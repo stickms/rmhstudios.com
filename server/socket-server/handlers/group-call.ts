@@ -1157,6 +1157,20 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         ? { callId: call.id }
         : { origin: call.origin, originId: call.originId };
 
+    // A ring the hub will not let them answer is over for the room too: left
+    // ringing, they would stay busy (refusing every other call) and show as
+    // "Ringing…" to everyone for the rest of the ring.
+    const refuse = (reason: GroupCallRejectReason): void => {
+      const ringing = call.origin === 'adhoc' ? call.participants.get(userId) : undefined;
+      if (ringing && ringing.joinedAt === null && calls.get(call.id) === call) {
+        call.declined += 1;
+        call.declinedBy.add(userId);
+        dropParticipant(io, call, userId, 'declined');
+        settle(io, call);
+      }
+      reject(reason, operation, roomRef);
+    };
+
     const busy = getBusy(userId);
     if (busy && busy.id !== call.id) return reject('busy', operation, roomRef);
 
@@ -1239,12 +1253,8 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // that is a direct connection, so ask again at the door. Everyone on the
       // roster counts, ringing included: they are meshed the moment they answer.
       const others = [...call.participants.keys()].filter((id) => id !== userId);
-      if (await hasBlockWithAny(userId, others)) {
-        return reject('privacy', operation, roomRef);
-      }
-      if (isRosterFull(joinedCount(call))) {
-        return reject('full', operation, roomRef);
-      }
+      if (await hasBlockWithAny(userId, others)) return refuse('privacy');
+      if (isRosterFull(joinedCount(call))) return refuse('full');
     } else {
       const originId = call.originId ?? '';
       const member = await isOriginMember(call.origin, originId, userId);
@@ -1290,7 +1300,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     const identity = onRoster ?? peer;
     if (!identity) return reject('gone', operation, roomRef);
     // Others may have joined while we awaited membership or the peer row.
-    if (isRosterFull(joinedCount(call))) return reject('full', operation, roomRef);
+    if (isRosterFull(joinedCount(call))) return refuse('full');
     // This socket closed while we awaited. Its disconnect handler has already
     // run and found nothing to clean up, so binding it now would leave a ghost
     // on the roster and a busy claim nobody releases.
@@ -1371,10 +1381,29 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // block from a busy line from a closed tab, exactly as in the 1:1 flow.
       // Refusing *everybody* is a call that did not happen, and gets a reason.
       if (admitted.length === 0) {
-        return reject(strongestReason(refusals), 'start', { origin, originId: null });
+        // `blocked` and `privacy` read the same on screen; on the wire they
+        // must too, or a one-person START tells the host which it was.
+        const reason = strongestReason(refusals);
+        return reject(reason === 'blocked' ? 'privacy' : reason, 'start', {
+          origin,
+          originId: null,
+        });
       }
       if (getBusy(userId)) return reject('busy', 'start', { origin, originId: null });
 
+      // The DM thread the call is attached to is echoed on every invitee's card
+      // and stored on the room, so it has to be one the host is actually in.
+      const thread = conversationId
+        ? await getPrismaClient()
+            .conversation.findFirst({
+              where: {
+                id: conversationId,
+                OR: [{ participantOneId: userId }, { participantTwoId: userId }],
+              },
+              select: { id: true },
+            })
+            .catch(() => null)
+        : null;
       const host = await loadPeer(userId, selfName(), selfImage());
       // Gone while we awaited: a room bound to a dead socket would hold the
       // host busy with nothing left to send the LEAVE that frees them.
@@ -1383,7 +1412,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         host,
         origin,
         originId: null,
-        conversationId,
+        conversationId: thread?.id ?? null,
       });
       if (!call) return reject('busy', 'start', { origin, originId: null });
       // Everyone onto the roster first, so both the host's `joined` and every
@@ -1542,7 +1571,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     // Screened against everyone in the room, not just the sender: the card
     // names the host and shows the roster, and accepting it meshes the
     // invitee with all of them.
-    const { admitted, refusals } = await screenInvitees(
+    const { admitted } = await screenInvitees(
       io,
       userId,
       targets,
@@ -1554,20 +1583,14 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       admitted.map(async (peer) => ((await isOriginMember(call.origin as OpenRoomOrigin, originId, peer.id)) ? peer : null)),
     );
     if (!inviterStillIn()) return reject('gone', 'invite', { callId });
-    let pinged = 0;
+    // Deliberately silent whether or not anyone was pinged. Any reply that
+    // differed between the two would let a member probe who belongs to a
+    // private space, and who is online or busy: a ping is a courtesy, and its
+    // sender learns nothing from it either way.
     for (const peer of eligible) {
       if (!peer) continue;
       noteRang(userId, peer.id);
       emitIncoming(io, call, peer.id);
-      pinged += 1;
-    }
-    // Nobody could be pinged: say so, as the ad-hoc path does, rather than
-    // closing the inviter's dialog on nothing. Non-members read as `privacy`
-    // like any other refusal, so the reply says nothing about who is in what.
-    if (pinged === 0) {
-      return reject(refusals.length > 0 ? strongestReason(refusals) : 'privacy', 'invite', {
-        callId,
-      });
     }
   });
 
@@ -1763,6 +1786,9 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
 
     // Asking is subscribing: from here on this socket gets the open/close
     // pushes for this origin without polling for them.
+    // Closed while membership was read: joining now would leave a room entry
+    // that no disconnect will ever clean up.
+    if (socket.disconnected) return;
     void socket.join(originPresenceRoom(origin, originId));
 
     const liveId = byOrigin.get(originKey(origin, originId));

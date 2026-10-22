@@ -7,6 +7,7 @@
   "ended": "Call ended",
   "ended-blocked": "Can't call this person",
   "ended-busy": "You're already on a call",
+  "ended-busy-them": "They're on another call",
   "ended-cannot-join": "You can't join this voice room",
   "ended-declined": "Everyone declined",
   "ended-empty": "Everyone left",

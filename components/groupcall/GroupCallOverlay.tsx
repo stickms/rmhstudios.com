@@ -113,6 +113,11 @@ function endReasonLabel(
     case 'gone':
       return t('ended-gone', { defaultValue: 'That call has ended' });
     case 'busy':
+      // An open room is refused as busy only for us (nobody is rung into it);
+      // an ad-hoc room's busy is the person we rang, as in the 1:1 overlay.
+      if (origin === 'adhoc') {
+        return t('ended-busy-them', { defaultValue: "They're on another call" });
+      }
       return t('ended-busy', { defaultValue: "You're already on a call" });
     case 'not-member':
       return t('ended-not-member', { defaultValue: "You're not a member of this space" });

@@ -624,6 +624,17 @@ export function initGroupCalls(): void {
 
   const socket: Socket = client.socket;
   bindSocket(socket);
+
+  // A closed or reloaded tab says goodbye instead of leaving its seat to the
+  // hub's reconnect grace: otherwise everyone else watches a tile for someone
+  // who is gone, and a two-person call waits out the grace to end. Best
+  // effort — the socket may not flush — and the grace still covers a miss.
+  // A tab that is only ringing says nothing: another tab may yet answer.
+  window.addEventListener('pagehide', () => {
+    const s = store();
+    const inRoom = s.phase === 'active' || (s.phase === 'joining' && joinSentFor === s.callId);
+    if (inRoom && s.callId) client?.emit(GCALL_C2S.LEAVE, { callId: s.callId });
+  });
 }
 
 /**

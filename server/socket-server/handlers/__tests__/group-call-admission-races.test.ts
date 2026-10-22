@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
     notificationPreference: { findMany: vi.fn() },
     follow: { findMany: vi.fn() },
     groupCall: { create: vi.fn(), update: vi.fn() },
+    conversation: { findFirst: vi.fn() },
     groupCallParticipant: { upsert: vi.fn() },
   },
 }));
@@ -132,6 +133,7 @@ describe('group-call admission races', () => {
       );
     mocks.prisma.follow.findMany.mockReset().mockResolvedValue([]);
     mocks.prisma.groupCall.create.mockReset().mockResolvedValue({});
+    mocks.prisma.conversation.findFirst.mockReset().mockResolvedValue(null);
     mocks.prisma.groupCall.update.mockReset().mockResolvedValue({});
     mocks.prisma.groupCallParticipant.upsert.mockReset().mockResolvedValue({});
   });
@@ -591,23 +593,6 @@ describe('group-call admission races', () => {
     await host.send(GCALL_C2S.LEAVE, { callId });
   });
 
-  it('tells the inviter when an open-room invite reached nobody', async () => {
-    holdPeerRows(new Map());
-    const host = connect('ping-host');
-    await host.send(GCALL_C2S.START, { origin: 'community', originId: 'community-m' });
-    const callId = joinedCallId(host) as string;
-
-    // The target is not a member of the community.
-    mocks.prisma.communityMember.findUnique.mockResolvedValue(null);
-    await host.send(GCALL_C2S.INVITE, { callId, userIds: ['ping-outsider'] });
-
-    expect(host.emitted).toContainEqual({
-      event: GCALL_S2C.REJECTED,
-      payload: expect.objectContaining({ operation: 'invite', callId }),
-    });
-    await host.send(GCALL_C2S.LEAVE, { callId });
-  });
-
   it('lets someone be called straight back after a call they answered', async () => {
     holdPeerRows(new Map());
     const host = connect('callback-host');
@@ -693,5 +678,64 @@ describe('group-call admission races', () => {
     await tabB.send(GCALL_C2S.LEAVE, { callId });
     await host.send(GCALL_C2S.LEAVE, { callId });
     expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('ends a ring the hub refused to let them answer', async () => {
+    holdPeerRows(new Map());
+    const host = connect('refused-host');
+    const early = connect('refused-early');
+    const late = connect('refused-late');
+    await host.send(GCALL_C2S.START, {
+      origin: 'adhoc',
+      inviteeIds: ['refused-early', 'refused-late'],
+    });
+    const callId = joinedCallId(host) as string;
+    await early.send(GCALL_C2S.JOIN, { callId });
+    blocksBetween([{ blockerId: 'refused-early', blockedId: 'refused-late' }]);
+
+    await late.send(GCALL_C2S.JOIN, { callId });
+
+    // Not left ringing (and busy) for the rest of the ring.
+    expect(getBusy('refused-late')).toBeNull();
+    await host.send(GCALL_C2S.END, { callId });
+  });
+
+  it('tells a one-invitee host `privacy`, never `blocked`', async () => {
+    holdPeerRows(new Map());
+    blocksBetween([{ blockerId: 'solo-callee', blockedId: 'solo-caller' }]);
+    const caller = connect('solo-caller');
+    await caller.send(GCALL_C2S.START, { origin: 'adhoc', inviteeIds: ['solo-callee'] });
+
+    expect(caller.emitted).toContainEqual({
+      event: GCALL_S2C.REJECTED,
+      payload: expect.objectContaining({ reason: 'privacy', operation: 'start' }),
+    });
+  });
+
+  it('drops a DM thread the host is not part of', async () => {
+    holdPeerRows(new Map());
+    const host = connect('thread-host');
+    await host.send(GCALL_C2S.START, {
+      origin: 'adhoc',
+      inviteeIds: ['thread-guest'],
+      conversationId: 'someone-elses-dm',
+    });
+    const joined = host.emitted.find((e) => e.event === GCALL_S2C.JOINED);
+    expect(joined?.payload.conversationId).toBeNull();
+    await host.send(GCALL_C2S.END, { callId: joined?.payload.callId });
+  });
+
+  it('answers an open-room invite the same whether or not anyone was pinged', async () => {
+    holdPeerRows(new Map());
+    const host = connect('quiet-host');
+    await host.send(GCALL_C2S.START, { origin: 'community', originId: 'community-o' });
+    const callId = joinedCallId(host) as string;
+    const before = host.emitted.length;
+
+    mocks.prisma.communityMember.findUnique.mockResolvedValue(null);
+    await host.send(GCALL_C2S.INVITE, { callId, userIds: ['quiet-outsider'] });
+
+    expect(host.emitted.slice(before)).toEqual([]);
+    await host.send(GCALL_C2S.LEAVE, { callId });
   });
 });

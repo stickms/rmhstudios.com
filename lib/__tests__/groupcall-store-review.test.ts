@@ -72,7 +72,7 @@ vi.mock('@/lib/groupcall/mesh', () => ({
 describe('group-call review regressions', () => {
   beforeEach(() => {
     vi.resetModules();
-    vi.stubGlobal('window', {});
+    vi.stubGlobal('window', { addEventListener: vi.fn() });
     mocks.handlers.clear();
     mocks.emits.length = 0;
     mocks.meshes.length = 0;
@@ -403,5 +403,32 @@ describe('group-call review regressions', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('leaves the room when the tab is closed', async () => {
+    const listeners = new Map<string, () => void>();
+    vi.stubGlobal('window', {
+      addEventListener: (event: string, handler: () => void) => listeners.set(event, handler),
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ iceServers: [] }) })),
+    );
+    const groupCall = await import('@/lib/groupcall/store');
+    await groupCall.joinGroupCall('room-id');
+    mocks.handlers.get(GCALL_S2C.JOINED)?.({
+      callId: 'room-id',
+      origin: 'community',
+      originId: 'community-id',
+      conversationId: null,
+      selfId: 'self',
+      hostId: 'peer',
+      participants: [],
+      startedAt: Date.now(),
+    });
+
+    listeners.get('pagehide')?.();
+
+    expect(mocks.emits).toContainEqual({ event: 'gcall:leave', payload: { callId: 'room-id' } });
   });
 });
