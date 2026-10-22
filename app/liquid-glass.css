@@ -100,15 +100,18 @@
     );
   }
   /* The eversion hover/press layer (`[data-evert]::before`, globals.css §7.3) pours out of the pointer INSIDE the host.
-     Over glass it must be translucent for the same reason, and it must reach the whole face: see the canvas order below. */
-  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset):not(
-    [data-liquid-material='off']
-  ),
-  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset):not(
+     Over glass the NEUTRAL hover must be translucent so the slab still reads through it, and it must reach the whole
+     face: see the canvas order below. That is done by redefining the neutral hover/press tokens for everything inside a
+     glass role, NOT by overriding `--evert-tint` itself: accent, danger and sign-in controls set their own tint (and swap
+     their label to the matching foreground on hover), and a blanket `--evert-tint` here would leave their white label on a
+     faint wash. The neutral controls reference `--site-surface-hover`, so they pick this up through inheritance. High
+     contrast, reduced transparency and the app/game tier keep their opaque hover tokens. */
+  html:not(.app-route):not(.style-high-contrast):not(.reduce-transparency)
+    :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset):not(
       [data-liquid-material='off']
-    )
-    [data-evert] {
-    --evert-tint: color-mix(in srgb, var(--site-text) 9%, transparent);
+    ) {
+    --site-surface-hover: color-mix(in srgb, var(--site-text) 9%, transparent);
+    --site-surface-active: color-mix(in srgb, var(--site-text) 14%, transparent);
   }
   .glass-interactive:active {
     scale: 0.97;
@@ -144,12 +147,9 @@
     background-image: none;
     box-shadow: none;
   }
-  /* Secondary and outline buttons are clear glass too: the fill is a sliver of the ground so the page shows through and
-     the lit coat/edge carries the shape. Only the prominent variants (default/accent/danger) keep a solid colour. */
-  [data-slot='button'][data-variant='secondary']:not([data-liquid-material='off']),
-  [data-slot='button'][data-variant='outline']:not([data-liquid-material='off']) {
-    background-color: color-mix(in srgb, var(--site-bg) 14%, transparent);
-  }
+  /* Secondary and outline buttons get no rule here on purpose: their `bg-site-surface` / `bg-transparent` utilities live in
+     Tailwind's utilities layer, which outranks this components layer whatever the selector, and `--site-surface` is itself
+     translucent now (globals.css), so they are already clear glass. Only the prominent variants keep a solid colour. */
   /* Standalone game menus use the same viewport contract without AppShell.
      Apply the coat to menu controls, leaving live canvas/HUD gameplay alone. */
   :is(.app-page, .app-screen)
