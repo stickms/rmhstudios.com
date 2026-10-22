@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 336 routes. 197 render inside the standard site shell (sidebar, nav, context rail); 139 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 337 routes. 198 render inside the standard site shell (sidebar, nav, context rail); 139 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -80,6 +80,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/creator-studio` | redirects to `/create/earnings` | public | `app/routes/_site/creator-studio.tsx` |
 | `/daily-mutator` | Daily Mutator | public | `app/routes/_site/daily-mutator.tsx` |
 | `/developer` | Developer API | public | `app/routes/_site/developer/index.tsx` |
+| `/developer/ai-practices` | Coding with AI \| RMH Studios Developer | public | `app/routes/_site/developer/ai-practices.tsx` |
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
 | `/emoji-packs` | Emoji & sticker packs | public | `app/routes/_site/emoji-packs.tsx` |
 | `/events` | redirects to `/communities?tab=events` | public | `app/routes/_site/events.tsx` |
