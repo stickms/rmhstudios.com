@@ -273,7 +273,7 @@ export class GroupCallMesh {
   private readonly sampleBuffer = new Uint8Array(ANALYSER_FFT_SIZE);
 
   constructor(
-    private readonly iceServers: IceServer[],
+    private iceServers: IceServer[],
     private readonly callbacks: GroupCallMeshCallbacks,
   ) {}
 
@@ -469,6 +469,10 @@ export class GroupCallMesh {
     // pair can hold a pending local offer, so ignoring the collision cannot
     // deadlock, and answering it would half-apply two negotiations at once.
     if (description.type === 'offer' && leg.offerer && leg.pc.signalingState !== 'stable') return;
+    // An answer to an offer we no longer have pending — the first of two when
+    // a lost-offer retry raced the late original. Applying it would throw and
+    // mark a working leg failed.
+    if (description.type === 'answer' && leg.pc.signalingState !== 'have-local-offer') return;
 
     try {
       await leg.pc.setRemoteDescription(new RTCSessionDescription(description));
@@ -699,6 +703,26 @@ export class GroupCallMesh {
     leg.restarts += 1;
     this.setStatus(leg, 'reconnecting');
     void this.offer(leg, { iceRestart: true });
+  }
+
+  /**
+   * Swap in fresh ICE servers. TURN credentials are minted with a short TTL,
+   * and a room outlives them: every leg built or ICE-restarted from here on
+   * uses the new list, and live legs adopt it so their next restart can
+   * allocate a relay.
+   */
+  setIceServers(servers: IceServer[]): void {
+    if (this.closed) return;
+    this.iceServers = servers;
+    const configuration = rtcConfiguration(servers);
+    for (const leg of this.legs.values()) {
+      if (leg.closed) continue;
+      try {
+        leg.pc.setConfiguration(configuration);
+      } catch {
+        /* a connection that refuses the change keeps its old servers */
+      }
+    }
   }
 
   /**

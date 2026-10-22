@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => {
     setMuted: ReturnType<typeof vi.fn>;
     setSelfId: ReturnType<typeof vi.fn>;
     syncPeers: ReturnType<typeof vi.fn>;
+    setIceServers: ReturnType<typeof vi.fn>;
   }> = [];
 
   return {
@@ -60,6 +61,7 @@ vi.mock('@/lib/groupcall/mesh', () => ({
     setMuted = vi.fn();
     setSelfId = vi.fn();
     syncPeers = vi.fn();
+    setIceServers = vi.fn();
 
     constructor() {
       mocks.meshes.push(this);
@@ -334,5 +336,72 @@ describe('group-call review regressions', () => {
     grantMicrophone();
     await starting;
     expect(mocks.emits.filter(({ event }) => event === 'gcall:start')).toHaveLength(1);
+  });
+
+  it('ignores the echo of its own LEAVE while walking back into the same room', async () => {
+    const answers: Array<() => void> = [];
+    mocks.openMicrophone.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          answers.push(resolve);
+        }),
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ iceServers: [] }) })),
+    );
+    const groupCall = await import('@/lib/groupcall/store');
+    const first = groupCall.joinGroupCall('room-id');
+    await vi.waitFor(() => expect(answers).toHaveLength(1));
+    answers[0]();
+    await first;
+    mocks.handlers.get(GCALL_S2C.JOINED)?.({
+      callId: 'room-id',
+      origin: 'community',
+      originId: 'community-id',
+      conversationId: null,
+      selfId: 'self',
+      hostId: 'peer',
+      participants: [],
+      startedAt: Date.now(),
+    });
+    groupCall.leaveGroupCall();
+
+    // Straight back in; the server's ENDED for the visit we left lands while
+    // the mic prompt for this one is still open.
+    const second = groupCall.joinGroupCall('room-id');
+    await vi.waitFor(() => expect(answers).toHaveLength(2));
+    mocks.handlers.get(GCALL_S2C.ENDED)?.({ callId: 'room-id', reason: 'left', durationSec: 1 });
+    expect(groupCall.useGroupCallStore.getState().phase).toBe('joining');
+
+    answers[1]();
+    await second;
+    expect(mocks.emits.filter(({ event }) => event === 'gcall:join')).toHaveLength(2);
+    mocks.openMicrophone.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('re-mints ICE servers for a long call', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    try {
+      let mint = 0;
+      const fetch = vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ iceServers: [{ urls: [`turn:relay?${++mint}`] }] }),
+      }));
+      vi.stubGlobal('fetch', fetch);
+      const groupCall = await import('@/lib/groupcall/store');
+      await groupCall.joinGroupCall('room-id');
+      const mesh = mocks.meshes[0];
+
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+
+      expect(fetch).toHaveBeenCalledTimes(2);
+      await vi.waitFor(() =>
+        expect(mesh.setIceServers).toHaveBeenCalledWith([{ urls: ['turn:relay?2'] }]),
+      );
+      groupCall.leaveGroupCall();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

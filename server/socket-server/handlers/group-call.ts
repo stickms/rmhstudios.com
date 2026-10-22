@@ -177,6 +177,12 @@ interface LiveGroupCall {
    * is a thing the host already consented to by inviting them.
    */
   invited: Set<string>;
+  /**
+   * Who declined this room. A mid-call invite skips them, so a refusal cannot
+   * be answered with another ring, and another; they can still walk back in
+   * from the guest list themselves.
+   */
+  declinedBy: Set<string>;
   /** Ring timers, keyed by the invitee they will give up on. */
   ringTimers: Map<string, ReturnType<typeof setTimeout>>;
   /**
@@ -609,6 +615,29 @@ async function loadPeer(
 }
 
 /**
+ * Is there a block, in either direction, between `userId` and any of `others`?
+ * Fails closed: an unreadable block table must never resolve to "connect them".
+ */
+async function hasBlockWithAny(userId: string, others: readonly string[]): Promise<boolean> {
+  if (others.length === 0) return false;
+  const row = await getPrismaClient()
+    .userBlock.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: { in: [...others] } },
+          { blockerId: { in: [...others] }, blockedId: userId },
+        ],
+      },
+      select: { blockerId: true },
+    })
+    .catch((err: unknown) => {
+      logger.warn({ event: 'group_call_block_check_failed', userId, error: String(err) });
+      return { blockerId: 'unknown' };
+    });
+  return row !== null;
+}
+
+/**
  * May these people be rung into an ad-hoc room?
  *
  * The same three facts `loadCallPermission` in `call.ts` loads, fed to
@@ -629,6 +658,8 @@ async function screenInvitees(
   io: Server,
   inviterId: string,
   inviteeIds: string[],
+  /** Everyone already on the roster besides the inviter, joined or ringing. */
+  roomIds: readonly string[] = [],
 ): Promise<{ admitted: CallPeer[]; refusals: GroupCallRejectReason[] }> {
   const admitted: CallPeer[] = [];
   const refusals: GroupCallRejectReason[] = [];
@@ -636,17 +667,31 @@ async function screenInvitees(
 
   const prisma = getPrismaClient();
   let blocks: Array<{ blockerId: string; blockedId: string }>;
+  let pairBlocks: Array<{ blockerId: string; blockedId: string }>;
   let prefs: Array<{ userId: string; callPrivacy: string }>;
   let follows: Array<{ followerId: string }>;
   let users: Array<{ id: string; name: string | null; image: string | null; handle: string | null }>;
   try {
-    [blocks, prefs, follows, users] = await Promise.all([
+    // A mesh connects every pair directly — each sees the other's IP and
+    // hears their voice — so a block between an invitee and anybody else in
+    // the room bars the ring just as one with the inviter does.
+    const others = [...new Set([...roomIds, ...inviteeIds])].filter((id) => id !== inviterId);
+    [blocks, pairBlocks, prefs, follows, users] = await Promise.all([
       prisma.userBlock.findMany({
         // Either direction bars the ring.
         where: {
           OR: [
             { blockerId: inviterId, blockedId: { in: inviteeIds } },
             { blockerId: { in: inviteeIds }, blockedId: inviterId },
+          ],
+        },
+        select: { blockerId: true, blockedId: true },
+      }),
+      prisma.userBlock.findMany({
+        where: {
+          OR: [
+            { blockerId: { in: inviteeIds }, blockedId: { in: others } },
+            { blockerId: { in: others }, blockedId: { in: inviteeIds } },
           ],
         },
         select: { blockerId: true, blockedId: true },
@@ -673,6 +718,20 @@ async function screenInvitees(
 
   const blocked = new Set<string>();
   for (const b of blocks) blocked.add(b.blockerId === inviterId ? b.blockedId : b.blockerId);
+  const conflicts = new Map<string, Set<string>>();
+  for (const b of pairBlocks) {
+    for (const [a, z] of [
+      [b.blockerId, b.blockedId],
+      [b.blockedId, b.blockerId],
+    ]) {
+      let set = conflicts.get(a);
+      if (!set) conflicts.set(a, (set = new Set()));
+      set.add(z);
+    }
+  }
+  // Who this invitee would be meshed with: the room as it stands, plus the
+  // invitees admitted ahead of them in this batch.
+  const present = new Set(roomIds);
   const privacyBy = new Map<string, CallPrivacy>();
   for (const p of prefs) {
     if (isCallPrivacy(p.callPrivacy)) privacyBy.set(p.userId, p.callPrivacy);
@@ -713,6 +772,13 @@ async function screenInvitees(
       refusals.push(verdict.reason);
       continue;
     }
+    const theirs = conflicts.get(id);
+    if (theirs && [...present].some((other) => theirs.has(other))) {
+      // Reported as `privacy`, not `blocked`: the block is between two other
+      // people, and the inviter has no business learning it exists.
+      refusals.push('privacy');
+      continue;
+    }
     if (getBusy(id)) {
       refusals.push('busy');
       continue;
@@ -723,6 +789,7 @@ async function screenInvitees(
       refusals.push('failed');
       continue;
     }
+    present.add(id);
     admitted.push({
       id,
       name: user.name ?? 'Someone',
@@ -1022,6 +1089,23 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     // is exactly what they need in order to tear down a peer connection whose
     // far end no longer exists and negotiate against the new tab.
     if (existing && existing.joinedAt !== null && existing.socketId !== socket.id) {
+      if (call.origin !== 'adhoc') {
+        // Membership is the whole admission rule of an open room, and a seat
+        // being re-claimed (a reconnect, another tab) is the moment to ask it
+        // again: they may have been removed while they were away. A refusal
+        // leaves the seat to its grace timer rather than evicting outright,
+        // so a database blip here costs a reconnect, not a place in the room.
+        const member = await isOriginMember(call.origin, call.originId ?? '', userId);
+        if (calls.get(call.id) !== call || call.participants.get(userId) !== existing) {
+          return reject('gone', operation, { callId: call.id });
+        }
+        if (!member) return reject('not-member', operation, { callId: call.id });
+        if (socket.disconnected) return;
+        if (existing.socketId === socket.id) {
+          emitJoined(socket, call, userId);
+          return;
+        }
+      }
       // Also the way back from a dropped socket: the seat was held (socketId
       // null) and this is the reconnect claiming it.
       clearGrace(call, userId);
@@ -1065,6 +1149,17 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // `GroupCallRejectReason` that means "this room is not open to you".
       if (!existing && !call.invited.has(userId)) {
         return reject('not-member', operation, { callId: call.id });
+      }
+      // Walking back in from the guest list: they were screened against the
+      // room as it was when they were rung, and it may since hold somebody
+      // they have a block with. In a mesh that is a direct connection.
+      if (!existing) {
+        const others = [...call.participants.values()]
+          .filter((p) => p.joinedAt !== null && p.userId !== userId)
+          .map((p) => p.userId);
+        if (await hasBlockWithAny(userId, others)) {
+          return reject('not-member', operation, { callId: call.id });
+        }
       }
       if (isRosterFull(joinedCount(call))) {
         return reject('full', operation, { callId: call.id });
@@ -1279,7 +1374,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     }
 
     const targets = asIdList(payload?.userIds, MAX_GROUP_CALL_INVITES).filter(
-      (id) => id !== userId && !call.participants.has(id),
+      (id) => id !== userId && !call.participants.has(id) && !call.declinedBy.has(id),
     );
     if (targets.length === 0) return fail('malformed', 'Nobody to invite');
 
@@ -1288,7 +1383,12 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // roster — not the joined count — is what a mid-call invite can fill.
       const room = MAX_GROUP_CALL_PARTICIPANTS - call.participants.size;
       if (room <= 0) return reject('full', 'invite', { callId });
-      const { admitted, refusals } = await screenInvitees(io, userId, targets.slice(0, room));
+      const { admitted, refusals } = await screenInvitees(
+        io,
+        userId,
+        targets.slice(0, room),
+        [...call.participants.keys()].filter((id) => id !== userId),
+      );
       if (calls.get(callId) !== call) return reject('gone', 'invite', { callId });
       if (admitted.length === 0) {
         return reject(strongestReason(refusals), 'invite', { callId });
@@ -1350,6 +1450,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     }
 
     call.declined += 1;
+    call.declinedBy.add(userId);
     dropParticipant(io, call, userId, 'declined');
     // Their other tabs are still showing the card; this is what clears it.
     io.to(userRoom(userId)).emit(GCALL_S2C.ENDED, { callId: call.id, reason: 'declined' });
@@ -1576,6 +1677,7 @@ function openRoom(
       ],
     ]),
     invited: new Set([args.host.id]),
+    declinedBy: new Set(),
     ringTimers: new Map(),
     graceTimers: new Map(),
     createdAt: at,

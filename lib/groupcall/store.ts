@@ -344,18 +344,49 @@ let incomingExpiryTimer: ReturnType<typeof setTimeout> | null = null;
 let selfUserId: string | null = null;
 
 /** Fetch relay credentials. Short-lived, so they are fetched per call. */
-async function loadIceServers(): Promise<IceServer[]> {
+/** Fresh ICE servers, or `null` when the endpoint could not be reached. */
+async function fetchIceServers(): Promise<IceServer[] | null> {
   try {
     const res = await fetch('/api/calls/ice');
     if (!res.ok) throw new Error(String(res.status));
     const body = (await res.json()) as { iceServers?: IceServer[] };
     return body.iceServers ?? [];
   } catch {
-    // A STUN-only fallback still connects for most pairs, which is better than
-    // refusing to open the room. It matters more in a mesh than in a 1:1 call:
-    // a room is only as complete as its worst pair.
-    return [{ urls: ['stun:stun.l.google.com:19302'] }];
+    return null;
   }
+}
+
+async function loadIceServers(): Promise<IceServer[]> {
+  // A STUN-only fallback still connects for most pairs, which is better than
+  // refusing to open the room. It matters more in a mesh than in a 1:1 call:
+  // a room is only as complete as its worst pair.
+  return (await fetchIceServers()) ?? [{ urls: ['stun:stun.l.google.com:19302'] }];
+}
+
+/**
+ * How often a live mesh re-mints its ICE servers. Comfortably inside the TURN
+ * credential TTL (`TURN_CREDENTIAL_TTL_SEC`, 10 min), so a leg built or
+ * restarted late in a long call never presents an expired credential.
+ */
+const ICE_REFRESH_MS = 5 * 60 * 1000;
+let iceRefreshTimer: ReturnType<typeof setInterval> | null = null;
+
+function stopIceRefresh(): void {
+  if (iceRefreshTimer) clearInterval(iceRefreshTimer);
+  iceRefreshTimer = null;
+}
+
+function startIceRefresh(bound: GroupCallMesh): void {
+  stopIceRefresh();
+  iceRefreshTimer = setInterval(() => {
+    void fetchIceServers().then((servers) => {
+      // A failed refresh keeps the last good list rather than dropping to
+      // STUN-only: the older credential may still have minutes left on it.
+      if (!servers || mesh !== bound) return;
+      iceServers = servers;
+      bound.setIceServers(servers);
+    });
+  }, ICE_REFRESH_MS);
 }
 
 async function resolveSelfId(): Promise<string | null> {
@@ -394,9 +425,23 @@ function clearIncomingExpiry(): void {
   incomingExpiryTimer = null;
 }
 
+/**
+ * Drop the attempt in progress — its media, its pending async work and what
+ * it had sent — without telling the server anything. The server-driven
+ * endings (ENDED, REJECTED, a fatal ERROR) and a dismiss all start here.
+ */
+function abandonAttempt(): void {
+  mediaAttempt += 1;
+  joinSentFor = null;
+  startSent = false;
+  clearIncomingExpiry();
+  teardownMesh();
+}
+
 function closeMesh(bound: GroupCallMesh): void {
   bound.close();
   if (mesh !== bound) return;
+  stopIceRefresh();
   mesh = null;
   store().clearLocalMedia();
 }
@@ -437,10 +482,12 @@ async function bindMesh(attempt: number): Promise<GroupCallMesh | null> {
   }
   mesh?.close();
   mesh = bound;
+  startIceRefresh(bound);
   return bound;
 }
 
 function teardownMesh(): void {
+  stopIceRefresh();
   mesh?.close();
   mesh = null;
   store().clearLocalMedia();
@@ -717,11 +764,17 @@ function bindSocket(socket: Socket): void {
   });
 
   socket.on(GCALL_S2C.ENDED, (payload: GroupCallEndedPayload) => {
-    if (store().callId !== payload.callId) return;
-    mediaAttempt += 1;
-    clearIncomingExpiry();
-    teardownMesh();
-    store().dispatch({ type: 'end', reason: payload.reason });
+    const s = store();
+    if (s.callId !== payload.callId) return;
+    // Already over here: this is the echo of our own LEAVE or DECLINE (the
+    // server answers to the whole user room). The same echo can land after we
+    // started walking back into the same room, before our new JOIN went out —
+    // it is about the visit we left, not this one. A ring we are answering is
+    // the exception: the host cancelling it is exactly this event.
+    if (s.phase === 'ended' || s.phase === 'idle') return;
+    if (s.phase === 'joining' && joinSentFor !== payload.callId && !s.ringingFrom) return;
+    abandonAttempt();
+    s.dispatch({ type: 'end', reason: payload.reason });
   });
 
   socket.on(GCALL_S2C.REJECTED, (payload: GroupCallRejectedPayload) => {
@@ -742,9 +795,7 @@ function bindSocket(socket: Socket): void {
       return;
     }
     if (payload.operation === 'start' && s.phase !== 'joining') return;
-    mediaAttempt += 1;
-    clearIncomingExpiry();
-    teardownMesh();
+    abandonAttempt();
     // `GroupCallRejectReason` is a subset of `GroupCallEndReason`, so it feeds
     // straight in without a translation table.
     s.dispatch({ type: 'end', reason: payload.reason });
@@ -776,9 +827,7 @@ function bindSocket(socket: Socket): void {
     const fatal = payload.code === 'unknown-call' || payload.code === 'not-participant';
     const s = store();
     if (!fatal || !s.callId || (payload.callId && payload.callId !== s.callId)) return;
-    mediaAttempt += 1;
-    clearIncomingExpiry();
-    teardownMesh();
+    abandonAttempt();
     store().dispatch({ type: 'end', reason: 'gone' });
   });
 }
@@ -1028,9 +1077,7 @@ export function toggleGroupMute(): void {
 
 /** Dismiss the ended-room card and go back to idle. */
 export function dismissGroupCall(): void {
-  mediaAttempt += 1;
-  clearIncomingExpiry();
-  teardownMesh();
+  abandonAttempt();
   const s = store();
   s.dispatch({ type: 'reset' });
   s.setRinging(null, null);

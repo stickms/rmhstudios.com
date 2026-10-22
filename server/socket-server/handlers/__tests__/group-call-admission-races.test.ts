@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   prisma: {
     communityMember: { findUnique: vi.fn() },
     user: { findUnique: vi.fn(), findMany: vi.fn() },
-    userBlock: { findMany: vi.fn() },
+    userBlock: { findMany: vi.fn(), findFirst: vi.fn() },
     notificationPreference: { findMany: vi.fn() },
     follow: { findMany: vi.fn() },
     groupCall: { create: vi.fn(), update: vi.fn() },
@@ -94,6 +94,20 @@ function holdPeerRows(held: Map<string, Promise<unknown>>): void {
   );
 }
 
+type IdFilter = string | { in: string[] };
+const matches = (filter: IdFilter, id: string) =>
+  typeof filter === 'string' ? filter === id : filter.in.includes(id);
+
+/** Serve `userBlock` queries from a fixture, evaluating the OR-of-pairs shape the hub sends. */
+function blocksBetween(rows: Array<{ blockerId: string; blockedId: string }>): void {
+  const select = ({ where }: { where: { OR: Array<{ blockerId: IdFilter; blockedId: IdFilter }> } }) =>
+    rows.filter((row) =>
+      where.OR.some((c) => matches(c.blockerId, row.blockerId) && matches(c.blockedId, row.blockedId)),
+    );
+  mocks.prisma.userBlock.findMany.mockImplementation(async (args) => select(args));
+  mocks.prisma.userBlock.findFirst.mockImplementation(async (args) => select(args)[0] ?? null);
+}
+
 const joinedCallId = (client: FakeClient): string | undefined =>
   client.emitted.find((e) => e.event === GCALL_S2C.JOINED)?.payload.callId as string | undefined;
 
@@ -106,7 +120,9 @@ describe('group-call admission races', () => {
       .mockImplementation(({ where }: { where: { id: { in: string[] } } }) =>
         Promise.resolve(where.id.in.map((id) => ({ id, name: id, image: null, handle: null }))),
       );
-    mocks.prisma.userBlock.findMany.mockReset().mockResolvedValue([]);
+    mocks.prisma.userBlock.findMany.mockReset();
+    mocks.prisma.userBlock.findFirst.mockReset();
+    blocksBetween([]);
     mocks.prisma.notificationPreference.findMany
       .mockReset()
       .mockImplementation(({ where }: { where: { userId: { in: string[] } } }) =>
@@ -318,6 +334,72 @@ describe('group-call admission races', () => {
 
     expect(getBusy('evict-goes')).toBeNull();
     expect(__liveGroupCallCount()).toBe(1);
+    await stays.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('does not ring two people into one mesh when one has blocked the other', async () => {
+    holdPeerRows(new Map());
+    blocksBetween([{ blockerId: 'pair-b', blockedId: 'pair-c' }]);
+    const host = connect('pair-host');
+    await host.send(GCALL_C2S.START, { origin: 'adhoc', inviteeIds: ['pair-b', 'pair-c'] });
+    const callId = joinedCallId(host) as string;
+
+    expect(getBusy('pair-b')).toEqual({ kind: 'gcall', id: callId });
+    expect(getBusy('pair-c')).toBeNull();
+
+    // Nor can a mid-call invite add them afterwards.
+    await host.send(GCALL_C2S.INVITE, { callId, userIds: ['pair-c'] });
+    expect(getBusy('pair-c')).toBeNull();
+    expect(host.emitted).toContainEqual({
+      event: GCALL_S2C.REJECTED,
+      payload: expect.objectContaining({ reason: 'privacy', operation: 'invite' }),
+    });
+
+    await host.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('does not ring someone again after they declined', async () => {
+    holdPeerRows(new Map());
+    const host = connect('decline-host');
+    const refuser = connect('decline-b');
+    await host.send(GCALL_C2S.START, {
+      origin: 'adhoc',
+      inviteeIds: ['decline-b', 'decline-c'],
+    });
+    const callId = joinedCallId(host) as string;
+    await refuser.send(GCALL_C2S.DECLINE, { callId });
+    expect(getBusy('decline-b')).toBeNull();
+
+    await host.send(GCALL_C2S.INVITE, { callId, userIds: ['decline-b'] });
+
+    expect(getBusy('decline-b')).toBeNull();
+    await host.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('asks an open room about membership again when a seat is re-claimed', async () => {
+    holdPeerRows(new Map());
+    const stays = connect('reclaim-stays');
+    const away = connect('reclaim-away');
+    await stays.send(GCALL_C2S.START, { origin: 'community', originId: 'community-f' });
+    const callId = joinedCallId(stays) as string;
+    await away.send(GCALL_C2S.JOIN, { callId });
+    await handleGroupCallDisconnect(io, away.socket);
+
+    // Removed from the community while their socket was down.
+    mocks.prisma.communityMember.findUnique.mockResolvedValue(null);
+    const back = connect('reclaim-away', 'reclaim-away-again');
+    await back.send(GCALL_C2S.JOIN, { callId });
+
+    expect(back.emitted).toContainEqual({
+      event: GCALL_S2C.REJECTED,
+      payload: expect.objectContaining({ reason: 'not-member', operation: 'join' }),
+    });
+    expect(joinedCallId(back)).toBeUndefined();
+
+    evictOriginMember(io, 'community', 'community-f', 'reclaim-away');
     await stays.send(GCALL_C2S.LEAVE, { callId });
     expect(__liveGroupCallCount()).toBe(0);
   });

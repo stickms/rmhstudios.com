@@ -47,6 +47,10 @@ class FakePeerConnection {
     this.signalingState = description.type === 'offer' ? 'have-local-offer' : 'stable';
   }
   async setRemoteDescription(description: RTCSessionDescriptionInit) {
+    // As browsers do: an answer is only valid against a pending local offer.
+    if (description.type === 'answer' && this.signalingState !== 'have-local-offer') {
+      throw new Error('InvalidStateError');
+    }
     this.remoteDescription = description;
     this.signalingState = description.type === 'offer' ? 'have-remote-offer' : 'stable';
   }
@@ -145,6 +149,23 @@ describe('group-call mesh recovery', () => {
 
     expect(pc.offers).toHaveLength(2);
     expect(pc.offers[1]).toEqual({ iceRestart: true });
+    mesh.close();
+  });
+
+  it('drops an answer to an offer it no longer has pending', async () => {
+    const status = vi.fn();
+    const mesh = new GroupCallMesh([], { ...callbacks(), onPeerStatus: status });
+    mesh.setSelfId('aa-self');
+    mesh.syncPeers(['zz-peer']);
+    await vi.advanceTimersByTimeAsync(0);
+    const [pc] = FakePeerConnection.instances;
+    await mesh.handleDescription('zz-peer', { type: 'answer', sdp: 'a=fingerprint:sha-256 BB:BB' });
+    pc.enter('connected');
+
+    // A second answer for the same exchange arrives late.
+    await mesh.handleDescription('zz-peer', { type: 'answer', sdp: 'a=fingerprint:sha-256 BB:BB' });
+
+    expect(status).not.toHaveBeenCalledWith('zz-peer', 'failed');
     mesh.close();
   });
 });
