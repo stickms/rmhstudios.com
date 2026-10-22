@@ -50,3 +50,19 @@ export function postCardShowsContent(post: PostCardSubject | null | undefined): 
   if (post.isSensitive) return false;
   return true;
 }
+
+/**
+ * The community name a card may print: only for a post in a PUBLIC community.
+ *
+ * A private community's name is itself members-only (the community 404s for
+ * non-members), and the card is public and cached for an hour at the edge, so
+ * it is part of what `postCardShowsContent` protects - and it is withheld even
+ * when the rest of the card is generic.
+ */
+export function postCardCommunityName(
+  post: { community?: { name?: string | null; isPrivate?: boolean | null } | null } | null | undefined,
+): string | null {
+  const community = post?.community;
+  if (!community || community.isPrivate) return null;
+  return community.name ?? null;
+}
