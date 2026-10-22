@@ -94,6 +94,7 @@ import {
   shouldOffer,
 } from '../../../lib/groupcall/state';
 import { isCallPrivacy, type CallPrivacy } from '../../../lib/call/state';
+import { userChipSelect } from '../../../lib/user-display';
 
 /** cuid is 25 chars, uuidv7 36, `GroupCall.partyId` is VarChar(64). */
 const MAX_ID_LENGTH = 64;
@@ -205,12 +206,20 @@ const byUser = new Map<string, string>();
 /** `community:<id>` / `party:<id>` → callId, so an origin can only have one room. */
 const byOrigin = new Map<string, string>();
 
-/** Close persisted rooms left behind when the previous signaling process died. */
-export async function reconcileOrphanedGroupCalls(): Promise<void> {
+/**
+ * Close persisted rooms left behind when the previous signaling process died.
+ *
+ * Only rows created before `before` (this process's boot) are touched: the
+ * sweep runs after the hub is already accepting connections, and a room opened
+ * in the meantime is live, not orphaned.
+ */
+export async function reconcileOrphanedGroupCalls(before: Date): Promise<void> {
   const prisma = getPrismaClient();
   const now = new Date();
   const orphaned = await prisma.groupCall.findMany({
-    where: { endedAt: null, status: { in: ['ACTIVE', 'RINGING'] } },
+    where: { endedAt: null, status: { in: ['ACTIVE', 'RINGING'] }, createdAt: { lt: before } },
+    // Bounded per boot; anything beyond it is swept on the next start.
+    take: 200,
     select: {
       id: true,
       status: true,
@@ -257,7 +266,9 @@ export async function reconcileOrphanedGroupCalls(): Promise<void> {
         data: { status: 'ENDED', endedAt: now },
       });
     }
-  });
+    // One update per joined participant (each has its own duration), so a
+    // large backlog needs more than Prisma's 5 s interactive default.
+  }, { timeout: 30_000 });
 
   logger.info({ event: 'group_call_orphans_reconciled', count: orphaned.length });
 }
@@ -569,7 +580,7 @@ async function loadPeer(
   const row = await getPrismaClient()
     .user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, image: true, handle: true },
+      select: userChipSelect,
     })
     .catch((err: unknown) => {
       logger.warn({ event: 'group_call_peer_load_failed', userId, error: String(err) });
@@ -636,7 +647,7 @@ async function screenInvitees(
       }),
       prisma.user.findMany({
         where: { id: { in: inviteeIds } },
-        select: { id: true, name: true, image: true, handle: true },
+        select: userChipSelect,
       }),
     ]);
   } catch (err) {
@@ -1028,30 +1039,43 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       if (!verdict.allowed) return reject(verdict.reason, operation, { callId: call.id });
     }
 
-    // The room may have ended while we were awaiting membership.
+    // Every await happens before this point. From the re-checks below to the
+    // roster write the run is synchronous, so the room cannot end, fill up or
+    // change our place in it between the checks and the busy claim — a claim
+    // taken on a room that then ended would never be released.
+    const peer = call.participants.has(userId)
+      ? null
+      : await loadPeer(userId, selfName(), selfImage());
+
     if (calls.get(call.id) !== call) return reject('gone', operation, { callId: call.id });
+    const onRoster = call.participants.get(userId);
+    // Another tab of ours got in while we were waiting; that tab is the leg.
+    if (onRoster && onRoster.joinedAt !== null) {
+      return reject('busy', operation, { callId: call.id });
+    }
+    // We were ringing when we started and have since been dropped (declined
+    // from another tab, or the ring ran out): that invitation is over.
+    const identity = onRoster ?? peer;
+    if (!identity) return reject('gone', operation, { callId: call.id });
+    // Others may have joined while we awaited membership or the peer row.
+    if (isRosterFull(joinedCount(call))) return reject('full', operation, { callId: call.id });
     if (!claimBusy(userId, 'gcall', call.id)) {
       return reject('busy', operation, { callId: call.id });
     }
 
     const at = Date.now();
-    let participant = call.participants.get(userId);
-    if (participant) {
-      participant.socketId = socket.id;
-      participant.joinedAt = at;
-    } else {
-      const peer = await loadPeer(userId, selfName(), selfImage());
-      participant = {
-        userId,
-        name: peer.name,
-        image: peer.image,
-        handle: peer.handle,
-        socketId: socket.id,
-        muted: false,
-        joinedAt: at,
-      };
-      call.participants.set(userId, participant);
-    }
+    const participant: LiveParticipant = onRoster ?? {
+      userId,
+      name: identity.name,
+      image: identity.image,
+      handle: identity.handle,
+      socketId: socket.id,
+      muted: false,
+      joinedAt: at,
+    };
+    participant.socketId = socket.id;
+    participant.joinedAt = at;
+    call.participants.set(userId, participant);
 
     const timer = call.ringTimers.get(userId);
     if (timer) {
@@ -1146,12 +1170,15 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       return reject('not-member', 'start', { origin, originId });
     }
 
-    // Somebody may have opened it while we were reading the membership row.
+    const host = await loadPeer(userId, selfName(), selfImage());
+
+    // Somebody may have opened it while we were reading the membership row or
+    // our own. Checked after the last await, so nothing can open a second room
+    // between this lookup and `openRoom` registering ours in `byOrigin`.
     const raced = byOrigin.get(originKey(origin, originId));
     const racedCall = raced ? calls.get(raced) : undefined;
     if (racedCall) return void (await enterRoom(racedCall, 'start'));
 
-    const host = await loadPeer(userId, selfName(), selfImage());
     const call = openRoom(socket, { host, origin, originId, conversationId: null });
     if (!call) return reject('busy', 'start', { origin, originId });
     emitJoined(socket, call, userId);
@@ -1355,7 +1382,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         return fail('malformed', 'Malformed candidate', call.id);
       }
 
-      let size = 0;
+      let size: number;
       try {
         size = JSON.stringify(body).length;
       } catch {

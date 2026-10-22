@@ -45,8 +45,15 @@ describe('orphaned group-call reconciliation', () => {
       { id: 'ringing-room', status: 'RINGING', participants: [] },
     ]);
 
-    await reconcileOrphanedGroupCalls();
+    const bootedAt = new Date();
+    await reconcileOrphanedGroupCalls(bootedAt);
 
+    // Rooms this process opened after booting are live, not orphaned.
+    expect(mocks.prisma.groupCall.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ createdAt: { lt: bootedAt } }),
+      }),
+    );
     expect(mocks.prisma.$transaction).toHaveBeenCalledOnce();
     expect(mocks.prisma.groupCallParticipant.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -77,7 +84,7 @@ describe('orphaned group-call reconciliation', () => {
   it('does not open a transaction when there are no orphaned rooms', async () => {
     mocks.prisma.groupCall.findMany.mockResolvedValue([]);
 
-    await reconcileOrphanedGroupCalls();
+    await reconcileOrphanedGroupCalls(new Date());
 
     expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
   });

@@ -616,17 +616,22 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // ─── Start listening ────────────────────────────────────────────
 
-void reconcileOrphanedGroupCalls()
-  .then(() => {
-    httpServer.listen(config.PORT, () => {
-      logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
-      initializeBlackjackPublicTable(io);
-      initializeHoldem(io);
-      initializeBaccarat(io);
-      initializeRoulette(io);
-    });
-  })
-  .catch((err: unknown) => {
-    logger.error({ event: 'group_call_orphan_reconciliation_failed', error: String(err) });
-    process.exit(1);
-  });
+// Taken before `listen`, so the sweep below can tell rooms the previous process
+// left behind from rooms this one opens while the sweep is still running.
+const bootedAt = new Date();
+
+httpServer.listen(config.PORT, () => {
+  logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
+  initializeBlackjackPublicTable(io);
+  initializeHoldem(io);
+  initializeBaccarat(io);
+  initializeRoulette(io);
+});
+
+// Close group-call rows a previous process died holding. History hygiene only:
+// it runs after `listen` and never fails the boot, because every other feature
+// on this hub must not wait on (or die with) a database that is briefly away.
+// Whatever it misses is swept on the next start.
+reconcileOrphanedGroupCalls(bootedAt).catch((err: unknown) => {
+  logger.warn({ event: 'group_call_orphan_reconciliation_failed', error: String(err) });
+});

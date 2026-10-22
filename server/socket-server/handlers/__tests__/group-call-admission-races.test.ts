@@ -1,0 +1,158 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Server, Socket } from 'socket.io';
+import { GCALL_C2S, GCALL_S2C } from '../../../../lib/groupcall/events';
+import { getBusy } from '../../busy-registry';
+import { __liveGroupCallCount, registerGroupCallHandlers } from '../group-call';
+
+const mocks = vi.hoisted(() => ({
+  prisma: {
+    communityMember: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn() },
+    groupCall: { create: vi.fn(), update: vi.fn() },
+    groupCallParticipant: { upsert: vi.fn() },
+  },
+}));
+
+vi.mock('../../prisma-client', () => ({
+  getPrismaClient: () => mocks.prisma,
+}));
+
+vi.mock('../../logger', () => ({
+  logger: { info: vi.fn(), warn: vi.fn() },
+}));
+
+vi.mock('../../rate-limit', () => ({
+  checkRateLimit: () => true,
+}));
+
+vi.mock('../party', () => ({
+  isPartyMember: vi.fn(),
+}));
+
+type Handler = (payload: Record<string, unknown>) => Promise<void> | void;
+
+interface FakeClient {
+  socket: Socket;
+  emitted: Array<{ event: string; payload: Record<string, unknown> }>;
+  send: (event: string, payload: Record<string, unknown>) => Promise<void> | void;
+}
+
+const io = {
+  to: () => ({ emit: () => {} }),
+  in: () => ({ socketsLeave: () => {}, fetchSockets: async () => [] }),
+  sockets: { sockets: new Map() },
+} as unknown as Server;
+
+function connect(userId: string): FakeClient {
+  const handlers = new Map<string, Handler>();
+  const emitted: FakeClient['emitted'] = [];
+  const socket = {
+    id: `${userId}-socket`,
+    data: { userId, userName: userId },
+    on: (event: string, handler: Handler) => handlers.set(event, handler),
+    emit: (event: string, payload: Record<string, unknown>) => emitted.push({ event, payload }),
+    join: () => {},
+    leave: () => {},
+  } as unknown as Socket;
+  registerGroupCallHandlers(io, socket);
+  return {
+    socket,
+    emitted,
+    send: (event, payload) => {
+      const handler = handlers.get(event);
+      if (!handler) throw new Error(`no handler for ${event}`);
+      return handler(payload);
+    },
+  };
+}
+
+/** A promise whose resolution the test controls. */
+function gate<T>(): { promise: Promise<T>; open: (value: T) => void } {
+  let open!: (value: T) => void;
+  const promise = new Promise<T>((resolve) => {
+    open = resolve;
+  });
+  return { promise, open };
+}
+
+/** Peer-row lookups that hang for the listed users until released. */
+function holdPeerRows(held: Map<string, Promise<unknown>>): void {
+  mocks.prisma.user.findUnique.mockImplementation(({ where }: { where: { id: string } }) =>
+    held.get(where.id) ?? Promise.resolve({ id: where.id, name: where.id, image: null, handle: null }),
+  );
+}
+
+const joinedCallId = (client: FakeClient): string | undefined =>
+  client.emitted.find((e) => e.event === GCALL_S2C.JOINED)?.payload.callId as string | undefined;
+
+describe('group-call admission races', () => {
+  beforeEach(() => {
+    mocks.prisma.communityMember.findUnique.mockReset().mockResolvedValue({ userId: 'member' });
+    mocks.prisma.user.findUnique.mockReset();
+    mocks.prisma.groupCall.create.mockReset().mockResolvedValue({});
+    mocks.prisma.groupCall.update.mockReset().mockResolvedValue({});
+    mocks.prisma.groupCallParticipant.upsert.mockReset().mockResolvedValue({});
+  });
+
+  it('does not leave a joiner busy when the room ends while their peer row loads', async () => {
+    holdPeerRows(new Map());
+    const host = connect('race-host');
+    await host.send(GCALL_C2S.START, { origin: 'community', originId: 'community-a' });
+    const callId = joinedCallId(host);
+    expect(callId).toBeDefined();
+
+    const joinerRow = gate<unknown>();
+    holdPeerRows(new Map([['race-joiner', joinerRow.promise]]));
+    const joiner = connect('race-joiner');
+    const joining = joiner.send(GCALL_C2S.JOIN, { callId });
+    // Let membership resolve so the join is parked on the peer row.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await host.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+
+    joinerRow.open({ id: 'race-joiner', name: 'Joiner', image: null, handle: null });
+    await joining;
+
+    expect(joiner.emitted).toContainEqual({
+      event: GCALL_S2C.REJECTED,
+      payload: expect.objectContaining({ reason: 'gone', operation: 'join', callId }),
+    });
+    expect(joiner.emitted.some((e) => e.event === GCALL_S2C.JOINED)).toBe(false);
+    expect(getBusy('race-joiner')).toBeNull();
+    expect(getBusy('race-host')).toBeNull();
+  });
+
+  it('opens one room when two members start the same community room at once', async () => {
+    const firstRow = gate<unknown>();
+    const secondRow = gate<unknown>();
+    holdPeerRows(
+      new Map([
+        ['starter-one', firstRow.promise],
+        ['starter-two', secondRow.promise],
+      ]),
+    );
+    const one = connect('starter-one');
+    const two = connect('starter-two');
+
+    const startOne = one.send(GCALL_C2S.START, { origin: 'community', originId: 'community-b' });
+    const startTwo = two.send(GCALL_C2S.START, { origin: 'community', originId: 'community-b' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    firstRow.open({ id: 'starter-one', name: 'One', image: null, handle: null });
+    await startOne;
+    secondRow.open({ id: 'starter-two', name: 'Two', image: null, handle: null });
+    await startTwo;
+
+    expect(__liveGroupCallCount()).toBe(1);
+    const callId = joinedCallId(one);
+    expect(callId).toBeDefined();
+    expect(joinedCallId(two)).toBe(callId);
+    expect(getBusy('starter-one')).toEqual({ kind: 'gcall', id: callId });
+    expect(getBusy('starter-two')).toEqual({ kind: 'gcall', id: callId });
+
+    await one.send(GCALL_C2S.LEAVE, { callId });
+    await two.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+});

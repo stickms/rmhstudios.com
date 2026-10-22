@@ -2,29 +2,19 @@
  * Group voice calls — the database side.
  *
  * Media never reaches a server (`lib/groupcall/events.ts` explains why the mesh
- * stops at eight), so nothing here touches audio. What these helpers persist is
- * the call *record*: who was rung, who actually got in, how long they stayed and
- * how the room ended — enough for a DM thread to say "Missed group call", for a
- * community to show its voice history, and for the mesh cap to be audited after
- * the fact.
+ * stops at eight), so nothing here touches audio. What these helpers read is
+ * the call *record* the hub writes: who was rung, who actually got in, how long
+ * they stayed and how the room ended — enough for a call history, a community's
+ * live-room pill, and for the mesh cap to be audited after the fact.
  *
  * ## Who calls what
  *
- * The module is written for the **web tier** — `app/routes/api/groupcalls/*` —
- * which is why the read helpers reach for presence, people search and community
- * membership. The socket hub is a separate bundle: `server/` is esbuilt from its
- * own Dockerfile stage that copies an explicit allowlist of `lib/` files, so the
- * hub cannot import this module unless someone adds it (and its whole import
- * graph) to that list. Rather than pretend otherwise, the write helpers below
- * are shaped so that *if* the hub ever does import them they work unchanged:
- *
- *  - every one takes an optional `db`, defaulting to the web tier's singleton,
- *    so the hub can pass its own client instead of opening a second pool (the
- *    same split `lib/economy/ledger-core.ts` exists for);
- *  - none of them read a session, a request or any web-tier state;
- *  - all of them are idempotent-ish and swallow nothing — the caller decides
- *    whether a failed history write is worth surfacing, which for a hub that is
- *    mid-signalling is always "no", hence {@link fireAndForget}.
+ * Reads only, for the **web tier** — `app/routes/api/groupcalls/*` — which is
+ * why these helpers reach for presence, people search and community membership.
+ * Every write happens on the socket hub, which owns the live room and persists
+ * it through its own fire-and-forget chain (`persist*` in
+ * `server/socket-server/handlers/group-call.ts`); keeping the writes in one
+ * place keeps one definition of what a row means.
  *
  * ## What is deliberately NOT here
  *
@@ -34,39 +24,16 @@
  * a privacy setting cannot be read back out of somebody's history.
  */
 
-import type { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
 import { getActiveFriends } from '@/lib/presence.server';
 import { searchPeople } from '@/lib/search/people.server';
 import { getRole } from '@/lib/communities/access.server';
-import {
-  MAX_GROUP_CALL_PARTICIPANTS,
-  type GroupCallEndReason,
-  type GroupCallLeaveReason,
-  type GroupCallOrigin,
-} from '@/lib/groupcall/events';
-import { persistedOrigin, persistedStatus } from '@/lib/groupcall/state';
+import { MAX_GROUP_CALL_PARTICIPANTS, type GroupCallOrigin } from '@/lib/groupcall/events';
 
 /* -------------------------------------------------------------------------- */
-/* Client plumbing                                                            */
+/* Wire shapes                                                                */
 /* -------------------------------------------------------------------------- */
-
-/** Any Prisma client: the base client or an interactive-transaction client. */
-export type Db = Prisma.TransactionClient | PrismaClient;
-
-/**
- * Run a history write without letting it fail the thing it is recording.
- *
- * The hub is the intended caller: a room's audio does not depend on its row, so
- * a database blip must never take a live call down. Errors are logged, once, at
- * the point they happen.
- */
-export function fireAndForget(label: string, work: Promise<unknown>): void {
-  void work.catch((err: unknown) => {
-    console.error(`[groupcall] ${label} failed:`, err);
-  });
-}
 
 /** Prisma enum → the lowercase word the wire and the UI use. */
 function wireOrigin(origin: 'ADHOC' | 'COMMUNITY' | 'PARTY'): GroupCallOrigin {
@@ -89,296 +56,6 @@ function wireOrigin(origin: 'ADHOC' | 'COMMUNITY' | 'PARTY'): GroupCallOrigin {
  */
 function wireOriginId(row: { communityId: string | null; partyId: string | null }): string | null {
   return row.communityId ?? row.partyId ?? null;
-}
-
-/** Whole seconds between two instants, floored at 0. A clock skew is not a debt. */
-function secondsBetween(from: Date, to: Date): number {
-  return Math.max(0, Math.round((to.getTime() - from.getTime()) / 1000));
-}
-
-/* -------------------------------------------------------------------------- */
-/* Writes                                                                     */
-/* -------------------------------------------------------------------------- */
-
-export interface RecordGroupCallStartedInput {
-  hostId: string;
-  origin: GroupCallOrigin;
-  /** Community id or party id. Null for `adhoc`. */
-  originId?: string | null;
-  /** The DM thread this started from, when it did. */
-  conversationId?: string | null;
-  /**
-   * Who is being rung. `adhoc` only — nobody is rung into an open room — and
-   * silently truncated to the mesh cap rather than refused, matching the hub's
-   * own handling of an oversized `START`.
-   */
-  inviteeIds?: readonly string[];
-  /** Override the clock, for tests and for replaying a backdated event. */
-  now?: Date;
-}
-
-/**
- * Open a room's record: the `GroupCall` row plus a participant row per person.
- *
- * The host's row is written as JOINED, because starting a call is joining it —
- * for `adhoc` the starter is already in while everyone else rings, and for an
- * open room the opener is the first one through the door. Invitees are INVITED
- * (`joinedAt` null), which is the same fact the roster expresses as "Ringing…".
- *
- * Returns the new `callId`. Prisma generates the uuid(7) client-side, so the id
- * exists the moment this resolves and the hub can put it on the wire — this is
- * the one write here that must be awaited rather than fired and forgotten.
- */
-export async function recordGroupCallStarted(
-  input: RecordGroupCallStartedInput,
-  db: Db = prisma,
-): Promise<{ callId: string; startedAt: Date }> {
-  const now = input.now ?? new Date();
-  const persisted = persistedOrigin(input.origin);
-  const invitees = [...new Set(input.inviteeIds ?? [])]
-    .filter((id) => id !== input.hostId)
-    // The cap counts the host, so this is what is left of the room.
-    .slice(0, MAX_GROUP_CALL_PARTICIPANTS - 1);
-
-  const call = await db.groupCall.create({
-    data: {
-      hostId: input.hostId,
-      origin: persisted,
-      communityId: persisted === 'COMMUNITY' ? (input.originId ?? null) : null,
-      partyId: persisted === 'PARTY' ? (input.originId ?? null) : null,
-      conversationId: input.conversationId ?? null,
-      // An open room is live the instant it exists; only an ad-hoc room rings.
-      status: persisted === 'ADHOC' ? 'RINGING' : 'ACTIVE',
-      createdAt: now,
-      startedAt: now,
-      peakParticipants: 1,
-      participants: {
-        create: [
-          { userId: input.hostId, status: 'JOINED', invitedAt: now, joinedAt: now },
-          ...(persisted === 'ADHOC'
-            ? invitees.map((userId) => ({ userId, status: 'INVITED' as const, invitedAt: now }))
-            : []),
-        ],
-      },
-    },
-    select: { id: true, startedAt: true },
-  });
-
-  return { callId: call.id, startedAt: call.startedAt ?? now };
-}
-
-/**
- * Ring more people into a room that already exists.
- *
- * `skipDuplicates` rather than an upsert loop: re-inviting someone who is
- * already on the roster — as a mid-call invite race will do — must not reset
- * their JOINED row back to INVITED.
- */
-export async function recordParticipantsInvited(
-  args: { callId: string; userIds: readonly string[]; now?: Date },
-  db: Db = prisma,
-): Promise<void> {
-  const invitedAt = args.now ?? new Date();
-  const userIds = [...new Set(args.userIds)];
-  if (userIds.length === 0) return;
-
-  await db.groupCallParticipant.createMany({
-    data: userIds.map((userId) => ({
-      callId: args.callId,
-      userId,
-      status: 'INVITED' as const,
-      invitedAt,
-    })),
-    skipDuplicates: true,
-  });
-}
-
-/**
- * Someone entered the room.
- *
- * Upsert rather than update, because an open room has no invite step at all —
- * the first this table hears of a community member is that they walked in.
- *
- * Also moves the call out of RINGING and keeps `peakParticipants` monotonic.
- * `participantCount` is the hub's own roster size when it has one (it always
- * does); without it the count is read back, which is a second query but never a
- * wrong answer.
- */
-export async function recordParticipantJoined(
-  args: { callId: string; userId: string; participantCount?: number; now?: Date },
-  db: Db = prisma,
-): Promise<void> {
-  const now = args.now ?? new Date();
-
-  await db.groupCallParticipant.upsert({
-    where: { callId_userId: { callId: args.callId, userId: args.userId } },
-    create: {
-      callId: args.callId,
-      userId: args.userId,
-      status: 'JOINED',
-      invitedAt: now,
-      joinedAt: now,
-    },
-    update: { status: 'JOINED', joinedAt: now, leftAt: null },
-  });
-
-  const peak =
-    args.participantCount ??
-    (await db.groupCallParticipant.count({
-      where: { callId: args.callId, status: 'JOINED' },
-    }));
-
-  // `updateMany` with the guards in the WHERE clause, not a read-then-write:
-  // two people joining at once must not let the lower peak win, and a room that
-  // has already ENDED must not be dragged back to ACTIVE by a late join event.
-  await db.groupCall.updateMany({
-    where: { id: args.callId, status: 'RINGING' },
-    data: { status: 'ACTIVE' },
-  });
-  await db.groupCall.updateMany({
-    where: { id: args.callId, peakParticipants: { lt: peak } },
-    data: { peakParticipants: peak },
-  });
-}
-
-/**
- * Someone is off the roster.
- *
- * The reason only decides how a **never-joined** row is described; a person who
- * was actually in the room always ends up LEFT (or FAILED), with the time they
- * spent there denormalised onto their row so a history list never has to
- * subtract two timestamps per participant.
- */
-export async function recordParticipantLeft(
-  args: {
-    callId: string;
-    userId: string;
-    reason?: GroupCallLeaveReason;
-    now?: Date;
-  },
-  db: Db = prisma,
-): Promise<void> {
-  const now = args.now ?? new Date();
-  const row = await db.groupCallParticipant.findUnique({
-    where: { callId_userId: { callId: args.callId, userId: args.userId } },
-    select: { joinedAt: true, leftAt: true },
-  });
-  if (!row || row.leftAt) return;
-
-  const joined = row.joinedAt !== null;
-  const status = joined
-    ? args.reason === 'failed'
-      ? ('FAILED' as const)
-      : ('LEFT' as const)
-    : args.reason === 'declined'
-      ? ('DECLINED' as const)
-      : args.reason === 'failed'
-        ? ('FAILED' as const)
-        : ('MISSED' as const);
-
-  await db.groupCallParticipant.update({
-    where: { callId_userId: { callId: args.callId, userId: args.userId } },
-    data: {
-      status,
-      leftAt: now,
-      durationSec: row.joinedAt ? secondsBetween(row.joinedAt, now) : 0,
-    },
-  });
-}
-
-/**
- * A ring was refused.
- *
- * Scoped to `status: 'INVITED'` so a decline arriving from a second tab after
- * the first tab answered cannot un-join someone.
- */
-export async function recordParticipantDeclined(
-  args: { callId: string; userId: string; now?: Date },
-  db: Db = prisma,
-): Promise<void> {
-  const now = args.now ?? new Date();
-  await db.groupCallParticipant.updateMany({
-    where: { callId: args.callId, userId: args.userId, status: 'INVITED' },
-    data: { status: 'DECLINED', leftAt: now },
-  });
-}
-
-/**
- * A ring timed out.
- *
- * Takes a list because that is how it actually happens — {@link
- * GROUP_RING_TIMEOUT_MS} fires once and drops every invitee who never answered,
- * not one at a time. Pass a single-element array for the one-person case.
- */
-export async function recordParticipantMissed(
-  args: { callId: string; userIds: readonly string[]; now?: Date },
-  db: Db = prisma,
-): Promise<void> {
-  const userIds = [...new Set(args.userIds)];
-  if (userIds.length === 0) return;
-  await db.groupCallParticipant.updateMany({
-    where: { callId: args.callId, userId: { in: userIds }, status: 'INVITED' },
-    data: { status: 'MISSED', leftAt: args.now ?? new Date() },
-  });
-}
-
-/**
- * Close the room's record.
- *
- * Three things happen together, and they have to: anyone still marked JOINED is
- * closed out (a hub restart is exactly the case where nobody sent a LEAVE),
- * anyone still INVITED becomes MISSED, and the call takes the status
- * `persistedStatus()` derives from the end reason.
- *
- * `everJoined` — "did anyone besides the host get in" — is read rather than
- * passed, because it is the one input this function cannot be lied to about and
- * the whole distinction between "a call happened" and "a call did not" hangs on
- * it. Safe to call twice: the WHERE clauses make the second pass a no-op.
- */
-export async function endGroupCallRecord(
-  args: { callId: string; reason: GroupCallEndReason; now?: Date },
-  db: Db = prisma,
-): Promise<void> {
-  const now = args.now ?? new Date();
-
-  const call = await db.groupCall.findUnique({
-    where: { id: args.callId },
-    select: {
-      hostId: true,
-      endedAt: true,
-      participants: {
-        select: { userId: true, joinedAt: true, leftAt: true, status: true },
-      },
-    },
-  });
-  if (!call || call.endedAt) return;
-
-  const everJoined = call.participants.some((p) => p.joinedAt !== null && p.userId !== call.hostId);
-
-  // Still in the room when the lights went out.
-  for (const p of call.participants) {
-    if (p.leftAt || p.joinedAt === null) continue;
-    await db.groupCallParticipant.update({
-      where: { callId_userId: { callId: args.callId, userId: p.userId } },
-      data: {
-        status: args.reason === 'failed' ? 'FAILED' : 'LEFT',
-        leftAt: now,
-        durationSec: secondsBetween(p.joinedAt, now),
-      },
-    });
-  }
-
-  // Still ringing when the room closed. `declined` is only theirs if that is
-  // literally what happened; every other ending leaves them as a missed ring.
-  await db.groupCallParticipant.updateMany({
-    where: { callId: args.callId, status: 'INVITED' },
-    data: { status: args.reason === 'declined' ? 'DECLINED' : 'MISSED', leftAt: now },
-  });
-
-  await db.groupCall.updateMany({
-    where: { id: args.callId, endedAt: null },
-    data: { status: persistedStatus(args.reason, everJoined), endedAt: now },
-  });
 }
 
 /* -------------------------------------------------------------------------- */
