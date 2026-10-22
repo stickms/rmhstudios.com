@@ -20,6 +20,7 @@ import idCEconomy from "@/locales/id/c-economy.json";
 import idCForestExplorer from "@/locales/id/c-forest-explorer.json";
 import idCGabrielsHorn from "@/locales/id/c-gabriels-horn.json";
 import idCGame from "@/locales/id/c-game.json";
+import idCGroupcall from "@/locales/id/c-groupcall.json";
 import idCHistory from "@/locales/id/c-history.json";
 import idCHouseAlwaysWins from "@/locales/id/c-house-always-wins.json";
 import idCIsleworks from "@/locales/id/c-isleworks.json";
@@ -41,11 +42,13 @@ import idCProfileModules from "@/locales/id/c-profile-modules.json";
 import idCRebarRutabaga from "@/locales/id/c-rebar-rutabaga.json";
 import idCRideshare from "@/locales/id/c-rideshare.json";
 import idCRmhCapital from "@/locales/id/c-rmh-capital.json";
+import idCRmhDatacenter from "@/locales/id/c-rmh-datacenter.json";
 import idCRmhPmc from "@/locales/id/c-rmh-pmc.json";
 import idCRmhbox from "@/locales/id/c-rmhbox.json";
 import idCRmhcalculator from "@/locales/id/c-rmhcalculator.json";
 import idCRmhcode from "@/locales/id/c-rmhcode.json";
 import idCRmhcoins from "@/locales/id/c-rmhcoins.json";
+import idCRmhfashion from "@/locales/id/c-rmhfashion.json";
 import idCRmhmusic from "@/locales/id/c-rmhmusic.json";
 import idCRmhstudy from "@/locales/id/c-rmhstudy.json";
 import idCRmhtech from "@/locales/id/c-rmhtech.json";
@@ -68,6 +71,38 @@ import idCVoidBreaker from "@/locales/id/c-void-breaker.json";
 import idCWager from "@/locales/id/c-wager.json";
 import idCWishlist from "@/locales/id/c-wishlist.json";
 import idCommon from "@/locales/id/common.json";
+import idErrors from "@/locales/id/errors.json";
+import idFAccess from "@/locales/id/f-access.json";
+import idFAction from "@/locales/id/f-action.json";
+import idFArcade from "@/locales/id/f-arcade.json";
+import idFAsyncGames from "@/locales/id/f-async-games.json";
+import idFCalendar from "@/locales/id/f-calendar.json";
+import idFCanvas from "@/locales/id/f-canvas.json";
+import idFCommunitiesPlus from "@/locales/id/f-communities-plus.json";
+import idFCompetitive from "@/locales/id/f-competitive.json";
+import idFCreative from "@/locales/id/f-creative.json";
+import idFDeepseek from "@/locales/id/f-deepseek.json";
+import idFDelight from "@/locales/id/f-delight.json";
+import idFDevAi from "@/locales/id/f-dev-ai.json";
+import idFDevplatform from "@/locales/id/f-devplatform.json";
+import idFDiscovery from "@/locales/id/f-discovery.json";
+import idFEconomyPlus from "@/locales/id/f-economy-plus.json";
+import idFFeedPlus from "@/locales/id/f-feed-plus.json";
+import idFForecasting from "@/locales/id/f-forecasting.json";
+import idFGifting from "@/locales/id/f-gifting.json";
+import idFLadderHomes from "@/locales/id/f-ladder-homes.json";
+import idFMessaging from "@/locales/id/f-messaging.json";
+import idFOncall from "@/locales/id/f-oncall.json";
+import idFOps from "@/locales/id/f-ops.json";
+import idFParty from "@/locales/id/f-party.json";
+import idFPerf from "@/locales/id/f-perf.json";
+import idFPostsPlus from "@/locales/id/f-posts-plus.json";
+import idFProfilePlus from "@/locales/id/f-profile-plus.json";
+import idFReading from "@/locales/id/f-reading.json";
+import idFSafety from "@/locales/id/f-safety.json";
+import idFTools from "@/locales/id/f-tools.json";
+import idFWatch from "@/locales/id/f-watch.json";
+import idFWorlds from "@/locales/id/f-worlds.json";
 import idFeed from "@/locales/id/feed.json";
 import idGamesHub from "@/locales/id/games-hub.json";
 import idGroups from "@/locales/id/groups.json";
@@ -117,6 +152,7 @@ const idResources = {
   "c-forest-explorer": idCForestExplorer,
   "c-gabriels-horn": idCGabrielsHorn,
   "c-game": idCGame,
+  "c-groupcall": idCGroupcall,
   "c-history": idCHistory,
   "c-house-always-wins": idCHouseAlwaysWins,
   "c-isleworks": idCIsleworks,
@@ -138,11 +174,13 @@ const idResources = {
   "c-rebar-rutabaga": idCRebarRutabaga,
   "c-rideshare": idCRideshare,
   "c-rmh-capital": idCRmhCapital,
+  "c-rmh-datacenter": idCRmhDatacenter,
   "c-rmh-pmc": idCRmhPmc,
   "c-rmhbox": idCRmhbox,
   "c-rmhcalculator": idCRmhcalculator,
   "c-rmhcode": idCRmhcode,
   "c-rmhcoins": idCRmhcoins,
+  "c-rmhfashion": idCRmhfashion,
   "c-rmhmusic": idCRmhmusic,
   "c-rmhstudy": idCRmhstudy,
   "c-rmhtech": idCRmhtech,
@@ -165,6 +203,38 @@ const idResources = {
   "c-wager": idCWager,
   "c-wishlist": idCWishlist,
   "common": idCommon,
+  "errors": idErrors,
+  "f-access": idFAccess,
+  "f-action": idFAction,
+  "f-arcade": idFArcade,
+  "f-async-games": idFAsyncGames,
+  "f-calendar": idFCalendar,
+  "f-canvas": idFCanvas,
+  "f-communities-plus": idFCommunitiesPlus,
+  "f-competitive": idFCompetitive,
+  "f-creative": idFCreative,
+  "f-deepseek": idFDeepseek,
+  "f-delight": idFDelight,
+  "f-dev-ai": idFDevAi,
+  "f-devplatform": idFDevplatform,
+  "f-discovery": idFDiscovery,
+  "f-economy-plus": idFEconomyPlus,
+  "f-feed-plus": idFFeedPlus,
+  "f-forecasting": idFForecasting,
+  "f-gifting": idFGifting,
+  "f-ladder-homes": idFLadderHomes,
+  "f-messaging": idFMessaging,
+  "f-oncall": idFOncall,
+  "f-ops": idFOps,
+  "f-party": idFParty,
+  "f-perf": idFPerf,
+  "f-posts-plus": idFPostsPlus,
+  "f-profile-plus": idFProfilePlus,
+  "f-reading": idFReading,
+  "f-safety": idFSafety,
+  "f-tools": idFTools,
+  "f-watch": idFWatch,
+  "f-worlds": idFWorlds,
   "feed": idFeed,
   "games-hub": idGamesHub,
   "groups": idGroups,

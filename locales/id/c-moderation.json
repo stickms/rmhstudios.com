@@ -15,6 +15,7 @@
   "submit-report": "Kirim laporan",
   "submitting": "Mengirim…",
   "toast-error": "Gagal mengirim laporan. Silakan coba lagi.",
+  "toast-invalid": "Laporan itu ada yang kurang. Silakan periksa dan coba lagi.",
   "toast-sign-in": "Silakan masuk untuk melaporkan konten.",
   "toast-success": "Terima kasih — tim kami akan meninjau ini."
 }

@@ -14,6 +14,8 @@
   "listener-count_one": "{{count}} listener",
   "listener-count_other": "{{count}} listener",
   "loading-rooms": "Loading rooms...",
+  "mini-pop-in": "Return to page",
+  "mini-pop-out": "Pop out player",
   "new": "New",
   "no-puzzles-yet": "No puzzles yet.",
   "no-results": "No results found",
