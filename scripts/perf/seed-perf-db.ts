@@ -39,6 +39,7 @@ import { createHmac } from 'node:crypto';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import pg from 'pg';
+import { isPerfSeedDbName } from './db-name-guard';
 
 const root = resolve(import.meta.dirname, '../..');
 if (existsSync(resolve(root, '.env'))) process.loadEnvFile(resolve(root, '.env'));
@@ -57,8 +58,8 @@ const baseUrl = process.env.DATABASE_URL ?? 'postgresql://postgres:password@loca
 const url = new URL(baseUrl);
 if (dbName) url.pathname = `/${dbName}`;
 const target = url.pathname.slice(1);
-if (!/^rmh_(perf|ws)/.test(target)) {
-  console.error(`refusing to seed database "${target}" (name must start with rmh_perf or rmh_ws)`);
+if (!isPerfSeedDbName(target)) {
+  console.error(`refusing to seed database "${target}" (name must be rmh_perf[_x] or rmh_ws<N>[_x])`);
   process.exit(1);
 }
 
