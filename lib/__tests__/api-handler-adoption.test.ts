@@ -167,7 +167,6 @@ const KNOWN_UNWRAPPED: readonly string[] = [
   'app/routes/api/internal/notify-typing.ts',
   'app/routes/api/internal/predictions-tick.ts',
   'app/routes/api/internal/streak-push.ts',
-  'app/routes/api/library/cover/$id.ts',
   'app/routes/api/library/file/$id.ts',
   'app/routes/api/library/quota.ts',
   'app/routes/api/market/listings/$id/buy.ts',

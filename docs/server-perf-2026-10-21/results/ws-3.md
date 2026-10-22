@@ -28,7 +28,7 @@ Caveat on the value of #3: the repo has no Apache or Cloudflare cache rule for `
 ## Deferred
 | # | Lead | Why | What would unblock it |
 |---|---|---|---|
-| D1 | Server-side response micro-cache inside `defineHandler` for routes declaring `visibility: 'public'` (L1 keyed by URL, TTL = `sMaxAge`) | Gives a real origin saving regardless of any CDN rule, and the triage + dynamic test already prove the declared set is anonymous-invariant. Needs a hunk in `lib/api/handler.server.ts`, WS0-owned until Stage B. | `WS0_READY`, then measure req/s on a public route. |
+| D1 | **Shipped (row 6 above; `lib/api/response-cache.server.ts`, `api-response-cache.test.ts`), no longer deferred.** Server-side response micro-cache inside `defineHandler` for routes declaring `visibility: 'public'` (L1 keyed by URL, TTL = `sMaxAge`) | Gives a real origin saving regardless of any CDN rule, and the triage + dynamic test already prove the declared set is anonymous-invariant. Needs a hunk in `lib/api/handler.server.ts`, WS0-owned until Stage B. | `WS0_READY`, then measure req/s on a public route. |
 | D3 | `defineHandler` fixed overhead (session resolve, one Redis EVAL round trip per rate-limited request, zod parse) on a trivial route; check whether `redis.eval` re-sends the Lua script text instead of EVALSHA | Needs the harness and Server-Timing phases. | `WS0_READY`. |
 | D4 | 58 raw GET handlers not on `defineHandler` (e.g. gift-sub, spaces, communities/$slug/announcements) | There is no options object for WS3 to edit; adoption is a handler-body change (WS4 / adoption backlog). `gift-sub` (constant price table) would take a public policy once adopted. | WS4 adopting the wrapper. |
 
