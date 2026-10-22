@@ -45,4 +45,40 @@ describe('searchMentionUsers', () => {
     expect(calls.length).toBe(2);
     for (const c of calls) expect(c.take).toBe(50);
   });
+
+  it('keeps a mutual that sits beyond the first 50 distinct edge ids', async () => {
+    const outEdges = [...Array.from({ length: 49 }, (_, i) => `o${i}`), 'm'];
+    const incEdges = [...Array.from({ length: 49 }, (_, i) => `i${i}`), 'm'];
+    db.follow.findMany
+      .mockResolvedValueOnce(outEdges.map((id) => ({ followingId: id })))
+      .mockResolvedValueOnce(incEdges.map((id) => ({ followerId: id })));
+    db.user.findMany.mockImplementation(async ({ where }) => where.id.in.map(u));
+    db.follow.findMany.mockResolvedValueOnce([
+      { followerId: 'v', followingId: 'm' },
+      { followerId: 'm', followingId: 'v' },
+    ]);
+    const out = await searchMentionUsers('', 'v');
+    const ids: string[] = db.user.findMany.mock.calls[0][0].where.id.in;
+    expect(ids.length).toBeLessThanOrEqual(50);
+    expect(ids).toContain('m');
+    expect(out[0].id).toBe('m');
+  });
+
+  it('orders the query-path candidate LIMIT by exact match, relation, handle, id', async () => {
+    db.$queryRaw.mockResolvedValue([]);
+    await searchMentionUsers('x', 'v');
+    const sql = db.$queryRaw.mock.calls[0][0] as { strings: string[] };
+    const text = sql.strings.join('?');
+    expect(text).toMatch(/ORDER BY[\s\S]*"handle" ASC, "id" ASC\s+LIMIT 50/);
+    expect(text).toContain('"follow"');
+  });
+
+  it('orders the anonymous default by follower count with an id tie-break', async () => {
+    db.user.findMany.mockResolvedValue([]);
+    await searchMentionUsers('', undefined);
+    expect(db.user.findMany.mock.calls[0][0].orderBy).toEqual([
+      { followerCount: 'desc' },
+      { id: 'asc' },
+    ]);
+  });
 });
