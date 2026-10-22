@@ -35,6 +35,7 @@ vi.mock('@/lib/cache', () => ({
     dropLocal: mocks.cacheInvalidate,
     dropLocalPrefix: mocks.cacheInvalidatePrefix,
     setInvalidationHook: vi.fn(),
+    setBridgeInstaller: vi.fn(),
   },
   CACHE_PROCESS_ID: 'test-process',
 }));

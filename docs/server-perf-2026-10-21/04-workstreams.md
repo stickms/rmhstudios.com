@@ -1,24 +1,25 @@
 # 04 — Workstreams
 
-The program is split so that parallel agents never edit the same file. Each
+The program is split so that parallel workstreams never edit the same file. Each
 workstream lists what it **owns** (may edit), its **leads** (where to look
 first — hypotheses, not conclusions; the baseline decides), and its **exit
 criteria**. Paths are globs from the repo root. When ownership is ambiguous,
-the more specific glob wins; when still ambiguous, ask the coordinator via a
-handoff row and do not edit.
+the more specific glob wins; when still ambiguous, record a handoff row
+(see Handoffs) and do not edit.
 
-Every workstream starts Stage A at once and, once the coordinator's ready
-marker appears, re-baselines its own routes in its own worktree
-(`01-method.md` §4) and reads `results/ws-0.md` (`05-agent-protocol.md` §0.1).
+WS8 (search and tag feeds) and WS9 (Go worker indexes) were added mid-program
+and have no section below; their scope and results are in
+[`results/ws-8.md`](results/ws-8.md) and [`results/ws-9.md`](results/ws-9.md).
+The tag feed and search code (`lib/tags*.ts`, `lib/search/**`) are listed under
+WS4 below, and WS8 is the workstream that changed them.
 
-### Concurrency
+### Ownership of shared files
 
-WS0–WS7 run at the same time. Until Stage B (the ready marker, WS0 merged into
-your branch) these files are **WS0-owned and no one else edits them**:
+These instrument files are WS0-owned and no other workstream edits them:
 `lib/otel/**`, `server/nitro/otel.ts`, `scripts/perf/**` (WS5's
 `socket-bench.mjs` excepted), `lib/auth-session.server.ts`,
 `lib/api/handler.server.ts`, `lib/cached.server.ts`, `lib/prisma.server.ts`. A
-Stage A lead that needs one of them is a handoff row, or waits for Stage B.
+lead that needs one of them is a handoff row.
 
 Inside `app/routes/api/**` the split is by line, so two agents can edit one
 file without conflicting: **WS3 owns the `defineHandler` options object**
@@ -27,7 +28,7 @@ two edits in separate hunks; do not reformat the surrounding code.
 
 ---
 
-## WS0 — Instrumentation, harness, dataset, baseline (P0, concurrent with Stage A)
+## WS0 — Instrumentation, harness, dataset, baseline
 
 **Owns:** `scripts/perf/**`, `lib/otel/**`, `server/nitro/otel.ts`, and the
 `mark()`/`measure()` call sites in `lib/auth-session.server.ts`,
@@ -52,7 +53,7 @@ entries for its outputs and a new `docs/testing.md` subsection.
    the `[db:query-budget]` / unbounded-read log lines captured during the
    baseline run (`results/baseline-querylog.txt`).
 
-**Exit:** a second agent can follow `05-agent-protocol.md` from a clean worktree
+**Exit:** someone else can follow `01-method.md` from a clean checkout
 and reproduce the baseline for `/` (both auth modes) within the noise band.
 
 ---
@@ -248,18 +249,15 @@ green.
 
 ---
 
-## Merge order (P2)
+## Merge order
 
-Merges happen as each agent finishes (the user's instruction), not in a fixed
-order. The coordinator still prefers `WS0` (at the ready marker) and `WS4`
-(schema/migrations) early, so later branches rebase onto them, and merges the
-rest in finishing order: `WS2`, `WS1`, `WS3`, `WS6`, `WS5`, `WS7` are
-independent of each other by ownership. The coordinator re-runs
-`pnpm check:consistency` after each merge and the full harness after the last
-one; WS7 also needs `make test` after its merge.
+Workstreams own disjoint files, so they merge in any order. Merging `WS0` (the
+instruments) and `WS4` (schema and migrations) first lets later branches rebase
+onto them. Run `pnpm check:consistency` after each merge and the full harness
+after the last; WS7 also needs `make test`.
 
 ## Handoffs
 
 A results file's **Handoffs** table is the only channel between workstreams:
-`| to | file:line | what | evidence |`. The coordinator routes each one into the
+`| to | file:line | what | evidence |`. Each one is routed into the
 owning workstream or into the report's follow-up list.

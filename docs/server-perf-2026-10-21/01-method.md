@@ -8,21 +8,21 @@ the environment, and what may be compared with what.
 
 Every results row is tagged with the class of its evidence:
 
-| Class | What | Available | How it may be produced |
-| --- | --- | --- | --- |
-| `exact` | counts, bytes, headers: queries per request, payload bytes, `cache-control`/`etag`, event-loop block count. Identical on any machine. | Stage A and B | a vitest test that counts Prisma calls, or the dev server (`vite dev`); the harness once it exists |
-| `latency` | TTFB, total time, rps, p95 under load: anything a clock or a contended CPU can move. | **Stage B only** | the harness against a production build, per §2 |
+| Class | What | How it may be produced |
+| --- | --- | --- |
+| `exact` | counts, bytes, headers: queries per request, payload bytes, `cache-control`/`etag`, event-loop block count. Identical on any machine. | a vitest test that counts Prisma calls, the dev server (`vite dev`), or the harness |
+| `latency` | TTFB, total time, rps, p95 under load: anything a clock or a contended CPU can move. | the harness against a production build, per §2 |
 
-A Stage A change ships on `exact` evidence alone. It is re-measured for latency
-in Stage B and reverted if it shows no win there (`05-agent-protocol.md` §3). A
-row never claims latency from an `exact` measurement.
+A change may ship on `exact` evidence alone (a removed query is removed on any
+machine). Once the harness is available it is re-measured for latency, and
+reverted if it shows no win there. A row never claims latency from an `exact`
+measurement.
 
 ## 1. The instruments (built by WS0)
 
-All live under `scripts/perf/`. Agents use them; only WS0 (and later the
-coordinator) changes them. If an instrument is wrong, report it in your results
-file instead of patching it in your branch — two harnesses produce two
-incompatible baselines.
+All live under `scripts/perf/`. Change them in that directory, in one place:
+patching a private copy produces two incompatible baselines. If an instrument is
+wrong, say so in the results file.
 
 ### 1.1 `scripts/perf/server-bench.mjs` — the HTTP harness
 
@@ -90,7 +90,7 @@ instrumentation, not a bench-only hack: it ships, and RUM reads it.
 ### 1.5 `scripts/perf/seed-perf-db.ts` — the dataset
 
 A **deterministic** (fixed PRNG seed) synthetic dataset, so a number from one
-worktree is comparable with a number from another. Sized so that indexes
+checkout is comparable with a number from another. Sized so that indexes
 matter — a 200-row table hides every missing index:
 
 | Entity | Rows (minimum) |
@@ -113,8 +113,8 @@ notifications). Loading it is `pnpm tsx scripts/perf/seed-perf-db.ts`; WS0
 records how long it takes.
 
 The seeded database is kept as a Postgres **template** (`rmh_perf_template`);
-every worktree gets its own copy with
-`createdb -T rmh_perf_template rmh_ws<N>` (seconds, not minutes) so agents never
+each working copy takes its own database with
+`createdb -T rmh_perf_template <your_db>` (seconds, not minutes) so runs never
 share mutable state.
 
 ### 1.6 Hub load (`scripts/perf/socket-bench.mjs`, built by WS5)
@@ -122,9 +122,8 @@ share mutable state.
 Opens N Socket.IO clients against a hub, drives a scripted event mix, and
 records server event-loop delay (`perf_hooks.monitorEventLoopDelay`, exposed by
 the hub behind the same `RMH_PERF_HEADERS`-style env flag), broadcast latency
-p50/p95, and RSS. WS5 builds it in Stage A (it needs no WS0 file); its latency
-figures are Stage B evidence like any other, its handler and per-event
-allocation counts are `exact`.
+p50/p95, and RSS. Its latency figures are `latency` evidence like any other; its handler
+and per-event allocation counts are `exact`.
 
 ### 1.7 Go evidence (WS7)
 
@@ -137,10 +136,10 @@ the two classes of evidence (§0) look like this:
   (`cache-control`, `etag`, `content-encoding`, status on a conditional or range
   request) from `curl -i`.
 - **Latency:** `go test -bench` ns/op, or an HTTP bench of `assets`/`status`
-  (same method as §1.1: sequential TTFB, then concurrent). Run it under the
-  shared lock (§2) with before and after in the same session, A B A B.
+  (same method as §1.1: sequential TTFB, then concurrent). Run it with
+  no other heavy command running (§2), before and after in the same session, A B A B.
 
-Toolchain notes for the agent container:
+Toolchain notes (the sandbox this program ran in; adjust for your machine):
 
 ```bash
 export GOTOOLCHAIN=go1.26.8
@@ -151,13 +150,12 @@ go test ./...                             # fallback (in go-services/) if Bazel 
 ```
 
 `go test ./...` proves correctness only; the Bazel run is what CI runs, so say
-in the results row which one you used. The box is shared, so Bazel runs under
-the lock with limits, e.g. `--jobs=2 --local_ram_resources=2048`.
+in the results row which one you used. On a shared box give Bazel limits, e.g.
+`--jobs=2 --local_ram_resources=2048`.
 
 ## 2. The environment
 
-- **Node 24.18** (`/opt/node24/bin` in the agent container — put it first on
-  `PATH`). Never measure on Node 22; the repo's `engines` says 24 and V8
+- **Node 24.18.** Never measure on Node 22; the repo's `engines` says 24 and V8
   differences are not noise.
 - **Production build only for latency and throughput**: `pnpm build` then
   `node .output/server/index.mjs` with `NODE_ENV=production`. `vite dev` numbers
@@ -174,20 +172,18 @@ the lock with limits, e.g. `--jobs=2 --local_ram_resources=2048`.
   **warm**. Cold-start (first request after boot) is measured separately by
   restarting the server and timing the first request to `/`, three times.
 
-**The heavy-command lock.** The container shares 4 cores between about eight
-parallel agents, so every heavy command runs under **one** lock:
-`flock /tmp/rmh-perf-build.lock <cmd>`. It covers `pnpm build`, the bench,
-`pnpm exec tsc --noEmit`, and `git commit` (the commit hook runs the gate, which
-runs `tsc`). A latency number measured while another agent builds, type-checks
-or commits is not comparable with one measured while it doesn't, which is why the
-bench holds the same lock. Targeted `vitest run <paths>` and eslint on single
-files are light and run unlocked; the whole suite does not. Hold the lock
-briefly.
+**Heavy commands.** `pnpm build`, the bench, `pnpm exec tsc --noEmit` and the
+commit gate (which runs `tsc`) are CPU-heavy. A latency number measured while any
+of them runs on the same machine is not comparable with one measured while none
+does, so serialise them: do not build, type-check or commit during a bench, and
+do not bench during one. (The program did this with one `flock` around every
+heavy command; any mechanism that gives the same exclusion will do.) Targeted
+`vitest run <paths>` and eslint on single files are light; the whole suite is not.
 
-**Container caveats.** The agent container shares 4 cores between parallel
-agents; absolute numbers are pessimistic and noisy. Therefore:
+**Shared-hardware caveats.** The program's box shared 4 cores between parallel
+runners; absolute numbers there are pessimistic and noisy. On any shared machine:
 
-1. Compare **within one worktree, same session, back-to-back** (before build →
+1. Compare **within one checkout, same session, back-to-back** (before build →
    after build), never against a number another agent produced.
 2. Run before and after **twice each, interleaved** (A B A B). Report the median
    of the two medians and the spread. If the spread of A overlaps B, the result
@@ -200,7 +196,7 @@ agents; absolute numbers are pessimistic and noisy. Therefore:
 A results row is accepted when it has all of:
 
 - the **metric** and **route(s)** it moved;
-- **before** and **after** values from the same worktree and session (§2);
+- **before** and **after** values from the same checkout and session (§2);
 - the **command** that produced them (copy-pasteable);
 - the **commit** that contains the change;
 - a **correctness note**: which test proves the response is unchanged (an
@@ -212,14 +208,14 @@ different machine than its baseline.
 
 ## 4. The baseline
 
-WS0 produces `results/baseline.json` (both auth modes, every route) on the
-merged-to-date tree with the instrumentation in place, plus `ws-0.md`
-summarising: top 15 routes by signed-in p95 TTFB, top 15 by query count, every
-route over its query budget, every `GET` without a cache policy that the
-harness shows is anonymous-invariant, cold-start time, and the phase breakdown
-of the five slowest pages. That summary is what the workstreams re-prioritise by in Stage B.
+`results/baseline.json` (both auth modes, every route) was taken on the tree with
+the instrumentation in place; `results/ws-0.md` summarises it: top 15 routes by
+signed-in p95 TTFB, top 15 by query count, every route over its query budget,
+every `GET` without a cache policy that the harness shows is anonymous-invariant,
+cold-start time, and the phase breakdown of the five slowest pages. That summary
+is what the workstreams prioritised by.
 
-Because the workstreams run in parallel on a loaded box, each **re-baselines its
-own subset** in its own worktree before any Stage B measurement (§2.1). The WS0
-baseline picks the targets; the per-worktree baseline proves the win. Stage A
-leads come from reading the code; Stage B re-prioritises them by the baseline.
+Because measurements share a loaded box, each workstream **re-baselines its own
+subset** in its own checkout before measuring latency (§2, caveat 1). The program
+baseline picks the targets; the local baseline proves the win. Reading the code
+produces leads; the baseline re-prioritises them.

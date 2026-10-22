@@ -268,6 +268,16 @@ const pick = (key: string) => (key.startsWith(VIEWER_FEED_PREFIX) ? viewerFeedCa
 
 /** Cross-process publisher; lives on the facade so one invalidation publishes once, not once per underlying cache. */
 let invalidationHook: InvalidationHook | null = null;
+/**
+ * Installer that wires `invalidationHook` (and the Redis subscription) the first time a process invalidates.
+ * `cached.server.ts` registers it at import without opening any connection, so importing never touches Redis.
+ */
+let bridgeInstaller: (() => void) | null = null;
+function installBridge(): void {
+  const fn = bridgeInstaller;
+  bridgeInstaller = null;
+  fn?.();
+}
 
 /** Singleton cache shared across all API routes in a process (same API as ApiCache). */
 export const apiCache = {
@@ -277,11 +287,13 @@ export const apiCache = {
   /** Delete a key here AND in every other process (via the registered hook). */
   invalidate: (key: string): void => {
     pick(key).invalidate(key);
+    installBridge();
     invalidationHook?.key(key);
   },
   /** Delete all keys matching a prefix here AND in every other process. */
   invalidatePrefix: (prefix: string): void => {
     apiCache.dropLocalPrefix(prefix);
+    installBridge();
     invalidationHook?.prefix(prefix);
   },
   /** Drop a key in THIS process only. Used when applying a remote invalidation (no echo). */
@@ -291,6 +303,10 @@ export const apiCache = {
     viewerFeedCache.invalidatePrefix(prefix);
   },
   /** Register (or clear, with null) the cross-process publisher. Server-only callers. */
+  /** Register the one-shot lazy installer (see `bridgeInstaller`). Server-only callers. */
+  setBridgeInstaller: (fn: (() => void) | null): void => {
+    bridgeInstaller = fn;
+  },
   setInvalidationHook: (hook: InvalidationHook | null): void => {
     invalidationHook = hook;
   },

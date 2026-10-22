@@ -1,12 +1,10 @@
 # Server-side performance program — 2026-10-21
 
-Triggered by: **"a full server side performance optimization of the website —
-design the documents that will govern the optimization process, then dispatch
-agents to implement the change."**
-
-This folder governs that program. It is written for the agents doing the work
-and for the person reviewing it. Read it in order the first time; afterwards
-[`04-workstreams.md`](04-workstreams.md) and your own results file are enough.
+A full server-side performance pass over the website, run 2026-10-21 to
+2026-10-22. This folder holds the method, budgets and rules it ran under, the
+workstreams, the per-workstream results, and the final report. Start with
+[`06-report.md`](06-report.md) for the outcome. The method, budgets and rules
+stay useful for the next pass.
 
 | File | What it settles |
 | --- | --- |
@@ -15,10 +13,8 @@ and for the person reviewing it. Read it in order the first time; afterwards
 | [`02-budgets.md`](02-budgets.md) | What "fast enough" means per route class, and what "done" means per change |
 | [`03-rules.md`](03-rules.md) | Engineering rules every change obeys — cache safety above all |
 | [`04-workstreams.md`](04-workstreams.md) | The work, split into workstreams with **disjoint file ownership**, each with its leads and exit criteria |
-| [`05-agent-protocol.md`](05-agent-protocol.md) | The operating procedure for an implementing agent: setup, build lock, commits, reporting |
-| `results/ws-*.md` | One ledger per workstream, written by its agent. Every claimed win is a row with before/after numbers |
-| [`06-report-template.md`](06-report-template.md) | The skeleton `06-report.md` follows |
-| [`06-report.md`](06-report.md) | **Start here for the outcome.** Written at integration: the merged before/after, the correctness and privacy fixes, what shipped, what was rejected, what is left, and the production verification plan |
+| `results/ws-*.md` | One ledger per workstream. Every claimed win is a row with before/after numbers |
+| [`06-report.md`](06-report.md) | **Start here for the outcome.** The merged before/after, the correctness and privacy fixes, what shipped, what was rejected, what is left, and the production verification plan |
 
 ---
 
@@ -37,9 +33,13 @@ Do **not** re-diagnose them — check the code first:
   handler layer do not need a revamp**. Its
   [`06-backlog.md`](../loading-audit-2026-08-11/06-backlog.md) "Measured and
   rejected" table is binding here: nothing on it is re-attempted without new
-  evidence.
-- [`performance-audit-2026-10-08.md`](../performance-audit-2026-10-08.md) — a
-  client-side pass (frame budget). Out of scope here.
+  evidence. Its backlog items for the server tier (API caching, database,
+  edge) are the origin of several workstreams below.
+- [`performance-audit-2026-10-08.md`](../performance-audit-2026-10-08.md) and
+  [`performance-audit-2026-10-21.md`](../performance-audit-2026-10-21.md) — the
+  client-side passes (frame budget, critical CSS, preload priority; the second
+  is from the same day as this program). Out of scope here; this program does
+  not touch bundles or browser rendering.
 
 What those passes did **not** do, and this one does:
 
@@ -92,39 +92,31 @@ libraries (Prisma, Better Auth, TanStack Start) — the rules say why.
 
 ## 4. Phases
 
-P0 and P1 **overlap**: WS0–WS7 start together, each in its own git worktree, so
-no agent waits for another. What WS0 gates is not the start of a workstream but
-the kind of evidence it may produce, in two stages:
+The work ran in four phases. Workstreams started together, so no one waited for
+the harness; what the harness gates is the kind of evidence a change may carry
+(`01-method.md` §0), not when work starts.
 
-- **Stage A — before the harness exists.** Static analysis, diagnosis, scan
-  scripts, and fixes whose evidence is *exact* and hardware-independent (query
-  counts, payload bytes, cache headers — `01-method.md` §0). Latency claims
-  wait. WS0-owned files (`04-workstreams.md` §Concurrency) are not edited.
-- **Stage B — after the coordinator's ready marker.** The coordinator merges WS0
-  and sets the marker; each agent merges WS0 into its branch, re-baselines,
-  **re-measures every Stage A change** and reverts any that shows no win, then
-  continues the loop with latency evidence.
+| Phase | Output | Gate to next phase |
+| --- | --- | --- |
+| **P0 — Instrument and baseline** (WS0) | the harness, the seeded perf dataset, the wired `Server-Timing` phases, `results/baseline.json` + `results/ws-0.md` | a baseline exists for every route in the route list, both auth modes; budgets in `02-budgets.md` are ratified against it |
+| **P1 — Parallel workstreams** (WS1–WS9) | commits per workstream + `results/ws-N.md`, each Shipped row tagged `exact` or `latency` | each workstream meets its exit criteria or closes with "measured, no win" |
+| **P2 — Integration** | workstreams merged (`04-workstreams.md` §Merge order); full commit gate on the merged tree; full harness re-run; `06-report.md` | merged tree green; no route regressed past tolerance (`02-budgets.md` §3) |
+| **P3 — Production verification** | RUM/synthetic windows per [`performance-slo.md`](../performance-slo.md) | the rollback policy there applies unchanged |
 
-| Phase | Who | Output | Gate to next phase |
-| --- | --- | --- | --- |
-| **P0 — Instrument & baseline** | one agent (WS0), concurrent with Stage A of P1 | the harness, the seeded perf dataset, the wired `Server-Timing` phases, `results/baseline.json` + `results/ws-0.md` | baseline exists for every route in the route list, both auth modes; coordinator ratifies the budgets in `02-budgets.md` §4 against it, merges WS0 and sets the ready marker |
-| **P1 — Parallel workstreams** | one agent per workstream (WS1–WS7): Stage A from the start, Stage B after the marker | commits on a workstream branch + `results/ws-N.md`, each Shipped row tagged `exact` or `latency` | each workstream meets its exit criteria or closes with "measured, no win" |
-| **P2 — Integration** | coordinator | workstreams merged in the order in `04-workstreams.md` §Merge order; full commit gate on the merged tree; full harness re-run; `06-report.md` | merged tree green; no route regressed past tolerance (`02-budgets.md` §3) |
-| **P3 — Production verification** | operator, after deploy | RUM/synthetic windows per [`performance-slo.md`](../performance-slo.md) | the rollback policy there applies unchanged |
+Evidence that is exact and hardware-independent (query counts, payload bytes,
+cache headers) can be produced before the harness exists. Latency claims wait
+for it, and any change shipped on exact evidence alone is re-measured for
+latency afterwards and reverted if it shows no win.
 
 ## 5. Who decides
 
-- **The coordinator** (the session that dispatched the agents) owns this folder,
-  ratifies budgets after P0, resolves ownership disputes, merges, and writes
-  `06-report.md`. Agents do not edit `index.md`, `01`–`05`, or another
-  workstream's results file.
-- **An agent** owns its workstream's files (see `04-workstreams.md`), decides
+- **Integration** (whoever merges the work) owns this folder, ratifies budgets
+  after the baseline, resolves ownership disputes, and writes `06-report.md`.
+  Workstream authors do not edit `index.md`, `01`–`04`, or another workstream's
+  results file.
+- **A workstream author** owns its files (see `04-workstreams.md`), decides
   *how* to hit its exit criteria, and is expected to **reject its own ideas**
   when the numbers say so. A results file full of honest "no win" rows is a
   good outcome; a merged change with no number is not.
-- **Disagreement with a rule** goes in the agent's results file under
-  "Rule objections", with evidence. The agent follows the rule meanwhile.
-- **The documentation is written by an agent.** A documentation agent revises
-  this folder as the process changes and drafts `06-report.md` from
-  [`06-report-template.md`](06-report-template.md) and the `results/` files; the
-  coordinator reviews and owns the result.
+- **Disagreement with a rule** goes in the results file under "Rule
+  objections", with evidence. Follow the rule meanwhile.
