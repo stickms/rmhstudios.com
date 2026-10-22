@@ -8,8 +8,8 @@
  *   - broadcast latency p50/p95/p99 (send -> receive at every recipient; the
  *     bench is one process so `performance.now()` is a shared clock),
  *   - inbound event/s the clients saw (fan-out volume),
- *   - the hub's own event-loop delay, CPU and RSS, read from the env-gated probe
- *     (`RMH_PERF_HUB=1` on the hub: server/shared/perf-probe.ts).
+ *   - the hub's own event-loop delay, CPU and RSS, read from the metrics every hub
+ *     serves at `GET /internal/metrics` (lib/perf/hub.ts; see probe() below).
  *
  * No new dependencies: socket.io-client and pg are already in package.json.
  *
@@ -231,14 +231,47 @@ function once(socket, event, timeoutMs = 10_000) {
   });
 }
 
-async function probe(baseUrl, reset) {
+// Hub metrics come from the collector every hub already serves at
+// `GET /internal/metrics` (lib/perf/hub.ts; INTERNAL_METRICS_TOKEN when the hub
+// sets one). It has no reset, so a "reset" probe stores a baseline snapshot and the
+// next probe reports CPU and wall time as deltas from it. Event-loop delay is the
+// collector's current window (since its last minute roll), not the bench window:
+// read it as the hub's recent loop health, not an exact per-run figure.
+const probeBase = new Map();
+
+async function readMetrics(baseUrl) {
   try {
-    const r = await fetch(`${baseUrl}/__perf${reset ? '/reset' : ''}`, { method: reset ? 'POST' : 'GET' });
+    const token = process.env.INTERNAL_METRICS_TOKEN;
+    const r = await fetch(`${baseUrl}/internal/metrics`, {
+      headers: token ? { 'x-internal-token': token } : {},
+    });
     if (!r.ok) return null;
     return await r.json();
   } catch {
     return null;
   }
+}
+
+async function probe(baseUrl, reset) {
+  const snap = await readMetrics(baseUrl);
+  if (!snap) return null;
+  if (reset) {
+    probeBase.set(baseUrl, snap);
+    return null;
+  }
+  const base = probeBase.get(baseUrl) ?? snap;
+  const el = snap.eventLoop?.current ?? {};
+  return {
+    eld: { p50: el.p50 ?? 0, p90: el.p90 ?? 0, p99: el.p99 ?? 0, max: el.max ?? 0, mean: el.mean ?? 0 },
+    cpuMs: {
+      user: (snap.cpu?.userMsTotal ?? 0) - (base.cpu?.userMsTotal ?? 0),
+      system: (snap.cpu?.systemMsTotal ?? 0) - (base.cpu?.systemMsTotal ?? 0),
+    },
+    windowMs: Math.max((snap.generatedAt ?? 0) - (base.generatedAt ?? 0), 1),
+    rssBytes: snap.memory?.rss ?? 0,
+    heapUsedBytes: snap.memory?.heapUsed ?? 0,
+    uptimeS: snap.uptimeSec ?? 0,
+  };
 }
 
 async function inBatches(items, size, fn) {
@@ -665,9 +698,9 @@ function print(r) {
     console.log(`\n[${hub}]`);
     if (e) {
       console.log(
-        `  event-loop delay ms  p50 ${e.eld.p50.toFixed(2)}  p95 ${e.eld.p95.toFixed(2)}  p99 ${e.eld.p99.toFixed(2)}  max ${e.eld.max.toFixed(2)}   cpu ${(e.cpuMs.user + e.cpuMs.system).toFixed(0)} ms / ${e.windowMs.toFixed(0)} ms   rss ${(e.rssBytes / 1048576).toFixed(0)} MB`,
+        `  event-loop delay ms  p50 ${e.eld.p50.toFixed(2)}  p90 ${e.eld.p90.toFixed(2)}  p99 ${e.eld.p99.toFixed(2)}  max ${e.eld.max.toFixed(2)}   cpu ${(e.cpuMs.user + e.cpuMs.system).toFixed(0)} ms / ${e.windowMs.toFixed(0)} ms   rss ${(e.rssBytes / 1048576).toFixed(0)} MB`,
       );
-    } else console.log('  (no probe — start the hub with RMH_PERF_HUB=1)');
+    } else console.log('  (no metrics — is GET /internal/metrics reachable? set INTERNAL_METRICS_TOKEN if the hub requires one)');
     for (const [k, v] of Object.entries(h.latency)) console.log(`  ${k.padEnd(26)} n=${v.n}  p50 ${v.p50}  p95 ${v.p95}  p99 ${v.p99}  max ${v.max}`);
     for (const [k, v] of Object.entries(h.events_per_s)) console.log(`  ${k.padEnd(26)} ${v}/s`);
   }
@@ -687,7 +720,7 @@ function compare(a, b) {
     if (!ha) continue;
     const ea = ha.eld, eb = hb.eld;
     if (ea && eb) {
-      for (const k of ['p50', 'p95', 'p99', 'max']) rows.push([hub, `eld ${k} ms`, fmt(ea.eld[k]), fmt(eb.eld[k]), d(ea.eld[k], eb.eld[k])]);
+      for (const k of ['p50', 'p90', 'p99', 'max']) rows.push([hub, `eld ${k} ms`, fmt(ea.eld[k]), fmt(eb.eld[k]), d(ea.eld[k], eb.eld[k])]);
       const ca = ea.cpuMs.user + ea.cpuMs.system, cb = eb.cpuMs.user + eb.cpuMs.system;
       rows.push([hub, 'cpu ms/s', fmt((ca / ea.windowMs) * 1000), fmt((cb / eb.windowMs) * 1000), d(ca / ea.windowMs, cb / eb.windowMs)]);
       rows.push([hub, 'rss MB', fmt(ea.rssBytes / 1048576), fmt(eb.rssBytes / 1048576), d(ea.rssBytes, eb.rssBytes)]);

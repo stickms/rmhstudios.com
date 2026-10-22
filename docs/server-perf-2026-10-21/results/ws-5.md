@@ -10,7 +10,7 @@ numbers below were taken before it, the tube DB numbers (before) before it and (
 ## Shipped
 | # | Change | Route(s) | Metric | Before | After | Commit | Evidence | Correctness test |
 |---|---|---|---|---:|---:|---|---|---|
-| 1 | `socket-bench.mjs` + env-gated `server/shared/perf-probe.ts` (`RMH_PERF_HUB=1`) | all hubs | instrument | — | — | first commit | n/a | `server/shared/__tests__/perf-probe.test.ts` (off by default, 404, no probe object) |
+| 1 | `socket-bench.mjs` + env-gated `server/shared/perf-probe.ts` (`RMH_PERF_HUB=1`). After the main merge the probe was deleted and the bench reads main's `/internal/metrics` instead | all hubs | instrument | — | — | first commit | n/a | — (the probe and its test were removed) |
 | 2 | Warm Prisma at socket-server boot | socket hub, first casino action | event-loop max, cold, 3 seats | 444 / 284 ms | 13.9 / 18.9 ms | `perf(socket-server): warm Prisma…` | latency | `prisma-warm.test.ts` |
 | 3 | RMHFarming broadcasts via `io.to(ids)` (presence, tiles, members, chat, FARM_STATE) | farming sim | server CPU per fan-out, 6 recipients | presence 19.5/15.4 µs; FARM_STATE 575/504 µs | 7.4/5.0 µs; 122/134 µs | `perf(farming-sim)…` | latency (microbench of real socket.io path) | recipient set unchanged (presence socket ids) |
 | 4 | RMHTube chat persistence batched (1 s / 200 rows `createMany`) | rmhtube hub | DB commits/s, 20 rooms × 12, chat/2 s | 38.7 / 39.7 | 15.2 | `perf(rmhtube): batch chat…` | exact | `batch-writer.test.ts` (one call per interval, order, early flush, failure, no concurrency) |

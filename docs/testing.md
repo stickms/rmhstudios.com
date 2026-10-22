@@ -459,6 +459,10 @@ node scripts/perf/server-bench.mjs --summary baseline.json             # the P0 
 node scripts/perf/cold-start.mjs --port 71<N>5                          # restart + first request to /
 ```
 
+Raw bench output (`--out *.json`, ~9k lines per run) stays out of the repo: `--compare` and `--summary` take any paths, so
+no checked-in baseline is needed. Commit the derived table (`--compare … > compare.md`) and the report instead. The program's
+own raw runs are in git history at `1b437552d` (`docs/server-perf-2026-10-21/results/{baseline,after,after-run2}.json`).
+
 `RMH_PERF_HEADERS=1` adds `x-rmh-queries: <n>` to every response (off by
 default; `lib/__tests__/perf-headers.test.ts` pins that). `Server-Timing` is
 always on and carries `dur`-only `sess` / `cache` / `db` / `total` phases. The

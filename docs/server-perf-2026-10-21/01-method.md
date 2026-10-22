@@ -208,7 +208,8 @@ different machine than its baseline.
 
 ## 4. The baseline
 
-`results/baseline.json` (both auth modes, every route) was taken on the tree with
+`results/baseline.json` (both auth modes, every route; not checked in, see
+[`06-report.md`](06-report.md) for where the raw runs live) was taken on the tree with
 the instrumentation in place; `results/ws-0.md` summarises it: top 15 routes by
 signed-in p95 TTFB, top 15 by query count, every route over its query budget,
 every `GET` without a cache policy that the harness shows is anonymous-invariant,

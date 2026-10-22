@@ -5,6 +5,8 @@ Governing documents: [`index.md`](index.md), [`01-method.md`](01-method.md), [`0
 [`03-rules.md`](03-rules.md). Ledgers: [`results/ws-0.md`](results/ws-0.md) to
 [`results/ws-9.md`](results/ws-9.md).
 
+The raw `server-bench` runs (`results/baseline.json`, `results/after.json`, `results/after-run2.json`, about 9k lines each) are not checked in: `results/compare.md` and this report carry the numbers. They are kept in git history at `1b437552d`, e.g. `git show 1b437552d:docs/server-perf-2026-10-21/results/after.json > after.json`, and `server-bench --compare` / `--summary` take any two paths.
+
 ## Summary
 
 - **Outcome.** The typical route was already fast, so the medians barely moved (section 1). The program's measurable speed
@@ -384,7 +386,7 @@ it. "Rejected on correctness" rows have no timing because the objection is that 
 | 2 | Capped mention-search follow loads, counters, notification mute cache | main `757b1d6df` | WS2 row 13 removed the remaining full-edge load |
 | 3 | `apiCache` FIFO to LRU with `API_CACHE_MAX_ENTRIES` | main `7cff5e5a6`, `ff05b6a36` (true LRU, byte budget from the heap) | The Redis invalidation bridge was kept on top |
 | 6 | Async resvg render and shared card cache (`653ceb9d5`) | main `88de16e44` (`dedupeOgRender`, `svgToPng`); `cf817ad07` removed `rasterizeSvg` and `createCardCache` | `loadSystemFonts:false` (`589cfdcc3`) and the story-card key (`dff14c642`) survived |
-| 5 | `/__perf` hub probe in the request handlers | main's `/internal/metrics` collector | `perf-probe.ts` is now unused (section 6) |
+| 5 | `/__perf` hub probe in the request handlers | main's `/internal/metrics` collector | `perf-probe.ts` was deleted; `socket-bench.mjs` reads `/internal/metrics` |
 
 ## 6. Follow-ups and handoffs not done
 
@@ -400,7 +402,7 @@ integration; the rest are open rows from the ledgers. Infrastructure proposals a
 | 3 | WS7 | Doctrine timezone list is cached for 10 min. No code writes `doctrineTimezone` today, so there is no invalidation hook. Any future timezone setting must add one in the same change | `go-services/internal/doctrine` (`767990f41`) | Nothing writes the field | The feature that sets it |
 | 4 | WS1 | `/achievements` signed renders every catalog card into SSR HTML: 316,549 B document, about 280 KB of markup, against a 90 KB budget (`after.json` re-measures it) | `components/feed/AchievementsColumn`, `JourneyColumn` | A component change, not a loader fix; WS1 did not own it | Collapse by category or render beyond the first tab client-side |
 | 5 | WS2 | The anonymous first page `timeline:anon:v2` (30 s plus 120 s stale-while-revalidate) is not reconciled: a removed public post can be served from origin for up to about 150 s (the edge cache likely dominates) | `lib/feed/timeline.ts` | Row 12 concerned the signed-in path only | A decision on whether 150 s of anonymous staleness is acceptable |
-| 6 | WS5 | `socket-bench.mjs` still targets `/__perf`, which the main merge removed in favour of main's `/internal/metrics`; `server/shared/perf-probe.ts` is now unused | `scripts/perf/socket-bench.mjs`, `server/shared/perf-probe.ts` | Coordinator-owned after the merge; no hub re-measurement was done on the merged tree | Point the bench at `/internal/metrics`, delete the probe |
+| 6 | WS5 | Done after review: `socket-bench.mjs` reads main's `/internal/metrics` (CPU and wall time as deltas between two snapshots; event-loop delay is the collector's current window, reported as p50/p90/p99/max) and `server/shared/perf-probe.ts` was deleted. No hub re-measurement was done on the merged tree | `scripts/perf/socket-bench.mjs` | — | Re-run the hub mixes if hub numbers are needed |
 | 7 | WS7 | Bazel `BUILD.bazel` files were hand-edited (module fetch was blocked in the sandbox, 403 on `bcr.bazel.build` and on the bats-core tarball) | `go-services/**/BUILD.bazel` | `make gazelle` and `make test` never ran | Run `make gazelle && make test` where Bazel can fetch, commit the diff |
 | 8 | WS4 | The invite and join-request UI is not checked in a browser: three themes, two widths, keyboard | `components/**` (CommunitiesColumn, mod tools), `/c/$slug`, `/c/$slug/invite/$code` | No browser session in the agent environment | A manual pass per `docs/page-consistency.md` |
 | 9 | WS4 | Non-English strings for the invites feature (English strings were added and extracted) | `locales/*/` | Translations come from the `i18n-translate` workflow | Run it |
