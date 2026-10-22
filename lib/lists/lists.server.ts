@@ -5,8 +5,8 @@
  * follow-up; this delivers the create->read vertical.
  */
 import { prisma } from '@/lib/prisma.server';
-import { getFollowingIds } from '@/lib/social/follow-graph.server';
-import { audienceWhere, circleOwnerIds } from '@/lib/feed/audience.server';
+import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
+import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
 import { MAX_LISTS, MAX_MEMBERS, MAX_PINNED, type ListView } from '@/lib/lists/constants';
 
@@ -163,19 +163,24 @@ export async function listTimeline(
   const memberIds = members.map((m) => m.userId);
   if (memberIds.length === 0) return { items: [], nextCursor: null };
 
-  const [followingIds, circleIds] = await Promise.all([
-    viewerId ? getFollowingIds(viewerId) : Promise.resolve([]),
-    circleOwnerIds(viewerId),
+  // A timeline is a feed: authors the viewer blocked or muted (or who blocked
+  // them) do not appear in it, even though they are on the list. The shared
+  // visibility predicate carries the audience / deleted / block rule and is
+  // nested under AND because it owns the `userId` key too.
+  const [visible, hidden] = await Promise.all([
+    viewerVisiblePostWhere(viewerId),
+    getHiddenAuthorIds(viewerId),
   ]);
+  const shownIds = hidden.length ? memberIds.filter((id) => !hidden.includes(id)) : memberIds;
+  if (shownIds.length === 0) return { items: [], nextCursor: null };
 
   const PAGE = 30;
   const rows = await prisma.rMHark.findMany({
     where: {
-      userId: { in: memberIds },
-      deletedAt: null,
+      userId: { in: shownIds },
       threadRootId: null,
       communityId: null,
-      ...audienceWhere(viewerId, followingIds, [], circleIds),
+      AND: [visible],
     },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: PAGE + 1,
