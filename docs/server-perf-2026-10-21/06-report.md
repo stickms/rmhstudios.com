@@ -84,12 +84,15 @@ way by a small amount: `api` signed p50 +0.6 ms and rps -14%; pages -2% to -14% 
 fixed cost described next, part is the privacy checks, part is day-to-day box load. All eight class medians are inside
 their `02-budgets.md` section 2 TTFB and query budgets.
 
-**An unexplained fixed cost per request.** The trivial `/api/health` (no session, no query) went from p50 0.6 ms and
+**A fixed cost per request since the baseline.** The trivial `/api/health` (no session, no query) went from p50 0.6 ms and
 1,820 rps to 0.8 ms and 1,437 rps (run 2: 0.7 ms, 1,551 rps); `/api/presence/online` (0 queries) from 1,836 to 1,450 rps.
 That is roughly 0.15 ms of extra CPU per request on every route and it explains most of the `api` throughput drift. No
-workstream touched those paths. The candidate is main's per-process performance collector (`7879e21d5`: Nitro request
-hooks and a Prisma timing extension; it is not in the baseline and has no off switch), but this was not isolated by an A/B
-build, so it stays unattributed.
+workstream touched those paths. **It is not this PR's.** An A/B after review (production builds of `origin/main`
+`1247bafdb` and the PR head `1b437552d`, same box and env, one server at a time, alternating, 3 rounds each) put
+`/api/health` at 1,139 rps on main and 1,073 rps on the head, inside main's own 957-1,309 run-to-run spread, p50 within
+0.1 ms; `/robots.txt` and `/manifest.webmanifest` were no slower on the head. The drift is baseline against today, and
+both trees carry main's per-process performance collector (`7879e21d5`: Nitro request hooks and a Prisma timing
+extension, not in the baseline). Whether the collector is the whole cost was not isolated (n=3 on a shared 4-core box).
 
 ### Biggest single wins
 
@@ -324,8 +327,8 @@ four write rows' extra queries are main's security fix, which `02-budgets.md` se
 
 ### 4.3 Also looked at
 
-- **Unexplained fixed cost.** `/api/health` anon 0.6 to 0.8 ms and 1,820 to 1,437 rps; every `api` class median rps fell 6% to
-  14%. Under the 5 ms floor, so it is not a section 3 flag, but it is the same direction on every row (section 1).
+- **Fixed cost since the baseline.** `/api/health` anon 0.6 to 0.8 ms and 1,820 to 1,437 rps; every `api` class median rps fell 6% to
+  14%. Under the 5 ms floor, so it is not a section 3 flag. A head-vs-main A/B shows it is not this PR's (section 1).
 - **Bytes.** Pages shrank by about 4 KB on 40 signed routes (for example `/games` signed 101,080 to 97,809 B; main's changes,
   not a workstream's). `/api/rmharks?limit=20` signed grew 10,350 to 14,181 B for the dataset reason in the header.
 - **Budget status after the merge** (`node scripts/perf/server-bench.mjs --summary results/after.json`): five rows over a TTFB budget
@@ -440,7 +443,7 @@ integration; the rest are open rows from the ledgers. Infrastructure proposals a
 | 36 | WS0 | The Nitro bundle and the app bundle each contain `prisma.server`, and the `globalThis` singleton guard is skipped in production, so two `PrismaClient` pools may exist | `.output/server/_chunks/prisma.server.mjs` | Low priority and unverified | `grep -l "new PrismaClient" .output/server -r` on a build |
 | 37 | WS8 | Common-query people search is still 260-320 ms (11k of 20k synthetic users match "user1"); trigram `%` and `<%` per row is the floor without changing recall | `lib/search/**` | Would change results | None planned |
 | 38 | WS9 | The two partial indexes are not in `schema.prisma`; a `prisma migrate dev` will offer to drop them | `prisma/migrations/20261022150000_*`, `20261022150100_*` | Prisma cannot express partial indexes; migration comments warn | Never accept the drop |
-| 39 | this report, section 1 | An unexplained fixed per-request cost of about 0.15 ms: `/api/health` 0.6 to 0.8 ms and 1,820 to 1,437 rps, the whole `api` class down 6-14% in rps. The candidate is main's per-process performance collector (`7879e21d5`), which has no off switch | `server/nitro/perf.ts`, `lib/perf/process-metrics.ts` | Not isolated: it needs an A/B build with the collector disabled | Add an env switch to the collector, build twice, compare `/api/health` |
+| 39 | this report, section 1 | A fixed per-request cost of about 0.15 ms since the baseline: `/api/health` 0.6 to 0.8 ms and 1,820 to 1,437 rps, the whole `api` class down 6-14% in rps. A head-vs-main A/B shows it is not this PR's (both trees within noise); the candidate is main's per-process performance collector (`7879e21d5`), which has no off switch | `server/nitro/perf.ts`, `lib/perf/process-metrics.ts` | Main's code, not this PR's | Add an env switch to the collector, build twice, compare `/api/health` |
 | 40 | this report, section 4.1 | The post visibility predicate expands a viewer's follows into an `IN` list: 2,000 bound parameters for the heavy user cost about +8 ms on `/thread/:id`, profile posts and likes, and bookmarks | `lib/feed/audience.server.ts` (`viewerVisiblePostWhere`) | The fix would touch every privacy test; this pass records regressions and does not fix them | Replace the FOLLOWERS branch with a correlated `EXISTS` on `follow (followerId, followingId)`; re-run `lib/feed/__tests__/` and the four routes with `--only thread,api-profile-posts,api-profile-likes,api-bookmarks` |
 | 41 | this report, section 1 | Sitemaps, OG cards, `/api/oembed`, the status page and the hubs are not in `server-routes.json`, so their wins are in-process or Go-bench figures and were not re-measured on the merged tree | `scripts/perf/server-routes.json` | The route list is WS0's and was fixed before those workstreams finished | Add `/sitemaps/posts-1.xml`, `/api/og/*` and `/api/oembed` to the list, and run `socket-bench.mjs` against `/internal/metrics` |
 
