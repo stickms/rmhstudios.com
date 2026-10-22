@@ -13,6 +13,7 @@ const h = vi.hoisted(() => ({
   community: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
   member: { findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), delete: vi.fn() },
   announcement: { findMany: vi.fn() },
+  joinRequest: { findUnique: vi.fn(), findMany: vi.fn() },
   page: { findUnique: vi.fn() },
   rmhark: { findMany: vi.fn() },
   transaction: vi.fn(),
@@ -23,12 +24,14 @@ vi.mock('@/lib/prisma.server', () => ({
     community: h.community,
     communityMember: h.member,
     communityAnnouncement: h.announcement,
+    communityJoinRequest: h.joinRequest,
     communityPage: h.page,
     user: { findUnique: async () => null },
     rMHark: h.rmhark,
     $transaction: h.transaction,
   },
 }));
+vi.mock('@/lib/notifications.server', () => ({ createNotification: vi.fn() }));
 vi.mock('@/lib/api/handler.server', () => ({
   defineHandler: (_o: unknown, fn: (c: unknown) => unknown) => fn,
 }));
@@ -98,11 +101,22 @@ beforeEach(() => {
 });
 
 describe('community detail + feed (SSR loader and API)', () => {
-  it('a non-member and an anonymous viewer get null, a member gets the community', async () => {
-    expect(await getCommunity('s', 'stranger')).toBeNull();
-    expect(await getCommunity('s', null)).toBeNull();
+  it('a non-member and an anonymous viewer get the locked preview: metadata only', async () => {
+    for (const viewer of ['stranger', null]) {
+      const c = await getCommunity('s', viewer);
+      expect(c).toMatchObject({ locked: true, joined: false, role: null, announcements: [], postCount: 0 });
+      expect(c?.name).toBe('N');
+      expect(c?.memberCount).toBe(3);
+    }
+    // no content query is made for them
+    expect(h.announcement.findMany).not.toHaveBeenCalled();
+  });
+
+  it('a member gets the full community', async () => {
     h.member.findUnique.mockResolvedValue({ role: 'MEMBER' });
-    expect((await getCommunity('s', 'me'))?.slug).toBe('s');
+    const c = await getCommunity('s', 'me');
+    expect(c).toMatchObject({ slug: 's', locked: false, joined: true });
+    expect(h.announcement.findMany).toHaveBeenCalledTimes(1);
   });
 
   it('feed: null for a non-member (no post query is made), posts for a member', async () => {
@@ -123,19 +137,34 @@ describe('community detail + feed (SSR loader and API)', () => {
 });
 
 describe('browse list', () => {
-  it('anonymous: only public communities are queried', async () => {
-    await listCommunities({ userId: null });
-    expect(h.community.findMany.mock.calls[0][0].where).toEqual({ isPrivate: false });
+  const row = (over: Record<string, unknown>) => ({
+    id: 'c1',
+    slug: 's',
+    name: 'N',
+    description: 'd',
+    icon: null,
+    color: null,
+    memberCount: 3,
+    postCount: 9,
+    isPrivate: true,
+    ...over,
   });
 
-  it('signed in: public ones plus communities the viewer is a member of', async () => {
-    await listCommunities({ userId: 'me', q: 'ret' });
-    expect(h.community.findMany.mock.calls[0][0].where).toEqual({
-      AND: [
-        { OR: [{ isPrivate: false }, { members: { some: { userId: 'me' } } }] },
-        { name: { contains: 'ret', mode: 'insensitive' } },
-      ],
-    });
+  it('lists private communities as locked cards with the post count withheld', async () => {
+    h.community.findMany.mockResolvedValue([row({}), row({ id: 'c2', slug: 'p', isPrivate: false })]);
+    const list = await listCommunities({ userId: null });
+    expect(h.community.findMany.mock.calls[0][0].where).toEqual({});
+    expect(list[0]).toMatchObject({ slug: 's', isPrivate: true, locked: true, postCount: 0, requestState: null });
+    expect(list[1]).toMatchObject({ slug: 'p', locked: false, postCount: 9 });
+  });
+
+  it('a member sees their private community unlocked; a requester sees the pending state', async () => {
+    h.community.findMany.mockResolvedValue([row({}), row({ id: 'c3', slug: 'q' })]);
+    h.member.findMany.mockResolvedValue([{ role: 'MEMBER', community: { slug: 's' } }]);
+    h.joinRequest.findMany.mockResolvedValue([{ communityId: 'c3', status: 'PENDING' }]);
+    const list = await listCommunities({ userId: 'me' });
+    expect(list[0]).toMatchObject({ slug: 's', locked: false, joined: true, postCount: 9 });
+    expect(list[1]).toMatchObject({ slug: 'q', locked: true, requestState: 'PENDING' });
   });
 });
 
@@ -169,7 +198,7 @@ describe('members / announcements / join / pages routes', () => {
     expect((await GET({ params: { slug: 's' }, ...session('mod') })).status).toBe(200);
   });
 
-  it('join: a non-member cannot join a private community; a member can still leave', async () => {
+  it('join: no invite means 404; a member can still leave', async () => {
     const POST = await routeHandlers('@/app/routes/api/communities/$slug/join', 'POST');
     h.transaction.mockResolvedValue([]);
     expect((await POST({ params: { slug: 's' }, ...session('stranger') })).status).toBe(404);

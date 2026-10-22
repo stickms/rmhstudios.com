@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
+import type { OwnRequestState } from '@/lib/communities/join-requests.server';
 
 export interface CommunityListItem {
   id: string;
@@ -11,6 +12,14 @@ export interface CommunityListItem {
   postCount: number;
   joined: boolean;
   role: string | null;
+  isPrivate: boolean;
+  /**
+   * A private community the viewer is not a member of: shown as a locked card
+   * (metadata only; `postCount` is withheld as 0) with a "Request to join" action.
+   */
+  locked: boolean;
+  /** The viewer's own join request, for the locked card's pending state. */
+  requestState: OwnRequestState;
 }
 
 /**
@@ -28,14 +37,11 @@ export async function listCommunities(opts: {
   q?: string | null;
 }): Promise<CommunityListItem[]> {
   const q = opts.q?.trim();
-  // A private community is members-only: it is listed for its members (so "my
-  // communities" still shows it) and for nobody else - the same rule search and
-  // the sitemap apply (`isPrivate: false`).
-  const visible = opts.userId
-    ? { OR: [{ isPrivate: false }, { members: { some: { userId: opts.userId } } }] }
-    : { isPrivate: false };
+  // Private communities are listed as locked cards (name, icon, description,
+  // member count, lock badge, request button). Their content stays members-only
+  // everywhere else; the sitemap still excludes them.
   const communities = await prisma.community.findMany({
-    where: q ? { AND: [visible, { name: { contains: q, mode: 'insensitive' } }] } : visible,
+    where: q ? { name: { contains: q, mode: 'insensitive' } } : {},
     orderBy: { memberCount: 'desc' },
     take: 50,
     select: {
@@ -47,6 +53,7 @@ export async function listCommunities(opts: {
       color: true,
       memberCount: true,
       postCount: true,
+      isPrivate: true,
     },
   });
   if (communities.length === 0) return [];
@@ -63,9 +70,30 @@ export async function listCommunities(opts: {
   const roleBySlug = new Map<string, string>();
   for (const m of mems) roleBySlug.set(m.community.slug, m.role);
 
-  return communities.map((c) => ({
-    ...c,
-    joined: roleBySlug.has(c.slug),
-    role: roleBySlug.get(c.slug) ?? null,
-  }));
+  // The viewer's own pending/denied requests, only for locked cards they could
+  // ask to join. Per-viewer state: this list is never shared-cached.
+  const lockedIds = communities
+    .filter((c) => c.isPrivate && !roleBySlug.has(c.slug))
+    .map((c) => c.id);
+  const requests =
+    opts.userId && lockedIds.length
+      ? await prisma.communityJoinRequest.findMany({
+          where: { userId: opts.userId, communityId: { in: lockedIds }, status: { in: ['PENDING', 'DENIED'] } },
+          select: { communityId: true, status: true },
+        })
+      : [];
+  const requestById = new Map(requests.map((r) => [r.communityId, r.status as OwnRequestState]));
+
+  return communities.map((c) => {
+    const joined = roleBySlug.has(c.slug);
+    const locked = c.isPrivate && !joined;
+    return {
+      ...c,
+      postCount: locked ? 0 : c.postCount,
+      joined,
+      role: roleBySlug.get(c.slug) ?? null,
+      locked,
+      requestState: locked ? (requestById.get(c.id) ?? null) : null,
+    };
+  });
 }

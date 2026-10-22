@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
+import { cachedNullable } from '@/lib/cached.server';
+import { readCapped } from '@/lib/unfurl/unfurl.server';
 import { getArchivedCard, noteLinkSeen } from '@/lib/posts-plus/link-rescue.server';
 /**
  * /api/oembed — Resolve media URLs and extract OpenGraph metadata.
@@ -10,6 +12,19 @@ import { getArchivedCard, noteLinkSeen } from '@/lib/posts-plus/link-rescue.serv
  *   - "og": Extract OpenGraph metadata (title, description, image) from any URL
  */
 const CACHE_TTL = 60 * 60 * 24; // 24h
+/** Only the document head is parsed; 64 kB covers it with room to spare. */
+const HEAD_BYTES = 64 * 1024;
+/** A Tenor share page keeps its og tags near the top, but is script-heavy. */
+const TENOR_BYTES = 256 * 1024;
+
+interface OgCard {
+  title: string | null;
+  description: string | null;
+  image: string | null;
+  siteName: string;
+}
+
+class UpstreamError extends Error {}
 
 function extractMetaContent(html: string, property: string): string | null {
   // Try property="..." content="..."
@@ -65,7 +80,7 @@ export const Route = createFileRoute('/api/oembed')({
                 return Response.json({ error: 'Failed to fetch page' }, { status: 502 });
               }
 
-              const html = await res.text();
+              const html = await readCapped(res, TENOR_BYTES);
 
               const ogImageMatch = html.match(
                 /<meta\s[^>]*property="og:image"\s[^>]*content="([^"]+)"/,
@@ -117,57 +132,67 @@ export const Route = createFileRoute('/api/oembed')({
                     archivedUrl: archived.archiveUrl,
                     archivedAt: archived.archiveTimestamp,
                   },
-                  { headers: { 'Cache-Control': 'public, max-age=3600, stale-while-revalidate=3600' } },
+                  {
+                    headers: {
+                      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=3600',
+                    },
+                  },
                 );
               }
 
-              const res = await safeFetch(url, {
-                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RmhBot/1.0)' },
-                timeoutMs: 5000,
-              });
-
-              if (!res.ok) {
-                return Response.json({ error: 'Failed to fetch page' }, { status: 502 });
-              }
-
-              const html = await res.text();
-              const head = html.slice(0, 50_000); // Only parse the head section
-
-              const title =
-                extractMetaContent(head, 'og:title') ||
-                extractMetaContent(head, 'twitter:title') ||
-                extractTagContent(head, 'title');
-              const description =
-                extractMetaContent(head, 'og:description') ||
-                extractMetaContent(head, 'twitter:description') ||
-                extractMetaContent(head, 'description');
-              const image =
-                extractMetaContent(head, 'og:image') || extractMetaContent(head, 'twitter:image');
-              const siteName = extractMetaContent(head, 'og:site_name');
-
-              if (!title && !description) {
-                return Response.json({ error: 'No metadata found' }, { status: 404 });
-              }
-
-              // X11: remember this card's link so the weekly check can watch it.
-              void noteLinkSeen(url, { title, description, siteName });
-
-              return Response.json(
-                {
-                  title: title || null,
-                  description: description || null,
-                  image: image || null,
-                  siteName: siteName || new URL(url).hostname,
-                },
-                {
-                  headers: {
-                    'Cache-Control': `public, max-age=${CACHE_TTL}, stale-while-revalidate=86400`,
-                  },
+              // Cached for 24h per URL (single-flight across concurrent callers),
+              // and the body is read through a byte cap rather than `res.text()`:
+              // the old code buffered whatever the origin sent and then threw all
+              // but the first 50 kB away. Upstream failures are thrown, not
+              // returned, so they are never cached.
+              const card = await cachedNullable<OgCard>(
+                `oembed:og:${url}`,
+                CACHE_TTL * 1000,
+                async () => {
+                  const res = await safeFetch(url, {
+                    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RmhBot/1.0)' },
+                    timeoutMs: 5000,
+                  });
+                  if (!res.ok) {
+                    void res.body?.cancel().catch(() => {});
+                    throw new UpstreamError();
+                  }
+                  const head = await readCapped(res, HEAD_BYTES);
+                  const title =
+                    extractMetaContent(head, 'og:title') ||
+                    extractMetaContent(head, 'twitter:title') ||
+                    extractTagContent(head, 'title');
+                  const description =
+                    extractMetaContent(head, 'og:description') ||
+                    extractMetaContent(head, 'twitter:description') ||
+                    extractMetaContent(head, 'description');
+                  if (!title && !description) return null;
+                  const image =
+                    extractMetaContent(head, 'og:image') ||
+                    extractMetaContent(head, 'twitter:image');
+                  const siteName = extractMetaContent(head, 'og:site_name');
+                  // X11: remember this card's link so the weekly check can watch it.
+                  void noteLinkSeen(url, { title, description, siteName });
+                  return {
+                    title: title || null,
+                    description: description || null,
+                    image: image || null,
+                    siteName: siteName || new URL(url).hostname,
+                  };
                 },
               );
+              if (!card) return Response.json({ error: 'No metadata found' }, { status: 404 });
+
+              return Response.json(card, {
+                headers: {
+                  'Cache-Control': `public, max-age=${CACHE_TTL}, stale-while-revalidate=86400`,
+                },
+              });
             } catch (e) {
               if (e instanceof SsrfError)
                 return Response.json({ error: 'Disallowed URL' }, { status: 400 });
+              if (e instanceof UpstreamError)
+                return Response.json({ error: 'Failed to fetch page' }, { status: 502 });
               return Response.json({ error: 'Fetch failed' }, { status: 502 });
             }
           }

@@ -150,9 +150,11 @@ model User {
   postUnlocks  PostUnlock[]
 
   // Communities created + memberships
-  communitiesCreated     Community[]             @relation("CommunityCreator")
-  communityMembers       CommunityMember[]
-  communityAnnouncements CommunityAnnouncement[] @relation("CommunityAnnouncementAuthor")
+  communitiesCreated      Community[]             @relation("CommunityCreator")
+  communityMembers        CommunityMember[]
+  communityInvitesCreated CommunityInvite[]
+  communityJoinRequests   CommunityJoinRequest[]
+  communityAnnouncements  CommunityAnnouncement[] @relation("CommunityAnnouncementAuthor")
 
   // Progression: quests + battle-pass season progress
   quests         UserQuest[]
@@ -475,8 +477,8 @@ model User {
   translationSuggestions     TranslationSuggestion[]
   // P27 async games: R11 R12 R13 R18 R21
   hornTableRead              GabrielsHornTableRead?
-  velumContractsMade         VelumContract[]        @relation("VelumContractMaker")
-  velumContractsHeld         VelumContract[]        @relation("VelumContractHolder")
+  velumContractsMade         VelumContract[]              @relation("VelumContractMaker")
+  velumContractsHeld         VelumContract[]              @relation("VelumContractHolder")
   versecraftSeedListings     VersecraftSeedListing[]
   versecraftSeedRatings      VersecraftSeedRating[]
   marchSignals               MarchSignal[]
@@ -507,8 +509,8 @@ model User {
   gamePlayStatuses           GamePlayStatus[]
   achievementTips            AchievementTip[]
   achievementTipVotes        AchievementTipVote[]
-  arcadeRivals               ArcadeRival[]               @relation("ArcadeRivalOwner")
-  arcadeRivalOf              ArcadeRival[]               @relation("ArcadeRivalTarget")
+  arcadeRivals               ArcadeRival[]                @relation("ArcadeRivalOwner")
+  arcadeRivalOf              ArcadeRival[]                @relation("ArcadeRivalTarget")
   // P20 watch parties: F1 timed comments, F17 watch later, T5 commentary tracks
   rmhtubeTimedComments       RmhTubeTimedComment[]
   rmhtubeWatchLater          RmhTubeWatchLater[]
@@ -516,11 +518,11 @@ model User {
   // P11 gifting: G1 birthdays, G2 advent, G3 gift exchange, G4 kudos, F2 mixtape exchange
   birthday                   UserBirthday?
   adventClaims               AdventClaim[]
-  giftExchangesOrganised     GiftExchange[]       @relation("GiftExchangeOrganiser")
-  giftExchangeMemberships    GiftExchangeMember[] @relation("GiftExchangeMemberUser")
-  giftExchangeRecipientOf    GiftExchangeMember[] @relation("GiftExchangeMemberRecipient")
-  kudosSent                  Kudos[]              @relation("KudosFrom")
-  kudosReceived              Kudos[]              @relation("KudosTo")
+  giftExchangesOrganised     GiftExchange[]               @relation("GiftExchangeOrganiser")
+  giftExchangeMemberships    GiftExchangeMember[]         @relation("GiftExchangeMemberUser")
+  giftExchangeRecipientOf    GiftExchangeMember[]         @relation("GiftExchangeMemberRecipient")
+  kudosSent                  Kudos[]                      @relation("KudosFrom")
+  kudosReceived              Kudos[]                      @relation("KudosTo")
   // P03 discovery: A3 digest, A4 custom feeds, A5 memories, A6 keyword alerts, A7 watches
   customFeeds                CustomFeed[]
   customFeedSubscriptions    CustomFeedSubscription[]
@@ -537,8 +539,8 @@ model User {
   gameJamsCreated            GameJam[]
   gameJamEntries             GameJamEntry[]
   gameJamRatings             GameJamRating[]
-  friendlyChallengesSent     FriendlyChallenge[]       @relation("FriendlyChallenger")
-  friendlyChallengesReceived FriendlyChallenge[]       @relation("FriendlyOpponent")
+  friendlyChallengesSent     FriendlyChallenge[]          @relation("FriendlyChallenger")
+  friendlyChallengesReceived FriendlyChallenge[]          @relation("FriendlyOpponent")
   communityChallengeVotes    CommunityChallengeVote[]
   communityCensusAnswered    CommunityCensusParticipant[]
   // P13 reading: L1 highlights, L3 goal, L7 shelves, L5 stories
@@ -546,49 +548,49 @@ model User {
   readingGoals               ReadingGoal[]
   readingShelfEntries        ReadingShelfEntry[]
   readingPrefs               ReadingPrefs?
-  glossaryTermsCreated       GlossaryTerm[]    @relation("GlossaryTermAuthor")
-  newsStoriesCreated         NewsStory[]       @relation("NewsStoryAuthor")
+  glossaryTermsCreated       GlossaryTerm[]               @relation("GlossaryTermAuthor")
+  newsStoriesCreated         NewsStory[]                  @relation("NewsStoryAuthor")
   communityContributorScores CommunityContributorScore[]
   // P09 calendar: K1 polls, K2 office hours, K3 feed, K4 occurrence RSVPs, F5 study buddy
   availabilityPolls          AvailabilityPoll[]
   availabilityResponses      AvailabilityPollResponse[]
   availabilityInvites        AvailabilityPollInvitee[]
   officeHoursConfig          OfficeHoursConfig?
-  officeHoursBookingsAsHost  OfficeHoursBooking[]      @relation("OfficeHoursHost")
-  officeHoursBookingsAsGuest OfficeHoursBooking[]      @relation("OfficeHoursGuest")
+  officeHoursBookingsAsHost  OfficeHoursBooking[]         @relation("OfficeHoursHost")
+  officeHoursBookingsAsGuest OfficeHoursBooking[]         @relation("OfficeHoursGuest")
   calendarFeed               CalendarFeed?
   calendarFeedSlots          CalendarFeedSlot[]
   eventOccurrenceRsvps       EventOccurrenceRsvp[]
   studyBuddyRequests         StudyBuddyRequest[]
-  studyBuddyMatchesA         StudyBuddyMatch[]         @relation("StudyBuddyA")
-  studyBuddyMatchesB         StudyBuddyMatch[]         @relation("StudyBuddyB")
+  studyBuddyMatchesA         StudyBuddyMatch[]            @relation("StudyBuddyA")
+  studyBuddyMatchesB         StudyBuddyMatch[]            @relation("StudyBuddyB")
   // P02 posts-plus: X4 prompts/answers, X5 series, X8 auto-delete
-  qotdPromptsCreated QotdPrompt[]
-  qotdAnswers        QotdAnswer[]
-  postSeries         PostSeries[]
-  postSeriesFollows  PostSeriesFollow[]
-  postAutoDelete     PostAutoDelete?
-  chatFolders    ChatFolder[]
-  chatPins       ChatPin[]
-  dmPollVotes    DirectPollVote[]
+  qotdPromptsCreated         QotdPrompt[]
+  qotdAnswers                QotdAnswer[]
+  postSeries                 PostSeries[]
+  postSeriesFollows          PostSeriesFollow[]
+  postAutoDelete             PostAutoDelete?
+  chatFolders                ChatFolder[]
+  chatPins                   ChatPin[]
+  dmPollVotes                DirectPollVote[]
   // Back-relations for the models at the end of this file. One line per field,
   // each package's lines together; never re-align this block.
   // P01 feed-plus: X6 take votes, X12 require-alt-text
-  rmharkTakeVotes RMHarkTakeVote[]
-  requireAltText  Boolean         @default(false)
+  rmharkTakeVotes            RMHarkTakeVote[]
+  requireAltText             Boolean                      @default(false)
   savingsGoals               SavingsGoal[]
   loadoutPresets             LoadoutPreset[]
   communityGoalPledges       CommunityGoalPledge[]
-  scheduledGiftsSent         ScheduledGift[]       @relation("ScheduledGiftSender")
-  scheduledGiftsReceived     ScheduledGift[]       @relation("ScheduledGiftRecipient")
+  scheduledGiftsSent         ScheduledGift[]              @relation("ScheduledGiftSender")
+  scheduledGiftsReceived     ScheduledGift[]              @relation("ScheduledGiftRecipient")
   // P05 profiles (P1-P10)
-  profilePlus          ProfilePlus?
-  stampsCreated        Stamp[]            @relation("StampCreator")
-  profileStamps        ProfileStamp[]
-  webringsOwned        Webring[]          @relation("WebringOwner")
-  webringMemberships   WebringMember[]
-  endorsementsGiven    SkillEndorsement[] @relation("EndorsementGiven")
-  endorsementsReceived SkillEndorsement[] @relation("EndorsementReceived")
+  profilePlus                ProfilePlus?
+  stampsCreated              Stamp[]                      @relation("StampCreator")
+  profileStamps              ProfileStamp[]
+  webringsOwned              Webring[]                    @relation("WebringOwner")
+  webringMemberships         WebringMember[]
+  endorsementsGiven          SkillEndorsement[]           @relation("EndorsementGiven")
+  endorsementsReceived       SkillEndorsement[]           @relation("EndorsementReceived")
 
   @@index([isBot])
   @@index([followerCount])
@@ -2455,7 +2457,7 @@ model VersecraftWorld {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  chapters VersecraftGenChapter[]
+  chapters    VersecraftGenChapter[]
   seedListing VersecraftSeedListing?
 
   @@index([createdAt(sort: Desc)])
@@ -2854,29 +2856,29 @@ model RMHark {
   // P01 feed-plus X6: take meter. A post marked `isTake` collects one
   // agree/disagree vote per member; the denormalized tallies are only ever
   // exposed to voters and the author (see lib/feed/take.server.ts).
-  isTake            Boolean          @default(false)
-  takeAgreeCount    Int              @default(0)
-  takeDisagreeCount Int              @default(0)
-  takeVotes         RMHarkTakeVote[]
+  isTake                  Boolean                  @default(false)
+  takeAgreeCount          Int                      @default(0)
+  takeDisagreeCount       Int                      @default(0)
+  takeVotes               RMHarkTakeVote[]
   // P06 communities-plus: N1 flair, N2 starboard, N5 challenge entry
-  communityFlair      CommunityPostFlair?
-  communityStar       CommunityStarPost?
+  communityFlair          CommunityPostFlair?
+  communityStar           CommunityStarPost?
   communityChallengeEntry CommunityChallengeEntry?
 
   // P02 posts-plus. `expiresAt` (X8 TTL) and `seriesId` (X5) are read-time hints so
   // the feed never needs a second query; the tables behind them (post_lifecycle,
   // post_series_item) are the source of truth and carry the indexes.
-  expiresAt  DateTime?
-  seriesId   String?
-  lifecycle  PostLifecycle?
-  seriesItem PostSeriesItem?
-  qotdAnswer QotdAnswer?
+  expiresAt    DateTime?
+  seriesId     String?
+  lifecycle    PostLifecycle?
+  seriesItem   PostSeriesItem?
+  qotdAnswer   QotdAnswer?
   // P19 X3: true while at least one context note on this post is visible (feed reads this boolean only)
-  hasNote      Boolean       @default(false)
+  hasNote      Boolean         @default(false)
   contextNotes ContextNote[]
   // P23 F14: true when the post carries a runnable code snippet (feed reads this boolean only)
-  hasEmbed  Boolean        @default(false)
-  codeEmbed PostCodeEmbed?
+  hasEmbed     Boolean         @default(false)
+  codeEmbed    PostCodeEmbed?
 
   @@index([userId])
   @@index([createdAt(sort: Desc)])
@@ -3247,10 +3249,10 @@ model Prediction {
   subjectUrl     String?   @db.VarChar(200) // in-app deep link to the subject
   autoResolveAt  DateTime? // when the resolver becomes eligible to settle this market
 
-  creator   User?                @relation("PredictionCreator", fields: [creatorId], references: [id], onDelete: SetNull)
-  positions PredictionPosition[]
+  creator       User?                    @relation("PredictionCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  positions     PredictionPosition[]
   seasonMarkets PredictionSeasonMarket[]
-  comments PredictionComment[]
+  comments      PredictionComment[]
 
   @@index([status, createdAt(sort: Desc)])
   @@index([resolverKey, status]) // resolver settlement sweeps
@@ -3269,7 +3271,7 @@ model PredictionPosition {
   noShares     Float   @default(0)
   spent        Int     @default(0) // net coins spent (cost basis)
   settled      Boolean @default(false)
-  lastP Float? // implied P(YES) right after the member's latest trade (forecast for scoring)
+  lastP        Float? // implied P(YES) right after the member's latest trade (forecast for scoring)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3681,13 +3683,13 @@ model Conversation {
   lastMessageAt    DateTime @default(now())
   createdAt        DateTime @default(now())
 
-  participantOne User            @relation("ConversationParticipantOne", fields: [participantOneId], references: [id], onDelete: Cascade)
-  participantTwo User            @relation("ConversationParticipantTwo", fields: [participantTwoId], references: [id], onDelete: Cascade)
-  messages       DirectMessage[]
+  participantOne    User            @relation("ConversationParticipantOne", fields: [participantOneId], references: [id], onDelete: Cascade)
+  participantTwo    User            @relation("ConversationParticipantTwo", fields: [participantTwoId], references: [id], onDelete: Cascade)
+  messages          DirectMessage[]
   /// M3 — disappearing-messages timer in seconds (3600 | 86400 | 604800). Null = off.
   disappearAfterSec Int?
   /// M9 — chat theme preset (lib/chat-plus/themes.ts), "<accent>.<wallpaper>". Null = default.
-  themeKey          String? @db.VarChar(24)
+  themeKey          String?         @db.VarChar(24)
 
   @@unique([participantOneId, participantTwoId])
   @@index([participantOneId, lastMessageAt(sort: Desc)])
@@ -3909,13 +3911,13 @@ model GroupChat {
   lastMessageAt DateTime @default(now())
   createdAt     DateTime @default(now())
 
-  owner    User              @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  members  GroupChatMember[]
-  messages GroupMessage[]
+  owner             User              @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members           GroupChatMember[]
+  messages          GroupMessage[]
   /// M3 — disappearing-messages timer in seconds (3600 | 86400 | 604800). Null = off.
   disappearAfterSec Int?
   /// M9 — chat theme preset (lib/chat-plus/themes.ts), "<accent>.<wallpaper>". Null = default.
-  themeKey          String? @db.VarChar(24)
+  themeKey          String?           @db.VarChar(24)
 
   @@map("group_chat")
 }
@@ -3979,9 +3981,9 @@ model GroupMessage {
   sender    User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
   pollVotes GroupPollVote[]
 
-  reactions GroupMessageReaction[]
-  threadParent  GroupMessage?  @relation("GroupMessageThread", fields: [threadParentId], references: [id], onDelete: Cascade)
-  threadReplies GroupMessage[] @relation("GroupMessageThread")
+  reactions     GroupMessageReaction[]
+  threadParent  GroupMessage?          @relation("GroupMessageThread", fields: [threadParentId], references: [id], onDelete: Cascade)
+  threadReplies GroupMessage[]         @relation("GroupMessageThread")
 
   @@index([groupId, createdAt])
   @@index([groupId, attachFlags, createdAt])
@@ -6119,27 +6121,27 @@ enum CommunityRole {
 }
 
 model Community {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String   @db.VarChar(60)
-  description String?  @db.VarChar(500)
-  color       String?  @db.VarChar(16) // accent color for the header
-  icon        String?  @db.VarChar(8) // emoji
-  isPrivate   Boolean  @default(false)
-  memberCount Int      @default(1)
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  name              String   @db.VarChar(60)
+  description       String?  @db.VarChar(500)
+  color             String?  @db.VarChar(16) // accent color for the header
+  icon              String?  @db.VarChar(8) // emoji
+  isPrivate         Boolean  @default(false)
+  memberCount       Int      @default(1)
   // Denormalized count of non-deleted posts, maintained on post create/delete so
   // the community page never runs COUNT(*) over rmheet. Backfilled in migration.
-  postCount   Int      @default(0)
+  postCount         Int      @default(0)
   // S2: posting requirement. level = none | email | account_age | member_age;
   // value = days (account_age) or minutes (member_age).
-  verificationLevel String @default("none") @db.VarChar(16)
-  verificationValue Int    @default(0)
+  verificationLevel String   @default("none") @db.VarChar(16)
+  verificationValue Int      @default(0)
   // N1: every post in the community must carry a flair.
-  flairRequired     Boolean @default(false)
+  flairRequired     Boolean  @default(false)
   // N2: ⭐ reactions needed for the hall of fame.
-  starThreshold     Int     @default(5)
-  createdById String
-  createdAt   DateTime @default(now())
+  starThreshold     Int      @default(5)
+  createdById       String
+  createdAt         DateTime @default(now())
 
   flairsP06            CommunityFlair[]
   starPostsP06         CommunityStarPost[]
@@ -6149,11 +6151,13 @@ model Community {
   challengesP06        CommunityChallenge[]
   censusesP06          CommunityCensus[]
   contributorScoresP06 CommunityContributorScore[]
-  sistersOutP06        CommunitySister[] @relation("CommunitySisterFrom")
-  sistersInP06         CommunitySister[] @relation("CommunitySisterTo")
+  sistersOutP06        CommunitySister[]             @relation("CommunitySisterFrom")
+  sistersInP06         CommunitySister[]             @relation("CommunitySisterTo")
 
   createdBy      User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
   members        CommunityMember[]
+  invites        CommunityInvite[]
+  joinRequests   CommunityJoinRequest[]
   posts          RMHark[]
   announcements  CommunityAnnouncement[]
   spaces         Space[]
@@ -6162,6 +6166,56 @@ model Community {
 
   @@index([memberCount(sort: Desc)])
   @@map("community")
+}
+
+// Invite links for a private community. A holder of a valid code may join
+// without approval. `code` is 128+ random bits (crypto.randomBytes, base64url);
+// `uses` is incremented by a single conditional UPDATE so `maxUses` cannot be
+// overshot by concurrent accepts. New high-volume-style table, so a time-sortable
+// BigInt identity key (lib/CLAUDE.md new-table policy).
+model CommunityInvite {
+  id          BigInt    @id @default(autoincrement())
+  communityId String
+  createdById String
+  code        String    @unique @db.VarChar(64)
+  maxUses     Int?
+  uses        Int       @default(0)
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdBy User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([communityId])
+  @@map("community_invite")
+}
+
+enum CommunityJoinRequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+// A request to join a private community, decided by its owner or a moderator.
+// One row per (community, user): a re-request after a denial resets the row to
+// PENDING once the cooldown has passed (see lib/communities/join-requests.server.ts).
+model CommunityJoinRequest {
+  id          BigInt                     @id @default(autoincrement())
+  communityId String
+  userId      String
+  message     String?                    @db.VarChar(280)
+  status      CommunityJoinRequestStatus @default(PENDING)
+  decidedById String?
+  decidedAt   DateTime?
+  createdAt   DateTime                   @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([communityId, status, createdAt(sort: Desc)])
+  @@map("community_join_request")
 }
 
 // Mod/admin announcements pinned to the top of a community.
@@ -6181,15 +6235,15 @@ model CommunityAnnouncement {
 }
 
 model CommunityMember {
-  id          String        @id @default(cuid())
-  communityId String
-  userId      String
-  role        CommunityRole @default(MEMBER)
-  joinedAt    DateTime      @default(now())
+  id               String        @id @default(cuid())
+  communityId      String
+  userId           String
+  role             CommunityRole @default(MEMBER)
+  joinedAt         DateTime      @default(now())
   // N3: flairs this member follows (feed priority) and cosmetic role labels
   // granted by onboarding answers. Labels never carry permissions.
-  followedFlairIds String[] @default([])
-  roleTags         String[] @default([])
+  followedFlairIds String[]      @default([])
+  roleTags         String[]      @default([])
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -7315,26 +7369,26 @@ enum EventVenueKind {
 }
 
 model CommunityEvent {
-  id          String         @id @default(cuid())
-  hostId      String
-  communityId String? // null = profile-hosted
-  title       String         @db.VarChar(120)
-  description String         @db.VarChar(2000)
-  startsAt    DateTime
-  endsAt      DateTime?
-  venueKind   EventVenueKind
-  venueRef    String?        @db.VarChar(191) // spaceId / tournamentId / game id / URL (SSRF-guarded)
-  capacity    Int?
-  canceledAt  DateTime?
-  createdAt   DateTime       @default(now())
+  id              String                @id @default(cuid())
+  hostId          String
+  communityId     String? // null = profile-hosted
+  title           String                @db.VarChar(120)
+  description     String                @db.VarChar(2000)
+  startsAt        DateTime
+  endsAt          DateTime?
+  venueKind       EventVenueKind
+  venueRef        String?               @db.VarChar(191) // spaceId / tournamentId / game id / URL (SSRF-guarded)
+  capacity        Int?
+  canceledAt      DateTime?
+  createdAt       DateTime              @default(now())
   /// P09 K4 — compact repeat rule ('W' weekly, 'M' monthly on the same nth weekday). Null = one-off.
-  recurrence      String?   @db.VarChar(4)
+  recurrence      String?               @db.VarChar(4)
   /// P09 K4 — last day a repeating event may occur. Null = until cancelled.
   recurUntil      DateTime?
   /// P09 K4 — IANA timezone the repeat keeps its wall-clock time in (so a 8pm event stays 8pm across DST).
-  recurTz         String?   @db.VarChar(64)
+  recurTz         String?               @db.VarChar(64)
   /// P09 K4 — optional host rotation (user ids, in order). Occurrence n is hosted by [n % length].
-  rotatingHostIds String[]  @default([])
+  rotatingHostIds String[]              @default([])
   occurrenceRsvps EventOccurrenceRsvp[]
 
   host      User        @relation("EventHost", fields: [hostId], references: [id], onDelete: Cascade)
@@ -7556,12 +7610,12 @@ model ContentAward {
 // Wishlists (§8): what a user wants — shop items, market cosmetics, or a
 // creator's future builds. Powers price/publish alerts and gifting.
 model WishlistEntry {
-  id          String   @id @default(cuid())
-  userId      String
-  entityType  String   @db.VarChar(24) // 'shop_item' | 'market_cosmetic' | 'creator_builds'
-  entityId    String // catalog key | itemId | creatorId
-  targetPrice Int? // coins; market alerts only
-  createdAt   DateTime @default(now())
+  id            String    @id @default(cuid())
+  userId        String
+  entityType    String    @db.VarChar(24) // 'shop_item' | 'market_cosmetic' | 'creator_builds'
+  entityId      String // catalog key | itemId | creatorId
+  targetPrice   Int? // coins; market alerts only
+  createdAt     DateTime  @default(now())
   // P10 (C8): price-drop / daily-shop alert state, written only by the daily alert job.
   lastSeenPrice Int?
   lastAlertKey  String?   @db.VarChar(40)
@@ -10123,21 +10177,21 @@ model ScheduledGift {
 /// off `user_profile` so the hottest table on the site is not widened and so a
 /// member who never touches these features costs nothing.
 model ProfilePlus {
-  userId String @id
+  userId           String    @id
   /// "she/her", "they/them" - free text, validated to letters and separators.
-  pronouns String? @db.VarChar(40)
+  pronouns         String?   @db.VarChar(40)
   /// Opt-in IANA zone ("America/New_York"). Null = the member does not share it.
-  timezone String? @db.VarChar(64)
+  timezone         String?   @db.VarChar(64)
   /// The /now block: plain text, links allowed, at most 500 characters.
-  nowText      String?   @db.VarChar(500)
-  nowUpdatedAt DateTime?
+  nowText          String?   @db.VarChar(500)
+  nowUpdatedAt     DateTime?
   /// Object-storage key of the <=5 s name-pronunciation clip, and its length.
-  pronunciationKey String? @db.VarChar(200)
+  pronunciationKey String?   @db.VarChar(200)
   pronunciationMs  Int?
   /// Opt-in retro hit counter. `visitCount` only ever moves through
   /// `recordProfileVisit`, which dedupes per visitor per day.
-  counterEnabled Boolean @default(false)
-  visitCount     Int     @default(0)
+  counterEnabled   Boolean   @default(false)
+  visitCount       Int       @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -10381,7 +10435,7 @@ model CommunityOnboardingQuestion {
   options     Json
   createdAt   DateTime @default(now())
 
-  community Community                  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  community Community                   @relation(fields: [communityId], references: [id], onDelete: Cascade)
   answers   CommunityOnboardingAnswer[]
 
   @@index([communityId, position])
@@ -10431,20 +10485,20 @@ model CommunityAutomodRule {
 /// (a held comment does not exist until approved); `snapshot` is a short text
 /// preview for the queue.
 model CommunityModItem {
-  id          String    @id @default(cuid())
-  communityId String
-  entityType  String    @db.VarChar(8)
-  entityId    String?   @db.VarChar(64)
-  postId      String?   @db.VarChar(64)
-  authorId    String
-  action      String    @db.VarChar(8)
-  ruleName    String    @db.VarChar(60)
-  snapshot    String    @db.VarChar(300)
-  payload     Json?
-  status      String    @default("PENDING") @db.VarChar(10)
+  id           String    @id @default(cuid())
+  communityId  String
+  entityType   String    @db.VarChar(8)
+  entityId     String?   @db.VarChar(64)
+  postId       String?   @db.VarChar(64)
+  authorId     String
+  action       String    @db.VarChar(8)
+  ruleName     String    @db.VarChar(60)
+  snapshot     String    @db.VarChar(300)
+  payload      Json?
+  status       String    @default("PENDING") @db.VarChar(10)
   resolvedById String?
   resolvedAt   DateTime?
-  createdAt   DateTime  @default(now())
+  createdAt    DateTime  @default(now())
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -10485,9 +10539,9 @@ model CommunityChallengeEntry {
   voteCount   Int      @default(0)
   createdAt   DateTime @default(now())
 
-  challenge CommunityChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  post      RMHark             @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge CommunityChallenge       @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  post      RMHark                   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   votes     CommunityChallengeVote[]
 
   @@unique([challengeId, userId])
@@ -10559,12 +10613,12 @@ model CommunityCensusTally {
 
 /// N7 — per-community helpfulness score, rebuilt daily by a worker.
 model CommunityContributorScore {
-  communityId    String
-  userId         String
-  starPosts      Int      @default(0)
-  challengeWins  Int      @default(0)
-  score          Int      @default(0)
-  updatedAt      DateTime @default(now()) @updatedAt
+  communityId   String
+  userId        String
+  starPosts     Int      @default(0)
+  challengeWins Int      @default(0)
+  score         Int      @default(0)
+  updatedAt     DateTime @default(now()) @updatedAt
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -10618,7 +10672,7 @@ model AvailabilityPoll {
   lockedEventId  String?   @db.VarChar(40)
   createdAt      DateTime  @default(now())
 
-  creator   User                     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator   User                       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   responses AvailabilityPollResponse[]
   invitees  AvailabilityPollInvitee[]
 
@@ -11563,7 +11617,7 @@ model AchievementTip {
   votes         Int      @default(0)
   createdAt     DateTime @default(now())
 
-  user User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   vote AchievementTipVote[]
 
   @@index([achievementId, votes(sort: Desc)])
@@ -11850,13 +11904,13 @@ model ClientErrorGroup {
 
 // O5: a flag/experiment. testPct = share of members in the "test" arm (sticky hash).
 model Experiment {
-  id          String    @id @default(cuid())
-  key         String    @unique @db.VarChar(64)
-  name        String    @db.VarChar(120)
-  status      String    @default("DRAFT") @db.VarChar(10)
-  testPct     Int       @default(50)
-  createdAt   DateTime  @default(now())
-  startedAt   DateTime?
+  id        String    @id @default(cuid())
+  key       String    @unique @db.VarChar(64)
+  name      String    @db.VarChar(120)
+  status    String    @default("DRAFT") @db.VarChar(10)
+  testPct   Int       @default(50)
+  createdAt DateTime  @default(now())
+  startedAt DateTime?
 
   exposures ExperimentExposure[]
 
@@ -12283,8 +12337,8 @@ model StudioChallengeEntry {
   voteCount   Int      @default(0)
   createdAt   DateTime @default(now())
 
-  challenge StudioChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge StudioChallenge       @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   votes     StudioChallengeVote[]
 
   @@unique([challengeId, userId])
@@ -12300,8 +12354,8 @@ model StudioChallengeVote {
   entryId     String
   createdAt   DateTime @default(now())
 
-  challenge StudioChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  voter     User            @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  challenge StudioChallenge      @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  voter     User                 @relation(fields: [voterId], references: [id], onDelete: Cascade)
   entry     StudioChallengeEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@id([challengeId, voterId])
@@ -12517,17 +12571,17 @@ model GabrielsHornTableRead {
 // R12: one row per delivery route (pickup chunk -> drop-off chunk, world metres).
 // The row carries the standing record; no coins are paid for holding it.
 model VelumContract {
-  id           String   @id @default(cuid())
-  pickupX      Int
-  pickupZ      Int
-  dropX        Int
-  dropZ        Int
-  creatorId    String
-  holderId     String?
-  bestCentis   Int
-  runs         Int      @default(1)
-  createdAt    DateTime @default(now())
-  recordSetAt  DateTime @default(now())
+  id          String   @id @default(cuid())
+  pickupX     Int
+  pickupZ     Int
+  dropX       Int
+  dropZ       Int
+  creatorId   String
+  holderId    String?
+  bestCentis  Int
+  runs        Int      @default(1)
+  createdAt   DateTime @default(now())
+  recordSetAt DateTime @default(now())
 
   creator User  @relation("VelumContractMaker", fields: [creatorId], references: [id], onDelete: Cascade)
   holder  User? @relation("VelumContractHolder", fields: [holderId], references: [id], onDelete: SetNull)
@@ -12610,18 +12664,18 @@ model MarchSignalVote {
 // replay, so the clip is the best combo's trick chain + score (bounded by the
 // member's recorded high score). `week` is the UTC Monday, YYYY-MM-DD.
 model NightrailTrick {
-  id        String   @id @default(cuid())
-  week      String   @db.VarChar(10)
-  authorId  String
-  level     Int
-  score     Int
+  id         String   @id @default(cuid())
+  week       String   @db.VarChar(10)
+  authorId   String
+  level      Int
+  score      Int
   multiplier Float
-  chain     String[]
-  votes     Int      @default(0)
-  createdAt DateTime @default(now())
+  chain      String[]
+  votes      Int      @default(0)
+  createdAt  DateTime @default(now())
 
-  author     User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  voteRows   NightrailTrickVote[]
+  author   User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  voteRows NightrailTrickVote[]
 
   @@unique([week, authorId])
   @@index([week, votes(sort: Desc)])
