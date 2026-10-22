@@ -76,6 +76,11 @@ type Target struct {
 	// seconds is not "operational" — reporting that as green is how a status
 	// page ends up disagreeing with every user looking at it.
 	DegradedAfter time.Duration
+	// FreshConn makes every probe open a new connection (DNS, TCP, TLS) instead
+	// of reusing an idle one. Set it for targets whose point is the path a
+	// visitor takes from scratch — the public origin and the certificate it
+	// presents — which a kept-alive connection would silently stop exercising.
+	FreshConn bool
 	// Probe, when set, replaces the HTTP GET with a custom health check.
 	Probe func(ctx context.Context) ProbeResult
 }
@@ -283,6 +288,13 @@ type Prober struct {
 	lastCycleAt   time.Time
 }
 
+// Cycles is the number of completed probe cycles.
+func (p *Prober) Cycles() int64 {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.cycles
+}
+
 // NewProber constructs a Prober for the given targets. Timeout defaults to 4s.
 func NewProber(targets []Target) *Prober {
 	p := &Prober{
@@ -322,6 +334,14 @@ const epochSentinel = "1970-01-01T00:00:00.000Z"
 // isoMillis is the timestamp layout every checkedAt uses.
 const isoMillis = "2006-01-02T15:04:05.000Z07:00"
 
+// freshClient never reuses a connection: every request resolves, dials and
+// handshakes again. Used for Target.FreshConn.
+func freshClient(timeout time.Duration) *http.Client {
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.DisableKeepAlives = true
+	return &http.Client{Timeout: timeout, Transport: tr}
+}
+
 // ProbeOnce fires a parallel HTTP GET for every target and records results.
 func (p *Prober) ProbeOnce(ctx context.Context) {
 	cycleStart := time.Now()
@@ -330,6 +350,7 @@ func (p *Prober) ProbeOnce(ctx context.Context) {
 	extras := make([]ProbeDetail, len(p.targets))
 
 	client := &http.Client{Timeout: p.timeout}
+	fresh := freshClient(p.timeout)
 
 	for i, t := range p.targets {
 		wg.Add(1)
@@ -338,7 +359,11 @@ func (p *Prober) ProbeOnce(ctx context.Context) {
 			if tgt.Probe != nil {
 				results[idx], extras[idx] = customProbe(ctx, tgt)
 			} else {
-				results[idx], extras[idx] = probe(ctx, client, tgt)
+				c := client
+				if tgt.FreshConn {
+					c = fresh
+				}
+				results[idx], extras[idx] = probe(ctx, c, tgt)
 			}
 		}(i, t)
 	}
@@ -614,9 +639,9 @@ func probe(ctx context.Context, client *http.Client, t Target) (ServiceStatus, P
 	if t.expects() {
 		body, _ = io.ReadAll(io.LimitReader(resp.Body, maxProbeBodyBytes))
 	}
-	resp.Body.Close()
 	phases.Total = float64(time.Since(start).Microseconds()) / 1000
 	pd.Phases = phases
+	drainAndClose(resp.Body, cancel)
 	pd.TotalMs = &latency
 
 	code := resp.StatusCode
@@ -680,6 +705,25 @@ func probe(ctx context.Context, client *http.Client, t Target) (ServiceStatus, P
 
 	return ss, pd
 }
+
+// drainAndClose reads what is left of the body (bounded in bytes and in time)
+// before closing it. net/http only returns a connection to the idle pool when
+// the body was read to EOF; closing it unread discards the connection, which
+// made every probe cycle open a fresh TCP (+TLS) connection per target.
+// Reaching either bound closes it unread, i.e. exactly the previous behaviour.
+// The timings recorded above are taken before the drain, so the reported
+// latency and phases are unchanged.
+func drainAndClose(body io.ReadCloser, cancel context.CancelFunc) {
+	t := time.AfterFunc(maxDrainTime, cancel)
+	_, _ = io.Copy(io.Discard, io.LimitReader(body, maxDrainBytes))
+	t.Stop()
+	body.Close()
+}
+
+const (
+	maxDrainBytes = 1 << 20
+	maxDrainTime  = 250 * time.Millisecond
+)
 
 // maxProbeBodyBytes caps how much of a response body a content-asserting probe
 // reads. Markers live in the head of a document, so 64 KiB is generous.

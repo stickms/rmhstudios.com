@@ -11,6 +11,13 @@ export const Route = createFileRoute('/api/communities/$slug/members')({
         const community = await getCommunityBySlug(params.slug);
         if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
 
+        // Members-only: a private community's roster is invisible to non-members
+        // (404, as for a missing community).
+        const viewerRole = session ? await getRole(community.id, session.user.id) : null;
+        if (community.isPrivate && !viewerRole) {
+          return Response.json({ error: 'Not found' }, { status: 404 });
+        }
+
         const members = await prisma.communityMember.findMany({
           where: { communityId: community.id },
           orderBy: [{ role: 'desc' }, { joinedAt: 'asc' }],
@@ -22,7 +29,6 @@ export const Route = createFileRoute('/api/communities/$slug/members')({
           },
         });
 
-        const viewerRole = session ? await getRole(community.id, session.user.id) : null;
         return Response.json({
           viewerRole,
           createdById: community.createdById,

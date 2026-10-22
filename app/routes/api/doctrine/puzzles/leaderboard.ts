@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { prisma } from '@/lib/prisma.server';
 import { apiCache } from '@/lib/cache';
 
@@ -7,7 +8,14 @@ export const Route = createFileRoute('/api/doctrine/puzzles/leaderboard')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-lb' } },
+        {
+          auth: 'none',
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-lb' },
+          // (mode, date, limit) are all query params, hence part of the key.
+          // Opt out of the 30 s micro-cache: puzzles/submit invalidates the board in apiCache.
+          microCache: false,
+          cache: CACHE_POLICY.leaderboard,
+        },
         async ({ request }) => {
           try {
             const url = new URL(request.url);

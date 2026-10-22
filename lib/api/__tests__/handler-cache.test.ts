@@ -23,6 +23,7 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 import { defineHandler, buildCacheHeaders, type CacheSpec } from '@/lib/api/handler.server';
+import { clearResponseCache } from '@/lib/api/response-cache.server';
 
 const SIGNED_IN = { user: { id: 'u1', name: 'Ada', isAdmin: false } };
 
@@ -47,6 +48,9 @@ const call = (
 ) => handler({ params: {}, request });
 
 beforeEach(() => {
+  // The per-worker response micro-cache would otherwise serve one test's body to the
+  // next test that hits the same public URL.
+  clearResponseCache();
   getSession.mockReset();
   getSession.mockResolvedValue(SIGNED_IN);
 });
@@ -274,6 +278,7 @@ describe('weak etag and 304', () => {
     expect(a).toBe(b);
 
     rows = 2;
+    clearResponseCache(); // the micro-cache would (correctly) still serve the 1-row body
     expect((await call(h)).headers.get('etag')).not.toBe(a);
   });
 

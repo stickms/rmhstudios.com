@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import type { FeedItem } from '@/lib/feed-types';
+import { getOwnRequestState, type OwnRequestState } from '@/lib/communities/join-requests.server';
 import { loadFlairsForPosts } from '@/lib/communities/flairs.server';
 
 export interface CommunityAnnouncement {
@@ -26,6 +27,14 @@ export interface CommunityDetail {
   joined: boolean;
   role: string | null;
   announcements: CommunityAnnouncement[];
+  /**
+   * A private community the viewer is not a member of: only metadata is present
+   * (`announcements` is empty, `postCount` is 0) and the page renders the locked
+   * preview with a "Request to join" action. Everything else stays members-only.
+   */
+  locked: boolean;
+  /** The viewer's own join request, for the locked preview's pending state. */
+  requestState: OwnRequestState;
   /** P06: posting settings (columns on `community`, so no extra query). */
   flairRequired: boolean;
   starThreshold: number;
@@ -72,6 +81,35 @@ export async function getCommunity(
     });
     role = mem?.role ?? null;
   }
+  // A private community is listed, so its existence is not secret; its content
+  // is. A non-member gets the metadata only - no announcements, no post count.
+  if (community.isPrivate && !role) {
+    // Explicit allow-list: only what the locked card/page renders (plus ids the
+    // invite page needs). Owner id, verification, starboard and flair settings
+    // are members-only, so they get neutral placeholders, never the real values.
+    return {
+      id: community.id,
+      slug: community.slug,
+      name: community.name,
+      description: community.description,
+      icon: community.icon,
+      color: community.color,
+      isPrivate: true,
+      memberCount: community.memberCount,
+      createdById: '',
+      createdAt: '',
+      postCount: 0,
+      joined: false,
+      role: null,
+      announcements: [],
+      locked: true,
+      requestState: viewerId ? await getOwnRequestState(community.id, viewerId) : null,
+      flairRequired: false,
+      starThreshold: 0,
+      verificationLevel: 'none',
+      verificationValue: 0,
+    };
+  }
 
   // Post count is the denormalized `community.postCount` column (maintained on
   // post create/delete), so this no longer runs COUNT(*) over rmheet per read.
@@ -93,6 +131,8 @@ export async function getCommunity(
     joined: !!role,
     role,
     announcements: announcements.map((a) => ({ ...a, createdAt: a.createdAt.toISOString() })),
+    locked: false,
+    requestState: null,
   };
 }
 
@@ -112,27 +152,35 @@ export async function getCommunityFeed(
   viewerId: string | null,
   opts: { cursor?: string | null; limit?: number; flairId?: string | null } = {},
 ): Promise<CommunityFeedResult | null> {
-  const community = await prisma.community.findUnique({ where: { slug }, select: { id: true } });
+  const community = await prisma.community.findUnique({
+    where: { slug },
+    select: { id: true, isPrivate: true },
+  });
   if (!community) return null;
 
   const limit = Math.min(opts.limit ?? 20, 50);
-  // The viewer's membership rides the same round trip as the hidden-author
-  // lookup; it only supplies the followed flairs (N3) for the first page.
-  const [hidden, member] = await Promise.all([
-    getHiddenAuthorIds(viewerId),
-    viewerId && !opts.cursor && !opts.flairId
+  // The viewer's membership rides the same round trip as the visibility lookup; it only supplies the followed flairs (N3) for the first page.
+  const [visible, member] = await Promise.all([
+    // The post's OWN audience still applies inside a community: a FOLLOWERS /
+    // PRIVATE / CIRCLE post is not shown to every member just because of where it
+    // was made. One definition of visibility, shared with canViewPost.
+    viewerVisiblePostWhere(viewerId, { hideMuted: true }),
+    // Needed on every page of a private community (the membership gate), and
+    // for the followed flairs on the first page of any.
+    viewerId && (community.isPrivate || (!opts.cursor && !opts.flairId))
       ? prisma.communityMember.findUnique({
           where: { communityId_userId: { communityId: community.id, userId: viewerId } },
           select: { followedFlairIds: true },
         })
       : Promise.resolve(null),
   ]);
+  // Members-only: indistinguishable from a missing community for a non-member.
+  if (community.isPrivate && !member) return null;
 
   const rows = await prisma.rMHark.findMany({
     where: {
       communityId: community.id,
-      deletedAt: null,
-      ...(hidden.length ? { userId: { notIn: hidden } } : {}),
+      ...visible,
       ...(opts.flairId ? { communityFlair: { flairId: opts.flairId } } : {}),
     },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],

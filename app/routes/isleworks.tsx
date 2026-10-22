@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { ClientOnly, createFileRoute } from '@tanstack/react-router';
 import { GameBackLink } from '@/components/shared/GameBackLink';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
@@ -21,9 +21,14 @@ function IsleworksPage() {
         <GameErrorBoundary gameName="Isleworks">
           {/* The fallback wears the game's own sky so the chunk arriving reads as
               the island appearing rather than as a different app flashing. */}
-          <Suspense fallback={<GameLoadingFallback background="#8ecbe8" foreground="#12314a" />}>
-            <IsleworksGame />
-          </Suspense>
+          {/* <Canvas> cannot render on the server (fiber is externalized and sees a
+              second React), so SSR emits the fallback and the island mounts after
+              hydration. */}
+          <ClientOnly fallback={<GameLoadingFallback background="#8ecbe8" foreground="#12314a" />}>
+            <Suspense fallback={<GameLoadingFallback background="#8ecbe8" foreground="#12314a" />}>
+              <IsleworksGame />
+            </Suspense>
+          </ClientOnly>
         </GameErrorBoundary>
       </div>
     </main>

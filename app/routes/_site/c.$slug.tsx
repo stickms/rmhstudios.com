@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { CommunityColumn } from '@/components/feed/CommunityColumn';
+import { LockedCommunityPreview } from '@/components/communities/LockedCommunity';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import {
@@ -24,10 +25,9 @@ const fetchCommunityPage = createServerFn({ method: 'GET' })
     }): Promise<{ community: CommunityDetail | null; feed: CommunityFeedResult | null }> => {
       const session = await getRequestSession();
       const viewerId = session?.user?.id ?? null;
-      const [community, feed] = await Promise.all([
-        getCommunity(slug, viewerId),
-        getCommunityFeed(slug, viewerId),
-      ]);
+      const community = await getCommunity(slug, viewerId);
+      // A locked (private, non-member) viewer gets metadata only: no feed query.
+      const feed = community?.locked ? null : await getCommunityFeed(slug, viewerId);
       return { community, feed };
     },
   );
@@ -39,9 +39,9 @@ export const Route = createFileRoute('/_site/c/$slug')({
    * and no canonical. Communities are in the sitemap now; they need the name
    * people actually call them.
    *
-   * A private community is listed nowhere and marked `noindex` here: its
-   * existence is not secret (the slug is guessable) but its description and
-   * member count are members-only, and a search snippet is not a membership.
+   * A private community is listed as a locked card and its page is a
+   * metadata-only preview for non-members; it is `noindex` (and out of the
+   * sitemap) so a search snippet never stands in for a membership.
    */
   // Annotated for the inference quirk documented on `/games/$gameId`.
   head: ({
@@ -89,6 +89,17 @@ function CommunityPage() {
     community: CommunityDetail | null;
     feed: CommunityFeedResult | null;
   };
+  if (community?.locked) {
+    // A private community the viewer is not in: metadata only (the loader never
+    // fetched the feed), with the way in. `head()` already marks it noindex.
+    return (
+      <PageFrame>
+        <div className="px-4 pt-6 pb-12">
+          <LockedCommunityPreview community={community} requestState={community.requestState} />
+        </div>
+      </PageFrame>
+    );
+  }
   return (
     <>
       <PageFrame>

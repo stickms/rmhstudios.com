@@ -14,7 +14,8 @@ import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
 import { config } from './config';
 import { logger } from './logger';
-import { disconnectPrisma } from './prisma-client';
+import { disconnectPrisma, getPrismaClient } from './prisma-client';
+import { warmPrismaClient } from '../shared/prisma-client';
 import { cleanupRateLimits } from './rate-limit';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
@@ -623,6 +624,7 @@ const bootedAt = new Date();
 
 httpServer.listen(config.PORT, () => {
   logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
+  if (config.DATABASE_URL) void warmPrismaClient(getPrismaClient(), logger);
   initializeBlackjackPublicTable(io);
   initializeHoldem(io);
   initializeBaccarat(io);

@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/rmhstudios/rmh-go/pkg/config"
 	"github.com/rmhstudios/rmh-go/pkg/worker"
 )
@@ -50,6 +51,15 @@ const findAtRisk = `
 	      AND n."createdAt" > now() - make_interval(hours => $4)
 	  )
 	LIMIT $5`
+
+// insertReminders is the batched form of insertReminder: one statement for the
+// whole sweep (<= batchLimit rows) instead of one round trip per user. The
+// enum needs an explicit cast because INSERT ... SELECT does not coerce an
+// untyped literal to NotificationType the way VALUES does.
+const insertReminders = `
+	INSERT INTO "notification" (id, "userId", type, "entityType", "entityId", preview, link, read, "createdAt")
+	SELECT t.id, t.uid, 'SYSTEM'::"NotificationType", 'streak_reminder', t.eid, t.preview, '/progress', false, now()
+	FROM unnest($1::text[], $2::text[], $3::text[], $4::text[]) AS t(id, uid, eid, preview)`
 
 const insertReminder = `
 	INSERT INTO "notification" (id, "userId", type, "entityType", "entityId", preview, link, read, "createdAt")
@@ -121,15 +131,11 @@ func sweep(ctx context.Context, d worker.Deps) {
 		return
 	}
 
-	var reminders []reminder
-	for _, t := range targets {
-		preview := fmt.Sprintf("Your %d-day streak is about to end — check in to keep it alive!", t.current)
-		if _, err := d.DB.Pool.Exec(ctx, insertReminder, newCUID(), t.userID, strconv.Itoa(t.current), preview); err != nil {
-			d.Logger.Error("streak-saver: insert reminder failed", "userId", t.userID, "error", err)
-			continue
-		}
-		reminders = append(reminders, reminder{UserID: t.userID, Current: t.current})
+	tgts := make([]reminder, len(targets))
+	for i, t := range targets {
+		tgts[i] = reminder{UserID: t.userID, Current: t.current}
 	}
+	reminders := insertAll(ctx, d.DB.Pool, d.Logger, tgts)
 	if len(reminders) > 0 {
 		d.Logger.Info("streak-saver: reminders sent", "count", len(reminders), "candidates", len(targets))
 		// Mirror the in-app reminders to web push (best-effort, no-op without
@@ -155,4 +161,46 @@ func randSuffix() uint32 {
 		return uint32(t>>32) ^ uint32(t)
 	}
 	return binary.BigEndian.Uint32(b[:])
+}
+
+// execer is the slice of pgxpool.Pool the inserts need.
+type execer interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
+func reminderPreview(current int) string {
+	return fmt.Sprintf("Your %d-day streak is about to end — check in to keep it alive!", current)
+}
+
+// insertAll writes the in-app reminders and returns the ones that landed. It
+// tries ONE batched statement; if that fails (e.g. a user deleted since the
+// SELECT breaks a foreign key) it falls back to the original per-user inserts so
+// one bad row still costs only itself, exactly as before.
+func insertAll(ctx context.Context, db execer, logger interface {
+	Error(msg string, args ...any)
+}, targets []reminder) []reminder {
+	if len(targets) == 0 {
+		return nil
+	}
+	ids := make([]string, len(targets))
+	uids := make([]string, len(targets))
+	eids := make([]string, len(targets))
+	previews := make([]string, len(targets))
+	for i, t := range targets {
+		ids[i], uids[i], eids[i], previews[i] = newCUID(), t.UserID, strconv.Itoa(t.Current), reminderPreview(t.Current)
+	}
+	if _, err := db.Exec(ctx, insertReminders, ids, uids, eids, previews); err == nil {
+		return targets
+	} else {
+		logger.Error("streak-saver: batch insert failed; retrying per user", "error", err)
+	}
+	var out []reminder
+	for i, t := range targets {
+		if _, err := db.Exec(ctx, insertReminder, ids[i], t.UserID, eids[i], previews[i]); err != nil {
+			logger.Error("streak-saver: insert reminder failed", "userId", t.UserID, "error", err)
+			continue
+		}
+		out = append(out, t)
+	}
+	return out
 }

@@ -46,10 +46,21 @@
  *            hit reports as the ~0 ms it is and a miss carries the loader.
  *   `db`     `lib/prisma.server.ts` — the `$allOperations` hook of
  *            `queryBudgetExtension`, which already wraps every query.
- *   `loader` a route loader wrapper; there is no single choke point today.
- *   `render` `app/server.ts` (does not exist yet — TanStack Start falls back to
- *            its default entry) wrapping `defaultStreamHandler`, which runs
- *            after the router has loaded and is therefore render-only.
+ *   `loader` NOT WIRED. Verified 2026-10-21: there is no single choke point.
+ *            Loaders are declared per route (`createFileRoute({ loader })`, 76 route
+ *            files today) and the router invokes them internally; wrapping them
+ *            means editing every route file (WS1-owned) or patching the router's
+ *            `createRouter` options (no hook for that was found in TanStack Start)
+ *            `sess` + `cache` + `db` already attribute most loader time.
+ *   `render` NOT WIRED. `app/server.ts` does not exist (TanStack Start uses its
+ *            default entry), so there is no place to wrap `defaultStreamHandler`
+ *            without adding a server entry — a behaviour-bearing file the WS0
+ *            charter does not cover. Streaming also makes "render" ambiguous:
+ *            the response hook fires at headers, before the shell has finished.
+ *
+ * Several of these overlap by design: `cache` on a miss contains the loader and
+ * therefore `db`; `db` is summed over concurrent queries, so it can exceed
+ * `total`. Read them as "time spent behind X", not as slices of `total`.
  *
  * An unmarked phase is simply absent from the header — never zero — so partial
  * adoption reads honestly in DevTools and in RUM.

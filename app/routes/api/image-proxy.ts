@@ -1,13 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import {
-  optimizeImage,
-  parseFormat,
-  negotiateFormat,
-  getCachedVariant,
-  setCachedVariant,
-  variantCacheKey,
-} from '@/lib/image-optimize';
+import { parseFormat, negotiateFormat, variantCacheKey } from '@/lib/image-optimize';
+import { snapDimension, snapQuality } from '@/lib/images/variant-params';
+import { busyResponse, CpuGateFullError, getOrEncodeVariant } from '@/lib/images/variants.server';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 import {
   isDiscordAvatarUrl,
@@ -25,6 +20,10 @@ const MAX_UPSTREAM_BYTES = 10 * 1024 * 1024; // 10 MB
 // on-demand resize routes, so the byte budget is one number for the container
 // rather than one per endpoint; per-process, so it complements — doesn't
 // replace — the recommended Cloudflare cache rule.
+//
+// Misses go through `getOrEncodeVariant` (lib/images/variants.server.ts):
+// concurrent requests for one key share one upstream fetch + encode, and the
+// encode itself is admitted through the CPU gate.
 
 export const Route = createFileRoute('/api/image-proxy')({
   server: {
@@ -46,71 +45,82 @@ export const Route = createFileRoute('/api/image-proxy')({
 
           // Resolve the transform params up front (they don't depend on the bytes) so
           // we can check the origin cache before doing any upstream fetch / transcode.
-          const width = wParam ? Math.min(parseInt(wParam, 10), 2000) : undefined;
-          const height = hParam ? Math.min(parseInt(hParam, 10), 2000) : undefined;
-          const quality = qParam ? Math.min(Math.max(parseInt(qParam, 10), 1), 100) : 80;
+          // Snapped to the shared ladder (lib/images/variant-params.ts): every
+          // distinct (w, h, q) is a separate upstream fetch + encode for one URL.
+          const width = snapDimension(wParam);
+          const height = snapDimension(hParam);
+          const quality = snapQuality(qParam);
           const format = parseFormat(fParam) ?? negotiateFormat(request.headers.get('accept'));
 
           const cacheKey = variantCacheKey('proxy', src, { width, height, quality, format });
-          const hit = getCachedVariant(cacheKey);
-          if (hit) {
-            return new Response(hit.buffer as unknown as BodyInit, {
-              status: 200,
-              headers: {
-                'Content-Type': hit.contentType,
-                'Cache-Control': 'public, max-age=2592000, stale-while-revalidate=2592000',
-                'Access-Control-Allow-Origin': '*',
-                Vary: 'Accept',
-                'X-Image-Proxy-Cache': 'HIT',
+
+          let variant;
+          try {
+            variant = await getOrEncodeVariant({
+              cacheKey,
+              width,
+              height,
+              quality,
+              format,
+              // Runs once per key however many requests are waiting on it, and
+              // outside the CPU gate: it is a network fetch.
+              load: async () => {
+                // Fetch the upstream image (SSRF-guarded: https only, blocks private IPs)
+                let upstream: Response;
+                try {
+                  upstream = await safeFetch(src, {
+                    headers: { 'User-Agent': 'RMHStudios-ImageProxy/1.0' },
+                    timeoutMs: 10_000,
+                  });
+                } catch (e) {
+                  if (e instanceof SsrfError) {
+                    return { fail: { status: 400, body: { error: 'Disallowed image URL' } } };
+                  }
+                  throw e;
+                }
+
+                if (!upstream.ok) {
+                  // A stale Discord avatar (the hash changed after the user updated it).
+                  // Lazily refresh it from Discord in the background — guarded + rate-limited.
+                  if (isDiscordAvatarUrl(src)) {
+                    void refreshDiscordAvatarFromBrokenUrl(src);
+                  }
+                  return {
+                    fail: { status: 502, body: { error: 'Failed to fetch upstream image' } },
+                  };
+                }
+
+                const contentType = upstream.headers.get('content-type') || '';
+                if (!contentType.startsWith('image/')) {
+                  return {
+                    fail: { status: 400, body: { error: 'URL does not point to an image' } },
+                  };
+                }
+
+                const arrayBuffer = await upstream.arrayBuffer();
+                if (arrayBuffer.byteLength > MAX_UPSTREAM_BYTES) {
+                  return { fail: { status: 413, body: { error: 'Image too large' } } };
+                }
+
+                return { bytes: Buffer.from(arrayBuffer) };
               },
             });
-          }
-
-          // Fetch the upstream image (SSRF-guarded: https only, blocks private IPs)
-          let upstream: Response;
-          try {
-            upstream = await safeFetch(src, {
-              headers: { 'User-Agent': 'RMHStudios-ImageProxy/1.0' },
-              timeoutMs: 10_000,
-            });
           } catch (e) {
-            if (e instanceof SsrfError) {
-              return Response.json({ error: 'Disallowed image URL' }, { status: 400 });
-            }
+            if (e instanceof CpuGateFullError) return busyResponse();
             throw e;
           }
 
-          if (!upstream.ok) {
-            // A stale Discord avatar (the hash changed after the user updated it).
-            // Lazily refresh it from Discord in the background — guarded + rate-limited.
-            if (isDiscordAvatarUrl(src)) {
-              void refreshDiscordAvatarFromBrokenUrl(src);
-            }
+          // `load` never returns null (a missing upstream is a `fail`), but the
+          // type allows it.
+          if (!variant) {
             return Response.json({ error: 'Failed to fetch upstream image' }, { status: 502 });
           }
+          if (!variant.ok) return Response.json(variant.body, { status: variant.status });
 
-          const contentType = upstream.headers.get('content-type') || '';
-          if (!contentType.startsWith('image/')) {
-            return Response.json({ error: 'URL does not point to an image' }, { status: 400 });
-          }
-
-          const arrayBuffer = await upstream.arrayBuffer();
-          if (arrayBuffer.byteLength > MAX_UPSTREAM_BYTES) {
-            return Response.json({ error: 'Image too large' }, { status: 413 });
-          }
-
-          const buffer = Buffer.from(arrayBuffer);
-
-          const result = await optimizeImage(buffer, { width, height, quality, format });
-
-          // Populate the origin cache so repeat requests for this (url,w,h,q,f) skip
-          // both the upstream fetch and the sharp transcode.
-          setCachedVariant(cacheKey, { buffer: result.buffer, contentType: result.contentType });
-
-          return new Response(result.buffer as unknown as BodyInit, {
+          return new Response(variant.image.buffer as unknown as BodyInit, {
             status: 200,
             headers: {
-              'Content-Type': result.contentType,
+              'Content-Type': variant.image.contentType,
               // Proxied images are keyed by the (url, w, h, q, f) tuple and the
               // upstreams we proxy (Discord/gstatic/cloudinary) carry the version in
               // the URL, so a changed image is a changed key — cache aggressively.
@@ -119,7 +129,7 @@ export const Route = createFileRoute('/api/image-proxy')({
               'Cache-Control': 'public, max-age=2592000, stale-while-revalidate=2592000',
               'Access-Control-Allow-Origin': '*',
               Vary: 'Accept',
-              'X-Image-Proxy-Cache': 'MISS',
+              'X-Image-Proxy-Cache': variant.hit ? 'HIT' : 'MISS',
             },
           });
         },

@@ -1,7 +1,7 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
-import { audienceWhere } from '@/lib/feed/audience.server';
 import type { FeedItem } from '@/lib/feed-types';
 
 export interface TagFeedResult {
@@ -36,30 +36,85 @@ export async function listTagFeed(
   const limit = Math.min(opts.limit ?? 20, 50);
 
   const hidden = await getHiddenAuthorIds(viewerId);
-  const followingIds = viewerId
-    ? (
-        await prisma.follow.findMany({
-          where: { followerId: viewerId },
-          select: { followingId: true },
-        })
-      ).map((f) => f.followingId)
-    : [];
 
-  // Read the normalized hashtag links (post_hashtag → hashtag) instead of
-  // scanning rmheet.content with ILIKE '%#tag%'. The join is exact, so no
-  // word-boundary post-filter is needed. Keyset paginated on rmheet.createdAt.
-  const rows = await prisma.rMHark.findMany({
-    where: {
-      deletedAt: null,
-      hashtags: { some: { hashtag: { tag } } },
-      ...(hidden.length ? { userId: { notIn: hidden } } : {}),
-      ...audienceWhere(viewerId, followingIds),
-    },
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    take: limit + 1,
-    ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-    include: rmharkIncludeLite(viewerId),
-  });
+  // Two steps, on purpose (WS8). Step 1 picks the page's ids as a keyset scan of
+  // the tag's own post_hashtag rows, newest first, via
+  // post_hashtag(hashtagId, createdAt DESC, rmheetId DESC) - it stops after
+  // limit+1 survivors instead of fetching and sorting every tagged post (4k for a
+  // busy tag; as one Prisma findMany the planner probed each by primary key and
+  // costed all the hydration LATERAL joins on top, which also tripped JIT).
+  // Step 2 hydrates exactly those ids.
+  //
+  // post_hashtag.createdAt is the post's createdAt by construction
+  // (linkPostHashtags, migration 20261022160000), so this ordering is the old
+  // `ORDER BY rmheet.createdAt DESC, rmheet.id DESC`.
+  //
+  // Every visibility predicate of the old `where` is kept in SQL form: not
+  // deleted, not a hidden author, the audience rule of audienceWhereExact()
+  // (PUBLIC / own / FOLLOWERS the viewer follows / SUPPORTERS of an author the
+  // viewer supports / CIRCLE of a circle the viewer is in), and
+  // communityVisibleWhere() (private community posts only for its members).
+  // The follow, membership and circle checks are correlated EXISTS probes on
+  // their unique indexes: exact for any follow count (no capped id list) and
+  // nothing bound as a parameter.
+  const audience = viewerId
+    ? Prisma.sql`(r.audience = 'PUBLIC'::"RMHarkAudience"
+        OR r."userId" = ${viewerId}
+        OR (r.audience = 'FOLLOWERS'::"RMHarkAudience" AND EXISTS (
+          SELECT 1 FROM follow f WHERE f."followerId" = ${viewerId} AND f."followingId" = r."userId"))
+        OR (r.audience = 'SUPPORTERS'::"RMHarkAudience" AND EXISTS (
+          SELECT 1 FROM creator_membership cm
+          WHERE cm."supporterId" = ${viewerId} AND cm."creatorId" = r."userId" AND cm."expiresAt" > now()))
+        OR (r.audience = 'CIRCLE'::"RMHarkAudience" AND EXISTS (
+          SELECT 1 FROM close_friend cf WHERE cf."memberId" = ${viewerId} AND cf."ownerId" = r."userId")))`
+    : Prisma.sql`r.audience = 'PUBLIC'::"RMHarkAudience"`;
+  const communityVisible = viewerId
+    ? Prisma.sql`(r."communityId" IS NULL OR NOT EXISTS (
+        SELECT 1 FROM community c WHERE c.id = r."communityId" AND c."isPrivate"
+          AND NOT EXISTS (SELECT 1 FROM community_member m WHERE m."communityId" = c.id AND m."userId" = ${viewerId})))`
+    : Prisma.sql`(r."communityId" IS NULL OR NOT EXISTS (
+        SELECT 1 FROM community c WHERE c.id = r."communityId" AND c."isPrivate"))`;
+  const hiddenClause = hidden.length
+    ? Prisma.sql`AND r."userId" <> ALL(${hidden}::text[])`
+    : Prisma.empty;
+  // The cursor resumes from the cursor post's own LINK row, the same
+  // (createdAt, rmheetId) the page was ordered by, so a link whose createdAt
+  // drifted from its post's (one re-linked by the previous image during a
+  // blue/green deploy, after the align migration ran) costs ordering at most and
+  // never skips posts. The post row is the fallback when the link is gone (the
+  // cursor post was unlinked between pages).
+  const cursorClause = cursor
+    ? Prisma.sql`AND (ph."createdAt", ph."rmheetId") < (
+        SELECT c."createdAt", c.id FROM (
+          SELECT ph2."createdAt", ph2."rmheetId" AS id, 0 AS pri FROM post_hashtag ph2
+          WHERE ph2."hashtagId" = (SELECT id FROM hashtag WHERE tag = ${tag}) AND ph2."rmheetId" = ${cursor}
+          UNION ALL
+          SELECT "createdAt", id, 1 FROM rmheet WHERE id = ${cursor}
+        ) c ORDER BY c.pri LIMIT 1)`
+    : Prisma.empty;
+
+  const idRows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT ph."rmheetId" AS id
+    FROM post_hashtag ph
+    JOIN rmheet r ON r.id = ph."rmheetId"
+    WHERE ph."hashtagId" = (SELECT id FROM hashtag WHERE tag = ${tag})
+      AND r."deletedAt" IS NULL
+      AND ${audience}
+      AND ${communityVisible}
+      ${hiddenClause}
+      ${cursorClause}
+    ORDER BY ph."createdAt" DESC, ph."rmheetId" DESC
+    LIMIT ${limit + 1}
+  `);
+  const ids = idRows.map((r) => r.id);
+  const hydrated = ids.length
+    ? await prisma.rMHark.findMany({
+        where: { id: { in: ids } },
+        include: rmharkIncludeLite(viewerId),
+      })
+    : [];
+  const byId = new Map(hydrated.map((r) => [r.id, r]));
+  const rows = ids.map((id) => byId.get(id)).filter((r): r is (typeof hydrated)[number] => !!r);
 
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;

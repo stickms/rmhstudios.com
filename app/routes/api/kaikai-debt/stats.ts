@@ -28,6 +28,8 @@ export const Route = createFileRoute('/api/kaikai-debt/stats')({
           // asking, which is the precondition `assertCacheSpec` enforces for
           // `public`. The max-age matches the server-side cache's own TTL, so a
           // CDN hit and a process-cache hit are the same age of data.
+          // Opt out of the 30 s micro-cache: ledger writes call invalidateDebtStats.
+          microCache: false,
           cache: { visibility: 'public', maxAge: 30, sMaxAge: 30, staleWhileRevalidate: 120 },
           // `asOfMs` moves on every read, so an ETag would never match and the
           // hash would be pure overhead — the same call `/api/kaikai-debt` makes.

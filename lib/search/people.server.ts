@@ -13,9 +13,9 @@
  */
 
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma.server';
+import { prisma, prismaRead } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
-import { fuzzyAny, fuzzyTerms, sqlRank, type FuzzyTerms } from './db.server';
+import { fuzzyAny, fuzzyTerms, norm, sqlRank, type FuzzyTerms } from './db.server';
 import { confidenceOf, scoreRecord, withPopularity, MATCH_FLOOR } from './score';
 import type { SearchHit } from './types';
 
@@ -34,6 +34,9 @@ const WEIGHTS = {
 
 /** Rows pulled from Postgres before JS re-ranking trims them to `limit`. */
 const CANDIDATE_POOL = 80;
+
+/** LIKE hits at which a query counts as "common" and the single-scan plan wins. */
+const BROAD_QUERY_HITS = 300;
 
 interface CandidateRow {
   id: string;
@@ -79,29 +82,115 @@ export async function searchPeopleScored(
     Prisma.sql`u."handle"`,
     Prisma.sql`p."displayName"`,
   ];
-  // Bio joins the recall net but not the ranking expression — a bio mention
-  // shouldn't pull someone to the top of the candidate pool ahead of names.
-  const recall = fuzzyAny([...nameCols, Prisma.sql`p."bio"`], terms, { perToken: true });
   const rank = sqlRank(nameCols, terms);
   const excludeClause = opts.excludeUserId
     ? Prisma.sql`AND u.id <> ${opts.excludeUserId}`
     : Prisma.empty;
 
-  const rows = await prisma.$queryRaw<CandidateRow[]>(Prisma.sql`
-    SELECT u.id,
-           u."name",
-           u."username",
-           u."handle",
-           p."displayName" AS display_name,
-           p."bio"         AS bio,
-           u."followerCount" AS follower_count
-    FROM "user" u
-    LEFT JOIN "user_profile" p ON p."userId" = u.id
-    WHERE ${recall}
-      ${excludeClause}
-    ORDER BY ${rank} DESC, u."followerCount" DESC
-    LIMIT ${CANDIDATE_POOL}
+  // The recall predicate (bio joins the net but not the ranking expression - a
+  // bio mention shouldn't pull someone to the top of the candidate pool ahead
+  // of names) spans two tables. As one OR over a join, Postgres can't turn it
+  // into a bitmap-OR of the trigram GIN indexes, so it seq-scans both tables and
+  // evaluates ~20 trigram predicates per row (~700 ms at 20k users for a query
+  // that matches nobody). WS8: split it per table so each half is index-eligible.
+  // The row set is exactly the same either way; only the plan differs.
+  const userRecall = (a: string) =>
+    fuzzyAny(
+      ['name', 'username', 'handle'].map((c) => Prisma.raw(`${a}."${c}"`)),
+      terms,
+      { perToken: true },
+    );
+  const profileRecall = (a: string) =>
+    fuzzyAny(
+      ['displayName', 'bio'].map((c) => Prisma.raw(`${a}."${c}"`)),
+      terms,
+      { perToken: true },
+    );
+
+  // When the query is common (the cheap LIKE below hits a lot of users) the
+  // index can't narrow anything and the split costs a second scan; the single
+  // short-circuiting scan is then the faster plan. Same rows, so the choice is
+  // invisible to callers.
+  // The recall also matches each query token on its own, so a common token
+  // ("user" in "bench user") makes the query common even when the phrase is rare.
+  const patterns = [
+    terms.q.length >= 3 ? terms.contains : terms.prefix,
+    ...(terms.tokens.length > 1
+      ? terms.tokens.filter((t) => t.t.length >= 3).map((t) => t.contains)
+      : []),
+  ];
+  const likeAny = Prisma.join(
+    patterns.flatMap((pat) =>
+      ['username', 'handle', 'name'].map(
+        (c) => Prisma.sql`${norm(Prisma.raw(`x."${c}"`))} LIKE ${pat}`,
+      ),
+    ),
+    ' OR ',
+  );
+  const probeRows = await prismaRead.$queryRaw<{ n: number }[]>(Prisma.sql`
+    SELECT count(*)::int AS n FROM (
+      SELECT 1 FROM "user" x
+      WHERE ${likeAny}
+      LIMIT ${BROAD_QUERY_HITS}
+    ) t
   `);
+  const broad = (probeRows[0]?.n ?? 0) >= BROAD_QUERY_HITS;
+
+  const rows = broad
+    ? // Common query: one scan, with each column folded ONCE per row. Written
+      // inline, the planner re-evaluates rmh_search_norm (an unaccent dictionary
+      // lookup) in every predicate and again in the rank - ~25 times a row.
+      // OFFSET 0 keeps the planner from inlining the fold back into them.
+      await prismaRead.$queryRaw<CandidateRow[]>(Prisma.sql`
+        SELECT s.id, s."name", s."username", s."handle",
+               s.display_name, s.bio, s.follower_count
+        FROM (
+          SELECT u.id, u."name", u."username", u."handle",
+                 p."displayName" AS display_name, p."bio" AS bio,
+                 u."followerCount" AS follower_count,
+                 ${norm(Prisma.sql`u."name"`)} AS n_name,
+                 ${norm(Prisma.sql`u."username"`)} AS n_username,
+                 ${norm(Prisma.sql`u."handle"`)} AS n_handle,
+                 ${norm(Prisma.sql`p."displayName"`)} AS n_display,
+                 ${norm(Prisma.sql`p."bio"`)} AS n_bio
+          FROM "user" u
+          LEFT JOIN "user_profile" p ON p."userId" = u.id
+          WHERE true ${excludeClause}
+          OFFSET 0
+        ) s
+        WHERE ${fuzzyAny(
+          ['n_name', 'n_username', 'n_handle', 'n_display', 'n_bio'].map((c) =>
+            Prisma.raw(`s.${c}`),
+          ),
+          terms,
+          { perToken: true, normalized: true },
+        )}
+        ORDER BY ${sqlRank(
+          ['n_name', 'n_username', 'n_handle', 'n_display'].map((c) => Prisma.raw(`s.${c}`)),
+          terms,
+          { normalized: true },
+        )} DESC, s.follower_count DESC
+        LIMIT ${CANDIDATE_POOL}
+      `)
+    : await prismaRead.$queryRaw<CandidateRow[]>(Prisma.sql`
+        SELECT u.id,
+               u."name",
+               u."username",
+               u."handle",
+               p."displayName" AS display_name,
+               p."bio"         AS bio,
+               u."followerCount" AS follower_count
+        FROM "user" u
+        LEFT JOIN "user_profile" p ON p."userId" = u.id
+        WHERE u.id IN (
+            SELECT x.id FROM "user" x WHERE ${userRecall('x')}
+            UNION
+            SELECT q."userId" FROM "user_profile" q WHERE ${profileRecall('q')}
+          )
+          ${excludeClause}
+        ORDER BY ${rank} DESC, u."followerCount" DESC
+        LIMIT ${CANDIDATE_POOL}
+      `);
 
   if (rows.length === 0) return [];
 
@@ -123,7 +212,9 @@ export async function searchPeopleScored(
   if (scored.length === 0) return [];
 
   // Hydrate through Prisma so results carry the same shape (profile overrides,
-  // equipped cosmetics) as every other surface that renders a user.
+  // equipped cosmetics) as every other surface that renders a user. Read from the
+  // PRIMARY: the candidate scan is lag-tolerant, but a user deleted a moment ago
+  // must not be listed from a lagging replica, and a user missing here is dropped.
   const ids = scored.map((s) => s.row.id);
   const hydrated = await prisma.user.findMany({
     where: { id: { in: ids } },

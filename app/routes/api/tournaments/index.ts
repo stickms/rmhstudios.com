@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { createTournamentSchema } from '@/lib/tournaments/tournament-schema';
@@ -12,15 +13,25 @@ import {
 export const Route = createFileRoute('/api/tournaments/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request }) => {
-        const status = new URL(request.url).searchParams.get('status');
-        const valid =
-          status === 'REGISTRATION' || status === 'LIVE' || status === 'COMPLETE'
-            ? status
-            : undefined;
-        const tournaments = await listTournaments({ status: valid });
-        return Response.json({ tournaments });
-      }),
+      // Same list for everyone, keyed by ?status=. Display-only: joining and paying
+      // go through their own routes, which read fresh (CACHE_POLICY.liveList).
+      GET: defineHandler(
+        {
+          auth: 'none',
+          // Opt out of the 30 s micro-cache: creating/registering must show in the list.
+          microCache: false,
+          cache: CACHE_POLICY.liveList,
+        },
+        async ({ request }) => {
+          const status = new URL(request.url).searchParams.get('status');
+          const valid =
+            status === 'REGISTRATION' || status === 'LIVE' || status === 'COMPLETE'
+              ? status
+              : undefined;
+          const tournaments = await listTournaments({ status: valid });
+          return Response.json({ tournaments });
+        },
+      ),
       POST: async ({ request }) => {
         try {
           const session = await auth.api.getSession({ headers: request.headers });

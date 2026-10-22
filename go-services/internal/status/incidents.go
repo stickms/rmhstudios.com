@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -172,6 +173,8 @@ type Store struct {
 	maxIncidents  int
 	// static is the env-configured announcement, never persisted.
 	static *Announcement
+	// ver counts persisted mutations; the response cache keys validity on it.
+	ver atomic.Uint64
 }
 
 // storeFile is the on-disk shape of IncidentsFileName.
@@ -234,8 +237,12 @@ func (s *Store) load() {
 	s.announcements = f.Announcements
 }
 
+// Version changes on every store mutation.
+func (s *Store) Version() uint64 { return s.ver.Load() }
+
 // saveLocked persists the store. Caller holds s.mu (read or write).
 func (s *Store) saveLocked() {
+	s.ver.Add(1)
 	if s.path == "" {
 		return
 	}

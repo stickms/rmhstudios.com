@@ -83,7 +83,10 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
 
  if (res.ok) {
  const data = await res.json();
- const serverPoll: FeedPoll = {
+ // An un-vote on a post that is no longer readable returns no tallies:
+ // keep the optimistic counts and take only the caller's own votes.
+ const serverPoll: FeedPoll = Array.isArray(data.options)
+ ? {
  ...localPoll,
  myVotes: data.myVotes,
  totalVotes: data.totalVotes,
@@ -91,7 +94,8 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  const updated = data.options.find((so: any) => so.id === o.id);
  return updated ? { ...o, voteCount: updated.voteCount } : o;
  }),
- };
+ }
+ : { ...optimistic, myVotes: data.myVotes ?? optimistic.myVotes };
  setLocalPoll(serverPoll);
  onUpdate?.(serverPoll);
  } else {

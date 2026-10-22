@@ -50,6 +50,7 @@ interface CommunityData {
  joined: boolean;
  role: string | null;
  announcements: Announcement[];
+ isPrivate?: boolean;
 }
 
 interface Member {

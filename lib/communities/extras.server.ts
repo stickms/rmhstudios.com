@@ -19,7 +19,7 @@ export async function getCommunityExtras(
 ): Promise<CommunityExtrasDTO | null> {
   const community = await prisma.community.findUnique({
     where: { slug },
-    select: { id: true },
+    select: { id: true, isPrivate: true },
   });
   if (!community) return null;
 
@@ -41,6 +41,8 @@ export async function getCommunityExtras(
       : Promise.resolve(null),
   ]);
   if (!settings) return null;
+  // Members-only: a non-member of a private community gets "not found".
+  if (community.isPrivate && !member) return null;
 
   const isMod = member?.role === 'MOD' || member?.role === 'ADMIN';
   let posting: PostingStatusDTO = { ok: true };

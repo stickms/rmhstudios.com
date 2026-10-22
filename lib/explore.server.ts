@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
-import { audienceWhere } from '@/lib/feed/audience.server';
+import { audienceWhereExact, communityVisibleWhere } from '@/lib/feed/audience.server';
 import { getMutedWords, applyMutedWords } from '@/lib/feed/timeline';
 import { cached } from '@/lib/cached.server';
 import type { FeedItem } from '@/lib/feed-types';
@@ -169,17 +169,14 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
 
   // Per-viewer inputs for hot posts (audience/mute) and the suggested-user
   // exclude set. These are cheap indexed reads.
-  const [hidden, following, muted] = await Promise.all([
+  const [hidden, muted] = await Promise.all([
     getHiddenAuthorIds(viewerId),
-    viewerId
-      ? prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } })
-      : Promise.resolve([] as { followingId: string }[]),
     viewerId ? getMutedWords(viewerId) : Promise.resolve([] as string[]),
   ]);
 
   const notHidden = hidden.length ? { userId: { notIn: hidden } } : {};
-  const followingIds = following.map((f) => f.followingId);
-  const aud = audienceWhere(viewerId, followingIds);
+  // Exact audience rule (no capped follow list): see audienceWhereExact.
+  const aud = { ...audienceWhereExact(viewerId), ...communityVisibleWhere(viewerId) };
 
   // Hydrate the shared candidate pool with this viewer's state (likes/reposts/
   // bookmarks via the include) and apply the viewer's hidden-author filter. The
@@ -213,8 +210,22 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
     muted,
   );
 
-  // People to follow: the cached pool minus self/followed/hidden.
-  const excludeIds = new Set<string>([...(viewerId ? [viewerId] : []), ...followingIds, ...hidden]);
+  // People to follow: the cached pool minus self/followed/hidden. "Followed" is
+  // looked up exactly for the pool's ids (a bounded probe on the unique index),
+  // not read from the capped follow list, which forgets a heavy follower's oldest
+  // follows and then suggests accounts they already follow.
+  const followedInPool = viewerId
+    ? await prisma.follow.findMany({
+        where: { followerId: viewerId, followingId: { in: base.userPool.map((u) => u.id) } },
+        select: { followingId: true },
+        take: base.userPool.length,
+      })
+    : [];
+  const excludeIds = new Set<string>([
+    ...(viewerId ? [viewerId] : []),
+    ...followedInPool.map((f) => f.followingId),
+    ...hidden,
+  ]);
   const suggestedUsers = base.userPool
     .filter((u) => !excludeIds.has(u.id))
     .slice(0, SUGGESTED_TAKE);

@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { prisma } from '@/lib/prisma.server';
+import { getRole } from '@/lib/communities/access.server';
 import { communityPageRollbackSchema } from '@/lib/communities/pages-schema';
 import {
   listRevisions,
@@ -26,9 +28,18 @@ const STATUS_BY_CODE = {
 export const Route = createFileRoute('/api/community-pages/$id/revisions')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ params }) =>
-        Response.json({ revisions: await listRevisions(params.id) }),
-      ),
+      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ params, userId }) => {
+        // Members-only: the history of a private community's page is invisible to
+        // non-members (404, as for a missing page).
+        const page = await prisma.communityPage.findUnique({
+          where: { id: params.id },
+          select: { communityId: true, community: { select: { isPrivate: true } } },
+        });
+        if (page?.community.isPrivate && !(await getRole(page.communityId, userId))) {
+          return Response.json({ error: 'Not found' }, { status: 404 });
+        }
+        return Response.json({ revisions: await listRevisions(params.id) });
+      }),
       POST: defineHandler(
         {
           rateLimit: { limit: 20, windowMs: 3_600_000, prefix: 'community-page', scope: 'user' },

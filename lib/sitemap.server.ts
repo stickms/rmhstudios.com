@@ -45,6 +45,9 @@ const CAPS = {
   homes: 50_000,
 } as const;
 
+/** Rows per query for the sections that are large enough to need `batch`. */
+const SUB_PAGE = 5_000;
+
 interface Section {
   /** How many URLs this section has, for sizing the index. */
   count: () => Promise<number>;
@@ -52,6 +55,24 @@ interface Section {
   page: (skip: number, take: number) => Promise<SitemapEntry[]>;
   /** Upper bound on rows; anything beyond it is dropped (and logged). */
   cap: number;
+  /**
+   * Fetch a chunk as several small queries instead of one. Prisma decodes a
+   * result set synchronously, ~140ms of blocked event loop for 40k rows of
+   * `posts`; at this size it is ~18ms per query and the loop breathes between.
+   */
+  batch?: number;
+  /**
+   * Keyset variant of `page` for sections whose sort key can change between
+   * slices. Offset paging over a mutating sort (followerCount) repeats or
+   * skips rows across slices of one chunk; after the first slice (which
+   * still needs `skip` to find the chunk), the next one resumes strictly
+   * after the last row returned.
+   */
+  pageAfter?: (
+    cursor: unknown,
+    skip: number,
+    take: number,
+  ) => Promise<{ entries: SitemapEntry[]; cursor: unknown }>;
 }
 
 // ─────────────────────────── visibility rules ───────────────────────────
@@ -75,6 +96,53 @@ function indexableUserWhere(): Prisma.UserWhereInput {
     // evaluated once at import, so a long-running web process would keep
     // filtering against its own boot time and never let a lapsed ban expire.
     OR: [{ bannedUntil: null }, { bannedUntil: { lt: new Date() } }],
+  };
+}
+
+type UserCursor = { followerCount: number; id: string };
+
+/**
+ * One slice of the users section. Total order is (followerCount desc, id asc);
+ * with a cursor the slice resumes strictly after it instead of using an offset.
+ */
+async function usersSlice(
+  skip: number,
+  take: number,
+  after: UserCursor | null,
+): Promise<{ entries: SitemapEntry[]; cursor: UserCursor | null }> {
+  const base = indexableUserWhere();
+  const rows = await prisma.user.findMany({
+    where: after
+      ? {
+          AND: [
+            base,
+            {
+              OR: [
+                { followerCount: { lt: after.followerCount } },
+                { followerCount: after.followerCount, id: { gt: after.id } },
+              ],
+            },
+          ],
+        }
+      : base,
+    select: { id: true, handle: true, updatedAt: true, followerCount: true },
+    // Most-followed first, so if the cap ever bites it drops the tail rather
+    // than a random slice. `id` makes the order total.
+    orderBy: [{ followerCount: 'desc' }, { id: 'asc' }],
+    ...(after ? {} : { skip }),
+    take,
+  });
+  const last = rows[rows.length - 1];
+  return {
+    entries: rows.map((u) => ({
+      loc: `/u/${u.handle!}`,
+      lastmod: u.updatedAt,
+      changefreq: 'daily' as const,
+      // A profile with an audience is worth more crawl budget than one
+      // without; everything else about them is identical.
+      priority: u.followerCount >= 10 ? 0.6 : 0.4,
+    })),
+    cursor: last ? { followerCount: last.followerCount, id: last.id } : after,
   };
 }
 
@@ -245,34 +313,22 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
   /** Public user profiles. */
   users: {
     cap: CAPS.users,
+    batch: SUB_PAGE,
     count: () => prisma.user.count({ where: indexableUserWhere() }),
-    page: async (skip, take) => {
-      const rows = await prisma.user.findMany({
-        where: indexableUserWhere(),
-        select: { handle: true, updatedAt: true, followerCount: true },
-        // Most-followed first, so if the cap ever bites it drops the tail
-        // rather than a random slice.
-        orderBy: [{ followerCount: 'desc' }, { id: 'asc' }],
-        skip,
-        take,
-      });
-      return rows.map((u) => ({
-        loc: `/u/${u.handle!}`,
-        lastmod: u.updatedAt,
-        changefreq: 'daily' as const,
-        // A profile with an audience is worth more crawl budget than one
-        // without; everything else about them is identical.
-        priority: u.followerCount >= 10 ? 0.6 : 0.4,
-      }));
-    },
+    page: async (skip, take) => (await usersSlice(skip, take, null)).entries,
+    pageAfter: (cursor, skip, take) => usersSlice(skip, take, cursor as UserCursor | null),
   },
 
   /** Public post permalinks, at their canonical `/u/{handle}/post/{id}` URL. */
   posts: {
     cap: CAPS.posts,
+    batch: SUB_PAGE,
     count: () => prisma.rMHark.count({ where: indexablePostWhere() }),
     page: async (skip, take) => {
       const rows = await prisma.rMHark.findMany({
+        // One joined query instead of post page + user IN (...) round trip: 22%
+        // faster at offset 120k, 10% at offset 0 (scripts/perf-ws6/sitemap-query-bench.mts).
+        relationLoadStrategy: 'join',
         where: indexablePostWhere(),
         select: {
           id: true,
@@ -484,4 +540,39 @@ export async function renderSection(
   if (skip >= def.cap) return [];
   const take = Math.min(SITEMAP_CHUNK_SIZE, def.cap - skip);
   return def.page(skip, take);
+}
+
+/**
+ * The same rows as `renderSection`, delivered as slices so the caller can
+ * serialise and yield between them. Sections without `batch` come back as one
+ * slice. `null` when the section doesn't exist.
+ */
+export function renderSectionBatches(
+  section: string,
+  chunk: number,
+): AsyncGenerator<SitemapEntry[], void, void> | null {
+  const def = SITEMAP_SECTIONS[section as SitemapSectionName];
+  if (!def) return null;
+  const skip = (chunk - 1) * SITEMAP_CHUNK_SIZE;
+  const take = skip >= def.cap ? 0 : Math.min(SITEMAP_CHUNK_SIZE, def.cap - skip);
+  return (async function* () {
+    if (take === 0) return;
+    if (!def.batch) {
+      yield await def.page(skip, take);
+      return;
+    }
+    let cursor: unknown = null;
+    for (let done = 0; done < take; done += def.batch) {
+      const want = Math.min(def.batch, take - done);
+      let rows: SitemapEntry[];
+      if (def.pageAfter) {
+        // First slice locates the chunk by offset (null cursor); later slices continue by key.
+        ({ entries: rows, cursor } = await def.pageAfter(cursor, skip, want));
+      } else {
+        rows = await def.page(skip + done, want);
+      }
+      if (rows.length > 0) yield rows;
+      if (rows.length < want) return;
+    }
+  })();
 }

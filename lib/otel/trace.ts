@@ -179,7 +179,22 @@ export function newScope(span: SpanContext): TraceScope {
   return { span, timings: new Map(), startedAt: performance.now() };
 }
 
-const storage = new AsyncLocalStorage<TraceScope>();
+/**
+ * ONE store per process, not one per copy of this module.
+ *
+ * The production build bundles this file more than once: Nitro bundles
+ * `server/nitro/otel.ts` (the plugin that opens the scope) into
+ * `.output/server/index.mjs`, while the TanStack Start app — every loader, API
+ * handler, `cached()` and Prisma call that `mark()`s a phase — lives in the
+ * separate `_ssr` bundle. Each bundle got its own `new AsyncLocalStorage()`, so
+ * the plugin entered a scope no application code could see: Server-Timing
+ * carried `total` and nothing else, in exactly the shipped configuration and
+ * nowhere else (dev and tests load one copy). Pinning the instance on
+ * `globalThis` under a registered symbol makes every copy share it.
+ */
+const STORAGE_KEY = Symbol.for('rmh.otel.traceScopeStorage');
+const globalStore = globalThis as unknown as Record<symbol, AsyncLocalStorage<TraceScope>>;
+const storage = (globalStore[STORAGE_KEY] ??= new AsyncLocalStorage<TraceScope>());
 
 /**
  * Run `fn` inside a span.

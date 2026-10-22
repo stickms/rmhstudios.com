@@ -33,8 +33,10 @@ func TestShutdownFlush(t *testing.T) {
 	lat := int64(1)
 	svc := New(Config{
 		Targets: []Target{{
-			Name:  "db",
-			Probe: func(ctx context.Context) ProbeResult { return ProbeResult{Status: StatusUp, LatencyMs: &lat, Detail: "ok"} },
+			Name: "db",
+			Probe: func(ctx context.Context) ProbeResult {
+				return ProbeResult{Status: StatusUp, LatencyMs: &lat, Detail: "ok"}
+			},
 		}},
 		ProbeInterval: time.Hour, // ticker must not fire during the test
 		HistoryPath:   path,

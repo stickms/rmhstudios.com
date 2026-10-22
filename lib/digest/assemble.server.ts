@@ -13,6 +13,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { communityVisibleWhere } from '@/lib/feed/audience.server';
 import { SITE_URL } from '@/lib/seo';
 import { signUnsubToken } from '@/lib/email/unsubscribe';
 import { getStreak } from '@/lib/streak.server';
@@ -79,7 +80,7 @@ function score(p: {
   return p.likeCount * 3 + p.commentCount * 2 + p.repostCount * 4 + p.viewCount * 0.05;
 }
 
-async function topPostsFromFollows(userId: string, since: Date): Promise<DigestPost[]> {
+export async function topPostsFromFollows(userId: string, since: Date): Promise<DigestPost[]> {
   const follows = await prisma.follow.findMany({
     where: { followerId: userId },
     select: { followingId: true },
@@ -94,6 +95,9 @@ async function topPostsFromFollows(userId: string, since: Date): Promise<DigestP
       createdAt: { gte: since },
       deletedAt: null,
       audience: 'PUBLIC',
+      // A digest must not carry members-only content: public-community posts are
+      // fine, a private community's only for its own members (the recipient).
+      ...communityVisibleWhere(userId),
       originalId: null, // skip bare reposts; surface original authored posts
     },
     orderBy: { createdAt: 'desc' },

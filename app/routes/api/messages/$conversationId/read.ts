@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { notifyUser } from '@/lib/message-events';
+import { redisDel } from '@/lib/redis.server';
 import { getPairPrivacy } from '@/lib/chat-plus/receipts.server';
 
 /** POST /api/messages/[conversationId]/read — mark messages as read */
@@ -35,6 +36,10 @@ export const Route = createFileRoute('/api/messages/$conversationId/read')({
           },
           data: { read: true },
         });
+
+        // The unread badge reads a Redis counter that this write bypassed, so it kept
+        // the old number for up to its 60s TTL. Drop it; the next read recounts.
+        if (marked.count > 0) await redisDel(`dm:unread:${userId}`).catch(() => {});
 
         // Notify the current user so their unread count updates
         notifyUser(userId);

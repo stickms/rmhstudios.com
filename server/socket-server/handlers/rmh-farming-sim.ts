@@ -518,13 +518,16 @@ function season(farm: Farm): Season {
   return SEASONS[farm.seasonIndex];
 }
 
-function socketsInFarm(farm: Farm): Socket[] {
-  const out: Socket[] = [];
-  for (const p of farm.presence.values()) {
-    const s = ioRef.sockets.sockets.get(p.socketId);
-    if (s) out.push(s);
-  }
-  return out;
+/**
+ * Emit one event to everyone in a farm. `io.to([socketIds])` serialises the
+ * packet once for the whole audience; a `socket.emit` loop re-encodes the same
+ * payload per recipient (and, for FARM_STATE, used to rebuild it per recipient).
+ */
+function emitToFarm(farm: Farm, event: string, payload: unknown): void {
+  if (farm.presence.size === 0) return;
+  const ids: string[] = [];
+  for (const p of farm.presence.values()) ids.push(p.socketId);
+  ioRef.to(ids).emit(event, payload);
 }
 
 function toast(socket: Socket, message: string, kind: 'info' | 'success' | 'error' = 'info'): void {
@@ -609,7 +612,7 @@ function broadcastStats(farm: Farm): void {
 }
 function broadcastMembers(farm: Farm): void {
   const payload = serializeMembers(farm);
-  for (const s of socketsInFarm(farm)) s.emit(S2C.MEMBERS, payload);
+  emitToFarm(farm, S2C.MEMBERS, payload);
 }
 function broadcastPresence(farm: Farm, opts: { volatile?: boolean } = {}): void {
   // Emitting the current full presence clears the dirty flag; the throttled
@@ -632,13 +635,11 @@ function broadcastPresence(farm: Farm, opts: { volatile?: boolean } = {}): void 
 function broadcastTiles(farm: Farm, indices: number[]): void {
   if (indices.length === 0) return;
   const deltas = indices.map((i) => ({ i, ...serializeTile(farm.tiles[i]) }));
-  for (const s of socketsInFarm(farm)) s.emit(S2C.TILES, deltas);
+  emitToFarm(farm, S2C.TILES, deltas);
 }
 function broadcastFarmInventory(farm: Farm): void {
   // seeds / inventory / tools changed → push fresh state header to everyone
-  for (const s of socketsInFarm(farm)) {
-    s.emit(S2C.FARM_STATE, fullFarmState(farm));
-  }
+  emitToFarm(farm, S2C.FARM_STATE, fullFarmState(farm));
 }
 
 // ── Joining / leaving a farm ───────────────────────────────────────
@@ -1042,17 +1043,15 @@ function onSleep(socket: Socket): void {
   advanceDay(farm);
 
   // refresh everyone
-  for (const s of socketsInFarm(farm)) s.emit(S2C.FARM_STATE, fullFarmState(farm));
+  emitToFarm(farm, S2C.FARM_STATE, fullFarmState(farm));
   for (const p of farm.presence.values()) {
     p.energy = MAX_ENERGY;
     ioRef.sockets.sockets.get(p.socketId)?.emit(S2C.STATS, serializeStats(farm, p));
   }
-  for (const s of socketsInFarm(farm)) {
-    s.emit(S2C.TOAST, {
-      message: `Day ${farm.day} — ${season(farm)}, ${farm.weather}.`,
-      kind: 'info',
-    });
-  }
+  emitToFarm(farm, S2C.TOAST, {
+    message: `Day ${farm.day} — ${season(farm)}, ${farm.weather}.`,
+    kind: 'info',
+  });
   // a new day is a natural checkpoint — persist immediately
   dirty.delete(farm.id);
   void persistFarm(farm);
@@ -1115,7 +1114,7 @@ function onChat(socket: Socket, payload: any): void {
     .replace(/[<>]/g, '');
   if (!text.trim()) return;
   const msg = { name, text, ts: Date.now() };
-  for (const s of socketsInFarm(farm)) s.emit(S2C.CHAT, msg);
+  emitToFarm(farm, S2C.CHAT, msg);
 }
 
 // ── Multiplayer: joining other farms ───────────────────────────────

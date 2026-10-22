@@ -3,7 +3,9 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { audienceWhere } from '@/lib/feed/audience.server';
+import { audienceWhere, communityVisibleWhere, viewerVisiblePostWhere } from '@/lib/feed/audience.server';
+import { getBlockedAuthorIds } from '@/lib/moderation.server';
+import { mapQuotedOriginal, type QuotedOriginalRow } from '@/lib/feed/quoted-original';
 import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
 import { isExpired } from '@/lib/posts-plus/constants';
 
@@ -60,47 +62,10 @@ const rmharkInclude = (viewerId: string | null) => ({
   original: {
     include: {
       user: { select: userDisplaySelect },
+      community: { select: { isPrivate: true } },
     },
   },
 });
-
-function mapOriginal(
-  original: {
-    id: string;
-    createdAt: Date;
-    content: string;
-    user: Parameters<typeof resolveUser>[0];
-    likeCount: number;
-    commentCount: number;
-    repostCount: number;
-    viewCount: number;
-    gifUrl?: string | null;
-    imageUrls?: string[];
-    imageAlts?: string[];
-    unlockPrice?: number | null;
-    audience?: string;
-  } | null,
-): FeedItem | undefined {
-  if (!original) return undefined;
-  // Same rule as the timeline's mapOriginal: only a free, public original shows
-  // its media inside a quote card — paid or followers-only content must not leak
-  // through someone else's quote.
-  const showMedia = (original.unlockPrice ?? 0) === 0 && original.audience === 'PUBLIC';
-  return {
-    id: original.id,
-    type: 'rmhark' as const,
-    createdAt: original.createdAt.toISOString(),
-    content: original.content,
-    user: resolveUser(original.user),
-    likeCount: original.likeCount,
-    commentCount: original.commentCount,
-    repostCount: original.repostCount,
-    viewCount: original.viewCount,
-    gifUrl: showMedia ? (original.gifUrl ?? undefined) : undefined,
-    imageUrls: showMedia ? original.imageUrls : undefined,
-    imageAlts: showMedia ? original.imageAlts : undefined,
-  };
-}
 
 export const Route = createFileRoute('/api/profile/$id/rmharks')({
   server: {
@@ -118,6 +83,17 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
 
         const cursorDate = cursor ? new Date(cursor) : undefined;
 
+        // Blocks apply to a profile's own posts and reposts like everywhere else: a
+        // viewer who blocked this author, or was blocked by them, sees nothing of
+        // theirs here (mutes stay feed-only).
+        const blocked = await getBlockedAuthorIds(viewerId);
+        if (viewerId && viewerId !== userId && blocked.includes(userId)) {
+          return Response.json({ items: [], nextCursor: null, hasMore: false });
+        }
+        // Quote cards: one shared rule (lib/feed/quoted-original.ts).
+        const quote = (o: (QuotedOriginalRow & { user: Parameters<typeof resolveUser>[0] }) | null) =>
+          o ? mapQuotedOriginal(o, resolveUser(o.user), viewerId, blocked) : undefined;
+
         // Audience: owner sees all; a follower also sees FOLLOWERS posts; others PUBLIC.
         let viewerFollowsOwner = false;
         if (viewerId && viewerId !== userId) {
@@ -126,7 +102,16 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
             select: { id: true },
           }));
         }
-        const aud = audienceWhere(viewerId, viewerFollowsOwner ? [userId] : []);
+        // A private community's posts are members-only (profile lists reach them by author).
+        const aud = {
+          ...audienceWhere(viewerId, viewerFollowsOwner ? [userId] : []),
+          ...communityVisibleWhere(viewerId),
+        };
+        // A repost shows someone else's post, so that post gets the full
+        // visibility check (deleted, audience, blocks). Only deletedAt was
+        // checked before, which let a profile's reposts reveal PRIVATE,
+        // FOLLOWERS and CIRCLE posts to anyone who opened the tab.
+        const repostedVisible = await viewerVisiblePostWhere(viewerId);
 
         // Fetch user's own RMHarks and their reposts in parallel (exclude deleted)
         // perf: the pinned post (first page only) rides in the same parallel batch
@@ -146,7 +131,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
           prisma.rMHarkRepost.findMany({
             where: {
               userId,
-              rmhark: { deletedAt: null },
+              rmhark: repostedVisible,
               ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
             },
             orderBy: { createdAt: 'desc' },
@@ -198,7 +183,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
               liked: viewerId ? r.likes.length > 0 : false,
               reposted: viewerId ? r.reposts.length > 0 : false,
               edited: !!r.editedAt,
-              original: mapOriginal(r.original),
+              original: quote(r.original),
               poll: mapPoll(r.poll),
               gifUrl: r.gifUrl ?? undefined,
               imageUrls: r.imageUrls ?? undefined,
@@ -232,7 +217,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
               liked: viewerId ? r.likes.length > 0 : false,
               reposted: viewerId ? r.reposts.length > 0 : false,
               repostedBy: resolveUser(rp.user),
-              original: mapOriginal(r.original),
+              original: quote(r.original),
               poll: mapPoll(r.poll),
               gifUrl: r.gifUrl ?? undefined,
               imageUrls: r.imageUrls ?? undefined,
@@ -276,7 +261,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
                 reposted: viewerId ? p.reposts.length > 0 : false,
                 edited: !!p.editedAt,
                 pinned: true,
-                original: mapOriginal(p.original),
+                original: quote(p.original),
                 poll: mapPoll(p.poll),
                 gifUrl: p.gifUrl ?? undefined,
                 imageUrls: p.imageUrls ?? undefined,

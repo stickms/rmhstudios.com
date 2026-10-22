@@ -21,6 +21,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
+import { canReadThread } from '@/lib/feed/audience.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import {
   generatePost,
@@ -56,17 +57,21 @@ const bodySchema = z.union([
   }),
 ]);
 
-/** Walk up the comment parent chain, returning ancestor contents oldest → target. */
-async function buildCommentChain(parentId: string): Promise<string[]> {
+/**
+ * Walk up the comment parent chain, returning ancestor contents oldest → target.
+ * Only comments on `rmharkId` count: the client sends both ids and nothing else
+ * ties them, so a parent from another (possibly unreadable) thread is ignored.
+ */
+async function buildCommentChain(parentId: string, rmharkId: string): Promise<string[]> {
   const chain: string[] = [];
   let currentId: string | null = parentId;
   for (let depth = 0; currentId && depth < 6; depth++) {
-    const node: { content: string; parentId: string | null } | null =
+    const node: { content: string; parentId: string | null; rmheetId: string } | null =
       await prisma.rMHarkComment.findUnique({
         where: { id: currentId },
-        select: { content: true, parentId: true },
+        select: { content: true, parentId: true, rmheetId: true },
       });
-    if (!node) break;
+    if (!node || node.rmheetId !== rmharkId) break;
     chain.unshift(node.content);
     currentId = node.parentId;
   }
@@ -76,7 +81,7 @@ async function buildCommentChain(parentId: string): Promise<string[]> {
 export const Route = createFileRoute('/api/rmharks/ai-generate')({
   server: {
     handlers: {
-      POST: defineHandler({ body: bodySchema }, async ({ request, session, body }) => {
+      POST: defineHandler({ body: bodySchema }, async ({ request, session, userId, body }) => {
         if (!isRmharkAIConfigured()) {
           return Response.json(
             { error: 'AI drafting is not available right now.' },
@@ -116,22 +121,38 @@ export const Route = createFileRoute('/api/rmharks/ai-generate')({
         } else {
           // Pull the post (plus the original it quotes, if it's a repost) and
           // the ancestor comments server-side so we never trust client-supplied
-          // context.
+          // context. Only text this viewer may read reaches the model: the
+          // thread's audience rule (canReadThread), and a priced post's body
+          // only for its author or someone who unlocked it.
+          const readable = {
+            userId: true,
+            audience: true,
+            deletedAt: true,
+            communityId: true,
+            content: true,
+            unlockPrice: true,
+            unlocks: { where: { userId }, select: { id: true } },
+          } as const;
           const post = await prisma.rMHark.findUnique({
             where: { id: data.rmharkId },
-            select: {
-              content: true,
-              deletedAt: true,
-              original: { select: { content: true } },
-            },
+            select: { ...readable, original: { select: readable } },
           });
-          if (!post || post.deletedAt) {
+          if (!post || !(await canReadThread(post, userId))) {
             return Response.json({ error: 'Post not found' }, { status: 404 });
           }
-          const thread = data.parentId ? await buildCommentChain(data.parentId) : [];
+          const unlocked = (p: { userId: string; unlockPrice: number | null; unlocks: unknown[] }) =>
+            !p.unlockPrice || p.unlockPrice <= 0 || p.userId === userId || p.unlocks.length > 0;
+          if (!unlocked(post)) {
+            return Response.json({ error: 'Unlock this post to draft a reply.' }, { status: 403 });
+          }
+          const original =
+            post.original && unlocked(post.original) && (await canReadThread(post.original, userId))
+              ? post.original
+              : null;
+          const thread = data.parentId ? await buildCommentChain(data.parentId, data.rmharkId) : [];
           content = await generateReply({
             postContent: post.content,
-            quotedPostContent: post.original?.content || undefined,
+            quotedPostContent: original?.content || undefined,
             thread,
             draft: data.draft,
           });

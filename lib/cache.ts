@@ -1,5 +1,5 @@
 /**
- * Lightweight in-memory cache for Next.js API routes.
+ * Lightweight in-memory cache for API routes.
  *
  * Uses a Map with TTL-based expiry. Entries are lazily evicted on access
  * and periodically swept to bound memory.
@@ -20,6 +20,20 @@ interface CacheEntry<T> {
   expiresAt: number;
   bytes: number;
 }
+
+/**
+ * Hook through which local invalidations reach OTHER processes. This module is
+ * imported by client-reachable code, so it must not import Redis: the server-only
+ * `cached.server.ts` registers the publisher at startup. Without a registered
+ * hook (no Redis, tests, the browser) invalidation is local-only, as before.
+ */
+export interface InvalidationHook {
+  key(key: string): void;
+  prefix(prefix: string): void;
+}
+
+/** Identifies this process in invalidation messages so it can ignore its own echo. */
+export const CACHE_PROCESS_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 /**
  * Nodes visited by the size estimator before it stops and extrapolates. A signed-in feed page (20 posts with their
@@ -160,12 +174,12 @@ export class ApiCache {
     if (this.store.delete(key) && entry) this.totalBytes -= entry.bytes;
   }
 
-  /** Delete a specific key (e.g. after a mutation invalidates cached data). */
+  /** Delete a specific key (e.g. after a mutation) in THIS process only. */
   invalidate(key: string): void {
     this.remove(key, this.store.get(key));
   }
 
-  /** Delete all keys matching a prefix (e.g. "leaderboard:"). */
+  /** Delete all keys matching a prefix (e.g. "leaderboard:") in THIS process only. */
   invalidatePrefix(prefix: string): void {
     for (const [key, entry] of this.store) {
       if (key.startsWith(prefix)) this.remove(key, entry);
@@ -226,7 +240,7 @@ export const MAIN_CACHE_HEAP_SHARE = 0.08;
 export const VIEWER_FEED_CACHE_HEAP_SHARE = 0.04;
 
 /**
- * perf: per-viewer signed-in feed pages (`feed:v2:*`, one per user x surface x
+ * perf: per-viewer signed-in feed pages (`feed:v3:*`, one per user x surface x
  * filter, tens of KB each) get their own small cache so a burst of distinct
  * viewers can never evict the global hot keys (anon SWR feed, sidebar:*) from
  * the main cache. Routed by key prefix inside `apiCache` so cachedSWR and every
@@ -236,7 +250,13 @@ export const viewerFeedCache = new ApiCache({
   maxEntries: 1000,
   maxBytes: heapShare(VIEWER_FEED_CACHE_HEAP_SHARE, 24 * 1024 * 1024),
 });
-const VIEWER_FEED_PREFIX = 'feed:v2:';
+/**
+ * The key prefix that routes into `viewerFeedCache`. `lib/feed/timeline.ts` builds its signed-in page keys from
+ * this constant, so the router and the producer cannot drift apart (they did: the producer moved to `v3` when the
+ * page became the pre-muted-word value, the router stayed on `v2`, and every viewer page landed in the main LRU).
+ * Bump it here only; a test asserts a real timeline page lands in `viewerFeedCache`.
+ */
+export const VIEWER_FEED_PREFIX = 'feed:v3:';
 
 /** Main process cache (global keys + everything else): 5000 entries, 8% of the heap (at most 64 MB). */
 const mainCache = new ApiCache({
@@ -246,15 +266,49 @@ const mainCache = new ApiCache({
 
 const pick = (key: string) => (key.startsWith(VIEWER_FEED_PREFIX) ? viewerFeedCache : mainCache);
 
+/** Cross-process publisher; lives on the facade so one invalidation publishes once, not once per underlying cache. */
+let invalidationHook: InvalidationHook | null = null;
+/**
+ * Installer that wires `invalidationHook` (and the Redis subscription) the first time a process invalidates.
+ * `cached.server.ts` registers it at import without opening any connection, so importing never touches Redis.
+ */
+let bridgeInstaller: (() => void) | null = null;
+function installBridge(): void {
+  const fn = bridgeInstaller;
+  bridgeInstaller = null;
+  fn?.();
+}
+
 /** Singleton cache shared across all API routes in a process (same API as ApiCache). */
 export const apiCache = {
   get: <T>(key: string): T | undefined => pick(key).get<T>(key),
   set: <T>(key: string, value: T, ttlMs: number, sizeBytes?: number): void =>
     pick(key).set(key, value, ttlMs, sizeBytes),
-  invalidate: (key: string): void => pick(key).invalidate(key),
+  /** Delete a key here AND in every other process (via the registered hook). */
+  invalidate: (key: string): void => {
+    pick(key).invalidate(key);
+    installBridge();
+    invalidationHook?.key(key);
+  },
+  /** Delete all keys matching a prefix here AND in every other process. */
   invalidatePrefix: (prefix: string): void => {
+    apiCache.dropLocalPrefix(prefix);
+    installBridge();
+    invalidationHook?.prefix(prefix);
+  },
+  /** Drop a key in THIS process only. Used when applying a remote invalidation (no echo). */
+  dropLocal: (key: string): void => pick(key).invalidate(key),
+  dropLocalPrefix: (prefix: string): void => {
     mainCache.invalidatePrefix(prefix);
     viewerFeedCache.invalidatePrefix(prefix);
+  },
+  /** Register (or clear, with null) the cross-process publisher. Server-only callers. */
+  /** Register the one-shot lazy installer (see `bridgeInstaller`). Server-only callers. */
+  setBridgeInstaller: (fn: (() => void) | null): void => {
+    bridgeInstaller = fn;
+  },
+  setInvalidationHook: (hook: InvalidationHook | null): void => {
+    invalidationHook = hook;
   },
   get size(): number {
     return mainCache.size + viewerFeedCache.size;

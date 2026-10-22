@@ -44,7 +44,13 @@
 import { createHash } from 'node:crypto';
 import type { z } from 'zod';
 import { auth } from '@/lib/auth';
+import { measure } from '@/lib/otel/timing';
 import { hasSessionCookie } from '@/lib/session-cookie';
+import {
+  responseCacheKey,
+  responseCacheTtlMs,
+  withResponseCache,
+} from '@/lib/api/response-cache.server';
 import type { RateLimitPolicy, WithRateLimitOptions } from '@/lib/rate-limit';
 import { withRateLimitAsync } from '@/lib/rate-limit.server';
 import { canUse, upgradeRequiredBody, type MemberFeature } from '@/lib/entitlements/features';
@@ -336,7 +342,7 @@ async function weakEtag(response: Response): Promise<string | null> {
  * otherwise the header is a comma-separated list compared with the **weak**
  * comparison function — so `W/"abc"` and `"abc"` are a match.
  */
-function ifNoneMatchMatches(header: string, etag: string): boolean {
+export function ifNoneMatchMatches(header: string, etag: string): boolean {
   const value = header.trim();
   if (value === '*') return true;
   const opaque = (tag: string) => tag.trim().replace(/^W\//, '');
@@ -458,6 +464,14 @@ export interface HandlerOptions<
    * inert.
    */
   etag?: boolean;
+  /**
+   * Set `false` to keep a public `auth: 'none'` GET out of the per-worker response
+   * micro-cache (`response-cache.server.ts`, up to 30 s, keyed by URL only). Required
+   * when the route's data has a write path that clears an in-process cache or flips
+   * visibility (private wishlist, admin config edit): the micro-cache cannot see
+   * `apiCache.invalidate*`, so it would keep serving the pre-write body.
+   */
+  microCache?: boolean;
 }
 
 type Parsed<S extends z.ZodType | undefined> = S extends z.ZodType ? z.infer<S> : undefined;
@@ -565,6 +579,19 @@ export function defineHandler<
   // process down at boot instead of quietly leaking on the first cache hit.
   if (options.cache) assertCacheSpec(options.cache, mode, options.feature);
   const wantsEtag = options.etag ?? Boolean(options.cache);
+  // A public policy on a route that never resolves a viewer: the response is the
+  // same for everyone, so a hot GET can be answered from memory for the part of
+  // its declared window we are willing to hold it (`response-cache.server.ts`).
+  // A declared `vary` means the body depends on a request header the key
+  // (method + path + query) does not carry, e.g. Accept-Language: such a route
+  // is left to the HTTP caches, which honour Vary.
+  const microCacheable =
+    options.cache?.visibility === 'public' &&
+    mode === 'none' &&
+    !options.feature &&
+    !options.idempotent &&
+    options.microCache !== false &&
+    !options.cache.vary?.length;
 
   return async ({ request, params }) => {
     try {
@@ -577,10 +604,10 @@ export function defineHandler<
       if (mode !== 'none' && hasSessionCookie(request.headers)) {
         // A transport/DB hiccup in the session lookup must not 500 a route that
         // tolerates anonymous callers — it degrades to "signed out" instead.
-        session =
-          mode === 'optional'
-            ? await auth.api.getSession({ headers: request.headers }).catch(() => null)
-            : await auth.api.getSession({ headers: request.headers });
+        // Timed as the `sess` Server-Timing phase.
+        const lookup = () =>
+          measure('sess', () => auth.api.getSession({ headers: request.headers }));
+        session = mode === 'optional' ? await lookup().catch(() => null) : await lookup();
       }
 
       const user = (session?.user ?? null) as ApiUser | null;
@@ -703,7 +730,14 @@ export function defineHandler<
 
       let response: Response;
       try {
-        response = await handler(ctx);
+        const microTtl =
+          microCacheable && request.method === 'GET'
+            ? responseCacheTtlMs(options.cache?.sMaxAge)
+            : 0;
+        response =
+          microTtl > 0
+            ? await withResponseCache(responseCacheKey(request), microTtl, async () => handler(ctx))
+            : await handler(ctx);
       } catch (handlerError) {
         // Release the claim so a genuine retry can run — a failed request must
         // not burn its key for the next 24 hours.

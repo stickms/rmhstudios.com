@@ -43,7 +43,7 @@ logger.Fatal("boot failed", "error", err)        // logs + os.Exit(1)
 database, err := db.Open(ctx, cfg.DatabaseURL, cfg.DBPoolSize) // *db.DB
 defer database.Close()
 database.Pool // *pgxpool.Pool — run queries with database.Pool.Query/QueryRow/Exec
-db.WaitForReachable(ctx, dsn string, attempts int, interval time.Duration) (*db.DB, error) // workers: 10, 5*time.Second
+db.WaitForReachable(ctx, dsn string, poolSize int32, attempts int, interval time.Duration) (*db.DB, error) // workers: 10, 5*time.Second
 ```
 Typed models live in package `db` (use or ignore as convenient): `db.User`,
 `db.Session`, `db.Account`, `db.DoctrinePuzzle`, `db.DoctrineReputation`,

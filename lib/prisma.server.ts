@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { measure } from './otel/timing';
 import { Pool } from 'pg';
 // Aliased: this module already exports a `recordQuery` (the budget counter below).
 import { recordQuery as recordQueryMetric } from './perf/process-metrics';
@@ -69,7 +70,14 @@ export const DEFAULT_QUERY_BUDGET = 40;
 /** How many offending operations to name in a breach line. */
 const BREACH_TOP_N = 5;
 
-const budgetStorage = new AsyncLocalStorage<QueryBudget>();
+// One store per process, not per bundled copy of this module: the production
+// build holds a copy in the Nitro bundle (the plugin that opens the budget) and
+// another in the app's `_ssr` bundle (where the queries run), and two stores
+// meant every request reported zero queries. Same reasoning, and the same fix,
+// as the trace scope in lib/otel/trace.ts.
+const BUDGET_STORAGE_KEY = Symbol.for('rmh.prisma.queryBudgetStorage');
+const globalBudget = globalThis as unknown as Record<symbol, AsyncLocalStorage<QueryBudget>>;
+const budgetStorage = (globalBudget[BUDGET_STORAGE_KEY] ??= new AsyncLocalStorage<QueryBudget>());
 
 function budgetMax(): number {
   const raw = parseInt(process.env.DATABASE_QUERY_BUDGET || '', 10);
@@ -213,9 +221,14 @@ const queryBudgetExtension = Prisma.defineExtension({
       // `query(args)` includes waiting for a pool connection, which is the point:
       // a slow op and a starved pool both show up here. The recorder swallows its
       // own errors and a failed query is re-thrown untouched.
+      //
+      // The same call is also the `db` Server-Timing phase: cumulative query time
+      // for the request. Summed across concurrent queries (a `Promise.all` of three
+      // 10 ms reads reports 30 ms), so it can exceed `total` — it is "DB work", not
+      // "DB wait". `measure` is a no-op outside a traced request scope.
       const startedAt = performance.now();
       try {
-        const result = await query(args);
+        const result = await measure('db', () => query(args));
         recordQueryMetric({
           op: `${model ?? 'raw'}.${operation}`,
           durationMs: performance.now() - startedAt,
@@ -523,7 +536,11 @@ export const prismaRead: PrismaClient = globalForPrisma.prismaRead || createRead
 /** True when reads are actually going somewhere else. For /api/ready + tests. */
 export const hasReadReplica = prismaRead !== prisma;
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-  globalForPrisma.prismaRead = prismaRead;
-}
+// Pin on `globalThis` in EVERY environment, production included. The production
+// build holds this module twice - once in the Nitro bundle (the plugins that open
+// the query budget, warmup, perf) and once in the app's `_ssr` bundle (where the
+// queries run) - and each copy used to build its own client and its own pg pool
+// (2 x DATABASE_POOL_SIZE connections per process, and `dbPoolStats` reporting
+// whichever copy loaded last). Same bundling reason as BUDGET_STORAGE_KEY above.
+globalForPrisma.prisma = prisma;
+globalForPrisma.prismaRead = prismaRead;

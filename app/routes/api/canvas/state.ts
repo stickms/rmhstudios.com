@@ -8,7 +8,7 @@ export const Route = createFileRoute('/api/canvas/state')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'optional', rateLimit: 'read', query: canvasEventQuery },
+        { auth: 'none', rateLimit: 'read', query: canvasEventQuery },
         async ({ query }) => {
           const state = await getCanvasState(query.id);
           if (!state) return Response.json({ error: 'Canvas not found' }, { status: 404 });

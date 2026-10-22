@@ -109,13 +109,16 @@ export const Route = createFileRoute('/api/rmharks/thread')({
           };
 
           // Broadcast the root to followers' live feeds (segments stay off-feed).
-          feedEventBus.publish({
-            type: 'rmhark.created',
-            rmharkId: item.id,
-            payload: item,
-            timestamp: item.createdAt,
-            authorId: userId,
-          });
+          feedEventBus.publishCreatedPost(
+            {
+              type: 'rmhark.created',
+              rmharkId: item.id,
+              payload: item,
+              timestamp: item.createdAt,
+              authorId: userId,
+            },
+            { audience: 'PUBLIC', communityId: null },
+          );
 
           // Moderation pre-screen (all segments, best-effort, non-blocking).
           void screenNewContent({

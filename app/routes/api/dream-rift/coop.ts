@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
@@ -29,7 +30,12 @@ export const Route = createFileRoute('/api/dream-rift/coop')({
     handlers: {
       // ── Co-op leaderboards: top runs by combined score or time survived ──
       GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 20, windowMs: 60_000, prefix: 'dream-rift-coop-get' } },
+        {
+          auth: 'none',
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'dream-rift-coop-get' },
+          // ?difficulty= and ?metric= are in the URL, so each variant caches alone.
+          cache: CACHE_POLICY.leaderboard,
+        },
         async ({ request }) => {
           try {
             const { searchParams } = new URL(request.url);

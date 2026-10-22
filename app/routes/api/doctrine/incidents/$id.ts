@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { getIncident } from '@/lib/doctrine/incidents';
 import { aggregateReactions, calculateDivisiveness } from '@/lib/doctrine/divisiveness';
 
@@ -10,9 +11,13 @@ export const Route = createFileRoute('/api/doctrine/incidents/$id')({
         {
           auth: 'none',
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-incident' },
-          // A single incident record, keyed entirely by the path param and
-          // effectively immutable once published.
-          cache: { visibility: 'public', maxAge: 60, sMaxAge: 300, staleWhileRevalidate: 3600 },
+          // A single incident, keyed by the path param. The record itself does
+          // not change once published, but the response carries live
+          // `reactionCounts` and `divisiveness`, so it shares the list route's
+          // window (index.ts) instead of a 5 min shared cache plus 1 h stale.
+          // Opt out of the 30 s micro-cache: reports/reactions invalidate apiCache; micro-cache cannot see that.
+          microCache: false,
+          cache: CACHE_POLICY.liveList,
         },
         async ({ params }) => {
           try {

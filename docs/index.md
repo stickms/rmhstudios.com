@@ -84,6 +84,23 @@ opti/**
 :maxdepth: 1
 :hidden:
 
+server-perf-2026-10-21/index
+server-perf-2026-10-21/01-method
+server-perf-2026-10-21/02-budgets
+server-perf-2026-10-21/03-rules
+server-perf-2026-10-21/04-workstreams
+server-perf-2026-10-21/06-report
+server-perf-2026-10-21/results/ws-0
+server-perf-2026-10-21/results/ws-1
+server-perf-2026-10-21/results/ws-2
+server-perf-2026-10-21/results/ws-3
+server-perf-2026-10-21/results/ws-4
+server-perf-2026-10-21/results/ws-5
+server-perf-2026-10-21/results/ws-6
+server-perf-2026-10-21/results/ws-7
+server-perf-2026-10-21/results/ws-8
+server-perf-2026-10-21/results/ws-9
+server-perf-2026-10-21/results/compare
 loading-audit-2026-08-11/index
 loading-audit-2026-08-11/01-measurements
 loading-audit-2026-08-11/02-critical-path

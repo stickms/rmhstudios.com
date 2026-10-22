@@ -390,6 +390,10 @@ export default defineConfig({
         //    10 s so the admin performance page sees every cluster worker.
         //    otel.ts feeds it requests and errors.
         fileURLToPath(new URL('./server/nitro/perf.ts', import.meta.url)),
+        //  - cache-bridge: subscribes the worker to the cross-process cache-invalidation
+        //    channel at boot, so a worker that only reads `apiCache` still receives
+        //    invalidations (a lazy subscription would never fire there).
+        fileURLToPath(new URL('./server/nitro/cache-bridge.ts', import.meta.url)),
       ],
       rollupConfig: {
         checks: rolldownChecks,

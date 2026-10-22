@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { canReadPostThread } from '@/lib/feed/audience.server';
 import { awardXp } from '@/lib/xp/engine.server';
 import { progressQuests } from '@/lib/quests/engine.server';
 
@@ -44,6 +45,9 @@ export const Route = createFileRoute('/api/rmharks/$id/vote')({
           });
 
           let castVote = false;
+          // Set when an un-vote lands on a post the caller can no longer read: the
+          // vote is still removed, but the post's tallies are not returned.
+          let unreadable = false;
           if (existingVote) {
             // Toggle off — remove the vote and drop the option's denormalized tally in
             // the same transaction (guarded so it never goes below zero).
@@ -54,6 +58,10 @@ export const Route = createFileRoute('/api/rmharks/$id/vote')({
                 data: { voteCount: { decrement: 1 } },
               }),
             ]);
+            unreadable = !(await canReadPostThread(id, userId));
+          } else if (!(await canReadPostThread(id, userId))) {
+            // Voting needs a readable post (un-voting, above, stays allowed).
+            return Response.json({ error: 'Not found' }, { status: 404 });
           } else if (isMultiSelect) {
             castVote = true;
             // Multi-select: add the vote and bump the option's tally atomically.
@@ -107,6 +115,10 @@ export const Route = createFileRoute('/api/rmharks/$id/vote')({
             where: { optionId: { in: optionIds }, userId },
             select: { optionId: true },
           });
+
+          if (unreadable) {
+            return Response.json({ success: true, myVotes: myVotes.map((v) => v.optionId) });
+          }
 
           // Read the updated tallies straight from the denormalized column — no
           // per-option `_count.votes` aggregate.

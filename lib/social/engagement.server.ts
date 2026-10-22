@@ -17,6 +17,7 @@ import { progressAchievement } from '@/lib/achievements/engine.server';
 import { enqueueProgression } from '@/lib/social/engagement-effects.server';
 import { resolveMediaForPost } from '@/lib/media/attach.server';
 import { userDisplaySelect } from '@/lib/user-display';
+import { canReadThread } from '@/lib/feed/audience.server';
 import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
 import type { RMHarkAudience } from '@prisma/client';
 
@@ -31,7 +32,8 @@ export interface LikeResult {
   /** False when the target post does not exist. */
   found: boolean;
   liked: boolean;
-  likeCount: number;
+  /** Absent when the caller can no longer read the post (an undo must not reveal its count). */
+  likeCount?: number;
 }
 
 /**
@@ -53,7 +55,15 @@ async function applyPostLike(
   const [post, existing] = await Promise.all([
     prisma.rMHark.findUnique({
       where: { id: postId },
-      select: { userId: true, content: true, likeCount: true, user: { select: { handle: true } } },
+      select: {
+        userId: true,
+        content: true,
+        likeCount: true,
+        audience: true,
+        communityId: true,
+        deletedAt: true,
+        user: { select: { handle: true } },
+      },
     }),
     prisma.rMHarkLike.findUnique({ where: { rmheetId_userId: { rmheetId: postId, userId } } }),
   ]);
@@ -61,11 +71,18 @@ async function applyPostLike(
   const liked = desired === 'toggle' ? !existing : desired;
 
   // Already in the requested state — no-op.
-  if (liked && existing) return { ok: true, found: true, liked: true, likeCount: post.likeCount };
-  if (!liked && !existing)
-    return { ok: true, found: true, liked: false, likeCount: post.likeCount };
+  // The count is only returned for a post the caller can still read.
+  if ((liked && existing) || (!liked && !existing)) {
+    const readable = await canReadThread(post, userId);
+    return { ok: true, found: true, liked, likeCount: readable ? post.likeCount : undefined };
+  }
 
   if (liked) {
+    // Liking needs a readable post (unliking, below, stays allowed so an old like can
+    // always be removed). 404, same as a missing post.
+    if (!(await canReadThread(post, userId))) {
+      return { ok: false, found: false, liked: false, likeCount: 0 };
+    }
     const [, updated] = await prisma.$transaction([
       prisma.rMHarkLike.create({ data: { rmheetId: postId, userId } }),
       prisma.rMHark.update({
@@ -128,7 +145,9 @@ async function applyPostLike(
     entityType: 'rmhark',
     entityId: postId,
   });
-  return { ok: true, found: true, liked: false, likeCount: updated.likeCount };
+  // Removing your own like always works; the count only goes back for a readable post.
+  const readable = await canReadThread(post, userId);
+  return { ok: true, found: true, liked: false, likeCount: readable ? updated.likeCount : undefined };
 }
 
 /** Toggle a like (used by the in-app web route). */
@@ -172,9 +191,17 @@ export async function createComment(args: {
   // comment: an existence check, a redundant count re-read, and this author read.
   const post = await prisma.rMHark.findUnique({
     where: { id: postId },
-    select: { id: true, userId: true, user: { select: { handle: true } } },
+    select: {
+      id: true,
+      userId: true,
+      audience: true,
+      communityId: true,
+      deletedAt: true,
+      user: { select: { handle: true } },
+    },
   });
-  if (!post) return { ok: false, found: false };
+  // A thread the author cannot read cannot be written to either (404, same as missing).
+  if (!post || !(await canReadThread(post, userId))) return { ok: false, found: false };
 
   // The transaction's update already returns the incremented count — capture it
   // instead of issuing a separate findUnique afterward.
@@ -296,8 +323,14 @@ export async function setBookmark(
   if (!bookmarked && !existing) return { ok: true, found: true, bookmarked: false };
 
   if (bookmarked) {
-    const post = await prisma.rMHark.findUnique({ where: { id: postId }, select: { id: true } });
-    if (!post) return { ok: false, found: false, bookmarked: false };
+    const post = await prisma.rMHark.findUnique({
+      where: { id: postId },
+      select: { userId: true, audience: true, communityId: true, deletedAt: true },
+    });
+    // Saving needs a readable post; removing a bookmark (below) stays allowed.
+    if (!post || !(await canReadThread(post, userId))) {
+      return { ok: false, found: false, bookmarked: false };
+    }
     // Not `addSave`: that upsert would move an already-saved post out of the
     // folder its owner filed it in. A bookmark press must never re-file.
     await prisma.savedItem.create({

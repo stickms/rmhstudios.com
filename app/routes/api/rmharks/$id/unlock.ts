@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins } from '@/lib/economy/ledger.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { canReadThread } from '@/lib/feed/audience.server';
 import { createNotification } from '@/lib/notifications.server';
 
 /**
@@ -27,9 +28,22 @@ export const Route = createFileRoute('/api/rmharks/$id/unlock')({
 
           const post = await prisma.rMHark.findUnique({
             where: { id },
-            select: { id: true, userId: true, unlockPrice: true, content: true, deletedAt: true },
+            select: {
+              id: true,
+              userId: true,
+              unlockPrice: true,
+              content: true,
+              deletedAt: true,
+              audience: true,
+              communityId: true,
+            },
           });
-          if (!post || post.deletedAt) return Response.json({ error: 'Post not found' }, { status: 404 });
+          // The "free post" and "already unlocked" answers below return the post's text, so
+          // the viewer must be allowed to see the post at all (and must not be charged for
+          // one they cannot): the route used to return any post's content to anyone.
+          if (!post || !(await canReadThread(post, userId))) {
+            return Response.json({ error: 'Post not found' }, { status: 404 });
+          }
 
           // Author or free post — nothing to pay.
           if (post.userId === userId || !post.unlockPrice || post.unlockPrice <= 0) {

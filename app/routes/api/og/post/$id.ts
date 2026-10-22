@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { renderPostOgImage } from '@/lib/og/post-image.server';
-import { postCardShowsContent } from '@/lib/og/post-visibility';
+import { postCardCommunityName, postCardShowsContent } from '@/lib/og/post-visibility';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 
 /** GET /api/og/post/$id — dynamic Open Graph card image (PNG) for a post. */
@@ -36,7 +36,7 @@ export const Route = createFileRoute('/api/og/post/$id')({
                 options: { select: { text: true }, orderBy: { position: 'asc' } },
               },
             },
-            community: { select: { name: true } },
+            community: { select: { name: true, isPrivate: true } },
             // The quoted post, for a quote-repost. Selected with its own
             // visibility columns because it is a different post with a
             // different audience — quoting something does not republish it.
@@ -47,6 +47,8 @@ export const Route = createFileRoute('/api/og/post/$id')({
                 deletedAt: true,
                 audience: true,
                 unlockPrice: true,
+                updatedAt: true,
+                community: { select: { isPrivate: true } },
                 user: { select: userDisplaySelect },
               },
             },
@@ -62,12 +64,19 @@ export const Route = createFileRoute('/api/og/post/$id')({
         // poll AND the attachments — see lib/og/post-visibility.ts.
         const showContent = postCardShowsContent(post);
         const showQuote = showContent && postCardShowsContent(post?.original);
+        // A private community's name is members-only; the card is public and cached.
+        const communityName = postCardCommunityName(post);
 
         const png = await renderPostOgImage({
           id: params.id,
           // Re-render on edit (and the moment a content warning is applied)
           // rather than when the ten-minute PNG cache happens to expire.
-          revision: `${post?.updatedAt?.getTime() ?? 0}:${showContent ? 1 : 0}`,
+          // The quote is part of the card, so its state is part of the key: a quoted
+          // original that goes private / deleted / edited must not keep its text on
+          // a cached card.
+          revision: `${post?.updatedAt?.getTime() ?? 0}:${showContent ? 1 : 0}:${communityName ? 1 : 0}:${
+            showQuote ? `q${post?.original?.updatedAt?.getTime() ?? 0}` : 'n'
+          }`,
           content: showContent ? (post?.content ?? '') : '',
           authorName: author?.name ?? 'RMH Studios',
           authorHandle: author?.handle ?? null,
@@ -83,7 +92,7 @@ export const Route = createFileRoute('/api/og/post/$id')({
           gifUrl: showContent ? (post?.gifUrl ?? null) : null,
           pollQuestion: showContent ? (post?.poll?.question ?? null) : null,
           pollOptions: showContent ? (post?.poll?.options.map((o) => o.text) ?? []) : [],
-          community: post?.community?.name ?? null,
+          community: communityName,
           quote:
             showQuote && post?.original
               ? {

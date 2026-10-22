@@ -83,6 +83,24 @@ export function createServerPrismaClient(logger: Logger): PrismaClient {
   return client.$extends(queryTimingExtension) as unknown as PrismaClient;
 }
 
+/**
+ * Pay Prisma's one-time start-up cost at boot instead of on the first player's
+ * action. The first query on a fresh client initialises the query compiler and
+ * opens the first pool connection; measured on the socket hub that is a single
+ * ~280 ms event-loop stall (docs/server-perf-2026-10-21/results/ws-5.md) landing
+ * on whichever table or lobby acts first. Fire-and-forget: a failure only means
+ * the first real query pays as before.
+ */
+export async function warmPrismaClient(client: PrismaClient, logger: Logger): Promise<void> {
+  const started = Date.now();
+  try {
+    await client.$queryRaw`SELECT 1`;
+    logger.info({ event: 'prisma_warmed', ms: Date.now() - started });
+  } catch (err) {
+    logger.warn({ event: 'prisma_warm_failed', error: String(err) });
+  }
+}
+
 export async function disconnectPrisma(client: PrismaClient, logger: Logger): Promise<void> {
   await client.$disconnect();
   logger.info({ event: 'prisma_client_disconnected' });

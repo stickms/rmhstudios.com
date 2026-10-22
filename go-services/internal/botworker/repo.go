@@ -71,7 +71,6 @@ type Repo interface {
 
 	// ─── DM tick ─────────────────────────────────────────────────────
 	RecentBotConversations(ctx context.Context, since time.Time) ([]ConversationRow, error)
-	LastMessageSender(ctx context.Context, conversationID string) (string, error)
 	RecentDMHistory(ctx context.Context, conversationID string) ([]dmMessage, error)
 	SendBotDM(ctx context.Context, conversationID, botID, content string) (messagePayload, error)
 	DMPrivacy(ctx context.Context, userID string) (DmPrivacy, error)

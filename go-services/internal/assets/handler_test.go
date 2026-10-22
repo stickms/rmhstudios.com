@@ -15,12 +15,13 @@ import (
 
 type fakeStore struct {
 	gotKey, gotRange string
+	gotOpts          objectstore.GetOptions
 	obj              *objectstore.Object
 	err              error
 }
 
-func (f *fakeStore) Get(_ context.Context, key, rng string) (*objectstore.Object, error) {
-	f.gotKey, f.gotRange = key, rng
+func (f *fakeStore) Get(_ context.Context, key string, opts objectstore.GetOptions) (*objectstore.Object, error) {
+	f.gotKey, f.gotRange, f.gotOpts = key, opts.Range, opts
 	return f.obj, f.err
 }
 
@@ -142,5 +143,71 @@ func TestBadRangeReturns416(t *testing.T) {
 	h.ServeHTTP(w, newReq("GET", "/music/song.mp3", "bytes=999999-"))
 	if w.Code != http.StatusRequestedRangeNotSatisfiable {
 		t.Errorf("status = %d, want 416", w.Code)
+	}
+}
+
+func TestConditionalGetRelaysValidatorsAndReturns304(t *testing.T) {
+	fs := &fakeStore{err: &objectstore.NotModifiedError{ETag: `"abc"`, LastModified: "Wed, 21 Oct 2026 07:28:00 GMT"}}
+	h := NewHandler(fs, log.New("assets", "error"))
+	r := newReq("GET", "/library/book.pdf", "")
+	r.Header.Set("If-None-Match", `"abc"`)
+	r.Header.Set("If-Modified-Since", "Wed, 21 Oct 2026 07:28:00 GMT")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+
+	if fs.gotOpts.IfNoneMatch != `"abc"` || fs.gotOpts.IfModifiedSince != "Wed, 21 Oct 2026 07:28:00 GMT" {
+		t.Errorf("validators not relayed: %+v", fs.gotOpts)
+	}
+	if w.Code != http.StatusNotModified || w.Body.Len() != 0 {
+		t.Errorf("status = %d, body %d bytes; want 304 with no body", w.Code, w.Body.Len())
+	}
+	if w.Header().Get("ETag") != `"abc"` || w.Header().Get("Last-Modified") != "Wed, 21 Oct 2026 07:28:00 GMT" ||
+		w.Header().Get("Cache-Control") != cacheControl {
+		t.Errorf("304 headers: %v", w.Header())
+	}
+}
+
+// The 304 carries the UPSTREAM's validators, never the request's If-None-Match:
+// "*" and a list must not come back as a bogus ETag, and an upstream that sent
+// none yields no ETag at all.
+func TestNotModifiedNeverEchoesRequestValidator(t *testing.T) {
+	for name, tc := range map[string]struct {
+		inm  string
+		err  error
+		etag string
+	}{
+		"star, upstream etag": {"*", &objectstore.NotModifiedError{ETag: `"v9"`}, `"v9"`},
+		"list, upstream etag": {`"a", "b"`, &objectstore.NotModifiedError{ETag: `"b"`}, `"b"`},
+		"star, no validators": {"*", &objectstore.NotModifiedError{}, ""},
+		"bare sentinel":       {`"a"`, objectstore.ErrNotModified, ""},
+	} {
+		t.Run(name, func(t *testing.T) {
+			h := NewHandler(&fakeStore{err: tc.err}, log.New("assets", "error"))
+			r := newReq("GET", "/library/book.pdf", "")
+			r.Header.Set("If-None-Match", tc.inm)
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, r)
+			if w.Code != http.StatusNotModified {
+				t.Fatalf("status = %d, want 304", w.Code)
+			}
+			if got := w.Header().Get("ETag"); got != tc.etag {
+				t.Errorf("ETag = %q, want %q", got, tc.etag)
+			}
+		})
+	}
+}
+
+func TestSetsContentLength(t *testing.T) {
+	fs := &fakeStore{obj: &objectstore.Object{
+		Body: body("PDFDATA"), ContentType: "application/pdf", ContentLength: 7, Status: http.StatusOK,
+	}}
+	h := NewHandler(fs, log.New("assets", "error"))
+	for _, m := range []string{"GET", "HEAD"} {
+		fs.obj.Body = body("PDFDATA")
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, newReq(m, "/library/book.pdf", ""))
+		if got := w.Header().Get("Content-Length"); got != "7" {
+			t.Errorf("%s Content-Length = %q, want 7", m, got)
+		}
 	}
 }

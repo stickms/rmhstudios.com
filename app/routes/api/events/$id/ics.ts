@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { SITE_URL } from '@/lib/seo';
 import { eventToICS } from '@/lib/events-ics';
+import { canViewCommunityEvents } from '@/lib/events.server';
+import { auth } from '@/lib/auth';
 
 /**
  * GET /api/events/$id/ics — download a single-event .ics file. Public: anyone
@@ -10,7 +12,7 @@ import { eventToICS } from '@/lib/events-ics';
 export const Route = createFileRoute('/api/events/$id/ics')({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: async ({ params, request }) => {
         const event = await prisma.communityEvent.findUnique({
           where: { id: params.id },
           select: {
@@ -22,10 +24,20 @@ export const Route = createFileRoute('/api/events/$id/ics')({
             venueKind: true,
             venueRef: true,
             canceledAt: true,
-            community: { select: { name: true } },
+            communityId: true,
+            community: { select: { name: true, isPrivate: true } },
           },
         });
         if (!event) return Response.json({ error: 'Not found' }, { status: 404 });
+
+        // Private-community events are members-only (404 otherwise); such a response must not be shared-cached.
+        const isPrivate = !!event.community?.isPrivate;
+        if (isPrivate && event.communityId) {
+          const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+          if (!(await canViewCommunityEvents(event.communityId, session?.user.id ?? null))) {
+            return Response.json({ error: 'Not found' }, { status: 404 });
+          }
+        }
 
         const location =
           event.venueKind === 'URL'
@@ -49,7 +61,7 @@ export const Route = createFileRoute('/api/events/$id/ics')({
           headers: {
             'Content-Type': 'text/calendar; charset=utf-8',
             'Content-Disposition': 'attachment; filename="event.ics"',
-            'Cache-Control': 'public, max-age=300',
+            'Cache-Control': isPrivate ? 'private, no-store' : 'public, max-age=300',
           },
         });
       },

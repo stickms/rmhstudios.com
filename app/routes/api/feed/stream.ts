@@ -137,7 +137,14 @@ export const Route = createFileRoute('/api/feed/stream')({
             if (viewerId) {
               unsubUser = feedEventBus.subscribeUser(viewerId, (event: FeedSSEEvent) => {
                 try {
-                  send(event.type, JSON.stringify(event));
+                  // The author's own non-public post arrives here (never on the
+                  // global channel); mark it own so the client prepends it.
+                  send(
+                    event.type,
+                    event.type === 'rmhark.created'
+                      ? serializeWithDelivery(event, { followed: false, own: true })
+                      : JSON.stringify(event),
+                  );
                 } catch {
                   // Serialization failure for one event must not kill the stream.
                 }

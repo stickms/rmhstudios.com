@@ -4,15 +4,19 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getAllNewsArticles, getFeaturedNewsArticles } from '@/lib/news';
+import { getNewsIndexArticles } from '@/lib/news';
 import { NewsPageContent } from '@/components/news/NewsPageContent';
 import { buildCanonical, buildMeta, SITE_URL } from '@/lib/seo';
 
 const fetchNews = createServerFn({ method: 'GET' }).handler(async () => {
-  // perf audit §4.2: fetch the two viewer-independent news lists in parallel
-  // instead of a sequential await chain (2 RTT / 2 serial DB reads → 1).
-  const [articles, featured] = await Promise.all([getAllNewsArticles(), getFeaturedNewsArticles()]);
-  return { articles, featured };
+  // One query, not two: the featured set is by definition the featured subset of
+  // the published list, in the same `date desc` order, so it is filtered from the
+  // first result (sharing object references, which the serializer emits once).
+  // The shared helper owns the lean select (no article body: it is read only by
+  // /news/$slug and would be serialized into the HTML for every article) and
+  // reads from the replica.
+  const articles = await getNewsIndexArticles();
+  return { articles, featured: articles.filter((a) => a.featured) };
 });
 
 export const Route = createFileRoute('/_site/news/')({

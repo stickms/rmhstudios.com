@@ -442,6 +442,33 @@ signed cookie without reading the (deleted) session row. Fixed by forcing
 Out of scope (each needs external services): Stripe checkout/webhooks, OAuth
 providers, the Socket.IO hubs, email delivery.
 
+### Server perf harness (not in CI)
+
+The server-side performance program ([`docs/server-perf-2026-10-21/`](server-perf-2026-10-21/index.md))
+measures the production build against a seeded dataset. Like the integration suite above it boots the built app (`.output/server/index.mjs`) against a real Postgres, but it measures latency and query counts rather than asserting behaviour, and it is never run in CI. Method, budgets and the
+agent procedure are in that folder; the instruments live in `scripts/perf/`:
+
+```bash
+pnpm tsx scripts/perf/seed-perf-db.ts --db rmh_perf_build   # ~2 min: 20k users, 200k posts, 1.2M likes, ...
+createdb -T rmh_perf_template rmh_ws<N>                     # a private copy of the seeded database
+flock /tmp/rmh-perf-build.lock pnpm build                   # latency is only ever measured on the prod build
+NODE_ENV=production PORT=71<N>5 RMH_PERF_HEADERS=1 node .output/server/index.mjs &
+node scripts/perf/server-bench.mjs --base http://localhost:71<N>5 --auth both --out out.json
+node scripts/perf/server-bench.mjs --compare before.json after.json    # markdown diff, flags regressions
+node scripts/perf/server-bench.mjs --summary baseline.json             # the P0 summary tables
+node scripts/perf/cold-start.mjs --port 71<N>5                          # restart + first request to /
+```
+
+Raw bench output (`--out *.json`, ~9k lines per run) stays out of the repo: `--compare` and `--summary` take any paths, so
+no checked-in baseline is needed. Commit the derived table (`--compare … > compare.md`) and the report instead. The program's
+own raw runs are in git history at `1b437552d` (`docs/server-perf-2026-10-21/results/{baseline,after,after-run2}.json`).
+
+`RMH_PERF_HEADERS=1` adds `x-rmh-queries: <n>` to every response (off by
+default; `lib/__tests__/perf-headers.test.ts` pins that). `Server-Timing` is
+always on and carries `dur`-only `sess` / `cache` / `db` / `total` phases. The
+tests for the instrumentation itself are `lib/__tests__/otel-server-timing.test.ts`
+and `perf-headers.test.ts`, and they run in the main suite; the harness does not.
+
 ### Coverage
 
 ```bash

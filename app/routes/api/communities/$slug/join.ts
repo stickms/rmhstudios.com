@@ -1,17 +1,30 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
+import { acceptInvite } from '@/lib/communities/invites.server';
 
-/** POST /api/communities/$slug/join — toggle membership. */
+/**
+ * POST /api/communities/$slug/join — toggle membership (join-only with an invite).
+ *
+ * A private community can only be joined with `{ invite: code }` (or by a
+ * moderator approving a join request); the code is validated and consumed
+ * atomically in `acceptInvite`, and every invalid code answers the same generic
+ * 404. Without a valid invite it is a plain 404 as for a missing community.
+ */
 export const Route = createFileRoute('/api/communities/$slug/join')({
   server: {
     handlers: {
       POST: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'community-join' } },
-        async ({ params, session }) => {
+        {
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'community-join' },
+          body: z.object({ invite: z.string().min(1).max(64).optional() }),
+          allowEmptyBody: true,
+        },
+        async ({ params, session, body }) => {
           const community = await prisma.community.findUnique({
             where: { slug: params.slug },
-            select: { id: true, createdById: true },
+            select: { id: true, createdById: true, isPrivate: true },
           });
           if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
 
@@ -20,6 +33,22 @@ export const Route = createFileRoute('/api/communities/$slug/join')({
             where: { communityId_userId: { communityId: community.id, userId } },
             select: { id: true },
           });
+
+          // An invite is a request to join, never a toggle: repeating it (a double
+          // submit, a second open invite tab) must not turn into a leave.
+          if (body?.invite && existing) {
+            return Response.json({ success: true, joined: true });
+          }
+
+          if (community.isPrivate && !existing) {
+            const accepted = body?.invite
+              ? await acceptInvite(community.id, userId, body.invite)
+              : null;
+            if (!accepted?.ok) {
+              return Response.json({ error: "This invite isn't valid" }, { status: 404 });
+            }
+            return Response.json({ success: true, joined: true });
+          }
 
           if (existing) {
             // The creator can't leave their own community.

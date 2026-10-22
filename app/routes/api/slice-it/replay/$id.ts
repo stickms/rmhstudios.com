@@ -21,7 +21,7 @@ import { getReplay } from '@/lib/replays.server';
 export const Route = createFileRoute('/api/slice-it/replay/$id')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ params }) => {
+      GET: defineHandler({ auth: 'none', rateLimit: 'read' }, async ({ params }) => {
         const id = typeof params.id === 'string' ? params.id : '';
         if (!id) return Response.json({ error: 'Not found' }, { status: 404 });
 

@@ -5,13 +5,23 @@ import { prisma } from '@/lib/prisma.server';
 import { feedbackSchema } from '@/lib/feedback-schema';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
+const FEEDBACK_LIST_CAP = 100;
+
 export const Route = createFileRoute('/api/feedback')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async () => {
+      // Admin only: the list is every submitter's name and message, and no
+      // client calls it (the form only POSTs).
+      GET: defineHandler({ auth: 'admin' }, async () => {
+        // Bounded: the table grows with every submission; newest FEEDBACK_LIST_CAP rows, only the columns returned.
         const feedbacks = await prisma.feedback.findMany({
           orderBy: { createdAt: 'desc' },
-          include: {
+          take: FEEDBACK_LIST_CAP,
+          select: {
+            id: true,
+            category: true,
+            message: true,
+            createdAt: true,
             user: {
               select: { name: true, username: true, image: true },
             },

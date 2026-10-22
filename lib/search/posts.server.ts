@@ -12,7 +12,8 @@
  */
 
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma.server';
+import { prisma, prismaRead } from '@/lib/prisma.server';
+import { communityVisibleWhere } from '@/lib/feed/audience.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { fuzzyColumn, norm, type FuzzyTerms } from './db.server';
 import { confidenceOf, scoreRecord, withPopularity, withRecency, MATCH_FLOOR } from './score';
@@ -73,6 +74,13 @@ export async function searchPostsScored(
   }
   if (opts.authorId) filters.push(Prisma.sql`"userId" = ${opts.authorId}`);
   if (opts.communityId) filters.push(Prisma.sql`"communityId" = ${opts.communityId}`);
+  // A private community's posts are members-only. Searching INSIDE a community is the
+  // caller's access check; a search across the site must never return them.
+  else {
+    filters.push(
+      Prisma.sql`("communityId" IS NULL OR "communityId" NOT IN (SELECT id FROM community WHERE "isPrivate"))`,
+    );
+  }
   if (opts.before) filters.push(Prisma.sql`"createdAt" < ${new Date(opts.before)}`);
   if (opts.after) filters.push(Prisma.sql`"createdAt" >= ${new Date(opts.after)}`);
   if (opts.hasMedia) filters.push(Prisma.sql`array_length("imageUrls", 1) > 0`);
@@ -87,7 +95,7 @@ export async function searchPostsScored(
       ) DESC, "likeCount" DESC`
     : Prisma.sql`"createdAt" DESC`;
 
-  const matches = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+  const matches = await prismaRead.$queryRaw<{ id: string }[]>(Prisma.sql`
     SELECT id
     FROM rmheet
     WHERE ${Prisma.join(filters, ' AND ')}
@@ -119,8 +127,29 @@ export async function searchPostsScored(
   if (fused.length === 0) return [];
 
   const ids = fused.slice(0, CANDIDATE_POOL).map((h) => h.id);
+  // Hydrate on the PRIMARY and re-apply the visibility rule. The candidate scan
+  // above is lag-tolerant (prismaRead), but the ids can also come from the
+  // semantic retriever, which never saw any of the SQL filters, and "deleted /
+  // not public / in a private community / by a hidden author" are facts that must
+  // be fresh: a post hidden a moment ago must not be listed because a replica is
+  // behind. It is a primary-key lookup of <= CANDIDATE_POOL ids.
   const rows = await prisma.rMHark.findMany({
-    where: { id: { in: ids } },
+    where: {
+      id: { in: ids },
+      deletedAt: null,
+      audience: 'PUBLIC',
+      unlockPrice: null,
+      AND: [
+        // Searching INSIDE a community is the caller's access check; anywhere else
+        // a private community's posts are never returned.
+        opts.communityId ? { communityId: opts.communityId } : communityVisibleWhere(null),
+        ...(hidden.length ? [{ userId: { notIn: hidden } }] : []),
+        ...(opts.authorId ? [{ userId: opts.authorId }] : []),
+        ...(opts.before ? [{ createdAt: { lt: new Date(opts.before) } }] : []),
+        ...(opts.after ? [{ createdAt: { gte: new Date(opts.after) } }] : []),
+        ...(opts.hasMedia ? [{ NOT: { imageUrls: { isEmpty: true } } }] : []),
+      ],
+    },
     select: {
       id: true,
       content: true,
@@ -194,7 +223,7 @@ export async function searchPostsScored(
 
 /** Resolve `in:<slug>` to a community id. Returns `undefined` when unknown. */
 export async function resolveCommunityId(slug: string): Promise<string | undefined> {
-  const row = await prisma.community.findFirst({
+  const row = await prismaRead.community.findFirst({
     where: { slug, isPrivate: false },
     select: { id: true },
   });

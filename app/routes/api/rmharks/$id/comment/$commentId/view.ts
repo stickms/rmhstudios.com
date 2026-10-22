@@ -3,6 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { getClientIp } from '@/lib/rate-limit';
 import crypto from 'crypto';
+import { canReadCommentThread } from '@/lib/feed/audience.server';
 
 export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/view')({
   server: {
@@ -24,6 +25,12 @@ export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/view')
           // per-IP view dedup below.
           const ip = getClientIp(request);
           const ipHash = crypto.createHash('sha256').update(ip).digest('hex').slice(0, 16);
+
+          // Privacy gate: no view row (and no existence signal) for a comment
+          // whose thread the viewer cannot read.
+          if (!(await canReadCommentThread(commentId, userId))) {
+            return Response.json({ error: 'Not found' }, { status: 404 });
+          }
 
           // perf: one idempotent INSERT ... ON CONFLICT DO NOTHING instead of an
           // upsert (SELECT + INSERT) per impression. A duplicate view (same

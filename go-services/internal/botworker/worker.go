@@ -450,11 +450,11 @@ func habitPostsPerDay(persona string) float64 {
 		}
 	}
 	switch {
-	case matchPersona(persona, `very online|frequently`):
+	case reVeryOnline.MatchString(persona):
 		return 9
-	case matchPersona(persona, `rare poster|only chimes in`):
+	case reRarePoster.MatchString(persona):
 		return 2
-	case matchPersona(persona, `flurry|goes quiet`):
+	case reFlurry.MatchString(persona):
 		return 6
 	}
 	return 5
@@ -481,13 +481,13 @@ func shouldPost(bot BotUser, multiplier float64, tick time.Duration, now time.Ti
 	return rnd < perDay/ticksPerDay
 }
 
-func matchPersona(persona, pattern string) bool {
-	re, err := regexp.Compile("(?i)" + pattern)
-	if err != nil {
-		return false
-	}
-	return re.MatchString(persona)
-}
+// Compiled once: postTick classifies every bot (up to 1000) each tick, and
+// compiling three patterns per bot dominated the cost of the pass.
+var (
+	reVeryOnline = regexp.MustCompile(`(?i)very online|frequently`)
+	reRarePoster = regexp.MustCompile(`(?i)rare poster|only chimes in`)
+	reFlurry     = regexp.MustCompile(`(?i)flurry|goes quiet`)
+)
 
 func shuffle(bots []BotUser) []BotUser {
 	out := make([]BotUser, len(bots))

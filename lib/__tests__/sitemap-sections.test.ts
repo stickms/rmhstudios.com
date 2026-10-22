@@ -75,6 +75,69 @@ describe('the sitemap index survives a broken database', () => {
   });
 });
 
+describe('batched sections', () => {
+  it('reads posts in small queries that together cover the chunk', async () => {
+    const { renderSectionBatches } = await import('@/lib/sitemap.server');
+    const row = (i: number) => ({ id: `p${i}`, updatedAt: new Date(0), user: { handle: 'h' } });
+    prismaMock.rMHark.findMany.mockImplementation(async ({ skip, take }) =>
+      Array.from({ length: take }, (_, i) => row(skip + i)),
+    );
+    const sizes: number[] = [];
+    const skips: number[] = [];
+    for await (const slice of renderSectionBatches('posts', 2)!) sizes.push(slice.length);
+    for (const c of prismaMock.rMHark.findMany.mock.calls) skips.push(c[0].skip);
+
+    expect(sizes.reduce((a, b) => a + b, 0)).toBe(SITEMAP_CHUNK_SIZE);
+    expect(Math.max(...sizes)).toBeLessThanOrEqual(5_000);
+    expect(skips[0]).toBe(SITEMAP_CHUNK_SIZE);
+    expect(skips[1]).toBe(SITEMAP_CHUNK_SIZE + 5_000);
+  });
+
+  it('pages users by keyset after the first slice, so concurrent writes cannot repeat or skip rows', async () => {
+    const { renderSectionBatches } = await import('@/lib/sitemap.server');
+    const row = (i: number) => ({
+      id: `u${String(i).padStart(6, '0')}`,
+      handle: `h${i}`,
+      updatedAt: new Date(0),
+      followerCount: 100 - Math.floor(i / 1000),
+    });
+    let n = 0;
+    prismaMock.user.findMany.mockImplementation(async ({ take }) =>
+      Array.from({ length: take }, () => row(n++)),
+    );
+    const sizes: number[] = [];
+    for await (const slice of renderSectionBatches('users', 1)!) sizes.push(slice.length);
+    expect(sizes.reduce((a, b) => a + b, 0)).toBe(SITEMAP_CHUNK_SIZE);
+    const calls = prismaMock.user.findMany.mock.calls.map((c) => c[0]);
+    expect(calls[0].skip).toBe(0);
+    expect(calls[0].orderBy).toEqual([{ followerCount: 'desc' }, { id: 'asc' }]);
+    for (const c of calls.slice(1)) {
+      expect(c.skip).toBeUndefined();
+      const keyset = c.where.AND[1].OR;
+      expect(keyset[0]).toEqual({ followerCount: { lt: expect.any(Number) } });
+      expect(keyset[1]).toEqual({
+        followerCount: expect.any(Number),
+        id: { gt: expect.any(String) },
+      });
+    }
+  });
+
+  it('stops at the first short page', async () => {
+    const { renderSectionBatches } = await import('@/lib/sitemap.server');
+    prismaMock.rMHark.findMany.mockResolvedValueOnce(
+      Array.from({ length: 3 }, (_, i) => ({
+        id: `p${i}`,
+        updatedAt: new Date(0),
+        user: { handle: 'h' },
+      })),
+    );
+    const out: number[] = [];
+    for await (const s of renderSectionBatches('posts', 1)!) out.push(s.length);
+    expect(out).toEqual([3]);
+    expect(prismaMock.rMHark.findMany).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('chunking', () => {
   it('splits a section into as many chunks as it needs', async () => {
     const { listSitemapChunks } = await import('@/lib/sitemap.server');
@@ -150,6 +213,22 @@ describe('visibility predicates', () => {
     }
     expect(where.originalId).toBeNull();
     expect(where.user).toEqual({ handle: { not: null }, isBot: false });
+  });
+
+  it('keeps community posts and private communities out, in both count and page', async () => {
+    const { SITEMAP_SECTIONS } = await import('@/lib/sitemap.server');
+    await SITEMAP_SECTIONS.posts.count();
+    await SITEMAP_SECTIONS.posts.page(0, 10);
+    for (const call of [
+      prismaMock.rMHark.count.mock.calls[0][0],
+      prismaMock.rMHark.findMany.mock.calls[0][0],
+    ]) {
+      expect(call.where.communityId).toBeNull();
+      expect(call.where.audience).toBe('PUBLIC');
+    }
+
+    await SITEMAP_SECTIONS.community.count();
+    expect(prismaMock.community.count.mock.calls[0][0]).toEqual({ where: { isPrivate: false } });
   });
 
   it('builds post URLs from the author handle, not the post author id', async () => {

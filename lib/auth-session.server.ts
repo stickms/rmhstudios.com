@@ -18,6 +18,7 @@
  */
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
+import { measure } from '@/lib/otel/timing';
 import { hasSessionCookie } from '@/lib/session-cookie';
 
 type SessionResult = Awaited<ReturnType<typeof auth.api.getSession>>;
@@ -47,9 +48,11 @@ export function getRequestSession(): Promise<SessionResult> {
   const cached = sessionByRequest.get(key);
   if (cached) return cached;
 
-  const pending = auth.api
-    .getSession({ headers: req.headers })
-    .catch(() => null) as Promise<SessionResult>;
+  // `sess` Server-Timing phase. Marked on the memoized promise, so the several
+  // callers of one render share one measurement instead of each adding it.
+  const pending = measure('sess', () => auth.api.getSession({ headers: req.headers })).catch(
+    () => null,
+  ) as Promise<SessionResult>;
   sessionByRequest.set(key, pending);
   return pending;
 }

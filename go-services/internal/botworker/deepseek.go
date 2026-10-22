@@ -19,6 +19,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/rmhstudios/rmh-go/pkg/config"
 )
 
 const deepSeekBaseURL = "https://api.deepseek.com"
@@ -64,6 +66,9 @@ type DSClient struct {
 	apiKey string
 	model  string
 	http   *http.Client
+	// baseURL is BOT_AI_BASE_URL (default the DeepSeek API) so tests and staging
+	// can point the client at a stand-in.
+	baseURL string
 }
 
 // newDSClient builds a client from an API key. Model defaults to defaultModel.
@@ -72,9 +77,10 @@ func newDSClient(apiKey, model string) *DSClient {
 		model = defaultModel
 	}
 	return &DSClient{
-		apiKey: apiKey,
-		model:  model,
-		http:   &http.Client{Timeout: 60 * time.Second},
+		apiKey:  apiKey,
+		model:   model,
+		http:    &http.Client{Timeout: 60 * time.Second},
+		baseURL: config.GetString("BOT_AI_BASE_URL", deepSeekBaseURL),
 	}
 }
 
@@ -90,7 +96,7 @@ func (c *DSClient) complete(ctx context.Context, system, user string) (string, e
 		return "", fmt.Errorf("botworker deepseek: marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, deepSeekBaseURL+"/v1/chat/completions", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/v1/chat/completions", bytes.NewReader(body))
 	if err != nil {
 		return "", fmt.Errorf("botworker deepseek: build request: %w", err)
 	}

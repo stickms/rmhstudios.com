@@ -31,7 +31,7 @@
 import { createHash } from 'node:crypto';
 import OpenAI from 'openai';
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma.server';
+import { prisma, prismaRead } from '@/lib/prisma.server';
 import { prepareText } from '@/lib/search/hybrid';
 import { timedAiFetch } from '../ai/timed-fetch.server';
 
@@ -210,7 +210,7 @@ export async function nearest(
   const vector = await embed(query);
   if (!vector) return [];
 
-  const rows = await prisma.$queryRaw<{ entityId: string; distance: number }[]>`
+  const rows = await prismaRead.$queryRaw<{ entityId: string; distance: number }[]>`
     SELECT "entityId", ("vector" <=> ${Prisma.raw(`'${toVectorLiteral(vector)}'::vector`)}) AS "distance"
     FROM "embedding"
     WHERE "kind" = ${kind} AND "model" = ${MODEL}
@@ -233,7 +233,7 @@ export async function similarTo(
   limit = 10,
 ): Promise<Neighbour[]> {
   if (!(await isEmbeddingStoreReady())) return [];
-  const rows = await prisma.$queryRaw<{ entityId: string; distance: number }[]>`
+  const rows = await prismaRead.$queryRaw<{ entityId: string; distance: number }[]>`
     SELECT e."entityId", (e."vector" <=> src."vector") AS "distance"
     FROM "embedding" e
     JOIN "embedding" src ON src."kind" = ${kind} AND src."entityId" = ${entityId}
