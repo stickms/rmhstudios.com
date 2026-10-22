@@ -269,6 +269,7 @@ import { Route as SiteCreateBuildsRouteImport } from './routes/_site/create/buil
 import { Route as SiteCreateEarningsRouteImport } from './routes/_site/create/earnings'
 import { Route as SiteCreatePersonasRouteImport } from './routes/_site/create/personas'
 import { Route as SiteDeveloperIndexRouteImport } from './routes/_site/developer/index'
+import { Route as SiteDeveloperAiPracticesRouteImport } from './routes/_site/developer/ai-practices'
 import { Route as SiteExchangeIndexRouteImport } from './routes/_site/exchange.index'
 import { Route as SiteExchangeIdRouteImport } from './routes/_site/exchange.$id'
 import { Route as SiteFeedsIndexRouteImport } from './routes/_site/feeds.index'
@@ -2571,6 +2572,12 @@ const SiteDeveloperIndexRoute = SiteDeveloperIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SiteDeveloperRouteRoute,
 } as any)
+const SiteDeveloperAiPracticesRoute =
+  SiteDeveloperAiPracticesRouteImport.update({
+    id: '/ai-practices',
+    path: '/ai-practices',
+    getParentRoute: () => SiteDeveloperRouteRoute,
+  } as any)
 const SiteExchangeIndexRoute = SiteExchangeIndexRouteImport.update({
   id: '/exchange/',
   path: '/exchange/',
@@ -8036,6 +8043,7 @@ export interface FileRoutesByFullPath {
   '/create/builds': typeof SiteCreateBuildsRoute
   '/create/earnings': typeof SiteCreateEarningsRoute
   '/create/personas': typeof SiteCreatePersonasRoute
+  '/developer/ai-practices': typeof SiteDeveloperAiPracticesRoute
   '/exchange/$id': typeof SiteExchangeIdRoute
   '/feeds/$id': typeof SiteFeedsIdRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
@@ -9269,6 +9277,7 @@ export interface FileRoutesByTo {
   '/create/builds': typeof SiteCreateBuildsRoute
   '/create/earnings': typeof SiteCreateEarningsRoute
   '/create/personas': typeof SiteCreatePersonasRoute
+  '/developer/ai-practices': typeof SiteDeveloperAiPracticesRoute
   '/exchange/$id': typeof SiteExchangeIdRoute
   '/feeds/$id': typeof SiteFeedsIdRoute
   '/games/$gameId': typeof SiteGamesGameIdRoute
@@ -10530,6 +10539,7 @@ export interface FileRoutesById {
   '/_site/create/builds': typeof SiteCreateBuildsRoute
   '/_site/create/earnings': typeof SiteCreateEarningsRoute
   '/_site/create/personas': typeof SiteCreatePersonasRoute
+  '/_site/developer/ai-practices': typeof SiteDeveloperAiPracticesRoute
   '/_site/exchange/$id': typeof SiteExchangeIdRoute
   '/_site/feeds/$id': typeof SiteFeedsIdRoute
   '/_site/games/$gameId': typeof SiteGamesGameIdRoute
@@ -11791,6 +11801,7 @@ export interface FileRouteTypes {
     | '/create/builds'
     | '/create/earnings'
     | '/create/personas'
+    | '/developer/ai-practices'
     | '/exchange/$id'
     | '/feeds/$id'
     | '/games/$gameId'
@@ -13024,6 +13035,7 @@ export interface FileRouteTypes {
     | '/create/builds'
     | '/create/earnings'
     | '/create/personas'
+    | '/developer/ai-practices'
     | '/exchange/$id'
     | '/feeds/$id'
     | '/games/$gameId'
@@ -14284,6 +14296,7 @@ export interface FileRouteTypes {
     | '/_site/create/builds'
     | '/_site/create/earnings'
     | '/_site/create/personas'
+    | '/_site/developer/ai-practices'
     | '/_site/exchange/$id'
     | '/_site/feeds/$id'
     | '/_site/games/$gameId'
@@ -17890,6 +17903,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/developer/'
       preLoaderRoute: typeof SiteDeveloperIndexRouteImport
+      parentRoute: typeof SiteDeveloperRouteRoute
+    }
+    '/_site/developer/ai-practices': {
+      id: '/_site/developer/ai-practices'
+      path: '/ai-practices'
+      fullPath: '/developer/ai-practices'
+      preLoaderRoute: typeof SiteDeveloperAiPracticesRouteImport
       parentRoute: typeof SiteDeveloperRouteRoute
     }
     '/_site/exchange/': {
@@ -24982,10 +25002,12 @@ const SiteCreateRouteRouteWithChildren = SiteCreateRouteRoute._addFileChildren(
 )
 
 interface SiteDeveloperRouteRouteChildren {
+  SiteDeveloperAiPracticesRoute: typeof SiteDeveloperAiPracticesRoute
   SiteDeveloperIndexRoute: typeof SiteDeveloperIndexRoute
 }
 
 const SiteDeveloperRouteRouteChildren: SiteDeveloperRouteRouteChildren = {
+  SiteDeveloperAiPracticesRoute: SiteDeveloperAiPracticesRoute,
   SiteDeveloperIndexRoute: SiteDeveloperIndexRoute,
 }
 
