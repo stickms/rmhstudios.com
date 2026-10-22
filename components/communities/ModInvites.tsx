@@ -1,7 +1,7 @@
 'use client';
 
 /** Invite links for a private community: create, copy, see usage, revoke. */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
@@ -30,6 +30,7 @@ export function ModInvites({ slug }: { slug: string }) {
   const [maxUses, setMaxUses] = useState('');
   const [expiry, setExpiry] = useState('7');
   const [busy, setBusy] = useState(false);
+  const listRef = useRef<HTMLUListElement>(null);
 
   const load = useCallback(async () => {
     const res = await plusFetch<{ invites: InviteDTO[] }>(communityApi(slug, '/invites'));
@@ -73,6 +74,10 @@ export function ModInvites({ slug }: { slug: string }) {
       return;
     }
     setInvites((cur) => cur?.filter((i) => i.id !== invite.id) ?? null);
+    // The revoked row is gone and its button with it: keep keyboard focus in the list.
+    requestAnimationFrame(() =>
+      listRef.current?.querySelector<HTMLElement>('button:not(:disabled)')?.focus(),
+    );
   };
 
   const linkFor = (code: string) =>
@@ -139,7 +144,7 @@ export function ModInvites({ slug }: { slug: string }) {
           })}
         />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul ref={listRef} className="flex flex-col gap-2">
           {invites.map((i) => {
             const label = stateLabel(i);
             return (
@@ -153,7 +158,15 @@ export function ModInvites({ slug }: { slug: string }) {
                     label={t('invite-copy', { defaultValue: 'Copy invite link' })}
                     disabled={i.state !== 'active'}
                   />
-                  <Button size="sm" variant="outline" onClick={() => revoke(i)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => revoke(i)}
+                    aria-label={t('invite-revoke-named', {
+                      code: i.code.slice(0, 6),
+                      defaultValue: 'Revoke invite link starting {{code}}',
+                    })}
+                  >
                     {t('invite-revoke', { defaultValue: 'Revoke' })}
                   </Button>
                 </div>
