@@ -77,8 +77,20 @@ export async function listTagFeed(
   const hiddenClause = hidden.length
     ? Prisma.sql`AND r."userId" <> ALL(${hidden}::text[])`
     : Prisma.empty;
+  // The cursor resumes from the cursor post's own LINK row, the same
+  // (createdAt, rmheetId) the page was ordered by, so a link whose createdAt
+  // drifted from its post's (one re-linked by the previous image during a
+  // blue/green deploy, after the align migration ran) costs ordering at most and
+  // never skips posts. The post row is the fallback when the link is gone (the
+  // cursor post was unlinked between pages).
   const cursorClause = cursor
-    ? Prisma.sql`AND (ph."createdAt", ph."rmheetId") < (SELECT "createdAt", id FROM rmheet WHERE id = ${cursor})`
+    ? Prisma.sql`AND (ph."createdAt", ph."rmheetId") < (
+        SELECT c."createdAt", c.id FROM (
+          SELECT ph2."createdAt", ph2."rmheetId" AS id, 0 AS pri FROM post_hashtag ph2
+          WHERE ph2."hashtagId" = (SELECT id FROM hashtag WHERE tag = ${tag}) AND ph2."rmheetId" = ${cursor}
+          UNION ALL
+          SELECT "createdAt", id, 1 FROM rmheet WHERE id = ${cursor}
+        ) c ORDER BY c.pri LIMIT 1)`
     : Prisma.empty;
 
   const idRows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
