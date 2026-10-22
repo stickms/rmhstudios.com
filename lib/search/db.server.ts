@@ -84,9 +84,11 @@ export function norm(column: Prisma.Sql): Prisma.Sql {
 export function fuzzyColumn(
   column: Prisma.Sql,
   terms: FuzzyTerms,
-  opts: { perToken?: boolean } = {},
+  opts: { perToken?: boolean; normalized?: boolean } = {},
 ): Prisma.Sql {
-  const col = norm(column);
+  // `normalized`: the caller already holds rmh_search_norm(column) (computed once
+  // per row), so use it as is. The default recomputes the fold per predicate.
+  const col = opts.normalized ? column : norm(column);
   const parts: Prisma.Sql[] = [
     Prisma.sql`${col} LIKE ${terms.prefix}`,
     Prisma.sql`${col} % ${terms.q}`,
@@ -113,7 +115,7 @@ export function fuzzyColumn(
 export function fuzzyAny(
   columns: Prisma.Sql[],
   terms: FuzzyTerms,
-  opts: { perToken?: boolean } = {},
+  opts: { perToken?: boolean; normalized?: boolean } = {},
 ): Prisma.Sql {
   return Prisma.sql`(${Prisma.join(
     columns.map((c) => fuzzyColumn(c, terms, opts)),
@@ -126,9 +128,13 @@ export function fuzzyAny(
  * `LIMIT`. The real ranking happens in JS; this just makes sure the rows the
  * limit keeps are the plausible ones.
  */
-export function sqlRank(columns: Prisma.Sql[], terms: FuzzyTerms): Prisma.Sql {
+export function sqlRank(
+  columns: Prisma.Sql[],
+  terms: FuzzyTerms,
+  opts: { normalized?: boolean } = {},
+): Prisma.Sql {
   const parts = columns.flatMap((c) => {
-    const col = norm(c);
+    const col = opts.normalized ? c : norm(c);
     return [
       Prisma.sql`COALESCE(similarity(${col}, ${terms.q}), 0)`,
       Prisma.sql`COALESCE(word_similarity(${terms.q}, ${col}), 0)`,

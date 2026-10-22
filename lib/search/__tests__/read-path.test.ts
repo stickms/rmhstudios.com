@@ -44,9 +44,9 @@ beforeEach(() => {
 });
 
 describe('search read path', () => {
-  it('people: one recall query on prismaRead', async () => {
+  it('people: a cheap breadth probe plus one recall query, both on prismaRead', async () => {
     await searchPeopleScored(fuzzyTerms('ada'));
-    expect(queryRaw).toHaveBeenCalledTimes(1);
+    expect(queryRaw).toHaveBeenCalledTimes(2);
   });
 
   it('posts: one recall query on prismaRead', async () => {
