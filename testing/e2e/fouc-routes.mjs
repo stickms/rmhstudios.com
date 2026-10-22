@@ -93,6 +93,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of a community page.',
   },
+  '/c/$slug/invite/$code': {
+    path: '/c/fouc-audit-no-such-community/invite/fouc-audit-no-such-code',
+    fidelity: 'shell',
+    why: 'Invalid-invite branch of the community invite page (the same generic state every bad code renders).',
+  },
   '/deeplink/$page': {
     path: null,
     fidelity: 'shell',

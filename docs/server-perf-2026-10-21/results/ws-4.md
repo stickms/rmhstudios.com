@@ -73,3 +73,37 @@ psql -d rmh_ws4 -f se.sql    # post search recall query
 psql -d rmh_ws4 -f ms.sql    # messages-search conversation match
 # snippet equivalence: old prisma.directMessage.findMany({distinct}) vs the DISTINCT ON query, same 30 conversations
 ```
+
+## Feature: invites & join requests (private communities)
+
+Decision: private communities are **listed + locked**. Metadata (name, icon, colour,
+description, member count, lock badge) is public; posts, members, announcements, pages,
+revisions, events and flairs stay members-only (404 for non-members). Out of the sitemap;
+the locked page and the invite page are `noindex`.
+
+**Models** (`prisma/migrations/20261022000000_community_invites_join_requests`, additive,
+`check-migration-safety` clean, BigInt identity PKs per the new-table policy):
+`CommunityInvite` (unique 192-bit `code`, `maxUses`, `uses`, `expiresAt`, `revokedAt`,
+index on `communityId`), `CommunityJoinRequest` (`@@unique([communityId, userId])`,
+status PENDING/APPROVED/DENIED, `message` <= 280, `decidedById/At`).
+
+**Routes**: `POST/GET /api/communities/$slug/invites`, `DELETE .../invites/$id`;
+`POST/DELETE .../join-request`; `GET .../join-requests`, `POST .../join-requests/$id`;
+`POST .../join` takes `{ invite }`. All `defineHandler` + zod + rate limits.
+**Pages**: `/c/$slug` (locked preview), `/c/$slug/invite/$code`. **UI**: locked cards in
+`CommunitiesColumn`, Requests and Invites tabs in the mod tools (the existing mod queue
+is a post-report model, so requests got their own tab).
+
+**Permission**: the existing `requireMod` check (owner + moderators) reused for invites
+and request decisions.
+**Notifications**: `createNotification` type SYSTEM (entityType `community-join-request`
+to mods, `community-join-decision` to the requester), so the user's system preference applies.
+**Re-request policy**: a denied user may ask again after 7 days; the single row is reset to
+PENDING (keeps the unique key and cooldown stops re-queueing in front of the same mods).
+**Caches**: none added. `/api/communities` GET has no cache policy and the list carries
+per-viewer member/request state, so it is never shared-cached.
+**Tests**: `lib/communities/__tests__/invites-and-requests.test.ts`, `locked-seo.test.ts`
+(sitemap exclusion, noindex heads), `invites-concurrency.test.ts` (opt-in via
+`RMH_TEST_DATABASE_URL`; 40 concurrent accepts of maxUses=5 admit exactly 5; green on
+`rmh_ws4`), `lib/__tests__/private-community-access.test.ts` (locked preview metadata only,
+content paths 404).

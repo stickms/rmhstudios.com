@@ -66,11 +66,11 @@ describe('ApiCache LRU', () => {
   });
 
   it('routes viewer feed keys separately but invalidatePrefix hits both', () => {
-    apiCache.set('feed:v2:foryou:all:u1:20', 1, 1000);
+    apiCache.set('feed:v3:foryou:all:u1:20', 1, 1000);
     apiCache.set('other:k', 2, 1000);
-    expect(apiCache.get('feed:v2:foryou:all:u1:20')).toBe(1);
-    apiCache.invalidatePrefix('feed:v2:');
-    expect(apiCache.get('feed:v2:foryou:all:u1:20')).toBeUndefined();
+    expect(apiCache.get('feed:v3:foryou:all:u1:20')).toBe(1);
+    apiCache.invalidatePrefix('feed:v3:');
+    expect(apiCache.get('feed:v3:foryou:all:u1:20')).toBeUndefined();
     expect(apiCache.get('other:k')).toBe(2);
   });
 

@@ -557,20 +557,24 @@ function isoDate(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : value;
 }
 
+export const URLSET_OPEN =
+  '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+export const URLSET_CLOSE = '\n</urlset>\n';
+
+/** One `<url>` element. Shared by the string and the streaming renderer so they cannot drift. */
+export function renderUrlEntry(entry: SitemapEntry, origin: string): string {
+  const parts = [`    <loc>${xmlEscape(origin + entry.loc)}</loc>`];
+  if (entry.lastmod) parts.push(`    <lastmod>${isoDate(entry.lastmod)}</lastmod>`);
+  if (entry.changefreq) parts.push(`    <changefreq>${entry.changefreq}</changefreq>`);
+  if (entry.priority !== undefined) {
+    parts.push(`    <priority>${entry.priority.toFixed(1)}</priority>`);
+  }
+  return `  <url>\n${parts.join('\n')}\n  </url>`;
+}
+
 /** Render a `<urlset>`. `origin` is the absolute site root, no trailing slash. */
 export function renderUrlset(entries: SitemapEntry[], origin: string): string {
-  const body = entries
-    .map((entry) => {
-      const parts = [`    <loc>${xmlEscape(origin + entry.loc)}</loc>`];
-      if (entry.lastmod) parts.push(`    <lastmod>${isoDate(entry.lastmod)}</lastmod>`);
-      if (entry.changefreq) parts.push(`    <changefreq>${entry.changefreq}</changefreq>`);
-      if (entry.priority !== undefined) {
-        parts.push(`    <priority>${entry.priority.toFixed(1)}</priority>`);
-      }
-      return `  <url>\n${parts.join('\n')}\n  </url>`;
-    })
-    .join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+  return URLSET_OPEN + entries.map((e) => renderUrlEntry(e, origin)).join('\n') + URLSET_CLOSE;
 }
 
 /** Render a `<sitemapindex>` pointing at child sitemaps. */

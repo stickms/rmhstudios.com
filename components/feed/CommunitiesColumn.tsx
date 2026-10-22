@@ -17,6 +17,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
+import { LockedCommunityHeader, RequestToJoin } from '@/components/communities/LockedCommunity';
 import { ColumnHeader } from './ColumnHeader';
 import { toast } from 'sonner';
 
@@ -31,6 +32,10 @@ interface Community {
   postCount: number;
   joined: boolean;
   role: string | null;
+  /** A private community: members see it as normal, everyone else as a locked card. */
+  isPrivate?: boolean;
+  locked?: boolean;
+  requestState?: 'PENDING' | 'DENIED' | null;
 }
 
 function formatCount(n: number): string {
@@ -209,6 +214,26 @@ export function CommunitiesColumn({
       ) : (
         <RevealGroup as="ul" className="flex flex-col gap-3 p-3">
           {items.map((c) => {
+            if (c.locked) {
+              // Listed + locked: metadata and the way in, nothing of the content.
+              return (
+                <RevealItem as="li" key={c.id}>
+                  <div className="flex flex-col gap-3 rounded-site glass-fill p-4">
+                    <Link
+                      to={`/c/${c.slug}` as string}
+                      className="rounded-site-sm transition-colors duration-site hover:bg-site-surface-hover"
+                    >
+                      <LockedCommunityHeader community={c} />
+                    </Link>
+                    <RequestToJoin
+                      slug={c.slug}
+                      initialState={c.requestState ?? null}
+                      className="justify-end"
+                    />
+                  </div>
+                </RevealItem>
+              );
+            }
             const roleLabel =
               c.role === 'ADMIN'
                 ? t('role-owner', { defaultValue: 'Owner' })

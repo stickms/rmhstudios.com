@@ -1,12 +1,9 @@
 /**
  * The CPU-bound endpoints' shared plumbing (WS6): the admission gate that keeps
- * sharp/resvg from monopolising the libuv threadpool, and the card cache that
- * de-duplicates concurrent renders.
+ * sharp from monopolising the libuv threadpool, and the story-card cache key.
  */
 import { describe, expect, it } from 'vitest';
-import { Resvg } from '@resvg/resvg-js';
 import { CpuGateFullError, createCpuGate } from '@/lib/images/cpu-gate.server';
-import { createCardCache, rasterizeSvg } from '@/lib/og/shared.server';
 import { postStoryCacheKey } from '@/lib/og/post-story.server';
 
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
@@ -54,54 +51,14 @@ describe('createCpuGate', () => {
   });
 });
 
-describe('createCardCache', () => {
-  it('renders a cold key once for any number of concurrent callers', async () => {
-    const cache = createCardCache({ max: 10, ttlMs: 60_000 });
-    let renders = 0;
-    const produce = async () => {
-      renders++;
-      await new Promise((r) => setTimeout(r, 10));
-      return Buffer.from('png');
-    };
-    const out = await Promise.all(Array.from({ length: 8 }, () => cache.getOrRender('k', produce)));
-    expect(renders).toBe(1);
-    expect(out.every((b) => b.toString() === 'png')).toBe(true);
-    // ...and the next caller is a plain hit.
-    await cache.getOrRender('k', produce);
-    expect(renders).toBe(1);
-  });
-
-  it('does not cache a failed render, and the next caller retries', async () => {
-    const cache = createCardCache({ max: 10, ttlMs: 60_000 });
-    let n = 0;
-    const flaky = async () => {
-      if (n++ === 0) throw new Error('fonts down');
-      return Buffer.from('ok');
-    };
-    await expect(cache.getOrRender('k', flaky)).rejects.toThrow('fonts down');
-    expect((await cache.getOrRender('k', flaky)).toString()).toBe('ok');
-  });
-
-  it('keys are independent and the store is bounded', async () => {
-    const cache = createCardCache({ max: 2, ttlMs: 60_000 });
-    for (const k of ['a', 'b', 'c']) await cache.getOrRender(k, async () => Buffer.from(k));
-    expect(cache.size).toBe(2);
-  });
-});
-
-describe('rasterizeSvg', () => {
-  const svg =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60"><rect width="120" height="60" fill="#fff"/><circle cx="40" cy="30" r="20" fill="rgba(0,0,0,0.5)"/></svg>';
-
-  it('produces the same PNG bytes as the synchronous rasteriser it replaced', async () => {
-    const sync = Buffer.from(new Resvg(svg, { fitTo: { mode: 'width', value: 120 } }).render().asPng());
-    const async_ = await rasterizeSvg(svg, 120);
-    expect(async_.equals(sync)).toBe(true);
-  });
-});
-
 describe('postStoryCacheKey', () => {
-  const base = { id: 'p1', content: 'hello', authorName: 'A', authorHandle: 'a', authorImage: null };
+  const base = {
+    id: 'p1',
+    content: 'hello',
+    authorName: 'A',
+    authorHandle: 'a',
+    authorImage: null,
+  };
 
   it('changes with every drawn field, so an edit or a hidden body is never served stale', () => {
     const k = postStoryCacheKey(base);

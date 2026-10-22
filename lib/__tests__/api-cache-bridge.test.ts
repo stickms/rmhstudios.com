@@ -115,17 +115,17 @@ describe('apiCache invalidation bridge', () => {
 });
 
 describe('apiCache invalidation covers the per-viewer feed cache too', () => {
-  it('a remote prefix invalidation clears feed:v2: keys held in the viewer-feed cache', async () => {
+  it('a remote prefix invalidation clears feed:v3: keys held in the viewer-feed cache', async () => {
     const a = await boot();
     const b = await boot();
     for (const c of [a, b]) {
-      c.apiCache.set('feed:v2:u1:home', 1, 60_000);
-      c.apiCache.set('feed:v2:u2:home', 1, 60_000);
+      c.apiCache.set('feed:v3:u1:home', 1, 60_000);
+      c.apiCache.set('feed:v3:u2:home', 1, 60_000);
       c.apiCache.set('feed-other', 1, 60_000);
     }
-    a.apiCache.invalidatePrefix('feed:v2:');
-    expect(b.apiCache.get('feed:v2:u1:home')).toBeUndefined();
-    expect(b.apiCache.get('feed:v2:u2:home')).toBeUndefined();
+    a.apiCache.invalidatePrefix('feed:v3:');
+    expect(b.apiCache.get('feed:v3:u1:home')).toBeUndefined();
+    expect(b.apiCache.get('feed:v3:u2:home')).toBeUndefined();
     expect(b.apiCache.get('feed-other')).toBe(1);
     expect(bus.published).toHaveLength(1);
   });
@@ -133,9 +133,9 @@ describe('apiCache invalidation covers the per-viewer feed cache too', () => {
   it('a remote key invalidation reaches a viewer-feed key', async () => {
     const a = await boot();
     const b = await boot();
-    b.apiCache.set('feed:v2:u1:home', 1, 60_000);
-    a.apiCache.invalidate('feed:v2:u1:home');
-    expect(b.apiCache.get('feed:v2:u1:home')).toBeUndefined();
+    b.apiCache.set('feed:v3:u1:home', 1, 60_000);
+    a.apiCache.invalidate('feed:v3:u1:home');
+    expect(b.apiCache.get('feed:v3:u1:home')).toBeUndefined();
   });
 });
 
