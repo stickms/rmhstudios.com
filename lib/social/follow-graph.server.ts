@@ -14,6 +14,8 @@ import { cached, invalidateCached } from '@/lib/cached.server';
 
 const TTL_MS = 30_000;
 const key = (userId: string) => `following-ids:${userId}`;
+/** Cache key of the viewer's friends leaderboard (built from this follow list). */
+export const friendsLeaderboardKey = (userId: string) => `leaderboard:friends:${userId}`;
 
 /**
  * Cap on how many follow ids feed the `userId IN (...)` timeline/audience filter
@@ -45,4 +47,7 @@ export function invalidateFollowingIds(userId: string): void {
   // Fire-and-forget: drops the local L1 copy synchronously and broadcasts the
   // drop to every instance over Redis pub/sub. Signature stays `void`.
   void invalidateCached(key(userId));
+  // The friends leaderboard is derived from this list; without this a new follow
+  // (or unfollow) did not show on it until its own TTL ran out.
+  void invalidateCached(friendsLeaderboardKey(userId));
 }

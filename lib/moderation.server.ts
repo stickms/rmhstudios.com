@@ -7,6 +7,7 @@ import { cached, invalidateCached } from '@/lib/cached.server';
 
 const HIDDEN_TTL_MS = 30_000;
 const hiddenKey = (userId: string) => `hidden-authors:${userId}`;
+const blockedKey = (userId: string) => `blocked-authors:${userId}`;
 
 /**
  * Author ids whose content should be hidden from `userId`'s feed: people they
@@ -39,6 +40,33 @@ export async function getHiddenAuthorIds(userId: string | null): Promise<string[
 }
 
 /**
+ * Author ids `userId` may not READ at all: people they blocked and people who
+ * blocked them. This is the access-control subset of `getHiddenAuthorIds` (which
+ * also holds mutes): a mute only filters feeds, it never makes a post unreadable
+ * by id, so every "may this viewer open/engage with this post" check uses this
+ * set and feeds keep using the wider hidden set. Cached ~30s, invalidated with
+ * the hidden set. Returns [] for anonymous users.
+ */
+export async function getBlockedAuthorIds(userId: string | null): Promise<string[]> {
+  if (!userId) return [];
+  try {
+    return await cached<string[]>(blockedKey(userId), HIDDEN_TTL_MS, async () => {
+      const [blocked, blockedBy] = await Promise.all([
+        prisma.userBlock.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
+        prisma.userBlock.findMany({ where: { blockedId: userId }, select: { blockerId: true } }),
+      ]);
+      const ids = new Set<string>();
+      for (const b of blocked) ids.add(b.blockedId);
+      for (const b of blockedBy) ids.add(b.blockerId);
+      return [...ids];
+    });
+  } catch (err) {
+    console.error('[moderation] getBlockedAuthorIds failed:', err);
+    return [];
+  }
+}
+
+/**
  * Drop the cached hidden-author set for a user (call after they block/mute or
  * are blocked). A block affects BOTH users' hidden sets, so invalidate both.
  */
@@ -46,5 +74,8 @@ export function invalidateHiddenAuthors(...userIds: string[]): void {
   // Fire-and-forget per id: drops each local L1 copy synchronously and
   // broadcasts the drop to every instance over Redis pub/sub so a block hides
   // content cross-instance immediately. Signature stays `void`.
-  for (const id of userIds) void invalidateCached(hiddenKey(id));
+  for (const id of userIds) {
+    void invalidateCached(hiddenKey(id));
+    void invalidateCached(blockedKey(id));
+  }
 }

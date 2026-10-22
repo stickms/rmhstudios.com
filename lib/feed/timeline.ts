@@ -23,9 +23,10 @@ import { getAllPosts } from '../blog';
 import { decodeCursor, encodeCursor, keysetWhere } from './cursor';
 import { rankCandidates, type RankContext } from './ranking';
 import { buildInterestProfile } from './personalize.server';
-import { getHiddenAuthorIds } from '../moderation.server';
+import { getHiddenAuthorIds, getBlockedAuthorIds } from '../moderation.server';
 import { getFollowingIds } from '../social/follow-graph.server';
 import { audienceWhere, circleOwnerIds } from './audience.server';
+import { mapQuotedOriginal } from './quoted-original';
 import { getSignals } from './signals.server';
 import { mutedTagWhere } from './signals';
 import { applyLock } from './map-feed-item.server';
@@ -192,8 +193,9 @@ function rmharkInclude(userId: string | null) {
       : {}),
     poll: pollInclude(userId),
     // Quoted original: scalar fields only (incl. its `userId`); its author is
-    // resolved through the same display map.
-    original: true,
+    // resolved through the same display map. Its community's privacy rides along
+    // because the quote card's visibility rule (quoted-original.ts) needs it.
+    original: { include: { community: { select: { isPrivate: true } } } },
   } as const;
 }
 
@@ -297,31 +299,27 @@ function deletedMessageFor(record: { deletedByAdmin?: boolean }): string {
     : '[This RMHark was deleted by the user]';
 }
 
-function mapOriginal(o: any, displayMap: Map<string, ResolvedUser>): FeedItem | undefined {
-  if (!o) return undefined;
-  const isDeleted = !!o.deletedAt;
-  // Only free, public originals expose their media in the quote card —
-  // paid/followers-only content must not leak through a quote.
-  const showMedia = !isDeleted && (o.unlockPrice ?? 0) === 0 && o.audience === 'PUBLIC';
-  return {
-    id: o.id,
-    type: 'rmhark',
-    createdAt: o.createdAt.toISOString(),
-    content: isDeleted ? deletedMessageFor(o) : o.content,
-    user: displayUser(displayMap, o.userId),
-    likeCount: o.likeCount,
-    commentCount: o.commentCount,
-    repostCount: o.repostCount,
-    viewCount: o.viewCount,
-    gifUrl: showMedia ? (o.gifUrl ?? undefined) : undefined,
-    imageUrls: showMedia ? o.imageUrls : undefined,
-    imageAlts: showMedia ? o.imageAlts : undefined,
-    deletedAt: o.deletedAt?.toISOString() || null,
-    deletedByAdmin: o.deletedByAdmin,
-  };
+/** Who the quote cards are drawn for: the viewer and their block set (both directions). */
+interface QuoteViewer {
+  viewerId: string | null;
+  blocked: readonly string[];
 }
 
-function mapOwn(r: any, userId: string | null, displayMap: Map<string, ResolvedUser>): FeedItem {
+function mapOriginal(
+  o: any,
+  displayMap: Map<string, ResolvedUser>,
+  qv: QuoteViewer,
+): FeedItem | undefined {
+  // One rule for what a quote card may show - see quoted-original.ts.
+  return o ? mapQuotedOriginal(o, displayUser(displayMap, o.userId), qv.viewerId, qv.blocked) : undefined;
+}
+
+function mapOwn(
+  r: any,
+  userId: string | null,
+  displayMap: Map<string, ResolvedUser>,
+  qv: QuoteViewer,
+): FeedItem {
   const isDeleted = !!r.deletedAt;
   const item: FeedItem = {
     id: r.id,
@@ -337,7 +335,7 @@ function mapOwn(r: any, userId: string | null, displayMap: Map<string, ResolvedU
     reposted: userId ? r.reposts?.length > 0 : false,
     bookmarked: userId ? r.bookmarks?.length > 0 : false,
     edited: !!r.editedAt,
-    original: mapOriginal(r.original, displayMap),
+    original: mapOriginal(r.original, displayMap, qv),
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
@@ -361,6 +359,7 @@ function mapRepost(
   rp: any,
   userId: string | null,
   displayMap: Map<string, ResolvedUser>,
+  qv: QuoteViewer,
 ): FeedItem {
   const r = rp.rmhark;
   const isDeleted = !!r.deletedAt;
@@ -379,7 +378,7 @@ function mapRepost(
     reposted: userId ? r.reposts?.length > 0 : false,
     bookmarked: userId ? r.bookmarks?.length > 0 : false,
     repostedBy: displayUser(displayMap, rp.userId),
-    original: mapOriginal(r.original, displayMap),
+    original: mapOriginal(r.original, displayMap, qv),
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
@@ -490,11 +489,13 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
     return { items: [], nextCursor: null, hasMore: false, empty: true };
   }
 
-  const [followingAll, hiddenIds, viewerCircleOwnerIds] = await Promise.all([
+  const [followingAll, hiddenIds, viewerCircleOwnerIds, blockedIds] = await Promise.all([
     getFollowingIds(userId),
     getHiddenAuthorIds(userId),
     circleOwnerIds(userId),
+    getBlockedAuthorIds(userId),
   ]);
+  const qv: QuoteViewer = { viewerId: userId, blocked: blockedIds };
   // Exclude muted/blocked authors even if still followed.
   const hiddenSet = new Set(hiddenIds);
   const followingIds = followingAll.filter((id) => !hiddenSet.has(id));
@@ -547,6 +548,9 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
         // FOLLOWERS / CIRCLE / PRIVATE post surfaced to the reposter's followers.
         rmhark: {
           deletedAt: null,
+          // Same as the main post query: a post in a community (private ones above
+          // all) never reaches a timeline through a repost either.
+          communityId: null,
           ...contentWhere,
           ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
           ...audienceWhere(userId, followingAll, [], viewerCircleOwnerIds),
@@ -566,8 +570,8 @@ async function getFollowingTimeline(params: GetTimelineParams): Promise<Timeline
   const displayMap = await getUserDisplayMap(collectAuthorIds(rmharks, repostRecords));
 
   const merged = sortByKeysetDesc([
-    ...rmharks.map((r) => mapOwn(r, userId, displayMap)),
-    ...repostRecords.map((rp) => mapRepost(rp, userId, displayMap)),
+    ...rmharks.map((r) => mapOwn(r, userId, displayMap, qv)),
+    ...repostRecords.map((rp) => mapRepost(rp, userId, displayMap, qv)),
   ]);
 
   const items = deduplicateReposts(merged).slice(0, limit);
@@ -615,12 +619,14 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
   // start. Everything else is NOT an input to the query — the interest profile
   // only reorders the returned page, and announcements are interleaved afterward
   // — so those stay off this batch and run alongside the query instead.
-  const [hiddenIds, viewerFollowingIds, viewerCircleOwnerIds, viewerSignals] = await Promise.all([
+  const [hiddenIds, viewerFollowingIds, viewerCircleOwnerIds, viewerSignals, blockedIds] = await Promise.all([
     getHiddenAuthorIds(userId),
     userId ? getFollowingIds(userId) : Promise.resolve([] as string[]),
     circleOwnerIds(userId),
     getSignals(userId),
+    getBlockedAuthorIds(userId),
   ]);
+  const qv: QuoteViewer = { viewerId: userId, blocked: blockedIds };
 
   // In-flight alongside the main query below (neither gates it).
   const interestPromise =
@@ -660,7 +666,15 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
       }),
       prisma.rMHarkRepost.findMany({
         where: {
-          rmhark: { deletedAt: null, ...contentWhere, ...authorWhere, ...audWhere, ...tagWhere },
+          rmhark: {
+            deletedAt: null,
+            // Same as the main post query: community posts never ride a repost into the feed.
+            communityId: null,
+            ...contentWhere,
+            ...authorWhere,
+            ...audWhere,
+            ...tagWhere,
+          },
           ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
           ...keyset,
         },
@@ -683,8 +697,8 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
 
     dbItems = deduplicateReposts(
       sortByKeysetDesc([
-        ...rmharks.map((r) => mapOwn(r, userId, displayMap)),
-        ...repostRecords.map((rp) => mapRepost(rp, userId, displayMap)),
+        ...rmharks.map((r) => mapOwn(r, userId, displayMap, qv)),
+        ...repostRecords.map((rp) => mapRepost(rp, userId, displayMap, qv)),
       ]),
     ).slice(0, limit);
 

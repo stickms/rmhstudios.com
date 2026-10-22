@@ -52,7 +52,10 @@ vi.mock('../../prisma.server', () => ({ prisma: db }));
 vi.mock('../../social/follow-graph.server', () => ({
   getFollowingIds: vi.fn(async () => store.following),
 }));
-vi.mock('../../moderation.server', () => ({ getHiddenAuthorIds: vi.fn(async () => []) }));
+vi.mock('../../moderation.server', () => ({
+  getHiddenAuthorIds: vi.fn(async () => []),
+  getBlockedAuthorIds: vi.fn(async () => []),
+}));
 vi.mock('../signals.server', () => ({
   getSignals: vi.fn(async () => ({ lessAuthors: [], mutedTags: [], followedTags: [] })),
 }));

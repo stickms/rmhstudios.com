@@ -27,7 +27,10 @@ vi.mock('@/lib/auth', () => ({
   },
 }));
 vi.mock('@/lib/rate-limit.server', () => ({ withRateLimitAsync: async () => null }));
-vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: async () => [] }));
+vi.mock('@/lib/moderation.server', () => ({
+  getHiddenAuthorIds: async () => [],
+  getBlockedAuthorIds: async () => [],
+}));
 vi.mock('@/lib/social/follow-graph.server', () => ({ getFollowingIds: async () => [] }));
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {

@@ -11,14 +11,7 @@
 
 import type { FeedItem } from '@/lib/feed-types';
 import { prisma } from '@/lib/prisma.server';
-import {
-  canViewPost,
-  audienceWhere,
-  communityVisibleWhere,
-  supportedCreatorIds,
-  circleOwnerIds,
-} from '@/lib/feed/audience.server';
-import { getFollowingIds } from '@/lib/social/follow-graph.server';
+import { canViewPost, audienceWhereExact, communityVisibleWhere } from '@/lib/feed/audience.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { decodeCursor, encodeCursor, keysetWhere } from '@/lib/feed/cursor';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
@@ -40,19 +33,15 @@ export async function listQuotes(
   });
   if (!post || post.deletedAt || !(await canViewPost(post, viewerId))) return null;
 
-  const [following, supported, circles, hidden] = await Promise.all([
-    viewerId ? getFollowingIds(viewerId) : Promise.resolve([] as string[]),
-    supportedCreatorIds(viewerId),
-    circleOwnerIds(viewerId),
-    getHiddenAuthorIds(viewerId),
-  ]);
-  // `audienceWhere` and the keyset both use a top-level `OR`, so they are
-  // combined under `AND` rather than spread into one object.
+  const hidden = await getHiddenAuthorIds(viewerId);
+  // The exact audience rule (no capped follow list). `audienceWhereExact` and the
+  // keyset both use a top-level `OR`, so they are combined under `AND` rather
+  // than spread into one object.
   const visible = {
     deletedAt: null,
     ...communityVisibleWhere(viewerId),
     ...(hidden.length > 0 ? { userId: { notIn: hidden } } : {}),
-    AND: [audienceWhere(viewerId, following, supported, circles)],
+    AND: [audienceWhereExact(viewerId)],
   };
 
   const rows = await prisma.rMHark.findMany({

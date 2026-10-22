@@ -149,7 +149,7 @@ export async function getCommunityFeed(
     // The post's OWN audience still applies inside a community: a FOLLOWERS /
     // PRIVATE / CIRCLE post is not shown to every member just because of where it
     // was made. One definition of visibility, shared with canViewPost.
-    viewerVisiblePostWhere(viewerId),
+    viewerVisiblePostWhere(viewerId, { hideMuted: true }),
     // Needed on every page of a private community (the membership gate), and
     // for the followed flairs on the first page of any.
     viewerId && (community.isPrivate || (!opts.cursor && !opts.flairId))

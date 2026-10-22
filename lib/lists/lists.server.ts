@@ -168,7 +168,7 @@ export async function listTimeline(
   // visibility predicate carries the audience / deleted / block rule and is
   // nested under AND because it owns the `userId` key too.
   const [visible, hidden] = await Promise.all([
-    viewerVisiblePostWhere(viewerId),
+    viewerVisiblePostWhere(viewerId, { hideMuted: true }),
     getHiddenAuthorIds(viewerId),
   ]);
   const shownIds = hidden.length ? memberIds.filter((id) => !hidden.includes(id)) : memberIds;

@@ -7,6 +7,8 @@ import { feedEventBus } from '@/lib/feed-sse';
 import { unlinkPostHashtags } from '@/lib/tags-extract.server';
 import { editRMHarkSchema } from '@/lib/rmhark-schema';
 import { canViewPost } from '@/lib/feed/audience.server';
+import { mapQuotedOriginal } from '@/lib/feed/quoted-original';
+import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { isLocked } from '@/lib/feed/map-feed-item.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { isExpired } from '@/lib/posts-plus/constants';
@@ -52,6 +54,7 @@ export const Route = createFileRoute('/api/rmharks/$id')({
             original: {
               include: {
                 user: { select: userDisplaySelect },
+                community: { select: { isPrivate: true } },
               },
             },
           },
@@ -132,18 +135,14 @@ export const Route = createFileRoute('/api/rmharks/$id')({
           unlockPrice: rmhark.unlockPrice ?? undefined,
           deletedAt: rmhark.deletedAt?.toISOString() || null,
           deletedByAdmin: rmhark.deletedByAdmin,
+          // One rule for what a quote card shows (lib/feed/quoted-original.ts).
           original: rmhark.original
-            ? {
-                id: rmhark.original.id,
-                type: 'rmhark',
-                createdAt: rmhark.original.createdAt.toISOString(),
-                content: rmhark.original.content,
-                user: resolveUser(rmhark.original.user),
-                likeCount: rmhark.original.likeCount,
-                commentCount: rmhark.original.commentCount,
-                repostCount: rmhark.original.repostCount,
-                viewCount: rmhark.original.viewCount,
-              }
+            ? mapQuotedOriginal(
+                rmhark.original,
+                resolveUser(rmhark.original.user),
+                userId,
+                await getBlockedAuthorIds(userId),
+              )
             : undefined,
         });
       }),

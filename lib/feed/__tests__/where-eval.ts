@@ -24,8 +24,11 @@ export function evalWhere(row: Row, where: Row | undefined): boolean {
     } else if (cond && typeof cond === 'object' && 'none' in cond) {
       const list = (row[key] as Row[] | undefined) ?? [];
       if (list.some((r) => evalWhere(r, (cond as { none: Row }).none))) return false;
-    } else if (key === 'rmhark') {
-      if (!evalWhere(row.rmhark as Row, cond as Row)) return false;
+    } else if (cond && typeof cond === 'object' && 'some' in cond) {
+      const list = (row[key] as Row[] | undefined) ?? [];
+      if (!list.some((r) => evalWhere(r, (cond as { some: Row }).some))) return false;
+    } else if (key === 'rmhark' || key === 'user') {
+      if (!evalWhere((row[key] ?? {}) as Row, cond as Row)) return false;
     } else if (!matchesField(row[key], cond)) {
       return false;
     }
@@ -48,3 +51,26 @@ function matchesField(value: unknown, cond: unknown): boolean {
   return true;
 }
 
+
+/**
+ * The viewer's graph, as the relation rows the exact audience predicate
+ * (`audienceWhereExact`) joins through: attaches `user.followers`,
+ * `user.closeFriendsOwned` and `user.creatorMemberships` to a post row so the
+ * evaluator answers "does the viewer follow / sit in the circle of / support the
+ * author" the way the database does.
+ */
+export function withAuthorGraph(
+  post: Row,
+  viewerId: string,
+  graph: { following?: string[]; circles?: string[]; supported?: string[] },
+): Row {
+  const author = post.userId as string;
+  const user = {
+    followers: graph.following?.includes(author) ? [{ followerId: viewerId }] : [],
+    closeFriendsOwned: graph.circles?.includes(author) ? [{ memberId: viewerId }] : [],
+    creatorMemberships: graph.supported?.includes(author)
+      ? [{ supporterId: viewerId, expiresAt: new Date(Date.now() + 86_400_000) }]
+      : [],
+  };
+  return { ...post, user };
+}

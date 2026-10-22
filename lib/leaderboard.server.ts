@@ -11,7 +11,7 @@
  */
 
 import { prismaRead } from '@/lib/prisma.server';
-import { getFollowingIds } from '@/lib/social/follow-graph.server';
+import { getFollowingIds, friendsLeaderboardKey } from '@/lib/social/follow-graph.server';
 import { cached } from '@/lib/cached.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { levelFromXp } from '@/lib/xp/levels';
@@ -77,12 +77,13 @@ export async function getLeaderboard(
 
   if (effectiveScope === 'friends' && viewerId) {
     const entries = await cached<LeaderboardEntry[]>(
-      `leaderboard:friends:${viewerId}`,
+      friendsLeaderboardKey(viewerId),
       FRIENDS_TTL_MS,
       async () => {
-        // The shared, capped (5,000 most recent) follow list: the same graph the
-        // feed filters by, already cached and invalidated on follow/unfollow,
-        // instead of an unbounded per-board `follow.findMany`.
+        // The shared, capped (5,000 most recent) follow list, already cached and
+        // invalidated on follow/unfollow (which also drops this board). The cap is
+        // kept on purpose: this board ranks people, it gates no visibility, and
+        // beyond 5,000 follows the oldest follows simply drop off a top-N list.
         const following = await getFollowingIds(viewerId);
         const ids = [...new Set([viewerId, ...following])];
         return buildEntries({ userId: { in: ids } }, viewerId);

@@ -10,11 +10,12 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { evalWhere, type Row } from './where-eval';
+import { evalWhere, withAuthorGraph, type Row } from './where-eval';
 
 const state = vi.hoisted(() => ({
   following: [] as string[],
   circles: [] as string[],
+  supported: [] as string[],
   hidden: [] as string[],
 }));
 
@@ -24,6 +25,7 @@ vi.mock('@/lib/social/follow-graph.server', () => ({
 }));
 vi.mock('@/lib/moderation.server', () => ({
   getHiddenAuthorIds: vi.fn(async () => state.hidden),
+  getBlockedAuthorIds: vi.fn(async () => state.hidden),
 }));
 
 import { viewerVisiblePostWhere } from '../audience.server';
@@ -46,7 +48,11 @@ function liked(id: string, over: Row): Row {
 
 async function visibleIds(viewerId: string | null, rows: Row[]): Promise<string[]> {
   const where = { rmhark: await viewerVisiblePostWhere(viewerId) };
-  return rows.filter((r) => evalWhere(r, where)).map((r) => (r.rmhark as { id: string }).id);
+  const graph = { following: state.following, circles: state.circles, supported: state.supported };
+  return rows
+    .map((r) => ({ ...r, rmhark: withAuthorGraph(r.rmhark as Row, VIEWER, graph) }))
+    .filter((r) => evalWhere(r, where))
+    .map((r) => (r.rmhark as { id: string }).id);
 }
 
 const rows = [
@@ -64,6 +70,7 @@ const rows = [
 beforeEach(() => {
   state.following = ['friend'];
   state.circles = [];
+  state.supported = [];
   state.hidden = [];
 });
 
