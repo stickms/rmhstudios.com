@@ -1761,7 +1761,7 @@ html.reduce-transparency .radial-globe__contact,
      toward the ink, which separates the pin from the globe on every theme. */
   background: color-mix(in srgb, var(--site-surface-opaque) 90%, var(--site-text) 10%);
   border: var(--site-border-width, 1px) solid var(--site-border);
-  box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.6);
+  box-shadow: none;
   color: inherit;
   transition:
     background-color 0.18s ease,
@@ -1829,7 +1829,7 @@ html.reduce-transparency .radial-globe__contact,
   background: var(--site-accent);
   color: var(--site-accent-fg);
   transform: scale(1.1);
-  box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.7);
+  box-shadow: none;
 }
 .radial-globe__pin-wrap.is-locked .radial-globe__pin-name {
   opacity: 1;
@@ -2211,9 +2211,7 @@ html.reduce-transparency .radial-globe__contact,
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow:
-    0 10px 30px -8px rgba(0, 0, 0, 0.5),
-    0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: none;
   transition:
     transform 0.2s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
     box-shadow 0.2s ease;
@@ -2408,7 +2406,7 @@ html.reduce-transparency .radial-globe__contact,
   border-radius: 999px;
   background: var(--site-accent);
   color: var(--site-accent-fg);
-  box-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: none;
 }
 .radial-core__mark {
   font-weight: 800;

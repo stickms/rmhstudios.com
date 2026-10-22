@@ -32,15 +32,15 @@ same optics plus a **dough** simulation.
 
 ## Roles
 
-| Role / class                              | Drawn as                                      | Refracts the page?                           |
-| ----------------------------------------- | --------------------------------------------- | -------------------------------------------- |
-| `glass-chrome` (sticky header, dock)      | slab                                          | **yes**                                      |
-| `glass-overlay` (dialogs, menus, toasts)  | slab                                          | **yes**                                      |
-| `glass-pane` (heroes, composers, panels)  | slab                                          | no by default; `data-liquid-glass="refract"` |
-| `app-glass` (full-screen app tier panels) | slab                                          | no by default                                |
-| `glass-fill` (repeated cards, rows)       | CSS only: tint + lit edge. **Never a canvas** | no                                           |
-| `glass-inset` (fields)                    | CSS only                                      | no                                           |
-| `[data-liquid-glass]`                     | slab (opt in any element)                     | only with `="refract"`                       |
+| Role / class                                                            | Drawn as                             | Refracts the page?                           |
+| ----------------------------------------------------------------------- | ------------------------------------ | -------------------------------------------- |
+| `glass-chrome` (sticky header, dock)                                    | slab                                 | **yes**                                      |
+| `glass-overlay` (dialogs, menus, toasts)                                | slab                                 | **yes**                                      |
+| `glass-pane` (heroes, composers, panels)                                | slab                                 | no by default; `data-liquid-glass="refract"` |
+| `app-glass` (full-screen app tier panels)                               | slab                                 | no by default                                |
+| `glass-fill` (repeated cards, rows)                                     | slab, admitted after the roles above | yes (its own paint; see below)               |
+| `glass-inset`, solid `[data-slot=button]`, `[data-slot=input/textarea]` | slab, admitted last (controls)       | yes                                          |
+| `[data-liquid-glass]`                                                   | slab (opt in any element)            | only with `="refract"`                       |
 
 Why panes do not refract by default: a pane is a content block, so its own text is in the
 page snapshot. Refracting it would draw the same words twice, live and bent, wherever they
@@ -71,6 +71,21 @@ the rim. Three things have to hold together, and each has been the cause of "it 
    the engine canvas is at `-2`: the layer paints over the slab, rim included. Over glass its tint is translucent ink
    (`--evert-tint` in `liquid-glass.css`), never `--site-surface-hover`. The cursor light also has a soft bloom across the
    FACE of a slab (shader `curGlow`), not only a glint on the bevel band.
+
+## No shadows: the edge is the depth
+
+Nothing on the site carries a drop shadow or an inset highlight any more. Every `--site-shadow*`,
+`--site-glass-depth*` and `--app-shadow*` token is a zero shadow (`0 0 0 0 transparent`, valid inside any
+`box-shadow` list, so no consumer breaks) in every theme except High contrast, which keeps its white outline
+as a requirement, not a style. Depth now comes from what a surface's EDGE does to the light: the shader's
+refracted, shaded, lit bevel. That is why cards (`glass-fill`) and controls are admitted as slabs, and why the
+bevel is wider than it was (up to 24px, refraction reach just under it). The CSS tier (no WebGL, reduced
+transparency, `perf-lite`, past the budget) is a coat and a hairline border, nothing that could clash. Do not
+add `box-shadow` to a UI surface; if something needs separating from the ground, that is the glass's job.
+
+Panes and cards stay in the page snapshot (only floating glass is hidden from it), so their rim bends their own
+paint rather than what is behind them; their tint is therefore not mixed in again. Opt a surface whose text sits
+in the bevel band out of refraction with `data-liquid-glass="lit"`.
 
 ## The slab
 
@@ -244,9 +259,10 @@ EXPORT_HTML=/tmp/x.html node testing/e2e/glass-slab.mjs   # standalone page for 
 - Not photorealistic refraction of arbitrary live content: the snapshot is a second or two
   old and only the bevel uses it. Video or animation under floating glass refracts a
   slightly stale rim; the interior is always live.
-- At most 8 slabs at once; extras fall back to the CSS material (the highest-priority roles
-  win: overlay, chrome, pane).
-- `glass-fill` and buttons are not slabs. A shader per card would cost more than it buys.
+- At most 24 VISIBLE slabs at once; extras fall back to the CSS material (the highest-priority roles
+  win: overlay, chrome, pane, fill, then controls). Only surfaces on screen count, so this is "how many
+  cards and controls fit in a viewport, with headroom". Ghost and link buttons are never slabs (no body to
+  give an edge to).
 - The default Daylight theme is deliberately monochrome; glass on white reads through shading
   and the content beneath it, not through colour. A richer ambient backdrop would help and is
   a design decision, not made here.
