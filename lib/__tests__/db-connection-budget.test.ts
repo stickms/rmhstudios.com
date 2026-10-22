@@ -28,6 +28,20 @@ import {
 const tuned = { maxConnections: 200, reserved: 3, webWorkers: 2, current: { ...DEFAULTS } };
 const stock = { ...tuned, maxConnections: 100 };
 
+describe('Go supervisor pool accounting', () => {
+  it('counts the default supervisor pool (3) in the documented compose sum', () => {
+    // docker-compose.yml: 88 + 27 + 24 + 6 + 3 + (3 + 2 + 2 slack) + 10
+    expect(peakConnections(DEFAULTS, 2)).toBe(165);
+  });
+
+  it('counts an operator-raised GO_DB_POOL_SIZE and still fits a stock host', () => {
+    expect(peakConnections(DEFAULTS, 2, 6)).toBe(peakConnections(DEFAULTS, 2) + 3);
+    const plan = planPools({ ...stock, goPool: 6 });
+    expect(plan.fits).toBe(true);
+    expect(peakConnections(plan.pools, 2, 6)).toBeLessThanOrEqual(plan.usable);
+  });
+});
+
 describe('planPools', () => {
   it('leaves a tuned 200-connection host exactly as configured', () => {
     const plan = planPools(tuned);
@@ -89,7 +103,9 @@ describe('docker-compose.yml', () => {
     'starts %s with the default the budget assumes',
     (key, envName) => {
       const fallback = DEFAULTS[key as keyof typeof DEFAULTS];
-      expect(compose).toContain(`- ${key === 'jobs' ? 'DATABASE_POOL_SIZE' : envName}=\${${envName}:-${fallback}}`);
+      expect(compose).toContain(
+        `- ${key === 'jobs' ? 'DATABASE_POOL_SIZE' : envName}=\${${envName}:-${fallback}}`,
+      );
     },
   );
 });
