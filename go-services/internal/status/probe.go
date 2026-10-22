@@ -76,6 +76,11 @@ type Target struct {
 	// seconds is not "operational" — reporting that as green is how a status
 	// page ends up disagreeing with every user looking at it.
 	DegradedAfter time.Duration
+	// FreshConn makes every probe open a new connection (DNS, TCP, TLS) instead
+	// of reusing an idle one. Set it for targets whose point is the path a
+	// visitor takes from scratch — the public origin and the certificate it
+	// presents — which a kept-alive connection would silently stop exercising.
+	FreshConn bool
 	// Probe, when set, replaces the HTTP GET with a custom health check.
 	Probe func(ctx context.Context) ProbeResult
 }
@@ -329,6 +334,14 @@ const epochSentinel = "1970-01-01T00:00:00.000Z"
 // isoMillis is the timestamp layout every checkedAt uses.
 const isoMillis = "2006-01-02T15:04:05.000Z07:00"
 
+// freshClient never reuses a connection: every request resolves, dials and
+// handshakes again. Used for Target.FreshConn.
+func freshClient(timeout time.Duration) *http.Client {
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.DisableKeepAlives = true
+	return &http.Client{Timeout: timeout, Transport: tr}
+}
+
 // ProbeOnce fires a parallel HTTP GET for every target and records results.
 func (p *Prober) ProbeOnce(ctx context.Context) {
 	cycleStart := time.Now()
@@ -337,6 +350,7 @@ func (p *Prober) ProbeOnce(ctx context.Context) {
 	extras := make([]ProbeDetail, len(p.targets))
 
 	client := &http.Client{Timeout: p.timeout}
+	fresh := freshClient(p.timeout)
 
 	for i, t := range p.targets {
 		wg.Add(1)
@@ -345,7 +359,11 @@ func (p *Prober) ProbeOnce(ctx context.Context) {
 			if tgt.Probe != nil {
 				results[idx], extras[idx] = customProbe(ctx, tgt)
 			} else {
-				results[idx], extras[idx] = probe(ctx, client, tgt)
+				c := client
+				if tgt.FreshConn {
+					c = fresh
+				}
+				results[idx], extras[idx] = probe(ctx, c, tgt)
 			}
 		}(i, t)
 	}

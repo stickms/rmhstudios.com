@@ -54,3 +54,39 @@ func TestProbeReusesConnections(t *testing.T) {
 		})
 	}
 }
+
+// Targets that exist to exercise the from-scratch path (public origin, its
+// certificate) must open a new connection every cycle; the rest keep reusing.
+func TestProbeOnceFreshConnTargetsDoNotReuse(t *testing.T) {
+	count := func(fresh bool) int32 {
+		var conns atomic.Int32
+		srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte("ok"))
+		}))
+		srv.Config.ConnState = func(_ net.Conn, s http.ConnState) {
+			if s == http.StateNew {
+				conns.Add(1)
+			}
+		}
+		srv.Start()
+		defer srv.Close()
+		p := NewProber([]Target{{Name: "t", URL: srv.URL, FreshConn: fresh}})
+		for i := 0; i < 4; i++ {
+			p.ProbeOnce(context.Background())
+		}
+		return conns.Load()
+	}
+	if n := count(true); n != 4 {
+		t.Errorf("FreshConn target used %d connections for 4 cycles, want 4", n)
+	}
+	if n := count(false); n != 1 {
+		t.Errorf("normal target used %d connections for 4 cycles, want 1", n)
+	}
+}
+
+func TestFreshClientDisablesKeepAlives(t *testing.T) {
+	tr, ok := freshClient(time.Second).Transport.(*http.Transport)
+	if !ok || !tr.DisableKeepAlives {
+		t.Fatalf("freshClient must use a transport with DisableKeepAlives")
+	}
+}
