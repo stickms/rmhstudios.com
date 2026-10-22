@@ -54,6 +54,7 @@ uniform vec3 uInk;         // the theme's ink: what the shaded side of the slab 
 uniform float uDark;       // 1 on a dark ground
 uniform vec3 uLight;       // cursor light: x,y in surface CSS px, z = height above the surface
 uniform float uLightOn;    // 0..1
+uniform vec2 uTilt;        // smoothed unit-disc cursor pose; optical tilt only, no text transform
 uniform vec4 uRip[${GLASS_RIPPLES}];   // ripple: x,y (surface px), age (s, <0 = empty), amplitude
 uniform vec4 uRipShape;    // speed px/s, width px, life s, slope gain
 uniform float uPress;      // 0..1: a pressed surface flattens its bevel
@@ -98,7 +99,9 @@ void main() {
     sdRoundRect(q + vec2(0.0, e), hs, r) - sdRoundRect(q - vec2(0.0, e), hs, r)
   );
   g = dot(g, g) > 1e-8 ? normalize(g) : vec2(0.0, -1.0);
-  vec3 n = normalize(vec3(g * slope, 1.0));
+  // A gentle ~2.6 degree optical rock toward the cursor. It changes the rim's
+  // refraction and reflections without shifting pixels of live text or the hit area.
+  vec3 n = normalize(vec3(g * slope + uTilt * 0.045, 1.0));
 
   // ── Surface waves from taps ──
   vec2 wn = vec2(0.0);
@@ -125,10 +128,17 @@ void main() {
     vec2 uvR = (base + shift * (1.0 + uDisperse)) * uSceneMap.zw;
     vec2 uvG = (base + shift) * uSceneMap.zw;
     vec2 uvB = (base + shift * (1.0 - uDisperse)) * uSceneMap.zw;
-    vec3 c = vec3(texture(uScene, uvR).r, texture(uScene, uvG).g, texture(uScene, uvB).b);
+    vec4 sR = texture(uScene, uvR);
+    vec4 sG = texture(uScene, uvG);
+    vec4 sB = texture(uScene, uvB);
+    // The picture is premultiplied and NOT opaque everywhere: anything it could not paint (a WebGL canvas, a region no
+    // background covers) is transparent, i.e. rgb 0. Painting those texels as an opaque rim is what turned the edges
+    // black once a snapshot landed; the sampled coverage keeps them clear, so the live DOM shows through instead.
+    float sa = sG.a;
+    vec3 c = vec3(sR.r, sG.g, sB.b);
     // The slab's own tint, so the rim matches the interior it fades into.
-    c = mix(c, uTint.rgb, uTint.a);
-    rim = vec4(c, 1.0) * band;
+    c = mix(c, uTint.rgb * sa, uTint.a);
+    rim = vec4(c, sa) * band;
   }
 
   // ── Light ──
@@ -149,7 +159,7 @@ void main() {
   // The light also falls on the FACE, not only the rim: a soft bloom under the cursor across the whole surface, so a
   // hover lights the element it is over rather than just the thin bevel band at its edge.
   float glowR = reach * 0.42;
-  float curGlow = exp(-dot(uLight.xy - P, uLight.xy - P) / (2.0 * glowR * glowR)) * 0.17 * uLightOn;
+  float curGlow = exp(-dot(uLight.xy - P, uLight.xy - P) / (2.0 * glowR * glowR)) * 0.055 * uLightOn;
 
   // The inner edge: a thin bright line, strongest on the edges that face a light.
   float stroke = (1.0 - smoothstep(0.0, uPx * 1.8, d - uPx * 0.5)) * smoothstep(-uPx, 0.0, d);

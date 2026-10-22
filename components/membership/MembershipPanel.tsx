@@ -492,19 +492,13 @@ function PricingStyles() {
          those tokens. Card hover is likewise the shared .glass-* behaviour.
          What is left here is the one thing the system has no token for: the
          featured tier's gold ring and glow. */
-      .pricing-card { transition: border-color 220ms ease, box-shadow 220ms ease; }
-      .pricing-card:hover { border-color: var(--site-border-bright); }
 
       .pricing-card--featured {
         box-shadow:
           0 0 0 1px color-mix(in srgb, var(--site-warning) 45%, transparent),
           0 24px 60px -20px color-mix(in srgb, var(--site-warning) 35%, transparent);
       }
-      .pricing-card--featured:hover {
-        box-shadow:
-          0 0 0 1px color-mix(in srgb, var(--site-warning) 70%, transparent),
-          0 30px 70px -18px color-mix(in srgb, var(--site-warning) 45%, transparent);
-      }
+
 
       /* Straddles the card's top edge. The max-width keeps a long translation
          inside the card rather than out over its neighbour.

@@ -523,12 +523,62 @@ jobs:
         run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
 
   # ── Deploy gate: fire the VPS webhook ONLY when CI + build are green ──────────
+  # The Go fleet's Bazel tests (same as go-microservices.yml) on the merged
+  # commit. go-microservices runs on PRs, but nothing stopped a Go change from
+  # shipping when it was skipped, red, or raced by another merge. Runs only when
+  # the pushed commits touch Go (a web-only deploy passes in seconds); parallel
+  # to `build`, so it adds no wall-clock when it does run.
+  go-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      BAZEL_REMOTE_CACHE: ${{ secrets.BAZEL_REMOTE_CACHE }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Did this push touch Go?
+        id: changed
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -uo pipefail
+          # workflow_dispatch has no `before`; a new branch has all zeros; a base we
+          # can't fetch (force-push) — all mean "can't tell", so test.
+          if [ -z "${BEFORE:-}" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
+             || ! git fetch --quiet --depth=1 origin "$BEFORE"; then
+            echo "go=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if git diff --quiet "$BEFORE" HEAD -- go-services MODULE.bazel .bazelrc .bazelversion; then
+            echo "go=false" >> "$GITHUB_OUTPUT"
+            echo "No Go changes in this push — skipping the Bazel tests."
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        if: steps.changed.outputs.go == 'true'
+        with:
+          path: ~/.cache/bazel-disk
+          key: bazel-disk-${{ runner.os }}-${{ hashFiles('go-services/go.sum', 'MODULE.bazel') }}
+          restore-keys: bazel-disk-${{ runner.os }}-
+      - name: bootstrap toolchain
+        if: steps.changed.outputs.go == 'true'
+        run: ./scripts/preflight.sh --guard
+      - name: configure remote cache (opt-in)
+        if: steps.changed.outputs.go == 'true' && env.BAZEL_REMOTE_CACHE != ''
+        run: echo "build --remote_cache=${BAZEL_REMOTE_CACHE}" >> .bazelrc
+      - name: build + test (bazel)
+        if: steps.changed.outputs.go == 'true'
+        run: bazelisk test --build_tests_only //go-services/...
+
   # `if: always()` so this runs even when `ci` fails (so it can mark the embed
   # red). The trigger step is guarded on BOTH jobs succeeding; the failure step
   # fires when either genuinely failed. Cancellation (superseded) is handled by
   # `build` above, so neither step runs then.
   deploy-gate:
-    needs: [ci, integration, build]
+    needs: [ci, integration, build, go-test]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -555,7 +605,7 @@ jobs:
         # stalled run that hit its timeout-minutes — also alerts, not just a clean
         # lint/test failure. This exactly complements the trigger step's
         # `success && success` guard, so precisely one of the two steps runs.
-        if: needs.ci.result != 'success' || needs.integration.result != 'success' || needs.build.result != 'success'
+        if: needs.ci.result != 'success' || needs.integration.result != 'success' || needs.build.result != 'success' || needs.go-test.result != 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -573,14 +623,14 @@ jobs:
             # Final render of the CI checklist, so the red embed shows WHICH check failed.
             DISCORD_FIELDS=$(bash .github/scripts/ci-checklist.sh fields | jq -c '.fields' 2>/dev/null || echo '[]') \
             bash .github/scripts/discord-notify.sh edit-or-post 15158332 \
-              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-${GIT_SHA:0:7}} — deploy BLOCKED (CI=${{ needs.ci.result }}, integration=${{ needs.integration.result }}, build=${{ needs.build.result }}); nothing shipped" \
+              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-${GIT_SHA:0:7}} — deploy BLOCKED (CI=${{ needs.ci.result }}, integration=${{ needs.integration.result }}, go=${{ needs.go-test.result }}, build=${{ needs.build.result }}); nothing shipped" \
               "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}" || true
           fi
-          echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, integration=${{ needs.integration.result }}, build=${{ needs.build.result }}. Images (if any) are inert; nothing shipped."
+          echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, integration=${{ needs.integration.result }}, go=${{ needs.go-test.result }}, build=${{ needs.build.result }}. Images (if any) are inert; nothing shipped."
           exit 1
 
       - name: Trigger VPS deploy (webhook listener)
-        if: needs.ci.result == 'success' && needs.integration.result == 'success' && needs.build.result == 'success'
+        if: needs.ci.result == 'success' && needs.integration.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success'
         env:
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
@@ -619,7 +669,7 @@ jobs:
           esac
 
       - name: Discord — trigger failed (post-build handoff)
-        if: failure() && needs.ci.result == 'success' && needs.integration.result == 'success' && needs.build.result == 'success' && github.ref == 'refs/heads/main'
+        if: failure() && needs.ci.result == 'success' && needs.integration.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success' && github.ref == 'refs/heads/main'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}

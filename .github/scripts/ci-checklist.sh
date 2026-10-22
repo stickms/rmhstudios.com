@@ -2,7 +2,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # The CI half of the deploy embed's checklist (deploy.yml).
 #
-# The checks run as PARALLEL jobs (`ci`, `integration`, `build`), so no single
+# The checks run as PARALLEL jobs (`ci`, `integration`, `go-test`, `build`), so no single
 # job knows the others' state — and several jobs editing one Discord message
 # would overwrite each other's partial views. Instead the checklist is rendered
 # from the GitHub API's view of THIS run's jobs and steps (the source of truth),
@@ -58,6 +58,7 @@ def dur:
   row("Lint"; "ci"; "Lint"; "step"),
   row("Unit tests"; "ci"; "Test"; "job"),
   row("Integration tests"; "integration"; "Integration tests"; "job"),
+  row("Go tests"; "go-test"; "Go tests"; "job"),
   row("Images built + pushed"; "build"; "Build + push both images (bake, single graph)"; "step") ]
 | { fields: [{name: "CI", value: (map("\(icon) \(.label)\(dur)") | join("\n"))}],
     state: (if any(.[]; .status == "completed" and .conclusion != "success" and .conclusion != "skipped") then "failure"

@@ -44,7 +44,21 @@ export const Route = createFileRoute('/api/admin/oncall-series')({
             ]);
             return buildSeries(effectiveRules(overrides), rows, range, now);
           });
-          return Response.json({ range, series }, { headers: { 'Cache-Control': 'no-store' } });
+          // Deploy markers for the same range (ops_deploy_event, from deploy.sh).
+          const deploys = await cached(`oncall:deploys:${range}`, 30_000, async () =>
+            (
+              await prisma.opsDeployEvent.findMany({
+                where: { at: { gte: new Date(Date.now() - RANGES[range].ms) } },
+                orderBy: { at: 'asc' },
+                take: 200,
+                select: { at: true, sha: true, status: true },
+              })
+            ).map((d) => ({ at: d.at.getTime(), sha: d.sha, status: d.status })),
+          );
+          return Response.json(
+            { range, series, deploys },
+            { headers: { 'Cache-Control': 'no-store' } },
+          );
         },
       ),
     },

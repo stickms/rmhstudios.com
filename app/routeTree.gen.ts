@@ -501,6 +501,9 @@ import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiGiftExchangesIndexRouteImport } from './routes/api/gift-exchanges/index'
 import { Route as ApiGlobesetRecordRouteImport } from './routes/api/globeset/record'
 import { Route as ApiGroupChatsIndexRouteImport } from './routes/api/group-chats/index'
+import { Route as ApiGroupcallsActiveRouteImport } from './routes/api/groupcalls/active'
+import { Route as ApiGroupcallsHistoryRouteImport } from './routes/api/groupcalls/history'
+import { Route as ApiGroupcallsInvitableRouteImport } from './routes/api/groupcalls/invitable'
 import { Route as ApiGuidesIndexRouteImport } from './routes/api/guides/index'
 import { Route as ApiGuidesIdRouteImport } from './routes/api/guides/$id'
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
@@ -955,6 +958,7 @@ import { Route as ApiGuidesIdPublishRouteImport } from './routes/api/guides/$id.
 import { Route as ApiHomesListingsIdRouteImport } from './routes/api/homes/listings.$id'
 import { Route as ApiHuntAnswerIndexRouteImport } from './routes/api/hunt/answer/index'
 import { Route as ApiHuntMarkerIndexRouteImport } from './routes/api/hunt/marker/index'
+import { Route as ApiInternalOpsDeployEventRouteImport } from './routes/api/internal/ops/deploy-event'
 import { Route as ApiInternalOpsPostDeployHealthRouteImport } from './routes/api/internal/ops/post-deploy-health'
 import { Route as ApiJamsSlugEntryRouteImport } from './routes/api/jams/$slug/entry'
 import { Route as ApiJamsSlugRateRouteImport } from './routes/api/jams/$slug/rate'
@@ -3748,6 +3752,21 @@ const ApiGroupChatsIndexRoute = ApiGroupChatsIndexRouteImport.update({
   path: '/api/group-chats/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGroupcallsActiveRoute = ApiGroupcallsActiveRouteImport.update({
+  id: '/api/groupcalls/active',
+  path: '/api/groupcalls/active',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupcallsHistoryRoute = ApiGroupcallsHistoryRouteImport.update({
+  id: '/api/groupcalls/history',
+  path: '/api/groupcalls/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupcallsInvitableRoute = ApiGroupcallsInvitableRouteImport.update({
+  id: '/api/groupcalls/invitable',
+  path: '/api/groupcalls/invitable',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGuidesIndexRoute = ApiGuidesIndexRouteImport.update({
   id: '/api/guides/',
   path: '/api/guides/',
@@ -6099,6 +6118,12 @@ const ApiHuntMarkerIndexRoute = ApiHuntMarkerIndexRouteImport.update({
   path: '/api/hunt/marker/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalOpsDeployEventRoute =
+  ApiInternalOpsDeployEventRouteImport.update({
+    id: '/api/internal/ops/deploy-event',
+    path: '/api/internal/ops/deploy-event',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInternalOpsPostDeployHealthRoute =
   ApiInternalOpsPostDeployHealthRouteImport.update({
     id: '/api/internal/ops/post-deploy-health',
@@ -8226,6 +8251,9 @@ export interface FileRoutesByFullPath {
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
+  '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
+  '/api/groupcalls/history': typeof ApiGroupcallsHistoryRoute
+  '/api/groupcalls/invitable': typeof ApiGroupcallsInvitableRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -8707,6 +8735,7 @@ export interface FileRoutesByFullPath {
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
+  '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
   '/api/jams/$slug/entry': typeof ApiJamsSlugEntryRoute
   '/api/jams/$slug/rate': typeof ApiJamsSlugRateRoute
@@ -9461,6 +9490,9 @@ export interface FileRoutesByTo {
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
+  '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
+  '/api/groupcalls/history': typeof ApiGroupcallsHistoryRoute
+  '/api/groupcalls/invitable': typeof ApiGroupcallsInvitableRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -9942,6 +9974,7 @@ export interface FileRoutesByTo {
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
+  '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
   '/api/jams/$slug/entry': typeof ApiJamsSlugEntryRoute
   '/api/jams/$slug/rate': typeof ApiJamsSlugRateRoute
@@ -10724,6 +10757,9 @@ export interface FileRoutesById {
   '/api/games/how-to-play': typeof ApiGamesHowToPlayRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/globeset/record': typeof ApiGlobesetRecordRoute
+  '/api/groupcalls/active': typeof ApiGroupcallsActiveRoute
+  '/api/groupcalls/history': typeof ApiGroupcallsHistoryRoute
+  '/api/groupcalls/invitable': typeof ApiGroupcallsInvitableRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/handles/change': typeof ApiHandlesChangeRoute
@@ -11205,6 +11241,7 @@ export interface FileRoutesById {
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
+  '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
   '/api/jams/$slug/entry': typeof ApiJamsSlugEntryRoute
   '/api/jams/$slug/rate': typeof ApiJamsSlugRateRoute
@@ -11987,6 +12024,9 @@ export interface FileRouteTypes {
     | '/api/games/how-to-play'
     | '/api/gif/search'
     | '/api/globeset/record'
+    | '/api/groupcalls/active'
+    | '/api/groupcalls/history'
+    | '/api/groupcalls/invitable'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -12468,6 +12508,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
     | '/api/homes/listings/$id'
+    | '/api/internal/ops/deploy-event'
     | '/api/internal/ops/post-deploy-health'
     | '/api/jams/$slug/entry'
     | '/api/jams/$slug/rate'
@@ -13222,6 +13263,9 @@ export interface FileRouteTypes {
     | '/api/games/how-to-play'
     | '/api/gif/search'
     | '/api/globeset/record'
+    | '/api/groupcalls/active'
+    | '/api/groupcalls/history'
+    | '/api/groupcalls/invitable'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -13703,6 +13747,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
     | '/api/homes/listings/$id'
+    | '/api/internal/ops/deploy-event'
     | '/api/internal/ops/post-deploy-health'
     | '/api/jams/$slug/entry'
     | '/api/jams/$slug/rate'
@@ -14484,6 +14529,9 @@ export interface FileRouteTypes {
     | '/api/games/how-to-play'
     | '/api/gif/search'
     | '/api/globeset/record'
+    | '/api/groupcalls/active'
+    | '/api/groupcalls/history'
+    | '/api/groupcalls/invitable'
     | '/api/guides/$id'
     | '/api/handle/check'
     | '/api/handles/change'
@@ -14965,6 +15013,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
     | '/api/homes/listings/$id'
+    | '/api/internal/ops/deploy-event'
     | '/api/internal/ops/post-deploy-health'
     | '/api/jams/$slug/entry'
     | '/api/jams/$slug/rate'
@@ -15535,6 +15584,9 @@ export interface RootRouteChildren {
   ApiGamesHowToPlayRoute: typeof ApiGamesHowToPlayRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiGlobesetRecordRoute: typeof ApiGlobesetRecordRoute
+  ApiGroupcallsActiveRoute: typeof ApiGroupcallsActiveRoute
+  ApiGroupcallsHistoryRoute: typeof ApiGroupcallsHistoryRoute
+  ApiGroupcallsInvitableRoute: typeof ApiGroupcallsInvitableRoute
   ApiGuidesIdRoute: typeof ApiGuidesIdRouteWithChildren
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
   ApiHandlesChangeRoute: typeof ApiHandlesChangeRoute
@@ -15920,6 +15972,7 @@ export interface RootRouteChildren {
   ApiGroupChatsIdMessagesRoute: typeof ApiGroupChatsIdMessagesRouteWithChildren
   ApiGroupChatsIdReactRoute: typeof ApiGroupChatsIdReactRoute
   ApiGroupChatsIdStreamRoute: typeof ApiGroupChatsIdStreamRoute
+  ApiInternalOpsDeployEventRoute: typeof ApiInternalOpsDeployEventRoute
   ApiInternalOpsPostDeployHealthRoute: typeof ApiInternalOpsPostDeployHealthRoute
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
@@ -19543,6 +19596,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGroupChatsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/groupcalls/active': {
+      id: '/api/groupcalls/active'
+      path: '/api/groupcalls/active'
+      fullPath: '/api/groupcalls/active'
+      preLoaderRoute: typeof ApiGroupcallsActiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/groupcalls/history': {
+      id: '/api/groupcalls/history'
+      path: '/api/groupcalls/history'
+      fullPath: '/api/groupcalls/history'
+      preLoaderRoute: typeof ApiGroupcallsHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/groupcalls/invitable': {
+      id: '/api/groupcalls/invitable'
+      path: '/api/groupcalls/invitable'
+      fullPath: '/api/groupcalls/invitable'
+      preLoaderRoute: typeof ApiGroupcallsInvitableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/guides/': {
       id: '/api/guides/'
       path: '/api/guides'
@@ -22719,6 +22793,13 @@ declare module '@tanstack/react-router' {
       path: '/api/hunt/marker'
       fullPath: '/api/hunt/marker/'
       preLoaderRoute: typeof ApiHuntMarkerIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/ops/deploy-event': {
+      id: '/api/internal/ops/deploy-event'
+      path: '/api/internal/ops/deploy-event'
+      fullPath: '/api/internal/ops/deploy-event'
+      preLoaderRoute: typeof ApiInternalOpsDeployEventRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/internal/ops/post-deploy-health': {
@@ -27261,6 +27342,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesHowToPlayRoute: ApiGamesHowToPlayRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiGlobesetRecordRoute: ApiGlobesetRecordRoute,
+  ApiGroupcallsActiveRoute: ApiGroupcallsActiveRoute,
+  ApiGroupcallsHistoryRoute: ApiGroupcallsHistoryRoute,
+  ApiGroupcallsInvitableRoute: ApiGroupcallsInvitableRoute,
   ApiGuidesIdRoute: ApiGuidesIdRouteWithChildren,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
   ApiHandlesChangeRoute: ApiHandlesChangeRoute,
@@ -27648,6 +27732,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGroupChatsIdMessagesRoute: ApiGroupChatsIdMessagesRouteWithChildren,
   ApiGroupChatsIdReactRoute: ApiGroupChatsIdReactRoute,
   ApiGroupChatsIdStreamRoute: ApiGroupChatsIdStreamRoute,
+  ApiInternalOpsDeployEventRoute: ApiInternalOpsDeployEventRoute,
   ApiInternalOpsPostDeployHealthRoute: ApiInternalOpsPostDeployHealthRoute,
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,

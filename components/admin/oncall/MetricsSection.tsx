@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Spinner } from '@/components/ui/spinner';
-import type { ChartSeries, RangeId } from '@/lib/ops/series';
+import type { ChartSeries, DeployMarker, RangeId } from '@/lib/ops/series';
 import { MetricChart } from './MetricChart';
 
 /** The metrics history behind every threshold alarm, one chart per metric. */
@@ -10,6 +10,7 @@ export function MetricsSection() {
   const { t } = useTranslation('f-oncall');
   const [range, setRange] = useState<RangeId>('24h');
   const [series, setSeries] = useState<ChartSeries[] | null>(null);
+  const [deploys, setDeploys] = useState<DeployMarker[]>([]);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -19,9 +20,10 @@ export function MetricsSection() {
     fetch(`/api/admin/oncall-series?range=${range}`, { credentials: 'include', cache: 'no-store' })
       .then(async (res) => {
         if (!res.ok) throw new Error(String(res.status));
-        const body = (await res.json()) as { series: ChartSeries[] };
+        const body = (await res.json()) as { series: ChartSeries[]; deploys?: DeployMarker[] };
         if (!cancelled) {
           setSeries(body.series);
+          setDeploys(body.deploys ?? []);
           setFailed(false);
         }
       })
@@ -71,7 +73,7 @@ export function MetricsSection() {
         // Keep the previous charts on screen (dimmed) while a new range loads.
         <div className={`mt-3 grid gap-3 xl:grid-cols-2 ${loading ? 'opacity-60' : ''}`}>
           {series.map((s) => (
-            <MetricChart key={s.key} series={s} withDate={range === '7d'} />
+            <MetricChart key={s.key} series={s} deploys={deploys} withDate={range === '7d'} />
           ))}
         </div>
       )}

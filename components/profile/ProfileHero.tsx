@@ -32,6 +32,7 @@ import { WishButton } from '@/components/wishlist/WishButton';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { Button } from '@/components/ui/button';
 import { CallButton } from '@/components/call/CallButton';
+import { GroupCallButton } from '@/components/groupcall/GroupCallButton';
 import { CopyButton } from '@/components/ui/copy-button';
 import { GlassPane } from '@/components/ui/liquid-glass';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
@@ -354,6 +355,14 @@ export function ProfileHero({
                       name: profile.name ?? null,
                       image: profile.image ?? null,
                       handle: profile.handle ?? null,
+                    }}
+                  />
+                  <GroupCallButton
+                    seedUser={{
+                      id: profile.id,
+                      name: profile.name ?? null,
+                      handle: profile.handle ?? null,
+                      image: profile.image ?? null,
                     }}
                   />
                   <OfficeHoursProfileButton userId={profile.id} />

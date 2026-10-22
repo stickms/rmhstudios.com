@@ -39,8 +39,6 @@ import { join } from 'node:path';
  *                                       and all are deleted (§5.1.1). So was
  *                                       `lib/glass-lens.ts`, whose rAF belonged to
  *                                       a generator with no caller.
- *   - components/radial/RadialWheel.tsx — rAF used as a SCROLL THROTTLE (one
- *                                       frame per scroll burst); cancels on unmount.
  *   - components/radial/RadialHub.tsx, components/radial/QuickPanel.tsx —
  *                                       one-shot rAF to move focus after the
  *                                       menu/panel opens; cancelled in cleanup.
@@ -284,7 +282,6 @@ const ALLOW = new Set<string>([
   'components/rmhcoins/PlinkoGame.tsx',
   'components/radial/QuickPanel.tsx',
   'components/radial/RadialHub.tsx',
-  'components/radial/RadialWheel.tsx',
   'components/rmhtech/RmhtechLanding.tsx',
   'components/signal-forge/SignalForgeGame.tsx',
   'components/site/LanguageSwitcher.tsx',

@@ -1007,21 +1007,8 @@ function RoadmapStyles() {
         .roadmap-node { left: 3px; }
       }
 
-      /* Milestone panes — L2 glass (.glass-pane) with a subtle hover lift. */
-      .roadmap-card {
-        width: 100%;
-        transition:
-          transform var(--site-transition-speed) ease,
-          border-color var(--site-transition-speed) ease;
-      }
-      .roadmap-card:hover {
-        transform: translateY(-4px);
-        border-color: var(--site-border-bright);
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .roadmap-card:hover { transform: none; }
-      }
+      /* Milestone panes use the shared optical hover response. */
+      .roadmap-card { width: 100%; }
     `}</style>
   );
 }

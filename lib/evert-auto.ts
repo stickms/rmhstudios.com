@@ -56,6 +56,10 @@ const decided = new WeakMap<Element, EvertMode>();
 export function controlAt(target: EventTarget | null): HTMLElement | null {
   const el = (target as Element | null)?.closest?.<HTMLElement>(`[data-evert], ${INTERACTIVE}`);
   if (!el || el.matches(LEFT_ALONE)) return null;
+  // A card's body link can target the card's full material without becoming a
+  // second, inset hover box. Sibling action buttons retain their own layers.
+  if (el.hasAttribute('data-evert-delegate'))
+    return el.parentElement?.closest<HTMLElement>('[data-evert]') ?? el;
   return el;
 }
 
@@ -89,6 +93,9 @@ export function adopt(el: HTMLElement): EvertMode {
   const r = el.getBoundingClientRect();
   if (style.display === 'contents' || style.display === 'none') mode = null;
   else if (r.width * r.height > 0.5 * window.innerWidth * window.innerHeight) mode = null;
+  // Inline links have no clientWidth/clientHeight for a child canvas. Keep their
+  // line layout intact and light the existing external carrier instead.
+  else if (style.display === 'inline') mode = 'ghost';
   else if (REPLACED.has(el.tagName)) mode = 'ghost';
   else if (!pseudoFree(el, '::before')) mode = 'ghost';
   else if (style.position === 'static' && anchorsDescendants(el)) mode = 'ghost';
@@ -124,6 +131,7 @@ function ghostFor(kind: GhostKind): Ghost {
     el.className = 'evert-ghost';
     el.setAttribute('data-kind', kind);
     el.setAttribute('aria-hidden', 'true');
+    if (kind === 'hover') el.setAttribute('data-liquid-glass', 'lit');
     document.body.appendChild(el);
     g = { el, target: null };
     ghosts[kind] = g;

@@ -38,15 +38,9 @@ function hrefFor(item: FeedItem): string {
  * of three letters, and a collision waiting for the first contributor on a
  * case-insensitive filesystem.
  *
- * They stay separate because the column card is an interactive post (30
- * imports, 11 hooks, session + feed-store subscriptions, view tracking,
- * like/repost/menu actions) and the wheel cannot afford all of it: the wheel
- * rakes its cards onto a 3D cylinder, and design.md §4 records that a rotated
- * 3D transform is the slow path for an antialiased curve — nothing rasterised
- * survives between frames, and the globe's wireframe as thirteen elements
- * halved the frame rate of the whole gesture. Adding a `variant="wheel"` to
- * the 541-line card would put all of that weight on the site's most-viewed
- * surface to save a file.
+ * They stay separate because the column card owns a heavier interactive post
+ * (session, feed subscriptions, view tracking and compose state). The home
+ * feed keeps a compact presentation and shares the actions row below.
  *
  * What the wheel DOES take is the shared `RMHarkActions` toolbar — the row, not
  * the card. Passive counts here meant the site's most-viewed surface showed a
@@ -170,19 +164,19 @@ export const WheelCard = memo(function WheelCard({ item }: { item: FeedItem }) {
   // the whole card meant the action buttons would have been nested inside an
   // anchor, which is invalid and is why they were text for so long.
   return (
-    <article className="rmhark glass-fill">
+    <article className="rmhark glass-fill" data-evert="">
       {external ? (
         <a
           href={href}
           className="rmhark__link"
-          data-evert=""
+          data-evert-delegate=""
           target="_blank"
           rel="noopener noreferrer"
         >
           {body}
         </a>
       ) : (
-        <Link to={href} className="rmhark__link" data-evert="">
+        <Link to={href} className="rmhark__link" data-evert-delegate="">
           {body}
         </Link>
       )}

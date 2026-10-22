@@ -6,6 +6,7 @@ import {
   admit,
   approach,
   bevelFor,
+  cursorTilt,
   dprFor,
   innerRadius,
   lightTarget,
@@ -31,7 +32,9 @@ describe('bevel and thickness', () => {
 
 describe('sizing and the surface budget', () => {
   it('rejects surfaces too small or too large', () => {
-    expect(sizeEligible(20, 200)).toBe(false);
+    expect(sizeEligible(12, 200)).toBe(false);
+    expect(sizeEligible(120, 18)).toBe(true); // native WebKit/Chromium select height
+    expect(bevelFor(120, 18, 5)).toBeLessThan(9); // room for a clear interior
     expect(sizeEligible(400, 300)).toBe(true);
     expect(sizeEligible(1400, 900)).toBe(false);
     expect(sizeEligible(GLASS_BUDGET.minSide, GLASS_BUDGET.minSide)).toBe(true);
@@ -96,6 +99,15 @@ describe('snapshot coverage', () => {
 });
 
 describe('ripples and light', () => {
+  it('tilts only the hovered slab, with a bounded diagonal and a neutral centre', () => {
+    expect(cursorTilt(200, 100, 400, 200)).toEqual([0, 0]);
+    expect(cursorTilt(300, 100, 400, 200)).toEqual([0.5, 0]);
+    expect(cursorTilt(0, 0, 400, 200)[0]).toBeCloseTo(-Math.SQRT1_2);
+    expect(Math.hypot(...cursorTilt(400, 200, 400, 200))).toBeCloseTo(1);
+    expect(cursorTilt(-1, 100, 400, 200)).toEqual([0, 0]);
+    expect(cursorTilt(100, 201, 400, 200)).toEqual([0, 0]);
+    expect(cursorTilt(0, 0, 0, 200)).toEqual([0, 0]);
+  });
   it('a tap is strongest at the finger, falls off smoothly, and has a finite reach', () => {
     expect(rippleAmplitude(0)).toBe(1);
     expect(rippleAmplitude(120)).toBeGreaterThan(rippleAmplitude(400));
