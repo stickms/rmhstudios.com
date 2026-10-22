@@ -31,7 +31,12 @@ vi.mock('@/lib/cache', () => ({
     set: mocks.cacheSet,
     invalidate: mocks.cacheInvalidate,
     invalidatePrefix: mocks.cacheInvalidatePrefix,
+    // cached.server drops locally via these (so a remote receipt never re-publishes).
+    dropLocal: mocks.cacheInvalidate,
+    dropLocalPrefix: mocks.cacheInvalidatePrefix,
+    setInvalidationHook: vi.fn(),
   },
+  CACHE_PROCESS_ID: 'test-process',
 }));
 
 vi.mock('@/lib/redis.server', () => ({

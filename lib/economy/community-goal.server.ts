@@ -239,7 +239,7 @@ export async function pledgeToGoal(
         raisedCoins: raised,
         targetCoins: goal.targetCoins,
         funded,
-        balance: profile?.coins ?? 0,
+        balance: Number(profile?.coins ?? 0),
       };
     });
   } catch (err) {

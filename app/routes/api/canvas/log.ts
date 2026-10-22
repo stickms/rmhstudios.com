@@ -1,14 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { getCanvasLog } from '@/lib/canvas/canvas.server';
-import { canvasLogQuery } from '@/lib/canvas/shared';
+import { canvasLogQuery } from '@/lib/canvas/schema';
 
 /** GET /api/canvas/log?id=&after= — placement history of a finished canvas, for the timelapse. */
 export const Route = createFileRoute('/api/canvas/log')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'optional', rateLimit: 'read', query: canvasLogQuery },
+        { auth: 'none', rateLimit: 'read', query: canvasLogQuery },
         async ({ query }) => {
           const log = await getCanvasLog(query.id, query.after);
           if (!log) return Response.json({ error: 'No replay available' }, { status: 404 });

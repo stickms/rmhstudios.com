@@ -113,7 +113,13 @@ async function submit(body: Body): Promise<{ status: number; json: Record<string
     method: 'POST',
     // A unique IP per call, so nothing shares a rate-limit bucket even if the
     // limiter mock is ever removed.
-    headers: { 'content-type': 'application/json', 'cf-connecting-ip': `${Math.random()}` },
+    headers: {
+      'content-type': 'application/json',
+      'cf-connecting-ip': `${Math.random()}`,
+      // The wrapper only consults Better Auth when a session cookie is present;
+      // the guest tests still get null from the mocked getSession.
+      cookie: 'better-auth.session_token=abc',
+    },
     body: JSON.stringify({
       songId: song.id,
       score: 50_000,

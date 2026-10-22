@@ -35,10 +35,17 @@ export default function drainPlugin() {
 
     try {
       await Promise.race([
-        (async () => {
-          const { flushActivity } = await import('../../lib/activity/emit.server');
-          await flushActivity();
-        })(),
+        Promise.all([
+          (async () => {
+            const { flushActivity } = await import('../../lib/activity/emit.server');
+            await flushActivity();
+          })(),
+          (async () => {
+            // In-process post-view buffer (no-Redis fallback in hot-counters).
+            const { flushLocalViews } = await import('../../lib/hot-counters.server');
+            await flushLocalViews();
+          })(),
+        ]),
         new Promise((resolve) => setTimeout(resolve, DRAIN_TIMEOUT_MS)),
       ]);
     } catch {

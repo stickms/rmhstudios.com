@@ -189,12 +189,21 @@ const ALLOW = new Set<string>([
   // `document.hidden`, is never started under reduced motion, and is cancelled
   // on unmount. Transform-only, writes nothing to <html>.
   'components/dunesday/os/frame.ts',
+  // R3F menu-backdrop cap: while a menu covers a `frameloop="demand"` scene it
+  // invalidates on the vsync ticks `FrameCap` lets through. It runs only while
+  // `fps` is non-null (a menu is open); the effect's teardown cancels it, and a
+  // hidden tab runs no rAF callbacks.
+  'components/render/FrameCap.tsx',
   'components/daily-puzzles/globeset/GlobeSetGlobe.tsx',
   'components/dream-rift/MenuBackdrop.tsx',
   // One-shot, not a loop: a single deferred frame that restores the caret after
   // a smart-paste rewrites the textarea value (B16). It schedules no successor,
   // so it settles by construction.
   'components/feed/ComposeBox.tsx',
+  // One-shot, no loop: the search field's autofocus waits one frame (rAF →
+  // setTimeout) so `focus()` reads the layout the frame already computed instead
+  // of forcing one mid page switch; both handles are cancelled on unmount.
+  'components/feed/ExploreColumn.tsx',
   'components/feed/GhostTextArea.tsx',
   'components/feed/HandleInput.tsx',
   'components/feed/MentionTextarea.tsx',

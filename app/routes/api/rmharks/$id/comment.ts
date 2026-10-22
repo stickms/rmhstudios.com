@@ -9,6 +9,7 @@ import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getActiveBan } from '@/lib/admin-audit.server';
 import { createComment } from '@/lib/social/engagement.server';
 import { groupReactions } from '@/lib/social/reactions';
+import { canReadPostThread, canReadThread } from '@/lib/feed/audience.server';
 import { canReplyToPost, type ReplyControl } from '@/lib/feed/reply-control.server';
 import { decodeCursor, encodeCursor, keysetWhere, type FeedCursor } from '@/lib/feed/cursor';
 import { gateCommunityContent, logRemoved } from '@/lib/communities/gate.server';
@@ -57,6 +58,12 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
           userId = session?.user?.id ?? null;
         } catch {
           // Not logged in
+        }
+
+        // A viewer who cannot see the post cannot read its thread. 404, like a post
+        // that does not exist, so the answer does not reveal that it does.
+        if (!(await canReadPostThread(id, userId))) {
+          return Response.json({ error: 'Not found' }, { status: 404 });
         }
 
         // Per-comment counts: `likeCount`/`replyCount` come from the denormalized
@@ -264,9 +271,18 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
           // always reply to their own post.
           const target = await prisma.rMHark.findUnique({
             where: { id },
-            select: { userId: true, replyControl: true, content: true, communityId: true },
+            select: {
+              userId: true,
+              replyControl: true,
+              content: true,
+              communityId: true,
+              audience: true,
+              deletedAt: true,
+            },
           });
-          if (!target) {
+          // Visibility first: reply-control / community answers below would otherwise
+          // confirm that a post the viewer cannot see exists.
+          if (!target || !(await canReadThread(target, session.user.id))) {
             return Response.json({ error: 'Post not found' }, { status: 404 });
           }
           const mayReply = await canReplyToPost(

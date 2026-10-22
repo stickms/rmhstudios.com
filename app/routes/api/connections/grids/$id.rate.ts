@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { rateSchema } from '@/lib/party/connections';
+import { rateSchema } from '@/lib/party/connections-schema';
 import { rateGrid } from '@/lib/party/connections.server';
 
 /** POST /api/connections/grids/:id/rate — 1-5 stars, only after finishing the grid. */

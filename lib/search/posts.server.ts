@@ -12,7 +12,7 @@
  */
 
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma.server';
+import { prismaRead } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { fuzzyColumn, norm, type FuzzyTerms } from './db.server';
 import { confidenceOf, scoreRecord, withPopularity, withRecency, MATCH_FLOOR } from './score';
@@ -73,6 +73,13 @@ export async function searchPostsScored(
   }
   if (opts.authorId) filters.push(Prisma.sql`"userId" = ${opts.authorId}`);
   if (opts.communityId) filters.push(Prisma.sql`"communityId" = ${opts.communityId}`);
+  // A private community's posts are members-only. Searching INSIDE a community is the
+  // caller's access check; a search across the site must never return them.
+  else {
+    filters.push(
+      Prisma.sql`("communityId" IS NULL OR "communityId" NOT IN (SELECT id FROM community WHERE "isPrivate"))`,
+    );
+  }
   if (opts.before) filters.push(Prisma.sql`"createdAt" < ${new Date(opts.before)}`);
   if (opts.after) filters.push(Prisma.sql`"createdAt" >= ${new Date(opts.after)}`);
   if (opts.hasMedia) filters.push(Prisma.sql`array_length("imageUrls", 1) > 0`);
@@ -87,7 +94,7 @@ export async function searchPostsScored(
       ) DESC, "likeCount" DESC`
     : Prisma.sql`"createdAt" DESC`;
 
-  const matches = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+  const matches = await prismaRead.$queryRaw<{ id: string }[]>(Prisma.sql`
     SELECT id
     FROM rmheet
     WHERE ${Prisma.join(filters, ' AND ')}
@@ -119,7 +126,7 @@ export async function searchPostsScored(
   if (fused.length === 0) return [];
 
   const ids = fused.slice(0, CANDIDATE_POOL).map((h) => h.id);
-  const rows = await prisma.rMHark.findMany({
+  const rows = await prismaRead.rMHark.findMany({
     where: { id: { in: ids } },
     select: {
       id: true,
@@ -194,7 +201,7 @@ export async function searchPostsScored(
 
 /** Resolve `in:<slug>` to a community id. Returns `undefined` when unknown. */
 export async function resolveCommunityId(slug: string): Promise<string | undefined> {
-  const row = await prisma.community.findFirst({
+  const row = await prismaRead.community.findFirst({
     where: { slug, isPrivate: false },
     select: { id: true },
   });

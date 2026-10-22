@@ -45,7 +45,7 @@
  * first `start`, no frame is scheduled and no GPU work is issued.
  */
 
-import { UNCOVER_LEAD_MS } from '../constants';
+import { EVERSION_PLAYBACK_RATE, UNCOVER_LEAD_MS } from '../constants';
 import { SPIN_AXIS } from '../domain';
 import { afterDomainTransform, alignAngle, fitEndIsometry } from '../orientation';
 import { bakeLut } from '../projection-lut';
@@ -95,6 +95,8 @@ export interface CoreDeps {
   probeWebgl2?(): boolean;
   /** A 1×1 bitmap of one colour, for the `solid-textures` debug op. */
   solidBitmap(colour: Rgba): Promise<ImageBitmap>;
+  /** Timeline time per wall-clock ms. Absent: `EVERSION_PLAYBACK_RATE`. */
+  playbackRate?: number;
 }
 
 /** The real collaborators. */
@@ -193,6 +195,7 @@ export const HIDDEN_SETTLE_GRACE_MS = 1000;
 export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps()): EversionCore {
   const mode = env.mode ?? 'main';
   const stats = new FrameStatsRecorder();
+  const rate = deps.playbackRate ?? EVERSION_PLAYBACK_RATE;
 
   let renderer: RendererApi | null = null;
   let dprCap = 1;
@@ -222,8 +225,11 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   let coverSent = false;
   /** Last frame's timestamp; `null` after a start or a resume (there is no interval to record). */
   let lastFrameAt: number | null = null;
+  /** Timeline time (`EVERSION_PLAYBACK_RATE` × the wall time since `runOrigin`); monotonic. */
   let clock = 0;
   let clockOffset = 0;
+  /** The wall time the running timeline started at: the one instant wall and timeline time agree. */
+  let runOrigin = 0;
 
   let afterUploaded = false;
   /** The viewport the current timeline was built for. */
@@ -261,10 +267,14 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     cancelFrame();
   }
 
+  /** Wall time → timeline time: the run plays `rate` times faster than the clock on the wall. */
   function tickClock(now: number): number {
-    if (now > clock) clock = now;
+    const t = runOrigin + (now - runOrigin) * rate;
+    if (t > clock) clock = t;
     return clock;
   }
+  /** Timeline time → wall time, for a deadline the main thread measures on its own clock. */
+  const toWall = (t: number) => runOrigin + (t - runOrigin) / rate;
 
   function frame(now: number) {
     handle = null;
@@ -348,7 +358,9 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
   function settleWhileHidden() {
     if (!hidden || !running || !timeline) return;
     for (let i = 0; i < SETTLE_MAX_STEPS && timeline; i++) {
-      const at = tickClock(clock + SCRUB_STEP_MS);
+      // A simulated step of TIMELINE time (the clock is already on that scale).
+      clock += SCRUB_STEP_MS;
+      const at = clock;
       timeline.tick(at);
       let uncovered = false;
       for (const event of timeline.events()) {
@@ -526,6 +538,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
       timelineViewport = timelineConfig.viewport;
     }
     clock = now;
+    runOrigin = now;
     lastFrameAt = null;
     coverSent = false;
     framesDrawn = 0;
@@ -539,7 +552,7 @@ export function createEversionCore(env: CoreEnv, deps: CoreDeps = defaultDeps())
     if (afterFailed) timeline.afterFailed(now);
     const deadline = timeline.afterDeadline(now);
     if (Number.isFinite(deadline)) {
-      emit({ type: 'need-after-by', deadline: deadline + clockOffset });
+      emit({ type: 'need-after-by', deadline: toWall(deadline) + clockOffset });
     }
     schedule();
     armHiddenSettle();

@@ -20,6 +20,7 @@ export class RoomManager {
   public rooms = new Map<string, ServerRoom>();
   private socketToRoom = new Map<string, string>();
   private userToSocket = new Map<string, string>();
+  private gcTimer: ReturnType<typeof setInterval> | null = null;
 
   /** Radio hooks (T4): set by the RadioManager; plain rooms never touch them. */
   public onMemberJoined?: (room: ServerRoom, socket: Socket) => void;
@@ -369,7 +370,8 @@ export class RoomManager {
   }
 
   public startGC() {
-    setInterval(() => {
+    if (this.gcTimer) return;
+    this.gcTimer = setInterval(() => {
       const now = Date.now();
       for (const [roomId, room] of this.rooms) {
         if (!room.radio && room.members.size === 0 && now - room.lastActivityAt > config.emptyTimeoutMs) {
@@ -378,5 +380,11 @@ export class RoomManager {
         }
       }
     }, config.gcIntervalMs);
+    this.gcTimer.unref();
+  }
+
+  public stop() {
+    if (this.gcTimer) clearInterval(this.gcTimer);
+    this.gcTimer = null;
   }
 }

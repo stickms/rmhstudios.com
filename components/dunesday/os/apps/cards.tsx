@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { PopupMenu, type MenuItem } from '../Menu';
 import { useOs } from '../store';
 import { sfx } from '../../sound';
+import './cards.css';
 
 /* ------------------------------------------------------------------ model */
 

@@ -97,7 +97,7 @@ export async function joinOrRenewMembership(
       where: { userId: supporterId },
       select: { coins: true },
     });
-    return { ok: true, expiresAt: expiresAt.toISOString(), newBalance: profile?.coins ?? 0 };
+    return { ok: true, expiresAt: expiresAt.toISOString(), newBalance: Number(profile?.coins ?? 0) };
   } catch (error) {
     if (error instanceof Error && error.message === 'INSUFFICIENT_COINS') {
       return { ok: false, error: 'Not enough coins', status: 400 };

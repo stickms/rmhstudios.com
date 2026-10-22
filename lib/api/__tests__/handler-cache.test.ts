@@ -33,7 +33,12 @@ const req = (
 ) =>
   new Request(url, {
     ...init,
-    headers: { 'cf-connecting-ip': `${Math.random()}`, ...(init.headers ?? {}) },
+    // A session cookie, since defineHandler skips Better Auth for cookie-less callers.
+    headers: {
+      'cf-connecting-ip': `${Math.random()}`,
+      cookie: 'better-auth.session_token=abc',
+      ...(init.headers ?? {}),
+    },
   });
 
 const call = (

@@ -4,6 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import type { FeedItem } from '@/lib/feed-types';
 
@@ -18,7 +19,9 @@ export async function getThread(id: string, viewerId: string | null): Promise<Fe
   const posts = await prisma.rMHark.findMany({
     where: {
       OR: [{ id: rootId }, { threadRootId: rootId }],
-      deletedAt: null,
+      // Deleted, audience, hidden author, private community: a thread was readable by id
+      // for any viewer. Under `AND` because both fragments carry a top-level `OR`.
+      AND: [await viewerVisiblePostWhere(viewerId)],
     },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     include: rmharkIncludeLite(viewerId),

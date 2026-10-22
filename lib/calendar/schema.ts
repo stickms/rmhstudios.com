@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { POLL_MAX_DAYS, POLL_MAX_INVITEES, POLL_SLOT_LENGTHS } from './poll-slots';
 import { STUDY_PRESETS } from './study-buddy';
+import { OFFICE_HOURS_SLOT_LENGTHS } from './office-hours';
 
 /** Client-safe request contracts for the calendar features. */
 
@@ -34,7 +35,8 @@ export const lockPollSchema = z.object({
 
 // ── Office hours (K2) ───────────────────────────────────────────────────────
 
-export const OFFICE_HOURS_SLOT_LENGTHS = [15, 30, 45, 60] as const;
+// Lives in `./office-hours` so the manage page can read it without zod.
+export { OFFICE_HOURS_SLOT_LENGTHS };
 
 export const officeHoursWindowSchema = z
   .object({

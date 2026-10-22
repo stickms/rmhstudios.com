@@ -2,9 +2,10 @@ import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
-import { audienceWhere } from '@/lib/feed/audience.server';
+import { audienceWhere, communityVisibleWhere } from '@/lib/feed/audience.server';
 import { getMutedWords, applyMutedWords } from '@/lib/feed/timeline';
 import { cached } from '@/lib/cached.server';
+import { getFollowingIds } from '@/lib/social/follow-graph.server';
 import type { FeedItem } from '@/lib/feed-types';
 
 export interface ExploreResult {
@@ -171,15 +172,15 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
   // exclude set. These are cheap indexed reads.
   const [hidden, following, muted] = await Promise.all([
     getHiddenAuthorIds(viewerId),
-    viewerId
-      ? prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } })
-      : Promise.resolve([] as { followingId: string }[]),
+    // The shared capped + cached follow list (invalidated on follow/unfollow/
+    // block), not an unbounded per-request `follow.findMany`.
+    viewerId ? getFollowingIds(viewerId) : Promise.resolve([] as string[]),
     viewerId ? getMutedWords(viewerId) : Promise.resolve([] as string[]),
   ]);
 
   const notHidden = hidden.length ? { userId: { notIn: hidden } } : {};
-  const followingIds = following.map((f) => f.followingId);
-  const aud = audienceWhere(viewerId, followingIds);
+  const followingIds = following;
+  const aud = { ...audienceWhere(viewerId, followingIds), ...communityVisibleWhere(viewerId) };
 
   // Hydrate the shared candidate pool with this viewer's state (likes/reposts/
   // bookmarks via the include) and apply the viewer's hidden-author filter. The

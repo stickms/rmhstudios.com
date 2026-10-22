@@ -92,6 +92,8 @@
   "audience-followers": "Takipçiler",
   "audience-group-label": "Bu gönderiyi kimler görebilir",
   "audience-only-me": "Yalnızca ben",
+  "auto-reinvest": "Otomatik yeniden yatırım",
+  "auto-reinvest-hint": "Faiz her gün stake'inize bileşik olarak eklenir",
   "avatar-alt": "Avatar",
   "avatar-change-hint": "Avatarı değiştirmek için tıklayın (en fazla {{maxMb}} MB)",
   "avatar-size-error": "",

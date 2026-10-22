@@ -37,7 +37,7 @@ import { ColumnHeader } from'./ColumnHeader';
 import { SwipeRow } from'@/components/ui/swipe-row';
 import { IconButton } from'@/components/ui/icon-button';
 import type { RemindTarget } from'@/components/reminders/RemindMeDialog';
-import { isSiteRelativePath } from'@/lib/reminders/schema';
+import { isSiteRelativePath } from'@/lib/reminders/shared';
 
 const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
 

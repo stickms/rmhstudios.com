@@ -33,6 +33,7 @@ import type { RmhTubeRoom } from './types';
 import { z } from 'zod';
 
 const FLUSH_MS = 20_000;
+const HEAT_FLUSH_CHUNK = 1000;
 const MAX_BUFFERED = 2_000;
 const EmptySchema = z.object({}).optional();
 
@@ -249,16 +250,27 @@ export class PartyHandler {
     this.heat.clear();
     try {
       const prisma = getPrismaClient();
-      await prisma.$transaction(
-        batch.map(([key, n]) => {
-          const cut = key.indexOf('|');
-          const bucket = Number(key.slice(0, cut));
-          const url = key.slice(cut + 1);
-          return prisma.$executeRaw`INSERT INTO "rmhtube_heat_bucket" ("mediaUrl", "bucket", "count")
-            VALUES (${url}, ${bucket}, ${n})
-            ON CONFLICT ("mediaUrl", "bucket") DO UPDATE SET "count" = "rmhtube_heat_bucket"."count" + EXCLUDED."count"`;
-        }),
-      );
+      // perf: one multi-row upsert per chunk instead of one INSERT per bucket
+      // inside a transaction. Map keys are unique `bucket|url` pairs, so no row
+      // appears twice in a statement (ON CONFLICT could not handle that); the
+      // merge below still guards it in case key parsing ever collapses two keys.
+      const merged = new Map<string, { url: string; bucket: number; n: number }>();
+      for (const [key, n] of batch) {
+        const cut = key.indexOf('|');
+        const bucket = Number(key.slice(0, cut));
+        const url = key.slice(cut + 1);
+        const id = `${bucket}|${url}`;
+        const prev = merged.get(id);
+        if (prev) prev.n += n;
+        else merged.set(id, { url, bucket, n });
+      }
+      const rows = [...merged.values()];
+      for (let i = 0; i < rows.length; i += HEAT_FLUSH_CHUNK) {
+        const chunk = rows.slice(i, i + HEAT_FLUSH_CHUNK);
+        await prisma.$executeRaw`INSERT INTO "rmhtube_heat_bucket" ("mediaUrl", "bucket", "count")
+          SELECT u, b, c FROM unnest(${chunk.map((r) => r.url)}::text[], ${chunk.map((r) => r.bucket)}::int[], ${chunk.map((r) => r.n)}::int[]) AS t(u, b, c)
+          ON CONFLICT ("mediaUrl", "bucket") DO UPDATE SET "count" = "rmhtube_heat_bucket"."count" + EXCLUDED."count"`;
+      }
     } catch (err) {
       logger.error({ event: 'heat_flush_failed', error: String(err) });
     }

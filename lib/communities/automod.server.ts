@@ -22,7 +22,7 @@ import {
   type AutomodRule,
   type AutomodRuleInput,
 } from '@/lib/communities/automod';
-import type { ModItemDTO } from '@/lib/communities/plus-schema';
+import type { ModItemDTO } from '@/lib/communities/plus';
 
 /** `deletedBy` marker for a post AutoMod is holding (VarChar(12)). */
 export const HELD_BY = 'automod_hold';

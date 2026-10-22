@@ -143,11 +143,27 @@ export function ExploreColumn({
    * `autoFocus` because the prop only acts on the initial mount, and the media
    * query does not resolve until after hydration (`useMediaQuery` reports false
    * on the server so it can't mismatch).
+   *
+   * After the arriving page has painted, not in the effect itself: `focus()`
+   * needs up-to-date style and layout, so calling it straight after a page
+   * switch's commit laid out the whole incoming page synchronously — ~55ms of
+   * the switch's one long task at 4× CPU (docs/performance-audit-2026-10-21.md
+   * §Navigation commit). One frame later that layout already exists and the
+   * call is free. `preventScroll`, because the field is at the top of the page
+   * and a back/forward arrival has just had its scroll position restored.
    */
   const fieldRef = useRef<HTMLInputElement | null>(null);
   const hasKeyboard = useMediaQuery('(pointer: fine)');
   useEffect(() => {
-    if (hasKeyboard) fieldRef.current?.focus();
+    if (!hasKeyboard) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const frame = requestAnimationFrame(() => {
+      timer = setTimeout(() => fieldRef.current?.focus({ preventScroll: true }), 0);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
   }, [hasKeyboard]);
 
   // Persist the active tab to the URL (alongside any query) so the selection

@@ -23,10 +23,12 @@
    in its own cascade layer so any rule of ours wins over it outright. */
 @import '7.css/dist/7.scoped.css' layer(win7);
 @import './os/os.css';
-@import './os/apps/minesweeper.css';
-@import './os/apps/cards.css';
-@import './os/apps/paint.css';
-@import './os/apps/utilities.css';
+/* The per-app sheets (Minesweeper, the card games, Paint/Photos, Cmd/Calculator/
+   Task Manager) are NOT imported here: this sheet is render-blocking on
+   /dunesday, and those apps are `lazy()` windows nobody has opened at first
+   paint. Each is imported by its app component, so it ships with that app's
+   chunk and is loaded before the chunk runs. Every selector in them is scoped to
+   its app's root class, so moving them later in the cascade changes nothing. */
 
 .ds {
   --ds-font:

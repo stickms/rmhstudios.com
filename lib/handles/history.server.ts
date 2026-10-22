@@ -13,7 +13,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { handleSchema } from '@/lib/handle';
+import { handleSchema } from '@/lib/handle-schema';
 import { invalidateProfileLookup } from '@/lib/profile.server';
 import { invalidateUserDisplay } from '@/lib/user-display.server';
 import {

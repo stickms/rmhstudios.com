@@ -89,6 +89,8 @@
   "audience-followers": "フォロワー",
   "audience-group-label": "この投稿を見られる人",
   "audience-only-me": "自分のみ",
+  "auto-reinvest": "自動再投資",
+  "auto-reinvest-hint": "利息は毎日ステークに複利で加算されます",
   "avatar-alt": "アバター",
   "avatar-change-hint": "クリックしてアバターを変更（最大{{maxMb}} MB）",
   "avatar-size-error": "",

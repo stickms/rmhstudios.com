@@ -14,7 +14,7 @@ import { articleTakeaways, isAITextConfigured } from '@/lib/ai/text.server';
  * `updatedAt`, which means editing a post silently invalidates its takeaways
  * instead of leaving a stale summary of an older draft in front of readers.
  *
- * Deliberately open to signed-out readers (`auth: 'optional'`) — the article
+ * Deliberately open to signed-out readers (`auth: 'none'`; nothing here reads the viewer) — the article
  * itself is public, and a summary gated behind login would be a worse page for
  * the exact visitor most likely to be deciding whether to read it. The AI rate
  * limit plus the cache bound what that costs; the set of slugs is finite.
@@ -28,7 +28,7 @@ const MIN_CONTENT_CHARS = 1200;
 export const Route = createFileRoute('/api/ai/takeaways')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'ai', query }, async ({ query }) => {
+      GET: defineHandler({ auth: 'none', rateLimit: 'ai', query }, async ({ query }) => {
         const post = await prisma.blogPost.findUnique({
           where: { slug: query.slug },
           select: { title: true, content: true, updatedAt: true },

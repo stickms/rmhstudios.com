@@ -2,16 +2,14 @@ import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { DeckMarketplaceColumn } from '@/components/feed/DeckMarketplaceColumn';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { listMarketplaceDecks } from '@/lib/study.server';
 
 // SSR the default (unfiltered) marketplace listing so the page paints on load;
 // searches are fetched client-side.
 const fetchMarketplace = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   return await listMarketplaceDecks(session?.user.id ?? null, null);
 });
 

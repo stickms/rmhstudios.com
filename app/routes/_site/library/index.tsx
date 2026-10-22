@@ -16,7 +16,6 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import {
   BookOpen,
   CloudUpload,
@@ -40,7 +39,7 @@ import { listAllBooks } from '@/lib/library/library.server';
 import { listAlbums } from '@/lib/albums.server';
 import { listCollectionsView, type Viewer } from '@/lib/library/collections.server';
 import { listPlaylists } from '@/lib/playlists.server';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getAllPosts, type Post } from '@/lib/blog';
 import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
@@ -72,8 +71,7 @@ const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
 // observer sorts by on-screen position, so this follows the JSX order below)
 // instead of popping in late.
 const fetchCollections = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   const viewer: Viewer = session
     ? { id: session.user.id, isAdmin: Boolean((session.user as { isAdmin?: boolean }).isAdmin) }
     : null;
@@ -94,8 +92,7 @@ const fetchAlbums = createServerFn({ method: 'GET' }).handler(async () => ({
 // "Music" section. Signed-out visitors get null (the section shows a sign-in
 // prompt), mirroring the old page's behavior.
 const fetchPlaylists = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   if (!session) return { playlists: null };
   return { playlists: await listPlaylists(session.user.id) };
 });

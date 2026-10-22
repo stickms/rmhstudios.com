@@ -1,5 +1,6 @@
 /**
- * Custom status — client-safe logic (zod schema, expiry math, presets).
+ * Custom status — client-safe logic (expiry math, presets). The PUT schema is
+ * in `./status-schema`, so the status badge on every profile stays zod-free.
  * Feature §10 of docs/plans/2026-07-20-parity-qol-customization-design.md.
  *
  * A status is a short emoji + text presence line stored on `UserProfile`
@@ -8,7 +9,6 @@
  * no status even before any sweep runs — so this module is imported by both the
  * server (profile payload) and the client (editor).
  */
-import { z } from 'zod';
 
 export const STATUS_MAX_TEXT = 80;
 export const STATUS_MAX_EMOJI = 16;
@@ -65,15 +65,8 @@ export function statusExpiresAt(
   return end;
 }
 
-/** PUT body for `/api/profile/status`. A full replace of the status. */
-export const statusUpdateSchema = z.object({
-  emoji: z.string().max(STATUS_MAX_EMOJI).nullable().optional(),
-  text: z.string().max(STATUS_MAX_TEXT).nullable().optional(),
-  expiresIn: z.enum(['30m', '1h', 'today']).nullable().optional(),
-  auto: z.boolean().optional(),
-});
-
-export type StatusUpdateInput = z.infer<typeof statusUpdateSchema>;
+/** PUT body for `/api/profile/status` — the schema is in `./status-schema`. */
+export type { StatusUpdateInput } from './status-schema';
 
 export interface StatusPreset {
   emoji: string;

@@ -14,6 +14,11 @@
  * Postgres alone can't do stage 2 well: `similarity()` compares whole strings,
  * so the longer a display name is, the lower it scores for the same query. That
  * is precisely why long display names were effectively unfindable.
+ *
+ * Every corpus reads through `prismaRead`: search is an index over content that
+ * is never read back after a write in the same request, so replica lag costs a
+ * result appearing a moment late and nothing else. (It is the primary until
+ * `DATABASE_REPLICA_URL` is set.)
  */
 
 import { Prisma } from '@prisma/client';

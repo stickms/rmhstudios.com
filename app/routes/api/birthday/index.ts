@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { birthdaySchema } from '@/lib/gifting/birthday';
+import { birthdaySchema } from '@/lib/gifting/birthday-schema';
 import { clearBirthday, getBirthday, setBirthday } from '@/lib/gifting/birthday.server';
 
 /**

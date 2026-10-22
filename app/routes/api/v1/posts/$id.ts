@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
+import { canReadThread } from '@/lib/feed/audience.server';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
 import { apiAuthorSelect, serializePublicPost } from '@/lib/api/serializers.server';
 import { deleteOwnPost } from '@/lib/social/engagement.server';
@@ -20,13 +21,14 @@ export const Route = createFileRoute('/api/v1/posts/$id')({
             const post = await prisma.rMHark.findUnique({
               where: { id: params.id },
               select: {
-                id: true, userId: true, content: true, audience: true, createdAt: true, deletedAt: true,
+                id: true, userId: true, content: true, audience: true, communityId: true, createdAt: true, deletedAt: true,
                 likeCount: true, commentCount: true, repostCount: true, viewCount: true, imageUrls: true,
                 user: { select: apiAuthorSelect },
               },
             });
-            // Visible only if it exists, isn't deleted, and is public or owned.
-            if (!post || post.deletedAt || (post.audience !== 'PUBLIC' && post.userId !== userId)) {
+            // Same rule as every other post read: exists, not deleted, audience,
+            // not by a hidden author, and a private community's posts are members-only.
+            if (!post || !(await canReadThread(post, userId))) {
               return error('not_found', 'Post not found.', 404);
             }
             return json(serializePublicPost(post));

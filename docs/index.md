@@ -98,6 +98,7 @@ loading-audit-2026-08-11/03-api-caching
 loading-audit-2026-08-11/04-database
 loading-audit-2026-08-11/05-server-edge-fonts
 loading-audit-2026-08-11/06-backlog
+performance-audit-2026-10-21
 css-js-audit-2026-10-09
 ui-perf-audit-2026-10-09
 ui-audit-2026-10-09

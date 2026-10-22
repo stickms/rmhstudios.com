@@ -17,7 +17,7 @@
  * entirely whenever the lexical pass already found something decent.
  */
 
-import { prisma } from '@/lib/prisma.server';
+import { prismaRead } from '@/lib/prisma.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { parseQuery } from './parse';
 import { fuzzyTerms, type FuzzyTerms } from './db.server';
@@ -303,7 +303,7 @@ export async function universalSearch(input: UniversalSearchInput): Promise<Sear
       ? getHiddenAuthorIds(input.viewerId).catch(() => [])
       : Promise.resolve([]),
     parsed.from
-      ? prisma.user
+      ? prismaRead.user
           .findFirst({ where: { handle: parsed.from }, select: { id: true } })
           .then((u) => u?.id ?? NO_MATCH)
           .catch(() => NO_MATCH)

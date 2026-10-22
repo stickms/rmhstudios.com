@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { SAVE_ENTITY_TYPES, type SaveEntityType } from '@/lib/saves/types';
 import { setSaveNote } from '@/lib/saves/saves.server';
-import { saveNoteSchema } from '@/lib/posts-plus/constants';
+import { saveNoteSchema } from '@/lib/posts-plus/schema';
 
 /**
  * PUT /api/saves/note { entityType, entityId, note } - set the private note on one of

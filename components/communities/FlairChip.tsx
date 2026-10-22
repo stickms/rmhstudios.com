@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { FLAIR_CHIP_CLASSES, isFlairColor } from '@/lib/communities/plus-schema';
+import { FLAIR_CHIP_CLASSES, isFlairColor } from '@/lib/communities/plus';
 
 /**
  * N1 — a community flair chip. Colour is a token preset (never a raw colour),

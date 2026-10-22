@@ -198,11 +198,11 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-web
     # Resource limits — sized for multi-core SSR (perf audit §1.1): 2 Nitro
     # cluster workers on ~2 cores. NOTE: a SECOND web container runs briefly
-    # during the blue/green hotswap, so the box must fit ~2× this (≈3 GB / 4
+    # during the blue/green hotswap, so the box must fit ~2× this (≈4.6 GB / 4
     # cores for web during a deploy). Lower WEB_WORKERS + cpus/mem together if the
     # host is smaller.
-    mem_limit: 1536m
-    mem_reservation: 768m
+    mem_limit: 2304m
+    mem_reservation: 1280m
     cpus: 2.0
     # CPU PRIORITY, not just a cap. `cpus:` hard-caps each service but leaves
     # every container at the SAME scheduler weight (1024), so on this
@@ -233,12 +233,50 @@ services:
       - PORT=${PORT_WEB:-7005}
       - HOSTNAME=0.0.0.0
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      # Postgres connection budget (max_connections = 200, deploy/postgres/
+      # postgresql.tuning.conf). Each Nitro worker owns a lib/prisma.server pool of
+      # DATABASE_POOL_SIZE (default 20) plus a pg-boss producer pool (2), so one web
+      # container = WEB_WORKERS(2) x 22 = 44, and the blue/green hotswap runs TWO web
+      # containers at once = 88. Everything else, worst case: socket/rmhbox/rmhtube
+      # hubs 3 x (SERVER_DB_POOL_SIZE 5 + AUTH_DB_POOL_SIZE 4) = 27, jobs 16 + pg-boss
+      # 8 = 24, ladder-worker 3 (own client) + 3 (alerts pool) = 6, homes-worker 3, Go
+      # supervisor 1 + status probe 2 (+2 slack), admin/psql/migrate ~10:
+      # 88 + 27 + 24 + 6 + 3 + 5 + 10 = 163 < 197 usable at 200.
+      #
+      # A STOCK host (100) cannot hold that, and applying the tuning is a root
+      # action the sandboxed deploy cannot take. So deploy.sh runs
+      # scripts/db-connection-budget.mjs before starting anything: it reads the LIVE
+      # max_connections and, only when this sum does not fit, exports smaller values
+      # for the four pool variables below (interpolated here, defaults = today's
+      # sizes; lib/__tests__/db-connection-budget.test.ts keeps them in step). The
+      # arithmetic above lives in that script — change both together.
+      - DATABASE_POOL_SIZE=${DATABASE_POOL_SIZE:-20}
+      #
+      # Server-side timeouts (lib/prisma.server.ts): code default is OFF so workers
+      # and scripts are unchanged; web turns them on so one slow query or a stuck
+      # transaction cannot hold a pool slot forever. Statements that legitimately
+      # run longer opt out with `SET LOCAL statement_timeout` (cohort recompute,
+      # kaikai ledger extension). Ignored by PgBouncer in transaction mode (the
+      # `pgbouncer` profile) — there use `ALTER ROLE ... SET statement_timeout`.
+      - DATABASE_STATEMENT_TIMEOUT_MS=${DATABASE_STATEMENT_TIMEOUT_MS:-20000}
+      - DATABASE_IDLE_TX_TIMEOUT_MS=${DATABASE_IDLE_TX_TIMEOUT_MS:-30000}
       # Per-WORKER V8 old-space cap (perf audit §1.5). With node-cluster the
       # master forks NITRO_CLUSTER_WORKERS workers, each with its OWN heap, so
-      # this is per-process: 2 × 384m heap + master + native (sharp/resvg) fits
-      # under the 1.5g cgroup. Kept below the limit because V8 does not reliably
+      # this is per-process: 2 × 640m heap + master + native (sharp/resvg) fits
+      # under the 2.25g cgroup. Kept below the limit because V8 does not reliably
       # size its heap to a container limit (OOM-flap or GC-thrash otherwise).
-      - NODE_OPTIONS=--max-old-space-size=384
+      # MEASURED (local production-like load test, 2026-10-21): after warm-up a web worker's LIVE heap is
+      # ~400 MB (Prisma query-compiler schema ~100 MB, 739-route tree ~30 MB, Better Auth,
+      # caches) — ABOVE the old 384 cap, so workers died with "Ineffective mark-compacts
+      # near heap limit" within ~40 s of real traffic (server/web-cluster.mjs now
+      # replaces a dead worker, but each respawn is a cold, failed-request blip). 640 leaves ~240 MB for request transients;
+      # RSS peaks ~850 MB/worker at c=150, hence mem_limit 2304m for 2 workers.
+      - NODE_OPTIONS=--max-old-space-size=640
+      # libuv threadpool (default 4) is shared by fs, dns.lookup, crypto, zlib AND
+      # now resvg `renderAsync` (OG cards). Four concurrent OG rasterizations (a
+      # Discord/crawler unfurl burst) would occupy every thread and stall DNS
+      # lookups + file reads for ordinary requests. 16 keeps headroom.
+      - UV_THREADPOOL_SIZE=16
       # Multi-core web serving (perf audit §1.1). The production image is built
       # with NITRO_PRESET=node-cluster (docker-bake.hcl), so these workers run on
       # separate cores instead of one shared event loop. Default 2; set
@@ -251,6 +289,13 @@ services:
       # socket needs a session token. Compose-network name, never reachable
       # from a browser.
       - SOCKET_INTERNAL_URL=http://socket:${PORT_SOCKET:-7001}
+      # Same idea for the other two hubs: /api/admin/perf reads each hub's
+      # `/internal/metrics` over the compose network (never proxied by Apache).
+      # INTERNAL_METRICS_TOKEN is optional and needs no line here: every service
+      # shares `env_file`, so setting it there makes the hubs require an
+      # `x-internal-token` header and the web tier send it.
+      - RMHBOX_INTERNAL_URL=http://rmhbox:${PORT_RMHBOX:-7676}
+      - RMHTUBE_INTERNAL_URL=http://rmhtube:${PORT_RMHTUBE:-7003}
     healthcheck:
       # Hit the cheap liveness endpoint, not `/` — curling `/` every 30s renders
       # the full homepage through SSR on the single web event loop (perf audit
@@ -276,11 +321,16 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - SOCKET_PORT=${PORT_SOCKET:-7001}
+      # Pool sizes: see the connection budget on the web service.
+      - SERVER_DB_POOL_SIZE=${SERVER_DB_POOL_SIZE:-5}
+      - AUTH_DB_POOL_SIZE=${AUTH_DB_POOL_SIZE:-4}
       # Cap V8 old-space below the 768m cgroup (perf audit §1.5).
       - NODE_OPTIONS=--max-old-space-size=576
     command: ['node', 'dist-server/server/socket-server/index.cjs']
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_SOCKET:-7001}/']
+      # /health, not / — the hub answers 404 for every path but /health, /internal/*
+      # and its Socket.IO path, so probing / marked it permanently unhealthy.
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_SOCKET:-7001}/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -301,11 +351,15 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - RMHBOX_PORT=${PORT_RMHBOX:-7676}
+      # Pool sizes: see the connection budget on the web service.
+      - SERVER_DB_POOL_SIZE=${SERVER_DB_POOL_SIZE:-5}
+      - AUTH_DB_POOL_SIZE=${AUTH_DB_POOL_SIZE:-4}
       # Cap V8 old-space below the 512m cgroup (perf audit §1.5).
       - NODE_OPTIONS=--max-old-space-size=384
     command: ['node', 'dist-server/server/rmhbox/index.cjs']
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_RMHBOX:-7676}/']
+      # /health, not / (404) — see the socket service above.
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_RMHBOX:-7676}/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -326,11 +380,15 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - RMHTUBE_PORT=${PORT_RMHTUBE:-7003}
+      # Pool sizes: see the connection budget on the web service.
+      - SERVER_DB_POOL_SIZE=${SERVER_DB_POOL_SIZE:-5}
+      - AUTH_DB_POOL_SIZE=${AUTH_DB_POOL_SIZE:-4}
       # Cap V8 old-space below the 512m cgroup (perf audit §1.5).
       - NODE_OPTIONS=--max-old-space-size=384
     command: ['node', 'dist-server/server/rmhtube/index.cjs']
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_RMHTUBE:-7003}/']
+      # /health, not / (404) — see the socket service above.
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_RMHTUBE:-7003}/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -351,6 +409,12 @@ services:
     # (initial-load audit). 256 = ¼ of default weight; it still runs, just yields.
     cpu_shares: 256
     env_file: ${ENV_FILE:-.env.production}
+    environment:
+      # The worker builds its own PrismaClient (max 3), but its alerts module
+      # (lib/rmhladder/alerts/dispatch.server) imports lib/prisma.server, which
+      # silently opened a SECOND 20-connection pool. Alerts run a few queries per
+      # cycle, so 3 is plenty. Set after env_file so it wins over a shared value.
+      - DATABASE_POOL_SIZE=3
     command: ['node', 'dist-server/server/ladder-worker/index.cjs']
 
   # ─── Homes Worker (RMHHomes external-listing scraper cron) ─────────────────
@@ -384,6 +448,16 @@ services:
     # starved (never a correctness dependency), so it yields to web too.
     cpu_shares: 512
     env_file: ${ENV_FILE:-.env.production}
+    environment:
+      # lib/prisma.server pool for this process (default 20, plus pg-boss's own 8).
+      # pg-boss runs each queue's handler at localConcurrency 1 and ~37 queues are
+      # registered, but they are cron-driven: at an hour boundary the per-minute,
+      # */2, */5 and */10 ticks coincide (~14 handlers), each holding a Prisma
+      # connection only while it queries. 16 = that worst case + 2 headroom
+      # (max(concurrency + 2, 8)); handlers past it wait on the pool rather than
+      # run wider. pg-boss's pool is separate (lib/jobs/boss.server.ts, 8).
+      # deploy.sh may lower it on a host with a small max_connections (see web).
+      - DATABASE_POOL_SIZE=${JOBS_DB_POOL_SIZE:-16}
     command: ['node', 'dist-server/server/jobs/index.cjs']
 
   # ─── Go Supervisor (discord-bot + recap + doctrine-worker + vibe-worker + bot-worker) ─

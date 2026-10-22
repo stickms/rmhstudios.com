@@ -11,6 +11,7 @@
  *   link preview is not in it;
  * - **priced** — a paid unlock that a crawler can read for free is not a paid
  *   unlock;
+ * - **in a private community** — members-only content has no public unfurl;
  * - **sensitive** — a content warning exists precisely to gate the surface that
  *   shows content without being asked, which is exactly what an unfurl is.
  *
@@ -28,6 +29,8 @@ export interface PostCardSubject {
   audience?: string | null;
   unlockPrice?: number | null;
   isSensitive?: boolean | null;
+  /** The post's community, when it has one (select `isPrivate`). */
+  community?: { isPrivate?: boolean | null } | null;
 }
 
 /**
@@ -43,6 +46,7 @@ export function postCardShowsContent(post: PostCardSubject | null | undefined): 
   if (post.deletedAt) return false;
   if (post.audience !== 'PUBLIC') return false;
   if ((post.unlockPrice ?? 0) > 0) return false;
+  if (post.community?.isPrivate) return false;
   if (post.isSensitive) return false;
   return true;
 }

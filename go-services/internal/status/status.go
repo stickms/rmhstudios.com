@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/rmhstudios/rmh-go/pkg/oncall"
 )
 
 // Config holds the runtime parameters for the status service.
@@ -52,6 +54,9 @@ type Config struct {
 	// Slack URLs get their native formats. WebhookSecret signs generic ones.
 	WebhookURLs   []string
 	WebhookSecret string
+	// Oncall, when non-nil, gets a heartbeat after each probe cycle and every
+	// automatic incident as an alarm (oncall.go). nil = on-call not configured.
+	Oncall *oncall.Client
 	// Announcement is an optional static banner (STATUS_ANNOUNCEMENT).
 	Announcement      string
 	AnnouncementLevel string
@@ -64,6 +69,8 @@ type Service struct {
 	prober    *Prober
 	store     *Store
 	notifier  *WebhookNotifier
+	oncall    *OncallNotifier
+	heartbeat *heartbeater
 	startedAt time.Time
 }
 
@@ -119,9 +126,21 @@ func New(cfg Config) *Service {
 	if cfg.HistoryPath != "" {
 		storePath = filepath.Join(filepath.Dir(cfg.HistoryPath), IncidentsFileName)
 	}
-	var n Notifier
+	oncallNotifier := NewOncallNotifier(cfg.Oncall, cfg.PageURL, cfg.Logger)
+	var fan multiNotifier
 	if notifier != nil {
-		n = notifier
+		fan = append(fan, notifier)
+	}
+	if oncallNotifier != nil {
+		fan = append(fan, oncallNotifier)
+	}
+	var n Notifier
+	switch len(fan) {
+	case 0:
+	case 1:
+		n = fan[0]
+	default:
+		n = fan
 	}
 	store := NewStore(cfg.Targets, storePath, cfg.Logger, n)
 	store.SetStaticAnnouncement(cfg.Announcement, cfg.AnnouncementLevel, cfg.AnnouncementLink)
@@ -129,7 +148,11 @@ func New(cfg Config) *Service {
 	p.inMaintenance = store.InMaintenance
 	p.onEvents = store.HandleEvents
 
-	return &Service{cfg: cfg, prober: p, store: store, notifier: notifier, startedAt: time.Now()}
+	var hb *heartbeater
+	if cfg.Oncall != nil {
+		hb = &heartbeater{client: cfg.Oncall, logger: cfg.Logger, interval: HeartbeatInterval}
+	}
+	return &Service{cfg: cfg, prober: p, store: store, notifier: notifier, oncall: oncallNotifier, heartbeat: hb, startedAt: time.Now()}
 }
 
 // Store exposes the incident store (tests, cmd wiring).
@@ -144,9 +167,15 @@ func (s *Service) Start(ctx context.Context) {
 	if s.notifier != nil {
 		go s.notifier.Run(ctx)
 	}
+	if s.oncall != nil {
+		go s.oncall.Run(ctx)
+	}
 	go func() {
 		s.prober.ProbeOnce(ctx)
 		s.store.Tick(time.Now())
+		// Checked in only after a completed cycle, so a wedged prober goes
+		// silent and the watchdog pages.
+		s.heartbeat.afterCycle(ctx, time.Now())
 		ticker := time.NewTicker(s.cfg.ProbeInterval)
 		defer ticker.Stop()
 		for {
@@ -159,6 +188,7 @@ func (s *Service) Start(ctx context.Context) {
 			case <-ticker.C:
 				s.prober.ProbeOnce(ctx)
 				s.store.Tick(time.Now())
+				s.heartbeat.afterCycle(ctx, time.Now())
 			}
 		}
 	}()

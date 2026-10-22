@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { getCommunityBySlug } from '@/lib/communities/access.server';
+import { getCommunityBySlug, getRole } from '@/lib/communities/access.server';
+import { prisma } from '@/lib/prisma.server';
 import {
   communityPageCreateSchema,
   communityPageListQuerySchema,
@@ -30,11 +31,25 @@ export const Route = createFileRoute('/api/community-pages/')({
         { auth: 'optional', rateLimit: 'read', query: communityPageListQuerySchema },
         async ({ query, userId, isAdmin }) => {
           let communityId = query.communityId ?? null;
+          let isPrivate = false;
           if (!communityId && query.communitySlug) {
             const community = await getCommunityBySlug(query.communitySlug);
             communityId = community?.id ?? null;
+            isPrivate = community?.isPrivate ?? false;
+          } else if (communityId) {
+            const community = await prisma.community.findUnique({
+              where: { id: communityId },
+              select: { isPrivate: true },
+            });
+            if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
+            isPrivate = community.isPrivate;
           }
           if (!communityId) return Response.json({ error: 'Not found' }, { status: 404 });
+          // Members-only: a private community's pages are invisible to
+          // non-members (404, as for a missing community).
+          if (isPrivate && !(await getRole(communityId, userId))) {
+            return Response.json({ error: 'Not found' }, { status: 404 });
+          }
 
           if (query.slug) {
             const page = await getCommunityPage(communityId, query.slug, userId, isAdmin);

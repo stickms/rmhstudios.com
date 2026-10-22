@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { getArchivedPrompt, listAnswers } from '@/lib/posts-plus/qotd.server';
-import { dayKeySchema } from '@/lib/posts-plus/constants';
+import { dayKeySchema } from '@/lib/posts-plus/schema';
 
 /**
  * GET /api/qotd/answers?day=YYYY-MM-DD&cursor= - one day's prompt and a page of

@@ -12,7 +12,7 @@
 
 import React from 'react';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
+import { dedupeOgRender, svgToPng } from './render.server';
 import {
   DIM,
   INK,
@@ -56,7 +56,7 @@ export interface ProfileCardData {
   url: string;
 }
 
-export async function renderProfileCard(data: ProfileCardData): Promise<Buffer> {
+async function renderProfileCardUncached(data: ProfileCardData): Promise<Buffer> {
   const key = `${data.id}|${data.url}|${data.name}|${data.bio ?? ''}|${data.image ?? ''}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.ts < TTL) return hit.png;
@@ -163,9 +163,7 @@ export async function renderProfileCard(data: ProfileCardData): Promise<Buffer> 
   });
 
   const svg = await satori(element, { ...LANDSCAPE, fonts: satoriFonts() });
-  const png = Buffer.from(
-    new Resvg(svg, { fitTo: { mode: 'width', value: LANDSCAPE.width } }).render().asPng(),
-  );
+  const png = await svgToPng(svg, LANDSCAPE.width);
 
   if (cache.size >= MAX) {
     const oldest = cache.keys().next().value;
@@ -173,4 +171,9 @@ export async function renderProfileCard(data: ProfileCardData): Promise<Buffer> 
   }
   cache.set(key, { png, ts: Date.now() });
   return png;
+}
+
+// perf: in-flight dedupe - concurrent requests for one card share a single render.
+export function renderProfileCard(data: ProfileCardData): Promise<Buffer> {
+  return dedupeOgRender(`${data.id}|${data.url}|${data.name}|${data.bio ?? ''}|${data.image ?? ''}`, () => renderProfileCardUncached(data));
 }

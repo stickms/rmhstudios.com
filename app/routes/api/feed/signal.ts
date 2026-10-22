@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { feedSignalSchema, normalizeTag } from '@/lib/feed/signals';
+import { normalizeTag } from '@/lib/feed/signals';
+import { feedSignalSchema } from '@/lib/feed/signals-schema';
 import { recordSignal, removeSignal, getSignals } from '@/lib/feed/signals.server';
 
 /**

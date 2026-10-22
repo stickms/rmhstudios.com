@@ -89,6 +89,8 @@
   "audience-followers": "Người theo dõi",
   "audience-group-label": "Ai có thể xem bài này",
   "audience-only-me": "Chỉ mình tôi",
+  "auto-reinvest": "Tự động tái đầu tư",
+  "auto-reinvest-hint": "Lãi được cộng dồn vào khoản gửi của bạn mỗi ngày",
   "avatar-alt": "Ảnh đại diện",
   "avatar-change-hint": "Nhấp để đổi ảnh đại diện (tối đa {{maxMb}} MB)",
   "avatar-size-error": "",

@@ -25,6 +25,7 @@ const PhotoMode = lazy(() => import('@/components/games/PhotoMode'));
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { createRun, emptyInput, stepRun, withInterpolatedPose, type RunState } from '@/lib/nightrail/game';
 import { NightrailRenderer3D } from '@/lib/nightrail/renderer3d';
+import { FrameCap, MENU_BACKDROP_FPS } from '@/lib/render/frame-cap';
 import { NightrailAudio } from '@/lib/nightrail/audio';
 import { LEVELS, LEVEL_ORDER } from '@/lib/nightrail/levels';
 import type { InputState, LevelId, RunStats, TrickDirection } from '@/lib/nightrail/types';
@@ -117,6 +118,15 @@ export function NightrailGame() {
   unlocksRef.current = unlockedLevels;
   const uiStateRef = useRef(uiState);
   uiStateRef.current = uiState;
+  /**
+   * The menu backdrop needs a redraw. Only read under reduced motion, where the
+   * idle cruise stands still and drawing it every frame would repaint the same
+   * picture forever; set by anything that changes that picture.
+   */
+  const backdropDirtyRef = useRef(true);
+  useEffect(() => {
+    backdropDirtyRef.current = true;
+  }, [uiState]);
 
   useEffect(() => {
     if (!supportsWebGL()) setWebglReady(false);
@@ -154,6 +164,7 @@ export function NightrailGame() {
       // A hidden or zero-size container would poison the projection matrix.
       if (rect.width < 2 || rect.height < 2) return;
       renderer.setSize(rect.width, rect.height, window.devicePixelRatio || 1);
+      backdropDirtyRef.current = true;
     };
     applySize();
 
@@ -364,6 +375,7 @@ export function NightrailGame() {
     /** Previous frame's gamepad trick direction, so a held stick fires once. */
     let padTrick: TrickDirection | null = null;
     let prevPause = false;
+    const cap = new FrameCap();
 
     const loop = (timestamp: number) => {
       rafId = requestAnimationFrame(loop);
@@ -416,7 +428,11 @@ export function NightrailGame() {
           run.train.mode === 'airborne',
         );
 
-        withInterpolatedPose(run, () => renderer.draw(run, dt));
+        // Paused, the train holds still under the pause menu: the sim still
+        // ticks (it reads the unpause), the picture only needs the backdrop
+        // rate.
+        const drawDt = cap.tick(timestamp, dt, run.phase === 'paused' ? MENU_BACKDROP_FPS : null);
+        if (drawDt !== null) withInterpolatedPose(run, () => renderer.draw(run, drawDt));
         hudRef.current?.sync(run);
 
         if (run.phase === 'runComplete' || run.phase === 'crashed') {
@@ -439,8 +455,18 @@ export function NightrailGame() {
       } else {
         // Menus sit in front of a slow idle cruise rather than a black screen,
         // so the game is showing you what it is before you have pressed
-        // anything.
-        renderer.draw(run, reducedMotion ? 0 : dt * 0.35);
+        // anything — behind a blurred menu, at the backdrop rate rather than
+        // the panel's. Under reduced motion the cruise stands still, so it is
+        // drawn only when something changed the picture.
+        if (reducedMotion) {
+          if (backdropDirtyRef.current) {
+            backdropDirtyRef.current = false;
+            renderer.draw(run, 0);
+          }
+          return;
+        }
+        const drawDt = cap.tick(timestamp, dt, MENU_BACKDROP_FPS);
+        if (drawDt !== null) renderer.draw(run, drawDt * 0.35);
       }
     };
 

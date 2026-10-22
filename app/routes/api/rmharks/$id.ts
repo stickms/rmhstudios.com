@@ -67,7 +67,10 @@ export const Route = createFileRoute('/api/rmharks/$id')({
         }
 
         // Audience visibility — non-public posts 404 for viewers who can't see them.
-        if (!(await canViewPost({ userId: rmhark.userId, audience: rmhark.audience }, userId))) {
+        if (!(await canViewPost(
+            { userId: rmhark.userId, audience: rmhark.audience, communityId: rmhark.communityId ?? null },
+            userId,
+          ))) {
           return Response.json({ error: 'Not found' }, { status: 404 });
         }
 

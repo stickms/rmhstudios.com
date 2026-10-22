@@ -4,7 +4,7 @@
  * The rules are all in that file, pure and tested. This reads and writes rows.
  */
 
-import { prisma } from '@/lib/prisma.server';
+import { prisma, prismaRead } from '@/lib/prisma.server';
 import { BASE_RATING, nextRatingWithK } from '@/lib/ranked/elo';
 import { tierForRating, type RankTier } from '@/lib/ranked/tiers';
 import {
@@ -182,7 +182,8 @@ export async function getLadder(
   now: Date = new Date(),
 ): Promise<{ season: number; endsAt: Date; progress: number; entries: LadderEntry[] }> {
   const season = seasonFor(now);
-  const rows = await prisma.rankedSeasonRating.findMany({
+  // A public, cached ladder page: lag-tolerant, read-only.
+  const rows = await prismaRead.rankedSeasonRating.findMany({
     where: { game, season, placementsLeft: 0 },
     orderBy: { rating: 'desc' },
     take: Math.min(limit * 3, 300),

@@ -18,22 +18,12 @@
  */
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
+import { measure } from '@/lib/otel/timing';
+import { hasSessionCookie } from '@/lib/session-cookie';
 
 type SessionResult = Awaited<ReturnType<typeof auth.api.getSession>>;
 
 const sessionByRequest = new WeakMap<object, Promise<SessionResult>>();
-
-/**
- * Better Auth names its session cookies `*session_token` / `*session_data` (plus
- * `__Secure-`/`__Host-` prefixes under HTTPS — see server/nitro/anon-html-cache.ts,
- * which keys the edge cache on the same signal). A request that carries neither
- * cannot be authenticated, so we can skip Better Auth entirely for it.
- */
-function hasSessionCookie(headers: Headers): boolean {
-  const cookie = headers.get('cookie');
-  if (!cookie) return false;
-  return cookie.includes('session_token') || cookie.includes('session_data');
-}
 
 /** Resolve the current request's session once, memoized for that request. */
 export function getRequestSession(): Promise<SessionResult> {
@@ -58,9 +48,11 @@ export function getRequestSession(): Promise<SessionResult> {
   const cached = sessionByRequest.get(key);
   if (cached) return cached;
 
-  const pending = auth.api
-    .getSession({ headers: req.headers })
-    .catch(() => null) as Promise<SessionResult>;
+  // `sess` Server-Timing phase. Marked on the memoized promise, so the several
+  // callers of one render share one measurement instead of each adding it.
+  const pending = measure('sess', () => auth.api.getSession({ headers: req.headers })).catch(
+    () => null,
+  ) as Promise<SessionResult>;
   sessionByRequest.set(key, pending);
   return pending;
 }

@@ -2,13 +2,17 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { canReadPostThread } from '@/lib/feed/audience.server';
 import { togglePostLike } from '@/lib/social/engagement.server';
 
 export const Route = createFileRoute('/api/rmharks/$id/like')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ params }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ params, userId: viewerId }) => {
         const { id } = params;
+        if (!(await canReadPostThread(id, viewerId))) {
+          return Response.json({ error: 'Not found' }, { status: 404 });
+        }
         const likes = await prisma.rMHarkLike.findMany({
           where: { rmheetId: id },
           orderBy: { createdAt: 'desc' },

@@ -1,13 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { canReadCommentThread } from '@/lib/feed/audience.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
 export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/repost')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ params }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ params, userId: viewerId }) => {
         const { commentId } = params;
+        // Gate on the post the COMMENT belongs to (not the `:id` in the URL).
+        if (!(await canReadCommentThread(commentId, viewerId))) {
+          return Response.json({ error: 'Not found' }, { status: 404 });
+        }
         const reposts = await prisma.rMHarkCommentRepost.findMany({
           where: { commentId },
           orderBy: { createdAt: 'desc' },
@@ -32,6 +37,10 @@ export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/repost
             await prisma.rMHarkCommentRepost.delete({ where: { id: existing.id } });
             return Response.json({ success: true, reposted: false });
           } else {
+            // Adding needs a readable thread; undoing (above) stays allowed.
+            if (!(await canReadCommentThread(commentId, userId))) {
+              return Response.json({ error: 'Not found' }, { status: 404 });
+            }
             await prisma.rMHarkCommentRepost.create({ data: { commentId, userId } });
             return Response.json({ success: true, reposted: true });
           }

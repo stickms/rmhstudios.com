@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { createOfferSchema } from '@/lib/rmhladder/community';
+import { createOfferSchema } from '@/lib/rmhladder/community-schema';
 import { createOffer, loadBoard } from '@/lib/rmhladder/community.server';
 
 /**

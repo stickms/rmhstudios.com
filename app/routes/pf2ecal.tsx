@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { BoardPending } from '@/components/pf2ecal/Loading';
 import { Pf2eCalendar } from '@/components/pf2ecal/Pf2eCalendar';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { buildMeta } from '@/lib/seo';
 import { describeNext, getNextSession } from '@/lib/pf2ecal/og.server';
 import { getCalendarState } from '@/lib/pf2ecal/sessions.server';
@@ -31,10 +30,9 @@ import type { CalendarStateDTO } from '@/lib/pf2ecal/types';
  */
 const fetchBoard = createServerFn({ method: 'GET' }).handler(
   async (): Promise<{ state: CalendarStateDTO; summary: string }> => {
-    const request = getRequest();
     // `.catch(() => null)` so an auth hiccup renders the signed-out board
     // rather than a 500: reading the schedule never needed a session.
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    const session = await getRequestSession();
     const viewer = session?.user ? { id: session.user.id, name: session.user.name ?? null } : null;
     const [state, next] = await Promise.all([getCalendarState(viewer), getNextSession()]);
     return { state, summary: describeNext(next) };

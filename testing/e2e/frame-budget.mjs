@@ -17,6 +17,7 @@
 //   … frame-budget.mjs --json out.json          # machine-readable report
 //   … frame-budget.mjs --gate                   # exit 1 if a site-shell page is not idle at rest
 //   … frame-budget.mjs --settle 15000           # wait this long after load before measuring
+//   FRAME_GPU=1 … frame-budget.mjs              # real GPU, not SwiftShader (3D routes need it)
 //
 // ## What it measures, per route
 //
@@ -25,9 +26,10 @@
 //    `DrawFrame` trace events with no probe running. A static page produces ~0.
 // 2. **Browser CPU at rest** (`restCpu`). CPU time across EVERY Chromium process
 //    (renderer, GPU — where SwiftShader raster and compositing land — browser,
-//    utility), from /proc. This is what main-thread metrics never see: the
+//    utility). This is what main-thread metrics never see: the
 //    measurement that showed the site backdrop costing a full core while idle,
-//    with the main thread essentially asleep. Linux-only; omitted elsewhere.
+//    with the main thread essentially asleep. From /proc on Linux; elsewhere
+//    from CDP `SystemInfo.getProcessInfo` (this browser's processes only).
 // 3. **Perpetual animations** (`infinite`). `document.getAnimations()` with
 //    `iterations === Infinity`, named in the report so a regression points at
 //    its selector.
@@ -139,6 +141,21 @@ function chromiumCpuMs(binary) {
   return total;
 }
 
+/**
+ * The same total where there is no /proc (macOS, Windows), from the browser
+ * itself: `SystemInfo.getProcessInfo` lists every process of THIS browser
+ * instance with its cumulative CPU time, so neither a desktop Chrome nor a
+ * second Playwright run on the same machine leaks into the number.
+ */
+async function cdpCpuMs(cdp) {
+  try {
+    const { processInfo } = await cdp.send('SystemInfo.getProcessInfo');
+    return processInfo.reduce((sum, p) => sum + p.cpuTime * 1000, 0);
+  } catch {
+    return null;
+  }
+}
+
 function cadence(deltas) {
   if (deltas.length === 0) return null;
   const s = [...deltas].sort((a, b) => a - b);
@@ -147,7 +164,7 @@ function cadence(deltas) {
   return { fps: +(1000 / mean).toFixed(1), p50: q(0.5), p95: q(0.95), p99: q(0.99) };
 }
 
-async function measure(browser, binary, route, profile) {
+async function measure(browser, cdp, binary, route, profile) {
   const context = await browser.newContext({ ...PROFILES[profile], reducedMotion: 'no-preference' });
   const page = await context.newPage();
   const result = { route, profile };
@@ -174,9 +191,9 @@ async function measure(browser, binary, route, profile) {
     });
     Object.assign(result, dom);
 
-    const cpu0 = chromiumCpuMs(binary);
+    const cpu0 = chromiumCpuMs(binary) ?? (await cdpCpuMs(cdp));
     await page.waitForTimeout(REST_MS);
-    const cpu1 = chromiumCpuMs(binary);
+    const cpu1 = chromiumCpuMs(binary) ?? (await cdpCpuMs(cdp));
     if (cpu0 !== null && cpu1 !== null) result.restCpuMsPerSec = Math.round((cpu1 - cpu0) / (REST_MS / 1000));
 
     await browser.startTracing(page, { categories: ['disabled-by-default-devtools.timeline.frame'] });
@@ -228,15 +245,23 @@ async function measure(browser, binary, route, profile) {
 }
 
 // ── run ──────────────────────────────────────────────────────────────────────
-const browser = await chromium.launch({ executablePath: CHROMIUM_PATH, args: ['--no-sandbox'] });
+// `FRAME_GPU=1` asks for the host's real GPU instead of SwiftShader. Under
+// software GL a WebGL scene runs at 2–7fps, so a frame cap on it never binds and
+// a 3D route's numbers say nothing about rendering; on a machine with a GPU
+// (macOS → Metal through ANGLE) this measures what a visitor's browser does.
+const GPU_ARGS = process.env.FRAME_GPU
+  ? ['--enable-gpu', '--ignore-gpu-blocklist', ...(process.platform === 'darwin' ? ['--use-angle=metal'] : [])]
+  : [];
+const browser = await chromium.launch({ executablePath: CHROMIUM_PATH, args: ['--no-sandbox', ...GPU_ARGS] });
 // The /proc filter needs a string that appears in every child's command line.
 const binary = CHROMIUM_PATH ?? chromium.executablePath();
+const cdp = await browser.newBrowserCDPSession();
 
 const results = [];
 const failures = [];
 for (const profile of profiles) {
   for (const route of routes) {
-    const r = await measure(browser, binary, route, profile);
+    const r = await measure(browser, cdp, binary, route, profile);
     results.push(r);
     const idleFail =
       r.siteShell && (r.restFramesPerSec > REST_FRAME_LIMIT || (r.infinite?.length ?? 0) > 0);

@@ -12,9 +12,36 @@
  *   await disconnectPrisma(prisma, logger);
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
+import { recordQuery, setGauge } from '../../lib/perf/process-metrics';
+import { guardPool } from '../../lib/perf/process-guards';
 import type { Logger } from './logger';
+
+/**
+ * Times every query for the hub's `/internal/metrics` (the same idea as the web
+ * tier's extension in lib/prisma.server.ts). There is no request budget here, so
+ * slow queries carry no route label. The recorder never throws and a failed query
+ * is re-thrown untouched.
+ */
+const queryTimingExtension = Prisma.defineExtension({
+  name: 'query-timing',
+  query: {
+    async $allOperations({ model, operation, args, query }) {
+      const op = `${model ?? 'raw'}.${operation}`;
+      const startedAt = performance.now();
+      try {
+        const result = await query(args);
+        recordQuery({ op, durationMs: performance.now() - startedAt, ok: true });
+        return result;
+      } catch (error) {
+        recordQuery({ op, durationMs: performance.now() - startedAt, ok: false });
+        throw error;
+      }
+    },
+  },
+});
 
 export function createServerPrismaClient(logger: Logger): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
@@ -23,20 +50,55 @@ export function createServerPrismaClient(logger: Logger): PrismaClient {
     throw new Error('DATABASE_URL environment variable is required');
   }
 
-  const adapter = new PrismaPg({
+  const max = parseInt(process.env.SERVER_DB_POOL_SIZE || '5', 10);
+  const poolConfig = {
     connectionString,
-    max: parseInt(process.env.SERVER_DB_POOL_SIZE || '5', 10),
+    max,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
-  });
+  };
+  // The pool is built here (PrismaPg 7 accepts a `pg.Pool`) so its counters can be
+  // read as gauges; `disposeExternalPool` keeps `$disconnect` ending it as before.
+  const pool = guardPool(new Pool(poolConfig), { pool: 'prisma' });
+  const adapter = new PrismaPg(pool, { disposeExternalPool: true });
+  // PrismaPg only adopts the pool when `instanceof pg.Pool` held for its own copy
+  // of `pg`; if not, fall back to the plain config (no gauges) rather than hand it
+  // a Pool it would read as a config object.
+  const pooled = (adapter as unknown as { externalPool?: Pool | null }).externalPool === pool;
+  if (pooled) {
+    setGauge('db.pool.total', () => pool.totalCount);
+    setGauge('db.pool.idle', () => pool.idleCount);
+    setGauge('db.pool.waiting', () => pool.waitingCount);
+    setGauge('db.pool.max', () => max);
+  }
 
   const client = new PrismaClient({
-    adapter,
+    adapter: pooled ? adapter : new PrismaPg(poolConfig),
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
   });
 
   logger.info({ event: 'prisma_client_created' });
-  return client;
+  // Cast back to PrismaClient, as lib/prisma.server.ts does: `$extends` returns a
+  // structurally richer type that no call site here names.
+  return client.$extends(queryTimingExtension) as unknown as PrismaClient;
+}
+
+/**
+ * Pay Prisma's one-time start-up cost at boot instead of on the first player's
+ * action. The first query on a fresh client initialises the query compiler and
+ * opens the first pool connection; measured on the socket hub that is a single
+ * ~280 ms event-loop stall (docs/server-perf-2026-10-21/results/ws-5.md) landing
+ * on whichever table or lobby acts first. Fire-and-forget: a failure only means
+ * the first real query pays as before.
+ */
+export async function warmPrismaClient(client: PrismaClient, logger: Logger): Promise<void> {
+  const started = Date.now();
+  try {
+    await client.$queryRaw`SELECT 1`;
+    logger.info({ event: 'prisma_warmed', ms: Date.now() - started });
+  } catch (err) {
+    logger.warn({ event: 'prisma_warm_failed', error: String(err) });
+  }
 }
 
 export async function disconnectPrisma(client: PrismaClient, logger: Logger): Promise<void> {

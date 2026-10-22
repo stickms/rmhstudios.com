@@ -12,6 +12,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { RadialFeed } from '@/components/radial/RadialFeed';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getTimeline } from '@/lib/feed/timeline';
+import { trackPromise } from '@/lib/route/tracked-promise';
 
 // The first feed page is fetched by its own server fn so the loader can return
 // it UNAWAITED (deferred) — it streams into the wheel after the shell instead of
@@ -42,7 +43,9 @@ export const Route = createFileRoute('/_site/')({
     return q ? { q } : {};
   },
   staleTime: 60_000,
-  loader: () => ({ initialFeed: fetchInitialFeed() }),
+  // Tracked so a preloaded (hover) or still-fresh feed renders in the click's
+  // own commit instead of suspending into the skeleton — see trackPromise.
+  loader: () => ({ initialFeed: trackPromise(fetchInitialFeed()) }),
   head: () => ({
     meta: buildMeta({
       title: 'RMH Studios',

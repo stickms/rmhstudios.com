@@ -1,13 +1,12 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import RmhLadderShell from '@/components/rmhladder/RmhLadderShell';
 import rmhladderCss from '@/components/rmhladder/rmhladder.css?url';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { buildMeta } from '@/lib/seo';
 
 const getLadderViewer = createServerFn({ method: 'GET' }).handler(async () => {
-  const session = await auth.api.getSession({ headers: getRequest().headers }).catch(() => null);
+  const session = await getRequestSession();
   return {
     isAuthenticated: Boolean(session?.user),
     isAdmin: Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin),

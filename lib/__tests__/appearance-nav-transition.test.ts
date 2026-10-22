@@ -42,7 +42,12 @@ const put = (body: unknown) =>
     params: {},
     request: new Request('https://rmhstudios.com/api/preferences/appearance', {
       method: 'PUT',
-      headers: { 'content-type': 'application/json', 'cf-connecting-ip': `${Math.random()}` },
+      headers: {
+        'content-type': 'application/json',
+        'cf-connecting-ip': `${Math.random()}`,
+        // defineHandler skips Better Auth for cookie-less callers.
+        cookie: 'better-auth.session_token=abc',
+      },
       body: JSON.stringify(body),
     }),
   });
@@ -105,7 +110,9 @@ describe('PUT /api/preferences/appearance navTransition (S#24)', () => {
     findUnique.mockResolvedValue(null);
     const res = await handlers.GET({
       params: {},
-      request: new Request('https://rmhstudios.com/api/preferences/appearance'),
+      request: new Request('https://rmhstudios.com/api/preferences/appearance', {
+        headers: { cookie: 'better-auth.session_token=abc' },
+      }),
     });
     await expect(res.json()).resolves.toMatchObject({ navTransition: null });
   });

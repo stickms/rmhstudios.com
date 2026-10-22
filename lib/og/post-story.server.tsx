@@ -13,7 +13,7 @@
 
 import React from 'react';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
+import { dedupeOgRender, svgToPng } from './render.server';
 import {
   INK,
   MUTED,
@@ -56,8 +56,23 @@ export interface PostStoryData {
   authorImage: string | null;
 }
 
-export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer> {
-  const cacheKey = data.id;
+/** Exported for the test that pins "everything drawn is in the key". */
+export function postStoryCacheKey(data: PostStoryData): string {
+  // Everything drawn is in the key (docs/open-graph.md). It used to be the id
+  // alone, so an edit, or a content warning that turned the body into the
+  // generic card, kept serving the old card from this process for up to the
+  // TTL. The body is cut at 320 characters when drawn, so 400 covers it.
+  return [
+    data.id,
+    data.authorName,
+    data.authorHandle ?? '',
+    data.authorImage ?? '',
+    (data.content ?? '').slice(0, 400),
+  ].join('\u0000');
+}
+
+async function renderPostStoryImageUncached(data: PostStoryData): Promise<Buffer> {
+  const cacheKey = postStoryCacheKey(data);
   const cached = pngCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < PNG_TTL) return cached.png;
 
@@ -122,8 +137,7 @@ export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer>
   });
 
   const svg = await satori(element, { ...STORY, fonts: satoriFonts() });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: STORY.width } });
-  const png = Buffer.from(resvg.render().asPng());
+  const png = await svgToPng(svg, STORY.width);
 
   if (pngCache.size >= PNG_MAX) {
     const oldest = pngCache.keys().next().value;
@@ -131,4 +145,9 @@ export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer>
   }
   pngCache.set(cacheKey, { png, ts: Date.now() });
   return png;
+}
+
+// perf: in-flight dedupe - concurrent requests for one card share a single render.
+export function renderPostStoryImage(data: PostStoryData): Promise<Buffer> {
+  return dedupeOgRender(`story:${postStoryCacheKey(data)}`, () => renderPostStoryImageUncached(data));
 }

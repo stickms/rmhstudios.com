@@ -1,24 +1,35 @@
 import { z } from "zod";
 import { isFeedImageUrl } from "@/lib/storage/keys";
 
-import { MAX_RMHARK_LENGTH } from "@/lib/rmhark-limits";
-import { postsPlusComposeFields } from "@/lib/posts-plus/constants";
-import { codeEmbedSchema } from "@/lib/code-embed/shared";
+import {
+  MAX_RMHARK_LENGTH,
+  MAX_RMHARK_IMAGES,
+  MAX_IMAGE_ALT_LENGTH,
+  MAX_COMMENT_LENGTH,
+  MAX_POLL_QUESTION_LENGTH,
+  MAX_POLL_OPTION_LENGTH,
+  MIN_POLL_OPTIONS,
+  MAX_POLL_OPTIONS,
+} from "@/lib/rmhark-limits";
+import { postsPlusComposeFields } from "@/lib/posts-plus/schema";
+import { codeEmbedSchema } from "@/lib/code-embed/schema";
 
-export { MAX_RMHARK_LENGTH };
-export const MAX_RMHARK_IMAGES = 4;
-// Per-image alt text (accessibility). Kept generous so screen-reader users get
-// a full description; empty string = "no description provided".
-export const MAX_IMAGE_ALT_LENGTH = 1000;
+// Re-exported for the API routes. Client code imports `@/lib/rmhark-limits`
+// directly — this module is zod.
+export {
+  MAX_RMHARK_LENGTH,
+  MAX_RMHARK_IMAGES,
+  MAX_IMAGE_ALT_LENGTH,
+  MAX_COMMENT_LENGTH,
+  MAX_POLL_QUESTION_LENGTH,
+  MAX_POLL_OPTION_LENGTH,
+  MIN_POLL_OPTIONS,
+  MAX_POLL_OPTIONS,
+};
 // Accepts the local proxy path or the public CDN URL (see isFeedImageUrl).
 export const feedImageUrlSchema = z
   .string()
   .refine(isFeedImageUrl, "Invalid image reference");
-export const MAX_COMMENT_LENGTH = 500;
-export const MAX_POLL_QUESTION_LENGTH = 200;
-export const MAX_POLL_OPTION_LENGTH = 80;
-export const MIN_POLL_OPTIONS = 2;
-export const MAX_POLL_OPTIONS = 4;
 
 const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
 

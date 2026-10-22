@@ -256,6 +256,25 @@ export function decideCacheControl(
   return policy ? { value: policy, shared: true } : null;
 }
 
+/**
+ * A hashed build asset that was NOT served (404, or any other error status)
+ * must never be cached.
+ *
+ * Nitro stamps the `/assets/**` route rule's `public, max-age=31536000,
+ * immutable` onto the response BEFORE it knows whether the file exists, so a
+ * missing chunk answers `404 text/html` carrying a one-year immutable header.
+ * Cloudflare's `/assets/` cache rule uses `respect_origin`, so it stores that
+ * 404 (observed in production: `cf-cache-status: MISS` then `HIT` with a rising
+ * `Age` on a deleted chunk), and browsers keep it too. One request that lands
+ * on a container that lacks the chunk — the old build after a blue/green flip,
+ * a stale tab, a rollout race — then pins a "this chunk does not exist" answer
+ * for that URL at that edge for a year, and every later lazy import of it fails
+ * with "Expected a JavaScript module script" -> the "Something went wrong" page.
+ */
+export function isUncacheableAssetError(pathname: string, status: number | undefined): boolean {
+  return pathname.startsWith('/assets/') && typeof status === 'number' && status >= 400;
+}
+
 export default function anonHtmlCachePlugin(nitroApp: {
   hooks: { hook: (name: string, fn: (res: unknown, event: unknown) => void) => void };
 }): void {
@@ -274,6 +293,19 @@ export default function anonHtmlCachePlugin(nitroApp: {
         typeof headers.get !== 'function'
       ) {
         return;
+      }
+
+      // Failed asset lookups first: they are `text/html` 404s, so they would
+      // otherwise fall to the content-type gate below and keep the immutable
+      // header the `/assets/**` route rule gave them.
+      try {
+        const assetPath = new URL(req.url ?? '/', 'http://localhost').pathname;
+        if (isUncacheableAssetError(assetPath, (res as { status?: number })?.status)) {
+          headers.set('Cache-Control', 'no-store');
+          return;
+        }
+      } catch {
+        /* fall through to the document gate */
       }
 
       // Only ever touch document (HTML) responses — never assets/API/JSON. This

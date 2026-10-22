@@ -6,6 +6,7 @@ import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { gifUrlSchema, feedImageUrlSchema } from '@/lib/rmhark-schema';
 import { listConversations } from '@/lib/messages.server';
 import { z } from 'zod';
+import { adjustDmUnread } from '@/lib/chat-plus/unread.server';
 import { messageStamp } from '@/lib/chat-plus/post.server';
 
 const sendMessageSchema = z.object({
@@ -149,6 +150,11 @@ export const Route = createFileRoute('/api/messages')({
               reactions: [],
               expiresAt: message.expiresAt?.toISOString() ?? null,
             };
+
+            // Bump the recipient's denormalized unread counter (only if warm) before
+            // the SSE notify so their stream reads a fresh count — this path never
+            // did, so the badge went stale until the Redis counter's TTL expired.
+            void adjustDmUnread(recipientId, 1);
 
             // Notify recipient via SSE with message payload
             notifyUser(recipientId, {

@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  joinTargetFor,
-  contextVerb,
-  presencePrivacySchema,
-  type PresenceActivity,
-} from '@/lib/presence-types';
+import { joinTargetFor, contextVerb, type PresenceActivity } from '@/lib/presence-types';
+import { presencePrivacySchema } from '@/lib/presence-types-schema';
 
 describe('joinTargetFor', () => {
   it('returns null for an idle friend', () => {

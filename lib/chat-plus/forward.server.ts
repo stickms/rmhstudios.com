@@ -14,7 +14,7 @@ import { canDirectMessage } from '@/lib/chat-plus/dm-privacy.server';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { postChatMessage } from '@/lib/chat-plus/post.server';
 import { FORWARD_MAX_TARGETS, maxForwardTargets } from '@/lib/chat-plus/flags';
-import { chatRefSchema, type ChatRef } from '@/lib/chat-plus/types';
+import { chatRefSchema, type ChatRef } from '@/lib/chat-plus/types-schema';
 
 export const forwardSchema = z.object({
   source: chatRefSchema,

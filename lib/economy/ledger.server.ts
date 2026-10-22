@@ -94,8 +94,8 @@ export async function reconcileUser(userId: string): Promise<Reconciliation> {
     }),
   ]);
 
-  const balance = profile?.coins ?? 0;
-  const ledgerBalance = STARTING_BALANCE + (credits._sum.amount ?? 0) - (debits._sum.amount ?? 0);
+  const balance = Number(profile?.coins ?? 0);
+  const ledgerBalance = STARTING_BALANCE + Number(credits._sum.amount ?? 0) - Number(debits._sum.amount ?? 0);
   const drift = balance - ledgerBalance;
 
   return { userId, balance, ledgerBalance, drift, ok: drift === 0 };

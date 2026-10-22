@@ -1,12 +1,12 @@
 /** Server half of Top Four (P1): store the four picks in the member's showcase layout. */
 import { prisma } from '@/lib/prisma.server';
+import { MAX_MODULES } from '@/lib/profile/modules';
 import {
   parseLayout,
   moduleSchema,
-  MAX_MODULES,
   type ProfileModule,
   type TopFourItem,
-} from '@/lib/profile/modules';
+} from '@/lib/profile/modules-schema';
 import { resolveTopFour } from '@/lib/profile/top-four';
 
 /**

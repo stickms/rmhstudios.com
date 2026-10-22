@@ -1,12 +1,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { queuePixel } from './live.server';
-import {
-  CANVAS_BLANK,
-  phaseOf,
-  type CanvasEventView,
-  type createCanvasEventSchema,
-  type placePixelSchema,
-} from './shared';
+import { CANVAS_BLANK, phaseOf, type CanvasEventView } from './shared';
+import { type createCanvasEventSchema, type placePixelSchema } from './schema';
 import type { z } from 'zod';
 
 const meta = {

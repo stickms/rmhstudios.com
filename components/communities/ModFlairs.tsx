@@ -14,7 +14,7 @@ import {
   FLAIR_MAX_PER_COMMUNITY,
   type FlairColor,
   type FlairDTO,
-} from '@/lib/communities/plus-schema';
+} from '@/lib/communities/plus';
 
 export function ModFlairs({
   slug,

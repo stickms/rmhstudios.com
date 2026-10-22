@@ -14,7 +14,7 @@ import {
   COINS_PER_SUB_MONTH,
   MIN_PAYOUT_COINS,
   MIN_REDEMPTION_COINS,
-} from '@/lib/creator/redemption-schema';
+} from '@/lib/creator/redemption';
 
 interface Earnings {
   lifetimeEarned: number;

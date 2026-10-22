@@ -1,9 +1,9 @@
 /// <reference types="vite/client" />
 import {
-  HeadContent,
   Outlet,
   Scripts,
   createRootRoute,
+  useRouter,
   useRouterState,
   useNavigate,
 } from '@tanstack/react-router';
@@ -19,12 +19,13 @@ import {
   THEME_EXCLUDED_EXCEPTIONS,
 } from '@/components/Providers';
 import { GlassFilter } from '@/components/ui/liquid-glass';
+import { SiteHeadContent } from '@/components/SiteHeadContent';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
 import { EversionRoot } from '@/components/radial/eversion/EversionRoot';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
-import { markDocumentHydrated } from '@/components/ui/defer-on-navigate';
+import { markDocumentHydrated, trackHistoryActions } from '@/components/ui/defer-on-navigate';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { installGlobalErrorHandlers } from '@/lib/client-errors';
@@ -34,6 +35,8 @@ import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
 import { DEFAULT_OG_IMAGE, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, absoluteUrl } from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { prisma } from '@/lib/prisma.server';
+import { cachedNullable } from '@/lib/cached.server';
+import { appearanceSeedKey } from '@/lib/appearance/seed-cache.server';
 import {
   accountAppearanceSeed,
   accountSeedScript,
@@ -86,6 +89,8 @@ const SESSION_LOADER_TIMEOUT_MS = 800;
  * root loader's session wait (see SESSION_LOADER_TIMEOUT_MS). The timer is
  * cleared once `p` settles so a resolved promise can't leak a pending timeout.
  */
+const APPEARANCE_SEED_TIMEOUT_MS = 400;
+
 function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   return new Promise<T>((resolve) => {
     const timer = setTimeout(() => resolve(fallback), ms);
@@ -120,22 +125,32 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
     // lib/appearance/account-seed.ts. One indexed lookup on a session we have
     // already resolved; a failure here degrades to the idle sync rather than
     // taking the user lookup down with it.
-    const appearanceRow = await prisma.appearancePreference
-      .findUnique({
-        where: { userId: u.id },
-        select: {
-          style: true,
-          accent: true,
-          fontScale: true,
-          density: true,
-          readableFont: true,
-          customAccent: true,
-          reduceMotion: true,
-          glassLevel: true,
-          colorVision: true,
-        },
-      })
-      .catch(() => null);
+    // perf: this ran an uncached query on every signed-in render. Cache the row
+    // for 5 min (invalidated by the appearance PUT in
+    // app/routes/api/preferences/appearance.ts, so a save is never stale), and
+    // give it its OWN short timeout: a slow query drops only the seed, never the
+    // user (the loader keeps running and still warms the cache). The loader
+    // throws on DB failure so an error is not cached as "no row".
+    const appearanceRow = await withTimeout(
+      cachedNullable(appearanceSeedKey(u.id), 300_000, () =>
+        prisma.appearancePreference.findUnique({
+          where: { userId: u.id },
+          select: {
+            style: true,
+            accent: true,
+            fontScale: true,
+            density: true,
+            readableFont: true,
+            customAccent: true,
+            reduceMotion: true,
+            glassLevel: true,
+            colorVision: true,
+          },
+        }),
+      ).catch(() => null),
+      APPEARANCE_SEED_TIMEOUT_MS,
+      null,
+    );
     return {
       appearanceSeed: appearanceRow ? accountAppearanceSeed(appearanceRow) : null,
       user: {
@@ -396,9 +411,31 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   // hydration (perf audit §4.1; see lib/i18n/instances.ts). SSR renders from the
   // same core set, so hydration still matches.
   if (locale === DEFAULT_LOCALE) return { locale, resources: null };
-  await preloadLocale(locale);
-  return { locale, resources: localeCoreResources(locale) };
+  try {
+    await preloadLocale(locale);
+    return { locale, resources: localeCoreResources(locale) };
+  } catch {
+    // A failed locale chunk load must not take the whole document down with a
+    // 500 / "Something went wrong": render English (the always-available
+    // defaultValues) and let the client backfill the real locale.
+    return { locale: DEFAULT_LOCALE, resources: null };
+  }
 });
+
+/**
+ * Fallback for the i18n server function failing on the CLIENT (a network blip
+ * on a loader refetch, after the one retry in lib/server-fn-retry.ts). The
+ * tab already holds the active locale's resources, so keep `<html lang>`'s
+ * locale and send no new bundle rather than throwing the root loader.
+ */
+function i18nFallback(): { locale: Locale; resources: null } {
+  let locale: Locale = DEFAULT_LOCALE;
+  if (typeof document !== 'undefined') {
+    const lang = document.documentElement.lang as Locale;
+    if ((LOCALES as readonly string[]).includes(lang)) locale = lang;
+  }
+  return { locale, resources: null };
+}
 
 /** Check if a URL path is a Discord Activity route (embedded iframe) */
 function isDiscordRoute(pathname: string): boolean {
@@ -426,7 +463,7 @@ export const Route = createRootRoute({
         resolved: false,
         appearanceSeed: null,
       }),
-      getInitialI18n(),
+      getInitialI18n().catch(i18nFallback),
     ]);
     return {
       user: user.user,
@@ -614,7 +651,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang={locale} dir={dirFor(locale)} suppressHydrationWarning>
       <head>
-        <HeadContent />
+        <SiteHeadContent />
         {/* Reveals are now pure CSS (`animation-timeline: view()`), and their
             hidden start state lives only inside `@supports` + `@media not
             (prefers-reduced-motion)` — so a no-JS render was never hiding
@@ -665,6 +702,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const router = useRouter();
   const { user: initialUser, sessionResolved, locale, i18nResources } = Route.useLoaderData();
 
   // Restore the exact feed position on back/forward (and cover the mobile scroll
@@ -682,6 +720,11 @@ function RootComponent() {
     // which `DeferOnNavigate` may split a page's first render.
     markDocumentHydrated();
   }, []);
+
+  // Tells `DeferOnNavigate` a back/forward arrival from a link click — read from
+  // the history itself, because `popstate` listeners registered after the
+  // router run only once React has already rendered the restored page.
+  useEffect(() => trackHistoryActions(router.history), [router]);
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK

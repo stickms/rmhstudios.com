@@ -232,6 +232,7 @@ import { Route as SiteAdminAppealsRouteImport } from './routes/_site/admin/appea
 import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminBotsRouteImport } from './routes/_site/admin/bots'
 import { Route as SiteAdminCanvasRouteImport } from './routes/_site/admin/canvas'
+import { Route as SiteAdminDeepseekRouteImport } from './routes/_site/admin/deepseek'
 import { Route as SiteAdminDelightRouteImport } from './routes/_site/admin/delight'
 import { Route as SiteAdminEconomyRouteImport } from './routes/_site/admin/economy'
 import { Route as SiteAdminInsightsRouteImport } from './routes/_site/admin/insights'
@@ -239,6 +240,7 @@ import { Route as SiteAdminLibraryRouteImport } from './routes/_site/admin/libra
 import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/library-quota'
 import { Route as SiteAdminLibraryStorageRouteImport } from './routes/_site/admin/library-storage'
 import { Route as SiteAdminPatchNotesRouteImport } from './routes/_site/admin/patch-notes'
+import { Route as SiteAdminPerformanceRouteImport } from './routes/_site/admin/performance'
 import { Route as SiteAdminPredictionsRouteImport } from './routes/_site/admin/predictions'
 import { Route as SiteAdminQotdRouteImport } from './routes/_site/admin/qotd'
 import { Route as SiteAdminReadingRouteImport } from './routes/_site/admin/reading'
@@ -707,6 +709,7 @@ import { Route as ApiSpeedrunVerifyRouteImport } from './routes/api/speedrun/ver
 import { Route as ApiSpotifySearchRouteImport } from './routes/api/spotify/search'
 import { Route as ApiStakingIndexRouteImport } from './routes/api/staking/index'
 import { Route as ApiStakingDepositRouteImport } from './routes/api/staking/deposit'
+import { Route as ApiStakingSettingsRouteImport } from './routes/api/staking/settings'
 import { Route as ApiStakingWithdrawRouteImport } from './routes/api/staking/withdraw'
 import { Route as ApiStampsIndexRouteImport } from './routes/api/stamps/index'
 import { Route as ApiStampsIdRouteImport } from './routes/api/stamps/$id'
@@ -815,6 +818,9 @@ import { Route as ApiAdminCanvasIdRouteImport } from './routes/api/admin/canvas/
 import { Route as ApiAdminContextNotesIndexRouteImport } from './routes/api/admin/context-notes/index'
 import { Route as ApiAdminContextNotesIdRouteImport } from './routes/api/admin/context-notes/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
+import { Route as ApiAdminDeepseekBalanceRouteImport } from './routes/api/admin/deepseek/balance'
+import { Route as ApiAdminDeepseekHistoryRouteImport } from './routes/api/admin/deepseek/history'
+import { Route as ApiAdminDeepseekRefreshRouteImport } from './routes/api/admin/deepseek/refresh'
 import { Route as ApiAdminForecastingSeasonsRouteImport } from './routes/api/admin/forecasting/seasons'
 import { Route as ApiAdminInsightsCohortsRouteImport } from './routes/api/admin/insights/cohorts'
 import { Route as ApiAdminInsightsErrorsRouteImport } from './routes/api/admin/insights/errors'
@@ -827,6 +833,10 @@ import { Route as ApiAdminLibraryMigrateRouteImport } from './routes/api/admin/l
 import { Route as ApiAdminLibraryQuotaRequestsRouteImport } from './routes/api/admin/library/quota-requests'
 import { Route as ApiAdminLibraryReorderRouteImport } from './routes/api/admin/library/reorder'
 import { Route as ApiAdminLibraryStorageHealthRouteImport } from './routes/api/admin/library/storage-health'
+import { Route as ApiAdminPerfIndexRouteImport } from './routes/api/admin/perf/index'
+import { Route as ApiAdminPerfDbRouteImport } from './routes/api/admin/perf/db'
+import { Route as ApiAdminPerfHeapRouteImport } from './routes/api/admin/perf/heap'
+import { Route as ApiAdminPerfProfileRouteImport } from './routes/api/admin/perf/profile'
 import { Route as ApiAdminPredictionsIndexRouteImport } from './routes/api/admin/predictions/index'
 import { Route as ApiAdminQotdIndexRouteImport } from './routes/api/admin/qotd/index'
 import { Route as ApiAdminQotdIdRouteImport } from './routes/api/admin/qotd/$id'
@@ -2370,6 +2380,11 @@ const SiteAdminCanvasRoute = SiteAdminCanvasRouteImport.update({
   path: '/canvas',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminDeepseekRoute = SiteAdminDeepseekRouteImport.update({
+  id: '/deepseek',
+  path: '/deepseek',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminDelightRoute = SiteAdminDelightRouteImport.update({
   id: '/delight',
   path: '/delight',
@@ -2403,6 +2418,11 @@ const SiteAdminLibraryStorageRoute = SiteAdminLibraryStorageRouteImport.update({
 const SiteAdminPatchNotesRoute = SiteAdminPatchNotesRouteImport.update({
   id: '/patch-notes',
   path: '/patch-notes',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminPerformanceRoute = SiteAdminPerformanceRouteImport.update({
+  id: '/performance',
+  path: '/performance',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminPredictionsRoute = SiteAdminPredictionsRouteImport.update({
@@ -4776,6 +4796,11 @@ const ApiStakingDepositRoute = ApiStakingDepositRouteImport.update({
   path: '/api/staking/deposit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStakingSettingsRoute = ApiStakingSettingsRouteImport.update({
+  id: '/api/staking/settings',
+  path: '/api/staking/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStakingWithdrawRoute = ApiStakingWithdrawRouteImport.update({
   id: '/api/staking/withdraw',
   path: '/api/staking/withdraw',
@@ -5330,6 +5355,21 @@ const ApiAdminCuratedBuildsImageRoute =
     path: '/api/admin/curated-builds/image',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminDeepseekBalanceRoute = ApiAdminDeepseekBalanceRouteImport.update({
+  id: '/api/admin/deepseek/balance',
+  path: '/api/admin/deepseek/balance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminDeepseekHistoryRoute = ApiAdminDeepseekHistoryRouteImport.update({
+  id: '/api/admin/deepseek/history',
+  path: '/api/admin/deepseek/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminDeepseekRefreshRoute = ApiAdminDeepseekRefreshRouteImport.update({
+  id: '/api/admin/deepseek/refresh',
+  path: '/api/admin/deepseek/refresh',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminForecastingSeasonsRoute =
   ApiAdminForecastingSeasonsRouteImport.update({
     id: '/api/admin/forecasting/seasons',
@@ -5394,6 +5434,26 @@ const ApiAdminLibraryStorageHealthRoute =
     path: '/api/admin/library/storage-health',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminPerfIndexRoute = ApiAdminPerfIndexRouteImport.update({
+  id: '/api/admin/perf/',
+  path: '/api/admin/perf/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminPerfDbRoute = ApiAdminPerfDbRouteImport.update({
+  id: '/api/admin/perf/db',
+  path: '/api/admin/perf/db',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminPerfHeapRoute = ApiAdminPerfHeapRouteImport.update({
+  id: '/api/admin/perf/heap',
+  path: '/api/admin/perf/heap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminPerfProfileRoute = ApiAdminPerfProfileRouteImport.update({
+  id: '/api/admin/perf/profile',
+  path: '/api/admin/perf/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminPredictionsIndexRoute =
   ApiAdminPredictionsIndexRouteImport.update({
     id: '/api/admin/predictions/',
@@ -7921,6 +7981,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/bots': typeof SiteAdminBotsRoute
   '/admin/canvas': typeof SiteAdminCanvasRoute
+  '/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
@@ -7928,6 +7989,7 @@ export interface FileRoutesByFullPath {
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
+  '/admin/performance': typeof SiteAdminPerformanceRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
   '/admin/qotd': typeof SiteAdminQotdRoute
   '/admin/reading': typeof SiteAdminReadingRoute
@@ -8301,6 +8363,7 @@ export interface FileRoutesByFullPath {
   '/api/speedrun/verify': typeof ApiSpeedrunVerifyRoute
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
+  '/api/staking/settings': typeof ApiStakingSettingsRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/stamps/$id': typeof ApiStampsIdRouteWithChildren
   '/api/stamps/mine': typeof ApiStampsMineRoute
@@ -8498,6 +8561,9 @@ export interface FileRoutesByFullPath {
   '/api/admin/canvas/$id': typeof ApiAdminCanvasIdRoute
   '/api/admin/context-notes/$id': typeof ApiAdminContextNotesIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/deepseek/balance': typeof ApiAdminDeepseekBalanceRoute
+  '/api/admin/deepseek/history': typeof ApiAdminDeepseekHistoryRoute
+  '/api/admin/deepseek/refresh': typeof ApiAdminDeepseekRefreshRoute
   '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
   '/api/admin/insights/cohorts': typeof ApiAdminInsightsCohortsRoute
   '/api/admin/insights/errors': typeof ApiAdminInsightsErrorsRoute
@@ -8509,6 +8575,9 @@ export interface FileRoutesByFullPath {
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
+  '/api/admin/perf/db': typeof ApiAdminPerfDbRoute
+  '/api/admin/perf/heap': typeof ApiAdminPerfHeapRoute
+  '/api/admin/perf/profile': typeof ApiAdminPerfProfileRoute
   '/api/admin/qotd/$id': typeof ApiAdminQotdIdRoute
   '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
   '/api/admin/release-notes/$id': typeof ApiAdminReleaseNotesIdRoute
@@ -8761,6 +8830,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/canvas/': typeof ApiAdminCanvasIndexRoute
   '/api/admin/context-notes/': typeof ApiAdminContextNotesIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
+  '/api/admin/perf/': typeof ApiAdminPerfIndexRoute
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
   '/api/admin/qotd/': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
@@ -9140,6 +9210,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/bots': typeof SiteAdminBotsRoute
   '/admin/canvas': typeof SiteAdminCanvasRoute
+  '/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
@@ -9147,6 +9218,7 @@ export interface FileRoutesByTo {
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/patch-notes': typeof SiteAdminPatchNotesRoute
+  '/admin/performance': typeof SiteAdminPerformanceRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
   '/admin/qotd': typeof SiteAdminQotdRoute
   '/admin/reading': typeof SiteAdminReadingRoute
@@ -9520,6 +9592,7 @@ export interface FileRoutesByTo {
   '/api/speedrun/verify': typeof ApiSpeedrunVerifyRoute
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
+  '/api/staking/settings': typeof ApiStakingSettingsRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/stamps/$id': typeof ApiStampsIdRouteWithChildren
   '/api/stamps/mine': typeof ApiStampsMineRoute
@@ -9717,6 +9790,9 @@ export interface FileRoutesByTo {
   '/api/admin/canvas/$id': typeof ApiAdminCanvasIdRoute
   '/api/admin/context-notes/$id': typeof ApiAdminContextNotesIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/deepseek/balance': typeof ApiAdminDeepseekBalanceRoute
+  '/api/admin/deepseek/history': typeof ApiAdminDeepseekHistoryRoute
+  '/api/admin/deepseek/refresh': typeof ApiAdminDeepseekRefreshRoute
   '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
   '/api/admin/insights/cohorts': typeof ApiAdminInsightsCohortsRoute
   '/api/admin/insights/errors': typeof ApiAdminInsightsErrorsRoute
@@ -9728,6 +9804,9 @@ export interface FileRoutesByTo {
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
+  '/api/admin/perf/db': typeof ApiAdminPerfDbRoute
+  '/api/admin/perf/heap': typeof ApiAdminPerfHeapRoute
+  '/api/admin/perf/profile': typeof ApiAdminPerfProfileRoute
   '/api/admin/qotd/$id': typeof ApiAdminQotdIdRoute
   '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
   '/api/admin/release-notes/$id': typeof ApiAdminReleaseNotesIdRoute
@@ -9980,6 +10059,7 @@ export interface FileRoutesByTo {
   '/api/admin/canvas': typeof ApiAdminCanvasIndexRoute
   '/api/admin/context-notes': typeof ApiAdminContextNotesIndexRoute
   '/api/admin/library': typeof ApiAdminLibraryIndexRoute
+  '/api/admin/perf': typeof ApiAdminPerfIndexRoute
   '/api/admin/predictions': typeof ApiAdminPredictionsIndexRoute
   '/api/admin/qotd': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions': typeof ApiAdminRedemptionsIndexRoute
@@ -10387,6 +10467,7 @@ export interface FileRoutesById {
   '/_site/admin/audit': typeof SiteAdminAuditRoute
   '/_site/admin/bots': typeof SiteAdminBotsRoute
   '/_site/admin/canvas': typeof SiteAdminCanvasRoute
+  '/_site/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/_site/admin/delight': typeof SiteAdminDelightRoute
   '/_site/admin/economy': typeof SiteAdminEconomyRoute
   '/_site/admin/insights': typeof SiteAdminInsightsRoute
@@ -10394,6 +10475,7 @@ export interface FileRoutesById {
   '/_site/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/_site/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/_site/admin/patch-notes': typeof SiteAdminPatchNotesRoute
+  '/_site/admin/performance': typeof SiteAdminPerformanceRoute
   '/_site/admin/predictions': typeof SiteAdminPredictionsRoute
   '/_site/admin/qotd': typeof SiteAdminQotdRoute
   '/_site/admin/reading': typeof SiteAdminReadingRoute
@@ -10767,6 +10849,7 @@ export interface FileRoutesById {
   '/api/speedrun/verify': typeof ApiSpeedrunVerifyRoute
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
+  '/api/staking/settings': typeof ApiStakingSettingsRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/stamps/$id': typeof ApiStampsIdRouteWithChildren
   '/api/stamps/mine': typeof ApiStampsMineRoute
@@ -10964,6 +11047,9 @@ export interface FileRoutesById {
   '/api/admin/canvas/$id': typeof ApiAdminCanvasIdRoute
   '/api/admin/context-notes/$id': typeof ApiAdminContextNotesIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/deepseek/balance': typeof ApiAdminDeepseekBalanceRoute
+  '/api/admin/deepseek/history': typeof ApiAdminDeepseekHistoryRoute
+  '/api/admin/deepseek/refresh': typeof ApiAdminDeepseekRefreshRoute
   '/api/admin/forecasting/seasons': typeof ApiAdminForecastingSeasonsRoute
   '/api/admin/insights/cohorts': typeof ApiAdminInsightsCohortsRoute
   '/api/admin/insights/errors': typeof ApiAdminInsightsErrorsRoute
@@ -10975,6 +11061,9 @@ export interface FileRoutesById {
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
+  '/api/admin/perf/db': typeof ApiAdminPerfDbRoute
+  '/api/admin/perf/heap': typeof ApiAdminPerfHeapRoute
+  '/api/admin/perf/profile': typeof ApiAdminPerfProfileRoute
   '/api/admin/qotd/$id': typeof ApiAdminQotdIdRoute
   '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
   '/api/admin/release-notes/$id': typeof ApiAdminReleaseNotesIdRoute
@@ -11227,6 +11316,7 @@ export interface FileRoutesById {
   '/api/admin/canvas/': typeof ApiAdminCanvasIndexRoute
   '/api/admin/context-notes/': typeof ApiAdminContextNotesIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
+  '/api/admin/perf/': typeof ApiAdminPerfIndexRoute
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
   '/api/admin/qotd/': typeof ApiAdminQotdIndexRoute
   '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
@@ -11634,6 +11724,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bots'
     | '/admin/canvas'
+    | '/admin/deepseek'
     | '/admin/delight'
     | '/admin/economy'
     | '/admin/insights'
@@ -11641,6 +11732,7 @@ export interface FileRouteTypes {
     | '/admin/library-quota'
     | '/admin/library-storage'
     | '/admin/patch-notes'
+    | '/admin/performance'
     | '/admin/predictions'
     | '/admin/qotd'
     | '/admin/reading'
@@ -12014,6 +12106,7 @@ export interface FileRouteTypes {
     | '/api/speedrun/verify'
     | '/api/spotify/search'
     | '/api/staking/deposit'
+    | '/api/staking/settings'
     | '/api/staking/withdraw'
     | '/api/stamps/$id'
     | '/api/stamps/mine'
@@ -12211,6 +12304,9 @@ export interface FileRouteTypes {
     | '/api/admin/canvas/$id'
     | '/api/admin/context-notes/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/deepseek/balance'
+    | '/api/admin/deepseek/history'
+    | '/api/admin/deepseek/refresh'
     | '/api/admin/forecasting/seasons'
     | '/api/admin/insights/cohorts'
     | '/api/admin/insights/errors'
@@ -12222,6 +12318,9 @@ export interface FileRouteTypes {
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
+    | '/api/admin/perf/db'
+    | '/api/admin/perf/heap'
+    | '/api/admin/perf/profile'
     | '/api/admin/qotd/$id'
     | '/api/admin/redemptions/$id'
     | '/api/admin/release-notes/$id'
@@ -12474,6 +12573,7 @@ export interface FileRouteTypes {
     | '/api/admin/canvas/'
     | '/api/admin/context-notes/'
     | '/api/admin/library/'
+    | '/api/admin/perf/'
     | '/api/admin/predictions/'
     | '/api/admin/qotd/'
     | '/api/admin/redemptions/'
@@ -12853,6 +12953,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bots'
     | '/admin/canvas'
+    | '/admin/deepseek'
     | '/admin/delight'
     | '/admin/economy'
     | '/admin/insights'
@@ -12860,6 +12961,7 @@ export interface FileRouteTypes {
     | '/admin/library-quota'
     | '/admin/library-storage'
     | '/admin/patch-notes'
+    | '/admin/performance'
     | '/admin/predictions'
     | '/admin/qotd'
     | '/admin/reading'
@@ -13233,6 +13335,7 @@ export interface FileRouteTypes {
     | '/api/speedrun/verify'
     | '/api/spotify/search'
     | '/api/staking/deposit'
+    | '/api/staking/settings'
     | '/api/staking/withdraw'
     | '/api/stamps/$id'
     | '/api/stamps/mine'
@@ -13430,6 +13533,9 @@ export interface FileRouteTypes {
     | '/api/admin/canvas/$id'
     | '/api/admin/context-notes/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/deepseek/balance'
+    | '/api/admin/deepseek/history'
+    | '/api/admin/deepseek/refresh'
     | '/api/admin/forecasting/seasons'
     | '/api/admin/insights/cohorts'
     | '/api/admin/insights/errors'
@@ -13441,6 +13547,9 @@ export interface FileRouteTypes {
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
+    | '/api/admin/perf/db'
+    | '/api/admin/perf/heap'
+    | '/api/admin/perf/profile'
     | '/api/admin/qotd/$id'
     | '/api/admin/redemptions/$id'
     | '/api/admin/release-notes/$id'
@@ -13693,6 +13802,7 @@ export interface FileRouteTypes {
     | '/api/admin/canvas'
     | '/api/admin/context-notes'
     | '/api/admin/library'
+    | '/api/admin/perf'
     | '/api/admin/predictions'
     | '/api/admin/qotd'
     | '/api/admin/redemptions'
@@ -14099,6 +14209,7 @@ export interface FileRouteTypes {
     | '/_site/admin/audit'
     | '/_site/admin/bots'
     | '/_site/admin/canvas'
+    | '/_site/admin/deepseek'
     | '/_site/admin/delight'
     | '/_site/admin/economy'
     | '/_site/admin/insights'
@@ -14106,6 +14217,7 @@ export interface FileRouteTypes {
     | '/_site/admin/library-quota'
     | '/_site/admin/library-storage'
     | '/_site/admin/patch-notes'
+    | '/_site/admin/performance'
     | '/_site/admin/predictions'
     | '/_site/admin/qotd'
     | '/_site/admin/reading'
@@ -14479,6 +14591,7 @@ export interface FileRouteTypes {
     | '/api/speedrun/verify'
     | '/api/spotify/search'
     | '/api/staking/deposit'
+    | '/api/staking/settings'
     | '/api/staking/withdraw'
     | '/api/stamps/$id'
     | '/api/stamps/mine'
@@ -14676,6 +14789,9 @@ export interface FileRouteTypes {
     | '/api/admin/canvas/$id'
     | '/api/admin/context-notes/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/deepseek/balance'
+    | '/api/admin/deepseek/history'
+    | '/api/admin/deepseek/refresh'
     | '/api/admin/forecasting/seasons'
     | '/api/admin/insights/cohorts'
     | '/api/admin/insights/errors'
@@ -14687,6 +14803,9 @@ export interface FileRouteTypes {
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
+    | '/api/admin/perf/db'
+    | '/api/admin/perf/heap'
+    | '/api/admin/perf/profile'
     | '/api/admin/qotd/$id'
     | '/api/admin/redemptions/$id'
     | '/api/admin/release-notes/$id'
@@ -14939,6 +15058,7 @@ export interface FileRouteTypes {
     | '/api/admin/canvas/'
     | '/api/admin/context-notes/'
     | '/api/admin/library/'
+    | '/api/admin/perf/'
     | '/api/admin/predictions/'
     | '/api/admin/qotd/'
     | '/api/admin/redemptions/'
@@ -15495,6 +15615,7 @@ export interface RootRouteChildren {
   ApiSpeedrunVerifyRoute: typeof ApiSpeedrunVerifyRoute
   ApiSpotifySearchRoute: typeof ApiSpotifySearchRoute
   ApiStakingDepositRoute: typeof ApiStakingDepositRoute
+  ApiStakingSettingsRoute: typeof ApiStakingSettingsRoute
   ApiStakingWithdrawRoute: typeof ApiStakingWithdrawRoute
   ApiStampsIdRoute: typeof ApiStampsIdRouteWithChildren
   ApiStampsMineRoute: typeof ApiStampsMineRoute
@@ -15627,6 +15748,9 @@ export interface RootRouteChildren {
   ApiAdminCanvasIdRoute: typeof ApiAdminCanvasIdRoute
   ApiAdminContextNotesIdRoute: typeof ApiAdminContextNotesIdRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  ApiAdminDeepseekBalanceRoute: typeof ApiAdminDeepseekBalanceRoute
+  ApiAdminDeepseekHistoryRoute: typeof ApiAdminDeepseekHistoryRoute
+  ApiAdminDeepseekRefreshRoute: typeof ApiAdminDeepseekRefreshRoute
   ApiAdminForecastingSeasonsRoute: typeof ApiAdminForecastingSeasonsRoute
   ApiAdminInsightsCohortsRoute: typeof ApiAdminInsightsCohortsRoute
   ApiAdminInsightsErrorsRoute: typeof ApiAdminInsightsErrorsRoute
@@ -15638,6 +15762,9 @@ export interface RootRouteChildren {
   ApiAdminLibraryQuotaRequestsRoute: typeof ApiAdminLibraryQuotaRequestsRoute
   ApiAdminLibraryReorderRoute: typeof ApiAdminLibraryReorderRoute
   ApiAdminLibraryStorageHealthRoute: typeof ApiAdminLibraryStorageHealthRoute
+  ApiAdminPerfDbRoute: typeof ApiAdminPerfDbRoute
+  ApiAdminPerfHeapRoute: typeof ApiAdminPerfHeapRoute
+  ApiAdminPerfProfileRoute: typeof ApiAdminPerfProfileRoute
   ApiAdminQotdIdRoute: typeof ApiAdminQotdIdRoute
   ApiAdminRedemptionsIdRoute: typeof ApiAdminRedemptionsIdRoute
   ApiAdminReleaseNotesIdRoute: typeof ApiAdminReleaseNotesIdRoute
@@ -15780,6 +15907,7 @@ export interface RootRouteChildren {
   ApiAdminCanvasIndexRoute: typeof ApiAdminCanvasIndexRoute
   ApiAdminContextNotesIndexRoute: typeof ApiAdminContextNotesIndexRoute
   ApiAdminLibraryIndexRoute: typeof ApiAdminLibraryIndexRoute
+  ApiAdminPerfIndexRoute: typeof ApiAdminPerfIndexRoute
   ApiAdminPredictionsIndexRoute: typeof ApiAdminPredictionsIndexRoute
   ApiAdminQotdIndexRoute: typeof ApiAdminQotdIndexRoute
   ApiAdminRedemptionsIndexRoute: typeof ApiAdminRedemptionsIndexRoute
@@ -17454,6 +17582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminCanvasRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/deepseek': {
+      id: '/_site/admin/deepseek'
+      path: '/deepseek'
+      fullPath: '/admin/deepseek'
+      preLoaderRoute: typeof SiteAdminDeepseekRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/delight': {
       id: '/_site/admin/delight'
       path: '/delight'
@@ -17501,6 +17636,13 @@ declare module '@tanstack/react-router' {
       path: '/patch-notes'
       fullPath: '/admin/patch-notes'
       preLoaderRoute: typeof SiteAdminPatchNotesRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/performance': {
+      id: '/_site/admin/performance'
+      path: '/performance'
+      fullPath: '/admin/performance'
+      preLoaderRoute: typeof SiteAdminPerformanceRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/predictions': {
@@ -20779,6 +20921,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStakingDepositRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/staking/settings': {
+      id: '/api/staking/settings'
+      path: '/api/staking/settings'
+      fullPath: '/api/staking/settings'
+      preLoaderRoute: typeof ApiStakingSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/staking/withdraw': {
       id: '/api/staking/withdraw'
       path: '/api/staking/withdraw'
@@ -21535,6 +21684,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminCuratedBuildsImageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/deepseek/balance': {
+      id: '/api/admin/deepseek/balance'
+      path: '/api/admin/deepseek/balance'
+      fullPath: '/api/admin/deepseek/balance'
+      preLoaderRoute: typeof ApiAdminDeepseekBalanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/deepseek/history': {
+      id: '/api/admin/deepseek/history'
+      path: '/api/admin/deepseek/history'
+      fullPath: '/api/admin/deepseek/history'
+      preLoaderRoute: typeof ApiAdminDeepseekHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/deepseek/refresh': {
+      id: '/api/admin/deepseek/refresh'
+      path: '/api/admin/deepseek/refresh'
+      fullPath: '/api/admin/deepseek/refresh'
+      preLoaderRoute: typeof ApiAdminDeepseekRefreshRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/forecasting/seasons': {
       id: '/api/admin/forecasting/seasons'
       path: '/api/admin/forecasting/seasons'
@@ -21617,6 +21787,34 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/library/storage-health'
       fullPath: '/api/admin/library/storage-health'
       preLoaderRoute: typeof ApiAdminLibraryStorageHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/perf/': {
+      id: '/api/admin/perf/'
+      path: '/api/admin/perf'
+      fullPath: '/api/admin/perf/'
+      preLoaderRoute: typeof ApiAdminPerfIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/perf/db': {
+      id: '/api/admin/perf/db'
+      path: '/api/admin/perf/db'
+      fullPath: '/api/admin/perf/db'
+      preLoaderRoute: typeof ApiAdminPerfDbRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/perf/heap': {
+      id: '/api/admin/perf/heap'
+      path: '/api/admin/perf/heap'
+      fullPath: '/api/admin/perf/heap'
+      preLoaderRoute: typeof ApiAdminPerfHeapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/perf/profile': {
+      id: '/api/admin/perf/profile'
+      path: '/api/admin/perf/profile'
+      fullPath: '/api/admin/perf/profile'
+      preLoaderRoute: typeof ApiAdminPerfProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/predictions/': {
@@ -24611,6 +24809,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminAuditRoute: typeof SiteAdminAuditRoute
   SiteAdminBotsRoute: typeof SiteAdminBotsRoute
   SiteAdminCanvasRoute: typeof SiteAdminCanvasRoute
+  SiteAdminDeepseekRoute: typeof SiteAdminDeepseekRoute
   SiteAdminDelightRoute: typeof SiteAdminDelightRoute
   SiteAdminEconomyRoute: typeof SiteAdminEconomyRoute
   SiteAdminInsightsRoute: typeof SiteAdminInsightsRoute
@@ -24618,6 +24817,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminLibraryQuotaRoute: typeof SiteAdminLibraryQuotaRoute
   SiteAdminLibraryStorageRoute: typeof SiteAdminLibraryStorageRoute
   SiteAdminPatchNotesRoute: typeof SiteAdminPatchNotesRoute
+  SiteAdminPerformanceRoute: typeof SiteAdminPerformanceRoute
   SiteAdminPredictionsRoute: typeof SiteAdminPredictionsRoute
   SiteAdminQotdRoute: typeof SiteAdminQotdRoute
   SiteAdminReadingRoute: typeof SiteAdminReadingRoute
@@ -24647,6 +24847,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminAuditRoute: SiteAdminAuditRoute,
   SiteAdminBotsRoute: SiteAdminBotsRoute,
   SiteAdminCanvasRoute: SiteAdminCanvasRoute,
+  SiteAdminDeepseekRoute: SiteAdminDeepseekRoute,
   SiteAdminDelightRoute: SiteAdminDelightRoute,
   SiteAdminEconomyRoute: SiteAdminEconomyRoute,
   SiteAdminInsightsRoute: SiteAdminInsightsRoute,
@@ -24654,6 +24855,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminLibraryQuotaRoute: SiteAdminLibraryQuotaRoute,
   SiteAdminLibraryStorageRoute: SiteAdminLibraryStorageRoute,
   SiteAdminPatchNotesRoute: SiteAdminPatchNotesRoute,
+  SiteAdminPerformanceRoute: SiteAdminPerformanceRoute,
   SiteAdminPredictionsRoute: SiteAdminPredictionsRoute,
   SiteAdminQotdRoute: SiteAdminQotdRoute,
   SiteAdminReadingRoute: SiteAdminReadingRoute,
@@ -27089,6 +27291,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpeedrunVerifyRoute: ApiSpeedrunVerifyRoute,
   ApiSpotifySearchRoute: ApiSpotifySearchRoute,
   ApiStakingDepositRoute: ApiStakingDepositRoute,
+  ApiStakingSettingsRoute: ApiStakingSettingsRoute,
   ApiStakingWithdrawRoute: ApiStakingWithdrawRoute,
   ApiStampsIdRoute: ApiStampsIdRouteWithChildren,
   ApiStampsMineRoute: ApiStampsMineRoute,
@@ -27221,6 +27424,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminCanvasIdRoute: ApiAdminCanvasIdRoute,
   ApiAdminContextNotesIdRoute: ApiAdminContextNotesIdRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
+  ApiAdminDeepseekBalanceRoute: ApiAdminDeepseekBalanceRoute,
+  ApiAdminDeepseekHistoryRoute: ApiAdminDeepseekHistoryRoute,
+  ApiAdminDeepseekRefreshRoute: ApiAdminDeepseekRefreshRoute,
   ApiAdminForecastingSeasonsRoute: ApiAdminForecastingSeasonsRoute,
   ApiAdminInsightsCohortsRoute: ApiAdminInsightsCohortsRoute,
   ApiAdminInsightsErrorsRoute: ApiAdminInsightsErrorsRoute,
@@ -27232,6 +27438,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminLibraryQuotaRequestsRoute: ApiAdminLibraryQuotaRequestsRoute,
   ApiAdminLibraryReorderRoute: ApiAdminLibraryReorderRoute,
   ApiAdminLibraryStorageHealthRoute: ApiAdminLibraryStorageHealthRoute,
+  ApiAdminPerfDbRoute: ApiAdminPerfDbRoute,
+  ApiAdminPerfHeapRoute: ApiAdminPerfHeapRoute,
+  ApiAdminPerfProfileRoute: ApiAdminPerfProfileRoute,
   ApiAdminQotdIdRoute: ApiAdminQotdIdRoute,
   ApiAdminRedemptionsIdRoute: ApiAdminRedemptionsIdRoute,
   ApiAdminReleaseNotesIdRoute: ApiAdminReleaseNotesIdRoute,
@@ -27376,6 +27585,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminCanvasIndexRoute: ApiAdminCanvasIndexRoute,
   ApiAdminContextNotesIndexRoute: ApiAdminContextNotesIndexRoute,
   ApiAdminLibraryIndexRoute: ApiAdminLibraryIndexRoute,
+  ApiAdminPerfIndexRoute: ApiAdminPerfIndexRoute,
   ApiAdminPredictionsIndexRoute: ApiAdminPredictionsIndexRoute,
   ApiAdminQotdIndexRoute: ApiAdminQotdIndexRoute,
   ApiAdminRedemptionsIndexRoute: ApiAdminRedemptionsIndexRoute,

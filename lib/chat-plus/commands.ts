@@ -16,14 +16,14 @@
  *    reminder, `/gif` opens the GIF picker) and never create a chat message.
  */
 
-import { MAX_REMINDER_AHEAD_MS, resolvePreset } from '@/lib/reminders/schema';
+import { MAX_REMINDER_AHEAD_MS, resolvePreset } from '@/lib/reminders/shared';
 import {
   CHECKLIST_ITEM_MAX,
   CHECKLIST_MAX_ITEMS,
   CHECKLIST_TITLE_MAX,
   type ChatKind,
 } from '@/lib/chat-plus/types';
-import { TIP_MAX, TIP_MIN } from '@/lib/economy/tip-schema';
+import { TIP_MAX, TIP_MIN } from '@/lib/economy/tip-limits';
 
 export type CommandName = 'roll' | 'flip' | 'poll' | 'remind' | 'tip' | 'gif' | 'checklist' | 'gm';
 

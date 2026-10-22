@@ -12,7 +12,7 @@ import { ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { ComposeBox } from '@/components/feed/ComposeBox';
 import { FlairChip } from '@/components/communities/FlairChip';
-import type { CommunityExtrasDTO } from '@/lib/communities/plus-schema';
+import type { CommunityExtrasDTO } from '@/lib/communities/plus';
 import type { FeedItem } from '@/lib/feed-types';
 
 function PostingNotice({ posting }: { posting: CommunityExtrasDTO['posting'] }) {

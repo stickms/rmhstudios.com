@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { PersonaChatColumn } from '@/components/feed/PersonaChatColumn';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getPersonaChat, type PersonaChatPayload } from '@/lib/persona-chat.server';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 
@@ -13,8 +12,7 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
 const fetchPersonaChat = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
   .handler(async ({ data: id }) => {
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    const session = await getRequestSession();
     return { personaChat: await getPersonaChat(id, session?.user?.id ?? null) };
   });
 

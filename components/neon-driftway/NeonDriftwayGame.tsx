@@ -35,6 +35,7 @@ import { useCloudSave } from '@/hooks/useCloudSave';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import { NeonDriftwayEngine } from '@/lib/neon-driftway/game';
 import { NeonDriftwayRenderer3D } from '@/lib/neon-driftway/renderer3d';
+import { FrameCap, MENU_BACKDROP_FPS } from '@/lib/render/frame-cap';
 import { getLivery, isCustomLivery, subscribeLivery } from '@/lib/neon-driftway/livery';
 import { GyroTracker, gyroPermissionGateExists, type GyroStatus } from '@/lib/neon-driftway/gyro';
 import { detectHeadset } from '@/lib/neon-driftway/headset';
@@ -515,6 +516,9 @@ export function NeonDriftwayGame() {
     if (!webglReady) return;
     let lastTime = 0;
     let rafId = 0;
+    const cap = new FrameCap();
+    /** Capping is only safe when nothing on screen tracks the player's head. */
+    const backdropCappable = (sample: unknown) => sample === null && !stereoRef.current;
 
     const loop = (timestamp: number) => {
       rafId = requestAnimationFrame(loop);
@@ -548,7 +552,11 @@ export function NeonDriftwayGame() {
           }
           ghostPlayerRef.current?.apply(game.elapsedMs, game.remotePlayers);
         }
-        renderer.draw(game, dt, sample);
+        // A paused solo run is a still picture under the pause menu. Multiplayer
+        // keeps the panel rate — the other cars are still driving.
+        const pausedBackdrop = state === 'paused' && !game.isMultiplayer && backdropCappable(sample);
+        const drawDt = cap.tick(timestamp, dt, pausedBackdrop ? MENU_BACKDROP_FPS : null);
+        if (drawDt !== null) renderer.draw(game, drawDt, sample);
         hudRef.current?.sync(game, {
           multiplayer: game.isMultiplayer,
           selfLabel: t('you-label-short', { defaultValue: 'You' }),
@@ -624,11 +632,15 @@ export function NeonDriftwayGame() {
       } else {
         // Menus sit in front of a slow idle cruise rather than a black screen.
         // Traffic from the finished run is cleared so the road behind the menu
-        // does not stream past a wall of frozen cars.
+        // does not stream past a wall of frozen cars. Behind the blurred menu
+        // the cruise draws at the backdrop rate, except when the camera follows
+        // the player's head (gyro or a viewer), where a capped frame rate is
+        // felt rather than seen.
         for (const obstacle of game.obstacles) obstacle.active = false;
         game.car.speed = 240;
         game.worldZ += game.car.speed * MPS_PER_UNIT * dt;
-        renderer.draw(game, dt, sample);
+        const drawDt = cap.tick(timestamp, dt, backdropCappable(sample) ? MENU_BACKDROP_FPS : null);
+        if (drawDt !== null) renderer.draw(game, drawDt, sample);
       }
     };
 

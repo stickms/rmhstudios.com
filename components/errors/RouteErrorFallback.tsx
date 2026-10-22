@@ -1,7 +1,13 @@
-import { useEffect } from'react';
-import { Link } from'@tanstack/react-router';
+import { useCallback, useEffect, useRef } from'react';
+import { Link, useRouter } from'@tanstack/react-router';
 import { AlertTriangle, Home, RotateCw } from'lucide-react';
 import { reportClientError } from'@/lib/client-errors';
+import { isStaleBuildError, reloadForStaleBuild } from'@/lib/stale-build';
+import { isTransientError } from'@/lib/transient-error';
+
+const AUTO_RETRY_KEY ='rmh:route-error-retry-at';
+const AUTO_RETRY_GUARD_MS = 30_000;
+const AUTO_RETRY_DELAY_MS = 1500;
 
 interface RouteErrorFallbackProps {
  error?: unknown;
@@ -17,9 +23,46 @@ interface RouteErrorFallbackProps {
  * accent color) while still reading clearly as an error state.
  */
 export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackProps) {
+ const router = useRouter();
+ const resetRef = useRef(reset);
+ resetRef.current = reset;
+
+ // The boundary's `reset` only re-renders; a loader error stays on the match
+ // and is simply re-thrown. The route has to be reloaded too, or "Try again"
+ // can never succeed.
+ const retry = useCallback(() => {
+ void router
+ .invalidate()
+ .catch(() => {})
+ .finally(() => resetRef.current?.());
+ }, [router]);
+
  useEffect(() => {
+ // The payload carries the page URL, so route + message reach the admin
+ // Insights -> Errors inbox.
  reportClientError(error, { source:'route-error', componentStack: info?.componentStack });
- }, [error, info]);
+ // A chunk deleted by a deploy (React.lazy, a split loader) lands here, where
+ // "Try again" would only refetch the same dead URL. Reload onto the current
+ // build instead; the guard lets a genuinely broken chunk fall through to this
+ // page rather than looping.
+ if (isStaleBuildError(error)) {
+ reloadForStaleBuild();
+ return;
+ }
+ // A dropped connection or gateway blip usually succeeds a moment later:
+ // retry once on our own (bounded per tab) before asking the user to.
+ if (!resetRef.current || !isTransientError(error)) return;
+ try {
+ const last = Number(sessionStorage.getItem(AUTO_RETRY_KEY) ?? 0);
+ if (Date.now() - last < AUTO_RETRY_GUARD_MS) return;
+ sessionStorage.setItem(AUTO_RETRY_KEY, String(Date.now()));
+ } catch {
+ return;
+ }
+ const timer = setTimeout(retry, AUTO_RETRY_DELAY_MS);
+ return () => clearTimeout(timer);
+ // eslint-disable-next-line react-hooks/exhaustive-deps -- arm once per error; retry/reset are stable via refs
+ }, [error]);
 
  // Raw error text is a developer artefact — the profile route's boundary was
  // observed leaking a bundler module-resolution message to visitors. It is
@@ -54,7 +97,7 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
  {reset ? (
  <button
  type="button"
- onClick={() => reset()}
+ onClick={retry}
  className="inline-flex items-center justify-center gap-2 rounded-full bg-site-text px-5 py-3 text-sm font-semibold text-site-bg transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
  >
  <RotateCw className="size-4"aria-hidden="true"/>

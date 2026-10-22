@@ -53,7 +53,7 @@ const { gameStat, GENERIC_GAME, TIMED_GAME } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@/lib/prisma.server', () => ({ prisma: { gameStat } }));
+vi.mock('@/lib/prisma.server', () => ({ prisma: { gameStat }, prismaRead: { gameStat } }));
 
 vi.mock('@/lib/game/registry', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/game/registry')>();

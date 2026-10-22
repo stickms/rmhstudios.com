@@ -55,7 +55,7 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
   MAX_IMAGE_ALT_LENGTH,
-} from '@/lib/rmhark-schema';
+} from '@/lib/rmhark-limits';
 import { Link } from '@tanstack/react-router';
 import { TakeMenuItem, TakeChip } from './TakeCompose';
 import { AltTextNotice, useRequireAltText } from './AltTextNotice';

@@ -98,6 +98,8 @@
   "audience-followers": "Подписчики",
   "audience-group-label": "Кто может видеть этот пост",
   "audience-only-me": "Только я",
+  "auto-reinvest": "Автореинвест",
+  "auto-reinvest-hint": "Проценты ежедневно добавляются к вашему вкладу",
   "avatar-alt": "Аватар",
   "avatar-change-hint": "Нажмите, чтобы сменить аватар (макс. {{maxMb}} МБ)",
   "avatar-size-error": "",

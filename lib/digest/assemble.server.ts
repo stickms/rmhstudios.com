@@ -94,6 +94,7 @@ async function topPostsFromFollows(userId: string, since: Date): Promise<DigestP
       createdAt: { gte: since },
       deletedAt: null,
       audience: 'PUBLIC',
+      communityId: null, // a digest must not carry members-only community posts
       originalId: null, // skip bare reposts; surface original authored posts
     },
     orderBy: { createdAt: 'desc' },

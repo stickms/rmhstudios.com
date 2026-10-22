@@ -29,19 +29,19 @@
 import { spring, springStep, type Spring } from './fluid';
 
 /** The tug and the stretch: bouncy, so a release visibly wobbles a couple of times. */
-export const JELLY_SPRING: Spring = spring(0.5, 0.52);
+export const JELLY_SPRING: Spring = spring(0.5, 0.6);
 /** The pinch: a little quicker, so a tap reads as a squeeze. */
-export const PINCH_SPRING: Spring = spring(0.34, 0.45);
+export const PINCH_SPRING: Spring = spring(0.36, 0.5);
 /** Seconds of finger velocity the grabbed region leads the body by. */
-export const TUG_LAG = 0.07;
+export const TUG_LAG = 0.11;
 /** The furthest the grabbed region is pulled, in radii. */
-export const TUG_MAX = 0.09;
+export const TUG_MAX = 0.17;
 /** How far toward the finger a held press squeezes the surface around it (a fraction). */
-export const PINCH_DEPTH = 0.1;
+export const PINCH_DEPTH = 0.16;
 /** Gaussian falloff of the tug and the pinch around the finger, in radii (σ). */
 export const FALLOFF = 0.62;
 /** Stretch along the tug per radius of tug. */
-export const STRETCH = 0.7;
+export const STRETCH = 1.15;
 /** Below this (radii, radii/s) every mode is at rest. */
 const REST = 1e-4;
 
@@ -95,6 +95,22 @@ export class SoftBody {
     this.held = false;
     this.tx = 0;
     this.ty = 0;
+  }
+
+  /** Add a velocity impulse (radii/s) to the tug for display-side events (strikes, hand-offs). */
+  nudge(vx: number, vy: number, gain = 1): void {
+    let tx = this.tx + vx * TUG_LAG * gain;
+    let ty = this.ty + vy * TUG_LAG * gain;
+    const max = TUG_MAX * 1.45;
+    const len = Math.hypot(tx, ty);
+    if (len > max) {
+      tx *= max / len;
+      ty *= max / len;
+    }
+    this.tx = tx;
+    this.ty = ty;
+    this.vx += vx * 0.14 * gain;
+    this.vy += vy * 0.14 * gain;
   }
 
   /** Advance `dt` seconds. Returns whether anything is (still) deformed: the caller repaints while it is. */

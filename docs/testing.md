@@ -27,6 +27,7 @@ pnpm test lib/slice-it        # one file or directory
 pnpm test:watch               # watch mode
 pnpm test:coverage            # V8 coverage → text + coverage/index.html + lcov
 pnpm test:epic                # epic content-build suite (needs Chromium)
+pnpm test:integration         # real flows against a running app + throwaway Postgres (see §8)
 make test                     # Go (Bazel) + the frontend vitest suite
 ```
 
@@ -245,6 +246,21 @@ Its commit-time half is `lib/__tests__/static-backdrop.test.ts` (in
 `GATE_TESTS`). Findings and the measured before/after:
 [`performance-audit-2026-10-08.md`](./performance-audit-2026-10-08.md).
 
+**Page switches.** Its sibling `testing/e2e/page-switch.mjs` times the other
+half of "does it feel fast": a click in the shell's nav rail, from a settled
+page, to the destination painted — plus the longest frame, summed blocking
+time, style+layout and layout shift over the switch (Long Animation Frames
+API), under CPU throttling and added latency. `--mode hover` lets the router's
+intent preload run first; `a>b:c` starts from a page reached within the visit.
+
+```bash
+BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs                # default switches, 4× CPU, tap
+BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs --mode hover --cpu 1 --rtt 0
+```
+
+Findings and the measured before/after:
+[`performance-audit-2026-10-21.md`](./performance-audit-2026-10-21.md) §Navigation commit.
+
 ### 7. Globe eversion suites (`lib/eversion/`, `testing/e2e/eversion-*.mjs`)
 
 The hub navigation effect (spec: [`plans/2026-10-17-globe-eversion.md`](./plans/2026-10-17-globe-eversion.md)
@@ -352,7 +368,11 @@ deliberate change moves the numbers (a Chromium bump, a slower-but-better effect
 **CI.** The `eversion-e2e` job in `web-ci.yml` builds WITH sourcemaps (the
 attribution checks read them), serves `.output`, and runs every
 `testing/e2e/eversion-*.mjs` except `eversion-lab.mjs` and `eversion-smoothness*.mjs` (own step, above); `eversion-hub.mjs` runs
-once per profile x theme (desktop/mobile x dark/light/high-contrast). The job is
+once per profile x theme (desktop/mobile x dark/light/high-contrast). It does
+**not run on PRs** for now: the suite does not finish inside its timeout (22 of 23
+PR runs were cancelled in `eversion-behaviour.mjs`), so on PRs it held a runner
+for ~40 min and reported nothing. Run it on a branch with
+`gh workflow run web-ci.yml --ref <branch>`. When re-enabled on PRs, the job is
 path-filtered by `eversion-changes` to what the effect depends on: `lib/eversion`,
 `components/radial`, the settings row and its preference API/schema, the theme
 store, `lib/perf-tier*` and `lib/render`, the glass layer, the two English
@@ -362,6 +382,75 @@ string. It runs nightly on `main`. It is `continue-on-error` until T37 makes it
 blocking, which hides a red job from the PR's checks, so each script's verdict is
 also written to the job summary (`GITHUB_STEP_SUMMARY`) and every failure is an
 `::error::` annotation. Open the job summary after a nightly.
+
+### 8. Integration suite (`vitest.integration.config.ts`, `testing/integration/`)
+
+`pnpm test:integration`. Black-box tests of real user flows against a **running,
+built** app and a **real** Postgres — the layer the main suite deliberately never
+touches. Blocking on every PR (the `integration` job in `web-ci.yml`).
+
+| File | Covers |
+| --- | --- |
+| `auth.test.ts` | email sign-up → session → handle assigned; sign-out revokes the session; wrong password sets no session; writes need a session |
+| `posts.test.ts` | create + read back; invalid body → 400 and nothing written; another user's like (toggle) and comment; only the author can delete (soft delete → tombstone) |
+| `coins.test.ts` | a tip moves exactly the amount and writes one ledger row; overdraft and self-tip are refused with every balance unchanged |
+| `developer-api.test.ts` | free accounts cannot mint keys; a paid key authenticates `/api/v1/me`; revoked and made-up keys → 401; scopes (read-only key cannot post, `write:posts` can) |
+| `public.test.ts` | `/api/ready`, the OpenAPI 3.1 spec, `/` SSR and the sitemap — the deploy smoke probes, run before merge |
+
+How it works: `global-setup.ts` waits for `/api/ready`, then signs up the shared
+cast (`alice`, `bob`, `carol`) once and hands their cookies to the files via
+`inject()`. `lib/client.ts` is a cookie-jar `fetch` client (it sends the
+`Origin` Better Auth's CSRF check wants) plus a `pg` pool on the **same**
+database, used only to seed what no endpoint can (a paid subscription, a starting
+coin balance) and to assert on what a response cannot prove (the ledger row, the
+`deletedAt` stamp). Files run one at a time and the app's per-IP rate limits stay
+on (10 sign-ups / posts per minute); the suite budgets its requests under them.
+
+Locally — never against a database you care about:
+
+```bash
+pnpm build:frontend
+DATABASE_URL=postgresql://…/scratch pnpm exec prisma migrate deploy
+DATABASE_URL=… BETTER_AUTH_SECRET=local-secret-at-least-32-chars-long BETTER_AUTH_URL=http://localhost:7005 PORT=7005 \
+  node .output/server/index.mjs &
+INTEGRATION_BASE_URL=http://localhost:7005 DATABASE_URL=… pnpm test:integration
+```
+
+(`INTEGRATION_BASE_URL`, not `BASE_URL`: Vite reserves that name and vitest
+overwrites it.) Restart the server between back-to-back runs — the rate-limit
+counters are in memory.
+
+**Found by this suite:** a session's cookies copied before sign-out kept writing
+for up to 5 minutes, because `session.cookieCache` let `getSession` trust the
+signed cookie without reading the (deleted) session row. Fixed by forcing
+`disableCookieCache` on non-GET requests (the wrapper at the bottom of
+`lib/auth.ts`); `auth.test.ts` › *a revoked session cookie cannot write* pins it.
+
+Out of scope (each needs external services): Stripe checkout/webhooks, OAuth
+providers, the Socket.IO hubs, email delivery.
+
+### Server perf harness (not in CI)
+
+The server-side performance program ([`docs/server-perf-2026-10-21/`](server-perf-2026-10-21/index.md))
+measures the production build against a seeded dataset. Like the integration suite above it boots the built app (`.output/server/index.mjs`) against a real Postgres, but it measures latency and query counts rather than asserting behaviour, and it is never run in CI. Method, budgets and the
+agent procedure are in that folder; the instruments live in `scripts/perf/`:
+
+```bash
+pnpm tsx scripts/perf/seed-perf-db.ts --db rmh_perf_build   # ~2 min: 20k users, 200k posts, 1.2M likes, ...
+createdb -T rmh_perf_template rmh_ws<N>                     # a private copy of the seeded database
+flock /tmp/rmh-perf-build.lock pnpm build                   # latency is only ever measured on the prod build
+NODE_ENV=production PORT=71<N>5 RMH_PERF_HEADERS=1 node .output/server/index.mjs &
+node scripts/perf/server-bench.mjs --base http://localhost:71<N>5 --auth both --out out.json
+node scripts/perf/server-bench.mjs --compare before.json after.json    # markdown diff, flags regressions
+node scripts/perf/server-bench.mjs --summary baseline.json             # the P0 summary tables
+node scripts/perf/cold-start.mjs --port 71<N>5                          # restart + first request to /
+```
+
+`RMH_PERF_HEADERS=1` adds `x-rmh-queries: <n>` to every response (off by
+default; `lib/__tests__/perf-headers.test.ts` pins that). `Server-Timing` is
+always on and carries `dur`-only `sess` / `cache` / `db` / `total` phases. The
+tests for the instrumentation itself are `lib/__tests__/otel-server-timing.test.ts`
+and `perf-headers.test.ts`, and they run in the main suite; the harness does not.
 
 ### Coverage
 
@@ -379,22 +468,27 @@ a target to farm.
 
 ## CI
 
-Ten workflows live in `.github/workflows/`. The ones that touch tests/quality:
+Ten workflows live in `.github/workflows/`. The ones that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from a cache keyed on the lockfile + Prisma schema and only installs on a miss):
 
 | Workflow                      | Runs                                                                                    | Gate?                                                                                    |
 | ----------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `web-ci.yml` (`check` job)    | `tsc --noEmit` → `eslint` → docs freshness → `pnpm test`                                | **all block**, tests included (as of 2026-08-08)                                         |
+| `web-ci.yml` (`typecheck`)    | `tsc --noEmit` → `eslint` → docs freshness                                              | **all block**                                                                            |
+| `web-ci.yml` (`test (1/2)`, `test (2/2)`) | `pnpm test --shard=N/2` — the unit suite split across two parallel jobs     | **blocks**, tests included (as of 2026-08-08)                                            |
 | `web-ci.yml` (`build` job)    | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                            |
 | `web-ci.yml` (`audit` job)    | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                  |
+| `web-ci.yml` (`integration`)  | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`    | **blocks**; see §8                                                                       |
 | `epic-tests.yml`              | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                           |
-| `deploy.yml` (`ci` job)       | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | typecheck + lint block; the **test step is advisory** here by owner decision — see below |
-| `web-ci.yml` (`eversion-e2e`) | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; path-filtered + nightly; see §7                                  |
+| `deploy.yml` (`ci` job)       | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | blocks — typecheck, lint and test all gate the deploy; see below                         |
+| `deploy.yml` (`integration`)  | same as web-ci's `integration`, on the **merged** commit                                | **blocks the deploy**; runs in parallel with the image build                             |
+| `web-ci.yml` (`eversion-e2e`) | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7          |
 | `go-microservices.yml`        | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                   |
 
-**Where enforcement lives.** `main` is reached only through a pull request, and
-web-ci's Test step is a hard gate, so a red test stops the change before it
-merges. The deploy's own `ci` job re-runs the suite as a second look and stays
-advisory by owner decision, so a flake cannot wedge a release.
+**Where enforcement lives.** web-ci's Test step is a hard gate on the PR, and
+the deploy's own `ci` job re-runs the suite on the merge result as a hard gate
+too. It used to be advisory on the premise that `main` is reached only through a
+PR — but nothing enforced that (no branch protection), so a direct push or a
+merge over a red PR could ship untested code. It costs no wall-clock: `ci` runs
+in parallel with the image build.
 
 The web-ci test step was advisory for a long stretch, for a reason that no
 longer holds: `i18n-catalogs` was permanently red, and the Test step used to sit

@@ -124,7 +124,7 @@ export async function collectWrappedStats(userId: string, year: number): Promise
     commentsReceived,
     newFollowers,
     achievementsUnlocked,
-    coinsEarned: coinAgg._sum.amount ?? 0,
+    coinsEarned: Number(coinAgg._sum.amount ?? 0),
     level: levelInfo(profile?.xp ?? 0).level,
     longestStreak: streak.longest,
     busiestMonth,

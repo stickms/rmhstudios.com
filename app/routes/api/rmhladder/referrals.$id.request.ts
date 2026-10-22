@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { createRequestSchema } from '@/lib/rmhladder/community';
+import { createRequestSchema } from '@/lib/rmhladder/community-schema';
 import { createRequest } from '@/lib/rmhladder/community.server';
 
 /** POST /api/rmhladder/referrals/$id/request — ask for a referral with a short pitch. */

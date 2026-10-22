@@ -12,8 +12,12 @@
  * optimisation, never a correctness dependency.
  */
 import 'dotenv/config';
+import { installProcessGuards } from '../../lib/perf/process-guards';
+
 import { type Job } from 'pg-boss';
 import { createLogger } from '@/server/shared/logger';
+import { startProcessMetrics } from '../../lib/perf/process-metrics';
+import { registerPrismaPoolGauges, startPerfPublisher } from '../../lib/perf/publish.server';
 import { getBoss, PROGRESSION_QUEUE } from '@/lib/jobs/boss.server';
 import { runProgression, type ProgressionJob } from '@/lib/social/engagement-effects.server';
 import { registerEventReminderWorker } from '@/lib/events.server';
@@ -41,9 +45,22 @@ import {
   registerProfileVisitSweepCron,
 } from '@/lib/profile/visit-sweep.server';
 
+// Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
+installProcessGuards({ service: 'jobs' });
+
 const log = createLogger('jobs');
 
 async function main() {
+  // Process metrics for the admin performance page: sample this worker and publish
+  // a snapshot to Redis every 10 s (best-effort; see lib/perf/publish.server.ts).
+  try {
+    startProcessMetrics({ service: 'jobs' });
+    registerPrismaPoolGauges();
+    startPerfPublisher('jobs');
+  } catch {
+    // Telemetry must not stop the worker from starting.
+  }
+
   const boss = await getBoss(true);
   if (!boss) {
     log.error({

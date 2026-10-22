@@ -12,7 +12,8 @@ import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateProfileLookup } from '@/lib/profile.server';
 import { DELETED_ACCOUNT_BAN_REASON } from '@/lib/account-lifecycle';
-import { HANDLE_MAX_LENGTH, deriveHandleBase, isValidHandle, suffixHandle } from '@/lib/handle';
+import { HANDLE_MAX_LENGTH, deriveHandleBase, suffixHandle } from '@/lib/handle';
+import { isValidHandle } from '@/lib/handle-schema';
 
 /** How many `base_1234` candidates to try before falling back to a random handle. */
 const SUFFIX_ATTEMPTS = 10;

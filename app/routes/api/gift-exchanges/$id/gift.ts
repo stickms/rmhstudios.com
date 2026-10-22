@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { sendExchangeGiftSchema } from '@/lib/gifting/exchange';
+import { sendExchangeGiftSchema } from '@/lib/gifting/exchange-schema';
 import { sendExchangeGift } from '@/lib/gifting/exchange.server';
 
 /** POST — send the one coin gift to the member the caller drew (existing coin gifting). */

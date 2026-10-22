@@ -7,7 +7,8 @@ import { defineHandler } from '@/lib/api/handler.server';
 
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
-import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { resolveUser } from '@/lib/user-display';
+import { buildCardSelect } from '@/lib/user-builds-list';
 
 export const Route = createFileRoute('/api/user-builds/featured')({
   server: {
@@ -32,14 +33,7 @@ export const Route = createFileRoute('/api/user-builds/featured')({
           },
           orderBy: { publishedAt: 'desc' },
           take: limit,
-          include: {
-            user: { select: userDisplaySelect },
-            category: { select: { id: true, name: true, slug: true, color: true, iconName: true } },
-            tags: { select: { name: true } },
-            ...(currentUserId
-              ? { likes: { where: { userId: currentUserId }, select: { id: true } } }
-              : {}),
-          },
+          select: buildCardSelect(currentUserId),
         });
 
         const mappedBuilds = builds.map((build: any) => ({

@@ -93,6 +93,8 @@
   "audience-followers": "Followers",
   "audience-group-label": "Who can see this post",
   "audience-only-me": "Only me",
+  "auto-reinvest": "Auto-reinvest",
+  "auto-reinvest-hint": "Interest compounds into your stake daily",
   "avatar-alt": "Avatar",
   "avatar-change-hint": "Square images work best. Maximum {{maxMb}} MB.",
   "avatar-size-error": "Avatar must be under {{maxMb}} MB",

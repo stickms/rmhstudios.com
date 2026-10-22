@@ -54,6 +54,7 @@ import type { AppProps } from '../apps';
 import { Icon } from '../icons';
 import { PopupMenu, type MenuItem } from '../Menu';
 import { useOs } from '../store';
+import './paint.css';
 
 type Tool = 'pencil' | 'brush' | 'eraser' | 'fill' | 'picker' | 'line' | 'rect' | 'ellipse';
 type Pt = { x: number; y: number };

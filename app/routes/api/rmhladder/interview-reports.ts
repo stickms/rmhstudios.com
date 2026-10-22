@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { createInterviewReportSchema, interviewReportQuerySchema } from '@/lib/rmhladder/community';
+import { createInterviewReportSchema, interviewReportQuerySchema } from '@/lib/rmhladder/community-schema';
 import { createInterviewReport, listInterviewReports } from '@/lib/rmhladder/community.server';
 
 /**
