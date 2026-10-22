@@ -1200,6 +1200,17 @@ void main() {
      morph weight, since the flat page must be the capture, untouched. Low keeps the fixed light; mid and high take the
      scene's (it turns toward the cosmos's sun as that arrives, cosmos.ts). */
   vec3 nn = normalize(v_nview);
+  /* Snell transmission through a thin glass coat. UV displacement is in
+     screen pixels, vanishes at both flat endpoints and never crosses a cut.
+     Existing captures are reused; there is no additional texture or pass. */
+  vec2 transmission = vec2(0.0);
+#if QUALITY >= 1
+  if (!cut) {
+    vec3 surfaceNormal = gl_FrontFacing ? nn : -nn;
+    vec3 transmitted = refract(vec3(0.0, 0.0, -1.0), surfaceNormal, 1.0 / 1.45);
+    transmission = transmitted.xy * (6.0 / u_viewport) * v_morph * (1.0 - flatness);
+  }
+#endif
 #if QUALITY >= 1
   vec3 L = normalize(u_lightDir);
   /* The background the glass sits against: the veil, deepened toward space while the cosmos is present. */
@@ -1212,11 +1223,11 @@ void main() {
   float litB = LAMBERT_BASE + LAMBERT_GAIN * max(dot(-nn, L), 0.0);
   vec3 page = vec3(0.0);
   if (side > 0.0) {
-    vec3 pg = planetTone(textureGrad(u_before, clamp(uvF, 0.0, 1.0), gx, gy).rgb);
+    vec3 pg = planetTone(textureGrad(u_before, clamp(uvF + transmission, 0.0, 1.0), gx, gy).rgb);
     page += side * mix(pg, pg * litF, v_morph);
   }
   if (side < 1.0) {
-    vec2 cb = clamp(uvB, 0.0, 1.0);
+    vec2 cb = clamp(uvB + transmission, 0.0, 1.0);
     vec3 pg = planetTone(
       mix(textureGrad(u_placeholder, cb, gx, gy).rgb, textureGrad(u_after, cb, gx, gy).rgb, u_afterMix));
     vec3 shaded = mix(pg * litB * SIDE_DARKEN, u_colAccent.rgb, SIDE_TINT);

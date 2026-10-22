@@ -10,6 +10,17 @@ rest of the site
 through the shared `--site-*` design tokens (retuned to high-contrast monochrome
 in `app/globals.css`).
 
+## Current material contract
+
+The October 21 liquid-glass replacement is documented in
+[`docs/liquid-glass-system.md`](../../docs/liquid-glass-system.md). It supersedes
+historical lens/sheen and blanket cursor-retirement notes below. The scene
+backdrop stays still; bounded surface-local lighting and nearby tap waves use
+one document runtime. The navigator now has an independent dielectric coat and
+a shared local contact indentation for cage/pins, with CSS and preference
+fallbacks. Historical compositor measurements still explain the blur budgets;
+they do not validate the replacement on native hardware.
+
 ## Files
 
 | File                 | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -316,6 +327,37 @@ pull (volume-preserving), and letting go wobbles it back through rest.
   the stretch plus a ripple's swell.
 - The stage's box is read once per press, never in the frame loop; the finger's
   velocity is the drag's own (`VelocityTracker`), so nothing new listens.
+
+### The material (jelly glass)
+
+The ball reads as thick, gelatinous glass (2026-10-21: "more jelly refractive
+reflective like a gelatinous glass surface"). Two halves, split by what each is
+cheapest at:
+
+- **Refraction is geometry** (`lensScale` in `LiquidGlobe.tsx`). Everything
+  behind the front face — the far half of the cage, the far pins, a crest on the
+  back — goes through a ball-lens remap that magnifies the middle and crowds the
+  rim, growing with depth (identity at the limb, so the cage never tears). One
+  division per back-face sample; the lines stay vector-crisp. Display only.
+- **Light is a shader** (`jelly-glass.ts`, its own lazy chunk, ~3 KB gzip):
+  a softbox reflection and sky placed in reflection space, Fresnel, a hard
+  glint plus a kicker, a hairline at the limb with an absorption band inside it,
+  the room seen upside-down through the ball, a crescent caustic on the far inner
+  rim, and the theme accent as the jelly's subsurface tint. Ripples bend its
+  normals (the light runs over the wave) and the soft body's lobe and pinch drag
+  it, so a poke dimples the glint and a pull smears it.
+- **It costs nothing at rest or while spinning.** A uniform glass ball looks the
+  same at any rotation, so the shader is redrawn only while the surface moves (a
+  ripple, the soft body) plus the frame it settles on, and never during the
+  eversion. Measured: 0 GL draws idle, ~70 over a poke's whole life; the CSS
+  sheen's infinite animation is retired while the material is up.
+- **One GL context per page**, shared by every mount; the idle rehearsal builds
+  it, so the real open never compiles a shader. The stage only drops the CSS
+  glass (`data-jelly="on"`) after the first frame is drawn, and a lost context
+  hands back to it.
+- **Not everywhere.** High contrast, reduced transparency (setting or media
+  query), `prefers-contrast: more`, `perf-lite` and no-WebGL keep the CSS glass;
+  refraction applies in all of them. Reduced motion keeps the material, static.
 
 ## Globe Eversion (the hub's navigation transition)
 

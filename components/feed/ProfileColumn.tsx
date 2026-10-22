@@ -25,6 +25,8 @@ import { useProfileSong } from'@/hooks/useProfileSong';
 import type { ProfileData } from'@/components/profile/profile-types';
 import { useShelvesTab } from'@/components/reading/useShelvesTab';
 import { useKudosTabLabel } from'@/components/gifting/useKudosTabLabel';
+import { profilePostsFirstPageUrl } from '@/lib/feed/profile-prefetch';
+import { takeOrFetch } from '@/lib/route/intent-fetch';
 
 type ProfileTab ='rmharks'|'likes'|'achievements'|'guestbook'|'shelves'|'kudos';
 
@@ -182,11 +184,19 @@ export function ProfileColumn({
  if (loadingItems) return;
  setLoadingItems(true);
  try {
- const params = new URLSearchParams({ limit:'20'});
- if (cursor) params.set('cursor', cursor);
+ let data;
+ if (cursor) {
+ const params = new URLSearchParams({ limit:'20', cursor });
  const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/rmharks?${params}`);
  if (!res.ok) return;
- const data = await res.json();
+ data = await res.json();
+ } else {
+ // The first page may already be in flight from the route's beforeLoad
+ // (lib/feed/profile-prefetch); take it rather than asking twice.
+ const first = await takeOrFetch(profilePostsFirstPageUrl(userId));
+ if (first.status < 200 || first.status >= 300) return;
+ data = first.data as { items: FeedItem[]; nextCursor: string | null; hasMore: boolean };
+ }
  // Update user display cache
  const users: FeedItemUser[] = [];
  for (const item of data.items as FeedItem[]) {

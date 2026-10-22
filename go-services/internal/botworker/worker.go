@@ -503,7 +503,7 @@ func (w *Worker) recordRun(outcome string) {
 // recordJob records a JobRuns outcome for a specific tick/job.
 func (w *Worker) recordJob(job, outcome string) {
 	if w.metrics != nil {
-		w.metrics.JobRuns.WithLabelValues(job, outcome).Inc()
+		w.metrics.RecordJob(job, outcome)
 	}
 }
 

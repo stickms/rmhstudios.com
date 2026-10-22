@@ -170,7 +170,7 @@ export const WheelCard = memo(function WheelCard({ item }: { item: FeedItem }) {
   // the whole card meant the action buttons would have been nested inside an
   // anchor, which is invalid and is why they were text for so long.
   return (
-    <article className="rmhark">
+    <article className="rmhark glass-fill">
       {external ? (
         <a
           href={href}

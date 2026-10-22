@@ -17,7 +17,7 @@ import {
  Plus,
 } from'lucide-react';
 import { useReducedMotion } from'@/hooks/useReducedMotion';
-import { EASE_OUT_EXPO } from'@/components/motion';
+import { APPLE_SPRING } from '@/lib/motion';
 import { Button } from'@/components/ui/button';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
@@ -568,7 +568,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  key={m.id}
  initial={animateIn ? { opacity: 0, y: 8 } : false}
  animate={{ opacity: 1, y: 0 }}
- transition={{ duration: 0.26, ease: EASE_OUT_EXPO }}
+ transition={APPLE_SPRING.snappy}
  className={`group flex gap-2 ${mine ?'flex-row-reverse':''}`}
  >
  {/* Show the sender's avatar on every message — including your own

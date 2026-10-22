@@ -15,6 +15,7 @@ import { getRequestSession } from '@/lib/auth-session.server';
 import { getProfile } from '@/lib/profile.server';
 import { listAchievements } from '@/lib/achievements.server';
 import { pickAchievementStrip } from '@/lib/achievements/strip';
+import { prefetchProfilePosts } from '@/lib/feed/profile-prefetch';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
@@ -71,6 +72,12 @@ const fetchProfileData = createServerFn({ method: 'GET' })
   });
 
 export const Route = createFileRoute('/_site/u/$userid/')({
+  // The post list is requested by `ProfileColumn` after it mounts; start it at
+  // the navigation so it runs alongside this loader (lib/feed/profile-prefetch).
+  // Not on a preload — speculation stays code + loader only.
+  beforeLoad: ({ params, preload }) => {
+    if (!preload) prefetchProfilePosts(params.userid.replace(/^@/, ''));
+  },
   loader: ({ params }) => fetchProfileData({ data: params.userid }),
   head: ({ loaderData }) => ({
     meta: [

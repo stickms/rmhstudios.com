@@ -26,6 +26,8 @@ import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
 import { EversionRoot } from '@/components/radial/eversion/EversionRoot';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { markDocumentHydrated, trackHistoryActions } from '@/components/ui/defer-on-navigate';
+import { markPageEnterComplete } from '@/lib/motion';
+import { startViewportPrefetch } from '@/lib/viewport-prefetch';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { installGlobalErrorHandlers } from '@/lib/client-errors';
@@ -689,9 +691,7 @@ function RootDocument({ children }: { children: ReactNode }) {
             So it must stay a leaf: never render children into it. */}
         <div className="site-aurora" aria-hidden />
         {children}
-        {/* The Liquid Glass lens filters (#glass-lens / -press / -prism, plus the
-            #glass-goo metaball filter). One hidden SVG host for the whole
-            document — every `.glass-refract` surface samples it by url(). */}
+        {/* The tab capsule's #glass-goo host. Glass optics do not use SVG lenses. */}
         <GlassFilter />
         <Scripts />
       </body>
@@ -725,6 +725,27 @@ function RootComponent() {
   // the history itself, because `popstate` listeners registered after the
   // router run only once React has already rendered the restored page.
   useEffect(() => trackHistoryActions(router.history), [router]);
+
+  // The touch-device link prefetcher (lib/viewport-prefetch), started once the
+  // document has hydrated rather than from `getRouter()`: a preload issued while
+  // the router is still adopting the server's matches re-runs the root loader
+  // and holds hydration up behind it (app/router.tsx). It still waits for `load`.
+  useEffect(() => startViewportPrefetch(router), [router]);
+
+  // The `page-enter` fade is for arriving by a navigation, so globals.css holds
+  // it off until the first one: on a fresh load it hid the server-rendered page
+  // at first paint and kept the home feed out of LCP. History subscribers run
+  // before the router renders the next page, so the flag is in place for it;
+  // the page on screen now is marked complete first, so flipping the flag never
+  // replays the fade on it (a same-page REPLACE such as a tab change).
+  useEffect(() => {
+    const unsubscribe = router.history.subscribe(() => {
+      unsubscribe();
+      markPageEnterComplete();
+      document.documentElement.setAttribute('data-navigated', '');
+    });
+    return unsubscribe;
+  }, [router]);
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK

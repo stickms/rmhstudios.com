@@ -37,7 +37,9 @@ const NotificationsPanel = lazy(() =>
 const MessagesPanel = lazy(() =>
   import('./TopBarPanels').then((m) => ({ default: m.MessagesPanel })),
 );
-const ProfilePanel = lazy(() => import('./TopBarPanels').then((m) => ({ default: m.ProfilePanel })));
+const ProfilePanel = lazy(() =>
+  import('./TopBarPanels').then((m) => ({ default: m.ProfilePanel })),
+);
 
 let panelsPreloaded = false;
 /**
@@ -188,7 +190,7 @@ function RadialTopBar() {
   const close = () => setPanel(null);
 
   return (
-    <header className="radial-topbar">
+    <header className="radial-topbar glass-chrome rounded-none border-x-0 border-t-0">
       <TabBadge count={unread + notifications} />
       <Link
         to="/"

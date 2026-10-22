@@ -41,12 +41,12 @@ feature lives in that feature's directory; genuinely shared primitives live in
   *material* — no noise, no rim glint, and nothing for high-contrast / reduced
   transparency / `perf-lite` to switch off. Budget: ≤8 blurred surfaces per
   viewport, **zero** on repeated list items.
-- **Nothing reacts to pointer position.** No `pointermove` listeners, no
-  cursor-following gradients, no per-card sheen or tilt — the whole class was
-  retired on 2026-08-01 (`docs/design-language.md` §5.1.1) because moving a
-  gradient repaints the element at pointer rate. Hover is a state. Likewise,
-  never write an inherited custom property to `<html>` in a frame loop: it
-  restyles the entire document each time.
+- **Liquid material:** `app/liquid-glass.css` is the independent material implementation;
+  `lib/liquid/runtime.ts` owns bounded nearby impulses and the cursor light.
+  Never add per-card pointer listeners, animate gradient positions, or write
+  inherited root variables in frames. Use `data-liquid-motion="off"` on gesture
+  subtrees and `data-liquid-material="off"` to keep an intentional custom
+  material. See [`docs/liquid-glass-system.md`](../docs/liquid-glass-system.md).
 - **Variants:** use `class-variance-authority` for components with variant
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`
   attribute on new primitives — themes restyle components through

@@ -24,19 +24,26 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Each row: label, job name, step name. A step that never ran because its job
-# died earlier takes the job's conclusion, so a failed install cannot leave a
-# row spinning forever.
+# Each row: label, job name, step name, and which duration to show — "step"
+# (just that step) or "job" (the whole job: setup + build + the check, i.e. how
+# long the deploy actually waited on it). The two test rows use "job": their
+# step alone is seconds (the integration suite is ~4 s of HTTP against a local
+# server) while the job around it is minutes. Typecheck/Lint share `ci` with
+# the unit tests, whose row carries that job's total; Images keeps its step
+# time because the build job also waits for the other checks. A step that
+# never ran because its job died earlier takes the job's conclusion, so a
+# failed install cannot leave a row spinning forever.
 CHECKLIST_JQ='
-def row($label; $job; $step):
+def row($label; $job; $step; $timing):
   ((.jobs | map(select(.name == $job)) | first) // {status: "queued", steps: []}) as $j
   | (($j.steps // []) | map(select(.name == $step)) | first) as $s
   | (if $s and ($s.status == "completed" or $j.status != "completed") then $s
      elif $j.status == "completed" then {status: "completed", conclusion: $j.conclusion}
      else {status: "queued"} end) as $r
+  | (if $timing == "job" then $j else $r end) as $t
   | {label: $label, status: $r.status, conclusion: $r.conclusion,
-     secs: (if $r.started_at and $r.completed_at
-            then (($r.completed_at | fromdate) - ($r.started_at | fromdate)) else null end)};
+     secs: (if $r.status == "completed" and $t.started_at and $t.completed_at
+            then (($t.completed_at | fromdate) - ($t.started_at | fromdate)) else null end)};
 def icon:
   if .status != "completed" then (if .status == "in_progress" then "🔄" else "⬜" end)
   elif .conclusion == "success" then "✅"
@@ -47,11 +54,11 @@ def dur:
   if .secs == null then ""
   elif .secs >= 60 then " · \(.secs / 60 | floor)m \(.secs % 60 | tostring | if length == 1 then "0" + . else . end)s"
   else " · \(.secs)s" end;
-[ row("Typecheck"; "ci"; "Typecheck"),
-  row("Lint"; "ci"; "Lint"),
-  row("Unit tests"; "ci"; "Test"),
-  row("Integration tests"; "integration"; "Integration tests"),
-  row("Images built + pushed"; "build"; "Build + push both images (bake, single graph)") ]
+[ row("Typecheck"; "ci"; "Typecheck"; "step"),
+  row("Lint"; "ci"; "Lint"; "step"),
+  row("Unit tests"; "ci"; "Test"; "job"),
+  row("Integration tests"; "integration"; "Integration tests"; "job"),
+  row("Images built + pushed"; "build"; "Build + push both images (bake, single graph)"; "step") ]
 | { fields: [{name: "CI", value: (map("\(icon) \(.label)\(dur)") | join("\n"))}],
     state: (if any(.[]; .status == "completed" and .conclusion != "success" and .conclusion != "skipped") then "failure"
             elif all(.[]; .status == "completed") then "success"

@@ -38,6 +38,7 @@ import { FlairChip } from'@/components/communities/FlairChip';
 import { useTranslation } from'react-i18next';
 import { useLocaleStore } from'@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
+import { prefetchPostDetail } from '@/lib/feed/post-detail-prefetch';
 
 interface RMHarkCardProps {
  item: FeedItem;
@@ -199,6 +200,21 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  if (item.pending || item.deletedAt) return;
  void router.preloadRoute({ to: postHref(item.user, actualId) }).catch(() => {});
  };
+ // A press on the card's body is the open itself starting (~100ms before the
+ // click, and a finger's only intent signal — it has no hover). It warms the
+ // route like a hover does AND starts the post's own body and comments fetches,
+ // which the detail page otherwise only began after mounting
+ // (lib/feed/post-detail-prefetch). Hover and focus don't start those: a like
+ // can come between a hover and the open, never between a press and its click.
+ // A press on a link or button inside the card is that control's, exactly as
+ // in `handleCardClick`.
+ const warmDetailOnPress = (e: React.PointerEvent) => {
+ if (item.pending || item.deletedAt) return;
+ const target = e.target as HTMLElement;
+ if (target.closest('a, button, [role="button"]')) return;
+ warmDetail();
+ prefetchPostDetail(actualId);
+ };
 
  const handleCardClick = (e: React.MouseEvent) => {
  const target = e.target as HTMLElement;
@@ -258,6 +274,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  onKeyDown={openable ? handleCardKeyDown : undefined}
  onMouseEnter={item.pending ? undefined : warmDetail}
  onFocusCapture={item.pending ? undefined : warmDetail}
+ onPointerDown={item.pending ? undefined : warmDetailOnPress}
  aria-busy={item.pending || undefined}
  >
  {/* Optimistic post — awaiting the server round-trip. */}

@@ -1,15 +1,14 @@
 import { createRouter as createTanStackRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen';
 import { RoutePending } from '@/components/ui/RoutePending';
-import { startViewportPrefetch } from '@/lib/viewport-prefetch';
 import { installNotFoundHeadGuard } from '@/lib/router/not-found-head';
 import { installStyleTierPreload } from '@/lib/style-tier';
 import appTierCss from '@/app/app-tier.css?url';
 
 // `getRouter()` runs once per client page load and once per SSR request. The
-// viewport prefetcher is a browser-only, page-lifetime singleton, so it is
-// started here behind a latch rather than from a component effect.
-let viewportPrefetchStarted = false;
+// style-tier preload is a browser-only, page-lifetime singleton, so it is
+// installed here behind a latch rather than from a component effect.
+let styleTierPreloadInstalled = false;
 
 export function getRouter() {
   const router = createTanStackRouter({
@@ -46,9 +45,19 @@ export function getRouter() {
     // long enough that fast navigations never flash the skeleton, and
     // `defaultPendingMinMs` keeps it up long enough to avoid a jarring blink
     // once it does show.
+    //
+    // The hold-back was 180ms, which is ONE round trip on a phone: a loader that
+    // took 200ms put the skeleton up at 180 and then held it to 400 (the 220ms
+    // minimum), so a page that was ready at 200ms appeared at 400. Measured on
+    // `/explore` → a post (4× CPU, 100ms RTT) it fired on every open. Until
+    // 400ms the click is already acknowledged — the press state, and
+    // `NavigationProgress`'s bar from 90ms — so the old page stays put and the
+    // new one replaces it directly, which is how a native app navigates; only a
+    // genuinely slow load shows the skeleton (docs/performance-audit-2026-10-21.md
+    // §Instant navigation).
     defaultPendingComponent: RoutePending,
-    defaultPendingMs: 180,
-    defaultPendingMinMs: 220,
+    defaultPendingMs: 400,
+    defaultPendingMinMs: 200,
   });
 
   // A 404 thrown by a nested loader: the server builds <head> only up to the
@@ -58,14 +67,18 @@ export function getRouter() {
   // client too. See lib/router/not-found-head.ts.
   installNotFoundHeadGuard(router.routesById);
 
-  // The intent preload above is hover-driven, so it never fires on a touch
-  // device. This warms the first few links that are actually on screen instead
-  // — capped, connection-aware, and only after `load`. See lib/viewport-prefetch.
-  if (typeof document !== 'undefined' && !viewportPrefetchStarted) {
-    viewportPrefetchStarted = true;
-    startViewportPrefetch(router);
-    // A switch from a site page into a game or app needs the app-tier sheet;
-    // start it alongside the route's chunk rather than after (lib/style-tier.ts).
+  // A switch from a site page into a game or app needs the app-tier sheet;
+  // start it alongside the route's chunk rather than after (lib/style-tier.ts).
+  //
+  // The viewport prefetcher (lib/viewport-prefetch) used to start here too. It
+  // is started by the root route once the document has hydrated instead: armed
+  // on `load` from here, it fired while the router was still in `hydrate()` on
+  // a slow phone, and a preload issued before the server's matches are adopted
+  // has nothing to reuse — it re-ran the root loader over the network, and
+  // hydrate waited on those shared matches (+2.2s to interactive on slow 4G;
+  // docs/performance-audit-2026-10-21.md §Home LCP).
+  if (typeof document !== 'undefined' && !styleTierPreloadInstalled) {
+    styleTierPreloadInstalled = true;
     installStyleTierPreload(router, appTierCss);
   }
 

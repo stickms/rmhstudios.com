@@ -144,7 +144,13 @@ func superviseWorker(ctx context.Context, run worker.RunFunc, d worker.Deps) err
 	backoff := panicBackoffMin
 	for {
 		started := time.Now()
+		if d.Metrics != nil {
+			d.Metrics.WorkerUp.Set(1)
+		}
 		panicked, err := runRecovered(ctx, run, d)
+		if d.Metrics != nil {
+			d.Metrics.WorkerUp.Set(0)
+		}
 		if !panicked {
 			return err
 		}

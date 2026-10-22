@@ -226,6 +226,7 @@ import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as VNewRouteImport } from './routes/v.new'
 import { Route as VersecraftIndexRouteImport } from './routes/versecraft/index'
 import { Route as SiteAdminIndexRouteImport } from './routes/_site/admin/index'
+import { Route as SiteAdminAlarmsRouteImport } from './routes/_site/admin/alarms'
 import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/analytics'
 import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin/announcements'
 import { Route as SiteAdminAppealsRouteImport } from './routes/_site/admin/appeals'
@@ -376,6 +377,7 @@ import { Route as ApiAdminBlogRouteImport } from './routes/api/admin/blog'
 import { Route as ApiAdminEconomyRouteImport } from './routes/api/admin/economy'
 import { Route as ApiAdminLinkRulesRouteImport } from './routes/api/admin/link-rules'
 import { Route as ApiAdminModMacrosRouteImport } from './routes/api/admin/mod-macros'
+import { Route as ApiAdminOncallRouteImport } from './routes/api/admin/oncall'
 import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
 import { Route as ApiAdminReviewCountsRouteImport } from './routes/api/admin/review-counts'
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
@@ -2356,6 +2358,11 @@ const SiteAdminIndexRoute = SiteAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminAlarmsRoute = SiteAdminAlarmsRouteImport.update({
+  id: '/alarms',
+  path: '/alarms',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminAnalyticsRoute = SiteAdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -3114,6 +3121,11 @@ const ApiAdminLinkRulesRoute = ApiAdminLinkRulesRouteImport.update({
 const ApiAdminModMacrosRoute = ApiAdminModMacrosRouteImport.update({
   id: '/api/admin/mod-macros',
   path: '/api/admin/mod-macros',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminOncallRoute = ApiAdminOncallRouteImport.update({
+  id: '/api/admin/oncall',
+  path: '/api/admin/oncall',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminReportsRoute = ApiAdminReportsRouteImport.update({
@@ -8016,6 +8028,7 @@ export interface FileRoutesByFullPath {
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
+  '/admin/alarms': typeof SiteAdminAlarmsRoute
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/appeals': typeof SiteAdminAppealsRoute
@@ -8128,6 +8141,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/economy': typeof ApiAdminEconomyRoute
   '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
   '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
+  '/api/admin/oncall': typeof ApiAdminOncallRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
@@ -9251,6 +9265,7 @@ export interface FileRoutesByTo {
   '/studio': typeof StudioIndexRoute
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
   '/versecraft': typeof VersecraftIndexRoute
+  '/admin/alarms': typeof SiteAdminAlarmsRoute
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/appeals': typeof SiteAdminAppealsRoute
@@ -9363,6 +9378,7 @@ export interface FileRoutesByTo {
   '/api/admin/economy': typeof ApiAdminEconomyRoute
   '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
   '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
+  '/api/admin/oncall': typeof ApiAdminOncallRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
@@ -10514,6 +10530,7 @@ export interface FileRoutesById {
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
+  '/_site/admin/alarms': typeof SiteAdminAlarmsRoute
   '/_site/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/_site/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/_site/admin/appeals': typeof SiteAdminAppealsRoute
@@ -10626,6 +10643,7 @@ export interface FileRoutesById {
   '/api/admin/economy': typeof ApiAdminEconomyRoute
   '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
   '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
+  '/api/admin/oncall': typeof ApiAdminOncallRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
@@ -11777,6 +11795,7 @@ export interface FileRouteTypes {
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
+    | '/admin/alarms'
     | '/admin/analytics'
     | '/admin/announcements'
     | '/admin/appeals'
@@ -11889,6 +11908,7 @@ export interface FileRouteTypes {
     | '/api/admin/economy'
     | '/api/admin/link-rules'
     | '/api/admin/mod-macros'
+    | '/api/admin/oncall'
     | '/api/admin/reports'
     | '/api/admin/review-counts'
     | '/api/admin/users'
@@ -13012,6 +13032,7 @@ export interface FileRouteTypes {
     | '/studio'
     | '/temple-of-joy'
     | '/versecraft'
+    | '/admin/alarms'
     | '/admin/analytics'
     | '/admin/announcements'
     | '/admin/appeals'
@@ -13124,6 +13145,7 @@ export interface FileRouteTypes {
     | '/api/admin/economy'
     | '/api/admin/link-rules'
     | '/api/admin/mod-macros'
+    | '/api/admin/oncall'
     | '/api/admin/reports'
     | '/api/admin/review-counts'
     | '/api/admin/users'
@@ -14274,6 +14296,7 @@ export interface FileRouteTypes {
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
+    | '/_site/admin/alarms'
     | '/_site/admin/analytics'
     | '/_site/admin/announcements'
     | '/_site/admin/appeals'
@@ -14386,6 +14409,7 @@ export interface FileRouteTypes {
     | '/api/admin/economy'
     | '/api/admin/link-rules'
     | '/api/admin/mod-macros'
+    | '/api/admin/oncall'
     | '/api/admin/reports'
     | '/api/admin/review-counts'
     | '/api/admin/users'
@@ -15439,6 +15463,7 @@ export interface RootRouteChildren {
   ApiAdminEconomyRoute: typeof ApiAdminEconomyRoute
   ApiAdminLinkRulesRoute: typeof ApiAdminLinkRulesRoute
   ApiAdminModMacrosRoute: typeof ApiAdminModMacrosRoute
+  ApiAdminOncallRoute: typeof ApiAdminOncallRoute
   ApiAdminReportsRoute: typeof ApiAdminReportsRouteWithChildren
   ApiAdminReviewCountsRoute: typeof ApiAdminReviewCountsRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRouteWithChildren
@@ -17620,6 +17645,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminIndexRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/alarms': {
+      id: '/_site/admin/alarms'
+      path: '/alarms'
+      fullPath: '/admin/alarms'
+      preLoaderRoute: typeof SiteAdminAlarmsRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/analytics': {
       id: '/_site/admin/analytics'
       path: '/analytics'
@@ -18668,6 +18700,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/mod-macros'
       fullPath: '/api/admin/mod-macros'
       preLoaderRoute: typeof ApiAdminModMacrosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/oncall': {
+      id: '/api/admin/oncall'
+      path: '/api/admin/oncall'
+      fullPath: '/api/admin/oncall'
+      preLoaderRoute: typeof ApiAdminOncallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/reports': {
@@ -24925,6 +24964,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface SiteAdminRouteRouteChildren {
+  SiteAdminAlarmsRoute: typeof SiteAdminAlarmsRoute
   SiteAdminAnalyticsRoute: typeof SiteAdminAnalyticsRoute
   SiteAdminAnnouncementsRoute: typeof SiteAdminAnnouncementsRoute
   SiteAdminAppealsRoute: typeof SiteAdminAppealsRoute
@@ -24963,6 +25003,7 @@ interface SiteAdminRouteRouteChildren {
 }
 
 const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
+  SiteAdminAlarmsRoute: SiteAdminAlarmsRoute,
   SiteAdminAnalyticsRoute: SiteAdminAnalyticsRoute,
   SiteAdminAnnouncementsRoute: SiteAdminAnnouncementsRoute,
   SiteAdminAppealsRoute: SiteAdminAppealsRoute,
@@ -27191,6 +27232,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminEconomyRoute: ApiAdminEconomyRoute,
   ApiAdminLinkRulesRoute: ApiAdminLinkRulesRoute,
   ApiAdminModMacrosRoute: ApiAdminModMacrosRoute,
+  ApiAdminOncallRoute: ApiAdminOncallRoute,
   ApiAdminReportsRoute: ApiAdminReportsRouteWithChildren,
   ApiAdminReviewCountsRoute: ApiAdminReviewCountsRoute,
   ApiAdminUsersRoute: ApiAdminUsersRouteWithChildren,

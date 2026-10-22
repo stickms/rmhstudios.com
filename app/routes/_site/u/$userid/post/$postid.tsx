@@ -12,6 +12,7 @@ import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 import { postCardShowsContent } from '@/lib/og/post-visibility';
+import { prefetchPostDetail } from '@/lib/feed/post-detail-prefetch';
 
 const fetchPostMeta = createServerFn({ method: 'GET' })
   .validator((postid: string) => postid)
@@ -101,6 +102,14 @@ const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
+  // `PostDetail` reads the post body and comments itself; start them here, at
+  // the navigation, so they run alongside the loader and the chunk instead of
+  // after the page mounts. `beforeLoad` runs on every navigation, including one
+  // whose loader data is still fresh from a hover preload. Not on a preload: a
+  // speculative warm-up stays code + loader only (lib/feed/post-detail-prefetch).
+  beforeLoad: ({ params, preload }) => {
+    if (!preload) prefetchPostDetail(params.postid);
+  },
   loader: async ({ params }) => {
     const [meta, sidebar] = await Promise.all([
       fetchPostMeta({ data: params.postid }),

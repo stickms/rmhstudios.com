@@ -89,6 +89,12 @@ export const SPRING = {
  * Tweens (DURATION/EASE above) remain correct for non-interactive state changes
  * — cross-fades, colour shifts, reveals — where there is no gesture to inherit
  * velocity from.
+ *
+ * `smooth`, `snappy` and `sheet` have CSS twins: `--spring-smooth` /
+ * `--spring-snappy` / `--spring-sheet` (+ `--spring-*-duration`) in
+ * `globals.css` §7.1, the same springs sampled into `linear()`. Change a preset
+ * here and `lib/__tests__/motion-spring-easings.test.ts` tells you which CSS
+ * stops to regenerate.
  */
 export const APPLE_SPRING = {
   /** SwiftUI `.smooth` — no bounce. Default for most UI state changes. */

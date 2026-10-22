@@ -251,15 +251,28 @@ half of "does it feel fast": a click in the shell's nav rail, from a settled
 page, to the destination painted — plus the longest frame, summed blocking
 time, style+layout and layout shift over the switch (Long Animation Frames
 API), under CPU throttling and added latency. `--mode hover` lets the router's
-intent preload run first; `a>b:c` starts from a page reached within the visit.
+intent preload run first; `--mode press` is a touch tap (`pointerdown`, 90ms,
+click — timed from the finger going down); `a>b:c` starts from a page reached
+within the visit; `~card` as the destination taps the first post card (a `div`,
+not a link) and waits for the post page. Each row also says how often the
+router's pending skeleton or an in-page spinner showed, and what the click and
+the settled page view fetched. `--cold` uses a fresh browser context per sample
+(`Network.clearBrowserCache` leaves the memory cache warm), `--kbps` throttles
+bandwidth, `--settle` sets the dwell before the click.
 
 ```bash
 BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs                # default switches, 4× CPU, tap
 BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs --mode hover --cpu 1 --rtt 0
+BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs --pair /explore:~card --mode press --cold --rtt 150 --kbps 1600
 ```
 
+The paint marker is a destination element that did not exist before the click:
+the outgoing page's own `main h1` is still mounted when the URL flips, and
+counting it made every h1 destination look ready a frame after the click.
+
 Findings and the measured before/after:
-[`performance-audit-2026-10-21.md`](./performance-audit-2026-10-21.md) §Navigation commit.
+[`performance-audit-2026-10-21.md`](./performance-audit-2026-10-21.md) §Navigation commit and
+§Instant navigation.
 
 ### 7. Globe eversion suites (`lib/eversion/`, `testing/e2e/eversion-*.mjs`)
 

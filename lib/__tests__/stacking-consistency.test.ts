@@ -86,18 +86,58 @@ function listSourceFiles(dirs: readonly string[], exts: readonly string[]): stri
  */
 const NON_SITE_DIRS = new Set([
   // games
-  'altair', 'void-breaker', 'slice-it', 'velum2099', 'synapse-storm', 'kowloon-knockout',
-  'temple-of-joy', 'neon-driftway', 'lights-out', 'cursed-logic', 'house-always-wins',
-  'laundry-sort', 'cookgame', 'dream-rift', 'forest-explorer', 'signal-forge', 'vega',
-  'versecraft', 'daily-puzzles', 'rmh-farming-sim', 'rmhbox', 'bums-rush', 'blm', 'covid',
-  'isleworks', 'kaikai-debt', 'lockdown', 'massive-march', 'nightrail', 'rmh-capital',
-  'rmh-pmc', 'sohumbum', 'sohumtracker', 'gabriels-horn', 'arcade', 'games',
+  'altair',
+  'void-breaker',
+  'slice-it',
+  'velum2099',
+  'synapse-storm',
+  'kowloon-knockout',
+  'temple-of-joy',
+  'neon-driftway',
+  'lights-out',
+  'cursed-logic',
+  'house-always-wins',
+  'laundry-sort',
+  'cookgame',
+  'dream-rift',
+  'forest-explorer',
+  'signal-forge',
+  'vega',
+  'versecraft',
+  'daily-puzzles',
+  'rmh-farming-sim',
+  'rmhbox',
+  'bums-rush',
+  'blm',
+  'covid',
+  'isleworks',
+  'kaikai-debt',
+  'lockdown',
+  'massive-march',
+  'nightrail',
+  'rmh-capital',
+  'rmh-pmc',
+  'sohumbum',
+  'sohumtracker',
+  'gabriels-horn',
+  'arcade',
+  'games',
   // --app-* tier and full-screen apps
-  'shared', 'rmhtube', 'rmhmusic', 'rmhtype', 'rmhstudy', 'rmhcode', 'rmhvibe', 'doctrine',
-  'render', 'replays', 'call',
+  'shared',
+  'rmhtube',
+  'rmhmusic',
+  'rmhtype',
+  'rmhstudy',
+  'rmhcode',
+  'rmhvibe',
+  'doctrine',
+  'render',
+  'replays',
+  'call',
   // Top-level routes (app/routes/<name>.tsx), so no shell and no frame: their
   // numbers are already body-level.
-  'pf2ecal', 'dunesday',
+  'pf2ecal',
+  'dunesday',
 ]);
 
 function isSiteTier(file: string): boolean {
@@ -215,7 +255,8 @@ describe('§5.6 — a big z-index inside the frame is a claim nobody can hear (R
       const values = [...src.matchAll(/\bz-\[?(\d+)\]?\b/g)]
         .map((m) => Number(m[1]))
         .filter((n) => n >= 50);
-      if (values.length) offenders.push(`${file} (z-${[...new Set(values)].sort((a, b) => a - b).join(', z-')})`);
+      if (values.length)
+        offenders.push(`${file} (z-${[...new Set(values)].sort((a, b) => a - b).join(', z-')})`);
     }
     expect(
       offenders,
@@ -249,16 +290,18 @@ describe('§4 — nothing `fixed` inside a blurred glass root (R3)', () => {
     }
     expect(
       offenders,
-      "A `position: fixed` element inside an ancestor carrying `backdrop-filter` is fixed to THAT ANCESTOR. Portal it. Note this renders correctly under reduce-transparency / high-contrast / perf-lite, which force `backdrop-filter: none` — so check the DEFAULT theme.",
+      'A `position: fixed` element inside an ancestor carrying `backdrop-filter` is fixed to THAT ANCESTOR. Portal it. Note this renders correctly under reduce-transparency / high-contrast / perf-lite, which force `backdrop-filter: none` — so check the DEFAULT theme.',
     ).toEqual([]);
   });
 
   it('L1 still has no blur, which is what R3 above depends on', () => {
-    const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
-    const block = /\.glass-fill\s*\{([^}]*)\}/.exec(css);
-    expect(block, '.glass-fill is missing from globals.css').not.toBeNull();
+    const css = readFileSync(join(ROOT, 'app', 'liquid-glass.css'), 'utf8');
+    const blocks = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((match) =>
+      match[1].includes('.glass-fill'),
+    );
+    expect(blocks.length, 'L1 material rules must exist').toBeGreaterThan(0);
     expect(
-      /backdrop-filter/.test(block![1]),
+      blocks.some((block) => /backdrop-filter\s*:\s*(?!none)[^;]+;/.test(block[2])),
       '.glass-fill gained a backdrop-filter. That breaks the blur budget (zero blurred surfaces on repeated list items) AND makes every feed card a containing block for fixed descendants.',
     ).toBe(false);
   });
@@ -306,9 +349,10 @@ describe('§5.6 — the shell stacking scale stays one scale (R4)', () => {
     const elsewhere = listSourceFiles(['components', 'app'], ['.css'])
       .filter((f) => f !== 'app/globals.css')
       .filter((f) => /^\s*--z-[a-z-]+:\s*\d+;/m.test(readFileSync(join(ROOT, f), 'utf8')));
-    expect(elsewhere, 'The stacking scale lives in one file so it can be read in one place.').toEqual(
-      [],
-    );
+    expect(
+      elsewhere,
+      'The stacking scale lives in one file so it can be read in one place.',
+    ).toEqual([]);
   });
 });
 

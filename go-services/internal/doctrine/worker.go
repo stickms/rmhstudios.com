@@ -177,16 +177,16 @@ func (w *Worker) runDecayLoop(ctx context.Context) {
 func (w *Worker) runJob(ctx context.Context, name string, fn func(context.Context) error) {
 	defer func() {
 		if r := recover(); r != nil {
-			w.metrics.JobRuns.WithLabelValues(name, "panic").Inc()
+			w.metrics.RecordJob(name, "panic")
 			w.log.Error("job panicked", "job", name, "panic", r)
 		}
 	}()
 	if err := fn(ctx); err != nil {
-		w.metrics.JobRuns.WithLabelValues(name, "error").Inc()
+		w.metrics.RecordJob(name, "error")
 		w.log.Error("job failed", "job", name, "error", err)
 		return
 	}
-	w.metrics.JobRuns.WithLabelValues(name, "ok").Inc()
+	w.metrics.RecordJob(name, "ok")
 }
 
 // ─── Job 1: generateDailyPuzzles ────────────────────────────────────────────
@@ -234,6 +234,11 @@ func (w *Worker) generateDailyPuzzles(ctx context.Context) error {
 			return err
 		}
 		w.log.Info("created puzzle", "mode", SahurSpecialMode, "date", dateStr)
+	}
+	// Every mode for tomorrow now exists: the on-call alarm (A19) pages when
+	// this lags behind tomorrow after the midnight run should have advanced it.
+	if w.metrics != nil {
+		w.metrics.PuzzlesReadyFor.Set(float64(date.Unix()))
 	}
 	return nil
 }

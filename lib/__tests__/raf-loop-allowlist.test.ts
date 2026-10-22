@@ -157,6 +157,10 @@ const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores'];
 
 /** Files permitted to call requestAnimationFrame (see the doc block above). */
 const ALLOW = new Set<string>([
+  // Cursor light is an input-throttled one-shot. Neighbouring waves use finite
+  // native animations, without a JS loop. Preferences, visibility and unmount
+  // cancel effects and restore the affected inline properties.
+  'lib/liquid/runtime.ts',
   'app/routes/_site/library/index.tsx',
   'app/routes/_site/rmhladder/pipeline.tsx',
   'components/assistant/ConciergePanel.tsx',

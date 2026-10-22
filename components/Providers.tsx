@@ -52,6 +52,7 @@ import {
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
 import { useFluidPressLayer } from '@/hooks/useFluidPress';
+import { useLiquidInteractions } from '@/hooks/useLiquidInteractions';
 import { useEvertPointLayer } from '@/hooks/useEvertPoint';
 import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
@@ -347,13 +348,9 @@ export function Providers({
   // at all on a page with no consumer for it. `pathname` re-runs that check.
   useSpatialParallax(pathname);
 
-  // The Liquid Glass optics runtime. Cursor reactivity is retired (the glass
-  // answers a static sun, not the pointer — see the §5.1 note in globals.css), so
-  // what is left is one listener that only attaches when the visitor has opted
-  // into device tilt: the aurora canvas' parallax follow on touch hardware.
-  // `useGlassLight` used to sit here and is gone — its whole job was the pointer
-  // hotspot and a scene light nothing consumed.
+  // The backdrop stays still; bounded material responses live on surfaces.
   useLiquidBackground();
+  useLiquidInteractions();
 
   // The fluid-interfaces press layer (WWDC 2018 §803 principle 1: instantaneous,
   // interruptible response to touch). One delegated pointerdown listener springs

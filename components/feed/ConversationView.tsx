@@ -5,7 +5,7 @@ import { m as motion } from 'framer-motion';
 import { Loader2, ArrowLeft, Send, ImagePlus, ImagePlay, X, Plus, Reply } from 'lucide-react';
 import { SwipeRow } from '@/components/ui/swipe-row';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { EASE_OUT_EXPO } from '@/components/motion';
+import { APPLE_SPRING } from '@/lib/motion';
 import { Spinner } from '@/components/ui/spinner';
 import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -1204,7 +1204,7 @@ export function ConversationView({
                   key={msg.id}
                   initial={animateIn ? { opacity: 0, y: 8 } : false}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.26, ease: EASE_OUT_EXPO }}
+                  transition={APPLE_SPRING.snappy}
                 >
                   {showDate && (
                     <div className="flex items-center justify-center my-4">

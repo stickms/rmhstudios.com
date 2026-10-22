@@ -15,8 +15,7 @@ import {
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useThemeStore } from '@/stores/themeStore';
-import { vibrate } from '@/lib/shared/platform';
+import { supportsWebGL, vibrate } from '@/lib/shared/platform';
 import { prefersLessData } from '@/lib/viewport-prefetch';
 import {
   DECELERATION,
@@ -36,8 +35,10 @@ import {
 } from '@/lib/fluid';
 import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
 import { SoftBody } from '@/lib/soft-body';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
+import type { JellyFrame, JellyGlass } from './jelly-glass';
 
 /**
  * The **liquid globe** navigator — the site's navigation as a glass sphere you
@@ -137,6 +138,54 @@ const MAX_SPIN = 900;
 const PERSP = 3.1;
 /** Foreshortening at depth `z` on the unit sphere (z = 1 front, −1 back). */
 const kAt = (z: number) => PERSP / (PERSP - z * 0.5);
+
+/* ── Refraction ──────────────────────────────────────────────────────────────
+   The globe is a thick ball of glass, so what is BEHIND its front face — the far
+   half of the cage, the far pins, a ripple's crest on the back — is seen through
+   it, and a ball lens magnifies the middle of what it looks through and crowds
+   the edge of it toward the rim.
+
+   That is geometry, so it is done here, on the projected point, rather than by
+   sampling the cage as a texture in the material's shader: the lines stay vector
+   and the cost is one division per back-face sample. `a` grows with depth behind
+   the limb (0 at the limb, `LENS` at the back pole), so the mapping is the
+   identity where the two faces meet and the cage never tears at the edge. It is
+   monotonic in r for any `a < 1`, and pins the limb itself (r = 1) in place.
+
+   Display only, like the ripple and the soft body: the lock reads the true
+   projection, and nothing behind the limb can be locked anyway. */
+const LENS = 0.42;
+/** Scale for a projected back-face point at radius² `x² + y²` and depth `z` (< 0). */
+const lensScale = (x: number, y: number, z: number) => {
+  if (z >= 0) return 1;
+  const a = LENS * -z;
+  return (1 + a) / (1 + a * (x * x + y * y));
+};
+
+/**
+ * Whether this visit gets the shader material (`./jelly-glass`). The CSS glass
+ * stays for high contrast (legibility over sheen), the reduced-transparency
+ * settings and `perf-lite` (a weak device should not pay for a second GL
+ * context), and anywhere WebGL will not start.
+ */
+function jellyEligible(): boolean {
+  if (typeof window === 'undefined') return false;
+  const html = document.documentElement.classList;
+  if (
+    html.contains('style-high-contrast') ||
+    html.contains('perf-lite') ||
+    html.contains('reduce-transparency')
+  ) {
+    return false;
+  }
+  if (
+    window.matchMedia?.('(prefers-reduced-transparency: reduce)').matches ||
+    window.matchMedia?.('(prefers-contrast: more)').matches
+  ) {
+    return false;
+  }
+  return supportsWebGL();
+}
 
 /**
  * Reticle radius, as a planar distance on the unit sphere. Every pin sits ON the
@@ -468,8 +517,8 @@ export function LiquidGlobe({
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const router = useRouter();
-  // The site's own Reduce motion switch, never the OS query (2026-10-21: the hub's motion plays by default).
-  const reduced = useThemeStore((s) => s.reduceMotion);
+  // Honour both the account preference and the OS motion setting.
+  const reduced = useReducedMotion();
 
   const nodes = useMemo(() => place(items), [items]);
 
@@ -635,7 +684,27 @@ export function LiquidGlobe({
   const everting = useRef(false);
   const nextEvertPulse = useRef(0);
   const glassRef = useRef<HTMLSpanElement | null>(null);
+  const contactRef = useRef<HTMLSpanElement | null>(null);
   const paintedGlass = useRef('');
+  /**
+   * The shader material (`./jelly-glass`), once its chunk has loaded — null for
+   * the CSS glass. It redraws only when the SURFACE changes (a ripple, the soft
+   * body), never for a turn: a uniform glass ball looks the same at any rotation.
+   */
+  const jellyGlass = useRef<JellyGlass | null>(null);
+  /** Force one material frame (attach, resize). */
+  const jellyDirty = useRef(false);
+  /** Whether the last paint drew a moving surface, so the frame it comes to rest is drawn too. */
+  const jellyLive = useRef(false);
+  /** The material's per-frame inputs, preallocated — the loop must not allocate. Ripples are (x, y, z, age) × 3. */
+  const [jellyFrame] = useState<JellyFrame>(() => ({
+    ripples: new Float32Array(12),
+    gx: 0,
+    gy: 0,
+    dx: 0,
+    dy: 0,
+    pinch: 0,
+  }));
 
   // Only these three reach the render: the caption, the ring's state classes.
   const [lock, setLock] = useState(-1);
@@ -738,6 +807,12 @@ export function LiquidGlobe({
           width: parseFloat(cs.getPropertyValue('--cage-width')) || 1,
         };
       }
+      // The material's backing store tracks the stage the same way (its own,
+      // lower DPR ceiling — see JELLY_MAX_DPR).
+      if (jellyGlass.current) {
+        jellyGlass.current.resize(size, window.devicePixelRatio || 1);
+        jellyDirty.current = true;
+      }
       dirty.current = true;
     };
     read();
@@ -746,6 +821,103 @@ export function LiquidGlobe({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  /* ── The material ────────────────────────────────────────────────────────
+     A gelatinous glass ball — reflection, Fresnel rim, specular, the room seen
+     upside-down through it, a caustic, the accent as its subsurface tint — is a
+     fragment shader (`./jelly-glass`), loaded as its own chunk so none of it is
+     on the entry or the hub's first paint. The idle rehearsal mounts this
+     component once before the first real open, so the chunk is fetched and the
+     page's one GL context and program are built there, off the open.
+
+     The CSS glass stays underneath as the fallback, and the stage only drops it
+     (`data-jelly="on"`) once the material has drawn its first frame, so the swap
+     happens inside one frame and there is never a frame with neither. */
+  useEffect(() => {
+    let cancelled = false;
+    let loading = false;
+    let glass: JellyGlass | null = null;
+    let factory: typeof import('./jelly-glass') | null = null;
+    const stage = stageRef.current;
+    const host = glassRef.current;
+    const root = document.documentElement;
+    const preferences = [
+      matchMedia('(prefers-reduced-transparency: reduce)'),
+      matchMedia('(prefers-contrast: more)'),
+      matchMedia('(forced-colors: active)'),
+    ];
+    const sync = () => {
+      if (cancelled || !host || !stage) return;
+      if (reduced || !jellyEligible() || preferences.some((q) => q.matches)) {
+        if (glass?.canvas.parentElement === host) glass.canvas.remove();
+        jellyGlass.current = null;
+        delete stage.dataset.jelly;
+        return;
+      }
+      if (!factory) {
+        if (!loading) {
+          loading = true;
+          void import('./jelly-glass')
+            .then((m) => {
+              if (cancelled) return;
+              factory = m;
+              sync();
+            })
+            .catch(() => {
+              /* Keep the CSS fallback if the optional chunk fails. */
+            });
+        }
+        return;
+      }
+      glass = factory.acquireJellyGlass();
+      if (!glass) return;
+      const g = glass;
+      g.onChange = sync;
+      if (!g.ready) {
+        jellyGlass.current = null;
+        delete stage.dataset.jelly;
+        return;
+      }
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--site-accent)';
+      probe.style.backgroundColor = 'var(--site-bg)';
+      host.appendChild(probe);
+      const ps = getComputedStyle(probe);
+      const accentCss = ps.color;
+      const bgCss = ps.backgroundColor;
+      probe.remove();
+      const ink = factory.resolveColor(getComputedStyle(host).color || 'rgb(0 0 0)', [0, 0, 0]);
+      const accent = factory.resolveColor(accentCss, [0.4, 0.5, 1]);
+      const bg = factory.resolveColor(bgCss, [1, 1, 1]);
+      const lum = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2];
+      g.resize(sizeRef.current, window.devicePixelRatio || 1);
+      g.palette({ ink, accent, light: lum > 0.5 ? 1 : 0 }, RIPPLE);
+      const f = jellyFrame;
+      f.ripples.fill(0);
+      for (let i = 3; i < 12; i += 4) f.ripples[i] = -1;
+      f.gx = f.gy = f.dx = f.dy = f.pinch = 0;
+      host.appendChild(g.canvas);
+      g.render(f);
+      jellyGlass.current = g;
+      jellyDirty.current = true;
+      dirty.current = true;
+      stage.dataset.jelly = 'on';
+    };
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { attributes: true, attributeFilter: ['class', 'style'] });
+    preferences.forEach((q) => q.addEventListener('change', sync));
+    sync();
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+      preferences.forEach((q) => q.removeEventListener('change', sync));
+      // The single cached canvas may already belong to a newer mount.
+      if (glass?.onChange === sync) glass.onChange = null;
+      if (glass?.canvas.parentElement === host) glass.canvas.remove();
+      jellyGlass.current = null;
+      if (stage) delete stage.dataset.jelly;
+    };
+  }, [jellyFrame, reduced]);
 
   /* ── Where the globe is on screen, for the eversion hand-off ──────────────
      The WebGL sphere has to start on top of this one, so the hand-off needs the
@@ -1164,8 +1336,14 @@ export function LiquidGlobe({
           const k = kAt(z2);
           let sx = x1 * k;
           let sy2 = y2 * k;
+          if (z2 < 0) {
+            // Seen through the ball (see `lensScale`).
+            const m = lensScale(sx, sy2, z2);
+            sx *= m;
+            sy2 *= m;
+          }
           if (soft) {
-            jelly.deform(sx, sy2, DEFORM_OUT);
+            jelly.deform(sx, sy2, DEFORM_OUT, z2);
             sx = DEFORM_OUT[0]!;
             sy2 = DEFORM_OUT[1]!;
           }
@@ -1265,8 +1443,13 @@ export function LiquidGlobe({
             const k = kAt(z2);
             let cx = x1 * k;
             let cy2 = y2 * k;
+            if (z2 < 0) {
+              const m = lensScale(cx, cy2, z2);
+              cx *= m;
+              cy2 *= m;
+            }
             if (soft) {
-              jelly.deform(cx, cy2, DEFORM_OUT);
+              jelly.deform(cx, cy2, DEFORM_OUT, z2);
               cx = DEFORM_OUT[0]!;
               cy2 = DEFORM_OUT[1]!;
             }
@@ -1331,6 +1514,55 @@ export function LiquidGlobe({
         paintedGlass.current = glass;
         glassRef.current.style.transform = glass === 'none' ? '' : glass;
       }
+      // A small shaded contact footprint explains the depth change even at the
+      // centre of the disc, where a symmetric indentation has no 2D translation.
+      // Only a leaf transform/opacity changes; never the body's gradient centre.
+      if (contactRef.current) {
+        const depth = Math.min(1, Math.abs(jelly.pinch) / 0.16);
+        contactRef.current.style.opacity = soft ? depth.toFixed(3) : '0';
+        if (soft)
+          contactRef.current.style.transform = `translate3d(${(jelly.gx * R).toFixed(2)}px,${(jelly.gy * R).toFixed(2)}px,0) scale(${(0.85 + depth * 0.15).toFixed(3)})`;
+      }
+      // The material redraws only while the SURFACE is moving (a ripple, the
+      // soft body), plus the one frame it comes to rest on. A turn alone does
+      // not touch it: a uniform glass ball looks the same at any rotation. It is
+      // held still during the eversion, which owns the GPU for that second.
+      const jg = jellyGlass.current;
+      // Only the mount that holds the shared canvas draws into it.
+      if (jg && jg.canvas.parentElement === glassRef.current) {
+        const live = soft || waveCount > 0;
+        if ((live || jellyLive.current || jellyDirty.current) && !everting.current) {
+          // The ripples' impact points, turned by the DRAWN rotation into the
+          // material's screen space — the same rotation the cage is drawn at.
+          const cy = Math.cos(draw.yaw * DEG);
+          const sy = Math.sin(draw.yaw * DEG);
+          const cp = Math.cos(draw.pitch * DEG);
+          const sp = Math.sin(draw.pitch * DEG);
+          const f = jellyFrame;
+          for (let i = 0; i < 3; i++) {
+            const o = i * 4;
+            if (i >= waveCount) {
+              f.ripples[o + 3] = -1;
+              continue;
+            }
+            const w = waveWin[i];
+            const x1 = w.bx * cy + w.bz * sy;
+            const z1 = -w.bx * sy + w.bz * cy;
+            f.ripples[o] = x1;
+            f.ripples[o + 1] = w.by * cp - z1 * sp;
+            f.ripples[o + 2] = w.by * sp + z1 * cp;
+            f.ripples[o + 3] = waveAge[i]!;
+          }
+          f.gx = soft ? jelly.gx : 0;
+          f.gy = soft ? jelly.gy : 0;
+          f.dx = soft ? jelly.dx : 0;
+          f.dy = soft ? jelly.dy : 0;
+          f.pinch = soft ? jelly.pinch : 0;
+          jg.render(f);
+          jellyDirty.current = false;
+          jellyLive.current = live;
+        }
+      }
 
       for (let rank = 0; rank < count; rank++) {
         const i = order[rank];
@@ -1352,8 +1584,14 @@ export function LiquidGlobe({
 
         let sx = px[i] * k * swell;
         let sy = py[i] * k * swell;
+        if (z < 0) {
+          // A far pin is seen through the ball, exactly as the cage behind it is.
+          const m = lensScale(sx, sy, z);
+          sx *= m;
+          sy *= m;
+        }
         if (soft) {
-          jelly.deform(sx, sy, DEFORM_OUT);
+          jelly.deform(sx, sy, DEFORM_OUT, z);
           sx = DEFORM_OUT[0]!;
           sy = DEFORM_OUT[1]!;
         }
@@ -1661,7 +1899,7 @@ export function LiquidGlobe({
 
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [nodes, reduced, jelly]);
+  }, [nodes, reduced, jelly, jellyFrame]);
 
   /* ── Pointer ──────────────────────────────────────────────────────────────
      `pointerdown` is taken on the stage (so a press that lands on a pin still
@@ -2158,7 +2396,9 @@ export function LiquidGlobe({
         {/* The glass body itself: a flat disc of shading over the cage, so the
             wireframe reads as structure suspended INSIDE a liquid ball rather
             than as a drawing on top of one. */}
-        <span ref={glassRef} className="radial-globe__glass" aria-hidden />
+        <span ref={glassRef} className="radial-globe__glass" aria-hidden>
+          <span ref={contactRef} className="radial-globe__contact" />
+        </span>
 
         {/* PINS — projected here rather than placed in the 3D cage, so their type
             stays flat, crisp and billboarded instead of skewing with the sphere. */}
