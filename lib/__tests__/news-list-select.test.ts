@@ -16,7 +16,9 @@ vi.mock('@/lib/prisma.server', () => {
 });
 
 import {
+  NEWS_INDEX_SELECT,
   NEWS_LIST_SELECT,
+  getNewsIndexArticles,
   getAllNewsArticles,
   getFeaturedNewsArticles,
   getNewsArticleBySlug,
@@ -68,6 +70,14 @@ describe('news list select', () => {
       where: { status: 'PUBLISHED', featured: true },
       select: NEWS_LIST_SELECT,
     });
+  });
+
+  it('getNewsIndexArticles is one lean query: a subset of the list select, no body', async () => {
+    await getNewsIndexArticles();
+    expect(findMany).toHaveBeenCalledTimes(1);
+    expect(findMany.mock.calls[0][0]).toMatchObject({ select: NEWS_INDEX_SELECT });
+    for (const k of Object.keys(NEWS_INDEX_SELECT)) expect(NEWS_LIST_SELECT).toHaveProperty(k);
+    expect(Object.keys(NEWS_INDEX_SELECT)).not.toContain('content');
   });
 
   it('the article page still reads the whole row', async () => {

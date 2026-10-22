@@ -12,8 +12,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const src = readFileSync(join(process.cwd(), 'app/routes/_site/news/index.tsx'), 'utf8');
-const select = src.match(/const LIST_SELECT = \{([\s\S]*?)\} as const;/)?.[1] ?? '';
+// The select and the query now live in the shared news helper (replica read);
+// the route only calls it. See news-index-route.test.ts for the route itself.
+const src = readFileSync(join(process.cwd(), 'lib/news.ts'), 'utf8');
+const select = src.match(/const NEWS_INDEX_SELECT = \{([\s\S]*?)\} as const;/)?.[1] ?? '';
+const index = src.slice(src.indexOf('export async function getNewsIndexArticles'));
 
 describe('/news index loader', () => {
   it('selects the fields the list components read', () => {
@@ -39,13 +42,14 @@ describe('/news index loader', () => {
   });
 
   it('keeps the published filter and date-desc order', () => {
-    expect(src).toMatch(/where: \{ status: 'PUBLISHED' \}/);
-    expect(src).toMatch(/orderBy: \{ date: 'desc' \}/);
+    expect(index).toMatch(/where: \{ status: "PUBLISHED" \}/);
+    expect(index).toMatch(/orderBy: \{ date: "desc" \}/);
   });
 
   it('derives the featured list from the same query', () => {
-    expect(src).toMatch(/featured: articles\.filter\(\(a\) => a\.featured\)/);
-    expect(src.match(/newsArticle\.findMany/g)?.length).toBe(1);
+    const route = readFileSync(join(process.cwd(), 'app/routes/_site/news/index.tsx'), 'utf8');
+    expect(route).toMatch(/featured: articles\.filter\(\(a\) => a\.featured\)/);
+    expect(route).not.toMatch(/findMany/);
   });
 });
 
