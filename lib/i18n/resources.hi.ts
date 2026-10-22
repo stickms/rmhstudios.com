@@ -41,11 +41,13 @@ import hiCProfileModules from "@/locales/hi/c-profile-modules.json";
 import hiCRebarRutabaga from "@/locales/hi/c-rebar-rutabaga.json";
 import hiCRideshare from "@/locales/hi/c-rideshare.json";
 import hiCRmhCapital from "@/locales/hi/c-rmh-capital.json";
+import hiCRmhDatacenter from "@/locales/hi/c-rmh-datacenter.json";
 import hiCRmhPmc from "@/locales/hi/c-rmh-pmc.json";
 import hiCRmhbox from "@/locales/hi/c-rmhbox.json";
 import hiCRmhcalculator from "@/locales/hi/c-rmhcalculator.json";
 import hiCRmhcode from "@/locales/hi/c-rmhcode.json";
 import hiCRmhcoins from "@/locales/hi/c-rmhcoins.json";
+import hiCRmhfashion from "@/locales/hi/c-rmhfashion.json";
 import hiCRmhmusic from "@/locales/hi/c-rmhmusic.json";
 import hiCRmhstudy from "@/locales/hi/c-rmhstudy.json";
 import hiCRmhtech from "@/locales/hi/c-rmhtech.json";
@@ -68,6 +70,38 @@ import hiCVoidBreaker from "@/locales/hi/c-void-breaker.json";
 import hiCWager from "@/locales/hi/c-wager.json";
 import hiCWishlist from "@/locales/hi/c-wishlist.json";
 import hiCommon from "@/locales/hi/common.json";
+import hiErrors from "@/locales/hi/errors.json";
+import hiFAccess from "@/locales/hi/f-access.json";
+import hiFAction from "@/locales/hi/f-action.json";
+import hiFArcade from "@/locales/hi/f-arcade.json";
+import hiFAsyncGames from "@/locales/hi/f-async-games.json";
+import hiFCalendar from "@/locales/hi/f-calendar.json";
+import hiFCanvas from "@/locales/hi/f-canvas.json";
+import hiFCommunitiesPlus from "@/locales/hi/f-communities-plus.json";
+import hiFCompetitive from "@/locales/hi/f-competitive.json";
+import hiFCreative from "@/locales/hi/f-creative.json";
+import hiFDeepseek from "@/locales/hi/f-deepseek.json";
+import hiFDelight from "@/locales/hi/f-delight.json";
+import hiFDevAi from "@/locales/hi/f-dev-ai.json";
+import hiFDevplatform from "@/locales/hi/f-devplatform.json";
+import hiFDiscovery from "@/locales/hi/f-discovery.json";
+import hiFEconomyPlus from "@/locales/hi/f-economy-plus.json";
+import hiFFeedPlus from "@/locales/hi/f-feed-plus.json";
+import hiFForecasting from "@/locales/hi/f-forecasting.json";
+import hiFGifting from "@/locales/hi/f-gifting.json";
+import hiFLadderHomes from "@/locales/hi/f-ladder-homes.json";
+import hiFMessaging from "@/locales/hi/f-messaging.json";
+import hiFOncall from "@/locales/hi/f-oncall.json";
+import hiFOps from "@/locales/hi/f-ops.json";
+import hiFParty from "@/locales/hi/f-party.json";
+import hiFPerf from "@/locales/hi/f-perf.json";
+import hiFPostsPlus from "@/locales/hi/f-posts-plus.json";
+import hiFProfilePlus from "@/locales/hi/f-profile-plus.json";
+import hiFReading from "@/locales/hi/f-reading.json";
+import hiFSafety from "@/locales/hi/f-safety.json";
+import hiFTools from "@/locales/hi/f-tools.json";
+import hiFWatch from "@/locales/hi/f-watch.json";
+import hiFWorlds from "@/locales/hi/f-worlds.json";
 import hiFeed from "@/locales/hi/feed.json";
 import hiGamesHub from "@/locales/hi/games-hub.json";
 import hiGroups from "@/locales/hi/groups.json";
@@ -138,11 +172,13 @@ const hiResources = {
   "c-rebar-rutabaga": hiCRebarRutabaga,
   "c-rideshare": hiCRideshare,
   "c-rmh-capital": hiCRmhCapital,
+  "c-rmh-datacenter": hiCRmhDatacenter,
   "c-rmh-pmc": hiCRmhPmc,
   "c-rmhbox": hiCRmhbox,
   "c-rmhcalculator": hiCRmhcalculator,
   "c-rmhcode": hiCRmhcode,
   "c-rmhcoins": hiCRmhcoins,
+  "c-rmhfashion": hiCRmhfashion,
   "c-rmhmusic": hiCRmhmusic,
   "c-rmhstudy": hiCRmhstudy,
   "c-rmhtech": hiCRmhtech,
@@ -165,6 +201,38 @@ const hiResources = {
   "c-wager": hiCWager,
   "c-wishlist": hiCWishlist,
   "common": hiCommon,
+  "errors": hiErrors,
+  "f-access": hiFAccess,
+  "f-action": hiFAction,
+  "f-arcade": hiFArcade,
+  "f-async-games": hiFAsyncGames,
+  "f-calendar": hiFCalendar,
+  "f-canvas": hiFCanvas,
+  "f-communities-plus": hiFCommunitiesPlus,
+  "f-competitive": hiFCompetitive,
+  "f-creative": hiFCreative,
+  "f-deepseek": hiFDeepseek,
+  "f-delight": hiFDelight,
+  "f-dev-ai": hiFDevAi,
+  "f-devplatform": hiFDevplatform,
+  "f-discovery": hiFDiscovery,
+  "f-economy-plus": hiFEconomyPlus,
+  "f-feed-plus": hiFFeedPlus,
+  "f-forecasting": hiFForecasting,
+  "f-gifting": hiFGifting,
+  "f-ladder-homes": hiFLadderHomes,
+  "f-messaging": hiFMessaging,
+  "f-oncall": hiFOncall,
+  "f-ops": hiFOps,
+  "f-party": hiFParty,
+  "f-perf": hiFPerf,
+  "f-posts-plus": hiFPostsPlus,
+  "f-profile-plus": hiFProfilePlus,
+  "f-reading": hiFReading,
+  "f-safety": hiFSafety,
+  "f-tools": hiFTools,
+  "f-watch": hiFWatch,
+  "f-worlds": hiFWorlds,
   "feed": hiFeed,
   "games-hub": hiGamesHub,
   "groups": hiGroups,

@@ -41,11 +41,13 @@ import trCProfileModules from "@/locales/tr/c-profile-modules.json";
 import trCRebarRutabaga from "@/locales/tr/c-rebar-rutabaga.json";
 import trCRideshare from "@/locales/tr/c-rideshare.json";
 import trCRmhCapital from "@/locales/tr/c-rmh-capital.json";
+import trCRmhDatacenter from "@/locales/tr/c-rmh-datacenter.json";
 import trCRmhPmc from "@/locales/tr/c-rmh-pmc.json";
 import trCRmhbox from "@/locales/tr/c-rmhbox.json";
 import trCRmhcalculator from "@/locales/tr/c-rmhcalculator.json";
 import trCRmhcode from "@/locales/tr/c-rmhcode.json";
 import trCRmhcoins from "@/locales/tr/c-rmhcoins.json";
+import trCRmhfashion from "@/locales/tr/c-rmhfashion.json";
 import trCRmhmusic from "@/locales/tr/c-rmhmusic.json";
 import trCRmhstudy from "@/locales/tr/c-rmhstudy.json";
 import trCRmhtech from "@/locales/tr/c-rmhtech.json";
@@ -68,6 +70,38 @@ import trCVoidBreaker from "@/locales/tr/c-void-breaker.json";
 import trCWager from "@/locales/tr/c-wager.json";
 import trCWishlist from "@/locales/tr/c-wishlist.json";
 import trCommon from "@/locales/tr/common.json";
+import trErrors from "@/locales/tr/errors.json";
+import trFAccess from "@/locales/tr/f-access.json";
+import trFAction from "@/locales/tr/f-action.json";
+import trFArcade from "@/locales/tr/f-arcade.json";
+import trFAsyncGames from "@/locales/tr/f-async-games.json";
+import trFCalendar from "@/locales/tr/f-calendar.json";
+import trFCanvas from "@/locales/tr/f-canvas.json";
+import trFCommunitiesPlus from "@/locales/tr/f-communities-plus.json";
+import trFCompetitive from "@/locales/tr/f-competitive.json";
+import trFCreative from "@/locales/tr/f-creative.json";
+import trFDeepseek from "@/locales/tr/f-deepseek.json";
+import trFDelight from "@/locales/tr/f-delight.json";
+import trFDevAi from "@/locales/tr/f-dev-ai.json";
+import trFDevplatform from "@/locales/tr/f-devplatform.json";
+import trFDiscovery from "@/locales/tr/f-discovery.json";
+import trFEconomyPlus from "@/locales/tr/f-economy-plus.json";
+import trFFeedPlus from "@/locales/tr/f-feed-plus.json";
+import trFForecasting from "@/locales/tr/f-forecasting.json";
+import trFGifting from "@/locales/tr/f-gifting.json";
+import trFLadderHomes from "@/locales/tr/f-ladder-homes.json";
+import trFMessaging from "@/locales/tr/f-messaging.json";
+import trFOncall from "@/locales/tr/f-oncall.json";
+import trFOps from "@/locales/tr/f-ops.json";
+import trFParty from "@/locales/tr/f-party.json";
+import trFPerf from "@/locales/tr/f-perf.json";
+import trFPostsPlus from "@/locales/tr/f-posts-plus.json";
+import trFProfilePlus from "@/locales/tr/f-profile-plus.json";
+import trFReading from "@/locales/tr/f-reading.json";
+import trFSafety from "@/locales/tr/f-safety.json";
+import trFTools from "@/locales/tr/f-tools.json";
+import trFWatch from "@/locales/tr/f-watch.json";
+import trFWorlds from "@/locales/tr/f-worlds.json";
 import trFeed from "@/locales/tr/feed.json";
 import trGamesHub from "@/locales/tr/games-hub.json";
 import trGroups from "@/locales/tr/groups.json";
@@ -138,11 +172,13 @@ const trResources = {
   "c-rebar-rutabaga": trCRebarRutabaga,
   "c-rideshare": trCRideshare,
   "c-rmh-capital": trCRmhCapital,
+  "c-rmh-datacenter": trCRmhDatacenter,
   "c-rmh-pmc": trCRmhPmc,
   "c-rmhbox": trCRmhbox,
   "c-rmhcalculator": trCRmhcalculator,
   "c-rmhcode": trCRmhcode,
   "c-rmhcoins": trCRmhcoins,
+  "c-rmhfashion": trCRmhfashion,
   "c-rmhmusic": trCRmhmusic,
   "c-rmhstudy": trCRmhstudy,
   "c-rmhtech": trCRmhtech,
@@ -165,6 +201,38 @@ const trResources = {
   "c-wager": trCWager,
   "c-wishlist": trCWishlist,
   "common": trCommon,
+  "errors": trErrors,
+  "f-access": trFAccess,
+  "f-action": trFAction,
+  "f-arcade": trFArcade,
+  "f-async-games": trFAsyncGames,
+  "f-calendar": trFCalendar,
+  "f-canvas": trFCanvas,
+  "f-communities-plus": trFCommunitiesPlus,
+  "f-competitive": trFCompetitive,
+  "f-creative": trFCreative,
+  "f-deepseek": trFDeepseek,
+  "f-delight": trFDelight,
+  "f-dev-ai": trFDevAi,
+  "f-devplatform": trFDevplatform,
+  "f-discovery": trFDiscovery,
+  "f-economy-plus": trFEconomyPlus,
+  "f-feed-plus": trFFeedPlus,
+  "f-forecasting": trFForecasting,
+  "f-gifting": trFGifting,
+  "f-ladder-homes": trFLadderHomes,
+  "f-messaging": trFMessaging,
+  "f-oncall": trFOncall,
+  "f-ops": trFOps,
+  "f-party": trFParty,
+  "f-perf": trFPerf,
+  "f-posts-plus": trFPostsPlus,
+  "f-profile-plus": trFProfilePlus,
+  "f-reading": trFReading,
+  "f-safety": trFSafety,
+  "f-tools": trFTools,
+  "f-watch": trFWatch,
+  "f-worlds": trFWorlds,
   "feed": trFeed,
   "games-hub": trGamesHub,
   "groups": trGroups,

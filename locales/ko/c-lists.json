@@ -8,6 +8,7 @@
   "empty-desc": "Group accounts and read them as their own feed.",
   "empty-title": "No lists yet",
   "error": "Couldn't create the list",
+  "error-add-to-list-sheet": "목록을 업데이트할 수 없습니다",
   "feed-empty-desc": "Posts from this list show up here.",
   "feed-empty-title": "No posts yet",
   "load-error": "Couldn't load your lists",

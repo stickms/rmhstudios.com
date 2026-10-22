@@ -41,11 +41,13 @@ import viCProfileModules from "@/locales/vi/c-profile-modules.json";
 import viCRebarRutabaga from "@/locales/vi/c-rebar-rutabaga.json";
 import viCRideshare from "@/locales/vi/c-rideshare.json";
 import viCRmhCapital from "@/locales/vi/c-rmh-capital.json";
+import viCRmhDatacenter from "@/locales/vi/c-rmh-datacenter.json";
 import viCRmhPmc from "@/locales/vi/c-rmh-pmc.json";
 import viCRmhbox from "@/locales/vi/c-rmhbox.json";
 import viCRmhcalculator from "@/locales/vi/c-rmhcalculator.json";
 import viCRmhcode from "@/locales/vi/c-rmhcode.json";
 import viCRmhcoins from "@/locales/vi/c-rmhcoins.json";
+import viCRmhfashion from "@/locales/vi/c-rmhfashion.json";
 import viCRmhmusic from "@/locales/vi/c-rmhmusic.json";
 import viCRmhstudy from "@/locales/vi/c-rmhstudy.json";
 import viCRmhtech from "@/locales/vi/c-rmhtech.json";
@@ -68,6 +70,38 @@ import viCVoidBreaker from "@/locales/vi/c-void-breaker.json";
 import viCWager from "@/locales/vi/c-wager.json";
 import viCWishlist from "@/locales/vi/c-wishlist.json";
 import viCommon from "@/locales/vi/common.json";
+import viErrors from "@/locales/vi/errors.json";
+import viFAccess from "@/locales/vi/f-access.json";
+import viFAction from "@/locales/vi/f-action.json";
+import viFArcade from "@/locales/vi/f-arcade.json";
+import viFAsyncGames from "@/locales/vi/f-async-games.json";
+import viFCalendar from "@/locales/vi/f-calendar.json";
+import viFCanvas from "@/locales/vi/f-canvas.json";
+import viFCommunitiesPlus from "@/locales/vi/f-communities-plus.json";
+import viFCompetitive from "@/locales/vi/f-competitive.json";
+import viFCreative from "@/locales/vi/f-creative.json";
+import viFDeepseek from "@/locales/vi/f-deepseek.json";
+import viFDelight from "@/locales/vi/f-delight.json";
+import viFDevAi from "@/locales/vi/f-dev-ai.json";
+import viFDevplatform from "@/locales/vi/f-devplatform.json";
+import viFDiscovery from "@/locales/vi/f-discovery.json";
+import viFEconomyPlus from "@/locales/vi/f-economy-plus.json";
+import viFFeedPlus from "@/locales/vi/f-feed-plus.json";
+import viFForecasting from "@/locales/vi/f-forecasting.json";
+import viFGifting from "@/locales/vi/f-gifting.json";
+import viFLadderHomes from "@/locales/vi/f-ladder-homes.json";
+import viFMessaging from "@/locales/vi/f-messaging.json";
+import viFOncall from "@/locales/vi/f-oncall.json";
+import viFOps from "@/locales/vi/f-ops.json";
+import viFParty from "@/locales/vi/f-party.json";
+import viFPerf from "@/locales/vi/f-perf.json";
+import viFPostsPlus from "@/locales/vi/f-posts-plus.json";
+import viFProfilePlus from "@/locales/vi/f-profile-plus.json";
+import viFReading from "@/locales/vi/f-reading.json";
+import viFSafety from "@/locales/vi/f-safety.json";
+import viFTools from "@/locales/vi/f-tools.json";
+import viFWatch from "@/locales/vi/f-watch.json";
+import viFWorlds from "@/locales/vi/f-worlds.json";
 import viFeed from "@/locales/vi/feed.json";
 import viGamesHub from "@/locales/vi/games-hub.json";
 import viGroups from "@/locales/vi/groups.json";
@@ -138,11 +172,13 @@ const viResources = {
   "c-rebar-rutabaga": viCRebarRutabaga,
   "c-rideshare": viCRideshare,
   "c-rmh-capital": viCRmhCapital,
+  "c-rmh-datacenter": viCRmhDatacenter,
   "c-rmh-pmc": viCRmhPmc,
   "c-rmhbox": viCRmhbox,
   "c-rmhcalculator": viCRmhcalculator,
   "c-rmhcode": viCRmhcode,
   "c-rmhcoins": viCRmhcoins,
+  "c-rmhfashion": viCRmhfashion,
   "c-rmhmusic": viCRmhmusic,
   "c-rmhstudy": viCRmhstudy,
   "c-rmhtech": viCRmhtech,
@@ -165,6 +201,38 @@ const viResources = {
   "c-wager": viCWager,
   "c-wishlist": viCWishlist,
   "common": viCommon,
+  "errors": viErrors,
+  "f-access": viFAccess,
+  "f-action": viFAction,
+  "f-arcade": viFArcade,
+  "f-async-games": viFAsyncGames,
+  "f-calendar": viFCalendar,
+  "f-canvas": viFCanvas,
+  "f-communities-plus": viFCommunitiesPlus,
+  "f-competitive": viFCompetitive,
+  "f-creative": viFCreative,
+  "f-deepseek": viFDeepseek,
+  "f-delight": viFDelight,
+  "f-dev-ai": viFDevAi,
+  "f-devplatform": viFDevplatform,
+  "f-discovery": viFDiscovery,
+  "f-economy-plus": viFEconomyPlus,
+  "f-feed-plus": viFFeedPlus,
+  "f-forecasting": viFForecasting,
+  "f-gifting": viFGifting,
+  "f-ladder-homes": viFLadderHomes,
+  "f-messaging": viFMessaging,
+  "f-oncall": viFOncall,
+  "f-ops": viFOps,
+  "f-party": viFParty,
+  "f-perf": viFPerf,
+  "f-posts-plus": viFPostsPlus,
+  "f-profile-plus": viFProfilePlus,
+  "f-reading": viFReading,
+  "f-safety": viFSafety,
+  "f-tools": viFTools,
+  "f-watch": viFWatch,
+  "f-worlds": viFWorlds,
   "feed": viFeed,
   "games-hub": viGamesHub,
   "groups": viGroups,
