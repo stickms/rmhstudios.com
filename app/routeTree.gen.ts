@@ -962,6 +962,7 @@ import { Route as ApiHomesListingsIdRouteImport } from './routes/api/homes/listi
 import { Route as ApiHuntAnswerIndexRouteImport } from './routes/api/hunt/answer/index'
 import { Route as ApiHuntMarkerIndexRouteImport } from './routes/api/hunt/marker/index'
 import { Route as ApiInternalOpsDeployEventRouteImport } from './routes/api/internal/ops/deploy-event'
+import { Route as ApiInternalOpsPostDeployHealthRouteImport } from './routes/api/internal/ops/post-deploy-health'
 import { Route as ApiJamsSlugEntryRouteImport } from './routes/api/jams/$slug/entry'
 import { Route as ApiJamsSlugRateRouteImport } from './routes/api/jams/$slug/rate'
 import { Route as ApiLibraryCollectionIdRouteImport } from './routes/api/library/collection/$id'
@@ -6147,6 +6148,12 @@ const ApiInternalOpsDeployEventRoute =
     path: '/api/internal/ops/deploy-event',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalOpsPostDeployHealthRoute =
+  ApiInternalOpsPostDeployHealthRouteImport.update({
+    id: '/api/internal/ops/post-deploy-health',
+    path: '/api/internal/ops/post-deploy-health',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiJamsSlugEntryRoute = ApiJamsSlugEntryRouteImport.update({
   id: '/entry',
   path: '/entry',
@@ -8773,6 +8780,7 @@ export interface FileRoutesByFullPath {
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
+  '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
   '/api/jams/$slug/entry': typeof ApiJamsSlugEntryRoute
   '/api/jams/$slug/rate': typeof ApiJamsSlugRateRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
@@ -10017,6 +10025,7 @@ export interface FileRoutesByTo {
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
+  '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
   '/api/jams/$slug/entry': typeof ApiJamsSlugEntryRoute
   '/api/jams/$slug/rate': typeof ApiJamsSlugRateRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
@@ -11289,6 +11298,7 @@ export interface FileRoutesById {
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
+  '/api/internal/ops/post-deploy-health': typeof ApiInternalOpsPostDeployHealthRoute
   '/api/jams/$slug/entry': typeof ApiJamsSlugEntryRoute
   '/api/jams/$slug/rate': typeof ApiJamsSlugRateRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
@@ -12561,6 +12571,7 @@ export interface FileRouteTypes {
     | '/api/guides/$id/publish'
     | '/api/homes/listings/$id'
     | '/api/internal/ops/deploy-event'
+    | '/api/internal/ops/post-deploy-health'
     | '/api/jams/$slug/entry'
     | '/api/jams/$slug/rate'
     | '/api/library/collection/$id'
@@ -13805,6 +13816,7 @@ export interface FileRouteTypes {
     | '/api/guides/$id/publish'
     | '/api/homes/listings/$id'
     | '/api/internal/ops/deploy-event'
+    | '/api/internal/ops/post-deploy-health'
     | '/api/jams/$slug/entry'
     | '/api/jams/$slug/rate'
     | '/api/library/collection/$id'
@@ -15076,6 +15088,7 @@ export interface FileRouteTypes {
     | '/api/guides/$id/publish'
     | '/api/homes/listings/$id'
     | '/api/internal/ops/deploy-event'
+    | '/api/internal/ops/post-deploy-health'
     | '/api/jams/$slug/entry'
     | '/api/jams/$slug/rate'
     | '/api/library/collection/$id'
@@ -16040,6 +16053,7 @@ export interface RootRouteChildren {
   ApiGroupChatsIdReactRoute: typeof ApiGroupChatsIdReactRoute
   ApiGroupChatsIdStreamRoute: typeof ApiGroupChatsIdStreamRoute
   ApiInternalOpsDeployEventRoute: typeof ApiInternalOpsDeployEventRoute
+  ApiInternalOpsPostDeployHealthRoute: typeof ApiInternalOpsPostDeployHealthRoute
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
@@ -22889,6 +22903,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalOpsDeployEventRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/ops/post-deploy-health': {
+      id: '/api/internal/ops/post-deploy-health'
+      path: '/api/internal/ops/post-deploy-health'
+      fullPath: '/api/internal/ops/post-deploy-health'
+      preLoaderRoute: typeof ApiInternalOpsPostDeployHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/jams/$slug/entry': {
       id: '/api/jams/$slug/entry'
       path: '/entry'
@@ -27869,6 +27890,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGroupChatsIdReactRoute: ApiGroupChatsIdReactRoute,
   ApiGroupChatsIdStreamRoute: ApiGroupChatsIdStreamRoute,
   ApiInternalOpsDeployEventRoute: ApiInternalOpsDeployEventRoute,
+  ApiInternalOpsPostDeployHealthRoute: ApiInternalOpsPostDeployHealthRoute,
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
