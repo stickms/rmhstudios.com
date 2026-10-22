@@ -7,8 +7,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { getFollowingIds } from '@/lib/social/follow-graph.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { getBlockedAuthorIds } from '@/lib/moderation.server';
 
 /**
  * A Prisma `where` fragment restricting rMHark queries to what `viewerId` may
@@ -33,6 +32,37 @@ export function audienceWhere(
       { audience: 'SUPPORTERS' as const, userId: { in: supportedCreatorIds } },
       // CIRCLE (§11): visible to members of the author's close-friends circle.
       { audience: 'CIRCLE' as const, userId: { in: circleOwnerIds } },
+    ],
+  };
+}
+
+/**
+ * The EXACT audience rule as a relation predicate, for reads that reach a post
+ * whose author is arbitrary (bookmarks, saves, threads, profile likes/reposts,
+ * quotes, the repost gate). `audienceWhere` takes id lists, which forces a cap on
+ * the follow list (`getFollowingIds` keeps 5,000) and a pre-resolved supporter
+ * set; this form asks the database about the viewer's real rows instead, so it
+ * answers exactly what `canViewPost` answers: PUBLIC, own, FOLLOWERS the viewer
+ * follows (any follow, however old), SUPPORTERS of an author the viewer holds an
+ * unexpired membership of, CIRCLE of an author whose circle the viewer is in.
+ * Nothing is bound as a parameter, so a 2,000-follow viewer costs what a
+ * 2-follow viewer does. Timeline assembly keeps using `audienceWhere` with the
+ * capped list, deliberately: that is bounded fan-out, not visibility.
+ */
+export function audienceWhereExact(viewerId: string | null) {
+  if (!viewerId) return { audience: 'PUBLIC' as const };
+  return {
+    OR: [
+      { audience: 'PUBLIC' as const },
+      { userId: viewerId },
+      { audience: 'FOLLOWERS' as const, user: { followers: { some: { followerId: viewerId } } } },
+      {
+        audience: 'SUPPORTERS' as const,
+        user: {
+          creatorMemberships: { some: { supporterId: viewerId, expiresAt: { gt: new Date() } } },
+        },
+      },
+      { audience: 'CIRCLE' as const, user: { closeFriendsOwned: { some: { memberId: viewerId } } } },
     ],
   };
 }
@@ -98,29 +128,28 @@ export async function circleOwnerIds(viewerId: string | null): Promise<string[]>
  * The `where` fragment for "the post behind this row, as `viewerId` may see it".
  *
  * For reads that reach a post through another row - a profile's reposts, a
- * profile's likes - where the post's author is arbitrary, so visibility has to
- * be checked in full: not deleted, audience rules (PUBLIC / own / FOLLOWERS the
- * viewer follows / CIRCLE the viewer is in), and not by an author the viewer
- * blocked, muted or was blocked by. Nest it under the relation:
+ * profile's likes, a bookmark, a thread - where the post's author is arbitrary,
+ * so visibility has to be checked in full and must agree with `canViewPost` /
+ * `canReadThread`: not deleted, the exact audience rules (`audienceWhereExact`),
+ * private-community membership, and not by an author the viewer BLOCKED or was
+ * blocked by. Mutes are deliberately not here: a mute only filters feeds, it
+ * does not make a post unreadable. Nest it under the relation:
  * `{ rmhark: await viewerVisiblePostWhere(viewerId) }`.
  *
- * Costs the viewer's cached follow graph + hidden-author set (both in-process
- * hits when warm) and one circle read; anonymous viewers cost nothing.
+ * Costs the viewer's cached block set (an in-process hit when warm); the
+ * follow / supporter / circle checks run inside the one query. Anonymous
+ * viewers cost nothing.
  */
 export async function viewerVisiblePostWhere(viewerId: string | null): Promise<Record<string, unknown>> {
   if (!viewerId) {
     return { deletedAt: null, audience: 'PUBLIC' as const, ...communityVisibleWhere(null) };
   }
-  const [following, circles, hidden] = await Promise.all([
-    getFollowingIds(viewerId),
-    circleOwnerIds(viewerId),
-    getHiddenAuthorIds(viewerId),
-  ]);
+  const blocked = await getBlockedAuthorIds(viewerId);
   return {
     deletedAt: null,
-    ...audienceWhere(viewerId, following, [], circles),
+    ...audienceWhereExact(viewerId),
     ...communityVisibleWhere(viewerId),
-    ...(hidden.length ? { userId: { notIn: hidden } } : {}),
+    ...(blocked.length ? { userId: { notIn: blocked } } : {}),
   };
 }
 
@@ -174,20 +203,21 @@ export interface ThreadPost {
 
 /**
  * May `viewerId` read the comments of this post? Same rule as the timeline,
- * reposts and the profile tabs (not deleted, audience, not by a hidden author),
+ * reposts and the profile tabs (not deleted, audience, not by a blocked author),
  * evaluated per post so SUPPORTERS-only posts keep working for their supporters.
  * Every comment read goes through here: a comment endpoint reached by post or
  * comment id used to answer for any post, so a PRIVATE post's thread, commenter
  * identities and likers were readable by anyone who had (or guessed) an id.
  *
- * Costs nothing extra for a PUBLIC post (the hidden-author set is an in-process
+ * Costs nothing extra for a PUBLIC post (the blocked-author set is an in-process
  * cache hit); one targeted read for FOLLOWERS / CIRCLE / SUPPORTERS.
  */
 export async function canReadThread(post: ThreadPost | null, viewerId: string | null): Promise<boolean> {
   if (!post || post.deletedAt) return false;
   if (viewerId && viewerId !== post.userId) {
-    const hidden = await getHiddenAuthorIds(viewerId);
-    if (hidden.includes(post.userId)) return false;
+    // Blocks deny reads; a mute only filters feeds (getBlockedAuthorIds, not the hidden set).
+    const blocked = await getBlockedAuthorIds(viewerId);
+    if (blocked.includes(post.userId)) return false;
   }
   return canViewPost(post, viewerId);
 }

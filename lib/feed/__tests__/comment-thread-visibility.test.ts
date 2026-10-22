@@ -32,7 +32,10 @@ vi.mock('@/lib/auth', () => ({
   },
 }));
 vi.mock('@/lib/rate-limit.server', () => ({ withRateLimitAsync: async () => null }));
-vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: async () => h.hidden }));
+vi.mock('@/lib/moderation.server', () => ({
+  getHiddenAuthorIds: async () => h.hidden,
+  getBlockedAuthorIds: async () => h.hidden,
+}));
 vi.mock('@/lib/prisma.server', () => {
   const count = <T>(v: T) => {
     h.queries += 1;

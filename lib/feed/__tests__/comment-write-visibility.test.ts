@@ -27,7 +27,10 @@ vi.mock('@/lib/auth', () => ({
   },
 }));
 vi.mock('@/lib/rate-limit.server', () => ({ withRateLimitAsync: async () => null }));
-vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: async () => h.hidden }));
+vi.mock('@/lib/moderation.server', () => ({
+  getHiddenAuthorIds: async () => h.hidden,
+  getBlockedAuthorIds: async () => h.hidden,
+}));
 vi.mock('@/lib/social/follow-graph.server', () => ({ getFollowingIds: async () => [] }));
 vi.mock('@/lib/notifications.server', () => ({
   createNotification: async () => {},

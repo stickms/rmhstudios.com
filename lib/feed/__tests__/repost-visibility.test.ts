@@ -4,7 +4,7 @@
  * author). Before, the route created the repost row for any post id.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { evalWhere, type Row } from './where-eval';
+import { evalWhere, withAuthorGraph, type Row } from './where-eval';
 
 const h = vi.hoisted(() => ({
   posts: [] as Record<string, unknown>[],
@@ -23,12 +23,18 @@ vi.mock('@/lib/notifications.server', () => ({
   removeNotification: vi.fn(async () => {}),
 }));
 vi.mock('@/lib/social/follow-graph.server', () => ({ getFollowingIds: async () => h.following }));
-vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: async () => h.hidden }));
+vi.mock('@/lib/moderation.server', () => ({
+  getHiddenAuthorIds: async () => h.hidden,
+  getBlockedAuthorIds: async () => h.hidden,
+}));
 vi.mock('@/lib/prisma.server', () => {
   const prisma: Record<string, unknown> = {
     closeFriend: { findMany: async () => [] },
     rMHark: {
-      findFirst: async (a: { where: Row }) => h.posts.find((p) => evalWhere(p, a.where)) ?? null,
+      findFirst: async (a: { where: Row }) =>
+        h.posts.find((p) =>
+          evalWhere(withAuthorGraph(p, 'viewer', { following: h.following }), a.where),
+        ) ?? null,
       findUnique: async () => ({ userId: 'author', content: 'x' }),
       update: vi.fn(),
     },
