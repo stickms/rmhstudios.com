@@ -1,7 +1,7 @@
 'use client';
 
 /** Pending join requests for a private community: approve or deny. */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { UserPlus } from 'lucide-react';
@@ -17,6 +17,7 @@ export function ModRequests({ slug }: { slug: string }) {
   const { t } = useTranslation('f-communities-plus');
   const [requests, setRequests] = useState<JoinRequestDTO[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   const load = useCallback(async () => {
     const res = await plusFetch<{ requests: JoinRequestDTO[] }>(
@@ -39,6 +40,8 @@ export function ModRequests({ slug }: { slug: string }) {
       return;
     }
     setRequests((cur) => cur?.filter((x) => x.id !== r.id) ?? null);
+    // The decided row is gone and its button with it: keep keyboard focus in the list.
+    requestAnimationFrame(() => listRef.current?.querySelector<HTMLElement>('button')?.focus());
   };
 
   if (!requests) {
@@ -58,25 +61,29 @@ export function ModRequests({ slug }: { slug: string }) {
   }
 
   return (
-    <ul className="flex flex-col gap-2">
+    <ul ref={listRef} className="flex flex-col gap-2">
       {requests.map((r) => {
         const name = r.user.name || r.user.handle || t('someone', { defaultValue: 'Someone' });
         return (
           <li key={r.id} className="glass-fill flex flex-col gap-2 p-3">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <UserAvatar src={r.user.image} alt="" size={36} fallbackName={name} />
-              <div className="min-w-0 flex-1">
+              <div className="min-w-32 flex-1">
                 <p className="truncate text-sm font-semibold text-site-text">{name}</p>
                 <p className="text-xs text-site-text-muted">
                   {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="ml-auto flex gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={busy === r.id}
                   onClick={() => decide(r, 'deny')}
+                  aria-label={t('requests-deny-named', {
+                    name,
+                    defaultValue: 'Deny {{name}}',
+                  })}
                 >
                   {t('requests-deny', { defaultValue: 'Deny' })}
                 </Button>
@@ -85,6 +92,10 @@ export function ModRequests({ slug }: { slug: string }) {
                   variant="accent"
                   disabled={busy === r.id}
                   onClick={() => decide(r, 'approve')}
+                  aria-label={t('requests-approve-named', {
+                    name,
+                    defaultValue: 'Approve {{name}}',
+                  })}
                 >
                   {t('requests-approve', { defaultValue: 'Approve' })}
                 </Button>

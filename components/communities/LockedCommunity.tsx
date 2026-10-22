@@ -7,7 +7,7 @@
  * "Join with invite" control — used by the directory, `/c/$slug` and the invite
  * page.
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Lock, Users } from 'lucide-react';
@@ -21,6 +21,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -117,7 +118,14 @@ export function LockedCommunityPreview({
       </p>
       <div className="flex flex-wrap items-center gap-2">
         {children}
-        <RequestToJoin slug={community.slug} initialState={requestState} />
+        {/* Beside a primary action (the invite page's "Join") asking is the
+            quieter second choice: same height, outline instead of accent. */}
+        <RequestToJoin
+          slug={community.slug}
+          initialState={requestState}
+          size={children ? 'default' : 'sm'}
+          variant={children ? 'outline' : 'accent'}
+        />
       </div>
     </div>
   );
@@ -147,6 +155,16 @@ export function RequestToJoin({
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  // Sending swaps the "Request to join" button (and its dialog) for the pending
+  // state, which would drop focus to <body>; hand it to the control that replaced it.
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const sentHere = useRef(false);
+  useEffect(() => {
+    if (state === 'PENDING' && sentHere.current) {
+      sentHere.current = false;
+      cancelRef.current?.focus();
+    }
+  }, [state]);
 
   if (!session) {
     return (
@@ -177,6 +195,7 @@ export function RequestToJoin({
       setOpen(false);
       return;
     }
+    sentHere.current = true;
     setState('PENDING');
     setOpen(false);
     setMessage('');
@@ -199,7 +218,7 @@ export function RequestToJoin({
         <span className="text-sm font-medium text-site-text-muted">
           {t('request-pending', { defaultValue: 'Request sent' })}
         </span>
-        <Button size={size} variant="ghost" onClick={cancel} disabled={busy}>
+        <Button ref={cancelRef} size={size} variant="ghost" onClick={cancel} disabled={busy}>
           {t('request-cancel', { defaultValue: 'Cancel request' })}
         </Button>
       </div>
@@ -207,52 +226,53 @@ export function RequestToJoin({
   }
 
   return (
-    <>
+    <Dialog open={open} onOpenChange={setOpen}>
       <div className={cn('flex flex-wrap items-center gap-2', className)}>
         {state === 'DENIED' && (
           <span className="text-xs text-site-text-muted">
             {t('request-denied', { defaultValue: "Your last request wasn't approved." })}
           </span>
         )}
-        <Button size={size} variant={variant} onClick={() => setOpen(true)}>
-          {t('request-button', { defaultValue: 'Request to join' })}
-        </Button>
+        {/* A real DialogTrigger so Radix returns focus to it when the dialog closes. */}
+        <DialogTrigger asChild>
+          <Button size={size} variant={variant}>
+            {t('request-button', { defaultValue: 'Request to join' })}
+          </Button>
+        </DialogTrigger>
       </div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('request-title', { defaultValue: 'Request to join' })}</DialogTitle>
-            <DialogDescription>
-              {t('request-description', {
-                defaultValue: 'The owner or a moderator will review your request.',
-              })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`join-msg-${slug}`}>
-              {t('request-message-label', { defaultValue: 'Message (optional)' })}
-            </Label>
-            <Textarea
-              id={`join-msg-${slug}`}
-              value={message}
-              maxLength={280}
-              rows={3}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={t('request-message-placeholder', {
-                defaultValue: 'Say why you would like to join',
-              })}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
-              {t('request-dialog-cancel', { defaultValue: 'Cancel' })}
-            </Button>
-            <Button variant="accent" onClick={send} disabled={busy}>
-              {t('request-send', { defaultValue: 'Send request' })}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t('request-title', { defaultValue: 'Request to join' })}</DialogTitle>
+          <DialogDescription>
+            {t('request-description', {
+              defaultValue: 'The owner or a moderator will review your request.',
+            })}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`join-msg-${slug}`}>
+            {t('request-message-label', { defaultValue: 'Message (optional)' })}
+          </Label>
+          <Textarea
+            id={`join-msg-${slug}`}
+            value={message}
+            maxLength={280}
+            rows={3}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder={t('request-message-placeholder', {
+              defaultValue: 'Say why you would like to join',
+            })}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
+            {t('request-dialog-cancel', { defaultValue: 'Cancel' })}
+          </Button>
+          <Button variant="accent" onClick={send} disabled={busy}>
+            {t('request-send', { defaultValue: 'Send request' })}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
