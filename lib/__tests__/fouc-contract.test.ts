@@ -1,6 +1,7 @@
 import { beforeAll, describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { collectRoutes, parseRouteTree } from '../../testing/e2e/fouc-routes.mjs';
 
 /**
@@ -29,7 +30,7 @@ import { collectRoutes, parseRouteTree } from '../../testing/e2e/fouc-routes.mjs
  * audit's result from quietly expiring.
  */
 
-const REPO = resolve(dirname(new URL(import.meta.url).pathname), '../..');
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (p: string) => readFileSync(join(REPO, p), 'utf8');
 
 /**
@@ -606,7 +607,10 @@ function repoSources(): { path: string; text: string }[] {
       if (entry.isDirectory()) {
         walk(full);
       } else if (/\.tsx?$/.test(entry.name)) {
-        files.push({ path: full.slice(REPO.length + 1), text: readFileSync(full, 'utf8') });
+        files.push({
+          path: full.slice(REPO.length + 1).replaceAll('\\', '/'),
+          text: readFileSync(full, 'utf8'),
+        });
       }
     }
   };

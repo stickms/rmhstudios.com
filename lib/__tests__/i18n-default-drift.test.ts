@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * A string's `defaultValue` and its English catalog entry must say the same
@@ -35,7 +36,7 @@ import { join, dirname, resolve } from 'node:path';
  * runtime-built key is invisible here exactly as it is to `i18n:extract`.
  */
 
-const REPO = resolve(dirname(new URL(import.meta.url).pathname), '../..');
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 const catalogs = new Map<string, Record<string, unknown>>();
 for (const f of readdirSync(join(REPO, 'locales/en'))) {
@@ -147,7 +148,14 @@ function scan(): Call[] {
         if (key.includes(':')) [ns, key] = key.split(':', 2) as [string, string];
         if (!catalogs.has(ns)) continue;
         const line = src.slice(0, m.index).split('\n').length;
-        calls.push({ where: `${full.slice(REPO.length + 1)}:${line}`, ns, key, dv: null, one: null, other: null });
+        calls.push({
+          where: `${full.slice(REPO.length + 1)}:${line}`,
+          ns,
+          key,
+          dv: null,
+          one: null,
+          other: null,
+        });
       }
       for (const m of src.matchAll(head)) {
         const open = (m.index ?? 0) + m[0].length - 1;

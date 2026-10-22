@@ -57,7 +57,7 @@ describe('route files do not import stylesheets', () => {
   it('only the shell-wide sheets are imported at a route file’s top level', () => {
     const offenders: string[] = [];
     for (const file of walk(ROUTES)) {
-      const rel = relative(ROOT, file);
+      const rel = relative(ROOT, file).replaceAll('\\', '/');
       const src = readFileSync(file, 'utf8');
       for (const [, spec] of src.matchAll(/^import\s+['"]([^'"]+\.css)['"]/gm)) {
         if (ALLOWED.get(rel) === spec) continue;
@@ -111,7 +111,7 @@ describe('route files keep their definitions small', () => {
   it('a page route exports only its Route', () => {
     const offenders: string[] = [];
     for (const file of pages) {
-      const rel = relative(ROOT, file);
+      const rel = relative(ROOT, file).replaceAll('\\', '/');
       const src = readFileSync(file, 'utf8');
       for (const [, name] of src.matchAll(
         /^export\s+(?:default\s+)?(?:async\s+)?(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/gm,
