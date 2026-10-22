@@ -60,6 +60,7 @@ Threshold alarms over the metrics history (A08, A09, M01–M03, B02, B03) are de
 | [D02](D02.md) | 2 | Deploy auto-rolled back |
 | [D03](D03.md) | 2 | Deploy failed |
 | [D04](D04.md) | 2 | Deploy died without reporting |
+| [D05](D05.md) | 2 | Release auto-rolled back on alarms (post-deploy guard) |
 | [BACKUP](BACKUP.md) | 3 | A backup run failed |
 | [B01](B01.md) | 3 | Disk filling up (85%) |
 | [B02](B02.md) | 3 | Heap pressure |
