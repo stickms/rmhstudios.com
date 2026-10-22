@@ -75,6 +75,21 @@ describe('oembed og', () => {
     expect(safeFetch).toHaveBeenCalledTimes(1);
   });
 
+  it('rejects an over-long url with 400 before fetching', async () => {
+    const res = await call(`https://long.test/${'a'.repeat(2100)}`);
+    expect(res.status).toBe(400);
+    expect(safeFetch).not.toHaveBeenCalled();
+  });
+
+  it('shares one cache entry across host case and fragment variants', async () => {
+    safeFetch.mockImplementation(async () =>
+      bodyOf(['<meta property="og:title" content="Canon">'], { n: 0 }),
+    );
+    await call('https://Canon.test/a?x=1#one');
+    await call('https://canon.test/a?x=1#two');
+    expect(safeFetch).toHaveBeenCalledTimes(1);
+  });
+
   it('does not cache an upstream failure', async () => {
     safeFetch.mockResolvedValueOnce(new Response('no', { status: 500 }));
     expect((await call('https://flaky.test/a')).status).toBe(502);
