@@ -110,11 +110,11 @@ a test asserting it is off. No ids, keys, SQL, or hostnames in any header.
 
 1. Edit only files your workstream owns (`04-workstreams.md`). A fix that needs
    another workstream's file is a **handoff row** in your results file — the
-   coordinator routes it. The one exception is a mechanical, one-line
+   integrator (whoever merges the work) routes it. The one exception is a mechanical, one-line
    adaptation forced by your change (a renamed import); say so in the commit.
 2. One idea per commit, so a rejected idea is one revert and a bisect lands on
    one cause.
 3. Commit messages say *why* and carry the before/after number.
 4. Never edit generated files (`app/routeTree.gen.ts`,
    `lib/i18n/resources.<locale>.ts`), never bypass the commit gate, never push —
-   the coordinator integrates and pushes.
+   the integrator merges and pushes.

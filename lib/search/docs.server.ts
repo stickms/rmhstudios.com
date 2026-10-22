@@ -10,7 +10,7 @@
  */
 
 import { Prisma } from '@prisma/client';
-import { prismaRead } from '@/lib/prisma.server';
+import { prisma, prismaRead } from '@/lib/prisma.server';
 import { fuzzyAny, type FuzzyTerms } from './db.server';
 import { confidenceOf, scoreRecord, withPopularity, withRecency, MATCH_FLOOR } from './score';
 import type { SearchHit, SearchKind } from './types';
@@ -49,11 +49,16 @@ interface DocCorpus {
   kind: SearchKind;
   href: (slug: string) => string;
   query: (terms: FuzzyTerms) => Prisma.Sql;
+  /** Table and live-visibility predicate, re-checked on the primary for the final page. */
+  table: string;
+  visible: Prisma.Sql;
 }
 
 const BLOG: DocCorpus = {
   kind: 'blog',
   href: (slug) => `/blog/${slug}`,
+  table: 'blog_post',
+  visible: Prisma.sql`true`, // existence is the whole rule: a deleted post must vanish
   query: (terms) => Prisma.sql`
     SELECT id, slug, title, description,
            left("content", ${BODY_SCAN_CHARS}) AS body,
@@ -80,6 +85,8 @@ const BLOG: DocCorpus = {
 const NEWS: DocCorpus = {
   kind: 'news',
   href: (slug) => `/news/${slug}`,
+  table: 'news_article',
+  visible: Prisma.sql`status = 'PUBLISHED'`,
   query: (terms) => Prisma.sql`
     SELECT id, slug, title, description,
            left("content", ${BODY_SCAN_CHARS}) AS body,
@@ -108,6 +115,8 @@ const NEWS: DocCorpus = {
 const BUILDS: DocCorpus = {
   kind: 'build',
   href: (slug) => `/user-builds/${slug}`,
+  table: 'user_build',
+  visible: Prisma.sql`visibility = 'PUBLIC'`,
   query: (terms) => Prisma.sql`
     SELECT id, slug, title, description,
            left(COALESCE("readme", ''), ${BODY_SCAN_CHARS}) AS body,
@@ -134,6 +143,8 @@ const BUILDS: DocCorpus = {
 const LIBRARY: DocCorpus = {
   kind: 'library',
   href: (slug) => `/library/${slug}`,
+  table: 'library_document',
+  visible: Prisma.sql`hidden = false`,
   query: (terms) => Prisma.sql`
     SELECT id, slug, title, description,
            NULL::text AS body,
@@ -207,5 +218,19 @@ export async function searchDocs(
     .filter((h): h is SearchHit => h !== null);
 
   hits.sort((a, b) => b.score - a.score);
-  return hits.slice(0, limit);
+  const page = hits.slice(0, limit);
+  if (page.length === 0) return page;
+
+  // The candidate scan above may be served by a read replica (lag-tolerant), but
+  // "is this still published / public / not deleted" is a visibility fact: re-check
+  // just the final page on the primary (one indexed PK lookup of <= `limit` ids), so
+  // a document hidden a moment ago cannot be listed because the replica is behind.
+  const idOf = new Map(rows.map((r) => [`${def.kind}:${r.id}`, r.id]));
+  const ids = page.map((h) => idOf.get(h.key)).filter((id): id is string => Boolean(id));
+  const live = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT id FROM ${Prisma.raw(`"${def.table}"`)}
+    WHERE id IN (${Prisma.join(ids)}) AND ${def.visible}
+  `);
+  const liveIds = new Set(live.map((r) => r.id));
+  return page.filter((h) => liveIds.has(idOf.get(h.key) ?? ''));
 }

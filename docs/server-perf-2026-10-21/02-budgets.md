@@ -18,7 +18,7 @@ Same classes as `scripts/ci/synthetic-perf-bands.json`, plus `api`:
 
 ## 2. Ratified budgets
 
-Ratified at integration (2026-10-22; drafted by the documentation agent, the coordinator reviews) against `results/baseline.json` and the post-merge runs `results/after.json` and
+Ratified at integration (2026-10-22) against `results/baseline.json` and the post-merge runs `results/after.json` and
 `results/after-run2.json` ([`06-report.md`](06-report.md) section 1). They were provisional until then.
 
 Warm, production build, one process, seeded dataset, Redis on. "Signed" means the heavy bench user from
@@ -66,7 +66,7 @@ request, and so does this table: after `cold-start-after.json` the first `GET /`
 (median of 3), and boot to `/api/health` is 1.28 s (1.26 s signed runs). Boot plus first request is 1.53 s anonymous and
 1.58 s signed by total time, so it would not meet 1.5 s on the other reading; the number was not changed to hide that.
 
-**The load rule is replaced by a throughput floor (WS0's objection, accepted by the coordinator).** The provisional rule,
+**The load rule is replaced by a throughput floor (WS0's objection, accepted at ratification).** The provisional rule,
 "load p95 <= 2x sequential p95 at c=16", failed on all 233 load rows in the baseline, including `/api/health`: sixteen
 concurrent requests queue on one Node process by definition, so load p95 is about 16 times the service time divided by the
 cores in use, and no route that costs more than about 1 ms of CPU can meet a 2x bound. A rule every route fails measures
@@ -115,8 +115,8 @@ joined read).
 No change may make any route in the route list worse than its baseline by more
 than **the larger of 10 % or 5 ms** on p50 TTFB, or add **any** query, in
 either auth mode — unless the results row explains the trade (e.g. "+1 query on
-`/x`, −6 on `/y`, same request"). The coordinator re-checks this across the
-merged tree in P2.
+`/x`, −6 on `/y`, same request"). Integration re-checks this across the
+merged tree.
 
 ## 4. Definition of done — per change
 

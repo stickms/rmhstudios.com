@@ -6,6 +6,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { askFeed, isAITextConfigured } from '@/lib/ai/text.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { communityVisibleWhere } from '@/lib/feed/audience.server';
 
 /** POST /api/ai/ask-feed — answer a question grounded in recent feed posts. */
 const schema = z.object({ question: z.string().min(3).max(300) });
@@ -54,8 +55,8 @@ export const Route = createFileRoute('/api/ai/ask-feed')({
           const where = {
             deletedAt: null,
             audience: 'PUBLIC' as const,
-            // Members-only community posts never feed an AI answer shown to anyone.
-            communityId: null,
+            // A private community's posts only feed the answer of its own members.
+            ...communityVisibleWhere(session.user.id),
             unlockPrice: null,
             ...(hidden.length ? { userId: { notIn: hidden } } : {}),
             ...(terms.length
@@ -79,7 +80,7 @@ export const Route = createFileRoute('/api/ai/ask-feed')({
               where: {
                 deletedAt: null,
                 audience: 'PUBLIC',
-                communityId: null,
+                ...communityVisibleWhere(session.user.id),
                 unlockPrice: null,
                 ...(hidden.length ? { userId: { notIn: hidden } } : {}),
               },

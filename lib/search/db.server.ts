@@ -15,9 +15,12 @@
  * so the longer a display name is, the lower it scores for the same query. That
  * is precisely why long display names were effectively unfindable.
  *
- * Every corpus reads through `prismaRead`: search is an index over content that
- * is never read back after a write in the same request, so replica lag costs a
- * result appearing a moment late and nothing else. (It is the primary until
+ * Every corpus's candidate SCAN reads through `prismaRead`: search is an index
+ * over content that is never read back after a write in the same request, so
+ * replica lag costs a result appearing a moment late. It must never cost a
+ * just-hidden result appearing, so the final page of each corpus is re-checked
+ * (deleted / audience / private community / hidden author / still published) on
+ * the PRIMARY - a PK lookup of <= `limit` ids. (`prismaRead` is the primary until
  * `DATABASE_REPLICA_URL` is set.)
  */
 
