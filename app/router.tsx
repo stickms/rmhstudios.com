@@ -45,9 +45,19 @@ export function getRouter() {
     // long enough that fast navigations never flash the skeleton, and
     // `defaultPendingMinMs` keeps it up long enough to avoid a jarring blink
     // once it does show.
+    //
+    // The hold-back was 180ms, which is ONE round trip on a phone: a loader that
+    // took 200ms put the skeleton up at 180 and then held it to 400 (the 220ms
+    // minimum), so a page that was ready at 200ms appeared at 400. Measured on
+    // `/explore` → a post (4× CPU, 100ms RTT) it fired on every open. Until
+    // 400ms the click is already acknowledged — the press state, and
+    // `NavigationProgress`'s bar from 90ms — so the old page stays put and the
+    // new one replaces it directly, which is how a native app navigates; only a
+    // genuinely slow load shows the skeleton (docs/performance-audit-2026-10-21.md
+    // §Instant navigation).
     defaultPendingComponent: RoutePending,
-    defaultPendingMs: 180,
-    defaultPendingMinMs: 220,
+    defaultPendingMs: 400,
+    defaultPendingMinMs: 200,
   });
 
   // A 404 thrown by a nested loader: the server builds <head> only up to the

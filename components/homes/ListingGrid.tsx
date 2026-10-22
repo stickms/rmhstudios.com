@@ -7,6 +7,7 @@ import type { Listing } from '@/lib/homes/types';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ListingCard } from './ListingCard';
+import { APPLE_SPRING } from '@/lib/motion';
 
 interface ListingGridProps {
   listings: Listing[];
@@ -89,7 +90,7 @@ export function ListingGrid({
           key={l.id}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: Math.min(i * 0.03, 0.3) }}
+          transition={{ ...APPLE_SPRING.smooth, delay: Math.min(i * 0.03, 0.3) }}
         >
           <ListingCard
             listing={l}

@@ -165,7 +165,11 @@ failures keep the shell.
 
 `router.tsx`: `defaultPreload: "intent"` (50ms delay, 30s preload stale
 time), `scrollRestoration`, `RoutePending` as the default pending component
-(150ms delay / 300ms min display).
+(400ms delay / 200ms min display — under 400ms the old page stays and the new
+one replaces it directly; see `docs/performance-audit-2026-10-21.md` §Instant
+navigation). A page whose main content is fetched by a component after mount
+can start that GET from its route's `beforeLoad` with `lib/route/intent-fetch`
+(see the post and profile routes) instead of waiting a round trip after mount.
 
 ## Before you commit a route
 
