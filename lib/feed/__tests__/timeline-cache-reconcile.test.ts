@@ -45,7 +45,7 @@ vi.mock('../audience.server', async () => {
 });
 
 import { getTimeline, invalidateViewerFeedPages } from '../timeline';
-import { apiCache } from '../../cache';
+import { apiCache, viewerFeedCache, VIEWER_FEED_PREFIX } from '../../cache';
 
 const NOW = Date.now();
 const VIEWER = 'viewer';
@@ -116,6 +116,21 @@ describe('signed-in first page cache: correctness against the live database', ()
     const before = assemblies();
     expect(await read()).toEqual(['p1', 'p2', 'p3']);
     expect(assemblies()).toBe(before);
+  });
+
+  it('keeps the page in the per-viewer cache, the only path back out of which is the reconcile', async () => {
+    await read();
+    const key = `${VIEWER_FEED_PREFIX}foryou:all:${VIEWER}:20`;
+    expect(viewerFeedCache.get(key)).toBeDefined();
+    // The router and the producer agree: nothing else holds a `feed:` page for this viewer.
+    expect(VIEWER_FEED_PREFIX).toBe('feed:v3:');
+  });
+
+  it('a block applied while the page sits in the per-viewer cache still hides the post', async () => {
+    await read();
+    expect(viewerFeedCache.size).toBeGreaterThan(0);
+    w.hidden = ['author'];
+    expect(await read()).toEqual(['p2']);
   });
 
   it('never serves one viewer the page cached for another', async () => {

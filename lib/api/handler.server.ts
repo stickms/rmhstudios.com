@@ -337,7 +337,7 @@ async function weakEtag(response: Response): Promise<string | null> {
  * otherwise the header is a comma-separated list compared with the **weak**
  * comparison function — so `W/"abc"` and `"abc"` are a match.
  */
-function ifNoneMatchMatches(header: string, etag: string): boolean {
+export function ifNoneMatchMatches(header: string, etag: string): boolean {
   const value = header.trim();
   if (value === '*') return true;
   const opaque = (tag: string) => tag.trim().replace(/^W\//, '');
