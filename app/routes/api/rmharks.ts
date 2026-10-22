@@ -322,7 +322,7 @@ export const Route = createFileRoute('/api/rmharks')({
             // of scanning `content` with ILIKE on read. Same tx as the post insert.
             // A held post is counted and hashtag-linked when a mod approves it.
             if (!held) {
-              await linkPostHashtags(tx, created.id, created.content);
+              await linkPostHashtags(tx, created.id, created.content, created.createdAt);
 
               // Maintain the author's denormalized post count atomically with the
               // insert (profile pages read this column instead of COUNT(*)).

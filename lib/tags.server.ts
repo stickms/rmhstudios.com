@@ -1,8 +1,8 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { getFollowingIds } from '@/lib/social/follow-graph.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
-import { audienceWhere, communityVisibleWhere } from '@/lib/feed/audience.server';
 import type { FeedItem } from '@/lib/feed-types';
 
 export interface TagFeedResult {
@@ -44,22 +44,62 @@ export async function listTagFeed(
     viewerId ? getFollowingIds(viewerId) : Promise.resolve<string[]>([]),
   ]);
 
-  // Read the normalized hashtag links (post_hashtag → hashtag) instead of
-  // scanning rmheet.content with ILIKE '%#tag%'. The join is exact, so no
-  // word-boundary post-filter is needed. Keyset paginated on rmheet.createdAt.
-  const rows = await prisma.rMHark.findMany({
-    where: {
-      deletedAt: null,
-      hashtags: { some: { hashtag: { tag } } },
-      ...(hidden.length ? { userId: { notIn: hidden } } : {}),
-      ...audienceWhere(viewerId, followingIds),
-      ...communityVisibleWhere(viewerId),
-    },
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    take: limit + 1,
-    ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-    include: rmharkIncludeLite(viewerId),
-  });
+  // Two steps, on purpose (WS8). Step 1 picks the page's ids as a keyset scan of
+  // the tag's own post_hashtag rows, newest first, via
+  // post_hashtag(hashtagId, createdAt DESC, rmheetId DESC) - it stops after
+  // limit+1 survivors instead of fetching and sorting every tagged post (4k for a
+  // busy tag; as one Prisma findMany the planner probed each by primary key and
+  // costed all the hydration LATERAL joins on top, which also tripped JIT).
+  // Step 2 hydrates exactly those ids.
+  //
+  // post_hashtag.createdAt is the post's createdAt by construction
+  // (linkPostHashtags, migration 20261022160000), so this ordering is the old
+  // `ORDER BY rmheet.createdAt DESC, rmheet.id DESC`.
+  //
+  // Every visibility predicate of the old `where` is kept in SQL form: not
+  // deleted, not a hidden author, audienceWhere() (PUBLIC / own / FOLLOWERS the
+  // viewer follows; SUPPORTERS and CIRCLE are empty sets, as before), and
+  // communityVisibleWhere() (private community posts only for its members).
+  const audience = viewerId
+    ? Prisma.sql`(r.audience = 'PUBLIC'::"RMHarkAudience"
+        OR r."userId" = ${viewerId}
+        OR (r.audience = 'FOLLOWERS'::"RMHarkAudience" AND r."userId" = ANY(${followingIds}::text[])))`
+    : Prisma.sql`r.audience = 'PUBLIC'::"RMHarkAudience"`;
+  const communityVisible = viewerId
+    ? Prisma.sql`(r."communityId" IS NULL OR NOT EXISTS (
+        SELECT 1 FROM community c WHERE c.id = r."communityId" AND c."isPrivate"
+          AND NOT EXISTS (SELECT 1 FROM community_member m WHERE m."communityId" = c.id AND m."userId" = ${viewerId})))`
+    : Prisma.sql`(r."communityId" IS NULL OR NOT EXISTS (
+        SELECT 1 FROM community c WHERE c.id = r."communityId" AND c."isPrivate"))`;
+  const hiddenClause = hidden.length
+    ? Prisma.sql`AND r."userId" <> ALL(${hidden}::text[])`
+    : Prisma.empty;
+  const cursorClause = cursor
+    ? Prisma.sql`AND (ph."createdAt", ph."rmheetId") < (SELECT "createdAt", id FROM rmheet WHERE id = ${cursor})`
+    : Prisma.empty;
+
+  const idRows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT ph."rmheetId" AS id
+    FROM post_hashtag ph
+    JOIN rmheet r ON r.id = ph."rmheetId"
+    WHERE ph."hashtagId" = (SELECT id FROM hashtag WHERE tag = ${tag})
+      AND r."deletedAt" IS NULL
+      AND ${audience}
+      AND ${communityVisible}
+      ${hiddenClause}
+      ${cursorClause}
+    ORDER BY ph."createdAt" DESC, ph."rmheetId" DESC
+    LIMIT ${limit + 1}
+  `);
+  const ids = idRows.map((r) => r.id);
+  const hydrated = ids.length
+    ? await prisma.rMHark.findMany({
+        where: { id: { in: ids } },
+        include: rmharkIncludeLite(viewerId),
+      })
+    : [];
+  const byId = new Map(hydrated.map((r) => [r.id, r]));
+  const rows = ids.map((id) => byId.get(id)).filter((r): r is (typeof hydrated)[number] => !!r);
 
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;

@@ -58,7 +58,13 @@ export function extractHashtags(content: string): string[] {
  * (tag, post) via the unique constraint; a duplicate link is ignored and does
  * not double-count.
  */
-export async function linkPostHashtags(tx: Tx, postId: string, content: string): Promise<void> {
+export async function linkPostHashtags(
+  tx: Tx,
+  postId: string,
+  content: string,
+  /** The post's own createdAt, when the caller has it (skips one read). */
+  postCreatedAt?: Date,
+): Promise<void> {
   const tags = extractHashtags(content);
   if (tags.length === 0) return;
 
@@ -87,8 +93,19 @@ export async function linkPostHashtags(tx: Tx, postId: string, content: string):
   const fresh = ids.filter((id) => !already.has(id));
   if (fresh.length === 0) return;
 
+  // The link carries the POST's createdAt, not the link time: the tag feed orders
+  // by the post's createdAt and is served from post_hashtag's
+  // (hashtagId, createdAt DESC, rmheetId DESC) index, which only works if the two
+  // agree. A re-link (trash restore, automod approval) must not reorder the post.
+  const createdAt =
+    postCreatedAt ??
+    (await tx.rMHark.findUnique({ where: { id: postId }, select: { createdAt: true } }))?.createdAt;
   await tx.postHashtag.createMany({
-    data: fresh.map((hashtagId) => ({ hashtagId, rmheetId: postId })),
+    data: fresh.map((hashtagId) => ({
+      hashtagId,
+      rmheetId: postId,
+      ...(createdAt ? { createdAt } : {}),
+    })),
     skipDuplicates: true,
   });
   await tx.hashtag.updateMany({
