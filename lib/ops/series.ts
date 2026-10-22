@@ -61,13 +61,40 @@ export function chartSpecs(rules: EffectiveRule[]) {
   return [...specs.entries()].map(([key, s]) => ({ key, ...s }));
 }
 
+const STEPS_MIN = [1, 5, 15, 30, 60, 120];
+const MIN_POINTS = 12;
+
+/**
+ * The range's bucket size — unless the stored history is younger than the
+ * range, in which case the largest step that still gives MIN_POINTS points
+ * over the history that exists. Otherwise a fresh history (just deployed, or
+ * after a gap) shows "no data" on 24h / 7d for its first hours.
+ */
+export function bucketFor(range: RangeId, rows: SeriesRow[], now: number): number {
+  const { ms, bucketMs } = RANGES[range];
+  let oldest = now;
+  for (const r of rows) {
+    const t = new Date(r.at).getTime();
+    if (t < oldest && t >= now - ms) oldest = t;
+  }
+  const span = now - oldest;
+  let best = 60_000;
+  for (const m of STEPS_MIN) {
+    const step = m * 60_000;
+    if (step > bucketMs) break;
+    if (span / step >= MIN_POINTS) best = step;
+  }
+  return best;
+}
+
 export function buildSeries(
   rules: EffectiveRule[],
   rows: SeriesRow[],
   range: RangeId,
   now: number,
 ): ChartSeries[] {
-  const { ms, bucketMs } = RANGES[range];
+  const { ms } = RANGES[range];
+  const bucketMs = bucketFor(range, rows, now);
   const start = Math.floor((now - ms) / bucketMs) * bucketMs;
   return chartSpecs(rules).map((spec) => {
     const mine = rows.filter(

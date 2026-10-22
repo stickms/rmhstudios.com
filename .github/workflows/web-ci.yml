@@ -583,7 +583,7 @@ jobs:
       # (a refresh run on a dev branch may fail other gates); only with the input.
       - name: Upload refreshed baselines
         if: always() && inputs.update-baselines
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: eversion-baselines
           path: testing/e2e/baselines/
@@ -596,7 +596,7 @@ jobs:
       # see WHY a smoothness or parity gate tripped, plus the server log.
       - name: Upload artefacts
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: eversion-e2e-artefacts
           path: ${{ env.EVERSION_ARTIFACT_DIR }}
