@@ -31,7 +31,7 @@ import { mutedTagWhere } from './signals';
 import { applyLock } from './map-feed-item.server';
 import { deduplicateReposts } from './dedupe';
 import type { ReactionSummary } from '../social/reactions';
-import { apiCache } from '../cache';
+import { apiCache, VIEWER_FEED_PREFIX } from '../cache';
 import { cachedSWR, invalidateCached } from '../cached.server';
 import { reconcileCachedPage } from './page-reconcile.server';
 import { isExpired } from '../posts-plus/constants';
@@ -866,7 +866,7 @@ async function assembleTimeline(params: GetTimelineParams): Promise<TimelineResu
 /** Cache key of a viewer's first page. `v3`: the value is the page BEFORE the
  *  muted-word filter (applied at serve time), unlike `v2`. */
 const feedPageKey = (p: { surface: FeedSurface; filter: FeedFilter; limit: number }, userId: string) =>
-  `feed:v3:${p.surface}:${p.filter}:${userId}:${p.limit}`;
+  `${VIEWER_FEED_PREFIX}${p.surface}:${p.filter}:${userId}:${p.limit}`;
 
 /** Drop a viewer's cached first pages for the sizes the app requests (homepage 15,
  *  feed column 20). Only needed for UX freshness (e.g. just added to a circle):

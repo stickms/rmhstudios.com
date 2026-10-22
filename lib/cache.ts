@@ -240,7 +240,7 @@ export const MAIN_CACHE_HEAP_SHARE = 0.08;
 export const VIEWER_FEED_CACHE_HEAP_SHARE = 0.04;
 
 /**
- * perf: per-viewer signed-in feed pages (`feed:v2:*`, one per user x surface x
+ * perf: per-viewer signed-in feed pages (`feed:v3:*`, one per user x surface x
  * filter, tens of KB each) get their own small cache so a burst of distinct
  * viewers can never evict the global hot keys (anon SWR feed, sidebar:*) from
  * the main cache. Routed by key prefix inside `apiCache` so cachedSWR and every
@@ -250,7 +250,13 @@ export const viewerFeedCache = new ApiCache({
   maxEntries: 1000,
   maxBytes: heapShare(VIEWER_FEED_CACHE_HEAP_SHARE, 24 * 1024 * 1024),
 });
-const VIEWER_FEED_PREFIX = 'feed:v2:';
+/**
+ * The key prefix that routes into `viewerFeedCache`. `lib/feed/timeline.ts` builds its signed-in page keys from
+ * this constant, so the router and the producer cannot drift apart (they did: the producer moved to `v3` when the
+ * page became the pre-muted-word value, the router stayed on `v2`, and every viewer page landed in the main LRU).
+ * Bump it here only; a test asserts a real timeline page lands in `viewerFeedCache`.
+ */
+export const VIEWER_FEED_PREFIX = 'feed:v3:';
 
 /** Main process cache (global keys + everything else): 5000 entries, 8% of the heap (at most 64 MB). */
 const mainCache = new ApiCache({
