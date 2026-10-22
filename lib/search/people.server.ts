@@ -13,7 +13,7 @@
  */
 
 import { Prisma } from '@prisma/client';
-import { prismaRead } from '@/lib/prisma.server';
+import { prisma, prismaRead } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
 import { fuzzyAny, fuzzyTerms, norm, sqlRank, type FuzzyTerms } from './db.server';
 import { confidenceOf, scoreRecord, withPopularity, MATCH_FLOOR } from './score';
@@ -212,9 +212,11 @@ export async function searchPeopleScored(
   if (scored.length === 0) return [];
 
   // Hydrate through Prisma so results carry the same shape (profile overrides,
-  // equipped cosmetics) as every other surface that renders a user.
+  // equipped cosmetics) as every other surface that renders a user. Read from the
+  // PRIMARY: the candidate scan is lag-tolerant, but a user deleted a moment ago
+  // must not be listed from a lagging replica, and a user missing here is dropped.
   const ids = scored.map((s) => s.row.id);
-  const hydrated = await prismaRead.user.findMany({
+  const hydrated = await prisma.user.findMany({
     where: { id: { in: ids } },
     select: userDisplaySelect,
   });
