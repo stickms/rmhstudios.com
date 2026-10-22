@@ -174,7 +174,7 @@ tier). Handler fixed overhead was measured and left alone: about 0.5 ms over the
 selects (news body, library `toc`, user-builds cards), bounded `/api/feedback` and the library cover variants,
 and replaced the messages-search snippet with one bounded `DISTINCT ON` query. No index was added by WS4 itself; the
 indexes came from WS8 and WS9. Its two correctness rounds are in section 3: private communities (members-only, then
-listed-and-locked with invite links and join requests, migration `20261022000000`) and the user-builds search/cursor
+listed-and-locked with invite links and join requests, migration `20261022030000`) and the user-builds search/cursor
 overwrite. Four index and sitemap ideas were measured and rejected (section 5).
 
 **WS5 (realtime hubs).** Built `socket-bench.mjs`. Baseline hub health was already inside budget (event-loop p99
@@ -245,7 +245,7 @@ must work for content the reporter just lost access to). Not audited: search ins
 The members-only rule removed the only way into a private community, so WS4 built the way in (user decision):
 metadata (name, icon, colour, description, member count, lock badge) is public; posts, members, announcements, pages,
 revisions, events and flairs are members-only. Models `CommunityInvite` and `CommunityJoinRequest` (migration
-`20261022000000`, additive); invite links with `maxUses`, `expiresAt` and revocation; join requests with a 7-day
+`20261022030000`, additive); invite links with `maxUses`, `expiresAt` and revocation; join requests with a 7-day
 re-request cooldown; routes under `/api/communities/$slug/{invites,join-request,join-requests}`; a locked preview at
 `/c/$slug` and an invite page at `/c/$slug/invite/$code` (both `noindex`, out of the sitemap); Requests and Invites tabs in the
 mod tools. Commits `5d145e0e5`, `f4330ce65`, `30b57e416`, `6818c0e96`, `0f18894de`, `3baa0df46`. Tests include
@@ -472,7 +472,7 @@ currently failing sign-in, error rates on `/api/auth/*` should fall to zero at t
 | 3 | Synthetic Lighthouse TTFB, three runs per route (`synthetic-perf.yml`, every 6 h) | next two scheduled runs | the last run before the swap | A breach of 25% or more on the new version, repeated on a confirmation run |
 | 4 | `/tag/*` and people-search latency (`Server-Timing: total` on `/tag/<tag>`, `/api/users/search`, `/api/search`) | 24 h | origin baseline: `/tag/tag1` signed 645 / 714 ms, `/api/users/search` 422 / 460 ms, `/api/search` 637 / 687 ms (`baseline.json`), on the seeded dataset only | No quantitative production baseline exists. Compare against the pre-deploy window; investigate if either route is slower than before |
 | 5 | Postgres: connections in use against `max_connections`; slow-statement log for the `post_hashtag` and `rmh_search_norm` shapes | first hour, then daily | not measured | The Go supervisor now opens up to `GO_DB_POOL_SIZE` (default 3) instead of 1 connection; if headroom is short, set it to 1 and redeploy |
-| 6 | Migration application: six migrations since main. `20261022000000` creates the invite and join-request tables; `20261022150000`, `20261022150100` and `20261022160100` are `CREATE INDEX CONCURRENTLY`; `20261022160200` is `DROP INDEX CONCURRENTLY`; `20261022160000` is an `UPDATE` of mismatched `post_hashtag` rows | during `deploy.sh` | n/a | `deploy.sh` output and the `prisma-migrate-status` workflow. A failed `CREATE INDEX CONCURRENTLY` leaves an invalid index that must be dropped before a retry |
+| 6 | Migration application: nine migrations since main. `20261022030000` creates the invite and join-request tables; `20261022150000`, `20261022150100` and `20261022160100` are `CREATE INDEX CONCURRENTLY`, each followed by an `…_ensure_valid` migration that rebuilds the index (non-concurrently) only if it is invalid or missing; `20261022160200` is `DROP INDEX CONCURRENTLY` of the index the new one supersedes, and runs only after that check; `20261022160000` is an `UPDATE` of mismatched `post_hashtag` rows | during `deploy.sh` | n/a | `deploy.sh` output and the `prisma-migrate-status` workflow. A concurrent build that hits the 5 s `lock_timeout` leaves an invalid index; deploy.sh's P3009 retry then records the `IF NOT EXISTS` create as applied, and the `…_ensure_valid` migration repairs it |
 | 7 | Web container restarts, 429 rate on writes, CPU of the web and hub processes | 24 h | not measured in production | Restarts or sustained CPU rise versus the pre-deploy window |
 | 8 | Hub event-loop delay and broadcast latency on `/internal/metrics` (the merged tree) | a busy evening | scripted-load baseline: event-loop p99 0.9-3.8 ms, broadcast p95 0.9-2.4 ms (`ws-5.md`) | `02-budgets.md` hub budget: event-loop p99 over 20 ms, broadcast p95 over 50 ms |
 | 9 | Moderation and privacy spot checks: a blocked user's post disappears from a cached signed-in feed within one request; a private community's posts 404 for a non-member; a locked community page shows metadata only | right after the swap | before: up to 60 s of stale permissions (WS2 #4) | Any exposure is a rollback and an incident |

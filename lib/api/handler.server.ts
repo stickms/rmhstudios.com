@@ -574,11 +574,15 @@ export function defineHandler<
   // A public policy on a route that never resolves a viewer: the response is the
   // same for everyone, so a hot GET can be answered from memory for the part of
   // its declared window we are willing to hold it (`response-cache.server.ts`).
+  // A declared `vary` means the body depends on a request header the key
+  // (method + path + query) does not carry, e.g. Accept-Language: such a route
+  // is left to the HTTP caches, which honour Vary.
   const microCacheable =
     options.cache?.visibility === 'public' &&
     mode === 'none' &&
     !options.feature &&
-    !options.idempotent;
+    !options.idempotent &&
+    !options.cache.vary?.length;
 
   return async ({ request, params }) => {
     try {

@@ -130,6 +130,18 @@ describe('response micro-cache', () => {
     for (const { run } of cases) expect(run).toHaveBeenCalledTimes(2);
   });
 
+  it('skips a route that declares vary (the key does not carry those headers)', async () => {
+    const run = vi.fn(async ({ request }) =>
+      Response.json({ lang: request.headers.get('accept-language') }),
+    );
+    const h = defineHandler({ auth: 'none', cache: { ...PUBLIC, vary: ['Accept-Language'] } }, run);
+    const en = await h({ params: {}, request: req('/api/t', { headers: { 'accept-language': 'en' } }) });
+    const fr = await h({ params: {}, request: req('/api/t', { headers: { 'accept-language': 'fr' } }) });
+    expect(run).toHaveBeenCalledTimes(2);
+    expect(await en.json()).toEqual({ lang: 'en' });
+    expect(await fr.json()).toEqual({ lang: 'fr' });
+  });
+
   it('still rate-limits cached routes (the limiter runs before the cache)', async () => {
     const run = vi.fn(async () => Response.json({ a: 1 }));
     const h = defineHandler(

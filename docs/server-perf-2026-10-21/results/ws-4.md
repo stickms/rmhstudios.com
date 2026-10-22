@@ -81,7 +81,7 @@ description, member count, lock badge) is public; posts, members, announcements,
 revisions, events and flairs stay members-only (404 for non-members). Out of the sitemap;
 the locked page and the invite page are `noindex`.
 
-**Models** (`prisma/migrations/20261022000000_community_invites_join_requests`, additive,
+**Models** (`prisma/migrations/20261022030000_community_invites_join_requests`, additive,
 `check-migration-safety` clean, BigInt identity PKs per the new-table policy):
 `CommunityInvite` (unique 192-bit `code`, `maxUses`, `uses`, `expiresAt`, `revokedAt`,
 index on `communityId`), `CommunityJoinRequest` (`@@unique([communityId, userId])`,
