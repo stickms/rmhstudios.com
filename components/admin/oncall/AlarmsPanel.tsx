@@ -213,14 +213,19 @@ export function AlarmsPanel() {
               'Senders on the VPS check in with the watchdog; silence past the limit pages.',
           })}
         </p>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Two columns at most: this sits in the centre column between the sidebar and
+            the right rail, where four cards left no room for the status badge. */}
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {data.heartbeats.map((h) => {
             const health = heartbeatHealth(h, data.now);
             return (
-              <li key={h.name} className="glass-fill rounded-site p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-sm text-site-text">{h.name}</span>
+              <li key={h.name} className="glass-fill min-w-0 rounded-site p-3">
+                <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                  <span className="min-w-0 break-words font-mono text-sm text-site-text">
+                    {h.name}
+                  </span>
                   <Badge
+                    className="shrink-0"
                     variant={health === 'ok' ? 'success' : health === 'late' ? 'danger' : 'default'}
                   >
                     {health === 'ok'
