@@ -68,4 +68,12 @@ describe('postStoryCacheKey', () => {
     expect(postStoryCacheKey({ ...base, authorName: 'B' })).not.toBe(k);
     expect(postStoryCacheKey({ ...base, authorImage: '/x.png' })).not.toBe(k);
   });
+
+  it('keys on the drawn text, not a raw prefix that emoji stripping shifts', () => {
+    // 400 emoji are stripped before drawing, so the drawn body is the tail.
+    const pad = '😀'.repeat(400);
+    expect(postStoryCacheKey({ ...base, content: `${pad} first` })).not.toBe(
+      postStoryCacheKey({ ...base, content: `${pad} second` }),
+    );
+  });
 });

@@ -308,4 +308,21 @@ describe('join route', () => {
     expect(ok.status).toBe(200);
     expect(await ok.json()).toMatchObject({ joined: true });
   });
+
+  it('an invite is join-only: repeating it as a member keeps the membership', async () => {
+    const POST = ((await import('@/app/routes/api/communities/$slug/join')) as unknown as {
+      Route: { options: { server: { handlers: { POST: Handler } } } };
+    }).Route.options.server.handlers.POST;
+    h.community.findUnique.mockResolvedValue({ id: 'c1', createdById: 'owner', isPrivate: true });
+    h.member.findUnique.mockResolvedValue({ id: 'm1' });
+    const res = await POST({
+      params: { slug: 's' },
+      session: { user: { id: 'member' } },
+      body: { invite: 'good' },
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ joined: true });
+    expect(h.executeRaw).not.toHaveBeenCalled();
+    expect(h.community.update).not.toHaveBeenCalled();
+  });
 });

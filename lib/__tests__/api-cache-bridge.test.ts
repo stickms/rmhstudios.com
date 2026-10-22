@@ -47,6 +47,7 @@ async function boot() {
 }
 
 beforeEach(() => {
+  delete (globalThis as Record<symbol, unknown>)[Symbol.for('rmh.cache.bridgeStart')];
   bus.enabled = true;
   bus.handlers.clear();
   bus.published.length = 0;
@@ -113,6 +114,27 @@ describe('apiCache invalidation bridge', () => {
     expect(a.apiCache.get('k')).toBeUndefined();
     expect(b.apiCache.get('k')).toBe(1);
     expect(bus.published).toHaveLength(0);
+  });
+});
+
+describe('start-up reaches the bundled copy the requests use', () => {
+  it('the Nitro plugin starts a cached.server copy that loads after it', async () => {
+    // Production holds cached.server twice: the plugin runs in the Nitro bundle at
+    // boot, before the app bundle's copy (which holds the apiCache requests read) loads.
+    vi.resetModules();
+    const plugin = (await import('../../server/nitro/cache-bridge')).default;
+    plugin();
+    expect(bus.handlers.size).toBe(0); // nothing loaded yet to subscribe
+
+    vi.resetModules();
+    const app = await import('@/lib/cache');
+    await import('@/lib/cached.server'); // the app copy: imported, never started by hand
+    expect(bus.handlers.size).toBe(1);
+
+    const other = await boot();
+    app.apiCache.set('rules:c1', 1, 60_000);
+    other.apiCache.invalidate('rules:c1');
+    expect(app.apiCache.get('rules:c1')).toBeUndefined();
   });
 });
 

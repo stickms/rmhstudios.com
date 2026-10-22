@@ -7,13 +7,21 @@
 // call, so without this it would never receive another worker's invalidation and
 // would serve the old value until its TTL. Long-running servers start the bridge here.
 //
-// SAFETY: no Redis configured -> no-op. Everything is swallowed; this must never
-// block boot. Imports are RELATIVE (Nitro plugins don't reliably resolve `@/`).
+// WHY A FLAG, NOT AN IMPORT OF cached.server: this plugin is bundled into Nitro,
+// which holds its own copy of cached.server and of `apiCache`; the requests use
+// the copy in the app bundle. Subscribing the Nitro copy did nothing for them.
+// The flag lives on globalThis, so the app copy starts itself when it loads
+// (lib/cache-bridge-start.ts).
+//
+// SAFETY: no Redis configured -> the bridge is a no-op. Nothing here can block
+// boot. Imports are RELATIVE (Nitro plugins don't reliably resolve `@/`).
+
+import { requestCacheBridge } from '../../lib/cache-bridge-start';
 
 export default function cacheBridgePlugin(): void {
-  void import('../../lib/cached.server')
-    .then(({ startCacheBridge }) => startCacheBridge())
-    .catch(() => {
-      // The lazy path still installs the bridge on the first cached()/invalidate call.
-    });
+  try {
+    requestCacheBridge();
+  } catch {
+    // The lazy path still installs the bridge on the first cached()/invalidate call.
+  }
 }

@@ -23,6 +23,7 @@
  * lib/feed/personalize.server.ts — migrate coherence-sensitive caches onto it.
  */
 
+import { registerCacheBridgeStarter, requestCacheBridge } from '@/lib/cache-bridge-start';
 import { apiCache, CACHE_PROCESS_ID } from '@/lib/cache';
 import { measure } from '@/lib/otel/timing';
 import { cacheNamespace, recordCache } from '@/lib/perf/process-metrics';
@@ -705,10 +706,15 @@ export async function invalidateCachedPrefix(prefix: string): Promise<void> {
  * Importing this module opens NO Redis connection (a short-lived script that imports it must exit).
  * The bridge is installed lazily on the first `cached*()` / `invalidateCached*()` call or the first
  * `apiCache.invalidate*`. A process that only ever READS `apiCache` would never trigger that, so
- * long-running servers call this at start-up: the web tier from `server/nitro/cache-bridge.ts`.
+ * long-running servers start it at boot: the web tier through `requestCacheBridge` in
+ * `server/nitro/cache-bridge.ts`, which reaches this module's copy in the app bundle.
  */
 export function startCacheBridge(): void {
+  requestCacheBridge();
   ensureSubscribed();
 }
 
 apiCache.setBridgeInstaller(ensureSubscribed);
+// Every bundled copy of this module registers, so start-up reaches the copy the
+// requests actually use (lib/cache-bridge-start.ts).
+registerCacheBridgeStarter(ensureSubscribed);

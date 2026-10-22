@@ -66,6 +66,8 @@ vi.mock('@/lib/quests/engine.server', () => ({ progressQuests: async () => {} })
 vi.mock('@/lib/economy/ledger.server', () => ({ transferCoins: async () => {} }));
 vi.mock('@/lib/feed/map-feed-item.server', () => ({
   applyLock: (i: unknown) => i,
+  isLocked: (r: { unlockPrice?: number | null; userId: string; unlocks?: unknown[] }, viewer: string | null) =>
+    !!r.unlockPrice && r.unlockPrice > 0 && r.userId !== viewer && !(r.unlocks && r.unlocks.length > 0),
   loadBoundedReactionSummaries: async () => new Map(),
   rmharkIncludeLite: () => ({}),
   mapRmharksWithBoundedReactions: async (rows: { id: string }[]) => rows.map((r) => ({ id: r.id })),
@@ -350,6 +352,27 @@ describe('readers', () => {
     expect(out.items.map((i) => i.id).sort()).toEqual(['comm-mine', 'pub']);
   });
 
+  it('bookmarks list: a run of unreadable saves does not end the list early', async () => {
+    // limit 2 scans in batches of 6: the first batch is all unreadable.
+    const hiddenIds = Array.from({ length: 6 }, (_, i) => `priv${i}`);
+    const readable = ['pub0', 'pub1', 'pub2'];
+    h.posts = [...hiddenIds.map((id) => mk(id, { audience: 'PRIVATE' })), ...readable.map((id) => mk(id))];
+    const saves = [...hiddenIds, ...readable].map((entityId) => ({ id: `s-${entityId}`, entityId }));
+    const { prisma } = await import('@/lib/prisma.server');
+    (prisma.savedItem.findMany as unknown as (a: unknown) => Promise<unknown>) = async (a: unknown) => {
+      const { take, cursor } = a as { take: number; cursor?: { id: string } };
+      const from = cursor ? saves.findIndex((x) => x.id === cursor.id) + 1 : 0;
+      return saves.slice(from, from + take);
+    };
+    const first = await listBookmarks('viewer', { limit: 2 });
+    expect(first.items.map((i) => i.id)).toEqual(['pub0', 'pub1']);
+    expect(first.hasMore).toBe(true);
+    const second = await listBookmarks('viewer', { limit: 2, cursor: first.nextCursor });
+    expect(second.items.map((i) => i.id)).toEqual(['pub2']);
+    expect(second.hasMore).toBe(false);
+    expect(second.nextCursor).toBeNull();
+  });
+
   it('saved items hydrate to tombstones when the post is no longer readable', async () => {
     h.posts = store();
     const rows = ['pub', 'priv', 'gone', 'comm', 'comm-mine'].map((entityId) => ({
@@ -380,6 +403,32 @@ describe('readers', () => {
   ])('developer API GET /v1/posts/:id 404s for a %s post', async (_l, post) => {
     h.posts = [post];
     expect((await call(V1Post, 'GET', { id: 'p1' })).status).toBe(404);
+  });
+
+  it('developer API GET /v1/posts/:id withholds a priced post the caller has not unlocked', async () => {
+    h.posts = [mk('p1', { unlockPrice: 50 })];
+    const res = await call(V1Post, 'GET', { id: 'p1' });
+    expect(res.status).toBe(403);
+    expect(JSON.stringify(await res.json())).not.toContain('content p1');
+    h.posts = [mk('p1', { unlockPrice: 50, unlocks: [{ id: 'u' }] })];
+    expect((await call(V1Post, 'GET', { id: 'p1' })).status).toBe(200);
+    h.posts = [mk('p1', { unlockPrice: 50, userId: 'viewer' })];
+    expect((await call(V1Post, 'GET', { id: 'p1' })).status).toBe(200);
+  });
+
+  it('a saved priced post the viewer has not unlocked gets no content-derived title', async () => {
+    h.posts = [mk('paid', { unlockPrice: 50 }), mk('paid-open', { unlockPrice: 50, unlocks: [{ id: 'u' }] })];
+    const rows = ['paid', 'paid-open'].map((entityId) => ({
+      id: `s-${entityId}`,
+      entityType: 'rmhark',
+      entityId,
+      folderId: null,
+      createdAt: new Date(),
+    }));
+    const [paid, open] = await hydrateSaves('viewer', rows);
+    expect(paid.tombstone).toBe(false);
+    expect(paid.title).not.toContain('content paid');
+    expect(open.title).toBe('content paid-open');
   });
 
   it('link-preview cards never show a private-community post', () => {

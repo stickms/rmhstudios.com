@@ -42,6 +42,7 @@ vi.mock('ioredis', () => {
 });
 
 beforeEach(() => {
+  delete (globalThis as Record<symbol, unknown>)[Symbol.for('rmh.cache.bridgeStart')];
   created.count = 0;
   vi.resetModules();
   vi.stubEnv('REDIS_URL', 'redis://127.0.0.1:6399');

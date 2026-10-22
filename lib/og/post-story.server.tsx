@@ -56,19 +56,23 @@ export interface PostStoryData {
   authorImage: string | null;
 }
 
+/** The strings the card draws: the cache key is built from exactly these. */
+function postStoryText(data: PostStoryData): { name: string; body: string } {
+  return {
+    name: truncate(data.authorName || data.authorHandle || 'RMH Studios', 24),
+    body: truncate(data.content || 'View this post on RMH Studios', 320),
+  };
+}
+
 /** Exported for the test that pins "everything drawn is in the key". */
 export function postStoryCacheKey(data: PostStoryData): string {
   // Everything drawn is in the key (docs/open-graph.md). It used to be the id
   // alone, so an edit, or a content warning that turned the body into the
   // generic card, kept serving the old card from this process for up to the
-  // TTL. The body is cut at 320 characters when drawn, so 400 covers it.
-  return [
-    data.id,
-    data.authorName,
-    data.authorHandle ?? '',
-    data.authorImage ?? '',
-    (data.content ?? '').slice(0, 400),
-  ].join('\u0000');
+  // TTL. The text parts are the normalized, truncated strings actually drawn,
+  // not a raw prefix that emoji stripping could shift.
+  const { name, body } = postStoryText(data);
+  return [data.id, name, data.authorHandle ?? '', data.authorImage ?? '', body].join('\u0000');
 }
 
 async function renderPostStoryImageUncached(data: PostStoryData): Promise<Buffer> {
@@ -79,9 +83,8 @@ async function renderPostStoryImageUncached(data: PostStoryData): Promise<Buffer
   await loadFonts();
 
   const avatar = await fetchAvatarDataUri(data.authorImage);
-  const name = truncate(data.authorName || data.authorHandle || 'RMH Studios', 24);
+  const { name, body } = postStoryText(data);
   const initial = (name || 'R')[0]?.toUpperCase() ?? 'R';
-  const body = truncate(data.content || 'View this post on RMH Studios', 320);
 
   // The pane sits above the globe, so it gets what's left after the mark and the
   // gap under it — worked out rather than eyeballed, because satori won't clip.

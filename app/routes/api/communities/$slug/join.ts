@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma.server';
 import { acceptInvite } from '@/lib/communities/invites.server';
 
 /**
- * POST /api/communities/$slug/join — toggle membership.
+ * POST /api/communities/$slug/join — toggle membership (join-only with an invite).
  *
  * A private community can only be joined with `{ invite: code }` (or by a
  * moderator approving a join request); the code is validated and consumed
@@ -33,6 +33,12 @@ export const Route = createFileRoute('/api/communities/$slug/join')({
             where: { communityId_userId: { communityId: community.id, userId } },
             select: { id: true },
           });
+
+          // An invite is a request to join, never a toggle: repeating it (a double
+          // submit, a second open invite tab) must not turn into a leave.
+          if (body?.invite && existing) {
+            return Response.json({ success: true, joined: true });
+          }
 
           if (community.isPrivate && !existing) {
             const accepted = body?.invite

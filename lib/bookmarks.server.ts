@@ -53,6 +53,9 @@ const rmharkInclude = (viewerId: string | null) => ({
   original: { include: { user: { select: userDisplaySelect } } },
 });
 
+/** Batches `listBookmarks` scans past unreadable saves before returning a short page. */
+const BOOKMARK_SCAN_ROUNDS = 4;
+
 /**
  * The viewer's bookmarked posts, newest-saved first (cursor-paginated). Shared
  * by the `/api/bookmarks` GET handler and the `/bookmarks` route loader so the
@@ -67,31 +70,46 @@ export async function listBookmarks(
   // 20260803210000 migration folded the old `rmheet_bookmark` table in. That
   // table is polymorphic, so there is no Prisma relation to `include` — the
   // posts are fetched by id in a second query and re-ordered to match.
-  const saves = await prisma.savedItem.findMany({
-    where: { userId: viewerId, entityType: 'rmhark' },
-    orderBy: { createdAt: 'desc' },
-    // Over-fetch: a save whose post was since deleted is dropped below, and
-    // without slack a page of them would return short and stall the cursor.
-    take: (limit + 1) * 2,
-    ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),
-    select: { id: true, entityId: true },
-  });
+  // A bookmark is not a standing right to read: a post that became PRIVATE, was
+  // deleted, belongs to a private community the viewer left, or is by an author the
+  // viewer blocked is dropped (viewerVisiblePostWhere includes deletedAt). Dropped
+  // saves must not end the list early, so scan on in over-fetched batches until a
+  // page (plus one, for hasMore) is filled or the saves run out. The scan is bounded;
+  // past the bound the page returns short with a cursor at the last save scanned.
+  const visible = await viewerVisiblePostWhere(viewerId);
+  const batch = (limit + 1) * 2;
+  const live: { id: string; rmhark: Awaited<ReturnType<typeof prisma.rMHark.findMany>>[number] }[] = [];
+  let cursor = opts.cursor ?? null;
+  let exhausted = false;
+  for (let round = 0; round < BOOKMARK_SCAN_ROUNDS && live.length <= limit; round++) {
+    const saves = await prisma.savedItem.findMany({
+      where: { userId: viewerId, entityType: 'rmhark' },
+      orderBy: { createdAt: 'desc' },
+      take: batch,
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+      select: { id: true, entityId: true },
+    });
+    if (saves.length > 0) {
+      const posts = await prisma.rMHark.findMany({
+        where: { id: { in: saves.map((s) => s.entityId) }, ...visible },
+        include: rmharkInclude(viewerId),
+      });
+      const byId = new Map(posts.map((p) => [p.id, p]));
+      for (const s of saves) {
+        const rmhark = byId.get(s.entityId);
+        if (rmhark) live.push({ id: s.id, rmhark });
+      }
+      cursor = saves[saves.length - 1]!.id;
+    }
+    if (saves.length < batch) {
+      exhausted = true;
+      break;
+    }
+  }
 
-  const posts = await prisma.rMHark.findMany({
-    // A bookmark is not a standing right to read: a post that became PRIVATE, was
-    // deleted, belongs to a private community the viewer left, or is by an author the
-    // viewer blocked is dropped here (viewerVisiblePostWhere includes deletedAt).
-    where: { id: { in: saves.map((s) => s.entityId) }, ...(await viewerVisiblePostWhere(viewerId)) },
-    include: rmharkInclude(viewerId),
-  });
-  const byId = new Map(posts.map((p) => [p.id, p]));
-
-  const live = saves
-    .filter((s) => byId.has(s.entityId))
-    .map((s) => ({ id: s.id, rmhark: byId.get(s.entityId)! }));
-
-  const hasMore = live.length > limit;
-  const page = hasMore ? live.slice(0, limit) : live;
+  const full = live.length > limit;
+  const page = full ? live.slice(0, limit) : live;
+  const hasMore = full || !exhausted;
 
   // Bounded reaction summaries for the whole page (two aggregate queries) instead
   // of fetching every reaction row per post (perf audit §2.3).
@@ -128,7 +146,7 @@ export async function listBookmarks(
 
   return {
     items,
-    nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
+    nextCursor: full ? (page[page.length - 1]?.id ?? null) : hasMore ? cursor : null,
     hasMore,
   };
 }

@@ -5,6 +5,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { canReadPostThread, viewerVisiblePostWhere } from '@/lib/feed/audience.server';
+import { isLocked } from '@/lib/feed/map-feed-item.server';
 import {
   MAX_FOLDERS,
   type SaveEntityType,
@@ -176,18 +177,30 @@ export async function hydrateSaves(
   // Posts.
   const postMap = new Map<
     string,
-    { content: string; audience: string; userId: string; handle: string | null }
+    { content: string; locked: boolean; audience: string; userId: string; handle: string | null }
   >();
   if (byType.has('rmhark')) {
     const posts = await prisma.rMHark.findMany({
       // Visibility in the query (deleted, audience, hidden author, private community):
       // a post the viewer can no longer read comes back as a tombstone.
       where: { id: { in: byType.get('rmhark')! }, ...(await viewerVisiblePostWhere(viewerId)) },
-      select: { id: true, content: true, audience: true, userId: true, user: { select: { handle: true } } },
+      select: {
+        id: true,
+        content: true,
+        audience: true,
+        userId: true,
+        unlockPrice: true,
+        unlocks: { where: { userId: viewerId }, select: { id: true } },
+        user: { select: { handle: true } },
+      },
     });
     for (const p of posts) {
+      // Audience access is not paid access: a priced post the viewer has not
+      // unlocked contributes no text to its save's title.
+      const locked = isLocked(p, viewerId);
       postMap.set(p.id, {
-        content: p.content,
+        content: locked ? '' : p.content,
+        locked,
         audience: String(p.audience),
         userId: p.userId,
         handle: p.user?.handle ?? null,
@@ -233,7 +246,7 @@ export async function hydrateSaves(
       const text = p.content.trim().replace(/\s+/g, ' ');
       return {
         ...base,
-        title: text.length > 100 ? `${text.slice(0, 100)}…` : text || '(post)',
+        title: p.locked ? '(locked post)' : text.length > 100 ? `${text.slice(0, 100)}…` : text || '(post)',
         subtitle: p.handle ? `@${p.handle}` : null,
         href: `/thread/${r.entityId}`,
         thumbnail: null,
