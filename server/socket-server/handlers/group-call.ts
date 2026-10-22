@@ -1176,6 +1176,9 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         call.declined += 1;
         call.declinedBy.add(userId);
         dropParticipant(io, call, userId, 'declined');
+        // Their other tabs are still showing the card. `declined` says
+        // nothing about why; the tab that asked gets the real refusal below.
+        io.to(userRoom(userId)).emit(GCALL_S2C.ENDED, { callId: call.id, reason: 'declined' });
         settle(io, call);
       }
       reject(reason, operation, roomRef);
@@ -1478,6 +1481,11 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     if (racedCall) return void (await enterRoom(racedCall, 'start'));
 
     if (socket.disconnected) return;
+    // Party membership again, synchronously: one that ended while the peer row
+    // loaded found no room for `evictOriginMember` to remove them from.
+    if (origin === 'party' && !isPartyMember(originId, userId)) {
+      return reject('not-member', 'start', { origin, originId });
+    }
     const call = openRoom(socket, { host, origin, originId, conversationId: null });
     if (!call) return reject('busy', 'start', { origin, originId });
     emitJoined(socket, call, userId);

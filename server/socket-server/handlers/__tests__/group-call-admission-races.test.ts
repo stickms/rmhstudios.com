@@ -822,4 +822,21 @@ describe('group-call admission races', () => {
     await host.send(GCALL_C2S.LEAVE, { callId });
     expect(__liveGroupCallCount()).toBe(0);
   });
+
+  it('does not open a party room for someone who left the party while it loaded', async () => {
+    const member = vi.mocked(isPartyMember);
+    member.mockReturnValue(true);
+    const row = gate<unknown>();
+    holdPeerRows(new Map([['party-opener', row.promise]]));
+    const opener = connect('party-opener');
+    const starting = opener.send(GCALL_C2S.START, { origin: 'party', originId: 'party-r' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    member.mockReturnValue(false);
+    row.open({ id: 'party-opener', name: 'Opener', image: null, handle: null });
+    await starting;
+
+    expect(__liveGroupCallCount()).toBe(0);
+    expect(getBusy('party-opener')).toBeNull();
+    member.mockReturnValue(true);
+  });
 });
