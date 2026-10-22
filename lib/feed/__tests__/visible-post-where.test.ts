@@ -17,6 +17,8 @@ const state = vi.hoisted(() => ({
   circles: [] as string[],
   supported: [] as string[],
   hidden: [] as string[],
+  /** When set, the throwing block lookup fails and the (fail-open) hidden lookup returns []. */
+  blockLookupFails: false,
 }));
 
 vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
@@ -24,8 +26,11 @@ vi.mock('@/lib/social/follow-graph.server', () => ({
   getFollowingIds: vi.fn(async () => state.following),
 }));
 vi.mock('@/lib/moderation.server', () => ({
-  getHiddenAuthorIds: vi.fn(async () => state.hidden),
-  getBlockedAuthorIds: vi.fn(async () => state.hidden),
+  getHiddenAuthorIds: vi.fn(async () => (state.blockLookupFails ? [] : state.hidden)),
+  getBlockedAuthorIds: vi.fn(async () => {
+    if (state.blockLookupFails) throw new Error('db down');
+    return state.hidden;
+  }),
 }));
 
 import { viewerVisiblePostWhere } from '../audience.server';
@@ -72,6 +77,7 @@ beforeEach(() => {
   state.circles = [];
   state.supported = [];
   state.hidden = [];
+  state.blockLookupFails = false;
 });
 
 describe('viewerVisiblePostWhere', () => {
@@ -105,5 +111,21 @@ describe('viewerVisiblePostWhere', () => {
   it('hides authors the viewer blocked, muted, or was blocked by', async () => {
     state.hidden = ['blocked'];
     expect(await visibleIds(VIEWER, rows)).not.toContain('by-blocked');
+  });
+});
+
+describe('viewerVisiblePostWhere with hideMuted (feeds)', () => {
+  it('fails the read, not the filter, when the block lookup errors', async () => {
+    state.blockLookupFails = true;
+    await expect(viewerVisiblePostWhere(VIEWER, { hideMuted: true })).rejects.toThrow('db down');
+  });
+
+  it('still excludes blocked authors alongside the hidden set', async () => {
+    state.hidden = ['blocked'];
+    expect(await visibleIds(VIEWER, rows)).not.toContain('by-blocked');
+    const where = (await viewerVisiblePostWhere(VIEWER, { hideMuted: true })) as {
+      userId: { notIn: string[] };
+    };
+    expect(where.userId.notIn).toEqual(['blocked']);
   });
 });

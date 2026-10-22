@@ -14,11 +14,19 @@ export const Route = createFileRoute('/api/achievements/$userId')({
       // Keyed by the path param; the body depends on nothing but that user (secret
       // masking is by the target's own unlocks, not the viewer's). Short because an
       // owner who has just unlocked something looks here (CACHE_POLICY.liveList).
-      GET: defineHandler({ auth: 'none', cache: CACHE_POLICY.liveList }, async ({ params }) => {
-        const result = await listAchievements(params.userId);
-        if (!result) return Response.json({ error: 'User not found' }, { status: 404 });
-        return Response.json(result);
-      }),
+      GET: defineHandler(
+        {
+          auth: 'none',
+          // Opt out of the 30 s micro-cache: an unlock must show for its owner.
+          microCache: false,
+          cache: CACHE_POLICY.liveList,
+        },
+        async ({ params }) => {
+          const result = await listAchievements(params.userId);
+          if (!result) return Response.json({ error: 'User not found' }, { status: 404 });
+          return Response.json(result);
+        },
+      ),
     },
   },
 });

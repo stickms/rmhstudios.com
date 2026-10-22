@@ -89,6 +89,15 @@ describe('feed callers keep hiding muted authors (hideMuted)', () => {
     s.blocked = ['blocked'];
     expect(await visible(rows, { hideMuted: true })).toEqual(['ok']);
     expect(await visible(rows)).toEqual(['by-muted', 'ok']);
+
+    // And the clause itself: feeds exclude exactly the muted + blocked ids, plain
+    // reads exclude only the blocked ones (so a dropped `notIn` cannot pass on row luck).
+    const feedWhere = (await viewerVisiblePostWhere(VIEWER, { hideMuted: true })) as {
+      userId?: { notIn: string[] };
+    };
+    expect([...(feedWhere.userId?.notIn ?? [])].sort()).toEqual(['blocked', 'muted']);
+    const readWhere = (await viewerVisiblePostWhere(VIEWER)) as { userId?: { notIn: string[] } };
+    expect(readWhere.userId?.notIn).toEqual(['blocked']);
   });
 });
 

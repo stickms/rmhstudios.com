@@ -10,6 +10,7 @@ import type { FeedItem } from '@/lib/feed-types';
 const w = vi.hoisted(() => ({
   quoted: [] as Record<string, unknown>[],
   blocked: [] as string[],
+  blockLookupFails: false,
 }));
 
 vi.mock('../../prisma.server', () => ({
@@ -36,7 +37,10 @@ vi.mock('../../prisma.server', () => ({
 }));
 vi.mock('../../moderation.server', () => ({
   getHiddenAuthorIds: async () => [],
-  getBlockedAuthorIds: async () => w.blocked,
+  getBlockedAuthorIds: async () => {
+    if (w.blockLookupFails) throw new Error('db down');
+    return w.blocked;
+  },
 }));
 vi.mock('../signals.server', () => ({
   getSignals: async () => ({ lessAuthors: [], mutedTags: [], followedTags: [] }),
@@ -80,6 +84,7 @@ async function originalText(): Promise<string | undefined> {
 beforeEach(() => {
   w.quoted = [origRow()];
   w.blocked = [];
+  w.blockLookupFails = false;
 });
 
 describe('reconcile re-checks the quoted original', () => {
@@ -111,5 +116,18 @@ describe('reconcile re-checks the quoted original', () => {
     const r = await reconcileCachedPage([card()], 'viewer', 'foryou');
     expect(r.items).toHaveLength(1);
     expect(r.items[0].content).toBe('my quote');
+  });
+
+  it('rejects when the block lookup fails, even for a page with no quoted original', async () => {
+    w.blockLookupFails = true;
+    const plain = { ...card(), original: undefined } as FeedItem;
+    await expect(reconcileCachedPage([plain], 'viewer', 'foryou')).rejects.toThrow('db down');
+  });
+
+  it('drops a cached post by a blocked author (not only quoted originals)', async () => {
+    w.blocked = ['author'];
+    const plain = { ...card(), original: undefined } as FeedItem;
+    const r = await reconcileCachedPage([plain], 'viewer', 'foryou');
+    expect(r.items).toHaveLength(0);
   });
 });

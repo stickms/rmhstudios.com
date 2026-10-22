@@ -25,7 +25,15 @@
  */
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-const { getSession } = vi.hoisted(() => ({ getSession: vi.fn() }));
+const { getSession, stub } = vi.hoisted(() => ({
+  getSession: vi.fn(),
+  // `rows` is what every stubbed Prisma call resolves to; the dynamic test runs each
+  // route once with [] and once with a populated row so a body that varies by caller
+  // is compared when it has something in it (an empty `[]` is trivially equal).
+  stub: {
+    rows: [] as unknown[],
+  },
+}));
 
 vi.mock('@/lib/auth', () => ({
   auth: { api: { getSession: (...a: unknown[]) => getSession(...a) } },
@@ -42,7 +50,7 @@ vi.mock('@/lib/prisma.server', () => {
           return async (arg: unknown) => (typeof arg === 'function' ? arg(make()) : []);
         return make();
       },
-      apply: async () => [],
+      apply: async () => stub.rows,
     });
   return { prisma: make(), prismaRead: make() };
 });
@@ -223,9 +231,29 @@ const concretePath = (url: string) => url.replace(/\$[A-Za-z]+/g, 'x');
 const paramsOf = (url: string) =>
   Object.fromEntries([...url.matchAll(/\$([A-Za-z]+)/g)].map((m) => [m[1], 'x']));
 
+const POPULATED_FLOOR = 15;
+
 describe('public cache declarations are anonymous-invariant (dynamic)', () => {
   const targets = rows.filter(isPublicDeclared);
   const statuses = new Map<string, number>();
+  /** Routes whose populated-stub body actually carried the stub row, i.e. were really compared. */
+  const populated = new Set<string>();
+  const ROW = {
+    id: 'row-1',
+    userId: 'user-1',
+    name: 'Row One',
+    username: 'rowone',
+    displayName: 'Row One',
+    title: 'Row One',
+    slug: 'row-one',
+    score: 42,
+    rating: 1500,
+    count: 3,
+    tag: 'row',
+    createdAt: new Date('2026-10-20T00:00:00Z'),
+    updatedAt: new Date('2026-10-20T00:00:00Z'),
+    user: { id: 'user-1', name: 'Row One', username: 'rowone', image: null },
+  };
 
   // A handler that stamps `Date.now()` into its body would differ between the two
   // calls for a reason that has nothing to do with the caller.
@@ -276,11 +304,31 @@ describe('public cache declarations are anonymous-invariant (dynamic)', () => {
         return { res, reads, sessionReads: getSession.mock.calls.length };
       };
 
-      const anon = await call({});
-      const authed = await call({
+      const credentialed = {
         cookie: 'better-auth.session_token=abc.def; rmh-lang=fr',
         authorization: 'Bearer secret',
         'accept-language': 'fr-FR,fr;q=0.9',
+      };
+      const textOf = async (r: Response) => r.clone().text();
+
+      // Populated pass first: same checks, but the stub returns a real row so the
+      // body has content that a viewer-dependent handler could vary.
+      stub.rows = [ROW];
+      try {
+        const a = await call({});
+        const b = await call(credentialed);
+        expect(b.sessionReads, 'credentialed call read the session (populated)').toBe(0);
+        expect(b.res.status).toBe(a.res.status);
+        const bodyA = await textOf(a.res);
+        expect(await textOf(b.res)).toBe(bodyA);
+        if (a.res.ok && /row-1|user-1|Row One|rowone/.test(bodyA)) populated.add(url);
+      } finally {
+        stub.rows = [];
+      }
+
+      const anon = await call({});
+      const authed = await call({
+        ...credentialed,
       });
 
       statuses.set(url, anon.res.status);
@@ -300,6 +348,10 @@ describe('public cache declarations are anonymous-invariant (dynamic)', () => {
     },
     20_000,
   );
+
+  it('the populated pass is not vacuous: a good share of routes compare a non-empty body', () => {
+    expect(populated.size).toBeGreaterThanOrEqual(POPULATED_FLOOR);
+  });
 
   it('is not vacuous: most public routes render 2xx under the empty stub', () => {
     // 33 of 47 at the time of writing; the rest 404/500 on the empty fixture, and

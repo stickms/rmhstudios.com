@@ -24,6 +24,8 @@ export const Route = createFileRoute('/api/slice-it/showcase')({
           rateLimit: 'read',
           query: QueryZ,
           // Leaderboard-grade numbers for the ?userId= player, which is in the key.
+          // Opt out of the 30 s micro-cache: run writes call invalidateSliceItShowcase.
+          microCache: false,
           cache: CACHE_POLICY.leaderboard,
         },
         async ({ query }) => {

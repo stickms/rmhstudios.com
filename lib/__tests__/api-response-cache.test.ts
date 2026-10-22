@@ -135,8 +135,14 @@ describe('response micro-cache', () => {
       Response.json({ lang: request.headers.get('accept-language') }),
     );
     const h = defineHandler({ auth: 'none', cache: { ...PUBLIC, vary: ['Accept-Language'] } }, run);
-    const en = await h({ params: {}, request: req('/api/t', { headers: { 'accept-language': 'en' } }) });
-    const fr = await h({ params: {}, request: req('/api/t', { headers: { 'accept-language': 'fr' } }) });
+    const en = await h({
+      params: {},
+      request: req('/api/t', { headers: { 'accept-language': 'en' } }),
+    });
+    const fr = await h({
+      params: {},
+      request: req('/api/t', { headers: { 'accept-language': 'fr' } }),
+    });
     expect(run).toHaveBeenCalledTimes(2);
     expect(await en.json()).toEqual({ lang: 'en' });
     expect(await fr.json()).toEqual({ lang: 'fr' });
@@ -186,5 +192,42 @@ describe('response micro-cache', () => {
       h({ params: {}, request: req('/api/e') }),
     ]);
     expect([a.status, b.status].sort()).toEqual([200, 500]);
+  });
+
+  it('microCache: false keeps a public route out of the cache', async () => {
+    const run = vi.fn(async () => Response.json({ a: 1 }));
+    const h = defineHandler({ auth: 'none', microCache: false, cache: PUBLIC }, run);
+    await h({ params: {}, request: req('/api/o') });
+    await h({ params: {}, request: req('/api/o') });
+    expect(run).toHaveBeenCalledTimes(2);
+  });
+
+  it('normalises param order but never caches a query with a sweep of params or a huge key', async () => {
+    const run = vi.fn(async () => Response.json({ a: 1 }));
+    const h = defineHandler({ auth: 'none', cache: PUBLIC }, run);
+    await h({ params: {}, request: req('/api/n?a=1&b=2') });
+    await h({ params: {}, request: req('/api/n?b=2&a=1') });
+    expect(run).toHaveBeenCalledTimes(1);
+
+    const many = '/api/m?' + Array.from({ length: 9 }, (_, i) => `p${i}=1`).join('&');
+    await h({ params: {}, request: req(many) });
+    await h({ params: {}, request: req(many) });
+    const long = `/api/l?q=${'x'.repeat(400)}`;
+    await h({ params: {}, request: req(long) });
+    await h({ params: {}, request: req(long) });
+    expect(run).toHaveBeenCalledTimes(5);
+  });
+
+  it('a sweep of unique cache-skipped URLs does not evict a hot entry', async () => {
+    const run = vi.fn(async () => Response.json({ a: 1 }));
+    const h = defineHandler({ auth: 'none', cache: PUBLIC }, run);
+    await h({ params: {}, request: req('/api/hot') });
+    for (let i = 0; i < 600; i++) {
+      const q = Array.from({ length: 9 }, (_, j) => `k${j}=${i}`).join('&');
+      await h({ params: {}, request: req(`/api/hot?${q}`) });
+    }
+    run.mockClear();
+    await h({ params: {}, request: req('/api/hot') });
+    expect(run).not.toHaveBeenCalled();
   });
 });

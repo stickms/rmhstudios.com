@@ -15,6 +15,8 @@ export const Route = createFileRoute('/api/doctrine/incidents/$id')({
           // not change once published, but the response carries live
           // `reactionCounts` and `divisiveness`, so it shares the list route's
           // window (index.ts) instead of a 5 min shared cache plus 1 h stale.
+          // Opt out of the 30 s micro-cache: reports/reactions invalidate apiCache; micro-cache cannot see that.
+          microCache: false,
           cache: CACHE_POLICY.liveList,
         },
         async ({ params }) => {
