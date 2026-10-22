@@ -89,6 +89,12 @@ import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/space
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './handlers/matchmaking';
 import { registerCallHandlers, handleCallDisconnect } from './handlers/call';
+import {
+  registerGroupCallHandlers,
+  handleGroupCallDisconnect,
+  reconcileOrphanedGroupCalls,
+  startCommunityMembershipSweep,
+} from './handlers/group-call';
 import { registerControllerHandlers, handleControllerDisconnect } from './handlers/controller';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
@@ -542,6 +548,7 @@ io.on('connection', (socket) => {
   registerPartyHandlers(io, socket);
   registerMatchmakingHandlers(io, socket);
   registerCallHandlers(io, socket);
+  registerGroupCallHandlers(io, socket);
   registerControllerHandlers(io, socket);
 
   // Disconnect cleanup
@@ -552,6 +559,7 @@ io.on('connection', (socket) => {
     handlePartyDisconnect(io, socket);
     handleMatchmakingDisconnect(socket);
     void handleCallDisconnect(io, socket);
+    void handleGroupCallDisconnect(io, socket);
     handleControllerDisconnect(io, socket);
     handleSynapseStormDisconnect(io, socket);
     handleSliceItDisconnect(io, socket);
@@ -610,6 +618,10 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // ─── Start listening ────────────────────────────────────────────
 
+// Taken before `listen`, so the sweep below can tell rooms the previous process
+// left behind from rooms this one opens while the sweep is still running.
+const bootedAt = new Date();
+
 httpServer.listen(config.PORT, () => {
   logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
   if (config.DATABASE_URL) void warmPrismaClient(getPrismaClient(), logger);
@@ -618,3 +630,15 @@ httpServer.listen(config.PORT, () => {
   initializeBaccarat(io);
   initializeRoulette(io);
 });
+
+// Close group-call rows a previous process died holding. History hygiene only:
+// it runs after `listen` and never fails the boot, because every other feature
+// on this hub must not wait on (or die with) a database that is briefly away.
+// Whatever it misses is swept on the next start.
+reconcileOrphanedGroupCalls(bootedAt).catch((err: unknown) => {
+  logger.warn({ event: 'group_call_orphan_reconciliation_failed', error: String(err) });
+});
+
+// Community removals happen in the web tier, which cannot reach this process;
+// this is how a removed member leaves the community's voice room.
+startCommunityMembershipSweep(io);
