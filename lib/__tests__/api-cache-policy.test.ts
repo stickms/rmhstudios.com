@@ -48,6 +48,7 @@ vi.mock('@/lib/prisma.server', () => {
 });
 vi.mock('@/lib/prisma', () => ({ prisma: new Proxy({}, { get: () => () => [] }) }));
 
+import { clearResponseCache } from '@/lib/api/response-cache.server';
 import { triage, type Row } from '../../scripts/api-cache-triage';
 
 const rows = triage();
@@ -261,6 +262,7 @@ describe('public cache declarations are anonymous-invariant (dynamic)', () => {
 
       const base = `https://rmhstudios.com${concretePath(url)}?limit=5&to=English&id=x&userId=x&slug=x`;
       const call = async (headers: Record<string, string>) => {
+        clearResponseCache(); // each call must run the handler: the micro-cache would hide its header reads
         getSession.mockReset();
         getSession.mockResolvedValue({ user: { id: 'viewer-1', isAdmin: true, name: 'Viewer' } });
         const { request, reads } = instrument(
