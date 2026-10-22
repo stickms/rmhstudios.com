@@ -384,7 +384,8 @@ function scanAll(): {
   const stacked = /(?<![\w-])z-(?:\d{1,3}|\[\d+\])(?![\w-])/;
   const edgeAnchored =
     /(?<![\w-])(?:top-full|bottom-full|mt-\d|mb-\d|left-0|right-0|inset-x-0)(?![\w-])/;
-  const lowerTier = /(?<![\w-])(?:glass-(?:fill|pane|chrome))(?![\w-])|(?<![\w-])bg-site-surface(?![\w-])/;
+  const lowerTier =
+    /(?<![\w-])(?:glass-(?:fill|pane|chrome))(?![\w-])|(?<![\w-])bg-site-surface(?![\w-])/;
   const l4Tier = /(?<![\w-])glass-(?:overlay|scrim)(?![\w-])/;
   const transitionAllRe = /(?<![\w-])transition-all(?![\w-])/g;
   /**
@@ -602,7 +603,8 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
    */
   it('no `transition-[…transform…]` beside a scale/translate/rotate utility', () => {
     const TRANSFORM_LIST = /transition-\[[^\]]*\btransform\b[^\]]*\]/;
-    const UTILITY = /(?:^|[\s'"`:])(?:group-)?(?:hover|active|focus|focus-visible)?:?-?(?:scale|translate|rotate)-/;
+    const UTILITY =
+      /(?:^|[\s'"`:])(?:group-)?(?:hover|active|focus|focus-visible)?:?-?(?:scale|translate|rotate)-/;
     const offenders: string[] = [];
     for (const file of FILES) {
       const src = readFileSync(join(ROOT, file), 'utf8');
@@ -727,14 +729,13 @@ function cssViolations(src: string): { hex: number; radius: number } {
  * `creator-studio.css`, then the rest.
  */
 const CSS_DEBT: Record<string, { hex: number; radius: number }> = {
-  'components/library/library.css': { hex: 31, radius: 33 },
-  'components/creator-studio/creator-studio.css': { hex: 25, radius: 5 },
+  'components/library/library.css': { hex: 31, radius: 12 },
+  'components/creator-studio/creator-studio.css': { hex: 20, radius: 0 },
   'components/rmhtech/rmhtech.css': { hex: 16, radius: 5 },
   'components/library/album-admin.css': { hex: 6, radius: 4 },
   'components/library/album-viewer.css': { hex: 7, radius: 3 },
-  'components/creator-studio/storefront.css': { hex: 5, radius: 3 },
+  'components/creator-studio/storefront.css': { hex: 5, radius: 0 },
   'components/rmhladder/rmhladder.css': { hex: 0, radius: 6 },
-  'components/feed/feed.css': { hex: 0, radius: 2 },
   'components/security/security.css': { hex: 0, radius: 4 },
   'components/rmhcalculator/rmhcalculator.css': { hex: 0, radius: 3 },
   'components/library/book-3d.css': { hex: 1, radius: 2 },
@@ -757,9 +758,7 @@ describe('the token contract holds in CSS too', () => {
     // changed tier set) every assertion below would pass vacuously.
     expect(measured.length).toBeGreaterThan(10);
     expect(measured.map((m) => m.file)).toContain('components/feed/feed.css');
-    expect(measured.map((m) => m.file)).not.toContain(
-      'components/temple-of-joy/temple-of-joy.css',
-    );
+    expect(measured.map((m) => m.file)).not.toContain('components/temple-of-joy/temple-of-joy.css');
   });
 
   it('adds no raw hex colour or hardcoded radius to a clean stylesheet', () => {
@@ -845,9 +844,10 @@ describe('the token contract holds in CSS too', () => {
 const FRAME_ALLOW = new Set<string>([]);
 
 describe('site pages take the shared frame', () => {
-  const routeFiles = FILES.filter((f) =>
-    f.split(/[\\/]/).slice(0, 3).join('/') === 'app/routes/_site' ||
-    f.startsWith(join('app', 'routes', '_site')),
+  const routeFiles = FILES.filter(
+    (f) =>
+      f.split(/[\\/]/).slice(0, 3).join('/') === 'app/routes/_site' ||
+      f.startsWith(join('app', 'routes', '_site')),
   );
 
   it('finds the _site routes at all', () => {
@@ -885,7 +885,7 @@ describe('site pages take the shared frame', () => {
     }
     expect(
       offenders,
-      '`reserve` and `compactReserve` do nothing (see ContextRail\'s own ' +
+      "`reserve` and `compactReserve` do nothing (see ContextRail's own " +
         'JSDoc). Drop the prop rather than carrying it forward.',
     ).toEqual([]);
   });

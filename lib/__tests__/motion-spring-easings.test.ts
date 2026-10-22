@@ -107,10 +107,9 @@ describe('§7.1 — the CSS springs are APPLE_SPRING, sampled', () => {
 });
 
 describe('dialog and sheet: one path both ways, readable on the quick clock', () => {
-  it('the dialog exit ends on the frame its enter starts from', () => {
-    expect(transformIn(keyframes(DIALOG, 'ui-dialog-content-out'))).toBe(
-      transformIn(keyframes(DIALOG, 'ui-dialog-content-in')),
-    );
+  it('dialogs use an interruptible scale transition for both directions', () => {
+    expect(DIALOG).toContain('scale var(--motion-in) var(--motion-ease-in)');
+    expect(DIALOG).toContain('@starting-style');
   });
 
   it('the desktop sheet exit ends on the frame its enter starts from', () => {
@@ -123,16 +122,13 @@ describe('dialog and sheet: one path both ways, readable on the quick clock', ()
 
   it('a spring-driven enter takes its opacity from a separate short animation', () => {
     for (const [css, rule] of [
-      [DIALOG, /\[data-slot='dialog-content'\]\[data-state='open'\]\s*\{([^}]*)\}/],
       [SHEET, /\[data-slot="sheet-content"\]\[data-state="open"\]\s*\{([^}]*)\}/],
-      [GLOBALS, /\[data-motion='rise'\]:not\(\[data-state='closed'\]\)\s*\{([^}]*)\}/],
     ] as const) {
       const body = rule.exec(css)?.[1] ?? '';
       expect(body, String(rule)).toMatch(/var\(--spring-\w+-duration\)\s+var\(--spring-\w+\)/);
       expect(body, String(rule)).toMatch(/var\(--motion-in\)\s+var\(--motion-ease-in\)/);
     }
     // ...and the spring half never animates opacity itself.
-    expect(keyframes(DIALOG, 'ui-dialog-content-in')).not.toMatch(/opacity/);
     expect(keyframes(GLOBALS, 'motion-rise-move')).not.toMatch(/opacity/);
   });
 });

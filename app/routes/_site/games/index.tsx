@@ -87,23 +87,18 @@ function GamesIndexPage() {
         wide
       >
         <CatalogTabs active="/games" />
-        {/* The player half, moved off `/create` when its Games tab was removed.
-            Only the two COMPACT surfaces sit above the catalog — the party bar
-            (null with no session) and the one-line Ranked summary. The Arcade
-            Pass comes after the games: signed out it is a full panel with its
-            own tab strip and a "sign in to play" block, and above the catalog
-            it pushed every game below the fold on a "browse the games" page
-            (UI minimalism audit, 2026-10-09). */}
-        <div className="flex flex-col gap-4 px-4 pt-2">
-          <PartyBar inline />
-          <RankedSummary />
-        </div>
         <div className="px-4">
           <CuratedBuildsTab
             curated={games}
             seed={0}
             searchPlaceholder={t('search-games-placeholder', { defaultValue: 'Search games...' })}
             emptyLabel={t('empty-games', { defaultValue: 'No games match that search.' })}
+            afterControls={
+              <div className="flex flex-col gap-3 pb-4">
+                <PartyBar inline />
+                <RankedSummary />
+              </div>
+            }
           />
         </div>
         <div className="px-4 pt-6 pb-12">

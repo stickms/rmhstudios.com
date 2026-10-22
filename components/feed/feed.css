@@ -49,7 +49,7 @@
    the backdrop, not in a box), so it is now the BASE rule and the override is
    gone. Type comes from the shared display scale via `.site-display-3`. */
 .page-heading {
-  margin: 0 0 var(--rad-4, 1.5rem);
+  margin: 0 0 var(--site-section-gap);
 }
 
 .page-heading__meta,
@@ -96,7 +96,8 @@
 .page-heading__content {
   justify-content: space-between;
   gap: 1rem;
-  align-items: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 /* Space above the title only when something sits above it — with no meta row
@@ -276,7 +277,7 @@
   width: 2.4rem;
   height: 2.4rem;
   place-items: center;
-  border-radius: 0.75rem;
+  border-radius: var(--site-control-radius);
   background: var(--site-bg-subtle);
   color: var(--site-text-muted);
 }
@@ -312,7 +313,7 @@
 .feed-tabs__timeline button {
   min-height: 2.55rem;
   flex: 1;
-  border-radius: 0.8rem;
+  border-radius: var(--site-control-radius);
   color: var(--site-text-muted);
   font-size: 0.8rem;
   font-weight: 740;
@@ -388,8 +389,8 @@
     background-color 160ms ease,
     /* `scale`, not `transform`: the press cue is the independent property now
        (`.glass-interactive:active`, globals.css) so it composes with whatever
-       transform the card carries instead of erasing it. */ scale 140ms
-      var(--ease-out);
+       transform the card carries instead of erasing it. */
+    scale 140ms var(--ease-out);
 }
 
 .social-feed-row {
@@ -401,7 +402,6 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-
   .social-post:hover {
     border-color: var(--site-border-bright);
     /* background-COLOR, not the shorthand: a post is `.glass-fill` now, and the
@@ -563,7 +563,6 @@
 }
 
 @media (min-width: 768px) {
-
   .page-heading,
   .feed-search,
   .feed-tabs-wrap,
@@ -603,7 +602,6 @@
 }
 
 @media (max-width: 419px) {
-
   .feed-heading__live {
     padding-inline: 0.55rem;
   }

@@ -163,7 +163,7 @@
 /* ── Hero banner ────────────────────────────────────────────────────────────── */
 .store-hero {
   margin: 8px 0 22px;
-  border-radius: 20px;
+  border-radius: var(--site-radius);
   overflow: hidden;
   border: 0.5px solid var(--site-border);
   box-shadow: var(--site-shadow);
@@ -279,7 +279,7 @@
   margin-top: 4px;
   height: 42px;
   padding: 0 20px;
-  border-radius: 9999px;
+  border-radius: var(--site-control-radius);
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.9rem;
@@ -335,7 +335,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  border-radius: 16px;
+  border-radius: var(--site-radius);
   overflow: hidden;
   text-decoration: none;
   color: inherit;
@@ -473,7 +473,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  border-radius: 14px;
+  border-radius: var(--site-radius-sm);
   overflow: hidden;
   text-decoration: none;
   color: inherit;

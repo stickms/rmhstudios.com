@@ -149,21 +149,6 @@ export function NewsList({
     [totalPages, updateURL, debouncedSearch, selectedCategory, sortMode],
   );
 
-  const pageNumbers = useMemo(() => {
-    const pages: (number | '...')[] = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (safePage > 3) pages.push('...');
-      for (let i = Math.max(2, safePage - 1); i <= Math.min(totalPages - 1, safePage + 1); i++)
-        pages.push(i);
-      if (safePage < totalPages - 2) pages.push('...');
-      pages.push(totalPages);
-    }
-    return pages;
-  }, [totalPages, safePage]);
-
   const hasActiveFilters = searchInput || selectedCategory || sortMode !== 'newest';
 
   const clearAllFilters = () => {
@@ -184,7 +169,11 @@ export function NewsList({
       {/* Filter Controls - collapsible */}
       {filtersOpen && (
         /* id is the target of the header's Filters button's aria-controls. */
-        <div id="news-filters" className="mb-4 space-y-3 border-b border-(--site-border) pb-4">
+        <div
+          id="news-filters"
+          data-slot="page-controls"
+          className="mb-4 space-y-3 border-b border-(--site-border) pb-4"
+        >
           {/* Category Tabs */}
           <NewsCategoryTabs
             activeCategory={selectedCategory}

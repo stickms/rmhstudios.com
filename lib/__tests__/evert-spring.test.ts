@@ -26,7 +26,7 @@ import {
 const ROOT = join(__dirname, '..', '..');
 const CSS = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
 const SECTION = (() => {
-  const start = CSS.indexOf('/* ─── §7.3 Eversion');
+  const start = CSS.indexOf('/* Section 7.3 Eversion');
   const end = CSS.indexOf('/* ─── Scoped shared-element View Transitions', start);
   expect(start).toBeGreaterThan(-1);
   expect(end).toBeGreaterThan(start);
@@ -37,7 +37,7 @@ const SECTION = (() => {
 const token = (name: string): string => {
   const m = new RegExp(`${name}:\\s*([^;]+);`).exec(SECTION);
   expect(m, `${name} is missing from §7.3`).not.toBeNull();
-  return m![1].trim();
+  return m![1].trim().replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')');
 };
 
 const SPRINGS = [
@@ -101,21 +101,12 @@ describe('§7.3 — the layer costs what the design language allows', () => {
     );
   });
 
-  it('the layers on controls that can navigate run on the compositor, not the main thread', () => {
-    // A press that navigates starts the route's render on the main thread; a main-thread animation (clip-path)
-    // stood still for ~630 ms after the click, until the new page had painted. `scale` keeps moving through it.
-    const rule = (sel: string) => {
-      const i = SECTION.indexOf(`${sel} {`);
-      expect(i, sel).toBeGreaterThan(-1);
-      return SECTION.slice(i, SECTION.indexOf('}', i));
-    };
-    for (const sel of ['[data-evert]::before', "[data-evert~='select']::after"]) {
-      const body = rule(sel);
-      expect(body, sel).toMatch(/scale: 0;/);
-      expect(body, sel).toMatch(/transform-origin: var\(--evert-x, 50%\) var\(--evert-y, 50%\)/);
-      expect(body, sel).toMatch(/transition:\s*scale var\(--evert-in\)/);
-      expect(body, sel).not.toMatch(/clip-path/);
-    }
+  it('ordinary state layers fade without growing or moving an origin', () => {
+    const a = SECTION.indexOf('  [data-evert]::before,');
+    const b = SECTION.indexOf('/* Legacy', a);
+    const controls = SECTION.slice(a, b < 0 ? SECTION.indexOf("[data-slot='button']", a) : b);
+    expect(controls).toContain('transition: opacity var(--site-transition-speed)');
+    expect(controls).not.toMatch(/scale:|transform-origin:|clip-path:/);
   });
 
   it('hover only ever comes from a fine pointer', () => {
@@ -131,84 +122,28 @@ describe('§7.3 — the layer costs what the design language allows', () => {
     expect(SECTION).toMatch(/@media \(forced-colors: active\)\s*\{[^}]*\[data-evert\]::before/);
   });
 
-  it('only the site’s own Reduce motion switch stands the layer down; the OS preference does not', () => {
-    // Owner, 2026-10-21: "it should always play by default". The account switch's reset reaches every pseudo-element…
+  it('both system and account motion preferences stop decorative transitions', () => {
     expect(CSS).toMatch(
       /html\.reduce-motion \*,\s*html\.reduce-motion \*::before,\s*html\.reduce-motion \*::after\s*\{[^}]*transition-duration: 0\.01ms !important/,
     );
-    // …and the OS-wide reset spares the eversion's layers, the pop-up globe, the hub and the run's overlay.
-    const os = CSS.slice(CSS.indexOf('@media (prefers-reduced-motion: reduce) {\n  :not('));
-    const head = os.slice(0, os.indexOf('{', os.indexOf(')::after')));
-    for (const spared of [
-      '[data-evert]',
-      '.evert-ghost',
-      '.evert-popup',
-      '.eversion-overlay',
-      '.radial-hub',
-    ]) {
-      expect(head, spared).toContain(spared);
-    }
+    expect(CSS).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\*,\s*\*::before,\s*\*::after/,
+    );
   });
 });
 
-describe('§7.3 — the shared controls carry the layer', () => {
+describe('ordinary controls keep immediate feedback', () => {
   const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
-
-  it.each([
-    ['components/ui/button.tsx', 'data-evert'],
-    ['components/ui/liquid-tabs.tsx', 'data-evert'],
-    ['components/ui/menu.tsx', "'data-evert'"],
-    ['components/ui/select.tsx', 'data-evert'],
-    ['components/ui/switch.tsx', 'data-switch-knob'],
-    // The navigation chrome, and the cards you press to go somewhere (owner, 2026-10-20: "I don't see any
-    // animations when I press non globe buttons to navigate").
-    ['components/radial/RadialNavRail.tsx', 'data-evert="select"'],
-    ['components/radial/RadialShell.tsx', 'data-evert'],
-    ['components/radial/RadialFeed.tsx', 'data-evert'],
-    ['components/radial/WheelCard.tsx', 'data-evert'],
-    ['components/creator-studio/storefront.tsx', "'data-evert': 'over'"],
-    ['components/creator-studio/RankedSummary.tsx', 'data-evert'],
-  ])('%s', (file, hook) => {
-    expect(read(file)).toContain(hook);
-  });
-
-  it('their hover fills arrive by eversion, not as colour changes on the control', () => {
-    expect(read('components/ui/button.tsx')).not.toMatch(/hover:bg-|hover:opacity-/);
-    expect(read('components/ui/menu.tsx')).not.toMatch(/hover:bg-|focus-visible:bg-/);
-    expect(read('components/ui/select.tsx')).not.toMatch(/data-\[highlighted\]:bg-/);
-  });
-
-  it('a control nobody tagged is adopted on first contact (owner, 2026-10-21: "EVERY BUTTON, INPUT BOX")', () => {
-    const hook = read('hooks/useEvertPoint.ts');
-    expect(hook).toMatch(/const mode = adopt\(el\);/);
-    expect(hook).toMatch(/showGhost\('focus'/);
-    const auto = read('lib/evert-auto.ts');
-    // Buttons, links, tabs, menu items, options and every text-like field.
-    for (const sel of [
-      'button',
-      'a[href]',
-      'textarea',
-      'select',
-      '[role="tab"]',
-      '[role="option"]',
-    ]) {
-      expect(auto).toContain(`'${sel}'`);
-    }
-    expect(auto).toMatch(/input:not\(\[type="hidden"\]\)/);
-    // Adopted under the state already on it, it everts in instead of popping.
-    expect(auto).toMatch(/data-evert-arming[\s\S]*getComputedStyle\(el, '::before'\)\.scale/);
-    expect(SECTION).toMatch(
-      /\[data-evert\]\[data-evert-arming\]::before\s*\{[^}]*scale: 0 !important/,
+  it('does not install the retired control eversion listener or mini globe renderer', () => {
+    expect(read('components/Providers.tsx')).not.toContain('useEvertPointLayer');
+    expect(read('components/radial/eversion/EversionRoot.tsx')).not.toContain(
+      "import('./mini-globe')",
     );
-    // Fields and taken pseudo-elements get the ghost: placed by `translate`, everted by `scale`, no frame loop.
-    expect(SECTION).toMatch(/\.evert-ghost\s*\{[^}]*position: fixed;[^}]*scale: 0;/);
-    expect(auto).toMatch(/style\.translate = /);
-    expect(auto).not.toMatch(/requestAnimationFrame|documentElement\.style/);
   });
-
-  it('the point is written by one delegated listener, mounted once', () => {
-    expect(read('components/Providers.tsx')).toMatch(/useEvertPointLayer\(\);/);
-    const hook = read('hooks/useEvertPoint.ts');
-    expect(hook).not.toMatch(/requestAnimationFrame|documentElement\.style/);
+  it('buttons acknowledge hover and press without replacing the surface', () => {
+    const button = read('components/ui/button.tsx');
+    expect(button).toContain('hover:bg-site-surface-hover');
+    expect(button).toContain('data-fluid-press');
+    expect(button).not.toContain('data-evert=');
   });
 });

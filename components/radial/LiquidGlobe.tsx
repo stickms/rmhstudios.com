@@ -31,7 +31,6 @@ import {
   spring,
   springStep,
   unprojectSphere,
-  unrotateSphere,
 } from '@/lib/fluid';
 import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
 import { DoughBody } from '@/lib/dough';
@@ -909,19 +908,16 @@ export function LiquidGlobe({
         return;
       }
       const probe = document.createElement('span');
-      probe.style.color = 'var(--site-accent)';
       probe.style.backgroundColor = 'var(--site-bg)';
       host.appendChild(probe);
       const ps = getComputedStyle(probe);
-      const accentCss = ps.color;
       const bgCss = ps.backgroundColor;
       probe.remove();
       const ink = factory.resolveColor(getComputedStyle(host).color || 'rgb(0 0 0)', [0, 0, 0]);
-      const accent = factory.resolveColor(accentCss, [0.4, 0.5, 1]);
       const bg = factory.resolveColor(bgCss, [1, 1, 1]);
       const lum = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2];
       g.resize(sizeRef.current, window.devicePixelRatio || 1);
-      g.palette({ ink, accent, light: lum > 0.5 ? 1 : 0, bg: [bg[0], bg[1], bg[2]] }, RIPPLE);
+      g.palette({ ink, light: lum > 0.5 ? 1 : 0, bg: [bg[0], bg[1], bg[2]] }, RIPPLE);
       attachScene(g);
       const f = jellyFrame;
       f.ripples.fill(0);
@@ -2003,18 +1999,6 @@ export function LiquidGlobe({
       w.vPitch += hit.y * WOBBLE_DEG * WOBBLE_KICK;
       jelly.nudge(-hit.x * 8, hit.y * 8, 1.1);
 
-      // Un-rotate the impact into the globe's own frame — the exact inverse of
-      // the yaw-then-pitch `project()` applies. This is what makes the ripple a
-      // mark on the BALL: everything the renderer samples (cage points, pin
-      // directions) lives in this space, so the wave turns with the surface
-      // instead of hanging in front of the screen.
-      const body = unrotateSphere(hit, rot.current.yaw, rot.current.pitch);
-      const impact: Ripple = { bx: body.x, by: body.y, bz: body.z, t0: performance.now() };
-
-      // Newest wins: a mash drops the oldest wave rather than accumulating work.
-      const live = ripples.current;
-      if (live.length >= MAX_RIPPLES) live.splice(0, live.length - MAX_RIPPLES + 1);
-      live.push(impact);
       dirty.current = true;
     },
     [reduced, jelly],

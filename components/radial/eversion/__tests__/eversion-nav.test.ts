@@ -282,17 +282,16 @@ describe('the eversion level (amended 2026-10-21)', () => {
       enabled: () => true,
       busy: () => false,
       evert,
-      mini,
       level,
       hubOpen,
     });
     return { r, evert, mini, off };
   };
 
-  it('decides: the hub open is always the full run; off it, all = the mini, globe = nothing', () => {
+  it('decides: the hub open is always the full run; off it, both legacy and current preferences leave navigation alone', () => {
     expect(navigationCarry('all', true)).toBe('full');
     expect(navigationCarry('globe', true)).toBe('full');
-    expect(navigationCarry('all', false)).toBe('mini');
+    expect(navigationCarry('all', false)).toBe('none');
     expect(navigationCarry('globe', false)).toBe('none');
   });
 
@@ -320,7 +319,7 @@ describe('the eversion level (amended 2026-10-21)', () => {
     off();
   });
 
-  it('all, off the hub: never holds the push (no waiting) and plays the mini on the pressed control', async () => {
+  it('all, off the hub: never holds the push (no waiting) and does not animate the pressed control', async () => {
     const { r, evert, mini, off } = rig(() => 'all');
     const item = { tag: 'nav-item' };
     document.dispatchEvent(pointerDown(40, 200, item));
@@ -328,8 +327,8 @@ describe('the eversion level (amended 2026-10-21)', () => {
     await Promise.resolve();
     vi.runAllTimers();
     expect(evert).not.toHaveBeenCalled();
-    expect(mini).toHaveBeenCalledTimes(1);
-    expect(mini).toHaveBeenCalledWith(item);
+    expect(mini).not.toHaveBeenCalled();
+    expect(mini).not.toHaveBeenCalledWith(item);
     // Not replayed either: the router's own navigation went through untouched.
     expect(r.calls).toEqual([]);
     off();
@@ -339,12 +338,12 @@ describe('the eversion level (amended 2026-10-21)', () => {
     const { r, mini, off } = rig(() => 'all');
     document.dispatchEvent(pointerDown(40, 200, { tag: 'nav-item' }));
     await r.block(at('/'), at('/games', 1), 'PUSH');
-    expect(mini).toHaveBeenCalledTimes(1);
+    expect(mini).not.toHaveBeenCalled();
     // The same press does not animate the destination's own follow-up navigation.
     expect(await r.block(at('/games', 1), at('/games/x', 2), 'PUSH')).toBe(false);
     expect(await r.block(at('/games/x', 2), at('/games', 1), 'BACK')).toBe(false);
     vi.runAllTimers();
-    expect(mini).toHaveBeenCalledTimes(1);
+    expect(mini).not.toHaveBeenCalled();
     off();
   });
 
@@ -357,12 +356,12 @@ describe('the eversion level (amended 2026-10-21)', () => {
     off();
   });
 
-  it('all: a plain anchor is still routed through the router (so it is an SPA navigation that can play)', () => {
+  it('legacy all: an ordinary anchor is not intercepted', () => {
     const { r, off } = rig(() => 'all');
     const preventDefault = vi.fn();
     window.dispatchEvent(clickEvent(anchor('/games'), preventDefault));
-    expect(preventDefault).toHaveBeenCalled();
-    expect(r.calls).toEqual(['navigate:/games']);
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(r.calls).toEqual([]);
     off();
   });
 
@@ -385,15 +384,15 @@ describe('the eversion level (amended 2026-10-21)', () => {
     const { r, mini, off } = rig(() => level);
     document.dispatchEvent(pointerDown(1, 1, { tag: 'a' }));
     await r.block(at('/'), at('/games', 1), 'PUSH');
-    expect(mini).toHaveBeenCalledTimes(1);
+    expect(mini).not.toHaveBeenCalled();
     level = 'globe';
     document.dispatchEvent(pointerDown(1, 1, { tag: 'b' }));
     await r.block(at('/'), at('/games', 1), 'PUSH');
-    expect(mini).toHaveBeenCalledTimes(1);
+    expect(mini).not.toHaveBeenCalled();
     level = 'all';
     document.dispatchEvent(pointerDown(1, 1, { tag: 'c' }));
     await r.block(at('/'), at('/games', 1), 'PUSH');
-    expect(mini).toHaveBeenCalledTimes(2);
+    expect(mini).not.toHaveBeenCalled();
     off();
   });
 
@@ -414,7 +413,7 @@ describe('the eversion level (amended 2026-10-21)', () => {
       join(process.cwd(), 'components/radial/eversion/EversionRoot.tsx'),
       'utf8',
     );
-    expect(src).toMatch(/level: \(\) => useThemeStore\.getState\(\)\.eversionLevel/);
+    expect(src).toContain('!root.hubOpen');
   });
 });
 
@@ -429,15 +428,15 @@ describe('which layer a run draws in', () => {
 describe('the effect plays by default (owner, 2026-10-21)', () => {
   const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
 
-  it('eligibility reads the site’s Reduce motion switch, never the OS preference', () => {
+  it('eligibility and controls respect system and site motion preferences', () => {
     const src = read('components/radial/eversion/useBeforeCapture.ts').replace(
       /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
       '',
     );
     expect(src).toMatch(/reducedMotion: siteReducedMotion\(\)/);
-    expect(src).not.toMatch(/prefersReducedMotion|prefers-reduced-motion/);
-    expect(read('components/radial/RadialHub.tsx')).not.toMatch(/useReducedMotion/);
-    expect(read('components/settings/AppearancePanel.tsx')).not.toMatch(/useReducedMotion/);
+    expect(src).toMatch(/prefersReducedMotion\(\)/);
+    expect(read('components/radial/RadialHub.tsx')).toMatch(/useReducedMotion/);
+    expect(read('components/settings/AppearancePanel.tsx')).toMatch(/useReducedMotion/);
   });
 
   it('every run takes the generous waits that used to be "Always evert globe"’s', () => {

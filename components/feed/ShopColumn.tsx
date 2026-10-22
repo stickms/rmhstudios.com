@@ -251,7 +251,7 @@ export function ShopColumn({
       {/* Category tabs → standalone glass sheet below the hero (§5.45). The pill
  scrolls horizontally in the shared tab-sheet track (overflow + edge fade,
  §5.5x A.4); ARIA/state are unchanged. */}
-      <div className="my-3 px-3">
+      <div data-slot="page-controls" className="my-3 px-3">
         <LiquidTabs
           size="sm"
           aria-label={t('shop-categories-label', { defaultValue: 'Shop categories' })}
@@ -267,13 +267,13 @@ export function ShopColumn({
           <Spinner />
         </div>
       ) : (
-        <Reveal className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2">
+        <Reveal className="grid grid-cols-1 gap-4 p-4 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((item) => (
             <div
               key={item.id}
               // L1 .glass-fill + .glass-interactive together light the hover glint
               // ring (the ring selector needs BOTH classes) and the pointer light.
-              className="glass-fill glass-interactive flex items-center gap-3 rounded-site p-3"
+              className="glass-fill glass-interactive flex min-w-0 flex-col items-stretch gap-4 rounded-site p-4"
               // Rarity communicates value through the rim colour (§9.4): a tinted
               // border + a matching inner specular hairline over the base rim.
               style={{
@@ -281,10 +281,12 @@ export function ShopColumn({
                 boxShadow: `inset 0 1px 0 ${RARITY_COLORS[item.rarity]}55, var(--site-shadow-site-sm)`,
               }}
             >
-              <Preview item={item} />
+              <div className="glass-inset flex min-h-32 items-center justify-center rounded-site-sm p-4">
+                <Preview item={item} />
+              </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="break-words text-sm font-semibold text-site-text">{item.name}</p>
                   {/* The rarity palette is saturated mid-tones, and as INK on the
                       card they all sit under 2.5:1 — legendary #f59e0b measured
                       2.04, uncommon #22c55e 2.0, exotic #06b6d4 2.2. The colour
@@ -301,7 +303,9 @@ export function ShopColumn({
                     {item.rarity}
                   </span>
                 </div>
-                <p className="truncate text-xs text-site-text-muted">{item.description}</p>
+                <p className="line-clamp-2 text-xs leading-relaxed text-site-text-muted">
+                  {item.description}
+                </p>
                 {item.requiresTier && (
                   <p className="text-[11px] uppercase text-site-accent">
                     {t('requires-tier-plan', {
@@ -311,7 +315,7 @@ export function ShopColumn({
                   </p>
                 )}
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
                 {signedIn && !item.owned && <ShopWishButton itemId={item.id} />}
                 {!signedIn ? (
                   <span className="inline-flex items-center gap-1 text-xs text-site-text-muted">

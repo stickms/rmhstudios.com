@@ -12,8 +12,6 @@
  * - **Reflection.** Fresnel reflectance (Schlick) brightens grazing angles; a fixed key light up-left and the CURSOR
  *   (a point light above the surface) add Blinn-Phong glints that slide around the bevel as it moves; a dimmer
  *   counter-glint on the far edge is the light bouncing inside the slab.
- * - **Surface waves.** Taps arrive as expanding ripples that tilt the normal, so the highlights run over the glass
- *   like it was liquid while the content on it stays perfectly still.
  *
  * The INTERIOR is deliberately left transparent: only the bevel band is painted opaque (the refracted page), fading
  * to nothing where the surface goes flat — which is also where refraction goes to zero, so there is no seam and no
@@ -25,8 +23,6 @@
  */
 
 import { GLASS_OPTICS_GLSL } from '../optics';
-
-export const GLASS_RIPPLES = 3;
 
 export const VERT = `#version 300 es
 in vec2 aPos;
@@ -55,23 +51,12 @@ uniform float uDark;       // 1 on a dark ground
 uniform vec3 uLight;       // cursor light: x,y in surface CSS px, z = height above the surface
 uniform float uLightOn;    // 0..1
 uniform vec2 uTilt;        // smoothed unit-disc cursor pose; optical tilt only, no text transform
-uniform vec4 uRip[${GLASS_RIPPLES}];   // ripple: x,y (surface px), age (s, <0 = empty), amplitude
-uniform vec4 uRipShape;    // speed px/s, width px, life s, slope gain
-uniform float uPress;      // 0..1: a pressed surface flattens its bevel
 
 ${GLASS_OPTICS_GLSL}
 
 float sdRoundRect(vec2 q, vec2 halfSize, float r) {
   vec2 e = abs(q) - halfSize + vec2(r);
   return min(max(e.x, e.y), 0.0) + length(max(e, 0.0)) - r;
-}
-
-float ripple(float age, float dist) {
-  if (age < 0.0 || age >= uRipShape.z) return 0.0;
-  float q = (dist - uRipShape.x * age) / uRipShape.y;
-  if (abs(q) > 4.0) return 0.0;
-  float f = 1.0 - age / uRipShape.z;
-  return (1.0 - q * q) * exp(-0.5 * q * q) * f * f;
 }
 
 void main() {
@@ -88,7 +73,7 @@ void main() {
   float cover = smoothstep(-uPx, uPx * 0.5, d);
 
   // ── Bevel geometry ──
-  float bz = max(uBezel * (1.0 - 0.4 * uPress), 2.0);
+  float bz = max(uBezel, 2.0);
   float t = clamp(d / bz, 0.0, 1.0);
   float tt = max(t, 0.035);
   // Convex squircle profile h = bz·(1 - (1 - t)^3)^(1/3); its slope is finite everywhere but the very rim.
@@ -104,21 +89,6 @@ void main() {
   // A gentle ~2.6 degree optical rock toward the cursor. It changes the rim's
   // refraction and reflections without shifting pixels of live text or the hit area.
   vec3 n = normalize(vec3(g * slope + uTilt * 0.045, 1.0));
-
-  // ── Surface waves from taps ──
-  vec2 wn = vec2(0.0);
-  float crest = 0.0;
-  for (int i = 0; i < ${GLASS_RIPPLES}; i++) {
-    vec4 rp = uRip[i];
-    if (rp.z < 0.0) continue;
-    vec2 dv = P - rp.xy;
-    float dist = length(dv);
-    float h0 = ripple(rp.z, dist);
-    float sl = (ripple(rp.z, dist + 2.0) - ripple(rp.z, dist - 2.0)) / 4.0;
-    wn += (dist > 1e-3 ? dv / dist : vec2(0.0)) * sl * rp.w * uRipShape.w;
-    crest += max(h0, 0.0) * rp.w;
-  }
-  n = normalize(vec3(n.xy + wn * 28.0, n.z));
 
   // ── Refraction of the page, in the bevel band only ──
   vec4 rim = vec4(0.0);
@@ -181,7 +151,7 @@ void main() {
   float shadeA = clamp(shade * mix(1.0, 0.5, uDark), 0.0, 0.5);
 
   float k = mix(1.0, 0.82, uDark);
-  float lit = (keySpec + fillSpec + curSpec + counter + lineK + sheen + body + fres * 0.07 + curGlow + crest * 0.22) * k;
+  float lit = (keySpec + fillSpec + curSpec + counter + lineK + sheen + body + fres * 0.07 + curGlow) * k;
   float litA = clamp(lit, 0.0, 1.0);
   vec3 glint = mix(vec3(1.0), uRim, 0.35);
 

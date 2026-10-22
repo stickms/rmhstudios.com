@@ -1549,5 +1549,11 @@
   "remind-post-label": "Post by {{name}}",
   "snooze": "Later",
   "guestbook-tab": "Guestbook",
-  "eversion-preview-unavailable": "This transition cannot play here, so pages change as usual."
+  "eversion-preview-unavailable": "This transition cannot play here, so pages change as usual.",
+  "globe-navigation-title": "Explore with the globe",
+  "nav-group-create": "Create & participate",
+  "nav-group-discover": "Discover",
+  "nav-group-more": "More from RMH",
+  "quick-navigation": "Quick navigation",
+  "search-site": "Search RMH Studios"
 }

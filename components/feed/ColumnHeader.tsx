@@ -66,7 +66,7 @@ export function ColumnHeader({
         <div className="page-heading__content">
           <div className="min-w-0">
             <h1 className="site-display-3">
-              <span className="min-w-0 truncate">{title}</span>
+              <span className="block min-w-0 break-words">{title}</span>
             </h1>
           </div>
           {actions && <div data-slot="page-header-action">{actions}</div>}
@@ -77,6 +77,7 @@ export function ColumnHeader({
 
   return (
     <header
+      data-slot={children ? 'column-controls' : undefined}
       className={cn(
         // `flex-wrap`: with two labelled actions the title was the only
         // shrinkable item in the row, so at 390px it truncated to "Flash…"
@@ -87,9 +88,7 @@ export function ColumnHeader({
         // Sticky column headers float as L3 `.glass-chrome` capsules inset from the
         // column edges (§8.2); embedded (sticky={false}) headers stay inline with
         // a hairline divider. The optics-ring glint comes free from `.glass-chrome`.
-        sticky
-          ? 'glass-chrome site-sticky-chrome'
-          : 'border-b border-site-border',
+        sticky ? 'glass-chrome site-sticky-chrome' : 'border-b border-site-border',
         className,
       )}
     >

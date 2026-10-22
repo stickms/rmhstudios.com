@@ -7,11 +7,11 @@ const compile = async (css: string) =>
 
 describe('material hover CSS policy', () => {
   it('places guards before pseudo-elements so production CSS minification stays valid', async () => {
-    const css = await compile('::-webkit-scrollbar-thumb:hover { background-color: red }');
+    const css = await compile('::-webkit-scrollbar-thumb:hover { filter: brightness(2) }');
     expect(css).toContain(':not(*)::-webkit-scrollbar-thumb');
     expect(css).not.toContain('::-webkit-scrollbar-thumb:not');
   });
-  it('replaces hover colour and host movement while keeping focus, selection and disabled states', async () => {
+  it('keeps quiet colour feedback and removes host movement while keeping focus, selection and disabled states', async () => {
     const css = await compile(`.button { color: black; background: white }
       .button:hover, .button:focus-visible { color: red; background: blue; transform: translateY(-2px); text-decoration: underline }
       .button[aria-selected=true] { background: green }
@@ -21,7 +21,9 @@ describe('material hover CSS policy', () => {
     const hover = result.nodes.find(
       (n) => n.type === 'rule' && n.selector === '.button:hover, .button:focus-visible',
     );
-    expect(hover?.toString()).not.toMatch(/color:|background:|transform:/);
+    expect(hover?.toString()).not.toMatch(/transform:/);
+    expect(hover?.toString()).toContain('color: red');
+    expect(hover?.toString()).toContain('background: blue');
     expect(hover?.toString()).toContain('text-decoration: underline');
     expect(css).toContain('background: green');
     expect(css).toContain('opacity: .4');
@@ -33,15 +35,15 @@ describe('material hover CSS policy', () => {
     );
     const root = postcss.parse(css);
     root.walkRules((rule) => {
-      if (rule.selector === '&:hover') expect(rule.toString()).not.toContain('background-color:');
+      if (rule.selector === '&:hover') expect(rule.toString()).toContain('background-color:');
     });
-    expect(css).toContain('&:not(*)');
+    expect(css).toContain('&:hover');
   });
 
-  it('preserves alternate focus branches inside functional selectors', async () => {
+  it('preserves hover and focus colours inside functional selectors', async () => {
     const css = await compile('.button:is(:hover, :focus-visible) { color: red }');
-    expect(css).toContain(':is(:not(*), :focus-visible)');
-    expect(css).not.toMatch(/:is\(:hover, :focus-visible\)\s*\{\s*color/);
+    expect(css).toContain(':is(:hover, :focus-visible)');
+    expect(css).toContain('color: red');
   });
 
   it('keeps resting :not(:hover) rules and ignores commas in attributes', async () => {
@@ -58,11 +60,11 @@ describe('material hover CSS policy', () => {
     expect(css).toContain('[data-evert]:hover::before { scale: 1 }');
   });
 
-  it('normalizes nested hover colours even in mixed focus ancestors', async () => {
+  it('keeps nested hover colours in mixed focus ancestors', async () => {
     const css = await compile(
       '.card:is(:hover,:focus-visible) { color: red; .child:hover { background: blue } }',
     );
-    expect(css).not.toMatch(/\.child:hover\s*\{\s*background/);
+    expect(css).toMatch(/\.child:hover\s*\{\s*background/);
   });
 
   it('handles synthetic declarations without source offsets', async () => {
@@ -70,11 +72,11 @@ describe('material hover CSS policy', () => {
     root.append(
       postcss
         .rule({ selector: 'button:hover' })
-        .append({ prop: 'color', value: 'red' }, { prop: 'opacity', value: '1' }),
+        .append({ prop: 'filter', value: 'brightness(2)' }, { prop: 'opacity', value: '1' }),
     );
     const result = await postcss([materialHover()]).process(root, { from: undefined });
     const stable = result.root.first;
-    expect(stable?.toString()).toContain('color: red');
+    expect(stable?.toString()).toContain('filter: brightness(2)');
     expect(stable?.toString()).not.toContain('opacity');
   });
 });

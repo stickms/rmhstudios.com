@@ -181,9 +181,9 @@ const TIER_CLASSES = {
     // an email address) into truncation far earlier than the box needed. The
     // mono is for code; a select is a control you read a value out of.
     trigger:
-      'rounded-[var(--site-control-radius)] border border-site-border bg-site-surface text-site-text shadow-site-sm hover:border-site-text/40 text-sm focus-visible:border-site-accent focus-visible:ring-2 focus-visible:ring-site-accent',
+      'glass-inset rounded-site-sm text-site-text hover:border-site-border-bright text-base sm:text-sm focus-visible:border-site-accent focus-visible:ring-2 focus-visible:ring-site-accent/30',
     // `--site-radius`, NOT `--site-control-radius`. The trigger is a control and
-    // takes the pill; the POPUP is a panel — a stack of rows — and a 9999px
+    // takes the small radius; the POPUP is a panel — a stack of rows — and a 9999px
     // radius on it does not read as "very rounded", it reads as a lozenge, with
     // the first and last rows sliced by the curve and a bulge of empty material
     // at each end. Same mistake one level down: the items were a pill inside a
@@ -312,14 +312,14 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
               // Radius and elevation come from the tier's control tokens, like
               // Button/Input/Badge, so a select squares off and swaps its
               // elevation for a hairline ring in the themes that do that.
-              'flex w-full cursor-pointer appearance-none items-center justify-between gap-2 transition duration-site',
-              // The SAME heights as Button and Input — `h-11` / `h-9`, not the
+              'flex w-full cursor-pointer appearance-none items-center justify-between gap-2 transition-colors duration-site-fast',
+              // Full-size fields match Input at 48px; compact actions stay 36px, not the
               // `h-10` / `h-8` this used to carry. A select is the third control
               // in a form row beside those two, and 4px short is not a subtle
               // difference when the three sit on one line: the baselines stop
               // agreeing and the row reads as assembled from two kits. 44px is
               // also the touch floor, which `h-10` was under.
-              controlSize === 'sm' ? 'h-9 px-3.5 py-1 pr-8' : 'h-11 px-4 py-2 pr-10',
+              controlSize === 'sm' ? 'h-9 px-3.5 py-1 pr-8' : 'h-12 px-4 py-2 pr-10',
               'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
               // The value can be longer than the control: clip it rather than let
               // it push the chevron out of the box.

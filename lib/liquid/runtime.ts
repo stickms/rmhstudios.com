@@ -1,10 +1,10 @@
 /**
  * Shared cursor lighting for surfaces outside the shader budget. Only a
  * decorative leaf moves; clicks never translate or animate surface hosts.
- * Shader-backed surfaces own their lighting and optical tap ripples.
+ * Shader-backed surfaces own their lighting. Clicks and taps never emit waves.
  */
 const SURFACES =
-  '.glass-fill,.glass-pane,.glass-chrome,.glass-overlay,.glass-interactive,.app-glass,[data-evert],[data-liquid-surface],.app-theme [class~="bg-(--app-surface)"]';
+  '.glass-fill,.glass-pane,.glass-chrome,.glass-overlay,.glass-interactive,.app-glass,[data-liquid-surface],.app-theme [class~="bg-(--app-surface)"]';
 const EXCLUDE =
   '[data-liquid-motion="off"],[data-fluid-press="none"],[data-fluid-press="off"],.eversion-overlay,.evert-ghost,.radial-globe__stage,canvas,input,textarea,select,[contenteditable="true"],[disabled],[aria-disabled="true"]';
 export function installLiquidInteractions(doc: Document = document): () => void {

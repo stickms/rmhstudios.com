@@ -43,7 +43,7 @@
   /* Card interior padding + the gap between stacked cards — same reasoning as
      the gutters: compact on phones, roomy once there is space to spend. */
   --rad-card-pad: clamp(0.9rem, 3.5vw, 1.6rem);
-  --rad-card-gap: clamp(0.6rem, 2.5vw, 1.4rem);
+  --rad-card-gap: clamp(0.875rem, 2vw, 1.25rem);
 
   /* ── The desktop frame ──────────────────────────────────────────────────
      Mobile is one column and none of this applies (both rails are display:none,
@@ -59,7 +59,7 @@
        --rad-measure     the MINIMUM the content column is allowed to grow to on
                          a wide screen. A page that asks for more (targetWidth)
                          keeps its own number; nothing exceeds the track. */
-  --rad-frame-max: 100%;
+  --rad-frame-max: 90rem;
   --rad-frame-gap: clamp(1rem, 2vw, 2rem);
   --rad-rail-nav: 0px;
   --rad-rail-live: 0px;
@@ -141,7 +141,7 @@
   transform: translate(-50%, -50%);
   border: 1px solid var(--site-border);
   border-radius: 50%;
-  opacity: calc(0.5 - var(--i) * 0.06);
+  opacity: calc(0.22 - var(--i) * 0.025);
 }
 /* Phones draw the inner three rings only: the outer three extend far past a
    narrow viewport and add nothing there but pixels. */
@@ -271,11 +271,11 @@
    duration of a call, from DIAL time, on every viewport under ~900px. It offsets
    by this now. */
 :root {
-  --rad-topbar-h: 3.5rem;
+  --rad-topbar-h: 4rem;
 }
 @media (min-width: 768px) {
   :root {
-    --rad-topbar-h: 4rem;
+    --rad-topbar-h: 4.5rem;
   }
 }
 
@@ -325,17 +325,16 @@ body:has(.radial-shell) .call-banner {
   text-decoration: none;
 }
 .radial-topbar__mark {
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-size: 1.25rem;
 }
 .radial-topbar__brand small {
   /* Mobile-first: just "RMH". The "Studios" wordmark returns on wider screens. */
   display: none;
   color: var(--site-text-muted);
-  font-size: 0.6875rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
+  font-size: 0.9375rem;
+  letter-spacing: -0.015em;
 }
 @media (min-width: 640px) {
   .radial-topbar__brand small {
@@ -351,8 +350,8 @@ body:has(.radial-shell) .call-banner {
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--site-touch-target);
+  height: var(--site-touch-target);
   border: none;
   background: transparent;
   border-radius: 999px;
@@ -378,7 +377,7 @@ body:has(.radial-shell) .call-banner {
 }
 .radial-topbar__btn:hover {
   /* The hover tint everts in (`data-evert`, globals.css §7.3). */
-  transform: translateY(-1px);
+  background: var(--site-surface-hover);
 }
 .radial-topbar__btn svg {
   width: 1.2rem;
@@ -404,6 +403,8 @@ body:has(.radial-shell) .call-banner {
   place-items: center;
   border: none;
   padding: 0;
+  width: var(--site-touch-target);
+  height: var(--site-touch-target);
   background: transparent;
   border-radius: 999px;
   cursor: pointer;
@@ -415,9 +416,12 @@ body:has(.radial-shell) .call-banner {
   outline-color: var(--site-border-bright);
 }
 .radial-topbar__signin {
-  border-radius: 999px;
+  border-radius: var(--site-control-radius);
   border: 1px solid var(--site-border-bright);
-  padding: 0.45rem 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--site-touch-target);
+  padding: 0.5rem 1.125rem;
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--site-text);
@@ -429,7 +433,7 @@ body:has(.radial-shell) .call-banner {
 .radial-topbar__signin:hover {
   /* The accent everts in behind the label (`data-evert`, globals.css §7.3). */
   color: var(--site-accent-fg);
-  transform: translateY(-1px);
+  background: var(--site-accent);
 }
 
 /* ── The frame: rail · content · rail ─────────────────────────────────────
@@ -549,8 +553,8 @@ body:has(.radial-shell) .call-banner {
 
 @media (min-width: 1120px) {
   .radial-shell {
-    --rad-frame-max: min(100%, 96rem);
-    --rad-rail-nav: 15rem;
+    --rad-frame-max: min(100%, 90rem);
+    --rad-rail-nav: 13.5rem;
     --rad-measure: 44rem;
   }
   .radial-frame {
@@ -568,9 +572,9 @@ body:has(.radial-shell) .call-banner {
 }
 @media (min-width: 1440px) {
   .radial-shell {
-    --rad-rail-nav: 16.5rem;
-    --rad-rail-live: 20rem;
-    --rad-measure: 50rem;
+    --rad-rail-nav: 14rem;
+    --rad-rail-live: 18rem;
+    --rad-measure: 44rem;
   }
   .radial-frame {
     grid-template-columns: var(--rad-rail-nav) minmax(0, 1fr) var(--rad-rail-live);
@@ -590,21 +594,20 @@ body:has(.radial-shell) .call-banner {
   align-items: center;
   gap: var(--rad-3);
   min-width: 0;
-  padding: 0.6rem 0.75rem;
-  border-radius: 999px;
+  min-height: var(--site-touch-target);
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--site-radius-sm);
   color: var(--site-text);
   text-decoration: none;
   font-size: 0.92rem;
-  font-weight: 600;
-  transition:
-    color var(--evert-in) var(--evert-ease),
-    transform 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+  font-weight: 500;
+  transition: color var(--site-transition-speed) var(--ease-glass);
 }
 /* The hover tint and the current page's accent are the item's eversion layers
    (`data-evert="select"`, globals.css §7.3): navigating pours the accent out of the
    item you pressed and drains it out of the one you left. */
 .rad-rail__item:hover {
-  transform: translateX(2px);
+  background: var(--site-surface-hover);
 }
 .rad-rail__item.is-active {
   color: var(--site-accent-fg);
@@ -690,10 +693,10 @@ body:has(.radial-shell) .call-banner {
 }
 .rad-rail__group-title {
   padding: 0.35rem 0.75rem;
-  font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  margin-block: var(--rad-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0;
   color: var(--site-text-muted);
 }
 
@@ -2600,7 +2603,7 @@ html.reduce-transparency .radial-globe__contact,
 }
 @media (min-width: 1280px) {
   .radial-feed__deck {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+    grid-template-columns: minmax(0, 1fr);
   }
   .rad-deck {
     display: flex;
@@ -3281,5 +3284,171 @@ html.reduce-transparency .radial-globe__contact,
   .rad-panel__identity::after,
   .rad-panel__more::after {
     min-width: 0;
+  }
+}
+
+/* Direct navigation supplements the globe on smaller screens. The empty middle
+   track is the existing orb: one navigator, with familiar shortcuts beside it. */
+.radial-quicknav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(var(--safe-bottom) + var(--site-hub-orb-inset));
+  z-index: calc(var(--z-floating) - 1);
+  display: grid;
+  grid-template-columns: 1fr 1fr var(--site-hub-orb-size) 1fr 1fr;
+  align-items: center;
+  width: min(calc(100% - 1.5rem), 30rem);
+  min-height: var(--site-hub-orb-size);
+  margin-inline: auto;
+  padding: var(--rad-1);
+  border-radius: var(--site-radius);
+  transition: opacity var(--site-transition-speed) var(--ease-glass);
+}
+.radial-quicknav__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rad-1);
+  min-width: 0;
+  min-height: var(--site-touch-target);
+  padding: var(--rad-1);
+  border-radius: var(--site-radius-sm);
+  color: var(--site-text-muted);
+  text-decoration: none;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  transition:
+    color var(--site-transition-speed) var(--ease-glass),
+    background-color var(--site-transition-speed) var(--ease-glass);
+}
+.radial-quicknav__link svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+}
+.radial-quicknav__link span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.radial-quicknav__link[aria-current='page'] {
+  color: var(--site-accent);
+  background: var(--site-surface-active);
+}
+.radial-quicknav__link:hover {
+  color: var(--site-text);
+  background: var(--site-surface-hover);
+}
+.radial-shell:has(.radial-hub:not([data-phase='closed'])) .radial-quicknav {
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+.radial-topbar__search span,
+.radial-topbar__search kbd {
+  display: none;
+}
+@media (min-width: 640px) {
+  .radial-topbar__search {
+    display: flex;
+    justify-content: flex-start;
+    gap: var(--rad-2);
+    width: clamp(12rem, 24vw, 22rem);
+    padding-inline: var(--rad-3);
+    border: var(--site-border-width) solid var(--site-border);
+    border-radius: var(--site-control-radius);
+    background: var(--site-surface);
+  }
+  .radial-topbar__search span {
+    display: block;
+    flex: 1;
+    text-align: start;
+    color: var(--site-text-muted);
+    font-size: 0.875rem;
+  }
+  .radial-topbar__search kbd {
+    display: block;
+    color: var(--site-text-muted);
+    font-family: var(--site-font-mono);
+    font-size: 0.75rem;
+  }
+}
+@media (min-width: 1120px) {
+  .radial-quicknav {
+    display: none;
+  }
+}
+@media (max-width: 1119.98px) {
+  :root {
+    --site-fab-row-bottom: calc(var(--site-hub-orb-size) + var(--site-hub-orb-inset) + 0.75rem);
+  }
+}
+
+/* Page navigation and search are viewport-wide on a phone. Content keeps its
+   reading gutter below the bar. The :has fallback covers older page-specific
+   search rows as well as the shared PageTabs contract, without affecting fields
+   in dialogs or nested control groups. */
+@media (max-width: 767.98px) {
+  .radial-shell
+    .page-root
+    :is(
+      [data-slot='page-controls'],
+      [data-slot='column-controls'],
+      .feed-search,
+      .feed-tabs-wrap,
+      :is(header, form, div):has(> [data-slot='search-field'])
+    ):not(:is([data-slot='page-controls'], [data-slot='column-controls']) *):not(
+      [role='dialog'],
+      [data-motion]
+    ) {
+    box-sizing: border-box;
+    width: var(--rad-viewport-width, 100vw);
+    max-width: var(--rad-viewport-width, 100vw);
+    margin-inline: calc(50% - var(--rad-viewport-width, 100vw) / 2);
+    padding-inline: max(0.75rem, var(--safe-left), var(--safe-right));
+    border-radius: 0;
+  }
+  .radial-shell [data-slot='page-controls'] > :is(.px-2, .md\:px-3) {
+    padding-inline: 0;
+  }
+  .radial-shell [data-slot='page-controls'] [data-slot='search-field'] {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* Layout follows the task: catalogues need product space; workspaces need room
+   for tools; a social timeline stays a single, readable stream with context
+   in the shell's right rail. All retain the same glass material contract. */
+.radial-feed {
+  width: 100%;
+  max-width: 42rem;
+  margin-inline: auto;
+}
+.radial-feed .page-controls {
+  margin-top: 0;
+}
+.radial-feed .radial-wheel__track {
+  gap: var(--rad-2);
+  padding-top: var(--rad-3);
+}
+.radial-feed .radial-wheel__slot,
+.radial-feed .radial-wheel__lead {
+  max-width: 100%;
+}
+.radial-shell:is([data-layout='catalog'], [data-layout='workspace']) .rad-rail--live {
+  display: none;
+}
+.radial-shell[data-layout='workspace'] {
+  --rad-measure: 52rem;
+}
+.radial-shell[data-layout='catalog'] [data-slot='site-main-column'] {
+  max-width: 100%;
+}
+@media (min-width: 1120px) {
+  .radial-shell:is([data-layout='catalog'], [data-layout='workspace']) .radial-frame {
+    grid-template-columns: var(--rad-rail-nav) minmax(0, 1fr);
   }
 }

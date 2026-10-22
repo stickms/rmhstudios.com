@@ -273,7 +273,7 @@ describe('the default plan (spec §7.1)', () => {
     expect(v[1]! * 1000).toBeCloseTo(-30 * DEG, 9);
     expect(s0.radius).toBe(150);
     expect(s0.centreX).toBe(640);
-    expect(s0.rippleAge).toBe(0);
+    expect(s0.rippleAge).toBe(-1);
 
     tl.afterReady(wall.now);
     runTo(tl, wall, PLAN_MS.spin[1] + 1);

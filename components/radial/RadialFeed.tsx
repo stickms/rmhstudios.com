@@ -13,11 +13,11 @@ import { ComposeBoxLazy } from '@/components/feed/ComposeBoxLazy';
 import { QotdCardLazy } from '@/components/posts-plus/QotdCardLazy';
 import { FortuneCardLazy } from '@/components/delight/FortuneCardLazy';
 import { useSession } from '@/components/Providers';
+import { PageTabs } from '@/components/feed/PageTabs';
 import { RadialLoader } from '@/components/ui/radial-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDeferOnNavigate } from '@/components/ui/defer-on-navigate';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
-import { RadialSideFeed } from './RadialSideFeed';
 import { WheelCard } from './WheelCard';
 
 /** X4: the question-of-the-day card follows this many posts. */
@@ -75,9 +75,7 @@ export function shouldUseStreamedPage({
   search: string | null;
   streamedCount: number;
 }): boolean {
-  return (
-    !initialized && storeCount === 0 && filter === 'all' && !search && streamedCount > 0
-  );
+  return !initialized && storeCount === 0 && filter === 'all' && !search && streamedCount > 0;
 }
 
 /**
@@ -156,7 +154,8 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
         // at the top of the feed shoves the whole column down (layout shift on
         // the busiest page); three cards in, it only moves what is below the fold.
         if (showQotd && i === QOTD_AFTER - 1) out.push({ id: 'qotd-card', node: <QotdCardLazy /> });
-        if (showFortune && i === FORTUNE_AFTER - 1) out.push({ id: 'fortune-card', node: <FortuneCardLazy /> });
+        if (showFortune && i === FORTUNE_AFTER - 1)
+          out.push({ id: 'fortune-card', node: <FortuneCardLazy /> });
         return out;
       }),
     [items, caughtUpBeforeId, showQotd, showFortune],
@@ -283,6 +282,9 @@ function FeedWheelSkeleton() {
  */
 export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed> | null }) {
   const { t } = useTranslation('feed');
+  const { data: session } = useSession();
+  const filter = useFeedStore((s) => s.filter);
+  const setFilter = useFeedStore((s) => s.setFilter);
   // Coming back to `/` within a visit, the store already holds the timeline —
   // and FeedWheel renders from the store whenever it has items, ignoring the
   // streamed page entirely. Waiting on `<Await>` for that page anyway put the
@@ -335,6 +337,17 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
       {/* The home page's heading outline used to start at a 10px rail caption
           (an h2), because nothing on the feed is a visible page title. */}
       <h1 className="sr-only">{t('feed', { defaultValue: 'Feed' })}</h1>
+      <PageTabs
+        tabs={[
+          { id: 'all', label: t('feed-for-you', { defaultValue: 'For you' }) },
+          ...(session
+            ? [{ id: 'friends', label: t('feed-following', { defaultValue: 'Following' }) }]
+            : []),
+        ]}
+        value={filter === 'friends' ? 'friends' : 'all'}
+        onChange={(id) => setFilter(id === 'friends' ? 'friends' : 'all')}
+        aria-label={t('feed-view-heading-rewrite', { defaultValue: 'Choose your feed' })}
+      />
       <div className="radial-feed__deck">
         <div className="radial-feed__primary">
           {storeHasFeed ? (
@@ -347,7 +360,6 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
             <FeedWheelSkeleton />
           )}
         </div>
-        <RadialSideFeed />
       </div>
 
       <button

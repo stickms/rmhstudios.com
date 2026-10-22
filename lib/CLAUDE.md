@@ -25,27 +25,27 @@ bundle only**. SSR/server builds get the real module.
 
 ## Load-bearing modules (know these ~20)
 
-| Module                                     | What it is                                                                                                                                                                                  |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `prisma.server.ts`                         | `prisma` singleton (`@prisma/adapter-pg`, pool via `DATABASE_POOL_SIZE`, default 10)                                                                                                        |
+| Module                                     | What it is                                                                                                                                                                                                               |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `prisma.server.ts`                         | `prisma` singleton (`@prisma/adapter-pg`, pool via `DATABASE_POOL_SIZE`, default 10)                                                                                                                                     |
 | `auth.ts`                                  | Better Auth server config: Discord/GitHub + email/password (Google is disabled, accounts kept), passkey + Stripe + customSession plugins, custom user fields `username/handle/isAdmin/isVerified`, auto-handle on signup |
-| `auth-client.ts`                           | `authClient` for the browser                                                                                                                                                                |
-| `entitlements.ts`                          | `getUserTier(userId)`, tier ranks, `hasApiAccess/...` — resolves Stripe subscription + gift membership                                                                                      |
-| `rate-limit.ts`                            | `rateLimit(ip, opts)`, `getClientIp` — in-memory, per-process, × `RATE_LIMIT_MULTIPLIER` (default 4)                                                                                        |
-| `cache.ts`                                 | `apiCache` in-memory TTL cache (`invalidatePrefix` supported)                                                                                                                               |
-| `redis.server.ts`                          | optional ioredis backplane — `redisPublish/Subscribe/RateLimit/GetJSON/SetJSON`; **no-ops when `REDIS_URL` unset**                                                                          |
-| `realtime-bus.server.ts`                   | `createBus<T>(namespace)` — EventEmitter + Redis fan-out; the seam under all SSE                                                                                                            |
-| `feed-sse.ts` / `feed-types.ts`            | feed event bus + the `FeedItem` client contract                                                                                                                                             |
-| `notifications.server.ts`                  | `createNotification/...` — respects preferences, mirrors to web push (`push/send.server.ts`)                                                                                                |
-| `coins.server.ts`                          | `awardCoins()` — the **only** correct way to grant coins (ledger + profile update)                                                                                                          |
-| `user-display.ts`                          | `userDisplaySelect` + `resolveUser` — shared user shape incl. cosmetics                                                                                                                     |
-| `storage/s3.server.ts` + `storage/keys.ts` | R2/S3 object store with local-FS fallback; key builders + filename safety                                                                                                                   |
-| `seo.ts` / `schema.ts`                     | `buildMeta`, `buildCanonical`, `SITE_URL`; JSON-LD builders + `jsonLdScript`                                                                                                                |
-| `rum.ts` / `client-errors.ts`              | Web Vitals + client error beacons (installed in `__root.tsx`)                                                                                                                               |
-| `games.ts` / `apps.ts`                     | the catalog: single source of truth for game/app cards                                                                                                                                      |
-| `internal-auth.ts`                         | shared-secret server-to-server auth (`authorizeInternalRequest`)                                                                                                                            |
-| `ssrf-guard.server.ts`                     | `safeFetch` — required for any user-supplied URL fetch                                                                                                                                      |
-| `utils.ts`                                 | `cn()` (twMerge+clsx), `formatCount`, `timeAgoShort`, `formatRelativeTime`                                                                                                                  |
+| `auth-client.ts`                           | `authClient` for the browser                                                                                                                                                                                             |
+| `entitlements.ts`                          | `getUserTier(userId)`, tier ranks, `hasApiAccess/...` — resolves Stripe subscription + gift membership                                                                                                                   |
+| `rate-limit.ts`                            | `rateLimit(ip, opts)`, `getClientIp` — in-memory, per-process, × `RATE_LIMIT_MULTIPLIER` (default 4)                                                                                                                     |
+| `cache.ts`                                 | `apiCache` in-memory TTL cache (`invalidatePrefix` supported)                                                                                                                                                            |
+| `redis.server.ts`                          | optional ioredis backplane — `redisPublish/Subscribe/RateLimit/GetJSON/SetJSON`; **no-ops when `REDIS_URL` unset**                                                                                                       |
+| `realtime-bus.server.ts`                   | `createBus<T>(namespace)` — EventEmitter + Redis fan-out; the seam under all SSE                                                                                                                                         |
+| `feed-sse.ts` / `feed-types.ts`            | feed event bus + the `FeedItem` client contract                                                                                                                                                                          |
+| `notifications.server.ts`                  | `createNotification/...` — respects preferences, mirrors to web push (`push/send.server.ts`)                                                                                                                             |
+| `coins.server.ts`                          | `awardCoins()` — the **only** correct way to grant coins (ledger + profile update)                                                                                                                                       |
+| `user-display.ts`                          | `userDisplaySelect` + `resolveUser` — shared user shape incl. cosmetics                                                                                                                                                  |
+| `storage/s3.server.ts` + `storage/keys.ts` | R2/S3 object store with local-FS fallback; key builders + filename safety                                                                                                                                                |
+| `seo.ts` / `schema.ts`                     | `buildMeta`, `buildCanonical`, `SITE_URL`; JSON-LD builders + `jsonLdScript`                                                                                                                                             |
+| `rum.ts` / `client-errors.ts`              | Web Vitals + client error beacons (installed in `__root.tsx`)                                                                                                                                                            |
+| `games.ts` / `apps.ts`                     | the catalog: single source of truth for game/app cards                                                                                                                                                                   |
+| `internal-auth.ts`                         | shared-secret server-to-server auth (`authorizeInternalRequest`)                                                                                                                                                         |
+| `ssrf-guard.server.ts`                     | `safeFetch` — required for any user-supplied URL fetch                                                                                                                                                                   |
+| `utils.ts`                                 | `cn()` (twMerge+clsx), `formatCount`, `timeAgoShort`, `formatRelativeTime`                                                                                                                                               |
 
 ## Domain map
 
@@ -84,7 +84,7 @@ bundle only**. SSR/server builds get the real module.
   `new AudioContext()` — plus haptics, idle callbacks, wake lock, fullscreen,
   WebGL detection). `app-toast.ts` is the toast store for the full-screen apps.
 - **Liquid glass:** `liquid/glass/` — `engine.ts` (the document service: discovery,
-  cursor light, tap ripples, the one on-demand frame), `shader.ts` + `renderer.ts`
+  cursor light and the one on-demand frame), `shader.ts` + `renderer.ts`
   (the slab optics; one shared WebGL 2 context), `policy.ts` and `color.ts` (pure,
   unit-tested decisions), `scene.ts` + `scene-store.ts` (the page snapshot the rim
   refracts, built on `eversion/capture`). `liquid/runtime.ts` is the

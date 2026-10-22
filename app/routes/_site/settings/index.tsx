@@ -25,11 +25,7 @@ import { NotificationPrefsPanel } from '@/components/settings/NotificationPrefsP
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useSession } from '@/components/Providers';
 import { SearchField } from '@/components/ui/search-field';
-import {
-  SETTINGS_DESTINATIONS,
-  filterSettings,
-  type SettingsGroup,
-} from '@/lib/settings-nav';
+import { SETTINGS_DESTINATIONS, filterSettings, type SettingsGroup } from '@/lib/settings-nav';
 
 export const Route = createFileRoute('/_site/settings/')({
   head: () => ({
@@ -226,22 +222,22 @@ function SettingsPage() {
             defaultValue: 'Everything you can change, in one list.',
           })}
         >
-          <SearchField
-            value={query}
-            onValueChange={setQuery}
-            placeholder={t('settings-search-placeholder', {
-              defaultValue: 'Search settings — try "dark mode" or "export"',
-            })}
-            aria-label={t('settings-search-label', { defaultValue: 'Search settings' })}
-          />
+          <div data-slot="page-controls">
+            <SearchField
+              value={query}
+              onValueChange={setQuery}
+              placeholder={t('settings-search-placeholder', {
+                defaultValue: 'Search settings — try "dark mode" or "export"',
+              })}
+              aria-label={t('settings-search-label', { defaultValue: 'Search settings' })}
+            />
+          </div>
 
           {!isPending && !signedIn && <div className="mt-3">{signInPrompt}</div>}
 
           {groups.map(({ group, items }) => (
             <div key={group} className="mt-4">
-              <h3 className="site-section-label mb-1">
-                {GROUP_LABELS[group](t)}
-              </h3>
+              <h3 className="site-section-label mb-1">{GROUP_LABELS[group](t)}</h3>
               <div className="-mx-3 flex flex-col">
                 {items.map((d) => (
                   <AccountLink

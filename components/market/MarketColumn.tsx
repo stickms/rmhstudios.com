@@ -120,6 +120,7 @@ export function MarketColumn({
     <>
       <ColumnHeader
         icon={Store}
+        headingLevel="h2"
         title={t('market-title', { defaultValue: 'Marketplace' })}
         actions={
           session ? (
@@ -130,7 +131,10 @@ export function MarketColumn({
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-site-border px-4 py-3">
+      <div
+        data-slot="page-controls"
+        className="flex flex-wrap items-center gap-3 border-b border-site-border px-4 py-3"
+      >
         <Select
           value={itemFilter}
           onChange={(e) => setItemFilter(e.target.value)}
@@ -205,7 +209,7 @@ export function MarketColumn({
           />
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 p-4 min-[400px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {listings.map((listing) => (
             <ListingCard
               key={listing.id}

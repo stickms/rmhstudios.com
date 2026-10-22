@@ -41,7 +41,7 @@
 .cstudio-ranked {
   margin-bottom: clamp(16px, 3vw, 24px);
   border: 1px solid var(--site-border, #232328);
-  border-radius: 16px;
+  border-radius: var(--site-radius);
   background: color-mix(in srgb, var(--site-surface, #18181b) 60%, transparent);
   overflow: hidden;
 }
@@ -87,7 +87,7 @@
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: var(--site-radius-sm);
   color: var(--site-accent, #6c5cff);
   background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
 }
@@ -131,39 +131,6 @@
   flex-shrink: 0;
 }
 
-.cstudio-ranked__toggle,
-.cstudio-ranked__link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 7px 12px;
-  border-radius: 9999px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    color 0.15s ease,
-    background 0.15s ease,
-    border-color 0.15s ease;
-  white-space: nowrap;
-}
-
-.cstudio-ranked__toggle {
-  color: var(--site-text-muted, #a9a9b2);
-  background: transparent;
-  border: 1px solid var(--site-border, #232328);
-}
-.cstudio-ranked__toggle:hover {
-  /* The surface everts in (`data-evert`, globals.css §7.3). */
-  color: var(--site-text, #f5f5f7);
-}
-
-.cstudio-ranked__link {
-  color: var(--site-accent, #6c5cff);
-  background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
-  border: 1px solid color-mix(in srgb, var(--site-accent, #6c5cff) 30%, transparent);
-}
-
 .cstudio-ranked__chev {
   transition: transform 0.18s ease;
 }
@@ -188,7 +155,7 @@
   align-items: center;
   gap: 12px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--site-radius-sm);
   font-size: 0.85rem;
 }
 .cstudio-ranked__row:hover {
@@ -248,7 +215,7 @@
 .cstudio-arcade {
   margin-bottom: clamp(16px, 3vw, 24px);
   border: 1px solid var(--site-border, #232328);
-  border-radius: 16px;
+  border-radius: var(--site-radius);
   background: color-mix(in srgb, var(--site-surface, #18181b) 60%, transparent);
   overflow: hidden;
 }
@@ -267,7 +234,7 @@
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: var(--site-radius-sm);
   color: var(--site-accent, #6c5cff);
   background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
 }

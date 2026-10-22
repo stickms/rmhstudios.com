@@ -59,8 +59,8 @@ export const SearchField = React.forwardRef<HTMLInputElement, SearchFieldProps>(
             // none of the material, so this one field degraded nowhere: every
             // high-contrast / reduced-transparency / perf-lite rule in globals.css
             // targets the glass classes and nothing else.
-            'glass-inset w-full rounded-full py-2 pl-9 pr-9 text-sm text-site-text',
-            'placeholder:text-site-text-dim focus:border-site-accent focus:outline-none',
+            'glass-inset h-12 w-full rounded-site-sm py-3 pl-10 pr-11 text-base sm:text-sm text-site-text transition-colors duration-site-fast',
+            'placeholder:text-site-text-muted focus:border-site-accent focus:outline-none',
             className,
           )}
           {...props}
@@ -77,7 +77,7 @@ export const SearchField = React.forwardRef<HTMLInputElement, SearchFieldProps>(
             <button
               type="button"
               onClick={() => onValueChange('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-site-text-dim hover:text-site-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+              className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-1 text-site-text-dim hover:text-site-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
               aria-label={t('clear-search', { defaultValue: 'Clear search' })}
             >
               <X className="h-3.5 w-3.5" aria-hidden />

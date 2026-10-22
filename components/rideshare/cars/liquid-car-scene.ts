@@ -103,7 +103,6 @@ const SETTLE_VEL_REST = 0.02;
 /* ── The poke ────────────────────────────────────────────────────────────── */
 
 /** Concurrent ripples, as on the globe: a mash evicts, it does not accumulate. */
-const MAX_RIPPLES = 3;
 /** Scale of the rock a poke square on the flank puts into the body, in radians. */
 const WOBBLE_RAD = 0.16;
 /**
@@ -552,8 +551,6 @@ export class LiquidCarScene {
     if (!hit) return false;
 
     const ray = this.body.shell.worldToLocal(hit.point.clone()).sub(this.body.centre).normalize();
-    if (this.ripples.length >= MAX_RIPPLES) this.ripples.shift();
-    this.ripples.push({ x: ray.x, y: ray.y, z: ray.z, t0: seconds() });
 
     // The rock. A poke square on the flank shoves the body round; one straight
     // down the viewing axis only rings it — so the impulse scales with how far
@@ -755,10 +752,6 @@ export class LiquidCarScene {
     (this.ring.material as THREE.Material).dispose();
     this.renderer.dispose();
   }
-}
-
-function seconds(): number {
-  return (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
 }
 
 /**

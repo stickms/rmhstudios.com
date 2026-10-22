@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   GLASS_BUDGET,
   LIGHT_REACH,
-  RIPPLE_REACH,
   admit,
   approach,
   bevelFor,
@@ -10,7 +9,6 @@ import {
   dprFor,
   innerRadius,
   lightTarget,
-  rippleAmplitude,
   sceneCoverage,
   sizeEligible,
   thicknessFor,
@@ -19,11 +17,11 @@ import {
 
 describe('bevel and thickness', () => {
   it('scales with the short side and never exceeds sane limits', () => {
-    expect(bevelFor(1200, 56, 0)).toBeLessThanOrEqual(24);
-    expect(bevelFor(1200, 56, 0)).toBeGreaterThanOrEqual(8);
-    expect(bevelFor(400, 300, 24)).toBeLessThanOrEqual(24);
+    expect(bevelFor(1200, 56, 0)).toBeLessThanOrEqual(12);
+    expect(bevelFor(1200, 56, 0)).toBeGreaterThanOrEqual(4);
+    expect(bevelFor(400, 300, 24)).toBeLessThanOrEqual(12);
     expect(bevelFor(30, 30, 15)).toBeLessThan(15);
-    expect(bevelFor(2000, 2000, 80)).toBe(24);
+    expect(bevelFor(2000, 2000, 80)).toBe(12);
   });
   it('refracts less deep than the bevel is wide, so rim content is not sampled from past the band', () => {
     for (const b of [8, 12, 18]) expect(thicknessFor(b)).toBeLessThan(b);
@@ -98,7 +96,7 @@ describe('snapshot coverage', () => {
   });
 });
 
-describe('ripples and light', () => {
+describe('cursor light', () => {
   it('tilts only the hovered slab, with a bounded diagonal and a neutral centre', () => {
     expect(cursorTilt(200, 100, 400, 200)).toEqual([0, 0]);
     expect(cursorTilt(300, 100, 400, 200)).toEqual([0.5, 0]);
@@ -107,12 +105,6 @@ describe('ripples and light', () => {
     expect(cursorTilt(-1, 100, 400, 200)).toEqual([0, 0]);
     expect(cursorTilt(100, 201, 400, 200)).toEqual([0, 0]);
     expect(cursorTilt(0, 0, 0, 200)).toEqual([0, 0]);
-  });
-  it('a tap is strongest at the finger, falls off smoothly, and has a finite reach', () => {
-    expect(rippleAmplitude(0)).toBe(1);
-    expect(rippleAmplitude(120)).toBeGreaterThan(rippleAmplitude(400));
-    expect(rippleAmplitude(RIPPLE_REACH)).toBe(0);
-    expect(rippleAmplitude(0, 0.8)).toBeCloseTo(0.8, 9);
   });
   it('the cursor light is full at the surface, eases out, and is off past its reach', () => {
     expect(lightTarget(0)).toBe(1);

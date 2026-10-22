@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
  * caller supplies its own leading glyph, and `icon={<Custom />}` to override.
  */
 const badgeVariants = cva(
-  "inline-flex shrink-0 items-center gap-1 rounded-[var(--site-control-radius)] border font-semibold whitespace-nowrap transition-colors [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-3",
+  "inline-flex shrink-0 items-center gap-1 rounded-[var(--site-control-radius)] border font-medium whitespace-nowrap transition-colors duration-site-fast [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-3",
   {
     variants: {
       variant: {
@@ -39,7 +39,7 @@ const badgeVariants = cva(
         outline: 'border border-site-border text-site-text-muted',
       },
       size: {
-        sm: 'px-2 py-0.5 text-[10px]',
+        sm: 'px-2 py-0.5 text-xs',
         default: 'px-2.5 py-1 text-xs',
         lg: 'px-3 py-1.5 text-sm',
       },
