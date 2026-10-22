@@ -234,6 +234,7 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 			// shell — so this is the cheapest honest "did the app render?" check.
 			Expect:        `id="main-content"`,
 			DegradedAfter: websiteBudget,
+			FreshConn:     true, // public origin: exercise DNS/TCP/TLS each cycle
 		},
 		{
 			Name:        "App readiness",
@@ -245,6 +246,7 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 			// here as degraded.
 			Expect:        `"status":"ok"`,
 			DegradedAfter: apiBudget,
+			FreshConn:     true,
 		},
 	}
 
@@ -287,6 +289,7 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 			URL:           u.Feed,
 			Expect:        "<rss",
 			DegradedAfter: apiBudget,
+			FreshConn:     true,
 		},
 		status.Target{
 			Name:        "Sitemap",
@@ -301,6 +304,7 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 			// time. Either root element is a working sitemap.
 			ExpectAny:     []string{"<sitemapindex", "<urlset"},
 			DegradedAfter: apiBudget,
+			FreshConn:     true,
 		},
 
 		// The six background workers run as goroutines inside the supervisor

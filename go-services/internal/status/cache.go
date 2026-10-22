@@ -97,7 +97,11 @@ func (c *responseCache) wrap(next http.Handler) http.Handler {
 		}
 		if f := c.flying[key]; f != nil {
 			c.mu.Unlock()
-			<-f.done
+			select {
+			case <-f.done:
+			case <-r.Context().Done():
+				return
+			}
 			if f.resp != nil {
 				c.hits.Add(1)
 				replay(w, f.resp)
@@ -112,7 +116,21 @@ func (c *responseCache) wrap(next http.Handler) http.Handler {
 		c.misses.Add(1)
 
 		rec := &recorder{header: http.Header{}, status: http.StatusOK}
+		// Leader cleanup is deferred so a handler panic (recovered by
+		// net/http) still clears the flight and releases waiters; they see
+		// resp == nil and serve themselves. The panic then propagates.
+		finished := false
+		defer func() {
+			if finished {
+				return
+			}
+			c.mu.Lock()
+			delete(c.flying, key)
+			c.mu.Unlock()
+			close(f.done)
+		}()
 		next.ServeHTTP(rec, r)
+		finished = true
 		var resp *cachedResponse
 		if rec.status == http.StatusOK && rec.body.Len() <= maxCachedBodyBytes {
 			resp = &cachedResponse{status: rec.status, header: rec.header, body: rec.body.Bytes(),

@@ -46,9 +46,9 @@ type Common struct {
 //
 // DefaultGoDBPoolSize is what runs unless GO_DB_POOL_SIZE says otherwise. It is
 // the budget the Postgres connection plan already reserves for Go: the fleet
-// arithmetic in scripts/db-connection-budget.mjs sets aside 5 connections for
-// "Go supervisor + status probe" (the status probe pool is 2), i.e. a supervisor
-// pool of 3. Raising the default means raising that reservation too.
+// arithmetic in scripts/db-connection-budget.mjs counts a supervisor pool of 3
+// (GO_POOL_DEFAULT, and it reads GO_DB_POOL_SIZE) on top of the status probe's 2
+// and 2 slack. Raising the default means raising GO_POOL_DEFAULT there too.
 const (
 	DefaultGoDBPoolSize = 3
 	MaxGoDBPoolSize     = 6

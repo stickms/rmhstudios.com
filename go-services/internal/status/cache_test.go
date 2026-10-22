@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -132,5 +133,83 @@ func TestResponseCacheKeySpaceIsBounded(t *testing.T) {
 	}
 	if len(c.entries) > maxCachedResponses {
 		t.Fatalf("cache grew to %d entries, cap %d", len(c.entries), maxCachedResponses)
+	}
+}
+
+// A handler panic (net/http recovers it) must not leave the key flying forever:
+// a later request for the same key has to complete, and so must one that was
+// already waiting on the panicking leader.
+func TestResponseCachePanicDoesNotWedgeKey(t *testing.T) {
+	svc, _ := cachedService(t)
+	started := make(chan struct{})
+	release := make(chan struct{})
+	var calls atomic.Int32
+	h := withResponseCache(svc, time.Hour, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) == 1 {
+			close(started)
+			<-release
+			panic("boom")
+		}
+		_, _ = w.Write([]byte("fine"))
+	}))
+
+	leaderDone := make(chan any, 1)
+	go func() {
+		defer func() { leaderDone <- recover() }()
+		doGet(h, "/api/uptime")
+	}()
+	<-started
+	waiter := make(chan *httptest.ResponseRecorder, 1)
+	go func() { waiter <- doGet(h, "/api/uptime") }()
+	time.Sleep(50 * time.Millisecond) // let the waiter park on the flight
+	close(release)
+
+	if r := <-leaderDone; r == nil {
+		t.Fatal("leader panic must propagate so net/http logs it")
+	}
+	select {
+	case rec := <-waiter:
+		if rec.Body.String() != "fine" {
+			t.Fatalf("waiter body %q, want it to serve itself", rec.Body.String())
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("waiter still blocked after leader panicked")
+	}
+	done := make(chan struct{})
+	go func() { doGet(h, "/api/uptime"); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("later request for the key blocked")
+	}
+}
+
+func TestResponseCacheWaiterHonoursContext(t *testing.T) {
+	svc, _ := cachedService(t)
+	started := make(chan struct{})
+	release := make(chan struct{})
+	h := withResponseCache(svc, time.Hour, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-started:
+		default:
+			close(started)
+			<-release
+		}
+		_, _ = w.Write([]byte("x"))
+	}))
+	go doGet(h, "/api/uptime")
+	<-started
+	defer close(release)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	req := httptest.NewRequest(http.MethodGet, "/api/uptime", nil).WithContext(ctx)
+	done := make(chan struct{})
+	go func() { h.ServeHTTP(httptest.NewRecorder(), req); close(done) }()
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("cancelled waiter did not return")
 	}
 }

@@ -240,8 +240,8 @@ services:
       # containers at once = 88. Everything else, worst case: socket/rmhbox/rmhtube
       # hubs 3 x (SERVER_DB_POOL_SIZE 5 + AUTH_DB_POOL_SIZE 4) = 27, jobs 16 + pg-boss
       # 8 = 24, ladder-worker 3 (own client) + 3 (alerts pool) = 6, homes-worker 3, Go
-      # supervisor 1 + status probe 2 (+2 slack), admin/psql/migrate ~10:
-      # 88 + 27 + 24 + 6 + 3 + 5 + 10 = 163 < 197 usable at 200.
+      # supervisor GO_DB_POOL_SIZE 3 + status probe 2 (+2 slack), admin/psql/migrate ~10:
+      # 88 + 27 + 24 + 6 + 3 + 7 + 10 = 165 < 197 usable at 200.
       #
       # A STOCK host (100) cannot hold that, and applying the tuning is a root
       # action the sandboxed deploy cannot take. So deploy.sh runs
