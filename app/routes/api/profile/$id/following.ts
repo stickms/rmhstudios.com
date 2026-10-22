@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { encodeFollowCursor, followCursorWhere, parseFollowCursor, FOLLOW_ORDER_BY } from '@/lib/api/follow-cursor';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
 export const Route = createFileRoute('/api/profile/$id/following')({
@@ -30,9 +31,9 @@ export const Route = createFileRoute('/api/profile/$id/following')({
         const followRecords = await prisma.follow.findMany({
           where: {
             followerId: id,
-            ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
+            ...followCursorWhere(parseFollowCursor(cursor)),
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: FOLLOW_ORDER_BY,
           take: limit,
           include: {
             following: { select: userDisplaySelect },
@@ -61,7 +62,7 @@ export const Route = createFileRoute('/api/profile/$id/following')({
 
         const nextCursor =
           followRecords.length === limit
-            ? followRecords[followRecords.length - 1].createdAt.toISOString()
+            ? encodeFollowCursor(followRecords[followRecords.length - 1])
             : null;
 
         return Response.json({
