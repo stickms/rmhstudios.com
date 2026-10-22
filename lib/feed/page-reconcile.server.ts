@@ -70,7 +70,8 @@ export async function reconcileCachedPage(
   ];
   const [hidden, blocked, quotedRows, rows, signals] = await Promise.all([
     getHiddenAuthorIds(viewerId),
-    quotedIds.length ? getBlockedAuthorIds(viewerId) : Promise.resolve([] as string[]),
+    // Always the throwing block set: getHiddenAuthorIds fails open, and blocks must not.
+    getBlockedAuthorIds(viewerId),
     quotedIds.length
       ? prisma.rMHark.findMany({
           where: { id: { in: quotedIds } },
@@ -103,7 +104,7 @@ export async function reconcileCachedPage(
     getSignals(viewerId),
   ]);
   const quotedById = new Map(quotedRows.map((q) => [q.id, q]));
-  const hiddenSet = new Set(hidden);
+  const hiddenSet = new Set([...hidden, ...blocked]);
   const mutedTags = new Set(signals.mutedTags);
   const byId = new Map(rows.map((r) => [r.id, r]));
 

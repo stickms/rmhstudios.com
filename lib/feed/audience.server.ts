@@ -150,8 +150,15 @@ export async function viewerVisiblePostWhere(
   if (!viewerId) {
     return { deletedAt: null, audience: 'PUBLIC' as const, ...communityVisibleWhere(null) };
   }
+  // getHiddenAuthorIds fails open ([]) on a lookup error: fine for mutes (a feed
+  // preference), not for blocks. Union in the throwing block set so a failed block
+  // lookup fails the read instead of silently dropping the filter.
   const excluded = opts.hideMuted
-    ? await getHiddenAuthorIds(viewerId)
+    ? [
+        ...new Set(
+          (await Promise.all([getHiddenAuthorIds(viewerId), getBlockedAuthorIds(viewerId)])).flat(),
+        ),
+      ]
     : await getBlockedAuthorIds(viewerId);
   return {
     deletedAt: null,
