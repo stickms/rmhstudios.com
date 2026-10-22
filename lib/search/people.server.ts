@@ -111,13 +111,26 @@ export async function searchPeopleScored(
   // index can't narrow anything and the split costs a second scan; the single
   // short-circuiting scan is then the faster plan. Same rows, so the choice is
   // invisible to callers.
-  const probe = terms.q.length >= 3 ? terms.contains : terms.prefix;
+  // The recall also matches each query token on its own, so a common token
+  // ("user" in "bench user") makes the query common even when the phrase is rare.
+  const patterns = [
+    terms.q.length >= 3 ? terms.contains : terms.prefix,
+    ...(terms.tokens.length > 1
+      ? terms.tokens.filter((t) => t.t.length >= 3).map((t) => t.contains)
+      : []),
+  ];
+  const likeAny = Prisma.join(
+    patterns.flatMap((pat) =>
+      ['username', 'handle', 'name'].map(
+        (c) => Prisma.sql`${norm(Prisma.raw(`x."${c}"`))} LIKE ${pat}`,
+      ),
+    ),
+    ' OR ',
+  );
   const probeRows = await prismaRead.$queryRaw<{ n: number }[]>(Prisma.sql`
     SELECT count(*)::int AS n FROM (
       SELECT 1 FROM "user" x
-      WHERE ${norm(Prisma.sql`x."username"`)} LIKE ${probe}
-         OR ${norm(Prisma.sql`x."handle"`)} LIKE ${probe}
-         OR ${norm(Prisma.sql`x."name"`)} LIKE ${probe}
+      WHERE ${likeAny}
       LIMIT ${BROAD_QUERY_HITS}
     ) t
   `);
