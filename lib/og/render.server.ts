@@ -10,6 +10,12 @@ import { renderAsync } from '@resvg/resvg-js';
  * 2. `svgToPng` — `new Resvg(svg).render()` is synchronous and blocks the event
  *    loop for the whole rasterization; `renderAsync` does the same work (same
  *    options, same `.asPng()`) on the libuv threadpool.
+ * 3. `loadSystemFonts: false` — satori embeds glyphs as `<path>` outlines (it is
+ *    never called with `embedFont: false`), so resvg has no `<text>` to resolve
+ *    and the default system-font scan is pure construction cost. Measured on
+ *    real satori output (scripts/perf-ws6/svgtopng-fonts-bench.mts, interleaved
+ *    runs, median of 13): 1200x630 144 -> 56 ms, 1080x1920 141 -> 91 ms, PNG
+ *    bytes identical. If a card ever needs `<text>`, drop the option.
  */
 const inflight = new Map<string, Promise<Buffer>>();
 
@@ -25,6 +31,9 @@ export function dedupeOgRender(key: string, render: () => Promise<Buffer>): Prom
 
 /** Rasterize an SVG to a PNG at `width`, off the event loop. */
 export async function svgToPng(svg: string, width: number): Promise<Buffer> {
-  const rendered = await renderAsync(svg, { fitTo: { mode: 'width', value: width } });
+  const rendered = await renderAsync(svg, {
+    fitTo: { mode: 'width', value: width },
+    font: { loadSystemFonts: false },
+  });
   return Buffer.from(rendered.asPng());
 }
