@@ -30,8 +30,8 @@ than a document, and that it can be made of a **material** rather than of paint.
 Content does not sit in a hierarchy of pages; it **radiates from a centre**. The
 RMH mark is that centre, and it is always on screen.
 
-- The home feed is a **wheel** — cards on the document's own scroll, raked onto
-  a shallow cylinder as they cross the focus line.
+- The home feed is a **wheel** — cards in a stable column on the document's own
+  scroll. Content and glass move together without scroll-linked tilts.
 - Navigation is a **globe**. Tap the fixed orb and it flies to the middle of the
   screen, swells, and dissolves into a glass sphere with every destination
   pinned to it. You _turn_ it to find where you want to go, hold on a

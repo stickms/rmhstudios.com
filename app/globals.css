@@ -4420,7 +4420,7 @@ html.nav-pop .page-root > * {
  * whole shape on a spring, and goes back into that point the same way.
  *
  * - One layer per control: `[data-evert]::before`, behind the label, painted in
- *   `--evert-tint`, the control's own shape (`border-radius: inherit`) scaled
+ *   the clear coat, the control's own shape (`border-radius: inherit`) scaled
  *   from 0 to 1 about the point (`scale` + `transform-origin`). It can never
  *   leave the control's box. Nothing else on the control moves, so a label
  *   never rotates, scales or leaves its pixel grid (§7.1: the retired menu cage).
@@ -4477,7 +4477,7 @@ html.nav-pop .page-root > * {
     inset: 0;
     z-index: -1;
     border-radius: inherit;
-    background: var(--evert-tint, color-mix(in srgb, currentColor 10%, transparent));
+    background: var(--liquid-coat);
     scale: 0;
     transform-origin: var(--evert-x, 50%) var(--evert-y, 50%);
     opacity: var(--evert-rest-opacity, 0.72);
@@ -4518,7 +4518,7 @@ html.nav-pop .page-root > * {
   z-index: calc(var(--z-tooltip) - 1);
   pointer-events: none;
   contain: strict;
-  background: color-mix(in srgb, currentColor 7%, transparent);
+  background: var(--liquid-coat);
   color: var(--site-text);
   scale: 0;
   transform-origin: var(--evert-x, 50%) var(--evert-y, 50%);
@@ -4577,8 +4577,8 @@ html.nav-pop .page-root > * {
   }
 }
 
-/* What each control everts into. Hover colours are the ones these controls always
-   had; they now arrive by eversion instead of a colour fade. */
+/* Legacy variant tint tokens remain for selected/pressed consumers. Hover uses
+   the shared coat/optical tilt; the CSS build policy removes hover colour swaps. */
 @layer components {
   [data-slot='button']:is([data-variant='default'], [data-variant='accent']) {
     --evert-tint: var(--site-accent-hover);
@@ -4609,15 +4609,6 @@ html.nav-pop .page-root > * {
   .cstudio-ranked__link {
     --evert-tint: color-mix(in srgb, var(--site-accent) 22%, transparent);
     --evert-rest-opacity: 1;
-  }
-  /* A feed card's link sits inside the card's padding; its tint reaches the card's own
-     edges (top and sides) so the card, not a box inside it, turns over. */
-  .rmhark__link[data-evert]::before {
-    inset: calc(var(--rad-card-pad) * -1) calc(var(--rad-card-pad) * -1) 0;
-    border-radius: var(--site-radius, 22px) var(--site-radius, 22px) 0 0;
-    /* The point is measured on the link; this layer starts one padding further out. */
-    transform-origin: calc(var(--evert-x, calc(50% - var(--rad-card-pad))) + var(--rad-card-pad))
-      calc(var(--evert-y, calc(50% - var(--rad-card-pad))) + var(--rad-card-pad));
   }
   [data-slot='button']:is([data-variant='accent-outline'], [data-variant='accent-ghost']) {
     --evert-tint: var(--site-accent-dim);

@@ -16,8 +16,8 @@ architecture. Two ideas, one language:
 
 - **Radial.** The site orbits a central **RMH** mark; content radiates from the
   centre. The home feed is a vertically-scrolling **wheel** of cards (on the
-  document's own scroll) that rake onto a shallow cylinder as they cross the
-  focus line, led by an inline compose box; navigation lives in a fixed **RMH
+  document's own scroll) that stay flat and move with their glass, led by an
+  inline compose box; navigation lives in a fixed **RMH
   hub** that, when tapped, sends the orb to the middle of the screen and swells
   it into a **liquid globe** — the destinations pinned to a glass sphere you
   turn, hold and let go of to travel — and that **ripples when you poke it**. A
@@ -753,16 +753,15 @@ clamp, dismissal and focus).
 
 The home (`/`) is a **radial feed**
 ([`RadialFeed`](../components/radial/RadialFeed.tsx) → `RadialWheel`): a wheel of
-cards raked onto a shallow cylinder on the **document's own scroll** (no inner
+cards in a stable column on the **document's own scroll** (no inner
 scroll region — that is what lets mobile Safari collapse its toolbars), led by an
 inline compose box, with a floating compose button that opens the new-rmhark
 modal. A post's **pictures render in the card** ([`RmharkMedia`](../components/radial/RmharkMedia.tsx)):
 up to four tiles, the rest summarised as "+N". Two rules there are load-bearing
 and easy to undo — a lone image's aspect is **clamped** to 4:5…16:9, because the
 wheel is a glance and a 1:4 panorama would own three screens of it; and every
-tile reserves a numeric aspect box **before decode**, because the wheel caches
-each card's document centre and a late-arriving image without a reserved box
-costs a re-measure of every mounted slot on top of the layout shift.
+tile reserves a numeric aspect box **before decode**, so late images do not shift
+the cards while someone is reading or scrolling.
 From 1280px it becomes a **deck** — the wheel keeps the primary column and
 an independent second feed (Following · News · Games) runs beside it. Every other
 `_site` route flows the same way — natural document scroll, **no pinned/sticky
@@ -817,13 +816,10 @@ gated off there too, via `html.app-route`).
   `data-no-reveal` on anything that must not fade (a live value that updates
   in place). Do not hand-roll a per-component fade for the same job.
 - **Radial motion (the shipped layer).** The radial UI is CSS/rAF-driven and
-  framer-motion-free for the shell: the feed **wheel** rakes each card onto a
-  shallow cylinder from a **scroll-driven CSS animation** (`animation-timeline:
-view()`), falling back to a rAF window-scroll pass with cached offsets where
-  the browser has no view timeline and to a flat column on iOS WebKit — where a
-  scroll _event_ is delivered after the compositor has already scrolled, so a
-  hand-driven rake can only ever be a frame late (`RadialWheel`), the **hub**
-  glides the orb to centre and blooms the
+  framer-motion-free for the shell: the feed **wheel** uses native document
+  scrolling, with no per-card tilt or scroll listener (`RadialWheel`). This
+  keeps content and glass together on asynchronous compositors in every engine.
+  The **hub** glides the orb to centre and blooms the
   **liquid globe** under an expanding `clip-path` **circular veil** (CSS phase
   machine + one mount-bounded rAF loop for the sphere's spin, dwell and ripple),
   and page headers/heroes rise in on mount (`radial-page-rise`). The **ring

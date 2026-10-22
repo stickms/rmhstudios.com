@@ -271,15 +271,19 @@ void main() {
     vec2 q = -n.xy * 0.95 - X * 0.3;
     vec2 spread = normalize(q + vec2(1e-4)) * (0.008 + 0.03 * rim) * uPlace.z * uSceneInv;
     vec2 uv = (uPlace.xy + q * uPlace.z) * uSceneInv;
+    // Premultiplied, and not opaque everywhere: what the capture could not paint is transparent (rgb 0), so its
+    // coverage weights the page in. Taken as opaque, those texels (smeared further by the mip blur) darkened the ball.
+    vec4 sG = textureLod(uScene, uv, uLod);
+    float sa = sG.a;
     vec3 page = vec3(
       textureLod(uScene, uv + spread, uLod).r,
-      textureLod(uScene, uv, uLod).g,
+      sG.g,
       textureLod(uScene, uv - spread, uLod).b
     );
-    page = mix(page, uBg, 0.28);
+    page = mix(page, uBg * sa, 0.28);
     float la = uSceneOn * (1.0 - smoothstep(0.9, 1.0, r)) * 0.94;
-    col = col * (1.0 - la) + page * la;
-    a = a * (1.0 - la) + la;
+    col = col * (1.0 - la * sa) + page * la;
+    a = a * (1.0 - la * sa) + la * sa;
   }
 
   vec3 glow = mix(hi, uAccent, 0.55);
@@ -526,11 +530,16 @@ export class JellyGlass {
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, this.sceneTex);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      // Premultiplied, so the mip chain averages coverage rather than smearing transparent black into the page.
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
       try {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, scene.bitmap);
       } catch {
         gl.uniform1f(u.sceneOn, 0);
         return false;
+      } finally {
+        // Unpack state is global; the dough field's float uploads must not be premultiplied.
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
       }
       gl.generateMipmap(gl.TEXTURE_2D);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);

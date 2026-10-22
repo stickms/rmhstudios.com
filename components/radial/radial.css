@@ -2247,10 +2247,7 @@ html.reduce-transparency .radial-globe__contact,
 }
 
 /* ── The wheel ────────────────────────────────────────────────────────── */
-/* Cards flow at their OWN natural heights (variable, so tall and short RMHarks
-   never overlap); the browser owns the momentum/rubber-band, and a rAF
-   window-scroll pass rakes each card onto a shallow cylinder from cached offsets
-   (no layout thrash) so it stays buttery at any refresh rate. */
+/* Native document scrolling keeps the glass and its content on the same layer. */
 .radial-wheel {
   position: relative;
   display: flex;
@@ -2283,112 +2280,7 @@ html.reduce-transparency .radial-globe__contact,
   width: 100%;
   max-width: 34rem;
   min-width: 0;
-  transform-origin: center center;
-  /* `will-change` is toggled by the scroll pass onto only the cards in the focus
-     band, so a long feed never permanently promotes dozens of compositor layers.
-
-     `backface-visibility: hidden` used to sit here, and it defeated exactly
-     that. It is the oldest force-a-GPU-layer hack there is, and on WebKit it is
-     still a compositing trigger — so on iOS it promoted EVERY slot in the feed,
-     not the handful in the band, and a few pages of lazy-loading meant dozens of
-     card-sized layers alive at once at device pixel ratio 3. Nothing needed it:
-     no slot is ever rotated far enough to show its own back (the rake tops out
-     at 15deg), and the only reason a card should get a layer is that it is being
-     animated right now, which both rake paths already say for themselves. */
-}
-
-/* ── The rake, as a scroll-driven animation ───────────────────────────────
-   The curve the wheel is named for: a card lies flat when it is at the middle
-   of the screen and tips away, receding, as it travels to either end.
-
-   Where the browser can do this, the stylesheet does it and `RadialWheel.tsx`
-   runs nothing at all. That is not a tidiness preference — it is the difference
-   between scroll-LINKED and scroll-DRIVEN. A `scroll` listener plus rAF is JS
-   reacting to a scroll that has already been composited, so its transforms
-   land against a position the screen has left; on a compositor-scrolling
-   platform (all of iOS) the cards can only ever be a frame or more behind the
-   column they belong to, which reads as the feed swimming under your thumb. A
-   view() timeline is evaluated as part of the same frame as the scroll, so
-   there is nothing to fall behind.
-
-   The `@supports` test must stay identical to `supportsViewTimeline()` in
-   `lib/perf-tier.ts`: it is what tells the component to stand down, and if the
-   two ever disagreed the column would get both rakes at once, or neither.
-
-   **The rake happens at the edges, and a card fully on screen is flat** (perf
-   audit 2026-10-08, scroll). It used to run over the card's whole `cover`
-   range — tilting continuously from the moment it entered until it left, flat
-   only at the exact centre — which meant EVERY card on screen carried a 3D
-   transform and its own compositor layer for its entire time in view, all of
-   them re-composited on every scroll frame. Two animations now split it:
-   `radial-wheel-rake-in` over `entry` (the card tips up from 15deg to flat as
-   it comes in at the bottom) and `radial-wheel-rake-out` over `exit` (flat to
-   15deg as it leaves at the top). In between, with `fill: none`, a card has no
-   transform at all and scrolls as part of the page. Same cylinder at the edges,
-   cards that are being read are flat, and only the one or two cards crossing an
-   edge are layers. Measured on `/` with a 40-post feed (desktop, all-process
-   CPU per scroll frame): 10.3ms with the full-range rake, 7.7ms edge-only,
-   6.9ms with no rake at all.
-
-   The keyframes and the JS pass in `RadialWheel.tsx` draw the same thing from
-   the same numbers — 15deg of tilt and 150px of depth against a 1500px
-   perspective, 0.8 opacity at the far edge, driven by the fraction of the card
-   that is off screen. */
-@keyframes radial-wheel-rake-in {
-  from {
-    transform: perspective(1500px) translateZ(-150px) rotateX(-15deg);
-    opacity: 0.8;
-  }
-  to {
-    transform: perspective(1500px) translateZ(0) rotateX(0deg);
-    opacity: 1;
-  }
-}
-@keyframes radial-wheel-rake-out {
-  from {
-    transform: perspective(1500px) translateZ(0) rotateX(0deg);
-    opacity: 1;
-  }
-  to {
-    transform: perspective(1500px) translateZ(-150px) rotateX(15deg);
-    opacity: 0.8;
-  }
-}
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    /* The same two opt-outs the component checks, in the same order: a curve the
-       page applies to itself as you scroll is unrequested motion, and continuous
-       decorative GPU work is what `perf-lite` exists to drop. */
-    html:not(.reduce-motion):not(.perf-lite) .radial-wheel__slot {
-      animation-name: radial-wheel-rake-in, radial-wheel-rake-out;
-      animation-timing-function: linear;
-      animation-timeline: view(), view();
-      animation-range:
-        entry 0% entry 100%,
-        exit 0% exit 100%;
-      /* Fill stays `none` on purpose. With `both` every slot in the feed would
-         hold an endpoint transform forever, which is a stacking context and a
-         promotion candidate per card — the same permanent-layer problem
-         `backface-visibility` caused above, reintroduced by the fix for it. With
-         no fill, a card outside its range has no transform at all; the range
-         ends where the card is fully off screen, so nothing pops. */
-      /* `animation-duration` is deliberately not set: on a timeline that is not
-         time-based its initial `auto` is the correct value, and naming it here
-         risks being dropped as unparsed on an engine that ships `view()` without
-         it — which would silently give every card a 0s animation. */
-    }
-  }
-}
-/* Printing renders the page as it stands, so a card caught partway along its
-   range is baked into the output tilted and faded — the ghost-card bug the JS
-   pass answers with a `beforeprint` flatten. This is the same reset for the
-   stylesheet path. The selector repeats the one above rather than being
-   simplified: `@supports`/`@media` add no specificity, so a shorter one would
-   lose to it and the reset would silently do nothing. */
-@media print {
-  html:not(.reduce-motion):not(.perf-lite) .radial-wheel__slot {
-    animation-name: none;
-  }
+  /* No 3D rake or per-scroll promotion: text stays at its native raster scale. */
 }
 .radial-wheel__sentinel {
   width: 100%;
@@ -2417,10 +2309,18 @@ html.reduce-transparency .radial-globe__contact,
 /* ── RMHark card ──────────────────────────────────────────────────────── */
 .rmhark__link {
   display: block;
+  /* The link reaches the card edge; its eversion delegates to the entire card
+     so the hover doesn't end at a second rounded box above the actions. */
+  margin: calc(var(--rad-card-pad) * -1) calc(var(--rad-card-pad) * -1) 0;
+  padding: var(--rad-card-pad) var(--rad-card-pad) 0;
+  border-radius: inherit;
+  overflow: clip;
   text-decoration: none;
   color: inherit;
 }
 .rmhark {
+  --evert-tint: var(--site-surface-hover);
+  --evert-rest-opacity: 1;
   display: flex;
   flex-direction: column;
   gap: var(--rad-3);
@@ -2430,17 +2330,15 @@ html.reduce-transparency .radial-globe__contact,
      on the site, so it takes the cheap tier — tint + rim, no backdrop blur —
      and lets the ring backdrop read through. */
   border: var(--site-border-width, 1px) solid var(--site-border);
-  transition:
-    transform 0.2s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
-    border-color 0.2s ease;
+  transition: border-color 0.2s ease;
 }
-/* The link is inside the card now (it wraps the body, so the toolbar beside it
-   can hold real buttons), so the lift keys off the card containing a hovered
-   link rather than off an ancestor. Hovering a toolbar button does not lift the
-   card — that row is its own set of targets, not a way into the post. */
-.rmhark:has(.rmhark__link:hover) {
+.rmhark:has(.rmhark__link:focus-visible) {
   border-color: var(--site-border-bright);
-  transform: translateY(-2px);
+}
+@media (hover: hover) and (pointer: fine) {
+  .rmhark:has(.rmhark__link:hover) {
+    border-color: var(--site-border-bright);
+  }
 }
 .rmhark__head {
   display: flex;
