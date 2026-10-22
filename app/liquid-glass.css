@@ -1,5 +1,13 @@
-/* Shared liquid material. Native HTML stays live and selectable; no DOM capture.
-   Imported by globals.css for BOTH style tiers. Utilities retain layout control. */
+/* Shared liquid material. Native HTML stays live and selectable.
+   Imported by globals.css for BOTH style tiers. Utilities retain layout control.
+
+   There is NO backdrop-filter anywhere in this file, on purpose. Frosted blur is the opposite of liquid glass (it throws
+   away the detail refraction needs), it is the one engine-specific piece (Firefox flickers under transforms, Safari
+   and Chromium disagree about stacking), and it is what made glass look different per browser. Surfaces carry their own
+   legibility with an adaptive tint instead, and `lib/liquid/glass/engine.ts` draws the clear, refracting, lit slab on
+   top: a canvas behind the content (`.liquid-glass-canvas`) on `glass-pane/chrome/overlay`. This sheet is also the
+   complete fallback tier: with no WebGL2, under reduced transparency/high contrast/`perf-lite`, a surface is simply
+   the tint + a static lit edge below, and looks the same in every engine. */
 @layer components {
   :root {
     --liquid-rim: color-mix(in srgb, white 62%, transparent);
@@ -25,14 +33,20 @@
     border: var(--site-border-width, 1px) solid color-mix(in srgb, var(--site-border) 75%, white);
     border-radius: var(--site-radius);
   }
-  :is(.glass-pane, .glass-chrome):not([data-liquid-material='off']) {
+  .glass-pane:not([data-liquid-material='off']) {
     background-color: color-mix(
       in srgb,
-      var(--site-bg) clamp(52%, calc(66% * var(--glass-user-tint, 1)), 100%),
+      var(--site-bg) clamp(48%, calc(60% * var(--glass-user-tint, 1)), 100%),
       transparent
     );
-    -webkit-backdrop-filter: blur(calc(18px * var(--glass-blur-factor, 1))) saturate(145%);
-    backdrop-filter: blur(calc(18px * var(--glass-blur-factor, 1))) saturate(145%);
+  }
+  /* Sticky chrome floats over scrolling text with no blur to soften it, so it is denser than a pane. */
+  .glass-chrome:not([data-liquid-material='off']) {
+    background-color: color-mix(
+      in srgb,
+      var(--site-bg) clamp(74%, calc(86% * var(--glass-user-tint, 1)), 100%),
+      transparent
+    );
   }
   .glass-fill:not([data-liquid-material='off']) {
     position: relative;
@@ -51,11 +65,9 @@
     max-inline-size: calc(100dvw - var(--safe-left, 0px) - var(--safe-right, 0px) - 1rem);
     background-color: color-mix(
       in srgb,
-      var(--site-bg) clamp(88%, calc(94% * var(--glass-user-tint, 1)), 100%),
+      var(--site-bg) clamp(90%, calc(94% * var(--glass-user-tint, 1)), 100%),
       transparent
     );
-    -webkit-backdrop-filter: blur(calc(22px * var(--glass-blur-factor, 1))) saturate(135%);
-    backdrop-filter: blur(calc(22px * var(--glass-blur-factor, 1))) saturate(135%);
     box-shadow: var(--liquid-edge), var(--site-shadow);
   }
   :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):not([data-liquid-material='off']) {
@@ -114,6 +126,33 @@
     background-image: var(--liquid-coat);
   }
 
+  /* The engine's slab. The canvas is the host's last child, painted BEHIND its content: `isolation` makes the host the
+     stacking context the negative z-index is resolved in, so the canvas sits above the host's own tint and below every
+     in-flow child, positioned or not. The shader draws the bevel, rim light and ripples, so the static CSS edge and coat
+     step aside; the host keeps its tint (the interior shows through it), border and drop shadow. */
+  .liquid-glass-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    user-select: none;
+  }
+  [data-liquid-canvas='on'] {
+    isolation: isolate;
+  }
+  [data-liquid-canvas='on'][data-liquid-static] {
+    position: relative;
+  }
+  :is(.glass-pane, .glass-chrome, .glass-overlay)[data-liquid-canvas='on']:not(
+      [data-liquid-material='off']
+    ) {
+    background-image: none;
+    box-shadow: var(--site-shadow);
+  }
+
   /* A separate clipped carrier owns the moving light. No pseudo collisions,
      gradient-position animation, backdrop filters or inherited CSS writes. */
   .liquid-light {
@@ -140,13 +179,6 @@
     opacity: 0.55;
     will-change: transform;
   }
-
-  /* Native browser fallback: reflection remains, text gets a solid ground. */
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay) {
-      background-color: var(--site-surface) !important;
-    }
-  }
 }
 
 /* Accessibility rules intentionally outrank both theme and material layers. */
@@ -159,11 +191,20 @@
 .app-high-contrast .liquid-light {
   display: none !important;
 }
+:is(.reduce-transparency, .style-high-contrast, .perf-lite) .liquid-glass-canvas,
+.app-high-contrast .liquid-glass-canvas {
+  display: none !important;
+}
 @media (prefers-reduced-motion: reduce),
   (prefers-reduced-transparency: reduce),
   (forced-colors: active),
   print {
   .liquid-light {
+    display: none !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active), print {
+  .liquid-glass-canvas {
     display: none !important;
   }
 }

@@ -16,30 +16,29 @@ const GlassFilter: React.FC = () => (
 interface GlassPaneProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Hover and press response. */
   interactive?: boolean;
-  /** Compatibility alias for a signature surface; no SVG displacement. */
+  /**
+   * Refract the page behind the pane's rim. A pane is lit by default but does not bend the page: its own text is in the
+   * page snapshot and would be drawn twice. Opt in for a pane that sits over imagery with nothing near its edge.
+   * Sets `data-liquid-glass="refract"` (see `lib/liquid/glass/engine.ts`).
+   */
   refract?: boolean;
-  /** Compatibility alias; every pane uses the new material. */
+  /** Retained alias: every pane is a shader slab; this has no effect of its own. */
   liquid?: boolean;
 }
 
 const GlassPane: React.FC<GlassPaneProps> = ({
   interactive = false,
   refract = false,
-  liquid = false,
+  // Kept so existing `<GlassPane liquid>` call sites still type-check; the slab needs no flag.
+  liquid: _liquid = false,
   className,
   children,
   ...props
 }) => (
   <div
     data-slot="glass-pane"
-    data-liquid-surface={refract || liquid ? '' : undefined}
-    className={cn(
-      'glass-pane',
-      interactive && 'glass-interactive',
-      refract && 'glass-refract',
-      liquid && 'glass-liquid',
-      className,
-    )}
+    data-liquid-glass={refract ? 'refract' : undefined}
+    className={cn('glass-pane', interactive && 'glass-interactive', className)}
     {...props}
   >
     {children}
