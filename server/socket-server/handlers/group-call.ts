@@ -183,6 +183,12 @@ interface LiveGroupCall {
    * from the guest list themselves.
    */
   declinedBy: Set<string>;
+  /**
+   * Per person who left and came back: when they first got in, and the seconds
+   * they had already spent here. One history row per person per room, so a
+   * re-join adds to it rather than overwriting the first stint.
+   */
+  earlierStints: Map<string, { firstJoinedAt: number; seconds: number }>;
   /** Ring timers, keyed by the invitee they will give up on. */
   ringTimers: Map<string, ReturnType<typeof setTimeout>>;
   /**
@@ -595,12 +601,26 @@ function persistParticipant(
 ): void {
   const joinedAt = p.joinedAt;
   const joined = joinedAt !== null;
-  const status = persistedParticipantStatus({ joined, left: args.left, reason: args.reason });
-  const durationSec =
-    joined && args.left ? Math.max(0, Math.round((args.at - joinedAt) / 1000)) : 0;
+  const earlier = call.earlierStints.get(p.userId);
+  // Somebody who was in earlier and is now only being rung again (or whose
+  // re-ring ended) is still, for history, someone who was in and left.
+  const status = persistedParticipantStatus({
+    joined: joined || earlier !== undefined,
+    left: args.left || (!joined && earlier !== undefined),
+    reason: args.reason,
+  });
+  const stint = joined && args.left ? Math.max(0, Math.round((args.at - joinedAt) / 1000)) : 0;
+  const durationSec = (earlier?.seconds ?? 0) + stint;
+  const firstJoinedAt = earlier?.firstJoinedAt ?? joinedAt;
+  if (joined && args.left) {
+    call.earlierStints.set(p.userId, {
+      firstJoinedAt: firstJoinedAt ?? joinedAt,
+      seconds: durationSec,
+    });
+  }
   const row = {
     status,
-    joinedAt: joined ? new Date(joinedAt) : null,
+    joinedAt: firstJoinedAt !== null ? new Date(firstJoinedAt) : null,
     leftAt: args.left ? new Date(args.at) : null,
     durationSec,
   };
@@ -1125,7 +1145,16 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     if (!userId) return fail('unauthenticated', 'Sign in to join a call');
 
     const busy = getBusy(userId);
-    if (busy && busy.id !== call.id) return reject('busy', operation, { callId: call.id });
+    if (busy && busy.id !== call.id) {
+      // No callId for an open room: this refusal is sent before membership is
+      // checked, and naming the room would tell a non-member that a space they
+      // cannot see has a live call (which `LOOKUP` deliberately hides).
+      return reject(
+        'busy',
+        operation,
+        call.origin === 'adhoc' ? { callId: call.id } : undefined,
+      );
+    }
 
     const existing = call.participants.get(userId);
 
@@ -1283,6 +1312,9 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       clearTimeout(timer);
       call.ringTimers.delete(userId);
     }
+    // An answered ring is not one to throttle: whoever rang them may call them
+    // straight back once this call is over.
+    for (const otherId of call.participants.keys()) lastRung.delete(`${otherId}>${userId}`);
     byUser.set(userId, call.id);
     if (userId !== call.hostId) call.othersJoined = true;
     call.peakParticipants = Math.max(call.peakParticipants, joinedCount(call));
@@ -1436,6 +1468,10 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     if (!inviter || inviter.joinedAt === null) {
       return fail('not-participant', 'You are not in this call', callId);
     }
+    // Asked again after every await: someone who left, or was evicted, while
+    // their invite waited its turn must not ring people on the room's behalf.
+    const inviterStillIn = (): boolean =>
+      calls.get(callId) === call && call.participants.get(userId) === inviter;
 
     const targets = asIdList(payload?.userIds, MAX_GROUP_CALL_INVITES).filter(
       (id) =>
@@ -1462,7 +1498,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
           targets.slice(0, room),
           [...call.participants.keys()].filter((id) => id !== userId),
         );
-        if (calls.get(callId) !== call) return reject('gone', 'invite', { callId });
+        if (!inviterStillIn()) return reject('gone', 'invite', { callId });
         if (admitted.length === 0) {
           return reject(strongestReason(refusals), 'invite', { callId });
         }
@@ -1500,22 +1536,32 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     // Screened against everyone in the room, not just the sender: the card
     // names the host and shows the roster, and accepting it meshes the
     // invitee with all of them.
-    const { admitted } = await screenInvitees(
+    const { admitted, refusals } = await screenInvitees(
       io,
       userId,
       targets,
       [...call.participants.keys()].filter((id) => id !== userId),
     );
-    if (calls.get(callId) !== call) return;
+    if (!inviterStillIn()) return reject('gone', 'invite', { callId });
     const originId = call.originId ?? '';
     const eligible = await Promise.all(
       admitted.map(async (peer) => ((await isOriginMember(call.origin as OpenRoomOrigin, originId, peer.id)) ? peer : null)),
     );
-    if (calls.get(callId) !== call) return;
+    if (!inviterStillIn()) return reject('gone', 'invite', { callId });
+    let pinged = 0;
     for (const peer of eligible) {
       if (!peer) continue;
       noteRang(userId, peer.id);
       emitIncoming(io, call, peer.id);
+      pinged += 1;
+    }
+    // Nobody could be pinged: say so, as the ad-hoc path does, rather than
+    // closing the inviter's dialog on nothing. Non-members read as `privacy`
+    // like any other refusal, so the reply says nothing about who is in what.
+    if (pinged === 0) {
+      return reject(refusals.length > 0 ? strongestReason(refusals) : 'privacy', 'invite', {
+        callId,
+      });
     }
   });
 
@@ -1772,6 +1818,7 @@ function openRoom(
     ]),
     invited: new Set([args.host.id]),
     declinedBy: new Set(),
+    earlierStints: new Map(),
     ringTimers: new Map(),
     graceTimers: new Map(),
     createdAt: at,

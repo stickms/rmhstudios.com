@@ -542,4 +542,87 @@ describe('group-call admission races', () => {
       ),
     );
   });
+
+  it('does not name a live open room to a non-member who happens to be busy', async () => {
+    holdPeerRows(new Map());
+    const member = connect('hidden-member');
+    await member.send(GCALL_C2S.START, { origin: 'community', originId: 'community-k' });
+    const callId = joinedCallId(member) as string;
+
+    // Busy elsewhere, and not a member of community-k.
+    expect(claimBusy('hidden-outsider', 'gcall', 'elsewhere')).toBe(true);
+    mocks.prisma.communityMember.findUnique.mockResolvedValue(null);
+    const outsider = connect('hidden-outsider');
+    await outsider.send(GCALL_C2S.START, { origin: 'community', originId: 'community-k' });
+
+    const refusal = outsider.emitted.find((e) => e.event === GCALL_S2C.REJECTED);
+    expect(refusal?.payload).not.toHaveProperty('callId');
+    releaseBusy('hidden-outsider', 'elsewhere');
+    await member.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('keeps one history row per person that adds up their stints', async () => {
+    holdPeerRows(new Map());
+    const host = connect('stint-host');
+    const guest = connect('stint-guest');
+    await host.send(GCALL_C2S.START, { origin: 'community', originId: 'community-l' });
+    const callId = joinedCallId(host) as string;
+    vi.useFakeTimers();
+    try {
+      await guest.send(GCALL_C2S.JOIN, { callId });
+      vi.advanceTimersByTime(10_000);
+      await guest.send(GCALL_C2S.LEAVE, { callId });
+      vi.advanceTimersByTime(5_000);
+      await guest.send(GCALL_C2S.JOIN, { callId });
+      vi.advanceTimersByTime(20_000);
+      await guest.send(GCALL_C2S.LEAVE, { callId });
+    } finally {
+      vi.useRealTimers();
+    }
+
+    await vi.waitFor(() => {
+      const rows = mocks.prisma.groupCallParticipant.upsert.mock.calls
+        .map(([args]) => args)
+        .filter((args) => args.where.callId_userId.userId === 'stint-guest');
+      expect(rows.at(-1)?.update).toMatchObject({ status: 'LEFT', durationSec: 30 });
+    });
+    await host.send(GCALL_C2S.LEAVE, { callId });
+  });
+
+  it('tells the inviter when an open-room invite reached nobody', async () => {
+    holdPeerRows(new Map());
+    const host = connect('ping-host');
+    await host.send(GCALL_C2S.START, { origin: 'community', originId: 'community-m' });
+    const callId = joinedCallId(host) as string;
+
+    // The target is not a member of the community.
+    mocks.prisma.communityMember.findUnique.mockResolvedValue(null);
+    await host.send(GCALL_C2S.INVITE, { callId, userIds: ['ping-outsider'] });
+
+    expect(host.emitted).toContainEqual({
+      event: GCALL_S2C.REJECTED,
+      payload: expect.objectContaining({ operation: 'invite', callId }),
+    });
+    await host.send(GCALL_C2S.LEAVE, { callId });
+  });
+
+  it('lets someone be called straight back after a call they answered', async () => {
+    holdPeerRows(new Map());
+    const host = connect('callback-host');
+    const friend = connect('callback-friend');
+    await host.send(GCALL_C2S.START, { origin: 'adhoc', inviteeIds: ['callback-friend'] });
+    const callId = joinedCallId(host) as string;
+    await friend.send(GCALL_C2S.JOIN, { callId });
+    await friend.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+
+    host.emitted.length = 0;
+    await host.send(GCALL_C2S.START, { origin: 'adhoc', inviteeIds: ['callback-friend'] });
+
+    expect(getBusy('callback-friend')).not.toBeNull();
+    const second = joinedCallId(host) as string;
+    await host.send(GCALL_C2S.LEAVE, { callId: second });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
 });
