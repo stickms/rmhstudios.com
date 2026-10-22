@@ -32,15 +32,16 @@ feature lives in that feature's directory; genuinely shared primitives live in
   the theme system depends on it, and raw palette classes plus
   `rounded-lg`/`-xl`/`-2xl` fail CI on the site tier.
 - **Surfaces take a glass elevation class by role**, not an equivalent box:
-  `.glass-fill` for repeated content (cards, rows, tiles — CSS only, never a
-  canvas, unlimited), `.glass-pane` for singular panels, `.glass-chrome` for sticky
+  `.glass-fill` for repeated content (cards, rows, tiles — a shader slab when on
+  screen, within the viewport budget), `.glass-pane` for singular panels, `.glass-chrome` for sticky
   chrome, `.glass-overlay` for anything floating (dialogs, popovers, menus,
   toasts — CI-enforced, because L1 is not a slab and a menu on it ghosts),
   `.glass-inset` for fields. `bg-site-surface border border-site-border
 rounded-site shadow-site-sm` renders the same _box_ and none of the
   _material_ — no bevel, no light, and nothing for high-contrast / reduced
-  transparency / `perf-lite` to switch off. Budget: at most 8 shader slabs per
-  viewport (`lib/liquid/glass/policy.ts`), **zero** on repeated list items.
+  transparency / `perf-lite` to switch off. Budget: at most 24 visible shader slabs
+  (`lib/liquid/glass/policy.ts`; roles first, cards, then controls). **No box-shadow
+  on any UI surface** — shadow tokens are zero; the refracting edge is the depth.
 - **Liquid material.** `pane`/`chrome`/`overlay` (and the app tier's `app-glass`)
   are drawn by `lib/liquid/glass/engine.ts`: a canvas appended as the host's LAST
   child, painted behind its content (`z-index: -2` in an isolated stacking
