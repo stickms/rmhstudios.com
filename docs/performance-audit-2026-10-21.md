@@ -10,8 +10,8 @@ self-contained.
 
 ## Critical CSS + preload priority
 
-Backlog items: *"split `globals.css`"* (loading-audit 06 §5, 10-08 *Not done*)
-and *"lower the module preloads' priority"* (ui-perf-audit 10-09 *Not done* §1).
+Backlog items: _"split `globals.css`"_ (loading-audit 06 §5, 10-08 _Not done_)
+and _"lower the module preloads' priority"_ (ui-perf-audit 10-09 _Not done_ §1).
 
 ### Method
 
@@ -20,14 +20,14 @@ local Postgres, behind a small gzip proxy (production compresses HTML; the local
 Nitro server does not). Chromium via Playwright, cold cache per load, CDP
 network + CPU throttling, interleaved A/B (old build, new build) per run:
 
-| Profile | CPU | RTT | Downlink | Viewport |
-| --- | --- | --- | --- | --- |
-| 4G | 2× | 100 ms | 9 Mbit/s | 768×1024 |
-| 3G | 4× | 300 ms | 1.6 Mbit/s | 390×844 @2x |
-| 2G-class | 6× | 1200 ms | 250 kbit/s | 390×844 @2x |
+| Profile  | CPU | RTT     | Downlink   | Viewport    |
+| -------- | --- | ------- | ---------- | ----------- |
+| 4G       | 2×  | 100 ms  | 9 Mbit/s   | 768×1024    |
+| 3G       | 4×  | 300 ms  | 1.6 Mbit/s | 390×844 @2x |
+| 2G-class | 6×  | 1200 ms | 250 kbit/s | 390×844 @2x |
 
 Per load: FCP, LCP, when the Inter woff2 finished, when the last JS finished,
-and *hydrated* (first moment `document` carries React's container key). Byte
+and _hydrated_ (first moment `document` carries React's container key). Byte
 sizes are brotli q11 of the built files. CSS usage is Chrome CSS coverage at 390
 and 1440 px after a scroll.
 
@@ -41,16 +41,16 @@ production number. RUM (`lib/rum.ts`, `--by-device`) is where to confirm it.
 
 Each page's head carries 82–98 `<link rel="modulepreload">` hints, the route's
 whole static JS closure. Chrome gives each one `High` priority, the same as the
-Inter preload, and the font's hint is emitted *after* all of them (TanStack's
+Inter preload, and the font's hint is emitted _after_ all of them (TanStack's
 `HeadContent` puts route preloads before route `links`). On a slow link they
 share the bandwidth, so the font, the one hint that changes how first paint
 looks, landed with the JavaScript:
 
-| Inter woff2 done (median) | before | after |
-| --- | ---: | ---: |
+| Inter woff2 done (median)                   |                  before |                       after |
+| ------------------------------------------- | ----------------------: | --------------------------: |
 | 4G, `/` · `/games` · `/dunesday` · `/daily` | 1.9 · 2.3 · 2.0 · 2.0 s | 0.33 · 0.45 · 0.40 · 0.36 s |
-| 3G, same routes | 6.4 · 7.6 · 6.8 · 6.6 s | 1.4 · 1.9 · 1.6 · 1.4 s |
-| 2G, `/` · `/dunesday` | 30.8 · 33.5 s | 7.9 · 8.9 s |
+| 3G, same routes                             | 6.4 · 7.6 · 6.8 · 6.6 s |     1.4 · 1.9 · 1.6 · 1.4 s |
+| 2G, `/` · `/dunesday`                       |           30.8 · 33.5 s |                 7.9 · 8.9 s |
 
 Inter is `font-display: swap`, so until then every page painted in the fallback
 and re-shaped seconds later.
@@ -65,21 +65,21 @@ so nothing mismatches. No patch to `node_modules` is involved. CDP showed no
 priority upgrades, so the module graph consumes the low-priority fetches as they
 are rather than refetching them.
 
-Medians, ms. 3G and 4G n=5, 2G n=3. *Hydrated* is the user-facing cost of
+Medians, ms. 3G and 4G n=5, 2G n=3. _Hydrated_ is the user-facing cost of
 delaying JS:
 
-| | FCP before → after | hydrated before → after |
-| --- | --- | --- |
-| 4G `/` | 520 → 424 | 2400 → 2224 |
-| 4G `/games` | 512 → 508 | 2936 → 2838 |
-| 4G `/dunesday` | 604 → 512 | 2450 → 2150 |
-| 4G `/daily` | 632 → 492 | 2455 → 2307 |
-| 3G `/` | 1656 → 1540 | 7608 → 7183 |
-| 3G `/games` | 1300 → 1324 | 9206 → **9448** |
-| 3G `/dunesday` | 2256 → 1996 | 8026 → 7261 |
-| 3G `/daily` | 2204 → 1900 | 7967 → 7614 |
-| 2G `/` | 9284 → 8028 | 35451 → 33368 |
-| 2G `/dunesday` | 13000 → 10672 | 37894 → 34343 |
+|                | FCP before → after | hydrated before → after |
+| -------------- | ------------------ | ----------------------- |
+| 4G `/`         | 520 → 424          | 2400 → 2224             |
+| 4G `/games`    | 512 → 508          | 2936 → 2838             |
+| 4G `/dunesday` | 604 → 512          | 2450 → 2150             |
+| 4G `/daily`    | 632 → 492          | 2455 → 2307             |
+| 3G `/`         | 1656 → 1540        | 7608 → 7183             |
+| 3G `/games`    | 1300 → 1324        | 9206 → **9448**         |
+| 3G `/dunesday` | 2256 → 1996        | 8026 → 7261             |
+| 3G `/daily`    | 2204 → 1900        | 7967 → 7614             |
+| 2G `/`         | 9284 → 8028        | 35451 → 33368           |
+| 2G `/dunesday` | 13000 → 10672      | 37894 → 34343           |
 
 Hydration got earlier everywhere except `/games` on 3G, which is +2–3% and
 reproduced in two separate runs. `/games` is the image-heavy page, and a `Low`
@@ -112,7 +112,7 @@ sheet is shared:
   Tailwind's own scanner (`@tailwindcss/oxide`, with `site-tier.css`'s
   sources and exclusions) attributed every candidate to the top-level
   directories that use it, and `@tailwindcss/node` rebuilt the sheet without
-  each directory's *exclusive* candidates. **No directory removes a single byte.** Every utility
+  each directory's _exclusive_ candidates. **No directory removes a single byte.** Every utility
   a site page uses is also used somewhere else on the site, so a third tier
   split by directory (admin, creator-studio, library, …) cannot shrink what `/`
   downloads.
@@ -141,7 +141,7 @@ bigger problem, and PRE-1 addressed it.
   Feed/eversion/spatial rules whose components are in the entry. Already cut
   from 107 KB in 10-08. What remains is small and needs per-class co-location.
 - **App-route-only rules in `globals.css`** (~0.5 KB brotli, css-js-audit
-  *Not done*). Unchanged.
+  _Not done_). Unchanged.
 - **React #418 on `/games`** reproduces on the baseline build too (css-js
   audit's pre-existing list). Not introduced here.
 
@@ -149,10 +149,10 @@ bigger problem, and PRE-1 addressed it.
 
 ## 3D idle + long tasks
 
-Two backlog items, both about the 3D games: the 10-08 audit's *"3D landing
-scenes render continuously"* ([`performance-audit-2026-10-08.md`](performance-audit-2026-10-08.md)
-§Not done), and the loading audit's *"the 3D games and `/rmhmusic`: 4.8–6.0 s of
-long tasks"* ([`loading-audit-2026-08-11/06-backlog.md`](loading-audit-2026-08-11/06-backlog.md) §7).
+Two backlog items, both about the 3D games: the 10-08 audit's _"3D landing
+scenes render continuously"_ ([`performance-audit-2026-10-08.md`](performance-audit-2026-10-08.md)
+§Not done), and the loading audit's _"the 3D games and `/rmhmusic`: 4.8–6.0 s of
+long tasks"_ ([`loading-audit-2026-08-11/06-backlog.md`](loading-audit-2026-08-11/06-backlog.md) §7).
 
 ### Method
 
@@ -177,13 +177,13 @@ median of 5 runs, with and without 4× CPU throttling.
 
 ### Finding 1 — every menu backdrop ran at the panel's full rate
 
-| route | what is behind the menu | why it drew every vsync |
-| --- | --- | --- |
-| `/isleworks` | the island, behind a translucent title card | R3F `frameloop="always"` |
-| `/nightrail` | the idle cruise, behind a blurred menu | its own rAF loop drew every tick; under reduced motion it drew the same still frame every tick |
-| `/neon-driftway` | the idle cruise, behind a blurred menu | its own rAF loop drew every tick |
-| `/cookgame` | the town, behind a 60% scrim while any shop/menu overlay is open | `setLinvel(…, wake = true)` every frame kept the player body awake forever, and `@react-three/rapier` requests a frame for as long as any body is awake |
-| `/velum2099` | **no 3D scene at all** — the boot terminal is DOM. The 10-08 table attributed its cost to WebGL; it was the CRT scanline animating `background-position`, a full-viewport repaint every frame | CSS |
+| route            | what is behind the menu                                                                                                                                                                       | why it drew every vsync                                                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/isleworks`     | the island, behind a translucent title card                                                                                                                                                   | R3F `frameloop="always"`                                                                                                                                |
+| `/nightrail`     | the idle cruise, behind a blurred menu                                                                                                                                                        | its own rAF loop drew every tick; under reduced motion it drew the same still frame every tick                                                          |
+| `/neon-driftway` | the idle cruise, behind a blurred menu                                                                                                                                                        | its own rAF loop drew every tick                                                                                                                        |
+| `/cookgame`      | the town, behind a 60% scrim while any shop/menu overlay is open                                                                                                                              | `setLinvel(…, wake = true)` every frame kept the player body awake forever, and `@react-three/rapier` requests a frame for as long as any body is awake |
+| `/velum2099`     | **no 3D scene at all** — the boot terminal is DOM. The 10-08 table attributed its cost to WebGL; it was the CRT scanline animating `background-position`, a full-viewport repaint every frame | CSS                                                                                                                                                     |
 
 Frames above 60 buy nothing behind a blur or a dark scrim, but each one is a
 full WebGL draw — and, under `backdrop-filter`, a re-blur of the whole
@@ -201,7 +201,7 @@ viewport. At 240Hz a full-rate menu is 4× the GPU work of the same menu at 60.
 - `MENU_BACKDROP_FPS = 60` for a live scene behind a menu (originally 30; see the note above).
 - Raw rAF loops (Nightrail, Neon Driftway) keep their loop and ask a
   `FrameCap` whether this tick draws. It hands back the time since the last
-  *drawn* frame, so the cruise keeps its real speed.
+  _drawn_ frame, so the cruise keeps its real speed.
 - R3F scenes (Isleworks, Cookgame) set `frameloop="demand"` and mount
   `components/render/FrameCap`, which re-requests a frame from inside every
   frame when uncapped (exactly `"always"`) and, when capped, from a rAF loop on
@@ -220,7 +220,7 @@ Per game:
 - **Isleworks** — capped until "Found a city"; full rate after.
 - **Nightrail** — menus and the pause screen capped; under reduced motion the
   still backdrop is drawn once and again only on a resize or a screen change.
-- **Neon Driftway** — menus capped, and a paused *solo* run. Not capped in
+- **Neon Driftway** — menus capped, and a paused _solo_ run. Not capped in
   multiplayer (the other cars are still driving), with gyro head-look, or in a
   stereo viewer, where a capped rate is felt rather than seen.
 - **Cookgame** — capped while an overlay is open. The player body is now woken
@@ -235,24 +235,24 @@ Per game:
 **Measured** (two interleaved before/after rounds; frames at rest from
 `DrawFrame` trace events, CPU across all of this browser's processes):
 
-| route | frames/s at rest | browser CPU ms/s at rest |
-| --- | ---: | ---: |
-| `/isleworks` (title) | 60 → **30.5** | 141–145 → **83–96** (−37%) |
-| `/nightrail` (menu) | 60 → **30** | 190 → **107–121** (−40%) |
-| `/neon-driftway` (menu) | 60 → **30** | 176–186 → **104–110** (−41%) |
-| `/velum2099` (terminal) | 60 → **15** | 166–188 → **70–86** (−55%) |
-| `/cookgame` (no overlay) | 60 → 60 | 152–181 → 152–153 (unchanged, by design — it is the game) |
+| route                    | frames/s at rest |                                  browser CPU ms/s at rest |
+| ------------------------ | ---------------: | --------------------------------------------------------: |
+| `/isleworks` (title)     |    60 → **30.5** |                                141–145 → **83–96** (−37%) |
+| `/nightrail` (menu)      |      60 → **30** |                                  190 → **107–121** (−40%) |
+| `/neon-driftway` (menu)  |      60 → **30** |                              176–186 → **104–110** (−41%) |
+| `/velum2099` (terminal)  |      60 → **15** |                                166–188 → **70–86** (−55%) |
+| `/cookgame` (no overlay) |          60 → 60 | 152–181 → 152–153 (unchanged, by design — it is the game) |
 
 WebGL frames actually drawn, counted from the context's draw calls while
 driving each game (`raf` stays at 60 throughout — input is never capped):
 
-| | before | after |
-| --- | ---: | ---: |
-| Isleworks title → founded | 61 → 61 | **30** → 61 |
-| Cookgame world → menu open → closed | 61 → 61 → 61 | 61 → **32** → 61 |
-| Nightrail menu | 61 | **30** |
-| Neon Driftway menu | 61 | **30** |
-| Velum 2099 driving | — (crashed, below) | 61 |
+|                                     |             before |            after |
+| ----------------------------------- | -----------------: | ---------------: |
+| Isleworks title → founded           |            61 → 61 |      **30** → 61 |
+| Cookgame world → menu open → closed |       61 → 61 → 61 | 61 → **32** → 61 |
+| Nightrail menu                      |                 61 |           **30** |
+| Neon Driftway menu                  |                 61 |           **30** |
+| Velum 2099 driving                  | — (crashed, below) |               61 |
 
 GPU time is not in the CPU column, and these are 60Hz numbers: on a 144Hz panel
 the uncapped side is 144 draws a second, so the saving is larger than shown.
@@ -271,13 +271,13 @@ found no other import trapped in a comment.
 
 Long Animation Frames ≥ 50 ms on load, median of 5:
 
-| route | unthrottled | 4× CPU — `main` | 4× CPU — this branch |
-| --- | ---: | ---: | ---: |
-| `/cookgame` | 55 ms | 250 ms | 240 ms |
-| `/isleworks` | 0 ms | 375 ms | 371 ms |
-| `/nightrail` | 52 ms | 193 ms | 192 ms |
-| `/neon-driftway` | 68 ms | 184 ms | 184 ms |
-| `/velum2099` | 59 ms | 234 ms | 188 ms |
+| route            | unthrottled | 4× CPU — `main` | 4× CPU — this branch |
+| ---------------- | ----------: | --------------: | -------------------: |
+| `/cookgame`      |       55 ms |          250 ms |               240 ms |
+| `/isleworks`     |        0 ms |          375 ms |               371 ms |
+| `/nightrail`     |       52 ms |          193 ms |               192 ms |
+| `/neon-driftway` |       68 ms |          184 ms |               184 ms |
+| `/velum2099`     |       59 ms |          234 ms |               188 ms |
 
 Branch and `main` are within run-to-run noise (±60 ms), as expected: nothing in
 this pass changes what runs on load.
@@ -328,7 +328,7 @@ schema was rewritten.
   included the home feed, explore, tag, thread, post, profile, community,
   messages and every settings page.
 - **None of those routes validated anything with it.** In every hot-route
-  case, a component imported a *constant, helper or type* from a module that
+  case, a component imported a _constant, helper or type_ from a module that
   also declared an API input schema. Every one of those schemas ran only
   inside an API handler or a `.server.ts` module. The home feed reached zod for
   `isExpired` (via `lib/posts-plus/constants.ts`). The post page reached it for
@@ -365,15 +365,15 @@ lazy-load them the same way (mounted on first open).
 Route-only closure = the route component chunk's static closure minus the
 entry closure every route shares:
 
-| Route | Before | After | Δ |
-| --- | ---: | ---: | ---: |
-| `/` (home feed) | 49.1 KB | 31.8 KB | **−35%** |
-| `/explore` | 92.2 KB | 74.6 KB | −19% |
-| `/u/$userid` (profile) | 207.0 KB | 186.9 KB | −10% |
-| `/u/$userid/post/$postid` | 98.1 KB | 79.6 KB | −19% |
-| `/c/$slug` | 139.5 KB | 121.1 KB | −13% |
-| `/messages/$conversationId` | 93.2 KB | 75.9 KB | −19% |
-| `/settings/profile` | 53.3 KB | 36.4 KB | −32% |
+| Route                       |   Before |    After |        Δ |
+| --------------------------- | -------: | -------: | -------: |
+| `/` (home feed)             |  49.1 KB |  31.8 KB | **−35%** |
+| `/explore`                  |  92.2 KB |  74.6 KB |     −19% |
+| `/u/$userid` (profile)      | 207.0 KB | 186.9 KB |     −10% |
+| `/u/$userid/post/$postid`   |  98.1 KB |  79.6 KB |     −19% |
+| `/c/$slug`                  | 139.5 KB | 121.1 KB |     −13% |
+| `/messages/$conversationId` |  93.2 KB |  75.9 KB |     −19% |
+| `/settings/profile`         |  53.3 KB |  36.4 KB |     −32% |
 
 Each route drops the whole 16.8 KB `schemas-*` chunk: 72 KB of JS the phone no
 longer downloads, parses or compiles. The profile route also loses
@@ -603,3 +603,138 @@ the ratios held.
   page on client navigations) moves that.
 - **The eversion capture** (`lib/eversion/capture.ts`, `modern-screenshot`) runs a
   ~220ms task (4×) ~2.2s after arriving on `/` at idle. Outside this item.
+
+---
+
+## Home LCP
+
+Production Lighthouse (mobile) put `/` at **LCP 6.9s, 91% of it render delay**,
+the LCP element being the first `.rmhark__content`. A MutationObserver on prod
+showed why: the server-rendered feed was in the DOM at first paint, and ~1s
+after `load` React deleted the whole `<!--$-->…<!--/$-->` boundary in
+`.radial-feed__primary` (the `<Suspense>` around `<Await promise={initialFeed}>`),
+inserted the skeleton, and ~40ms later a fresh wheel — which is what LCP fired
+on.
+
+### Method
+
+A production build (`pnpm build:frontend`, Nitro on 127.0.0.1) against a
+migrated embedded Postgres seeded with 40 users / 400 posts. Cold loads at
+412×823 (DPR 2, touch), **4× CPU and Lighthouse's slow 4G** (150ms RTT,
+1.6 Mbps down), cache disabled, with a MutationObserver on the feed boundary,
+LCP/paint observers, and `self.__TSR_ROUTER__` polled for the router's matches
+and the feed promise's state. Attribution came from initiator stacks on an
+unminified build (CDP async stacks) and a breakpoint in React's
+`throwOnHydrationMismatch` reading the fiber and the DOM node it expected.
+Lighthouse 12, mobile preset, both simulated (default) and applied
+(`--throttling-method=devtools`) throttling.
+
+### What was happening — three causes, stacked
+
+1. **`<Await>` suspended during hydration.** On first load the home loader
+   never runs on the client: the router's copy of `initialFeed` is deserialized
+   from the SSR stream, and nothing has tracked it, so `React.use` suspends on it
+   even though it already holds the page. The boundary stays dehydrated, and the
+   next update to reach it makes React abandon the server HTML and client-render
+   it from the fallback — silently (no recoverable error is reported for that
+   path, which is why `onRecoverableError` printed nothing on prod).
+2. **Under that, a real mismatch — from the 10-21 navigation work.** With the
+   promise tracked, hydration got further and failed with **#418**: the
+   breakpoint showed the client rendering **4** wheel slots against **15**
+   server-rendered ones. `useDeferOnNavigate` (NC-5) decided "is this
+   hydration?" from a document flag the root sets after ITS hydration commit —
+   but a dehydrated Suspense boundary hydrates in a separate, later pass, after
+   that flag has flipped, so the feed deferred its cards mid-hydration. On prod
+   cause 1 hid this one; fixing only cause 1 would have swapped a silent remount
+   for an error-reported one.
+3. **The first card was invisible at first paint anyway.** The card was in the
+   DOM before FCP, but `.page-root > *` plays `page-enter` (opacity 0 → 1,
+   `backwards` fill) on the document's first load too, so at FCP the feed was at
+   opacity 0. An element painted at opacity 0 is not an LCP candidate; locally
+   the cookie notice took LCP instead, and for a visitor without the notice LCP
+   only ever fired on the remounted card.
+
+Not the cause: the `/posts` route preloads seen right after `load`. They are the
+viewport prefetcher (`lib/viewport-prefetch.ts`) firing on `load` while the
+router is still in `hydrate()`; with no committed matches to reuse, each preload
+re-ran the root loader (`getInitialUser`, `getInitialI18n`) over the network and
+`hydrate` waited behind it. Disabling the prefetcher did not stop the remount,
+but it did move router hydration from 8.8s to 6.6s — a real second-order cost.
+
+### Fixes
+
+|       | Change                                                                                                                                                                                                                                       | Where                                                        |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| LCP-1 | `trackPromise` reads seroval's synchronous settlement (`s` 1/2, `v`) on a deserialized promise, and `Home` tracks the hydrated `initialFeed` before `<Await>` reads it — hydration takes the streamed page in the same render, no suspension | `lib/route/tracked-promise.ts`, `app/routes/_site/index.tsx` |
+| LCP-2 | `useDeferOnNavigate` never defers in a hydrating render, detected per component via `useSyncExternalStore`'s server snapshot (which React uses for every hydrating render, including a late Suspense pass)                                   | `components/ui/defer-on-navigate.tsx`                        |
+| LCP-3 | `page-enter` held off until the first client navigation (`html[data-navigated]`, set from a history subscription; the page on screen is marked complete first so it never replays)                                                           | `app/globals.css`, `app/routes/__root.tsx`                   |
+| LCP-4 | The viewport prefetcher starts from the root's post-hydration effect, not `getRouter()` (still gated on `load`)                                                                                                                              | `app/router.tsx`, `app/routes/__root.tsx`                    |
+
+Why not await the feed on the server (the other candidate): it fixes cause 1
+by construction but not causes 2 and 3, and it costs every cold-cache response
+its streaming. With a warm timeline cache the streamed page is already in the
+first flush (LCP = FCP below), so awaiting buys nothing there; with a cold one
+(first request after a deploy: TTFB 650ms locally) the shell painted at 1.87s
+and the feed swapped in at 2.46s — awaiting would have held the whole first
+paint back to ~2.4s to save that swap. Tracking the promise keeps the stream and
+costs nothing. The dependency is on seroval's `s`/`v` fields (seroval 1.6.8,
+`PROMISE_SUCCESS`/`PROMISE_FAILURE`); if they ever change, `trackPromise` falls
+back to the async path and the symptom is cause 1 again — no wrong data.
+
+### Results
+
+`main` → this branch. Cold load, 412px, 4× CPU, slow 4G, median of 5:
+
+|                                            | TTFB |    FCP |         LCP | LCP element                  | Boundary remounted |
+| ------------------------------------------ | ---: | -----: | ----------: | ---------------------------- | -----------------: |
+| first visit (cookie notice shown), `main`  | 12ms | 1372ms |      1408ms | cookie notice (card hidden)  |                5/5 |
+| first visit, branch                        | 20ms | 1400ms |  **1400ms** | **first `.rmhark__content`** |            **0/5** |
+| returning visitor (consent stored), `main` | 15ms | 1368ms | **10836ms** | remounted card               |                5/5 |
+| returning visitor, branch                  | 12ms | 1372ms |  **1372ms** | first `.rmhark__content`     |            **0/5** |
+
+(One branch run per set was a cold server — empty timeline cache, TTFB
+~650ms — where the feed streamed in after FCP via React's own boundary swap; it
+is counted in the medians and is not a remount.) Router hydration finishes at
+**6.6s instead of 8.8s** with the prefetcher moved, and the root loader is no
+longer fetched again on the client.
+
+Lighthouse 12 mobile against the local build, runs 2–3 (run 1 of each was the
+cold server):
+
+|                            | Score |      FCP |          LCP |       TBT |   CLS | LCP element        |
+| -------------------------- | ----: | -------: | -----------: | --------: | ----: | ------------------ |
+| simulated, `main`          | 72–74 | 2.3–2.5s |     6.2–7.0s |   47–50ms | 0.026 | cookie notice      |
+| simulated, branch          |    74 |     2.3s | **5.4–5.5s** | 140–178ms | **0** | `.rmhark__content` |
+| applied (devtools), `main` |    94 |    1.94s |        1.94s | 206–227ms |     0 | cookie notice      |
+| applied (devtools), branch |    94 |    1.95s |        1.95s | 220–224ms |     0 | `.rmhark__content` |
+
+Under applied throttling LCP equals FCP on both builds — on `main` only because
+the cookie notice stands in for the hidden card. The simulated LCP that remains
+(5.4s against an observed LCP equal to FCP) is Lantern chaining the paint behind
+the stylesheet and module preloads still on the critical path after
+§Critical CSS + preload priority — not this boundary. Simulated TBT rises because hydration now
+actually hydrates fifteen cards in place where it used to bail out; under
+applied throttling it is flat (206–227 → 220–224ms).
+
+### Checked
+
+- No `#418`, no boundary removal, with the prefetcher on and off.
+- The 10-21 navigation behaviour is intact on the new build: back/forward
+  restores exactly (`/` 2200→2200, `/explore` 1800→1800, `/games` 1800→1800),
+  the in-visit return home shows no skeleton, infinite scroll loads (32 → 119),
+  the `/explore` autofocus lands, and `DeferOnNavigate` still defers on a
+  client switch.
+- `page-enter`: `none` on the first load's page, plays on the next client
+  navigation; nav-pop and reduced-motion suppression unchanged.
+
+### Not done
+
+- **`RelativeTime`'s pre-hydration fallback** uses `toLocaleDateString(undefined,
+…)`, which reads the runtime's locale and time zone — the server's on SSR and
+  the browser's while hydrating. For a visitor whose locale or zone differs from
+  the server's (any non-`en-US` locale; a post near midnight) that text differs
+  and is a hydration mismatch of its own. Not reproducible here (both `en-US`);
+  it wants a fixed locale/zone, or the timestamp formatted on the server and
+  carried in the data.
+- What Lantern still charges to LCP from the critical path (see §Critical CSS
+  - preload priority).
