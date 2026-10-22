@@ -121,7 +121,7 @@ func (w *Worker) processStale(ctx context.Context) {
 	// so a single job crash cannot take down the shared supervisor process.
 	defer func() {
 		if r := recover(); r != nil {
-			w.metrics.JobRuns.WithLabelValues(jobName, "panic").Inc()
+			w.metrics.RecordJob(jobName, "panic")
 			w.logger.Error("processStale panicked", "panic", r)
 		}
 	}()
@@ -195,6 +195,6 @@ func (w *Worker) renderOne(ctx context.Context, page StalePage) bool {
 
 func (w *Worker) recordRun(outcome string) {
 	if w.metrics != nil {
-		w.metrics.JobRuns.WithLabelValues(jobName, outcome).Inc()
+		w.metrics.RecordJob(jobName, outcome)
 	}
 }

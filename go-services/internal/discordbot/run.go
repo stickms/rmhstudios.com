@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
+
 	"github.com/rmhstudios/rmh-go/pkg/config"
 	"github.com/rmhstudios/rmh-go/pkg/worker"
 )
@@ -61,6 +63,15 @@ func Run(ctx context.Context, d worker.Deps) error {
 	bot, err := New(cfg, chat, pet, watch, summarizer, d.Logger)
 	if err != nil {
 		return err
+	}
+	// Gateway state for on-call: a session that drops after startup was
+	// otherwise invisible (only the initial Open was retried and logged).
+	if d.Metrics != nil {
+		up := func() { d.Metrics.GatewayConnected.Set(1) }
+		bot.session.AddHandler(func(*discordgo.Session, *discordgo.Connect) { up() })
+		bot.session.AddHandler(func(*discordgo.Session, *discordgo.Resumed) { up() })
+		bot.session.AddHandler(func(*discordgo.Session, *discordgo.Disconnect) { d.Metrics.GatewayConnected.Set(0) })
+		defer d.Metrics.GatewayConnected.Set(0)
 	}
 	return bot.Run(ctx)
 }
