@@ -73,16 +73,24 @@ export async function gzipUrlset(
     }
   }
 
-  await write(URLSET_OPEN);
-  let n = 0;
-  for await (const slice of slices()) {
-    await write((n > 0 ? '\n' : '') + slice.map((e) => renderUrlEntry(e, origin)).join('\n'));
-    n += slice.length;
-    await new Promise<void>((r) => setImmediate(r));
+  try {
+    await write(URLSET_OPEN);
+    let n = 0;
+    for await (const slice of slices()) {
+      await write((n > 0 ? '\n' : '') + slice.map((e) => renderUrlEntry(e, origin)).join('\n'));
+      n += slice.length;
+      await new Promise<void>((r) => setImmediate(r));
+    }
+    await write(URLSET_CLOSE);
+    gz.end();
+    return { gzip: await done, entries: n };
+  } catch (e) {
+    // The source threw mid-stream: tear the compressor down so it does not
+    // sit half-open, and swallow its own rejection (we rethrow the cause).
+    done.catch(() => {});
+    gz.destroy();
+    throw e;
   }
-  await write(URLSET_CLOSE);
-  gz.end();
-  return { gzip: await done, entries: n };
 }
 
 const cache = new Map<string, SitemapBody>();

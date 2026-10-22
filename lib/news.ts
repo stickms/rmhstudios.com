@@ -27,6 +27,27 @@ export const NEWS_LIST_SELECT = {
     image: true,
 } as const;
 
+/**
+ * The /news index page's narrower read: exactly the fields the list, search,
+ * category tabs and hero render (components/news/NewsList|NewsCard|NewsHero|
+ * NewsSourceBadge), which is a subset of {@link NEWS_LIST_SELECT} (the RSS feed
+ * also wants `id`, `image`, `sourceTitle`, `sourceDate`). The index is
+ * serialised into the SSR HTML, so every extra column ships once per article.
+ */
+export const NEWS_INDEX_SELECT = {
+    slug: true,
+    title: true,
+    date: true,
+    description: true,
+    category: true,
+    tags: true,
+    featured: true,
+    sourcePublisher: true,
+    sourceUrl: true,
+} as const;
+
+export type NewsIndexItem = Pick<PrismaNewsArticle, keyof typeof NEWS_INDEX_SELECT>;
+
 export type NewsListItem = Pick<PrismaNewsArticle, keyof typeof NEWS_LIST_SELECT>;
 
 // The list reads below are public, anonymous-invariant and tolerate replica lag
@@ -52,6 +73,14 @@ export async function getAllNewsArticles(): Promise<NewsListItem[]> {
         where: { status: "PUBLISHED" },
         orderBy: { date: "desc" },
         select: NEWS_LIST_SELECT,
+    });
+}
+
+export async function getNewsIndexArticles(): Promise<NewsIndexItem[]> {
+    return prismaRead.newsArticle.findMany({
+        where: { status: "PUBLISHED" },
+        orderBy: { date: "desc" },
+        select: NEWS_INDEX_SELECT,
     });
 }
 

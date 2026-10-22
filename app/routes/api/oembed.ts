@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
@@ -25,6 +26,21 @@ interface OgCard {
 }
 
 class UpstreamError extends Error {}
+
+/** Longest `url` we will fetch or cache; real links are far shorter. */
+const MAX_URL_LENGTH = 2048;
+
+/**
+ * Cache key for a URL: sha256 of its canonical form (scheme and host
+ * lowercased by `URL`, fragment dropped). Hashing bounds the key size no matter
+ * what the caller sends. Query params are left in the order given: reordering
+ * them is not safe in general (repeated keys, order-sensitive origins).
+ */
+function ogCacheKey(parsed: URL): string {
+  const u = new URL(parsed.href);
+  u.hash = '';
+  return `oembed:og:${createHash('sha256').update(u.href).digest('hex')}`;
+}
 
 function extractMetaContent(html: string, property: string): string | null {
   // Try property="..." content="..."
@@ -61,9 +77,14 @@ export const Route = createFileRoute('/api/oembed')({
             return Response.json({ error: 'Missing url parameter' }, { status: 400 });
           }
 
+          if (url.length > MAX_URL_LENGTH) {
+            return Response.json({ error: 'URL too long' }, { status: 400 });
+          }
+
           // Validate URL
+          let parsedUrl: URL;
           try {
-            new URL(url);
+            parsedUrl = new URL(url);
           } catch {
             return Response.json({ error: 'Invalid URL' }, { status: 400 });
           }
@@ -146,7 +167,7 @@ export const Route = createFileRoute('/api/oembed')({
               // but the first 50 kB away. Upstream failures are thrown, not
               // returned, so they are never cached.
               const card = await cachedNullable<OgCard>(
-                `oembed:og:${url}`,
+                ogCacheKey(parsedUrl),
                 CACHE_TTL * 1000,
                 async () => {
                   const res = await safeFetch(url, {

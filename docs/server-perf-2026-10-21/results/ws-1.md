@@ -6,7 +6,7 @@ Stage A only (static analysis + dev-server query/byte counts). Stage B (producti
 | # | Change | Route(s) | Metric | Before | After | Commit | Evidence | Correctness test |
 |---|---|---|---|---:|---:|---|---|---|
 | 1 | 28 `_site` route files + 3 ladder pages use `getRequestSession()` instead of raw `auth.api.getSession` (request memo + no-cookie fast path) | `/library` and every loader above | queries, signed, cookie without `session_data` | 13 | 9 | 37d96ba8 | exact (in prod `cookieCache` removes the queries; saving is repeated cookie verify + tier lookup) | `lib/__tests__/ssr-session-dedupe.test.ts` |
-| 2 | `/news` loader: narrow select (no `content`), featured derived from the one query | `/news` | document bytes anon; queries | 655,258 B; 2 | 138,301 B; 1 | 4fca3ced | exact; markup with scripts stripped byte-identical (97,329 B) | `lib/__tests__/news-index-loader.test.ts` |
+| 2 | `/news` loader: narrow select (no `content`), featured derived from the one query (since moved behind `getNewsIndexArticles()` in `lib/news.ts`, on `prismaRead`, same nine columns) | `/news` | document bytes anon; queries | 655,258 B; 2 | 138,301 B; 1 | 4fca3ced | exact; markup with scripts stripped byte-identical (97,329 B) | `lib/__tests__/news-index-loader.test.ts` |
 
 ## Rejected (measured, no win)
 | # | Idea | Route(s) | Metric | Before | After | Why it didn't help |
@@ -16,7 +16,7 @@ Stage A only (static analysis + dev-server query/byte counts). Stage B (producti
 ## Deferred
 | # | Lead | Why | What would unblock it |
 |---|---|---|---|
-| 1 | Root loader `appearancePreference.findUnique` runs serially after the session on every signed-in document | One PK lookup; caching needs `invalidateCached` in `app/routes/api/preferences/appearance.ts` (not WS1-owned) | Stage B number showing it matters; then a handoff for the one-line invalidation |
+| 1 | (Superseded by main 219655bd6, see the Superseded table.) Root loader `appearancePreference.findUnique` runs serially after the session on every signed-in document | One PK lookup; caching needs `invalidateCached` in `app/routes/api/preferences/appearance.ts` (not WS1-owned) | Stage B number showing it matters; then a handoff for the one-line invalidation |
 | 2 | `/news` read is still unbounded | Page searches/paginates all articles client-side; a `take` changes behaviour | Server-side search + paging (product decision) |
 | 3 | Non-English documents carry core i18n catalogs inline: `/communities` 49 KB (en) vs 191 KB (de), 199 KB (ja), 221 KB (ar) | Per-route namespace subsetting risks hydration mismatch | Stage B CPU measure of seroval on the 140 KB; route-aware namespace map with a hydration test |
 | 4 | Anon edge-cache allowlist additions | Origin allowlist is inert until `deploy/apply-cloudflare-cache-rules.sh` matches, and `anon-html-cache.test.ts` fails if they disagree; deploy script is not WS1-owned. I did not audit any candidate route end to end | Coordinator/operator decides to widen the CF rule; then audit per 03-rules §2 |

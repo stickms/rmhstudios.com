@@ -24,6 +24,7 @@ import { ReconnectionHandler } from './reconnection';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
+import { boundedFlush } from './shutdown';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
@@ -119,6 +120,9 @@ roomManager.startGarbageCollector();
 
 // ─── Graceful shutdown ───────────────────────────────────────────
 
+/** Upper bound on a chat flush during shutdown; well inside SHUTDOWN_TIMEOUT_MS. */
+const FLUSH_BOUND_MS = Math.max(1_000, Math.floor(config.SHUTDOWN_TIMEOUT_MS / 2));
+
 function shutdown(signal: string): void {
   logger.info({ event: 'shutdown_initiated', signal });
 
@@ -131,10 +135,19 @@ function shutdown(signal: string): void {
   // both before the Prisma pool closes.
   const partyStopped = partyHandler.stop().catch(() => undefined);
   roomManager.stopGarbageCollector();
+  // Flush chat now, not only once the HTTP server has drained: `httpServer.close`
+  // waits for open connections, and the forced-exit timer below can fire first,
+  // which would drop every buffered message. Bounded so a hung write cannot hold
+  // shutdown past its budget; the close callback flushes again for stragglers.
+  const chatFlushed = boundedFlush(chatHandler.flushPersistence(), FLUSH_BOUND_MS);
 
   httpServer.close(() => {
     logger.info({ event: 'http_server_closed' });
-    Promise.allSettled([partyStopped, chatHandler.flushPersistence()]).then(() => disconnectPrisma()).finally(() => {
+    Promise.allSettled([
+      partyStopped,
+      chatFlushed,
+      boundedFlush(chatHandler.flushPersistence(), FLUSH_BOUND_MS),
+    ]).then(() => disconnectPrisma()).finally(() => {
       process.exit(0);
     });
   });

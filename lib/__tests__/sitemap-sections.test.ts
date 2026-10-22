@@ -93,6 +93,35 @@ describe('batched sections', () => {
     expect(skips[1]).toBe(SITEMAP_CHUNK_SIZE + 5_000);
   });
 
+  it('pages users by keyset after the first slice, so concurrent writes cannot repeat or skip rows', async () => {
+    const { renderSectionBatches } = await import('@/lib/sitemap.server');
+    const row = (i: number) => ({
+      id: `u${String(i).padStart(6, '0')}`,
+      handle: `h${i}`,
+      updatedAt: new Date(0),
+      followerCount: 100 - Math.floor(i / 1000),
+    });
+    let n = 0;
+    prismaMock.user.findMany.mockImplementation(async ({ take }) =>
+      Array.from({ length: take }, () => row(n++)),
+    );
+    const sizes: number[] = [];
+    for await (const slice of renderSectionBatches('users', 1)!) sizes.push(slice.length);
+    expect(sizes.reduce((a, b) => a + b, 0)).toBe(SITEMAP_CHUNK_SIZE);
+    const calls = prismaMock.user.findMany.mock.calls.map((c) => c[0]);
+    expect(calls[0].skip).toBe(0);
+    expect(calls[0].orderBy).toEqual([{ followerCount: 'desc' }, { id: 'asc' }]);
+    for (const c of calls.slice(1)) {
+      expect(c.skip).toBeUndefined();
+      const keyset = c.where.AND[1].OR;
+      expect(keyset[0]).toEqual({ followerCount: { lt: expect.any(Number) } });
+      expect(keyset[1]).toEqual({
+        followerCount: expect.any(Number),
+        id: { gt: expect.any(String) },
+      });
+    }
+  });
+
   it('stops at the first short page', async () => {
     const { renderSectionBatches } = await import('@/lib/sitemap.server');
     prismaMock.rMHark.findMany.mockResolvedValueOnce(

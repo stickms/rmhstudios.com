@@ -11,6 +11,7 @@ import {
   snapQuality,
 } from '@/lib/images/variant-params';
 import { getOrEncodeVariant } from '@/lib/images/variants.server';
+import { cpuGate } from '@/lib/images/cpu-gate.server';
 import { variantCacheKey } from '@/lib/image-optimize';
 
 describe('snapDimension', () => {
@@ -119,8 +120,32 @@ describe('getOrEncodeVariant', () => {
       },
     };
     const first = await getOrEncodeVariant(failing);
-    expect(first).toEqual({ ok: false, status: 502, body: { error: 'Failed to fetch upstream image' } });
+    expect(first).toEqual({
+      ok: false,
+      status: 502,
+      body: { error: 'Failed to fetch upstream image' },
+    });
     await getOrEncodeVariant(failing);
     expect(calls).toBe(2); // a failure is retried, not remembered
+  });
+
+  it('loads the source inside the CPU gate so the queue bounds source buffers', async () => {
+    const png = await sharp({
+      create: { width: 40, height: 40, channels: 3, background: '#123456' },
+    })
+      .png()
+      .toBuffer();
+    let activeDuringLoad = -1;
+    await getOrEncodeVariant({
+      cacheKey: variantCacheKey('test', 'gate-load', { width: 16, quality: 80, format: 'webp' }),
+      width: 16,
+      quality: 80,
+      format: 'webp',
+      load: async () => {
+        activeDuringLoad = cpuGate.stats.active;
+        return { bytes: png };
+      },
+    });
+    expect(activeDuringLoad).toBeGreaterThanOrEqual(1);
   });
 });

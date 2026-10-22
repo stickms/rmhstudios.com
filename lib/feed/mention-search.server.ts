@@ -17,12 +17,24 @@ export async function searchMentionUsers(q: string, viewerId: string | undefined
     // *_norm_trgm_idx GIN indexes serve the substring predicate.
     const needle = `%${normalizeQuery(q).replace(/[\\%_]/g, '\\$&')}%`;
     const viewerClause = viewerId ? Prisma.sql`AND "id" <> ${viewerId}` : Prisma.empty;
+    // The LIMIT must keep the best candidates, not an arbitrary 50: order by the same signals the ranker
+    // below uses (exact handle, then mutual > following > follower), with handle/id as a total-order tie-break.
+    const viewerFollowScore = viewerId
+      ? Prisma.sql`(
+          (CASE WHEN EXISTS (SELECT 1 FROM "follow" f WHERE f."followerId" = ${viewerId} AND f."followingId" = "user"."id") THEN 2 ELSE 0 END)
+          + (CASE WHEN EXISTS (SELECT 1 FROM "follow" f WHERE f."followingId" = ${viewerId} AND f."followerId" = "user"."id") THEN 1 ELSE 0 END)
+        ) DESC,`
+      : Prisma.empty;
     const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
       SELECT "id" FROM "user"
       WHERE "handle" IS NOT NULL ${viewerClause}
         AND (${norm(Prisma.raw('"handle"'))} LIKE ${needle}
           OR ${norm(Prisma.raw('"username"'))} LIKE ${needle}
           OR ${norm(Prisma.raw('"name"'))} LIKE ${needle})
+      ORDER BY
+        (lower("handle") = ${q.toLowerCase()}) DESC,
+        ${viewerFollowScore}
+        "handle" ASC, "id" ASC
       LIMIT 50`);
     candidates = rows.length
       ? await prisma.user.findMany({
@@ -46,20 +58,32 @@ export async function searchMentionUsers(q: string, viewerId: string | undefined
         take: DEFAULT_SUGGESTION_EDGES,
       }),
     ]);
-    const graphIds = [...new Set([...out.map((f) => f.followingId), ...inc.map((f) => f.followerId)])].filter(
-      (id) => id !== viewerId,
-    );
+    // Up to 100 distinct ids; cap at 50 keeping the strongest ties (mutuals, then follows, then followers)
+    // rather than letting the database drop an arbitrary half before ranking.
+    const outIds = out.map((f) => f.followingId);
+    const incIds = inc.map((f) => f.followerId);
+    const incSet = new Set(incIds);
+    const outSet = new Set(outIds);
+    const graphIds = [
+      ...new Set([
+        ...outIds.filter((id) => incSet.has(id)),
+        ...outIds.filter((id) => !incSet.has(id)),
+        ...incIds.filter((id) => !outSet.has(id)),
+      ]),
+    ]
+      .filter((id) => id !== viewerId)
+      .slice(0, 50);
     candidates = graphIds.length
       ? await prisma.user.findMany({
           where: { id: { in: graphIds }, handle: { not: null } },
           select: userDisplaySelect,
-          take: 50,
         })
       : [];
   } else {
     candidates = await prisma.user.findMany({
       where: { handle: { not: null } },
       select: userDisplaySelect,
+      orderBy: [{ followerCount: 'desc' }, { id: 'asc' }],
       take: 50,
     });
   }

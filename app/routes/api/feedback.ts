@@ -10,9 +10,10 @@ const FEEDBACK_LIST_CAP = 100;
 export const Route = createFileRoute('/api/feedback')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async () => {
-        // Bounded: the table grows with every submission, and no client reads
-        // this list; newest FEEDBACK_LIST_CAP rows, only the columns returned.
+      // Admin only: the list is every submitter's name and message, and no
+      // client calls it (the form only POSTs).
+      GET: defineHandler({ auth: 'admin' }, async () => {
+        // Bounded: the table grows with every submission; newest FEEDBACK_LIST_CAP rows, only the columns returned.
         const feedbacks = await prisma.feedback.findMany({
           orderBy: { createdAt: 'desc' },
           take: FEEDBACK_LIST_CAP,

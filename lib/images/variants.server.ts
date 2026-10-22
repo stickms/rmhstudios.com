@@ -16,9 +16,11 @@
  *    takes 0.13 ms idle took up to 2.4 s (results/ws-6.md). Encodes now go
  *    through {@link cpuGate}.
  *
- * Source loading (object-store GET / upstream fetch) deliberately happens
- * **outside** the gate: it is I/O, and holding a CPU slot across a slow upstream
- * would let a few slow hosts starve every encode.
+ * Source loading (object-store GET / upstream fetch) happens **inside** the
+ * gate, with the encode. The queue is what bounds how many source buffers (up
+ * to 10 MB each) are alive at once; loading before queueing would let a flood
+ * of distinct keys each pin a buffer while waiting for a slot. The cost is that
+ * a slow load holds a slot, which is bounded by the loaders' own timeouts.
  */
 
 import {
@@ -34,8 +36,7 @@ export { CpuGateFullError };
 
 /** What a loader returns: the source bytes, or a response to relay to the caller. */
 export type VariantSource =
-  | { bytes: Buffer }
-  | { fail: { status: number; body: Record<string, unknown> } };
+  { bytes: Buffer } | { fail: { status: number; body: Record<string, unknown> } };
 
 export type VariantResult =
   | { ok: true; image: CachedImage; hit: boolean }
@@ -67,20 +68,20 @@ export async function getOrEncodeVariant(req: VariantRequest): Promise<VariantRe
   if (running) return running;
 
   const p = (async (): Promise<VariantResult | null> => {
-    const source = await req.load();
-    if (!source) return null;
-    if ('fail' in source) return { ok: false, ...source.fail };
-    const result = await cpuGate.run(() =>
-      optimizeImage(source.bytes, {
+    return cpuGate.run(async (): Promise<VariantResult | null> => {
+      const source = await req.load();
+      if (!source) return null;
+      if ('fail' in source) return { ok: false, ...source.fail };
+      const result = await optimizeImage(source.bytes, {
         width: req.width,
         height: req.height,
         quality: req.quality,
         format: req.format,
-      }),
-    );
-    const image: CachedImage = { buffer: result.buffer, contentType: result.contentType };
-    setCachedVariant(req.cacheKey, image);
-    return { ok: true, image, hit: false };
+      });
+      const image: CachedImage = { buffer: result.buffer, contentType: result.contentType };
+      setCachedVariant(req.cacheKey, image);
+      return { ok: true, image, hit: false };
+    });
   })();
 
   inflight.set(req.cacheKey, p);
