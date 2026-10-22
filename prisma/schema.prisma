@@ -4472,6 +4472,9 @@ model DoctrineReputation {
   lastActiveAt   DateTime                   @default(now())
   coalitionScore Float                      @default(1.0)
   sahurCount     Int                        @default(0)
+  // Set by the Go doctrine worker's weekly decay; a row decays at most once per
+  // ISO week (UTC). Null = never decayed.
+  lastDecayedAt  DateTime?
   ledger         DoctrineReputationLedger[]
 
   @@index([totalXp(sort: Desc)])

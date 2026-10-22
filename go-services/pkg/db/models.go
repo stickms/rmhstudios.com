@@ -73,6 +73,7 @@ type DoctrineReputation struct {
 	CurrentStreak  int32
 	LongestStreak  int32
 	LastActiveAt   time.Time
+	LastDecayedAt  *time.Time // once-per-ISO-week decay guard; nil = never decayed
 	CoalitionScore float64
 	SahurCount     int32
 }
