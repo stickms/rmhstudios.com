@@ -14,7 +14,6 @@ export interface GlassDraw {
   radius: number;
   bezel: number;
   thickness: number;
-  disperse: number;
   /** Scene position (CSS px) of the surface's top-left corner, and the scene's size. */
   sceneX: number;
   sceneY: number;
@@ -69,7 +68,6 @@ const NAMES = [
   'uScene',
   'uSceneMap',
   'uSceneOn',
-  'uDisperse',
   'uTint',
   'uRim',
   'uInk',
@@ -218,7 +216,6 @@ export class GlassRenderer {
       1 / Math.max(1, o.sceneH),
     );
     gl.uniform1f(u.uSceneOn, o.sceneOn);
-    gl.uniform1f(u.uDisperse, o.disperse);
     gl.uniform4f(u.uTint, o.tint[0], o.tint[1], o.tint[2], o.tint[3]);
     gl.uniform3f(u.uRim, o.rim[0], o.rim[1], o.rim[2]);
     gl.uniform3f(u.uInk, o.ink[0], o.ink[1], o.ink[2]);

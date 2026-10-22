@@ -6,8 +6,8 @@ import { installLiquidInteractions } from '@/lib/liquid/runtime';
 /**
  * Mount once at the provider boundary, including full-screen app routes.
  *
- * Two independent services share the document: the interaction field (a translate-only push on neighbouring surfaces,
- * tiny, installed immediately) and the glass engine (shader slabs, cursor light, surface ripples). The engine and its
+ * Two independent services share the document: fallback cursor lighting (installed immediately) and the glass engine
+ * (shader slabs, cursor light, optical surface ripples). Neither service moves surface hosts on a click. The engine and its
  * shaders are loaded after the browser is idle, so they cost nothing on the first paint; surfaces simply keep their CSS
  * material until it arrives, which is the same material the engine falls back to.
  */
