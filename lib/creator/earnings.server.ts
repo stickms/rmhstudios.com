@@ -67,10 +67,10 @@ export async function getCreatorEarnings(userId: string, db: Db = prisma): Promi
   ]);
 
   const lifetimeEarned =
-    (tipsAndMemberships._sum.amount ?? 0) + (purchases._sum.amount ?? 0);
+    Number(tipsAndMemberships._sum.amount ?? 0) + Number(purchases._sum.amount ?? 0);
   const redeemed = redeemedAgg._sum.amountCoins ?? 0;
   const redeemable = Math.max(0, lifetimeEarned - redeemed);
-  const spendable = profile?.coins ?? 0;
+  const spendable = Number(profile?.coins ?? 0);
   return { lifetimeEarned, redeemed, redeemable, spendable };
 }
 

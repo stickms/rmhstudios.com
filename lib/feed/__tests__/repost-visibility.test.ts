@@ -62,7 +62,7 @@ const POST = (
 async function repost(id: string) {
   const request = new Request(`https://x.test/api/rmharks/${id}/repost`, {
     method: 'POST',
-    headers: { 'cf-connecting-ip': String(Math.random()) },
+    headers: { 'cf-connecting-ip': String(Math.random()), cookie: 'better-auth.session_token=t' },
   });
   return POST({ request, params: { id } });
 }

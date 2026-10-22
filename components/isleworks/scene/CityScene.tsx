@@ -12,7 +12,9 @@
  * In `GameClock`, inside the canvas, on `useFrame`. A city builder's clock has
  * to advance smoothly and pause when the tab is hidden, which is exactly what
  * the render loop already does — a parallel `setInterval` would drift against
- * the animation it drives and keep running in a background tab.
+ * the animation it drives and keep running in a background tab. The loop
+ * itself is `FrameCap`'s: every display frame once the city is founded,
+ * `MENU_BACKDROP_FPS` behind the title screen.
  *
  * ## Pointer flow
  *
@@ -36,6 +38,8 @@ import {
   useIsleworksClock,
 } from '@/lib/isleworks/store';
 import { useRenderQuality } from '@/lib/render/useRenderQuality';
+import { MENU_BACKDROP_FPS } from '@/lib/render/frame-cap';
+import FrameCap from '@/components/render/FrameCap';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 import { Atmosphere } from './Atmosphere';
@@ -64,6 +68,9 @@ export function CityScene({ rigRef }: { rigRef: React.MutableRefObject<RigHandle
   const selectedId = useIsleworks((s) => s.selectedId);
   const freshIds = useIsleworks((s) => s.freshIds);
   const setHover = useIsleworks((s) => s.setHover);
+  // Behind the title card the island only has to breathe, not run at the
+  // panel's rate. Nothing on it is interactive until "Found a city".
+  const started = useIsleworks((s) => s.started);
 
   const aim = useRef<Aim>({ tile: null, buildingId: null });
   const paintingRef = useRef(false);
@@ -152,6 +159,7 @@ export function CityScene({ rigRef }: { rigRef: React.MutableRefObject<RigHandle
       orthographic
       shadows={quality.quality.shadows}
       dpr={quality.dpr}
+      frameloop="demand"
       gl={{ antialias: quality.quality.antialias, powerPreference: 'high-performance' }}
       camera={{ position: [30, 30, 30], zoom: 46, near: -200, far: 400 }}
       style={{ width: '100%', height: '100%', touchAction: 'none' }}
@@ -160,6 +168,7 @@ export function CityScene({ rigRef }: { rigRef: React.MutableRefObject<RigHandle
       {/* The sky colour is owned by <Atmosphere>, which drives it from the world
           clock; the wrapper's CSS background covers the single frame before it
           first runs. */}
+      <FrameCap fps={started ? null : MENU_BACKDROP_FPS} />
       <GameClock />
 
       <CameraRig

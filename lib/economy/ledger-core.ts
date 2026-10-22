@@ -44,10 +44,12 @@ export interface TxCapable {
 
 /**
  * Largest single movement we will process. Not a product rule — a blast-radius
- * limit. A bug or a compromised endpoint that tries to move a billion coins
- * should fail loudly rather than quietly mint an economy's worth of currency.
+ * limit: an amount that is not even a plausible number of coins should fail
+ * loudly. Raised from 10M because legitimate whales outgrew it — a 1.5B coin
+ * vault accrues more than 10M interest in three weeks, and the claim threw.
+ * Still well inside Number.MAX_SAFE_INTEGER (~9e15) so the integer check holds.
  */
-export const MAX_TRANSACTION = 10_000_000;
+export const MAX_TRANSACTION = 10_000_000_000_000;
 
 /** Balance a new profile is seeded with (matches the historical default). */
 export const STARTING_BALANCE = 10;
@@ -416,7 +418,7 @@ export async function getBalanceOn(db: Db, userId: string): Promise<number> {
     where: { userId },
     select: { coins: true },
   });
-  return profile?.coins ?? 0;
+  return Number(profile?.coins ?? 0);
 }
 
 /**
@@ -434,5 +436,5 @@ export async function getBalancesOn(db: Db, userIds: string[]): Promise<Map<stri
     where: { userId: { in: unique } },
     select: { userId: true, coins: true },
   });
-  return new Map(rows.map((r) => [r.userId, r.coins]));
+  return new Map(rows.map((r) => [r.userId, Number(r.coins)]));
 }

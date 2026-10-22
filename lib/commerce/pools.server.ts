@@ -353,7 +353,7 @@ export async function contribute(
         raised: updated.raised,
         goalCoins: updated.goalCoins,
         settled,
-        balance: profile?.coins ?? 0,
+        balance: Number(profile?.coins ?? 0),
       };
     });
   } catch (err) {

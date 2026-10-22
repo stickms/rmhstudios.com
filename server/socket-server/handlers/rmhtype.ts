@@ -668,7 +668,9 @@ function startProgressBroadcast(io: Server, room: TypeRoom): void {
       });
     }
     if (progress.length > 0) {
-      io.to(`rmhtype:${room.roomId}`).emit('rmhtype:game:progress', progress);
+      // perf: volatile — every frame carries full per-player state, so a missed one is
+      // replaced 200ms later; don't let connectionStateRecovery retain them.
+      io.to(`rmhtype:${room.roomId}`).volatile.emit('rmhtype:game:progress', progress);
     }
   }, PROGRESS_BROADCAST_INTERVAL_MS);
 }

@@ -1,19 +1,13 @@
 /**
- * Feed controls — client-safe types + zod (§17 of
+ * Feed controls — client-safe types (§17 of
  * docs/plans/2026-07-20-parity-qol-customization-design.md).
+ *
+ * zod-free on purpose — the home feed imports this via `lib/feed/timeline.ts`.
+ * The API input schema is in `./signals-schema`.
  */
-import { z } from 'zod';
 
 export const FEED_SIGNAL_KINDS = ['less_author', 'mute_tag', 'follow_tag'] as const;
 export type FeedSignalKind = (typeof FEED_SIGNAL_KINDS)[number];
-
-export const feedSignalSchema = z.object({
-  kind: z.enum(FEED_SIGNAL_KINDS),
-  // authorId (cuid) or a hashtag (normalized lowercase, no '#').
-  targetId: z.string().trim().min(1).max(64),
-});
-
-export type FeedSignalInput = z.infer<typeof feedSignalSchema>;
 
 /** Normalize a hashtag target (strip '#', lowercase). */
 export function normalizeTag(tag: string): string {

@@ -108,7 +108,8 @@ export class SyncEngine {
     this.heartbeatInterval = setInterval(() => {
       for (const room of this.roomManager.rooms.values()) {
         if (room.playback.isPlaying) {
-          this.io.to(room.id).emit(S2C.SYNC_HEARTBEAT, {
+          // perf: volatile — a periodic resend of the current position; the next one replaces it.
+          this.io.to(room.id).volatile.emit(S2C.SYNC_HEARTBEAT, {
             trackUri: room.playback.trackUri,
             positionMs: room.playback.positionMs + (Date.now() - room.playback.updatedAt),
             isPlaying: room.playback.isPlaying,
@@ -120,5 +121,6 @@ export class SyncEngine {
 
   stop() {
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+    this.heartbeatInterval = null;
   }
 }

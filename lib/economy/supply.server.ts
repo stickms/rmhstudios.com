@@ -110,9 +110,9 @@ export async function getEconomySnapshot(windowDays = 30): Promise<EconomySnapsh
     }
     return entry;
   };
-  for (const r of faucetRows) bucket(r.type).faucet = r._sum.amount ?? 0;
-  for (const r of sinkRows) bucket(r.type).sink = r._sum.amount ?? 0;
-  for (const r of transferRows) bucket(r.type).transfer = r._sum.amount ?? 0;
+  for (const r of faucetRows) bucket(r.type).faucet = Number(r._sum.amount ?? 0);
+  for (const r of sinkRows) bucket(r.type).sink = Number(r._sum.amount ?? 0);
+  for (const r of transferRows) bucket(r.type).transfer = Number(r._sum.amount ?? 0);
 
   const byType = [...byTypeMap.values()].sort(
     (a, b) => b.faucet + b.sink + b.transfer - (a.faucet + a.sink + a.transfer),
@@ -121,13 +121,13 @@ export async function getEconomySnapshot(windowDays = 30): Promise<EconomySnapsh
   const faucet = byType.reduce((n, t) => n + t.faucet, 0);
   const sink = byType.reduce((n, t) => n + t.sink, 0);
   const transfer = byType.reduce((n, t) => n + t.transfer, 0);
-  const totalFloat = floatAgg._sum.coins ?? 0;
+  const totalFloat = Number(floatAgg._sum.coins ?? 0);
 
   // Concentration over the sampled head. With fewer holders than the sample
   // cap this is exact; beyond it, the top 1% is still fully inside the sample,
   // so the share stays accurate while the denominator uses the true float.
   const topCount = Math.max(1, Math.ceil(holders * 0.01));
-  const top1Sum = top.slice(0, topCount).reduce((n, p) => n + p.coins, 0);
+  const top1Sum = top.slice(0, topCount).reduce((n, p) => n + Number(p.coins), 0);
 
   return {
     windowDays,

@@ -19,7 +19,7 @@ import { HiddenRepliesGroup } from'./HiddenReplies';
 import { AIGenerateButton } from'./AIGenerateButton';
 import { MentionTextarea } from'./MentionTextarea';
 import type { Comment } from'./CommentItem';
-import { MAX_COMMENT_LENGTH } from'@/lib/rmhark-schema';
+import { MAX_COMMENT_LENGTH } from'@/lib/rmhark-limits';
 import { Link, useNavigate } from'@tanstack/react-router';
 import type { FeedItem } from'@/lib/feed-types';
 import { RMHarkContent, extractFirstUrl } from'./RMHarkContent';

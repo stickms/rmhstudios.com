@@ -1,0 +1,841 @@
+{
+ "version": 1,
+ "note": "Fixed route set for every comparison. Placeholders {a.b} come from scripts/perf/.dataset.json. Removing a route needs a note in results/ws-0.md.",
+ "routes": [
+  {
+   "id": "home",
+   "path": "/",
+   "class": "core",
+   "auth": "both"
+  },
+  {
+   "id": "games",
+   "path": "/games",
+   "class": "core",
+   "auth": "both"
+  },
+  {
+   "id": "apps",
+   "path": "/apps",
+   "class": "core",
+   "auth": "both"
+  },
+  {
+   "id": "profile-self",
+   "path": "/u/{users.heavy.handle}",
+   "class": "core",
+   "auth": "both"
+  },
+  {
+   "id": "profile-popular",
+   "path": "/u/{users.topFollowed.0.handle}",
+   "class": "core",
+   "auth": "both"
+  },
+  {
+   "id": "profile-by-id",
+   "path": "/u/{users.heavy.id}",
+   "class": "core",
+   "auth": "both"
+  },
+  {
+   "id": "post",
+   "path": "/u/{ids.postAuthorHandle}/post/{ids.postId}",
+   "class": "core",
+   "auth": "both"
+  },
+  {
+   "id": "post-thread-2k",
+   "path": "/u/{ids.threadPostAuthorHandle}/post/{ids.threadPostId}",
+   "class": "core",
+   "auth": "both"
+  },
+  {
+   "id": "thread",
+   "path": "/thread/{ids.threadPostId}",
+   "class": "core",
+   "auth": "both"
+  },
+  {
+   "id": "news",
+   "path": "/news",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "library",
+   "path": "/library",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "leaderboard",
+   "path": "/games?sub=leaderboard",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "events",
+   "path": "/communities?tab=events",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "communities",
+   "path": "/communities",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "achievements",
+   "path": "/achievements",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "help",
+   "path": "/help",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "roadmap",
+   "path": "/roadmap",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "changelog",
+   "path": "/changelog",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "pricing",
+   "path": "/store?tab=membership",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "shop",
+   "path": "/store?tab=shop",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "store",
+   "path": "/store",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "speedruns",
+   "path": "/speedruns",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "tournaments",
+   "path": "/tournaments",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "predictions",
+   "path": "/predictions",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "quotes",
+   "path": "/quotes",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "ventures",
+   "path": "/ventures",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "services",
+   "path": "/services",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "series",
+   "path": "/series",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "jams",
+   "path": "/jams",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "feeds",
+   "path": "/feeds",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "today",
+   "path": "/today",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "museum",
+   "path": "/museum",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "explore",
+   "path": "/explore",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "spaces",
+   "path": "/communities?tab=spaces",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "ranked",
+   "path": "/ranked",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "progress",
+   "path": "/progress",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "community",
+   "path": "/c/{ids.communitySlug}",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "tag",
+   "path": "/tag/{ids.tag}",
+   "class": "content",
+   "auth": "both"
+  },
+  {
+   "id": "notifications",
+   "path": "/messages?tab=notifications",
+   "class": "content",
+   "auth": "signed"
+  },
+  {
+   "id": "messages",
+   "path": "/messages",
+   "class": "content",
+   "auth": "signed"
+  },
+  {
+   "id": "messages-conversation",
+   "path": "/messages/{ids.conversationHeavy}",
+   "class": "content",
+   "auth": "signed"
+  },
+  {
+   "id": "bookmarks",
+   "path": "/saves?tab=saved",
+   "class": "content",
+   "auth": "signed"
+  },
+  {
+   "id": "history",
+   "path": "/history",
+   "class": "content",
+   "auth": "signed"
+  },
+  {
+   "id": "settings",
+   "path": "/settings",
+   "class": "content",
+   "auth": "signed"
+  },
+  {
+   "id": "settings-appearance",
+   "path": "/settings/appearance",
+   "class": "content",
+   "auth": "signed"
+  },
+  {
+   "id": "market",
+   "path": "/store?tab=market",
+   "class": "interactive",
+   "auth": "both"
+  },
+  {
+   "id": "search",
+   "path": "/explore?q={ids.searchQuery}",
+   "class": "interactive",
+   "auth": "both"
+  },
+  {
+   "id": "creator-studio",
+   "path": "/create/earnings",
+   "class": "interactive",
+   "auth": "both"
+  },
+  {
+   "id": "developer",
+   "path": "/developer",
+   "class": "interactive",
+   "auth": "both"
+  },
+  {
+   "id": "homes",
+   "path": "/homes",
+   "class": "interactive",
+   "auth": "both"
+  },
+  {
+   "id": "rideshare",
+   "path": "/rideshare",
+   "class": "interactive",
+   "auth": "both"
+  },
+  {
+   "id": "rmhladder",
+   "path": "/rmhladder",
+   "class": "interactive",
+   "auth": "both"
+  },
+  {
+   "id": "study",
+   "path": "/study",
+   "class": "interactive",
+   "auth": "both"
+  },
+  {
+   "id": "music-trivia",
+   "path": "/music-trivia",
+   "class": "interactive",
+   "auth": "both"
+  },
+  {
+   "id": "emoji-packs",
+   "path": "/emoji-packs",
+   "class": "interactive",
+   "auth": "both"
+  },
+  {
+   "id": "game-page",
+   "path": "/games/{ids.game}",
+   "class": "interactive",
+   "auth": "both"
+  },
+  {
+   "id": "app-rmhtube",
+   "path": "/rmhtube",
+   "class": "interactive",
+   "auth": "signed"
+  },
+  {
+   "id": "app-rmhmusic",
+   "path": "/rmhmusic",
+   "class": "interactive",
+   "auth": "signed"
+  },
+  {
+   "id": "app-rmhtype",
+   "path": "/rmhtype",
+   "class": "interactive",
+   "auth": "signed"
+  },
+  {
+   "id": "app-rmhcode",
+   "path": "/rmhcode",
+   "class": "interactive",
+   "auth": "signed"
+  },
+  {
+   "id": "app-rmhbox",
+   "path": "/rmhbox",
+   "class": "interactive",
+   "auth": "signed"
+  },
+  {
+   "id": "app-login",
+   "path": "/login",
+   "class": "interactive",
+   "auth": "anon"
+  },
+  {
+   "id": "api-session",
+   "path": "/api/auth/get-session",
+   "class": "api",
+   "auth": "both",
+   "load": false
+  },
+  {
+   "id": "api-notifications",
+   "path": "/api/notifications",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-notifications-unread",
+   "path": "/api/notifications?unread=1&limit=1",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-messages-unread",
+   "path": "/api/messages/unread-count",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-messages-sidebar",
+   "path": "/api/messages/sidebar",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-messages",
+   "path": "/api/messages",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-presence-online",
+   "path": "/api/presence/online-count",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-streak",
+   "path": "/api/streak",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-progress",
+   "path": "/api/progress",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-coins",
+   "path": "/api/coins",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-activity",
+   "path": "/api/activity",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-announcements",
+   "path": "/api/announcements",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-experiments",
+   "path": "/api/experiments",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-prefs-appearance",
+   "path": "/api/preferences/appearance",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-prefs-layout",
+   "path": "/api/preferences/layout",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-feed-foryou",
+   "path": "/api/rmharks?limit=20",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-feed-following",
+   "path": "/api/rmharks?feed=following&limit=20",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-feed-page2",
+   "path": "/api/rmharks?limit=20&cursor={ids.midPostId}",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-post",
+   "path": "/api/rmharks/{ids.postId}",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-post-comments",
+   "path": "/api/rmharks/{ids.postId}/comment",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-post-comments-2k",
+   "path": "/api/rmharks/{ids.threadPostId}/comment",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-post-similar",
+   "path": "/api/rmharks/{ids.postId}/similar",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-post-quotes",
+   "path": "/api/rmharks/{ids.postId}/quotes",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-profile",
+   "path": "/api/profile/{users.topFollowed.0.handle}",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-profile-posts",
+   "path": "/api/profile/{users.topFollowed.0.handle}/rmharks",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-profile-followers",
+   "path": "/api/profile/{users.topFollowed.0.handle}/followers",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-profile-following",
+   "path": "/api/profile/{users.heavy.handle}/following",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-profile-card",
+   "path": "/api/profile/{users.topFollowed.0.handle}/card",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-profile-likes",
+   "path": "/api/profile/{users.heavy.handle}/likes",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-explore",
+   "path": "/api/explore",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-search",
+   "path": "/api/search?q={ids.searchQuery}",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-hashtag-search",
+   "path": "/api/feed/hashtag-search?q=tag",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-mention-search",
+   "path": "/api/feed/mention-search?q=user1",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-users-search",
+   "path": "/api/users/search?q=user1",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-communities",
+   "path": "/api/communities",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-community",
+   "path": "/api/communities/{ids.communitySlug}",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-community-feed",
+   "path": "/api/communities/{ids.communitySlug}/feed",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-community-members",
+   "path": "/api/communities/{ids.communitySlug}/members",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-leaderboard-players",
+   "path": "/api/leaderboards/players",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-leaderboard-game",
+   "path": "/api/leaderboards/{ids.game}",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-game-leaderboard-legacy",
+   "path": "/api/games/{ids.game}/leaderboard",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-messages-search",
+   "path": "/api/messages/search?q=Synthetic",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-arcade",
+   "path": "/api/arcade",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-shop",
+   "path": "/api/shop",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-market",
+   "path": "/api/market/listings",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-events",
+   "path": "/api/events",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-series",
+   "path": "/api/series",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-playlists",
+   "path": "/api/playlists",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-tournaments",
+   "path": "/api/tournaments",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-predictions",
+   "path": "/api/predictions",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-user-builds",
+   "path": "/api/user-builds",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-conversation",
+   "path": "/api/messages/{ids.conversationHeavy}",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-history",
+   "path": "/api/history",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-bookmarks",
+   "path": "/api/bookmarks",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-ranked",
+   "path": "/api/ranked",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-spaces-live",
+   "path": "/api/spaces/live",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-qotd",
+   "path": "/api/qotd/today",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "api-today",
+   "path": "/api/today",
+   "class": "api",
+   "auth": "signed"
+  },
+  {
+   "id": "api-health",
+   "path": "/api/health",
+   "class": "api",
+   "auth": "anon"
+  },
+  {
+   "id": "post-create",
+   "path": "/api/rmharks",
+   "class": "api",
+   "auth": "signed",
+   "method": "POST",
+   "body": {
+    "content": "perf bench post"
+   }
+  },
+  {
+   "id": "post-like",
+   "path": "/api/rmharks/{ids.midPostId}/like",
+   "class": "api",
+   "auth": "signed",
+   "method": "POST",
+   "body": {}
+  },
+  {
+   "id": "post-comment",
+   "path": "/api/rmharks/{ids.midPostId}/comment",
+   "class": "api",
+   "auth": "signed",
+   "method": "POST",
+   "body": {
+    "content": "perf bench comment"
+   }
+  },
+  {
+   "id": "follow",
+   "path": "/api/profile/{users.midUser.handle}/follow",
+   "class": "api",
+   "auth": "signed",
+   "method": "POST",
+   "body": {}
+  },
+  {
+   "id": "sfn-initial-user",
+   "path": "/_serverFn/8e361134d3ced248faeb41bd6511ddf2b53be3512df743ef4149ce3ce094a6f6",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "sfn-initial-feed",
+   "path": "/_serverFn/9e7d4e85b0bc4c95dccd6dbe982fa58c6ac148fca49977701010e6c1baeeb0e0",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "sfn-sidebar-data",
+   "path": "/_serverFn/b954baac833339c16bd8b5b84566ff50cd49f430cdbd414651ec0286ff4c5961",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "sfn-explore",
+   "path": "/_serverFn/94e29d35a33dfc2319a69cee8cc339ac96ea4569b7ff26ea4155c7736a900daa",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "sfn-communities",
+   "path": "/_serverFn/8db318bc70c9833abab7ba90513265edd1cc75f4c67b0abc7e1b5f2973098293",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "sfn-inbox",
+   "path": "/_serverFn/03de92e3faa01fa27bd44106de8bff15cb901ecec3a446e4f6676f9b0100f984",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "sfn-achievements",
+   "path": "/_serverFn/0ee94b275a140e00f7894c23f0ee2d502335c4a43598ecb07fbe888d58303a67",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "sfn-board",
+   "path": "/_serverFn/72a8e7000f8f8a9ca9ee43db524406474e234fe6e1389529dacfb59f1a5df76b",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "sfn-snapshot",
+   "path": "/_serverFn/1b2b519feb17c9fa6c1b5c0496a7d7d601b6681ffdd2341325e9165e35ce22de",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "sfn-ranked",
+   "path": "/_serverFn/ca6a40efe4356fe22a2f8e37b0d79fdd670d776c01f056e5f399099efd76a71c",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "sfn-settings",
+   "path": "/_serverFn/50a55a46e1cd20391a1f9f3d1134f6e741c02aa5c309836fd24e1f6b97a4f0a6",
+   "class": "api",
+   "auth": "both"
+  },
+  {
+   "id": "sfn-news",
+   "path": "/_serverFn/1e7f3217822581dcba9602332976eeaf06374cc81107e8d0a37645019178aae8",
+   "class": "api",
+   "auth": "both"
+  }
+ ]
+}

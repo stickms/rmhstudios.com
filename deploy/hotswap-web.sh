@@ -54,6 +54,22 @@ FLIP_VERIFY_TIMEOUT="${FLIP_VERIFY_TIMEOUT:-15}"
 # Host header used when probing Apache (:80) so the request hits this vhost
 # (ProxyPreserveHost is on). Override for staging/other origins.
 ORIGIN_HOST="${ORIGIN_HOST:-rmhstudios.com}"
+# Post-deploy BAKE: after the flip, the old container is kept STOPPED (not
+# deleted) for BAKE_SECONDS while deploy/smoke-test.sh probes the real user path
+# every BAKE_INTERVAL seconds. BAKE_FAIL_THRESHOLD consecutive failed rounds (or
+# the new container dying/restarting) rolls traffic back to the old container.
+# Consecutive, not cumulative, so one slow probe can't trigger a rollback; the
+# defaults need ~1 min of sustained failure. BAKE_SECONDS=0 disables the bake
+# (the one-shot smoke gate right after the flip still runs).
+BAKE_SECONDS="${BAKE_SECONDS:-300}"
+BAKE_INTERVAL="${BAKE_INTERVAL:-20}"
+BAKE_FAIL_THRESHOLD="${BAKE_FAIL_THRESHOLD:-3}"
+# Exit codes deploy.sh tells apart: 1 = failed before traffic moved (old still
+# live), 3 = shipped, failed the smoke gate/bake, rolled back to the old
+# container, 4 = failed the bake AND the old container could not be brought back
+# (new one left serving — needs a human).
+EXIT_ROLLED_BACK=3
+EXIT_ROLLBACK_FAILED=4
 
 log() { echo "[hotswap] $*"; }
 die() { echo "[hotswap] ERROR: $*" >&2; exit 1; }
@@ -271,8 +287,7 @@ if "$DOCKER_BIN" inspect "$old_container" >/dev/null 2>&1; then
     "$DOCKER_BIN" stop "$old_container" >/dev/null 2>&1 || true
 
     if verify_apache_flip; then
-        log "Apache confirmed serving via ${target_color} (port ${target_port}). Retiring ${old_container}."
-        "$DOCKER_BIN" rm -f "$old_container" >/dev/null 2>&1 || true
+        log "Apache confirmed serving via ${target_color} (port ${target_port}). Keeping ${old_container} stopped as the rollback target."
     else
         log "Apache NOT serving after flip — the reload did not route to port ${target_port}."
         log "  Rolling back: restarting ${old_container} and reverting ${ACTIVE_CONF} → ${current_port}."
@@ -289,4 +304,106 @@ if "$DOCKER_BIN" inspect "$old_container" >/dev/null 2>&1; then
     fi
 fi
 
+# ── Smoke gate + bake, with automatic rollback ──────────────────────────────
+# The checks above prove the new container ANSWERS. This proves it WORKS for a
+# user — SSR renders, the DB-backed paths serve, readiness is green — first once,
+# right after the flip, then continuously for BAKE_SECONDS while the old
+# container waits, stopped, as an instant rollback target. A release that boots
+# but breaks a real path (a bad query, a missing env var a route reads lazily, a
+# crash loop after warm-up) is rolled back by the deploy instead of by whoever
+# notices. Scope: this rolls back WEB only. Migrations already ran, so the old
+# web must tolerate the new schema (expand/contract — never drop in the same
+# release that stops using a column); the other services are not rolled back.
+SMOKE="${SCRIPT_DIR}/smoke-test.sh"
+# Progress markers for deploy.sh's Discord checklist (it strips them from the
+# log); harmless noise when this script is run by hand.
+progress_stage() { echo "::deploy-stage::$1"; }
+progress_note() { echo "::deploy-note::$1"; }
+fmt_dur() { if [ "$1" -ge 60 ]; then printf '%dm %02ds' $(($1 / 60)) $(($1 % 60)); else printf '%ds' "$1"; fi; }
+smoke() { ORIGIN_HOST="$ORIGIN_HOST" bash "$SMOKE"; }
+
+reload_apache() {
+    if [ "$RELOADER" = "external" ]; then
+        sleep 3
+    else
+        $SUDO apachectl graceful >/dev/null 2>&1 || $SUDO systemctl reload apache2 >/dev/null 2>&1 || true
+    fi
+}
+
+# Bring the stopped old container back, flip Apache to it, retire the new one.
+# Never flips to an old container that is not itself healthy: if both fail, the
+# cause is almost certainly shared (DB, Redis, disk), and moving traffic would
+# only add a second outage — so the new one stays live and a human is paged.
+rollback() {
+    local reason="$1" _i
+    log "ROLLBACK: ${reason}"
+    progress_note "rolling back — ${reason}"
+    "$DOCKER_BIN" logs --tail=50 "$new_container" 2>&1 | sed 's/^/[hotswap]   new> /' || true
+    if ! "$DOCKER_BIN" inspect "$old_container" >/dev/null 2>&1; then
+        log "  no ${old_container} to roll back to (first deploy?) — leaving ${target_color} live."
+        exit "$EXIT_ROLLBACK_FAILED"
+    fi
+    "$DOCKER_BIN" start "$old_container" >/dev/null 2>&1 || true
+    for _i in $(seq 1 "$HEALTH_TIMEOUT"); do
+        curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:${current_port}/" && break
+        sleep 1
+    done
+    if ! curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:${current_port}/"; then
+        log "  ${old_container} did not become healthy on ${current_port} — NOT flipping back; ${target_color} stays live."
+        "$DOCKER_BIN" stop "$old_container" >/dev/null 2>&1 || true
+        exit "$EXIT_ROLLBACK_FAILED"
+    fi
+    write_active_conf "$current_port" || { diagnose_apache_perms; exit "$EXIT_ROLLBACK_FAILED"; }
+    reload_apache
+    if ! verify_apache_flip; then
+        log "  WARNING: Apache not serving after rollback flip — manual intervention needed."
+        exit "$EXIT_ROLLBACK_FAILED"
+    fi
+    sleep "$DRAIN_SECONDS"
+    "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true
+    log "Rolled back: ${old_color} live again on ${current_port}; ${new_container} removed."
+    exit "$EXIT_ROLLED_BACK"
+}
+
+progress_stage bake
+progress_note "smoke gate"
+# One-shot gate. A few retries absorb cold caches on the first requests.
+gate_ok=false
+for _ in 1 2 3; do
+    if smoke; then gate_ok=true; break; fi
+    sleep 5
+done
+[ "$gate_ok" = true ] || rollback "smoke test failed right after the flip"
+log "Smoke gate passed."
+
+if [ "$BAKE_SECONDS" -gt 0 ] && "$DOCKER_BIN" inspect "$old_container" >/dev/null 2>&1; then
+    log "Baking ${target_color} for ${BAKE_SECONDS}s (probe every ${BAKE_INTERVAL}s, rollback after ${BAKE_FAIL_THRESHOLD} consecutive failures)..."
+    restarts0=$("$DOCKER_BIN" inspect -f '{{.RestartCount}}' "$new_container" 2>/dev/null || echo 0)
+    bake_end=$(( $(date +%s) + BAKE_SECONDS ))
+    consecutive=0
+    bake_start=$(date +%s)
+    probes=0
+    probes_ok=0
+    while [ "$(date +%s)" -lt "$bake_end" ]; do
+        sleep "$BAKE_INTERVAL"
+        running=$("$DOCKER_BIN" inspect -f '{{.State.Running}}' "$new_container" 2>/dev/null || echo false)
+        restarts=$("$DOCKER_BIN" inspect -f '{{.RestartCount}}' "$new_container" 2>/dev/null || echo 0)
+        if [ "$running" != "true" ] || [ "$restarts" != "$restarts0" ]; then
+            rollback "${new_container} died or restarted during the bake (running=${running}, restarts ${restarts0}→${restarts})"
+        fi
+        probes=$((probes + 1))
+        if QUIET=1 smoke; then
+            consecutive=0
+            probes_ok=$((probes_ok + 1))
+        else
+            consecutive=$((consecutive + 1))
+            log "  bake probe failed (${consecutive}/${BAKE_FAIL_THRESHOLD})"
+            [ "$consecutive" -ge "$BAKE_FAIL_THRESHOLD" ] && rollback "${consecutive} consecutive smoke failures during the bake"
+        fi
+        progress_note "$(fmt_dur $(( $(date +%s) - bake_start )))/$(fmt_dur "$BAKE_SECONDS") · ${probes_ok}/${probes} probes ok"
+    done
+    log "Bake passed."
+fi
+
+"$DOCKER_BIN" rm -f "$old_container" >/dev/null 2>&1 || true
 log "Hotswap complete: ${target_color} live on ${target_port}, zero downtime."

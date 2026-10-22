@@ -1,0 +1,9049 @@
+{
+ "meta": {
+  "commit": "8e107956",
+  "date": "2026-10-21T19:35:27.999Z",
+  "base": "http://localhost:7105",
+  "node": "v24.18.0",
+  "host": {
+   "cpus": 4,
+   "load1": 1.43
+  },
+  "args": {
+   "auth": "both",
+   "user": "heavy",
+   "warmup": 5,
+   "samples": 30,
+   "concurrency": 16,
+   "duration": 4,
+   "only": null
+  },
+  "dataset": {
+   "scale": "full",
+   "generatedAt": "2026-10-21T03:13:29.431Z",
+   "counts": {
+    "users": 20000,
+    "posts": 200000,
+    "follows": 493112,
+    "likes": 1249228,
+    "comments": 150000,
+    "notifications": 500000,
+    "dms": 50000,
+    "conversations": 5000,
+    "communities": 200,
+    "members": 45362,
+    "game_stats": 200000
+   }
+  },
+  "elapsedSec": 1079
+ },
+ "rows": [
+  {
+   "id": "home",
+   "path": "/",
+   "class": "core",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 12.5,
+    "p95": 17.3,
+    "p99": 43.8
+   },
+   "total": {
+    "p50": 12.7,
+    "p95": 18.4
+   },
+   "bytes": 112442,
+   "encodedBytes": 112442,
+   "phases": {
+    "cache": 0,
+    "total": 9.7
+   },
+   "queries": 0,
+   "bodyHash": "dfa913ac101c",
+   "stable": false,
+   "cacheControl": "public, max-age=0, s-maxage=30, stale-while-revalidate=120",
+   "load": {
+    "concurrency": 16,
+    "rps": 113.4,
+    "p50": 126,
+    "p95": 240.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "home",
+   "path": "/",
+   "class": "core",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 9.8,
+    "p95": 15.5,
+    "p99": 16.7
+   },
+   "total": {
+    "p50": 10,
+    "p95": 15.8
+   },
+   "bytes": 116870,
+   "encodedBytes": 116870,
+   "phases": {
+    "sess": 1,
+    "cache": 0,
+    "db": 0.6,
+    "total": 9.2
+   },
+   "queries": 1,
+   "bodyHash": "68eec6af8be0",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 107,
+    "p50": 145.6,
+    "p95": 183.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "games",
+   "path": "/games",
+   "class": "core",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.9,
+    "p95": 8.2,
+    "p99": 8.5
+   },
+   "total": {
+    "p50": 5.9,
+    "p95": 8.3
+   },
+   "bytes": 96132,
+   "encodedBytes": 96132,
+   "phases": {
+    "total": 5.3
+   },
+   "queries": 0,
+   "bodyHash": "c8d30b11b7db",
+   "stable": false,
+   "cacheControl": "public, max-age=0, s-maxage=30, stale-while-revalidate=120",
+   "load": {
+    "concurrency": 16,
+    "rps": 168.6,
+    "p50": 87.5,
+    "p95": 160.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "games",
+   "path": "/games",
+   "class": "core",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 7.4,
+    "p95": 9.2,
+    "p99": 10
+   },
+   "total": {
+    "p50": 7.4,
+    "p95": 9.3
+   },
+   "bytes": 101080,
+   "encodedBytes": 101080,
+   "phases": {
+    "sess": 0.9,
+    "cache": 0,
+    "db": 0.5,
+    "total": 6.8
+   },
+   "queries": 1,
+   "bodyHash": "17a19d0109bf",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 146.1,
+    "p50": 106.4,
+    "p95": 124,
+    "errors": 0
+   }
+  },
+  {
+   "id": "apps",
+   "path": "/apps",
+   "class": "core",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.7,
+    "p95": 6.9,
+    "p99": 8
+   },
+   "total": {
+    "p50": 4.7,
+    "p95": 7
+   },
+   "bytes": 68571,
+   "encodedBytes": 68571,
+   "phases": {
+    "total": 4.1
+   },
+   "queries": 0,
+   "bodyHash": "90ccda5fcce6",
+   "stable": false,
+   "cacheControl": "public, max-age=0, s-maxage=30, stale-while-revalidate=120",
+   "load": {
+    "concurrency": 16,
+    "rps": 214.7,
+    "p50": 69,
+    "p95": 131.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "apps",
+   "path": "/apps",
+   "class": "core",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.9,
+    "p95": 9.5,
+    "p99": 9.6
+   },
+   "total": {
+    "p50": 6,
+    "p95": 9.6
+   },
+   "bytes": 72107,
+   "encodedBytes": 72107,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.5,
+    "total": 5.4
+   },
+   "queries": 1,
+   "bodyHash": "b68f36288f07",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 175.5,
+    "p50": 89.2,
+    "p95": 106.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "profile-self",
+   "path": "/u/heavyuser",
+   "class": "core",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 8.8,
+    "p95": 16.6,
+    "p99": 16.9
+   },
+   "total": {
+    "p50": 8.9,
+    "p95": 16.7
+   },
+   "bytes": 72828,
+   "encodedBytes": 72828,
+   "phases": {
+    "cache": 1.2,
+    "db": 2.7,
+    "total": 8.1
+   },
+   "queries": 5,
+   "bodyHash": "94e4124f7367",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 126.4,
+    "p50": 120.9,
+    "p95": 158.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "profile-self",
+   "path": "/u/heavyuser",
+   "class": "core",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 10.7,
+    "p95": 13.6,
+    "p99": 16.3
+   },
+   "total": {
+    "p50": 10.8,
+    "p95": 13.7
+   },
+   "bytes": 82535,
+   "encodedBytes": 82535,
+   "phases": {
+    "sess": 0.7,
+    "cache": 1.6,
+    "db": 5.3,
+    "total": 9.9
+   },
+   "queries": 7,
+   "bodyHash": "de3e634ac656",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 114.9,
+    "p50": 136.5,
+    "p95": 187.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "profile-popular",
+   "path": "/u/user3",
+   "class": "core",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 8.1,
+    "p95": 11.5,
+    "p99": 14.4
+   },
+   "total": {
+    "p50": 8.2,
+    "p95": 11.5
+   },
+   "bytes": 70620,
+   "encodedBytes": 70620,
+   "phases": {
+    "cache": 1.2,
+    "db": 2.6,
+    "total": 7.6
+   },
+   "queries": 5,
+   "bodyHash": "cb8585c1ae6a",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 142.6,
+    "p50": 108.8,
+    "p95": 143,
+    "errors": 0
+   }
+  },
+  {
+   "id": "profile-popular",
+   "path": "/u/user3",
+   "class": "core",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 10.2,
+    "p95": 14,
+    "p99": 14.3
+   },
+   "total": {
+    "p50": 10.3,
+    "p95": 14.1
+   },
+   "bytes": 78507,
+   "encodedBytes": 78507,
+   "phases": {
+    "sess": 0.7,
+    "cache": 1.6,
+    "db": 4.7,
+    "total": 9.6
+   },
+   "queries": 7,
+   "bodyHash": "c25454106b00",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 119.2,
+    "p50": 130.5,
+    "p95": 179.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "profile-by-id",
+   "path": "/u/cu00000002",
+   "class": "core",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 8.8,
+    "p95": 11.2,
+    "p99": 11.3
+   },
+   "total": {
+    "p50": 8.8,
+    "p95": 11.3
+   },
+   "bytes": 72829,
+   "encodedBytes": 72829,
+   "phases": {
+    "cache": 1.9,
+    "db": 3.1,
+    "total": 8.3
+   },
+   "queries": 6,
+   "bodyHash": "fd8529e89c8d",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 142.5,
+    "p50": 111.4,
+    "p95": 138.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "profile-by-id",
+   "path": "/u/cu00000002",
+   "class": "core",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 10.5,
+    "p95": 14.6,
+    "p99": 15.2
+   },
+   "total": {
+    "p50": 10.5,
+    "p95": 14.7
+   },
+   "bytes": 82488,
+   "encodedBytes": 82488,
+   "phases": {
+    "sess": 0.7,
+    "cache": 2.3,
+    "db": 4.6,
+    "total": 10
+   },
+   "queries": 8,
+   "bodyHash": "dc3dc6753e9d",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 123.1,
+    "p50": 127.6,
+    "p95": 166.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "post",
+   "path": "/u/user8/post/cp00000001",
+   "class": "core",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.2,
+    "p95": 8.4,
+    "p99": 8.6
+   },
+   "total": {
+    "p50": 5.2,
+    "p95": 8.5
+   },
+   "bytes": 54897,
+   "encodedBytes": 54897,
+   "phases": {
+    "cache": 0,
+    "db": 0.9,
+    "total": 4.6
+   },
+   "queries": 1,
+   "bodyHash": "39670f30dd93",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 226.2,
+    "p50": 68.8,
+    "p95": 99.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "post",
+   "path": "/u/user8/post/cp00000001",
+   "class": "core",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.7,
+    "p95": 8.7,
+    "p99": 11
+   },
+   "total": {
+    "p50": 5.7,
+    "p95": 8.7
+   },
+   "bytes": 58029,
+   "encodedBytes": 58029,
+   "phases": {
+    "sess": 0.9,
+    "cache": 0,
+    "db": 1.9,
+    "total": 5.2
+   },
+   "queries": 2,
+   "bodyHash": "1ce3948c447e",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 187.5,
+    "p50": 84.6,
+    "p95": 90.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "post-thread-2k",
+   "path": "/u/user13316/post/cp00000100",
+   "class": "core",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.9,
+    "p95": 7.8,
+    "p99": 8.1
+   },
+   "total": {
+    "p50": 4.9,
+    "p95": 7.9
+   },
+   "bytes": 55021,
+   "encodedBytes": 55021,
+   "phases": {
+    "cache": 0,
+    "db": 0.9,
+    "total": 4.3
+   },
+   "queries": 1,
+   "bodyHash": "91f01b5d235d",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 229.5,
+    "p50": 68.5,
+    "p95": 97.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "post-thread-2k",
+   "path": "/u/user13316/post/cp00000100",
+   "class": "core",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.8,
+    "p95": 9.2,
+    "p99": 18.1
+   },
+   "total": {
+    "p50": 5.9,
+    "p95": 9.3
+   },
+   "bytes": 58153,
+   "encodedBytes": 58153,
+   "phases": {
+    "sess": 1,
+    "cache": 0,
+    "db": 1.8,
+    "total": 5.2
+   },
+   "queries": 2,
+   "bodyHash": "f06be15c336d",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 183.6,
+    "p50": 85.4,
+    "p95": 99.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "thread",
+   "path": "/thread/cp00000100",
+   "class": "core",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 7.3,
+    "p95": 11.2,
+    "p99": 12.3
+   },
+   "total": {
+    "p50": 7.3,
+    "p95": 11.3
+   },
+   "bytes": 59166,
+   "encodedBytes": 59166,
+   "phases": {
+    "db": 2.2,
+    "total": 6.8
+   },
+   "queries": 3,
+   "bodyHash": "3c72be208769",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 152.2,
+    "p50": 96.4,
+    "p95": 144.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "thread",
+   "path": "/thread/cp00000100",
+   "class": "core",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 9.4,
+    "p95": 15.2,
+    "p99": 15.6
+   },
+   "total": {
+    "p50": 9.5,
+    "p95": 15.3
+   },
+   "bytes": 62702,
+   "encodedBytes": 62702,
+   "phases": {
+    "sess": 0.9,
+    "cache": 0,
+    "db": 3.7,
+    "total": 8.9
+   },
+   "queries": 5,
+   "bodyHash": "c53c11a65e5f",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 138,
+    "p50": 113.3,
+    "p95": 141.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "news",
+   "path": "/news",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.6,
+    "p95": 5,
+    "p99": 8.1
+   },
+   "total": {
+    "p50": 4.6,
+    "p95": 5
+   },
+   "bytes": 53881,
+   "encodedBytes": 53881,
+   "phases": {
+    "db": 1.2,
+    "total": 4.1
+   },
+   "queries": 2,
+   "bodyHash": "8c4817f34678",
+   "stable": false,
+   "cacheControl": "public, max-age=0, s-maxage=30, stale-while-revalidate=120",
+   "load": {
+    "concurrency": 16,
+    "rps": 229.1,
+    "p50": 68.3,
+    "p95": 98.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "news",
+   "path": "/news",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6,
+    "p95": 6.6,
+    "p99": 10.7
+   },
+   "total": {
+    "p50": 6.1,
+    "p95": 6.6
+   },
+   "bytes": 57417,
+   "encodedBytes": 57417,
+   "phases": {
+    "sess": 1,
+    "cache": 0,
+    "db": 2.1,
+    "total": 5.5
+   },
+   "queries": 3,
+   "bodyHash": "0e82d3a68048",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 191.5,
+    "p50": 88.1,
+    "p95": 114.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "library",
+   "path": "/library",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.9,
+    "p95": 11.4,
+    "p99": 16.1
+   },
+   "total": {
+    "p50": 7,
+    "p95": 11.5
+   },
+   "bytes": 64575,
+   "encodedBytes": 64575,
+   "phases": {
+    "db": 5.1,
+    "total": 6
+   },
+   "queries": 5,
+   "bodyHash": "4446898721be",
+   "stable": false,
+   "cacheControl": "public, max-age=0, s-maxage=30, stale-while-revalidate=120",
+   "load": {
+    "concurrency": 16,
+    "rps": 176.8,
+    "p50": 89.6,
+    "p95": 95.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "library",
+   "path": "/library",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 8.2,
+    "p95": 12.2,
+    "p99": 12.8
+   },
+   "total": {
+    "p50": 8.3,
+    "p95": 12.3
+   },
+   "bytes": 70901,
+   "encodedBytes": 70901,
+   "phases": {
+    "sess": 1.9,
+    "cache": 0,
+    "db": 10.1,
+    "total": 7.6
+   },
+   "queries": 7,
+   "bodyHash": "7727a19b662c",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 141.1,
+    "p50": 113.1,
+    "p95": 128,
+    "errors": 0
+   }
+  },
+  {
+   "id": "leaderboard",
+   "path": "/games?sub=leaderboard",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.8,
+    "p95": 8.8,
+    "p99": 9.6
+   },
+   "total": {
+    "p50": 5.9,
+    "p95": 8.9
+   },
+   "bytes": 95554,
+   "encodedBytes": 95554,
+   "phases": {
+    "total": 5.3
+   },
+   "queries": 0,
+   "bodyHash": "018373e6dd78",
+   "stable": false,
+   "cacheControl": "public, max-age=0, s-maxage=30, stale-while-revalidate=120",
+   "load": {
+    "concurrency": 16,
+    "rps": 167.9,
+    "p50": 88.5,
+    "p95": 135.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "leaderboard",
+   "path": "/games?sub=leaderboard",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.9,
+    "p95": 9.7,
+    "p99": 10.7
+   },
+   "total": {
+    "p50": 7,
+    "p95": 9.8
+   },
+   "bytes": 101082,
+   "encodedBytes": 101082,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 6.5
+   },
+   "queries": 1,
+   "bodyHash": "e6a1deb43734",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 148.5,
+    "p50": 105.7,
+    "p95": 121.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "events",
+   "path": "/communities?tab=events",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.3,
+    "p95": 8.2,
+    "p99": 8.4
+   },
+   "total": {
+    "p50": 5.4,
+    "p95": 8.3
+   },
+   "bytes": 68653,
+   "encodedBytes": 68653,
+   "phases": {
+    "db": 0.5,
+    "total": 4.8
+   },
+   "queries": 1,
+   "bodyHash": "3bda4c3870d0",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 198.1,
+    "p50": 80.6,
+    "p95": 112.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "events",
+   "path": "/communities?tab=events",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 7,
+    "p95": 10,
+    "p99": 10.3
+   },
+   "total": {
+    "p50": 7,
+    "p95": 10.1
+   },
+   "bytes": 73293,
+   "encodedBytes": 73293,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 1.5,
+    "total": 6.5
+   },
+   "queries": 3,
+   "bodyHash": "038e62163968",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 156.1,
+    "p50": 100.4,
+    "p95": 134.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "communities",
+   "path": "/communities",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 8,
+    "p95": 10.8,
+    "p99": 11.8
+   },
+   "total": {
+    "p50": 8.2,
+    "p95": 11
+   },
+   "bytes": 148922,
+   "encodedBytes": 148922,
+   "phases": {
+    "db": 0.5,
+    "total": 7.5
+   },
+   "queries": 1,
+   "bodyHash": "490e04822432",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 126.1,
+    "p50": 124.3,
+    "p95": 176.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "communities",
+   "path": "/communities",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 9.8,
+    "p95": 14.1,
+    "p99": 14.3
+   },
+   "total": {
+    "p50": 9.9,
+    "p95": 14.2
+   },
+   "bytes": 154202,
+   "encodedBytes": 154202,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 1.6,
+    "total": 9.4
+   },
+   "queries": 3,
+   "bodyHash": "c69899e88030",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 105.6,
+    "p50": 149.6,
+    "p95": 202.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "achievements",
+   "path": "/achievements",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.7,
+    "p95": 5.9,
+    "p99": 7.3
+   },
+   "total": {
+    "p50": 3.8,
+    "p95": 6
+   },
+   "bytes": 51010,
+   "encodedBytes": 51010,
+   "phases": {
+    "total": 3.4
+   },
+   "queries": 0,
+   "bodyHash": "6684dfd0612c",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 256.1,
+    "p50": 58.5,
+    "p95": 78.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "achievements",
+   "path": "/achievements",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 13.7,
+    "p95": 19.4,
+    "p99": 23.7
+   },
+   "total": {
+    "p50": 13.9,
+    "p95": 19.5
+   },
+   "bytes": 317733,
+   "encodedBytes": 317733,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 1.3,
+    "total": 13
+   },
+   "queries": 3,
+   "bodyHash": "8125fa75e5e7",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 73.4,
+    "p50": 212.9,
+    "p95": 296.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "help",
+   "path": "/help",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.8,
+    "p95": 7.4,
+    "p99": 8.3
+   },
+   "total": {
+    "p50": 3.8,
+    "p95": 7.6
+   },
+   "bytes": 54471,
+   "encodedBytes": 54471,
+   "phases": {
+    "total": 3.3
+   },
+   "queries": 0,
+   "bodyHash": "6eb8ea46ab92",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 263.1,
+    "p50": 57.3,
+    "p95": 77.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "help",
+   "path": "/help",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.2,
+    "p95": 8.8,
+    "p99": 8.9
+   },
+   "total": {
+    "p50": 5.3,
+    "p95": 8.9
+   },
+   "bytes": 58007,
+   "encodedBytes": 58007,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.7
+   },
+   "queries": 1,
+   "bodyHash": "38d055a2cbee",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 213.1,
+    "p50": 74.2,
+    "p95": 82.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "roadmap",
+   "path": "/roadmap",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 7.2,
+    "p95": 11.2,
+    "p99": 11.5
+   },
+   "total": {
+    "p50": 7.3,
+    "p95": 11.4
+   },
+   "bytes": 144707,
+   "encodedBytes": 144707,
+   "phases": {
+    "db": 1.4,
+    "total": 6.5
+   },
+   "queries": 2,
+   "bodyHash": "e590763d8dbf",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 153.5,
+    "p50": 101.6,
+    "p95": 146.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "roadmap",
+   "path": "/roadmap",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 7.6,
+    "p95": 11.6,
+    "p99": 12
+   },
+   "total": {
+    "p50": 7.7,
+    "p95": 11.7
+   },
+   "bytes": 148138,
+   "encodedBytes": 148138,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 1.8,
+    "total": 7.1
+   },
+   "queries": 3,
+   "bodyHash": "cb123677f47c",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 139.2,
+    "p50": 112.9,
+    "p95": 133.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "changelog",
+   "path": "/changelog",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.2,
+    "p95": 6.3,
+    "p99": 7.9
+   },
+   "total": {
+    "p50": 4.2,
+    "p95": 6.3
+   },
+   "bytes": 50472,
+   "encodedBytes": 50472,
+   "phases": {
+    "total": 3.7
+   },
+   "queries": 0,
+   "bodyHash": "37848b297600",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 260.8,
+    "p50": 57.3,
+    "p95": 107.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "changelog",
+   "path": "/changelog",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5,
+    "p95": 5.8,
+    "p99": 9.2
+   },
+   "total": {
+    "p50": 5,
+    "p95": 5.8
+   },
+   "bytes": 54008,
+   "encodedBytes": 54008,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.6
+   },
+   "queries": 1,
+   "bodyHash": "48f88d8ff05b",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 219.3,
+    "p50": 72.7,
+    "p95": 80.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "pricing",
+   "path": "/store?tab=membership",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 7.8,
+    "p95": 11.6,
+    "p99": 12
+   },
+   "total": {
+    "p50": 7.9,
+    "p95": 11.7
+   },
+   "bytes": 119652,
+   "encodedBytes": 119652,
+   "phases": {
+    "db": 0.8,
+    "total": 7.3
+   },
+   "queries": 1,
+   "bodyHash": "7a8d30859071",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 141.1,
+    "p50": 113.1,
+    "p95": 157.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "pricing",
+   "path": "/store?tab=membership",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 9,
+    "p95": 13.1,
+    "p99": 14.1
+   },
+   "total": {
+    "p50": 9.1,
+    "p95": 13.2
+   },
+   "bytes": 123200,
+   "encodedBytes": 123200,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 2.4,
+    "total": 8.5
+   },
+   "queries": 4,
+   "bodyHash": "35284ff24281",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 122.1,
+    "p50": 128.3,
+    "p95": 151.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "shop",
+   "path": "/store?tab=shop",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.6,
+    "p95": 10,
+    "p99": 11
+   },
+   "total": {
+    "p50": 6.7,
+    "p95": 10
+   },
+   "bytes": 104358,
+   "encodedBytes": 104358,
+   "phases": {
+    "db": 0.7,
+    "total": 6.1
+   },
+   "queries": 1,
+   "bodyHash": "c709129d7ffc",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 157.5,
+    "p50": 98.6,
+    "p95": 143.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "shop",
+   "path": "/store?tab=shop",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 8.3,
+    "p95": 12.1,
+    "p99": 13
+   },
+   "total": {
+    "p50": 8.3,
+    "p95": 12.2
+   },
+   "bytes": 118429,
+   "encodedBytes": 118429,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 2.3,
+    "total": 7.8
+   },
+   "queries": 4,
+   "bodyHash": "6346544dfd39",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 116.9,
+    "p50": 126.7,
+    "p95": 152.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "store",
+   "path": "/store",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 7.3,
+    "p95": 11.1,
+    "p99": 11.2
+   },
+   "total": {
+    "p50": 7.4,
+    "p95": 11.2
+   },
+   "bytes": 119652,
+   "encodedBytes": 119652,
+   "phases": {
+    "db": 0.8,
+    "total": 6.8
+   },
+   "queries": 1,
+   "bodyHash": "214689ade5f0",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 143.3,
+    "p50": 109.7,
+    "p95": 156.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "store",
+   "path": "/store",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 8.4,
+    "p95": 13.7,
+    "p99": 13.9
+   },
+   "total": {
+    "p50": 8.5,
+    "p95": 13.8
+   },
+   "bytes": 123200,
+   "encodedBytes": 123200,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 2.3,
+    "total": 7.8
+   },
+   "queries": 4,
+   "bodyHash": "69d29a364817",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 122.8,
+    "p50": 129.4,
+    "p95": 151.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "speedruns",
+   "path": "/speedruns",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.6,
+    "p95": 3.8,
+    "p99": 7.6
+   },
+   "total": {
+    "p50": 3.6,
+    "p95": 3.9
+   },
+   "bytes": 51433,
+   "encodedBytes": 51433,
+   "phases": {
+    "total": 3.2
+   },
+   "queries": 0,
+   "bodyHash": "981088c8fcce",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 273.7,
+    "p50": 54.7,
+    "p95": 103.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "speedruns",
+   "path": "/speedruns",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.9,
+    "p95": 8.7,
+    "p99": 14.5
+   },
+   "total": {
+    "p50": 5,
+    "p95": 8.8
+   },
+   "bytes": 54969,
+   "encodedBytes": 54969,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.5
+   },
+   "queries": 1,
+   "bodyHash": "d7e9110206fe",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 224.2,
+    "p50": 70.9,
+    "p95": 78.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "tournaments",
+   "path": "/tournaments",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.7,
+    "p95": 6.9,
+    "p99": 7.1
+   },
+   "total": {
+    "p50": 3.7,
+    "p95": 6.9
+   },
+   "bytes": 53160,
+   "encodedBytes": 53160,
+   "phases": {
+    "total": 3.3
+   },
+   "queries": 0,
+   "bodyHash": "281b428a4ba5",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 263.5,
+    "p50": 56.3,
+    "p95": 107.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "tournaments",
+   "path": "/tournaments",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.2,
+    "p95": 7.9,
+    "p99": 8
+   },
+   "total": {
+    "p50": 5.2,
+    "p95": 8
+   },
+   "bytes": 57748,
+   "encodedBytes": 57748,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.6
+   },
+   "queries": 1,
+   "bodyHash": "7de75ecbacf4",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 211.6,
+    "p50": 74.6,
+    "p95": 83.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "predictions",
+   "path": "/predictions",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.7,
+    "p95": 4.1,
+    "p99": 7.9
+   },
+   "total": {
+    "p50": 3.7,
+    "p95": 4.2
+   },
+   "bytes": 52023,
+   "encodedBytes": 52023,
+   "phases": {
+    "total": 3.2
+   },
+   "queries": 0,
+   "bodyHash": "f74b5d28b19f",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 261,
+    "p50": 57,
+    "p95": 107.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "predictions",
+   "path": "/predictions",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.2,
+    "p95": 6.6,
+    "p99": 8.5
+   },
+   "total": {
+    "p50": 5.3,
+    "p95": 6.6
+   },
+   "bytes": 55559,
+   "encodedBytes": 55559,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.7
+   },
+   "queries": 1,
+   "bodyHash": "356019040814",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 212.8,
+    "p50": 73.7,
+    "p95": 85.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "quotes",
+   "path": "/quotes",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4,
+    "p95": 7.2,
+    "p99": 7.7
+   },
+   "total": {
+    "p50": 4.1,
+    "p95": 7.3
+   },
+   "bytes": 87304,
+   "encodedBytes": 87304,
+   "phases": {
+    "total": 3.6
+   },
+   "queries": 0,
+   "bodyHash": "48170211e0d3",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 243.2,
+    "p50": 61.4,
+    "p95": 119.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "quotes",
+   "path": "/quotes",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.5,
+    "p95": 8.5,
+    "p99": 9
+   },
+   "total": {
+    "p50": 5.6,
+    "p95": 8.5
+   },
+   "bytes": 90840,
+   "encodedBytes": 90840,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.5,
+    "total": 5
+   },
+   "queries": 1,
+   "bodyHash": "610370949ef3",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 196.3,
+    "p50": 80.3,
+    "p95": 91.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "ventures",
+   "path": "/ventures",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.8,
+    "p95": 4.2,
+    "p99": 8.3
+   },
+   "total": {
+    "p50": 3.8,
+    "p95": 4.2
+   },
+   "bytes": 58049,
+   "encodedBytes": 58049,
+   "phases": {
+    "total": 3.4
+   },
+   "queries": 0,
+   "bodyHash": "9fd4fdc8c0d3",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 228.3,
+    "p50": 64.6,
+    "p95": 118.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "ventures",
+   "path": "/ventures",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.5,
+    "p95": 8.6,
+    "p99": 11.8
+   },
+   "total": {
+    "p50": 5.5,
+    "p95": 8.7
+   },
+   "bytes": 61585,
+   "encodedBytes": 61585,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.5,
+    "total": 4.9
+   },
+   "queries": 1,
+   "bodyHash": "1cf03cffa874",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 200.3,
+    "p50": 77.2,
+    "p95": 99.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "services",
+   "path": "/services",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4,
+    "p95": 7.5,
+    "p99": 7.6
+   },
+   "total": {
+    "p50": 4,
+    "p95": 7.6
+   },
+   "bytes": 59436,
+   "encodedBytes": 59436,
+   "phases": {
+    "total": 3.6
+   },
+   "queries": 0,
+   "bodyHash": "b1ab8f987f6a",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 244.3,
+    "p50": 60.7,
+    "p95": 116.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "services",
+   "path": "/services",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.5,
+    "p95": 6.2,
+    "p99": 8.2
+   },
+   "total": {
+    "p50": 5.5,
+    "p95": 6.2
+   },
+   "bytes": 62972,
+   "encodedBytes": 62972,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 5
+   },
+   "queries": 1,
+   "bodyHash": "6aa4945288ba",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 194,
+    "p50": 79.2,
+    "p95": 97.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "series",
+   "path": "/series",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.6,
+    "p95": 6.7,
+    "p99": 6.9
+   },
+   "total": {
+    "p50": 3.7,
+    "p95": 6.7
+   },
+   "bytes": 51165,
+   "encodedBytes": 51165,
+   "phases": {
+    "total": 3.2
+   },
+   "queries": 0,
+   "bodyHash": "f65b90308f45",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 265.6,
+    "p50": 55.1,
+    "p95": 105.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "series",
+   "path": "/series",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.3,
+    "p95": 8.5,
+    "p99": 10.4
+   },
+   "total": {
+    "p50": 5.3,
+    "p95": 8.5
+   },
+   "bytes": 54029,
+   "encodedBytes": 54029,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.9
+   },
+   "queries": 1,
+   "bodyHash": "ed67a4e57e1d",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 214.5,
+    "p50": 73,
+    "p95": 88.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "jams",
+   "path": "/jams",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.5,
+    "p95": 7,
+    "p99": 7
+   },
+   "total": {
+    "p50": 3.6,
+    "p95": 7
+   },
+   "bytes": 49903,
+   "encodedBytes": 49903,
+   "phases": {
+    "total": 3.2
+   },
+   "queries": 0,
+   "bodyHash": "febcb62b1134",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 279.4,
+    "p50": 54.4,
+    "p95": 102.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "jams",
+   "path": "/jams",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.1,
+    "p95": 7.1,
+    "p99": 8.7
+   },
+   "total": {
+    "p50": 5.1,
+    "p95": 7.2
+   },
+   "bytes": 53439,
+   "encodedBytes": 53439,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.6
+   },
+   "queries": 1,
+   "bodyHash": "a95e4d86eb59",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 221.6,
+    "p50": 71,
+    "p95": 82.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "feeds",
+   "path": "/feeds",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.5,
+    "p95": 6.2,
+    "p99": 6.4
+   },
+   "total": {
+    "p50": 3.6,
+    "p95": 6.3
+   },
+   "bytes": 50852,
+   "encodedBytes": 50852,
+   "phases": {
+    "total": 3.1
+   },
+   "queries": 0,
+   "bodyHash": "45de7f8a7dd1",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 265.6,
+    "p50": 54.1,
+    "p95": 104,
+    "errors": 0
+   }
+  },
+  {
+   "id": "feeds",
+   "path": "/feeds",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.1,
+    "p95": 8,
+    "p99": 12.2
+   },
+   "total": {
+    "p50": 5.1,
+    "p95": 8
+   },
+   "bytes": 53463,
+   "encodedBytes": 53463,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.6
+   },
+   "queries": 1,
+   "bodyHash": "d1fd37abe72e",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 214.1,
+    "p50": 72.9,
+    "p95": 90.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "today",
+   "path": "/today",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.8,
+    "p95": 7.3,
+    "p99": 7.6
+   },
+   "total": {
+    "p50": 3.8,
+    "p95": 7.3
+   },
+   "bytes": 55251,
+   "encodedBytes": 55251,
+   "phases": {
+    "cache": 0,
+    "total": 3.3
+   },
+   "queries": 0,
+   "bodyHash": "4bfbaaf2897e",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 258.7,
+    "p50": 58.3,
+    "p95": 72.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "today",
+   "path": "/today",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.1,
+    "p95": 5.7,
+    "p99": 9.7
+   },
+   "total": {
+    "p50": 5.2,
+    "p95": 5.8
+   },
+   "bytes": 58787,
+   "encodedBytes": 58787,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.7
+   },
+   "queries": 1,
+   "bodyHash": "b7e58c342c29",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 208.2,
+    "p50": 75.8,
+    "p95": 84.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "museum",
+   "path": "/museum",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.6,
+    "p95": 4.6,
+    "p99": 6.7
+   },
+   "total": {
+    "p50": 3.7,
+    "p95": 4.6
+   },
+   "bytes": 50098,
+   "encodedBytes": 50098,
+   "phases": {
+    "total": 3.3
+   },
+   "queries": 0,
+   "bodyHash": "7911e9a14fe8",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 270,
+    "p50": 55.5,
+    "p95": 103.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "museum",
+   "path": "/museum",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.9,
+    "p95": 6.2,
+    "p99": 7.9
+   },
+   "total": {
+    "p50": 4.9,
+    "p95": 6.3
+   },
+   "bytes": 53634,
+   "encodedBytes": 53634,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.5
+   },
+   "queries": 1,
+   "bodyHash": "240f20053468",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 214.4,
+    "p50": 72.1,
+    "p95": 91.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "explore",
+   "path": "/explore",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 23.6,
+    "p95": 32.7,
+    "p99": 35.6
+   },
+   "total": {
+    "p50": 23.7,
+    "p95": 32.9
+   },
+   "bytes": 212367,
+   "encodedBytes": 212367,
+   "phases": {
+    "cache": 0,
+    "db": 4.6,
+    "total": 22.5
+   },
+   "queries": 2,
+   "bodyHash": "a874212a7c02",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 46.1,
+    "p50": 334.3,
+    "p95": 435.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "explore",
+   "path": "/explore",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 39,
+    "p95": 47.3,
+    "p99": 48.4
+   },
+   "total": {
+    "p50": 39.2,
+    "p95": 47.5
+   },
+   "bytes": 211990,
+   "encodedBytes": 211990,
+   "phases": {
+    "sess": 1,
+    "cache": 0.1,
+    "db": 17.3,
+    "total": 36.6
+   },
+   "queries": 5,
+   "bodyHash": "8144c3bf4ff2",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 35.4,
+    "p50": 424.3,
+    "p95": 578.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "spaces",
+   "path": "/communities?tab=spaces",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.2,
+    "p95": 8.6,
+    "p99": 9.8
+   },
+   "total": {
+    "p50": 5.2,
+    "p95": 8.7
+   },
+   "bytes": 66857,
+   "encodedBytes": 66857,
+   "phases": {
+    "db": 0.5,
+    "total": 4.7
+   },
+   "queries": 1,
+   "bodyHash": "16fc4fcc805a",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 186.5,
+    "p50": 83.7,
+    "p95": 121.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "spaces",
+   "path": "/communities?tab=spaces",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 7.4,
+    "p95": 11.2,
+    "p99": 12.2
+   },
+   "total": {
+    "p50": 7.5,
+    "p95": 11.2
+   },
+   "bytes": 71680,
+   "encodedBytes": 71680,
+   "phases": {
+    "sess": 0.9,
+    "cache": 0,
+    "db": 1.8,
+    "total": 7
+   },
+   "queries": 3,
+   "bodyHash": "0622a3b0e11e",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 146.6,
+    "p50": 106.3,
+    "p95": 144.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "ranked",
+   "path": "/ranked",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.1,
+    "p95": 5.1,
+    "p99": 8.1
+   },
+   "total": {
+    "p50": 4.1,
+    "p95": 5.1
+   },
+   "bytes": 53467,
+   "encodedBytes": 53467,
+   "phases": {
+    "total": 3.6
+   },
+   "queries": 0,
+   "bodyHash": "3e3213f4f22b",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 228.4,
+    "p50": 62.2,
+    "p95": 121,
+    "errors": 0
+   }
+  },
+  {
+   "id": "ranked",
+   "path": "/ranked",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.4,
+    "p95": 10.8,
+    "p99": 11
+   },
+   "total": {
+    "p50": 6.5,
+    "p95": 10.9
+   },
+   "bytes": 59749,
+   "encodedBytes": 59749,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 2.8,
+    "total": 6
+   },
+   "queries": 4,
+   "bodyHash": "fdf785a16c52",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 160.8,
+    "p50": 98.7,
+    "p95": 110.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "progress",
+   "path": "/progress",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.8,
+    "p95": 8.5,
+    "p99": 10.2
+   },
+   "total": {
+    "p50": 3.9,
+    "p95": 8.5
+   },
+   "bytes": 50629,
+   "encodedBytes": 50629,
+   "phases": {
+    "total": 3.3
+   },
+   "queries": 0,
+   "bodyHash": "7f88bb09c0e6",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 275,
+    "p50": 54.9,
+    "p95": 103.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "progress",
+   "path": "/progress",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.1,
+    "p95": 8.8,
+    "p99": 9.4
+   },
+   "total": {
+    "p50": 5.2,
+    "p95": 8.8
+   },
+   "bytes": 56937,
+   "encodedBytes": 56937,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.7
+   },
+   "queries": 1,
+   "bodyHash": "b73dbf68fc77",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 211.7,
+    "p50": 73.8,
+    "p95": 88,
+    "errors": 0
+   }
+  },
+  {
+   "id": "community",
+   "path": "/c/perf-community-1",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 20,
+    "p95": 27.5,
+    "p99": 28
+   },
+   "total": {
+    "p50": 20.1,
+    "p95": 27.7
+   },
+   "bytes": 192654,
+   "encodedBytes": 192654,
+   "phases": {
+    "db": 4.7,
+    "total": 19.5
+   },
+   "queries": 6,
+   "bodyHash": "f1447553a7c2",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 48.5,
+    "p50": 323.4,
+    "p95": 344.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "community",
+   "path": "/c/perf-community-1",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 25.5,
+    "p95": 32.8,
+    "p99": 41.7
+   },
+   "total": {
+    "p50": 25.7,
+    "p95": 32.9
+   },
+   "bytes": 203942,
+   "encodedBytes": 203942,
+   "phases": {
+    "sess": 0.9,
+    "cache": 0,
+    "db": 7.8,
+    "total": 24.5
+   },
+   "queries": 10,
+   "bodyHash": "09fec3b5089d",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 40.1,
+    "p50": 369.7,
+    "p95": 583,
+    "errors": 0
+   }
+  },
+  {
+   "id": "tag",
+   "path": "/tag/tag1",
+   "class": "content",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 72.4,
+    "p95": 80.2,
+    "p99": 83.9
+   },
+   "total": {
+    "p50": 72.6,
+    "p95": 80.4
+   },
+   "bytes": 201251,
+   "encodedBytes": 201251,
+   "phases": {
+    "db": 51.2,
+    "total": 71
+   },
+   "queries": 2,
+   "bodyHash": "247179ed8200",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 34.2,
+    "p50": 464,
+    "p95": 565.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "tag",
+   "path": "/tag/tag1",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 645.1,
+    "p95": 714,
+    "p99": 730.7
+   },
+   "total": {
+    "p50": 645.3,
+    "p95": 714.2
+   },
+   "bytes": 204788,
+   "encodedBytes": 204788,
+   "phases": {
+    "sess": 1.2,
+    "cache": 0,
+    "db": 617.2,
+    "total": 644.3
+   },
+   "queries": 5,
+   "bodyHash": "1810aab5f17b",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 5.5,
+    "p50": 2701.3,
+    "p95": 3416.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "notifications",
+   "path": "/messages?tab=notifications",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 8.7,
+    "p95": 13.6,
+    "p99": 14.7
+   },
+   "total": {
+    "p50": 8.8,
+    "p95": 13.7
+   },
+   "bytes": 70681,
+   "encodedBytes": 70681,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 3.2,
+    "total": 8.3
+   },
+   "queries": 4,
+   "bodyHash": "5f10632a5d13",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 125.2,
+    "p50": 125,
+    "p95": 155.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "messages",
+   "path": "/messages",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 14.1,
+    "p95": 22.5,
+    "p99": 29.8
+   },
+   "total": {
+    "p50": 14.2,
+    "p95": 22.6
+   },
+   "bytes": 91259,
+   "encodedBytes": 91259,
+   "phases": {
+    "sess": 1,
+    "cache": 0,
+    "db": 3.9,
+    "total": 13.4
+   },
+   "queries": 4,
+   "bodyHash": "e414c71ec0ef",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 89.2,
+    "p50": 173.2,
+    "p95": 244.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "messages-conversation",
+   "path": "/messages/cv0000021",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 7.2,
+    "p95": 11.7,
+    "p99": 12
+   },
+   "total": {
+    "p50": 7.2,
+    "p95": 11.7
+   },
+   "bytes": 65381,
+   "encodedBytes": 65381,
+   "phases": {
+    "sess": 0.9,
+    "cache": 0,
+    "db": 1.4,
+    "total": 6.7
+   },
+   "queries": 2,
+   "bodyHash": "2484ca86354a",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 162.6,
+    "p50": 96.4,
+    "p95": 119.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "bookmarks",
+   "path": "/saves?tab=saved",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.3,
+    "p95": 9.4,
+    "p99": 9.6
+   },
+   "total": {
+    "p50": 6.4,
+    "p95": 9.5
+   },
+   "bytes": 62544,
+   "encodedBytes": 62544,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 3.1,
+    "total": 5.8
+   },
+   "queries": 5,
+   "bodyHash": "b80b497e7970",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 164.1,
+    "p50": 96.7,
+    "p95": 112.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "history",
+   "path": "/history",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.7,
+    "p95": 9.7,
+    "p99": 16
+   },
+   "total": {
+    "p50": 5.8,
+    "p95": 9.8
+   },
+   "bytes": 60001,
+   "encodedBytes": 60001,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 1.3,
+    "total": 5.2
+   },
+   "queries": 3,
+   "bodyHash": "ae59243b93d3",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 169.7,
+    "p50": 88.5,
+    "p95": 124.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "settings",
+   "path": "/settings",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.4,
+    "p95": 9.6,
+    "p99": 10.4
+   },
+   "total": {
+    "p50": 6.4,
+    "p95": 9.7
+   },
+   "bytes": 86335,
+   "encodedBytes": 86335,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 6
+   },
+   "queries": 1,
+   "bodyHash": "c1125c04b9ff",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 165.8,
+    "p50": 95.2,
+    "p95": 105.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "settings-appearance",
+   "path": "/settings/appearance",
+   "class": "content",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.7,
+    "p95": 9.9,
+    "p99": 10
+   },
+   "total": {
+    "p50": 6.8,
+    "p95": 10
+   },
+   "bytes": 79513,
+   "encodedBytes": 79513,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 6.4
+   },
+   "queries": 1,
+   "bodyHash": "03a584d4d419",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 164.2,
+    "p50": 94.3,
+    "p95": 110.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "market",
+   "path": "/store?tab=market",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.5,
+    "p95": 10.3,
+    "p99": 10.9
+   },
+   "total": {
+    "p50": 6.6,
+    "p95": 10.4
+   },
+   "bytes": 85573,
+   "encodedBytes": 85573,
+   "phases": {
+    "db": 0.7,
+    "total": 6.1
+   },
+   "queries": 1,
+   "bodyHash": "7ff7d8244b68",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 159.1,
+    "p50": 97.1,
+    "p95": 142.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "market",
+   "path": "/store?tab=market",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 10,
+    "p95": 12.3,
+    "p99": 15.1
+   },
+   "total": {
+    "p50": 10.1,
+    "p95": 12.4
+   },
+   "bytes": 90357,
+   "encodedBytes": 90357,
+   "phases": {
+    "sess": 1,
+    "cache": 0,
+    "db": 3.1,
+    "total": 8.7
+   },
+   "queries": 4,
+   "bodyHash": "fce6997e43ce",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 114.9,
+    "p50": 124.7,
+    "p95": 169,
+    "errors": 0
+   }
+  },
+  {
+   "id": "search",
+   "path": "/explore?q=build",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 11.1,
+    "p95": 16.1,
+    "p99": 18.5
+   },
+   "total": {
+    "p50": 11.2,
+    "p95": 16.2
+   },
+   "bytes": 76050,
+   "encodedBytes": 76050,
+   "phases": {
+    "cache": 0,
+    "db": 5,
+    "total": 10.6
+   },
+   "queries": 2,
+   "bodyHash": "fd97eaf491f7",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 122.1,
+    "p50": 128,
+    "p95": 170.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "search",
+   "path": "/explore?q=build",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 24.6,
+    "p95": 34.5,
+    "p99": 37.9
+   },
+   "total": {
+    "p50": 24.7,
+    "p95": 34.6
+   },
+   "bytes": 78821,
+   "encodedBytes": 78821,
+   "phases": {
+    "sess": 0.9,
+    "cache": 0.1,
+    "db": 16.4,
+    "total": 24
+   },
+   "queries": 5,
+   "bodyHash": "d20e8261707b",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 59.4,
+    "p50": 255.3,
+    "p95": 464,
+    "errors": 0
+   }
+  },
+  {
+   "id": "creator-studio",
+   "path": "/create/earnings",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.7,
+    "p95": 9.5,
+    "p99": 18.2
+   },
+   "total": {
+    "p50": 4.8,
+    "p95": 9.5
+   },
+   "bytes": 66075,
+   "encodedBytes": 66075,
+   "phases": {
+    "total": 4.3
+   },
+   "queries": 0,
+   "bodyHash": "557af5bd4e11",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 208.2,
+    "p50": 71.6,
+    "p95": 136.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "creator-studio",
+   "path": "/create/earnings",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.3,
+    "p95": 10,
+    "p99": 13.2
+   },
+   "total": {
+    "p50": 6.3,
+    "p95": 10
+   },
+   "bytes": 69611,
+   "encodedBytes": 69611,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.5,
+    "total": 5.8
+   },
+   "queries": 1,
+   "bodyHash": "31019607ca3e",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 174.9,
+    "p50": 89.2,
+    "p95": 105.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "developer",
+   "path": "/developer",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.7,
+    "p95": 4,
+    "p99": 8.3
+   },
+   "total": {
+    "p50": 3.7,
+    "p95": 4
+   },
+   "bytes": 55175,
+   "encodedBytes": 55175,
+   "phases": {
+    "total": 3.3
+   },
+   "queries": 0,
+   "bodyHash": "1d40dcd7a041",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 258.4,
+    "p50": 57.8,
+    "p95": 84,
+    "errors": 0
+   }
+  },
+  {
+   "id": "developer",
+   "path": "/developer",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.8,
+    "p95": 6.3,
+    "p99": 9
+   },
+   "total": {
+    "p50": 5.8,
+    "p95": 6.4
+   },
+   "bytes": 67254,
+   "encodedBytes": 67254,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 5.3
+   },
+   "queries": 1,
+   "bodyHash": "4e43ae47cbf6",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 174.8,
+    "p50": 89.9,
+    "p95": 104.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "homes",
+   "path": "/homes",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.4,
+    "p95": 8.1,
+    "p99": 9.3
+   },
+   "total": {
+    "p50": 4.5,
+    "p95": 8.1
+   },
+   "bytes": 67636,
+   "encodedBytes": 67636,
+   "phases": {
+    "total": 4
+   },
+   "queries": 0,
+   "bodyHash": "7a170ea4ce7a",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 215,
+    "p50": 68.7,
+    "p95": 130.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "homes",
+   "path": "/homes",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.6,
+    "p95": 9,
+    "p99": 9.1
+   },
+   "total": {
+    "p50": 5.6,
+    "p95": 9
+   },
+   "bytes": 72363,
+   "encodedBytes": 72363,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.4,
+    "total": 5.2
+   },
+   "queries": 1,
+   "bodyHash": "cfea5650e2d4",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 182.7,
+    "p50": 86.2,
+    "p95": 96.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "rideshare",
+   "path": "/rideshare",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.8,
+    "p95": 8.1,
+    "p99": 8.4
+   },
+   "total": {
+    "p50": 4.8,
+    "p95": 8.2
+   },
+   "bytes": 78480,
+   "encodedBytes": 78480,
+   "phases": {
+    "total": 4.3
+   },
+   "queries": 0,
+   "bodyHash": "f1b3dfd9d1e6",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 205.2,
+    "p50": 72.9,
+    "p95": 138.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "rideshare",
+   "path": "/rideshare",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.8,
+    "p95": 9.3,
+    "p99": 10.8
+   },
+   "total": {
+    "p50": 5.9,
+    "p95": 9.4
+   },
+   "bytes": 82016,
+   "encodedBytes": 82016,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.4,
+    "total": 5.4
+   },
+   "queries": 1,
+   "bodyHash": "6d6a9ad5e4f7",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 169.1,
+    "p50": 92.4,
+    "p95": 113.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "rmhladder",
+   "path": "/rmhladder",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.8,
+    "p95": 9.1,
+    "p99": 9.4
+   },
+   "total": {
+    "p50": 5.9,
+    "p95": 9.2
+   },
+   "bytes": 57244,
+   "encodedBytes": 57244,
+   "phases": {
+    "db": 3.9,
+    "total": 5.4
+   },
+   "queries": 4,
+   "bodyHash": "4973ce9c4945",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 173.9,
+    "p50": 90.2,
+    "p95": 105.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "rmhladder",
+   "path": "/rmhladder",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 9,
+    "p95": 14.3,
+    "p99": 16.4
+   },
+   "total": {
+    "p50": 9.1,
+    "p95": 14.3
+   },
+   "bytes": 65569,
+   "encodedBytes": 65569,
+   "phases": {
+    "sess": 1,
+    "cache": 0,
+    "db": 13.9,
+    "total": 8.6
+   },
+   "queries": 18,
+   "bodyHash": "8d563595f676",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 114,
+    "p50": 137.3,
+    "p95": 167.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "study",
+   "path": "/study",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.8,
+    "p95": 5.6,
+    "p99": 7.7
+   },
+   "total": {
+    "p50": 3.8,
+    "p95": 5.7
+   },
+   "bytes": 50625,
+   "encodedBytes": 50625,
+   "phases": {
+    "total": 3.3
+   },
+   "queries": 0,
+   "bodyHash": "044f4011a8d8",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 265.8,
+    "p50": 57.2,
+    "p95": 107.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "study",
+   "path": "/study",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.9,
+    "p95": 11.2,
+    "p99": 13.3
+   },
+   "total": {
+    "p50": 6,
+    "p95": 11.3
+   },
+   "bytes": 59962,
+   "encodedBytes": 59962,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 1.5,
+    "total": 5.5
+   },
+   "queries": 3,
+   "bodyHash": "5ed7bff1f9f3",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 174.4,
+    "p50": 90,
+    "p95": 109.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "music-trivia",
+   "path": "/music-trivia",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.6,
+    "p95": 4.9,
+    "p99": 8.9
+   },
+   "total": {
+    "p50": 4.7,
+    "p95": 4.9
+   },
+   "bytes": 50577,
+   "encodedBytes": 50577,
+   "phases": {
+    "db": 0.7,
+    "total": 4.2
+   },
+   "queries": 1,
+   "bodyHash": "d235a2d94603",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 239.6,
+    "p50": 65.3,
+    "p95": 94.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "music-trivia",
+   "path": "/music-trivia",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.9,
+    "p95": 10.8,
+    "p99": 11.2
+   },
+   "total": {
+    "p50": 5.9,
+    "p95": 10.9
+   },
+   "bytes": 55182,
+   "encodedBytes": 55182,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 1.4,
+    "total": 5.4
+   },
+   "queries": 3,
+   "bodyHash": "13bc15320880",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 187.6,
+    "p50": 84,
+    "p95": 98.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "emoji-packs",
+   "path": "/emoji-packs",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.7,
+    "p95": 5.8,
+    "p99": 8.2
+   },
+   "total": {
+    "p50": 3.8,
+    "p95": 5.8
+   },
+   "bytes": 52497,
+   "encodedBytes": 52497,
+   "phases": {
+    "total": 3.3
+   },
+   "queries": 0,
+   "bodyHash": "99e25bea4354",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 238.6,
+    "p50": 58,
+    "p95": 110.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "emoji-packs",
+   "path": "/emoji-packs",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.1,
+    "p95": 9,
+    "p99": 9.1
+   },
+   "total": {
+    "p50": 5.2,
+    "p95": 9.1
+   },
+   "bytes": 56033,
+   "encodedBytes": 56033,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 4.6
+   },
+   "queries": 1,
+   "bodyHash": "db9a8b49d46c",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 207.8,
+    "p50": 76,
+    "p95": 84.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "game-page",
+   "path": "/games/void-breaker",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.4,
+    "p95": 7.6,
+    "p99": 8.7
+   },
+   "total": {
+    "p50": 5.4,
+    "p95": 7.6
+   },
+   "bytes": 60482,
+   "encodedBytes": 60482,
+   "phases": {
+    "db": 1.7,
+    "total": 4.9
+   },
+   "queries": 2,
+   "bodyHash": "6adcb650a891",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 184.4,
+    "p50": 83.2,
+    "p95": 128.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "game-page",
+   "path": "/games/void-breaker",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 7.7,
+    "p95": 14.5,
+    "p99": 16.9
+   },
+   "total": {
+    "p50": 7.8,
+    "p95": 14.6
+   },
+   "bytes": 71716,
+   "encodedBytes": 71716,
+   "phases": {
+    "sess": 0.9,
+    "cache": 0,
+    "db": 2.5,
+    "total": 7.1
+   },
+   "queries": 3,
+   "bodyHash": "041c508ccf7f",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 105.1,
+    "p50": 151.4,
+    "p95": 201.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "app-rmhtube",
+   "path": "/rmhtube",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5,
+    "p95": 9.6,
+    "p99": 11.6
+   },
+   "total": {
+    "p50": 5.1,
+    "p95": 9.6
+   },
+   "bytes": 33340,
+   "encodedBytes": 33340,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.5,
+    "total": 4.2
+   },
+   "queries": 1,
+   "bodyHash": "b68fdecc0454",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 185.2,
+    "p50": 70.2,
+    "p95": 137.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "app-rmhmusic",
+   "path": "/rmhmusic",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.9,
+    "p95": 4.6,
+    "p99": 11.4
+   },
+   "total": {
+    "p50": 4,
+    "p95": 4.7
+   },
+   "bytes": 29893,
+   "encodedBytes": 29893,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 3.5
+   },
+   "queries": 1,
+   "bodyHash": "e40b40f3b5ae",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 294.6,
+    "p50": 53.6,
+    "p95": 65,
+    "errors": 0
+   }
+  },
+  {
+   "id": "app-rmhtype",
+   "path": "/rmhtype",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.8,
+    "p95": 5.7,
+    "p99": 8.9
+   },
+   "total": {
+    "p50": 3.8,
+    "p95": 5.8
+   },
+   "bytes": 34711,
+   "encodedBytes": 34711,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.4,
+    "total": 3.4
+   },
+   "queries": 1,
+   "bodyHash": "91ab995fc51d",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 290.9,
+    "p50": 54.2,
+    "p95": 64,
+    "errors": 0
+   }
+  },
+  {
+   "id": "app-rmhcode",
+   "path": "/rmhcode",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.4,
+    "p95": 9.1,
+    "p99": 9.1
+   },
+   "total": {
+    "p50": 5.5,
+    "p95": 9.1
+   },
+   "bytes": 66404,
+   "encodedBytes": 66404,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 5
+   },
+   "queries": 1,
+   "bodyHash": "77bb0d1d8451",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 213,
+    "p50": 73.7,
+    "p95": 84.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "app-rmhbox",
+   "path": "/rmhbox",
+   "class": "interactive",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.9,
+    "p95": 4.6,
+    "p99": 8.1
+   },
+   "total": {
+    "p50": 3.9,
+    "p95": 4.7
+   },
+   "bytes": 35687,
+   "encodedBytes": 35687,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.5,
+    "total": 3.4
+   },
+   "queries": 1,
+   "bodyHash": "741adada9193",
+   "stable": false,
+   "cacheControl": "private, no-cache, max-age=0, must-revalidate",
+   "load": {
+    "concurrency": 16,
+    "rps": 301.7,
+    "p50": 52.8,
+    "p95": 59.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "app-login",
+   "path": "/login",
+   "class": "interactive",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.4,
+    "p95": 2.7,
+    "p99": 6.2
+   },
+   "total": {
+    "p50": 2.4,
+    "p95": 2.7
+   },
+   "bytes": 40361,
+   "encodedBytes": 40361,
+   "phases": {
+    "total": 2
+   },
+   "queries": 0,
+   "bodyHash": "6c96e7a522d8",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 362.8,
+    "p50": 35.8,
+    "p95": 76.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-session",
+   "path": "/api/auth/get-session",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.9,
+    "p95": 2.5,
+    "p99": 8
+   },
+   "total": {
+    "p50": 1.9,
+    "p95": 2.5
+   },
+   "bytes": 4,
+   "encodedBytes": 4,
+   "phases": {
+    "total": 1.4
+   },
+   "queries": 0,
+   "bodyHash": "2be88ca4242c",
+   "stable": true,
+   "cacheControl": null,
+   "load": null
+  },
+  {
+   "id": "api-session",
+   "path": "/api/auth/get-session",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2,
+    "p95": 7.3,
+    "p99": 7.5
+   },
+   "total": {
+    "p50": 2.1,
+    "p95": 7.4
+   },
+   "bytes": 550,
+   "encodedBytes": 550,
+   "phases": {
+    "cache": 0,
+    "total": 1.7
+   },
+   "queries": 0,
+   "bodyHash": "f9f180804484",
+   "stable": true,
+   "cacheControl": "no-store",
+   "load": null
+  },
+  {
+   "id": "api-notifications",
+   "path": "/api/notifications",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.1,
+    "p95": 5,
+    "p99": 14.4
+   },
+   "total": {
+    "p50": 3.2,
+    "p95": 5
+   },
+   "bytes": 6328,
+   "encodedBytes": 6328,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 1.2,
+    "total": 2.8
+   },
+   "queries": 1,
+   "bodyHash": "4c67ecfded98",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 541.2,
+    "p50": 27.9,
+    "p95": 38.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-notifications-unread",
+   "path": "/api/notifications?unread=1&limit=1",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.4,
+    "p95": 5.6,
+    "p99": 8.7
+   },
+   "total": {
+    "p50": 2.4,
+    "p95": 5.6
+   },
+   "bytes": 256,
+   "encodedBytes": 256,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.7,
+    "total": 2
+   },
+   "queries": 1,
+   "bodyHash": "789e1337f4cc",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 645.3,
+    "p50": 23.2,
+    "p95": 34.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-messages-unread",
+   "path": "/api/messages/unread-count",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.8,
+    "p95": 2.3,
+    "p99": 6.8
+   },
+   "total": {
+    "p50": 0.8,
+    "p95": 2.3
+   },
+   "bytes": 11,
+   "encodedBytes": 11,
+   "phases": {
+    "total": 0.6
+   },
+   "queries": 0,
+   "bodyHash": "721ecc370c3d",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1303.5,
+    "p50": 10.9,
+    "p95": 20.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-messages-unread",
+   "path": "/api/messages/unread-count",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.5,
+    "p95": 2.2,
+    "p99": 3.7
+   },
+   "total": {
+    "p50": 1.5,
+    "p95": 2.2
+   },
+   "bytes": 11,
+   "encodedBytes": 11,
+   "phases": {
+    "cache": 0,
+    "total": 1.2
+   },
+   "queries": 0,
+   "bodyHash": "03c6a319ed79",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1004.4,
+    "p50": 14.8,
+    "p95": 21.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-messages-sidebar",
+   "path": "/api/messages/sidebar",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1,
+    "p95": 1.3,
+    "p99": 6.9
+   },
+   "total": {
+    "p50": 1,
+    "p95": 1.3
+   },
+   "bytes": 28,
+   "encodedBytes": 28,
+   "phases": {
+    "total": 0.7
+   },
+   "queries": 0,
+   "bodyHash": "76fa4f6b44db",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1339.8,
+    "p50": 10.5,
+    "p95": 20,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-messages-sidebar",
+   "path": "/api/messages/sidebar",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.3,
+    "p95": 4.1,
+    "p99": 4.4
+   },
+   "total": {
+    "p50": 3.3,
+    "p95": 4.2
+   },
+   "bytes": 756,
+   "encodedBytes": 756,
+   "phases": {
+    "cache": 0,
+    "db": 1.6,
+    "total": 3
+   },
+   "queries": 2,
+   "bodyHash": "d76e7d8052a0",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 543.4,
+    "p50": 28.4,
+    "p95": 38.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-messages",
+   "path": "/api/messages",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.2,
+    "p95": 4.8,
+    "p99": 10.1
+   },
+   "total": {
+    "p50": 4.2,
+    "p95": 4.9
+   },
+   "bytes": 7525,
+   "encodedBytes": 7525,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 2.3,
+    "total": 3.8
+   },
+   "queries": 3,
+   "bodyHash": "c6e39c5333d4",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 325.9,
+    "p50": 44.1,
+    "p95": 60.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-presence-online",
+   "path": "/api/presence/online-count",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.8,
+    "p95": 0.9,
+    "p99": 0.9
+   },
+   "total": {
+    "p50": 0.8,
+    "p95": 0.9
+   },
+   "bytes": 11,
+   "encodedBytes": 11,
+   "phases": {
+    "total": 0.6
+   },
+   "queries": 0,
+   "bodyHash": "721ecc370c3d",
+   "stable": true,
+   "cacheControl": "public, max-age=30",
+   "load": {
+    "concurrency": 16,
+    "rps": 1874,
+    "p50": 7.7,
+    "p95": 13.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-presence-online",
+   "path": "/api/presence/online-count",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.7,
+    "p95": 0.9,
+    "p99": 5.7
+   },
+   "total": {
+    "p50": 0.7,
+    "p95": 0.9
+   },
+   "bytes": 11,
+   "encodedBytes": 11,
+   "phases": {
+    "total": 0.5
+   },
+   "queries": 0,
+   "bodyHash": "721ecc370c3d",
+   "stable": true,
+   "cacheControl": "public, max-age=30",
+   "load": {
+    "concurrency": 16,
+    "rps": 1835.8,
+    "p50": 7.7,
+    "p95": 13.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-streak",
+   "path": "/api/streak",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.9,
+    "p95": 2.4,
+    "p99": 3.4
+   },
+   "total": {
+    "p50": 1.9,
+    "p95": 2.4
+   },
+   "bytes": 109,
+   "encodedBytes": 109,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.4,
+    "total": 1.6
+   },
+   "queries": 1,
+   "bodyHash": "77bf7c7df27f",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 782.7,
+    "p50": 18.6,
+    "p95": 29.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-progress",
+   "path": "/api/progress",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.2,
+    "p95": 2.8,
+    "p99": 3
+   },
+   "total": {
+    "p50": 2.3,
+    "p95": 2.8
+   },
+   "bytes": 1719,
+   "encodedBytes": 1719,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 1.6,
+    "total": 2
+   },
+   "queries": 3,
+   "bodyHash": "21a46d2a99ba",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 600.5,
+    "p50": 25.3,
+    "p95": 35.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-coins",
+   "path": "/api/coins",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.8,
+    "p95": 2.3,
+    "p99": 8.1
+   },
+   "total": {
+    "p50": 1.8,
+    "p95": 2.3
+   },
+   "bytes": 14,
+   "encodedBytes": 14,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.3,
+    "total": 1.5
+   },
+   "queries": 1,
+   "bodyHash": "cf4589e6f04b",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 823.3,
+    "p50": 18.2,
+    "p95": 26,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-activity",
+   "path": "/api/activity",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.1,
+    "p95": 2.5,
+    "p99": 8.6
+   },
+   "total": {
+    "p50": 2.2,
+    "p95": 2.5
+   },
+   "bytes": 12,
+   "encodedBytes": 12,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.4,
+    "total": 1.8
+   },
+   "queries": 1,
+   "bodyHash": "17a83bb01c89",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 833.9,
+    "p50": 18.1,
+    "p95": 24.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-announcements",
+   "path": "/api/announcements",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.6,
+    "p95": 2.1,
+    "p99": 2.2
+   },
+   "total": {
+    "p50": 1.6,
+    "p95": 2.1
+   },
+   "bytes": 20,
+   "encodedBytes": 20,
+   "phases": {
+    "db": 0.7,
+    "total": 1.3
+   },
+   "queries": 1,
+   "bodyHash": "68c645c318b4",
+   "stable": true,
+   "cacheControl": "public, max-age=30",
+   "load": {
+    "concurrency": 16,
+    "rps": 995.2,
+    "p50": 14.4,
+    "p95": 22.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-announcements",
+   "path": "/api/announcements",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.1,
+    "p95": 2.6,
+    "p99": 3.4
+   },
+   "total": {
+    "p50": 2.2,
+    "p95": 2.7
+   },
+   "bytes": 20,
+   "encodedBytes": 20,
+   "phases": {
+    "cache": 0,
+    "db": 0.7,
+    "total": 1.9
+   },
+   "queries": 1,
+   "bodyHash": "68c645c318b4",
+   "stable": true,
+   "cacheControl": "private, no-store",
+   "load": {
+    "concurrency": 16,
+    "rps": 771,
+    "p50": 18.8,
+    "p95": 28,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-experiments",
+   "path": "/api/experiments",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.9,
+    "p95": 1.1,
+    "p99": 8.7
+   },
+   "total": {
+    "p50": 0.9,
+    "p95": 1.1
+   },
+   "bytes": 18,
+   "encodedBytes": 18,
+   "phases": {
+    "sess": 0.1,
+    "total": 0.7
+   },
+   "queries": 0,
+   "bodyHash": "88407e1a0f7b",
+   "stable": true,
+   "cacheControl": "private, no-store",
+   "load": {
+    "concurrency": 16,
+    "rps": 1445,
+    "p50": 10,
+    "p95": 16.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-experiments",
+   "path": "/api/experiments",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.5,
+    "p95": 2.1,
+    "p99": 2.6
+   },
+   "total": {
+    "p50": 1.5,
+    "p95": 2.1
+   },
+   "bytes": 18,
+   "encodedBytes": 18,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "total": 1.2
+   },
+   "queries": 0,
+   "bodyHash": "88407e1a0f7b",
+   "stable": true,
+   "cacheControl": "private, no-store",
+   "load": {
+    "concurrency": 16,
+    "rps": 1036.4,
+    "p50": 14.2,
+    "p95": 22,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-prefs-appearance",
+   "path": "/api/preferences/appearance",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.7,
+    "p95": 2,
+    "p99": 2.9
+   },
+   "total": {
+    "p50": 1.8,
+    "p95": 2
+   },
+   "bytes": 232,
+   "encodedBytes": 232,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.3,
+    "total": 1.5
+   },
+   "queries": 1,
+   "bodyHash": "806932788254",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 787.2,
+    "p50": 18.5,
+    "p95": 28.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-prefs-layout",
+   "path": "/api/preferences/layout",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.7,
+    "p95": 2.5,
+    "p99": 2.5
+   },
+   "total": {
+    "p50": 1.7,
+    "p95": 2.5
+   },
+   "bytes": 192,
+   "encodedBytes": 192,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.3,
+    "total": 1.4
+   },
+   "queries": 1,
+   "bodyHash": "6384e5b7f18d",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 780.8,
+    "p50": 18.8,
+    "p95": 28.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-feed-foryou",
+   "path": "/api/rmharks?limit=20",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.9,
+    "p95": 1,
+    "p99": 1.1
+   },
+   "total": {
+    "p50": 0.9,
+    "p95": 1
+   },
+   "bytes": 10350,
+   "encodedBytes": 10350,
+   "phases": {
+    "cache": 0,
+    "total": 0.6
+   },
+   "queries": 0,
+   "bodyHash": "82a5cc01bc67",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1180.9,
+    "p50": 12,
+    "p95": 23,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-feed-foryou",
+   "path": "/api/rmharks?limit=20",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.4,
+    "p95": 1.7,
+    "p99": 1.8
+   },
+   "total": {
+    "p50": 1.4,
+    "p95": 1.7
+   },
+   "bytes": 10350,
+   "encodedBytes": 10350,
+   "phases": {
+    "cache": 0,
+    "total": 1.1
+   },
+   "queries": 0,
+   "bodyHash": "82a5cc01bc67",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 788.7,
+    "p50": 16.9,
+    "p95": 27.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-feed-following",
+   "path": "/api/rmharks?feed=following&limit=20",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.8,
+    "p95": 0.9,
+    "p99": 1.2
+   },
+   "total": {
+    "p50": 0.8,
+    "p95": 1
+   },
+   "bytes": 75,
+   "encodedBytes": 75,
+   "phases": {
+    "total": 0.6
+   },
+   "queries": 0,
+   "bodyHash": "aba13b58a614",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1283.4,
+    "p50": 10.9,
+    "p95": 20.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-feed-following",
+   "path": "/api/rmharks?feed=following&limit=20",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.4,
+    "p95": 1.7,
+    "p99": 6.7
+   },
+   "total": {
+    "p50": 1.4,
+    "p95": 1.7
+   },
+   "bytes": 16176,
+   "encodedBytes": 16176,
+   "phases": {
+    "cache": 0,
+    "total": 1.1
+   },
+   "queries": 0,
+   "bodyHash": "498ed5be527d",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 785,
+    "p50": 17.6,
+    "p95": 31.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-feed-page2",
+   "path": "/api/rmharks?limit=20&cursor=cp00000092",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.2,
+    "p95": 5,
+    "p99": 6.6
+   },
+   "total": {
+    "p50": 3.2,
+    "p95": 5
+   },
+   "bytes": 11124,
+   "encodedBytes": 11124,
+   "phases": {
+    "cache": 0,
+    "db": 2.8,
+    "total": 2.8
+   },
+   "queries": 3,
+   "bodyHash": "d66e3050a021",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 481,
+    "p50": 31.9,
+    "p95": 46.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-feed-page2",
+   "path": "/api/rmharks?limit=20&cursor=cp00000092",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 14,
+    "p95": 23.4,
+    "p99": 25.3
+   },
+   "total": {
+    "p50": 14,
+    "p95": 23.5
+   },
+   "bytes": 11124,
+   "encodedBytes": 11124,
+   "phases": {
+    "cache": 0.1,
+    "db": 22.8,
+    "total": 13.6
+   },
+   "queries": 5,
+   "bodyHash": "d66e3050a021",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 112.3,
+    "p50": 139.6,
+    "p95": 178,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-post",
+   "path": "/api/rmharks/cp00000001",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.3,
+    "p95": 2.7,
+    "p99": 5.8
+   },
+   "total": {
+    "p50": 2.4,
+    "p95": 2.7
+   },
+   "bytes": 472,
+   "encodedBytes": 472,
+   "phases": {
+    "db": 1.3,
+    "total": 2
+   },
+   "queries": 1,
+   "bodyHash": "89d766fb420b",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 803.1,
+    "p50": 18,
+    "p95": 28.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-post",
+   "path": "/api/rmharks/cp00000001",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.5,
+    "p95": 8.2,
+    "p99": 9.1
+   },
+   "total": {
+    "p50": 3.5,
+    "p95": 8.2
+   },
+   "bytes": 472,
+   "encodedBytes": 472,
+   "phases": {
+    "cache": 0,
+    "db": 1.7,
+    "total": 3.1
+   },
+   "queries": 1,
+   "bodyHash": "89d766fb420b",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 534.4,
+    "p50": 29,
+    "p95": 38.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-post-comments",
+   "path": "/api/rmharks/cp00000001/comment",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.2,
+    "p95": 4,
+    "p99": 4.4
+   },
+   "total": {
+    "p50": 3.2,
+    "p95": 4
+   },
+   "bytes": 10627,
+   "encodedBytes": 10627,
+   "phases": {
+    "db": 2,
+    "total": 2.8
+   },
+   "queries": 2,
+   "bodyHash": "212d3ce6c4e6",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 538,
+    "p50": 27.2,
+    "p95": 41.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-post-comments",
+   "path": "/api/rmharks/cp00000001/comment",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.3,
+    "p95": 5.1,
+    "p99": 10.1
+   },
+   "total": {
+    "p50": 4.3,
+    "p95": 5.2
+   },
+   "bytes": 10627,
+   "encodedBytes": 10627,
+   "phases": {
+    "cache": 0,
+    "db": 2,
+    "total": 3.9
+   },
+   "queries": 2,
+   "bodyHash": "212d3ce6c4e6",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 448.1,
+    "p50": 34.8,
+    "p95": 44.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-post-comments-2k",
+   "path": "/api/rmharks/cp00000100/comment",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.1,
+    "p95": 4.3,
+    "p99": 7.8
+   },
+   "total": {
+    "p50": 3.1,
+    "p95": 4.3
+   },
+   "bytes": 10363,
+   "encodedBytes": 10363,
+   "phases": {
+    "db": 1.8,
+    "total": 2.7
+   },
+   "queries": 2,
+   "bodyHash": "cb5bf49adca3",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 601,
+    "p50": 26.6,
+    "p95": 35.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-post-comments-2k",
+   "path": "/api/rmharks/cp00000100/comment",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4,
+    "p95": 4.7,
+    "p99": 5.3
+   },
+   "total": {
+    "p50": 4,
+    "p95": 4.8
+   },
+   "bytes": 10363,
+   "encodedBytes": 10363,
+   "phases": {
+    "cache": 0,
+    "db": 2.2,
+    "total": 3.6
+   },
+   "queries": 2,
+   "bodyHash": "cb5bf49adca3",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 408.9,
+    "p50": 35.8,
+    "p95": 55.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-post-similar",
+   "path": "/api/rmharks/cp00000001/similar",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 8.2,
+    "p95": 12.5,
+    "p99": 12.7
+   },
+   "total": {
+    "p50": 8.2,
+    "p95": 12.5
+   },
+   "bytes": 3740,
+   "encodedBytes": 3740,
+   "phases": {
+    "db": 6,
+    "total": 7.8
+   },
+   "queries": 3,
+   "bodyHash": "6882228a275d",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 185.5,
+    "p50": 82.9,
+    "p95": 113.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-post-similar",
+   "path": "/api/rmharks/cp00000001/similar",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 11.2,
+    "p95": 14.6,
+    "p99": 14.7
+   },
+   "total": {
+    "p50": 11.2,
+    "p95": 14.7
+   },
+   "bytes": 3740,
+   "encodedBytes": 3740,
+   "phases": {
+    "cache": 0,
+    "db": 9,
+    "total": 10.9
+   },
+   "queries": 4,
+   "bodyHash": "6882228a275d",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 145.4,
+    "p50": 107.6,
+    "p95": 136.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-post-quotes",
+   "path": "/api/rmharks/cp00000001/quotes",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3,
+    "p95": 3.8,
+    "p99": 8.7
+   },
+   "total": {
+    "p50": 3,
+    "p95": 3.8
+   },
+   "bytes": 30,
+   "encodedBytes": 30,
+   "phases": {
+    "sess": 0.1,
+    "db": 1.7,
+    "total": 2.7
+   },
+   "queries": 2,
+   "bodyHash": "355e6b46446a",
+   "stable": true,
+   "cacheControl": "private, no-store",
+   "load": {
+    "concurrency": 16,
+    "rps": 768.8,
+    "p50": 19.8,
+    "p95": 27.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-post-quotes",
+   "path": "/api/rmharks/cp00000001/quotes",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 14,
+    "p95": 17.5,
+    "p99": 21.6
+   },
+   "total": {
+    "p50": 14.1,
+    "p95": 17.5
+   },
+   "bytes": 30,
+   "encodedBytes": 30,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0,
+    "db": 11.5,
+    "total": 13.6
+   },
+   "queries": 4,
+   "bodyHash": "355e6b46446a",
+   "stable": true,
+   "cacheControl": "private, no-store",
+   "load": {
+    "concurrency": 16,
+    "rps": 200.7,
+    "p50": 78.6,
+    "p95": 100.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile",
+   "path": "/api/profile/user3",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.8,
+    "p95": 3.3,
+    "p99": 4.5
+   },
+   "total": {
+    "p50": 2.8,
+    "p95": 3.3
+   },
+   "bytes": 862,
+   "encodedBytes": 862,
+   "phases": {
+    "cache": 1,
+    "db": 1.7,
+    "total": 2.5
+   },
+   "queries": 3,
+   "bodyHash": "3a075cbdd497",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 738.3,
+    "p50": 20.7,
+    "p95": 29.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile",
+   "path": "/api/profile/user3",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.6,
+    "p95": 7.1,
+    "p99": 7.4
+   },
+   "total": {
+    "p50": 3.6,
+    "p95": 7.1
+   },
+   "bytes": 861,
+   "encodedBytes": 861,
+   "phases": {
+    "cache": 1.2,
+    "db": 2.4,
+    "total": 3.2
+   },
+   "queries": 4,
+   "bodyHash": "2e29ec6e311f",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 684.1,
+    "p50": 21.9,
+    "p95": 31.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile-posts",
+   "path": "/api/profile/user3/rmharks",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.6,
+    "p95": 7,
+    "p99": 11.5
+   },
+   "total": {
+    "p50": 5.6,
+    "p95": 7
+   },
+   "bytes": 11697,
+   "encodedBytes": 11697,
+   "phases": {
+    "db": 5.7,
+    "total": 5.2
+   },
+   "queries": 5,
+   "bodyHash": "687fb11efd80",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 270.7,
+    "p50": 54.4,
+    "p95": 73.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile-posts",
+   "path": "/api/profile/user3/rmharks",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 7.5,
+    "p95": 9.3,
+    "p99": 16
+   },
+   "total": {
+    "p50": 7.5,
+    "p95": 9.4
+   },
+   "bytes": 11697,
+   "encodedBytes": 11697,
+   "phases": {
+    "cache": 0,
+    "db": 8,
+    "total": 7.1
+   },
+   "queries": 7,
+   "bodyHash": "687fb11efd80",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 212.8,
+    "p50": 73.4,
+    "p95": 97.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile-followers",
+   "path": "/api/profile/user3/followers",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.6,
+    "p95": 3.2,
+    "p99": 8.2
+   },
+   "total": {
+    "p50": 2.6,
+    "p95": 3.2
+   },
+   "bytes": 3779,
+   "encodedBytes": 3779,
+   "phases": {
+    "db": 1.4,
+    "total": 2.2
+   },
+   "queries": 2,
+   "bodyHash": "4803846debec",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 646.8,
+    "p50": 23.5,
+    "p95": 34.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile-followers",
+   "path": "/api/profile/user3/followers",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.4,
+    "p95": 4.9,
+    "p99": 5
+   },
+   "total": {
+    "p50": 4.5,
+    "p95": 4.9
+   },
+   "bytes": 3776,
+   "encodedBytes": 3776,
+   "phases": {
+    "cache": 0,
+    "db": 2.3,
+    "total": 3.9
+   },
+   "queries": 3,
+   "bodyHash": "612cb548063a",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 451.7,
+    "p50": 34.4,
+    "p95": 46.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile-following",
+   "path": "/api/profile/heavyuser/following",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.4,
+    "p95": 2.7,
+    "p99": 7.5
+   },
+   "total": {
+    "p50": 2.4,
+    "p95": 2.8
+   },
+   "bytes": 3707,
+   "encodedBytes": 3707,
+   "phases": {
+    "db": 1.3,
+    "total": 2
+   },
+   "queries": 2,
+   "bodyHash": "0b3617f4b8bd",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 677.7,
+    "p50": 22.5,
+    "p95": 31.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile-following",
+   "path": "/api/profile/heavyuser/following",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.6,
+    "p95": 4,
+    "p99": 4.3
+   },
+   "total": {
+    "p50": 3.6,
+    "p95": 4.3
+   },
+   "bytes": 3687,
+   "encodedBytes": 3687,
+   "phases": {
+    "cache": 0,
+    "db": 1.8,
+    "total": 3.2
+   },
+   "queries": 3,
+   "bodyHash": "b09c84c1ade1",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 452.9,
+    "p50": 34.4,
+    "p95": 46.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile-card",
+   "path": "/api/profile/user3/card",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.8,
+    "p95": 2.2,
+    "p99": 4.1
+   },
+   "total": {
+    "p50": 1.8,
+    "p95": 2.2
+   },
+   "bytes": 59069,
+   "encodedBytes": 59069,
+   "phases": {
+    "db": 0.6,
+    "total": 1.5
+   },
+   "queries": 1,
+   "bodyHash": "22d3b7cf5cfa",
+   "stable": true,
+   "cacheControl": "public, max-age=600, s-maxage=3600, stale-while-revalidate=86400",
+   "load": {
+    "concurrency": 16,
+    "rps": 1001.6,
+    "p50": 13.7,
+    "p95": 26,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile-card",
+   "path": "/api/profile/user3/card",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.7,
+    "p95": 2,
+    "p99": 2.1
+   },
+   "total": {
+    "p50": 1.7,
+    "p95": 2
+   },
+   "bytes": 59069,
+   "encodedBytes": 59069,
+   "phases": {
+    "db": 0.6,
+    "total": 1.4
+   },
+   "queries": 1,
+   "bodyHash": "22d3b7cf5cfa",
+   "stable": true,
+   "cacheControl": "public, max-age=600, s-maxage=3600, stale-while-revalidate=86400",
+   "load": {
+    "concurrency": 16,
+    "rps": 1031.9,
+    "p50": 12.4,
+    "p95": 26.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile-likes",
+   "path": "/api/profile/heavyuser/likes",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.2,
+    "p95": 3.4,
+    "p99": 3.9
+   },
+   "total": {
+    "p50": 2.3,
+    "p95": 3.4
+   },
+   "bytes": 46,
+   "encodedBytes": 46,
+   "phases": {
+    "db": 0.9,
+    "total": 1.9
+   },
+   "queries": 2,
+   "bodyHash": "636bdf937498",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 803.4,
+    "p50": 18.6,
+    "p95": 27.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-profile-likes",
+   "path": "/api/profile/heavyuser/likes",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.6,
+    "p95": 7.7,
+    "p99": 7.8
+   },
+   "total": {
+    "p50": 6.6,
+    "p95": 7.7
+   },
+   "bytes": 10324,
+   "encodedBytes": 10324,
+   "phases": {
+    "cache": 0,
+    "db": 4.5,
+    "total": 6.2
+   },
+   "queries": 2,
+   "bodyHash": "cbadaed49f83",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 331.7,
+    "p50": 47.4,
+    "p95": 62.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-explore",
+   "path": "/api/explore",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.4,
+    "p95": 7.4,
+    "p99": 10.5
+   },
+   "total": {
+    "p50": 6.4,
+    "p95": 7.4
+   },
+   "bytes": 14062,
+   "encodedBytes": 14062,
+   "phases": {
+    "cache": 0,
+    "db": 4.8,
+    "total": 6
+   },
+   "queries": 2,
+   "bodyHash": "4ef065604fe1",
+   "stable": true,
+   "cacheControl": "private, max-age=30",
+   "load": {
+    "concurrency": 16,
+    "rps": 285.3,
+    "p50": 54.9,
+    "p95": 72.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-explore",
+   "path": "/api/explore",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 16.6,
+    "p95": 18.4,
+    "p99": 18.6
+   },
+   "total": {
+    "p50": 16.7,
+    "p95": 18.5
+   },
+   "bytes": 12819,
+   "encodedBytes": 12819,
+   "phases": {
+    "cache": 0,
+    "db": 14,
+    "total": 16.2
+   },
+   "queries": 4,
+   "bodyHash": "8712851d0610",
+   "stable": true,
+   "cacheControl": "private, max-age=30",
+   "load": {
+    "concurrency": 16,
+    "rps": 110.1,
+    "p50": 141.7,
+    "p95": 176.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-search",
+   "path": "/api/search?q=build",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 12.9,
+    "p95": 19.7,
+    "p99": 20.7
+   },
+   "total": {
+    "p50": 12.9,
+    "p95": 19.8
+   },
+   "bytes": 7166,
+   "encodedBytes": 7166,
+   "phases": {
+    "sess": 0.1,
+    "total": 11.2
+   },
+   "queries": 0,
+   "bodyHash": "b945b1660ff2",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 83.3,
+    "p50": 177.3,
+    "p95": 328.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-search",
+   "path": "/api/search?q=build",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 636.9,
+    "p95": 687.3,
+    "p99": 688.7
+   },
+   "total": {
+    "p50": 637,
+    "p95": 687.4
+   },
+   "bytes": 13214,
+   "encodedBytes": 13214,
+   "phases": {
+    "sess": 1.1,
+    "cache": 0,
+    "db": 708.8,
+    "total": 635.7
+   },
+   "queries": 7,
+   "bodyHash": "0d885f6e381e",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 4.9,
+    "p50": 3089.9,
+    "p95": 3459.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-hashtag-search",
+   "path": "/api/feed/hashtag-search?q=tag",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.6,
+    "p95": 2,
+    "p99": 4.6
+   },
+   "total": {
+    "p50": 1.6,
+    "p95": 2
+   },
+   "bytes": 425,
+   "encodedBytes": 425,
+   "phases": {
+    "db": 0.4,
+    "total": 1.3
+   },
+   "queries": 1,
+   "bodyHash": "de9700e0d797",
+   "stable": true,
+   "cacheControl": "public, max-age=30, s-maxage=60, stale-while-revalidate=300",
+   "load": {
+    "concurrency": 16,
+    "rps": 996.1,
+    "p50": 14.4,
+    "p95": 23.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-hashtag-search",
+   "path": "/api/feed/hashtag-search?q=tag",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.4,
+    "p95": 1.7,
+    "p99": 1.8
+   },
+   "total": {
+    "p50": 1.5,
+    "p95": 1.8
+   },
+   "bytes": 425,
+   "encodedBytes": 425,
+   "phases": {
+    "db": 0.3,
+    "total": 1.1
+   },
+   "queries": 1,
+   "bodyHash": "de9700e0d797",
+   "stable": true,
+   "cacheControl": "public, max-age=30, s-maxage=60, stale-while-revalidate=300",
+   "load": {
+    "concurrency": 16,
+    "rps": 1023.5,
+    "p50": 14.1,
+    "p95": 23,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-mention-search",
+   "path": "/api/feed/mention-search?q=user1",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3,
+    "p95": 8.3,
+    "p99": 17.9
+   },
+   "total": {
+    "p50": 3,
+    "p95": 8.3
+   },
+   "bytes": 2105,
+   "encodedBytes": 2105,
+   "phases": {
+    "db": 1.4,
+    "total": 2.6
+   },
+   "queries": 1,
+   "bodyHash": "8c4bf9fd330f",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 729.6,
+    "p50": 21.1,
+    "p95": 29,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-mention-search",
+   "path": "/api/feed/mention-search?q=user1",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.3,
+    "p95": 9,
+    "p99": 9.5
+   },
+   "total": {
+    "p50": 5.4,
+    "p95": 9
+   },
+   "bytes": 2105,
+   "encodedBytes": 2105,
+   "phases": {
+    "cache": 0,
+    "db": 3.1,
+    "total": 5
+   },
+   "queries": 3,
+   "bodyHash": "8c4bf9fd330f",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 243.7,
+    "p50": 63.8,
+    "p95": 77.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-users-search",
+   "path": "/api/users/search?q=user1",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 424,
+    "p95": 453.7,
+    "p99": 454.7
+   },
+   "total": {
+    "p50": 424.1,
+    "p95": 453.7
+   },
+   "bytes": 696,
+   "encodedBytes": 696,
+   "phases": {
+    "db": 418.8,
+    "total": 423.3
+   },
+   "queries": 2,
+   "bodyHash": "782b4e00cf0f",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 9.1,
+    "p50": 1737.9,
+    "p95": 1892.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-users-search",
+   "path": "/api/users/search?q=user1",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 422.5,
+    "p95": 459.9,
+    "p99": 487
+   },
+   "total": {
+    "p50": 422.7,
+    "p95": 460
+   },
+   "bytes": 696,
+   "encodedBytes": 696,
+   "phases": {
+    "cache": 0,
+    "db": 417,
+    "total": 422
+   },
+   "queries": 2,
+   "bodyHash": "782b4e00cf0f",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 9.3,
+    "p50": 1699.1,
+    "p95": 1859.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-communities",
+   "path": "/api/communities",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.4,
+    "p95": 1.6,
+    "p99": 1.9
+   },
+   "total": {
+    "p50": 1.4,
+    "p95": 1.6
+   },
+   "bytes": 9842,
+   "encodedBytes": 9842,
+   "phases": {
+    "sess": 0.1,
+    "db": 0.4,
+    "total": 1.1
+   },
+   "queries": 1,
+   "bodyHash": "22db4da6e706",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 859.3,
+    "p50": 16.9,
+    "p95": 26.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-communities",
+   "path": "/api/communities",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.5,
+    "p95": 3.2,
+    "p99": 3.5
+   },
+   "total": {
+    "p50": 2.5,
+    "p95": 3.2
+   },
+   "bytes": 9860,
+   "encodedBytes": 9860,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 1,
+    "total": 2.2
+   },
+   "queries": 2,
+   "bodyHash": "b9bad3271be2",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 537.5,
+    "p50": 28.5,
+    "p95": 40.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-community",
+   "path": "/api/communities/perf-community-1",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.7,
+    "p95": 2.5,
+    "p99": 2.6
+   },
+   "total": {
+    "p50": 1.8,
+    "p95": 2.5
+   },
+   "bytes": 386,
+   "encodedBytes": 386,
+   "phases": {
+    "sess": 0.1,
+    "db": 0.8,
+    "total": 1.5
+   },
+   "queries": 2,
+   "bodyHash": "3805704a5ac2",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 827.9,
+    "p50": 18.1,
+    "p95": 24.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-community",
+   "path": "/api/communities/perf-community-1",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.8,
+    "p95": 3.2,
+    "p99": 3.5
+   },
+   "total": {
+    "p50": 2.8,
+    "p95": 3.2
+   },
+   "bytes": 389,
+   "encodedBytes": 389,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 1.2,
+    "total": 2.5
+   },
+   "queries": 3,
+   "bodyHash": "84042eddb009",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 602.3,
+    "p50": 25.3,
+    "p95": 32.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-community-feed",
+   "path": "/api/communities/perf-community-1/feed",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.9,
+    "p95": 8.7,
+    "p99": 9.3
+   },
+   "total": {
+    "p50": 3.9,
+    "p95": 8.8
+   },
+   "bytes": 11521,
+   "encodedBytes": 11521,
+   "phases": {
+    "sess": 0.1,
+    "db": 3.2,
+    "total": 3.6
+   },
+   "queries": 4,
+   "bodyHash": "5f5105c91690",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 401.6,
+    "p50": 37.6,
+    "p95": 58.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-community-feed",
+   "path": "/api/communities/perf-community-1/feed",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.7,
+    "p95": 6.6,
+    "p99": 11
+   },
+   "total": {
+    "p50": 5.7,
+    "p95": 6.7
+   },
+   "bytes": 11521,
+   "encodedBytes": 11521,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 5,
+    "total": 5.2
+   },
+   "queries": 6,
+   "bodyHash": "5f5105c91690",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 288.5,
+    "p50": 54.8,
+    "p95": 66.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-community-members",
+   "path": "/api/communities/perf-community-1/members",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 18,
+    "p95": 26.7,
+    "p99": 29.6
+   },
+   "total": {
+    "p50": 18,
+    "p95": 26.8
+   },
+   "bytes": 63514,
+   "encodedBytes": 63514,
+   "phases": {
+    "sess": 0.2,
+    "db": 14.7,
+    "total": 17.2
+   },
+   "queries": 2,
+   "bodyHash": "2772c28657a3",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 166.3,
+    "p50": 96.2,
+    "p95": 130.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-community-members",
+   "path": "/api/communities/perf-community-1/members",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 19.3,
+    "p95": 26.2,
+    "p99": 30.3
+   },
+   "total": {
+    "p50": 19.4,
+    "p95": 26.3
+   },
+   "bytes": 63518,
+   "encodedBytes": 63518,
+   "phases": {
+    "sess": 1,
+    "cache": 0,
+    "db": 15.4,
+    "total": 18.6
+   },
+   "queries": 3,
+   "bodyHash": "587c2c85f8d1",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 137.5,
+    "p50": 112.9,
+    "p95": 162.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-leaderboard-players",
+   "path": "/api/leaderboards/players",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.9,
+    "p95": 1.1,
+    "p99": 1.2
+   },
+   "total": {
+    "p50": 0.9,
+    "p95": 1.2
+   },
+   "bytes": 23797,
+   "encodedBytes": 23797,
+   "phases": {
+    "sess": 0.1,
+    "cache": 0,
+    "total": 0.7
+   },
+   "queries": 0,
+   "bodyHash": "9f5b9f927a2e",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1036.2,
+    "p50": 12.9,
+    "p95": 25.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-leaderboard-players",
+   "path": "/api/leaderboards/players",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.6,
+    "p95": 2.1,
+    "p99": 2.3
+   },
+   "total": {
+    "p50": 1.6,
+    "p95": 2.1
+   },
+   "bytes": 23797,
+   "encodedBytes": 23797,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "total": 1.3
+   },
+   "queries": 0,
+   "bodyHash": "9f5b9f927a2e",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 747.7,
+    "p50": 19.2,
+    "p95": 32,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-leaderboard-game",
+   "path": "/api/leaderboards/void-breaker",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.5,
+    "p95": 2.2,
+    "p99": 7.3
+   },
+   "total": {
+    "p50": 1.5,
+    "p95": 2.3
+   },
+   "bytes": 237,
+   "encodedBytes": 237,
+   "phases": {
+    "sess": 0.1,
+    "db": 0.4,
+    "total": 1.2
+   },
+   "queries": 1,
+   "bodyHash": "589e778faebb",
+   "stable": true,
+   "cacheControl": "public, max-age=60",
+   "load": {
+    "concurrency": 16,
+    "rps": 1106.1,
+    "p50": 13.3,
+    "p95": 20.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-leaderboard-game",
+   "path": "/api/leaderboards/void-breaker",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.3,
+    "p95": 2.5,
+    "p99": 2.9
+   },
+   "total": {
+    "p50": 2.4,
+    "p95": 2.6
+   },
+   "bytes": 237,
+   "encodedBytes": 237,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 2
+   },
+   "queries": 1,
+   "bodyHash": "589e778faebb",
+   "stable": true,
+   "cacheControl": "public, max-age=60",
+   "load": {
+    "concurrency": 16,
+    "rps": 793.5,
+    "p50": 18.4,
+    "p95": 28.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-game-leaderboard-legacy",
+   "path": "/api/games/void-breaker/leaderboard",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.1,
+    "p95": 1.3,
+    "p99": 1.4
+   },
+   "total": {
+    "p50": 1.2,
+    "p95": 1.3
+   },
+   "bytes": 89,
+   "encodedBytes": 89,
+   "phases": {
+    "db": 0.3,
+    "total": 0.8
+   },
+   "queries": 1,
+   "bodyHash": "5a3f8c21fad8",
+   "stable": true,
+   "cacheControl": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
+   "load": {
+    "concurrency": 16,
+    "rps": 1229.5,
+    "p50": 11.9,
+    "p95": 18.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-game-leaderboard-legacy",
+   "path": "/api/games/void-breaker/leaderboard",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.1,
+    "p95": 1.4,
+    "p99": 1.5
+   },
+   "total": {
+    "p50": 1.1,
+    "p95": 1.4
+   },
+   "bytes": 89,
+   "encodedBytes": 89,
+   "phases": {
+    "db": 0.3,
+    "total": 0.8
+   },
+   "queries": 1,
+   "bodyHash": "5a3f8c21fad8",
+   "stable": true,
+   "cacheControl": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
+   "load": {
+    "concurrency": 16,
+    "rps": 1209.1,
+    "p50": 11.8,
+    "p95": 18.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-messages-search",
+   "path": "/api/messages/search?q=Synthetic",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.7,
+    "p95": 10.5,
+    "p99": 14.5
+   },
+   "total": {
+    "p50": 5.8,
+    "p95": 10.5
+   },
+   "bytes": 7906,
+   "encodedBytes": 7906,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 3.4,
+    "total": 5.3
+   },
+   "queries": 2,
+   "bodyHash": "7eb5c45ff7b8",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 364.6,
+    "p50": 43,
+    "p95": 55.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-arcade",
+   "path": "/api/arcade",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2,
+    "p95": 3.2,
+    "p99": 4.2
+   },
+   "total": {
+    "p50": 2,
+    "p95": 3.2
+   },
+   "bytes": 680,
+   "encodedBytes": 680,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.8,
+    "total": 1.6
+   },
+   "queries": 2,
+   "bodyHash": "92a9e42efe7e",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 691,
+    "p50": 21,
+    "p95": 32.2,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-shop",
+   "path": "/api/shop",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.9,
+    "p95": 1.1,
+    "p99": 8.5
+   },
+   "total": {
+    "p50": 0.9,
+    "p95": 1.1
+   },
+   "bytes": 24034,
+   "encodedBytes": 24034,
+   "phases": {
+    "sess": 0.1,
+    "total": 0.7
+   },
+   "queries": 0,
+   "bodyHash": "787895bb3e43",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1039.3,
+    "p50": 13.4,
+    "p95": 25.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-shop",
+   "path": "/api/shop",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.1,
+    "p95": 2.8,
+    "p99": 3
+   },
+   "total": {
+    "p50": 2.1,
+    "p95": 2.9
+   },
+   "bytes": 24036,
+   "encodedBytes": 24036,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.8,
+    "total": 1.8
+   },
+   "queries": 2,
+   "bodyHash": "4452476a2769",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 622.6,
+    "p50": 23.3,
+    "p95": 34.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-market",
+   "path": "/api/market/listings",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.6,
+    "p95": 2.1,
+    "p99": 2.2
+   },
+   "total": {
+    "p50": 1.6,
+    "p95": 2.2
+   },
+   "bytes": 30,
+   "encodedBytes": 30,
+   "phases": {
+    "db": 0.6,
+    "total": 1.3
+   },
+   "queries": 1,
+   "bodyHash": "2dfdc7867ea0",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1180.5,
+    "p50": 12.8,
+    "p95": 18.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-market",
+   "path": "/api/market/listings",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.8,
+    "p95": 2.5,
+    "p99": 4.8
+   },
+   "total": {
+    "p50": 1.8,
+    "p95": 2.5
+   },
+   "bytes": 30,
+   "encodedBytes": 30,
+   "phases": {
+    "db": 0.8,
+    "total": 1.5
+   },
+   "queries": 1,
+   "bodyHash": "2dfdc7867ea0",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1177,
+    "p50": 12.7,
+    "p95": 18.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-events",
+   "path": "/api/events",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.7,
+    "p95": 2.1,
+    "p99": 2.2
+   },
+   "total": {
+    "p50": 1.8,
+    "p95": 2.1
+   },
+   "bytes": 13,
+   "encodedBytes": 13,
+   "phases": {
+    "sess": 0.1,
+    "db": 0.8,
+    "total": 1.5
+   },
+   "queries": 1,
+   "bodyHash": "ab3a96458ff4",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 919.3,
+    "p50": 15.5,
+    "p95": 24.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-events",
+   "path": "/api/events",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.1,
+    "p95": 4,
+    "p99": 6.5
+   },
+   "total": {
+    "p50": 3.1,
+    "p95": 4.1
+   },
+   "bytes": 13,
+   "encodedBytes": 13,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 1.2,
+    "total": 2.6
+   },
+   "queries": 1,
+   "bodyHash": "ab3a96458ff4",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 668.4,
+    "p50": 21.9,
+    "p95": 32,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-series",
+   "path": "/api/series",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.5,
+    "p95": 3.9,
+    "p99": 8.2
+   },
+   "total": {
+    "p50": 2.5,
+    "p95": 3.9
+   },
+   "bytes": 26,
+   "encodedBytes": 26,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 1.2,
+    "total": 2.2
+   },
+   "queries": 2,
+   "bodyHash": "5b4be0c6b72b",
+   "stable": true,
+   "cacheControl": "private, no-store",
+   "load": {
+    "concurrency": 16,
+    "rps": 672.5,
+    "p50": 22.6,
+    "p95": 31.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-playlists",
+   "path": "/api/playlists",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.9,
+    "p95": 5.9,
+    "p99": 9.6
+   },
+   "total": {
+    "p50": 1.9,
+    "p95": 5.9
+   },
+   "bytes": 16,
+   "encodedBytes": 16,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.4,
+    "total": 1.5
+   },
+   "queries": 1,
+   "bodyHash": "e26c18aeeaa2",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 794.6,
+    "p50": 18.3,
+    "p95": 28.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-tournaments",
+   "path": "/api/tournaments",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.4,
+    "p95": 1.8,
+    "p99": 2
+   },
+   "total": {
+    "p50": 1.4,
+    "p95": 1.9
+   },
+   "bytes": 18,
+   "encodedBytes": 18,
+   "phases": {
+    "db": 0.6,
+    "total": 1.1
+   },
+   "queries": 1,
+   "bodyHash": "c47bfe96e7ac",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1182.6,
+    "p50": 12,
+    "p95": 19.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-tournaments",
+   "path": "/api/tournaments",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.4,
+    "p95": 1.9,
+    "p99": 1.9
+   },
+   "total": {
+    "p50": 1.5,
+    "p95": 1.9
+   },
+   "bytes": 18,
+   "encodedBytes": 18,
+   "phases": {
+    "db": 0.5,
+    "total": 1.2
+   },
+   "queries": 1,
+   "bodyHash": "c47bfe96e7ac",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1239.1,
+    "p50": 11.6,
+    "p95": 18.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-predictions",
+   "path": "/api/predictions",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.5,
+    "p95": 1.8,
+    "p99": 1.9
+   },
+   "total": {
+    "p50": 1.5,
+    "p95": 1.8
+   },
+   "bytes": 14,
+   "encodedBytes": 14,
+   "phases": {
+    "sess": 0.1,
+    "db": 0.6,
+    "total": 1.2
+   },
+   "queries": 1,
+   "bodyHash": "416f2d3376c3",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1014,
+    "p50": 14.3,
+    "p95": 22.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-predictions",
+   "path": "/api/predictions",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.1,
+    "p95": 2.8,
+    "p99": 8.2
+   },
+   "total": {
+    "p50": 2.1,
+    "p95": 2.8
+   },
+   "bytes": 14,
+   "encodedBytes": 14,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.6,
+    "total": 1.8
+   },
+   "queries": 1,
+   "bodyHash": "416f2d3376c3",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 757.1,
+    "p50": 19.5,
+    "p95": 28.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-user-builds",
+   "path": "/api/user-builds",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.9,
+    "p95": 2.3,
+    "p99": 2.3
+   },
+   "total": {
+    "p50": 1.9,
+    "p95": 2.3
+   },
+   "bytes": 46,
+   "encodedBytes": 46,
+   "phases": {
+    "db": 0.9,
+    "total": 1.6
+   },
+   "queries": 1,
+   "bodyHash": "636bdf937498",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 942.8,
+    "p50": 15,
+    "p95": 24.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-user-builds",
+   "path": "/api/user-builds",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.5,
+    "p95": 2.8,
+    "p99": 3
+   },
+   "total": {
+    "p50": 2.5,
+    "p95": 2.9
+   },
+   "bytes": 46,
+   "encodedBytes": 46,
+   "phases": {
+    "cache": 0,
+    "db": 1.1,
+    "total": 2.2
+   },
+   "queries": 1,
+   "bodyHash": "636bdf937498",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 662.8,
+    "p50": 21.9,
+    "p95": 31.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-conversation",
+   "path": "/api/messages/cv0000021",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.2,
+    "p95": 6,
+    "p99": 7.6
+   },
+   "total": {
+    "p50": 3.2,
+    "p95": 6
+   },
+   "bytes": 1804,
+   "encodedBytes": 1804,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 1.8,
+    "total": 2.9
+   },
+   "queries": 4,
+   "bodyHash": "564ab1fdb72d",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 498.5,
+    "p50": 29.7,
+    "p95": 43.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-history",
+   "path": "/api/history",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.9,
+    "p95": 2.4,
+    "p99": 2.8
+   },
+   "total": {
+    "p50": 2,
+    "p95": 2.4
+   },
+   "bytes": 45,
+   "encodedBytes": 45,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.8,
+    "total": 1.6
+   },
+   "queries": 2,
+   "bodyHash": "c552e552ca4b",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 694,
+    "p50": 21.3,
+    "p95": 31.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-bookmarks",
+   "path": "/api/bookmarks",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3.4,
+    "p95": 4.6,
+    "p99": 4.9
+   },
+   "total": {
+    "p50": 3.4,
+    "p95": 4.7
+   },
+   "bytes": 46,
+   "encodedBytes": 46,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 1.7,
+    "total": 3.1
+   },
+   "queries": 2,
+   "bodyHash": "636bdf937498",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 534.7,
+    "p50": 28.8,
+    "p95": 40.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-ranked",
+   "path": "/api/ranked",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.8,
+    "p95": 1.1,
+    "p99": 1.1
+   },
+   "total": {
+    "p50": 0.8,
+    "p95": 1.1
+   },
+   "bytes": 425,
+   "encodedBytes": 425,
+   "phases": {
+    "sess": 0.1,
+    "total": 0.5
+   },
+   "queries": 0,
+   "bodyHash": "d33b003cbd7d",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1309.9,
+    "p50": 10.8,
+    "p95": 20.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-ranked",
+   "path": "/api/ranked",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.3,
+    "p95": 2.8,
+    "p99": 2.9
+   },
+   "total": {
+    "p50": 2.4,
+    "p95": 2.8
+   },
+   "bytes": 424,
+   "encodedBytes": 424,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 2.1,
+    "total": 2.1
+   },
+   "queries": 3,
+   "bodyHash": "11b229935dbe",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 556.7,
+    "p50": 27.2,
+    "p95": 38.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-spaces-live",
+   "path": "/api/spaces/live",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.5,
+    "p95": 2.9,
+    "p99": 7
+   },
+   "total": {
+    "p50": 1.5,
+    "p95": 2.9
+   },
+   "bytes": 13,
+   "encodedBytes": 13,
+   "phases": {
+    "db": 0.7,
+    "total": 1.2
+   },
+   "queries": 1,
+   "bodyHash": "fe69a820b00c",
+   "stable": true,
+   "cacheControl": "public, max-age=5, stale-while-revalidate=20",
+   "load": {
+    "concurrency": 16,
+    "rps": 1177.1,
+    "p50": 12.3,
+    "p95": 19.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-spaces-live",
+   "path": "/api/spaces/live",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.5,
+    "p95": 2,
+    "p99": 9.3
+   },
+   "total": {
+    "p50": 1.5,
+    "p95": 2
+   },
+   "bytes": 13,
+   "encodedBytes": 13,
+   "phases": {
+    "db": 0.7,
+    "total": 1.2
+   },
+   "queries": 1,
+   "bodyHash": "fe69a820b00c",
+   "stable": true,
+   "cacheControl": "public, max-age=5, stale-while-revalidate=20",
+   "load": {
+    "concurrency": 16,
+    "rps": 1149.5,
+    "p50": 12.5,
+    "p95": 20.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-qotd",
+   "path": "/api/qotd/today",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.9,
+    "p95": 1.2,
+    "p99": 1.3
+   },
+   "total": {
+    "p50": 0.9,
+    "p95": 1.2
+   },
+   "bytes": 131,
+   "encodedBytes": 131,
+   "phases": {
+    "sess": 0.1,
+    "total": 0.7
+   },
+   "queries": 0,
+   "bodyHash": "93ce02a26f0a",
+   "stable": true,
+   "cacheControl": "private, no-store",
+   "load": {
+    "concurrency": 16,
+    "rps": 1467.1,
+    "p50": 9.8,
+    "p95": 16.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-qotd",
+   "path": "/api/qotd/today",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2,
+    "p95": 2.7,
+    "p99": 7.6
+   },
+   "total": {
+    "p50": 2,
+    "p95": 2.8
+   },
+   "bytes": 131,
+   "encodedBytes": 131,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "db": 0.3,
+    "total": 1.6
+   },
+   "queries": 1,
+   "bodyHash": "93ce02a26f0a",
+   "stable": true,
+   "cacheControl": "private, no-store",
+   "load": {
+    "concurrency": 16,
+    "rps": 790.2,
+    "p50": 19.2,
+    "p95": 26.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-today",
+   "path": "/api/today",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.6,
+    "p95": 3.6,
+    "p99": 8.7
+   },
+   "total": {
+    "p50": 2.6,
+    "p95": 3.6
+   },
+   "bytes": 406,
+   "encodedBytes": 406,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 2.5,
+    "total": 2.3
+   },
+   "queries": 4,
+   "bodyHash": "62fd2aa83b4b",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 718.4,
+    "p50": 20.6,
+    "p95": 31.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "api-health",
+   "path": "/api/health",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.6,
+    "p95": 0.8,
+    "p99": 7.2
+   },
+   "total": {
+    "p50": 0.6,
+    "p95": 0.8
+   },
+   "bytes": 2,
+   "encodedBytes": 2,
+   "phases": {
+    "total": 0.4
+   },
+   "queries": 0,
+   "bodyHash": "7a85f4764bbd",
+   "stable": true,
+   "cacheControl": "no-store",
+   "load": {
+    "concurrency": 16,
+    "rps": 1819.7,
+    "p50": 7.8,
+    "p95": 14.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "post-create",
+   "path": "/api/rmharks",
+   "class": "api",
+   "auth": "signed",
+   "method": "POST",
+   "status": {
+    "201": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 9.8,
+    "p95": 31.6,
+    "p99": 160.9
+   },
+   "total": {
+    "p50": 9.8,
+    "p95": 31.7
+   },
+   "bytes": 453,
+   "encodedBytes": 453,
+   "phases": {
+    "sess": 1.7,
+    "cache": 0,
+    "db": 3.8,
+    "total": 9.2
+   },
+   "queries": 4,
+   "bodyHash": "52bbf496f8de",
+   "stable": false,
+   "cacheControl": null,
+   "load": null
+  },
+  {
+   "id": "post-like",
+   "path": "/api/rmharks/cp00000092/like",
+   "class": "api",
+   "auth": "signed",
+   "method": "POST",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5.3,
+    "p95": 7.7,
+    "p99": 7.7
+   },
+   "total": {
+    "p50": 5.3,
+    "p95": 7.8
+   },
+   "bytes": 29,
+   "encodedBytes": 29,
+   "phases": {
+    "sess": 1,
+    "cache": 0,
+    "db": 4.4,
+    "total": 4.8
+   },
+   "queries": 6,
+   "bodyHash": "7151e5b0f805",
+   "stable": false,
+   "cacheControl": null,
+   "load": null
+  },
+  {
+   "id": "post-comment",
+   "path": "/api/rmharks/cp00000092/comment",
+   "class": "api",
+   "auth": "signed",
+   "method": "POST",
+   "status": {
+    "201": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.3,
+    "p95": 8,
+    "p99": 15.2
+   },
+   "total": {
+    "p50": 6.4,
+    "p95": 8.1
+   },
+   "bytes": 549,
+   "encodedBytes": 549,
+   "phases": {
+    "sess": 1.1,
+    "cache": 0,
+    "db": 5.5,
+    "total": 5.8
+   },
+   "queries": 7,
+   "bodyHash": "4be0d2b39f01",
+   "stable": false,
+   "cacheControl": null,
+   "load": null
+  },
+  {
+   "id": "follow",
+   "path": "/api/profile/user10/follow",
+   "class": "api",
+   "auth": "signed",
+   "method": "POST",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.9,
+    "p95": 15.6,
+    "p99": 193.7
+   },
+   "total": {
+    "p50": 6.9,
+    "p95": 15.6
+   },
+   "bytes": 33,
+   "encodedBytes": 33,
+   "phases": {
+    "sess": 1.4,
+    "cache": 0,
+    "db": 7.5,
+    "total": 6.3
+   },
+   "queries": 8,
+   "bodyHash": "9688b2c33fd5",
+   "stable": false,
+   "cacheControl": null,
+   "load": null
+  },
+  {
+   "id": "sfn-initial-user",
+   "path": "/_serverFn/8e361134d3ced248faeb41bd6511ddf2b53be3512df743ef4149ce3ce094a6f6",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.5,
+    "p95": 0.7,
+    "p99": 0.7
+   },
+   "total": {
+    "p50": 0.5,
+    "p95": 0.7
+   },
+   "bytes": 236,
+   "encodedBytes": 236,
+   "phases": {
+    "total": 0.2
+   },
+   "queries": 0,
+   "bodyHash": "21322a72fcc4",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 4125.7,
+    "p50": 3.1,
+    "p95": 6.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-initial-user",
+   "path": "/_serverFn/8e361134d3ced248faeb41bd6511ddf2b53be3512df743ef4149ce3ce094a6f6",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.7,
+    "p95": 2,
+    "p99": 2.2
+   },
+   "total": {
+    "p50": 1.7,
+    "p95": 2.1
+   },
+   "bytes": 528,
+   "encodedBytes": 528,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "db": 0.4,
+    "total": 1.4
+   },
+   "queries": 1,
+   "bodyHash": "b9dd64c8eff2",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 980.2,
+    "p50": 14.8,
+    "p95": 24.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-initial-feed",
+   "path": "/_serverFn/9e7d4e85b0bc4c95dccd6dbe982fa58c6ac148fca49977701010e6c1baeeb0e0",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.7,
+    "p95": 0.8,
+    "p99": 0.8
+   },
+   "total": {
+    "p50": 0.7,
+    "p95": 0.8
+   },
+   "bytes": 13159,
+   "encodedBytes": 13159,
+   "phases": {
+    "cache": 0,
+    "total": 0.4
+   },
+   "queries": 0,
+   "bodyHash": "ee6899ab740d",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1667.3,
+    "p50": 8.4,
+    "p95": 16.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-initial-feed",
+   "path": "/_serverFn/9e7d4e85b0bc4c95dccd6dbe982fa58c6ac148fca49977701010e6c1baeeb0e0",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.4,
+    "p95": 2,
+    "p99": 7.4
+   },
+   "total": {
+    "p50": 1.4,
+    "p95": 2
+   },
+   "bytes": 13159,
+   "encodedBytes": 13159,
+   "phases": {
+    "sess": 0.6,
+    "cache": 0,
+    "total": 1.1
+   },
+   "queries": 0,
+   "bodyHash": "ee6899ab740d",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 862.3,
+    "p50": 16.4,
+    "p95": 27.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-sidebar-data",
+   "path": "/_serverFn/b954baac833339c16bd8b5b84566ff50cd49f430cdbd414651ec0286ff4c5961",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.6,
+    "p95": 0.9,
+    "p99": 1
+   },
+   "total": {
+    "p50": 0.7,
+    "p95": 1
+   },
+   "bytes": 1994,
+   "encodedBytes": 1994,
+   "phases": {
+    "cache": 0,
+    "total": 0.2
+   },
+   "queries": 0,
+   "bodyHash": "a0c4ca3b89cb",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 3216.1,
+    "p50": 4.2,
+    "p95": 9.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-sidebar-data",
+   "path": "/_serverFn/b954baac833339c16bd8b5b84566ff50cd49f430cdbd414651ec0286ff4c5961",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.4,
+    "p95": 1.9,
+    "p99": 3.4
+   },
+   "total": {
+    "p50": 1.4,
+    "p95": 1.9
+   },
+   "bytes": 1357,
+   "encodedBytes": 1357,
+   "phases": {
+    "sess": 0.7,
+    "cache": 0,
+    "total": 1.1
+   },
+   "queries": 0,
+   "bodyHash": "9e3d798896e7",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1058.1,
+    "p50": 14.1,
+    "p95": 21.1,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-explore",
+   "path": "/_serverFn/94e29d35a33dfc2319a69cee8cc339ac96ea4569b7ff26ea4155c7736a900daa",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 6.3,
+    "p95": 9.6,
+    "p99": 10.4
+   },
+   "total": {
+    "p50": 6.3,
+    "p95": 9.6
+   },
+   "bytes": 32878,
+   "encodedBytes": 32878,
+   "phases": {
+    "cache": 0,
+    "db": 4.3,
+    "total": 5.9
+   },
+   "queries": 2,
+   "bodyHash": "75471abb4e6d",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 227.2,
+    "p50": 67.3,
+    "p95": 93,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-explore",
+   "path": "/_serverFn/94e29d35a33dfc2319a69cee8cc339ac96ea4569b7ff26ea4155c7736a900daa",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 19.6,
+    "p95": 34.6,
+    "p99": 36.9
+   },
+   "total": {
+    "p50": 19.6,
+    "p95": 34.7
+   },
+   "bytes": 30228,
+   "encodedBytes": 30228,
+   "phases": {
+    "sess": 0.8,
+    "cache": 0.1,
+    "db": 16,
+    "total": 18.9
+   },
+   "queries": 4,
+   "bodyHash": "f8030ad1025a",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 93.9,
+    "p50": 165.1,
+    "p95": 215.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-communities",
+   "path": "/_serverFn/8db318bc70c9833abab7ba90513265edd1cc75f4c67b0abc7e1b5f2973098293",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1.5,
+    "p95": 1.8,
+    "p99": 1.8
+   },
+   "total": {
+    "p50": 1.5,
+    "p95": 1.8
+   },
+   "bytes": 17268,
+   "encodedBytes": 17268,
+   "phases": {
+    "db": 0.4,
+    "total": 1.2
+   },
+   "queries": 1,
+   "bodyHash": "9baa53603aa5",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 767.4,
+    "p50": 19.8,
+    "p95": 30.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-communities",
+   "path": "/_serverFn/8db318bc70c9833abab7ba90513265edd1cc75f4c67b0abc7e1b5f2973098293",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.8,
+    "p95": 3.1,
+    "p99": 3.8
+   },
+   "total": {
+    "p50": 2.8,
+    "p95": 3.1
+   },
+   "bytes": 17310,
+   "encodedBytes": 17310,
+   "phases": {
+    "cache": 0,
+    "db": 1.1,
+    "total": 2.5
+   },
+   "queries": 2,
+   "bodyHash": "79555193f3d5",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 524.1,
+    "p50": 29.2,
+    "p95": 38.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-inbox",
+   "path": "/_serverFn/03de92e3faa01fa27bd44106de8bff15cb901ecec3a446e4f6676f9b0100f984",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.4,
+    "p95": 0.5,
+    "p99": 0.5
+   },
+   "total": {
+    "p50": 0.4,
+    "p95": 0.5
+   },
+   "bytes": 184,
+   "encodedBytes": 184,
+   "phases": {
+    "total": 0.2
+   },
+   "queries": 0,
+   "bodyHash": "ba8efbc567ce",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 2734.4,
+    "p50": 5.1,
+    "p95": 11.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-inbox",
+   "path": "/_serverFn/03de92e3faa01fa27bd44106de8bff15cb901ecec3a446e4f6676f9b0100f984",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 4.3,
+    "p95": 5.5,
+    "p99": 11.5
+   },
+   "total": {
+    "p50": 4.4,
+    "p95": 5.6
+   },
+   "bytes": 13885,
+   "encodedBytes": 13885,
+   "phases": {
+    "cache": 0,
+    "db": 2.4,
+    "total": 3.9
+   },
+   "queries": 3,
+   "bodyHash": "0fc91f9622cb",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 379.5,
+    "p50": 40.3,
+    "p95": 52.4,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-achievements",
+   "path": "/_serverFn/0ee94b275a140e00f7894c23f0ee2d502335c4a43598ecb07fbe888d58303a67",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.4,
+    "p95": 1.4,
+    "p99": 5.8
+   },
+   "total": {
+    "p50": 0.4,
+    "p95": 1.4
+   },
+   "bytes": 188,
+   "encodedBytes": 188,
+   "phases": {
+    "total": 0.2
+   },
+   "queries": 0,
+   "bodyHash": "9cda43a58e4f",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 2567.7,
+    "p50": 5.1,
+    "p95": 12.5,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-achievements",
+   "path": "/_serverFn/0ee94b275a140e00f7894c23f0ee2d502335c4a43598ecb07fbe888d58303a67",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3,
+    "p95": 4.3,
+    "p99": 9.3
+   },
+   "total": {
+    "p50": 3,
+    "p95": 4.3
+   },
+   "bytes": 42724,
+   "encodedBytes": 42724,
+   "phases": {
+    "cache": 0,
+    "db": 0.7,
+    "total": 2.6
+   },
+   "queries": 2,
+   "bodyHash": "c6f7dbb9fb03",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 411.4,
+    "p50": 37.3,
+    "p95": 52.6,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-board",
+   "path": "/_serverFn/72a8e7000f8f8a9ca9ee43db524406474e234fe6e1389529dacfb59f1a5df76b",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5,
+    "p95": 6.8,
+    "p99": 13.1
+   },
+   "total": {
+    "p50": 5,
+    "p95": 6.8
+   },
+   "bytes": 17215,
+   "encodedBytes": 17215,
+   "phases": {
+    "db": 5.3,
+    "total": 4.5
+   },
+   "queries": 6,
+   "bodyHash": "33686556079c",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 238.1,
+    "p50": 65.9,
+    "p95": 78.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-board",
+   "path": "/_serverFn/72a8e7000f8f8a9ca9ee43db524406474e234fe6e1389529dacfb59f1a5df76b",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 5,
+    "p95": 6.5,
+    "p99": 11.1
+   },
+   "total": {
+    "p50": 5.1,
+    "p95": 6.5
+   },
+   "bytes": 17237,
+   "encodedBytes": 17237,
+   "phases": {
+    "cache": 0,
+    "db": 4.9,
+    "total": 4.6
+   },
+   "queries": 6,
+   "bodyHash": "ec7686f55028",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 229.6,
+    "p50": 68.7,
+    "p95": 80.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-snapshot",
+   "path": "/_serverFn/1b2b519feb17c9fa6c1b5c0496a7d7d601b6681ffdd2341325e9165e35ce22de",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.5,
+    "p95": 3.1,
+    "p99": 3.1
+   },
+   "total": {
+    "p50": 2.5,
+    "p95": 3.1
+   },
+   "bytes": 12313,
+   "encodedBytes": 12313,
+   "phases": {
+    "db": 1.2,
+    "total": 2.1
+   },
+   "queries": 2,
+   "bodyHash": "85c4110e60cd",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 783.3,
+    "p50": 19.4,
+    "p95": 28.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-snapshot",
+   "path": "/_serverFn/1b2b519feb17c9fa6c1b5c0496a7d7d601b6681ffdd2341325e9165e35ce22de",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2,
+    "p95": 2.4,
+    "p99": 2.5
+   },
+   "total": {
+    "p50": 2,
+    "p95": 2.4
+   },
+   "bytes": 12313,
+   "encodedBytes": 12313,
+   "phases": {
+    "db": 1.2,
+    "total": 1.8
+   },
+   "queries": 2,
+   "bodyHash": "1953996f40db",
+   "stable": false,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 800.3,
+    "p50": 19.5,
+    "p95": 27.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-ranked",
+   "path": "/_serverFn/ca6a40efe4356fe22a2f8e37b0d79fdd670d776c01f056e5f399099efd76a71c",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.7,
+    "p95": 5.7,
+    "p99": 24.6
+   },
+   "total": {
+    "p50": 0.7,
+    "p95": 5.7
+   },
+   "bytes": 1293,
+   "encodedBytes": 1293,
+   "phases": {
+    "total": 0.4
+   },
+   "queries": 0,
+   "bodyHash": "12eff2dc2369",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 2276.2,
+    "p50": 6,
+    "p95": 13.7,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-ranked",
+   "path": "/_serverFn/ca6a40efe4356fe22a2f8e37b0d79fdd670d776c01f056e5f399099efd76a71c",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 2.1,
+    "p95": 3,
+    "p99": 4.1
+   },
+   "total": {
+    "p50": 2.1,
+    "p95": 3.1
+   },
+   "bytes": 1293,
+   "encodedBytes": 1293,
+   "phases": {
+    "cache": 0,
+    "db": 2.1,
+    "total": 1.8
+   },
+   "queries": 3,
+   "bodyHash": "565eab0ecbb9",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 672.2,
+    "p50": 22.5,
+    "p95": 32.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-settings",
+   "path": "/_serverFn/50a55a46e1cd20391a1f9f3d1134f6e741c02aa5c309836fd24e1f6b97a4f0a6",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 0.9,
+    "p95": 1.1,
+    "p99": 1.3
+   },
+   "total": {
+    "p50": 0.9,
+    "p95": 1.1
+   },
+   "bytes": 159,
+   "encodedBytes": 159,
+   "phases": {
+    "total": 0.6
+   },
+   "queries": 0,
+   "bodyHash": "13c381574dd8",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1238.8,
+    "p50": 11.6,
+    "p95": 21.9,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-settings",
+   "path": "/_serverFn/50a55a46e1cd20391a1f9f3d1134f6e741c02aa5c309836fd24e1f6b97a4f0a6",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 3,
+    "p95": 3.2,
+    "p99": 3.6
+   },
+   "total": {
+    "p50": 3,
+    "p95": 3.3
+   },
+   "bytes": 884,
+   "encodedBytes": 884,
+   "phases": {
+    "cache": 0,
+    "db": 2.9,
+    "total": 2.7
+   },
+   "queries": 5,
+   "bodyHash": "abf562e5e70b",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 520,
+    "p50": 29.1,
+    "p95": 42.3,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-news",
+   "path": "/_serverFn/1e7f3217822581dcba9602332976eeaf06374cc81107e8d0a37645019178aae8",
+   "class": "api",
+   "auth": "anon",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1,
+    "p95": 1.4,
+    "p99": 1.8
+   },
+   "total": {
+    "p50": 1,
+    "p95": 1.4
+   },
+   "bytes": 235,
+   "encodedBytes": 235,
+   "phases": {
+    "db": 0.8,
+    "total": 0.7
+   },
+   "queries": 2,
+   "bodyHash": "5f6ebb69a8e7",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1780.7,
+    "p50": 8.1,
+    "p95": 14.8,
+    "errors": 0
+   }
+  },
+  {
+   "id": "sfn-news",
+   "path": "/_serverFn/1e7f3217822581dcba9602332976eeaf06374cc81107e8d0a37645019178aae8",
+   "class": "api",
+   "auth": "signed",
+   "method": "GET",
+   "status": {
+    "200": 30
+   },
+   "invalid": false,
+   "ttfb": {
+    "p50": 1,
+    "p95": 1.2,
+    "p99": 1.8
+   },
+   "total": {
+    "p50": 1,
+    "p95": 1.2
+   },
+   "bytes": 235,
+   "encodedBytes": 235,
+   "phases": {
+    "db": 0.8,
+    "total": 0.7
+   },
+   "queries": 2,
+   "bodyHash": "5f6ebb69a8e7",
+   "stable": true,
+   "cacheControl": null,
+   "load": {
+    "concurrency": 16,
+    "rps": 1725.7,
+    "p50": 8.5,
+    "p95": 15,
+    "errors": 0
+   }
+  }
+ ]
+}

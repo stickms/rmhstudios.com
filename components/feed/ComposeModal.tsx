@@ -30,7 +30,7 @@ import {
  MIN_POLL_OPTIONS,
  MAX_POLL_OPTIONS,
  MAX_IMAGE_ALT_LENGTH,
-} from'@/lib/rmhark-schema';
+} from'@/lib/rmhark-limits';
 import { clearComposeDraft, useComposeDraftAutosave } from'@/hooks/useComposeDraft';
 
 const MAX_IMAGES = 4;

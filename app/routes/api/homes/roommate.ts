@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { roommateProfileSchema } from '@/lib/homes/roommate';
+import { roommateProfileSchema } from '@/lib/homes/roommate-schema';
 import { getRoommateProfile, saveRoommateProfile } from '@/lib/homes/roommate.server';
 
 /**

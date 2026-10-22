@@ -16,6 +16,9 @@ go_library(
 
 go_test(
     name = "objectstore_test",
-    srcs = ["objectstore_test.go"],
+    srcs = [
+        "conditional_test.go",
+        "objectstore_test.go",
+    ],
     embed = [":objectstore"],
 )

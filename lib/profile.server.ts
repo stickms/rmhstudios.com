@@ -7,9 +7,10 @@ import { getEquippedCosmetics } from '@/lib/shop/equipped.server';
 import { profileLinkSchema, type ProfileLink } from '@/lib/profile-schema';
 import { getMembershipStatus } from '@/lib/memberships.server';
 import { resolveStatus, type UserStatus } from '@/lib/profile/status';
-import { parseLayout, type ProfileModule } from '@/lib/profile/modules';
+import { parseLayout, type ProfileModule } from '@/lib/profile/modules-schema';
 import { pronunciationUrl } from '@/lib/profile/plus';
 import { isBirthdayOn } from '@/lib/gifting/birthday';
+import { filterOnlineUsers } from '@/lib/hot-counters.server';
 
 /**
  * Coerce the JSON `links` column into a validated ProfileLink[]. Defends the
@@ -202,7 +203,7 @@ export async function getProfile(
   monthStart.setUTCDate(1);
   monthStart.setUTCHours(0, 0, 0, 0);
   const wantsTipGoal = !!user.profile?.tipGoal && user.profile.tipGoal > 0;
-  const [cosmetics, tipAgg, membership] = await Promise.all([
+  const [cosmetics, tipAgg, membership, onlineIds] = await Promise.all([
     getEquippedCosmetics(user.id),
     wantsTipGoal
       ? prisma.coinTransaction.aggregate({
@@ -216,10 +217,16 @@ export async function getProfile(
         })
       : Promise.resolve(null),
     getMembershipStatus(user.id, user.profile?.membershipPriceCoins ?? null, viewerId),
+    // The Redis presence set is written on every heartbeat; `lastSeenAt` only
+    // reaches Postgres ~every 5 min, so on its own it under-reports who is online.
+    filterOnlineUsers([user.id]).catch(() => null),
   ]);
-  const tipsThisMonth = tipAgg?._sum.amount ?? 0;
+  const tipsThisMonth = Number(tipAgg?._sum.amount ?? 0);
 
-  const isOnline = !!user.lastSeenAt && Date.now() - user.lastSeenAt.getTime() < 2 * 60 * 1000;
+  const isOnline =
+    onlineIds !== null
+      ? onlineIds.includes(user.id)
+      : !!user.lastSeenAt && Date.now() - user.lastSeenAt.getTime() < 2 * 60 * 1000;
 
   return {
     cosmetics,
@@ -258,7 +265,7 @@ export async function getProfile(
     pronouns: user.profilePlus?.pronouns ?? null,
     timezone: user.profilePlus?.timezone ?? null,
     pronunciationUrl: pronunciationUrl(user.id, user.profilePlus?.pronunciationKey),
-    coins: user.profile?.coins ?? 10,
+    coins: Number(user.profile?.coins ?? 10),
     followerCount: user.followerCount,
     followingCount: user.followingCount,
     rmharkCount: user.postCount,

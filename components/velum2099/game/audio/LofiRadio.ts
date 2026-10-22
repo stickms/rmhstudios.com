@@ -1,12 +1,12 @@
 // @ts-nocheck
 /* ═══════════════════════════════════════════
-import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
-
    NEURODRIVE — Lo-Fi / Jazz Radio
    Procedural Web Audio API synthesizer
    Cycle: OFF → lo-fi → jazz → OFF
    No external audio files needed
    ═══════════════════════════════════════════ */
+
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
 
 // Lo-fi chord progressions (MIDI note numbers)
 const LOFI_PROGRESSIONS = [

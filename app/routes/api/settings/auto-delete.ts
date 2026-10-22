@@ -6,7 +6,8 @@ import {
   getAutoDelete,
   setAutoDelete,
 } from '@/lib/posts-plus/lifecycle.server';
-import { AUTO_DELETE_MONTHS, autoDeleteSchema } from '@/lib/posts-plus/constants';
+import { AUTO_DELETE_MONTHS } from '@/lib/posts-plus/constants';
+import { autoDeleteSchema } from '@/lib/posts-plus/schema';
 
 /**
  * `/api/settings/auto-delete` - "delete my posts older than N months" (X8).

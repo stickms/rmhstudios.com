@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { adminAdd, adminList } from '@/lib/posts-plus/qotd.server';
-import { qotdAddSchema } from '@/lib/posts-plus/constants';
+import { qotdAddSchema } from '@/lib/posts-plus/schema';
 
 /**
  * GET  /api/admin/qotd - the prompt queue, pinned future prompts, and recent ones (X4).

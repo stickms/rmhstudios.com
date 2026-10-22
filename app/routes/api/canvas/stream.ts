@@ -2,7 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 import { canvasBus } from '@/lib/canvas/live.server';
-import { canvasEventQuery, type CanvasBatch } from '@/lib/canvas/shared';
+import { type CanvasBatch } from '@/lib/canvas/shared';
+import { canvasEventQuery } from '@/lib/canvas/schema';
 
 /** Below the idle timeout of every proxy in the path. */
 const KEEPALIVE_MS = 20_000;

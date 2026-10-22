@@ -32,6 +32,7 @@ export class RadioManager {
   private woots = new Set<string>();
   private mehs = new Set<string>();
   private timer: ReturnType<typeof setTimeout> | null = null;
+  private listenerRefreshTimer: ReturnType<typeof setInterval> | null = null;
   private lastEvent = new Map<string, number>();
 
   constructor(
@@ -55,9 +56,10 @@ export class RadioManager {
       this.broadcast();
     };
     // Listener counts also move on disconnects, which fire no hook: refresh while anyone is tuned in.
-    setInterval(() => {
+    this.listenerRefreshTimer = setInterval(() => {
       if (this.room.members.size > 0) this.broadcast();
-    }, 15_000).unref();
+    }, 15_000);
+    this.listenerRefreshTimer.unref();
     roomManager.onMemberRemoved = (room, userId) => {
       if (room !== this.room) return;
       this.djs = this.djs.filter((id) => id !== userId);
@@ -66,6 +68,14 @@ export class RadioManager {
       this.mehs.delete(userId);
       this.broadcast();
     };
+  }
+
+  /** Clear the listener-refresh interval and the current-track timer. */
+  stop(): void {
+    if (this.listenerRefreshTimer) clearInterval(this.listenerRefreshTimer);
+    this.listenerRefreshTimer = null;
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
   }
 
   handleConnection(socket: Socket): void {

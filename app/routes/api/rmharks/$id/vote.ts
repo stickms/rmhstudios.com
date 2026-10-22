@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { canReadPostThread } from '@/lib/feed/audience.server';
 import { awardXp } from '@/lib/xp/engine.server';
 import { progressQuests } from '@/lib/quests/engine.server';
 
@@ -54,6 +55,9 @@ export const Route = createFileRoute('/api/rmharks/$id/vote')({
                 data: { voteCount: { decrement: 1 } },
               }),
             ]);
+          } else if (!(await canReadPostThread(id, userId))) {
+            // Voting needs a readable post (un-voting, above, stays allowed).
+            return Response.json({ error: 'Not found' }, { status: 404 });
           } else if (isMultiSelect) {
             castVote = true;
             // Multi-select: add the vote and bump the option's tally atomically.

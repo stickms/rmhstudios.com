@@ -14,7 +14,7 @@ import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { fetchJson } from '@/lib/http';
-import { formatDuration } from '@/lib/delight/schema';
+import { formatDuration } from '@/lib/delight/shared';
 
 interface HuntData {
   state: {

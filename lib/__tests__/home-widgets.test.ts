@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  parseHomeStack,
-  parseSidebarPref,
-  parseLayoutPref,
-  DEFAULT_HOME_STACK,
-  layoutPrefsSchema,
-} from '@/lib/home-widgets';
+import { parseHomeStack, parseSidebarPref, parseLayoutPref, DEFAULT_HOME_STACK } from '@/lib/home-widgets';
+import { layoutPrefsSchema } from '@/lib/home-widgets-schema';
 
 describe('parseHomeStack', () => {
   it('returns the default stack when empty or not an array', () => {

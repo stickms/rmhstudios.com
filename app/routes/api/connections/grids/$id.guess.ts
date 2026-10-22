@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { guessSchema } from '@/lib/party/connections';
+import { guessSchema } from '@/lib/party/connections-schema';
 import { submitGuess } from '@/lib/party/connections.server';
 
 /** POST /api/connections/grids/:id/guess — check four items server-side. */

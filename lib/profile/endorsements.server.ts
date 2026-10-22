@@ -11,7 +11,7 @@
  * in their showcase — adding the module is the opt-in, removing it the opt-out.
  */
 import { prisma } from '@/lib/prisma.server';
-import { parseLayout } from '@/lib/profile/modules';
+import { parseLayout } from '@/lib/profile/modules-schema';
 import { isSkillId } from '@/lib/profile/skills';
 import { DELETED_ACCOUNT_BAN_REASON } from '@/lib/account-lifecycle';
 

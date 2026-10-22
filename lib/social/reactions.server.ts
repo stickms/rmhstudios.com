@@ -2,7 +2,7 @@
 import { canReadThread } from '@/lib/feed/audience.server';
 import { prisma } from '@/lib/prisma.server';
 import type { ReactionRow, ReactionSummary } from '@/lib/social/reactions';
-import { isStarEmoji } from '@/lib/communities/plus-schema';
+import { isStarEmoji } from '@/lib/communities/plus';
 import { recordStarToggle } from '@/lib/communities/starboard.server';
 
 interface ToggleResult {
@@ -28,13 +28,20 @@ export async function togglePostReaction(
   const [post, existing] = await Promise.all([
     prisma.rMHark.findUnique({
       where: { id: postId },
-      select: { id: true, deletedAt: true, communityId: true, userId: true },
+      select: { id: true, deletedAt: true, communityId: true, userId: true, audience: true },
     }),
     prisma.rMHarkReaction.findUnique({
       where: { rmheetId_userId_emoji: { rmheetId: postId, userId, emoji } },
     }),
   ]);
   if (!post || post.deletedAt) return { found: false, reacted: false, rows: [], summary: [] };
+  if (!(await canReadThread(post, userId))) {
+    // Adding a reaction needs a readable post; removing one stays allowed, but the
+    // answer must not reveal the hidden post's reactions.
+    if (!existing) return { found: false, reacted: false, rows: [], summary: [] };
+    await prisma.rMHarkReaction.delete({ where: { id: existing.id } });
+    return { found: true, reacted: false, rows: [], summary: [] };
+  }
   if (existing) {
     await prisma.rMHarkReaction.delete({ where: { id: existing.id } });
   } else {

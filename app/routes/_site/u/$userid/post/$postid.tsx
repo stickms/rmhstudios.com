@@ -25,6 +25,7 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
         audience: true,
         unlockPrice: true,
         isSensitive: true,
+        community: { select: { isPrivate: true } },
         deletedAt: true,
         createdAt: true,
         user: { select: userDisplaySelect },
@@ -47,7 +48,8 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
     // still had open: a post marked sensitive was hidden in the card image and
     // quoted verbatim in `og:description` two tags further down.
     const showContent = postCardShowsContent(rmhark);
-    const isPublicFree = rmhark.audience === 'PUBLIC' && (rmhark.unlockPrice ?? 0) === 0;
+    const isPublicFree =
+      rmhark.audience === 'PUBLIC' && (rmhark.unlockPrice ?? 0) === 0 && !rmhark.community?.isPrivate;
     const imageCount = rmhark.imageUrls?.length ?? 0;
 
     let description: string;

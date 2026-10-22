@@ -69,6 +69,6 @@ export async function buyProduct(
       data: { salesCount: { increment: 1 } },
     });
 
-    return { deliverable: product.deliverable, balance: updatedBuyer?.coins ?? 0, creatorId: product.creatorId };
+    return { deliverable: product.deliverable, balance: Number(updatedBuyer?.coins ?? 0), creatorId: product.creatorId };
   });
 }

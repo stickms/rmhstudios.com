@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
@@ -49,7 +50,13 @@ func runGroup(
 	for name, run := range runs {
 		name, run := name, run
 		g.Go(func() error {
-			err := run(gctx, deps(name))
+			d := deps(name)
+			err := superviseWorker(gctx, run, d)
+			if err == nil && gctx.Err() == nil {
+				// A worker that returns nil before shutdown has simply stopped
+				// doing its job; the group can't tell, so say so.
+				d.Logger.Warn("worker exited before shutdown")
+			}
 			mu.Lock()
 			delete(pending, name)
 			mu.Unlock()
@@ -112,4 +119,58 @@ func runGroup(
 // failure. On a signal-driven drain we don't want that to look like a crash.
 func errgroupCausedBySignal(ctx context.Context, err error) bool {
 	return ctx.Err() != nil && (errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded))
+}
+
+// Panic restart backoff: doubles from panicBackoffMin up to panicBackoffMax, and
+// resets once a restarted worker has stayed up for panicBackoffReset.
+var (
+	panicBackoffMin   = time.Second
+	panicBackoffMax   = time.Minute
+	panicBackoffReset = 5 * time.Minute
+)
+
+// superviseWorker runs one worker and restarts it in place when it panics.
+//
+// Without this, a panic in any worker's Run goroutine crashed the whole process
+// and took all six workers down with it. discord-bot and streak-saver have no
+// recover of their own. Now the panic is logged with its stack and counted in
+// rmh_worker_panics_total, and only that worker restarts after a backoff while
+// the other five keep running. Errors keep their old meaning: a returned error
+// still unwinds the group so the supervisor exits non-zero.
+//
+// Only panics on the Run goroutine itself are caught. A panic in a goroutine the
+// worker spawns cannot be recovered from here; it must recover on its own.
+func superviseWorker(ctx context.Context, run worker.RunFunc, d worker.Deps) error {
+	backoff := panicBackoffMin
+	for {
+		started := time.Now()
+		panicked, err := runRecovered(ctx, run, d)
+		if !panicked {
+			return err
+		}
+		if d.Metrics != nil {
+			d.Metrics.WorkerPanics.Inc()
+		}
+		if time.Since(started) >= panicBackoffReset {
+			backoff = panicBackoffMin
+		}
+		d.Logger.Error("worker panicked; restarting", "backoff", backoff.String())
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(backoff):
+		}
+		backoff = min(backoff*2, panicBackoffMax)
+	}
+}
+
+// runRecovered calls run and reports whether it panicked instead of returning.
+func runRecovered(ctx context.Context, run worker.RunFunc, d worker.Deps) (panicked bool, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			panicked = true
+			d.Logger.Error("worker panic", "panic", fmt.Sprint(r), "stack", string(debug.Stack()))
+		}
+	}()
+	return false, run(ctx, d)
 }

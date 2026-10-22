@@ -10,7 +10,7 @@ import { ModOnboarding } from '@/components/communities/ModOnboarding';
 import { ModQueue } from '@/components/communities/ModQueue';
 import { ModSettings } from '@/components/communities/ModSettings';
 import { ModSisters } from '@/components/communities/ModSisters';
-import type { CommunityExtrasDTO } from '@/lib/communities/plus-schema';
+import type { CommunityExtrasDTO } from '@/lib/communities/plus';
 
 export default function ModPanel({
   slug,

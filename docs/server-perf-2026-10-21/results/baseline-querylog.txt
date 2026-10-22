@@ -1,0 +1,20 @@
+# Baseline query log (WS0) - server stdout + Postgres slow statements during the baseline run
+# Server: NODE_ENV=production RMH_PERF_HEADERS=1 (the unbounded-findMany guard is dev-only: no [prisma] lines in production by design)
+# Postgres: rmh_ws0, log_min_duration_statement=20ms
+
+## [db:query-budget] lines (budget 40 queries/request)
+
+## Postgres statements over 20 ms (database rmh_ws0), grouped by normalised statement
+1380
+statements over 20 ms: 1285 executions, 9 distinct shapes
+
+count	total_ms	max_ms	statement
+233	291546	3081	SELECT u.id, u."name", u."username", u."handle", p."displayName" AS... FROM "user" u LEFT JOIN "user_profile" p ON p."userId" = u.id WHERE ((public.rmh_search_norm(u."name") LIKE $n OR public.rmh_search_norm(u."name") % $n OR $n <% public.rmh_search_norm(u."name") OR public.rmh_search_norm(u."name") LIKE $n) OR (public.rmh_search_norm
+249	112372	2681	SELECT "t0"."id", "t0"."userId", "t0"."content", "t0"."gifUrl", "t0... FROM "public"."rmheet" AS "t0" LEFT JOIN LATERAL (SELECT JSONB_BUILD_OBJECT('?', "t3"."id", '?', "t3"."name", '?', "t3"."image", '?', "t3"."username", '?', "t3"."handle", '?', "t3"."isVerified", '?', "t3"."isAdmin", '?', "t3"."isBot", '?', "User_profile"."__prisma_
+727	25479	75	SELECT "t0"."id", "t0"."role"::text, "t0"."joinedAt", "t0"."userId"... FROM "public"."community_member" AS "t0" LEFT JOIN LATERAL (SELECT JSONB_BUILD_OBJECT('?', "t1"."id", '?', "t1"."name", '?', "t1"."handle", '?', "t1"."image") AS "__prisma_data__" FROM "public"."user" AS "t1" WHERE "t0"."userId" = "t1"."id" LIMIT $n) AS "CommunityM
+67	20351	950	SELECT id FROM rmheet WHERE "deletedAt" IS NULL AND audience = '?' AND "unlockPrice" IS NULL AND (content_tsv @@ websearch_to_tsquery('?', $n) OR (public.rmh_search_norm("content") LIKE $n OR public.rmh_search_norm("content") % $n OR $n <% public.rmh_search_norm("content") O
+2	331	179	COMMIT
+1	228	228	SELECT "t0"."id", "t0"."rmheetId", "t0"."userId", "t0"."createdAt",... FROM "public"."rmheet_like" AS "t0" LEFT JOIN LATERAL (SELECT JSONB_BUILD_OBJECT('?', "t1"."id", '?', "t1"."userId", '?', "t1"."content", '?', "t1"."gifUrl", '?', "t1"."imageUrls", '?', "t1"."imageAlts", '?', "t1"."createdAt", '?', "t1"."updatedAt", '?', "t1"."like
+1	190	190	INSERT INTO "public"."notification" ("id","userId","actorId","type","entityType","entityId","preview","link","read","groupKey","createdAt") VALUES ($n,$n,$n,CAST($n::text AS "public"."NotificationType"),$n,$n,$n,$n,$n,$n,$n) RETURNING "public"."notification"."id"
+1	137	137	INSERT INTO "public"."rmheet_comment" ("id","rmheetId","userId","content","createdAt","updatedAt","likeCount","replyCount","parentId","deletedByAdmin") VALUES ($n,$n,$n,$n,$n,$n,$n,$n,$n,$n) RETURNING "public"."rmheet_comment"."id"
+4	111	31	SELECT "t0"."id" FROM "public"."rmheet" AS "t0" WHERE ("t0"."deletedAt" IS NULL AND "t0"."createdAt" >= $n AND "t0"."audience" = CAST($n::text AS "public"."RMHarkAudience") AND "t0"."likeCount" > $n) ORDER BY "t0"."likeCount" DESC, "t0"."createdAt" DESC LIMIT $n

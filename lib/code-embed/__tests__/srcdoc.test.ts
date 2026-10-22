@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildSrcdoc, codeEmbedSchema, EMBED_TOTAL_MAX } from '../shared';
+import { buildSrcdoc, EMBED_TOTAL_MAX } from '../shared';
+import { codeEmbedSchema } from '../schema';
 
 describe('runnable embed srcdoc', () => {
   it('puts the CSP before any author content and allows no network', () => {

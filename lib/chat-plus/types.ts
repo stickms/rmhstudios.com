@@ -5,13 +5,15 @@
  * A "chat" is either a one-to-one DM conversation (`dm`) or a group chat
  * (`group`). They are separate models, so everything here is keyed by
  * `(kind, id)` and the server adapters in `access.server.ts` hide the difference.
+ *
+ * zod-free — the conversation view imports this. The chat-reference schemas
+ * are in `./types-schema`.
  */
 
-import { z } from 'zod';
+export type { ChatRef } from './types-schema';
 
 export const CHAT_KINDS = ['dm', 'group'] as const;
 export type ChatKind = (typeof CHAT_KINDS)[number];
-export const chatKindSchema = z.enum(CHAT_KINDS);
 
 /** `dm:<id>` | `group:<id>` — the same namespace `ConversationPref` uses. */
 export function scopeKeyOf(kind: ChatKind, id: string): string {
@@ -22,12 +24,6 @@ export function parseScopeKey(key: string): { kind: ChatKind; id: string } | nul
   const m = /^(dm|group):([A-Za-z0-9_-]{1,60})$/.exec(key);
   return m ? { kind: m[1] as ChatKind, id: m[2] } : null;
 }
-
-export const chatRefSchema = z.object({
-  kind: chatKindSchema,
-  id: z.string().min(1).max(60),
-});
-export type ChatRef = z.infer<typeof chatRefSchema>;
 
 /**
  * Message kinds. `text` is every message that existed before this feature;

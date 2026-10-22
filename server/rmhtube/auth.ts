@@ -8,6 +8,7 @@
 
 import { Pool } from 'pg';
 import { config } from './config';
+import { guardPool } from '../../lib/perf/process-guards';
 import type { Socket } from 'socket.io';
 import type { ExtendedError } from 'socket.io';
 
@@ -17,12 +18,17 @@ let pool: Pool | null = null;
 
 function getPool(): Pool {
   if (!pool) {
-    pool = new Pool({
-      connectionString: config.DATABASE_URL,
-      max: 10,
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 5_000,
-    });
+    // guardPool: an idle client dropped by a Postgres restart must not crash the hub.
+    pool = guardPool(
+      new Pool({
+        connectionString: config.DATABASE_URL,
+        // perf: one session lookup per connect, 4 is plenty; override with AUTH_DB_POOL_SIZE.
+        max: Number(process.env.AUTH_DB_POOL_SIZE) || 4,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 5_000,
+      }),
+      { service: 'rmhtube', pool: 'auth' },
+    );
   }
   return pool;
 }

@@ -17,7 +17,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import { CENSUS_MAX_QUESTIONS } from '@/lib/communities/census';
-import type { CensusDTO } from '@/lib/communities/plus-schema';
+import type { CensusDTO } from '@/lib/communities/plus';
 
 interface DraftQuestion {
   prompt: string;

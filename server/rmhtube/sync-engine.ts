@@ -434,7 +434,10 @@ export class SyncEngine {
 
         // The *effective* state: the timeline keeps advancing even when the
         // leader's tab is throttled and its reports have stopped arriving.
-        this.io.to(room.id).emit(S2C.SYNC_STATE, reanchor(room.videoState, now));
+        // perf: volatile — this is a pure resend of current state (same rev); a dropped
+        // one is replaced 2s later, and recovery must not retain it. State changes
+        // go through broadcastState and stay reliable.
+        this.io.to(room.id).volatile.emit(S2C.SYNC_STATE, reanchor(room.videoState, now));
       }
     }, config.SYNC_HEARTBEAT_INTERVAL_MS);
 

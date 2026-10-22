@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
+import { cached } from '@/lib/cached.server';
 import { getOnlinePresenceCount } from '@/lib/hot-counters.server';
 
 /**
@@ -15,15 +16,20 @@ export const Route = createFileRoute('/api/presence/online-count')({
     handlers: {
       GET: async () => {
         try {
-          const fromRedis = await getOnlinePresenceCount();
-          const count =
-            fromRedis ??
-            (await prisma.user.count({
-              where: {
-                lastSeenAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
-                isBot: false,
-              },
-            }));
+          // perf: SUNION over the presence buckets ran on every request; the count
+          // is explicitly approximate, so share one result for 15s per instance.
+          const count = await cached('presence:online-count', 15_000, async () => {
+            const fromRedis = await getOnlinePresenceCount();
+            return (
+              fromRedis ??
+              (await prisma.user.count({
+                where: {
+                  lastSeenAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
+                  isBot: false,
+                },
+              }))
+            );
+          });
           return Response.json({ count }, { headers: { 'Cache-Control': 'public, max-age=30' } });
         } catch (error) {
           console.error('Online count error:', error);

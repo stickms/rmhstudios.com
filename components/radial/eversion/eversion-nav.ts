@@ -1,17 +1,23 @@
 /**
- * Every page transition runs the Globe Eversion (amended 2026-10-21).
+ * Every page transition plays an eversion (amended 2026-10-21, twice).
  *
- * The owner: "not a single page transition should be without eversion". The hub's globe was the only way in; a
- * link, a card, a nav-rail item, a button that navigates or the browser's back button changed the page without it.
- * This is the one place every one of those passes through:
+ * The owner, first: "not a single page transition should be without eversion". Then: instead of the full-screen
+ * globe on every navigation, "play a button-sized animation on nav menu (still play the animation on the liquid
+ * globe opening anyways) that still plays as the page is changing", and "make the nav animations faster so there
+ * isn't some waiting". So there are two carriers, decided by {@link navigationCarry}:
  *
- * - **The router's history blocker.** Every `<Link>`, every `navigate()`, every back/forward goes through
- *   `router.history`, and a blocker sees each one before the router does. A navigation the effect should carry
- *   is held back there and handed to the effect, which REPLAYS it exactly as it was asked for once the frozen page
- *   is up (`NavigationReplay.go`: the same push with its history state, or the same traversal), past the blocker.
- *   So nothing about the navigation changes (history stack, state, scroll restoration), only how it looks.
- * - **Plain anchors.** An `<a href="/...">` no `<Link>` handles is a full page load, and a page load cannot
- *   evert; one that points at a page route is routed through the router instead (and so through the blocker).
+ * - **The hub's globe (`full`).** A navigation while the liquid-globe hub is open runs the full-screen effect from
+ *   the hub's own globe, as before: it is held at the router's history blocker and handed to the effect, which
+ *   REPLAYS it exactly as it was asked for once the frozen page is up (`NavigationReplay.go`: the same push with
+ *   its history state, or the same traversal), past the blocker. (The hub's own confirmed navigations never reach
+ *   the blocker; they push with `ignoreBlocker` and run the same effect.)
+ * - **The control that was pressed (`mini`).** Every other page transition goes through AT ONCE, untouched: the
+ *   blocker lets it pass, and the link or button it came from plays the button-sized eversion in place
+ *   (`mini-globe.ts`) while the new page renders. Nothing is held, so nothing waits. A back/forward has no control
+ *   and plays nothing.
+ *
+ * Plain anchors: an `<a href="/...">` no `<Link>` handles is a full page load, and a page load can play neither;
+ * one that points at a page route is routed through the router instead (and so through the blocker).
  *
  * What is NOT a page transition, and passes untouched: a replace (redirects, URL-synced filters and tabs), a change
  * of search or hash on the same page, any navigation while a run is already on screen (the destination's own
@@ -73,6 +79,27 @@ export function anchorToIntercept(event: MouseEvent, origin: string): HTMLAnchor
   return a;
 }
 
+/**
+ * The eversion level setting (amended 2026-10-21; the full definition is `EVERSION_LEVELS` in
+ * `lib/appearance/prefs.ts`, redeclared as a type here so this module stays import-free): `all` carries every
+ * page transition (the hub's globe from the hub, the pressed control's mini from anywhere else), `globe` only
+ * those confirmed through the liquid-globe hub.
+ */
+export type NavLevel = 'all' | 'globe';
+
+/** How a page transition is carried: the hub's full-screen run, the pressed control's mini, or not at all. */
+export type NavCarry = 'full' | 'mini' | 'none';
+
+/**
+ * Which carrier takes this navigation. With the hub open it is always the hub's globe (`full`), whatever the
+ * level. Off the hub: at `all` the pressed control's button-sized eversion (`mini`), never held; at `globe`
+ * nothing at all (not held, not delayed, nothing drawn).
+ */
+export function navigationCarry(level: NavLevel, hubOpen: boolean): NavCarry {
+  if (hubOpen) return 'full';
+  return level === 'all' ? 'mini' : 'none';
+}
+
 /** The slice of the router the interceptor needs. */
 export interface NavRouter {
   history: {
@@ -115,12 +142,21 @@ export interface NavigatorDeps {
   enabled(): boolean;
   /** A run (or a hub hand-off) is already on: let navigations through untouched. */
   busy(): boolean;
-  /** Carry `held` through the effect. Must end in `held.go()` one way or another. */
+  /** Carry `held` through the full-screen effect. Must end in `held.go()` one way or another. */
   evert(held: HeldNavigation): void;
+  /** Play the button-sized eversion on the control a navigation came from. It runs alongside; nothing waits. */
+  mini?(control: Element): void;
+  /** The eversion level, read on every navigation so a change in Settings applies to the next one. Default `all`. */
+  level?(): NavLevel;
+  /** The hub's menu is up. Only consulted at the `globe` level. Default false. */
+  hubOpen?(): boolean;
 }
 
 /** How recent a press has to be to count as where a navigation came from. */
 const ORIGIN_MS = 1500;
+
+/** What counts as "the control" a navigation was pressed on. */
+const CONTROL_SELECTOR = 'a[href], button, [role="link"], [role="button"], [role="menuitem"], [role="tab"]';
 
 /** Whether `pathname` renders inside the `_site` shell (the hub's layout). */
 export function inShell(router: Pick<NavRouter, 'getMatchedRoutes'>, pathname: string): boolean {
@@ -149,11 +185,12 @@ export function isPageRoute(
 /** Install the interceptor; returns the remover. */
 export function installNavigationEversion(deps: NavigatorDeps): () => void {
   const { router } = deps;
-  let press: { x: number; y: number; at: number } | null = null;
+  let press: { x: number; y: number; at: number; el: Element | null } | null = null;
   let key: { el: Element; at: number } | null = null;
 
   const onPointerDown = (e: PointerEvent) => {
-    press = { x: e.clientX, y: e.clientY, at: performance.now() };
+    const el = (e.target as Element | null)?.closest?.(CONTROL_SELECTOR) ?? null;
+    press = { x: e.clientX, y: e.clientY, at: performance.now(), el };
   };
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -170,6 +207,17 @@ export function installNavigationEversion(deps: NavigatorDeps): () => void {
     }
     return p ? { x: p.x, y: p.y } : null;
   };
+  /** The control the navigation came from: the focused one a key was pressed on, else the one pressed. */
+  const control = (): Element | null => {
+    const now = performance.now();
+    const k = key && now - key.at < ORIGIN_MS ? key : null;
+    const p = press && now - press.at < ORIGIN_MS ? press : null;
+    if (k && (!p || k.at > p.at)) return k.el.closest?.(CONTROL_SELECTOR) ?? null;
+    return p?.el ?? null;
+  };
+
+  // Read per navigation, never cached: switching the setting applies to the very next one, without a reload.
+  const carry = () => navigationCarry(deps.level?.() ?? 'all', deps.hubOpen?.() ?? false);
 
   const hold = (held: HeldNavigation) => {
     press = null;
@@ -181,7 +229,19 @@ export function installNavigationEversion(deps: NavigatorDeps): () => void {
     enableBeforeUnload: false,
     blockerFn: ({ currentLocation, nextLocation, action }) => {
       if (!isPageTransition(currentLocation, nextLocation, action)) return false;
+      // At the `globe` level this is the first thing checked after the pure shape test: nothing is held, queued or
+      // timed, so a navigation off the hub is exactly the router's own.
+      const how = carry();
+      if (how === 'none') return false;
       if (!deps.enabled() || deps.busy()) return false;
+      if (how === 'mini') {
+        // Never held: the navigation is the router's own, now. The control plays alongside it.
+        const el = action === 'PUSH' ? control() : null;
+        press = null;
+        key = null;
+        if (el) deps.mini?.(el);
+        return false;
+      }
       if (action === 'PUSH') {
         const at = origin();
         const state = nextLocation.state ?? undefined;
@@ -228,6 +288,7 @@ export function installNavigationEversion(deps: NavigatorDeps): () => void {
   });
 
   const onClick = (e: MouseEvent) => {
+    if (carry() === 'none') return;
     const a = anchorToIntercept(e, location.origin);
     if (!a) return;
     const url = new URL(a.href, location.origin);

@@ -25,6 +25,7 @@ import { useOs } from '../store';
 import { PopupMenu, type MenuItem } from '../Menu';
 import { Icon } from '../icons';
 import { sfx } from '../../sound';
+import './minesweeper.css';
 
 type Level = 'beginner' | 'intermediate' | 'expert' | 'custom';
 type StdLevel = Exclude<Level, 'custom'>;

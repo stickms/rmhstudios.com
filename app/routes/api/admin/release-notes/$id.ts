@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { releaseNotePatchSchema } from '@/lib/devplatform/release-notes';
+import { releaseNotePatchSchema } from '@/lib/devplatform/release-notes-schema';
 import { deleteNote, updateNote } from '@/lib/devplatform/release-notes.server';
 
 export const Route = createFileRoute('/api/admin/release-notes/$id')({

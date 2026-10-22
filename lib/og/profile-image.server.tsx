@@ -11,14 +11,13 @@
 
 import React from 'react';
 import satori from 'satori';
+import { dedupeOgRender, svgToPng } from './render.server';
 import {
   INK,
   MUTED,
   SCALE,
-  createCardCache,
   fetchAvatarDataUri,
   loadFonts,
-  rasterizeSvg,
   satoriFonts,
   stripEmoji,
   truncate as sharedTruncate,
@@ -40,7 +39,9 @@ function truncate(s: string, n: number): string {
   return sharedTruncate(stripEmoji(s), n);
 }
 
-const pngCache = createCardCache({ max: 100, ttlMs: 10 * 60 * 1000 });
+const pngCache = new Map<string, { png: Buffer; ts: number }>();
+const PNG_TTL = 10 * 60 * 1000;
+const PNG_MAX = 100;
 
 const PANE_PAD = 26 * SCALE;
 const AVATAR = 52 * SCALE;
@@ -61,16 +62,15 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-export function renderProfileOgImage(data: ProfileOgData): Promise<Buffer> {
+async function renderProfileOgImageUncached(data: ProfileOgData): Promise<Buffer> {
   // Bucket follower/post counts (per 10) so ordinary count churn doesn't bust
   // the rendered-PNG cache on every follow/post — the displayed figure is
   // K/M-abbreviated anyway, so small deltas don't change the card.
   const bucket = (n: number) => Math.floor((n ?? 0) / 10);
   const cacheKey = `${data.id}:${bucket(data.followerCount)}:${bucket(data.postCount)}`;
-  return pngCache.getOrRender(cacheKey, () => drawProfileOgImage(data));
-}
+  const cached = pngCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < PNG_TTL) return cached.png;
 
-async function drawProfileOgImage(data: ProfileOgData): Promise<Buffer> {
   await loadFonts();
 
   const avatar = await fetchAvatarDataUri(data.image);
@@ -150,5 +150,17 @@ async function drawProfileOgImage(data: ProfileOgData): Promise<Buffer> {
     ...LANDSCAPE,
     fonts: satoriFonts(),
   });
-  return rasterizeSvg(svg, LANDSCAPE.width);
+  const png = await svgToPng(svg, LANDSCAPE.width);
+
+  if (pngCache.size >= PNG_MAX) {
+    const oldest = pngCache.keys().next().value;
+    if (oldest !== undefined) pngCache.delete(oldest);
+  }
+  pngCache.set(cacheKey, { png, ts: Date.now() });
+  return png;
+}
+
+// perf: in-flight dedupe - concurrent requests for one card share a single render.
+export function renderProfileOgImage(data: ProfileOgData): Promise<Buffer> {
+  return dedupeOgRender(`profile:${data.id}:${Math.floor((data.followerCount ?? 0) / 10)}:${Math.floor((data.postCount ?? 0) / 10)}`, () => renderProfileOgImageUncached(data));
 }

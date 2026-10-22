@@ -3,8 +3,8 @@
  * (§16 of docs/plans/2026-07-20-parity-qol-customization-design.md).
  * Client-safe (settings UI + the dispatch gateway).
  */
-import { z } from 'zod';
 
+export type { NotifPrefsInput } from './categories-schema';
 export const NOTIFY_CATEGORIES = ['social', 'replies', 'follows', 'economy', 'events', 'system'] as const;
 export type NotifyCategory = (typeof NOTIFY_CATEGORIES)[number];
 
@@ -71,23 +71,6 @@ export function minutesInTz(date: Date, tz: string | null | undefined): number {
     return date.getUTCHours() * 60 + date.getUTCMinutes();
   }
 }
-
-const channelSchema = z.object({
-  inapp: z.boolean().optional(),
-  push: z.boolean().optional(),
-  email: z.boolean().optional(),
-});
-
-export const notifPrefsSchema = z.object({
-  // partialRecord: any subset of categories may be present, unknown keys rejected.
-  matrix: z.partialRecord(z.enum(NOTIFY_CATEGORIES), channelSchema).optional(),
-  quietStart: z.number().int().min(0).max(1439).nullable().optional(),
-  quietEnd: z.number().int().min(0).max(1439).nullable().optional(),
-  tz: z.string().max(40).nullable().optional(),
-  emailDigest: z.boolean().optional(),
-});
-
-export type NotifPrefsInput = z.infer<typeof notifPrefsSchema>;
 
 export const CATEGORY_LABELS: Record<NotifyCategory, string> = {
   social: 'Likes & reposts',

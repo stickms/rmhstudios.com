@@ -39,21 +39,35 @@ export interface LikeResult {
  * Set the like state of a post to `liked` for `userId`. Idempotent: a no-op when
  * already in the requested state. Returns the resulting like state + count.
  */
-export async function setPostLike(
+export function setPostLike(userId: string, postId: string, liked: boolean): Promise<LikeResult> {
+  return applyPostLike(userId, postId, liked);
+}
+
+/** `desired === 'toggle'` flips whatever the single read of the viewer's like row finds. */
+async function applyPostLike(
   userId: string,
   postId: string,
-  liked: boolean,
+  desired: boolean | 'toggle',
 ): Promise<LikeResult> {
   // The post row and the viewer's existing like are independent lookups — fetch
   // them together instead of serially on the highest-traffic write path.
   const [post, existing] = await Promise.all([
     prisma.rMHark.findUnique({
       where: { id: postId },
-      select: { userId: true, content: true, likeCount: true, user: { select: { handle: true } } },
+      select: {
+        userId: true,
+        content: true,
+        likeCount: true,
+        audience: true,
+        communityId: true,
+        deletedAt: true,
+        user: { select: { handle: true } },
+      },
     }),
     prisma.rMHarkLike.findUnique({ where: { rmheetId_userId: { rmheetId: postId, userId } } }),
   ]);
   if (!post) return { ok: false, found: false, liked: false, likeCount: 0 };
+  const liked = desired === 'toggle' ? !existing : desired;
 
   // Already in the requested state — no-op.
   if (liked && existing) return { ok: true, found: true, liked: true, likeCount: post.likeCount };
@@ -61,6 +75,11 @@ export async function setPostLike(
     return { ok: true, found: true, liked: false, likeCount: post.likeCount };
 
   if (liked) {
+    // Liking needs a readable post (unliking, below, stays allowed so an old like can
+    // always be removed). 404, same as a missing post.
+    if (!(await canReadThread(post, userId))) {
+      return { ok: false, found: false, liked: false, likeCount: 0 };
+    }
     const [, updated] = await prisma.$transaction([
       prisma.rMHarkLike.create({ data: { rmheetId: postId, userId } }),
       prisma.rMHark.update({
@@ -128,11 +147,9 @@ export async function setPostLike(
 
 /** Toggle a like (used by the in-app web route). */
 export async function togglePostLike(userId: string, postId: string): Promise<LikeResult> {
-  const existing = await prisma.rMHarkLike.findUnique({
-    where: { rmheetId_userId: { rmheetId: postId, userId } },
-    select: { id: true },
-  });
-  return setPostLike(userId, postId, !existing);
+  // perf: this used to read the like row here and then again inside setPostLike;
+  // the toggle now resolves its direction from setPostLike's own (single) read.
+  return applyPostLike(userId, postId, 'toggle');
 }
 
 // ─── Comments ──────────────────────────────────────────────────────────────
@@ -301,8 +318,14 @@ export async function setBookmark(
   if (!bookmarked && !existing) return { ok: true, found: true, bookmarked: false };
 
   if (bookmarked) {
-    const post = await prisma.rMHark.findUnique({ where: { id: postId }, select: { id: true } });
-    if (!post) return { ok: false, found: false, bookmarked: false };
+    const post = await prisma.rMHark.findUnique({
+      where: { id: postId },
+      select: { userId: true, audience: true, communityId: true, deletedAt: true },
+    });
+    // Saving needs a readable post; removing a bookmark (below) stays allowed.
+    if (!post || !(await canReadThread(post, userId))) {
+      return { ok: false, found: false, bookmarked: false };
+    }
     // Not `addSave`: that upsert would move an already-saved post out of the
     // folder its owner filed it in. A bookmark press must never re-file.
     await prisma.savedItem.create({

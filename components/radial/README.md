@@ -387,7 +387,15 @@ with the task plan beside it. The components here are in `eversion/`
   azimuthal, equirectangular) with **Random as the default** (it never repeats the
   previous projection) plus a Preview button. After the flip, confirm the row is
   visible, defaults to Random, persists and previews (tasks T39 acceptance).
-- **"Always evert globe".** A switch next to the transition picker
+- **"Globe eversion" (the eversion level, 2026-10-21).** A select under "Navigation transition"
+  (`EversionLevelRow`; same flag and Reduce-motion rules): **Every navigation** (default) or **Only the liquid
+  globe**. At the second, `eversion-nav.ts` lets every navigation that does not start from the hub through untouched
+  (no hold, no pop-up globe, no added latency; plain `<a>`s are left to the browser) and only hub-confirmed
+  navigations (hold-release, pin click, Enter, anything asked for while the hub is open) run the effect. The level
+  is read per navigation, so switching it needs no reload. Page navigations only: the per-control press animation is
+  separate. Stored as `eversionLevel` (account column + `rmh-eversion-level` cache; absent = `all`). Spec amendment
+  2026-10-21 (f).
+- **"Always evert globe" (removed from Settings 2026-10-21).** A switch next to the transition picker
   (`AlwaysEvertRow` in `AppearancePanel.tsx`; hidden while the flag is off, disabled
   with a hint while reduced motion is on) that forces the effect on devices where it
   is normally skipped to keep navigation fast: a host still starting, a BEFORE

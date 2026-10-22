@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { patchRecipeSchema } from '@/lib/devplatform/recipes';
+import { patchRecipeSchema } from '@/lib/devplatform/recipes-schema';
 import { deleteRecipe, setRecipeEnabled } from '@/lib/devplatform/recipes.server';
 
 /** PATCH /api/recipes/:id pauses/resumes a recipe; DELETE removes it. */

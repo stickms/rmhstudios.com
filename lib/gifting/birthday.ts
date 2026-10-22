@@ -2,14 +2,8 @@
  * Birthdays (G1) — pure and client-safe. Month/day only, always UTC, so the
  * daily job, the profile badge and the scheduled-gift shortcut agree on "today".
  */
-import { z } from 'zod';
 
-export const birthdaySchema = z
-  .object({ month: z.number().int().min(1).max(12), day: z.number().int().min(1).max(31) })
-  .refine(({ month, day }) => isValidMonthDay(month, day), { message: 'Not a real date' });
-
-export type BirthdayInput = z.infer<typeof birthdaySchema>;
-
+export type { BirthdayInput } from './birthday-schema';
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 export function isValidMonthDay(month: number, day: number): boolean {

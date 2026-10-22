@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { HANDLE_REGEX } from "@/lib/handle";
-import { httpUrl } from "@/lib/url-safety";
+import { httpUrl } from "@/lib/url-schema";
+import { MAX_PROFILE_LINKS } from "@/lib/profile-limits";
+
+export { MAX_PROFILE_LINKS };
 
 export const dmPrivacyValues = ["EVERYONE", "FOLLOWERS", "NONE"] as const;
-
-export const MAX_PROFILE_LINKS = 5;
 
 // A single link-in-bio entry. Labels are short; URLs must be http(s).
 export const profileLinkSchema = z.object({

@@ -73,7 +73,7 @@ export async function listSavingsGoals(
     prisma.userProfile.findUnique({ where: { userId }, select: { coins: true } }),
     getNetHistory(userId, now),
   ]);
-  const balance = profile?.coins ?? 0;
+  const balance = Number(profile?.coins ?? 0);
   const today = Math.floor(now.getTime() / DAY_MS);
 
   const views: SavingsGoalView[] = goals.map((g) => {

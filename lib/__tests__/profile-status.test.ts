@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   resolveStatus,
   statusExpiresAt,
-  statusUpdateSchema,
   STATUS_MAX_TEXT,
 } from '@/lib/profile/status';
+import { statusUpdateSchema } from '@/lib/profile/status-schema';
 
 describe('resolveStatus', () => {
   const now = Date.parse('2026-07-20T12:00:00Z');

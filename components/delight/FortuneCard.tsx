@@ -8,7 +8,7 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { fetchJson } from '@/lib/http';
-import { FORTUNE_MAX } from '@/lib/delight/schema';
+import { FORTUNE_MAX } from '@/lib/delight/shared';
 
 /** Z4 — today's community fortune, with a one-line submission form (moderated before it runs). */
 export default function FortuneCard() {

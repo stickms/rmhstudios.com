@@ -43,7 +43,6 @@ const FORMERLY_DEAD_SESSION = [
   '/api/canvas/state',
   '/api/slice-it/replay',
   '/api/slice-it/replay/$id',
-  '/api/community-pages/$id/revisions',
   '/api/handles/history',
 ];
 

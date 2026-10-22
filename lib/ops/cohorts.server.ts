@@ -12,25 +12,38 @@ export async function computeCohortRetention(): Promise<number> {
   start.setUTCHours(0, 0, 0, 0);
   start.setUTCDate(start.getUTCDate() - COHORT_WEEKS * 7);
 
-  const sizes = await prisma.$queryRaw<{ cw: Date; size: bigint }[]>`
-    SELECT date_trunc('week', "createdAt")::date AS cw, count(*) AS size
-    FROM "user"
-    WHERE "createdAt" >= ${start} AND "isBot" = false
-    GROUP BY 1`;
-  const active = await prisma.$queryRaw<{ cw: Date; wk: number; n: bigint }[]>`
-    WITH u AS (
-      SELECT id, date_trunc('week', "createdAt") AS cw FROM "user"
+  // The `active` rollup joins `activity` + `session` for the whole cohort window
+  // and can legitimately outrun the web tier's DATABASE_STATEMENT_TIMEOUT_MS
+  // (this is reachable from the admin "recompute" route). Lift the cap for these
+  // two read-only statements only; the interactive transaction needs an explicit
+  // timeout too, because Prisma's default is 5s.
+  const { sizes, active } = await prisma.$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SET LOCAL statement_timeout = 120000`;
+      const sizes = await tx.$queryRaw<{ cw: Date; size: bigint }[]>`
+      SELECT date_trunc('week', "createdAt")::date AS cw, count(*) AS size
+      FROM "user"
       WHERE "createdAt" >= ${start} AND "isBot" = false
-    ), act AS (
-      SELECT "userId", "at" AS ts FROM "activity" WHERE "at" >= ${start}
-      UNION ALL
-      SELECT "userId", "createdAt" AS ts FROM "session" WHERE "createdAt" >= ${start}
-    )
-    SELECT u.cw::date AS cw,
-           floor(extract(epoch FROM (date_trunc('week', act.ts) - u.cw)) / 604800)::int AS wk,
-           count(DISTINCT u.id) AS n
-    FROM u JOIN act ON act."userId" = u.id AND act.ts >= u.cw
-    GROUP BY 1, 2`;
+      GROUP BY 1`;
+      const active = await tx.$queryRaw<{ cw: Date; wk: number; n: bigint }[]>`
+      WITH u AS (
+        SELECT id, date_trunc('week', "createdAt") AS cw FROM "user"
+        WHERE "createdAt" >= ${start} AND "isBot" = false
+      ), act AS (
+        SELECT "userId", "at" AS ts FROM "activity" WHERE "at" >= ${start}
+        UNION ALL
+        SELECT "userId", "createdAt" AS ts FROM "session" WHERE "createdAt" >= ${start}
+      )
+      SELECT u.cw::date AS cw,
+             floor(extract(epoch FROM (date_trunc('week', act.ts) - u.cw)) / 604800)::int AS wk,
+             count(DISTINCT u.id) AS n
+      FROM u JOIN act ON act."userId" = u.id AND act.ts >= u.cw
+      GROUP BY 1, 2`;
+
+      return { sizes, active };
+    },
+    { timeout: 130_000, maxWait: 10_000 },
+  );
 
   const activeMap = new Map(active.map((a) => [`${a.cw.toISOString()}:${a.wk}`, Number(a.n)]));
   const nowWeek = Date.now();

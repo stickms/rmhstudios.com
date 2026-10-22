@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
+import { isFrameCapped } from '@/lib/render/frame-cap';
 import { budgetMsFor, DEFAULT_WINDOW, FrametimeMonitor, shouldDownscale, targetFpsForRefresh } from '@/lib/render/governor';
 import { displayRefreshHz } from '@/lib/render/refresh-rate';
 
@@ -30,8 +31,16 @@ const FPS_PUBLISH_EVERY = 20;
 export default function AdaptiveQuality({ onDownscale, targetFps, onFps }: Props) {
     const monitor = useMemo(() => new FrametimeMonitor(DEFAULT_WINDOW), []);
     const frames = useRef(0);
+    const gl = useThree((s) => s.gl);
 
     useFrame((_, deltaRaw) => {
+        // A deliberate cap (a menu over the scene, `FrameCap`) is not a slow
+        // GPU. Measuring through it would step quality down every time a menu
+        // opened, so drop the window and re-sample once the cap lifts.
+        if (isFrameCapped(gl)) {
+            monitor.reset();
+            return;
+        }
         // Clamp tab-stalls and asset-decode hitches so one 3s freeze doesn't
         // drag the average down and trigger a spurious downscale.
         monitor.push(Math.min(100, deltaRaw * 1000));

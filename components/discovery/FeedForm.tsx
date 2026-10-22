@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { MAX_FEED_KEYWORDS, MAX_FEED_PEOPLE, MAX_FEED_TAGS } from '@/lib/discovery/schema';
+import { MAX_FEED_KEYWORDS, MAX_FEED_PEOPLE, MAX_FEED_TAGS } from '@/lib/discovery/limits';
 
 export interface FeedFormValue {
   name: string;

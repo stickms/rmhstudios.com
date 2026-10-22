@@ -76,6 +76,7 @@ export const Route = createFileRoute('/api/embed/oembed')({
                 deletedAt: true,
                 audience: true,
                 unlockPrice: true,
+                community: { select: { isPrivate: true } },
                 user: { select: userDisplaySelect },
               },
             });
@@ -85,6 +86,7 @@ export const Route = createFileRoute('/api/embed/oembed')({
               !post ||
               post.deletedAt ||
               post.audience !== 'PUBLIC' ||
+              post.community?.isPrivate ||
               (post.unlockPrice ?? 0) > 0
             ) {
               return Response.json({ error: 'Post not embeddable' }, { status: 404 });

@@ -1,5 +1,5 @@
 /**
- * `apiCache.invalidate*` reaches every process, and `apiCache` is an LRU.
+ * `apiCache.invalidate*` reaches every process.
  *
  * Production runs two Nitro workers (and a second container during a blue/green
  * swap). `apiCache` is per-process, and ~25 call sites invalidate it directly
@@ -48,7 +48,6 @@ beforeEach(() => {
   bus.enabled = true;
   bus.handlers.clear();
   bus.published.length = 0;
-  delete process.env.API_CACHE_MAX_ENTRIES;
 });
 afterEach(() => vi.resetModules());
 
@@ -115,48 +114,42 @@ describe('apiCache invalidation bridge', () => {
   });
 });
 
-describe('apiCache is an LRU with a bounded, overridable size', () => {
-  it('evicts the least recently used entry, not the oldest inserted', async () => {
-    const { ApiCache } = await boot();
-    const c = new ApiCache(3);
-    c.set('a', 1, 60_000);
-    c.set('b', 2, 60_000);
-    c.set('c', 3, 60_000);
-    c.get('a'); // a is now the most recently used; b is the LRU
-    c.set('d', 4, 60_000);
-    expect(c.get('b')).toBeUndefined();
-    expect([c.get('a'), c.get('c'), c.get('d')]).toEqual([1, 3, 4]);
-    expect(c.size).toBe(3);
+describe('apiCache invalidation covers the per-viewer feed cache too', () => {
+  it('a remote prefix invalidation clears feed:v2: keys held in the viewer-feed cache', async () => {
+    const a = await boot();
+    const b = await boot();
+    for (const c of [a, b]) {
+      c.apiCache.set('feed:v2:u1:home', 1, 60_000);
+      c.apiCache.set('feed:v2:u2:home', 1, 60_000);
+      c.apiCache.set('feed-other', 1, 60_000);
+    }
+    a.apiCache.invalidatePrefix('feed:v2:');
+    expect(b.apiCache.get('feed:v2:u1:home')).toBeUndefined();
+    expect(b.apiCache.get('feed:v2:u2:home')).toBeUndefined();
+    expect(b.apiCache.get('feed-other')).toBe(1);
+    expect(bus.published).toHaveLength(1);
   });
 
-  it('overwriting a key never evicts another', async () => {
-    const { ApiCache } = await boot();
-    const c = new ApiCache(2);
-    c.set('a', 1, 60_000);
-    c.set('b', 2, 60_000);
-    c.set('a', 3, 60_000);
-    expect([c.get('a'), c.get('b')]).toEqual([3, 2]);
+  it('a remote key invalidation reaches a viewer-feed key', async () => {
+    const a = await boot();
+    const b = await boot();
+    b.apiCache.set('feed:v2:u1:home', 1, 60_000);
+    a.apiCache.invalidate('feed:v2:u1:home');
+    expect(b.apiCache.get('feed:v2:u1:home')).toBeUndefined();
   });
+});
 
-  it('hot shared keys survive a flood of per-user keys (the FIFO failure)', async () => {
+// LRU order, overwrite, byte budget and heap sizing are covered by lib/__tests__/cache.test.ts.
+describe('hot shared keys survive a flood of per-user keys (the FIFO failure)', () => {
+  it('keeps a key that is read on every request', async () => {
     const { ApiCache } = await boot();
-    const c = new ApiCache(100);
+    const c = new ApiCache({ maxEntries: 100 });
     c.set('config', 'x', 60_000);
     for (let i = 0; i < 1000; i++) {
       c.set(`user:${i}`, i, 60_000);
-      c.get('config'); // read on every request
+      c.get('config');
     }
     expect(c.get('config')).toBe('x');
     expect(c.size).toBe(100);
-  });
-
-  it('default is 5000, env-overridable and clamped', async () => {
-    expect((await boot()).apiCache.capacity).toBe(5000);
-    process.env.API_CACHE_MAX_ENTRIES = '12000';
-    expect((await boot()).apiCache.capacity).toBe(12000);
-    process.env.API_CACHE_MAX_ENTRIES = '5';
-    expect((await boot()).apiCache.capacity).toBe(100);
-    process.env.API_CACHE_MAX_ENTRIES = 'junk';
-    expect((await boot()).apiCache.capacity).toBe(5000);
   });
 });

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { releaseNoteSchema } from '@/lib/devplatform/release-notes';
+import { releaseNoteSchema } from '@/lib/devplatform/release-notes-schema';
 import { createNote, listAllNotes } from '@/lib/devplatform/release-notes.server';
 
 /** GET lists every note (drafts included); POST saves one (publish: true to go live). */

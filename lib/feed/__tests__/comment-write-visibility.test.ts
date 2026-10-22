@@ -92,7 +92,7 @@ vi.mock('@/lib/prisma.server', () => {
       create: write('react.create'),
       delete: write('react.delete'),
     },
-    rMHarkCommentView: { upsert: write('view.upsert') },
+    rMHarkCommentView: { createMany: write('view.createMany') },
     rMHarkLike: { findMany: async () => [] },
     rMHarkRepost: { findMany: async () => [] },
     follow: { findUnique: async () => null },
@@ -122,7 +122,7 @@ const call = (route: unknown, method: 'GET' | 'POST', params: Record<string, str
   ]({
     request: new Request('https://x.test/x', {
       method,
-      headers: { 'cf-connecting-ip': '1.1.1.1', 'content-type': 'application/json' },
+      headers: { 'cf-connecting-ip': '1.1.1.1', cookie: 'better-auth.session_token=t', 'content-type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
     }),
     params,
@@ -140,7 +140,7 @@ const hiddenPosts: [string, PostRow | null][] = [
 const adds: [string, () => Promise<Response>, string][] = [
   ['comment like', () => call(LikeRoute, 'POST', { id: 'p1', commentId: 'c1' }), 'like.create'],
   ['comment repost', () => call(RepostRoute, 'POST', { id: 'p1', commentId: 'c1' }), 'repost.create'],
-  ['comment view', () => call(ViewRoute, 'POST', { id: 'p1', commentId: 'c1' }), 'view.upsert'],
+  ['comment view', () => call(ViewRoute, 'POST', { id: 'p1', commentId: 'c1' }), 'view.createMany'],
   ['comment react', () => call(ReactRoute, 'POST', { commentId: 'c1' }, { emoji: '👍' }), 'react.create'],
 ];
 

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { giveAwardSchema, AWARD_ENTITY_TYPES, type AwardEntityType } from '@/lib/awards/catalog';
+import { AWARD_ENTITY_TYPES, type AwardEntityType } from '@/lib/awards/catalog';
+import { giveAwardSchema } from '@/lib/awards/catalog-schema';
 import { giveAward, listAwards, AwardError } from '@/lib/awards/awards.server';
 
 /**

@@ -25,6 +25,8 @@ import { DistrictMap } from './ui/DistrictMap';
 import Lighting from './models/Lighting';
 import { useRenderQuality } from '@/lib/render/useRenderQuality';
 import AdaptiveQuality from '@/components/render/AdaptiveQuality';
+import FrameCap from '@/components/render/FrameCap';
+import { MENU_BACKDROP_FPS } from '@/lib/render/frame-cap';
 
 // Throttled district detector — reads playerPosition every 10 frames and calls setCurrentDistrict
 // only when the district changes, to avoid per-frame store writes.
@@ -58,10 +60,13 @@ function WorldTicker() {
 }
 
 export function CookGameGame() {
-  // NOTE: no `frameloop` gating here, unlike forest-explorer. WorldTicker drives
-  // the in-game clock (and passive income) from useFrame, so pausing the render
-  // loop while an overlay is open would also pause world time.
+  // Capped, never paused, while an overlay is up. WorldTicker drives the
+  // in-game clock (and passive income) from useFrame, so stopping the loop
+  // would stop world time; a capped loop keeps it running at real speed (its
+  // deltas are real time) while the town behind the 60% scrim draws at
+  // MENU_BACKDROP_FPS instead of the panel's rate.
   const { quality, dpr, downscale } = useRenderQuality();
+  const overlayOpen = useCookgameStore((s) => s.activeOverlay !== null);
 
   // The save can be in two places now — this browser and the account — so the
   // load waits on the hook rather than reading storage itself. `ready` does not
@@ -159,10 +164,12 @@ export function CookGameGame() {
       <Canvas
         shadows={quality.shadows}
         dpr={dpr}
+        frameloop="demand"
         gl={{ antialias: quality.antialias, powerPreference: 'high-performance' }}
         camera={{ position: [0, 7, 17], fov: 55 }}
         className="w-full h-full"
       >
+        <FrameCap fps={overlayOpen ? MENU_BACKDROP_FPS : null} />
         <AdaptiveQuality onDownscale={downscale} />
         <Lighting />
         {/* The scene's own boundary. `<Physics>` suspends while rapier's WASM

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { handleSchema } from '@/lib/handle';
+import { handleSchema } from '@/lib/handle-schema';
 
 export const Route = createFileRoute('/api/handle/check')({
   server: {

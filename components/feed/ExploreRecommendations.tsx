@@ -18,6 +18,7 @@ import { WhyTrending } from'@/components/discovery/WhyTrending';
 import { listCuratedBuilds } from'@/lib/builds/curated';
 import { RevealGroup, RevealItem } from'@/components/motion';
 import { Spinner } from'@/components/ui/spinner';
+import { DeferOnNavigate } from'@/components/ui/defer-on-navigate';
 import { EmptyState } from'@/components/ui/empty-state';
 import { UserAvatar } from'@/components/ui/UserAvatar';
 import { OptimizedImage } from'@/components/ui/OptimizedImage';
@@ -250,6 +251,14 @@ export function ExploreRecommendations({
  </RevealItem>
  )}
 
+ {/* Everything from here down is below the fold on Top, which shows trending
+ and who-to-follow first. On a page switch it is built after the top of the
+ page has painted, in a transition React time-slices — its fifteen hot-post
+ cards were most of the switch's one long task (docs/performance-audit-2026-10-21.md
+ §Navigation commit). Only on Top: on Posts and People these sections ARE the
+ top of the page, and `enabled` is read once at mount, so a later tab change
+ never hides anything. */}
+ <DeferOnNavigate enabled={tab ==='top'} minHeight="100vh">
  {/* Top supported creators — a people section, so it follows the same tab
  gate as "who to follow" rather than being a fourth thing on Top only. */}
  {showPeople && tipLeaders.length > 0 && (
@@ -464,6 +473,7 @@ export function ExploreRecommendations({
  </div>
  </RevealItem>
  )}
+ </DeferOnNavigate>
 
  {/* Posts and People are the two tabs whose sections are bare `&&` guards —
  Builds, Blog and Library each carry their own `? :` empty branch. So when

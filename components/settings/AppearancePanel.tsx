@@ -22,8 +22,11 @@ import {
   type FontScale,
   type ColorVisionMode,
   type NavTransition,
+  type EversionLevel,
   NAV_TRANSITIONS,
+  EVERSION_LEVELS,
   isNavTransition,
+  isEversionLevel,
 } from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
@@ -78,6 +81,10 @@ export function AppearancePanel() {
   function setNavTransition(value: NavTransition) {
     store.setNavTransition(value);
     void persist({ navTransition: value });
+  }
+  function setEversionLevel(value: EversionLevel) {
+    store.setEversionLevel(value);
+    void persist({ eversionLevel: value });
   }
   function applyCustomAccent(hex: string) {
     if (!HEX_RE.test(hex)) return;
@@ -268,6 +275,7 @@ export function AppearancePanel() {
           onChange={setReduceMotion}
         />
         <NavTransitionRow value={store.navTransition} onChange={setNavTransition} />
+        <EversionLevelRow value={store.eversionLevel} onChange={setEversionLevel} />
         {/* Tilt effects (§5.5x C.3): only renders on platforms that gate device
             orientation behind a permission prompt (iOS). Self-contained consent. */}
         <TiltEffectsRow />
@@ -460,6 +468,75 @@ function NavTransitionRow({
           {t('nav-transition-preview', { defaultValue: 'Preview' })}
         </Button>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * "Globe eversion" (amended 2026-10-21): how many page transitions play the eversion. Every navigation (default)
+ * or only the ones confirmed through the liquid-globe hub. It is about page navigations only: the per-control
+ * "evert every button and input" state animation is a separate effect this does not touch. Hidden with the
+ * rollout flag, and off under the site's Reduce motion switch, like the row above.
+ */
+function EversionLevelRow({
+  value,
+  onChange,
+}: {
+  value: EversionLevel;
+  onChange: (v: EversionLevel) => void;
+}) {
+  const { t } = useTranslation('settings-appearance');
+  const reduced = useThemeStore((s) => s.reduceMotion);
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => setEnabled(isEversionEnabled()), []);
+
+  const names: Record<EversionLevel, string> = {
+    all: t('eversion-level-all', { defaultValue: 'Every navigation' }),
+    globe: t('eversion-level-globe', { defaultValue: 'Only the liquid globe' }),
+  };
+  const descriptions: Record<EversionLevel, string> = {
+    all: t('eversion-level-all-desc-mini', {
+      defaultValue:
+        'Pages opened from the liquid globe play the full eversion. Any other link or button turns into a small globe right where you tapped, while the page changes without waiting.',
+    }),
+    globe: t('eversion-level-globe-desc', {
+      defaultValue:
+        'Only pages you open from the liquid globe menu play the eversion. Everything else changes pages as usual. The per-control press animation is separate and not affected.',
+    }),
+  };
+
+  if (!enabled) return null;
+
+  return (
+    <div className="py-2.5">
+      <div className="flex items-center justify-between gap-4">
+        <Label htmlFor="eversion-level" className="min-w-0 text-sm text-site-text">
+          {t('eversion-level', { defaultValue: 'Globe eversion' })}
+        </Label>
+        <Select
+          id="eversion-level"
+          containerClassName="w-48 shrink-0"
+          value={value}
+          disabled={reduced}
+          aria-describedby="eversion-level-hint"
+          onChange={(e) => {
+            if (isEversionLevel(e.target.value)) onChange(e.target.value);
+          }}
+        >
+          {EVERSION_LEVELS.map((id) => (
+            <option key={id} value={id}>
+              {names[id]}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <p id="eversion-level-hint" className="mt-1 text-xs text-site-text-muted">
+        {reduced
+          ? t('eversion-level-reduced-off', {
+              defaultValue: 'Reduced motion is on, so pages change as usual.',
+            })
+          : descriptions[value]}
+      </p>
     </div>
   );
 }

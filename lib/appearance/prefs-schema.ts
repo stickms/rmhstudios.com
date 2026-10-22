@@ -9,7 +9,13 @@
  * `./prefs` before moving anything back.
  */
 import { z } from 'zod';
-import { DENSITIES, COLOR_VISION_MODES, NAV_TRANSITIONS, HEX_RE } from '@/lib/appearance/prefs';
+import {
+  DENSITIES,
+  COLOR_VISION_MODES,
+  NAV_TRANSITIONS,
+  EVERSION_LEVELS,
+  HEX_RE,
+} from '@/lib/appearance/prefs';
 
 export const appearanceComfortSchema = z.object({
   fontScale: z
@@ -24,6 +30,7 @@ export const appearanceComfortSchema = z.object({
   colorVision: z.enum(COLOR_VISION_MODES).nullable().optional(),
   navTransition: z.enum(NAV_TRANSITIONS).nullable().optional(),
   alwaysEvertGlobe: z.boolean().optional(),
+  eversionLevel: z.enum(EVERSION_LEVELS).nullable().optional(),
 });
 
 export type AppearanceComfortInput = z.infer<typeof appearanceComfortSchema>;

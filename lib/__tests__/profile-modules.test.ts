@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseLayout, moduleSchema, layoutSchema, MAX_MODULES } from '@/lib/profile/modules';
+import { MAX_MODULES } from '@/lib/profile/modules';
+import { parseLayout, moduleSchema, layoutSchema } from '@/lib/profile/modules-schema';
 
 describe('moduleSchema', () => {
   it('validates known kinds', () => {

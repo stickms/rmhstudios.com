@@ -4,6 +4,7 @@
  * and tombstones for gone/hidden targets.
  */
 import { prisma } from '@/lib/prisma.server';
+import { canReadPostThread, viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import {
   MAX_FOLDERS,
   type SaveEntityType,
@@ -15,6 +16,10 @@ export async function addSave(
   userId: string,
   input: { entityType: SaveEntityType; entityId: string; folderId?: string | null },
 ): Promise<void> {
+  // Saving a post needs a readable post (removing a save stays allowed).
+  if (input.entityType === 'rmhark' && !(await canReadPostThread(input.entityId, userId))) {
+    throw new Error('not-found');
+  }
   // If a folder is named, it must belong to the caller.
   if (input.folderId) {
     const owned = await prisma.saveFolder.findFirst({
@@ -175,7 +180,9 @@ export async function hydrateSaves(
   >();
   if (byType.has('rmhark')) {
     const posts = await prisma.rMHark.findMany({
-      where: { id: { in: byType.get('rmhark')! } },
+      // Visibility in the query (deleted, audience, hidden author, private community):
+      // a post the viewer can no longer read comes back as a tombstone.
+      where: { id: { in: byType.get('rmhark')! }, ...(await viewerVisiblePostWhere(viewerId)) },
       select: { id: true, content: true, audience: true, userId: true, user: { select: { handle: true } } },
     });
     for (const p of posts) {
@@ -220,7 +227,7 @@ export async function hydrateSaves(
     };
     if (r.entityType === 'rmhark') {
       const p = postMap.get(r.entityId);
-      if (!p || (p.audience !== 'PUBLIC' && p.userId !== viewerId)) {
+      if (!p) {
         return { ...base, title: '', subtitle: null, href: null, thumbnail: null, tombstone: true };
       }
       const text = p.content.trim().replace(/\s+/g, ' ');

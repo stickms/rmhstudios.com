@@ -8,6 +8,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { invalidateNotificationPrefs } from '@/lib/notifications.server';
 import { CALL_PRIVACY_VALUES, isCallPrivacy } from '@/lib/call/state';
 
 export const Route = createFileRoute('/api/calls/privacy')({
@@ -34,6 +35,7 @@ export const Route = createFileRoute('/api/calls/privacy')({
             create: { userId, callPrivacy: body.callPrivacy },
             update: { callPrivacy: body.callPrivacy },
           });
+          invalidateNotificationPrefs(userId);
           return Response.json({ callPrivacy: body.callPrivacy });
         },
       ),

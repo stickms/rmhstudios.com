@@ -23,13 +23,16 @@ go_library(
 go_test(
     name = "doctrine_test",
     srcs = [
+        "decay_test.go",
         "run_test.go",
         "seed_test.go",
+        "timezones_test.go",
     ],
     embed = [":doctrine"],
     deps = [
         "//go-services/pkg/log",
         "//go-services/pkg/telemetry",
         "//go-services/pkg/worker",
+        "@com_github_jackc_pgx_v5//:pgx",
     ],
 )

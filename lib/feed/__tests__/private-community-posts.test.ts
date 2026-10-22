@@ -119,7 +119,7 @@ describe('by id and comments (routes)', () => {
   type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
   const get = (route: unknown) =>
     (route as { options: { server: { handlers: { GET: Handler } } } }).options.server.handlers.GET({
-      request: new Request('https://x.test/x', { headers: { 'cf-connecting-ip': '1.1.1.1' } }),
+      request: new Request('https://x.test/x', { headers: { 'cf-connecting-ip': '1.1.1.1', cookie: 'better-auth.session_token=t' } }),
       params: { id: 'p1' },
     });
 

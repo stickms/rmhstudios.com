@@ -12,15 +12,14 @@
 
 import React from 'react';
 import satori from 'satori';
+import { dedupeOgRender, svgToPng } from './render.server';
 import {
   DIM,
   INK,
   MUTED,
   SCALE,
-  createCardCache,
   fetchAvatarDataUri,
   loadFonts,
-  rasterizeSvg,
   satoriFonts,
   stripEmoji,
   truncate as sharedTruncate,
@@ -38,7 +37,9 @@ import { qrSvgDataUri } from '@/lib/profile/qr';
 
 const truncate = (s: string, n: number) => sharedTruncate(stripEmoji(s), n);
 
-const cache = createCardCache({ max: 60, ttlMs: 10 * 60 * 1000 });
+const cache = new Map<string, { png: Buffer; ts: number }>();
+const TTL = 10 * 60 * 1000;
+const MAX = 60;
 
 const PANE_PAD = 26 * SCALE;
 const AVATAR = 64 * SCALE;
@@ -55,12 +56,11 @@ export interface ProfileCardData {
   url: string;
 }
 
-export function renderProfileCard(data: ProfileCardData): Promise<Buffer> {
+async function renderProfileCardUncached(data: ProfileCardData): Promise<Buffer> {
   const key = `${data.id}|${data.url}|${data.name}|${data.bio ?? ''}|${data.image ?? ''}`;
-  return cache.getOrRender(key, () => drawProfileCard(data));
-}
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.ts < TTL) return hit.png;
 
-async function drawProfileCard(data: ProfileCardData): Promise<Buffer> {
   await loadFonts();
   const avatar = await fetchAvatarDataUri(data.image);
   const name = truncate(data.name || data.handle || 'RMH Studios', 28);
@@ -163,5 +163,17 @@ async function drawProfileCard(data: ProfileCardData): Promise<Buffer> {
   });
 
   const svg = await satori(element, { ...LANDSCAPE, fonts: satoriFonts() });
-  return rasterizeSvg(svg, LANDSCAPE.width);
+  const png = await svgToPng(svg, LANDSCAPE.width);
+
+  if (cache.size >= MAX) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
+  cache.set(key, { png, ts: Date.now() });
+  return png;
+}
+
+// perf: in-flight dedupe - concurrent requests for one card share a single render.
+export function renderProfileCard(data: ProfileCardData): Promise<Buffer> {
+  return dedupeOgRender(`${data.id}|${data.url}|${data.name}|${data.bio ?? ''}|${data.image ?? ''}`, () => renderProfileCardUncached(data));
 }

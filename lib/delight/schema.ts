@@ -1,24 +1,16 @@
-/** Shared types + zod for the delight package (Z2, Z3, Z4, Z6, Z8, Y4). Client-safe. */
+/**
+ * The zod input schemas for the delight package (Z2, Z3, Z4, Z6, Z8, Y4).
+ * The helpers and types live in `./shared` (re-exported below); components
+ * import that module directly so the hunt, photo and fortune pages stay
+ * zod-free.
+ */
 import { z } from 'zod';
 
+import { FORTUNE_MAX } from './shared';
+
+export * from './shared';
+
 export const dayKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-
-export function utcDay(d: Date = new Date()): string {
-  return d.toISOString().slice(0, 10);
-}
-
-export function addDays(dayKey: string, n: number): string {
-  return utcDay(new Date(Date.parse(`${dayKey}T00:00:00Z`) + n * 86_400_000));
-}
-
-/** Hunt answers match case-insensitively with punctuation and spacing ignored. */
-export function normalizeAnswer(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 
 /** Only same-site, absolute paths: where a clue marker may appear. */
 export const sitePathSchema = z
@@ -54,7 +46,6 @@ export const eraSchema = z.object({
   imageUrl: z.string().trim().url().max(500).startsWith('https://').nullable().optional(),
 });
 
-export const FORTUNE_MAX = 140;
 export const fortuneSubmitSchema = z.object({ text: z.string().trim().min(8).max(FORTUNE_MAX) });
 export const fortuneReviewSchema = z.object({ status: z.enum(['approved', 'rejected']) });
 
@@ -71,15 +62,3 @@ export const translateQuerySchema = z.object({
   ns: z.string().min(1).max(64).optional(),
   offset: z.coerce.number().int().min(0).max(100_000).default(0),
 });
-
-export interface DelightConfig {
-  fools: boolean;
-  hunt: boolean;
-}
-
-export function formatDuration(ms: number): string {
-  const s = Math.round(ms / 1000);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
-}

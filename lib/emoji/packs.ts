@@ -26,8 +26,6 @@
  * needs to reject a pack for choosing a popular name.
  */
 
-import { z } from 'zod';
-
 export const PACK_KINDS = ['emoji', 'sticker', 'mixed'] as const;
 export type PackKind = (typeof PACK_KINDS)[number];
 
@@ -55,35 +53,6 @@ export const ITEM_MAX_BYTES = 256 * 1024;
  * a custom code is typeable through exactly the same `:` trigger.
  */
 export const SHORTCODE_RE = /^[a-z0-9][a-z0-9_+-]{1,31}$/;
-
-export const shortcodeSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .regex(SHORTCODE_RE, 'Shortcodes are 2–32 characters: letters, numbers, _ + and -');
-
-export const packSlugSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .regex(/^[a-z0-9][a-z0-9-]{1,47}$/, 'Slugs are 2–48 characters: letters, numbers and -');
-
-export const createPackSchema = z.object({
-  name: z.string().trim().min(1).max(60),
-  description: z.string().trim().max(300).optional(),
-  kind: z.enum(PACK_KINDS).default('emoji'),
-  visibility: z.enum(PACK_VISIBILITIES).default('public'),
-});
-
-export const updatePackSchema = createPackSchema.partial();
-
-export const addItemSchema = z.object({
-  name: shortcodeSchema,
-  kind: z.enum(ITEM_KINDS).default('emoji'),
-  /** Media id from the ordinary upload pipeline — never a raw URL from a client. */
-  mediaId: z.string().min(1).max(64),
-  alt: z.string().trim().min(1, 'Alt text is required').max(140),
-});
 
 export interface PackItem {
   id: string;

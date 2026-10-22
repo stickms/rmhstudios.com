@@ -6,7 +6,7 @@
 
 import { getActiveBan } from '@/lib/admin-audit.server';
 import { getChatAccess, type ChatAccess } from '@/lib/chat-plus/access.server';
-import { chatKindSchema } from '@/lib/chat-plus/types';
+import { chatKindSchema } from '@/lib/chat-plus/types-schema';
 
 export async function requireChat(
   params: Record<string, string>,

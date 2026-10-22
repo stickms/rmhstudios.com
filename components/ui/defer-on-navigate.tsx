@@ -27,8 +27,18 @@ import { startTransition, useEffect, useState, type ReactNode } from 'react';
  *    once from the root route after hydration commits) is what flips this.
  *  - **On back/forward.** Scroll restoration puts the reader back at a saved
  *    offset that is usually INSIDE the deferred part; that offset has to exist
- *    when it is applied. `BackNavAnimation` flags `<html>.nav-pop` synchronously
- *    on `popstate`, before the router renders, which is what is read here.
+ *    when it is applied. This reads the router history's own record of the last
+ *    navigation (`trackHistoryActions`, subscribed from the root route).
+ *
+ *    It used to read `<html>.nav-pop`, which `BackNavAnimation` sets from its
+ *    own `popstate` listener — and that listener runs AFTER the router's: the
+ *    router's handler notifies synchronously, React renders the restored page
+ *    in the microtask between the two listeners, and only then is the class
+ *    set. So every back/forward arrival deferred anyway and the router restored
+ *    the scroll offset against a page that was still a placeholder short
+ *    (`/games` from 1800px came back at 1335px; docs/performance-audit-2026-10-21.md
+ *    §Navigation commit). History subscribers are notified inside the router's
+ *    handler, before that microtask.
  *
  * Use it only for content that is below the fold on arrival. `minHeight` is a
  * reservation so the page does not visibly end and then grow while the subtree
@@ -37,15 +47,56 @@ import { startTransition, useEffect, useState, type ReactNode } from 'react';
  */
 
 let documentHydrated = false;
+/** The router history's last action type: PUSH / REPLACE, or BACK / FORWARD / GO. */
+let lastHistoryAction = 'PUSH';
 
 /** Called once by the root route, after the hydration commit. */
 export function markDocumentHydrated() {
   documentHydrated = true;
 }
 
+/**
+ * Record each history action as it happens. Called once by the root route with
+ * `router.history`; returns the unsubscribe.
+ */
+export function trackHistoryActions(history: {
+  subscribe: (cb: (event: { action: { type: string } }) => void) => () => void;
+}): () => void {
+  return history.subscribe(({ action }) => {
+    lastHistoryAction = action.type;
+  });
+}
+
 function shouldDeferNow(): boolean {
   if (!documentHydrated || typeof document === 'undefined') return false;
+  if (
+    lastHistoryAction === 'BACK' ||
+    lastHistoryAction === 'FORWARD' ||
+    lastHistoryAction === 'GO'
+  ) {
+    return false;
+  }
   return !document.documentElement.classList.contains('nav-pop');
+}
+
+/**
+ * The same split as {@link DeferOnNavigate}, for a caller that defers PART of
+ * what it renders rather than a whole subtree — the home feed builds its first
+ * screen of cards in the navigation commit and the rest of the page of results
+ * in the follow-up transition. Returns `false` for the first render of a
+ * page-switch mount and `true` from then on (always `true` under SSR, during
+ * hydration and on back/forward, for the reasons above). `enabled` is read once,
+ * at mount.
+ */
+export function useDeferOnNavigate(enabled = true): boolean {
+  const [ready, setReady] = useState(() => !(enabled && shouldDeferNow()));
+
+  useEffect(() => {
+    if (ready) return;
+    startTransition(() => setReady(true));
+  }, [ready]);
+
+  return ready;
 }
 
 export function DeferOnNavigate({
@@ -65,12 +116,7 @@ export function DeferOnNavigate({
    */
   enabled?: boolean;
 }) {
-  const [ready, setReady] = useState(() => !(enabled && shouldDeferNow()));
-
-  useEffect(() => {
-    if (ready) return;
-    startTransition(() => setReady(true));
-  }, [ready]);
+  const ready = useDeferOnNavigate(enabled);
 
   if (!ready) {
     return <div aria-hidden data-slot="defer-placeholder" style={{ minHeight }} />;

@@ -14,8 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CommunityComposer } from '@/components/communities/CommunityComposer';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
-import type { ChallengeDTO } from '@/lib/communities/plus-schema';
-import type { CommunityExtrasDTO } from '@/lib/communities/plus-schema';
+import type { ChallengeDTO } from '@/lib/communities/plus';
+import type { CommunityExtrasDTO } from '@/lib/communities/plus';
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });

@@ -91,10 +91,11 @@ function collectedBy(config: string): string[] {
 
 describe('test discovery', () => {
   const onDisk = walk(ROOT).sort();
-  // Two subprocesses, once for the file — each `vitest list` costs ~400ms.
+  // Three subprocesses, once for the file — each `vitest list` costs ~400ms.
   const main = collectedBy('vitest.config.ts');
   const epic = collectedBy('vitest.epic.config.ts');
-  const collected = new Set([...main, ...epic]);
+  const integration = collectedBy('vitest.integration.config.ts');
+  const collected = new Set([...main, ...epic, ...integration]);
   const excused = new Set(UNCOLLECTED_BY_DESIGN.map((entry) => entry.file));
 
   it('finds test files at all — guards the walker itself', () => {

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { getCanvasState } from '@/lib/canvas/canvas.server';
-import { canvasEventQuery } from '@/lib/canvas/shared';
+import { canvasEventQuery } from '@/lib/canvas/schema';
 
 /** GET /api/canvas/state?id= — the raw board, one byte (palette index) per pixel. */
 export const Route = createFileRoute('/api/canvas/state')({

@@ -73,6 +73,13 @@ export async function searchPostsScored(
   }
   if (opts.authorId) filters.push(Prisma.sql`"userId" = ${opts.authorId}`);
   if (opts.communityId) filters.push(Prisma.sql`"communityId" = ${opts.communityId}`);
+  // A private community's posts are members-only. Searching INSIDE a community is the
+  // caller's access check; a search across the site must never return them.
+  else {
+    filters.push(
+      Prisma.sql`("communityId" IS NULL OR "communityId" NOT IN (SELECT id FROM community WHERE "isPrivate"))`,
+    );
+  }
   if (opts.before) filters.push(Prisma.sql`"createdAt" < ${new Date(opts.before)}`);
   if (opts.after) filters.push(Prisma.sql`"createdAt" >= ${new Date(opts.after)}`);
   if (opts.hasMedia) filters.push(Prisma.sql`array_length("imageUrls", 1) > 0`);

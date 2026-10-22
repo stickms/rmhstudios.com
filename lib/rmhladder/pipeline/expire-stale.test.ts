@@ -68,7 +68,7 @@ describe('resolveJobMaxAgeMs', () => {
 
 describe('expireStaleJobs', () => {
   it('expires only stale active jobs and writes a verification row for each', async () => {
-    const updates: Array<{ id: string; data: Record<string, unknown> }> = [];
+    const updates: Array<{ ids: string[]; data: Record<string, unknown> }> = [];
     const verifications: Array<Record<string, unknown>> = [];
     const stale = [
       { id: 'a', lastSeenAt: new Date(now.getTime() - 40 * dayMs), discoveredAt: new Date(0) },
@@ -76,15 +76,15 @@ describe('expireStaleJobs', () => {
     const prisma: ExpireStalePrisma = {
       ladderJob: {
         findMany: async () => stale,
-        update: async ({ where, data }) => {
-          updates.push({ id: where.id, data });
-          return { id: where.id };
+        updateMany: async ({ where, data }) => {
+          updates.push({ ids: where.id.in, data });
+          return { count: where.id.in.length };
         },
       },
       ladderVerification: {
-        create: async ({ data }) => {
-          verifications.push(data);
-          return { id: 'v' };
+        createMany: async ({ data }) => {
+          verifications.push(...data);
+          return { count: data.length };
         },
       },
     };
@@ -92,5 +92,38 @@ describe('expireStaleJobs', () => {
     expect(result.expired).toBe(1);
     expect(updates[0].data.status).toBe('expired');
     expect(verifications[0].status).toBe('expired');
+  });
+
+  it('chunks writes at 500 jobs and only expires the stale ones', async () => {
+    const old = new Date(now.getTime() - 40 * dayMs);
+    const stale = Array.from({ length: 1201 }, (_, i) => ({
+      id: `j${i}`,
+      lastSeenAt: old,
+      discoveredAt: new Date(0),
+    }));
+    // A candidate that is not actually stale must be skipped.
+    stale.push({ id: 'fresh', lastSeenAt: new Date(now.getTime() - dayMs), discoveredAt: new Date(0) });
+    const updates: string[][] = [];
+    const verifications: Array<Record<string, unknown>> = [];
+    const prisma: ExpireStalePrisma = {
+      ladderJob: {
+        findMany: async () => stale,
+        updateMany: async ({ where }) => {
+          updates.push(where.id.in);
+          return { count: where.id.in.length };
+        },
+      },
+      ladderVerification: {
+        createMany: async ({ data }) => {
+          verifications.push(...data);
+          return { count: data.length };
+        },
+      },
+    };
+    const result = await expireStaleJobs(prisma, { now, maxAgeMs: DEFAULT_JOB_MAX_AGE_MS });
+    expect(result.expired).toBe(1201);
+    expect(updates.map((u) => u.length)).toEqual([500, 500, 201]);
+    expect(updates.flat()).not.toContain('fresh');
+    expect(verifications).toHaveLength(1201);
   });
 });

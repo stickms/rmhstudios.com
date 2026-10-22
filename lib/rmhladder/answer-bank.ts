@@ -26,7 +26,7 @@
  */
 
 import { z } from 'zod';
-import { httpUrl } from '@/lib/url-safety';
+import { httpUrl } from '@/lib/url-schema';
 
 /* -------------------------------------------------------------------------- */
 /* Schema                                                                     */

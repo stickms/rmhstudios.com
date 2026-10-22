@@ -36,7 +36,7 @@ export const Route = createFileRoute('/api/og/post/$id')({
                 options: { select: { text: true }, orderBy: { position: 'asc' } },
               },
             },
-            community: { select: { name: true } },
+            community: { select: { name: true, isPrivate: true } },
             // The quoted post, for a quote-repost. Selected with its own
             // visibility columns because it is a different post with a
             // different audience — quoting something does not republish it.
@@ -47,6 +47,7 @@ export const Route = createFileRoute('/api/og/post/$id')({
                 deletedAt: true,
                 audience: true,
                 unlockPrice: true,
+                community: { select: { isPrivate: true } },
                 user: { select: userDisplaySelect },
               },
             },

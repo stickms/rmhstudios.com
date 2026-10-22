@@ -103,17 +103,18 @@ export async function getStudioOverview(creatorId: string): Promise<StudioOvervi
   for (const tx of windowTxns) {
     const kind: keyof typeof bySource =
       tx.type === 'TIP' ? 'tips' : tx.type === 'MEMBERSHIP' ? 'memberships' : 'sales';
-    bySource[kind] += tx.amount;
+    const amount = Number(tx.amount);
+    bySource[kind] += amount;
     const bucket = buckets.get(monthKey(tx.createdAt));
     if (bucket) {
-      bucket[kind] += tx.amount;
-      bucket.total += tx.amount;
+      bucket[kind] += amount;
+      bucket.total += amount;
     }
   }
 
   const recentTips: RecentTip[] = recentTipRows.map((r) => ({
     id: r.id,
-    amount: r.amount,
+    amount: Number(r.amount),
     note: r.note,
     createdAt: r.createdAt.toISOString(),
     sender: r.sender

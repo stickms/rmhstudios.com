@@ -38,7 +38,7 @@ const post = (route: unknown, params: Record<string, string> = {}) =>
   (route as { options: { server: { handlers: { POST: Handler } } } }).options.server.handlers.POST({
     request: new Request('https://x.test/x', {
       method: 'POST',
-      headers: { 'cf-connecting-ip': String(Math.random()) },
+      headers: { 'cf-connecting-ip': String(Math.random()), cookie: 'better-auth.session_token=t' },
     }),
     params,
   });
