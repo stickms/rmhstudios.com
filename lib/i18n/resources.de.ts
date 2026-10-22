@@ -20,6 +20,7 @@ import deCEconomy from "@/locales/de/c-economy.json";
 import deCForestExplorer from "@/locales/de/c-forest-explorer.json";
 import deCGabrielsHorn from "@/locales/de/c-gabriels-horn.json";
 import deCGame from "@/locales/de/c-game.json";
+import deCGroupcall from "@/locales/de/c-groupcall.json";
 import deCHistory from "@/locales/de/c-history.json";
 import deCHouseAlwaysWins from "@/locales/de/c-house-always-wins.json";
 import deCIsleworks from "@/locales/de/c-isleworks.json";
@@ -41,11 +42,13 @@ import deCProfileModules from "@/locales/de/c-profile-modules.json";
 import deCRebarRutabaga from "@/locales/de/c-rebar-rutabaga.json";
 import deCRideshare from "@/locales/de/c-rideshare.json";
 import deCRmhCapital from "@/locales/de/c-rmh-capital.json";
+import deCRmhDatacenter from "@/locales/de/c-rmh-datacenter.json";
 import deCRmhPmc from "@/locales/de/c-rmh-pmc.json";
 import deCRmhbox from "@/locales/de/c-rmhbox.json";
 import deCRmhcalculator from "@/locales/de/c-rmhcalculator.json";
 import deCRmhcode from "@/locales/de/c-rmhcode.json";
 import deCRmhcoins from "@/locales/de/c-rmhcoins.json";
+import deCRmhfashion from "@/locales/de/c-rmhfashion.json";
 import deCRmhmusic from "@/locales/de/c-rmhmusic.json";
 import deCRmhstudy from "@/locales/de/c-rmhstudy.json";
 import deCRmhtech from "@/locales/de/c-rmhtech.json";
@@ -68,6 +71,38 @@ import deCVoidBreaker from "@/locales/de/c-void-breaker.json";
 import deCWager from "@/locales/de/c-wager.json";
 import deCWishlist from "@/locales/de/c-wishlist.json";
 import deCommon from "@/locales/de/common.json";
+import deErrors from "@/locales/de/errors.json";
+import deFAccess from "@/locales/de/f-access.json";
+import deFAction from "@/locales/de/f-action.json";
+import deFArcade from "@/locales/de/f-arcade.json";
+import deFAsyncGames from "@/locales/de/f-async-games.json";
+import deFCalendar from "@/locales/de/f-calendar.json";
+import deFCanvas from "@/locales/de/f-canvas.json";
+import deFCommunitiesPlus from "@/locales/de/f-communities-plus.json";
+import deFCompetitive from "@/locales/de/f-competitive.json";
+import deFCreative from "@/locales/de/f-creative.json";
+import deFDeepseek from "@/locales/de/f-deepseek.json";
+import deFDelight from "@/locales/de/f-delight.json";
+import deFDevAi from "@/locales/de/f-dev-ai.json";
+import deFDevplatform from "@/locales/de/f-devplatform.json";
+import deFDiscovery from "@/locales/de/f-discovery.json";
+import deFEconomyPlus from "@/locales/de/f-economy-plus.json";
+import deFFeedPlus from "@/locales/de/f-feed-plus.json";
+import deFForecasting from "@/locales/de/f-forecasting.json";
+import deFGifting from "@/locales/de/f-gifting.json";
+import deFLadderHomes from "@/locales/de/f-ladder-homes.json";
+import deFMessaging from "@/locales/de/f-messaging.json";
+import deFOncall from "@/locales/de/f-oncall.json";
+import deFOps from "@/locales/de/f-ops.json";
+import deFParty from "@/locales/de/f-party.json";
+import deFPerf from "@/locales/de/f-perf.json";
+import deFPostsPlus from "@/locales/de/f-posts-plus.json";
+import deFProfilePlus from "@/locales/de/f-profile-plus.json";
+import deFReading from "@/locales/de/f-reading.json";
+import deFSafety from "@/locales/de/f-safety.json";
+import deFTools from "@/locales/de/f-tools.json";
+import deFWatch from "@/locales/de/f-watch.json";
+import deFWorlds from "@/locales/de/f-worlds.json";
 import deFeed from "@/locales/de/feed.json";
 import deGamesHub from "@/locales/de/games-hub.json";
 import deGroups from "@/locales/de/groups.json";
@@ -117,6 +152,7 @@ const deResources = {
   "c-forest-explorer": deCForestExplorer,
   "c-gabriels-horn": deCGabrielsHorn,
   "c-game": deCGame,
+  "c-groupcall": deCGroupcall,
   "c-history": deCHistory,
   "c-house-always-wins": deCHouseAlwaysWins,
   "c-isleworks": deCIsleworks,
@@ -138,11 +174,13 @@ const deResources = {
   "c-rebar-rutabaga": deCRebarRutabaga,
   "c-rideshare": deCRideshare,
   "c-rmh-capital": deCRmhCapital,
+  "c-rmh-datacenter": deCRmhDatacenter,
   "c-rmh-pmc": deCRmhPmc,
   "c-rmhbox": deCRmhbox,
   "c-rmhcalculator": deCRmhcalculator,
   "c-rmhcode": deCRmhcode,
   "c-rmhcoins": deCRmhcoins,
+  "c-rmhfashion": deCRmhfashion,
   "c-rmhmusic": deCRmhmusic,
   "c-rmhstudy": deCRmhstudy,
   "c-rmhtech": deCRmhtech,
@@ -165,6 +203,38 @@ const deResources = {
   "c-wager": deCWager,
   "c-wishlist": deCWishlist,
   "common": deCommon,
+  "errors": deErrors,
+  "f-access": deFAccess,
+  "f-action": deFAction,
+  "f-arcade": deFArcade,
+  "f-async-games": deFAsyncGames,
+  "f-calendar": deFCalendar,
+  "f-canvas": deFCanvas,
+  "f-communities-plus": deFCommunitiesPlus,
+  "f-competitive": deFCompetitive,
+  "f-creative": deFCreative,
+  "f-deepseek": deFDeepseek,
+  "f-delight": deFDelight,
+  "f-dev-ai": deFDevAi,
+  "f-devplatform": deFDevplatform,
+  "f-discovery": deFDiscovery,
+  "f-economy-plus": deFEconomyPlus,
+  "f-feed-plus": deFFeedPlus,
+  "f-forecasting": deFForecasting,
+  "f-gifting": deFGifting,
+  "f-ladder-homes": deFLadderHomes,
+  "f-messaging": deFMessaging,
+  "f-oncall": deFOncall,
+  "f-ops": deFOps,
+  "f-party": deFParty,
+  "f-perf": deFPerf,
+  "f-posts-plus": deFPostsPlus,
+  "f-profile-plus": deFProfilePlus,
+  "f-reading": deFReading,
+  "f-safety": deFSafety,
+  "f-tools": deFTools,
+  "f-watch": deFWatch,
+  "f-worlds": deFWorlds,
   "feed": deFeed,
   "games-hub": deGamesHub,
   "groups": deGroups,
