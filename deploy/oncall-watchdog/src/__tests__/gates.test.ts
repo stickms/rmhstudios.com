@@ -123,3 +123,75 @@ describe('Worker /v1 end to end', () => {
     expect(await res.json()).toMatchObject({ ok: true, alarm: { key: 'T00', state: 'firing' } });
   });
 });
+
+describe('/page and Resolve (Discord interactions, end to end)', () => {
+  const { publicKey, privateKey } = generateKeyPairSync('ed25519');
+  const pubHex = (publicKey.export({ format: 'der', type: 'spki' }) as Buffer).subarray(-32).toString('hex');
+
+  function harness() {
+    const env = {
+      SITE_URL: 'https://site.test',
+      STATUS_URL: 'https://status.test',
+      RUNBOOK_BASE: 'https://example.test/runbooks',
+      DISCORD_APPLICATION_ID: 'app',
+      DISCORD_PUBLIC_KEY: pubHex,
+      ONCALL_CHANNEL_ID: 'C',
+      ONCALL_ROLE_ID: 'R',
+      ONCALL_SIGNING_SECRET: SECRET,
+    } as Env;
+    const storage = memoryStorage();
+    const state = new OncallState({ storage }, env);
+    env.ONCALL_STATE = { idFromName: () => 'id', get: () => ({ fetch: (i, init) => state.fetch(new Request(i, init)) }) };
+    return { env, storage };
+  }
+  const interaction = (body: unknown) => {
+    const raw = JSON.stringify(body);
+    const ts = String(Math.floor(Date.now() / 1000));
+    return new Request('https://oncall.test/interactions', {
+      method: 'POST',
+      body: raw,
+      headers: {
+        'x-signature-timestamp': ts,
+        'x-signature-ed25519': sign(null, Buffer.from(ts + raw), privateKey).toString('hex'),
+      },
+    });
+  };
+  const page = (userId: string, sev: number, title = 'Checkout is broken') => ({
+    type: 2,
+    channel_id: 'elsewhere',
+    member: { user: { id: userId }, roles: [] },
+    data: { name: 'page', options: [{ name: 'severity', value: sev }, { name: 'title', value: title }] },
+  });
+
+  it('any member can cut a ticket; it becomes a firing TICKET alarm', async () => {
+    const { env, storage } = harness();
+    const res = (await (await worker.fetch(interaction(page('U1', 2)), env)).json()) as { data: { content: string; flags: number } };
+    expect(res.data.content).toMatch(/cut as \*\*SEV2\*\*.*paged/);
+    expect(res.data.flags).toBe(64); // only the reporter sees the confirmation
+    const recs = [...(await storage.list<{ id: string; state: string; sev: number }>({ prefix: 'alarm:' })).values()];
+    expect(recs).toMatchObject([{ id: 'TICKET', state: 'firing', sev: 2 }]);
+  });
+
+  it('rate-limits a person to 5 tickets an hour', async () => {
+    const { env } = harness();
+    for (let i = 0; i < 5; i++) await worker.fetch(interaction(page('U1', 4, `t${i}`)), env);
+    const res = (await (await worker.fetch(interaction(page('U1', 4)), env)).json()) as { data: { content: string } };
+    expect(res.data.content).toMatch(/5 tickets in the last hour/);
+  });
+
+  it('only @oncall can press Resolve, and it resolves the ticket', async () => {
+    const { env, storage } = harness();
+    await worker.fetch(interaction(page('U1', 3)), env);
+    const key = [...(await storage.list<{ key: string }>({ prefix: 'alarm:' })).values()][0]!.key;
+    const press = (roles: string[]) =>
+      worker.fetch(
+        interaction({ type: 3, channel_id: 'C', member: { user: { id: 'U2' }, roles }, data: { custom_id: `res|${key}` } }),
+        env,
+      );
+    expect(((await (await press([])).json()) as { data: { content: string } }).data.content).toMatch(/Only members/);
+    const ok = (await (await press(['R'])).json()) as { type: number };
+    expect(ok.type).toBe(7);
+    const rec = (await storage.get<{ state: string }>(`alarm:${key}`))!;
+    expect(rec.state).toBe('resolved');
+  });
+});

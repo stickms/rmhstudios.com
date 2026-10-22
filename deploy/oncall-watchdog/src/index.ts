@@ -16,7 +16,9 @@ import {
   discordNotifier,
   ephemeral,
   InteractionType,
+  pages,
   ResponseType,
+  TICKET_ID,
   verifyDiscordSignature,
   type MessageContext,
 } from './discord';
@@ -53,8 +55,28 @@ function toDO(env: Env, path: string, body?: unknown): Promise<Response> {
 interface ComponentInteraction {
   type: number;
   channel_id?: string;
+  guild_id?: string;
   member?: { user?: { id?: string }; roles?: string[] };
-  data?: { custom_id?: string };
+  data?: {
+    custom_id?: string;
+    name?: string;
+    options?: { name: string; value: string | number }[];
+  };
+}
+
+/** `/page` — any server member can cut a ticket to on-call. */
+async function handlePageCommand(ix: ComponentInteraction, env: Env): Promise<Response> {
+  const userId = ix.member?.user?.id;
+  if (!userId) return json(ephemeral('Use /page inside the server.'));
+  const opt = (name: string) => ix.data?.options?.find((o) => o.name === name)?.value;
+  const sev = Number(opt('severity'));
+  const title = String(opt('title') ?? '').trim().slice(0, 100);
+  const details = String(opt('details') ?? '').trim().slice(0, 1500);
+  if (!Number.isInteger(sev) || sev < 1 || sev > 5 || !title) {
+    return json(ephemeral('A ticket needs a severity (1–5) and a title.'));
+  }
+  const res = await toDO(env, '/ticket', { userId, sev, title, details });
+  return json(await res.json());
 }
 
 async function handleInteraction(request: Request, env: Env): Promise<Response> {
@@ -70,6 +92,9 @@ async function handleInteraction(request: Request, env: Env): Promise<Response> 
 
   const ix = JSON.parse(raw) as ComponentInteraction;
   if (ix.type === InteractionType.PING) return json({ type: ResponseType.PONG });
+  if (ix.type === InteractionType.APPLICATION_COMMAND && ix.data?.name === 'page') {
+    return handlePageCommand(ix, env);
+  }
   if (ix.type !== InteractionType.MESSAGE_COMPONENT) return json(ephemeral('Unsupported interaction.'));
 
   // Authorization: only the on-call role, only in the on-call channel.
@@ -79,7 +104,9 @@ async function handleInteraction(request: Request, env: Env): Promise<Response> 
     return json(ephemeral(`Only members of <@&${env.ONCALL_ROLE_ID}> can do that.`));
   }
   const [action, key] = (ix.data?.custom_id ?? '').split('|');
-  if ((action !== 'ack' && action !== 'esc') || !key) return json(ephemeral('Unknown button.'));
+  if ((action !== 'ack' && action !== 'esc' && action !== 'res') || !key) {
+    return json(ephemeral('Unknown button.'));
+  }
 
   const res = await toDO(env, `/${action}`, { key, userId });
   return json(await res.json());
@@ -212,6 +239,39 @@ export class OncallState {
           })),
         );
         return json({ now, alarms: await this.engine.list(), heartbeats });
+      }
+      case '/ticket': {
+        const userId = String(body.userId);
+        // At most 5 tickets per person per hour: /page pings people.
+        const rlKey = `rl:page:${userId}`;
+        const recent = ((await this.state.storage.get<number[]>(rlKey)) ?? []).filter((t) => now - t < 3_600_000);
+        if (recent.length >= 5) {
+          return json(ephemeral('You have cut 5 tickets in the last hour. Ping on-call directly if this is urgent.'));
+        }
+        await this.state.storage.put(rlKey, [...recent, now]);
+        const sev = Number(body.sev);
+        const rec = await this.engine.fire(
+          {
+            id: TICKET_ID,
+            instance: `${now.toString(36)}`,
+            sev,
+            title: String(body.title),
+            detail: `${String(body.details || '(no details)')}\n\nReported by <@${userId}> with /page.`,
+            source: 'Discord /page',
+            runbook: 'README',
+          },
+          now,
+        );
+        return json(
+          ephemeral(
+            `Ticket \`${rec.key}\` cut as **SEV${sev}** in <#${this.env.ONCALL_CHANNEL_ID}>${pages(sev) ? ' — on-call has been paged.' : '.'}`,
+          ),
+        );
+      }
+      case '/res': {
+        const result = await this.engine.resolveBy(String(body.key), String(body.userId), now);
+        if (typeof result === 'string') return json(ephemeral(result));
+        return json({ type: ResponseType.UPDATE_MESSAGE, data: alertMessage(result, this.msgCtx) });
       }
       case '/ack':
       case '/esc': {

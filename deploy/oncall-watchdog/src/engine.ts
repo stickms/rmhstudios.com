@@ -6,7 +6,7 @@
 // All of it runs inside one Durable Object, so an ack and a cron tick can never
 // interleave and lose each other's write.
 
-import { alertMessage, pages, replyMessage, type MessageContext, type Notifier } from './discord';
+import { alertMessage, pageRoles, pages, replyMessage, type MessageContext, type Notifier } from './discord';
 import type { DurableObjectStorageLike } from './env';
 
 export const REPAGE_MS = 10 * 60 * 1000;
@@ -160,6 +160,14 @@ export class Engine {
     return rec;
   }
 
+  /** A person resolving a ticket (or alarm) from its Resolve button. */
+  async resolveBy(key: string, userId: string, now: number): Promise<AlarmRecord | string> {
+    const rec = await this.get(key);
+    if (!rec) return 'That alarm no longer exists.';
+    if (rec.state !== 'firing') return 'Already resolved.';
+    return (await this.resolve(key, now, `resolved by <@${userId}>`))!;
+  }
+
   /** Returns the updated record, or a reason the click was refused. */
   async ack(key: string, userId: string, now: number): Promise<AlarmRecord | string> {
     const rec = await this.get(key);
@@ -209,11 +217,12 @@ export class Engine {
       rec.pageCount += 1;
       await this.save(rec);
       const minutes = Math.round((now - rec.firedAt) / 60_000);
+      const roles = pageRoles(rec, this.ctx);
       await this.notifier.post(
         replyMessage(
           rec.messageId,
-          `<@&${this.ctx.roleId}> still firing and **unacknowledged** after ${minutes}m (page #${rec.pageCount}) · \`${rec.key}\``,
-          [this.ctx.roleId],
+          `${roles.map((r) => `<@&${r}>`).join(' ')} still firing and **unacknowledged** after ${minutes}m (page #${rec.pageCount}) · \`${rec.key}\``,
+          roles,
         ),
       );
     }
