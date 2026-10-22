@@ -7,6 +7,7 @@ import {
   type NavTransition,
   type EversionLevel,
   DEFAULT_EVERSION_LEVEL,
+  resolveEversionLevel,
 } from '@/lib/appearance/prefs';
 import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 
@@ -379,7 +380,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   alwaysEvertGlobe: false,
   setAlwaysEvertGlobe: (alwaysEvertGlobe) => set({ alwaysEvertGlobe }),
   eversionLevel: DEFAULT_EVERSION_LEVEL,
-  setEversionLevel: (eversionLevel) => set({ eversionLevel }),
+  setEversionLevel: (eversionLevel) => set({ eversionLevel: resolveEversionLevel(eversionLevel) }),
   userTheme: null,
   // Applying/removing an owned theme also clears any transient preview.
   setUserTheme: (userTheme) => set({ userTheme, userThemePreview: null }),

@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
 import { Swords, ChevronDown, ArrowUpRight } from 'lucide-react';
 import '@/components/creator-studio/creator-studio.css';
 
@@ -71,7 +72,7 @@ export function RankedSummary() {
         : t('ranked-summary-signed-out', { defaultValue: 'Sign in to compete in ranked matches.' });
 
   return (
-    <section className="cstudio-ranked">
+    <section className="cstudio-ranked glass-fill">
       <div className="cstudio-ranked__head">
         <span className="cstudio-ranked__icon" aria-hidden="true">
           <Swords size={18} />
@@ -89,22 +90,22 @@ export function RankedSummary() {
         </div>
 
         <div className="cstudio-ranked__actions">
-          <button
+          <Button
             type="button"
-            className="cstudio-ranked__toggle"
-            data-evert=""
+            variant="outline"
+            className="flex-1 sm:flex-none"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
-            {open
-              ? t('ranked-summary-hide', { defaultValue: 'Hide' })
-              : t('ranked-summary-show', { defaultValue: 'Standings' })}
+            {t('ranked-summary-show', { defaultValue: 'Standings' })}
             <ChevronDown size={15} className={`cstudio-ranked__chev ${open ? 'is-open' : ''}`} />
-          </button>
-          <Link to="/ranked" className="cstudio-ranked__link" data-evert="">
-            {t('ranked-summary-view-all', { defaultValue: 'View all' })}
-            <ArrowUpRight size={15} />
-          </Link>
+          </Button>
+          <Button asChild variant="secondary" className="flex-1 sm:flex-none">
+            <Link to="/ranked">
+              {t('ranked-summary-view-all', { defaultValue: 'View all' })}
+              <ArrowUpRight size={15} />
+            </Link>
+          </Button>
         </div>
       </div>
 

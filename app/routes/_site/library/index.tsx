@@ -138,66 +138,6 @@ export const Route = createFileRoute('/_site/library/')({
   component: Library,
 });
 
-function resetLibraryOrbit(element: HTMLElement | null) {
-  if (!element) return;
-  element.style.setProperty('--lib-orbit-x', '0deg');
-  element.style.setProperty('--lib-orbit-y', '0deg');
-  element.removeAttribute('data-orbit-active');
-}
-
-/**
- * One delegated pointer handler powers every playful glass object on the page.
- * It writes CSS variables directly (no React renders during pointer movement),
- * works with a fine pointer and a finger while it is down, and leaves scrolling
- * fully native on touch devices.
- */
-function useLibraryOrbit() {
-  const active = useRef<HTMLElement | null>(null);
-
-  useEffect(() => () => resetLibraryOrbit(active.current), []);
-
-  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== 'mouse' && event.buttons === 0) return;
-    const target = (event.target as Element).closest<HTMLElement>('[data-library-orbit]');
-    if (!target || !event.currentTarget.contains(target)) {
-      resetLibraryOrbit(active.current);
-      active.current = null;
-      return;
-    }
-
-    if (active.current !== target) resetLibraryOrbit(active.current);
-    active.current = target;
-
-    const rect = target.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-    const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
-    // The two ROTATIONS stay: a tilt is a transform, which composites, and this
-    // is direct manipulation of the object under the finger — the one thing
-    // design.md §3 keeps when it retires cursor tracking.
-    //
-    // The two GLOW writes are gone. They moved the centre of a `radial-gradient`
-    // (library.css), and a gradient's position is PAINT: following the pointer
-    // re-rasterised the whole tile on every move, across a grid of them, which
-    // is exactly the cost §3 names when it says nothing slides a gradient. The
-    // glow is centred now and reads as the light on the object, which is what
-    // the rest of the site's glass does.
-    target.style.setProperty('--lib-orbit-x', `${((0.5 - y) * 7).toFixed(2)}deg`);
-    target.style.setProperty('--lib-orbit-y', `${((x - 0.5) * 8).toFixed(2)}deg`);
-    target.setAttribute('data-orbit-active', '');
-  };
-
-  const onPointerLeave = () => {
-    resetLibraryOrbit(active.current);
-    active.current = null;
-  };
-
-  const onPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== 'mouse') onPointerLeave();
-  };
-
-  return { onPointerMove, onPointerLeave, onPointerCancel: onPointerLeave, onPointerUp };
-}
-
 function Library() {
   const { t } = useTranslation('library');
   const {
@@ -211,7 +151,6 @@ function Library() {
   const navigate = useNavigate();
   const [view, setActiveView] = useState<LibraryView>(routeView);
   const [hasFiltered, setHasFiltered] = useState(false);
-  const orbit = useLibraryOrbit();
   const reducedMotion = useReducedMotion();
 
   useEffect(() => setActiveView(routeView), [routeView]);
@@ -493,6 +432,7 @@ function Library() {
       <VibeStyles />
       <LibraryStyles />
       <PageLayout
+        wide
         title={t('library-heading', { defaultValue: 'Library' })}
         description={t('archive-description', {
           defaultValue:
@@ -581,7 +521,7 @@ function Library() {
 
           {shows('books') ? <LibraryReadingMount /> : null}
 
-          <div className="lib-playground" ref={playgroundRef} {...orbit}>
+          <div className="lib-playground" data-library-layout="shelves" ref={playgroundRef}>
             <LibraryRevealProvider instant={hasFiltered}>
               {shows('reads') && <LibraryBlogRow posts={blogPosts} query={query} />}
 
@@ -679,7 +619,9 @@ function Library() {
                       onEdit={setEditing}
                       onInspect={setInspecting}
                       onMove={(book, dir) => move(curated, book, dir)}
-                      onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
+                      onReorder={(draggedId, targetId) =>
+                        reorderWithin(curated, draggedId, targetId)
+                      }
                       onChanged={refresh}
                     />
                     <Section
@@ -705,7 +647,11 @@ function Library() {
             is configured — see lib/ads/adsense.ts. */}
         <AdSlot placement="index-footer" className="mt-(--site-section-gap)" />
         {uploadOpen && (
-          <UploadModal isAdmin={isAdmin} onClose={() => setUploadOpen(false)} onUploaded={refresh} />
+          <UploadModal
+            isAdmin={isAdmin}
+            onClose={() => setUploadOpen(false)}
+            onUploaded={refresh}
+          />
         )}
         {editing && (
           <LibraryEditModal book={editing} onClose={() => setEditing(null)} onSaved={refresh} />

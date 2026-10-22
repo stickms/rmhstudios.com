@@ -341,11 +341,6 @@ export function GlobeCursorPanel() {
               checked={s.sparkles}
               onChange={(sparkles) => update({ sparkles })}
             />
-            <ToggleRow
-              label={t('globe-cursor-ripples', { defaultValue: 'Ripple on click' })}
-              checked={s.ripples}
-              onChange={(ripples) => update({ ripples })}
-            />
           </Section>
 
           <Section title={t('globe-cursor-behaviour', { defaultValue: 'Pointer behaviour' })}>

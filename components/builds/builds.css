@@ -18,7 +18,11 @@
 .builds-toolbar__right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-end;
 }
 
 /* Sort dropdown. */
@@ -35,14 +39,16 @@
   gap: 6px;
   height: 34px;
   padding: 0 14px;
-  border-radius: 9999px;
+  border-radius: var(--site-control-radius);
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   color: var(--site-text);
   font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
-  transition: border-color 160ms ease, color 160ms ease;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease;
 }
 
 .builds-submit:hover {
@@ -80,3 +86,15 @@
    PageLayout and style themselves with `--site-*` token utilities +
    `components/ui/` primitives. Everything above is still used by /create's
    bookshelf, which is the only importer left. */
+
+/* Search takes the full row on a phone; sort/submit never squeeze it off screen. */
+@media (max-width: 639.98px) {
+  .builds-toolbar__right > [data-slot='search-field'] {
+    flex: 1 0 100%;
+    width: 100%;
+    margin-inline: 0;
+  }
+  .builds-toolbar__right > * {
+    max-width: 100%;
+  }
+}

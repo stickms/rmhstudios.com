@@ -33,11 +33,7 @@
  */
 
 import type { ReactNode } from 'react';
-import {
-  LiquidTabs,
-  type LiquidTab,
-  type LiquidTabRenderProps,
-} from '@/components/ui/liquid-tabs';
+import { LiquidTabs, type LiquidTab, type LiquidTabRenderProps } from '@/components/ui/liquid-tabs';
 
 interface PageTabsProps {
   tabs: LiquidTab[];
@@ -78,7 +74,7 @@ export function PageTabs({
   search,
 }: PageTabsProps) {
   return (
-    <>
+    <div data-slot="page-controls" className="page-controls">
       <div className={`mt-3 ${search ? 'mb-2' : 'mb-3'} ${GUTTER}`}>
         <LiquidTabs
           tabs={tabs}
@@ -90,6 +86,6 @@ export function PageTabs({
         />
       </div>
       {search && <div className={`mb-3 ${GUTTER}`}>{search}</div>}
-    </>
+    </div>
   );
 }

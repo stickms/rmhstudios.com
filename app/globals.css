@@ -303,7 +303,7 @@
   --site-shadow-sm: 0 0 0 0 transparent;
   --site-radius: 22px;
   --site-radius-sm: 14px;
-  --site-control-radius: 9999px;
+  --site-control-radius: var(--site-radius-sm);
   /* San-Francisco first — the single biggest "Apple" cue — with Inter as the
      cross-platform fallback so Linux/Windows still read as the same neutral sans. */
   --site-font-display:
@@ -314,8 +314,8 @@
     system-ui, sans-serif;
   --site-font-mono: var(--font-jetbrains-mono), 'SF Mono', 'Cascadia Code', monospace;
   --site-border-width: 1px;
-  --site-card-transform: translateY(-4px);
-  --site-transition-speed: 200ms;
+  --site-card-transform: none;
+  --site-transition-speed: 160ms;
   --site-press-duration: 160ms;
   --site-heading-transform: none;
   --site-glow: none;
@@ -343,16 +343,16 @@
      `4vw` middle term rendered the new header SMALLER than the 3.4rem cap it was
      meant to replace. These terms are tuned so each step is comfortably larger
      than what it replaces at ordinary column widths, not just at the extremes. */
-  --site-display-3: clamp(1.9rem, 5.5vw, 4.5rem);
-  --site-display-3-leading: 1;
-  --site-display-3-tracking: -0.05em;
-  --site-display-4: clamp(1.35rem, 3vw, 2.75rem);
-  --site-display-4-leading: 1.04;
+  --site-display-3: clamp(2rem, 3.5vw, 3rem);
+  --site-display-3-leading: 1.12;
+  --site-display-3-tracking: -0.035em;
+  --site-display-4: clamp(1.35rem, 2.5vw, 2rem);
+  --site-display-4-leading: 1.2;
   --site-display-4-tracking: -0.042em;
   /* The one weight the display scale uses. 500 (not 700): at these sizes weight
      comes from the size itself, and 500 is what keeps SF Pro Display looking
      drawn rather than shouted. */
-  --site-display-weight: 500;
+  --site-display-weight: 600;
 
   /* Kicker (the micro-caps eyebrow above a display heading). /design uses
      0.625rem; this is 0.6875rem — the 11px floor the 2026-07-28 audit set in
@@ -371,7 +371,7 @@
   }
 
   /* The lede paragraph that follows a display heading. */
-  --site-lede-size: clamp(1rem, 1.5vw, 1.3rem);
+  --site-lede-size: clamp(1rem, 1.25vw, 1.125rem);
   --site-lede-leading: 1.65;
 
   /* Reveal-on-scroll, one curve for the whole site (audit SPA-003). */
@@ -1606,7 +1606,8 @@ html.style-high-contrast .lg-goo {
    restacked mid-move retargets from where it is. `html` for specificity:
    sonner injects its stylesheet after ours. */
 html [data-sonner-toast] {
-  transition-timing-function: var(--spring-smooth), var(--spring-smooth), var(--spring-smooth), ease;
+  transition-timing-function:
+    var(--spring-smooth), var(--spring-smooth), var(--spring-smooth), ease;
 }
 
 /* ── Global degradations ──────────────────────────────────────────────────── */
@@ -1875,20 +1876,11 @@ html.ios-webkit .glass-liquid::after {
   width: min(100%, 150px);
 }
 
-/* Respect the OS "reduce motion" preference site-wide: neutralize enter
-   animations, transitions and smooth scrolling that can trigger vestibular
-   discomfort, while preserving essential loading feedback (spinners, skeleton
-   pulse). Games render motion via canvas/WebGL, so gameplay is unaffected.
-
-   The eversion is exempt (owner, 2026-10-21: "it should always play by
-   default"): the controls' state layer (§7.3: `[data-evert]`, `.evert-ghost`),
-   the globe that pops up for a navigation (`.evert-popup`), the hub that hands
-   its globe over and the effect's own overlay. Only the site's own Reduce
-   motion switch (`html.reduce-motion`, below) stands those down. */
+/* System and account motion preferences apply to every surface, including the globe. */
 @media (prefers-reduced-motion: reduce) {
-  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *)),
-  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *))::before,
-  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *))::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -4207,11 +4199,137 @@ html:not([data-navigated]) .page-root > * {
 
      Use them on ENTERS and on transitions of `transform`/`scale`/`translate`.
      Not on colour: `snappy` overshoots, and an overshooting colour clamps. */
-  --spring-smooth: linear(0, 0.0268, 0.091, 0.1748, 0.2662, 0.3577, 0.4448, 0.5249, 0.5969, 0.6603, 0.7154, 0.7628, 0.8032, 0.8374, 0.8661, 0.89, 0.91, 0.9265, 0.9401, 0.9513, 0.9605, 0.968, 0.9741, 0.9791, 0.9831, 0.9864, 0.9891, 0.9912, 0.9929, 0.9943, 0.9955, 0.9964, 0.9971, 0.9977, 0.9981, 0.9985, 0.9988, 0.9991, 0.9992, 0.9994, 1);
+  --spring-smooth: linear(
+    0,
+    0.0268,
+    0.091,
+    0.1748,
+    0.2662,
+    0.3577,
+    0.4448,
+    0.5249,
+    0.5969,
+    0.6603,
+    0.7154,
+    0.7628,
+    0.8032,
+    0.8374,
+    0.8661,
+    0.89,
+    0.91,
+    0.9265,
+    0.9401,
+    0.9513,
+    0.9605,
+    0.968,
+    0.9741,
+    0.9791,
+    0.9831,
+    0.9864,
+    0.9891,
+    0.9912,
+    0.9929,
+    0.9943,
+    0.9955,
+    0.9964,
+    0.9971,
+    0.9977,
+    0.9981,
+    0.9985,
+    0.9988,
+    0.9991,
+    0.9992,
+    0.9994,
+    1
+  );
   --spring-smooth-duration: 0.64s;
-  --spring-snappy: linear(0, 0.0243, 0.085, 0.1673, 0.2604, 0.3564, 0.4501, 0.5378, 0.6177, 0.6886, 0.7503, 0.803, 0.8472, 0.8839, 0.9137, 0.9376, 0.9564, 0.9711, 0.9822, 0.9904, 0.9964, 1.0006, 1.0033, 1.005, 1.0059, 1.0063, 1.0062, 1.0059, 1.0054, 1.0048, 1.0042, 1.0036, 1.0031, 1.0026, 1.0021, 1.0017, 1.0013, 1.001, 1.0008, 1.0006, 1);
+  --spring-snappy: linear(
+    0,
+    0.0243,
+    0.085,
+    0.1673,
+    0.2604,
+    0.3564,
+    0.4501,
+    0.5378,
+    0.6177,
+    0.6886,
+    0.7503,
+    0.803,
+    0.8472,
+    0.8839,
+    0.9137,
+    0.9376,
+    0.9564,
+    0.9711,
+    0.9822,
+    0.9904,
+    0.9964,
+    1.0006,
+    1.0033,
+    1.005,
+    1.0059,
+    1.0063,
+    1.0062,
+    1.0059,
+    1.0054,
+    1.0048,
+    1.0042,
+    1.0036,
+    1.0031,
+    1.0026,
+    1.0021,
+    1.0017,
+    1.0013,
+    1.001,
+    1.0008,
+    1.0006,
+    1
+  );
   --spring-snappy-duration: 0.6s;
-  --spring-sheet: linear(0, 0.0162, 0.0577, 0.1156, 0.1831, 0.2552, 0.3284, 0.4001, 0.4685, 0.5325, 0.5915, 0.6452, 0.6936, 0.7367, 0.7749, 0.8084, 0.8377, 0.8631, 0.8851, 0.9039, 0.92, 0.9337, 0.9452, 0.955, 0.9632, 0.97, 0.9757, 0.9804, 0.9843, 0.9875, 0.9901, 0.9923, 0.994, 0.9954, 0.9965, 0.9974, 0.9981, 0.9986, 0.999, 0.9994, 1);
+  --spring-sheet: linear(
+    0,
+    0.0162,
+    0.0577,
+    0.1156,
+    0.1831,
+    0.2552,
+    0.3284,
+    0.4001,
+    0.4685,
+    0.5325,
+    0.5915,
+    0.6452,
+    0.6936,
+    0.7367,
+    0.7749,
+    0.8084,
+    0.8377,
+    0.8631,
+    0.8851,
+    0.9039,
+    0.92,
+    0.9337,
+    0.9452,
+    0.955,
+    0.9632,
+    0.97,
+    0.9757,
+    0.9804,
+    0.9843,
+    0.9875,
+    0.9901,
+    0.9923,
+    0.994,
+    0.9954,
+    0.9965,
+    0.9974,
+    0.9981,
+    0.9986,
+    0.999,
+    0.9994,
+    1
+  );
   --spring-sheet-duration: 0.67s;
 }
 
@@ -4237,40 +4355,47 @@ html:not([data-navigated]) .page-root > * {
   }
 }
 
+/* Closed UI is never interactive, even when system preferences change during exit. */
+:is([data-motion='pop'], [data-motion='rise'], [data-motion='fade'])[data-state='closed'],
+:is([data-slot='dialog-overlay'], [data-slot='dialog-content'])[data-state='closed'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  [data-motion='fade']:not([data-state='closed']) {
-    animation: motion-fade-in var(--motion-in) var(--motion-ease-in);
+  /* Transitions retarget from the current frame when a surface is reopened
+     during its exit. Longhand scale preserves each surface's positioning. */
+  :is([data-motion='pop'], [data-motion='rise'], [data-motion='fade']) {
+    opacity: 1;
+    scale: 1;
+    transition:
+      opacity var(--motion-collapse) var(--motion-ease-out),
+      scale var(--site-transition-speed) var(--motion-ease-in);
   }
-  [data-motion='fade'][data-state='closed'] {
-    animation: motion-fade-out var(--motion-out) var(--motion-ease-out) forwards;
-  }
-  [data-motion='pop']:not([data-state='closed']) {
-    animation: motion-pop-in var(--motion-bloom) linear;
-  }
-  [data-motion='pop'][data-state='closed'] {
-    animation: motion-pop-out var(--motion-collapse) var(--motion-ease-out) forwards;
+  :is([data-motion='pop'], [data-motion='rise'], [data-motion='fade'])[data-state='closed'] {
+    opacity: 0;
+    scale: 0.98;
     pointer-events: none;
+    transition-duration: var(--motion-collapse);
+    /* Radix Presence holds the node until animationend; visibility is constant
+       while the compositor finishes the actual opacity/scale transitions. */
+    animation: motion-presence var(--motion-collapse) linear;
   }
-
-  /* Two clocks, on purpose. The panel is READABLE on the quick opacity ramp
-     (the number that decides whether it "opened"), and its travel lands on the
-     smooth spring — so it settles the way a SwiftUI panel does instead of
-     decelerating into a stop at a fixed 0.22s. */
-  [data-motion='rise']:not([data-state='closed']) {
-    animation:
-      motion-fade-in var(--motion-in) var(--motion-ease-in),
-      motion-rise-move var(--spring-smooth-duration) var(--spring-smooth);
+  @starting-style {
+    :is([data-motion='pop'], [data-motion='rise'], [data-motion='fade']):not(
+      [data-state='closed']
+    ) {
+      opacity: 0;
+      scale: 0.98;
+    }
   }
-  [data-motion='rise'][data-state='closed'] {
-    animation: motion-rise-out var(--motion-out) var(--motion-ease-out) forwards;
+}
+@keyframes motion-presence {
+  from {
+    visibility: visible;
   }
-
-  /* perf-lite: the sampled settle is ten stops of transform on a
-     backdrop-filtered panel, and its last third is sub-pixel — nothing there is
-     being enjoyed on a device already struggling. Keep the anchored scale-fade,
-     drop the sampling for one eased tween. */
-  html.perf-lite [data-motion='pop']:not([data-state='closed']) {
-    animation: motion-pop-lite var(--motion-in) var(--motion-ease-in);
+  to {
+    visibility: visible;
   }
 }
 
@@ -4310,52 +4435,6 @@ html:not([data-navigated]) .page-root > * {
  * Nothing here touches `background-color` or `box-shadow`. The old version held
  * the fill off through act 1 to let the wireframe read; with no wireframe, a
  * panel whose material fades in is just a panel that arrives twice. */
-@keyframes motion-pop-in {
-  0% {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  8% {
-    opacity: 0.34;
-    transform: scale(0.9274);
-  }
-  16% {
-    opacity: 0.68;
-    transform: scale(0.9421);
-  }
-  24% {
-    opacity: 1;
-    transform: scale(0.9573);
-  }
-  32% {
-    transform: scale(0.9702);
-  }
-  42% {
-    transform: scale(0.9822);
-  }
-  54% {
-    transform: scale(0.9911);
-  }
-  68% {
-    transform: scale(0.9965);
-  }
-  84% {
-    transform: scale(0.999);
-  }
-}
-@keyframes motion-pop-out {
-  to {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-}
-/* Same shape, same start, one eased tween instead of the sampled spring. */
-@keyframes motion-pop-lite {
-  from {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-}
 @keyframes motion-rise-in {
   from {
     opacity: 0;
@@ -4388,59 +4467,83 @@ html.nav-pop .page-root > * {
   animation: none !important;
 }
 
-/* ─── §7.3 Eversion: a control's state turns inside out ───────────────────
- * The navigation globe ends by turning itself inside out; every control on the
- * site changes state the same way, at the scale of a button (owner, 2026-10-20:
- * "an eversion animation on state change that smoothly and seamlessly plays …
- * for hover and focus and click"). The new state is not faded in over the old
- * one: it emerges from INSIDE it, swelling out of one point into the control's
- * whole shape on a spring, and goes back into that point the same way.
- *
- * - One layer per control: `[data-evert]::before`, behind the label, painted in
- *   the clear coat, the control's own shape (`border-radius: inherit`) scaled
- *   from 0 to 1 about the point (`scale` + `transform-origin`). It can never
- *   leave the control's box. Nothing else on the control moves, so a label
- *   never rotates, scales or leaves its pixel grid (§7.1: the retired menu cage).
- * - It is a TRANSFORM so it runs on the compositor (amended 2026-10-20). It was a
- *   `clip-path` circle, which the main thread animates; pressing something that
- *   navigates starts the route's render on that same thread, and a probe showed
- *   no frame at all for ~630 ms after the click, so the press tint stood still
- *   until the new page had painted and the owner saw no animation. A compositor
- *   transform keeps moving through that render.
- * - The point is where you are. `hooks/useEvertPoint.ts` writes `--evert-x/-y`
- *   on the control itself (never on <html>) once per event: the
- *   pointer's entry point for a hover, the finger for a press, the exit point as
- *   a hover leaves, so the state is swallowed back where the pointer went. No
- *   pointer (keyboard, a programmatic change): the centre. Nothing tracks the
- *   cursor (§5.1.1): one rect read per enter, press or leave.
- * - The spring is a TRANSITION on a sampled `linear()` easing (`--evert-ease`,
- *   `spring(0.3, 0.15)` from lib/fluid.ts; marks that land, `--evert-ease-pop`,
- *   `spring(0.32, 0.3)`). A transition never plays on mount, so a page that loads
- *   with boxes ticked does not animate them, and an interrupted one retargets
- *   from where it is. `lib/__tests__/evert-spring.test.ts` re-derives the stops.
- * - Cost: `scale` on a control-sized layer, `transform` on marks and knobs,
- *   `opacity` for the press deepening, all composited; `clip-path` only on the
- *   16-40px fills of checkboxes, radios and switches, which never navigate. No
- *   shadow, no layout property, no gradient position, no filter, no per-frame
- *   script.
- * - Touch: hover is only ever a fine pointer's (`(hover: hover)`), so a phone
- *   never shows a sticky hover. A press everts from the finger and is held for
- *   at least `EVERT_MIN_PRESS_MS` so a quick tap is still seen.
- * - Every control, tagged or not (amended 2026-10-21: "ensure the eversion
- *   ALWAYS PLAYS ON EVERY BUTTON, INPUT BOX, ETC"): one nobody tagged is adopted
- *   on first contact (lib/evert-auto.ts) - `data-evert="auto"`, or, where it
- *   cannot hold the layer (fields, selects, a taken `::before`), the
- *   `.evert-ghost` below.
- * - Degradation is here, not in components: the site's own Reduce motion switch
- *   collapses every transition (the state still shows, it just arrives at once;
- *   the OS preference does not, since 2026-10-21), `perf-lite` swaps the spring
- *   for one short tween, forced colors drop the layer.
- */
+/* Section 7.3 Eversion is reserved for globe navigation.
+   Existing data-evert markers retain an opacity state layer for menus,
+   selected navigation and cards. Controls never grow a second globe, invert,
+   or animate a moving origin. No document listeners are needed for this layer. */
 :root {
   --evert-in: 0.419s;
-  --evert-ease: linear(0, 0.0322, 0.1102, 0.2123, 0.3234, 0.4335, 0.5364, 0.6287, 0.7088, 0.7764, 0.8322, 0.8772, 0.9128, 0.9403, 0.9612, 0.9766, 0.9876, 0.9953, 1.0004, 1.0036, 1.0053, 1.0061, 1.0063, 1.006, 1.0054, 1.0048, 1.0041, 1.0034, 1.0028, 1.0022, 1.0017, 1.0013, 1);
+  --evert-ease: linear(
+    0,
+    0.0322,
+    0.1102,
+    0.2123,
+    0.3234,
+    0.4335,
+    0.5364,
+    0.6287,
+    0.7088,
+    0.7764,
+    0.8322,
+    0.8772,
+    0.9128,
+    0.9403,
+    0.9612,
+    0.9766,
+    0.9876,
+    0.9953,
+    1.0004,
+    1.0036,
+    1.0053,
+    1.0061,
+    1.0063,
+    1.006,
+    1.0054,
+    1.0048,
+    1.0041,
+    1.0034,
+    1.0028,
+    1.0022,
+    1.0017,
+    1.0013,
+    1
+  );
   --evert-pop-in: 0.524s;
-  --evert-ease-pop: linear(0, 0.0444, 0.1515, 0.2898, 0.4367, 0.5767, 0.701, 0.8049, 0.8872, 0.949, 0.9926, 1.021, 1.0374, 1.0448, 1.0458, 1.0426, 1.0371, 1.0305, 1.0238, 1.0176, 1.0121, 1.0077, 1.0042, 1.0016, 0.9999, 0.9987, 0.9981, 0.9979, 0.9979, 0.9981, 0.9984, 0.9987, 1);
+  --evert-ease-pop: linear(
+    0,
+    0.0444,
+    0.1515,
+    0.2898,
+    0.4367,
+    0.5767,
+    0.701,
+    0.8049,
+    0.8872,
+    0.949,
+    0.9926,
+    1.021,
+    1.0374,
+    1.0448,
+    1.0458,
+    1.0426,
+    1.0371,
+    1.0305,
+    1.0238,
+    1.0176,
+    1.0121,
+    1.0077,
+    1.0042,
+    1.0016,
+    0.9999,
+    0.9987,
+    0.9981,
+    0.9979,
+    0.9979,
+    0.9981,
+    0.9984,
+    0.9987,
+    1
+  );
 }
 @layer components {
   /* `relative` in this layer so a control's own `absolute`/`fixed` utility still wins. */
@@ -4448,109 +4551,40 @@ html.nav-pop .page-root > * {
     position: relative;
     isolation: isolate;
   }
-  [data-evert]::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    background: var(--liquid-coat);
-    scale: 0;
-    transform-origin: var(--evert-x, 50%) var(--evert-y, 50%);
-    opacity: var(--evert-rest-opacity, 0.72);
-    pointer-events: none;
-    transition:
-      scale var(--evert-in) var(--evert-ease),
-      opacity 0.12s ease-out;
-  }
-  /* On: pressed (pointer or touch), highlighted by a menu's roving focus, or keyboard-focused. */
-  [data-evert]:is([data-pressed], [data-highlighted], :focus-visible, :has(> :focus-visible))::before {
-    scale: 1;
-  }
-  /* A press deepens what is already there (a hovered control is already everted). */
-  [data-evert][data-pressed]::before {
-    opacity: 1;
-  }
-  [data-evert]:is(:disabled, [aria-disabled='true'], [data-disabled])::before {
-    scale: 0;
-  }
-  /* A control adopted on first contact (lib/evert-auto.ts) is held at rest for one style pass, so the hover or
-     focus that found it everts in rather than popping. */
-  [data-evert][data-evert-arming]::before {
-    scale: 0 !important;
-    transition: none !important;
-  }
-}
-
-/* The ghost of the layer, for a control that cannot hold its own (lib/evert-auto.ts, amended 2026-10-21): a text
-   field, a textarea or a select (no pseudo-elements), or a control whose `::before` the site already uses. One
-   body-level box laid over the control in its own shape, turned out of the same point on the same spring; a
-   translucent wash over the field rather than under its text, like the `over` variant. `translate` places it and
-   `scale` everts it, both on the compositor; it is re-placed only on scroll and resize while it is up. The `focus`
-   ghost stays on the focused field and carries the accent. */
-.evert-ghost {
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: calc(var(--z-tooltip) - 1);
-  pointer-events: none;
-  contain: strict;
-  background: var(--liquid-coat);
-  color: var(--site-text);
-  scale: 0;
-  transform-origin: var(--evert-x, 50%) var(--evert-y, 50%);
-  opacity: 0.8;
-  transition:
-    scale var(--evert-in) var(--evert-ease),
-    opacity 0.12s ease-out;
-}
-.evert-ghost[data-on] {
-  scale: 1;
-}
-.evert-ghost[data-pressed] {
-  opacity: 1;
-}
-.evert-ghost[data-kind='focus'] {
-  background: color-mix(in srgb, var(--site-accent) 7%, transparent);
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--site-accent) 45%, transparent);
-  opacity: 1;
-}
-@media (hover: hover) and (pointer: fine) {
-  @layer components {
-    [data-evert]:hover:not(:disabled, [aria-disabled='true'], [data-disabled])::before {
-      scale: 1;
-    }
-  }
-}
-
-/* Two variants of the layer, named in the attribute's value (`data-evert="select over"`):
-   - `select` adds a SECOND layer, `::after`, for a control's selected state - the nav
-     rail's current page, which changes as you navigate while the rail stays on screen.
-     It everts in `--evert-selected` out of wherever the control was pressed, and drains
-     out of the one that lost it, on the same spring. The control's own rule carries its
-     ink on the same curve (`.rad-rail__item`).
-   - `over` lifts the tint above the control's content, for cards whose art covers the
-     whole box (a tint under the art would never be seen). Translucent, so it reads as
-     light on the card rather than a cover over it. */
-@layer components {
+  [data-evert]::before,
   [data-evert~='select']::after {
     content: '';
     position: absolute;
     inset: 0;
     z-index: -1;
     border-radius: inherit;
-    background: var(--evert-selected, var(--site-accent));
-    scale: 0;
-    transform-origin: var(--evert-x, 50%) var(--evert-y, 50%);
+    background: var(--site-surface-hover);
+    opacity: 0;
     pointer-events: none;
-    transition: scale var(--evert-in) var(--evert-ease);
+    transition: opacity var(--site-transition-speed) var(--ease-glass);
+  }
+  [data-evert]:is([data-pressed], [data-highlighted], :focus-visible)::before {
+    opacity: 1;
+  }
+  [data-evert]:is(:disabled, [aria-disabled='true'], [data-disabled])::before {
+    opacity: 0;
+  }
+  [data-evert~='select']::after {
+    background: var(--site-accent);
   }
   [data-evert~='select']:is([aria-current='page'], .is-active)::after {
-    scale: 1;
+    opacity: 1;
   }
   [data-evert~='over']::before {
     z-index: 3;
-    --evert-tint: color-mix(in srgb, var(--site-text) 12%, transparent);
+    background: var(--liquid-coat);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  @layer components {
+    [data-evert]:hover:not(:disabled, [aria-disabled='true'], [data-disabled])::before {
+      opacity: 1;
+    }
   }
 }
 
@@ -4561,7 +4595,11 @@ html.nav-pop .page-root > * {
     --evert-tint: var(--site-accent-hover);
     --evert-rest-opacity: 1;
   }
-  [data-slot='button']:is([data-variant='outline'], [data-variant='secondary'], [data-variant='ghost']),
+  [data-slot='button']:is(
+    [data-variant='outline'],
+    [data-variant='secondary'],
+    [data-variant='ghost']
+  ),
   [data-slot='menu-item'],
   [data-slot='select-item'],
   [data-slot='select'][data-evert],
@@ -4596,31 +4634,7 @@ html.nav-pop .page-root > * {
   }
 }
 
-/* The focus ring turns out from inside the control: its offset springs from
-   within the border to where it rests (from-only keyframes, so it lands on each
-   element's own offset). Colour and width never animate. Elements running their
-   own animation keep it. */
-@keyframes evert-focus {
-  from {
-    outline-offset: -4px;
-  }
-}
-:is(
-    a,
-    button,
-    select,
-    input,
-    summary,
-    [role='button'],
-    [role='tab'],
-    [role='link'],
-    [role='menuitem'],
-    [role='switch'],
-    [tabindex]:not([tabindex='-1'])
-  ):focus-visible:not([class*='animate-']) {
-  animation: evert-focus var(--evert-pop-in) var(--evert-ease-pop);
-}
-
+/* Focus is immediate; a keyboard user never waits for a ring to animate. */
 /* Switch: the "on" colour everts out of the knob as the knob travels, and swallows
    back into it. The origin is the knob's resting place on the off side. */
 @layer components {
@@ -4630,18 +4644,18 @@ html.nav-pop .page-root > * {
     inset: 0;
     border-radius: inherit;
     background: var(--site-accent);
-    clip-path: circle(0 at 0.6875rem 50%);
-    transition: clip-path var(--evert-in) var(--evert-ease);
+    opacity: 0;
+    transition: opacity var(--site-transition-speed) var(--ease-glass);
     pointer-events: none;
   }
   [data-slot='switch'][aria-checked='true']::before {
-    clip-path: circle(2.5rem at 0.6875rem 50%);
+    opacity: 1;
   }
   [data-slot='switch'] > [data-switch-knob] {
     position: relative;
     transition:
-      translate var(--evert-pop-in) var(--evert-ease-pop),
-      background-color var(--evert-in) var(--evert-ease);
+      translate var(--site-transition-speed) var(--ease-glass),
+      background-color var(--site-transition-speed) var(--ease-glass);
   }
 }
 
@@ -4668,7 +4682,7 @@ html.nav-pop .page-root > * {
         background: var(--site-surface-opaque);
         color: var(--site-accent-fg);
         cursor: pointer;
-        transition: border-color var(--evert-in) var(--evert-ease);
+        transition: border-color var(--site-transition-speed) var(--ease-glass);
       }
       :where(input[type='radio']) {
         border-radius: 50%;
@@ -4679,11 +4693,11 @@ html.nav-pop .page-root > * {
         inset: -1.5px;
         border-radius: inherit;
         background: var(--site-accent);
-        clip-path: circle(0 at 50% 50%);
-        transition: clip-path var(--evert-in) var(--evert-ease);
+        opacity: 0;
+        transition: opacity var(--site-transition-speed) var(--ease-glass);
       }
       :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate)::before {
-        clip-path: circle(75% at 50% 50%);
+        opacity: 1;
       }
       :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate) {
         border-color: var(--site-accent);
@@ -4702,7 +4716,7 @@ html.nav-pop .page-root > * {
       }
       :where(input[type='checkbox']):checked::after {
         transform: rotate(45deg) scale(1);
-        transition: transform var(--evert-pop-in) var(--evert-ease-pop) 0.06s;
+        transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
       }
       :where(input[type='checkbox']):indeterminate::after {
         width: 0.5rem;
@@ -4710,7 +4724,7 @@ html.nav-pop .page-root > * {
         margin-top: 0;
         border-width: 0 0 2px;
         transform: scale(1);
-        transition: transform var(--evert-pop-in) var(--evert-ease-pop) 0.06s;
+        transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
       }
       :where(input[type='radio'])::after {
         content: '';
@@ -4724,7 +4738,7 @@ html.nav-pop .page-root > * {
       }
       :where(input[type='radio']):checked::after {
         transform: scale(1);
-        transition: transform var(--evert-pop-in) var(--evert-ease-pop) 0.06s;
+        transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
       }
       :where(input[type='checkbox'], input[type='radio']):disabled {
         cursor: not-allowed;
@@ -5864,7 +5878,13 @@ html.reduce-motion .u-reveal-group > * {
   mask-image: linear-gradient(to left, transparent, #000 2rem);
 }
 [data-slot='liquid-tabs'][data-fade-start='true'][data-fade-end='true'] {
-  mask-image: linear-gradient(to right, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 2rem,
+    #000 calc(100% - 2rem),
+    transparent
+  );
 }
 [dir='rtl'] [data-slot='liquid-tabs'][data-fade-start='true'] {
   mask-image: linear-gradient(to left, transparent, #000 2rem);
@@ -6199,7 +6219,30 @@ html.reduce-motion .u-reveal-group > * {
 /* Text spacing (WCAG 1.4.12). Unlayered on purpose: it must beat the `leading-*`
    and `tracking-*` utilities, which live in the utilities layer. */
 html[data-text-spacing] body,
-html[data-text-spacing] body :where(p, li, dd, dt, td, th, label, blockquote, h1, h2, h3, h4, h5, h6, span, a, button, input, textarea, select) {
+html[data-text-spacing]
+  body
+  :where(
+    p,
+    li,
+    dd,
+    dt,
+    td,
+    th,
+    label,
+    blockquote,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    span,
+    a,
+    button,
+    input,
+    textarea,
+    select
+  ) {
   line-height: var(--rmh-ts-lh);
   letter-spacing: var(--rmh-ts-ls);
   word-spacing: var(--rmh-ts-ws);
@@ -6254,16 +6297,37 @@ html[class*='season-']:not(.style-high-contrast) body::before {
   background-size: 200% 100%;
 }
 html.season-valentines {
-  --delight-ribbon: linear-gradient(90deg, oklch(0.7 0.18 5), oklch(0.8 0.1 350), oklch(0.7 0.18 5));
+  --delight-ribbon: linear-gradient(
+    90deg,
+    oklch(0.7 0.18 5),
+    oklch(0.8 0.1 350),
+    oklch(0.7 0.18 5)
+  );
 }
 html.season-earthday {
-  --delight-ribbon: linear-gradient(90deg, oklch(0.7 0.15 150), oklch(0.7 0.1 230), oklch(0.7 0.15 150));
+  --delight-ribbon: linear-gradient(
+    90deg,
+    oklch(0.7 0.15 150),
+    oklch(0.7 0.1 230),
+    oklch(0.7 0.15 150)
+  );
 }
 html.season-halloween {
-  --delight-ribbon: linear-gradient(90deg, oklch(0.72 0.17 55), oklch(0.45 0.15 305), oklch(0.72 0.17 55));
+  --delight-ribbon: linear-gradient(
+    90deg,
+    oklch(0.72 0.17 55),
+    oklch(0.45 0.15 305),
+    oklch(0.72 0.17 55)
+  );
 }
 html.season-winter {
-  --delight-ribbon: linear-gradient(90deg, oklch(0.7 0.17 25), oklch(0.75 0.15 150), oklch(0.85 0.05 240), oklch(0.7 0.17 25));
+  --delight-ribbon: linear-gradient(
+    90deg,
+    oklch(0.7 0.17 25),
+    oklch(0.75 0.15 150),
+    oklch(0.85 0.05 240),
+    oklch(0.7 0.17 25)
+  );
 }
 @media (prefers-reduced-motion: no-preference) {
   html[class*='season-']:not(.reduce-motion) body::before {

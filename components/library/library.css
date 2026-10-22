@@ -417,7 +417,7 @@
   max-width: min(78vw, 340px);
   max-height: min(60vh, 460px);
   overflow-y: auto;
-  border-radius: 12px;
+  border-radius: var(--site-radius-sm);
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.6);
@@ -439,7 +439,7 @@
   width: 100%;
   padding: 8px 12px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
   background: none;
   color: var(--site-text-muted);
   font-size: 0.82rem;
@@ -516,7 +516,7 @@
   display: flex;
   align-items: stretch;
   gap: 2px;
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
 }
 .lib-marks__item:hover {
   background: var(--site-surface);
@@ -535,7 +535,7 @@
   line-height: 1.35;
   text-align: left;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
 }
 .lib-marks__jump:hover {
   color: var(--site-text);
@@ -572,7 +572,7 @@
   width: 30px;
   flex-shrink: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
   background: none;
   color: var(--site-text-dim);
   cursor: pointer;
@@ -599,7 +599,7 @@
   resize: vertical;
   min-height: 44px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   color: var(--site-text);
@@ -931,7 +931,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 9px 10px;
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
 }
 .lib-collections__picker-row:hover {
   background: var(--site-surface);
@@ -1168,7 +1168,7 @@
   max-width: 560px;
   background: var(--site-bg-subtle);
   border: 1px solid var(--site-border);
-  border-radius: 12px;
+  border-radius: var(--site-radius-sm);
   color: var(--site-text);
   padding: 20px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
@@ -1205,7 +1205,7 @@
   width: 100%;
   padding: 40px 20px;
   border: 1.5px dashed var(--site-border-bright);
-  border-radius: 10px;
+  border-radius: var(--site-radius-sm);
   background: var(--site-surface);
   color: var(--site-text-muted);
   font-size: 14px;
@@ -1223,7 +1223,7 @@
   position: relative;
   aspect-ratio: 3 / 4;
   border: 1px solid var(--site-border);
-  border-radius: 6px;
+  border-radius: var(--site-radius-sm);
   overflow: hidden;
   background: var(--site-surface);
 }
@@ -1275,7 +1275,7 @@
   gap: 12px;
   padding: 10px;
   border: 1px solid var(--site-border);
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
   background: var(--site-surface);
 }
 .lib-upload__row.is-done {
@@ -1317,7 +1317,7 @@
   place-items: center;
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--site-radius-sm);
   border: 1px solid var(--site-border);
   background: transparent;
   color: var(--site-text-muted);
@@ -1346,7 +1346,7 @@
   justify-content: center;
   padding: 9px;
   border: 1px dashed var(--site-border);
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
   background: transparent;
   color: var(--site-text-muted);
   font-size: 13px;
@@ -1454,7 +1454,7 @@
   width: 100%;
   background: var(--site-surface);
   border: 1px solid var(--site-border);
-  border-radius: 6px;
+  border-radius: var(--site-radius-sm);
   color: var(--site-text);
   font-size: 14px;
   padding: 9px 11px;
@@ -1562,7 +1562,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 18px;
-  border-radius: 14px;
+  border-radius: var(--site-radius-sm);
   border: 1px solid var(--site-border);
   background: var(--site-surface);
   color: inherit;
@@ -1775,7 +1775,7 @@
   width: 100%;
   padding: 8px 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
   background: transparent;
   color: var(--site-text);
   font-size: 13.5px;
@@ -2266,7 +2266,7 @@
   gap: 2px;
   padding: 3px 6px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
   background: transparent;
   text-align: start;
   cursor: pointer;
@@ -2329,7 +2329,7 @@
   width: min(760px, calc(100vw - 28px));
   min-height: 50px;
   padding: 6px 10px;
-  border-radius: 16px;
+  border-radius: var(--site-radius);
   background: var(--site-surface);
   border-color: var(--site-border);
   box-shadow: 0 18px 55px rgba(0, 0, 0, 0.48);
@@ -2347,7 +2347,7 @@
   height: 34px;
   padding: 0 8px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
   background: transparent;
   color: var(--site-text-muted);
   font: inherit;
@@ -2476,7 +2476,7 @@
 .lib-reader__details-meta div {
   padding: 12px;
   border: 1px solid var(--site-border);
-  border-radius: 10px;
+  border-radius: var(--site-radius-sm);
   background: var(--site-surface);
 }
 .lib-reader__details-meta dt {
@@ -2510,7 +2510,7 @@
   width: 100%;
   padding: 9px 10px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--site-radius-sm);
   background: transparent;
   color: var(--site-text-muted);
   font: inherit;
@@ -2965,4 +2965,12 @@ html.reduce-motion .lib-playground [data-library-orbit] {
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 156px), 1fr));
     gap: 20px 12px;
   }
+}
+
+/* A catalogue of readable covers and metadata; inspection stays in the viewer. */
+.lib-playground[data-library-layout='shelves'] [data-library-orbit] {
+  transform: none;
+}
+.lib-playground[data-library-layout='shelves'] .lib__shelf {
+  align-items: start;
 }

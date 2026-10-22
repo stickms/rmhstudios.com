@@ -84,7 +84,13 @@ export function RadialNavRail() {
     );
     const className = 'rad-rail__item' + (active ? ' is-active' : '');
     return leaf.external ? (
-      <a key={leaf.id} href={leaf.href} className={className} data-evert="select">
+      <a
+        key={leaf.id}
+        href={leaf.href}
+        className={className}
+        data-evert="select"
+        data-liquid-material="off"
+      >
         {body}
       </a>
     ) : (
@@ -95,6 +101,7 @@ export function RadialNavRail() {
         aria-current={active ? 'page' : undefined}
         // Hover, press and the current page turn out of the item (globals.css §7.3).
         data-evert="select"
+        data-liquid-material="off"
       >
         {body}
       </Link>
@@ -107,17 +114,69 @@ export function RadialNavRail() {
       aria-label={t('section-navigation', { defaultValue: 'Browse RMH Studios' })}
     >
       <nav className="rad-rail__scroll">
+        <div className="rad-rail__group">
+          {entries
+            .filter(
+              (entry) =>
+                entry.kind === 'leaf' && ['/', '/search', '/messages'].includes(entry.leaf.id),
+            )
+            .map((entry) => entry.kind === 'leaf' && renderLeaf(entry.leaf))}
+        </div>
+        <div className="rad-rail__group">
+          <h2 className="rad-rail__group-title">
+            {t('nav-group-discover', { defaultValue: 'Discover' })}
+          </h2>
+          {entries
+            .filter(
+              (entry) =>
+                entry.kind === 'leaf' &&
+                ['/games', '/library', '/communities'].includes(entry.leaf.id),
+            )
+            .map((entry) => entry.kind === 'leaf' && renderLeaf(entry.leaf))}
+        </div>
+        <div className="rad-rail__group">
+          <h2 className="rad-rail__group-title">
+            {t('nav-group-create', { defaultValue: 'Create & participate' })}
+          </h2>
+          {entries
+            .filter(
+              (entry) =>
+                entry.kind === 'leaf' &&
+                ['/create', '/store', '/predictions'].includes(entry.leaf.id),
+            )
+            .map((entry) => entry.kind === 'leaf' && renderLeaf(entry.leaf))}
+        </div>
+        <div className="rad-rail__group">
+          <h2 className="rad-rail__group-title">
+            {t('nav-group-more', { defaultValue: 'More from RMH' })}
+          </h2>
+          {entries
+            .filter(
+              (entry) =>
+                entry.kind === 'leaf' &&
+                ![
+                  '/',
+                  '/search',
+                  '/messages',
+                  '/games',
+                  '/library',
+                  '/communities',
+                  '/create',
+                  '/store',
+                  '/predictions',
+                ].includes(entry.leaf.id),
+            )
+            .map((entry) => entry.kind === 'leaf' && renderLeaf(entry.leaf))}
+        </div>
         {entries.map((entry) =>
-          entry.kind === 'leaf' ? (
-            renderLeaf(entry.leaf)
-          ) : (
+          entry.kind === 'group' ? (
             <div key={entry.group.id} className="rad-rail__group">
               <h2 className="rad-rail__group-title">
                 {t(entry.group.tKey, { defaultValue: entry.group.label })}
               </h2>
               {entry.group.children.map(renderLeaf)}
             </div>
-          ),
+          ) : null,
         )}
         {/* No Notifications entry: notifications are a tab of the Inbox
             (/messages?tab=notifications), so a rail row of their own was a

@@ -10,7 +10,7 @@
  * Each card links to the playable page or the detail page at /builds/$slug.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SearchField } from '@/components/ui/search-field';
 import { Link } from '@tanstack/react-router';
@@ -53,11 +53,14 @@ export function CuratedBuildsTab({
   seed,
   searchPlaceholder,
   emptyLabel,
+  afterControls,
 }: {
   curated: CuratedBuild[];
   seed: number;
   searchPlaceholder?: string;
   emptyLabel?: string;
+  /** Secondary context follows search, so catalog controls stay directly below the tabs. */
+  afterControls?: ReactNode;
 }) {
   const { t } = useTranslation('builds');
   const [query, setQuery] = useState('');
@@ -101,7 +104,7 @@ export function CuratedBuildsTab({
   );
 
   const toolbar = (
-    <div className="builds-toolbar">
+    <div data-slot="page-controls" className="builds-toolbar">
       <div className="builds-toolbar__right">
         <SearchField
           containerClassName="ml-auto w-[min(320px,48vw)]"
@@ -135,7 +138,12 @@ export function CuratedBuildsTab({
       items={items}
       seed={seed}
       featured={!query.trim() && sort === 'featured'}
-      toolbar={toolbar}
+      toolbar={
+        <>
+          {toolbar}
+          {afterControls}
+        </>
+      }
       emptyLabel={
         emptyLabel ?? t('empty-curated', { defaultValue: 'No builds match that search.' })
       }
@@ -240,7 +248,7 @@ export function UserBuildsTab({ seed }: { seed: number }) {
   const isEmpty = loadedOnce && userItems.length === 0 && !loading;
 
   const toolbar = (
-    <div className="builds-toolbar">
+    <div data-slot="page-controls" className="builds-toolbar">
       <div className="builds-toolbar__right">
         <SearchField
           containerClassName="ml-auto w-[min(320px,48vw)]"

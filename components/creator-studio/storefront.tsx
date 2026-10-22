@@ -231,8 +231,17 @@ function Art({
     // the drop-the-srcSet retry below (which leaves `current` alone) can't
     // re-enable itself and spin.
     setUseVariants(true);
-    if (imgRef.current?.complete) setLoaded(true);
+    setLoaded(false);
   }, [current]);
+  useEffect(() => {
+    const image = imgRef.current;
+    if (!image?.complete) return;
+    // A cached failure can finish before hydration attaches onError. Treat it
+    // exactly like a live failure, while keeping the reserved art rectangle.
+    if (image.naturalWidth > 0) setLoaded(true);
+    else if (srcSet) setUseVariants(false);
+    else setIdx((i) => i + 1);
+  }, [current, srcSet]);
 
   return current ? (
     <img

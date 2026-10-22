@@ -35,8 +35,12 @@ const fetchCompanies = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/companies' } });
-    const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
+    if (!session?.user)
+      throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/companies' } });
+    const admin = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isAdmin: true },
+    });
     if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
     const [companies, settings] = await Promise.all([
       listCompanies(queriesPrisma, { q: data.q }),
@@ -50,11 +54,17 @@ const doCompanyAction = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/companies' } });
-    const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
+    if (!session?.user)
+      throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/companies' } });
+    const admin = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isAdmin: true },
+    });
     if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
-    if (data.kind === 'enabled') return setCompanyEnabled(actionsPrisma, data.companyId, data.enabled);
-    if (data.kind === 'priority') return setCompanyPriority(actionsPrisma, data.companyId, data.priorityLevel);
+    if (data.kind === 'enabled')
+      return setCompanyEnabled(actionsPrisma, data.companyId, data.enabled);
+    if (data.kind === 'priority')
+      return setCompanyPriority(actionsPrisma, data.companyId, data.priorityLevel);
     return toggleWatchlist(actionsPrisma, session.user.id, data.companyId, data.on);
   });
 
@@ -71,7 +81,14 @@ export const Route = createFileRoute('/_site/rmhladder/companies')({
   component: CompaniesPage,
 });
 
-const API_PLATFORMS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'workday', 'manual'] as const;
+const API_PLATFORMS = [
+  'greenhouse',
+  'lever',
+  'ashby',
+  'smartrecruiters',
+  'workday',
+  'manual',
+] as const;
 
 function CompaniesPage() {
   const { companies, watchlistCompanyIds } = Route.useLoaderData();
@@ -100,7 +117,6 @@ function CompaniesPage() {
       setRows(companies as AnyRow[]);
       setWatchlist(new Set(watchlistCompanyIds));
       setLimit(PAGE); // a new result set starts at the top again
-
     }
   }, [companies, watchlistCompanyIds]);
 
@@ -168,7 +184,7 @@ function CompaniesPage() {
     <div>
       {errorLine && <p className="rl-review-error rl-mono">{errorLine}</p>}
 
-      <div className="rl-filter-bar">
+      <div data-slot="page-controls" className="rl-filter-bar">
         <input
           type="search"
           className="rl-search-box"
@@ -192,7 +208,9 @@ function CompaniesPage() {
             <th scope="col">Active jobs</th>
             <th scope="col">Enabled</th>
             <th scope="col">Watch</th>
-            <th scope="col"><span className="rl-visually-hidden">Details</span></th>
+            <th scope="col">
+              <span className="rl-visually-hidden">Details</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -211,7 +229,11 @@ function CompaniesPage() {
                   </div>
                 </td>
                 <td data-label="Priority">
-                  <div className="rl-priority-stepper" role="group" aria-label={`Priority for ${c.name as string}`}>
+                  <div
+                    className="rl-priority-stepper"
+                    role="group"
+                    aria-label={`Priority for ${c.name as string}`}
+                  >
                     <button
                       type="button"
                       className="rl-chip"
@@ -243,7 +265,13 @@ function CompaniesPage() {
                         <Badge
                           key={p}
                           size="sm"
-                          variant={status === 'active' ? 'success' : status === 'error' || status === 'blocked' ? 'danger' : 'outline'}
+                          variant={
+                            status === 'active'
+                              ? 'success'
+                              : status === 'error' || status === 'blocked'
+                                ? 'danger'
+                                : 'outline'
+                          }
                           title={label}
                         >
                           {label}
@@ -252,7 +280,9 @@ function CompaniesPage() {
                     })}
                   </div>
                 </td>
-                <td className="rl-mono" data-label="Active jobs">{(c.activeJobCount as number) ?? 0}</td>
+                <td className="rl-mono" data-label="Active jobs">
+                  {(c.activeJobCount as number) ?? 0}
+                </td>
                 <td data-label="Enabled">
                   <button
                     type="button"
@@ -296,7 +326,9 @@ function CompaniesPage() {
                         <li key={s.id as string} className="rl-mono">
                           {s.platform as string} · {(s.slug ?? s.url ?? '—') as string} ·{' '}
                           <span className="rl-program-chip">{s.status as string}</span> ·{' '}
-                          {s.lastSuccessAt ? `ok ${timeAgo(s.lastSuccessAt as Date)}` : 'never succeeded'}
+                          {s.lastSuccessAt
+                            ? `ok ${timeAgo(s.lastSuccessAt as Date)}`
+                            : 'never succeeded'}
                         </li>
                       ))}
                     </ul>

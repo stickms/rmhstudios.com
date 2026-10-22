@@ -49,7 +49,6 @@ import {
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
 import { useFluidPressLayer } from '@/hooks/useFluidPress';
 import { useLiquidInteractions } from '@/hooks/useLiquidInteractions';
-import { useEvertPointLayer } from '@/hooks/useEvertPoint';
 import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useLocaleStore, writeLocaleCookie } from '@/stores/localeStore';
@@ -355,7 +354,6 @@ export function Providers({
 
   // The eversion state layer's input (globals.css §7.3): where each `data-evert` control turns inside out from
   // (the pointer's entry, the finger, the exit) and when a press is down. Delegated, passive, no frame loop.
-  useEvertPointLayer();
 
   // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
   // so a user whose locale was resolved via Accept-Language (no cookie yet) gets
@@ -495,7 +493,7 @@ export function Providers({
   // so a flaky connection can retry on the next load.
   useEffect(() => {
     if (!userId) return;
-    let code: string | null = null;
+    let code: string | null;
     try {
       code = localStorage.getItem('rmh-ref');
     } catch {

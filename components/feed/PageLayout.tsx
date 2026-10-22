@@ -92,13 +92,8 @@ interface PageLayoutProps {
   /**
    * Let the title run onto more than one line.
    *
-   * A page name ("Wallet", "Bookmarks") is short and stays on one line, so the
-   * default keeps `truncate`. But that class puts `white-space: nowrap` on an
-   * *inline* span — `overflow: hidden` does not apply to one, so a title too
-   * long for the column does not ellipsize, it overflows and drags the column's
-   * width out with it (which then pushes the lede past the viewport too). Pages
-   * whose title is a sentence rather than a name — an article headline — opt in
-   * here and wrap instead.
+   * Titles wrap by default so localized labels fit narrow screens. Pass false
+   * only for explicitly compact headers that need truncation.
    */
   wrapTitle?: boolean;
 }
@@ -169,7 +164,13 @@ export function PageLayout({
                   scale. `truncate` keeps a long title on one line inside the
                   header's flex row. */}
               <h1 className="site-display-3">
-                <span className={wrapTitle ? 'block min-w-0' : 'min-w-0 truncate'}>{title}</span>
+                <span
+                  className={
+                    wrapTitle === false ? 'block min-w-0 truncate' : 'block min-w-0 break-words'
+                  }
+                >
+                  {title}
+                </span>
               </h1>
               {description && (
                 <p id={descriptionId} data-slot="page-description" className="site-lede">

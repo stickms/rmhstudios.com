@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Droplets, Layers, MousePointerClick, Sparkles, Wind } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buildMeta, buildCanonical } from '@/lib/seo';
@@ -55,7 +56,7 @@ function LiquidMorphDemo() {
 const PATH = '/liquid-glass';
 const TITLE = 'Liquid Glass — Design Lab | RMH Studios';
 const DESC =
-  'The living reference for the Liquid Glass material: clear shader-drawn slabs with a refracting rim, a cursor that is a light, taps that ripple the glass, and the shared UI primitives.';
+  'The living reference for the Liquid Glass material: clear shader-drawn slabs with a refracting rim, a cursor that is a light, neutral reflections and stable tap feedback, and the shared UI primitives.';
 
 /**
  * `noindex`: this is the material lab, not a page of the site. It was listed in
@@ -175,6 +176,7 @@ function Section({
 }
 
 function LiquidGlassLab() {
+  const { t } = useTranslation('c-ui');
   return (
     // Full-screen top-level page (outside _site/): its own padding + document scroll. Every glass surface below is
     // drawn by `lib/liquid/glass/engine.ts`: a canvas behind the content, transparent in the middle, refracting and lit
@@ -192,14 +194,17 @@ function LiquidGlassLab() {
               Liquid Glass
             </h1>
             <p className="max-w-2xl text-base text-site-text-muted sm:text-lg">
-              Clear slabs, not frosted blur: a bevel that catches light, a rim that bends the page
-              behind it, a cursor that is a lamp, and taps that send ripples across the glass. Move
-              your mouse over the page and tap near any surface.
+              {t('glass-intro', {
+                defaultValue:
+                  'Clear glass catches light along its bevel and gently refracts the page at its edge. Move your cursor to explore the reflections; tapping keeps the surface still.',
+              })}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
               <Badge variant="accent">L1–L4 elevation</Badge>
               <Badge variant="default">cursor light</Badge>
-              <Badge variant="outline">tap ripples</Badge>
+              <Badge variant="outline">
+                {t('glass-stable-taps', { defaultValue: 'Stable tap feedback' })}
+              </Badge>
             </div>
           </div>
         </header>
@@ -293,26 +298,33 @@ function LiquidGlassLab() {
           </div>
         </Section>
 
-        {/* ── 4 · Light and ripples ── */}
+        {/* ── 4 · Reflected light ── */}
         <Section
           id="light"
           eyebrow="§4"
-          title="Cursor light & tap ripples"
+          title={t('glass-cursor-title', { defaultValue: 'Light and reflections' })}
           description={
             <>
-              On a fine pointer the cursor is a lamp hovering above the glass: every slab near it
-              slides its glints around the bevel as you move, and lets go smoothly when you leave. A
-              tap anywhere near sends a ripple across the surface of every slab in reach, like a
-              stone in water, while the text on it stays perfectly still. Touch gets the ripples
-              with no cursor light; reduced motion gets neither.
+              {t('glass-cursor-description', {
+                defaultValue:
+                  'On a fine pointer, the cursor moves a soft reflection along the bevel. Text and hit areas stay fixed. Touch and reduced motion keep the material still, with no tap ripples.',
+              })}
             </>
           }
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
               { label: 'Pane A', icon: Sparkles, hint: 'move the cursor across' },
-              { label: 'Pane B', icon: MousePointerClick, hint: 'tap near me' },
-              { label: 'Pane C', icon: Layers, hint: 'tap between us' },
+              {
+                label: 'Pane B',
+                icon: MousePointerClick,
+                hint: t('glass-clear-edge', { defaultValue: 'Clear edges' }),
+              },
+              {
+                label: 'Pane C',
+                icon: Layers,
+                hint: t('glass-stable-surface', { defaultValue: 'Stable surfaces' }),
+              },
             ].map((item) => {
               const Icon = item.icon;
               return (

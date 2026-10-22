@@ -6,9 +6,9 @@
 export const GLASS_BUDGET = {
   /**
    * Surfaces drawn at once. Each is one canvas and one draw; more costs memory before it costs frames. Only VISIBLE surfaces
-   * count, so this is "how many cards fit on screen", with headroom.
+   * count. Repeated cards and small controls use CSS rather than additional canvases.
    */
-  maxSurfaces: 24,
+  maxSurfaces: 8,
   /** CSS px². Above this a surface falls back to the CSS material. */
   maxArea: 640_000,
   /** CSS px. Smaller than this has no room for a bevel. */
@@ -22,13 +22,13 @@ export const GLASS_BUDGET = {
 /** Bevel width for a surface: wide enough to refract visibly, never so wide that content sits inside it. */
 export function bevelFor(width: number, height: number, radius: number): number {
   const short = Math.min(width, height);
-  const wanted = Math.min(short * 0.26, Math.max(radius * 0.9, 16));
-  return Math.max(3, Math.min(24, Math.round(wanted), Math.floor(short / 2) - 1));
+  const wanted = Math.min(short * 0.14, Math.max(radius * 0.5, 8));
+  return Math.max(3, Math.min(12, Math.round(wanted), Math.floor(short / 2) - 1));
 }
 
 /** How far behind the surface the page appears to be: the reach of refraction. Shorter than the bevel by design. */
 export function thicknessFor(bevel: number): number {
-  return bevel * 0.95;
+  return bevel * 0.6;
 }
 
 /** Backing-store scale for a surface. */
@@ -100,14 +100,6 @@ export function sceneCoverage(
   // surface that is flush with the picture (a sticky header at the top of the viewport) is fully covered: no fade.
   const over = Math.max(0, -sceneX, -sceneY, sceneX + width - sceneW, sceneY + height - sceneH);
   return Math.max(0, Math.min(1, 1 - over / Math.max(1, reach * 2)));
-}
-
-/** Strength of a tap's ripple on a surface `distance` px away: 1 at the finger, quadratic fall-off, 0 past the reach. */
-export const RIPPLE_REACH = 520;
-export function rippleAmplitude(distance: number, strength = 1): number {
-  if (distance >= RIPPLE_REACH) return 0;
-  const k = distance / 260;
-  return strength / (1 + k * k);
 }
 
 /** Cursor light weight for a surface `distance` px from the pointer (0 inside the surface). */

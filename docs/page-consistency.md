@@ -103,6 +103,25 @@ track instead.
 
 ---
 
+## Layout by page purpose
+
+The shared shell publishes `data-layout` from the committed route, so switching
+pages does not resize the outgoing content while its loader is still running.
+
+| Page family                    | Layout                                                                                                                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feed/social                    | One timeline with For you/Following, composer, posts, and desktop discovery in the shell rail.                                                                                  |
+| Store/catalogs                 | Product previews, category/filter controls and a responsive grid; the ambient social rail yields its space. Store opens on Shop, while membership deep links keep their target. |
+| Library                        | Wide, category-based shelves with search above the collection; 3D inspection stays in its dedicated viewer.                                                                     |
+| Settings/inbox/developer/admin | A wider workspace with grouped settings or task controls and no ambient social rail.                                                                                            |
+| Blog/news                      | A reading measure, clear hierarchy and browse/filter controls above the content.                                                                                                |
+
+On phones, `PageTabs` and page-level search/filter rows span the shell's drawable
+viewport through `data-slot="page-controls"`. Content beneath retains its reading
+gutter. Mark an unfamiliar custom toolbar with that slot; never widen individual
+form fields or modal contents. The shell measures its own width on resize so a
+reserved desktop scrollbar gutter cannot crop the bar on a narrow window.
+
 ## 3. The consistency checklist
 
 Work through this for every new or edited page:
@@ -313,20 +332,20 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    that ignores each theme's `--site-radius` / `--site-radius-sm`. CI-enforced
    (§13 rule 6). `rounded-full` and `rounded-none` are shapes, not radii, and
    stay fine.
-2b. A dropdown / popover / menu / tooltip on `.glass-fill` instead of
+   2b. A dropdown / popover / menu / tooltip on `.glass-fill` instead of
    `.glass-overlay`. L1 has **no backdrop blur** — it is the tier for repeated
    cards — so a menu built on it is transparent over whatever it opened on top
    of. CI-enforced (§13 rule 7).
-2b2. `transition-all`. It makes the engine watch every animatable property
+   2b2. `transition-all`. It makes the engine watch every animatable property
    including the layout ones, so a state change that touches `width` or `gap`
    animates a reflow. Name what moves (`transition-colors`,
    `transition-transform`, `transition-[a,b]`, or plain `transition`).
    CI-enforced (§13 rule 8). And if a layout property IS what you want to
    animate, reach for a transform first — a progress bar is `scaleX` on a
    full-width fill, not an animated `width`.
-2c. A bare `duration-200` / `duration-300` instead of `duration-site` /
+   2c. A bare `duration-200` / `duration-300` instead of `duration-site` /
    `duration-site-fast` / `duration-site-slow`, which follow the theme's
-   `--site-transition-speed`. Anything the user *drags* is a spring
+   `--site-transition-speed`. Anything the user _drags_ is a spring
    (`APPLE_SPRING`), not a duration at all.
 3. A custom page header instead of `PageLayout`'s — or re-pinning one. The
    shell's header is a flat, transparent big-type block floating on the ring
@@ -346,7 +365,7 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    items (blur cost) or on an ancestor of a `position:fixed` element (containing
    block) — see design-language.md §5.1.
 8. Adding `react-icons`, new font imports, or one-off animation systems.
-8b. Adding decorative pointer tracking outside `lib/liquid/runtime.ts`, or
+   8b. Adding decorative pointer tracking outside `lib/liquid/runtime.ts`, or
    moving a gradient centre/root custom property at pointer rate. Extend the
    bounded shared field instead (see `docs/liquid-glass-system.md`). Also avoid
    reveal-on-scroll that defaults to `opacity: 0`: use `useReveal`, whose hidden
@@ -361,3 +380,8 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
     blur carrier, so the lens band has nowhere to live — see design-language.md
     §5.1). The aside's glint rides its own border-box background layer now (§4.35),
     not a pseudo.
+
+Search/filter controls immediately follow the relevant tabs, before promotional or summary content.
+Loading states reserve space, use the shell column measure, and do not insert a second rail gutter.
+Controls share `--site-control-radius` / `--site-radius-sm`; cards and dialogs use `--site-radius`.
+Click/tap feedback never emits a ripple or changes a control's layout dimensions.

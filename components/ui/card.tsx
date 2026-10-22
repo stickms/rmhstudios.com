@@ -3,8 +3,8 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 /** Shared material surface. Repeated content uses tint/rim without blur;
- * `pane` promotes a singular panel to native backdrop frost. The document's
- * liquid runtime owns nearby tap waves and cursor lighting. Palette, fallbacks
+ * `pane` promotes a singular panel to the bounded optical renderer. The document's
+ * liquid runtime owns cursor lighting. Palette, fallbacks
  * and performance budgets are defined in docs/liquid-glass-system.md.
  */
 function Card({
@@ -13,7 +13,7 @@ function Card({
   interactive = false,
   ...props
 }: React.ComponentProps<'div'> & {
-  /** Use the L2 `.glass-pane` (native frost) instead of the default L1 fill. */
+  /** Use the L2 `.glass-pane` (optical bevel) instead of the default L1 fill. */
   pane?: boolean;
   /** Add hover tint-raise + press flex + the hover-raised rim glint. */
   interactive?: boolean;
@@ -55,7 +55,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-title"
-      className={cn('leading-none font-semibold', className)}
+      className={cn('text-base leading-snug font-semibold tracking-tight', className)}
       {...props}
     />
   );
@@ -65,7 +65,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-description"
-      className={cn('text-site-text-muted text-sm', className)}
+      className={cn('text-site-text-muted text-sm leading-relaxed', className)}
       {...props}
     />
   );

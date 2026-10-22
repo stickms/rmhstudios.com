@@ -136,20 +136,22 @@ export function ListingCard({
 
   return (
     <div
-      className="glass-fill glass-interactive flex items-center gap-3 rounded-site p-3"
+      className="glass-fill glass-interactive flex min-w-0 flex-col items-stretch gap-4 rounded-site p-4"
       style={{
         borderColor: `${RARITY_COLORS[rarity]}55`,
         boxShadow: `inset 0 1px 0 ${RARITY_COLORS[rarity]}55, var(--site-shadow-sm)`,
       }}
     >
-      {listing.item ? (
-        <MarketItemPreview kind={listing.item.kind} data={listing.item.data} />
-      ) : (
-        <div className="h-12 w-12 rounded-site-sm bg-site-surface" />
-      )}
+      <div className="glass-inset flex min-h-32 items-center justify-center rounded-site-sm p-4">
+        {listing.item ? (
+          <MarketItemPreview kind={listing.item.kind} data={listing.item.data} />
+        ) : (
+          <div className="h-12 w-12 rounded-site-sm bg-site-surface" />
+        )}
+      </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-semibold text-site-text">{name}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="break-words text-sm font-semibold text-site-text">{name}</p>
           <span
             className="text-[10px] font-bold uppercase"
             style={{ color: RARITY_COLORS[rarity] }}
@@ -171,7 +173,7 @@ export function ListingCard({
           </span>
         </div>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-1.5">
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-3">
         <span className="inline-flex items-center gap-1 text-sm font-semibold text-site-text">
           <CoinIcon className="h-4 w-4" /> {listing.priceCoins.toLocaleString()}
         </span>
