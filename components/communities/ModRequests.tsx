@@ -2,6 +2,7 @@
 
 /** Pending join requests for a private community: approve or deny. */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { UserPlus } from 'lucide-react';
@@ -39,9 +40,10 @@ export function ModRequests({ slug }: { slug: string }) {
       toast.error(t('requests-error', { defaultValue: "Couldn't update the request" }));
       return;
     }
-    setRequests((cur) => cur?.filter((x) => x.id !== r.id) ?? null);
-    // The decided row is gone and its button with it: keep keyboard focus in the list.
-    requestAnimationFrame(() => listRef.current?.querySelector<HTMLElement>('button')?.focus());
+    // The decided row is gone and its button with it: commit the removal now, then
+    // keep keyboard focus in the list.
+    flushSync(() => setRequests((cur) => cur?.filter((x) => x.id !== r.id) ?? null));
+    listRef.current?.querySelector<HTMLElement>('button')?.focus();
   };
 
   if (!requests) {

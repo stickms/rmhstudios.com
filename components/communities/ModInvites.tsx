@@ -2,6 +2,7 @@
 
 /** Invite links for a private community: create, copy, see usage, revoke. */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
@@ -73,11 +74,10 @@ export function ModInvites({ slug }: { slug: string }) {
       toast.error(t('invite-revoke-error', { defaultValue: "Couldn't revoke the link" }));
       return;
     }
-    setInvites((cur) => cur?.filter((i) => i.id !== invite.id) ?? null);
-    // The revoked row is gone and its button with it: keep keyboard focus in the list.
-    requestAnimationFrame(() =>
-      listRef.current?.querySelector<HTMLElement>('button:not(:disabled)')?.focus(),
-    );
+    // The revoked row is gone and its button with it: commit the removal now, then
+    // keep keyboard focus in the list.
+    flushSync(() => setInvites((cur) => cur?.filter((i) => i.id !== invite.id) ?? null));
+    listRef.current?.querySelector<HTMLElement>('button:not(:disabled)')?.focus();
   };
 
   const linkFor = (code: string) =>
