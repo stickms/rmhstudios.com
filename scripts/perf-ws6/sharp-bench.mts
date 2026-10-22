@@ -7,7 +7,14 @@ const base = await sharp('public/og-spatial.png')
   .resize(2048, 1536, { fit: 'cover' })
   .jpeg({ quality: 88 })
   .toBuffer();
-console.log('source bytes', base.length, 'sharp.concurrency', sharp.concurrency(), 'UV_THREADPOOL_SIZE', process.env.UV_THREADPOOL_SIZE ?? '(default 4)');
+console.log(
+  'source bytes',
+  base.length,
+  'sharp.concurrency',
+  sharp.concurrency(),
+  'UV_THREADPOOL_SIZE',
+  process.env.UV_THREADPOOL_SIZE ?? '(default 4)',
+);
 
 let maxGap = 0;
 let last = performance.now();
@@ -32,12 +39,20 @@ for (const f of ['webp', 'avif', 'jpeg'] as ImageFormat[]) {
     for (let i = 0; i < 5; i++) runs.push(await once(w, f));
     runs.sort((a, b) => a.ms - b.ms);
     const m = runs[2];
-    console.log(`${f.padEnd(5)} w=${String(w).padEnd(5)} ${m.ms.toFixed(1).padStart(7)} ms  loop-stall ${m.stall.toFixed(1).padStart(5)} ms  ${m.bytes}B ${m.type}`);
+    console.log(
+      `${f.padEnd(5)} w=${String(w).padEnd(5)} ${m.ms.toFixed(1).padStart(7)} ms  loop-stall ${m.stall.toFixed(1).padStart(5)} ms  ${m.bytes}B ${m.type}`,
+    );
   }
 }
 
-console.log('--- 8 concurrent distinct encodes (miss storm), wall + max stall + per-request latency');
-for (const [f, w] of [['webp', 1024], ['avif', 1024], ['avif', 1600]] as [ImageFormat, number][]) {
+console.log(
+  '--- 8 concurrent distinct encodes (miss storm), wall + max stall + per-request latency',
+);
+for (const [f, w] of [
+  ['webp', 1024],
+  ['avif', 1024],
+  ['avif', 1600],
+] as [ImageFormat, number][]) {
   maxGap = 0;
   last = performance.now();
   const t = performance.now();
@@ -50,7 +65,9 @@ for (const [f, w] of [['webp', 1024], ['avif', 1024], ['avif', 1600]] as [ImageF
     }),
   );
   lat.sort((a, b) => a - b);
-  console.log(`${f} ~w=${w}: wall ${(performance.now() - t).toFixed(0)} ms, per-req p50 ${lat[4].toFixed(0)} max ${lat[7].toFixed(0)}, loop stall ${maxGap.toFixed(1)} ms`);
+  console.log(
+    `${f} ~w=${w}: wall ${(performance.now() - t).toFixed(0)} ms, per-req p50 ${lat[4].toFixed(0)} max ${lat[7].toFixed(0)}, loop stall ${maxGap.toFixed(1)} ms`,
+  );
 }
 clearInterval(hb);
 process.exit(0);

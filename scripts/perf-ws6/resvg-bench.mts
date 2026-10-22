@@ -15,9 +15,22 @@ Resvg.prototype.render = function (this: any) {
   if (!svgCaptured) svgCaptured = this.toString();
   return orig.call(this);
 };
-await renderPageCard({ cacheKey: 'cap', eyebrow: 'Devlog', title: 'A title', subtitle: 'sub '.repeat(30), stats: [{ value: '3', label: 'x', lead: true }] });
+await renderPageCard({
+  cacheKey: 'cap',
+  eyebrow: 'Devlog',
+  title: 'A title',
+  subtitle: 'sub '.repeat(30),
+  stats: [{ value: '3', label: 'x', lead: true }],
+});
 const svg = svgCaptured!;
-console.log('svg bytes', svg.length, 'has <text', /<text/.test(svg), 'has font-family', /font-family/.test(svg));
+console.log(
+  'svg bytes',
+  svg.length,
+  'has <text',
+  /<text/.test(svg),
+  'has font-family',
+  /font-family/.test(svg),
+);
 
 function time(label: string, fn: () => unknown, n = 8) {
   const ts: number[] = [];
@@ -32,9 +45,13 @@ function time(label: string, fn: () => unknown, n = 8) {
   return out;
 }
 
-const a = time('default (system fonts)', () => new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } }).render().asPng());
+const a = time('default (system fonts)', () =>
+  new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } }).render().asPng(),
+);
 const b = time('loadSystemFonts:false', () =>
-  new Resvg(svg, { fitTo: { mode: 'width', value: 1200 }, font: { loadSystemFonts: false } }).render().asPng(),
+  new Resvg(svg, { fitTo: { mode: 'width', value: 1200 }, font: { loadSystemFonts: false } })
+    .render()
+    .asPng(),
 );
 const hash = (x: Uint8Array) => createHash('md5').update(x).digest('hex');
 console.log('identical PNG bytes:', hash(a) === hash(b), a.length, b.length);
@@ -52,10 +69,21 @@ for (let i = 0; i < 6; i++) {
   stallMax = 0;
   last = performance.now();
   const t = performance.now();
-  const r = await renderAsync(svg, { fitTo: { mode: 'width', value: 1200 }, font: { loadSystemFonts: false } });
+  const r = await renderAsync(svg, {
+    fitTo: { mode: 'width', value: 1200 },
+    font: { loadSystemFonts: false },
+  });
   const png = r.asPng();
   ts.push(performance.now() - t);
-  console.log('renderAsync run', i, (performance.now() - t).toFixed(1), 'ms; max loop stall', stallMax.toFixed(1), 'identical', hash(png) === hash(b));
+  console.log(
+    'renderAsync run',
+    i,
+    (performance.now() - t).toFixed(1),
+    'ms; max loop stall',
+    stallMax.toFixed(1),
+    'identical',
+    hash(png) === hash(b),
+  );
 }
 clearInterval(hb);
 process.exit(0);
