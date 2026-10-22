@@ -5,6 +5,18 @@ import { renderUrlset, type SitemapEntry } from '@/lib/sitemap';
 /** Batch-gzip serialisation, the L1 cache + single-flight, and the HTTP validators. */
 
 const batches = vi.fn();
+const createdGz = vi.hoisted(() => [] as import('node:zlib').Gzip[]);
+vi.mock('node:zlib', async (orig) => {
+  const actual = await orig<typeof import('node:zlib')>();
+  return {
+    ...actual,
+    createGzip: (...a: Parameters<typeof actual.createGzip>) => {
+      const g = actual.createGzip(...a);
+      createdGz.push(g);
+      return g;
+    },
+  };
+});
 vi.mock('@/lib/sitemap.server', () => ({
   renderSectionBatches: (...a: unknown[]) => batches(...a),
 }));
@@ -41,6 +53,18 @@ describe('gzipUrlset', () => {
     expect(gunzipSync(a.gzip).toString()).toBe(expected);
     expect(gunzipSync(b.gzip).toString()).toBe(expected);
     expect(b.entries).toBe(23);
+  });
+
+  it('destroys the gzip stream and propagates when the source throws', async () => {
+    createdGz.length = 0;
+    const { gzipUrlset } = await import('@/lib/sitemap-serve.server');
+    async function* boom() {
+      yield [entry(1)];
+      throw new Error('db down');
+    }
+    await expect(gzipUrlset(boom(), 'https://example.test')).rejects.toThrow('db down');
+    expect(createdGz.length).toBeGreaterThan(0);
+    expect(createdGz.every((g) => g.destroyed)).toBe(true);
   });
 
   it('renders an empty section exactly as before', async () => {
