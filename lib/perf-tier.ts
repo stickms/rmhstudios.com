@@ -122,7 +122,7 @@ export function isPerfLite(): boolean {
  * it does NOT keep is scroll-linked main-thread transform work, because iOS
  * scrolls on the compositor thread and hands JS the offset a frame late, so any
  * effect driven from a scroll event is structurally behind the content it is
- * decorating (`components/radial/RadialWheel.tsx` §the rake).
+ * decorating. The feed uses native document scrolling in every engine.
  *
  * The class is stamped pre-paint by `platformScript` in `app/routes/__root.tsx`.
  * Also read by `hooks/useLiquidBackground.ts` and the `html.ios-webkit` tier in
@@ -138,12 +138,8 @@ export function isIosWebKit(): boolean {
  *
  * Where it can, a scroll-linked decoration belongs in the stylesheet: it is
  * driven by the same thread that owns the scroll, so it cannot lag the content
- * the way a `scroll`-event + rAF pass does. Where it cannot, the effect has to
- * be either hand-driven or dropped — see `RadialWheel`, which chooses between
- * exactly those three outcomes.
- *
- * The matching stylesheet gate is `@supports (animation-timeline: view())`, and
- * the two must stay identical or both paths can run at once (or neither).
+ * the way a `scroll`-event + rAF pass does. Prefer dropping decorative scroll
+ * motion where this is unavailable; the feed now scrolls natively everywhere.
  */
 export function supportsViewTimeline(): boolean {
   return (

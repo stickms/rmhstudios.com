@@ -133,10 +133,6 @@ export default function WikiFrame({
           color: #3366cc;
           text-decoration: underline;
           cursor: pointer;
-          transition: color 0.15s ease;
-        }
-        .wiki-frame a[data-wiki-target]:hover {
-          color: #5577dd;
         }
         .wiki-frame a[data-wiki-target]:visited {
           color: #795cb2;

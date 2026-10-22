@@ -240,12 +240,31 @@ oncall_deploy() {
     esac
 }
 
+# ── Deploy markers for the /admin/alarms graphs ──────────────────────────────
+# Records each deploy result through the web tier's internal API (shared
+# INTERNAL_API_SECRET from $ENV_FILE). Best effort: a few seconds at most, and
+# a failure only means no marker on the graphs.
+record_deploy_event() {
+    local status="$1" reason="$2" secret url
+    secret="${INTERNAL_API_SECRET:-}"
+    [ -n "$secret" ] || secret=$(grep -E '^INTERNAL_API_SECRET=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+    [ -n "$secret" ] || return 0
+    url="${DEPLOY_EVENT_URL:-https://rmhstudios.com/api/internal/ops/deploy-event}"
+    local body
+    body=$(printf '{"sha":"%s","status":"%s","detail":"%s"}' "${DEPLOY_SHORT_HASH:-unknown}" "$status" \
+        "$(printf '%s' "$reason" | tr -d '"\\' | tr '\n\t' '  ' | cut -c1-280)")
+    curl -fsS --max-time 8 -X POST "$url" -H 'content-type: application/json' \
+        -H @<(printf 'x-internal-secret: %s\n' "$secret") --data-binary "$body" >/dev/null 2>&1 \
+        || log "WARNING: could not record the deploy event (no marker on the graphs)."
+}
+
 update_deploy_status() {
     local status="$1"  # "success", "fail", or "rolledback" (web auto-rolled back)
     local reason="${2:-}"  # optional failure reason
 
     DEPLOY_REPORTED=1
     oncall_deploy "$status" "$reason"
+    record_deploy_event "$status" "$reason"
 
     if [ -z "$DISCORD_WEBHOOK" ]; then
         if [ "$status" = "success" ]; then
@@ -563,6 +582,10 @@ fi
 stage fetch
 step_start "Fetching latest code..."
 
+# The release live before this deploy — the post-deploy guard's rollback
+# target. Exported so the self-restart below (HEAD already moved) keeps it.
+export PREV_DEPLOYED_SHA="${PREV_DEPLOYED_SHA:-$("$GIT_BIN" rev-parse HEAD 2>/dev/null || true)}"
+
 # Snapshot deploy.sh hash before pulling so we can detect self-updates.
 DEPLOY_SCRIPT_PATH="${REPO_DIR}/deploy.sh"
 PRE_PULL_HASH=$(sha256sum "$DEPLOY_SCRIPT_PATH" | awk '{print $1}')
@@ -747,6 +770,15 @@ if [ "$full_pull_ok" -ne 0 ]; then
     update_deploy_status fail "image pull failed (full)"
     exit 1
 fi
+
+# Before :latest moves, keep what it pointed at as :rollback — the release the
+# non-web services are restored to if they fail their health checks after
+# `compose up` (rollback_non_web below). Absent on a first deploy: no rollback.
+for img in "$IMAGE_NAME" "$FULL_IMAGE_NAME"; do
+    if "$DOCKER_BIN" image inspect "${img}:latest" >/dev/null 2>&1; then
+        "$DOCKER_BIN" tag "${img}:latest" "${img}:rollback" || true
+    fi
+done
 
 # Retag the pulled images to the local names docker-compose.yml references — both
 # :latest (the compose `image:`) and :${GIT_SHA} (instant rollback target).
@@ -1172,45 +1204,88 @@ check_supervisor() {
 }
 
 stage health
-step_start "Running health checks (ports + supervisor, parallel)..."
-port_ok=0
-sup_ok=0
-failed_ports=""
+step_start "Running health checks (hubs, status, supervisor, workers — parallel)..."
 
-check_port "$PORT_SOCKET"  & p_socket=$!
-check_port "$PORT_RMHBOX"  & p_rmhbox=$!
-check_port "$PORT_RMHTUBE" & p_rmhtube=$!
-check_port "$PORT_STATUS"  & p_status=$!
-check_supervisor           & p_sup=$!
+# HTTP /health on each hub + status (a listening port alone said nothing about a
+# hub that accepted connections but could not serve them).
+check_http() {
+    local port=$1
+    for _ in $(seq 1 "${HTTP_HEALTH_TRIES:-24}"); do
+        curl -fsS --max-time 4 "http://127.0.0.1:${port}/health" >/dev/null 2>&1 && return 0
+        sleep 5
+    done
+    return 1
+}
 
-# Label each job with its compose service name so a failure says WHICH service
-# never published its port. The old report was a bare "port health check failed"
-# covering all four at once — and check_port's own per-port line could not be
-# reached (see above) — so the only artifact of a failed deploy named neither
-# the port nor the service. The labels below are the compose service names
-# verbatim, which also lets the log dump be scoped to what actually failed.
-for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status"; do
-    if ! wait "${job#*:}"; then
-        port_ok=1
-        failed_ports="${failed_ports} ${job%%:*}"
-    fi
-done
-wait "$p_sup" || sup_ok=1
+# The cron/queue workers have no port: healthy = still running, with no new
+# restarts, after a settle window (a crash-loop shows up as RestartCount moving).
+WORKER_SERVICES="jobs ladder-worker homes-worker"
+worker_state() { # → "<running> <restartCount>" or "missing"
+    local id
+    id=$(dc ps -q "$1" 2>/dev/null | head -n1)
+    [ -n "$id" ] || { echo missing; return; }
+    "$DOCKER_BIN" inspect -f '{{.State.Running}} {{.RestartCount}}' "$id" 2>/dev/null || echo missing
+}
+check_workers() {
+    local svc before after failed="" base=""
+    for svc in $WORKER_SERVICES; do base="${base}${svc}|$(worker_state "$svc")"$'\n'; done
+    sleep "${WORKER_SETTLE_SECONDS:-30}"
+    for svc in $WORKER_SERVICES; do
+        before=$(printf '%s' "$base" | grep "^${svc}|" | cut -d'|' -f2-); after=$(worker_state "$svc")
+        case "$after" in
+            "true "*) [ "$after" = "$before" ] || failed="$failed $svc" ;;
+            *) failed="$failed $svc" ;;
+        esac
+    done
+    [ -z "$failed" ] || { echo "$failed"; return 1; }
+}
 
-if [ $port_ok -ne 0 ]; then
-    log "ERROR: port health check failed for:${failed_ports}"
-    log "--- Container logs (${failed_ports# }) ---"
-    # Intentional word splitting: $failed_ports is a space-separated list of
-    # compose service names, so the dump covers exactly the failing services.
+# Runs every check in one parallel wave; prints the failing service names.
+run_health_checks() {
+    local failed="" job wf
+    check_http "$PORT_SOCKET"  & local p_socket=$!
+    check_http "$PORT_RMHBOX"  & local p_rmhbox=$!
+    check_http "$PORT_RMHTUBE" & local p_rmhtube=$!
+    check_http "$PORT_STATUS"  & local p_status=$!
+    check_supervisor           & local p_sup=$!
+    wf=$(mktemp); check_workers > "$wf" & local p_workers=$!
+    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status" "supervisor:$p_sup"; do
+        wait "${job#*:}" || failed="$failed ${job%%:*}"
+    done
+    wait "$p_workers" || failed="$failed $(cat "$wf")"
+    rm -f "$wf"
+    echo "$failed" | xargs
+}
+
+# Restore the non-web services to the release they ran before this deploy (the
+# :rollback images), then re-check them. Web is left alone: it already passed
+# its own smoke test + bake in the hotswap, and rolls back on its own.
+rollback_non_web() {
+    local img
+    for img in "$IMAGE_NAME" "$FULL_IMAGE_NAME"; do
+        "$DOCKER_BIN" image inspect "${img}:rollback" >/dev/null 2>&1 || return 1
+    done
+    log "Rolling back non-web services to the previous release..."
+    for img in "$IMAGE_NAME" "$FULL_IMAGE_NAME"; do
+        "$DOCKER_BIN" tag "${img}:rollback" "${img}:latest" || return 1
+    done
+    dc up -d --no-build --remove-orphans --scale web=0 || return 1
+    local still
+    still=$(run_health_checks)
+    [ -z "$still" ] || { log "Still unhealthy after rollback: $still"; return 1; }
+}
+
+failed_services=$(run_health_checks)
+if [ -n "$failed_services" ]; then
+    log "ERROR: health checks failed for: ${failed_services}"
+    log "--- Container logs (${failed_services}) ---"
     # shellcheck disable=SC2086
-    dc logs --tail=50 $failed_ports 2>&1 || true
-    update_deploy_status fail "port health check failed:${failed_ports}"
-    exit 1
-fi
-if [ $sup_ok -ne 0 ]; then
-    log "ERROR: supervisor /health did not come up on :${SUPERVISOR_METRICS_PORT} after 120s."
-    dc logs --tail=50 supervisor 2>&1 || true
-    update_deploy_status fail "supervisor health check failed"
+    dc logs --tail=50 $failed_services 2>&1 || true
+    if rollback_non_web; then
+        update_deploy_status rolledback "${failed_services} failed health checks — non-web services restored to the previous release (web stays on this one)"
+        exit 1
+    fi
+    update_deploy_status fail "${failed_services} failed health checks and ROLLBACK FAILED — needs a human"
     exit 1
 fi
 
@@ -1328,4 +1403,16 @@ fi
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 update_deploy_status success
+
+# Watch the new release for 15 min and roll it back if the page/API 5xx or
+# latency alarms fire on its traffic (deploy/post-deploy-guard.sh). Detached,
+# so the deploy lock is released now; the guard stands down on a newer deploy.
+# Off for the redeploy the guard itself starts (POST_DEPLOY_GUARD=0).
+if [ "${POST_DEPLOY_GUARD:-1}" = 1 ] && [ -x "${REPO_DIR}/deploy/post-deploy-guard.sh" ] \
+   && [ -n "${PREV_DEPLOYED_SHA:-}" ] && [ "${PREV_DEPLOYED_SHA:0:7}" != "${DEPLOY_SHORT_HASH:0:7}" ]; then
+    setsid nohup bash "${REPO_DIR}/deploy/post-deploy-guard.sh" "$DEPLOY_SHORT_HASH" "$PREV_DEPLOYED_SHA" "$(date +%s)" \
+        >> "${GUARD_LOG:-/home/rmhstudios/post-deploy-guard.log}" 2>&1 < /dev/null &
+    log "Post-deploy guard started (15 min, rollback target ${PREV_DEPLOYED_SHA:0:12})."
+fi
+
 log "=== Deployment complete ($ENVIRONMENT: web=$PORT_WEB, socket=$PORT_SOCKET, rmhbox=$PORT_RMHBOX, rmhtube=$PORT_RMHTUBE, status=$PORT_STATUS) ==="

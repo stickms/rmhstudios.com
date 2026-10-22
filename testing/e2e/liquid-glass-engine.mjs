@@ -24,6 +24,13 @@ mkdirSync(out, { recursive: true });
 const bundle = await build({
   stdin: {
     contents: `import { installLiquidGlass } from './lib/liquid/glass/engine';
+      import { GlassRenderer } from './lib/liquid/glass/renderer';
+      window.glassPoses = {};
+      const draw = GlassRenderer.prototype.draw;
+      GlassRenderer.prototype.draw = function(o, canvas) {
+        window.glassPoses[canvas.parentElement.id] = o.tilt;
+        return draw.call(this, o, canvas);
+      };
       window.stopGlass = installLiquidGlass();`,
     resolveDir: root,
     loader: 'ts',
@@ -39,6 +46,9 @@ const engine = { chromium, firefox, webkit }[browserName];
 assert.ok(engine, 'known browser');
 const browser = await engine.launch({
   headless: true,
+  ...(browserName === 'firefox' && process.env.FIREFOX_PATH
+    ? { executablePath: process.env.FIREFOX_PATH }
+    : {}),
   ...(browserName === 'chromium'
     ? {
         executablePath: process.env.CHROMIUM_PATH,
@@ -67,7 +77,7 @@ try {
     (_, i) =>
       `<p style="margin:0 0 14px;font:600 20px system-ui">Row ${i} — liquid glass bends what scrolls under it.</p>`,
   ).join('');
-  const markup = `<meta name="viewport" content="width=device-width, initial-scale=1"><style>
+  const markup = `<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>
     @layer components; :root{--site-bg:#f1f4fa;--site-text:#10151f;--site-accent:#4a82d8;--site-surface:#f7f9fd;--site-border:#9aa6bb;--site-radius:22px;--site-radius-sm:10px;--site-shadow:0 15px 40px #15203020;--site-shadow-sm:0 3px 10px #15203012;--site-glass-light:white;--glass-blur-factor:1}
     *{box-sizing:border-box} body{margin:0;min-height:2400px;color:var(--site-text);font:16px system-ui;
       background:repeating-linear-gradient(90deg,#d8e1f5 0 16px,#f1f4fa 16px 32px)}
@@ -78,7 +88,7 @@ try {
     #fill{width:300px;height:120px;padding:24px;margin:24px 0}
     #off{width:300px;height:100px;padding:24px;margin:24px 0}
     #aside{width:200px;height:100px;padding:24px;margin:24px 0}
-    #tiny{width:16px;height:16px}
+    #tiny{width:12px;height:12px}
     ${materialCss}</style>
     <header class="glass-chrome" id="chrome"><b>Chrome</b> <button id="btn">Press</button></header>
     <main>
@@ -116,7 +126,7 @@ try {
   check('a visible glass-pane gets a canvas', await has('#pane'));
   check('sticky glass-chrome gets a canvas', await has('#chrome'));
   check('a fixed glass-overlay gets a canvas', await has('#overlay'));
-  check('glass-fill (a repeated card) gets a canvas too: its edge refracts', await has('#fill'));
+  check('glass-fill (a repeated card) gets a lit canvas', await has('#fill'));
   check('data-liquid-material="off" never does', !(await has('#off')));
   check('the opaque aside never does', !(await has('#aside')));
   check('a surface too small for a bevel never does', !(await has('#tiny')));
@@ -207,6 +217,10 @@ try {
   };
   // Without a picture the rim is only light (mostly transparent); an OPAQUE rim is the refracted page.
   check('floating glass has an opaque, refracted rim', (await alphaAt('#chrome', 0.5, 0.96)) > 200);
+  check(
+    'content glass never refracts a stale duplicate of its own text or hover',
+    (await alphaAt('#fill', 0.5, 0.96)) < 200 && (await alphaAt('#pane', 0.5, 0.96)) < 200,
+  );
 
   // ── Cursor light and ripples move the surface, then it settles ──
   const box = await (await page.$('#pane')).boundingBox();
@@ -239,6 +253,39 @@ try {
   );
   check('and the ripple has fully gone by its lifetime', diff(gone, calm) < 0.8);
 
+  // Optical tilt follows the cursor; the card's hit area and text never move.
+  const origin = await page.locator('#pane').boundingBox();
+  await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.2);
+  await settle(550);
+  const leftTilt = await page.evaluate(() => window.glassPoses.pane);
+  await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.8);
+  await settle(550);
+  const rightTilt = await page.evaluate(() => window.glassPoses.pane);
+  check(
+    'the glass tilts gently toward the cursor on both axes',
+    leftTilt[0] < -0.5 &&
+      leftTilt[1] < -0.5 &&
+      rightTilt[0] > 0.5 &&
+      rightTilt[1] > 0.5 &&
+      Math.hypot(...leftTilt) <= 1.001 &&
+      Math.hypot(...rightTilt) <= 1.001,
+  );
+  const held = await page.locator('#pane').boundingBox();
+  check(
+    'optical tilt leaves the live DOM geometry unchanged',
+    origin.x === held.x &&
+      origin.y === held.y &&
+      origin.width === held.width &&
+      origin.height === held.height,
+  );
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await settle(650);
+  check(
+    'reduced motion returns the glass to a neutral optical pose',
+    (await page.evaluate(() => window.glassPoses.pane)).every((v) => v === 0),
+  );
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
   // ── Nothing runs at rest ──
   await page.mouse.move(5, 5);
   await settle(1800);
@@ -246,14 +293,33 @@ try {
   await settle(2200);
   check('at rest the engine draws nothing', (await page.evaluate(() => window.__draws)) === before);
 
-  // ── Scroll: a viewport-anchored surface redraws, a scrolling one does not ──
+  // ── Scroll: invalidate stale refraction once, then let the DOM own motion ──
   const draws0 = await page.evaluate(() => window.__draws);
   await page.evaluate(() => window.scrollTo(0, 220));
   await settle(300);
   check(
-    'scrolling redraws the sticky header (the page behind it changed)',
+    'scrolling redraws the sticky header to clear its stale snapshot',
     (await page.evaluate(() => window.__draws)) > draws0,
   );
+  const during = await page.evaluate(async () => {
+    // Longer than the capture debounce: the old throttle captured mid-gesture.
+    for (let i = 0; i < 24; i++) {
+      window.scrollTo(0, 220 + i * 8);
+      await new Promise((r) => setTimeout(r, 40));
+    }
+    return document.documentElement.hasAttribute('data-liquid-scene');
+  });
+  check('continuous scrolling never displays a stale page capture', !during);
+  check(
+    'the header retains its lit bevel while scrolling',
+    (await alphaAt('#chrome', 0.5, 0.96)) < 200,
+  );
+  await page.waitForFunction(
+    () => document.documentElement.getAttribute('data-liquid-scene') === 'on',
+    null,
+    { timeout: 25000 },
+  );
+  check('fresh refraction returns after scrolling settles', true);
   await page.evaluate(() => window.scrollTo(0, 0));
   await settle(300);
 
@@ -307,8 +373,8 @@ try {
       (await page.$$('[data-liquid-canvas]')).length === 0 &&
       (await page.evaluate(() => !document.documentElement.hasAttribute('data-liquid-scene'))),
   );
-  check('no page errors', errors.length === 0);
   if (errors.length) console.log(errors.slice(0, 4));
+  check('no page errors', errors.length === 0);
   console.log(`\n${checks} checks passed on ${browserName}; screenshots: ${out}`);
 } finally {
   await browser.close();

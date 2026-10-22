@@ -23,7 +23,7 @@ same optics plus a **dough** simulation.
 | One shared GL context, draw + copy                | `lib/liquid/glass/renderer.ts`                                                  |
 | Per-surface decisions (bevel, budget, coverage)   | `lib/liquid/glass/policy.ts` (pure, unit-tested)                                |
 | Computed colour → RGBA                            | `lib/liquid/glass/color.ts` (pure, unit-tested)                                 |
-| The page snapshot (capture, throttle, backoff)    | `lib/liquid/glass/scene.ts`, on `lib/eversion/capture.ts` (`modern-screenshot`) |
+| The page snapshot (capture, debounce, backoff)    | `lib/liquid/glass/scene.ts`, on `lib/eversion/capture.ts` (`modern-screenshot`) |
 | Snapshot shared with other GL contexts            | `lib/liquid/glass/scene-store.ts`                                               |
 | Neighbour push (translate-only)                   | `lib/liquid/runtime.ts`, wave math in `lib/liquid/interaction.ts`               |
 | Globe dough simulation                            | `lib/dough.ts` (pure, unit-tested)                                              |
@@ -38,8 +38,8 @@ same optics plus a **dough** simulation.
 | `glass-overlay` (dialogs, menus, toasts)                                | slab                                 | **yes**                                      |
 | `glass-pane` (heroes, composers, panels)                                | slab                                 | no by default; `data-liquid-glass="refract"` |
 | `app-glass` (full-screen app tier panels)                               | slab                                 | no by default                                |
-| `glass-fill` (repeated cards, rows)                                     | slab, admitted after the roles above | yes (its own paint; see below)               |
-| `glass-inset`, solid `[data-slot=button]`, `[data-slot=input/textarea]` | slab, admitted last (controls)       | yes                                          |
+| `glass-fill` (repeated cards, rows)                                     | slab, admitted after the roles above | no (live content)                            |
+| `glass-inset`, `[data-slot=button]`, `[data-evert]`, field hover carrier | slab, admitted last (controls)       | no (live controls)                           |
 | `[data-liquid-glass]`                                                   | slab (opt in any element)            | only with `="refract"`                       |
 
 Why panes do not refract by default: a pane is a content block, so its own text is in the
@@ -48,7 +48,7 @@ start inside the bevel. Floating glass is _hidden_ from the snapshot, so what it
 really is what is behind it. A pane over imagery with nothing near its edge can opt in.
 
 Opt-outs: `data-liquid-material="off"` or `data-liquid-glass="off"`. Never slabs: the
-opaque `glass-chrome--aside`, the globe stage, eversion layers, anything smaller than 28px
+opaque `glass-chrome--aside`, the globe stage, eversion layers, anything smaller than 16px
 or larger than 640,000px².
 
 ## Clarity: tints, the ground and hover (read this before changing a fill)
@@ -83,9 +83,10 @@ bevel is wider than it was (up to 24px, refraction reach just under it). The CSS
 transparency, `perf-lite`, past the budget) is a coat and a hairline border, nothing that could clash. Do not
 add `box-shadow` to a UI surface; if something needs separating from the ground, that is the glass's job.
 
-Panes and cards stay in the page snapshot (only floating glass is hidden from it), so their rim bends their own
-paint rather than what is behind them; their tint is therefore not mixed in again. Opt a surface whose text sits
-in the bevel band out of refraction with `data-liquid-glass="lit"`.
+Panes, cards and controls stay in the snapshot as page content, but **do not sample it themselves**. Sampling their own
+text, borders or hover would draw a stale second copy at the rim, making hover look cut off and scrolling shimmer.
+Only floating glass refracts by default; a pane over imagery can opt in with `data-liquid-glass="refract"`.
+`data-liquid-glass="lit"` always disables refraction while retaining the lit bevel, cursor light and tap ripples.
 
 ## The slab
 
@@ -108,6 +109,18 @@ Fresnel, and a soft sheen. Shade is as important as light: glass on a pale groun
 through a dark refraction line at the rim and a denser far side, drawn in the theme's ink
 (`--site-text`), so it works in monochrome and every other theme.
 
+Hover. All adopted controls (including ghost buttons, links, menu items and tabs) use the same bounded optical tilt:
+the shared engine eases a unit-disc cursor pose, and the shader rocks its normal by at most about 2.6 degrees.
+Reflections and refracting rims respond while text, hit areas and scroll geometry stay fixed. The face bloom is subtle;
+shader-backed controls do not also paint a flat colour wash. Fields and native selects use the existing inert hover
+carrier, drawn as lit glass; compact 16–27px controls get a narrower bevel. Disabled controls never tilt.
+Reduced motion, coarse pointers and scrolling return the optical pose to zero.
+
+Hover colours are normalized at compilation by `lib/liquid/hover-css.ts` (Vite's shared PostCSS pipeline). It handles
+Tailwind's nested/escaped variants and authored styles, replacing hover colour, border, shadow and host-transform
+changes while preserving focus/selected/disabled states and content reveals. Runtime inline CSS follows the same
+contract. The no-WebGL tier uses the shared clear coat instead of a variant-colour fill.
+
 Ripples. Each tap within 520px of a surface adds an expanding wave (up to 3 per surface,
 1.15s life) that tilts the normal, so the glints run over the glass like it was liquid while
 the text on it stays perfectly still.
@@ -128,10 +141,11 @@ Firefox/Safari/Chromium quirks.
   **hidden, not removed**: they keep their box and lose their paint. Removing a sticky header
   reflows the page up by its height, and every rim would then refract a picture of a
   different page (this was a real bug found during development).
-- **Using it.** The picture is mapped with the scroll since it was taken. A viewport-anchored
-  surface fades its refraction out as its sample region leaves the picture; a route change
-  fades it out until a new one lands. Only the bevel uses it, so a picture a second or two
-  old is invisible.
+- **Using it.** Content glass uses live DOM plus a lit rim. On scroll, floating glass immediately drops stale
+  refraction and keeps the lit rim attached to its host; it does not repaint captured text a frame behind the browser's
+  compositor. Cursor lighting and ripples pause during scrolling. Refraction returns only after a fresh settled capture.
+  Requests reset the debounce, including queued idle callbacks. Pictures invalidated by a new request, route, viewport
+  size or scroll position while in flight are closed without publishing.
 - **Observability.** `<html data-liquid-scene="on">` while a picture is in use.
 
 ## What runs when
@@ -144,7 +158,8 @@ frame recomputes whether anything is still moving and reschedules only if so (th
 engine reads rects in observer callbacks and frames and writes only canvases and attributes.
 
 Draw path: one shared WebGL 2 context renders a surface offscreen, then `drawImage` copies it
-into that surface's own 2D canvas in the same task. The page never holds more than one GL
+into that surface's own 2D canvas in the same task. Its backing store grows to the largest admitted dimensions and is
+reused; it never reallocates for each differently sized surface. A frame reads all host rects before drawing any canvas. The page never holds more than one GL
 context for all slabs (browsers cap them at ~16; the globe uses a second).
 
 ## Tiers and fallbacks
@@ -228,10 +243,13 @@ direct children of a glass role: the canvas is appended as its last child. Do no
 
 | Engine                                        | Verified                                                                                                                                                                                                                                                                                         |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Chromium (headless, SwiftShader)              | Everything: unit tests, `glass-slab`, `dough-globe`, `liquid-glass-engine` (30 checks), the real app                                                                                                                                                                                             |
-| WebKit (WebKitGTK 2.52, WebGL 2, real engine) | Shaders compile and are **pixel-identical** to Chromium at probed points; the full engine on the real site, including a successful page capture; the globe                                                                                                                                       |
-| Firefox / Gecko                               | **Not run.** The sandbox this was built in could not download Firefox. By construction there is no `backdrop-filter` dependency, no `rotate()` on text, no float-texture or extension requirement beyond WebGL 2 core, and no `will-change` toggling. **Test it in Firefox before trusting it.** |
-| Real GPUs, iOS, Android                       | **Not run.** Headless software rendering says nothing about energy or frame cost.                                                                                                                                                                                                                |
+| Chromium 156 (headless) | `liquid-glass-engine`: 37 checks; `ui-stability`: 80 checks across three themes × two widths. Real `/games` page and shell. |
+| WebKit 27.2 (headless, macOS) | Same glass and feed suites, 34 + 80 checks; real `/games` page and shell. |
+| Firefox 157 / Gecko (headless, macOS) | Same glass and feed suites, 34 + 80 checks; real `/games` page and shell. Firefox uses isolated test app data for Playwright's macOS startup issue. |
+| Physical iOS, Android, Windows/Linux GPUs | Not verified by these headless engine tests. |
+
+The live home feed could not be checked against this local database (its schema is behind the code); the feed
+suite uses the actual wheel, hover hook, interaction runtime and styles with fixture posts instead.
 
 Note for anyone screenshotting WebKit WebGL under WebDriver: a WebGL canvas is only
 _presented_ on an animation frame. A screenshot taken straight after a draw shows the

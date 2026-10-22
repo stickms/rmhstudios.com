@@ -1,8 +1,10 @@
 {
   "acked-by": "Acknowledged by",
   "acked-detail": "Discord user {{id}}, {{when}}",
+  "chart-after-deploy": "after deploy {{sha}} ({{status}})",
   "chart-col-time": "Time",
   "chart-col-value": "Value",
+  "chart-deploys": "{{n}} deploys",
   "chart-empty": "Not enough data in this range yet. A point is recorded every minute.",
   "chart-empty-2": "No data for this metric yet. It appears a few minutes after the metric first sees traffic.",
   "chart-label": "{{title}}, latest {{value}}. Use the arrow keys to read earlier points.",
