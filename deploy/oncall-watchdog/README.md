@@ -94,6 +94,21 @@ directory and deploys on merge to `main`. It needs two repo (or
 
 CI never sets Worker secrets; those stay as put by hand in step 4.
 
+## `/page` — cutting a ticket by hand
+
+Any member of the server can type `/page` in Discord: pick a severity (SEV1–5),
+a title, optional details. It becomes a `TICKET:<id>` alarm in `#rmh-oncall`
+like any other — SEV1/SEV2 ping `@oncall` (SEV1 also the escalation role) and
+re-ping until acknowledged — plus a **Resolve** button, since nothing clears a
+person's ticket automatically. Only `@oncall` can press the buttons. Each person
+can cut 5 tickets an hour. The confirmation is visible only to the reporter.
+
+Register (or update) the command once per change to its definition:
+
+```bash
+DISCORD_BOT_TOKEN=… node deploy/oncall-watchdog/scripts/register-commands.mjs <application id> <guild id>
+```
+
 ## Operating notes
 
 - Logs: `npx wrangler@4 tail --config deploy/oncall-watchdog/wrangler.toml`.

@@ -20,6 +20,13 @@ allow notifications from the server, or a page can arrive silently.
 | **Sev4** | Automated | Posted, no ping | This sprint |
 | **Sev5** | Automated | Posted, no ping | Informational |
 
+## Cutting a ticket yourself
+
+Seen something on-call should handle? Type `/page` anywhere in the Discord
+server: severity, title, and what you saw. SEV2 pages `@oncall` immediately;
+SEV1 also pages the escalation role. It shows in `#rmh-oncall` and on
+`/admin/alarms`, and `@oncall` closes it with **Resolve**.
+
 ## When you are paged
 
 1. **Acknowledge** (✅). Only `@oncall` members can, and it stops the re-pings.

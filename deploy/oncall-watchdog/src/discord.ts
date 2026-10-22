@@ -42,11 +42,14 @@ export async function verifyDiscordSignature(
 
 /* ─── Message shape ─────────────────────────────────────────────────────── */
 
-export const InteractionType = { PING: 1, MESSAGE_COMPONENT: 3 } as const;
+export const InteractionType = { PING: 1, APPLICATION_COMMAND: 2, MESSAGE_COMPONENT: 3 } as const;
 export const ResponseType = { PONG: 1, CHANNEL_MESSAGE: 4, UPDATE_MESSAGE: 7 } as const;
 const EPHEMERAL = 64;
 
-const ButtonStyle = { SUCCESS: 3, DANGER: 4, LINK: 5 } as const;
+const ButtonStyle = { SECONDARY: 2, SUCCESS: 3, DANGER: 4, LINK: 5 } as const;
+
+/** Alarm id for tickets cut by a person with /page. */
+export const TICKET_ID = 'TICKET';
 
 export interface DiscordMessage {
   content?: string;
@@ -84,6 +87,11 @@ function statusLine(rec: AlarmRecord): string {
   return pages(rec.sev) ? '🚨 Firing — **not acknowledged**' : '⚠️ Firing';
 }
 
+/** Who an alert pings: @oncall, plus the escalation role for a Sev1. */
+export function pageRoles(rec: Pick<AlarmRecord, 'sev'>, ctx: MessageContext): string[] {
+  return rec.sev === 1 && ctx.escalationRoleId ? [ctx.roleId, ctx.escalationRoleId] : [ctx.roleId];
+}
+
 /** The alert itself: the message every later edit rewrites in place. */
 export function alertMessage(rec: AlarmRecord, ctx: MessageContext): DiscordMessage {
   const paging = pages(rec.sev) && rec.state === 'firing' && !rec.acked;
@@ -104,10 +112,14 @@ export function alertMessage(rec: AlarmRecord, ctx: MessageContext): DiscordMess
       buttons.push({ type: 2, style: ButtonStyle.DANGER, label: 'Escalate to Sev1', emoji: { name: '🔺' }, custom_id: `esc|${rec.key}` });
     }
   }
+  // A ticket cut by a person (/page) has no check that clears it: it needs a button.
+  if (rec.state === 'firing' && rec.id === TICKET_ID) {
+    buttons.push({ type: 2, style: ButtonStyle.SECONDARY, label: 'Resolve', emoji: { name: '✔️' }, custom_id: `res|${rec.key}` });
+  }
   if (url) buttons.push({ type: 2, style: ButtonStyle.LINK, label: 'Runbook', emoji: { name: '📖' }, url });
 
   return {
-    content: `${paging ? `<@&${ctx.roleId}> ` : ''}**SEV${rec.sev}** · ${rec.title}`,
+    content: `${paging ? `${pageRoles(rec, ctx).map((r) => `<@&${r}>`).join(' ')} ` : ''}**SEV${rec.sev}** · ${rec.title}`,
     embeds: [
       {
         title: `[SEV${rec.sev}] ${rec.id} · ${rec.title}`.slice(0, 256),
@@ -123,7 +135,7 @@ export function alertMessage(rec: AlarmRecord, ctx: MessageContext): DiscordMess
     ],
     components: buttons.length ? [{ type: 1, components: buttons }] : [],
     // Only the alert that is paging may ping, and only the on-call role.
-    allowed_mentions: paging ? { parse: [], roles: [ctx.roleId] } : { parse: [] },
+    allowed_mentions: paging ? { parse: [], roles: pageRoles(rec, ctx) } : { parse: [] },
   };
 }
 
