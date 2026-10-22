@@ -497,12 +497,13 @@ export interface GroupCallEndedPayload {
 /**
  * Your request did not go through.
  *
- * `callId` is present when we were refused entry to a specific room and absent
- * when a `START` was refused before a room existed — which is why the client's
- * pre-join state has to exist without one (see `lib/groupcall/state.ts`).
+ * `operation` lets a failed mid-call invite be reported without ending the
+ * inviter's existing room. `callId` is present when the refusal names a room
+ * and absent when a `START` was refused before one existed.
  */
 export interface GroupCallRejectedPayload {
   reason: GroupCallRejectReason;
+  operation: 'start' | 'join' | 'invite';
   callId?: string;
   origin?: GroupCallOrigin;
   originId?: string | null;

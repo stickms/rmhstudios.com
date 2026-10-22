@@ -88,7 +88,11 @@ import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/space
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './handlers/matchmaking';
 import { registerCallHandlers, handleCallDisconnect } from './handlers/call';
-import { registerGroupCallHandlers, handleGroupCallDisconnect } from './handlers/group-call';
+import {
+  registerGroupCallHandlers,
+  handleGroupCallDisconnect,
+  reconcileOrphanedGroupCalls,
+} from './handlers/group-call';
 import { registerControllerHandlers, handleControllerDisconnect } from './handlers/controller';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
@@ -612,10 +616,17 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // ─── Start listening ────────────────────────────────────────────
 
-httpServer.listen(config.PORT, () => {
-  logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
-  initializeBlackjackPublicTable(io);
-  initializeHoldem(io);
-  initializeBaccarat(io);
-  initializeRoulette(io);
-});
+void reconcileOrphanedGroupCalls()
+  .then(() => {
+    httpServer.listen(config.PORT, () => {
+      logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
+      initializeBlackjackPublicTable(io);
+      initializeHoldem(io);
+      initializeBaccarat(io);
+      initializeRoulette(io);
+    });
+  })
+  .catch((err: unknown) => {
+    logger.error({ event: 'group_call_orphan_reconciliation_failed', error: String(err) });
+    process.exit(1);
+  });

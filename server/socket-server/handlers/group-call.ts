@@ -205,6 +205,63 @@ const byUser = new Map<string, string>();
 /** `community:<id>` / `party:<id>` → callId, so an origin can only have one room. */
 const byOrigin = new Map<string, string>();
 
+/** Close persisted rooms left behind when the previous signaling process died. */
+export async function reconcileOrphanedGroupCalls(): Promise<void> {
+  const prisma = getPrismaClient();
+  const now = new Date();
+  const orphaned = await prisma.groupCall.findMany({
+    where: { endedAt: null, status: { in: ['ACTIVE', 'RINGING'] } },
+    select: {
+      id: true,
+      status: true,
+      participants: {
+        where: { status: 'JOINED' },
+        select: { userId: true, joinedAt: true },
+      },
+    },
+  });
+  if (orphaned.length === 0) return;
+
+  await prisma.$transaction(async (tx) => {
+    for (const call of orphaned) {
+      for (const participant of call.participants) {
+        await tx.groupCallParticipant.updateMany({
+          where: { callId: call.id, userId: participant.userId, status: 'JOINED' },
+          data: {
+            status: 'LEFT',
+            leftAt: now,
+            durationSec: participant.joinedAt
+              ? Math.max(0, Math.round((now.getTime() - participant.joinedAt.getTime()) / 1000))
+              : 0,
+          },
+        });
+      }
+    }
+
+    await tx.groupCallParticipant.updateMany({
+      where: { callId: { in: orphaned.map((call) => call.id) }, status: 'INVITED' },
+      data: { status: 'MISSED', leftAt: now },
+    });
+
+    const ringingIds = orphaned.filter((call) => call.status === 'RINGING').map((call) => call.id);
+    const activeIds = orphaned.filter((call) => call.status === 'ACTIVE').map((call) => call.id);
+    if (ringingIds.length > 0) {
+      await tx.groupCall.updateMany({
+        where: { id: { in: ringingIds }, endedAt: null, status: 'RINGING' },
+        data: { status: 'MISSED', endedAt: now },
+      });
+    }
+    if (activeIds.length > 0) {
+      await tx.groupCall.updateMany({
+        where: { id: { in: activeIds }, endedAt: null, status: 'ACTIVE' },
+        data: { status: 'ENDED', endedAt: now },
+      });
+    }
+  });
+
+  logger.info({ event: 'group_call_orphans_reconciled', count: orphaned.length });
+}
+
 /* -------------------------------------------------------------------------- */
 /* Names                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -890,9 +947,10 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
   };
   const reject = (
     reason: GroupCallRejectReason,
+    operation: 'start' | 'join' | 'invite',
     extra?: { callId?: string; origin?: GroupCallOrigin; originId?: string | null },
   ): void => {
-    socket.emit(GCALL_S2C.REJECTED, { reason, ...extra });
+    socket.emit(GCALL_S2C.REJECTED, { reason, operation, ...extra });
   };
 
   /**
@@ -901,12 +959,15 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
    * Shared by `JOIN` and by a `START` that turned out to be a join, because
    * "create or join" must not mean two different admissions.
    */
-  const enterRoom = async (call: LiveGroupCall): Promise<void> => {
+  const enterRoom = async (
+    call: LiveGroupCall,
+    operation: 'start' | 'join',
+  ): Promise<void> => {
     const userId = uid();
     if (!userId) return fail('unauthenticated', 'Sign in to join a call');
 
     const busy = getBusy(userId);
-    if (busy && busy.id !== call.id) return reject('busy', { callId: call.id });
+    if (busy && busy.id !== call.id) return reject('busy', operation, { callId: call.id });
 
     const existing = call.participants.get(userId);
 
@@ -945,8 +1006,12 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // is what admission is checked against, so a dropped connection can come
       // back. The contract has no "not invited"; `not-member` is the member of
       // `GroupCallRejectReason` that means "this room is not open to you".
-      if (!existing && !call.invited.has(userId)) return reject('not-member', { callId: call.id });
-      if (isRosterFull(joinedCount(call))) return reject('full', { callId: call.id });
+      if (!existing && !call.invited.has(userId)) {
+        return reject('not-member', operation, { callId: call.id });
+      }
+      if (isRosterFull(joinedCount(call))) {
+        return reject('full', operation, { callId: call.id });
+      }
     } else {
       const originId = call.originId ?? '';
       const member = await isOriginMember(call.origin, originId, userId);
@@ -960,12 +1025,14 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         banned: false,
         participantCount: joinedCount(call),
       });
-      if (!verdict.allowed) return reject(verdict.reason, { callId: call.id });
+      if (!verdict.allowed) return reject(verdict.reason, operation, { callId: call.id });
     }
 
     // The room may have ended while we were awaiting membership.
-    if (calls.get(call.id) !== call) return reject('gone', { callId: call.id });
-    if (!claimBusy(userId, 'gcall', call.id)) return reject('busy', { callId: call.id });
+    if (calls.get(call.id) !== call) return reject('gone', operation, { callId: call.id });
+    if (!claimBusy(userId, 'gcall', call.id)) {
+      return reject('busy', operation, { callId: call.id });
+    }
 
     const at = Date.now();
     let participant = call.participants.get(userId);
@@ -1029,16 +1096,16 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       if (inviteeIds.length === 0) {
         return fail('malformed', 'An ad-hoc call needs somebody to ring');
       }
-      if (getBusy(userId)) return reject('busy', { origin, originId: null });
+      if (getBusy(userId)) return reject('busy', 'start', { origin, originId: null });
 
       const { admitted, refusals } = await screenInvitees(io, userId, inviteeIds);
       // One refused invitee is dropped in silence — the host cannot tell a
       // block from a busy line from a closed tab, exactly as in the 1:1 flow.
       // Refusing *everybody* is a call that did not happen, and gets a reason.
       if (admitted.length === 0) {
-        return reject(strongestReason(refusals), { origin, originId: null });
+        return reject(strongestReason(refusals), 'start', { origin, originId: null });
       }
-      if (getBusy(userId)) return reject('busy', { origin, originId: null });
+      if (getBusy(userId)) return reject('busy', 'start', { origin, originId: null });
 
       const host = await loadPeer(userId, selfName(), selfImage());
       const call = openRoom(socket, {
@@ -1047,7 +1114,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         originId: null,
         conversationId,
       });
-      if (!call) return reject('busy', { origin, originId: null });
+      if (!call) return reject('busy', 'start', { origin, originId: null });
       // Everyone onto the roster first, so both the host's `joined` and every
       // invitee's card describe the same complete room.
       for (const peer of admitted) addRinging(io, call, peer);
@@ -1070,23 +1137,23 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     const existing = existingId ? calls.get(existingId) : undefined;
     // Contract decision #1: a second room for one community is a state the UI
     // cannot represent, so starting one that exists is joining it.
-    if (existing) return void (await enterRoom(existing));
+    if (existing) return void (await enterRoom(existing, 'start'));
 
-    if (getBusy(userId)) return reject('busy', { origin, originId });
+    if (getBusy(userId)) return reject('busy', 'start', { origin, originId });
     if (!(await isOriginMember(origin, originId, userId))) {
       // Covers a private community just as it covers a public one: without a
       // membership row there is nothing to admit.
-      return reject('not-member', { origin, originId });
+      return reject('not-member', 'start', { origin, originId });
     }
 
     // Somebody may have opened it while we were reading the membership row.
     const raced = byOrigin.get(originKey(origin, originId));
     const racedCall = raced ? calls.get(raced) : undefined;
-    if (racedCall) return void (await enterRoom(racedCall));
+    if (racedCall) return void (await enterRoom(racedCall, 'start'));
 
     const host = await loadPeer(userId, selfName(), selfImage());
     const call = openRoom(socket, { host, origin, originId, conversationId: null });
-    if (!call) return reject('busy', { origin, originId });
+    if (!call) return reject('busy', 'start', { origin, originId });
     emitJoined(socket, call, userId);
     pushActive(io, call, true);
     logger.info({ event: 'group_call_started', callId: call.id, origin, originId, hostId: userId });
@@ -1104,8 +1171,8 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     const call = calls.get(callId);
     // A room that ended while the card was on screen, or one lost to a hub
     // restart. Both are `gone`, and both are the client's cue to drop the card.
-    if (!call) return reject('gone', { callId });
-    await enterRoom(call);
+    if (!call) return reject('gone', 'join', { callId });
+    await enterRoom(call, 'join');
   });
 
   // ─── Invite (mid-call) ───
@@ -1118,7 +1185,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     const callId = asId(payload?.callId);
     if (!callId) return fail('malformed', 'Missing callId');
     const call = calls.get(callId);
-    if (!call) return reject('gone', { callId });
+    if (!call) return reject('gone', 'invite', { callId });
 
     const inviter = call.participants.get(userId);
     if (!inviter || inviter.joinedAt === null) {
@@ -1134,10 +1201,12 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // Ringing invitees hold a roster slot even before they answer, so the
       // roster — not the joined count — is what a mid-call invite can fill.
       const room = MAX_GROUP_CALL_PARTICIPANTS - call.participants.size;
-      if (room <= 0) return reject('full', { callId });
+      if (room <= 0) return reject('full', 'invite', { callId });
       const { admitted, refusals } = await screenInvitees(io, userId, targets.slice(0, room));
-      if (calls.get(callId) !== call) return reject('gone', { callId });
-      if (admitted.length === 0) return reject(strongestReason(refusals), { callId });
+      if (calls.get(callId) !== call) return reject('gone', 'invite', { callId });
+      if (admitted.length === 0) {
+        return reject(strongestReason(refusals), 'invite', { callId });
+      }
       const rung = admitted.filter((peer) => !call.participants.has(peer.id));
       for (const peer of rung) addRinging(io, call, peer);
       // Deltas before cards, so an invitee already on the roster learns about

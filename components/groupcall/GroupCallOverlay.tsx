@@ -58,8 +58,10 @@ import {
 import type { GroupCallEndReason, GroupCallOrigin } from '@/lib/groupcall/events';
 import { GroupCallRoster } from '@/components/groupcall/GroupCallRoster';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 /** How long the ended-room notice lingers before it clears itself. */
 const ENDED_LINGER_MS = 4000;
@@ -152,6 +154,8 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
   const startedAt = useGroupCallStore((s) => s.startedAt);
   const endReason = useGroupCallStore((s) => s.endReason);
   const ringingFrom = useGroupCallStore((s) => s.ringingFrom);
+  const lastInviteRejection = useGroupCallStore((s) => s.lastInviteRejection);
+  const setLastInviteRejection = useGroupCallStore((s) => s.setLastInviteRejection);
   const micDenied = useGroupCallStore((s) => s.self.micDenied);
   const isHost = useGroupCallStore(selectIsHost);
   // Scalars derived from the roster. Both are plain numbers, so they need no
@@ -165,6 +169,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
   const rosterPanelId = useId();
   const incomingTitleId = useId();
   const incomingCardRef = useRef<HTMLDivElement | null>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   // Clear the ended notice on its own so a stale "call ended" never sits there.
   useEffect(() => {
@@ -173,22 +178,11 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
     return () => clearTimeout(id);
   }, [phase]);
 
-  // Escape declines a ringing room — the same affordance as the button.
   useEffect(() => {
-    if (phase !== 'incoming') return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') declineGroupCall();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [phase]);
-
-  // Move focus into the card so the dialog is announced and Escape reaches it.
-  // The CARD takes focus, never Accept: a stray Return keystroke that lands the
-  // instant a room starts ringing must not answer it.
-  useEffect(() => {
-    if (phase === 'incoming') incomingCardRef.current?.focus();
-  }, [phase]);
+    if (!lastInviteRejection || lastInviteRejection.callId !== callId) return;
+    toast.error(t('invite-failed', { defaultValue: "Couldn't invite anyone to this call." }));
+    setLastInviteRejection(null);
+  }, [callId, lastInviteRejection, setLastInviteRejection, t]);
 
   // A room that ends while the panel is open should not reopen it on the next
   // call, and the panel has nothing to show once the mesh is gone.
@@ -208,24 +202,31 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
   if (phase === 'incoming') {
     const callerName = ringingFrom?.name || ringingFrom?.handle || null;
 
-    return createPortal(
-      <div
-        className="fixed inset-0 z-[120] flex items-center justify-center p-4"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={incomingTitleId}
+    return (
+      <Dialog
+        open
+        onOpenChange={(open) => {
+          if (!open) declineGroupCall();
+        }}
       >
-        <div
-          className="absolute inset-0 bg-black/50"
-          aria-hidden
-          onClick={() => declineGroupCall()}
-        />
-        {/* Floating UI is L4 per the design language — a card on a blur-less
-            tier ghosts against whatever is behind it. */}
-        <div
+        <DialogContent
           ref={incomingCardRef}
           tabIndex={-1}
-          className="glass-overlay relative w-full max-w-sm rounded-site p-6 outline-none"
+          className="z-[121] max-w-sm p-6 outline-none"
+          overlayClassName="z-[120]"
+          aria-labelledby={incomingTitleId}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            restoreFocusRef.current =
+              document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            incomingCardRef.current?.focus();
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            const target = restoreFocusRef.current;
+            restoreFocusRef.current = null;
+            if (target?.isConnected) target.focus();
+          }}
         >
           <p className="flex items-center justify-center gap-2 text-sm text-site-text-muted">
             <PhoneIncoming className="h-4 w-4" aria-hidden />
@@ -241,14 +242,14 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
                 fallbackName={callerName ?? undefined}
               />
             )}
-            <h2 id={incomingTitleId} className="text-lg font-semibold text-site-text">
+            <DialogTitle id={incomingTitleId} className="text-lg font-semibold text-site-text">
               {callerName
                 ? t('incoming-from', {
                     name: callerName,
                     defaultValue: '{{name}} is calling',
                   })
                 : originLabel(origin, t)}
-            </h2>
+            </DialogTitle>
             <p className="text-xs text-site-text-muted">{originLabel(origin, t)}</p>
           </div>
 
@@ -292,9 +293,8 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
                 })
               : t('answer-hint', { defaultValue: 'Answering asks for microphone access.' })}
           </p>
-        </div>
-      </div>,
-      document.body,
+        </DialogContent>
+      </Dialog>
     );
   }
 

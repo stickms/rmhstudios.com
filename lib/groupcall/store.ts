@@ -128,6 +128,8 @@ export interface GroupCallStore extends GroupCallState {
   rooms: Record<string, GroupCallRoomSummary | null>;
   /** The last protocol-level error. Developer-facing; cleared by the next action. */
   lastError: GroupCallErrorPayload | null;
+  /** The last rejected invite, surfaced without ending the active room. */
+  lastInviteRejection: GroupCallRejectedPayload | null;
 
   /** The only way roster state changes. */
   dispatch: (event: GroupCallEvent) => void;
@@ -140,6 +142,7 @@ export interface GroupCallStore extends GroupCallState {
   setRinging: (from: CallPeer | null, expiresAt: number | null) => void;
   setStartedAt: (at: number | null) => void;
   setLastError: (error: GroupCallErrorPayload | null) => void;
+  setLastInviteRejection: (rejection: GroupCallRejectedPayload | null) => void;
   /** Drop everything the mesh owned: meters, speaking flags, mic verdict. */
   clearLocalMedia: () => void;
 }
@@ -162,6 +165,7 @@ export const useGroupCallStore = create<GroupCallStore>((set) => ({
   connection: 'idle',
   rooms: {},
   lastError: null,
+  lastInviteRejection: null,
 
   dispatch: (event) =>
     set((s) => {
@@ -217,6 +221,9 @@ export const useGroupCallStore = create<GroupCallStore>((set) => ({
   setStartedAt: (startedAt) => set((s) => (s.startedAt === startedAt ? s : { startedAt })),
 
   setLastError: (lastError) => set((s) => (s.lastError === lastError ? s : { lastError })),
+
+  setLastInviteRejection: (lastInviteRejection) =>
+    set((s) => (s.lastInviteRejection === lastInviteRejection ? s : { lastInviteRejection })),
 
   clearLocalMedia: () =>
     set((s) => {
@@ -316,6 +323,8 @@ function reconcilePeers(
 let client: RealtimeClient | null = null;
 let mesh: GroupCallMesh | null = null;
 let iceServers: IceServer[] = [];
+let mediaAttempt = 0;
+let incomingExpiryTimer: ReturnType<typeof setTimeout> | null = null;
 /**
  * Our own userId, cached from the session.
  *
@@ -368,26 +377,57 @@ export function openRoomKey(origin: OpenRoomOrigin, originId: string): string {
  * without changing when it is available: the only caller already awaits, on the
  * same tick it asks for the microphone.
  */
-async function bindMesh(): Promise<GroupCallMesh> {
+function isCurrentMediaAttempt(attempt: number): boolean {
+  return attempt === mediaAttempt;
+}
+
+function clearIncomingExpiry(): void {
+  if (incomingExpiryTimer) clearTimeout(incomingExpiryTimer);
+  incomingExpiryTimer = null;
+}
+
+function closeMesh(bound: GroupCallMesh): void {
+  bound.close();
+  if (mesh !== bound) return;
+  mesh = null;
+  store().clearLocalMedia();
+}
+
+async function bindMesh(attempt: number): Promise<GroupCallMesh | null> {
   const { GroupCallMesh: Mesh } = await import('@/lib/groupcall/mesh');
-  mesh?.close();
+  if (!isCurrentMediaAttempt(attempt)) return null;
   const bound = new Mesh(iceServers, {
     onDescription: (toUserId, description) => {
+      if (mesh !== bound || !isCurrentMediaAttempt(attempt)) return;
       const { callId } = store();
       if (callId) client?.emit(GCALL_C2S.SIGNAL, { callId, to: toUserId, description });
     },
     onCandidate: (toUserId, candidate) => {
+      if (mesh !== bound || !isCurrentMediaAttempt(attempt)) return;
       const { callId } = store();
       if (callId) client?.emit(GCALL_C2S.ICE, { callId, to: toUserId, candidate });
     },
     // A failed leg degrades one tile and nothing else. There is deliberately no
     // path from here to `finish()`: seven people should not lose a room because
     // the eighth is behind a symmetric NAT with no relay to fall back on.
-    onPeerStatus: (userId, status) => store().setPeerStatus(userId, status),
-    onSpeaking: (userId, speaking) => store().setPeerSpeaking(userId, speaking),
-    onLocalSpeaking: (speaking) => store().setSelf({ speaking }),
-    onLevels: (levels, localLevel) => store().setLevels(levels, localLevel),
+    onPeerStatus: (userId, status) => {
+      if (mesh === bound && isCurrentMediaAttempt(attempt)) store().setPeerStatus(userId, status);
+    },
+    onSpeaking: (userId, speaking) => {
+      if (mesh === bound && isCurrentMediaAttempt(attempt)) store().setPeerSpeaking(userId, speaking);
+    },
+    onLocalSpeaking: (speaking) => {
+      if (mesh === bound && isCurrentMediaAttempt(attempt)) store().setSelf({ speaking });
+    },
+    onLevels: (levels, localLevel) => {
+      if (mesh === bound && isCurrentMediaAttempt(attempt)) store().setLevels(levels, localLevel);
+    },
   });
+  if (!isCurrentMediaAttempt(attempt)) {
+    bound.close();
+    return null;
+  }
+  mesh?.close();
   mesh = bound;
   return bound;
 }
@@ -416,16 +456,33 @@ function syncMesh(): void {
  * that is ringing us (decline it) and one we were about to open (nothing was
  * sent, so there is nothing to take back).
  */
-async function openLocalMedia(): Promise<boolean> {
+async function openLocalMedia(attempt: number): Promise<boolean> {
+  if (!isCurrentMediaAttempt(attempt)) return false;
   store().setSelf({ micDenied: false });
+  let bound: GroupCallMesh | null = null;
   try {
-    iceServers = await loadIceServers();
-    const bound = await bindMesh();
+    const servers = await loadIceServers();
+    if (!isCurrentMediaAttempt(attempt)) return false;
+    iceServers = servers;
+    bound = await bindMesh(attempt);
+    if (!bound || !isCurrentMediaAttempt(attempt)) {
+      if (bound) closeMesh(bound);
+      return false;
+    }
     await bound.openMicrophone();
+    if (!isCurrentMediaAttempt(attempt)) {
+      closeMesh(bound);
+      return false;
+    }
     bound.setMuted(store().muted);
     store().setSelf({ micAvailable: true });
     return true;
   } catch (error) {
+    if (!isCurrentMediaAttempt(attempt)) {
+      if (bound) closeMesh(bound);
+      return false;
+    }
+    if (bound) closeMesh(bound);
     const failure = describeMicrophoneError(error);
     store().setSelf({ micDenied: failure === 'denied', micAvailable: failure !== 'missing' });
     return false;
@@ -443,7 +500,10 @@ async function openLocalMedia(): Promise<boolean> {
  * echoing a `LEAVE` back at a room that has already closed is noise.
  */
 function finish(reason: GroupCallEndReason, notify: 'decline' | 'leave' | 'end' | 'none'): void {
+  mediaAttempt += 1;
+  clearIncomingExpiry();
   const s = store();
+  s.setLastInviteRejection(null);
   const { callId } = s;
   if (callId && notify !== 'none') {
     const event =
@@ -581,6 +641,7 @@ function bindSocket(socket: Socket): void {
     });
     s.setStartedAt(payload.startedAt);
     s.setRinging(null, null);
+    clearIncomingExpiry();
 
     mesh?.setSelfId(payload.selfId);
     // Mute set before the room admitted us has not been published yet —
@@ -631,15 +692,32 @@ function bindSocket(socket: Socket): void {
 
   socket.on(GCALL_S2C.ENDED, (payload: GroupCallEndedPayload) => {
     if (store().callId !== payload.callId) return;
+    mediaAttempt += 1;
+    clearIncomingExpiry();
     teardownMesh();
     store().dispatch({ type: 'end', reason: payload.reason });
   });
 
   socket.on(GCALL_S2C.REJECTED, (payload: GroupCallRejectedPayload) => {
     const s = store();
+    if (payload.operation === 'invite') {
+      if (s.phase === 'active' && s.callId === payload.callId) {
+        s.setLastInviteRejection(payload);
+      }
+      return;
+    }
     // A refused `START` has no callId — there was no room to name. A refused
     // `JOIN` names the room, and one aimed at a room we are not in is stale.
     if (payload.callId && s.callId && payload.callId !== s.callId) return;
+    if (
+      payload.operation === 'join' &&
+      (s.phase !== 'joining' && s.phase !== 'active')
+    ) {
+      return;
+    }
+    if (payload.operation === 'start' && s.phase !== 'joining') return;
+    mediaAttempt += 1;
+    clearIncomingExpiry();
     teardownMesh();
     // `GroupCallRejectReason` is a subset of `GroupCallEndReason`, so it feeds
     // straight in without a translation table.
@@ -672,6 +750,8 @@ function bindSocket(socket: Socket): void {
     const fatal = payload.code === 'unknown-call' || payload.code === 'not-participant';
     const s = store();
     if (!fatal || !s.callId || (payload.callId && payload.callId !== s.callId)) return;
+    mediaAttempt += 1;
+    clearIncomingExpiry();
     teardownMesh();
     store().dispatch({ type: 'end', reason: 'gone' });
   });
@@ -679,7 +759,7 @@ function bindSocket(socket: Socket): void {
 
 async function handleIncoming(payload: GroupCallIncomingPayload): Promise<void> {
   const selfId = await resolveSelfId();
-  if (!selfId) return;
+  if (!selfId || payload.expiresAt <= Date.now()) return;
 
   const s = store();
   // Already in a room. The server guards this too, but a second ring must never
@@ -703,6 +783,18 @@ async function handleIncoming(payload: GroupCallIncomingPayload): Promise<void> 
     selfId,
     participants: payload.participants,
   });
+  clearIncomingExpiry();
+  const expiresAt = payload.expiresAt;
+  incomingExpiryTimer = setTimeout(() => {
+    const current = store();
+    if (
+      current.phase === 'incoming' &&
+      current.callId === payload.callId &&
+      current.ringExpiresAt === expiresAt
+    ) {
+      finish('unanswered', 'none');
+    }
+  }, Math.max(0, expiresAt - Date.now()));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -730,11 +822,14 @@ export async function startGroupCall(args: {
     return;
   }
 
+  const attempt = ++mediaAttempt;
   const selfId = await resolveSelfId();
+  if (!isCurrentMediaAttempt(attempt)) return;
   if (!selfId) return;
   if (isGroupCallBusy(store())) return;
 
   s.setLastError(null);
+  s.setLastInviteRejection(null);
   // Enter `joining` before the round trip, so the room is on screen while we
   // wait and so a refusal has something to end — the same reason `dial` exists
   // in the 1:1 machine.
@@ -746,15 +841,18 @@ export async function startGroupCall(args: {
     selfId,
   });
 
-  if (!(await openLocalMedia())) {
+  if (!(await openLocalMedia(attempt))) {
+    if (!isCurrentMediaAttempt(attempt)) return;
     // Nothing was emitted, so there is nothing to take back.
     finish('failed', 'none');
     return;
   }
   // Giving up during the permission prompt is a normal thing to do, and a
   // `START` sent afterwards would ring people on behalf of somebody who left.
+  if (!isCurrentMediaAttempt(attempt)) return;
   if (store().phase !== 'joining') {
-    teardownMesh();
+    const bound = mesh;
+    if (bound) closeMesh(bound);
     return;
   }
 
@@ -779,6 +877,15 @@ export async function startGroupCall(args: {
  */
 export async function joinGroupCall(callId: string): Promise<void> {
   initGroupCalls();
+  const before = store();
+  if (
+    before.phase === 'joining' ||
+    before.phase === 'active' ||
+    (before.phase === 'incoming' && before.callId !== callId)
+  ) {
+    return;
+  }
+  const attempt = ++mediaAttempt;
   const s = store();
   if (!groupCallSupported()) {
     s.setSelf({ micAvailable: false });
@@ -787,19 +894,30 @@ export async function joinGroupCall(callId: string): Promise<void> {
 
   const wasRinging = s.phase === 'incoming';
   s.setLastError(null);
+  s.setLastInviteRejection(null);
   s.dispatch({ type: 'join', callId });
   // `reduce` refuses a stale accept (a card that has since been replaced) and a
   // duplicate press, so this is where both are dropped.
-  if (store().phase !== 'joining' || store().callId !== callId) return;
+  if (
+    !isCurrentMediaAttempt(attempt) ||
+    store().phase !== 'joining' ||
+    store().callId !== callId
+  ) {
+    return;
+  }
+  clearIncomingExpiry();
 
-  if (!(await openLocalMedia())) {
+  if (!(await openLocalMedia(attempt))) {
+    if (!isCurrentMediaAttempt(attempt)) return;
     // A room that is ringing us has to be told; one we were walking into has
     // heard nothing from us at all.
     finish('failed', wasRinging ? 'decline' : 'none');
     return;
   }
+  if (!isCurrentMediaAttempt(attempt)) return;
   if (store().phase !== 'joining' || store().callId !== callId) {
-    teardownMesh();
+    const bound = mesh;
+    if (bound) closeMesh(bound);
     return;
   }
 
@@ -867,17 +985,22 @@ export function toggleGroupMute(): void {
   mesh?.setMuted(muted);
   s.dispatch({ type: 'set-muted', muted });
   s.setSelf(muted ? { muted, speaking: false, level: 0 } : { muted });
-  if (s.callId) client?.emit(GCALL_C2S.STATE, { callId: s.callId, muted });
+  if (s.phase === 'active' && s.callId) {
+    client?.emit(GCALL_C2S.STATE, { callId: s.callId, muted });
+  }
 }
 
 /** Dismiss the ended-room card and go back to idle. */
 export function dismissGroupCall(): void {
+  mediaAttempt += 1;
+  clearIncomingExpiry();
   teardownMesh();
   const s = store();
   s.dispatch({ type: 'reset' });
   s.setRinging(null, null);
   s.setStartedAt(null);
   s.setLastError(null);
+  s.setLastInviteRejection(null);
   s.setSelf({ speaking: false, level: 0, micDenied: false });
 }
 

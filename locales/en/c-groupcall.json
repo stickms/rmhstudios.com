@@ -25,6 +25,7 @@
   "invite-cancel": "Cancel",
   "invite-confirm": "Start call",
   "invite-empty": "Nobody to invite yet",
+  "invite-failed": "Couldn't invite anyone to this call.",
   "invite-max_one": "You can invite up to {{count}} person at once",
   "invite-max_other": "You can invite up to {{count}} people at once",
   "invite-no-results": "Nobody matches that.",

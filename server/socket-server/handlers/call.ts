@@ -207,22 +207,28 @@ export function registerCallHandlers(io: Server, socket: Socket): void {
       connectedAt: null,
       ringTimer: null,
     };
+    // Claim both users before publishing the call into the live indexes. A
+    // group call may have claimed either one while permission/presence/DB work
+    // was in flight.
+    if (!claimBusy(callerId, 'call', call.id)) {
+      persist(call, 'cancelled');
+      return reject('busy');
+    }
+    if (!claimBusy(calleeId, 'call', call.id)) {
+      releaseBusy(callerId, call.id);
+      persist(call, 'cancelled');
+      return reject('busy');
+    }
+
     // The server owns the ring timeout, so a client that ignores its own timer
     // cannot ring someone indefinitely.
     call.ringTimer = setTimeout(() => {
       const live = calls.get(call.id);
       if (live) endCall(io, live, 'missed');
     }, RING_TIMEOUT_MS);
-
     calls.set(call.id, call);
     byUser.set(callerId, call.id);
     byUser.set(calleeId, call.id);
-    // `byUser` stays the index this handler looks its own calls up in; the
-    // registry is the shared "is this person on a call at all" bit. A claim
-    // that loses a race to a group call is left alone rather than overwritten
-    // — the group room's own release is what clears it.
-    claimBusy(callerId, 'call', call.id);
-    claimBusy(calleeId, 'call', call.id);
 
     const caller = await prisma.user
       .findUnique({

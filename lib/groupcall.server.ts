@@ -408,7 +408,9 @@ export interface GroupCallHistoryEntry {
     leftAt: Date | null;
     durationSec: number;
   };
-  /** Everyone else who was on the roster, viewer excluded. */
+  /** Number of distinct roster rows for this room, viewer excluded. */
+  participantCount: number;
+  /** Bounded preview of other participants; the count covers the full history. */
   participants: ResolvedUser[];
 }
 
@@ -420,6 +422,7 @@ export interface GroupCallHistoryPage {
 
 /** Hard ceiling on a history page, whatever the caller asks for. */
 const MAX_HISTORY_TAKE = 50;
+const HISTORY_PARTICIPANT_PREVIEW = 8;
 
 /**
  * The calls this account took part in, newest first.
@@ -467,10 +470,14 @@ export async function getGroupCallHistory(
           startedAt: true,
           endedAt: true,
           peakParticipants: true,
+          _count: {
+            select: { participants: { where: { userId: { not: userId } } } },
+          },
           participants: {
-            // The roster is capped at eight, so this is a bounded join.
+            // Open rooms can outlive many successive participants.
             where: { userId: { not: userId } },
             orderBy: { invitedAt: 'asc' },
+            take: HISTORY_PARTICIPANT_PREVIEW,
             select: { user: { select: userDisplaySelect } },
           },
         },
@@ -499,6 +506,7 @@ export async function getGroupCallHistory(
         leftAt: row.leftAt,
         durationSec: row.durationSec,
       },
+      participantCount: row.call._count.participants,
       participants: row.call.participants.map((p) => resolveUser(p.user)),
     })),
     nextCursor: rows.length > take ? (page[page.length - 1]?.call.id ?? null) : null,
