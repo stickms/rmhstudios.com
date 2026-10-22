@@ -78,11 +78,13 @@ export async function listCommunities(opts: {
   const requests =
     opts.userId && lockedIds.length
       ? await prisma.communityJoinRequest.findMany({
-          where: { userId: opts.userId, communityId: { in: lockedIds }, status: { in: ['PENDING', 'DENIED'] } },
+          where: { userId: opts.userId, communityId: { in: lockedIds }, status: { in: ['PENDING', 'DENIED', 'REMOVED'] } },
           select: { communityId: true, status: true },
         })
       : [];
-  const requestById = new Map(requests.map((r) => [r.communityId, r.status as OwnRequestState]));
+  const requestById = new Map(
+    requests.map((r) => [r.communityId, (r.status === 'PENDING' ? 'PENDING' : 'DENIED') as OwnRequestState]),
+  );
 
   return communities.map((c) => {
     const joined = roleBySlug.has(c.slug);

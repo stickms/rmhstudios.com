@@ -18,6 +18,7 @@ import { createNotification } from '@/lib/notifications.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
 
 export const DENIED_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+export const CANCELLED_COOLDOWN_MS = 60 * 60 * 1000;
 export const JOIN_REQUEST_MESSAGE_MAX = 280;
 
 /** What the requester sees about their own request. */
@@ -44,7 +45,9 @@ export async function getOwnRequestState(
     where: { communityId_userId: { communityId, userId } },
     select: { status: true },
   });
-  return row?.status === 'PENDING' ? 'PENDING' : row?.status === 'DENIED' ? 'DENIED' : null;
+  if (row?.status === 'PENDING') return 'PENDING';
+  // A removal reads to the person as "not approved", like a denial.
+  return row?.status === 'DENIED' || row?.status === 'REMOVED' ? 'DENIED' : null;
 }
 
 export async function requestToJoin(
@@ -64,8 +67,14 @@ export async function requestToJoin(
     select: { status: true, decidedAt: true },
   });
   if (existing?.status === 'PENDING') return { ok: true, status: 'PENDING' };
-  if (existing?.status === 'DENIED' && existing.decidedAt) {
-    const retryAt = new Date(existing.decidedAt.getTime() + DENIED_COOLDOWN_MS);
+  const cooldownMs =
+    existing?.status === 'DENIED' || existing?.status === 'REMOVED'
+      ? DENIED_COOLDOWN_MS
+      : existing?.status === 'CANCELLED'
+        ? CANCELLED_COOLDOWN_MS
+        : 0;
+  if (cooldownMs && existing?.decidedAt) {
+    const retryAt = new Date(existing.decidedAt.getTime() + cooldownMs);
     if (retryAt > new Date()) return { ok: false, reason: 'cooldown', retryAt: retryAt.toISOString() };
   }
 
@@ -106,10 +115,33 @@ async function notifyModerators(
   );
 }
 
-/** Withdraw the viewer's own PENDING request. Idempotent. */
+/**
+ * Withdraw the viewer's own PENDING request. Idempotent. The row is kept as
+ * CANCELLED (not deleted) so {@link requestToJoin} can throttle the re-request.
+ */
 export async function cancelRequest(communityId: string, userId: string): Promise<void> {
-  await prisma.communityJoinRequest.deleteMany({
+  await prisma.communityJoinRequest.updateMany({
     where: { communityId, userId, status: 'PENDING' },
+    data: { status: 'CANCELLED', decidedAt: new Date(), decidedById: null },
+  });
+}
+
+/**
+ * Record that a moderator removed `userId` (call in the removal transaction).
+ * `acceptInvite` refuses a REMOVED user and `requestToJoin` applies the cooldown;
+ * a moderator approving a later request is what lets them back in.
+ */
+export function markRemoved(
+  tx: Pick<typeof prisma, 'communityJoinRequest'>,
+  communityId: string,
+  userId: string,
+  decidedById: string,
+) {
+  const now = new Date();
+  return tx.communityJoinRequest.upsert({
+    where: { communityId_userId: { communityId, userId } },
+    create: { communityId, userId, status: 'REMOVED', decidedById, decidedAt: now },
+    update: { status: 'REMOVED', decidedById, decidedAt: now, message: null },
   });
 }
 
