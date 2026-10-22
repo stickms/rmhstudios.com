@@ -1,38 +1,18 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# i18n-translate — machine-translate any missing locale keys OFF the deploy path.
-#
-# Why this exists: the production Docker build used to run scripts/translate-locales.ts
-# inside the vite-builder stage. That was a ~39s live DeepSeek API call on the
-# deploy critical path (measured) that re-translated the same still-uncommitted
-# keys on EVERY deploy and threw the result away — pure repeated cost plus an
-# external-network dependency that could stall a release.
-#
-# Instead, translation runs HERE (scheduled + on new English keys + on demand),
-# and the result is COMMITTED via a PR, so the checked-in catalog is the single
-# source of truth. The deploy build now only regenerates the resource modules
-# from the committed JSON (fast, deterministic, offline). Any key not yet
-# translated simply falls back to English at runtime until this job fills it in.
-# ─────────────────────────────────────────────────────────────────────────────
+# Translate only unfinished strings added/changed by merges to main. The pending
+# PR branch also stores paid results so an unmerged PR never repeats API work.
 name: i18n-translate
 
 on:
-  # New English strings land in locales/en/** (via `pnpm i18n:extract`). When such
-  # a change hits main, translate the additions promptly as a follow-up PR.
   push:
     branches: [main]
     paths:
-      - "locales/en/**"
-  # Weekly safety net for anything that slipped through.
-  schedule:
-    - cron: "0 6 * * 1"
-  workflow_dispatch: {}
+      - 'locales/en/**'
 
-# One translation run at a time; a newer trigger supersedes an in-flight one.
+# Finish and persist paid work before starting the next merge's run.
 concurrency:
   group: i18n-translate
-  cancel-in-progress: true
+  cancel-in-progress: false
 
-# contents: write — push the translation branch. pull-requests: write — open the PR.
 permissions:
   contents: write
   pull-requests: write
@@ -43,9 +23,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Queued runs use the latest main, including merges while waiting.
+          ref: main
+          fetch-depth: 0
 
-      # Skip cleanly (not fail) when the DeepSeek key isn't configured — e.g. on a
-      # fork. The deploy is unaffected either way; committed translations ship as-is.
       - name: Check for DeepSeek key
         id: guard
         env:
@@ -57,6 +39,29 @@ jobs:
           else
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Prepare merge baseline and reusable translations
+        if: steps.guard.outputs.run == 'true'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          branch="i18n/auto-translate"
+          base="$BEFORE_SHA"
+          mkdir -p "$RUNNER_TEMP/i18n-base" "$RUNNER_TEMP/i18n-reuse/locales"
+          # Distinguish an absent branch (exit 2) from a network/auth failure.
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+            git fetch origin "refs/heads/$branch:refs/remotes/origin/$branch"
+            base=$(git merge-base HEAD "origin/$branch")
+            git archive "origin/$branch" locales | tar -x -C "$RUNNER_TEMP/i18n-reuse"
+          else
+            status=$?
+            [ "$status" -eq 2 ] || exit "$status"
+          fi
+          # A missing/invalid baseline fails before any model call. Never fall
+          # back to translating the entire historical backlog.
+          git merge-base --is-ancestor "$base" HEAD
+          git archive "$base" locales | tar -x -C "$RUNNER_TEMP/i18n-base"
 
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         if: steps.guard.outputs.run == 'true'
@@ -73,56 +78,43 @@ jobs:
         if: steps.guard.outputs.run == 'true'
         run: pnpm install --frozen-lockfile
 
-      # translate-locales.ts is idempotent — it only calls DeepSeek for keys that
-      # are missing or whose English source changed, then writes locales/**. We
-      # regenerate the resource modules from the freshened JSON so both stay in sync.
-      - name: Translate missing keys + regenerate resources
+      - name: Translate unfinished merge strings and regenerate resources
         if: steps.guard.outputs.run == 'true'
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          I18N_BASE_DIR: ${{ runner.temp }}/i18n-base/locales
+          I18N_REUSE_DIR: ${{ runner.temp }}/i18n-reuse/locales
         run: |
           set -euo pipefail
           pnpm exec tsx scripts/translate-locales.ts
           pnpm exec tsx scripts/gen-i18n-resources.ts
 
-      # Open a PR only when something actually changed. GITHUB_TOKEN-authored PRs
-      # don't retrigger workflows, which is fine here — the diff is machine JSON +
-      # generated TS. Review/merge (or enable auto-merge) to land the translations.
-      - name: Open PR if translations changed
+      - name: Save translations and update the shared PR
         if: steps.guard.outputs.run == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          if git diff --quiet -- locales lib/i18n; then
-            echo "No new translations — nothing to open."
+          branch="i18n/auto-translate"
+          if ! git diff --quiet -- locales lib/i18n; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git checkout -B "$branch"
+            git add locales lib/i18n
+            git commit -m "chore(i18n): translate unfinished merge strings"
+            git push --force-with-lease origin "$branch"
+          else
+            echo "No unfinished merge strings — nothing to translate."
             exit 0
           fi
-          branch="i18n/auto-translate-${{ github.run_id }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$branch"
-          git add locales lib/i18n
-          git commit -m "chore(i18n): machine-translate new locale keys"
-          git push origin "$branch"
-          # Opening the PR needs the org/repo setting "Allow GitHub Actions to
-          # create and approve pull requests". When it's OFF, `gh pr create`
-          # exits non-zero with "GitHub Actions is not permitted to create or
-          # approve pull requests" — a policy state, NOT a translation failure.
-          # The branch is already pushed and the deploy is unaffected (English is
-          # the runtime fallback), so that specific block must not red-fail the
-          # job: surface a warning with the branch to open by hand. Any OTHER
-          # failure (network, bad base, ...) still fails the step.
-          if gh pr create --base main --head "$branch" \
-              --title "chore(i18n): machine-translate new locale keys" \
-              --body "Automated DeepSeek translation of locale keys that were missing or whose English source changed, plus regenerated \`lib/i18n/resources.*.ts\`. Opened by the \`i18n-translate\` workflow so translation stays OFF the deploy critical path. English is the runtime fallback for anything still untranslated." \
-              2> pr-err.txt; then
-            echo "Opened translation PR for $branch."
-          elif grep -qiE "not permitted to create|not allowed to create|GitHub Actions is not permitted" pr-err.txt; then
-            echo "::warning title=i18n translation PR not opened::GitHub Actions can't open PRs in this repo (setting 'Allow GitHub Actions to create and approve pull requests' is off). Translations are pushed to branch '$branch' — open a PR from it manually, or enable the setting. Deploy is unaffected."
-            cat pr-err.txt
-          else
-            echo "::error title=i18n translation PR failed::gh pr create failed for an unexpected reason:"
-            cat pr-err.txt
-            exit 1
+          # Paid results are already durable even if GitHub refuses PR creation.
+          # A later merge reuses this branch instead of paying for them again.
+          pr=$(gh pr list --base main --head "$branch" --state open --json number --jq '.[0].number // empty')
+          if [ -z "$pr" ]; then
+            cat > "$RUNNER_TEMP/i18n-pr-body.md" <<'EOF'
+          Translates unfinished strings added or changed by merges to main and regenerates the locale resources. Completed translations are reused across runs while this PR awaits merging. Historical missing strings are left for an explicit local backfill.
+          EOF
+            gh pr create --base main --head "$branch" \
+              --title "chore(i18n): translate unfinished merge strings" \
+              --body-file "$RUNNER_TEMP/i18n-pr-body.md"
           fi

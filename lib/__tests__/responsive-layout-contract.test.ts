@@ -142,7 +142,7 @@ describe('spatial redesign — responsive layout contract', () => {
         return out;
       }
       for (const entry of entries) {
-        const rel = join(dir, entry.name);
+        const rel = join(dir, entry.name).replaceAll('\\', '/');
         if (entry.isDirectory()) walk(rel, out);
         else if (entry.name.endsWith('.tsx') && !entry.name.endsWith('.test.tsx')) out.push(rel);
       }
@@ -174,7 +174,8 @@ describe('spatial redesign — responsive layout contract', () => {
       },
       {
         file: 'app/routes/_site/library/index.tsx',
-        reason: 'The `.vibe-screen` library shell paints its own full-bleed ground; it is not a column.',
+        reason:
+          'The `.vibe-screen` library shell paints its own full-bleed ground; it is not a column.',
       },
       {
         file: 'app/routes/_site/create/route.tsx',
@@ -187,7 +188,11 @@ describe('spatial redesign — responsive layout contract', () => {
     ];
     const allowed = new Set(ALLOWED.map((e) => e.file));
 
-    const files = [...walk('components/feed'), ...walk('app/routes/_site'), ...walk('components/errors')];
+    const files = [
+      ...walk('components/feed'),
+      ...walk('app/routes/_site'),
+      ...walk('components/errors'),
+    ];
     const offenders: string[] = [];
     for (const file of files) {
       if (allowed.has(file)) continue;
