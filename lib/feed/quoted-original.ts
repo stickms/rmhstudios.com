@@ -76,6 +76,24 @@ function cardBase(o: QuotedOriginalRow, user: FeedItem['user']) {
   };
 }
 
+/** `createdAt` of a card that must not date its post (clients never render it on a quote card). */
+const NEUTRAL_CREATED_AT = new Date(0).toISOString();
+
+/**
+ * The base of a card that must not say who wrote the post or when: no author
+ * (clients render a missing quote author as "Unknown"), and a neutral date.
+ */
+function anonymousCardBase(o: QuotedOriginalRow) {
+  return { id: o.id, type: 'rmhark' as const, createdAt: NEUTRAL_CREATED_AT, user: undefined };
+}
+
+/** Whether a (possibly deleted) post's author is public knowledge: public, free of a private community. */
+function authorIsPublic(o: QuotedOriginalSubject): boolean {
+  if (o.audience !== 'PUBLIC') return false;
+  if (o.communityId && !o.community) return false;
+  return !o.community?.isPrivate;
+}
+
 /**
  * The quote card for an original: the full card when the viewer may see it, a
  * "deleted" card when it is gone, and an "unavailable" card (no text, no media,
@@ -90,7 +108,8 @@ export function mapQuotedOriginal(
   if (!o) return undefined;
   if (o.deletedAt) {
     return {
-      ...cardBase(o, user),
+      // A deleted members-only post's author is still members-only knowledge.
+      ...(authorIsPublic(o) ? cardBase(o, user) : anonymousCardBase(o)),
       content: o.deletedByAdmin
         ? '[This RMHark was deleted by an admin]'
         : '[This RMHark was deleted by the user]',
@@ -104,7 +123,8 @@ export function mapQuotedOriginal(
   }
   if (!quotedOriginalVisibleTo(o, viewerId, blockedAuthorIds)) {
     return {
-      ...cardBase(o, user),
+      // No author, no date: naming who wrote a members-only post is the leak.
+      ...anonymousCardBase(o),
       content: QUOTE_UNAVAILABLE_MESSAGE,
       likeCount: 0,
       commentCount: 0,
@@ -136,6 +156,9 @@ export function mapQuotedOriginal(
 export function withholdQuotedOriginal(card: FeedItem, deleted: boolean): FeedItem {
   return {
     ...card,
+    // Same as the unavailable card: a post withheld from this viewer names no author.
+    user: undefined,
+    createdAt: NEUTRAL_CREATED_AT,
     content: deleted ? '[This RMHark was deleted by the user]' : QUOTE_UNAVAILABLE_MESSAGE,
     likeCount: 0,
     commentCount: 0,
