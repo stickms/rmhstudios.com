@@ -35,7 +35,7 @@ func main() {
 	ctx, cancel := httpx.SignalContext()
 	defer cancel()
 
-	database, err := db.WaitForReachable(ctx, cfg.DatabaseURL, 10, 5*time.Second)
+	database, err := db.WaitForReachable(ctx, cfg.DatabaseURL, cfg.DBPoolSize, 10, 5*time.Second)
 	if err != nil {
 		logger.Fatal("db", "error", err)
 	}
