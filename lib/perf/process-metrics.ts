@@ -39,6 +39,7 @@ import {
 } from 'node:perf_hooks';
 import { getHeapSpaceStatistics, getHeapStatistics } from 'node:v8';
 import {
+  cloneHistogram,
   fromCounts,
   mean,
   mergeHistograms,
@@ -55,6 +56,7 @@ export const MAX_OPS = 300;
 export const MAX_COUNTERS = 200;
 export const MAX_CACHE_NAMESPACES = 100;
 export const MAX_GAUGES = 100;
+export const MAX_TIMINGS = 60;
 export const RING_SIZE = 50;
 export const SERIES_MINUTES = 60;
 const ERROR_MESSAGE_MAX = 300;
@@ -272,6 +274,12 @@ export interface ProcessSnapshot {
   };
   counters: Record<string, number>;
   gauges: Record<string, number | null>;
+  /**
+   * Named latency histograms (`recordTiming`), cumulative since process start —
+   * e.g. `llm.latency|deepseek:chat`, `rum.lcp`. Optional: snapshots from a
+   * process that predates the field have none.
+   */
+  timings?: Record<string, HistogramData>;
   errors: ErrorEntry[];
 }
 
@@ -506,6 +514,7 @@ export class Collector {
   private cache = new Map<string, Record<CacheKind, number>>();
   private cacheTotal = zeroCache();
   private counters = new Map<string, number>();
+  private timings = new Map<string, HistogramData>();
   private gauges = new Map<string, GaugeValue>();
 
   // Runtime sampling.
@@ -710,6 +719,17 @@ export class Collector {
       cur = this.counters.get(key);
     }
     this.counters.set(key, (cur ?? 0) + by);
+  }
+
+  recordTiming(name: string, ms: number): void {
+    if (!Number.isFinite(ms) || ms < 0) return;
+    let h = this.timings.get(name);
+    if (!h) {
+      if (this.timings.size >= MAX_TIMINGS) return;
+      h = newHistogram();
+      this.timings.set(name, h);
+    }
+    observe(h, ms);
   }
 
   setGauge(name: string, value: GaugeValue): void {
@@ -1010,6 +1030,7 @@ export class Collector {
       cache: { total: { ...this.cacheTotal }, namespaces: cache },
       counters: Object.fromEntries(this.counters),
       gauges,
+      timings: Object.fromEntries([...this.timings].map(([k, h]) => [k, cloneHistogram(h)])),
       errors: this.errors.newestFirst(),
     };
   }
@@ -1071,6 +1092,15 @@ export function recordCache(kind: CacheKind, namespace?: string): void {
 export function recordCounter(name: string, by = 1): void {
   try {
     collector().recordCounter(name, by);
+  } catch {
+    /* swallow */
+  }
+}
+
+/** Observe a duration under a bounded name (`metric` or `metric|dimension`). */
+export function recordTiming(name: string, ms: number): void {
+  try {
+    collector().recordTiming(name, ms);
   } catch {
     /* swallow */
   }

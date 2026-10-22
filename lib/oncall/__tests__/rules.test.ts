@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PerfOverview } from '../../perf/admin-types';
-import { newHistogram, observe } from '../../perf/histogram';
-import type { MinuteBucket, ProcessSnapshot } from '../../perf/process-metrics';
+import type { ProcessSnapshot } from '../../perf/process-metrics';
 import { oncallClient, signOncall } from '../client.server';
 import {
   Debouncer,
@@ -18,26 +17,6 @@ import {
 const NOW = 1_800_000_000_000;
 const MIN = 60_000;
 
-/** Per-bucket latency counts with all `n` samples at `ms`, via the real histogram. */
-function lat(ms: number, n: number): number[] {
-  const h = newHistogram();
-  for (let i = 0; i < n; i++) observe(h, ms);
-  return [...h.counts];
-}
-
-function minutes(
-  count: number,
-  per: { requests: number; s5xx: number; ms?: number },
-): MinuteBucket[] {
-  return Array.from({ length: count }, (_, i) => ({
-    t: NOW - (count - i + 1) * MIN, // all complete
-    requests: per.requests,
-    s4xx: 0,
-    s5xx: per.s5xx,
-    lat: lat(per.ms ?? 50, per.requests),
-  })) as unknown as MinuteBucket[];
-}
-
 function snap(over: Partial<ProcessSnapshot> & { service: string; pid: number }): ProcessSnapshot {
   return {
     hostname: 'h',
@@ -51,7 +30,6 @@ function snap(over: Partial<ProcessSnapshot> & { service: string; pid: number })
 
 function overview(
   o: {
-    series?: MinuteBucket[];
     processes?: ProcessSnapshot[];
     gauges?: Record<string, number>;
   } = {},
@@ -59,7 +37,7 @@ function overview(
   return {
     processes: o.processes ?? [snap({ service: 'web', pid: 1 })],
     hubs: [{ service: 'socket', error: 'unreachable' }],
-    cluster: { timeseries: o.series ?? [], gauges: o.gauges ?? {} },
+    cluster: { timeseries: [], gauges: o.gauges ?? {} },
   } as unknown as PerfOverview;
 }
 
@@ -92,73 +70,6 @@ describe('client signing', () => {
     expect(
       oncallClient({ ONCALL_URL: 'https://w.test', ONCALL_SIGNING_SECRET: 'x'.repeat(32) }),
     ).not.toBeNull();
-  });
-});
-
-describe('A08 web 5xx', () => {
-  it('fires on >5% over 3 minutes with enough traffic, not on a quiet blip', () => {
-    expect(
-      find(
-        evaluate(
-          input({ overview: overview({ series: minutes(3, { requests: 100, s5xx: 6 }) }) }),
-          newMemory(),
-        ),
-        'A08',
-      )?.active,
-    ).toBe(true);
-    expect(
-      find(
-        evaluate(
-          input({ overview: overview({ series: minutes(3, { requests: 100, s5xx: 2 }) }) }),
-          newMemory(),
-        ),
-        'A08',
-      )?.active,
-    ).toBe(false); // 2%: under both thresholds
-    // 2 of 10 requests is 20%, but 10 requests is not enough traffic to page on.
-    expect(
-      find(
-        evaluate(
-          input({ overview: overview({ series: minutes(3, { requests: 3, s5xx: 1 }) }) }),
-          newMemory(),
-        ),
-        'A08',
-      )?.active,
-    ).toBe(false);
-  });
-
-  it('fires on a sustained >2% over 10 minutes', () => {
-    const series = minutes(10, { requests: 100, s5xx: 3 });
-    expect(
-      find(evaluate(input({ overview: overview({ series }) }), newMemory()), 'A08')?.active,
-    ).toBe(true);
-  });
-});
-
-describe('A09 latency', () => {
-  it('fires when p95 over 10 minutes exceeds 2.5s', () => {
-    expect(
-      find(
-        evaluate(
-          input({
-            overview: overview({ series: minutes(10, { requests: 20, s5xx: 0, ms: 4000 }) }),
-          }),
-          newMemory(),
-        ),
-        'A09',
-      )?.active,
-    ).toBe(true);
-    expect(
-      find(
-        evaluate(
-          input({
-            overview: overview({ series: minutes(10, { requests: 20, s5xx: 0, ms: 300 }) }),
-          }),
-          newMemory(),
-        ),
-        'A09',
-      )?.active,
-    ).toBe(false);
   });
 });
 

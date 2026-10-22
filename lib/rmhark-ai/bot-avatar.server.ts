@@ -21,9 +21,10 @@ import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import { optimizeImage } from '@/lib/image-optimize';
 import { putObject } from '@/lib/storage/s3.server';
 import { userAvatarKey, userAvatarUrl } from '@/lib/storage/keys';
+import { timedAiFetch } from '../ai/timed-fetch.server';
 
 // xAI is OpenAI-SDK compatible; point the base URL at their endpoint.
-const xai = new OpenAI({
+const xai = new OpenAI({ fetch: timedAiFetch,
   // `|| 'missing'`, not `|| ''`: the SDK throws on an empty key at CONSTRUCTION, and
   // `loadEntries()` imports this module before serving any page, so an unset key was
   // a site-wide 500 (see lib/rmhvibe/vibe-ai.server.ts). Calls are gated on the env var.

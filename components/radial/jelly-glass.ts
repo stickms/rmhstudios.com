@@ -35,7 +35,8 @@
  * mount of the globe, so opening the menu never compiles a shader twice.
  */
 
-import { CONTACT_RADIUS, FALLOFF } from '@/lib/soft-body';
+import { CONTACT, DOUGH_EXTENT, DOUGH_N } from '@/lib/dough';
+import type { SharedScene } from '@/lib/liquid/glass/scene-store';
 
 /** Everything the material needs for one frame. All coordinates are in radii of the sphere, y DOWN. */
 export interface JellyFrame {
@@ -45,11 +46,9 @@ export interface JellyFrame {
    * negative age is an empty slot.
    */
   ripples: Float32Array;
-  /** The soft body: grab point, tug, pinch (see `lib/soft-body.ts`). */
+  /** The dough body's grab point and press pressure (see `lib/dough.ts`); the field itself goes up with `setField`. */
   gx: number;
   gy: number;
-  dx: number;
-  dy: number;
   pinch: number;
 }
 
@@ -59,7 +58,15 @@ export interface JellyPalette {
   accent: [number, number, number];
   /** 1 on a light ground, 0 on a dark one. */
   light: number;
+  /** The page ground, so the image refracted through the ball is washed toward what actually surrounds it. */
+  bg: [number, number, number];
 }
+
+/**
+ * Mip level the refracted page is read at. The hub blurs the page behind the globe by `--hub-page-blur` (20px), and a ball
+ * showing a SHARPER picture of the thing behind it than the thing itself would read as a sticker, not a lens.
+ */
+export const JELLY_SCENE_LOD = 5;
 
 /** The ripple's shape — kept in step with `lib/fluid` §RIPPLE by the caller. */
 export interface JellyRippleShape {
@@ -76,37 +83,57 @@ export interface JellyRippleShape {
  */
 export const JELLY_MAX_DPR = 1.5;
 
+/**
+ * The canvas hangs outside the disc on every side by this fraction of the disc's DIAMETER (the same 11% as the cage),
+ * because the dough can push the silhouette past its rest position. `radial.css` sizes the canvas from the same number.
+ */
+export const JELLY_BLEED = 0.11;
+/** Half the canvas, in radii of the sphere. */
+export const JELLY_EXTENT = 1 + 2 * JELLY_BLEED;
+
 /** Max live ripples the shader takes; matches `MAX_RIPPLES` in LiquidGlobe. */
 export const JELLY_RIPPLES = 3;
 
-const VERT = `
-attribute vec2 aPos;
-varying vec2 vP;
+const VERT = `#version 300 es
+in vec2 aPos;
+out vec2 vP;
+uniform float uE;
 void main() {
-  // Screen-handed: x right, y DOWN, in radii of the sphere.
-  vP = vec2(aPos.x, -aPos.y);
+  // Screen-handed: x right, y DOWN, in radii of the sphere. The canvas spans ±uE radii.
+  vP = vec2(aPos.x, -aPos.y) * uE;
   gl_Position = vec4(aPos, 0.0, 1.0);
 }`;
 
-const FRAG = `
-#ifdef GL_FRAGMENT_PRECISION_HIGH
+const FRAG = `#version 300 es
 precision highp float;
-#else
-precision mediump float;
-#endif
-varying vec2 vP;
+in vec2 vP;
+out vec4 outColor;
 uniform float uPx;
 uniform vec3 uInk;
 uniform vec3 uAccent;
 uniform float uLight;
 uniform vec4 uRip[${JELLY_RIPPLES}];
 uniform vec4 uShape;
-uniform vec4 uSoft;
-uniform float uPinch;
+// The dough field: R,G = in-plane displacement of the material that rests at that point, B = height. Half float, linear.
+uniform sampler2D uField;
+uniform vec2 uContact;
+uniform float uPress;
+// The page, refracted. uPlace = (centre x, centre y, radius) in viewport CSS px, already shifted by the scroll since the
+// snapshot was taken; uSceneInv = 1 / snapshot size.
+uniform sampler2D uScene;
+uniform vec4 uPlace;
+uniform vec2 uSceneInv;
+uniform float uSceneOn;
+uniform float uLod;
+uniform vec3 uBg;
 
-const float INV2S2 = ${(1 / (2 * FALLOFF * FALLOFF)).toFixed(6)};
+const float EXTENT = ${DOUGH_EXTENT.toFixed(4)};
+const float CONTACT_R = ${CONTACT.toFixed(4)};
+const float CELL = ${((2 * DOUGH_EXTENT) / (DOUGH_N - 1)).toFixed(5)};
 
-const float CONTACT_S2 = ${(CONTACT_RADIUS * CONTACT_RADIUS).toFixed(6)};
+vec3 field(vec2 q) {
+  return texture(uField, q / (2.0 * EXTENT) + 0.5).xyz;
+}
 
 float wave(float age, float dist) {
   if (age < 0.0 || age >= uShape.w) return 0.0;
@@ -126,21 +153,23 @@ float box(vec2 q, vec2 c, vec2 halfSize, float feather) {
 void main() {
   vec2 p = vP;
 
-  // The soft body's local lobe, undone so the lighting rides the jelly: the
-  // surface under the finger is dragged along, and a press dimples it.
-  vec2 g = p - uSoft.xy;
-  float w = exp(-dot(g, g) * INV2S2);
-  p = p - uSoft.zw * w + g * uPinch * w;
+  // Which material is at this pixel? The field says where each piece of material went (p = X + u(X)), so invert it:
+  // two fixed-point passes are exact for the small, smooth displacements the dough allows. Where the field pushed the
+  // limb outward, X falls inside the disc and the silhouette bulges.
+  vec2 X = p - field(p).xy;
+  X = p - field(X).xy;
+  float h = field(p).z;
 
-  float r2 = dot(p, p);
+  float r2 = dot(X, X);
   float r = sqrt(r2);
-  float inside = 1.0 - smoothstep(1.0 - uPx * 1.5, 1.0, r);
+  float aa = max(fwidth(r), uPx * 0.75);
+  float inside = 1.0 - smoothstep(1.0 - aa * 1.5, 1.0, r);
   if (inside <= 0.0) {
-    gl_FragColor = vec4(0.0);
+    outColor = vec4(0.0);
     return;
   }
 
-  vec3 n = vec3(p, sqrt(max(0.0, 1.0 - min(r2, 1.0))));
+  vec3 n = vec3(X, sqrt(max(0.0, 1.0 - min(r2, 1.0))));
 
   // Ripples bend the surface normal, so the light itself runs over the wave.
   float crest = 0.0;
@@ -149,20 +178,23 @@ void main() {
     if (rip.w < 0.0) continue;
     float c = clamp(dot(n, rip.xyz), -1.0, 1.0);
     float dist = acos(c);
-    float h = wave(rip.w, dist);
+    float hh = wave(rip.w, dist);
     float slope = (wave(rip.w, dist + 0.03) - wave(rip.w, dist - 0.03)) / 0.06;
     vec3 t = rip.xyz - n * c;
     float tl = length(t);
     if (tl > 1e-4) n = normalize(n + (t / tl) * slope * 2.2);
-    crest += max(h, 0.0);
+    crest += max(hh, 0.0);
   }
-  // Same normal indentation + compensating shoulder as SoftBody.depth.
-  // Its analytic gradient bends the highlight inward around the finger.
-  float contact2 = dot(g, g) / CONTACT_S2;
-  vec2 contactSlope = uPinch * g / CONTACT_S2 * (2.0 - 0.5 * contact2) * exp(-0.5 * contact2);
-  n = normalize(n - vec3(contactSlope, 0.0));
-  // A tug leans the surface toward the pull; the jelly's sheen follows it.
-  n = normalize(n + vec3(uSoft.zw * w * 1.4, 0.0));
+
+  // The dough's own surface. The height field tilts the normal wherever the dough has been pushed: a wall of the dent
+  // leans toward its centre, the shoulder leans away, so the studio's window and glints bend around every dent and
+  // ridge, wherever the finger has been, instead of at one fixed point.
+  float e = CELL * 1.25;
+  vec2 gh = vec2(
+    field(p + vec2(e, 0.0)).z - field(p - vec2(e, 0.0)).z,
+    field(p + vec2(0.0, e)).z - field(p - vec2(0.0, e)).z
+  ) / (2.0 * e);
+  n = normalize(vec3(n.xy - gh * 1.7, n.z));
 
   float nz = max(n.z, 0.0);
   float rim = 1.0 - nz;
@@ -170,13 +202,8 @@ void main() {
   vec3 rf = reflect(-v, n);
 
   // ── Reflection: the studio, mirrored, weighted by Fresnel ──
-  // The softbox is placed in REFLECTION space, so on the ball it lands as a
-  // curved window up-left that bends with every ripple and squeeze.
   float fres = 0.033736 + 0.966264 * pow(rim, 5.0); // IOR 1.45
   float sky = 1.0 - smoothstep(-0.9, 0.3, rf.y);
-  // Centred just up-left of the key glint (the glint is the window's hot spot),
-  // and small: on a sphere a reflection is compressed toward the limb, so a big
-  // box smears into a comma.
   float win = box(rf.xy, vec2(-0.56, -0.66), vec2(0.13, 0.055), 0.035);
   float floorDark = smoothstep(-0.1, 0.8, rf.y);
   float refl = win * (0.34 + 0.5 * fres) + sky * 0.3 * fres;
@@ -188,58 +215,108 @@ void main() {
   vec3 L2 = normalize(vec3(0.62, 0.5, 0.6));
   float spec2 = pow(max(dot(n, normalize(L2 + v)), 0.0), 220.0) * 0.28;
 
-  // ── The rim: thick glass is brightest in a hairline right at the limb, and
-  //    darkest just inside it, where light has the longest path through ──
+  // ── The rim: thick glass is brightest in a hairline right at the limb, and darkest just inside it ──
   float rimLine = smoothstep(0.935, 0.99, r) * (1.0 - smoothstep(0.99, 1.0, r));
   float band = smoothstep(0.7, 0.93, r) * (1.0 - smoothstep(0.93, 0.99, r));
+  float hair = 1.0 - smoothstep(0.0, aa * 1.6, abs(r - (1.0 - aa * 0.8)));
 
-  // ── Transmission: the room behind, upside-down, and the key light focused
-  //    into a crescent hugging the far inner rim ──
+  // ── Transmission: the room behind, upside-down, and the key light focused into a crescent ──
   float thick = nz;
   vec3 entryRay = refract(-v, n, 1.0 / 1.45);
-  vec3 exitNormal = normalize(vec3(p + entryRay.xy * 2.0 * nz, -nz));
+  vec3 exitNormal = normalize(vec3(X + entryRay.xy * 2.0 * nz, -nz));
   vec3 throughRay = refract(entryRay, -exitNormal, 1.45);
   float tband = smoothstep(0.15, 0.85, throughRay.y) * (1.0 - smoothstep(0.8, 0.97, r)) * 0.16;
-  vec2 cdir = normalize(vec2(0.62, 0.78) - uSoft.zw * 1.2);
-  float along = max(dot(r > 1e-4 ? p / r : vec2(0.0), cdir), 0.0);
+  vec2 cdir = normalize(vec2(0.62, 0.78));
+  float along = max(dot(r > 1e-4 ? X / r : vec2(0.0), cdir), 0.0);
   float crescent = exp(-pow((r - 0.8) / 0.085, 2.0)) * pow(along, 7.0);
-  vec2 dc = p - cdir * 0.55;
+  vec2 dc = X - cdir * 0.55;
   float caustic = crescent * 0.5 + exp(-dot(dc, dc) / 0.09) * 0.07;
+
+  // ── Dough: thinner and brighter under the finger, a soft occlusion in the dent, a faint stress glow ──
+  vec2 cg = X - uContact;
+  float stress = uPress * exp(-dot(cg, cg) / (2.0 * CONTACT_R * CONTACT_R));
+  float dent = smoothstep(0.0, 0.14, -h);
+  // A dent in clear gel is read from broad shading on its walls, not from a pin-prick glint: the wall facing the key
+  // light is lit, the far wall falls into shadow, and a soft sheen rolls over the shoulder. All of it scales with the
+  // dough's own tilt, so an undisturbed ball is exactly as lit as before.
+  vec2 tilt = gh * 1.7;
+  float bent = smoothstep(0.02, 0.35, length(tilt));
+  float emboss = dot(tilt, normalize(vec2(-0.5, -0.62)));
+  float litWall = max(-emboss, 0.0) * bent;
+  float darkWall = max(emboss, 0.0) * bent;
+  float sheen = pow(k1, 14.0) * 0.5 * bent;
+  // The shoulder is where the pushed-out material banks up: it catches the light as a thin bright lip.
+  float lip = smoothstep(0.004, 0.05, h) * bent;
 
   // ── Absorption ──
   float body = mix(0.035, 0.085, thick) + uLight * 0.015;
-  float edge = band * mix(0.12, 0.2, uLight) + smoothstep(0.86, 1.0, r) * mix(0.03, 0.1, uLight);
+  body = body * (1.0 - 0.45 * dent) + dent * 0.05;
+  float edge = band * mix(0.12, 0.2, uLight) + smoothstep(0.86, 1.0, r) * mix(0.03, 0.1, uLight) + hair * 0.42;
+  edge += darkWall * 0.15;
 
-  // Composite, premultiplied. Body and edge are a tinted medium (over); the
-  // light is added on top of it.
+  // Composite, premultiplied. Body and edge are a tinted medium (over); the light is added on top of it.
   vec3 hi = mix(vec3(1.0), uAccent, 0.08);
-  vec3 col = uAccent * body + uInk * edge * (1.0 - body);
+  vec3 col = uAccent * body + mix(uInk, uAccent, step(0.0001, darkWall) * 0.55) * edge * (1.0 - body);
   float a = body + edge * (1.0 - body);
   col *= 1.0 - floorDark * 0.25 * fres;
 
+  // ── The page, seen through the ball ──
+  // A ball lens inverts and magnifies what is behind it: each pixel's ray, after the two surfaces, lands on the page on
+  // the OPPOSITE side of the centre, further out the closer it is to the limb. The red and blue channels land a hair
+  // apart (dispersion), more so toward the rim where the glass is steepest.
+  if (uSceneOn > 0.001) {
+    // From the surface normal, not from the two-surface refraction above: that one has a total-internal-reflection cutoff
+    // (refract() returns zero past a critical angle), and a sampling point that jumps there draws a visible ring on the
+    // ball. The normal is smooth everywhere, and it carries every dent and ripple, so the image warps with the surface.
+    vec2 q = -n.xy * 0.95 - X * 0.3;
+    vec2 spread = normalize(q + vec2(1e-4)) * (0.008 + 0.03 * rim) * uPlace.z * uSceneInv;
+    vec2 uv = (uPlace.xy + q * uPlace.z) * uSceneInv;
+    vec3 page = vec3(
+      textureLod(uScene, uv + spread, uLod).r,
+      textureLod(uScene, uv, uLod).g,
+      textureLod(uScene, uv - spread, uLod).b
+    );
+    page = mix(page, uBg, 0.28);
+    float la = uSceneOn * (1.0 - smoothstep(0.9, 1.0, r)) * 0.94;
+    col = col * (1.0 - la) + page * la;
+    a = a * (1.0 - la) + la;
+  }
+
   vec3 glow = mix(hi, uAccent, 0.55);
-  float lightA = refl * 0.7 + spec + spec2 + rimLine * 0.38 + crest * 3.2 * (0.4 + fres);
+  float lightA = refl * 0.7 + spec + spec2 + rimLine * 0.38 + crest * 3.2 * (0.4 + fres) + stress * 0.06;
+  lightA += litWall * 0.42 + sheen + lip * 0.22;
   float transA = (tband + caustic) * (1.0 - fres * 0.5);
   col += hi * lightA + glow * transA;
   a += lightA * 0.85 + transA * 0.7;
 
   a = clamp(a, 0.0, 1.0) * inside;
   col = min(col, vec3(a)) * inside;
-  gl_FragColor = vec4(col, a);
+  outColor = vec4(col, a);
 }`;
 
-type GL = WebGLRenderingContext;
+type GL = WebGL2RenderingContext;
 
 interface Uniforms {
+  e: WebGLUniformLocation | null;
   px: WebGLUniformLocation | null;
   ink: WebGLUniformLocation | null;
   accent: WebGLUniformLocation | null;
   light: WebGLUniformLocation | null;
   rip: WebGLUniformLocation | null;
   shape: WebGLUniformLocation | null;
-  soft: WebGLUniformLocation | null;
-  pinch: WebGLUniformLocation | null;
+  field: WebGLUniformLocation | null;
+  contact: WebGLUniformLocation | null;
+  press: WebGLUniformLocation | null;
+  scene: WebGLUniformLocation | null;
+  place: WebGLUniformLocation | null;
+  sceneInv: WebGLUniformLocation | null;
+  sceneOn: WebGLUniformLocation | null;
+  lod: WebGLUniformLocation | null;
+  bg: WebGLUniformLocation | null;
 }
+
+/** The driver's last compile/link message, kept for diagnostics: a silent fallback is how an engine-specific shader bug hides. */
+export let lastShaderError = '';
 
 function compile(gl: GL, type: number, src: string): WebGLShader | null {
   const s = gl.createShader(type);
@@ -247,19 +324,28 @@ function compile(gl: GL, type: number, src: string): WebGLShader | null {
   gl.shaderSource(s, src);
   gl.compileShader(s);
   if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    lastShaderError = gl.getShaderInfoLog(s) ?? 'shader compile failed';
     gl.deleteShader(s);
     return null;
   }
   return s;
 }
 
-/** One GL context, one program, one full-screen triangle. */
+/**
+ * One GL context, one program, one full-screen triangle. WebGL 2 because the dough field is a half-float texture that
+ * must filter linearly, which WebGL 1 only offers behind extensions that are missing on parts of the mobile fleet.
+ * Without WebGL 2 `create()` returns null and the globe keeps its CSS material (the cage and pins still deform).
+ */
 export class JellyGlass {
   readonly canvas: HTMLCanvasElement;
   private gl: GL | null = null;
   private u: Uniforms | null = null;
+  private tex: WebGLTexture | null = null;
+  private sceneTex: WebGLTexture | null = null;
+  private sceneVersion = -1;
   private px = 0;
   private lost = false;
+  private uploaded = -1;
   /** Called when the context is lost or restored, so the owner can swap to or from the CSS material. */
   onChange: (() => void) | null = null;
 
@@ -272,10 +358,16 @@ export class JellyGlass {
       this.lost = true;
       this.gl = null;
       this.u = null;
+      this.tex = null;
+      this.sceneTex = null;
+      this.sceneVersion = -1;
       this.onChange?.();
     });
     canvas.addEventListener('webglcontextrestored', () => {
       this.lost = false;
+      this.px = 0;
+      this.uploaded = -1;
+      this.sceneVersion = -1;
       this.init();
       this.onChange?.();
     });
@@ -301,8 +393,7 @@ export class JellyGlass {
       preserveDrawingBuffer: false,
       powerPreference: 'low-power',
     };
-    const gl = (this.canvas.getContext('webgl', opts) ??
-      this.canvas.getContext('experimental-webgl', opts)) as GL | null;
+    const gl = this.canvas.getContext('webgl2', opts) as GL | null;
     if (!gl) return false;
     const vs = compile(gl, gl.VERTEX_SHADER, VERT);
     const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
@@ -313,7 +404,10 @@ export class JellyGlass {
     gl.attachShader(prog, fs);
     gl.bindAttribLocation(prog, 0, 'aPos');
     gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      lastShaderError = gl.getProgramInfoLog(prog) ?? 'program link failed';
+      return false;
+    }
     gl.useProgram(prog);
     // One oversized triangle covers the viewport with no diagonal seam.
     const buf = gl.createBuffer();
@@ -323,25 +417,64 @@ export class JellyGlass {
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     gl.disable(gl.BLEND);
     gl.clearColor(0, 0, 0, 0);
+    // The dough field: DOUGH_N² RGBA half floats, linear, clamped. Starts at rest (all zero).
+    const tex = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA16F,
+      DOUGH_N,
+      DOUGH_N,
+      0,
+      gl.RGBA,
+      gl.FLOAT,
+      new Float32Array(DOUGH_N * DOUGH_N * 4),
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     const loc = (name: string) => gl.getUniformLocation(prog, name);
     this.u = {
+      e: loc('uE'),
       px: loc('uPx'),
       ink: loc('uInk'),
       accent: loc('uAccent'),
       light: loc('uLight'),
       rip: loc('uRip'),
       shape: loc('uShape'),
-      soft: loc('uSoft'),
-      pinch: loc('uPinch'),
+      field: loc('uField'),
+      contact: loc('uContact'),
+      press: loc('uPress'),
+      scene: loc('uScene'),
+      place: loc('uPlace'),
+      sceneInv: loc('uSceneInv'),
+      sceneOn: loc('uSceneOn'),
+      lod: loc('uLod'),
+      bg: loc('uBg'),
     };
+    gl.uniform1i(this.u.field, 0);
+    gl.uniform1i(this.u.scene, 1);
+    gl.uniform1f(this.u.lod, JELLY_SCENE_LOD);
+    gl.uniform1f(this.u.sceneOn, 0);
+    gl.uniform1f(this.u.e, JELLY_EXTENT);
+    this.tex = tex;
     this.gl = gl;
     this.px = 0;
     return true;
   }
 
-  /** Size the backing store. Only on mount and on a real resize — never per frame. */
+  /**
+   * Size the backing store for a disc `cssPx` across. The canvas is larger than the disc by `JELLY_BLEED` on each
+   * side so the silhouette has somewhere to go. Only on mount and on a real resize — never per frame.
+   */
   resize(cssPx: number, dpr: number): void {
-    const px = Math.max(1, Math.round(cssPx * Math.min(dpr, JELLY_MAX_DPR)));
+    const px = Math.max(
+      1,
+      Math.round(cssPx * (1 + 2 * JELLY_BLEED) * Math.min(dpr, JELLY_MAX_DPR)),
+    );
     if (px === this.px) return;
     this.px = px;
     this.canvas.width = px;
@@ -350,8 +483,8 @@ export class JellyGlass {
     const u = this.u;
     if (!gl || !u) return;
     gl.viewport(0, 0, px, px);
-    // One pixel, in radii of the sphere (the canvas spans two radii).
-    gl.uniform1f(u.px, 2 / px);
+    // One pixel, in radii of the sphere (the canvas spans 2·JELLY_EXTENT radii).
+    gl.uniform1f(u.px, (2 * JELLY_EXTENT) / px);
   }
 
   palette(p: JellyPalette, shape: JellyRippleShape): void {
@@ -360,8 +493,68 @@ export class JellyGlass {
     if (!gl || !u) return;
     gl.uniform3f(u.ink, p.ink[0], p.ink[1], p.ink[2]);
     gl.uniform3f(u.accent, p.accent[0], p.accent[1], p.accent[2]);
+    gl.uniform3f(u.bg, p.bg[0], p.bg[1], p.bg[2]);
     gl.uniform1f(u.light, p.light);
     gl.uniform4f(u.shape, shape.speed, shape.width, shape.amplitude, shape.life);
+  }
+
+  /** Send the dough body's field to the GPU. A no-op when `version` is what it already holds. */
+  setField(data: Float32Array, version: number): void {
+    const gl = this.gl;
+    if (!gl || !this.tex || this.lost || version === this.uploaded) return;
+    this.uploaded = version;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.tex);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, DOUGH_N, DOUGH_N, gl.RGBA, gl.FLOAT, data);
+  }
+
+  /**
+   * Hand the shader the page snapshot to refract (or `null` to stop). Uploaded once per new picture and mip-mapped, so
+   * the globe can read it at the hub's blur radius. Returns whether a picture is now in use.
+   */
+  setScene(scene: SharedScene | null): boolean {
+    const gl = this.gl;
+    const u = this.u;
+    if (!gl || !u || this.lost) return false;
+    if (!scene) {
+      gl.uniform1f(u.sceneOn, 0);
+      this.sceneVersion = -1;
+      return false;
+    }
+    if (scene.version !== this.sceneVersion) {
+      if (!this.sceneTex) this.sceneTex = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, this.sceneTex);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      try {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, scene.bitmap);
+      } catch {
+        gl.uniform1f(u.sceneOn, 0);
+        return false;
+      }
+      gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.activeTexture(gl.TEXTURE0);
+      this.sceneVersion = scene.version;
+    }
+    gl.uniform2f(u.sceneInv, 1 / Math.max(1, scene.width), 1 / Math.max(1, scene.height));
+    gl.uniform1f(u.sceneOn, 1);
+    return true;
+  }
+
+  /**
+   * Where the disc is, in viewport CSS px, for mapping a pixel to a place on the snapshot: the centre, the radius, and how
+   * far the page has scrolled since the snapshot was taken. Called when the globe has settled and on resize — never per
+   * frame, because it is measured from layout.
+   */
+  place(cx: number, cy: number, radiusCss: number, scrollDx: number, scrollDy: number): void {
+    const gl = this.gl;
+    const u = this.u;
+    if (!gl || !u || this.lost) return;
+    gl.uniform4f(u.place, cx + scrollDx, cy + scrollDy, radiusCss, 0);
   }
 
   render(f: JellyFrame): void {
@@ -369,8 +562,8 @@ export class JellyGlass {
     const u = this.u;
     if (!gl || !u || this.lost) return;
     gl.uniform4fv(u.rip, f.ripples);
-    gl.uniform4f(u.soft, f.gx, f.gy, f.dx, f.dy);
-    gl.uniform1f(u.pinch, f.pinch);
+    gl.uniform2f(u.contact, f.gx, f.gy);
+    gl.uniform1f(u.press, f.pinch);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }

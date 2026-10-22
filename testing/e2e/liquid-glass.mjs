@@ -1,3 +1,4 @@
+/* global performance -- referenced only inside page.evaluate() callbacks, which run in the page. */
 /** Independent material/interaction browser contract, no app or database needed.
  * CHROMIUM_PATH=/usr/bin/chromium node testing/e2e/liquid-glass.mjs
  * LIQUID_BROWSER=firefox|webkit selects installed Playwright engines.
@@ -26,8 +27,8 @@ const result = await build({
       g.resize(200,1);
       const style=getComputedStyle(document.documentElement);
       const bg=resolveColor(style.getPropertyValue('--site-bg').trim(),[1,1,1]);
-      g.palette({ink:resolveColor(style.getPropertyValue('--site-text').trim(),[0,0,0]),accent:resolveColor(style.getPropertyValue('--site-accent').trim(),[.4,.5,1]),light:bg[0]>.5?1:0},RIPPLE);
-      g.render({ripples:new Float32Array([0,0,0,-1,0,0,0,-1,0,0,0,-1]),gx:.35,gy:.2,dx:0,dy:0,pinch});
+      g.palette({ink:resolveColor(style.getPropertyValue('--site-text').trim(),[0,0,0]),accent:resolveColor(style.getPropertyValue('--site-accent').trim(),[.4,.5,1]),light:bg[0]>.5?1:0,bg:[bg[0],bg[1],bg[2]]},RIPPLE);
+      g.render({ripples:new Float32Array([0,0,0,-1,0,0,0,-1,0,0,0,-1]),gx:.35,gy:.2,pinch});
     };
     window.paint();`,
     resolveDir: root,
@@ -224,17 +225,29 @@ try {
   });
   await advance(80);
   await page.mouse.click(430, 345);
-  await advance(160);
+  // Observe a window, not an instant: the neighbour oscillates, so one sample can land on a zero crossing. The surface
+  // must be animated at some point, move at its peak, and keep its OWN rotation intact at every sample.
+  const joined = await page.locator('#dynamic').evaluate(
+    (el) =>
+      new Promise((resolve) => {
+        let animated = false;
+        let peak = 0;
+        let rotationKept = true;
+        const t0 = performance.now();
+        const tick = () => {
+          const m = new window.DOMMatrix(getComputedStyle(el).transform);
+          animated ||= el.getAnimations().length > 0;
+          peak = Math.max(peak, Math.abs(m.m41));
+          rotationKept &&= Math.abs(m.m11 - Math.cos((8 * Math.PI) / 180)) < 0.003;
+          if (performance.now() - t0 < 500) setTimeout(tick, 16);
+          else resolve({ animated, peak, rotationKept });
+        };
+        tick();
+      }),
+  );
   check(
     'newly mounted surfaces join the field',
-    await page.locator('#dynamic').evaluate((el) => {
-      const m = new window.DOMMatrix(getComputedStyle(el).transform);
-      return (
-        el.getAnimations().length > 0 &&
-        Math.abs(m.m41) > 0.01 &&
-        Math.abs(m.m11 - Math.cos((8 * Math.PI) / 180)) < 0.003
-      );
-    }),
+    joined.animated && joined.peak > 0.01 && joined.rotationKept,
   );
   await advance(1900);
   check(
@@ -321,15 +334,24 @@ try {
   await phone.goto('https://rmh-glass.test/');
   await phone.addScriptTag({ content: result.outputFiles[0].text });
   await phone.touchscreen.tap(345, 160);
-  await phone.waitForTimeout(160);
-  await phone.screenshot({ path: join(out, `${browserName}-touch.png`) });
-  check(
-    'touch tap excites a neighbouring surface',
-    await phone.locator('#left').evaluate((el) => {
-      const m = new window.DOMMatrix(getComputedStyle(el).transform);
-      return Math.hypot(m.m41, m.m42) > 0.01;
-    }),
+  // The neighbour's motion is a damped oscillation: one sample at one instant can land on a zero crossing, so take the
+  // peak over the first half second rather than assume where the wave is at 160ms.
+  const peak = await phone.locator('#left').evaluate(
+    (el) =>
+      new Promise((resolve) => {
+        let best = 0;
+        const t0 = performance.now();
+        const tick = () => {
+          const m = new window.DOMMatrix(getComputedStyle(el).transform);
+          best = Math.max(best, Math.hypot(m.m41, m.m42));
+          if (performance.now() - t0 < 500) setTimeout(tick, 16);
+          else resolve(best);
+        };
+        tick();
+      }),
   );
+  await phone.screenshot({ path: join(out, `${browserName}-touch.png`) });
+  check('touch tap excites a neighbouring surface', peak > 0.01);
   check('touch creates no cursor light', (await phone.locator('.liquid-light').count()) === 0);
   await phone.evaluate(() => document.dispatchEvent(new window.Event('pointercancel')));
   await phone.waitForTimeout(500);

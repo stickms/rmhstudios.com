@@ -189,7 +189,11 @@ export function installLiquidInteractions(doc: Document = document): () => void 
       const [x, y] = sample(body, at);
       frames.push({
         offset: i / 96,
-        transform: `translate3d(${Math.max(-6, Math.min(6, x)).toFixed(3)}px, ${Math.max(-6, Math.min(6, y)).toFixed(3)}px, 0) rotate(${Math.max(-0.45, Math.min(0.45, x * 0.07)).toFixed(3)}deg)`,
+        // Translate only, and bounded to the same ±6px as before. Rotating a surface rotates its TEXT, which every engine
+        // re-rasterises (and Gecko snaps to the pixel grid again when the animation ends), and that reads as shimmer.
+        // The model above stays LINEAR on purpose: retargeting folds old waves into a recovery by subtraction, which
+        // only reproduces the pose if the sum is linear, so the clamp lives here, at display, and is rarely reached.
+        transform: `translate3d(${Math.max(-6, Math.min(6, x)).toFixed(3)}px, ${Math.max(-6, Math.min(6, y)).toFixed(3)}px, 0)`,
       });
     }
     body.animation?.cancel();
@@ -349,6 +353,8 @@ export function installLiquidInteractions(doc: Document = document): () => void 
     const host = target?.closest<HTMLElement>(SURFACES) ?? null;
     if (
       !host ||
+      // The glass engine lights these in the shader; a CSS carrier on top would be a second, DOM-churning light.
+      host.matches('[data-liquid-canvas]') ||
       host.closest(EXCLUDE) ||
       host.matches('input,textarea,select') ||
       (host !== lightHost && win.getComputedStyle(host).position === 'static')

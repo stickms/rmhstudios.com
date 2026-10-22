@@ -32,6 +32,7 @@
 import OpenAI from 'openai';
 import { AppError } from '@/lib/errors/codes';
 import { prisma } from '@/lib/prisma.server';
+import { timedAiFetch } from './timed-fetch.server';
 
 /* -------------------------------------------------------------------------- */
 /* Tasks + routing                                                            */
@@ -143,7 +144,7 @@ let deepseek: OpenAI | null = null;
 
 function client(): OpenAI {
   if (!process.env.DEEPSEEK_API_KEY) throw new AppError('AI_UNAVAILABLE');
-  deepseek ??= new OpenAI({
+  deepseek ??= new OpenAI({ fetch: timedAiFetch,
     apiKey: process.env.DEEPSEEK_API_KEY,
     // Overridable so a local stand-in or an OpenAI-compatible proxy can be
     // pointed at in dev/CI without reaching the real API.

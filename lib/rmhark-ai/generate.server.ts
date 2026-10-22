@@ -27,8 +27,9 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
 } from '@/lib/rmhark-schema';
+import { timedAiFetch } from '../ai/timed-fetch.server';
 
-const deepseek = new OpenAI({
+const deepseek = new OpenAI({ fetch: timedAiFetch,
   // `|| 'missing'` rather than `!` — see the note in `lib/rmhvibe/vibe-ai.server.ts`:
   // the SDK throws on an absent key at construction, and `loadEntries()` imports
   // this module before serving any page, so `!` turned one unset env var into a

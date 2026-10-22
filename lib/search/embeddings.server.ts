@@ -33,6 +33,7 @@ import OpenAI from 'openai';
 import { Prisma } from '@prisma/client';
 import { prisma, prismaRead } from '@/lib/prisma.server';
 import { prepareText } from '@/lib/search/hybrid';
+import { timedAiFetch } from '../ai/timed-fetch.server';
 
 /** The declared column dimension. Changing this is a migration and a backfill. */
 export const EMBEDDING_DIM = 1536;
@@ -56,7 +57,7 @@ const MODEL = process.env.EMBEDDING_MODEL || 'text-embedding-3-small';
 let client: OpenAI | null = null;
 function getClient(): OpenAI | null {
   if (!API_KEY) return null;
-  client ??= new OpenAI({ apiKey: API_KEY, baseURL: BASE_URL });
+  client ??= new OpenAI({ fetch: timedAiFetch, apiKey: API_KEY, baseURL: BASE_URL });
   return client;
 }
 

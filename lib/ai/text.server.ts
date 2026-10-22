@@ -4,8 +4,9 @@
  */
 
 import OpenAI from 'openai';
+import { timedAiFetch } from './timed-fetch.server';
 
-const deepseek = new OpenAI({
+const deepseek = new OpenAI({ fetch: timedAiFetch,
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   // Overridable so the endpoint can be pointed at a local stand-in (an
   // OpenAI-compatible proxy, or a stub in a dev/CI environment that must not

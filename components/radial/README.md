@@ -304,27 +304,35 @@ anything else that ever needs to answer a touch this way.
 the OS preference does not: the owner asked for the motion to play by default).
 The press still turns the globe as it always did.
 
-### The soft body
+### The dough body
 
-Grab the globe and it gives (2026-10-21: "full soft-body physics … dragging it
-deforms it according to your pointer/finger … make it super optimized"). The
-surface under the finger leads the drag and the ball lags after it in a lobe, a
-press squeezes the jelly in around the finger, the whole ball stretches along the
-pull (volume-preserving), and letting go wobbles it back through rest.
+Grab the globe and it gives like dough (2026-10-22: it used to "morph like a
+stretchy ball … I want it to truly morph like little bits at a time almost like
+dough"). The first soft body (2026-10-21) was three global springs around one
+Gaussian: it had no memory of _where_ material had been pushed, so the only thing
+it could do was stretch as a whole. The replacement keeps its state in space.
 
-- **A modal soft body, not a mesh.** `lib/soft-body.ts` is three under-damped
-  springs (tug, pinch, stretch) and a closed-form displacement field — a gaussian
-  around the finger plus a 2×2 stretch — evaluated at the points the paint pass
-  already draws, after projection: every cage sample, the ripple crest, every pin,
-  and one affine `transform` on the glass disc. One `exp` and a dozen multiplies
-  per sample, one scratch `Float64Array(2)`, no allocation.
+- **A displacement field, not a few springs.** `lib/dough.ts` holds the in-plane
+  displacement `u(x)` of every piece of material on a 48×48 grid, in two layers:
+  an **elastic** one (a damped spring that rebounds, so a release wobbles a
+  little) and a **plastic** one (held strain flows into it and it eases out over
+  ~1.4s, so a dent outlives the finger). A press pushes material _out of_ the
+  contact and banks it up around it. Height is derived, `h = −0.12·∇·u`, so volume
+  is conserved by construction (asserted in `lib/__tests__/dough.test.ts`). A drag
+  grips the material under the finger and carries it: it piles up ahead and leaves
+  a groove behind, which is what the plastic layer remembers.
+- **One field, three readers.** The paint pass samples it on the CPU at the points
+  it already draws (`DoughBody.deform`: every cage sample, the ripple crest, every
+  pin; the same call the old body had, so the callers did not change). The coat
+  shader reads the same field as a half-float texture and inverts it per pixel, so
+  the **silhouette bulges** past the rest limb and the lighting wraps every dent.
+  The CSS disc no longer takes an affine transform and no longer clips.
 - **Free at rest.** `step()` says whether the body is deformed; only then does the
-  loop repaint for it. Measured dragging at 4× CPU throttle: the same frame times
-  with and without it.
+  loop repaint for it. The field upload is skipped unless its `version` changed.
 - **Display only**, like the ripple and the wobble: `project()` never reads it, so
   a squeeze cannot move a destination into or out of the reticle.
-- **The cage's bleed grew to 11%** to leave room for a full tug at the limb plus
-  the stretch plus a ripple's swell.
+- The canvas hangs outside the disc by 11% of its diameter (`JELLY_BLEED`, the same
+  fraction as the cage) so the silhouette has somewhere to go.
 - The stage's box is read once per press, never in the frame loop; the finger's
   velocity is the drag's own (`VelocityTracker`), so nothing new listens.
 
@@ -344,11 +352,18 @@ cheapest at:
   glint plus a kicker, a hairline at the limb with an absorption band inside it,
   the room seen upside-down through the ball, a crescent caustic on the far inner
   rim, and the theme accent as the jelly's subsurface tint. Ripples bend its
-  normals (the light runs over the wave) and the soft body's lobe and pinch drag
-  it, so a poke dimples the glint and a pull smears it.
+  normals (the light runs over the wave) and the dough field's height tilts them
+  too, so a press dimples the glint and a drag smears a groove through it.
+- **It refracts the page** (2026-10-22: "the same effect"). The glass engine keeps
+  a snapshot of the page taken while it was idle, i.e. before the hub opened
+  (`lib/liquid/glass/scene-store.ts`); the coat samples it through a ball-lens
+  model (inverted, magnified, slightly dispersed) at mip level 5, to match the
+  hub's 20px blur, driven by the surface normal so it warps with every dent. It is
+  placed (a layout read) when the globe attaches, finishes blooming, resizes, or a
+  new picture lands, never per frame.
 - **It costs nothing at rest or while spinning.** A uniform glass ball looks the
   same at any rotation, so the shader is redrawn only while the surface moves (a
-  ripple, the soft body) plus the frame it settles on, and never during the
+  ripple, the dough body) plus the frame it settles on, and never during the
   eversion. Measured: 0 GL draws idle, ~70 over a poke's whole life; the CSS
   sheen's infinite animation is retired while the material is up.
 - **One GL context per page**, shared by every mount; the idle rehearsal builds
