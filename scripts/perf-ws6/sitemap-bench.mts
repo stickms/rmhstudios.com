@@ -18,8 +18,8 @@ for (let i = 0; i < Number(runsArg); i++) {
   h.reset();
   h.enable();
   const t = performance.now();
-  let bytes = 0;
-  let n = 0;
+  let bytes: number;
+  let n: number;
   if (serve) {
     serve.clearSitemapCache();
     const body = await serve.getSitemapBody(section, chunk);

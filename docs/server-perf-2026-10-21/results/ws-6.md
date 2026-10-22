@@ -63,8 +63,8 @@ pnpm exec tsx --env-file=.env scripts/perf-ws6/rss-tag-bench.mts
 pnpm exec vitest run lib/__tests__/sitemap-serve.test.ts lib/__tests__/sitemap-sections.test.ts lib/__tests__/oembed-og-cache.test.ts
 
 export PATH=/opt/node24/bin:$PATH
-flock /tmp/rmh-perf-build.lock pnpm exec tsx scripts/perf-ws6/og-bench.mts          # OG cold render / stall (run at e97b5192-era code and at 653ceb9d)
-flock /tmp/rmh-perf-build.lock pnpm exec tsx scripts/perf-ws6/resvg-bench.mts       # sync vs async, system fonts, byte equality
+# removed: scripts/perf-ws6/og-bench.mts (OG cold render / stall) benchmarked the synchronous Resvg.render path that main's svgToPng replaced (88de16e44); see git history
+# removed: scripts/perf-ws6/resvg-bench.mts (sync vs async, system fonts, byte equality) benchmarked the synchronous Resvg.render path that main's svgToPng replaced (88de16e44); see git history
 flock /tmp/rmh-perf-build.lock pnpm exec tsx scripts/perf-ws6/sharp-bench.mts       # encode time / stall per width x format, 8-way burst
 flock /tmp/rmh-perf-build.lock pnpm exec tsx scripts/perf-ws6/threadpool-bench.mts  # starvation, ungated
 flock /tmp/rmh-perf-build.lock pnpm exec tsx scripts/perf-ws6/threadpool-gated.mts  # starvation, gated (RMH_CPU_GATE_LIMIT=2|3)

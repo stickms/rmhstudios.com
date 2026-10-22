@@ -69,11 +69,10 @@ describe('getSitemapBody', () => {
   it('does not cache a failure and serves an empty urlset', async () => {
     const { getSitemapBody } = await import('@/lib/sitemap-serve.server');
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    batches.mockImplementationOnce(() =>
-      (async function* () {
-        throw new Error('db down');
-      })(),
-    );
+    // A section whose first batch query fails: an async iterable that rejects on first read.
+    batches.mockImplementationOnce(() => ({
+      [Symbol.asyncIterator]: () => ({ next: () => Promise.reject(new Error('db down')) }),
+    }));
     const bad = await getSitemapBody('posts', 1);
     expect(bad?.tag).toBe('err');
     batches.mockImplementation(() => gen([[entry(1)]]));

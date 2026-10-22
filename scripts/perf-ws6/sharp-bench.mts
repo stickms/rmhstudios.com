@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- CLI bench intentionally writes its report to stdout */
 import { performance } from 'node:perf_hooks';
 import sharp from 'sharp';
 import { optimizeImage, type ImageFormat } from '@/lib/image-optimize';
