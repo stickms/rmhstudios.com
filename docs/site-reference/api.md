@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 894 files across 192 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 898 files across 193 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -868,6 +868,16 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/group-chats/:id/react` | `POST` | `app/routes/api/group-chats/$id/react.ts` |
 | `/api/group-chats/:id/stream` | `GET` | `app/routes/api/group-chats/$id/stream.ts` |
 
+## `/api/groupcalls`
+
+3 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/groupcalls/active` | `GET` | `app/routes/api/groupcalls/active.ts` |
+| `/api/groupcalls/history` | `GET` | `app/routes/api/groupcalls/history.ts` |
+| `/api/groupcalls/invitable` | `GET` | `app/routes/api/groupcalls/invitable.ts` |
+
 ## `/api/guides`
 
 3 routes.
@@ -951,13 +961,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/internal`
 
-5 routes.
+6 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/internal/match-result` | `POST` | `app/routes/api/internal/match-result.ts` |
 | `/api/internal/notify-message` | `POST` | `app/routes/api/internal/notify-message.ts` |
 | `/api/internal/notify-typing` | `POST` | `app/routes/api/internal/notify-typing.ts` |
+| `/api/internal/ops/deploy-event` | `POST` | `app/routes/api/internal/ops/deploy-event.ts` |
 | `/api/internal/predictions-tick` | `POST` | `app/routes/api/internal/predictions-tick.ts` |
 | `/api/internal/streak-push` | `POST` | `app/routes/api/internal/streak-push.ts` |
 

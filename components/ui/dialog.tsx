@@ -63,8 +63,10 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
     /** Let complex dialogs become a safe-area-aware full screen on phones. */
     mobileFullscreen?: boolean;
+    /** Override the scrim's stacking position for dialogs above site chrome. */
+    overlayClassName?: string;
   }
->(({ className, children, mobileFullscreen = false, ...props }, ref) => {
+>(({ className, children, mobileFullscreen = false, overlayClassName, ...props }, ref) => {
   const { t } = useTranslation('c-ui');
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const overlayRef = React.useRef<HTMLDivElement | null>(null);
@@ -106,7 +108,7 @@ const DialogContent = React.forwardRef<
 
   return (
     <DialogPortal>
-      <DialogOverlay ref={overlayRef} />
+      <DialogOverlay ref={overlayRef} className={overlayClassName} />
       <DialogPrimitive.Content
         ref={mergeRefs(ref, contentRef)}
         data-slot="dialog-content"

@@ -11,6 +11,13 @@ export const RANGES = {
 } as const;
 export type RangeId = keyof typeof RANGES;
 
+/** A production deploy result, drawn as a marker on every chart. */
+export interface DeployMarker {
+  at: number;
+  sha: string;
+  status: 'success' | 'rolledback' | 'fail' | string;
+}
+
 export interface ChartThreshold {
   value: number;
   /** e.g. "A08 · 10 min" */

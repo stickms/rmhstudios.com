@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Crown, Gamepad2, LogOut, UserPlus, Users, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
+import { VoiceRoomBanner } from '@/components/groupcall/VoiceRoomBanner';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { Button } from '@/components/ui/button';
 import { MenuItem } from '@/components/ui/menu';
@@ -95,6 +96,8 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
         {party.members.length}/{party.maxSize}
       </span>
 
+      <VoiceRoomBanner origin="party" originId={party.id} className="min-w-0" />
+
       <div className="relative">
         <Button
           ref={triggerRef}
@@ -178,7 +181,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
             })}
           </p>
         </div>
-        <div className="flex items-center gap-2">{core}</div>
+        <div className="flex flex-wrap items-center gap-2">{core}</div>
       </section>
     );
   }

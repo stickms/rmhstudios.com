@@ -20,6 +20,7 @@ import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../prisma-client';
 import { logger } from '../logger';
 import { checkRateLimit } from '../rate-limit';
+import { claimBusy, getBusy, releaseBusy } from '../busy-registry';
 import { CALL_C2S, CALL_S2C, RING_TIMEOUT_MS, MAX_SDP_BYTES, MAX_ICE_BYTES } from '../../../lib/call/events';
 import type { CallEndReason, CallRejectReason } from '../../../lib/call/events';
 import { canCall, persistedStatus, isCallPrivacy, type CallPrivacy } from '../../../lib/call/state';
@@ -53,6 +54,10 @@ function clearCall(call: LiveCall): void {
   calls.delete(call.id);
   if (byUser.get(call.callerId) === call.id) byUser.delete(call.callerId);
   if (byUser.get(call.calleeId) === call.id) byUser.delete(call.calleeId);
+  // Scoped by call id, so releasing a call somebody has already moved on from
+  // cannot free them out of the one they are now in.
+  releaseBusy(call.callerId, call.id);
+  releaseBusy(call.calleeId, call.id);
 }
 
 /** Persist the outcome. Fire-and-forget: a history row must never delay teardown. */
@@ -158,9 +163,11 @@ export function registerCallHandlers(io: Server, socket: Socket): void {
     const reject = (reason: CallRejectReason) =>
       socket.emit(CALL_S2C.REJECTED, { reason });
 
-    // Busy on either side. Checked before the DB round trip.
-    if (byUser.has(callerId)) return reject('busy');
-    if (byUser.has(calleeId)) return reject('busy');
+    // Busy on either side. Checked before the DB round trip. Asked of the
+    // shared registry rather than `byUser` so a person standing in a group
+    // voice room counts as busy here too — one microphone, one call.
+    if (getBusy(callerId)) return reject('busy');
+    if (getBusy(calleeId)) return reject('busy');
 
     let permission;
     try {
@@ -200,13 +207,25 @@ export function registerCallHandlers(io: Server, socket: Socket): void {
       connectedAt: null,
       ringTimer: null,
     };
+    // Claim both users before publishing the call into the live indexes. A
+    // group call may have claimed either one while permission/presence/DB work
+    // was in flight.
+    if (!claimBusy(callerId, 'call', call.id)) {
+      persist(call, 'cancelled');
+      return reject('busy');
+    }
+    if (!claimBusy(calleeId, 'call', call.id)) {
+      releaseBusy(callerId, call.id);
+      persist(call, 'cancelled');
+      return reject('busy');
+    }
+
     // The server owns the ring timeout, so a client that ignores its own timer
     // cannot ring someone indefinitely.
     call.ringTimer = setTimeout(() => {
       const live = calls.get(call.id);
       if (live) endCall(io, live, 'missed');
     }, RING_TIMEOUT_MS);
-
     calls.set(call.id, call);
     byUser.set(callerId, call.id);
     byUser.set(calleeId, call.id);

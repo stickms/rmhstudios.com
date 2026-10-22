@@ -17,6 +17,8 @@ function harness(canCapture = () => true) {
     clearTimeout: (id: number) => clearTimeout(id as unknown as ReturnType<typeof setTimeout>),
     scrollX: 0,
     scrollY: 340,
+    innerWidth: 1440,
+    innerHeight: 900,
   };
   const doc = { defaultView: win } as unknown as Document;
   const shots: { width: number; height: number; scrollY: number; bitmap: ImageBitmap }[] = [];
@@ -60,6 +62,54 @@ describe('scene provider', () => {
     expect(shots[0]!.width).toBeCloseTo(1440, 5);
     expect(shots[0]!.height).toBeCloseTo(900, 5);
     expect(shots[0]!.scrollY).toBe(340);
+  });
+
+  it('waits until continuous scrolling stops instead of capturing every settle interval', async () => {
+    const { provider, capture } = harness();
+    for (let i = 0; i < 20; i++) {
+      provider.request('scroll');
+      await vi.advanceTimersByTimeAsync(100);
+    }
+    expect(capture).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    expect(capture).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['scroll', 'resize', 'route'])(
+    'closes a capture invalidated by %s while it was in flight',
+    async (reason) => {
+      const { win, provider, capture, shots } = harness();
+      const stale = bitmap();
+      let release!: (o: CaptureOutcome) => void;
+      capture.mockImplementationOnce(() => new Promise<CaptureOutcome>((r) => (release = r)));
+      provider.request();
+      await vi.advanceTimersByTimeAsync(SETTLE_MS + 5);
+      if (reason === 'scroll') win.scrollY += 150;
+      if (reason === 'resize') win.innerWidth -= 200;
+      if (reason === 'route') provider.reset();
+      provider.request(reason);
+      release({ bitmap: stale, width: 100, height: 100, scale: 1 });
+      await vi.advanceTimersByTimeAsync(5);
+      expect(stale.close).toHaveBeenCalledOnce();
+      expect(shots).toHaveLength(0);
+      await vi.advanceTimersByTimeAsync(MIN_INTERVAL_MS + SETTLE_MS);
+      expect(shots).toHaveLength(1);
+    },
+  );
+
+  it('does not publish a late picture after effects have been disabled', async () => {
+    let allowed = true;
+    const { provider, capture, shots } = harness(() => allowed);
+    const stale = bitmap();
+    let release!: (o: CaptureOutcome) => void;
+    capture.mockImplementationOnce(() => new Promise<CaptureOutcome>((r) => (release = r)));
+    provider.request();
+    await vi.advanceTimersByTimeAsync(SETTLE_MS + 5);
+    allowed = false;
+    release({ bitmap: stale, width: 100, height: 100, scale: 1 });
+    await vi.advanceTimersByTimeAsync(5);
+    expect(stale.close).toHaveBeenCalledOnce();
+    expect(shots).toHaveLength(0);
   });
 
   it('removes only its own canvases, and HIDES (keeps the box of) floating glass so the page cannot reflow', async () => {

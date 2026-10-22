@@ -12,7 +12,7 @@ export const GLASS_BUDGET = {
   /** CSS px². Above this a surface falls back to the CSS material. */
   maxArea: 640_000,
   /** CSS px. Smaller than this has no room for a bevel. */
-  minSide: 28,
+  minSide: 16,
   /** Backing-store scale ceiling, and the lower ceiling for large surfaces. */
   maxDpr: 2,
   largeDpr: 1.5,
@@ -23,7 +23,7 @@ export const GLASS_BUDGET = {
 export function bevelFor(width: number, height: number, radius: number): number {
   const short = Math.min(width, height);
   const wanted = Math.min(short * 0.26, Math.max(radius * 0.9, 16));
-  return Math.max(8, Math.min(24, Math.round(wanted), Math.floor(short / 2) - 1));
+  return Math.max(3, Math.min(24, Math.round(wanted), Math.floor(short / 2) - 1));
 }
 
 /** How far behind the surface the page appears to be: the reach of refraction. Shorter than the bevel by design. */
@@ -116,6 +116,15 @@ export function lightTarget(distance: number): number {
   if (distance >= LIGHT_REACH) return 0;
   const t = 1 - distance / LIGHT_REACH;
   return t * t * (3 - 2 * t);
+}
+
+/** Unit-disc tilt toward a cursor INSIDE the slab. The shader caps the optical angle, never the DOM. */
+export function cursorTilt(x: number, y: number, width: number, height: number): [number, number] {
+  if (width <= 0 || height <= 0 || x < 0 || y < 0 || x > width || y > height) return [0, 0];
+  const tx = (x / width) * 2 - 1;
+  const ty = (y / height) * 2 - 1;
+  const length = Math.max(1, Math.hypot(tx, ty));
+  return [tx / length, ty / length];
 }
 
 /** Exponential approach, frame-rate independent. */

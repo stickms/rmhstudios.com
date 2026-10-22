@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import { nitro } from 'nitro/vite';
+import { materialHover } from './lib/liquid/hover-css';
 
 /**
  * Vite plugin that replaces *.server.{ts,tsx,js,jsx} imports with empty
@@ -215,6 +216,7 @@ export default defineConfig({
   define: {
     __CDN_BASE__: JSON.stringify(process.env.VITE_CDN_BASE_URL ?? ''),
   },
+  css: { postcss: { plugins: [materialHover()] } },
   plugins: [
     stubServerFiles(),
     tailwindcss(),

@@ -29,6 +29,7 @@ import {
   admit,
   approach,
   bevelFor,
+  cursorTilt,
   dprFor,
   innerRadius,
   lightTarget,
@@ -47,9 +48,9 @@ import { clearScene, publishScene } from './scene-store';
  * full of them never starves a card or a menu.
  */
 const SELECTOR =
-  '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass],.glass-inset,[data-slot="button"]:not([data-variant="ghost"]):not([data-variant="link"]),[data-slot="input"],[data-slot="textarea"]';
+  '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass],.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"]';
 const EXCLUDE =
-  '[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,.radial-globe__stage,.eversion-overlay,.evert-ghost';
+  '[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,.radial-globe__stage,.radial-hub__orb,.eversion-overlay,input,textarea,select';
 const TAP_EXCLUDE =
   'input,textarea,select,[contenteditable="true"],[data-liquid-motion="off"],[disabled],[aria-disabled="true"]';
 const LIGHT_HEIGHT = 96;
@@ -81,24 +82,20 @@ interface Surface {
   radius: number;
   tint: RGBA;
   dirty: boolean;
-  lastTop: number;
-  lastLeft: number;
   light: number;
+  tiltX: number;
+  tiltY: number;
   ripples: Ripple[];
 }
 
-/**
- * Every glass surface bends the page at its rim; that is what makes its edge visible now that nothing carries a shadow.
- * Floating glass (`chrome`, `overlay`) is HIDDEN from the snapshot, so its rim shows exactly what is behind it. Panes and
- * repeated cards are content blocks and stay in the snapshot, so their rim bends the card's own paint (tint and edge
- * included, which is why their tint is not mixed in again) rather than the page behind it; their text sits inside the
- * padding, clear of the bevel band. A surface whose edge would put live text in the band opts out with
- * `data-liquid-glass="lit"` and keeps the full lit slab: bevel shading, Fresnel, specular, cursor light and ripples.
- */
-const refracts = (s: Surface): boolean => s.el.getAttribute('data-liquid-glass') !== 'lit';
+/** Content must stay live. Sampling a card's own text/hover paints a stale second copy over it. */
+const refracts = (s: Surface): boolean => {
+  const mode = s.el.getAttribute('data-liquid-glass');
+  return mode !== 'lit' && (mode === 'refract' || s.role === 'chrome' || s.role === 'overlay');
+};
 
 const roleOf = (el: Element): GlassRole =>
-  el.classList.contains('glass-overlay')
+  el.classList.contains('glass-overlay') || el.classList.contains('evert-ghost')
     ? 'overlay'
     : el.classList.contains('glass-chrome')
       ? 'chrome'
@@ -107,7 +104,7 @@ const roleOf = (el: Element): GlassRole =>
         : el.classList.contains('glass-fill')
           ? 'fill'
           : el.matches(
-                '.glass-inset,[data-slot="button"],[data-slot="input"],[data-slot="textarea"]',
+                '.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"]',
               )
             ? 'control'
             : 'other';
@@ -160,7 +157,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
   // The frame loop.
   let raf = 0;
   let lastFrame = 0;
-  let scrollDirty = false;
+  let scrolling = false;
+  let scrollTimer = 0;
   let pointerMoved = false;
   const rippleBuffer = new Float32Array(GLASS_RIPPLES * 4);
 
@@ -174,7 +172,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
   // While the hub is open the page behind it is blurred and covered, and the picture taken BEFORE it opened is the one
   // the globe is refracting; a new one now would be of the wrong thing.
   const hubOpen = () => !!doc.querySelector('.radial-hub:not([data-phase="closed"])');
-  const sceneAllowed = () => !lowEnd && !doc.hidden && !off() && !hubOpen();
+  const sceneAllowed = () => !scrolling && !lowEnd && !doc.hidden && !off() && !hubOpen();
 
   const readTheme = () => {
     const style = win.getComputedStyle(root);
@@ -220,7 +218,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       sceneFadeTarget = 1;
       // Observable by tests and by anyone debugging a surface that "does not refract": is there a picture at all?
       root.setAttribute('data-liquid-scene', 'on');
-      markAllDirty();
+      markRefractionDirty();
       requestFrame();
     },
   });
@@ -250,6 +248,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
 
   const markAllDirty = () => {
     for (const s of surfaces.values()) s.dirty = true;
+  };
+  const markRefractionDirty = () => {
+    for (const s of surfaces.values()) if (refracts(s)) s.dirty = true;
   };
 
   // ── Surfaces ──────────────────────────────────────────────────────────────
@@ -293,9 +294,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
       radius: 0,
       tint: [1, 1, 1, 0],
       dirty: true,
-      lastTop: NaN,
-      lastLeft: NaN,
       light: 0,
+      tiltX: 0,
+      tiltY: 0,
       ripples: [],
     });
     visibility.observe(el);
@@ -352,6 +353,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.el.removeAttribute('data-liquid-static');
     s.ripples.length = 0;
     s.light = 0;
+    s.tiltX = s.tiltY = 0;
   };
 
   let reconcileQueued = false;
@@ -391,10 +393,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
   };
 
   // ── Drawing ───────────────────────────────────────────────────────────────
-  const drawSurface = (s: Surface, now: number): boolean => {
+  const drawSurface = (s: Surface, rect: DOMRect, now: number): boolean => {
     const r = renderer;
     if (!r?.ready || !s.canvas || !s.el.isConnected) return false;
-    const rect = s.el.getBoundingClientRect();
     const padLeft = s.el.clientLeft;
     const padTop = s.el.clientTop;
     const w = s.width;
@@ -446,9 +447,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       sceneW: scene?.width ?? 1,
       sceneH: scene?.height ?? 1,
       sceneOn,
-      // The rim of a surface that is NOT hidden from the snapshot samples its own paint, tint included.
-      tint:
-        s.role === 'chrome' || s.role === 'overlay' ? s.tint : [s.tint[0], s.tint[1], s.tint[2], 0],
+      tint: s.tint,
       rim,
       ink,
       dark,
@@ -456,6 +455,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       lightY: pointerY - oy,
       lightZ: LIGHT_HEIGHT,
       lightOn: s.light,
+      tilt: [s.tiltX, s.tiltY],
       ripples,
       press: 0,
     };
@@ -472,29 +472,24 @@ export function installLiquidGlass(doc: Document = document): () => void {
 
     if (sceneFade !== sceneFadeTarget) {
       sceneFade = approach(sceneFade, sceneFadeTarget, 8, dt);
-      markAllDirty();
+      markRefractionDirty();
       again = sceneFade !== sceneFadeTarget;
     }
 
-    const lightOk = pointerLive && queries.fine.matches && motionOk();
-    for (const s of surfaces.values()) {
-      if (!s.canvas || !s.visible) continue;
+    const lightOk = !scrolling && pointerLive && queries.fine.matches && motionOk();
+    // Read all geometry before any canvas/attribute writes. Interleaving these
+    // phases forced synchronous layout once per slab in Firefox.
+    const active = [...surfaces.values()]
+      .filter((s) => s.canvas && s.visible && s.el.isConnected)
+      .map((s) => ({ s, rect: s.el.getBoundingClientRect() }));
+    for (const { s, rect } of active) {
       let render = s.dirty;
-
-      if (scrollDirty) {
-        // A surface pinned to the viewport sees different page behind it every time the page scrolls; one that scrolls
-        // with the page does not (the picture moves with it).
-        const rect = s.el.getBoundingClientRect();
-        if (Math.abs(rect.top - s.lastTop) < 0.5 && Math.abs(rect.left - s.lastLeft) < 0.5)
-          render = true;
-        s.lastTop = rect.top;
-        s.lastLeft = rect.left;
-      }
+      const surfaceLightOk =
+        lightOk && !s.el.matches(':disabled,[aria-disabled="true"],[data-disabled]');
 
       // Cursor light eases toward its target for this surface.
       let goal = 0;
-      if (lightOk) {
-        const rect = s.el.getBoundingClientRect();
+      if (surfaceLightOk) {
         const dx = Math.max(rect.left - pointerX, 0, pointerX - rect.right);
         const dy = Math.max(rect.top - pointerY, 0, pointerY - rect.bottom);
         goal = lightTarget(Math.hypot(dx, dy));
@@ -507,6 +502,18 @@ export function installLiquidGlass(doc: Document = document): () => void {
         render = true;
       }
 
+      // Ease the material's pose through the shared frame loop. Only the shader
+      // tilts; native scroll geometry, text and controls stay fixed.
+      const [tx, ty] = surfaceLightOk
+        ? cursorTilt(pointerX - rect.left, pointerY - rect.top, rect.width, rect.height)
+        : [0, 0];
+      if (s.tiltX !== tx || s.tiltY !== ty) {
+        s.tiltX = approach(s.tiltX, tx, 14, dt);
+        s.tiltY = approach(s.tiltY, ty, 14, dt);
+        render = true;
+        again = true;
+      }
+
       // Ripples live for a fixed time; drop the dead ones and keep drawing while any is alive.
       if (s.ripples.length) {
         s.ripples = s.ripples.filter((rp) => now - rp.at < RIPPLE_SHAPE.life * 1000);
@@ -515,11 +522,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
       }
 
       if (render) {
-        drawSurface(s, now);
+        drawSurface(s, rect, now);
         s.dirty = false;
       }
     }
-    scrollDirty = false;
     pointerMoved = false;
     if (again) requestFrame();
   };
@@ -572,19 +578,34 @@ export function installLiquidGlass(doc: Document = document): () => void {
     if (any) requestFrame();
   };
   const onScroll = () => {
-    scrollDirty = true;
-    requestFrame();
-    provider.request('scroll');
-    // Far enough from where the picture was taken that it no longer describes what is behind the surface.
-    if (scene && Math.abs(win.scrollY - scene.scrollY) > win.innerHeight * 0.7) {
-      sceneFadeTarget = 0;
+    if (!scrolling) {
+      scrolling = true;
+      // A viewport capture cannot follow compositor scrolling. Keep the lit rim
+      // attached to its DOM host, and stop displaying stale text at its edge.
+      sceneFade = sceneFadeTarget = 0;
+      root.removeAttribute('data-liquid-scene');
+      for (const s of surfaces.values()) {
+        if (refracts(s) || s.light > 0 || s.ripples.length || s.tiltX || s.tiltY) s.dirty = true;
+        s.light = 0;
+        s.tiltX = s.tiltY = 0;
+        s.ripples.length = 0;
+      }
+      requestFrame();
     }
+    win.clearTimeout(scrollTimer);
+    scrollTimer = win.setTimeout(() => {
+      scrolling = false;
+      requestFrame();
+    }, 160);
+    provider.request('scroll');
   };
   const onResize = () => {
     markAllDirty();
-    if (scene) sceneFadeTarget = 0;
+    sceneFade = sceneFadeTarget = 0;
+    root.removeAttribute('data-liquid-scene');
     provider.request('resize');
     scheduleReconcile();
+    requestFrame();
   };
 
   // ── Page changes ──────────────────────────────────────────────────────────
@@ -594,7 +615,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
     if (next === route) return;
     route = next;
     // The picture is of the previous page: stop refracting it until a new one lands.
-    sceneFadeTarget = 0;
+    sceneFade = sceneFadeTarget = 0;
+    scene = null;
+    markRefractionDirty();
+    requestFrame();
     root.removeAttribute('data-liquid-scene');
     clearScene();
     provider.reset();
@@ -607,7 +631,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
         if (!(n instanceof win.HTMLElement) || !n.isConnected) untrackTree(n);
       });
       r.addedNodes.forEach((n) => {
-        if (n instanceof win.HTMLElement && n.hasAttribute('data-liquid-glass')) return;
+        if (n instanceof win.HTMLCanvasElement && n.hasAttribute('data-liquid-glass')) return;
         trackTree(n);
         content = true;
       });
@@ -637,6 +661,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
       requestFrame();
     }
   };
+  const onBlur = () => {
+    pointerLive = false;
+    requestFrame();
+  };
   const onPreference = () => scheduleReconcile();
 
   // ── Install ───────────────────────────────────────────────────────────────
@@ -646,7 +674,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['data-liquid-glass', 'data-liquid-material'],
+    attributeFilter: ['data-liquid-glass', 'data-liquid-material', 'data-evert'],
   });
   themeObserver.observe(root, {
     attributes: true,
@@ -660,15 +688,14 @@ export function installLiquidGlass(doc: Document = document): () => void {
   doc.addEventListener('visibilitychange', onVisibility);
   win.addEventListener('resize', onResize, { passive: true });
   win.addEventListener('popstate', checkRoute);
-  win.addEventListener('blur', () => {
-    pointerLive = false;
-  });
+  win.addEventListener('blur', onBlur);
   scheduleReconcile();
 
   return () => {
     disposed = true;
     stopFrames();
     win.clearTimeout(mutationTimer);
+    win.clearTimeout(scrollTimer);
     tree.disconnect();
     themeObserver.disconnect();
     visibility.disconnect();
@@ -681,6 +708,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     doc.removeEventListener('visibilitychange', onVisibility);
     win.removeEventListener('resize', onResize);
     win.removeEventListener('popstate', checkRoute);
+    win.removeEventListener('blur', onBlur);
     for (const s of surfaces.values()) deactivate(s);
     surfaces.clear();
     provider.dispose();

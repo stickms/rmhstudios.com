@@ -240,12 +240,31 @@ oncall_deploy() {
     esac
 }
 
+# ── Deploy markers for the /admin/alarms graphs ──────────────────────────────
+# Records each deploy result through the web tier's internal API (shared
+# INTERNAL_API_SECRET from $ENV_FILE). Best effort: a few seconds at most, and
+# a failure only means no marker on the graphs.
+record_deploy_event() {
+    local status="$1" reason="$2" secret url
+    secret="${INTERNAL_API_SECRET:-}"
+    [ -n "$secret" ] || secret=$(grep -E '^INTERNAL_API_SECRET=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+    [ -n "$secret" ] || return 0
+    url="${DEPLOY_EVENT_URL:-https://rmhstudios.com/api/internal/ops/deploy-event}"
+    local body
+    body=$(printf '{"sha":"%s","status":"%s","detail":"%s"}' "${DEPLOY_SHORT_HASH:-unknown}" "$status" \
+        "$(printf '%s' "$reason" | tr -d '"\\' | tr '\n\t' '  ' | cut -c1-280)")
+    curl -fsS --max-time 8 -X POST "$url" -H 'content-type: application/json' \
+        -H @<(printf 'x-internal-secret: %s\n' "$secret") --data-binary "$body" >/dev/null 2>&1 \
+        || log "WARNING: could not record the deploy event (no marker on the graphs)."
+}
+
 update_deploy_status() {
     local status="$1"  # "success", "fail", or "rolledback" (web auto-rolled back)
     local reason="${2:-}"  # optional failure reason
 
     DEPLOY_REPORTED=1
     oncall_deploy "$status" "$reason"
+    record_deploy_event "$status" "$reason"
 
     if [ -z "$DISCORD_WEBHOOK" ]; then
         if [ "$status" = "success" ]; then

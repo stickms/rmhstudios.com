@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatValue } from '@/lib/ops/alarm-rules';
-import type { ChartSeries } from '@/lib/ops/series';
+import type { ChartSeries, DeployMarker } from '@/lib/ops/series';
 
 // The SVG draws only lines and is stretched to the plot box
 // (preserveAspectRatio="none" + non-scaling strokes); every label and the
@@ -32,7 +32,15 @@ const fmtTime = (t: number, withDate: boolean) =>
  * glance. A crosshair snaps to the nearest point on hover, touch, or the arrow
  * keys; every value is also in the "Show data" table.
  */
-export function MetricChart({ series, withDate }: { series: ChartSeries; withDate: boolean }) {
+export function MetricChart({
+  series,
+  deploys = [],
+  withDate,
+}: {
+  series: ChartSeries;
+  deploys?: DeployMarker[];
+  withDate: boolean;
+}) {
   const { t } = useTranslation('f-oncall');
   const [active, setActive] = useState<number | null>(null);
   const pts = series.points;
@@ -70,6 +78,12 @@ export function MetricChart({ series, withDate }: { series: ChartSeries; withDat
     .join(' ');
   const cur = active === null ? null : pts[active]!;
   const over = (v: number) => series.thresholds.some((th) => !th.muted && v > th.value);
+  // Deploys inside the plotted span, and for the hovered point the deploy(s)
+  // since the previous point — "this is the first reading after deploy X".
+  const marks = deploys.filter((d) => d.at >= t0 && d.at <= t1);
+  const deployBefore = (i: number) =>
+    marks.filter((d) => d.at <= pts[i]!.t && (i === 0 || d.at > pts[i - 1]!.t)).at(-1);
+  const curDeploy = active === null ? undefined : deployBefore(active);
   const ticks = [1, 0.5, 0].map((f) => top * f);
 
   const nearest = (vx: number) => {
@@ -104,6 +118,15 @@ export function MetricChart({ series, withDate }: { series: ChartSeries; withDat
                 {fmt(cur.v)}
               </span>{' '}
               {fmtTime(cur.t, withDate)}
+              {curDeploy && (
+                <span className="ml-2 text-site-text">
+                  {t('chart-after-deploy', {
+                    defaultValue: 'after deploy {{sha}} ({{status}})',
+                    sha: curDeploy.sha,
+                    status: curDeploy.status,
+                  })}
+                </span>
+              )}
             </>
           ) : (
             <>
@@ -150,6 +173,14 @@ export function MetricChart({ series, withDate }: { series: ChartSeries; withDat
                 })}
           </li>
         ))}
+        {marks.length > 0 && (
+          <li className="flex items-center gap-1.5">
+            <svg aria-hidden width="2" height="12" className="text-site-text-muted">
+              <line x1="1" x2="1" y1="0" y2="12" stroke="currentColor" strokeWidth="2" />
+            </svg>
+            {t('chart-deploys', { defaultValue: '{{n}} deploys', n: marks.length })}
+          </li>
+        )}
       </ul>
 
       <div className="mt-3 flex gap-2">
@@ -206,6 +237,19 @@ export function MetricChart({ series, withDate }: { series: ChartSeries; withDat
                   stroke="currentColor"
                   strokeDasharray="5 4"
                   strokeOpacity={th.muted ? 0.5 : 0.8}
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+              {marks.map((d) => (
+                <line
+                  key={`${d.at}-${d.sha}`}
+                  x1={x(d.at)}
+                  x2={x(d.at)}
+                  y1={0}
+                  y2={H}
+                  className={d.status === 'success' ? 'text-site-text-dim' : 'text-site-warning'}
+                  stroke="currentColor"
+                  strokeOpacity={0.7}
                   vectorEffect="non-scaling-stroke"
                 />
               ))}
