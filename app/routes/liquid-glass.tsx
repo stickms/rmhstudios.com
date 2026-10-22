@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Aperture, Droplets, Layers, MousePointerClick, Sparkles, Waves, Wind } from 'lucide-react';
+import { Droplets, Layers, MousePointerClick, Sparkles, Wind } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 import { GlassPane } from '@/components/ui/liquid-glass';
@@ -67,7 +67,7 @@ function LiquidMorphDemo() {
 const PATH = '/liquid-glass';
 const TITLE = 'Liquid Glass — Design Lab | RMH Studios';
 const DESC =
-  'The living reference for the Liquid Glass material system: elevation tiers, the scene light and rim glint, the frosted edge bevel, the liquid sheen, and the shared UI primitives — all over the real aurora canvas.';
+  'The living reference for the Liquid Glass material: clear shader-drawn slabs with a refracting rim, a cursor that is a light, taps that ripple the glass, and the shared UI primitives.';
 
 /**
  * `noindex`: this is the material lab, not a page of the site. It was listed in
@@ -98,25 +98,25 @@ const TIERS = [
     cls: 'glass-fill',
     name: '.glass-fill',
     label: 'L1 · Fill',
-    note: 'Repeated content — cards, rows, tiles. Tint + rim, no blur. No ring. Cheap, unlimited.',
+    note: 'Repeated content — cards, rows, tiles. Tint + lit CSS edge. Never a canvas. Cheap, unlimited.',
   },
   {
     cls: 'glass-pane',
     name: '.glass-pane',
     label: 'L2 · Pane',
-    note: 'Singular panels — heroes, composer, settings. Blur + noise + optics ring. Budgeted.',
+    note: 'Singular panels — heroes, composer, settings. A lit shader slab: bevel, Fresnel, glints. Budgeted.',
   },
   {
     cls: 'glass-chrome rounded-site border border-site-border',
     name: '.glass-chrome',
     label: 'L3 · Chrome',
-    note: 'Persistent chrome — sidebar, sticky headers, dock. Thinner bevel; brightens on scroll.',
+    note: 'Persistent chrome — sticky headers, dock. A slab that refracts the page scrolling under it.',
   },
   {
     cls: 'glass-overlay',
     name: '.glass-overlay',
     label: 'L4 · Overlay',
-    note: 'Floating UI — dialogs, popovers, palette, toasts. Ring glint on; opaque enough for text.',
+    note: 'Floating UI — dialogs, popovers, palette, toasts. Refracts the page behind it; dense enough for text.',
   },
   {
     cls: 'glass-inset',
@@ -187,24 +187,14 @@ function Section({
 }
 
 function LiquidGlassLab() {
-  // §3.7 playground: toggles the demo pane's lens between the rest and press
-  // (×1.6) static filters by hand. This pane carries no data-glass-lens, so the
-  // bucket generator never fights the inline --glass-lens override.
-  const [pressDemo, setPressDemo] = useState(false);
   return (
-    // Full-screen top-level page (outside _site/): its own padding + document
-    // scroll. The body already paints --site-canvas (the aurora, now two-layer
-    // depth) behind us — no external image, every glass surface samples that real
-    // backdrop and answers the one scene light.
+    // Full-screen top-level page (outside _site/): its own padding + document scroll. Every glass surface below is
+    // drawn by `lib/liquid/glass/engine.ts`: a canvas behind the content, transparent in the middle, refracting and lit
+    // at the rim. There is no backdrop-filter anywhere, so it looks the same in Chromium, Safari and Firefox.
     <div className="min-h-screen w-full">
       <div className="mx-auto flex max-w-6xl flex-col gap-14 px-4 py-10 sm:px-6 md:gap-20 lg:py-16">
-        {/* ── 1 · Hero ── the page's prism slot: pane + the frosted edge bevel + the
-            chromatic rim fringe + the ambient liquid sheen, over the real aurora.
-            (The displacement lens itself is parked — see app/globals.css §3.3.) */}
-        <header
-          data-glass-lens=""
-          className="glass-pane glass-refract glass-refract--prism glass-liquid relative overflow-hidden rounded-site px-6 py-14 sm:px-12 sm:py-20"
-        >
+        {/* ── 1 · Hero ── a pane: a lit slab over the page ground. */}
+        <header className="glass-pane relative rounded-site px-6 py-14 sm:px-12 sm:py-20">
           <div className="relative z-10 flex flex-col items-center gap-4 text-center">
             <span className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-site-accent">
               <Droplets className="h-4 w-4" aria-hidden />
@@ -214,15 +204,14 @@ function LiquidGlassLab() {
               Liquid Glass
             </h1>
             <p className="max-w-2xl text-base text-site-text-muted sm:text-lg">
-              The living reference for the site&apos;s glass material system — elevation tiers, the
-              scene light and rim glint, the frosted edge bevel, and the liquid sheen, all rendered
-              over the real aurora canvas. Move your mouse: the rims glint, the sheen drifts, the
-              backdrop has depth.
+              Clear slabs, not frosted blur: a bevel that catches light, a rim that bends the page
+              behind it, a cursor that is a lamp, and taps that send ripples across the glass. Move
+              your mouse over the page and tap near any surface.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
               <Badge variant="accent">L1–L4 elevation</Badge>
-              <Badge variant="default">rim glint</Badge>
-              <Badge variant="outline">edge bevel</Badge>
+              <Badge variant="default">cursor light</Badge>
+              <Badge variant="outline">tap ripples</Badge>
               <ClarityIndicator />
             </div>
           </div>
@@ -235,9 +224,10 @@ function LiquidGlassLab() {
           title="Elevation tiers"
           description={
             <>
-              Blur and shadow co-vary with height, and each tier declares whether it carries an
-              optics ring. Every swatch below is the named glass class applied directly, over the
-              aurora — read the material, then the <Mono>class</Mono> beneath it.
+              Each tier is a role, not a look you assemble. <Mono>glass-pane</Mono>,{' '}
+              <Mono>glass-chrome</Mono> and <Mono>glass-overlay</Mono> become shader slabs;{' '}
+              <Mono>glass-fill</Mono> (repeated content) and <Mono>glass-inset</Mono> (fields) stay
+              CSS so a feed of cards costs nothing. At most eight slabs are drawn at once.
             </>
           }
         >
@@ -258,242 +248,118 @@ function LiquidGlassLab() {
           </div>
         </Section>
 
-        {/* ── 3 · Scene light / rim glint ── */}
-        <Section
-          id="glint"
-          eyebrow="§4"
-          title="Scene light & rim glint"
-          description={
-            <>
-              One light, sitewide. On a fine pointer the light <em>is</em> the cursor (viewport
-              coords, written to <Mono>--light-x/--light-y</Mono>); on touch or under reduced motion
-              it rests at the scene&apos;s &ldquo;sun&rdquo; (top centre). Every pane, chrome bar
-              and overlay paints a viewport-anchored specular <strong>rim glint</strong> in its
-              optics ring, so as you sweep the cursor across the page each surface&apos;s rim
-              brightens on the side facing the light and dims as it passes — all three panes below
-              answer the same light at once, with zero per-element JS.
-            </>
-          }
-        >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {[
-              { label: 'Pane A', icon: Sparkles },
-              { label: 'Pane B', icon: Sparkles },
-              { label: 'Pane C', icon: Sparkles },
-            ].map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.label}
-                  className="glass-pane relative flex h-32 flex-col items-center justify-center gap-2 overflow-hidden rounded-site p-4"
-                >
-                  <Icon className="relative z-[1] h-6 w-6 text-site-accent" aria-hidden />
-                  <span className="relative z-[1] text-sm font-medium text-site-text">
-                    {item.label}
-                  </span>
-                  <span className="relative z-[1] text-xs text-site-text-dim">
-                    watch the rim {i === 1 ? 'brighten' : 'track'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </Section>
-
-        {/* ── 4 · Pointer light (interactive) ── */}
-        <Section
-          id="pointer"
-          eyebrow="§4.1"
-          title="Hover response — interactive glass"
-          description={
-            <>
-              The glass no longer tracks your cursor. <Mono>.glass-interactive</Mono> used to grow a
-              soft radial hotspot that followed the pointer inside the hovered card; moving a
-              gradient&apos;s centre repaints the whole element, at pointer rate, so a grid of cards
-              spent its frame budget on a highlight. What answers hover now costs nothing per frame:
-              the tint raises, and the L1 rim glint lifts from its ambient rest to full — so the
-              hovered card is still unmistakably the lit one. The glint itself answers a static sun.
-              Hover a card.
-            </>
-          }
-        >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {[
-              { label: 'Nav pill', icon: Layers },
-              { label: 'Dashboard card', icon: Sparkles },
-              { label: 'Shop tile', icon: MousePointerClick },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.label}
-                  className="glass-fill glass-interactive flex h-32 flex-col items-center justify-center gap-2 p-4"
-                >
-                  <Icon className="relative z-[1] h-6 w-6 text-site-accent" aria-hidden />
-                  <span className="relative z-[1] text-sm font-medium text-site-text">
-                    {item.label}
-                  </span>
-                  <span className="relative z-[1] text-xs text-site-text-dim">hover me</span>
-                </div>
-              );
-            })}
-          </div>
-        </Section>
-
-        {/* ── 5 · Optical refraction ── bends the live backdrop through the bezel. */}
+        {/* ── 3 · Refraction ── what a rim does to the page behind it. */}
         <Section
           id="refraction"
           eyebrow="§3"
-          title="Optical refraction — on vs off"
+          title="Refraction"
           description={
             <>
-              Singular panes, chrome and overlays bend the live page behind their rim: a convex
-              squircle bezel refracted by Snell&apos;s law (IOR 1.45), applied as an SVG
-              displacement map inside <Mono>backdrop-filter</Mono>. Only engines that render{' '}
-              <Mono>url()</Mono> there (Chromium) get it; Safari and Firefox keep the frosted
-              clear-coat. At most six visible surfaces refract at once, never under reduced
-              transparency, high contrast or <Mono>perf-lite</Mono>. Watch the stripes bend at the
-              edge and stay straight in the middle.
+              The rim is a convex bevel refracted by Snell&apos;s law (IOR 1.5) with a little
+              dispersion; the middle is clear, so the live page shows through untouched. Floating
+              glass (<Mono>glass-chrome</Mono>, <Mono>glass-overlay</Mono>) refracts a snapshot of
+              the page behind it automatically. A pane is a content block and would bend its own
+              text, so it is only lit unless you opt in with{' '}
+              <Mono>data-liquid-glass=&quot;refract&quot;</Mono>. Watch the stripes bend at the edge
+              and stay straight in the middle.
             </>
           }
         >
           <div
-            className="grid gap-6 rounded-site p-6 sm:grid-cols-3"
+            className="grid gap-6 rounded-site p-6 sm:grid-cols-2 lg:grid-cols-4"
             style={{
               backgroundImage:
                 'repeating-linear-gradient(90deg, var(--site-accent) 0 14px, transparent 14px 28px)',
             }}
           >
-            <div className="glass-pane relative flex h-44 items-center justify-center rounded-site p-6">
+            <div className="glass-chrome flex h-44 items-center justify-center rounded-site p-6">
               <div className="flex flex-col items-center gap-1 text-center">
-                <span className="text-base font-semibold text-site-text">Refracted</span>
+                <span className="text-base font-semibold text-site-text">Chrome</span>
+                <Mono>.glass-chrome</Mono>
+                <span className="text-xs text-site-text-dim">refracts the page</span>
+              </div>
+            </div>
+            <div className="glass-overlay flex h-44 items-center justify-center rounded-site p-6">
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="text-base font-semibold text-site-text">Overlay</span>
+                <Mono>.glass-overlay</Mono>
+                <span className="text-xs text-site-text-dim">refracts the page</span>
+              </div>
+            </div>
+            <div
+              data-liquid-glass="refract"
+              className="glass-pane flex h-44 items-center justify-center rounded-site p-6"
+            >
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="text-base font-semibold text-site-text">Pane + refract</span>
+                <Mono>opt-in</Mono>
+                <span className="text-xs text-site-text-dim">refracts the page</span>
+              </div>
+            </div>
+            <div className="glass-pane flex h-44 items-center justify-center rounded-site p-6">
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="text-base font-semibold text-site-text">Pane</span>
                 <Mono>.glass-pane</Mono>
-                <span className="text-xs text-site-text-dim">automatic, within budget</span>
-              </div>
-            </div>
-            <div
-              data-liquid-refract="dispersive"
-              className="glass-pane relative flex h-44 items-center justify-center rounded-site p-6"
-            >
-              <div className="flex flex-col items-center gap-1 text-center">
-                <span className="text-base font-semibold text-site-text">Dispersive</span>
-                <Mono>data-liquid-refract=&quot;dispersive&quot;</Mono>
-                <span className="text-xs text-site-text-dim">split R/G/B at the rim</span>
-              </div>
-            </div>
-            <div
-              data-liquid-refract="off"
-              className="glass-pane relative flex h-44 items-center justify-center rounded-site p-6"
-            >
-              <div className="flex flex-col items-center gap-1 text-center">
-                <span className="text-base font-semibold text-site-text">Frost only</span>
-                <Mono>data-liquid-refract=&quot;off&quot;</Mono>
-                <span className="text-xs text-site-text-dim">the fallback every engine has</span>
+                <span className="text-xs text-site-text-dim">lit slab only</span>
               </div>
             </div>
           </div>
         </Section>
 
-        {/* ── 5b · Reactive lens (press-flex) ── §3.7 */}
+        {/* ── 4 · Light and ripples ── */}
         <Section
-          id="press"
-          eyebrow="§3.7"
-          title="Reactive lens — press-flex refraction"
+          id="light"
+          eyebrow="§4"
+          title="Cursor light & tap ripples"
           description={
             <>
-              The lens has discrete intensity states — no per-frame filter animation (that stays
-              banned). Pressing a refract surface swaps to a ×1.6 displacement map so the glass
-              flexes under the finger, riding the same spring press. The left pane toggles rest ↔
-              press by hand (it points <Mono>--glass-lens</Mono> at the static{' '}
-              <Mono>#glass-lens-press</Mono>); the right pane is on the real <Mono>:active</Mono>{' '}
-              path — press and hold it. Both skip the swap under reduced motion.
+              On a fine pointer the cursor is a lamp hovering above the glass: every slab near it
+              slides its glints around the bevel as you move, and lets go smoothly when you leave. A
+              tap anywhere near sends a ripple across the surface of every slab in reach, like a
+              stone in water, while the text on it stays perfectly still. Touch gets the ripples
+              with no cursor light; reduced motion gets neither.
             </>
           }
         >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-3">
-              <div
-                data-glass-lens=""
-                style={
-                  pressDemo
-                    ? ({ '--glass-lens': "url('#glass-lens-press')" } as React.CSSProperties)
-                    : undefined
-                }
-                className="glass-pane glass-refract relative flex h-40 items-center justify-center overflow-hidden rounded-site p-6"
-              >
-                <div className="relative z-10 flex flex-col items-center gap-1 text-center">
-                  <span className="text-base font-semibold text-site-text">
-                    {pressDemo ? 'Press' : 'Rest'}
-                  </span>
-                  <Mono>{pressDemo ? 'scale ×1.6' : 'scale ×1'}</Mono>
-                  <span className="text-xs text-site-text-dim">manual state toggle</span>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {[
+              { label: 'Pane A', icon: Sparkles, hint: 'move the cursor across' },
+              { label: 'Pane B', icon: MousePointerClick, hint: 'tap near me' },
+              { label: 'Pane C', icon: Layers, hint: 'tap between us' },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.label}
+                  className="glass-pane relative flex h-32 flex-col items-center justify-center gap-2 rounded-site p-4"
+                >
+                  <Icon className="h-6 w-6 text-site-accent" aria-hidden />
+                  <span className="text-sm font-medium text-site-text">{item.label}</span>
+                  <span className="text-xs text-site-text-dim">{item.hint}</span>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="lg-press-toggle"
-                  checked={pressDemo}
-                  onCheckedChange={setPressDemo}
-                  aria-label="Toggle the lens press state"
-                />
-                <label htmlFor="lg-press-toggle" className="text-sm text-site-text-muted">
-                  {pressDemo ? 'Press state' : 'Rest state'}
-                </label>
-              </div>
-            </div>
-            <div
-              data-glass-lens=""
-              className="glass-pane glass-refract glass-interactive relative flex h-40 cursor-pointer select-none items-center justify-center overflow-hidden rounded-site p-6"
-            >
-              <div className="relative z-10 flex flex-col items-center gap-1 text-center">
-                <MousePointerClick className="mx-auto h-6 w-6 text-site-accent" aria-hidden />
-                <span className="text-base font-semibold text-site-text">Press me</span>
-                <Mono>.glass-refract:active</Mono>
-                <span className="text-xs text-site-text-dim">
-                  press &amp; hold — the bend deepens
-                </span>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </Section>
 
-        {/* ── 6 · Liquid sheen ── */}
+        {/* ── 5 · The globe ── */}
         <Section
-          id="sheen"
-          eyebrow="§5.2"
-          title="Liquid sheen — living material"
+          id="globe"
+          eyebrow="§5"
+          title="The Liquid Globe"
           description={
             <>
-              <Mono>.glass-liquid</Mono> (or <Mono>&lt;GlassPane liquid&gt;</Mono>) sweeps one slow
-              specular band across the surface on arrival, like light travelling over wet glass,
-              then rests — a loop would keep the page from ever going idle. It is a background
-              layer, so it composes freely with refraction and the pointer light on the same pane.
-              Signature surfaces only; ration it. The right card uses{' '}
-              <Mono>.glass-sheen-hover</Mono>, the one-shot sweep signature CTAs (and{' '}
-              <Mono>Button</Mono> <Mono>default</Mono>/<Mono>accent</Mono>) fire on hover.
+              Open the menu: the globe is the same glass. Its coat refracts the page behind the hub
+              (read from the same snapshot, at the blur the hub applies) as a ball lens, so the page
+              appears inverted inside it. And it is dough, not a stretchy ball: pressing pushes
+              material out of the contact and banks it up around it, dragging kneads it along the
+              finger, and what you moved eases back over a couple of seconds instead of snapping.
             </>
           }
         >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <GlassPane
-              liquid
-              className="relative flex h-44 items-center justify-center overflow-hidden p-6"
-            >
-              <div className="relative z-10 flex flex-col items-center gap-1 text-center">
-                <Waves className="mx-auto h-6 w-6 text-site-accent" aria-hidden />
-                <span className="text-base font-semibold text-site-text">Ambient sheen</span>
-                <Mono>.glass-liquid</Mono>
-                <span className="text-xs text-site-text-dim">one sweep on arrival, then still</span>
-              </div>
-            </GlassPane>
-            <div className="glass-pane glass-sheen-hover relative flex h-44 items-center justify-center overflow-hidden rounded-site p-6">
-              <div className="relative z-10 flex flex-col items-center gap-1 text-center">
-                <Aperture className="mx-auto h-6 w-6 text-site-accent" aria-hidden />
-                <span className="text-base font-semibold text-site-text">Hover sweep</span>
-                <Mono>.glass-sheen-hover</Mono>
-                <span className="text-xs text-site-text-dim">one pass, per hover</span>
-              </div>
-            </div>
+          <div className="glass-pane rounded-site p-6 text-sm text-site-text-muted">
+            See <Mono>lib/dough.ts</Mono> (the simulation) and{' '}
+            <Mono>components/radial/jelly-glass.ts</Mono> (the coat).
           </div>
         </Section>
 
@@ -525,9 +391,10 @@ function LiquidGlassLab() {
           description={
             <>
               <Mono>GlassPane</Mono> wraps the L2 <Mono>.glass-pane</Mono> class with opt-in{' '}
-              <Mono>interactive</Mono>, <Mono>refract</Mono> (sets <Mono>data-glass-lens</Mono>),
-              and <Mono>liquid</Mono> props — all composable on one pane. Site chrome uses the raw
-              classes; this helper is for one-off panes.
+              <Mono>interactive</Mono> and <Mono>refract</Mono> (sets{' '}
+              <Mono>data-liquid-glass=&quot;refract&quot;</Mono>). <Mono>liquid</Mono> is a retained
+              alias with no effect of its own. Site chrome uses the raw classes; this helper is for
+              one-off panes.
             </>
           }
         >
@@ -542,12 +409,9 @@ function LiquidGlassLab() {
             </GlassPane>
             <GlassPane
               refract
-              liquid
-              className="relative flex h-32 items-center justify-center overflow-hidden rounded-site p-4"
+              className="relative flex h-32 items-center justify-center rounded-site p-4"
             >
-              <span className="relative z-10 text-sm font-medium text-site-text">
-                refract + liquid
-              </span>
+              <span className="relative z-10 text-sm font-medium text-site-text">refract</span>
             </GlassPane>
           </div>
         </Section>
@@ -563,7 +427,7 @@ function LiquidGlassLab() {
         </Section>
 
         <footer className="border-t border-site-border pt-6 text-xs text-site-text-dim">
-          Internal design-lab reference · Liquid Glass v2 optics · every surface uses{' '}
+          Internal design-lab reference · Liquid Glass (shader slabs) · every surface uses{' '}
           <Mono>--site-*</Mono> tokens and the <Mono>.glass-*</Mono> classes only.
         </footer>
       </div>
@@ -615,7 +479,7 @@ function PrimitiveGallery() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-site-text-muted">
-                Tint + rim, no blur, no always-on ring. Unlimited per page.
+                Tint + lit CSS edge. Never a canvas. Unlimited per page.
               </p>
             </CardContent>
           </Card>
@@ -628,7 +492,7 @@ function PrimitiveGallery() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-site-text-muted">
-                Backdrop blur + micro-noise + optics ring. Budgeted.
+                A lit shader slab: bevel, Fresnel, cursor light. Budgeted.
               </p>
             </CardContent>
           </Card>

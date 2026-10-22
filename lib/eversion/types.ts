@@ -833,8 +833,14 @@ export type CapturePhase = 'before' | 'after';
 
 export interface CaptureOptions {
   phase: CapturePhase;
-  /** Selectors excluded from the capture (default: `CAPTURE_EXCLUDE_SELECTORS`). */
+  /** Selectors excluded from the capture (default: `CAPTURE_EXCLUDE_SELECTORS`). Removed from layout. */
   exclude?: readonly string[];
+  /**
+   * Selectors whose elements keep their box but are painted invisible, with their subtree dropped (default: none).
+   * Unlike `exclude` this cannot reflow the page: an excluded sticky header makes everything after it move up by its
+   * height, which is the wrong picture of "what is behind the header".
+   */
+  hide?: readonly string[];
   /** Capture scale ceiling — `CAPTURE_DPR_CAP[tier]`. */
   scaleCap: number;
   /** Rejects with a {@link CaptureError} after this long (default `CAPTURE_TIMEOUT_MS`). */

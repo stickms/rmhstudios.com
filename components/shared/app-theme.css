@@ -475,28 +475,26 @@
    7. Material utilities
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* Translucent panel. Falls back to the opaque surface where `backdrop-filter`
-   is missing — a see-through panel with no blur is unreadable, not "degraded". */
+/* Translucent panel. No backdrop-filter, on purpose (see `app/liquid-glass.css`): the tier is dense enough to read on
+   its own (`--app-glass-bg` is ~85% opaque), and `lib/liquid/glass/engine.ts` draws the clear, refracting, lit slab on
+   it as a canvas behind the content, the same as the site's panels. */
 .app-glass {
-  background: var(--app-surface);
+  background-color: var(--app-glass-bg);
+  background-image: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--app-text) 7%, transparent),
+    transparent 45%,
+    color-mix(in srgb, var(--app-accent) 5%, transparent)
+  );
   border: 1px solid var(--app-border-bright);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--app-text) 18%, transparent),
     var(--app-shadow-sm);
 }
-
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .app-glass {
-    background-color: var(--app-glass-bg);
-    background-image: linear-gradient(
-      150deg,
-      color-mix(in srgb, var(--app-text) 7%, transparent),
-      transparent 45%,
-      color-mix(in srgb, var(--app-accent) 5%, transparent)
-    );
-    -webkit-backdrop-filter: blur(var(--app-glass-blur)) saturate(1.4);
-    backdrop-filter: blur(var(--app-glass-blur)) saturate(1.4);
-  }
+/* With the slab drawn, the shader owns the edge light and the coat. */
+.app-glass[data-liquid-canvas='on'] {
+  background-image: none;
+  box-shadow: var(--app-shadow-sm);
 }
 
 /* Shared app chrome and controls share the site's clear coat; gameplay and
@@ -557,12 +555,6 @@ html:is(.reduce-transparency, .style-high-contrast)
     backdrop-filter: none;
   }
 }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .app-theme :is([class~='bg-(--app-surface)'], [data-liquid-surface]) {
-    background-color: var(--app-surface);
-  }
-}
-
 .app-scrim {
   background: var(--app-scrim);
 }

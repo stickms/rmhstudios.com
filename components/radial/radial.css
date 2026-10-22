@@ -1654,16 +1654,32 @@ html.reduce-transparency .radial-globe__contact,
    painted gradients and the drifting sheen are the shader's now. That also
    retires the sheen's infinite animation while the material is up, so an
    untouched globe composites nothing of its own. */
+/* The canvas hangs outside the disc on every side by the SAME fraction of its diameter that `JELLY_BLEED` in
+   `jelly-glass.ts` bakes into the shader's coordinates (and that the cage uses): the dough can push the silhouette
+   past its rest position, and the shader draws that silhouette itself. Change one and change the other. */
 .radial-globe__jelly {
+  --jelly-bleed: 11%;
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
+  top: calc(var(--jelly-bleed) * -1);
+  left: calc(var(--jelly-bleed) * -1);
+  width: calc(100% + 2 * var(--jelly-bleed));
+  height: calc(100% + 2 * var(--jelly-bleed));
   pointer-events: none;
 }
+/* The shader owns the body, rim hairline and silhouette now, so the CSS disc stops clipping and stops drawing them.
+   Only the drop shadow stays CSS (a static ellipse on the surface below: it does not need to deform). */
 .radial-globe__stage[data-jelly='on'] .radial-globe__glass {
   background: none;
+  overflow: visible;
+  border-radius: 0;
+  box-shadow: none;
+}
+.radial-globe__stage[data-jelly='on'] .radial-globe__glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 30px 70px -34px rgba(0, 0, 0, 0.5);
 }
 .radial-globe__stage[data-jelly='on'] .radial-globe__contact {
   display: none;
@@ -1967,15 +1983,9 @@ html.reduce-transparency .radial-globe__contact,
   gap: var(--rad-2);
   padding: 0.4rem 0.5rem;
   border-radius: 999px;
-  /* A single floating capsule over the hub's expanding blur — L4 material:
-     it frosts what passes under it instead of hiding it. */
-  background: color-mix(in srgb, var(--site-bg) calc(62% * var(--glass-user-tint, 1)), transparent);
-  -webkit-backdrop-filter: blur(
-      calc(var(--site-glass-blur-overlay, 30px) * var(--glass-blur-factor, 1))
-    )
-    saturate(var(--site-glass-saturate, 180%));
-  backdrop-filter: blur(calc(var(--site-glass-blur-overlay, 30px) * var(--glass-blur-factor, 1)))
-    saturate(var(--site-glass-saturate, 180%));
+  /* A single floating capsule over the hub's expanding blur — L4 material. No backdrop-filter of its own (see
+     `app/liquid-glass.css`): the tint is dense enough to carry the label over whatever passes under it. */
+  background: color-mix(in srgb, var(--site-bg) calc(84% * var(--glass-user-tint, 1)), transparent);
   border: var(--site-border-width, 1px) solid var(--site-border);
   box-shadow: var(--site-shadow);
   max-width: calc(100vw - 2rem);
@@ -2668,11 +2678,10 @@ html.reduce-transparency .radial-globe__contact,
   .radial-wheel__lead {
     max-width: 38rem;
   }
-  /* Frosted chrome is only worth its GPU cost on desktop — restore it here. */
+  /* Chrome is a clear slab drawn by the glass engine (it carries `.glass-chrome`), not frosted: no backdrop-filter, a
+     denser tint to hold the bar's text over scrolling content. */
   .radial-topbar {
-    background: color-mix(in srgb, var(--site-bg) 72%, transparent);
-    backdrop-filter: saturate(140%) blur(16px);
-    -webkit-backdrop-filter: saturate(140%) blur(16px);
+    background: color-mix(in srgb, var(--site-bg) 84%, transparent);
   }
 }
 
