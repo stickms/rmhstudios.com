@@ -12,6 +12,8 @@ export const Route = createFileRoute('/api/doctrine/puzzles/leaderboard')({
           auth: 'none',
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-lb' },
           // (mode, date, limit) are all query params, hence part of the key.
+          // Opt out of the 30 s micro-cache: puzzles/submit invalidates the board in apiCache.
+          microCache: false,
           cache: CACHE_POLICY.leaderboard,
         },
         async ({ request }) => {

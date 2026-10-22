@@ -11,6 +11,8 @@ export const Route = createFileRoute('/api/users/$id/wishlist')({
           auth: 'none',
           // A public wishlist: viewer-independent, but its owner can edit it, so
           // the window is short enough that an edit shows up promptly.
+          // Opt out of the 30 s micro-cache: a wishlist made private must stop being served at once.
+          microCache: false,
           cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 },
         },
         async ({ params }) => {

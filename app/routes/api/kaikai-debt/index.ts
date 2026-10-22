@@ -29,6 +29,8 @@ export const Route = createFileRoute('/api/kaikai-debt/')({
           // field, which is the precondition `assertCacheSpec` enforces for
           // `public`. `etag: false`: `asOfMs` changes on every build, so the hash
           // would never match and the mechanism would be pure overhead.
+          // Opt out of the 30 s micro-cache: ledger writes call invalidateTotals.
+          microCache: false,
           cache: { visibility: 'public', maxAge: 5, sMaxAge: 5, staleWhileRevalidate: 30 },
           etag: false,
         },

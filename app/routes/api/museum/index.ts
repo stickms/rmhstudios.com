@@ -10,6 +10,8 @@ export const Route = createFileRoute('/api/museum/')({
         {
           auth: 'none',
           rateLimit: 'read',
+          // Opt out of the 30 s micro-cache: writes clear apiCache (museum.server) and must show at once.
+          microCache: false,
           cache: { visibility: 'public', maxAge: 60, sMaxAge: 300 },
         },
         async () => Response.json({ eras: await listEras() }),

@@ -464,6 +464,14 @@ export interface HandlerOptions<
    * inert.
    */
   etag?: boolean;
+  /**
+   * Set `false` to keep a public `auth: 'none'` GET out of the per-worker response
+   * micro-cache (`response-cache.server.ts`, up to 30 s, keyed by URL only). Required
+   * when the route's data has a write path that clears an in-process cache or flips
+   * visibility (private wishlist, admin config edit): the micro-cache cannot see
+   * `apiCache.invalidate*`, so it would keep serving the pre-write body.
+   */
+  microCache?: boolean;
 }
 
 type Parsed<S extends z.ZodType | undefined> = S extends z.ZodType ? z.infer<S> : undefined;
@@ -582,6 +590,7 @@ export function defineHandler<
     mode === 'none' &&
     !options.feature &&
     !options.idempotent &&
+    options.microCache !== false &&
     !options.cache.vary?.length;
 
   return async ({ request, params }) => {
