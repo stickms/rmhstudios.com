@@ -47,6 +47,7 @@ export const Route = createFileRoute('/api/og/post/$id')({
                 deletedAt: true,
                 audience: true,
                 unlockPrice: true,
+                updatedAt: true,
                 community: { select: { isPrivate: true } },
                 user: { select: userDisplaySelect },
               },
@@ -70,7 +71,12 @@ export const Route = createFileRoute('/api/og/post/$id')({
           id: params.id,
           // Re-render on edit (and the moment a content warning is applied)
           // rather than when the ten-minute PNG cache happens to expire.
-          revision: `${post?.updatedAt?.getTime() ?? 0}:${showContent ? 1 : 0}:${communityName ? 1 : 0}`,
+          // The quote is part of the card, so its state is part of the key: a quoted
+          // original that goes private / deleted / edited must not keep its text on
+          // a cached card.
+          revision: `${post?.updatedAt?.getTime() ?? 0}:${showContent ? 1 : 0}:${communityName ? 1 : 0}:${
+            showQuote ? `q${post?.original?.updatedAt?.getTime() ?? 0}` : 'n'
+          }`,
           content: showContent ? (post?.content ?? '') : '',
           authorName: author?.name ?? 'RMH Studios',
           authorHandle: author?.handle ?? null,

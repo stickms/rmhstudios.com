@@ -32,7 +32,8 @@ export interface LikeResult {
   /** False when the target post does not exist. */
   found: boolean;
   liked: boolean;
-  likeCount: number;
+  /** Absent when the caller can no longer read the post (an undo must not reveal its count). */
+  likeCount?: number;
 }
 
 /**
@@ -70,9 +71,11 @@ async function applyPostLike(
   const liked = desired === 'toggle' ? !existing : desired;
 
   // Already in the requested state — no-op.
-  if (liked && existing) return { ok: true, found: true, liked: true, likeCount: post.likeCount };
-  if (!liked && !existing)
-    return { ok: true, found: true, liked: false, likeCount: post.likeCount };
+  // The count is only returned for a post the caller can still read.
+  if ((liked && existing) || (!liked && !existing)) {
+    const readable = await canReadThread(post, userId);
+    return { ok: true, found: true, liked, likeCount: readable ? post.likeCount : undefined };
+  }
 
   if (liked) {
     // Liking needs a readable post (unliking, below, stays allowed so an old like can
@@ -142,7 +145,9 @@ async function applyPostLike(
     entityType: 'rmhark',
     entityId: postId,
   });
-  return { ok: true, found: true, liked: false, likeCount: updated.likeCount };
+  // Removing your own like always works; the count only goes back for a readable post.
+  const readable = await canReadThread(post, userId);
+  return { ok: true, found: true, liked: false, likeCount: readable ? updated.likeCount : undefined };
 }
 
 /** Toggle a like (used by the in-app web route). */
