@@ -6,8 +6,10 @@
  * event to every connected client, events are split across three channel
  * families so an engagement on a viral post no longer reaches every stream:
  *
- *   - `feed:created`        — new posts (`rmhark.created`). Broadcast (every
- *                             stream subscribes); the stream attaches per-viewer
+ *   - `feed:created`        — new PUBLIC, non-community posts (`rmhark.created`;
+ *                             `publishCreatedPost` keeps every other audience off
+ *                             it). Broadcast (every stream subscribes, anonymous
+ *                             included); the stream attaches per-viewer
  *                             delivery metadata from the follow graph. Full
  *                             per-follower fan-out is a later phase.
  *   - `feed:post:<postId>`  — engagement patches for ONE post (liked / unliked /
@@ -130,7 +132,8 @@ class FeedEventBus {
    * existing call site (`feedEventBus.publish({...})`) lands on the correct
    * channel with no change:
    *   - has `targetUserIds`   → each `feed:user:<id>` (targeted, never broadcast)
-   *   - `rmhark.created`      → `feed:created` (broadcast)
+   *   - `rmhark.created`      → `feed:created` (broadcast; callers that know the
+   *                             post's audience use `publishCreatedPost`)
    *   - engagement patches    → `feed:post:<rmharkId>`
    */
   publish(event: FeedSSEEvent) {
@@ -154,6 +157,23 @@ class FeedEventBus {
   /** Publish a new post to the broadcast `feed:created` channel. */
   publishPostCreated(event: FeedSSEEvent) {
     this.bus.publish(CREATED_KEY, event);
+  }
+
+  /**
+   * Publish a new post to the audience that may see it. The global channel
+   * reaches every open stream (anonymous included), so only a PUBLIC post
+   * outside any community goes there; anything narrower goes to the author's
+   * own per-user channel (their other tabs), never to anyone else.
+   */
+  publishCreatedPost(
+    event: FeedSSEEvent,
+    post: { audience: string; communityId: string | null },
+  ) {
+    if (post.audience === 'PUBLIC' && !post.communityId) {
+      this.bus.publish(CREATED_KEY, event);
+    } else if (event.authorId) {
+      this.bus.publish(userKey(event.authorId), event);
+    }
   }
 
   /** Publish an engagement patch to a single post's `feed:post:<id>` channel. */

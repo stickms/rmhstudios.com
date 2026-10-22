@@ -16,6 +16,8 @@ import { getActiveBan } from '@/lib/admin-audit.server';
 import { awardXp } from '@/lib/xp/engine.server';
 import { progressQuests } from '@/lib/quests/engine.server';
 import { canReadThread } from '@/lib/feed/audience.server';
+import { mapQuotedOriginal } from '@/lib/feed/quoted-original';
+import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { getTimeline, type FeedSurface } from '@/lib/feed/timeline';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { publishDueForUser } from '@/lib/scheduled/publish.server';
@@ -283,6 +285,18 @@ export const Route = createFileRoute('/api/rmharks')({
             if (!orig || !(await canReadThread(orig, session.user.id))) {
               return Response.json({ error: 'Quoted post not found' }, { status: 400 });
             }
+            // Quoting a quote quotes the ROOT, so the root is what gets republished,
+            // counted and notified: it must be readable by the quoter too (the quote
+            // they named may be public while its root is followers-only or private).
+            if (orig.originalId) {
+              const root = await prisma.rMHark.findUnique({
+                where: { id: orig.originalId },
+                select: { userId: true, audience: true, communityId: true, deletedAt: true },
+              });
+              if (!root || !(await canReadThread(root, session.user.id))) {
+                return Response.json({ error: 'Quoted post not found' }, { status: 400 });
+              }
+            }
             quotedOriginalId = orig.originalId ?? orig.id; // quote the root, not a quote
           }
 
@@ -476,7 +490,9 @@ export const Route = createFileRoute('/api/rmharks')({
             if (flair) item.communityFlair = flair;
           }
 
-          // Attach the quoted original so the card renders it inline immediately.
+          // Attach the quoted original so the card renders it inline immediately,
+          // through the one quote-card rule (never the original's raw row).
+          let broadcastOriginal: FeedItem | undefined;
           if (quotedOriginalId) {
             const orig = await prisma.rMHark.findUnique({
               where: { id: quotedOriginalId },
@@ -490,27 +506,28 @@ export const Route = createFileRoute('/api/rmharks')({
                 viewCount: true,
                 gifUrl: true,
                 imageUrls: true,
+                imageAlts: true,
                 unlockPrice: true,
                 audience: true,
+                isSensitive: true,
+                deletedAt: true,
+                deletedByAdmin: true,
+                userId: true,
+                communityId: true,
+                community: { select: { isPrivate: true } },
                 user: { select: userDisplaySelect },
               },
             });
             if (orig) {
-              // Match timeline mapOriginal: only free public originals show media.
-              const showMedia = (orig.unlockPrice ?? 0) === 0 && orig.audience === 'PUBLIC';
-              item.original = {
-                id: orig.id,
-                type: 'rmhark',
-                createdAt: orig.createdAt.toISOString(),
-                content: orig.content,
-                user: resolveUser(orig.user),
-                likeCount: orig.likeCount,
-                commentCount: orig.commentCount,
-                repostCount: orig.repostCount,
-                viewCount: orig.viewCount,
-                gifUrl: showMedia ? (orig.gifUrl ?? undefined) : undefined,
-                imageUrls: showMedia ? orig.imageUrls : undefined,
-              };
+              const origUser = resolveUser(orig.user);
+              item.original = mapQuotedOriginal(
+                orig,
+                origUser,
+                session.user.id,
+                await getBlockedAuthorIds(session.user.id),
+              );
+              // The live broadcast has no single viewer: it carries the anonymous card.
+              broadcastOriginal = mapQuotedOriginal(orig, origUser, null, []);
 
               // Tell the quoted author. Links to the QUOTE so they see the commentary.
               void createNotification({
@@ -525,15 +542,16 @@ export const Route = createFileRoute('/api/rmharks')({
             }
           }
 
-          // Publish to the SSE bus. The stream endpoint targets this to each
-          // viewer's follow graph using `authorId` (Phase 3) instead of blindly
-          // prepending onto every open client.
-          // Paid posts must broadcast a locked teaser — never the unlocked content,
-          // since the SSE payload reaches the author's followers.
+          // Publish to the SSE bus. Only PUBLIC, non-community posts go out on the
+          // global channel (every open stream, anonymous included); any other
+          // audience reaches the author's own streams only. The stream endpoint
+          // targets this to each viewer's follow graph using `authorId`.
+          // Paid posts must broadcast a locked teaser — never the unlocked content.
+          const broadcastBase = { ...item, original: broadcastOriginal };
           const broadcastItem =
             unlockPrice && unlockPrice > 0
               ? {
-                  ...item,
+                  ...broadcastBase,
                   content: '',
                   imageUrls: undefined,
                   imageAlts: undefined,
@@ -542,14 +560,17 @@ export const Route = createFileRoute('/api/rmharks')({
                   locked: true,
                   unlockPrice,
                 }
-              : item;
-          feedEventBus.publishPostCreated({
-            type: 'rmhark.created',
-            rmharkId: item.id,
-            payload: broadcastItem,
-            timestamp: item.createdAt,
-            authorId: session.user.id,
-          });
+              : broadcastBase;
+          feedEventBus.publishCreatedPost(
+            {
+              type: 'rmhark.created',
+              rmharkId: item.id,
+              payload: broadcastItem,
+              timestamp: item.createdAt,
+              authorId: session.user.id,
+            },
+            { audience: audience ?? 'PUBLIC', communityId: communityId ?? null },
+          );
 
           // Notify mentioned users (persisted MENTION notification + live SSE toast).
           // Best-effort and nothing downstream uses its result, so fire-and-forget:
