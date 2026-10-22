@@ -53,7 +53,7 @@ export async function listTagFeed(
   // Step 2 hydrates exactly those ids.
   //
   // post_hashtag.createdAt is the post's createdAt by construction
-  // (linkPostHashtags, migration 20261022100000), so this ordering is the old
+  // (linkPostHashtags, migration 20261022160000), so this ordering is the old
   // `ORDER BY rmheet.createdAt DESC, rmheet.id DESC`.
   //
   // Every visibility predicate of the old `where` is kept in SQL form: not
