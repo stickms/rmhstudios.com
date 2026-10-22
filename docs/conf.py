@@ -74,6 +74,8 @@ extensions = [
     "myst_parser",
     "sphinx_copybutton",
     "sphinx_design",
+    # ```mermaid fences (docs/architecture.md diagrams) render as diagrams, as on GitHub.
+    "sphinxcontrib.mermaid",
 ]
 
 source_suffix = {
@@ -92,6 +94,10 @@ myst_enable_extensions = [
     "linkify",
     "tasklist",
 ]
+
+# Treat ```mermaid fences as the mermaid directive, so one source renders on
+# both GitHub and the docs site.
+myst_fence_as_directive = ["mermaid"]
 
 # Generate anchors for h1–h3 so cross-doc "#section" links resolve.
 myst_heading_anchors = 3

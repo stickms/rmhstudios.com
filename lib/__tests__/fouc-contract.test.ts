@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { collectRoutes, parseRouteTree } from '../../testing/e2e/fouc-routes.mjs';
@@ -571,23 +571,11 @@ describe('FOUC contract: coverage', () => {
 
 /** Source files under the scanned roots whose text matches `pattern`. */
 function grepRepoMatching(pattern: RegExp): string[] {
-  const hits: string[] = [];
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) {
-        walk(full);
-      } else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) {
-        if (pattern.test(readFileSync(full, 'utf8'))) hits.push(full.slice(REPO.length + 1));
-      }
-    }
-  };
-  for (const root of ['lib', 'components', 'app', 'stores', 'hooks']) {
-    const dir = join(REPO, root);
-    if (existsSync(dir)) walk(dir);
-  }
-  return hits;
+  // Same scope as before (lib, components, app, stores, hooks; test files
+  // excluded), but over the shared read-once tree — see repoSources().
+  return repoSources()
+    .filter((f) => !/\.test\.tsx?$/.test(f.path) && pattern.test(f.text))
+    .map((f) => f.path);
 }
 
 /**
@@ -598,11 +586,16 @@ function grepRepoMatching(pattern: RegExp): string[] {
  * wherever it runs — the commit hook, CI and a contributor's machine — and does
  * not depend on a binary being on PATH.
  */
-// The tree is read ONCE and shared by every grepRepo call. Re-walking it per
+// The tree is read ONCE and shared by every grepRepo / grepRepoMatching call. Re-walking it per
 // needle (one full read of every .ts/.tsx file per APP_ROUTE_THEME_BG key) put
 // that test past vitest's 5 s timeout on slower machines — a flake that, with
 // the deploy's test step a hard gate, can block a release.
 let sourceCache: { path: string; text: string }[] | null = null;
+// Pay the one full read up front, with its own budget, so no single test's
+// 5 s timeout includes it (it took up to ~4.9 s on a loaded laptop).
+beforeAll(() => {
+  repoSources();
+}, 60_000);
 function repoSources(): { path: string; text: string }[] {
   if (sourceCache) return sourceCache;
   const files: { path: string; text: string }[] = [];
@@ -617,13 +610,17 @@ function repoSources(): { path: string; text: string }[] {
       }
     }
   };
-  for (const root of ['lib', 'components', 'app', 'stores']) walk(join(REPO, root));
+  for (const root of ['lib', 'components', 'app', 'stores', 'hooks']) {
+    const dir = join(REPO, root);
+    if (existsSync(dir)) walk(dir);
+  }
   sourceCache = files;
   return files;
 }
 
 function grepRepo(needle: string): string[] {
+  // grepRepo's scope never included hooks/ — keep it that way.
   return repoSources()
-    .filter((f) => f.text.includes(needle))
+    .filter((f) => !f.path.startsWith('hooks/') && f.text.includes(needle))
     .map((f) => f.path);
 }
