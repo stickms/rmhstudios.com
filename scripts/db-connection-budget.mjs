@@ -74,7 +74,7 @@ export function peakConnections(p, webWorkers, goPool = GO_POOL_DEFAULT) {
 }
 
 /**
- * @param {{ maxConnections: number, reserved: number, webWorkers: number, current: Pools }} input
+ * @param {{ maxConnections: number, reserved: number, webWorkers: number, current: Pools, goPool?: number }} input
  *   `reserved` = superuser_reserved_connections + reserved_connections (PG16+).
  *   `goPool` = the Go supervisor's pool, default GO_POOL_DEFAULT.
  */

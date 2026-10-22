@@ -63,7 +63,10 @@ vi.mock('@/lib/feed/map-feed-item.server', () => ({
   mapRmharksWithBoundedReactions: async () => [],
 }));
 vi.mock('@/lib/social/follow-graph.server', () => ({ getFollowingIds: async () => [] }));
-vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: async () => [] }));
+vi.mock('@/lib/moderation.server', () => ({
+  getHiddenAuthorIds: async () => [],
+  getBlockedAuthorIds: async () => [],
+}));
 vi.mock('@/lib/communities/flairs.server', () => ({
   loadFlairsForPosts: async () => new Map(),
   listFlairs: async () => [],

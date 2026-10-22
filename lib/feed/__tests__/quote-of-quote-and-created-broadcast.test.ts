@@ -13,7 +13,7 @@ const h = vi.hoisted(() => ({
   readable: new Set<string>(),
   repostBumps: [] as string[],
   notified: [] as unknown[],
-  published: [] as { event: any; post: any }[],
+  published: [] as { event: { payload: { original: { content: string } } }; post: unknown }[],
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -26,7 +26,8 @@ vi.mock('@/lib/rate-limit.server', () => ({
 vi.mock('@/lib/feed-sse', () => ({
   feedEventBus: {
     publish: vi.fn(),
-    publishCreatedPost: (event: unknown, post: unknown) => h.published.push({ event, post }),
+    publishCreatedPost: (event: unknown, post: unknown) =>
+      h.published.push({ event: event as (typeof h.published)[number]['event'], post }),
   },
 }));
 vi.mock('@/lib/notifications.server', () => ({

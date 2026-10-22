@@ -5,7 +5,7 @@
  * reach it, so the route would serve the pre-write body for up to 30 s.
  * See lib/api/response-cache.server.ts.
  */
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
