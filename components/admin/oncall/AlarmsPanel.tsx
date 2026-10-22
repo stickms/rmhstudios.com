@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Kpi } from '@/components/admin/perf/Kpi';
 import { AlarmRules } from './AlarmRules';
+import { MetricsSection } from './MetricsSection';
 import {
   heartbeatHealth,
   phaseOf,
@@ -252,6 +253,8 @@ export function AlarmsPanel() {
           })}
         </ul>
       </section>
+
+      <MetricsSection />
 
       <AlarmRules />
 
