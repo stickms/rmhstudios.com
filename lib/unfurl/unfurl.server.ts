@@ -51,7 +51,7 @@ function truncate(value: string | null, max: number): string | null {
  * the cap is reached is the only version of this that is actually bounded — and
  * cancelling also releases the SSRF guard's pinned connection immediately.
  */
-async function readCapped(res: Response, maxBytes: number): Promise<string> {
+export async function readCapped(res: Response, maxBytes: number): Promise<string> {
   const body = res.body;
   if (!body) return '';
   const reader = body.getReader();

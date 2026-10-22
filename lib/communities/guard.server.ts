@@ -6,6 +6,8 @@ import { canModerate, type CommunityRole } from '@/lib/communities/access.server
 
 export interface CommunityCtxP06 {
   id: string;
+  slug: string;
+  name: string;
   isPrivate: boolean;
   role: CommunityRole | null;
 }
@@ -19,13 +21,21 @@ export async function communityWithRole(
     where: { slug },
     select: {
       id: true,
+      slug: true,
+      name: true,
       isPrivate: true,
       members: userId ? { where: { userId }, select: { role: true }, take: 1 } : false,
     },
   });
   if (!community) return null;
   const role = (community.members?.[0]?.role as CommunityRole | undefined) ?? null;
-  return { id: community.id, isPrivate: community.isPrivate, role };
+  return {
+    id: community.id,
+    slug: community.slug,
+    name: community.name,
+    isPrivate: community.isPrivate,
+    role,
+  };
 }
 
 export type GuardResult<T> = { ok: true; value: T } | { ok: false; response: Response };

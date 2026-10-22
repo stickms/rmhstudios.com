@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- CLI bench intentionally writes its report to stdout */
 import { performance } from 'node:perf_hooks';
 import { stat } from 'node:fs/promises';
 import { lookup } from 'node:dns/promises';
@@ -5,7 +6,10 @@ import sharp from 'sharp';
 import { type ImageFormat } from '@/lib/image-optimize';
 import { getOrEncodeVariant } from '@/lib/images/variants.server';
 
-const base = await sharp('public/og-spatial.png').resize(2048, 1536, { fit: 'cover' }).jpeg({ quality: 88 }).toBuffer();
+const base = await sharp('public/og-spatial.png')
+  .resize(2048, 1536, { fit: 'cover' })
+  .jpeg({ quality: 88 })
+  .toBuffer();
 
 async function probe(label: string, encodes: number, f: ImageFormat, w: number) {
   const lat: number[] = [];

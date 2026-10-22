@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import type { FeedItem } from '@/lib/feed-types';
+import { getOwnRequestState, type OwnRequestState } from '@/lib/communities/join-requests.server';
 import { loadFlairsForPosts } from '@/lib/communities/flairs.server';
 
 export interface CommunityAnnouncement {
@@ -26,6 +27,14 @@ export interface CommunityDetail {
   joined: boolean;
   role: string | null;
   announcements: CommunityAnnouncement[];
+  /**
+   * A private community the viewer is not a member of: only metadata is present
+   * (`announcements` is empty, `postCount` is 0) and the page renders the locked
+   * preview with a "Request to join" action. Everything else stays members-only.
+   */
+  locked: boolean;
+  /** The viewer's own join request, for the locked preview's pending state. */
+  requestState: OwnRequestState;
   /** P06: posting settings (columns on `community`, so no extra query). */
   flairRequired: boolean;
   starThreshold: number;
@@ -72,9 +81,20 @@ export async function getCommunity(
     });
     role = mem?.role ?? null;
   }
-  // Members-only: a non-member gets the same "not found" as a missing community
-  // (the codebase's convention, `requireReadable`), so existence does not leak.
-  if (community.isPrivate && !role) return null;
+  // A private community is listed, so its existence is not secret; its content
+  // is. A non-member gets the metadata only - no announcements, no post count.
+  if (community.isPrivate && !role) {
+    return {
+      ...community,
+      postCount: 0,
+      createdAt: community.createdAt.toISOString(),
+      joined: false,
+      role: null,
+      announcements: [],
+      locked: true,
+      requestState: viewerId ? await getOwnRequestState(community.id, viewerId) : null,
+    };
+  }
 
   // Post count is the denormalized `community.postCount` column (maintained on
   // post create/delete), so this no longer runs COUNT(*) over rmheet per read.
@@ -96,6 +116,8 @@ export async function getCommunity(
     joined: !!role,
     role,
     announcements: announcements.map((a) => ({ ...a, createdAt: a.createdAt.toISOString() })),
+    locked: false,
+    requestState: null,
   };
 }
 

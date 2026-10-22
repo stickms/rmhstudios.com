@@ -45,6 +45,9 @@ const CAPS = {
   homes: 50_000,
 } as const;
 
+/** Rows per query for the sections that are large enough to need `batch`. */
+const SUB_PAGE = 5_000;
+
 interface Section {
   /** How many URLs this section has, for sizing the index. */
   count: () => Promise<number>;
@@ -52,6 +55,12 @@ interface Section {
   page: (skip: number, take: number) => Promise<SitemapEntry[]>;
   /** Upper bound on rows; anything beyond it is dropped (and logged). */
   cap: number;
+  /**
+   * Fetch a chunk as several small queries instead of one. Prisma decodes a
+   * result set synchronously, ~140ms of blocked event loop for 40k rows of
+   * `posts`; at this size it is ~18ms per query and the loop breathes between.
+   */
+  batch?: number;
 }
 
 // ─────────────────────────── visibility rules ───────────────────────────
@@ -245,6 +254,7 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
   /** Public user profiles. */
   users: {
     cap: CAPS.users,
+    batch: SUB_PAGE,
     count: () => prisma.user.count({ where: indexableUserWhere() }),
     page: async (skip, take) => {
       const rows = await prisma.user.findMany({
@@ -270,9 +280,13 @@ export const SITEMAP_SECTIONS: Record<SitemapSectionName, Section> = {
   /** Public post permalinks, at their canonical `/u/{handle}/post/{id}` URL. */
   posts: {
     cap: CAPS.posts,
+    batch: SUB_PAGE,
     count: () => prisma.rMHark.count({ where: indexablePostWhere() }),
     page: async (skip, take) => {
       const rows = await prisma.rMHark.findMany({
+        // One joined query instead of post page + user IN (...) round trip: 22%
+        // faster at offset 120k, 10% at offset 0 (scripts/perf-ws6/sitemap-query-bench.mts).
+        relationLoadStrategy: 'join',
         where: indexablePostWhere(),
         select: {
           id: true,
@@ -484,4 +498,32 @@ export async function renderSection(
   if (skip >= def.cap) return [];
   const take = Math.min(SITEMAP_CHUNK_SIZE, def.cap - skip);
   return def.page(skip, take);
+}
+
+/**
+ * The same rows as `renderSection`, delivered as slices so the caller can
+ * serialise and yield between them. Sections without `batch` come back as one
+ * slice. `null` when the section doesn't exist.
+ */
+export function renderSectionBatches(
+  section: string,
+  chunk: number,
+): AsyncGenerator<SitemapEntry[], void, void> | null {
+  const def = SITEMAP_SECTIONS[section as SitemapSectionName];
+  if (!def) return null;
+  const skip = (chunk - 1) * SITEMAP_CHUNK_SIZE;
+  const take = skip >= def.cap ? 0 : Math.min(SITEMAP_CHUNK_SIZE, def.cap - skip);
+  return (async function* () {
+    if (take === 0) return;
+    if (!def.batch) {
+      yield await def.page(skip, take);
+      return;
+    }
+    for (let done = 0; done < take; done += def.batch) {
+      const want = Math.min(def.batch, take - done);
+      const rows = await def.page(skip + done, want);
+      if (rows.length > 0) yield rows;
+      if (rows.length < want) return;
+    }
+  })();
 }
