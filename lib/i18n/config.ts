@@ -105,6 +105,7 @@ export const NAMESPACES = [
   "f-perf",
   "f-deepseek",
   "f-oncall",
+  "f-dev-ai",
 ] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 

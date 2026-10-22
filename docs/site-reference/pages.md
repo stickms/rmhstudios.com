@@ -81,6 +81,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/creator-studio` | redirects to `/create/earnings` | public | `app/routes/_site/creator-studio.tsx` |
 | `/daily-mutator` | Daily Mutator | public | `app/routes/_site/daily-mutator.tsx` |
 | `/developer` | Developer API | public | `app/routes/_site/developer/index.tsx` |
+| `/developer/ai-practices` | Coding with AI \| RMH Studios Developer | public | `app/routes/_site/developer/ai-practices.tsx` |
 | `/drafts` | Drafts | public | `app/routes/_site/drafts.tsx` |
 | `/emoji-packs` | Emoji & sticker packs | public | `app/routes/_site/emoji-packs.tsx` |
 | `/events` | redirects to `/communities?tab=events` | public | `app/routes/_site/events.tsx` |

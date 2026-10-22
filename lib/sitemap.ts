@@ -137,6 +137,7 @@ export const STATIC_ROUTES: SitemapEntry[] = [
 
   // Developer platform — the API is a promotable product surface.
   { loc: '/developer', changefreq: 'weekly', priority: 0.6 },
+  { loc: '/developer/ai-practices', changefreq: 'monthly', priority: 0.4 },
 
   // The separately-branded arms are DERIVED from `lib/verticals.ts` rather than
   // listed here (K2). Eleven microsites shipped in six weeks and this block was
