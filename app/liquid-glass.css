@@ -38,36 +38,20 @@
      carries only as much body as it needs to stay legible with no blur behind it (a blur is exactly what is not wanted),
      and the shader's shaded bevel and lit edge, not an opaque fill, are what make the surface visible. */
   .glass-pane:not([data-liquid-material='off']) {
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) clamp(10%, calc(18% * var(--glass-user-tint, 1)), 100%),
-      transparent
-    );
+    background-color: color-mix(in srgb, var(--site-bg) 18%, transparent);
   }
   /* Sticky chrome floats over scrolling text with no blur to soften it, so it is a little denser than a pane. */
   .glass-chrome:not([data-liquid-material='off']) {
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) clamp(30%, calc(42% * var(--glass-user-tint, 1)), 100%),
-      transparent
-    );
+    background-color: color-mix(in srgb, var(--site-bg) 42%, transparent);
   }
   .glass-fill:not([data-liquid-material='off']) {
     position: relative;
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) clamp(8%, calc(14% * var(--glass-user-tint, 1)), 100%),
-      transparent
-    );
+    background-color: color-mix(in srgb, var(--site-bg) 14%, transparent);
   }
   .glass-overlay:not([data-liquid-material='off']) {
     /* Floating labels must remain readable over arbitrary content. */
     max-inline-size: calc(100dvw - var(--safe-left, 0px) - var(--safe-right, 0px) - 1rem);
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) clamp(76%, calc(86% * var(--glass-user-tint, 1)), 100%),
-      transparent
-    );
+    background-color: color-mix(in srgb, var(--site-bg) 86%, transparent);
   }
   :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):not([data-liquid-material='off']) {
     border-color: color-mix(in srgb, var(--site-border) 85%, var(--site-glass-light));

@@ -289,23 +289,6 @@ interface ThemeStore {
    */
   accent: string | null;
   setAccent: (accent: string | null) => void;
-  /**
-   * User "reduce transparency" preference: collapses the glass material to
-   * opaque surfaces with no blur (html.reduce-transparency), the manual
-   * equivalent of the OS `prefers-reduced-transparency` media query — the only
-   * way Firefox users (no media-query support) can turn glass off. Persisted
-   * and account-synced like `style`.
-   */
-  reduceTransparency: boolean;
-  setReduceTransparency: (value: boolean) => void;
-  /**
-   * Glass clarity stop (§5.46): 0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear.
-   * Stop 0 is the reduce-transparency mechanism; stops 1/3/4 set inline user
-   * blur/tint factors. Persisted and account-synced like `style` (default 2).
-   */
-  glassLevel: number;
-  setGlassLevel: (value: number) => void;
-
   // ── Appearance & accessibility comfort suite (§13) ──────────────────────
   /** Root font scale in per-mille (875|1000|1125|1250); null = default (1000). */
   fontScale: number | null;
@@ -379,10 +362,6 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   setPreview: (preview) => set({ preview }),
   accent: null,
   setAccent: (accent) => set({ accent }),
-  reduceTransparency: false,
-  setReduceTransparency: (reduceTransparency) => set({ reduceTransparency }),
-  glassLevel: 2,
-  setGlassLevel: (glassLevel) => set({ glassLevel }),
   fontScale: null,
   setFontScale: (fontScale) => set({ fontScale }),
   density: null,
@@ -407,9 +386,6 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   userThemePreview: null,
   setUserThemePreview: (userThemePreview) => set({ userThemePreview }),
 }));
-
-/** localStorage key for the reduce-transparency preference (no-flash cache). */
-export const REDUCE_TRANSPARENCY_KEY = 'rmh-reduce-transparency';
 
 /** localStorage key for the applied marketplace user theme (§14 no-flash cache). */
 export const USER_THEME_KEY = 'rmh-user-theme';

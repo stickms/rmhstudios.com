@@ -35,8 +35,8 @@
  * wins. Changing that is a settings decision, not a flash fix, and it belongs in
  * the API and the runtime together if it is ever made.
  *
- * `reduceTransparency` is deliberately absent: glass clarity (`glassLevel`) owns
- * the `reduce-transparency` class now, and the legacy flag drives nothing visible.
+ * Retired glass clarity and reduce-transparency preferences are never seeded:
+ * every account uses the shared default glass material.
  */
 import { ACCENT_STORAGE_KEY, isAccentId } from '@/lib/appearance';
 import {
@@ -44,12 +44,10 @@ import {
   CUSTOM_ACCENT_KEY,
   DENSITY_KEY,
   FONT_SCALE_KEY,
-  GLASS_LEVEL_KEY,
   HEX_RE,
   READABLE_FONT_KEY,
   REDUCE_MOTION_KEY,
   isColorVisionMode,
-  isGlassLevel,
 } from '@/lib/appearance/prefs';
 import { SITE_STYLES } from '@/stores/themeStore';
 
@@ -65,7 +63,6 @@ export interface AccountAppearanceRow {
   readableFont?: boolean | null;
   customAccent?: string | null;
   reduceMotion?: boolean | null;
-  glassLevel?: number | null;
   colorVision?: string | null;
 }
 
@@ -128,9 +125,6 @@ export function accountAppearanceSeed(
   if (isColorVisionMode(row.colorVision)) {
     seed[COLOR_VISION_KEY] = row.colorVision === 'none' ? null : row.colorVision;
   }
-
-  // `if (isGlassLevel(r.glassLevel)) setGlassLevel(...)`
-  if (isGlassLevel(row.glassLevel)) seed[GLASS_LEVEL_KEY] = String(row.glassLevel);
 
   return seed;
 }

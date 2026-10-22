@@ -1987,7 +1987,7 @@ html.reduce-transparency .radial-globe__contact,
   border-radius: 999px;
   /* A single floating capsule over the hub's expanding blur — L4 material. No backdrop-filter of its own (see
      `app/liquid-glass.css`): the tint is dense enough to carry the label over whatever passes under it. */
-  background: color-mix(in srgb, var(--site-bg) calc(84% * var(--glass-user-tint, 1)), transparent);
+  background: color-mix(in srgb, var(--site-bg) 84%, transparent);
   border: var(--site-border-width, 1px) solid var(--site-border);
   box-shadow: var(--site-shadow);
   max-width: calc(100vw - 2rem);

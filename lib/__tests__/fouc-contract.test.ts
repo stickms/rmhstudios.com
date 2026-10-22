@@ -2,6 +2,7 @@ import { beforeAll, describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runInNewContext } from 'node:vm';
 import { collectRoutes, parseRouteTree } from '../../testing/e2e/fouc-routes.mjs';
 
 /**
@@ -32,6 +33,54 @@ import { collectRoutes, parseRouteTree } from '../../testing/e2e/fouc-routes.mjs
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (p: string) => readFileSync(join(REPO, p), 'utf8');
+
+describe('retired glass preferences before first paint', () => {
+  it.each([0, 1, 2, 3, 4])('uses default glass with legacy clarity %i stored', (level) => {
+    // Execute the actual inline script, including its template interpolation.
+    // Importing the root route would also initialize server/database modules.
+    const source = read('app/routes/__root.tsx');
+    const body = source.match(
+      /function buildThemeScript\(siteTier: boolean\): string \{([\s\S]*?)\n\}/,
+    )![1];
+    const script = runInNewContext(`(function(siteTier) {${body}})(false)`, {
+      THEME_BG: { default: '#ffffff' },
+      APP_THEME_BG: '#000000',
+      APP_ROUTE_THEME_BG: {},
+      DEFAULT_STYLE: 'default',
+      THEME_EXCLUDED_ROUTES: [],
+      THEME_EXCLUDED_EXCEPTIONS: [],
+      ACCENT_MAP: {},
+    });
+    const stored = new Map([
+      ['rmh-glass-level', String(level)],
+      ['rmh-reduce-transparency', '1'],
+    ]);
+    const classes = new Set<string>();
+    const properties = new Map<string, string>();
+    const html = {
+      classList: { add: (v: string) => classes.add(v), contains: (v: string) => classes.has(v) },
+      style: {
+        backgroundColor: '',
+        setProperty: (key: string, value: string) => properties.set(key, value),
+      },
+    };
+    runInNewContext(script, {
+      localStorage: {
+        getItem: (key: string) => stored.get(key) ?? null,
+        removeItem: (key: string) => stored.delete(key),
+      },
+      document: { documentElement: html, querySelector: () => ({ content: '' }) },
+      location: { pathname: '/' },
+      window: {},
+    });
+    expect(html.style.backgroundColor).toBe('#ffffff');
+    expect(classes.has('reduce-transparency')).toBe(false);
+    expect(properties.has('--glass-user-blur')).toBe(false);
+    expect(properties.has('--glass-user-tint')).toBe(false);
+    expect(stored.has('rmh-glass-level')).toBe(false);
+    expect(stored.has('rmh-reduce-transparency')).toBe(false);
+  });
+});
 
 /**
  * The inline scripts in `__root.tsx` that run before first paint, as one string.

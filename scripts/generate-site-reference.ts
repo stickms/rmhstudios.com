@@ -69,12 +69,12 @@ function walk(dir: string, acc: RouteFile[] = []): RouteFile[] {
   for (const name of readdirSync(dir).sort()) {
     const full = join(dir, name);
     if (statSync(full).isDirectory()) {
-      layoutIds.add(relative(ROUTES, full));
+      layoutIds.add(relative(ROUTES, full).replace(/\\/g, '/'));
       walk(full, acc);
       continue;
     }
     if (!/\.tsx?$/.test(name)) continue;
-    const rel = relative(ROUTES, full);
+    const rel = relative(ROUTES, full).replace(/\\/g, '/');
     const id = rel.replace(/\.tsx?$/, '');
     if (id === '__root' || id === 'routeTree.gen') continue;
     acc.push({ id, file: `app/routes/${rel}`, isApi: id === 'api' || id.startsWith(`api/`) });
