@@ -144,7 +144,8 @@ new type or lint warnings versus the base branch, and a message that explains
    `.glass-overlay` floating UI · `.glass-inset` fields), not a hand-rolled
    `bg-site-surface border rounded-site` box — the class is what carries the
    material and what the degradation tiers switch off. **Liquid interaction** is owned by `lib/liquid/runtime.ts`: bounded nearby
-   tap waves and a compositor-carried cursor light. Never add per-component
+   tap waves and a compositor-carried cursor light; `lib/liquid/refraction-runtime.ts` adds
+   budgeted, Chromium-only rim refraction to panes/chrome/overlays. Never add per-component
    pointer loops or animated root custom properties. See `docs/liquid-glass-system.md`. The statement of the language is
    [`design.md`](design.md) at the root; **before any UI commit** read
    [`docs/design-language.md`](docs/design-language.md) §0 (the definition of

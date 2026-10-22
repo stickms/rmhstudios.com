@@ -141,6 +141,20 @@
     will-change: transform;
   }
 
+  /* Optical refraction. `lib/liquid/refraction-runtime.ts` sets
+     `data-liquid-refracted` + `--liquid-refract-filter` only where the engine
+     renders `url()` in backdrop-filter (Chromium), the surface is visible and
+     inside its budget, and no reduced-effects preference is on. Everywhere else
+     the rules above stand unchanged. Blur and saturation run first; the
+     displacement is the last pass, and no CSS function follows the url(). */
+  :is(.glass-pane, .glass-chrome, .glass-overlay)[data-liquid-refracted]:not(
+      [data-liquid-material='off']
+    ),
+  [data-liquid-refract][data-liquid-refracted] {
+    backdrop-filter: blur(calc(9px * var(--glass-blur-factor, 1))) saturate(155%)
+      var(--liquid-refract-filter);
+  }
+
   /* Native browser fallback: reflection remains, text gets a solid ground. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay) {

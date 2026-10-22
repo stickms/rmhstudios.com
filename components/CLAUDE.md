@@ -42,7 +42,10 @@ feature lives in that feature's directory; genuinely shared primitives live in
   transparency / `perf-lite` to switch off. Budget: ≤8 blurred surfaces per
   viewport, **zero** on repeated list items.
 - **Liquid material:** `app/liquid-glass.css` is the independent material implementation;
-  `lib/liquid/runtime.ts` owns bounded nearby impulses and the cursor light.
+  `lib/liquid/runtime.ts` owns bounded nearby impulses and the cursor light;
+  `lib/liquid/refraction-runtime.ts` adds Chromium-only rim refraction to
+  `glass-pane/chrome/overlay` (opt out with `data-liquid-refract="off"`, opt in
+  prismatic with `="dispersive"`; never refract canvases or repeated rows).
   Never add per-card pointer listeners, animate gradient positions, or write
   inherited root variables in frames. Use `data-liquid-motion="off"` on gesture
   subtrees and `data-liquid-material="off"` to keep an intentional custom

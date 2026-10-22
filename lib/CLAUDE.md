@@ -83,6 +83,10 @@ bundle only**. SSR/server builds get the real module.
   everywhere (Web Audio — **always** go through `getAudioContext()`, never
   `new AudioContext()` — plus haptics, idle callbacks, wake lock, fullscreen,
   WebGL detection). `app-toast.ts` is the toast store for the full-screen apps.
+- **Liquid glass:** `liquid/` — `runtime.ts` (tap field + cursor light), `interaction.ts`
+  (wave math), `refraction.ts` (pure Snell/bezel displacement maps, unit-tested) and
+  `refraction-runtime.ts` (Chromium-only, budgeted SVG-filter service). Contract:
+  [`docs/liquid-glass-system.md`](../docs/liquid-glass-system.md).
 - **Moderation/admin:** `moderation.server.ts`, `admin-audit.server.ts`,
   `admin-review.server.ts`, `security-reports.ts`.
 - **Webhooks (outbound developer API):** `webhooks/` (emit, events,

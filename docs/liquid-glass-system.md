@@ -3,7 +3,8 @@
 This document supersedes the former lens, sheen and cursor-retirement notes in
 the design guide. The previous material implementation and inactive SVG optical
 filters were removed, not enabled again. The October 21 implementation plan is
-[here](plans/2026-10-21-liquid-glass-system.md).
+[here](plans/2026-10-21-liquid-glass-system.md); the optical refraction tier added
+on October 22 is planned [here](plans/2026-10-22-liquid-refraction.md).
 
 ## Ownership
 
@@ -12,6 +13,8 @@ filters were removed, not enabled again. The October 21 implementation plan is
 | Site material and fallbacks                | `app/liquid-glass.css`, imported by `globals.css` in both style tiers               |
 | App controls, panels and fields            | `components/shared/app-theme.css`                                                   |
 | One document interaction service           | `lib/liquid/runtime.ts`, mounted by `hooks/useLiquidInteractions.ts` in `Providers` |
+| Edge refraction math (profile, Snell, map) | `lib/liquid/refraction.ts` (pure, unit-tested)                                      |
+| Refraction service (budget, SVG filters)   | `lib/liquid/refraction-runtime.ts`, mounted beside the interaction service          |
 | Wave timing and attenuation                | `lib/liquid/interaction.ts`                                                         |
 | Contact indentation and shoulder           | `lib/soft-body.ts`                                                                  |
 | Lazy dielectric globe coat                 | `components/radial/jelly-glass.ts`                                                  |
@@ -122,23 +125,56 @@ projection cuts; there is no extra capture or draw pass.
 
 Native CSS cannot universally supply a live DOM backdrop texture to arbitrary
 WebGL shaders. Ordinary panels therefore use real native backdrop frost and a
-clear-coat approximation. Do not describe their specular edge as pixel-exact
+clear-coat approximation, plus the Chromium-only rim refraction above. Do not describe their specular edge as pixel-exact
 page refraction. Blanket DOM snapshot renderers were rejected because they
 duplicate content, lag dynamic media, interact with CORS, and impose stacking
 constraints on a live feed and game platform. No external library code is copied.
 
+## Optical refraction tier
+
+Panels bend the live page behind their rim, the trait the reference libraries
+(liquidGL, liquid-glass-react, ybouane/liquidglass) are known for, without
+snapshotting the DOM. `refraction-runtime.ts` gives a surface a per-surface SVG
+filter: a displacement map (`feImage`) read by `feDisplacementMap`, referenced
+last in `backdrop-filter` (`blur() saturate() url(#lr-n)`). The map encodes a
+convex-squircle bezel `h(t) = (1 − (1 − t)^4)^¼`; a vertical ray at the
+surface slope θ₁ refracts to θ₂ = asin(sin θ₁ / 1.45) (the globe coat's IOR) and
+shifts laterally by thickness·tan(θ₁ − θ₂). Displacement is zero in the flat
+interior, strongest at the rim, and always points **inward**, so it never samples
+outside the backdrop. It approximates one bezel profile; it is not pixel-exact
+lensing of arbitrary content.
+
+| Rule                | Value                                                                                         |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| Eligible            | `.glass-pane`, `.glass-chrome`, `.glass-overlay`, `[data-liquid-refract]`; never `glass-fill` |
+| Engine              | Chromium only (feature + engine detected); others never receive the attribute                 |
+| Budget              | ≤ 6 visible surfaces, each 24px–360,000px²; first-registered wins, hand-over on removal       |
+| Cost                | No frame loop. Maps rasterised once per 8px-quantised size (LRU 24, ≤ 90k px each)            |
+| Dispersion          | `data-liquid-refract="dispersive"` splits R/G/B (three displacement passes); use sparingly    |
+| Opt out             | `data-liquid-refract="off"` (frost only) or `data-liquid-material="off"`                      |
+| Reflection of state | `<html data-liquid-refraction="active">` while any surface is refracting                      |
+
+The `[data-liquid-refracted]` rule in `app/liquid-glass.css` only matches
+surfaces the runtime has admitted, so every fallback tier is the plain material
+unchanged. Never chain a CSS filter function after the `url()` (the
+filter-cost budget test explains why), never refract an animated viewport-sized
+region, and never raise the budget without re-measuring.
+
 ## Compatibility and access
 
-| Capability/preference                               | Behaviour                                                                   |
-| --------------------------------------------------- | --------------------------------------------------------------------------- |
-| Modern Chromium, Firefox, Safari/WebKit             | Native live backdrop material; fine-pointer light and tap field             |
-| No native backdrop support                          | Opaque readable ground with static rim                                      |
-| No WebGL / shader failure / context loss            | CSS globe rim; navigation remains functional                                |
-| Reduced motion, OS or account                       | No field or cursor light; globe deformation uses the shared preference hook |
-| Reduced transparency, forced colours, high contrast | Solid material; decorative light and globe coat disabled                    |
-| `perf-lite`                                         | No cursor light/field or globe coat; existing blur caps still apply         |
-| Touch                                               | No cursor light; bounded taps, cancelled on scroll/drag                     |
-| Print / hidden document                             | Decorative layers omitted / work cancelled                                  |
+| Capability/preference                               | Behaviour                                                                     |
+| --------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Modern Chromium, Firefox, Safari/WebKit             | Native live backdrop material; fine-pointer light and tap field               |
+| Chromium (incl. Edge, Android Chrome)               | Plus optical rim refraction (see below)                                       |
+| Safari/WebKit, Firefox, iOS Chrome/Firefox          | Refraction tier absent by design: frost + clear-coat, byte-for-byte as before |
+| No native backdrop support                          | Opaque readable ground with static rim                                        |
+| No WebGL / shader failure / context loss            | CSS globe rim; navigation remains functional                                  |
+| Reduced motion, OS or account                       | No field or cursor light; globe deformation uses the shared preference hook   |
+| Reduced transparency, forced colours, high contrast | Solid material; decorative light and globe coat disabled                      |
+| `perf-lite`                                         | No cursor light/field, globe coat or refraction; existing blur caps apply     |
+| Low-end hardware (≤2 cores/≤2 GB) or Save-Data      | No refraction                                                                 |
+| Touch                                               | No cursor light; bounded taps, cancelled on scroll/drag                       |
+| Print / hidden document                             | Decorative layers omitted / work cancelled                                    |
 
 Keep Safari's existing compositor safeguards and safe-area handling. Do not
 infer native GPU, energy or assistive-technology results from headless tests.
@@ -151,6 +187,8 @@ pnpm exec tsc --noEmit
 pnpm check:consistency
 pnpm build
 CHROMIUM_PATH=/usr/bin/chromium node testing/e2e/liquid-glass.mjs
+CHROMIUM_PATH=/usr/bin/chromium node testing/e2e/liquid-refraction.mjs
+LIQUID_BROWSER=firefox node testing/e2e/liquid-refraction.mjs   # asserts the tier is absent
 LIQUID_BROWSER=firefox node testing/e2e/liquid-glass.mjs
 LIQUID_BROWSER=webkit node testing/e2e/liquid-glass.mjs
 CHROMIUM_PATH=/usr/bin/chromium node testing/e2e/eversion-gl.mjs

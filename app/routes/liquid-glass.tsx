@@ -82,7 +82,10 @@ const DESC =
  */
 export const Route = createFileRoute('/liquid-glass')({
   head: () => ({
-    meta: [...buildMeta({ title: TITLE, description: DESC, path: PATH }), { name: 'robots', content: 'noindex' }],
+    meta: [
+      ...buildMeta({ title: TITLE, description: DESC, path: PATH }),
+      { name: 'robots', content: 'noindex' },
+    ],
     links: [buildCanonical(PATH)],
   }),
   component: LiquidGlassLab,
@@ -307,10 +310,10 @@ function LiquidGlassLab() {
               The glass no longer tracks your cursor. <Mono>.glass-interactive</Mono> used to grow a
               soft radial hotspot that followed the pointer inside the hovered card; moving a
               gradient&apos;s centre repaints the whole element, at pointer rate, so a grid of cards
-              spent its frame budget on a highlight. What answers hover now costs nothing per
-              frame: the tint raises, and the L1 rim glint lifts from its ambient rest to full — so
-              the hovered card is still unmistakably the lit one. The glint itself answers a static
-              sun. Hover a card.
+              spent its frame budget on a highlight. What answers hover now costs nothing per frame:
+              the tint raises, and the L1 rim glint lifts from its ambient rest to full — so the
+              hovered card is still unmistakably the lit one. The glint itself answers a static sun.
+              Hover a card.
             </>
           }
         >
@@ -337,40 +340,55 @@ function LiquidGlassLab() {
           </div>
         </Section>
 
-        {/* ── 5 · Edge bevel on/off ── the page's second refract slot. */}
+        {/* ── 5 · Optical refraction ── bends the live backdrop through the bezel. */}
         <Section
           id="refraction"
           eyebrow="§3"
-          title="Edge bevel — on vs off"
+          title="Optical refraction — on vs off"
           description={
             <>
-              <Mono>.glass-refract</Mono> frosts a masked band at the pane&apos;s edge, so the sheet
-              reads as thick: the lip scatters the aurora while the centre stays optically flat. The
-              displacement lens that used to bend the backdrop through that band is currently parked
-              — Chromium composites the map itself into the band instead of sampling through it (see
-              the note in <Mono>app/globals.css</Mono>) — so every engine gets the same honest
-              frosted lip today. Rationed to hero / chrome only, never in scroll containers.
+              Singular panes, chrome and overlays bend the live page behind their rim: a convex
+              squircle bezel refracted by Snell&apos;s law (IOR 1.45), applied as an SVG
+              displacement map inside <Mono>backdrop-filter</Mono>. Only engines that render{' '}
+              <Mono>url()</Mono> there (Chromium) get it; Safari and Firefox keep the frosted
+              clear-coat. At most six visible surfaces refract at once, never under reduced
+              transparency, high contrast or <Mono>perf-lite</Mono>. Watch the stripes bend at the
+              edge and stay straight in the middle.
             </>
           }
         >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div
-              data-glass-lens=""
-              className="glass-pane glass-refract relative flex h-44 items-center justify-center overflow-hidden rounded-site p-6"
-            >
-              <div className="relative z-10 flex flex-col items-center gap-1 text-center">
-                <span className="text-base font-semibold text-site-text">Bevel on</span>
-                <Mono>.glass-pane .glass-refract</Mono>
-                <span className="text-xs text-site-text-dim">
-                  watch the edge band frost the aurora inward
-                </span>
+          <div
+            className="grid gap-6 rounded-site p-6 sm:grid-cols-3"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(90deg, var(--site-accent) 0 14px, transparent 14px 28px)',
+            }}
+          >
+            <div className="glass-pane relative flex h-44 items-center justify-center rounded-site p-6">
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="text-base font-semibold text-site-text">Refracted</span>
+                <Mono>.glass-pane</Mono>
+                <span className="text-xs text-site-text-dim">automatic, within budget</span>
               </div>
             </div>
-            <div className="glass-pane relative flex h-44 items-center justify-center overflow-hidden rounded-site p-6">
-              <div className="relative z-10 flex flex-col items-center gap-1 text-center">
-                <span className="text-base font-semibold text-site-text">Bevel off</span>
-                <Mono>.glass-pane</Mono>
-                <span className="text-xs text-site-text-dim">clean, optically flat edge</span>
+            <div
+              data-liquid-refract="dispersive"
+              className="glass-pane relative flex h-44 items-center justify-center rounded-site p-6"
+            >
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="text-base font-semibold text-site-text">Dispersive</span>
+                <Mono>data-liquid-refract=&quot;dispersive&quot;</Mono>
+                <span className="text-xs text-site-text-dim">split R/G/B at the rim</span>
+              </div>
+            </div>
+            <div
+              data-liquid-refract="off"
+              className="glass-pane relative flex h-44 items-center justify-center rounded-site p-6"
+            >
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="text-base font-semibold text-site-text">Frost only</span>
+                <Mono>data-liquid-refract=&quot;off&quot;</Mono>
+                <span className="text-xs text-site-text-dim">the fallback every engine has</span>
               </div>
             </div>
           </div>
@@ -448,9 +466,9 @@ function LiquidGlassLab() {
             <>
               <Mono>.glass-liquid</Mono> (or <Mono>&lt;GlassPane liquid&gt;</Mono>) sweeps one slow
               specular band across the surface on arrival, like light travelling over wet glass,
-              then rests — a loop would keep the page from ever going idle. It is a
-              background layer, so it composes freely with refraction and the pointer light on the
-              same pane. Signature surfaces only; ration it. The right card uses{' '}
+              then rests — a loop would keep the page from ever going idle. It is a background
+              layer, so it composes freely with refraction and the pointer light on the same pane.
+              Signature surfaces only; ration it. The right card uses{' '}
               <Mono>.glass-sheen-hover</Mono>, the one-shot sweep signature CTAs (and{' '}
               <Mono>Button</Mono> <Mono>default</Mono>/<Mono>accent</Mono>) fire on hover.
             </>
@@ -490,11 +508,10 @@ function LiquidGlassLab() {
               The active tab capsule does not slide, it <em>flows</em>: a <Mono>layoutId</Mono>{' '}
               spring carries the capsule while an SVG metaball underlay (<Mono>#glass-goo</Mono>,{' '}
               <Mono>components/ui/liquid-morph.tsx</Mono>) fuses it with a trailing droplet into a
-              stretching teardrop. Velocity drives the squash and stretch.
-              {' '}
-              There was a second renderer here — a WebGPU/WebGL2 canvas drawing the same merge as
-              SDF bodies. It is deleted: its entry point had no caller anywhere in the repo, so it
-              never ran, and the SVG path below was always what shipped.
+              stretching teardrop. Velocity drives the squash and stretch. There was a second
+              renderer here — a WebGPU/WebGL2 canvas drawing the same merge as SDF bodies. It is
+              deleted: its entry point had no caller anywhere in the repo, so it never ran, and the
+              SVG path below was always what shipped.
             </>
           }
         >
