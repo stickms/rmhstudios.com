@@ -97,7 +97,7 @@ flowchart LR
 
   subgraph Ext["External services"]
     STRIPE["Stripe<br/>memberships"]
-    OAUTH["OAuth: Discord · Google · GitHub"]
+    OAUTH["OAuth: Discord · GitHub"]
     AI["AI: Anthropic · DeepSeek · Kimi<br/>embeddings"]
     MISC["Spotify · Klipy GIFs · web push · email"]
     DISC["Discord<br/>deploy embeds · bot · #rmh-oncall"]

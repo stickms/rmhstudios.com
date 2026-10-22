@@ -2414,18 +2414,19 @@ export function LiquidGlobe({
         onPointerDown={onPointerDown}
         onClickCapture={onClickCapture}
       >
-        {/* WIREFRAME — the meridians and parallels, stroked onto one canvas.
-            It used to be thirteen `border-radius: 50%` elements inside a
-            `preserve-3d` parent; see the note above MERIDIANS for the measured
-            reason it is not any more. The geometry is unchanged. */}
-        <canvas ref={cageRef} className="radial-globe__cage" aria-hidden />
-
-        {/* The glass body itself: a flat disc of shading over the cage, so the
-            wireframe reads as structure suspended INSIDE a liquid ball rather
-            than as a drawing on top of one. */}
+        {/* The glass body itself: a flat disc of shading (CSS fallback) and, once it has drawn, the shader coat that
+            lenses the page and shades the dough. It is the BACK of the stack, under the wireframe: the coat is opaque
+            where it refracts the page, so a cage drawn beneath it vanished (the lat/long lines disappeared the moment
+            the shader took over). */}
         <span ref={glassRef} className="radial-globe__glass" aria-hidden>
           <span ref={contactRef} className="radial-globe__contact" />
         </span>
+
+        {/* WIREFRAME — the meridians and parallels, stroked onto one canvas over the glass, so the structure reads as
+            suspended inside the ball (both faces are drawn, the far ones lensed) and never under its coat. It used to
+            be thirteen `border-radius: 50%` elements inside a `preserve-3d` parent; see the note above MERIDIANS for
+            the measured reason it is not any more. The geometry is unchanged. */}
+        <canvas ref={cageRef} className="radial-globe__cage" aria-hidden />
 
         {/* PINS — projected here rather than placed in the 3D cage, so their type
             stays flat, crisp and billboarded instead of skewing with the sphere. */}

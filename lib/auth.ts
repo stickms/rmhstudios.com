@@ -97,15 +97,13 @@ export const auth = betterAuth({
       '/reset-password': { window: 60, max: 10 },
     },
   },
+  // Google sign-in is switched off (repeated problems with it, 2026-10). Nothing was deleted: existing `account` rows with
+  // providerId 'google' stay in the database untouched, so it can come back by restoring a `google: { clientId, clientSecret,
+  // overrideUserInfoOnSignIn: true }` entry here, its button in app/routes/login.tsx, and the GOOGLE_CLIENT_* env vars.
   socialProviders: {
     discord: {
       clientId: process.env.DISCORD_CLIENT_ID!,
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
-      overrideUserInfoOnSignIn: true,
-    },
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       overrideUserInfoOnSignIn: true,
     },
     github: {

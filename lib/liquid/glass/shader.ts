@@ -146,7 +146,10 @@ void main() {
   float reach = uLight.z * 2.4;
   float fall = uLightOn / (1.0 + (distL * distL) / (reach * reach));
   float curSpec = pow(max(dot(n, normalize(Lc + V)), 0.0), 80.0) * 1.3 * fall;
-  float curGlow = exp(-dot(uLight.xy - P, uLight.xy - P) / (2.0 * uLight.z * uLight.z * 0.8)) * 0.05 * uLightOn;
+  // The light also falls on the FACE, not only the rim: a soft bloom under the cursor across the whole surface, so a
+  // hover lights the element it is over rather than just the thin bevel band at its edge.
+  float glowR = reach * 0.42;
+  float curGlow = exp(-dot(uLight.xy - P, uLight.xy - P) / (2.0 * glowR * glowR)) * 0.17 * uLightOn;
 
   // The inner edge: a thin bright line, strongest on the edges that face a light.
   float stroke = (1.0 - smoothstep(0.0, uPx * 1.8, d - uPx * 0.5)) * smoothstep(-uPx, 0.0, d);
