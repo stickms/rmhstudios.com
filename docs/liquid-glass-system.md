@@ -51,6 +51,27 @@ Opt-outs: `data-liquid-material="off"` or `data-liquid-glass="off"`. Never slabs
 opaque `glass-chrome--aside`, the globe stage, eversion layers, anything smaller than 28px
 or larger than 640,000px².
 
+## Clarity: tints, the ground and hover (read this before changing a fill)
+
+Liquid glass is **clear**. If a surface reads as a coloured card, the material is wrong, whatever the shader does at
+the rim. Three things have to hold together, and each has been the cause of "it is not liquid yet":
+
+1. **Low tints.** The role tints in `app/liquid-glass.css` are slivers of the ground, not paint: fill 14%, pane 18%, chrome
+   42%, overlay 86% (menus/dialogs sit on arbitrary content with no blur behind them, so they keep the most body),
+   `glass-inset` 3%. The surface tokens (`--site-surface`, `-hover`, `-active`, `--site-glass-tint*`) are likewise
+   translucent in every light theme (about 0.3–0.5 alpha, dark Graphite similar). `--site-surface-opaque` is the opaque
+   twin for things that must hide the page. A local `background:` on a glass role is **unlayered** and silently beats the
+   role (the top bar was an opaque white strip this way): let the class own the fill.
+2. **A ground with something in it.** Clear glass over flat white has nothing to bend. `--site-canvas` carries soft
+   chromatic light in Daylight, and **the body must not paint over it**: `.site-aurora` is a fixed layer at `z-index: -1`,
+   which paints above the root's background but below an in-flow body background, so `body { background }` hid it on every
+   theme. On the site tier `<html>` carries the solid base and `<body>` is transparent (`paintDocumentGround`,
+   `bodyThemeScript`, `globals.css`); app/game routes keep painting their own body.
+3. **Hover that reaches the whole face.** The eversion hover/press layer is `[data-evert]::before` at `z-index: -1`, so
+   the engine canvas is at `-2`: the layer paints over the slab, rim included. Over glass its tint is translucent ink
+   (`--evert-tint` in `liquid-glass.css`), never `--site-surface-hover`. The cursor light also has a soft bloom across the
+   FACE of a slab (shader `curGlow`), not only a glint on the bevel band.
+
 ## The slab
 
 Geometry. A rounded-rect signed distance gives each pixel its depth `d` inside the edge. A
@@ -137,6 +158,11 @@ the shader ripple; the cursor light on them is the shader's, so no CSS light car
 appended to them (that DOM churn was removed).
 
 ## The globe
+
+**The lat/long cage is drawn OVER the coat.** The meridians and parallels are one canvas (`.radial-globe__cage`) after
+the glass in the stage. The coat is opaque where it lenses the page, so a cage underneath it vanished the moment the
+shader took over (the self-contained harness has no page snapshot, so it never showed). Keep the cage last in the stage
+order, above `.radial-globe__glass`, below the pins.
 
 **Dough, not a stretchy ball.** `lib/dough.ts` simulates a displacement field `u(x)` on a
 48×48 grid over the disc. Two layers: an **elastic** layer (a damped spring that rebounds) and

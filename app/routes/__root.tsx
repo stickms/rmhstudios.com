@@ -295,7 +295,9 @@ const localeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )rmh-l
 /** Pre-paint text spacing, caption style and bedtime mode (lib/access/prefs). */
 const accessScript = ACCESS_PREPAINT_SCRIPT;
 
-const bodyThemeScript = `if(window.__themeBg)document.body.style.backgroundColor=window.__themeBg`;
+// Only app/game routes paint the body: on the site tier the ground is `<html>`'s, and the body stays transparent so the
+// fixed aurora layer (z-index -1) behind the glass is visible (globals.css, "The page ground is the ROOT's").
+const bodyThemeScript = `if(window.__themeBg&&document.documentElement.classList.contains("app-route"))document.body.style.backgroundColor=window.__themeBg`;
 
 /**
  * Paths that must never be speculatively prefetched (OPT-04).

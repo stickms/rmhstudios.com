@@ -217,9 +217,9 @@
      `bg-site-surface` — samples the aurora canvas underneath and reads as one
      material. `--site-surface-opaque` stays solid for the fallbacks that must
      hide the page (autofill, reduced transparency, full-screen takeovers). */
-  --site-surface: rgba(255, 255, 255, 0.72);
-  --site-surface-hover: rgba(248, 248, 248, 0.86);
-  --site-surface-active: rgba(238, 238, 238, 0.92);
+  --site-surface: rgba(255, 255, 255, 0.34);
+  --site-surface-hover: rgba(255, 255, 255, 0.52);
+  --site-surface-active: rgba(255, 255, 255, 0.66);
   --site-surface-opaque: #ffffff;
   --site-border: rgba(0, 0, 0, 0.16);
   --site-border-bright: #000000;
@@ -238,8 +238,8 @@
   --site-warning-fg: #ffffff;
 
   /* ── Monochrome material contract — glass reads as clean, near-opaque frost ── */
-  --site-glass-tint: rgba(255, 255, 255, 0.72);
-  --site-glass-tint-strong: rgba(255, 255, 255, 0.86);
+  --site-glass-tint: rgba(255, 255, 255, 0.34);
+  --site-glass-tint-strong: rgba(255, 255, 255, 0.5);
   --site-glass-ink: rgba(255, 255, 255, 0.9);
   --site-glass-blur-pane: 18px;
   --site-glass-blur-chrome: 20px;
@@ -494,11 +494,16 @@
      `background-image` by the aurora layer, where a bare colour would make the
      whole declaration invalid (and the canvas silently vanish). The flat white
      base is therefore a gradient, not `#ffffff`. */
+  /* Clear glass needs something behind it to bend. The paper ground stays near-white, but carries soft chromatic
+     light (sky, violet, rose, mint) so a slab's refracted rim and the page seen through its body have a hue to show.
+     Low chroma on purpose: ink and structure stay monochrome, only the light behind the glass has colour. */
   --site-canvas:
-    radial-gradient(70% 55% at 18% 4%, rgba(0, 0, 0, 0.055), transparent 62%),
-    radial-gradient(60% 50% at 88% 12%, rgba(0, 0, 0, 0.045), transparent 60%),
-    radial-gradient(90% 70% at 50% 42%, rgba(0, 0, 0, 0.05), transparent 62%),
-    linear-gradient(180deg, #ffffff 0%, #fbfbfb 55%, #ffffff 100%);
+    radial-gradient(58% 46% at 14% 6%, rgba(96, 165, 250, 0.3), transparent 66%),
+    radial-gradient(52% 44% at 90% 10%, rgba(192, 132, 252, 0.24), transparent 64%),
+    radial-gradient(60% 48% at 78% 62%, rgba(251, 146, 180, 0.2), transparent 66%),
+    radial-gradient(56% 46% at 8% 78%, rgba(110, 231, 183, 0.22), transparent 66%),
+    radial-gradient(70% 50% at 50% 100%, rgba(253, 186, 116, 0.16), transparent 68%),
+    linear-gradient(180deg, #fbfcff 0%, #f6f7fc 55%, #fcfbff 100%);
 
   --site-glass-noise: none;
   --site-map-filter: none;
@@ -790,9 +795,9 @@
      `bg-site-surface` — samples the aurora canvas underneath and reads as one
      material. `--site-surface-opaque` stays solid for the fallbacks that must
      hide the page (autofill, reduced transparency, full-screen takeovers). */
-  --site-surface: rgba(255, 255, 255, 0.72);
-  --site-surface-hover: rgba(248, 248, 248, 0.86);
-  --site-surface-active: rgba(238, 238, 238, 0.92);
+  --site-surface: rgba(255, 255, 255, 0.34);
+  --site-surface-hover: rgba(255, 255, 255, 0.52);
+  --site-surface-active: rgba(255, 255, 255, 0.66);
   --site-surface-opaque: #ffffff;
   --site-border: rgba(0, 0, 0, 0.16);
   --site-border-bright: #000000;
@@ -809,8 +814,8 @@
   --site-danger-fg: #ffffff;
   --site-warning: #7a4a00;
   --site-warning-fg: #ffffff;
-  --site-glass-tint: rgba(255, 255, 255, 0.78);
-  --site-glass-tint-strong: rgba(255, 255, 255, 0.9);
+  --site-glass-tint: rgba(255, 255, 255, 0.36);
+  --site-glass-tint-strong: rgba(255, 255, 255, 0.52);
   --site-glass-rim: rgba(0, 0, 0, 0.12);
   --site-glass-rim-soft: rgba(0, 0, 0, 0.05);
   --site-radius: 22px;
@@ -819,11 +824,16 @@
      `background-image` by the aurora layer, where a bare colour would make the
      whole declaration invalid (and the canvas silently vanish). The flat white
      base is therefore a gradient, not `#ffffff`. */
+  /* Clear glass needs something behind it to bend. The paper ground stays near-white, but carries soft chromatic
+     light (sky, violet, rose, mint) so a slab's refracted rim and the page seen through its body have a hue to show.
+     Low chroma on purpose: ink and structure stay monochrome, only the light behind the glass has colour. */
   --site-canvas:
-    radial-gradient(70% 55% at 18% 4%, rgba(0, 0, 0, 0.055), transparent 62%),
-    radial-gradient(60% 50% at 88% 12%, rgba(0, 0, 0, 0.045), transparent 60%),
-    radial-gradient(90% 70% at 50% 42%, rgba(0, 0, 0, 0.05), transparent 62%),
-    linear-gradient(180deg, #ffffff 0%, #fbfbfb 55%, #ffffff 100%);
+    radial-gradient(58% 46% at 14% 6%, rgba(96, 165, 250, 0.3), transparent 66%),
+    radial-gradient(52% 44% at 90% 10%, rgba(192, 132, 252, 0.24), transparent 64%),
+    radial-gradient(60% 48% at 78% 62%, rgba(251, 146, 180, 0.2), transparent 66%),
+    radial-gradient(56% 46% at 8% 78%, rgba(110, 231, 183, 0.22), transparent 66%),
+    radial-gradient(70% 50% at 50% 100%, rgba(253, 186, 116, 0.16), transparent 68%),
+    linear-gradient(180deg, #fbfcff 0%, #f6f7fc 55%, #fcfbff 100%);
   --site-aurora-far-1: rgba(0, 0, 0, 0.02);
   --site-aurora-far-2: rgba(0, 0, 0, 0.03);
 }
@@ -834,9 +844,9 @@
   color-scheme: light;
   --site-bg: #e9edf6;
   --site-bg-subtle: rgba(120, 145, 195, 0.09);
-  --site-surface: rgba(255, 255, 255, 0.55);
-  --site-surface-hover: rgba(255, 255, 255, 0.72);
-  --site-surface-active: rgba(255, 255, 255, 0.85);
+  --site-surface: rgba(255, 255, 255, 0.3);
+  --site-surface-hover: rgba(255, 255, 255, 0.48);
+  --site-surface-active: rgba(255, 255, 255, 0.62);
   --site-surface-opaque: #ffffff;
   --site-border: rgba(18, 30, 66, 0.1);
   --site-border-bright: rgba(18, 30, 66, 0.2);
@@ -854,8 +864,8 @@
   --site-warning: #a8730a;
   --site-warning-fg: #100b00;
   /* Light glass: brighter frost, white rims, cool low-alpha depth. */
-  --site-glass-tint: rgba(255, 255, 255, 0.55);
-  --site-glass-tint-strong: rgba(255, 255, 255, 0.72);
+  --site-glass-tint: rgba(255, 255, 255, 0.3);
+  --site-glass-tint-strong: rgba(255, 255, 255, 0.48);
   --site-glass-ink: rgba(244, 247, 253, 0.55);
   --site-glass-rim: rgba(255, 255, 255, 0.9);
   --site-glass-rim-soft: rgba(255, 255, 255, 0.55);
@@ -952,9 +962,9 @@
   color-scheme: dark;
   --site-bg: #000000;
   --site-bg-subtle: rgba(255, 255, 255, 0.05);
-  --site-surface: rgba(28, 28, 30, 0.72);
-  --site-surface-hover: rgba(44, 44, 46, 0.82);
-  --site-surface-active: rgba(58, 58, 60, 0.9);
+  --site-surface: rgba(28, 28, 30, 0.38);
+  --site-surface-hover: rgba(44, 44, 46, 0.52);
+  --site-surface-active: rgba(58, 58, 60, 0.64);
   --site-surface-opaque: #1c1c1e;
   --site-border: rgba(255, 255, 255, 0.12);
   --site-border-bright: rgba(255, 255, 255, 0.26);
@@ -977,8 +987,8 @@
   --site-danger-fg: #ffffff;
   --site-warning: #ff9f0a;
   --site-warning-fg: #100b00;
-  --site-glass-tint: rgba(28, 28, 30, 0.62);
-  --site-glass-tint-strong: rgba(28, 28, 30, 0.82);
+  --site-glass-tint: rgba(28, 28, 30, 0.34);
+  --site-glass-tint-strong: rgba(28, 28, 30, 0.52);
   --site-glass-ink: rgba(0, 0, 0, 0.62);
   --site-glass-rim: rgba(255, 255, 255, 0.14);
   --site-glass-rim-soft: rgba(255, 255, 255, 0.06);
@@ -1007,9 +1017,9 @@
   color-scheme: light;
   --site-bg: #efe4cf;
   --site-bg-subtle: rgba(120, 90, 50, 0.08);
-  --site-surface: rgba(255, 250, 238, 0.6);
-  --site-surface-hover: rgba(255, 250, 238, 0.78);
-  --site-surface-active: rgba(255, 250, 238, 0.9);
+  --site-surface: rgba(255, 250, 238, 0.3);
+  --site-surface-hover: rgba(255, 250, 238, 0.48);
+  --site-surface-active: rgba(255, 250, 238, 0.62);
   --site-surface-opaque: #fbf4e5;
   --site-border: rgba(90, 62, 32, 0.18);
   --site-border-bright: rgba(90, 62, 32, 0.3);
@@ -1026,8 +1036,8 @@
   --site-danger-fg: #ffffff;
   --site-warning: #a8730a;
   --site-warning-fg: #100b00;
-  --site-glass-tint: rgba(255, 250, 238, 0.6);
-  --site-glass-tint-strong: rgba(255, 250, 238, 0.78);
+  --site-glass-tint: rgba(255, 250, 238, 0.3);
+  --site-glass-tint-strong: rgba(255, 250, 238, 0.48);
   --site-glass-ink: rgba(240, 232, 214, 0.6);
   --site-glass-rim: rgba(255, 248, 230, 0.85);
   --site-glass-rim-soft: rgba(255, 248, 230, 0.45);
@@ -3018,6 +3028,18 @@ body {
      handled per-column — PageLayout / feed columns carry the legacy-named
      .pb-dock utility so the last content clears floating controls, the home
      indicator, and the browser bottom bar (--safe-bottom). */
+}
+
+/* The page ground is the ROOT's, not the body's. `.site-aurora` is a fixed layer at z-index -1, which paints above the
+   root's background but BELOW an in-flow body background, so the opaque `body { background }` above hid the aurora on
+   every theme: glass had nothing coloured behind it to bend, and read as a flat card. On pages that own the aurora the
+   body is transparent and `<html>` carries the solid base (`--site-bg`, repainted inline from THEME_BG before first
+   paint), so nothing about the paint-before-hydration guarantee changes. App/game routes keep their own backdrop. */
+html:not(.app-route) {
+  background-color: var(--site-bg);
+}
+html:not(.app-route) body {
+  background: transparent;
 }
 
 /* Prevent iOS Safari from auto-zooming the page when a form control is focused.
