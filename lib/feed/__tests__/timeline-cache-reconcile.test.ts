@@ -32,7 +32,10 @@ const db = vi.hoisted(() => ({
 vi.mock('@/lib/prisma.server', () => ({ prisma: db }));
 vi.mock('../../prisma.server', () => ({ prisma: db }));
 vi.mock('../../social/follow-graph.server', () => ({ getFollowingIds: async () => w.following }));
-vi.mock('../../moderation.server', () => ({ getHiddenAuthorIds: async () => w.hidden }));
+vi.mock('../../moderation.server', () => ({
+  getHiddenAuthorIds: async () => w.hidden,
+  getBlockedAuthorIds: async () => w.hidden,
+}));
 vi.mock('../signals.server', () => ({
   getSignals: async () => ({ lessAuthors: [], mutedTags: w.mutedTags, followedTags: [] }),
 }));

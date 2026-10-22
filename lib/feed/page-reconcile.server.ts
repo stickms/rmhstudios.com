@@ -30,7 +30,8 @@
 
 import { prisma } from '../prisma.server';
 import type { FeedItem } from '../feed-types';
-import { getHiddenAuthorIds } from '../moderation.server';
+import { getHiddenAuthorIds, getBlockedAuthorIds } from '../moderation.server';
+import { quotedOriginalVisibleTo, withholdQuotedOriginal } from './quoted-original';
 import { getSignals } from './signals.server';
 
 type Surface = 'following' | 'foryou';
@@ -62,8 +63,30 @@ export async function reconcileCachedPage(
   if (posts.length === 0) return { items, needsRefresh: false };
 
   const postIds = [...new Set(posts.map((i) => i.actualId ?? i.id))];
-  const [hidden, rows, signals] = await Promise.all([
+  // Quoted originals ride inside the cached cards, with their own audience:
+  // re-check them too (item 8), not only the top-level post.
+  const quotedIds = [
+    ...new Set(posts.flatMap((i) => (i.original?.id ? [i.original.id] : []))),
+  ];
+  const [hidden, blocked, quotedRows, rows, signals] = await Promise.all([
     getHiddenAuthorIds(viewerId),
+    quotedIds.length ? getBlockedAuthorIds(viewerId) : Promise.resolve([] as string[]),
+    quotedIds.length
+      ? prisma.rMHark.findMany({
+          where: { id: { in: quotedIds } },
+          select: {
+            id: true,
+            userId: true,
+            audience: true,
+            deletedAt: true,
+            unlockPrice: true,
+            isSensitive: true,
+            communityId: true,
+            community: { select: { isPrivate: true } },
+          },
+          take: quotedIds.length,
+        })
+      : Promise.resolve([]),
     prisma.rMHark.findMany({
       where: { id: { in: postIds } },
       select: {
@@ -79,6 +102,7 @@ export async function reconcileCachedPage(
     }) as Promise<PostRow[]>,
     getSignals(viewerId),
   ]);
+  const quotedById = new Map(quotedRows.map((q) => [q.id, q]));
   const hiddenSet = new Set(hidden);
   const mutedTags = new Set(signals.mutedTags);
   const byId = new Map(rows.map((r) => [r.id, r]));
@@ -117,8 +141,8 @@ export async function reconcileCachedPage(
     if (item.type !== 'rmhark') return true;
     const row = byId.get(item.actualId ?? item.id);
     if (!row || row.deletedAt) return false;
-    // The feed only ever holds posts outside communities (the assembly query requires
-    // communityId null); one that has one now is never served from a cached page, so
+    // The feed only ever holds posts outside communities (the assembly queries, reposts
+    // included, require communityId null); one that has one now is never served from a cached page, so
     // a private community's post cannot leak through the cache.
     if (row.communityId) return false;
     if (hiddenSet.has(row.userId) || (item.repostedBy && hiddenSet.has(item.repostedBy.id))) {
@@ -148,5 +172,15 @@ export async function reconcileCachedPage(
     return true;
   });
 
-  return { items: kept, needsRefresh };
+  // A quoted original that has since gone private, been deleted or removed, or
+  // whose author was blocked: keep the quote, withhold the original's content.
+  const reconciled = kept.map((item) => {
+    if (item.type !== 'rmhark' || !item.original) return item;
+    const q = quotedById.get(item.original.id);
+    if (!q || q.deletedAt) return { ...item, original: withholdQuotedOriginal(item.original, true) };
+    if (quotedOriginalVisibleTo(q, viewerId, blocked)) return item;
+    return { ...item, original: withholdQuotedOriginal(item.original, false) };
+  });
+
+  return { items: reconciled, needsRefresh };
 }

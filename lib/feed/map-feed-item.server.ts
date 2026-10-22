@@ -7,6 +7,8 @@ import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { groupReactions } from '@/lib/social/reactions';
+import { getBlockedAuthorIds } from '@/lib/moderation.server';
+import { mapQuotedOriginal } from '@/lib/feed/quoted-original';
 
 /** One per-emoji reaction summary entry, as it appears on a FeedItem. */
 type ReactionSummary = NonNullable<FeedItem['reactions']>[number];
@@ -75,11 +77,14 @@ export async function mapRmharksWithBoundedReactions(
   rows: { id: string }[],
   viewerId: string | null,
 ): Promise<FeedItem[]> {
-  const summaries = await loadBoundedReactionSummaries(
-    rows.map((r) => r.id),
-    viewerId,
-  );
-  return rows.map((r) => mapRmharkToFeedItem(r, viewerId, summaries.get(r.id) ?? []));
+  const [summaries, blocked] = await Promise.all([
+    loadBoundedReactionSummaries(
+      rows.map((r) => r.id),
+      viewerId,
+    ),
+    getBlockedAuthorIds(viewerId),
+  ]);
+  return rows.map((r) => mapRmharkToFeedItem(r, viewerId, summaries.get(r.id) ?? [], blocked));
 }
 
 /**
@@ -140,7 +145,13 @@ export function rmharkInclude(viewerId: string | null) {
         },
       },
     },
-    original: { include: { user: { select: userDisplaySelect } } },
+    // The original's community privacy rides along for the quote card's visibility rule.
+    original: {
+      include: {
+        user: { select: userDisplaySelect },
+        community: { select: { isPrivate: true } },
+      },
+    },
   };
 }
 
@@ -166,6 +177,8 @@ export function mapRmharkToFeedItem(
   r: any,
   viewerId: string | null,
   reactionsOverride?: ReactionSummary[],
+  /** The viewer's block set; quote cards of a blocked author's post are withheld. */
+  blockedAuthorIds: readonly string[] = [],
 ): FeedItem {
   const item: FeedItem = {
     id: r.id,
@@ -182,17 +195,7 @@ export function mapRmharkToFeedItem(
     bookmarked: viewerId ? r.bookmarks?.length > 0 : false,
     edited: !!r.editedAt,
     original: r.original
-      ? {
-          id: r.original.id,
-          type: 'rmhark',
-          createdAt: r.original.createdAt.toISOString(),
-          content: r.original.content,
-          user: resolveUser(r.original.user),
-          likeCount: r.original.likeCount,
-          commentCount: r.original.commentCount,
-          repostCount: r.original.repostCount,
-          viewCount: r.original.viewCount,
-        }
+      ? mapQuotedOriginal(r.original, resolveUser(r.original.user), viewerId, blockedAuthorIds)
       : undefined,
     poll: mapPoll(r.poll),
     gifUrl: r.gifUrl ?? undefined,
