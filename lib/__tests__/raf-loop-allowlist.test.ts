@@ -107,11 +107,6 @@ import { join } from 'node:path';
  *   - components/radial/eversion/useEversionController.ts — the eversion controller's two
  *                                       one-shot rAF waits (`nextFrame()`): each resolves one
  *                                       promise and never re-requests a frame.
- *   - components/radial/eversion/mini-globe.ts — the button-sized eversion's
- *                                       frame loop, bounded by its own length
- *                                       (MINI_MS): it ends at t ≥ 1, on a
- *                                       hidden tab, or when cancelled, and
- *                                       never runs while the page is at rest.
  *   - lib/eversion/gl/worker.ts, lib/eversion/gl/host.ts — the globe-eversion
  *                                       navigation effect's frame loop (the
  *                                       worker's own scheduler, and the same
@@ -290,10 +285,6 @@ const ALLOW = new Set<string>([
   // (the two-frame waits before the AFTER capture and before `reveal`, spec §6.3/§6.6), with a
   // 100 ms timer so a hidden tab cannot hang it. Nothing re-requests a frame from the callback.
   'components/radial/eversion/useEversionController.ts',
-  // The button-sized eversion (amended 2026-10-21): a bounded run, never a loop at rest. It starts on a
-  // navigation press and stops at t ≥ 1 (MINI_MS, 900 ms), at once when the tab is hidden, and when the
-  // next run or a lost GL context cancels it; the frame is cancelled in every exit path (`end()`).
-  'components/radial/eversion/mini-globe.ts',
   'components/temple-of-joy/TempleOfJoyGame.tsx',
   // The headline joy/rate readouts write textContent on a frame loop
   // rather than re-rendering their subtree 60 times a second.
