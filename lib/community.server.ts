@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
-import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
 import type { FeedItem } from '@/lib/feed-types';
 import { getOwnRequestState, type OwnRequestState } from '@/lib/communities/join-requests.server';
 import { loadFlairsForPosts } from '@/lib/communities/flairs.server';
@@ -144,10 +144,12 @@ export async function getCommunityFeed(
   if (!community) return null;
 
   const limit = Math.min(opts.limit ?? 20, 50);
-  // The viewer's membership rides the same round trip as the hidden-author
-  // lookup; it only supplies the followed flairs (N3) for the first page.
-  const [hidden, member] = await Promise.all([
-    getHiddenAuthorIds(viewerId),
+  // The viewer's membership rides the same round trip as the visibility lookup; it only supplies the followed flairs (N3) for the first page.
+  const [visible, member] = await Promise.all([
+    // The post's OWN audience still applies inside a community: a FOLLOWERS /
+    // PRIVATE / CIRCLE post is not shown to every member just because of where it
+    // was made. One definition of visibility, shared with canViewPost.
+    viewerVisiblePostWhere(viewerId),
     // Needed on every page of a private community (the membership gate), and
     // for the followed flairs on the first page of any.
     viewerId && (community.isPrivate || (!opts.cursor && !opts.flairId))
@@ -163,8 +165,7 @@ export async function getCommunityFeed(
   const rows = await prisma.rMHark.findMany({
     where: {
       communityId: community.id,
-      deletedAt: null,
-      ...(hidden.length ? { userId: { notIn: hidden } } : {}),
+      ...visible,
       ...(opts.flairId ? { communityFlair: { flairId: opts.flairId } } : {}),
     },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
