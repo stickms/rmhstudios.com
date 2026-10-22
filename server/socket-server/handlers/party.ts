@@ -121,6 +121,18 @@ function newPartyId(): string {
   return `pty_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+type PartyMemberRemovedListener = (io: Server, partyId: string, userId: string) => void;
+const memberRemovedListeners = new Set<PartyMemberRemovedListener>();
+
+/**
+ * Be told when someone stops being a member of a party (left, kicked, moved to
+ * another party, or the party dissolved under them). Features scoped to a party
+ * — its voice room — must not outlive the membership that admitted them.
+ */
+export function onPartyMemberRemoved(listener: PartyMemberRemovedListener): void {
+  memberRemovedListeners.add(listener);
+}
+
 /** Remove a user from their current party, transferring leadership / disbanding. */
 function leaveParty(io: Server, userId: string, disbandSocket?: Socket): void {
   const partyId = userToParty.get(userId);
@@ -135,6 +147,13 @@ function leaveParty(io: Server, userId: string, disbandSocket?: Socket): void {
     const s = disbandSocket ?? io.sockets.sockets.get(member.socketId);
     s?.leave(roomName(partyId));
   }
+  for (const listener of memberRemovedListeners) {
+    try {
+      listener(io, partyId, userId);
+    } catch (err) {
+      logger.warn({ event: 'party_member_removed_listener_failed', error: String(err) });
+    }
+  }
 
   if (party.members.size === 0) {
     parties.delete(partyId);
@@ -146,6 +165,22 @@ function leaveParty(io: Server, userId: string, disbandSocket?: Socket): void {
     if (next) party.leaderId = next.userId;
   }
   emitState(io, party);
+}
+
+// ─── Read-only accessors for other handlers ─────────────────────
+
+/**
+ * Is this user in that party right now?
+ *
+ * Parties are in-memory only — there is no Prisma model — so a feature scoped
+ * to a party (the group-call handler's party voice rooms) has nowhere else to
+ * ask. This accessor exists so that question has one supported answer instead
+ * of another handler reaching into the Maps above and turning them into a
+ * de-facto public API that can never be reshaped.
+ */
+export function isPartyMember(partyId: string, userId: string): boolean {
+  const party = parties.get(partyId);
+  return party ? party.members.has(userId) : false;
 }
 
 // ─── Registration ───────────────────────────────────────────────

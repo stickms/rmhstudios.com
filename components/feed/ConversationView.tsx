@@ -10,6 +10,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CallButton } from '@/components/call/CallButton';
+import { GroupCallButton } from '@/components/groupcall/GroupCallButton';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -1087,7 +1088,7 @@ export function ConversationView({
               no WebRTC); the server is still the authority on whether this person
               accepts calls from you. */}
           {otherUser && !isSavedChat && (
-            <div className="ml-auto">
+            <div className="ml-auto flex gap-1">
               <CallButton
                 user={{
                   id: otherUser.id,
@@ -1097,6 +1098,16 @@ export function ConversationView({
                 }}
                 conversationId={conversationId}
                 viewerId={session?.user?.id ?? null}
+              />
+              <GroupCallButton
+                conversationId={conversationId}
+                viewerId={session?.user?.id ?? null}
+                seedUser={{
+                  id: otherUser.id,
+                  name: otherUser.name ?? null,
+                  handle: (otherUser as { handle?: string | null }).handle ?? null,
+                  image: otherUser.image ?? null,
+                }}
               />
             </div>
           )}
