@@ -157,6 +157,7 @@ import { Route as VoteRoute } from '../../../app/routes/api/rmharks/$id/vote';
 import { Route as UnlockRoute } from '../../../app/routes/api/rmharks/$id/unlock';
 import { Route as SavesRoute } from '../../../app/routes/api/saves/index';
 import { Route as V1Post } from '../../../app/routes/api/v1/posts/$id';
+import { Route as V1Bookmarks } from '../../../app/routes/api/v1/me/bookmarks';
 import { notifyMentions } from '../notify-mentions.server';
 import { listBookmarks } from '../../bookmarks.server';
 import { hydrateSaves } from '../../saves/saves.server';
@@ -414,6 +415,23 @@ describe('readers', () => {
     expect((await call(V1Post, 'GET', { id: 'p1' })).status).toBe(200);
     h.posts = [mk('p1', { unlockPrice: 50, userId: 'viewer' })];
     expect((await call(V1Post, 'GET', { id: 'p1' })).status).toBe(200);
+  });
+
+  it('developer API GET /v1/me/bookmarks leaves out a priced post the caller has not unlocked', async () => {
+    h.posts = [
+      mk('free'),
+      mk('paid', { unlockPrice: 50 }),
+      mk('paid-open', { unlockPrice: 50, unlocks: [{ id: 'u' }] }),
+      mk('paid-own', { unlockPrice: 50, userId: 'viewer' }),
+    ];
+    const { prisma } = await import('@/lib/prisma.server');
+    (prisma.savedItem.findMany as unknown as (a?: unknown) => Promise<unknown>) = async () =>
+      ['free', 'paid', 'paid-open', 'paid-own'].map((entityId) => ({ entityId, createdAt: new Date() }));
+    const res = await call(V1Bookmarks, 'GET', {});
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.map((d: { id: string }) => d.id).sort()).toEqual(['free', 'paid-open', 'paid-own']);
+    expect(JSON.stringify(body)).not.toContain('content paid"');
   });
 
   it('a saved priced post the viewer has not unlocked gets no content-derived title', async () => {

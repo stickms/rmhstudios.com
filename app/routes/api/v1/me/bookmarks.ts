@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
+import { isLocked } from '@/lib/feed/map-feed-item.server';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
 import { apiAuthorSelect, serializePublicPost, parsePage } from '@/lib/api/serializers.server';
 
@@ -33,11 +34,15 @@ export const Route = createFileRoute('/api/v1/me/bookmarks')({
               // private community): same visibility rule as the web bookmarks list.
               where: { id: { in: rows.map((r) => r.entityId) }, ...(await viewerVisiblePostWhere(userId)) },
               select: {
-                id: true, content: true, createdAt: true, deletedAt: true, likeCount: true, commentCount: true,
-                repostCount: true, viewCount: true, imageUrls: true, user: { select: apiAuthorSelect },
+                id: true, userId: true, content: true, createdAt: true, deletedAt: true, likeCount: true,
+                commentCount: true, repostCount: true, viewCount: true, imageUrls: true,
+                unlockPrice: true, unlocks: { where: { userId }, select: { id: true } },
+                user: { select: apiAuthorSelect },
               },
             });
-            const byId = new Map(posts.map((p) => [p.id, p]));
+            // Audience access is not paid access: a priced post the caller has not unlocked is
+            // left out, as GET /api/v1/posts/{id} refuses it (bookmarking does not unlock).
+            const byId = new Map(posts.filter((p) => !isLocked(p, userId)).map((p) => [p.id, p]));
             const data = rows
               .filter((r) => byId.has(r.entityId))
               .map((r) => ({ ...serializePublicPost(byId.get(r.entityId)!), bookmarkedAt: r.createdAt }));
