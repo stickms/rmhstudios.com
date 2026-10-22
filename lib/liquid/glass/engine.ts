@@ -17,8 +17,7 @@
  * ## What it never does
  *
  * - Touch layout: it reads rects in observer callbacks and frames, and writes only canvases and attributes.
- * - Move or animate a host element: taps ripple the SURFACE OF THE GLASS, not the text on it (the DOM push that used to
- *   rotate surfaces is a separate, translate-only service — `runtime.ts`).
+ * - Move or animate a host element: taps ripple the SURFACE OF THE GLASS, while its text and layout stay fixed.
  * - Depend on `backdrop-filter`, WebGL extensions, or `fwidth`: the look is the same in Chromium, WebKit and Gecko.
  * - Draw when it must not: reduced transparency, forced colours, high contrast, `perf-lite` and print all remove every
  *   canvas and leave the CSS material, which is the fallback tier and is always complete without this file.

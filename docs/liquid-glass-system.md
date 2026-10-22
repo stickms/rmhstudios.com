@@ -26,7 +26,7 @@ same optics plus a **dough** simulation.
 | Computed colour → RGBA                            | `lib/liquid/glass/color.ts` (pure, unit-tested)                                 |
 | The page snapshot (capture, debounce, backoff)    | `lib/liquid/glass/scene.ts`, on `lib/eversion/capture.ts` (`modern-screenshot`) |
 | Snapshot shared with other GL contexts            | `lib/liquid/glass/scene-store.ts`                                               |
-| Neighbour push (translate-only)                   | `lib/liquid/runtime.ts`, wave math in `lib/liquid/interaction.ts`               |
+| Fallback cursor lighting (no host motion)         | `lib/liquid/runtime.ts`                                                       |
 | Globe dough simulation                            | `lib/dough.ts` (pure, unit-tested)                                              |
 | Globe coat (field, silhouette, lens, light)       | `components/radial/jelly-glass.ts`, `components/radial/LiquidGlobe.tsx`         |
 | Captured-page transmission during eversion        | `lib/eversion/gl/shaders.ts` (unchanged)                                        |
@@ -195,15 +195,16 @@ context for all slabs (browsers cap them at ~16; the globe uses a second).
 The CSS material is a complete design on its own and looks the same in every engine. Never
 add `backdrop-filter` to a glass role.
 
-## Neighbour push
+## Clicks keep the page still
 
-Taps still push nearby surfaces (`runtime.ts`): a damped wave that arrives later at distant
-surfaces, bounded to **±6px and translate only**. It no longer rotates: rotating a surface
-rotates its text, which every engine re-rasterises (and Gecko snaps to the pixel grid again
-when the animation ends), and that reads as shimmer. It composes with component transforms
-through additive native animations (no JS frame loop). The model is kept linear on purpose: retargeting folds old waves into a recovery by subtraction, which only reproduces the pose if the sum is linear, so the clamp is applied only at display (a smooth saturation inside the model broke retargeting; do not add one). Surfaces the engine draws also get
-the shader ripple; the cursor light on them is the shader's, so no CSS light carrier is
-appended to them (that DOM churn was removed).
+Clicks and taps never push, translate or bounce neighbouring surfaces. The former
+document-wide impulse field and its wave/recovery model are removed: moving cards
+and their text on every click made the page shake.
+
+Tap feedback stays within the shader: a wave bends the optical normal and moves the
+light across the glass while its host and text remain fixed. `runtime.ts` provides
+only a cursor-light leaf for surfaces outside the shader budget. Shader-backed
+surfaces own their cursor light and never receive a second CSS light carrier.
 
 ## The globe
 
@@ -291,7 +292,7 @@ node testing/e2e/glass-slab.mjs          # shader contract over a loud synthetic
 node testing/e2e/glass-dispersion.mjs    # GPU Snell/sphere parity, RGB ordering, all eversion tiers
 node testing/e2e/liquid-glass-engine.mjs # the engine on a real DOM, real capture, real CSS
 node testing/e2e/dough-globe.mjs         # dough sim + coat shader + lens
-node testing/e2e/liquid-glass.mjs        # neighbour push + older contract
+node testing/e2e/liquid-glass.mjs        # stationary click/touch geometry + fallback lighting
 LIQUID_BROWSER=firefox|webkit node testing/e2e/liquid-glass-engine.mjs   # where installed
 EXPORT_HTML=/tmp/x.html node testing/e2e/glass-slab.mjs   # standalone page for another driver
 ```

@@ -87,86 +87,44 @@ try {
     route.fulfill({ contentType: 'text/html', body: markup }),
   );
   await page.goto('https://rmh-glass.test/');
-  await page.evaluate(() => {
-    window.poseJumps = [];
-    document.addEventListener(
-      'pointerdown',
-      () => {
-        if (!window.measureRetarget) return;
-        // Read the native timeline phase in this same event. WPE's computed
-        // style may still describe the last presented frame between paints.
-        const effect = document.querySelector('#left').getAnimations()[0];
-        if (!effect) {
-          window.poseBefore = [0, 0];
-          return;
-        }
-        const frames = effect.effect.getKeyframes();
-        const phase = Math.min(
-          1,
-          Math.max(0, Number(effect.currentTime) / effect.effect.getComputedTiming().duration),
-        );
-        const index = Math.min(frames.length - 2, Math.floor(phase * (frames.length - 1)));
-        const first = frames[index],
-          last = frames[index + 1];
-        const t = (phase - first.computedOffset) / (last.computedOffset - first.computedOffset);
-        const a = new window.DOMMatrix(first.transform),
-          b = new window.DOMMatrix(last.transform);
-        window.poseBefore = [a.m41 + (b.m41 - a.m41) * t, a.m42 + (b.m42 - a.m42) * t];
-      },
-      true,
-    );
-  });
   await page.addScriptTag({ content: result.outputFiles[0].text });
-  await page.evaluate(() => {
-    document.addEventListener(
-      'pointerdown',
-      () => {
-        if (!window.measureRetarget) return;
-        const animation = document.querySelector('#left').getAnimations()[0];
-        const m = new window.DOMMatrix(animation.effect.getKeyframes()[0].transform);
-        window.poseJumps.push(
-          Math.hypot(m.m41 - window.poseBefore[0], m.m42 - window.poseBefore[1]),
-        );
-      },
-      true,
-    );
+  const stationary = async (label, action, selectors = ['#left', '#right', '#off', '#far']) => {
+    await page.evaluate((selectors) => {
+      const elements = selectors.map((s) => document.querySelector(s));
+      const original = elements.map((el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, transform: getComputedStyle(el).transform };
+      });
+      window.stillness = { peak: 0, frames: 0, transformsKept: true, raf: 0 };
+      const sample = () => {
+        const probe = window.stillness;
+        probe.frames++;
+        elements.forEach((el, i) => {
+          const r = el.getBoundingClientRect();
+          probe.peak = Math.max(probe.peak, Math.hypot(r.x - original[i].x, r.y - original[i].y));
+          probe.transformsKept &&= getComputedStyle(el).transform === original[i].transform;
+        });
+        probe.raf = window.requestAnimationFrame(sample);
+      };
+      sample();
+    }, selectors);
+    await action();
+    await advance(600);
+    const probe = await page.evaluate(() => {
+      window.cancelAnimationFrame(window.stillness.raf);
+      return window.stillness;
+    });
+    check(label, probe.frames > 1 && probe.peak < 0.01 && probe.transformsKept);
+  };
+  await stationary('an off-target click never moves neighbouring surfaces', () =>
+    page.mouse.click(405, 160),
+  );
+  await stationary('rapid clicks never shake surrounding content', async () => {
+    for (let i = 0; i < 6; i++) {
+      await page.mouse.click(405, 160);
+      await advance(35);
+    }
   });
-  await advance(100); // let the shared visibility observer deliver
-  await page.mouse.click(405, 160);
-  await advance(160);
-  const moved = await page.waitForFunction(
-    () => {
-      const matrix = new window.DOMMatrix(
-        getComputedStyle(document.querySelector('#left')).transform,
-      );
-      return Math.hypot(matrix.m41, matrix.m42) > 0.01;
-    },
-    null,
-    { timeout: 5000 },
-  );
-  const displaced = await moved.jsonValue();
-  check('off-target tap displaces a neighbouring surface', displaced);
-  check(
-    'opt-out subtree stays still',
-    await page.locator('#off').evaluate((el) => getComputedStyle(el).transform === 'none'),
-  );
-  check(
-    'far surface receives no impulse outside radius',
-    await page.locator('#far').evaluate((el) => getComputedStyle(el).transform === 'none'),
-  );
-  await advance(1800);
-  await page.waitForFunction(() => !document.querySelector('#left').getAnimations().length, null, {
-    timeout: 8000,
-  });
-  check(
-    'settling restores inline styles and releases layers',
-    await page
-      .locator('#left')
-      .evaluate(
-        (el) =>
-          getComputedStyle(el).transform === 'none' && !el.style.rotate && !el.style.willChange,
-      ),
-  );
   await page.mouse.move(160, 130);
   await advance(40);
   check(
@@ -192,7 +150,7 @@ try {
   await page.mouse.click(405, 160);
   await advance(150);
   check(
-    'reduced motion prevents waves',
+    'reduced motion keeps surfaces stationary',
     await page.locator('#left').evaluate((el) => getComputedStyle(el).transform === 'none'),
   );
   await page.evaluate(() => document.documentElement.classList.remove('reduce-motion'));
@@ -203,7 +161,7 @@ try {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.locator('input').fill('Text entry is intact');
   check(
-    'fields remain editable and do not launch waves',
+    'fields remain editable without moving surrounding content',
     (await page.locator('input').inputValue()) === 'Text entry is intact' &&
       (await page.locator('#right').evaluate((el) => getComputedStyle(el).transform === 'none')),
   );
@@ -223,86 +181,40 @@ try {
     el.style.cssText = 'left:510px;top:300px;transform:rotate(8deg);will-change:opacity';
     document.body.append(el);
   });
-  await advance(80);
-  await page.mouse.click(430, 345);
-  // Observe a window, not an instant: the neighbour oscillates, so one sample can land on a zero crossing. The surface
-  // must be animated at some point, move at its peak, and keep its OWN rotation intact at every sample.
-  const joined = await page.locator('#dynamic').evaluate(
-    (el) =>
-      new Promise((resolve) => {
-        let animated = false;
-        let peak = 0;
-        let rotationKept = true;
-        const t0 = performance.now();
-        const tick = () => {
-          const m = new window.DOMMatrix(getComputedStyle(el).transform);
-          animated ||= el.getAnimations().length > 0;
-          peak = Math.max(peak, Math.abs(m.m41));
-          rotationKept &&= Math.abs(m.m11 - Math.cos((8 * Math.PI) / 180)) < 0.003;
-          if (performance.now() - t0 < 500) setTimeout(tick, 16);
-          else resolve({ animated, peak, rotationKept });
-        };
-        tick();
-      }),
+  await stationary(
+    'new surfaces keep their own transforms during clicks',
+    () => page.mouse.click(430, 345),
+    ['#left', '#right', '#dynamic'],
   );
-  check(
-    'newly mounted surfaces join the field',
-    joined.animated && joined.peak > 0.01 && joined.rotationKept,
-  );
-  await advance(1900);
   check(
     'component transforms and layer hints are preserved',
     await page
       .locator('#dynamic')
-      .evaluate((el) => el.style.transform === 'rotate(8deg)' && el.style.willChange === 'opacity'),
-  );
-  await page.mouse.click(430, 345);
-  await page.evaluate(() => {
-    const el = document.querySelector('#dynamic');
-    window.detachedEffects = el.getAnimations();
-    el.remove();
-  });
-  await advance(40);
-  check(
-    'unmount cancels the detached surface effect',
-    await page.evaluate(
-      () =>
-        window.detachedEffects.length > 0 &&
-        window.detachedEffects.every((a) => a.playState === 'idle'),
-    ),
-  );
-  await page.mouse.move(400, 160);
-  await page.mouse.down();
-  await page.mouse.move(440, 190);
-  await advance(450);
-  check(
-    'dragging recovers smoothly to rest',
-    await page.locator('#left').evaluate((el) => getComputedStyle(el).transform === 'none'),
-  );
-  await page.mouse.up();
-  await page.mouse.click(405, 160);
-  await advance(120);
-  await page.evaluate(() => {
-    window.measureRetarget = true;
-  });
-  for (let i = 0; i < 6; i++) {
-    await page.mouse.click(405, 160);
-    await advance(35);
-  }
-  const worstJump = await page.evaluate(() => {
-    window.measureRetarget = false;
-    return Math.max(...window.poseJumps);
-  });
-  check('rapid retarget starts at the previous native animation pose', worstJump < 0.15);
-  await advance(2200);
-  check(
-    'overlapping impacts finish at the original pose',
-    await page
-      .locator('#left')
       .evaluate(
-        (el) => getComputedStyle(el).transform === 'none' && el.getAnimations().length === 0,
+        (el) =>
+          el.style.transform === 'rotate(8deg)' &&
+          el.style.willChange === 'opacity' &&
+          el.getAnimations().length === 0,
       ),
   );
+  await page.locator('#dynamic').hover();
+  await advance(40);
+  check(
+    'new surfaces still receive fallback cursor lighting',
+    (await page.locator('#dynamic .liquid-light').count()) === 1,
+  );
+  await page.locator('#dynamic').evaluate((el) => el.remove());
+  await advance(40);
+  check(
+    'unmount removes the detached cursor light',
+    (await page.locator('.liquid-light').count()) === 0,
+  );
+  await stationary('dragging does not move nearby surfaces', async () => {
+    await page.mouse.move(400, 160);
+    await page.mouse.down();
+    await page.mouse.move(440, 190);
+    await page.mouse.up();
+  });
   check('shared globe dielectric shader compiles', await page.evaluate(() => !!window.material));
   const before = await page.locator('canvas').screenshot();
   await page.evaluate(() => window.paint(0.16));
@@ -334,8 +246,7 @@ try {
   await phone.goto('https://rmh-glass.test/');
   await phone.addScriptTag({ content: result.outputFiles[0].text });
   await phone.touchscreen.tap(345, 160);
-  // The neighbour's motion is a damped oscillation: one sample at one instant can land on a zero crossing, so take the
-  // peak over the first half second rather than assume where the wave is at 160ms.
+  // Sample the whole response window so even a brief click-induced shake fails.
   const peak = await phone.locator('#left').evaluate(
     (el) =>
       new Promise((resolve) => {
@@ -351,7 +262,7 @@ try {
       }),
   );
   await phone.screenshot({ path: join(out, `${browserName}-touch.png`) });
-  check('touch tap excites a neighbouring surface', peak > 0.01);
+  check('touch taps never move neighbouring surfaces', peak === 0);
   check('touch creates no cursor light', (await phone.locator('.liquid-light').count()) === 0);
   await phone.evaluate(() => document.dispatchEvent(new window.Event('pointercancel')));
   await phone.waitForTimeout(500);

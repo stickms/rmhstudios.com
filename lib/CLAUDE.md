@@ -88,7 +88,7 @@ bundle only**. SSR/server builds get the real module.
   (the slab optics; one shared WebGL 2 context), `policy.ts` and `color.ts` (pure,
   unit-tested decisions), `scene.ts` + `scene-store.ts` (the page snapshot the rim
   refracts, built on `eversion/capture`). `liquid/runtime.ts` is the
-  translate-only neighbour push. `dough.ts` is the globe's soft-body field
+  fallback cursor light; clicks never push or bounce neighbouring surfaces. `dough.ts` is the globe's soft-body field
   (pure, unit-tested). Contract:
   [`docs/liquid-glass-system.md`](../docs/liquid-glass-system.md).
 - **Moderation/admin:** `moderation.server.ts`, `admin-audit.server.ts`,
