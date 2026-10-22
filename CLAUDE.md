@@ -18,7 +18,7 @@ and `lib/apps.ts` are the single source of truth for what exists.
 **TanStack Start + Vite 8 + React 19 + Nitro SSR.** This is **NOT Next.js**
 (some old docs/specs say otherwise — they are stale). TypeScript strict,
 Tailwind CSS v4, framer-motion, Zustand + React Query, PostgreSQL + Prisma 7
-(`@prisma/adapter-pg`), Better Auth (Discord/Google/GitHub + passkeys +
+(`@prisma/adapter-pg`), Better Auth (Discord/GitHub + passkeys +
 Stripe), Socket.io Node hubs, Go microservices built with Bazel, i18next (16
 locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 

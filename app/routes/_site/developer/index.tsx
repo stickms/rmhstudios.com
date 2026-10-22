@@ -7,6 +7,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { KeysManager } from '@/components/developer/KeysManager';
 import { RecipesManager } from '@/components/developer/RecipesManager';
 import { BadgeSnippets } from '@/components/developer/BadgeSnippets';
+import { AiPracticesLink } from '@/components/developer/AiPracticesLink';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
 
@@ -64,6 +65,8 @@ function DeveloperHome() {
             </span>
           </p>
         </section>
+
+        <AiPracticesLink />
 
         {isPending ? (
           <div className="flex justify-center py-20">

@@ -43,8 +43,8 @@ rounded-site shadow-site-sm` renders the same _box_ and none of the
   viewport (`lib/liquid/glass/policy.ts`), **zero** on repeated list items.
 - **Liquid material.** `pane`/`chrome`/`overlay` (and the app tier's `app-glass`)
   are drawn by `lib/liquid/glass/engine.ts`: a canvas appended as the host's LAST
-  child, painted behind its content (`z-index: -1` in an isolated stacking
-  context), transparent in the middle and refracting/lit at the rim. **There is no
+  child, painted behind its content (`z-index: -2` in an isolated stacking
+  context, under the eversion hover layer at -1), transparent in the middle and refracting/lit at the rim. **There is no
   `backdrop-filter` in any glass role, and you must not add one**: it is the one
   primitive engines disagree on, and it is what made glass look frosted instead of
   liquid. Floating glass (`chrome`, `overlay`) refracts a snapshot of the page; a

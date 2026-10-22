@@ -217,7 +217,9 @@ export function appRouteGround(pathname: string): { bg: string; dark: boolean } 
 export function paintDocumentGround(bg: string, dark: boolean | null): void {
   const html = document.documentElement;
   html.style.backgroundColor = bg;
-  document.body.style.backgroundColor = bg;
+  // The site tier's ground is the root's: a body fill would paint over the fixed aurora (z-index -1) that the glass
+  // refracts. App/game routes keep painting their own body.
+  document.body.style.backgroundColor = html.classList.contains('app-route') ? bg : '';
 
   if (dark === null) html.removeAttribute('data-app-dark');
   else html.setAttribute('data-app-dark', dark ? '1' : '0');

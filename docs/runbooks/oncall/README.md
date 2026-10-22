@@ -57,9 +57,9 @@ Threshold alarms over the metrics history (A08, A09, M01–M03, B02, B03) are de
 | [M03](M03.md) | 3 | LLM slow or failing |
 | [STATUS](status-incident.md) | 2 / 3 | An automatic status-page incident (component down / degraded) |
 | [D01](D01.md) | 2 | Deploy rollback **failed** |
-| [D02](D02.md) | 3 | Deploy auto-rolled back |
-| [D03](D03.md) | 3 | Deploy failed |
-| [D04](D04.md) | 3 | Deploy died without reporting |
+| [D02](D02.md) | 2 | Deploy auto-rolled back |
+| [D03](D03.md) | 2 | Deploy failed |
+| [D04](D04.md) | 2 | Deploy died without reporting |
 | [BACKUP](BACKUP.md) | 3 | A backup run failed |
 | [B01](B01.md) | 3 | Disk filling up (85%) |
 | [B02](B02.md) | 3 | Heap pressure |

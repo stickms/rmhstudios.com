@@ -104,6 +104,11 @@ try {
   await page.goto('https://rmh-glass-engine.test/');
   await page.addScriptTag({ content: bundle.outputFiles[0].text });
   const settle = (ms = 250) => page.evaluate((ms) => new Promise((r) => setTimeout(r, ms)), ms);
+  // Wait for the engine's first admission pass rather than a fixed delay: under software GL on a loaded machine 600 ms
+  // was sometimes not enough, and the first assertion below then failed for timing, not behaviour.
+  await page
+    .waitForSelector('#pane[data-liquid-canvas="on"]', { timeout: 15000 })
+    .catch(() => undefined);
   await settle(600);
 
   // ── Which surfaces become glass ──
@@ -131,10 +136,13 @@ try {
     };
   });
   check(
-    "the canvas is the host's last child, z-index -1, inert and hidden from assistive tech",
-    stack.last && stack.z === '-1' && stack.pe === 'none' && stack.aria === 'true',
+    "the canvas is the host's last child, z-index -2 (under the eversion hover layer at -1), inert and hidden from assistive tech",
+    stack.last && stack.z === '-2' && stack.pe === 'none' && stack.aria === 'true',
   );
-  check('the host isolates its stacking context so -1 stays inside it', stack.iso === 'isolate');
+  check(
+    'the host isolates its stacking context so the negative z-index stays inside it',
+    stack.iso === 'isolate',
+  );
   const hit = await page.evaluate(() => {
     const r = document.querySelector('#field').getBoundingClientRect();
     return document.elementFromPoint(r.left + 8, r.top + 8)?.id;

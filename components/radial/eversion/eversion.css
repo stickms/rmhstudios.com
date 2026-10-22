@@ -102,7 +102,7 @@
   height: 100%;
 }
 .radial-hub:is([data-phase='open'], [data-phase='everting']) .eversion-hold {
-  filter: blur(var(--hub-page-blur, 20px));
+  filter: blur(var(--hub-page-blur, 6px));
 }
 .radial-hub .eversion-hold-layer--focus .eversion-hold {
   filter: blur(0px);

@@ -4,6 +4,7 @@
   "chart-col-time": "Time",
   "chart-col-value": "Value",
   "chart-empty": "Not enough data in this range yet. A point is recorded every minute.",
+  "chart-empty-2": "No data for this metric yet. It appears a few minutes after the metric first sees traffic.",
   "chart-label": "{{title}}, latest {{value}}. Use the arrow keys to read earlier points.",
   "chart-latest": "Latest",
   "chart-table": "Show data",

@@ -48,8 +48,9 @@ export function MetricChart({ series, withDate }: { series: ChartSeries; withDat
       <div className="glass-fill rounded-site p-4">
         <h3 className="text-sm font-semibold text-site-text">{title}</h3>
         <p className="mt-6 mb-6 text-center text-sm text-site-text-muted">
-          {t('chart-empty', {
-            defaultValue: 'Not enough data in this range yet. A point is recorded every minute.',
+          {t('chart-empty-2', {
+            defaultValue:
+              'No data for this metric yet. It appears a few minutes after the metric first sees traffic.',
           })}
         </p>
       </div>
