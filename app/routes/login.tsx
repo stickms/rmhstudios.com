@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
 import { useState, useRef, useEffect } from 'react';
-import { DiscordIcon, GoogleIcon, GithubIcon } from '@/components/ui/brand-icons';
+import { DiscordIcon, GithubIcon } from '@/components/ui/brand-icons';
 import { Mail, Lock, User, Camera, Fingerprint, Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
@@ -55,7 +55,7 @@ function safeInternalPath(raw?: string): string {
 }
 
 /** Which action is currently in flight (drives per-button spinners + disabling). */
-type Pending = 'passkey' | 'discord' | 'google' | 'github' | 'email' | null;
+type Pending = 'passkey' | 'discord' | 'github' | 'email' | null;
 
 function LoginPage() {
   const { t } = useTranslation('pages');
@@ -185,7 +185,7 @@ function LoginPage() {
     }
   };
 
-  const handleSocial = (provider: 'discord' | 'google' | 'github') => async () => {
+  const handleSocial = (provider: 'discord' | 'github') => async () => {
     setPending(provider);
     setError(null);
     await authClient.signIn.social({ provider, callbackURL });
@@ -280,11 +280,6 @@ function LoginPage() {
       id: 'discord' as const,
       label: t('continue-with-discord', { defaultValue: 'Continue with Discord' }),
       icon: <DiscordIcon className="size-5" />,
-    },
-    {
-      id: 'google' as const,
-      label: t('continue-with-google', { defaultValue: 'Continue with Google' }),
-      icon: <GoogleIcon className="size-5" />,
     },
     {
       id: 'github' as const,
@@ -461,7 +456,7 @@ function LoginPage() {
 
           {/* Providers: a compact row of glass chips — brand glyphs keep full
               colour (they are content, not chrome). Labelled for assistive tech. */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {providers.map((p) => (
               <Button
                 key={p.id}
