@@ -309,7 +309,7 @@ export function AppearancePanel() {
  * with nothing tying the two together. Same reason the segmented buttons were
  * stretching to ~445px each.
  */
-function Section({
+export function Section({
   title,
   description,
   children,
@@ -331,7 +331,7 @@ function Section({
   );
 }
 
-function ToggleRow({
+export function ToggleRow({
   label,
   description,
   checked,

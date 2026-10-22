@@ -24,6 +24,7 @@ import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
 import { EversionRoot } from '@/components/radial/eversion/EversionRoot';
+import { GlobeCursorRoot } from '@/components/globe-cursor/GlobeCursorRoot';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { markDocumentHydrated, trackHistoryActions } from '@/components/ui/defer-on-navigate';
 import { markPageEnterComplete } from '@/lib/motion';
@@ -770,6 +771,7 @@ function RootComponent() {
       <NavigationProgress />
       <BackNavAnimation />
       <EversionRoot />
+      <GlobeCursorRoot />
       <TwemojiProvider>
         <Outlet />
       </TwemojiProvider>

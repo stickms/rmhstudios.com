@@ -3,6 +3,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { AppearancePanel } from '@/components/settings/AppearancePanel';
 import { AccessPrefsPanel } from '@/components/access/AccessPrefsPanel';
 import { GameAssistPanel } from '@/components/settings/GameAssistPanel';
+import { GlobeCursorPanel } from '@/components/settings/GlobeCursorPanel';
 
 export const Route = createFileRoute('/_site/settings/appearance')({
   head: () => ({
@@ -23,6 +24,7 @@ function AppearanceSettingsPage() {
     >
       <div className="space-y-4 px-4 pt-4 pb-12">
         <AppearancePanel />
+        <GlobeCursorPanel />
         {/* Game assists sit beside the site's own accessibility controls
             rather than on their own page: somebody looking for "make this
             usable" looks in one place, and the two halves of that answer —
