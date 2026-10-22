@@ -14,7 +14,14 @@ import { collectPerfOverview } from '../perf/admin.server';
 import { prisma } from '../prisma.server';
 import { getBoss } from '../jobs/boss.server';
 import { oncallClient, type OncallClient } from './client.server';
-import { Debouncer, evaluate, newMemory, type CheckInputs, type QueueFacts, type Transition } from './rules';
+import {
+  Debouncer,
+  evaluate,
+  newMemory,
+  type CheckInputs,
+  type QueueFacts,
+  type Transition,
+} from './rules';
 
 export const CHECK_INTERVAL_MS = 60_000;
 
@@ -39,7 +46,11 @@ async function queueFacts(): Promise<QueueFacts[] | null> {
   const boss = await getBoss(true);
   if (!boss) return null;
   const queues = await boss.getQueues();
-  return queues.map((q) => ({ name: q.name, failedCount: q.failedCount, readyCount: q.readyCount }));
+  return queues.map((q) => ({
+    name: q.name,
+    failedCount: q.failedCount,
+    readyCount: q.readyCount,
+  }));
 }
 
 async function outboxOldestPendingMs(now: number): Promise<number> {
@@ -75,7 +86,11 @@ async function deliver(client: OncallClient, debouncer: Debouncer, tr: Transitio
     });
   } catch (err) {
     debouncer.undo(tr); // retried on the next check
-    console.error('[oncall] alarm delivery failed:', Debouncer.key(c), (err as Error)?.message ?? err);
+    console.error(
+      '[oncall] alarm delivery failed:',
+      Debouncer.key(c),
+      (err as Error)?.message ?? err,
+    );
   }
 }
 
@@ -98,7 +113,9 @@ export function startOncallChecks(): () => void {
       const transitions = debouncer.step(evaluate(input, memory), input.now);
       for (const tr of transitions) await deliver(client, debouncer, tr);
       // Last, so a check that throws above doesn't count as alive.
-      await client.heartbeat('jobs').catch((err) => console.error('[oncall] heartbeat failed:', (err as Error)?.message));
+      await client
+        .heartbeat('jobs')
+        .catch((err) => console.error('[oncall] heartbeat failed:', (err as Error)?.message));
     } catch (err) {
       console.error('[oncall] check failed:', (err as Error)?.message ?? err);
     } finally {

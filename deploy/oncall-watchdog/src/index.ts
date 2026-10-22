@@ -22,7 +22,7 @@ import {
 } from './discord';
 import { Engine, validateInput, type AlarmRecord } from './engine';
 import type { DurableObjectStateLike, Env, ExecutionContextLike } from './env';
-import { checkHeartbeats, recordHeartbeat, runProbes } from './probes';
+import { HEARTBEATS, checkHeartbeats, recordHeartbeat, runProbes } from './probes';
 import { SIGNATURE_WINDOW_SECONDS, verifySignature } from './signing';
 
 const MAX_BODY_BYTES = 64 * 1024;
@@ -201,8 +201,18 @@ export class OncallState {
         const known = await recordHeartbeat(this.state.storage, this.engine, String(body.name), now);
         return known ? json({ ok: true }) : json({ error: 'unknown heartbeat' }, 404);
       }
-      case '/list':
-        return json({ alarms: await this.engine.list() });
+      case '/list': {
+        // Heartbeats alongside the alarms, for the admin dashboard: when each
+        // sender last checked in, and how long silence may last before it pages.
+        const heartbeats = await Promise.all(
+          Object.entries(HEARTBEATS).map(async ([name, def]) => ({
+            name,
+            maxAgeMs: def.maxAgeMs,
+            lastSeen: (await this.state.storage.get<number>(`hb:${name}`)) ?? null,
+          })),
+        );
+        return json({ now, alarms: await this.engine.list(), heartbeats });
+      }
       case '/ack':
       case '/esc': {
         const key = String(body.key);

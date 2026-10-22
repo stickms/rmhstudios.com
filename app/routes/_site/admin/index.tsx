@@ -16,6 +16,7 @@ import { AdminReadingLink } from '@/components/reading/admin/AdminReadingLink';
 import { InsightsLink } from '@/components/admin/InsightsLink';
 import { PerformanceLink } from '@/components/admin/PerformanceLink';
 import { DeepseekLink } from '@/components/admin/DeepseekLink';
+import { OncallLink } from '@/components/admin/OncallLink';
 
 export const Route = createFileRoute('/_site/admin/')({
   head: () => ({
@@ -169,6 +170,8 @@ function AdminDashboardPage() {
           <PerformanceLink />
 
           <DeepseekLink />
+
+          <OncallLink />
 
           <Link
             to="/admin/bots"
