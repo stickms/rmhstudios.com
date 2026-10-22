@@ -125,7 +125,11 @@ async function tournamentSlots(from: Date, to: Date): Promise<SlotDefinition[]> 
 /** Community events with a start inside the window. */
 async function eventSlots(from: Date, to: Date): Promise<SlotDefinition[]> {
   const rows = await prisma.communityEvent.findMany({
-    where: { startsAt: { gte: from, lte: to } },
+    // Public schedule: events of private communities are members-only.
+    where: {
+      startsAt: { gte: from, lte: to },
+      OR: [{ communityId: null }, { community: { isPrivate: false } }],
+    },
     orderBy: { startsAt: 'asc' },
     take: 100,
     select: { id: true, title: true, startsAt: true, endsAt: true },

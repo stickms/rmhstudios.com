@@ -52,7 +52,14 @@ import {
   createInvite,
   generateInviteCode,
 } from '@/lib/communities/invites.server';
-import { DENIED_COOLDOWN_MS, decideRequest, requestToJoin } from '@/lib/communities/join-requests.server';
+import {
+  CANCELLED_COOLDOWN_MS,
+  DENIED_COOLDOWN_MS,
+  cancelRequest,
+  decideRequest,
+  markRemoved,
+  requestToJoin,
+} from '@/lib/communities/join-requests.server';
 
 const COMMUNITY = { id: 'c1', slug: 's', name: 'Secret Club' };
 
@@ -182,6 +189,63 @@ describe('join requests', () => {
     // owner/moderators are told
     expect(h.notify).toHaveBeenCalledTimes(2);
     expect(h.notify.mock.calls[0][0]).toMatchObject({ entityType: 'community-join-request', type: 'SYSTEM' });
+  });
+});
+
+describe('removal and cancellation are remembered', () => {
+  it('a removed member holding a live invite is refused (generic invalid), nothing consumed', async () => {
+    h.request.findFirst.mockResolvedValue({ id: 1n }); // a REMOVED row
+    expect(await acceptInvite('c1', 'u1', 'LIVE-MULTI-USE-CODE')).toEqual({ ok: false, reason: 'invalid' });
+    expect(h.request.findFirst.mock.calls[0][0].where).toMatchObject({ status: 'REMOVED', userId: 'u1' });
+    expect(h.executeRaw).not.toHaveBeenCalled();
+    expect(h.member.createMany).not.toHaveBeenCalled();
+  });
+
+  it('markRemoved upserts a REMOVED row carrying the deciding moderator', async () => {
+    await markRemoved(
+      { communityJoinRequest: h.request } as unknown as Parameters<typeof markRemoved>[0],
+      'c1',
+      'u1',
+      'mod',
+    );
+    const arg = h.request.upsert.mock.calls[0][0];
+    expect(arg.create).toMatchObject({ status: 'REMOVED', decidedById: 'mod' });
+    expect(arg.update).toMatchObject({ status: 'REMOVED', decidedById: 'mod' });
+    expect(arg.create.decidedAt).toBeInstanceOf(Date);
+  });
+
+  it('a removed user waits out the cooldown before asking again; no moderator is notified', async () => {
+    h.request.findUnique.mockResolvedValue({
+      status: 'REMOVED',
+      decidedAt: new Date(Date.now() - DENIED_COOLDOWN_MS / 2),
+    });
+    expect(await requestToJoin(COMMUNITY, 'u', 'U', null)).toMatchObject({ ok: false, reason: 'cooldown' });
+    expect(h.request.upsert).not.toHaveBeenCalled();
+    expect(h.notify).not.toHaveBeenCalled();
+  });
+
+  it('cancel keeps a CANCELLED row, and a quick re-request is refused without notifying moderators', async () => {
+    h.request.updateMany.mockResolvedValue({ count: 1 });
+    await cancelRequest('c1', 'u');
+    expect(h.request.deleteMany).not.toHaveBeenCalled();
+    expect(h.request.updateMany.mock.calls[0][0]).toMatchObject({
+      where: { status: 'PENDING' },
+      data: { status: 'CANCELLED' },
+    });
+
+    h.request.findUnique.mockResolvedValue({ status: 'CANCELLED', decidedAt: new Date() });
+    expect(await requestToJoin(COMMUNITY, 'u', 'U', null)).toMatchObject({ ok: false, reason: 'cooldown' });
+    expect(h.request.upsert).not.toHaveBeenCalled();
+    expect(h.notify).not.toHaveBeenCalled();
+
+    // after the short cooldown a new request goes through
+    h.request.findUnique.mockResolvedValue({
+      status: 'CANCELLED',
+      decidedAt: new Date(Date.now() - CANCELLED_COOLDOWN_MS - 1000),
+    });
+    h.member.findMany.mockResolvedValue([{ userId: 'mod1' }]);
+    expect(await requestToJoin(COMMUNITY, 'u', 'U', null)).toEqual({ ok: true, status: 'PENDING' });
+    expect(h.notify).toHaveBeenCalledTimes(1);
   });
 });
 

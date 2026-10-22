@@ -6189,6 +6189,7 @@ model CommunityInvite {
   createdBy User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
   @@index([communityId])
+  @@index([createdById])
   @@map("community_invite")
 }
 
@@ -6196,6 +6197,12 @@ enum CommunityJoinRequestStatus {
   PENDING
   APPROVED
   DENIED
+  // A moderator removed the member: the row is the marker that stops an invite
+  // link or a request from putting them straight back (cooldown, then request).
+  REMOVED
+  // The requester withdrew: kept (rather than deleted) so cancel + re-request
+  // cannot re-notify every moderator on demand (short cooldown).
+  CANCELLED
 }
 
 // A request to join a private community, decided by its owner or a moderator.
@@ -6215,7 +6222,9 @@ model CommunityJoinRequest {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([communityId, userId])
-  @@index([communityId, status, createdAt(sort: Desc)])
+  // Matches the pending list (`WHERE communityId, status ORDER BY id`).
+  @@index([communityId, status, id])
+  @@index([userId])
   @@map("community_join_request")
 }
 

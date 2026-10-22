@@ -10,7 +10,7 @@ import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 
 export type InvitePreview =
   | { state: 'invalid' }
-  /** Already inside (or the community is open): nothing to accept. */
+  /** A signed-in member: nothing to accept. */
   | { state: 'member'; slug: string }
   | { state: 'valid'; community: CommunityDetail };
 
@@ -29,7 +29,12 @@ export async function getInvitePreview(
 
   const community = await getCommunity(slug, viewerId);
   if (!community) return { state: 'invalid' };
-  if (!community.locked) return { state: 'member', slug: community.slug };
+  if (!community.locked) {
+    // Never tell a non-member of a public community "you're already in": only
+    // someone who actually belongs sees that. Everyone else gets the generic
+    // invalid state (the invite page is for private communities).
+    return community.joined ? { state: 'member', slug: community.slug } : { state: 'invalid' };
+  }
   if (!(await isInviteUsable(community.id, code))) return { state: 'invalid' };
   return { state: 'valid', community };
 }

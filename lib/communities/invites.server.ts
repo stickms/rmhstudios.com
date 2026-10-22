@@ -158,6 +158,15 @@ export async function acceptInvite(
   });
   if (existing) return { ok: true, alreadyMember: true };
 
+  // A member a moderator removed does not walk back in on a live link (a
+  // multi-use code can outlive the removal by months); they ask again instead.
+  // Same generic result as any other unusable code.
+  const removed = await prisma.communityJoinRequest.findFirst({
+    where: { communityId, userId, status: 'REMOVED' },
+    select: { id: true },
+  });
+  if (removed) return { ok: false, reason: 'invalid' };
+
   try {
     return await prisma.$transaction(async (tx) => {
       // Validate AND consume in one statement; the row lock this takes is what

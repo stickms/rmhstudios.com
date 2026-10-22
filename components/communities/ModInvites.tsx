@@ -20,6 +20,9 @@ import type { InviteDTO } from '@/lib/communities/invites.server';
 /** Expiry choices, in days; `''` = never. Mirrors INVITE_LIMITS.maxExpiryDays (90). */
 const EXPIRY_OPTIONS = ['1', '7', '30', '90'] as const;
 
+/** Mirrors INVITE_LIMITS.maxUsesCap (1000) — invites.server.ts is server-only, so it can't be imported here. */
+const MAX_USES_CAP = 1000;
+
 export function ModInvites({ slug }: { slug: string }) {
   const { t } = useTranslation('f-communities-plus');
   const confirm = useConfirm();
@@ -41,7 +44,7 @@ export function ModInvites({ slug }: { slug: string }) {
     setBusy(true);
     const uses = Number.parseInt(maxUses, 10);
     const res = await plusFetch<{ invite: InviteDTO }>(communityApi(slug, '/invites'), 'POST', {
-      maxUses: Number.isFinite(uses) && uses > 0 ? uses : null,
+      maxUses: Number.isFinite(uses) && uses > 0 ? Math.min(uses, MAX_USES_CAP) : null,
       expiresInDays: expiry ? Number.parseInt(expiry, 10) : null,
     });
     setBusy(false);
@@ -95,7 +98,11 @@ export function ModInvites({ slug }: { slug: string }) {
             value={maxUses}
             maxLength={4}
             className="w-32"
-            onChange={(e) => setMaxUses(e.target.value.replace(/\D/g, ''))}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, '');
+              // Clamp as typed so the field can never hold a value the server would 400.
+              setMaxUses(digits && Number(digits) > MAX_USES_CAP ? String(MAX_USES_CAP) : digits);
+            }}
             placeholder={t('invite-unlimited', { defaultValue: 'Unlimited' })}
           />
         </div>

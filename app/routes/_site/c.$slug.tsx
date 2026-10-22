@@ -25,10 +25,9 @@ const fetchCommunityPage = createServerFn({ method: 'GET' })
     }): Promise<{ community: CommunityDetail | null; feed: CommunityFeedResult | null }> => {
       const session = await getRequestSession();
       const viewerId = session?.user?.id ?? null;
-      const [community, feed] = await Promise.all([
-        getCommunity(slug, viewerId),
-        getCommunityFeed(slug, viewerId),
-      ]);
+      const community = await getCommunity(slug, viewerId);
+      // A locked (private, non-member) viewer gets metadata only: no feed query.
+      const feed = community?.locked ? null : await getCommunityFeed(slug, viewerId);
       return { community, feed };
     },
   );
