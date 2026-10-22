@@ -55,8 +55,13 @@ import { Route } from '@/app/routes/api/ai/ask-feed';
 function expectCommunityPredicate(where: Record<string, unknown>, viewerId: string | null) {
   // Not the blanket "no community at all" filter ...
   expect(where.communityId).toBeUndefined();
-  // ... but the shared members-only rule.
-  expect(where.community).toEqual(communityVisibleWhere(viewerId).community);
+  // ... but the members-only rule, spelled out here so a regression in the shared
+  // helper (e.g. dropping the membership clause) fails instead of agreeing with itself.
+  const expected = viewerId
+    ? { isNot: { isPrivate: true, members: { none: { userId: viewerId } } } }
+    : { isNot: { isPrivate: true } };
+  expect(where.community).toEqual(expected);
+  expect(communityVisibleWhere(viewerId).community).toEqual(expected);
 }
 
 beforeEach(() => {
