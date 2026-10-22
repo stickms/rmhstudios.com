@@ -10,6 +10,17 @@ rest of the site
 through the shared `--site-*` design tokens (retuned to high-contrast monochrome
 in `app/globals.css`).
 
+## Current material contract
+
+The October 21 liquid-glass replacement is documented in
+[`docs/liquid-glass-system.md`](../../docs/liquid-glass-system.md). It supersedes
+historical lens/sheen and blanket cursor-retirement notes below. The scene
+backdrop stays still; bounded surface-local lighting and nearby tap waves use
+one document runtime. The navigator now has an independent dielectric coat and
+a shared local contact indentation for cage/pins, with CSS and preference
+fallbacks. Historical compositor measurements still explain the blur budgets;
+they do not validate the replacement on native hardware.
+
 ## Files
 
 | File                 | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |

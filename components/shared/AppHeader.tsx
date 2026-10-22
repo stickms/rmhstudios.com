@@ -78,6 +78,7 @@ export default function AppHeader({
 
   return (
     <header
+      data-liquid-surface
       className={`grid h-16 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 sm:px-4 ${
         bordered ? 'border-b border-(--app-border)' : ''
       }`}

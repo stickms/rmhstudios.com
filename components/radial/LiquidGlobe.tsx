@@ -15,7 +15,6 @@ import {
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useThemeStore } from '@/stores/themeStore';
 import { vibrate } from '@/lib/shared/platform';
 import { prefersLessData } from '@/lib/viewport-prefetch';
 import {
@@ -36,6 +35,8 @@ import {
 } from '@/lib/fluid';
 import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
 import { SoftBody } from '@/lib/soft-body';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { createGlobeMaterial, type GlobeMaterialFrame } from '@/lib/liquid/globe-material';
 import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
 
@@ -468,8 +469,8 @@ export function LiquidGlobe({
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const router = useRouter();
-  // The site's own Reduce motion switch, never the OS query (2026-10-21: the hub's motion plays by default).
-  const reduced = useThemeStore((s) => s.reduceMotion);
+  // Honour both the account preference and the OS motion setting.
+  const reduced = useReducedMotion();
 
   const nodes = useMemo(() => place(items), [items]);
 
@@ -635,6 +636,8 @@ export function LiquidGlobe({
   const everting = useRef(false);
   const nextEvertPulse = useRef(0);
   const glassRef = useRef<HTMLSpanElement | null>(null);
+  const contactRef = useRef<HTMLSpanElement | null>(null);
+  const materialCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const paintedGlass = useRef('');
 
   // Only these three reach the render: the caption, the ring's state classes.
@@ -895,6 +898,21 @@ export function LiquidGlobe({
      snapping frame is a dozen sin/cos; painting stale is a visible bug. */
   useEffect(() => {
     const count = nodes.length;
+    const material =
+      !reduced &&
+      !document.documentElement.matches('.perf-lite,.reduce-transparency,.style-high-contrast') &&
+      materialCanvasRef.current
+        ? createGlobeMaterial(materialCanvasRef.current)
+        : null;
+    const materialFrame: GlobeMaterialFrame = {
+      radius: 1,
+      dpr: 1,
+      grabX: 0,
+      grabY: 0,
+      pinch: 0,
+      stretchX: 1,
+      stretchY: 1,
+    };
     // Scratch, allocated once per node-set: the loop must not allocate.
     const px = new Float64Array(count);
     const py = new Float64Array(count);
@@ -1165,7 +1183,7 @@ export function LiquidGlobe({
           let sx = x1 * k;
           let sy2 = y2 * k;
           if (soft) {
-            jelly.deform(sx, sy2, DEFORM_OUT);
+            jelly.deform(sx, sy2, DEFORM_OUT, z2);
             sx = DEFORM_OUT[0]!;
             sy2 = DEFORM_OUT[1]!;
           }
@@ -1266,7 +1284,7 @@ export function LiquidGlobe({
             let cx = x1 * k;
             let cy2 = y2 * k;
             if (soft) {
-              jelly.deform(cx, cy2, DEFORM_OUT);
+              jelly.deform(cx, cy2, DEFORM_OUT, z2);
               cx = DEFORM_OUT[0]!;
               cy2 = DEFORM_OUT[1]!;
             }
@@ -1331,6 +1349,23 @@ export function LiquidGlobe({
         paintedGlass.current = glass;
         glassRef.current.style.transform = glass === 'none' ? '' : glass;
       }
+      // A small shaded contact footprint explains the depth change even at the
+      // centre of the disc, where a symmetric indentation has no 2D translation.
+      // Only a leaf transform/opacity changes; never the body's gradient centre.
+      if (contactRef.current) {
+        const depth = Math.min(1, Math.abs(jelly.pinch) / 0.16);
+        contactRef.current.style.opacity = soft ? depth.toFixed(3) : '0';
+        if (soft)
+          contactRef.current.style.transform = `translate3d(${(jelly.gx * R).toFixed(2)}px,${(jelly.gy * R).toFixed(2)}px,0) scale(${(0.85 + depth * 0.15).toFixed(3)})`;
+      }
+      if (material) {
+        materialFrame.radius = R;
+        materialFrame.dpr = window.devicePixelRatio || 1;
+        materialFrame.grabX = jelly.gx;
+        materialFrame.grabY = jelly.gy;
+        materialFrame.pinch = jelly.pinch;
+        material.draw(materialFrame);
+      }
 
       for (let rank = 0; rank < count; rank++) {
         const i = order[rank];
@@ -1353,7 +1388,7 @@ export function LiquidGlobe({
         let sx = px[i] * k * swell;
         let sy = py[i] * k * swell;
         if (soft) {
-          jelly.deform(sx, sy, DEFORM_OUT);
+          jelly.deform(sx, sy, DEFORM_OUT, z);
           sx = DEFORM_OUT[0]!;
           sy = DEFORM_OUT[1]!;
         }
@@ -1660,7 +1695,10 @@ export function LiquidGlobe({
     };
 
     raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      material?.dispose();
+    };
   }, [nodes, reduced, jelly]);
 
   /* ── Pointer ──────────────────────────────────────────────────────────────
@@ -2158,7 +2196,10 @@ export function LiquidGlobe({
         {/* The glass body itself: a flat disc of shading over the cage, so the
             wireframe reads as structure suspended INSIDE a liquid ball rather
             than as a drawing on top of one. */}
-        <span ref={glassRef} className="radial-globe__glass" aria-hidden />
+        <span ref={glassRef} className="radial-globe__glass" aria-hidden>
+          <canvas ref={materialCanvasRef} className="radial-globe__material" />
+          <span ref={contactRef} className="radial-globe__contact" />
+        </span>
 
         {/* PINS — projected here rather than placed in the 3D cage, so their type
             stays flat, crisp and billboarded instead of skewing with the sphere. */}

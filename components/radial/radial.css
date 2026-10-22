@@ -316,6 +316,8 @@ body:has(.radial-shell) .call-banner {
      them across the RMH wordmark. Translucency needs the blur to read as glass. */
   background: var(--site-bg);
   border-bottom: 1px solid var(--site-border);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .radial-topbar__brand {
   display: inline-flex;
@@ -770,8 +772,6 @@ body:has(.radial-shell) .call-banner {
   padding: var(--rad-4);
   border-radius: var(--site-radius, 22px);
   border: var(--site-border-width, 1px) solid var(--site-border);
-  background: var(--site-glass-tint, var(--site-surface));
-  box-shadow: var(--site-shadow-sm, none);
 }
 .rad-live__card h2 {
   display: flex;
@@ -1576,26 +1576,69 @@ html.ios-webkit .radial-hub__veil {
   inset: 0;
   border-radius: 50%;
   pointer-events: none;
+  overflow: hidden;
   /* Liquid Glass, held still: a specular bloom up-left, a thickening toward the
      limb where a sphere's glass is deepest, and a bright rim where it turns away.
      Every stop is mixed from the theme's own ink, so it resolves on a light theme
      and a dark one without a second set of values. */
-  background:
-    radial-gradient(
-      68% 68% at 30% 26%,
-      color-mix(in srgb, var(--site-text) 9%, transparent) 0%,
-      transparent 62%
-    ),
-    radial-gradient(
-      circle closest-side at 50% 50%,
-      transparent 52%,
-      color-mix(in srgb, var(--site-text) 8%, transparent) 88%,
-      color-mix(in srgb, var(--site-text) 17%, transparent) 100%
-    );
+  background: radial-gradient(
+    circle closest-side,
+    transparent 62%,
+    color-mix(in srgb, var(--site-text) 12%, transparent)
+  );
   box-shadow:
     inset 0 0 0 var(--site-border-width, 1px) var(--site-border),
-    inset 0 -14% 26% -18% color-mix(in srgb, var(--site-text) 16%, transparent),
+    inset 0 -20px 36px -24px color-mix(in srgb, var(--site-text) 16%, transparent),
     0 30px 70px -34px rgba(0, 0, 0, 0.5);
+}
+.radial-globe__material {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+html:is(.reduce-transparency, .style-high-contrast, .perf-lite) .radial-globe__material {
+  display: none;
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  .radial-globe__material {
+    display: none;
+  }
+}
+.radial-globe__contact {
+  position: absolute;
+  left: 32%;
+  top: 32%;
+  width: 36%;
+  height: 36%;
+  border-radius: 50%;
+  opacity: 0;
+  background:
+    radial-gradient(
+      ellipse at 52% 58%,
+      color-mix(in srgb, var(--site-text) 15%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse at 45% 38%,
+      transparent 42%,
+      color-mix(in srgb, var(--site-glass-light) 55%, transparent) 60%,
+      transparent 74%
+    );
+  pointer-events: none;
+}
+html.reduce-motion .radial-globe__contact,
+html.reduce-transparency .radial-globe__contact,
+.style-high-contrast .radial-globe__contact {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce),
+  (prefers-reduced-transparency: reduce),
+  (forced-colors: active) {
+  .radial-globe__contact {
+    display: none;
+  }
 }
 /* The travelling highlight — the one part of the material that moves by itself.
    Transform-only on a small element, so it composites; there is deliberately no
@@ -2374,9 +2417,7 @@ html.ios-webkit .radial-hub__veil {
   /* L1 material (see globals.css §glass): the feed is the most-repeated surface
      on the site, so it takes the cheap tier — tint + rim, no backdrop blur —
      and lets the ring backdrop read through. */
-  background: var(--site-glass-tint, var(--site-surface));
   border: var(--site-border-width, 1px) solid var(--site-border);
-  box-shadow: var(--site-shadow);
   transition:
     transform 0.2s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
     border-color 0.2s ease;

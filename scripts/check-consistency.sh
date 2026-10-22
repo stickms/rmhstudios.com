@@ -263,11 +263,11 @@ review_site "Hex colour literal" \
   '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]([^0-9a-fA-F]|$)' \
   'Site UI reads colour from --site-* tokens; a fixed-palette domain gets its own scoped variable group.'
 
-# Site tier only: a game legitimately reads the pointer as GAMEPLAY input
-# (mouse-look, aiming). What was retired is pointer-position styling on the site.
-review_site "Pointer-position effect (retired 2026-08-01, §5.1.1)" \
+# Site tier: decorative effects belong to the shared bounded material runtime;
+# games and gesture hooks retain their own input semantics.
+review_site "Pointer-position effect — verify shared liquid runtime ownership" \
   "(pointermove|mousemove)" \
-  'Nothing on a site page reacts to pointer position. Hover is a state, never a coordinate. (Gesture drags via hooks/useFluidDrag are the sanctioned exception.)'
+  'Decorative light/waves belong to lib/liquid/runtime.ts (docs/liquid-glass-system.md). No per-card listeners, animated gradient centres or inherited root writes. Gesture/gameplay input remains local.'
 
 review "Per-frame write to a root custom property" \
   '^(components|app|hooks|lib)/.*\.tsx?$' \

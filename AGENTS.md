@@ -21,8 +21,9 @@
   class by role** (`.glass-fill` / `.glass-pane` / `.glass-chrome` /
   `.glass-overlay` / `.glass-inset`) rather than a hand-rolled equivalent box;
   use `components/ui/` primitives and `components/feed/PageLayout.tsx`.
-  **Nothing tracks the cursor** (retired 2026-08-01) and nothing writes a
-  custom property to `<html>` per frame. Full-screen apps use the parallel
+  **Liquid interaction:** use the bounded shared runtime in `lib/liquid/runtime.ts`
+  for cursor lighting and nearby tap waves; no component-level pointer loops
+  or animated custom properties on `<html>`. See `docs/liquid-glass-system.md`. Full-screen apps use the parallel
   `--app-*` contract (`components/shared/app-theme.css` + `AppShell`). The
   statement of the language is `design.md` at the root; read
   `docs/design-language.md` §0 before a UI commit; checklist in

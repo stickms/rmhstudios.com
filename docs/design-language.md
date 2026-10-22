@@ -26,17 +26,12 @@ architecture. Two ideas, one language:
   on any tier, so a page at rest goes idle (§5.5 Living backdrop;
   `lib/__tests__/static-backdrop.test.ts`). Mobile-first, with a
   strict **high-contrast monochrome** palette.
-- **Avant-garde glass.** The material is Apple's Liquid Glass used
-  _theatrically_, not literally: physically-plausible layered translucent glass
-  with **live optics** — an always-on specular rim glint lit by a static scene
-  sun, lens-model edge refraction (with an optional chromatic **prism** on one
-  flagship surface), a two-layer aurora canvas, micro-noise, and liquid sheens
-  that sweep once on arrival or on hover — deployed for signature
-  radial moments (the menu is an **expanding circular veil** growing from the
-  centre, not a drawn disc, with a glass sphere suspended in it). It is
-  expressed as an **elevation system of explicit CSS classes** (`.glass-fill` /
-  `.glass-pane` / `.glass-chrome` / `.glass-overlay` / `.glass-inset`, plus the
-  modifiers in §5.1) placed _on_ components.
+- **Avant-garde glass.** A shared material language of translucent tint,
+  directional rim and clear coat. Singular panes/chrome/overlays use native
+  backdrop frost; repeated cards use a cheaper tint/rim tier. The public role
+  classes are `.glass-fill`, `.glass-pane`, `.glass-chrome`, `.glass-overlay`
+  and `.glass-inset`. Nearby tap waves and cursor lighting are owned by one
+  bounded document runtime; the globe adds a dielectric coat and contact dent.
 
 **Everything rests on one contract:** a single set of CSS custom properties
 (`--site-*`) that every theme re-defines. Components never hardcode colors,
@@ -44,36 +39,22 @@ radii, fonts, or shadows — they consume the contract through Tailwind utilitie
 so any theme (and any accent preset layered on top) restyles the entire site
 without a single component change.
 
-> **What ships today — read this first.** Both layers are live. The **radial**
-> layer (shell, hub, liquid globe, wheel feed) ships in
-> [`components/radial/`](../components/radial/README.md), and the **Liquid Glass
-> material is rendered on top of it**: the radial shell no longer demotes the
-> glass classes to flat cards, the aurora canvas paints behind everything, and surfaces are translucent by token (`--site-surface` is a tint,
-> not paper) so both the `.glass-*` tiers and the many pages that simply paint
-> `bg-site-surface` sample the same scene. The elevation tiers, rim glint (on L1
-> as well as L2+), frosted edge bevel and travelling sheen are all on. The
-> navigation globe **ripples when you poke it**.
+> **Current implementation (2026-10-21).** The radial shell and navigator live
+> in [`components/radial/`](../components/radial/README.md). Material rendering is
+> `app/liquid-glass.css`, with an app-token adapter in `app-theme.css` and shared
+> input in `lib/liquid/runtime.ts`.
 >
-> Two things are **not** live, and both are deliberate:
+> [`liquid-glass-system.md`](liquid-glass-system.md) supersedes the historical
+> lens, sheen and blanket cursor-retirement implementation notes below. The old
+> SVG lens filters and `lib/glass-lens.ts` were removed. Historical modifier names
+> are compatibility aliases; they do not restore the old optics. Ordinary HTML
+> uses native frost and an approximate clear coat. The independent globe coat
+> models dielectric lighting; eversion refracts existing captured page textures.
+> The contract documents optical limits, preference fallbacks and finite motion.
 >
-> - **Nothing tracks the cursor** (§5.1.1, 2026-08-01). The hovered-glass
->   hotspot, the aurora's pointer parallax, the ring backdrop's, the per-card
->   sheens and pointer tilts, and the scene-light hook that fed them are all
->   deleted. The glass answers a **static sun**; hover is a state change, not a
->   coordinate. If a doc, a comment or a code path still implies otherwise, it
->   is stale.
-> - **The SVG displacement lens is parked** (`url(#glass-lens)`, §5.1
->   `.glass-refract`) — current Chromium composites the displacement map into
->   the bevel instead of bending the backdrop through it, so refract surfaces
->   keep the frosted edge band (and the prism keeps its static chromatic rim)
->   without the bend. The filters and `lib/glass-lens.ts` still ship; re-enabling
->   means restoring the `@supports` upgrades in `app/globals.css` and giving
->   `initGlassLens()` a caller (its old one, `useGlassLight`, is gone).
->
-> Also deleted, and worth knowing so you don't go looking for it: the **GL/WebGPU
-> shader tier** (`lib/liquid-gl/`, ~2,240 lines) whose `initLiquidGL()` never had
-> a caller. `liquid-morph` is the SVG-metaball path it always
-> actually ran; comments there that mention a "shader body" are historical.
+> The older unused `lib/liquid-gl/` tier also remains deleted; `liquid-morph`
+> is the SVG-metaball path. Historical performance findings below still explain
+> why viewport blur, root writes and blanket capture loops must not return.
 
 **Current companions:** [radial UI + the globe](../components/radial/README.md) ·
 [the per-page checklist](./page-consistency.md) ·
@@ -363,7 +344,7 @@ Persisted-but-unknown ids (a retired decorative theme, or the old `liquid-glass`
 id) self-heal to `default` during hydration.
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
-`GlassFilter` — the v2 lens-filter host mounted globally in `__root.tsx`) with a
+`GlassFilter` — the tab-capsule merge host, with no optical lenses) with a
 design-lab reference at `/liquid-glass`. A **Glass clarity** slider (Settings →
 Appearance, §5.46) tunes how much scene shows through in five stops
 (`0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear`): stop 0 is the opaque
