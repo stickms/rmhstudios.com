@@ -44,6 +44,146 @@ production uses — the `supervisor` (background workers), `status`, and
 `assets`. The Node hubs are the realtime tier. Recover the deleted topology from
 git history (tag `pre-rewrite-go-realtime`) if it is ever revived.
 
+### Diagrams
+
+Rendered by GitHub and by the docs site (`sphinxcontrib-mermaid`). Dashed edges
+are optional or dormant paths (`redis-state`, `pgbouncer`, direct-to-R2 media,
+path-filtered workflows). Keep these in step with `docker-compose.yml`,
+`deploy.sh` and `.github/workflows/` — when they disagree, the files win.
+
+**Runtime — what serves a request**
+
+```mermaid
+flowchart LR
+  subgraph Clients
+    B["Browser / PWA<br/>React 19 + TanStack"]
+    API3P["3rd-party apps<br/>(Bearer API keys)"]
+    DACT["Discord Activity"]
+  end
+
+  subgraph Cloudflare["Cloudflare (TLS, CDN, DNS)"]
+    CF["Proxy + cache"]
+    R2[("R2 object storage<br/>media · library · models")]
+  end
+
+  subgraph VPS["Oracle ARM VPS — Docker Compose (all ports bound to 127.0.0.1)"]
+    AP["Apache :80<br/>only front door · CSP/headers"]
+
+    subgraph Node["Node tier"]
+      WEB["web — Nitro SSR<br/>pages + API routes<br/>Better Auth · defineHandler<br/>:7005 ⇄ :7015 blue/green"]
+      SOCK["socket :7001<br/>games + RMHMusic"]
+      BOX["rmhbox :7676<br/>party games"]
+      TUBE["rmhtube :7003<br/>watch-together"]
+      JOBS["jobs<br/>pg-boss queues"]
+      LAD["ladder-worker<br/>cron"]
+      HOM["homes-worker<br/>cron"]
+    end
+
+    subgraph Go["Go tier (Bazel)"]
+      SUP["supervisor :9090<br/>discord-bot · recap · doctrine<br/>vibe · bot-worker · streak-saver"]
+      STAT["status :7008<br/>uptime dashboard"]
+      ASSET["assets :7007<br/>range-aware R2 streaming"]
+    end
+
+    subgraph Data["Data plane"]
+      RED[("redis<br/>LRU cache")]
+      REDS[("redis-state<br/>durable · dormant")]
+      PGB["pgbouncer<br/>opt-in · dormant"]
+    end
+
+  end
+
+  PG[("PostgreSQL on host<br/>Prisma 7 · pgvector")]
+
+  subgraph Ext["External services"]
+    STRIPE["Stripe<br/>memberships"]
+    OAUTH["OAuth: Discord · Google · GitHub"]
+    AI["AI: Anthropic · DeepSeek · Kimi<br/>embeddings"]
+    MISC["Spotify · Klipy GIFs · web push · email"]
+    DISC["Discord<br/>deploy embeds · bot · #rmh-oncall"]
+  end
+
+  WD["On-call watchdog<br/>Cloudflare Worker (off-box)<br/>probes every minute · pages @oncall"]
+
+  B -->|HTTPS| CF
+  API3P -->|/api/v1| CF
+  DACT --> CF
+  CF -->|HTTP| AP
+  B -.->|static media| R2
+
+  AP -->|"/"| WEB
+  AP -->|"/socket/"| SOCK
+  AP -->|"/rmhbox-ws/"| BOX
+  AP -->|"/rmhtube-ws/"| TUBE
+
+  WEB --> PG
+  WEB --> RED
+  WEB -.-> REDS
+  WEB -.-> PGB
+  PGB -.-> PG
+  SOCK --> PG
+  BOX --> PG
+  TUBE --> PG
+  JOBS --> PG
+  LAD --> PG
+  HOM --> PG
+  SUP --> PG
+  ASSET --> R2
+  WEB --> R2
+
+  WEB --> STRIPE
+  WEB --> OAUTH
+  WEB --> AI
+  WEB --> MISC
+  SUP --> DISC
+  SUP --> AI
+  STAT -->|probes| AP
+
+  WD -->|"probes / and /api/ready"| CF
+  WD --> DISC
+  VPS -.->|"signed alerts + heartbeats"| WD
+```
+
+**Delivery — push to production**
+
+```mermaid
+flowchart LR
+  DEV["Developer / agent<br/>pnpm check:consistency<br/>(pre-commit gate)"] -->|PR| PR
+
+  subgraph PRCI["PR checks — web-ci.yml (parallel, ~2 min)"]
+    PR["Pull request"] --> TC["typecheck + lint<br/>+ docs freshness"]
+    PR --> T1["test (1/2)"]
+    PR --> T2["test (2/2)"]
+    PR --> BLD["build<br/>+ bundle budgets"]
+    PR --> AUD["audit"]
+    PR --> INT["integration<br/>built app + Postgres"]
+    PR --> REV["senior-review<br/>(LLM)"]
+    PR -.->|path-filtered| OTHER["go · prisma · compose<br/>· epic workflows"]
+  end
+
+  PRCI -->|merge| MAIN["main"]
+
+  subgraph DEPLOY["deploy.yml (parallel)"]
+    MAIN --> CI["ci: typecheck · lint · unit"]
+    MAIN --> INT2["integration (merged commit)"]
+    MAIN --> IMG["build: 2 ARM64 images<br/>buildx bake → GHCR"]
+    IMG -.->|live CI checklist| DISC2["Discord embed"]
+    CI --> GATE{"deploy-gate<br/>all green?"}
+    INT2 --> GATE
+    IMG --> GATE
+  end
+
+  GATE -->|no| BLOCK["🔴 BLOCKED<br/>nothing ships"]
+  GATE -->|"yes: HMAC webhook"| VPSD
+
+  subgraph VPSD["VPS — deploy.sh (flock-serialized)"]
+    F["fetch + reset<br/>(self-restart if changed)"] --> P["pull images"] --> M["prisma migrate deploy"] --> S["start services"] --> SW["blue/green web swap"] --> BK["smoke test + 5-min bake"] --> H["health checks"]
+    BK -->|"3 failures / crash"| RB["↩️ auto-rollback<br/>to previous web"]
+  end
+
+  VPSD -.->|stage checklist| DISC2
+```
+
 ## 2. Images: two, from one Dockerfile
 
 The root `Dockerfile` builds both production images; `vite build` runs once:
