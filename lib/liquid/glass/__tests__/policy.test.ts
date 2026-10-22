@@ -18,11 +18,11 @@ import {
 
 describe('bevel and thickness', () => {
   it('scales with the short side and never exceeds sane limits', () => {
-    expect(bevelFor(1200, 56, 0)).toBeLessThanOrEqual(18);
+    expect(bevelFor(1200, 56, 0)).toBeLessThanOrEqual(24);
     expect(bevelFor(1200, 56, 0)).toBeGreaterThanOrEqual(8);
-    expect(bevelFor(400, 300, 24)).toBeLessThanOrEqual(18);
+    expect(bevelFor(400, 300, 24)).toBeLessThanOrEqual(24);
     expect(bevelFor(30, 30, 15)).toBeLessThan(15);
-    expect(bevelFor(2000, 2000, 80)).toBe(18);
+    expect(bevelFor(2000, 2000, 80)).toBe(24);
   });
   it('refracts less deep than the bevel is wide, so rim content is not sampled from past the band', () => {
     for (const b of [8, 12, 18]) expect(thicknessFor(b)).toBeLessThan(b);
@@ -60,8 +60,12 @@ describe('sizing and the surface budget', () => {
     const got = admit([c(1, 'pane'), c(2, 'chrome'), c(3, 'overlay'), c(4, 'pane', 0)]);
     expect(got.map((x) => x.id)).toEqual([3, 2, 4, 1]);
   });
+  it('admits repeated cards last, after every other role', () => {
+    const got = admit([c(1, 'fill'), c(2, 'pane'), c(3, 'chrome'), c(4, 'overlay')]);
+    expect(got.map((x) => x.id)).toEqual([4, 3, 2, 1]);
+  });
   it('caps at the budget and drops hidden and ineligible surfaces', () => {
-    const many = Array.from({ length: 20 }, (_, i) => c(i, 'pane'));
+    const many = Array.from({ length: GLASS_BUDGET.maxSurfaces + 6 }, (_, i) => c(i, 'pane'));
     expect(admit(many)).toHaveLength(GLASS_BUDGET.maxSurfaces);
     expect(admit([c(1, 'pane', 1, { visible: false }), c(2, 'pane', 2, { width: 10 })])).toEqual(
       [],
@@ -77,9 +81,13 @@ describe('snapshot coverage', () => {
   it('is full while the sample region is inside the picture', () => {
     expect(sceneCoverage(100, 100, 300, 200, 1440, 900, 24)).toBe(1);
   });
+  it('is full for a surface flush with the picture edge (a header at the top of the viewport)', () => {
+    expect(sceneCoverage(0, 0, 1440, 56, 1440, 900, 3)).toBe(1);
+    expect(sceneCoverage(0, 844, 1440, 56, 1440, 900, 3)).toBe(1);
+  });
   it('fades as the region slides off an edge, and is zero once fully gone', () => {
-    const a = sceneCoverage(100, 690, 300, 200, 1440, 900, 24);
-    const b = sceneCoverage(100, 710, 300, 200, 1440, 900, 24);
+    const a = sceneCoverage(100, 710, 300, 200, 1440, 900, 24);
+    const b = sceneCoverage(100, 730, 300, 200, 1440, 900, 24);
     expect(a).toBeLessThan(1);
     expect(b).toBeLessThan(a);
     expect(sceneCoverage(100, 2000, 300, 200, 1440, 900, 24)).toBe(0);

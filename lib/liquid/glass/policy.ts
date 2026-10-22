@@ -4,8 +4,11 @@
  */
 
 export const GLASS_BUDGET = {
-  /** Surfaces drawn at once. Each is one canvas and one draw; more costs memory before it costs frames. */
-  maxSurfaces: 8,
+  /**
+   * Surfaces drawn at once. Each is one canvas and one draw; more costs memory before it costs frames. Only VISIBLE surfaces
+   * count, so this is "how many cards fit on screen", with headroom.
+   */
+  maxSurfaces: 24,
   /** CSS px². Above this a surface falls back to the CSS material. */
   maxArea: 640_000,
   /** CSS px. Smaller than this has no room for a bevel. */
@@ -19,13 +22,13 @@ export const GLASS_BUDGET = {
 /** Bevel width for a surface: wide enough to refract visibly, never so wide that content sits inside it. */
 export function bevelFor(width: number, height: number, radius: number): number {
   const short = Math.min(width, height);
-  const wanted = Math.min(short * 0.2, Math.max(radius * 0.7, 12));
-  return Math.max(8, Math.min(18, Math.round(wanted), Math.floor(short / 2) - 1));
+  const wanted = Math.min(short * 0.26, Math.max(radius * 0.9, 16));
+  return Math.max(8, Math.min(24, Math.round(wanted), Math.floor(short / 2) - 1));
 }
 
 /** How far behind the surface the page appears to be: the reach of refraction. Shorter than the bevel by design. */
 export function thicknessFor(bevel: number): number {
-  return bevel * 0.85;
+  return bevel * 0.95;
 }
 
 /** Backing-store scale for a surface. */
@@ -43,11 +46,19 @@ export function sizeEligible(width: number, height: number): boolean {
   );
 }
 
-export type GlassRole = 'overlay' | 'chrome' | 'pane' | 'other';
+export type GlassRole = 'overlay' | 'chrome' | 'pane' | 'fill' | 'control' | 'other';
 
-/** Admission priority: floating UI first (it sits over the most varied content), then chrome, then panes. */
+/** Admission priority: floating UI first (it sits over the most varied content), then chrome, panes, then repeated cards. */
 export function rolePriority(role: GlassRole): number {
-  return role === 'overlay' ? 0 : role === 'chrome' ? 1 : role === 'pane' ? 2 : 3;
+  const order: Record<GlassRole, number> = {
+    overlay: 0,
+    chrome: 1,
+    pane: 2,
+    fill: 3,
+    control: 4,
+    other: 5,
+  };
+  return order[role];
 }
 
 export interface Candidate {
@@ -73,7 +84,8 @@ export function admit<T extends Candidate>(candidates: readonly T[]): T[] {
  * the page has scrolled, the part of it behind a viewport-anchored surface slides toward (and past) its edge. The
  * refracted rim must fade out as its sample region leaves the picture rather than smear the last row of pixels.
  *
- * `sceneY` is where the surface's top-left sits in the snapshot; `reach` is the largest sample shift (bevel + margin).
+ * `sceneY` is where the surface's top-left sits in the snapshot; `reach` sets how quickly the rim fades once the surface has
+ * overhung the picture (fully gone after `2 * reach` px).
  */
 export function sceneCoverage(
   sceneX: number,
@@ -84,13 +96,9 @@ export function sceneCoverage(
   sceneH: number,
   reach: number,
 ): number {
-  const over = Math.max(
-    0,
-    -(sceneX - reach),
-    -(sceneY - reach),
-    sceneX + width + reach - sceneW,
-    sceneY + height + reach - sceneH,
-  );
+  // How far the surface has slid PAST the picture's edge, px. Refraction samples inward from the surface's own edge, so a
+  // surface that is flush with the picture (a sticky header at the top of the viewport) is fully covered: no fade.
+  const over = Math.max(0, -sceneX, -sceneY, sceneX + width - sceneW, sceneY + height - sceneH);
   return Math.max(0, Math.min(1, 1 - over / Math.max(1, reach * 2)));
 }
 

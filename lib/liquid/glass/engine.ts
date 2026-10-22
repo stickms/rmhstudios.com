@@ -41,7 +41,13 @@ import { GlassRenderer, RIPPLE_SHAPE, GLASS_RIPPLES, type GlassDraw } from './re
 import { createSceneProvider, type SceneProvider, type SceneShot } from './scene';
 import { clearScene, publishScene } from './scene-store';
 
-const SELECTOR = '.glass-pane,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass]';
+/**
+ * What becomes a slab. The five glass roles, plus the CONTROLS that carry the material without a role class: solid
+ * buttons (ghost and link buttons have no body to give an edge to) and fields. Controls are admitted last, so a screen
+ * full of them never starves a card or a menu.
+ */
+const SELECTOR =
+  '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass],.glass-inset,[data-slot="button"]:not([data-variant="ghost"]):not([data-variant="link"]),[data-slot="input"],[data-slot="textarea"]';
 const EXCLUDE =
   '[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,.radial-globe__stage,.eversion-overlay,.evert-ghost';
 const TAP_EXCLUDE =
@@ -82,17 +88,14 @@ interface Surface {
 }
 
 /**
- * Which surfaces bend the page behind them. Floating glass does: its own subtree is hidden from the snapshot, so
- * what its rim shows really is what is behind it. A pane does not by default: it is a CONTENT block, its own text is
- * in the snapshot, and refracting that would draw the same words twice, live and bent, wherever they start inside the
- * bevel. A pane that sits over imagery (and has no text near its rim) can opt in with `data-liquid-glass="refract"`.
- * Every surface, refracting or not, still gets the full lit slab: bevel shading, Fresnel, specular, cursor light and
- * ripples.
+ * Every glass surface bends the page at its rim; that is what makes its edge visible now that nothing carries a shadow.
+ * Floating glass (`chrome`, `overlay`) is HIDDEN from the snapshot, so its rim shows exactly what is behind it. Panes and
+ * repeated cards are content blocks and stay in the snapshot, so their rim bends the card's own paint (tint and edge
+ * included, which is why their tint is not mixed in again) rather than the page behind it; their text sits inside the
+ * padding, clear of the bevel band. A surface whose edge would put live text in the band opts out with
+ * `data-liquid-glass="lit"` and keeps the full lit slab: bevel shading, Fresnel, specular, cursor light and ripples.
  */
-const refracts = (s: Surface): boolean =>
-  s.role === 'chrome' ||
-  s.role === 'overlay' ||
-  s.el.getAttribute('data-liquid-glass') === 'refract';
+const refracts = (s: Surface): boolean => s.el.getAttribute('data-liquid-glass') !== 'lit';
 
 const roleOf = (el: Element): GlassRole =>
   el.classList.contains('glass-overlay')
@@ -101,7 +104,13 @@ const roleOf = (el: Element): GlassRole =>
       ? 'chrome'
       : el.classList.contains('glass-pane') || el.classList.contains('app-glass')
         ? 'pane'
-        : 'other';
+        : el.classList.contains('glass-fill')
+          ? 'fill'
+          : el.matches(
+                '.glass-inset,[data-slot="button"],[data-slot="input"],[data-slot="textarea"]',
+              )
+            ? 'control'
+            : 'other';
 
 interface NavigatorHints extends Navigator {
   deviceMemory?: number;
@@ -431,13 +440,15 @@ export function installLiquidGlass(doc: Document = document): () => void {
       radius: s.radius,
       bezel,
       thickness,
-      disperse: 0.07,
+      disperse: 0.11,
       sceneX,
       sceneY,
       sceneW: scene?.width ?? 1,
       sceneH: scene?.height ?? 1,
       sceneOn,
-      tint: s.tint,
+      // The rim of a surface that is NOT hidden from the snapshot samples its own paint, tint included.
+      tint:
+        s.role === 'chrome' || s.role === 'overlay' ? s.tint : [s.tint[0], s.tint[1], s.tint[2], 0],
       rim,
       ink,
       dark,

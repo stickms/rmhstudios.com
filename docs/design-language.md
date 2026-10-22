@@ -45,7 +45,7 @@ without a single component change.
 > [`liquid-glass-system.md`](liquid-glass-system.md)). Everywhere below that speaks
 > of a tier's "backdrop blur", its "≤8 backdrop-filters" budget, or an
 > `@supports not (backdrop-filter)` fallback, read it as: the budget is **≤8 shader
-> slabs per viewport**, `glass-fill` is never a slab, and the CSS material is the
+> slabs per viewport**, `glass-fill` and solid controls are slabs too (budget 24 visible, roles first), there are **no box-shadows** on UI surfaces (the shadow tokens are zero), and the CSS material is the
 > fallback in every engine. The role-by-purpose rules are unchanged.
 >
 > **Current implementation (2026-10-21).** The radial shell and navigator live
@@ -480,8 +480,8 @@ mode list, the CSS blocks, the pre-paint script) is CI-enforced — §13.
 ### 5.1 The glass elevation classes (use these for surfaces)
 
 Glass is opt-in per element via these classes (in `app/globals.css`). Pick by
-role, not by looks — the tier decides cost (budget: ≤8 shader slabs per
-viewport, **0** on repeated list items).
+role, not by looks — the tier decides cost (budget: ≤24 visible shader slabs per
+viewport; roles first, then cards, then controls).
 
 | Class                               | Tier            | Use for                                                                                             |
 | ----------------------------------- | --------------- | --------------------------------------------------------------------------------------------------- |

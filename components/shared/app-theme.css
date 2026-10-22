@@ -85,8 +85,8 @@
   --app-radius-lg: 18px;
 
   /* Depth */
-  --app-shadow: 0 4px 24px rgb(0 0 0 / 0.3);
-  --app-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.24);
+  --app-shadow: 0 0 0 0 transparent;
+  --app-shadow-sm: 0 0 0 0 transparent;
 
   /* Motion — one duration scale, so every app eases alike */
   --app-duration-fast: 120ms;
@@ -159,8 +159,8 @@
   --app-text: #2a2b30;
   --app-text-muted: #6a6b74;
   --app-text-dim: #9a9ba4;
-  --app-shadow: 0 4px 24px rgb(0 0 0 / 0.06);
-  --app-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.08);
+  --app-shadow: 0 0 0 0 transparent;
+  --app-shadow-sm: 0 0 0 0 transparent;
   --app-toast-bg: #ffffff;
   --app-glass-bg: rgb(255 255 255 / 0.85);
   --app-scrim: rgb(0 0 0 / 0.4);
@@ -197,7 +197,7 @@
   --app-warning: #ffd93d;
   --app-info: #6bc5ff;
   --app-rare: #d99bff;
-  --app-shadow: 0 4px 24px rgb(0 0 0 / 0.6);
+  --app-shadow: 0 0 0 0 transparent;
   --app-toast-bg: #1a1a1a;
   --app-glass-bg: #1a1a1a;
   --app-scrim: rgb(0 0 0 / 0.86);
@@ -487,24 +487,22 @@
     color-mix(in srgb, var(--app-accent) 5%, transparent)
   );
   border: 1px solid var(--app-border-bright);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--app-text) 18%, transparent),
-    var(--app-shadow-sm);
+  box-shadow: none;
 }
 /* With the slab drawn, the shader owns the edge light and the coat. */
 .app-glass[data-liquid-canvas='on'] {
   background-image: none;
-  box-shadow: var(--app-shadow-sm);
+  box-shadow: none;
 }
 
 /* Shared app chrome and controls share the site's clear coat; gameplay and
    media keep their own rendering. Repeated surfaces never acquire blur. */
 .app-theme :is(button, [role='button']):not([data-liquid-material='off']) {
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--app-text) 12%, transparent);
+  box-shadow: none;
 }
 .app-theme :is(input, textarea, select) {
   border-color: var(--app-border-bright);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--app-text) 8%, transparent);
+  box-shadow: none;
 }
 /* Adapter for existing app cards using the shared surface token. New code can
    use data-liquid-surface directly. Zero added backdrop samplers on lists. */
@@ -515,9 +513,7 @@
     color-mix(in srgb, var(--app-text) 6%, transparent),
     transparent 50%
   );
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--app-text) 14%, transparent),
-    var(--app-shadow-sm);
+  box-shadow: none;
 }
 /* Utilities must retain positioning ownership (fixed dialogs, sticky headers). */
 @layer components {

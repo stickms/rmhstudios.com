@@ -167,7 +167,7 @@ void main() {
   // Drawn with the theme's ink so it works in monochrome and on every other ground.
   float bevelW = 1.0 - smoothstep(0.0, 1.0, t);
   float away = 0.5 - 0.5 * dot(g, normalize(key.xy));
-  float shade = bevelW * (0.025 + 0.12 * away * away) + (1.0 - smoothstep(0.0, uPx * 2.6, d)) * 0.075;
+  float shade = bevelW * (0.01 + 0.055 * away * away) + (1.0 - smoothstep(0.0, uPx * 2.6, d)) * 0.045;
   float shadeA = clamp(shade * mix(1.0, 0.5, uDark), 0.0, 0.5);
 
   float k = mix(1.0, 0.82, uDark);
