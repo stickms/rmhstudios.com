@@ -16,6 +16,9 @@ const h = vi.hoisted(() => ({
   joinRequest: { findUnique: vi.fn(), findMany: vi.fn() },
   page: { findUnique: vi.fn() },
   rmhark: { findMany: vi.fn() },
+  event: { findUnique: vi.fn(), findMany: vi.fn() },
+  rsvp: { groupBy: vi.fn(), findMany: vi.fn() },
+  getSession: vi.fn(),
   transaction: vi.fn(),
 }));
 
@@ -28,11 +31,27 @@ vi.mock('@/lib/prisma.server', () => ({
     communityPage: h.page,
     user: { findUnique: async () => null },
     rMHark: h.rmhark,
+    communityEvent: h.event,
+    eventRsvp: h.rsvp,
     closeFriend: { findMany: async () => [] },
     $transaction: h.transaction,
   },
 }));
 vi.mock('@/lib/notifications.server', () => ({ createNotification: vi.fn() }));
+vi.mock('@/lib/jobs/boss.server', () => ({ getBoss: async () => null }));
+vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: h.getSession } } }));
+vi.mock('@/lib/calendar/recurring-events.server', () => ({
+  OccurrenceError: class extends Error {},
+  activeSeriesWhere: () => ({}),
+  checkRecurrence: vi.fn(),
+  decorateRecurring: async (m: unknown) => m,
+  isGoingToOccurrence: vi.fn(),
+  notifyRotation: vi.fn(),
+  occurrenceAfter: vi.fn(),
+  rsvpRecurring: vi.fn(),
+  unrsvpRecurring: vi.fn(),
+  upcomingOccurrenceEventIds: async () => [],
+}));
 vi.mock('@/lib/api/handler.server', () => ({
   defineHandler: (_o: unknown, fn: (c: unknown) => unknown) => fn,
 }));
@@ -65,6 +84,7 @@ vi.mock('@/lib/communities/pages.server', () => ({
 import { getCommunity, getCommunityFeed } from '@/lib/community.server';
 import { listCommunities } from '@/lib/communities.server';
 import { getCommunityExtras } from '@/lib/communities/extras.server';
+import { getEvent, listEvents, rsvp } from '@/lib/events.server';
 
 const PRIVATE = { id: 'c1', isPrivate: true, createdById: 'owner', slug: 's' };
 const session = (id: string) => ({ session: { user: { id } }, userId: id });
@@ -228,5 +248,111 @@ describe('members / announcements / join / pages routes', () => {
     h.page.findUnique.mockResolvedValue({ communityId: 'c1', community: { isPrivate: true } });
     const REV = await routeHandlers('@/app/routes/api/community-pages/$id.revisions', 'GET');
     expect((await REV({ params: { id: 'p1' }, userId: 'stranger' })).status).toBe(404);
+  });
+});
+
+describe('locked community payload', () => {
+  it('is built from an allow-list: no owner id, verification, starboard or flair settings', async () => {
+    const c = await getCommunity('s', 'stranger');
+    expect(Object.keys(c!).sort()).toEqual(
+      [
+        'id', 'slug', 'name', 'description', 'icon', 'color', 'isPrivate', 'memberCount', 'createdById',
+        'createdAt', 'postCount', 'joined', 'role', 'announcements', 'locked', 'requestState',
+        'flairRequired', 'starThreshold', 'verificationLevel', 'verificationValue',
+      ].sort(),
+    );
+    expect(c).toMatchObject({
+      createdById: '',
+      flairRequired: false,
+      starThreshold: 0,
+      verificationLevel: 'none',
+      verificationValue: 0,
+    });
+  });
+});
+
+describe('events of a private community are members-only', () => {
+  const EVENT_ROW = {
+    id: 'e1',
+    hostId: 'owner',
+    communityId: 'c1',
+    title: 'Secret meetup',
+    description: 'd',
+    startsAt: new Date(Date.now() + 3600_000),
+    endsAt: null,
+    venueKind: 'IRL',
+    venueRef: 'Somewhere',
+    capacity: null,
+    canceledAt: null,
+    createdAt: new Date(),
+    recurrence: null,
+    host: { id: 'owner', name: 'O', handle: 'o', image: null },
+    community: { id: 'c1', slug: 's', name: 'N', icon: null, color: null, isPrivate: true },
+    canceled: null,
+  };
+  const privateCommunity = (isMember: boolean) =>
+    h.community.findUnique.mockResolvedValue({ isPrivate: true, members: isMember ? [{ id: 'm' }] : [] });
+
+  beforeEach(() => {
+    h.event.findUnique.mockResolvedValue(EVENT_ROW);
+    h.event.findMany.mockResolvedValue([EVENT_ROW]);
+    h.rsvp.groupBy.mockResolvedValue([]);
+    h.rsvp.findMany.mockResolvedValue([]);
+  });
+
+  it('listEvents(scope=community): empty for an anonymous viewer and a non-member, no event query made', async () => {
+    privateCommunity(false);
+    expect(await listEvents({ scope: 'community', communityId: 'c1', userId: null })).toEqual([]);
+    expect(await listEvents({ scope: 'community', communityId: 'c1', userId: 'stranger' })).toEqual([]);
+    expect(h.event.findMany).not.toHaveBeenCalled();
+    privateCommunity(true);
+    expect(await listEvents({ scope: 'community', communityId: 'c1', userId: 'me' })).toHaveLength(1);
+  });
+
+  it('listEvents(scope=community) is unchanged for a public community', async () => {
+    h.community.findUnique.mockResolvedValue({ isPrivate: false, members: false });
+    expect(await listEvents({ scope: 'community', communityId: 'c9', userId: null })).toHaveLength(1);
+  });
+
+  it('getEvent (and GET /api/events/:id): null / 404 for a non-member, the event for a member', async () => {
+    privateCommunity(false);
+    expect(await getEvent('e1', null)).toBeNull();
+    expect(await getEvent('e1', 'stranger')).toBeNull();
+    const GET = await routeHandlers('@/app/routes/api/events/$id/index', 'GET');
+    expect((await GET({ params: { id: 'e1' }, session: null })).status).toBe(404);
+    privateCommunity(true);
+    expect((await GET({ params: { id: 'e1' }, ...session('me') })).status).toBe(200);
+  });
+
+  it('GET /api/events?scope=community: no event data for an anonymous viewer', async () => {
+    privateCommunity(false);
+    const GET = await routeHandlers('@/app/routes/api/events/index', 'GET');
+    const res = await GET({
+      request: new Request('http://x/api/events?scope=community&communityId=c1'),
+      session: null,
+    });
+    expect(await res.json()).toEqual({ events: [] });
+  });
+
+  it('the .ics download: 404 for a non-member (never shared-cached), file for a member', async () => {
+    h.event.findUnique.mockResolvedValue({ ...EVENT_ROW, community: { name: 'N', isPrivate: true } });
+    const GET = await routeHandlers('@/app/routes/api/events/$id/ics', 'GET');
+    const req = new Request('http://x/api/events/e1/ics');
+    privateCommunity(false);
+    h.getSession.mockResolvedValue(null);
+    expect((await GET({ params: { id: 'e1' }, request: req })).status).toBe(404);
+    h.getSession.mockResolvedValue({ user: { id: 'stranger' } });
+    expect((await GET({ params: { id: 'e1' }, request: req })).status).toBe(404);
+    privateCommunity(true);
+    h.getSession.mockResolvedValue({ user: { id: 'me' } });
+    const ok = await GET({ params: { id: 'e1' }, request: req });
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get('Cache-Control')).toBe('private, no-store');
+  });
+
+  it('RSVP: a non-member gets NOT_FOUND and nothing is written', async () => {
+    privateCommunity(false);
+    await expect(rsvp('e1', 'stranger', 'going')).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect(h.transaction).not.toHaveBeenCalled();
   });
 });

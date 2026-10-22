@@ -466,6 +466,38 @@ async function summarize(eventId: string, userId: string): Promise<RsvpResult> {
 
 // ─── Reads ───────────────────────────────────────────────────────────────────
 
+/**
+ * Whether `viewerId` may see events of `communityId`: always for a public
+ * community (or a profile event, `communityId` null), members only for a private
+ * one. Callers answer 404 / empty on false so existence does not leak.
+ */
+export async function canViewCommunityEvents(
+  communityId: string | null,
+  viewerId: string | null,
+): Promise<boolean> {
+  if (!communityId) return true;
+  const c = await prisma.community.findUnique({
+    where: { id: communityId },
+    select: {
+      isPrivate: true,
+      members: viewerId ? { where: { userId: viewerId }, select: { id: true }, take: 1 } : false,
+    },
+  });
+  if (!c) return false;
+  return !c.isPrivate || !!c.members?.length;
+}
+
+/** Prisma filter: events outside private communities, or in ones the viewer belongs to. */
+function eventCommunityVisibleWhere(viewerId: string | null) {
+  return {
+    OR: [
+      { communityId: null },
+      { community: { isPrivate: false } },
+      ...(viewerId ? [{ community: { members: { some: { userId: viewerId } } } }] : []),
+    ],
+  };
+}
+
 /** A single event with counts, an attendee sample, and the viewer's RSVP. */
 export async function getEvent(
   id: string,
@@ -473,6 +505,7 @@ export async function getEvent(
 ): Promise<EventDTO | null> {
   const row = await fetchEventRow(id);
   if (!row) return null;
+  if (!(await canViewCommunityEvents(row.communityId, viewerId))) return null;
   const [mapped] = await attachAndMap([row], viewerId, 12);
   return mapped ?? null;
 }
@@ -504,14 +537,19 @@ export async function listEvents(opts: {
       take: 60,
       select: { event: { include: eventInclude } },
     });
-    rows = rsvps.map((r) => r.event);
+    // An RSVP outlives membership: drop events of private communities the viewer has left.
+    rows = (
+      await Promise.all(
+        rsvps.map(async (r) => ((await canViewCommunityEvents(r.event.communityId, viewerId)) ? r.event : null)),
+      )
+    ).filter((e): e is NonNullable<typeof e> => e !== null);
     // K4 — one-off RSVPs to a single occurrence of a repeating event.
     const seen = new Set(rows.map((r) => r.id));
     const occurrenceIds = (await upcomingOccurrenceEventIds(viewerId, now)).filter((id) => !seen.has(id));
     if (occurrenceIds.length) {
       rows.push(
         ...(await prisma.communityEvent.findMany({
-          where: { id: { in: occurrenceIds }, canceledAt: null },
+          where: { id: { in: occurrenceIds }, canceledAt: null, ...eventCommunityVisibleWhere(viewerId) },
           take: 60,
           include: eventInclude,
         })),
@@ -519,6 +557,7 @@ export async function listEvents(opts: {
     }
   } else if (opts.scope === 'community') {
     if (!opts.communityId) return [];
+    if (!(await canViewCommunityEvents(opts.communityId, viewerId))) return [];
     rows = await prisma.communityEvent.findMany({
       where: {
         communityId: opts.communityId,
@@ -747,6 +786,7 @@ export async function rsvp(
     where: { id: eventId },
     select: {
       id: true,
+      communityId: true,
       hostId: true,
       startsAt: true,
       endsAt: true,
@@ -759,6 +799,7 @@ export async function rsvp(
     },
   });
   if (!event) throw new EventError('NOT_FOUND');
+  if (!(await canViewCommunityEvents(event.communityId, userId))) throw new EventError('NOT_FOUND');
   if (event.canceledAt) throw new EventError('CANCELED');
 
   if (event.recurrence) {
