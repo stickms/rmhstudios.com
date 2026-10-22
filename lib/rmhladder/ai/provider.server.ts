@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
+import { timedAiFetch } from '../../ai/timed-fetch.server';
 
 export type LadderAiProviderName = 'deepseek' | 'openai' | 'anthropic';
 
@@ -35,7 +36,7 @@ function openAiCompatibleProvider(args: {
   model: string;
 }): LadderAiProvider {
   if (!args.apiKey) throw new LadderAiConfigurationError(args.name);
-  const client = new OpenAI({
+  const client = new OpenAI({ fetch: timedAiFetch,
     apiKey: args.apiKey,
     baseURL: args.baseURL,
     maxRetries: 1,

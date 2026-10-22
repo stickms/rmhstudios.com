@@ -19,6 +19,7 @@ import { createLogger } from '@/server/shared/logger';
 import { startProcessMetrics } from '../../lib/perf/process-metrics';
 import { registerPrismaPoolGauges, startPerfPublisher } from '../../lib/perf/publish.server';
 import { startOncallChecks } from '../../lib/oncall/checks.server';
+import { startMetricsRollup } from '../../lib/ops/metrics-store.server';
 import { getBoss, PROGRESSION_QUEUE } from '@/lib/jobs/boss.server';
 import { runProgression, type ProgressionJob } from '@/lib/social/engagement-effects.server';
 import { registerEventReminderWorker } from '@/lib/events.server';
@@ -295,10 +296,15 @@ async function main() {
   // fleet's own telemetry and page the watchdog. Also this worker's heartbeat —
   // if the jobs container dies, the silence pages. No-op until ONCALL_* are set.
   const stopOncall = startOncallChecks();
+  // One-minute rollups of the fleet's telemetry into ops_metric_minute, for the
+  // /admin/alarms graphs (lib/ops/metrics-store.server.ts). Runs regardless of
+  // on-call being configured.
+  const stopRollup = startMetricsRollup();
 
   const shutdown = async (sig: string) => {
     log.info({ event: 'jobs.stopping', signal: sig });
     stopOncall();
+    stopRollup();
     try {
       await boss.stop({ graceful: true });
     } catch {

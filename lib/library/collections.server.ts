@@ -20,6 +20,7 @@ import {
   COLLECTION_ITEM_CAP,
   type CollectionView,
 } from './collections';
+import { timedAiFetch } from '../ai/timed-fetch.server';
 
 export type Viewer = { id: string; isAdmin: boolean } | null;
 
@@ -59,7 +60,7 @@ const DOC_SELECT = {
 let _xai: OpenAI | null = null;
 function xaiClient(): OpenAI {
   if (!_xai) {
-    _xai = new OpenAI({
+    _xai = new OpenAI({ fetch: timedAiFetch,
       apiKey: process.env.XAI_API_KEY || '',
       baseURL: 'https://api.x.ai/v1',
       maxRetries: 1,

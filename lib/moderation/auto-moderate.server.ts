@@ -25,8 +25,9 @@ import { prisma } from '@/lib/prisma.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
 import { redisRateLimit } from '@/lib/redis.server';
 import type { ReportReason } from '@prisma/client';
+import { timedAiFetch } from '../ai/timed-fetch.server';
 
-const deepseek = new OpenAI({
+const deepseek = new OpenAI({ fetch: timedAiFetch,
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,

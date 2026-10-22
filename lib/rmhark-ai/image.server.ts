@@ -21,9 +21,10 @@ import {
   withImageDimensions,
 } from '@/lib/storage/keys';
 import { imageDimensions } from '@/lib/image-optimize';
+import { timedAiFetch } from '../ai/timed-fetch.server';
 
 // xAI is OpenAI-SDK compatible; just point the base URL at their endpoint.
-const xai = new OpenAI({
+const xai = new OpenAI({ fetch: timedAiFetch,
   // `|| 'missing'`, not `|| ''`: the SDK throws on an empty key at CONSTRUCTION, and
   // `loadEntries()` imports this module before serving any page, so an unset key was
   // a site-wide 500 (see lib/rmhvibe/vibe-ai.server.ts). Calls are gated on the env var.

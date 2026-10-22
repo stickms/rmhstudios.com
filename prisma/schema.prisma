@@ -12736,3 +12736,43 @@ model DeepseekBalanceSnapshot {
   @@index([createdAt])
   @@map("deepseek_balance_snapshot")
 }
+
+/// One-minute rollups of the app's own telemetry, for /admin/alarms graphs and
+/// threshold alarms (lib/ops/metrics-rollup.ts, written by the jobs worker).
+/// Append-only, ~30 rows a minute, pruned after 30 days — hence the identity key.
+model OpsMetricMinute {
+  id     BigInt   @id @default(autoincrement())
+  /// Start of the minute (UTC) the row covers.
+  at     DateTime
+  /// e.g. "http.latency", "http.5xx_pct", "llm.latency", "rum.lcp".
+  metric String   @db.VarChar(60)
+  /// The dimension: route group, provider:kind, service, route class; "" when none.
+  dim    String   @default("") @db.VarChar(80)
+  /// Samples behind the row (requests, calls, beacons); 0 for gauges.
+  count  Int      @default(0)
+  p50    Float?
+  p95    Float?
+  p99    Float?
+  max    Float?
+  /// Gauges and rates (percent, waiting count): the single value for the minute.
+  value  Float?
+
+  @@unique([metric, dim, at])
+  @@index([at])
+  @@map("ops_metric_minute")
+}
+
+/// Admin overrides of metric alarm rules (lib/ops/alarm-rules.ts) from
+/// /admin/alarms. A row only exists while a rule differs from the code: its
+/// threshold, or muted. "Reset to code" deletes it.
+model OpsAlarmOverride {
+  /// `ruleKey()` of the rule: id|metric|dim|stat|<n>m.
+  key       String   @id @db.VarChar(160)
+  threshold Float?
+  muted     Boolean  @default(false)
+  /// Admin user id of the last change (also in admin_audit_log).
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+
+  @@map("ops_alarm_override")
+}

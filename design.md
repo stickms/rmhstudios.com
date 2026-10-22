@@ -55,7 +55,7 @@ The material uses translucent tint, a directional rim and a clear coat.
 Singular panes, chrome and overlays sample live content with native backdrop
 frost. Repeated cards use tint and reflection without adding blur samplers.
 A bounded shared runtime supplies nearby tap waves and surface-local cursor
-lighting. The globe has a dielectric coat and local soft-body indentation.
+lighting. The globe has a dielectric coat that refracts the page behind it and a dough body that dents, kneads and eases back.
 
 These are different optical capabilities behind one material language. Native
 HTML panels preserve live content and accessibility with an approximate clear

@@ -34,11 +34,12 @@ import {
   unrotateSphere,
 } from '@/lib/fluid';
 import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
-import { SoftBody } from '@/lib/soft-body';
+import { DoughBody } from '@/lib/dough';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
 import type { JellyFrame, JellyGlass } from './jelly-glass';
+import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
 
 /**
  * The **liquid globe** navigator — the site's navigation as a glass sphere you
@@ -332,14 +333,16 @@ const CAGE_MAX_DPR = 2;
  */
 const CAGE_BLEED = 0.11;
 
-/* ── The soft body ───────────────────────────────────────────────────────────
-   Grab the globe and it gives (owner, 2026-10-21: "full soft-body physics … as you drag it around and click it …
-   dragging it deforms it according to your pointer/finger"): the surface under the finger leads the drag and the
-   ball lags after it, a press squeezes the jelly in around the finger, and letting go wobbles it back. The model is
-   `lib/soft-body.ts`: three springs and a closed-form displacement field, evaluated at the points the paint pass
-   already draws (every cage sample, every pin) after they are projected, plus one affine transform on the glass
-   disc. Nothing is allocated (`DEFORM_OUT` is the one scratch pair), and at rest it costs nothing at all: `step`
-   says when the body is deformed, and only then does the frame loop repaint for it.
+/* ── The dough body ──────────────────────────────────────────────────────────
+   Grab the globe and it gives like dough (owner, 2026-10-22: it used to "morph like a stretchy ball … I want it to
+   truly morph like little bits at a time almost like dough"). The model is `lib/dough.ts`: a displacement FIELD with an
+   elastic layer that rebounds and a plastic layer that holds a dent and eases out, a press that pushes material out of
+   the contact and banks it up around it (volume is conserved by construction), and a drag that grips and kneads the
+   material under the finger. The field is evaluated at the points the paint pass already draws (every cage sample,
+   every pin) after they are projected, and the SAME field is uploaded as a texture to the coat shader, which inverts it
+   per pixel — so the silhouette, the lighting and the wireframe all describe one surface. Nothing is allocated
+   (`DEFORM_OUT` is the one scratch pair), and at rest it costs nothing at all: `step` says when the body is deformed,
+   and only then does the frame loop repaint for it.
 
    It is DISPLAY ONLY, like the ripple and the wobble: the lock, the magnetism and the dwell keep reading the true
    projection, so a squeeze can never move a destination into or out of the reticle. The cage's bleed above makes
@@ -678,8 +681,8 @@ export function LiquidGlobe({
    * feature.
    */
   const wobble = useRef<{ yaw: number; vYaw: number; pitch: number; vPitch: number } | null>(null);
-  /** The soft body (see the note above `DEFORM_OUT`), and where the finger holding it is, in radii. */
-  const [jelly] = useState(() => new SoftBody());
+  /** The dough body (see the note above `DEFORM_OUT`), and where the finger holding it is, in radii. */
+  const [jelly] = useState(() => new DoughBody());
   const grabAt = useRef({ x: 0, y: 0, left: 0, top: 0, r: 1 });
   const everting = useRef(false);
   const nextEvertPulse = useRef(0);
@@ -701,8 +704,6 @@ export function LiquidGlobe({
     ripples: new Float32Array(12),
     gx: 0,
     gy: 0,
-    dx: 0,
-    dy: 0,
     pinch: 0,
   }));
 
@@ -846,6 +847,35 @@ export function LiquidGlobe({
       matchMedia('(prefers-contrast: more)'),
       matchMedia('(forced-colors: active)'),
     ];
+    /* The page behind the hub, refracted through the ball. The glass engine keeps the latest snapshot of the page (taken
+       while it was idle, i.e. BEFORE the hub opened); the coat samples it through a ball-lens model at the hub's own blur.
+       Placing it reads layout, so it happens when the globe attaches, resizes, finishes blooming, or a new picture lands,
+       never per frame. */
+    const attachScene = (g: JellyGlass) => {
+      const scene = currentScene();
+      if (!stage || !scene || !g.setScene(scene)) return;
+      const rect = stage.getBoundingClientRect();
+      g.place(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+        sizeRef.current / 2,
+        window.scrollX - scene.scrollX,
+        window.scrollY - scene.scrollY,
+      );
+    };
+    const refreshScene = () => {
+      if (cancelled || !glass?.ready || jellyGlass.current !== glass) return;
+      attachScene(glass);
+      jellyDirty.current = true;
+      dirty.current = true;
+    };
+    const globeRoot = stage?.closest('.radial-globe') ?? null;
+    const onBloomEnd = (e: Event) => {
+      if (e.target === globeRoot) refreshScene();
+    };
+    globeRoot?.addEventListener('animationend', onBloomEnd);
+    window.addEventListener('resize', refreshScene);
+    const stopScene = onSceneChange(refreshScene);
     const sync = () => {
       if (cancelled || !host || !stage) return;
       if (reduced || !jellyEligible() || preferences.some((q) => q.matches)) {
@@ -891,12 +921,14 @@ export function LiquidGlobe({
       const bg = factory.resolveColor(bgCss, [1, 1, 1]);
       const lum = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2];
       g.resize(sizeRef.current, window.devicePixelRatio || 1);
-      g.palette({ ink, accent, light: lum > 0.5 ? 1 : 0 }, RIPPLE);
+      g.palette({ ink, accent, light: lum > 0.5 ? 1 : 0, bg: [bg[0], bg[1], bg[2]] }, RIPPLE);
+      attachScene(g);
       const f = jellyFrame;
       f.ripples.fill(0);
       for (let i = 3; i < 12; i += 4) f.ripples[i] = -1;
-      f.gx = f.gy = f.dx = f.dy = f.pinch = 0;
+      f.gx = f.gy = f.pinch = 0;
       host.appendChild(g.canvas);
+      g.setField(jelly.field, jelly.version);
       g.render(f);
       jellyGlass.current = g;
       jellyDirty.current = true;
@@ -909,6 +941,9 @@ export function LiquidGlobe({
     sync();
     return () => {
       cancelled = true;
+      stopScene();
+      globeRoot?.removeEventListener('animationend', onBloomEnd);
+      window.removeEventListener('resize', refreshScene);
       observer.disconnect();
       preferences.forEach((q) => q.removeEventListener('change', sync));
       // The single cached canvas may already belong to a newer mount.
@@ -917,7 +952,7 @@ export function LiquidGlobe({
       jellyGlass.current = null;
       if (stage) delete stage.dataset.jelly;
     };
-  }, [jellyFrame, reduced]);
+  }, [jelly, jellyFrame, reduced]);
 
   /* ── Where the globe is on screen, for the eversion hand-off ──────────────
      The WebGL sphere has to start on top of this one, so the hand-off needs the
@@ -1501,18 +1536,11 @@ export function LiquidGlobe({
       primeWaves(now);
       const soft = jelly.active();
 
-      // The glass disc takes the body's stretch and where its centre is carried: one affine transform, the
-      // compositor's. The skin's local lobe is the cage's and the pins' to show.
-      let glass = 'none';
-      if (soft) {
-        jelly.deform(0, 0, DEFORM_OUT);
-        glass =
-          `matrix(${jelly.m00.toFixed(4)}, ${jelly.m10.toFixed(4)}, ${jelly.m01.toFixed(4)}, ` +
-          `${jelly.m11.toFixed(4)}, ${(DEFORM_OUT[0]! * R).toFixed(2)}, ${(DEFORM_OUT[1]! * R).toFixed(2)})`;
-      }
-      if (glass !== paintedGlass.current && glassRef.current) {
-        paintedGlass.current = glass;
-        glassRef.current.style.transform = glass === 'none' ? '' : glass;
+      // The glass disc stays put: the coat shader draws the deformed silhouette itself, from the same field the cage
+      // and pins are displaced by, so there is no whole-disc transform to disagree with the local dough.
+      if (paintedGlass.current !== 'none' && glassRef.current) {
+        paintedGlass.current = 'none';
+        glassRef.current.style.transform = '';
       }
       // A small shaded contact footprint explains the depth change even at the
       // centre of the disc, where a symmetric indentation has no 2D translation.
@@ -1555,9 +1583,8 @@ export function LiquidGlobe({
           }
           f.gx = soft ? jelly.gx : 0;
           f.gy = soft ? jelly.gy : 0;
-          f.dx = soft ? jelly.dx : 0;
-          f.dy = soft ? jelly.dy : 0;
           f.pinch = soft ? jelly.pinch : 0;
+          jg.setField(jelly.field, jelly.version);
           jg.render(f);
           jellyDirty.current = false;
           jellyLive.current = live;

@@ -33,6 +33,9 @@ allow notifications from the server, or a page can arrive silently.
 
 ## Alarms
 
+Threshold alarms over the metrics history (A08, A09, M01–M03, B02, B03) are declared in
+`lib/ops/alarm-rules.ts` and can be overridden or muted on `/admin/alarms` → Alarm rules.
+
 | ID | Sev | What |
 |---|---|---|
 | [A01](A01.md) | 2 | Site down (external check) |
@@ -49,6 +52,9 @@ allow notifications from the server, or a page can arrive silently.
 | [A16](A16.md) | 2 | Jobs worker silent |
 | [A17](A17.md) | 2 | Stripe webhook failing |
 | [A19](A19.md) | 2 | Tomorrow's daily puzzles missing |
+| [M01](M01.md) | 3 | API response time high |
+| [M02](M02.md) | 3 | Real-user page loads slow (LCP / TTFB) |
+| [M03](M03.md) | 3 | LLM slow or failing |
 | [STATUS](status-incident.md) | 2 / 3 | An automatic status-page incident (component down / degraded) |
 | [D01](D01.md) | 2 | Deploy rollback **failed** |
 | [D02](D02.md) | 3 | Deploy auto-rolled back |
