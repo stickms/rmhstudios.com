@@ -1,0 +1,30 @@
+# rmhstudios — host health check for on-call (one-shot, driven by the timer).
+#
+# Disk, memory, kernel OOM kills and container health/restarts, reported to the
+# on-call watchdog through deploy/oncall-send.sh (docs/runbooks/oncall/). It is
+# read-only. ONCALL_URL / ONCALL_SIGNING_SECRET are read from the checkout's
+# .env.production; until they are set it only records state and sends nothing.
+#
+# ── Install (once, as root) ──────────────────────────────────────────────────
+#   sudo cp deploy/systemd/rmh-host-check.{service,timer} /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now rmh-host-check.timer
+#   Test now:  sudo systemctl start rmh-host-check.service
+#              journalctl -u rmh-host-check.service -n 20
+# ─────────────────────────────────────────────────────────────────────────────
+[Unit]
+Description=rmhstudios host health check (on-call)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Repo checkout path on the VPS (deploy.sh REPO_DIR).
+WorkingDirectory=/home/rmhstudios/rmhstudios.com
+ExecStart=/usr/bin/env bash deploy/host-check.sh
+# Root: reads the kernel log and Docker's restart counts. It writes nothing
+# but its own state under /var/lib/rmh-host-check.
+StateDirectory=rmh-host-check
+Environment=STATE_DIR=/var/lib/rmh-host-check
+TimeoutStartSec=50
+Nice=10
