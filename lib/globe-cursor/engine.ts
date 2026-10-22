@@ -29,7 +29,8 @@
  * `busy()` whether anything is still moving so the frame can stop.
  */
 
-import { evert } from '@/lib/eversion/thurston';
+import { evert, stageParams } from '@/lib/eversion/thurston';
+import { GlobeGl } from './gl';
 import { BASE_EVERT_SECONDS, type CursorDetail, type GlobeCursorSettings } from './settings';
 
 const PI = Math.PI;
@@ -38,12 +39,14 @@ const DEG = PI / 180;
 /** Largest |F| of the eversion (MAX_EVERSION_EXTENT) — sizes the offscreen sprite. */
 const EXTENT = 1.35;
 const MAX_PARTICLES = 160;
-const TRAIL_SPACING = 3;
+/** Seconds between trail echoes. Time, not frames, so the trail is the same length at 30 Hz and 144 Hz. */
+const TRAIL_SPACING = 0.05;
 
+/** CPU fallback grid (no WebGL 2). The GPU path's own, much finer grid is in `gl.ts`. */
 const GRID: Record<CursorDetail, [number, number]> = {
   low: [24, 12],
-  medium: [32, 16],
-  high: [48, 24],
+  medium: [40, 20],
+  high: [56, 28],
 };
 
 export type HoverKind = 'none' | 'interactive' | 'text';
@@ -73,6 +76,18 @@ function hexToHsl(hex: string): Hsl {
     h *= 60;
   }
   return { h, s: s * 100, l: l * 100 };
+}
+
+/** HSL (deg, %, %) → linear 0–1 RGB. */
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  const sat = s / 100;
+  const lig = l / 100;
+  const a = sat * Math.min(lig, 1 - lig);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    return lig - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+  };
+  return [f(0), f(8), f(4)];
 }
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
@@ -179,13 +194,20 @@ export class GlobeCursorEngine {
   // Effects.
   private particles: Particle[] = [];
   private ripples: Ripple[] = [];
-  private trail: { x: number; y: number }[] = [];
+  /** Follower history, newest first, stamped with `time`. */
+  private trail: { x: number; y: number; t: number }[] = [];
 
   // Sprite.
   private sprite: HTMLCanvasElement;
   private sctx: CanvasRenderingContext2D;
   private spriteCss = 0;
+  private spriteSource: CanvasImageSource;
   private dpr = 1;
+  private gpu: GlobeGl | null;
+  private stage = new Float64Array(8);
+  private model = new Float64Array(9);
+  private deform = new Float64Array(9);
+  private deformIT = new Float64Array(9);
 
   constructor(settings: GlobeCursorSettings) {
     this.s = settings;
@@ -196,7 +218,14 @@ export class GlobeCursorEngine {
     const ctx = this.sprite.getContext('2d');
     if (!ctx) throw new Error('2d context unavailable');
     this.sctx = ctx;
+    this.spriteSource = this.sprite;
+    this.gpu = GlobeGl.create();
     this.buildMesh();
+  }
+
+  dispose(): void {
+    this.gpu?.dispose();
+    this.gpu = null;
   }
 
   setSettings(settings: GlobeCursorSettings): void {
@@ -270,7 +299,10 @@ export class GlobeCursorEngine {
   /* ── Simulation ────────────────────────────────────────────────────────── */
 
   step(dtRaw: number): void {
-    const dt = Math.min(dtRaw, 1 / 30);
+    // Real time up to 100 ms a frame, so a slow machine sees the same motion at a lower frame rate rather than
+    // slow motion (the springs substep, so a long step is stable); beyond that, e.g. returning to a hidden tab, it
+    // is capped so nothing jumps.
+    const dt = Math.min(dtRaw, 0.1);
     const s = this.s;
     const j = s.jelly;
     this.time += dt;
@@ -371,9 +403,12 @@ export class GlobeCursorEngine {
 
     // Trail history.
     if (s.trail > 0) {
-      this.trail.unshift({ x: this.x, y: this.y });
-      const keep = s.trail * TRAIL_SPACING + 1;
-      if (this.trail.length > keep) this.trail.length = keep;
+      this.trail.unshift({ x: this.x, y: this.y, t: this.time });
+      // Keep one entry past the oldest echo, so that echo always has a sample at or before its time.
+      const horizon = this.time - s.trail * TRAIL_SPACING;
+      let keep = this.trail.findIndex((p) => p.t <= horizon);
+      keep = keep < 0 ? this.trail.length : keep + 1;
+      this.trail.length = keep;
       if (!this.visible && this.alpha < 0.02) this.trail.length = 0;
     }
 
@@ -599,22 +634,12 @@ export class GlobeCursorEngine {
     const stretch = this.stretch;
     const squish = this.squish;
 
-    // Sprite large enough for the farthest the surface + deformation can reach.
-    const reach = R * EXTENT * Math.max(1, scale) * (1 + Math.max(0, stretch)) * 1.25 + 4;
-    const css = Math.ceil(reach * 2);
+    // Fixed per settings (room for hover growth and a full stretch), so animation never reallocates the sprite.
+    const css = Math.ceil((R * EXTENT * Math.max(1, s.hoverGrow) * 2 + 4) * 2);
     const px = Math.ceil(css * this.dpr);
-    if (this.sprite.width !== px) {
-      this.sprite.width = px;
-      this.sprite.height = px;
-    }
     this.spriteCss = css;
-    const ctx = this.sctx;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, px, px);
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, (css / 2) * this.dpr, (css / 2) * this.dpr);
 
     const { e, flipped } = this.progress();
-    this.sample(e);
 
     // Orientation: spin/roll matrix, then the fixed tilt about screen x.
     const m = this.rot;
@@ -628,6 +653,31 @@ export class GlobeCursorEngine {
     const sqX = 1 / Math.sqrt(Math.max(0.3, sqY));
     const wob = this.wobble * 0.13;
     const tw = this.time * 7;
+
+    if (this.gpu?.ok) {
+      this.spriteSource = this.paintGpu(px, css, e, flipped, {
+        dX,
+        dY,
+        along,
+        across,
+        sqX,
+        sqY,
+        ct,
+        st,
+      });
+      return css;
+    }
+    this.spriteSource = this.sprite;
+
+    if (this.sprite.width !== px) {
+      this.sprite.width = px;
+      this.sprite.height = px;
+    }
+    const ctx = this.sctx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, px, px);
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, (css / 2) * this.dpr, (css / 2) * this.dpr);
+    this.sample(e);
 
     for (let jj = 0; jj <= nP; jj++) {
       const phi = -PI / 2 + (PI * jj) / nP;
@@ -783,6 +833,78 @@ export class GlobeCursorEngine {
     return css;
   }
 
+  /** The GPU path: same transforms as the CPU loop above, handed to the shader as matrices. */
+  private paintGpu(
+    px: number,
+    css: number,
+    e: number,
+    flipped: boolean,
+    k: {
+      dX: number;
+      dY: number;
+      along: number;
+      across: number;
+      sqX: number;
+      sqY: number;
+      ct: number;
+      st: number;
+    },
+  ): CanvasImageSource {
+    const s = this.s;
+    const gpu = this.gpu!;
+    stageParams(e, this.stage);
+
+    // model = Rx(tilt) · orientation
+    const m = this.rot;
+    const M = this.model;
+    for (let c = 0; c < 3; c++) {
+      M[c] = m[c]!;
+      M[3 + c] = k.ct * m[3 + c]! - k.st * m[6 + c]!;
+      M[6 + c] = k.st * m[3 + c]! + k.ct * m[6 + c]!;
+    }
+
+    // deform = squish · (across·I + (along − across)·d dᵀ in the screen plane; across in depth)
+    const g = k.along - k.across;
+    const a = k.sqX * (k.across + g * k.dX * k.dX);
+    const b = k.sqX * g * k.dX * k.dY;
+    const c = k.sqY * g * k.dX * k.dY;
+    const d = k.sqY * (k.across + g * k.dY * k.dY);
+    const zz = k.sqX * k.across;
+    this.deform.set([a, b, 0, c, d, 0, 0, 0, zz]);
+    const det = a * d - b * c || 1e-6;
+    this.deformIT.set([d / det, -c / det, 0, -b / det, a / det, 0, 0, 0, 1 / zz]);
+
+    const hueShift = this.time * s.hueDrift;
+    const hue = (h: Hsl) => (((h.h + hueShift) % 360) + 360) % 360;
+    const sat = (h: Hsl) => clamp(h.s * s.vibrance, 0, 100);
+    const hsl = (h: Hsl): [number, number, number] => [hue(h), sat(h) / 100, h.l / 100];
+    const colour = (h: Hsl) => hslToRgb(hue(h), sat(h), clamp(h.l + 8, 30, 80));
+    const out = flipped ? this.insideHsl : this.outsideHsl;
+    const inn = flipped ? this.outsideHsl : this.insideHsl;
+
+    return gpu.render({
+      px,
+      detail: s.detail,
+      stage: this.stage,
+      model: M,
+      deform: this.deform,
+      deformIT: this.deformIT,
+      scale: ((s.size / 2) * this.scale) / (css / 2),
+      wobble: this.wobble * 0.13,
+      time: this.time,
+      pointPx: Math.max(1.5, s.size * this.scale * 0.075 * this.dpr),
+      palette: s.palette,
+      style: s.style,
+      outside: hsl(out),
+      inside: hsl(inn),
+      glowRgb: colour(this.glowHsl ?? out),
+      hueShift,
+      vibrance: s.vibrance,
+      shine: s.shine,
+      glow: s.glow,
+    });
+  }
+
   private glowCss(alpha: number): string {
     const g = this.glowHsl ?? (this.progress().flipped ? this.insideHsl : this.outsideHsl);
     const h = (((g.h + this.time * this.s.hueDrift) % 360) + 360) % 360;
@@ -790,12 +912,31 @@ export class GlobeCursorEngine {
     return `hsl(${h.toFixed(1)} ${sat.toFixed(1)}% ${clamp(g.l + 8, 30, 80).toFixed(1)}% / ${alpha.toFixed(3)})`;
   }
 
-  /** Draw one frame onto the overlay context (already cleared, identity transform in device px). */
-  draw(ctx: CanvasRenderingContext2D): void {
+  private bx0 = 0;
+  private by0 = 0;
+  private bx1 = 0;
+  private by1 = 0;
+
+  /** Extend this frame's painted bounds by a disc at (x, y). */
+  private grow(x: number, y: number, r: number): void {
+    this.bx0 = Math.min(this.bx0, x - r);
+    this.by0 = Math.min(this.by0, y - r);
+    this.bx1 = Math.max(this.bx1, x + r);
+    this.by1 = Math.max(this.by1, y + r);
+  }
+
+  /**
+   * Draw one frame onto the overlay context (identity transform, device px).
+   * Returns what it painted, in CSS px, so the caller clears only that region
+   * next frame instead of the whole viewport — or null if nothing was painted.
+   */
+  draw(ctx: CanvasRenderingContext2D): { x: number; y: number; w: number; h: number } | null {
     const s = this.s;
     const dpr = this.dpr;
     const alpha = this.alpha * s.opacity;
-    if (alpha < 0.005 && this.particles.length === 0 && this.ripples.length === 0) return;
+    this.bx0 = this.by0 = Infinity;
+    this.bx1 = this.by1 = -Infinity;
+    if (alpha < 0.005 && this.particles.length === 0 && this.ripples.length === 0) return null;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const css = this.paintSprite();
@@ -808,6 +949,7 @@ export class GlobeCursorEngine {
     // Ripples.
     for (const r of this.ripples) {
       const t = r.age / 0.7;
+      this.grow(r.x, r.y, R * (0.8 + t * 3) + 4);
       ctx.beginPath();
       ctx.arc(r.x, r.y, R * (0.8 + t * 3), 0, TWO_PI);
       ctx.strokeStyle = this.glowCss((1 - t) * 0.7 * this.alpha);
@@ -823,22 +965,31 @@ export class GlobeCursorEngine {
         const t = p.life / p.max;
         ctx.fillStyle = `hsl(${p.hue.toFixed(0)} ${clamp(90 * s.vibrance, 0, 100).toFixed(0)}% 65% / ${(t * 0.9).toFixed(2)})`;
         const r = p.size * (0.4 + t);
+        this.grow(p.x, p.y, r + 1);
         ctx.fillRect(p.x - r, p.y - r, r * 2, r * 2);
       }
       ctx.globalCompositeOperation = prev;
     }
 
-    if (alpha < 0.005) return;
+    if (alpha < 0.005) return this.bounds();
 
     // Trail echoes: the current sprite redrawn at past positions, fading and shrinking.
     if (s.trail > 0) {
       for (let k = s.trail; k >= 1; k--) {
-        const p = this.trail[k * TRAIL_SPACING];
+        const at = this.time - k * TRAIL_SPACING;
+        const p = this.trail.find((e) => e.t <= at) ?? this.trail[this.trail.length - 1];
         if (!p) continue;
         const t = 1 - k / (s.trail + 1);
         const sc = 0.45 + 0.55 * t;
         ctx.globalAlpha = alpha * t * 0.45;
-        ctx.drawImage(this.sprite, p.x + ox - half * sc, p.y + oy - half * sc, css * sc, css * sc);
+        this.grow(p.x + ox, p.y + oy, half * sc + 1);
+        ctx.drawImage(
+          this.spriteSource,
+          p.x + ox - half * sc,
+          p.y + oy - half * sc,
+          css * sc,
+          css * sc,
+        );
       }
     }
 
@@ -856,6 +1007,7 @@ export class GlobeCursorEngine {
       g.addColorStop(0, this.glowCss(0.38 * s.glow * alpha));
       g.addColorStop(1, this.glowCss(0));
       ctx.globalAlpha = 1;
+      this.grow(this.x + ox, this.y + oy, gr + 1);
       ctx.fillStyle = g;
       ctx.fillRect(this.x + ox - gr, this.y + oy - gr, gr * 2, gr * 2);
     }
@@ -866,13 +1018,16 @@ export class GlobeCursorEngine {
       ctx.shadowColor = this.glowCss(Math.min(1, 0.4 + s.glow * 0.6));
       ctx.shadowBlur = s.glow * R * 1.1 * dpr;
     }
-    ctx.drawImage(this.sprite, this.x + ox - half, this.y + oy - half, css, css);
+    // The sprite's square plus twice the shadow blur, which spreads past the silhouette.
+    this.grow(this.x + ox, this.y + oy, half * Math.SQRT2 + s.glow * R * 2.2 + 2);
+    ctx.drawImage(this.spriteSource, this.x + ox - half, this.y + oy - half, css, css);
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';
 
     // Hotspot: always exactly at the pointer, whatever the lag.
     if (s.hotspot && !textMode) {
       ctx.globalAlpha = this.alpha;
+      this.grow(this.tx, this.ty, 4);
       ctx.beginPath();
       ctx.arc(this.tx, this.ty, 2.6, 0, TWO_PI);
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
@@ -883,5 +1038,11 @@ export class GlobeCursorEngine {
       ctx.fill();
     }
     ctx.globalAlpha = 1;
+    return this.bounds();
+  }
+
+  private bounds(): { x: number; y: number; w: number; h: number } | null {
+    if (!(this.bx1 > this.bx0)) return null;
+    return { x: this.bx0, y: this.by0, w: this.bx1 - this.bx0, h: this.by1 - this.by0 };
   }
 }

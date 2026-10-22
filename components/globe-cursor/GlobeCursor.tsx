@@ -108,11 +108,13 @@ export default function GlobeCursor() {
       engine.setDpr(dpr);
       canvas.width = Math.round(window.innerWidth * dpr);
       canvas.height = Math.round(window.innerHeight * dpr);
+      dirty = null; // resizing cleared the canvas
       kick();
     };
 
     let raf = 0;
     let last = 0;
+    let dirty: { x: number; y: number; w: number; h: number } | null = null;
     let lastHover: HoverKind | 'native' = 'none';
 
     const frame = (now: number) => {
@@ -121,8 +123,18 @@ export default function GlobeCursor() {
       last = now;
       engine.step(dt);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      engine.draw(ctx);
+      // Clear only what the last frame painted: the globe covers a few hundred
+      // pixels of a full-viewport canvas, and a full clear is a full raster.
+      if (dirty) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        ctx.clearRect(
+          Math.floor(dirty.x * dpr) - 2,
+          Math.floor(dirty.y * dpr) - 2,
+          Math.ceil(dirty.w * dpr) + 4,
+          Math.ceil(dirty.h * dpr) + 4,
+        );
+      }
+      dirty = engine.draw(ctx);
       // Reduced motion draws one still frame per event; otherwise keep going while anything moves.
       if (!reducedRef.current && engine.busy()) raf = requestAnimationFrame(frame);
       else last = 0;
@@ -193,6 +205,7 @@ export default function GlobeCursor() {
     return () => {
       if (raf) cancelAnimationFrame(raf);
       kickRef.current = () => {};
+      engine.dispose();
       engineRef.current = null;
       window.removeEventListener('resize', resize);
       document.removeEventListener('pointermove', onMove);
