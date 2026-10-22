@@ -536,7 +536,11 @@ export const prismaRead: PrismaClient = globalForPrisma.prismaRead || createRead
 /** True when reads are actually going somewhere else. For /api/ready + tests. */
 export const hasReadReplica = prismaRead !== prisma;
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-  globalForPrisma.prismaRead = prismaRead;
-}
+// Pin on `globalThis` in EVERY environment, production included. The production
+// build holds this module twice - once in the Nitro bundle (the plugins that open
+// the query budget, warmup, perf) and once in the app's `_ssr` bundle (where the
+// queries run) - and each copy used to build its own client and its own pg pool
+// (2 x DATABASE_POOL_SIZE connections per process, and `dbPoolStats` reporting
+// whichever copy loaded last). Same bundling reason as BUDGET_STORAGE_KEY above.
+globalForPrisma.prisma = prisma;
+globalForPrisma.prismaRead = prismaRead;
