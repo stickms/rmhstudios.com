@@ -86,6 +86,9 @@ export function createSceneProvider(options: SceneOptions): SceneProvider {
   const doc = options.doc ?? document;
   const win = doc.defaultView!;
   let timer = 0;
+  let idleHandle: number | null = null;
+  let revision = 0;
+  let requestedAt = -Infinity;
   let inFlight = false;
   let pending = false;
   let lastAt = -Infinity;
@@ -119,24 +122,38 @@ export function createSceneProvider(options: SceneOptions): SceneProvider {
 
   const run = async () => {
     timer = 0;
+    idleHandle = null;
     if (disposed) return;
     if (inFlight) {
       pending = true;
       return;
     }
     if (failures >= MAX_FAILURES || !options.canCapture()) return;
-    const wait = lastAt + MIN_INTERVAL_MS - win.performance.now();
+    const wait =
+      Math.max(lastAt + MIN_INTERVAL_MS, requestedAt + SETTLE_MS) - win.performance.now();
     if (wait > 0) {
-      timer = win.setTimeout(run, wait);
+      schedule(wait);
       return;
     }
     inFlight = true;
     const scrollX = win.scrollX;
     const scrollY = win.scrollY;
+    const width = win.innerWidth;
+    const height = win.innerHeight;
+    const startedRevision = revision;
     try {
       const out = await capture(SCENE_EXCLUDE, SCENE_HIDE, SCALE_CAP, CAPTURE_TIMEOUT_MS);
-      if (disposed) {
+      if (
+        disposed ||
+        startedRevision !== revision ||
+        scrollX !== win.scrollX ||
+        scrollY !== win.scrollY ||
+        width !== win.innerWidth ||
+        height !== win.innerHeight ||
+        !options.canCapture()
+      ) {
         out.bitmap.close();
+        lastAt = win.performance.now();
         return;
       }
       failures = 0;
@@ -162,15 +179,19 @@ export function createSceneProvider(options: SceneOptions): SceneProvider {
   };
 
   const schedule = (delay: number) => {
-    if (disposed || timer) return;
+    if (disposed) return;
+    win.clearTimeout(timer);
+    if (idleHandle !== null) win.cancelIdleCallback?.(idleHandle);
+    idleHandle = null;
     timer = win.setTimeout(() => {
+      timer = 0;
       // Run when the browser is idle, so a capture never lands in the middle of an interaction.
       const idle = (
         win as Window & {
           requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
         }
       ).requestIdleCallback;
-      if (idle) idle.call(win, () => void run(), { timeout: 1200 });
+      if (idle) idleHandle = idle.call(win, () => void run(), { timeout: 1200 });
       else void run();
     }, delay);
   };
@@ -178,15 +199,20 @@ export function createSceneProvider(options: SceneOptions): SceneProvider {
   return {
     request() {
       if (disposed) return;
+      revision++;
+      requestedAt = win.performance.now();
       if (inFlight) pending = true;
       else schedule(SETTLE_MS);
     },
     reset() {
       failures = 0;
+      revision++;
     },
     dispose() {
       disposed = true;
       win.clearTimeout(timer);
+      if (idleHandle !== null) win.cancelIdleCallback?.(idleHandle);
+      idleHandle = null;
       timer = 0;
       session?.dispose();
       session = null;
