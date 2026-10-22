@@ -72,6 +72,12 @@ the rim. Three things have to hold together, and each has been the cause of "it 
    (`--evert-tint` in `liquid-glass.css`), never `--site-surface-hover`. The cursor light also has a soft bloom across the
    FACE of a slab (shader `curGlow`), not only a glint on the bevel band.
 
+The glass clarity preference is retired. All visitors use the role tints above;
+legacy `rmh-glass-level` and `rmh-reduce-transparency` device values are cleared
+before first paint and during hydration, and saved account values are ignored.
+There is no slider or account override. OS reduced transparency, forced colours,
+high contrast, performance budgets and renderer capability fallbacks still apply.
+
 ## No shadows: the edge is the depth
 
 Nothing on the site carries a drop shadow or an inset highlight any more. Every `--site-shadow*`,

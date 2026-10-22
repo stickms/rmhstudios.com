@@ -34,7 +34,6 @@ const schema = z
       .nullable()
       .optional()
       .refine((v) => v == null || ACCENT_IDS.has(v), { message: 'Unknown accent' }),
-    reduceTransparency: z.boolean().optional(),
   })
   .and(appearanceComfortSchema);
 
@@ -48,13 +47,11 @@ export const Route = createFileRoute('/api/preferences/appearance')({
         return Response.json({
           style: row?.style ?? null,
           accent: row?.accent ?? null,
-          reduceTransparency: row?.reduceTransparency ?? false,
           fontScale: row?.fontScale ?? null,
           density: row?.density ?? null,
           readableFont: row?.readableFont ?? false,
           customAccent: row?.customAccent ?? null,
           reduceMotion: row?.reduceMotion ?? false,
-          glassLevel: row?.glassLevel ?? null,
           colorVision: row?.colorVision ?? null,
           navTransition: row?.navTransition ?? null,
           alwaysEvertGlobe: row?.alwaysEvertGlobe ?? false,
@@ -68,12 +65,10 @@ export const Route = createFileRoute('/api/preferences/appearance')({
           const {
             style,
             accent,
-            reduceTransparency,
             fontScale,
             density,
             readableFont,
             reduceMotion,
-            glassLevel,
             colorVision,
             navTransition,
             alwaysEvertGlobe,
@@ -90,7 +85,6 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             ...(readableFont !== undefined ? { readableFont } : {}),
             ...(customAccent !== undefined ? { customAccent } : {}),
             ...(reduceMotion !== undefined ? { reduceMotion } : {}),
-            ...(glassLevel !== undefined ? { glassLevel } : {}),
             ...(navTransition !== undefined ? { navTransition } : {}),
             ...(alwaysEvertGlobe !== undefined ? { alwaysEvertGlobe } : {}),
             ...(eversionLevel !== undefined ? { eversionLevel } : {}),
@@ -105,10 +99,9 @@ export const Route = createFileRoute('/api/preferences/appearance')({
               userId: session.user.id,
               style,
               accent,
-              reduceTransparency: reduceTransparency ?? false,
               ...comfort,
             },
-            update: { style, accent, reduceTransparency, ...comfort },
+            update: { style, accent, ...comfort },
           });
           // perf: the root loader caches the seed row (__root.tsx); drop it so the
           // next render reflects this save on every instance.
@@ -116,13 +109,11 @@ export const Route = createFileRoute('/api/preferences/appearance')({
           return Response.json({
             style: row.style ?? null,
             accent: row.accent ?? null,
-            reduceTransparency: row.reduceTransparency ?? false,
             fontScale: row.fontScale ?? null,
             density: row.density ?? null,
             readableFont: row.readableFont ?? false,
             customAccent: row.customAccent ?? null,
             reduceMotion: row.reduceMotion ?? false,
-            glassLevel: row.glassLevel ?? null,
             colorVision: row.colorVision ?? null,
             navTransition: row.navTransition ?? null,
             alwaysEvertGlobe: row.alwaysEvertGlobe ?? false,

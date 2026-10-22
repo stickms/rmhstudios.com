@@ -31,6 +31,7 @@ import {
   resolveNavTransition,
 } from '@/lib/appearance/prefs';
 import { useThemeStore } from '@/stores/themeStore';
+import { accountAppearanceSeed } from '@/lib/appearance/account-seed';
 
 type Handler = (ctx: { params: object; request: Request }) => Promise<Response>;
 const handlers = (
@@ -67,6 +68,36 @@ beforeEach(() => {
 });
 
 describe('PUT /api/preferences/appearance navTransition (S#24)', () => {
+  it('never sends retired account opacity settings back to the browser', async () => {
+    const row = { style: 'default', accent: null, glassLevel: 0, reduceTransparency: true };
+    findUnique.mockResolvedValue(row);
+    const res = await handlers.GET({
+      params: {},
+      request: new Request('https://rmhstudios.com/api/preferences/appearance', {
+        headers: { cookie: 'better-auth.session_token=abc' },
+      }),
+    });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).not.toHaveProperty('glassLevel');
+    expect(data).not.toHaveProperty('reduceTransparency');
+    const seed = accountAppearanceSeed(row);
+    expect(seed).toHaveProperty('rmh-style', 'default');
+    expect(seed).not.toHaveProperty('rmh-glass-level');
+    expect(seed).not.toHaveProperty('rmh-reduce-transparency');
+  });
+
+  it('ignores retired opacity settings sent by an older client', async () => {
+    const res = await put({ navTransition: 'mercator', glassLevel: 0, reduceTransparency: true });
+    expect(res.status).toBe(200);
+    const { create, update } = upsert.mock.calls[0][0];
+    for (const data of [create, update, await res.json()]) {
+      expect(data).not.toHaveProperty('glassLevel');
+      expect(data).not.toHaveProperty('reduceTransparency');
+    }
+    expect(update.navTransition).toBe('mercator');
+  });
+
   it('has exactly the six spec values', () => {
     expect([...NAV_TRANSITIONS]).toEqual([
       'random',

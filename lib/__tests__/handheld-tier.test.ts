@@ -132,12 +132,12 @@ describe('the CSS half actually stops the motion', () => {
     expect(block).not.toContain('--glass-blur-factor');
   });
 
-  it(':root combines all three blur inputs with min() so no tier can raise cost', () => {
+  it(':root caps blur at the default and both device budgets so no tier can raise cost', () => {
     const root = GLOBALS.slice(0, GLOBALS.indexOf('@layer components'));
     const factor = root.match(/--glass-blur-factor:\s*min\(([^;]+)\);/s);
     expect(factor).not.toBeNull();
     const inputs = factor![1];
-    expect(inputs).toContain('--glass-user-blur');
+    expect(inputs).toMatch(/^\s*1,/);
     expect(inputs).toContain('--glass-blur-cap-tier');
     expect(inputs).toContain('--glass-blur-cap-viewport');
   });
@@ -156,7 +156,9 @@ describe('the CSS half actually stops the motion', () => {
     // nothing left for a handheld rule to stop; static-backdrop.test.ts is the
     // gate that keeps it that way. Pinned here so a reintroduced handheld block
     // reads as the signal it would be: someone put the motion back.
-    expect(RADIAL).not.toMatch(/\.radial-backdrop__(ring|blob)[^{]*\{[^}]*animation\s*:\s*(?!none)/);
+    expect(RADIAL).not.toMatch(
+      /\.radial-backdrop__(ring|blob)[^{]*\{[^}]*animation\s*:\s*(?!none)/,
+    );
   });
 });
 

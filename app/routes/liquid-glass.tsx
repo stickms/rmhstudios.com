@@ -15,18 +15,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
-import { useThemeStore } from '@/stores/themeStore';
-
-// §5.46: read-only indicator of the active glass clarity stop (no i18n in the lab).
-const CLARITY_LABELS = ['Opaque', 'Calm', 'Default', 'Airy', 'Clear'];
-function ClarityIndicator() {
-  const level = useThemeStore((s) => s.glassLevel);
-  return (
-    <Badge variant="outline">
-      clarity {level} · {CLARITY_LABELS[level] ?? '—'}
-    </Badge>
-  );
-}
 
 const MORPH_TABS = [
   { id: 'for-you', label: 'For You' },
@@ -212,7 +200,6 @@ function LiquidGlassLab() {
               <Badge variant="accent">L1–L4 elevation</Badge>
               <Badge variant="default">cursor light</Badge>
               <Badge variant="outline">tap ripples</Badge>
-              <ClarityIndicator />
             </div>
           </div>
         </header>

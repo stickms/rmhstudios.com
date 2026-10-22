@@ -116,7 +116,13 @@ git "${DIFF[@]}" -U0 --diff-filter=ACMR 2>/dev/null | awk '
 # matching both, skipping comment-only lines (a class-shaped word in prose is a
 # comment, not a call site — the same lesson the vitest gates record).
 scan() {
-  awk -v pathre="$1" -v pat="$2" '
+  # -v interprets backslash escapes, corrupting regexes such as literal \(.
+  # ENVIRON preserves the patterns verbatim in both GNU awk and mawk.
+  RMH_SCAN_PATH="$1" RMH_SCAN_PATTERN="$2" awk '
+    BEGIN {
+      pathre = ENVIRON["RMH_SCAN_PATH"]
+      pat = ENVIRON["RMH_SCAN_PATTERN"]
+    }
     {
       p1 = index($0, ":"); if (p1 == 0) next
       file = substr($0, 1, p1 - 1)

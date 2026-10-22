@@ -354,14 +354,11 @@ id) self-heal to `default` during hydration.
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
 `GlassFilter` — the tab-capsule merge host, with no optical lenses) with a
-design-lab reference at `/liquid-glass`. A **Glass clarity** slider (Settings →
-Appearance, §5.46) tunes how much scene shows through in five stops
-(`0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear`): stop 0 is the opaque
-`html.reduce-transparency` mechanism (the manual equivalent of the OS
-`prefers-reduced-transparency`), and stops 1/3/4 scale the `--glass-user-blur` /
-`--glass-user-tint` factors the glass classes consume (stop 2 = the shipped
-default). Persisted as `rmh-glass-level`, applied pre-paint by the no-flash
-script; the OS override and high-contrast still win.
+design-lab reference at `/liquid-glass`. Everyone uses the shared default glass
+material. The Glass clarity slider is retired: saved device and account values
+cannot make the site opaque or change its tint. Old device keys are cleared
+before first paint and during hydration. OS reduced-transparency preferences,
+forced colours, high contrast and renderer capability fallbacks still apply.
 
 On top of any theme a user can pick an **accent preset** — a curated color
 (`lib/appearance.ts`, `ACCENT_PRESETS`, 14 options) that overrides just the
@@ -419,7 +416,6 @@ account-synced. The shared constants, zod schema and storage keys are
 | **Density**       | `cozy` \| `compact` → `html[data-density]`; compact tightens `[data-slot="card"]` padding and gap. Font sizes and touch targets deliberately unchanged                                                    | `rmh-density`       |
 | **Readable font** | `html.readable-font` swaps the **body** face to a high-legibility stack (Atkinson Hyperlegible → Verdana → system) with loosened tracking, word spacing and leading. Headings keep the theme display face | `rmh-readable-font` |
 | **Reduce motion** | In-account switch that sets `html.reduce-motion`, on equal footing with the OS preference                                                                                                                 | `rmh-reduce-motion` |
-| **Glass clarity** | Five stops (§5.46), below                                                                                                                                                                                 | `rmh-glass-level`   |
 | **Colour vision** | `html[data-color-vision=…]` retint of the semantic tokens, below                                                                                                                                          | `rmh-color-vision`  |
 | **Tilt effects**  | The one surviving motion input: `deviceorientation` drives the aurora on touch. iOS needs an explicit `requestPermission()` gesture, which this row performs — we never prompt on load                    | `rmh-motion-ok`     |
 
@@ -606,13 +602,11 @@ is the travelling sheen on `.glass-liquid` (§5.1.2) and otherwise free, now tha
 the pointer light that used to own it is gone (§5.1.1) — a component may take it
 for something static. Never add a third owner.
 
-**L4 has a legibility floor.** A popover is the one surface a visitor must read
-the instant it appears, so `.glass-overlay`'s tint is
-`clamp(78%, 90% × --glass-user-tint, 100%)` rather than a plain multiply: the
-Glass clarity slider still moves it, but "Airy" cannot take a dropdown to 56%
-opacity and lose it against a busy page. There is also a
-`@supports not (backdrop-filter: …)` rule that turns every blurred tier opaque
-where the engine cannot blur — the tint alone was never doing that job.
+**L4 keeps a fixed legible tint.** A popover must be readable over arbitrary
+content. `.glass-overlay` uses an 86% tint; tooltip arrows and toast fills use
+the named `--site-glass-overlay-fill` token. These fills are shared by every
+user and cannot be changed by a clarity preference. See
+[`liquid-glass-system.md`](./liquid-glass-system.md) for the shader and CSS tiers.
 **Floating UI must be `.glass-overlay`.** L1 `.glass-fill` has no backdrop blur
 by design (it is the repeated-card tier); a menu built on it sits transparent
 over whatever it opened on top of. This is CI-enforced — see §13.

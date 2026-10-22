@@ -21,7 +21,6 @@ import {
   APP_THEME_BG,
   DEFAULT_STYLE,
   SiteStyle,
-  REDUCE_TRANSPARENCY_KEY,
   USER_THEME_KEY,
   appRouteGround,
   paintDocumentGround,
@@ -36,7 +35,6 @@ import {
   READABLE_FONT_KEY,
   CUSTOM_ACCENT_KEY,
   REDUCE_MOTION_KEY,
-  GLASS_LEVEL_KEY,
   COLOR_VISION_KEY,
   NAV_TRANSITION_KEY,
   DEFAULT_NAV_TRANSITION,
@@ -45,8 +43,6 @@ import {
   DEFAULT_EVERSION_LEVEL,
   isEversionLevel,
   isNavTransition,
-  isGlassLevel,
-  applyGlassLevel,
   isColorVisionMode,
   applyColorVision,
 } from '@/lib/appearance/prefs';
@@ -317,8 +313,6 @@ export function Providers({
   const style = useThemeStore((s) => s.style);
   const preview = useThemeStore((s) => s.preview);
   const accent = useThemeStore((s) => s.accent);
-  const reduceTransparency = useThemeStore((s) => s.reduceTransparency);
-  const glassLevel = useThemeStore((s) => s.glassLevel);
   const fontScale = useThemeStore((s) => s.fontScale);
   const density = useThemeStore((s) => s.density);
   const readableFont = useThemeStore((s) => s.readableFont);
@@ -582,27 +576,6 @@ export function Providers({
     if (isAccentId(storedAccent)) {
       useThemeStore.getState().setAccent(storedAccent);
     }
-    if (localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1') {
-      useThemeStore.getState().setReduceTransparency(true);
-    }
-    // Glass clarity (§5.46): the stored stop wins; unset means Default (2) —
-    // full glass. The launch-era migration mapped a legacy reduce-transparency
-    // flag to stop 0 (Opaque), which surprised users into an opaque site; that
-    // mapping is removed, and the exact state it produced (level 0 + legacy
-    // flag together) is healed back to Default once. Deliberate Opaque picks
-    // made after this fix never write the legacy key, so they are not healed.
-    // True accessibility needs stay covered by prefers-reduced-transparency.
-    // Read the raw string first: Number(null) coerces to 0, which would
-    // hydrate a fresh visitor (no stored level) straight into Opaque — the
-    // stored-value branches below must only run when a value actually exists.
-    const glRaw = localStorage.getItem(GLASS_LEVEL_KEY);
-    const gl = glRaw === null ? Number.NaN : Number(glRaw);
-    if (gl === 0 && localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1') {
-      localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
-      localStorage.setItem(GLASS_LEVEL_KEY, '2');
-    } else if (isGlassLevel(gl)) {
-      useThemeStore.getState().setGlassLevel(gl);
-    }
     // Comfort suite (§13) — hydrate from the no-flash localStorage cache.
     const st = useThemeStore.getState();
     const fs = Number(localStorage.getItem(FONT_SCALE_KEY));
@@ -682,18 +655,13 @@ export function Providers({
     if (userTheme) localStorage.setItem(USER_THEME_KEY, JSON.stringify(userTheme));
     else localStorage.removeItem(USER_THEME_KEY);
 
-    // Glass clarity (§5.46): the slider owns both the reduce-transparency class
-    // (stop 0, the §10 degradation the glass keys off) AND the inline user
-    // blur/tint factors (stops 1/3/4). Persisted for the no-flash script; the
-    // legacy reduce-transparency key is kept in sync at stop 0 so an older client
-    // or the no-flash fallback still turns glass off.
-    applyGlassLevel(html, glassLevel);
-    localStorage.setItem(GLASS_LEVEL_KEY, String(glassLevel));
-    // Never write the legacy reduce-transparency key here: the level-0 heal in
-    // the hydration effect keys on (level 0 + legacy flag) to identify the
-    // launch-era migration state, so a deliberate Opaque pick must not recreate
-    // that pair.
-    localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
+    // Glass clarity is retired. Clear old device overrides, including during HMR;
+    // OS transparency preferences and high contrast still apply in the material layer.
+    html.classList.remove('reduce-transparency');
+    html.style.removeProperty('--glass-user-blur');
+    html.style.removeProperty('--glass-user-tint');
+    localStorage.removeItem('rmh-glass-level');
+    localStorage.removeItem('rmh-reduce-transparency');
 
     // Accent override: apply on content pages; clear on app/game routes (they own
     // their palette) and when no accent is chosen. applyAccent no-ops safely for a
@@ -785,7 +753,6 @@ export function Providers({
     preview,
     accent,
     isAppRoute,
-    glassLevel,
     fontScale,
     density,
     readableFont,
@@ -807,25 +774,21 @@ export function Providers({
   const lastSavedAppearanceRef = useRef<{
     style: string;
     accent: string | null;
-    reduceTransparency: boolean;
   } | null>(null);
 
   // Fire-and-forget PUT of the appearance to the account, recording it as the
   // last-saved value so the change-watcher below never echoes it straight back.
-  const saveAppearance = useCallback(
-    (next: { style: string; accent: string | null; reduceTransparency: boolean }) => {
-      lastSavedAppearanceRef.current = next;
-      fetch('/api/preferences/appearance', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(next),
-      }).catch((err) => {
-        console.error('Appearance save failed:', err);
-      });
-    },
-    [],
-  );
+  const saveAppearance = useCallback((next: { style: string; accent: string | null }) => {
+    lastSavedAppearanceRef.current = next;
+    fetch('/api/preferences/appearance', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(next),
+    }).catch((err) => {
+      console.error('Appearance save failed:', err);
+    });
+  }, []);
 
   useEffect(() => {
     if (!userId) {
@@ -856,7 +819,6 @@ export function Providers({
           remote: {
             style: string | null;
             accent: string | null;
-            reduceTransparency?: boolean | null;
           } | null,
         ) => {
           if (cancelled || !remote) return;
@@ -868,32 +830,21 @@ export function Providers({
               ? (remote.style as SiteStyle)
               : store.style;
           const nextAccent = isAccentId(remote.accent) ? remote.accent : store.accent;
-          const nextReduce =
-            typeof remote.reduceTransparency === 'boolean'
-              ? remote.reduceTransparency
-              : store.reduceTransparency;
-          if (
-            remote.style !== nextStyle ||
-            remote.accent !== nextAccent ||
-            remote.reduceTransparency !== nextReduce
-          ) {
+          if (remote.style !== nextStyle || remote.accent !== nextAccent) {
             // Server was missing a value this device has → seed the account with the
             // merged result (also records it as last-saved).
             saveAppearance({
               style: nextStyle,
               accent: nextAccent,
-              reduceTransparency: nextReduce,
             });
           } else {
             lastSavedAppearanceRef.current = {
               style: nextStyle,
               accent: nextAccent,
-              reduceTransparency: nextReduce,
             };
           }
           store.setStyle(nextStyle);
           store.setAccent(nextAccent);
-          store.setReduceTransparency(nextReduce);
           // Comfort suite (§13): apply account values on this device (account
           // wins where set; the settings panel persists device changes).
           const r = remote as typeof remote & {
@@ -902,7 +853,6 @@ export function Providers({
             readableFont?: boolean | null;
             customAccent?: string | null;
             reduceMotion?: boolean | null;
-            glassLevel?: number | null;
             colorVision?: string | null;
             navTransition?: string | null;
             alwaysEvertGlobe?: boolean | null;
@@ -920,14 +870,6 @@ export function Providers({
           if (typeof r.alwaysEvertGlobe === 'boolean')
             store.setAlwaysEvertGlobe(r.alwaysEvertGlobe);
           if (isEversionLevel(r.eversionLevel)) store.setEversionLevel(r.eversionLevel);
-          // Glass clarity (§5.46): the account stop wins; otherwise map a legacy
-          // reduce-transparency flag to stop 0 (Opaque). glassLevel is authoritative
-          // for the reduce-transparency class going forward.
-          // An account without an explicit glassLevel means Default (2) — the
-          // legacy reduceTransparency boolean no longer forces Opaque (it
-          // surprised users into an opaque site; OS-level
-          // prefers-reduced-transparency still covers accessibility needs).
-          if (isGlassLevel(r.glassLevel)) store.setGlassLevel(r.glassLevel);
           appearanceSyncedRef.current = true;
         },
       )
@@ -943,15 +885,9 @@ export function Providers({
   useEffect(() => {
     if (!userId || !appearanceSyncedRef.current) return;
     const last = lastSavedAppearanceRef.current;
-    if (
-      last &&
-      last.style === style &&
-      last.accent === accent &&
-      last.reduceTransparency === reduceTransparency
-    )
-      return;
-    saveAppearance({ style, accent, reduceTransparency });
-  }, [style, accent, reduceTransparency, userId, saveAppearance]);
+    if (last && last.style === style && last.accent === accent) return;
+    saveAppearance({ style, accent });
+  }, [style, accent, userId, saveAppearance]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -1028,8 +964,7 @@ export function Providers({
                     // §L4), not a third answer. This was a flat 82% of
                     // `--site-surface-opaque`, which meant a toast was thinner
                     // than every other floating surface, had no legibility
-                    // floor, and — unlike the tier — ignored the Glass clarity
-                    // slider entirely. A toast is the one L4 surface that
+                    // floor. A toast is the one L4 surface that
                     // appears unbidden and is gone in four seconds, so it is the
                     // last one that can afford to ghost.
                     background: 'var(--site-glass-overlay-fill)',

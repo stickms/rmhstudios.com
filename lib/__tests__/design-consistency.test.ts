@@ -645,7 +645,7 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
           'lighter tint by design — it is the tier for repeated CARDS — so a menu ' +
           'built on it sits transparent over whatever it opened on top of and the ' +
           'labels ghost. `.glass-overlay` carries the blur plus the ≥78% legibility ' +
-          'floor that the Glass clarity slider cannot push under.',
+          'floor shared by every user.',
       ),
     ).toEqual([]);
   });

@@ -253,16 +253,12 @@
      border colour) and an inline style object (sonner's toast, which owns its
      own positioning and stacking). Those were three hand-copied approximations
      of this expression before it had a name. */
-  --site-glass-overlay-fill: color-mix(
-    in srgb,
-    var(--site-bg) clamp(78%, calc(90% * var(--glass-user-tint, 1)), 100%),
-    transparent
-  );
+  --site-glass-overlay-fill: color-mix(in srgb, var(--site-bg) 90%, transparent);
 
   /* `--site-glass-menu-opacity` (88%) lived here, for menus opening over live
      content with no scrim. It is retired: it existed because `.glass-overlay`
      was 62%, and that tier now carries its own legibility floor — 90% base,
-     clamped to a hard 78% minimum, and slider-aware. A second flat number could
+     fixed for every user. A second flat number could
      only drift from it, and did: it had become the LOWER of the two, on exactly
      the surfaces it was added to strengthen. */
   --site-glass-rim: rgba(0, 0, 0, 0.08);
@@ -298,29 +294,9 @@
     transparent 65%
   );
 
-  --glass-user-blur: 1;
-  --glass-user-tint: 1;
-  /* §5.46.4 — the blur multiplier every backdrop-filter on the site is scaled
-     by. Three inputs, combined with min() so the SMALLEST always wins and no
-     tier can ever raise another tier's cost:
-
-       --glass-user-blur         the clarity slider (runtime, inline on <html>)
-       --glass-blur-cap-tier     the device tier — html.perf-lite caps at 1
-       --glass-blur-cap-viewport the viewport tier — phones/tablets cap lower
-
-     They are three separate PROPERTIES rather than three rules writing one,
-     because the tiers live on selectors of different specificity
-     (`html.perf-lite` vs a bare `html` inside a media query). Written as
-     competing rules the higher-specificity tier would win outright — and since
-     perf-lite is the *less* aggressive cap of the two, a weak phone would have
-     ended up with MORE blur than a strong one. min() over disjoint properties
-     composes instead of competing. 999 is an inert default: it just means
-     "this tier has no opinion". */
-  --glass-blur-factor: min(
-    var(--glass-user-blur, 1),
-    var(--glass-blur-cap-tier, 999),
-    var(--glass-blur-cap-viewport, 999)
-  );
+  /* Legacy non-material blur consumers retain the bounded device/viewport budget.
+     Glass roles themselves are shader-drawn and never use backdrop-filter. */
+  --glass-blur-factor: min(1, var(--glass-blur-cap-tier, 999), var(--glass-blur-cap-viewport, 999));
 
   /* Elevation tokens — feather-soft Apple depth layering */
   --site-shadow: 0 0 0 0 transparent;
@@ -1530,7 +1506,7 @@ html.app-route {
        backdrop through it. Cutting the radius to 60% is close to invisible
        against that floor (18px → 10.8px panes, 20px → 12px chrome, 30px → 18px
        overlays) while removing a large, per-frame, full-screen GPU cost.
-       A cap, never a raise — the clarity slider can still go lower. */
+       A cap, never a raise — this composes with the device budget. */
     --glass-blur-cap-viewport: 0.6;
   }
 
@@ -1791,10 +1767,8 @@ html.reduce-transparency .glass-liquid::after {
    aurora + sheen go. CSS-only demotion — no component branches. */
 html.perf-lite {
   --glass-glint-attach: scroll;
-  /* §5.46.4: the clarity slider may lower blur on weak devices but never raise
-     its cost — cap this tier's contribution at 1. Declaring the CAP rather than
-     the derived factor is what lets the viewport tier below cap it further; see
-     the --glass-blur-factor note at :root. Tint still scales. */
+  /* Cap the device budget at 1; the independent viewport cap may lower it
+     further through --glass-blur-factor. */
   --glass-blur-cap-tier: 1;
   --glass-glint-layer: linear-gradient(
     180deg,
@@ -2739,7 +2713,7 @@ html.readable-font body {
     );
   }
 
-  /* §5.5x B — touch target: the 16px slider thumb (clarity slider + every other
+  /* §5.5x B — touch target: the 16px slider thumb (volume, playback and other
      slider) needs a ≥44px hit area on coarse pointers (WCAG 2.5.8) without growing
      its visual size. An invisible centred ::after expands the tap target; fine
      pointers keep the precise 16px thumb and the ability to click the track. */
