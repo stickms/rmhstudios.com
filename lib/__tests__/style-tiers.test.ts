@@ -124,7 +124,10 @@ describe('entry stylesheet tiers', () => {
       offenders,
       'a site page imports code app/site-tier.css skips, so its utilities are missing there — remove that `@source not` line, or keep the import out of the site shell',
     ).toEqual([]);
-  });
+    // Checks every file the site shell reaches against every exclusion: ~5s on a
+    // loaded CI shard, right at vitest's 5s default, which made it time out (not
+    // fail) and block deploys. Same treatment as fouc-contract's graph walk.
+  }, 30_000);
 
   it('every exclusion still names something that exists', () => {
     const stale = tierExcluded.filter((p) => !existsSync(join(ROOT, p)));
@@ -146,7 +149,7 @@ describe('entry stylesheet tiers', () => {
       [...missing].sort(),
       'only full-screen routes import these directories, yet the site sheet scans them — add the lines to app/site-tier.css',
     ).toEqual([]);
-  });
+  }, 30_000); // same graph walk as above (~2.5s on CI)
 
   it('the app-tier sheet is the unfiltered superset', () => {
     expect(sourceNots('app-tier.css')).toEqual([]);
