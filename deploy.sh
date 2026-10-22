@@ -207,13 +207,14 @@ send_deploy_started() {
 }
 
 # ── On-call (deploy/oncall-send.sh → the off-box watchdog) ──────────────────
-# The deploy channel is for everyone; only a deploy that leaves production
-# needing a human pages @oncall. Best effort: oncall-send.sh always exits 0
-# and skips quietly when ONCALL_URL / ONCALL_SIGNING_SECRET are unset.
+# The deploy channel is for everyone; every failed deploy also pages @oncall
+# (Sev2): even one that left production on the old release blocks shipping.
+# Best effort: oncall-send.sh always exits 0 and skips quietly when
+# ONCALL_URL / ONCALL_SIGNING_SECRET are unset.
 #   D01 Sev2  web rollback FAILED      — prod may be serving nothing good
-#   D02 Sev3  web auto-rolled back     — prod is fine (old release), the commit isn't
-#   D03 Sev3  deploy failed            — prod unchanged or partly updated
-#   D04 Sev3  deploy died unreported   — see cleanup()
+#   D02 Sev2  web auto-rolled back     — prod is fine (old release), the commit isn't
+#   D03 Sev2  deploy failed            — prod unchanged or partly updated
+#   D04 Sev2  deploy died unreported   — see cleanup()
 # A later successful deploy clears all of them.
 DEPLOY_REPORTED=0
 DEPLOY_IN_PROGRESS=0
@@ -228,13 +229,13 @@ oncall_deploy() {
                 bash "$send" alert resolved "$id" 3 "deploy recovered" "$what deployed successfully" || true
             done ;;
         rolledback)
-            bash "$send" alert firing D02 3 "Deploy auto-rolled back" "$what: $reason" || true ;;
+            bash "$send" alert firing D02 2 "Deploy auto-rolled back" "$what: $reason" || true ;;
         fail)
             case "$reason" in
                 *"ROLLBACK FAILED"*)
                     bash "$send" alert firing D01 2 "Deploy rollback FAILED — production needs a human" "$what: $reason" || true ;;
                 *)
-                    bash "$send" alert firing D03 3 "Deploy failed" "$what: $reason" || true ;;
+                    bash "$send" alert firing D03 2 "Deploy failed" "$what: $reason" || true ;;
             esac ;;
     esac
 }
@@ -374,7 +375,7 @@ cleanup() {
     # unexpected `set -e` failure, a kill) would otherwise sit at "deploying"
     # forever with nobody told.
     if [ "$DEPLOY_IN_PROGRESS" = 1 ] && [ "$DEPLOY_REPORTED" = 0 ] && [ -f "${REPO_DIR}/deploy/oncall-send.sh" ]; then
-        bash "${REPO_DIR}/deploy/oncall-send.sh" alert firing D04 3 "Deploy died without reporting a result" \
+        bash "${REPO_DIR}/deploy/oncall-send.sh" alert firing D04 2 "Deploy died without reporting a result" \
             "Commit ${DEPLOY_SHORT_HASH:-unknown} on ${ENVIRONMENT}: deploy.sh exited $rc before a final status. Check webhook.log." || true
     fi
     rm -f "$DEPLOY_LOG"
