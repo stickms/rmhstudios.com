@@ -1,0 +1,215 @@
+/* Shared liquid material. Native HTML stays live and selectable.
+   Imported by globals.css for BOTH style tiers. Utilities retain layout control.
+
+   There is NO backdrop-filter anywhere in this file, on purpose. Frosted blur is the opposite of liquid glass (it throws
+   away the detail refraction needs), it is the one engine-specific piece (Firefox flickers under transforms, Safari
+   and Chromium disagree about stacking), and it is what made glass look different per browser. Surfaces carry their own
+   legibility with an adaptive tint instead, and `lib/liquid/glass/engine.ts` draws the clear, refracting, lit slab on
+   top: a canvas behind the content (`.liquid-glass-canvas`) on `glass-pane/chrome/overlay`. This sheet is also the
+   complete fallback tier: with no WebGL2, under reduced transparency/high contrast/`perf-lite`, a surface is simply
+   the tint + a static lit edge below, and looks the same in every engine. */
+@layer components {
+  :root {
+    --liquid-rim: color-mix(in srgb, white 62%, transparent);
+    --liquid-coat: linear-gradient(
+      155deg,
+      rgb(255 255 255 / 0.16),
+      transparent 38%,
+      rgb(255 255 255 / 0.025) 76%,
+      rgb(255 255 255 / 0.08)
+    );
+    --liquid-edge:
+      inset 0 1px 0 var(--liquid-rim),
+      inset 0 -1px 0 color-mix(in srgb, var(--site-text) 7%, transparent);
+  }
+
+  /* Clear-coat reflection has no backdrop cost on repeated content. */
+  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay):not([data-liquid-material='off']) {
+    position: relative;
+    background-image: var(--liquid-coat);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: var(--liquid-edge), var(--site-shadow-sm);
+    border: var(--site-border-width, 1px) solid color-mix(in srgb, var(--site-border) 75%, white);
+    border-radius: var(--site-radius);
+  }
+  .glass-pane:not([data-liquid-material='off']) {
+    background-color: color-mix(
+      in srgb,
+      var(--site-bg) clamp(48%, calc(60% * var(--glass-user-tint, 1)), 100%),
+      transparent
+    );
+  }
+  /* Sticky chrome floats over scrolling text with no blur to soften it, so it is denser than a pane. */
+  .glass-chrome:not([data-liquid-material='off']) {
+    background-color: color-mix(
+      in srgb,
+      var(--site-bg) clamp(74%, calc(86% * var(--glass-user-tint, 1)), 100%),
+      transparent
+    );
+  }
+  .glass-fill:not([data-liquid-material='off']) {
+    position: relative;
+    background-color: color-mix(
+      in srgb,
+      var(--site-surface) clamp(68%, calc(88% * var(--glass-user-tint, 1)), 100%),
+      transparent
+    );
+    border-color: color-mix(in srgb, var(--site-border) 78%, var(--site-glass-light));
+  }
+  .glass-pane:not([data-liquid-material='off']) {
+    box-shadow: var(--liquid-edge), var(--site-shadow);
+  }
+  .glass-overlay:not([data-liquid-material='off']) {
+    /* Floating labels must remain readable over arbitrary content. */
+    max-inline-size: calc(100dvw - var(--safe-left, 0px) - var(--safe-right, 0px) - 1rem);
+    background-color: color-mix(
+      in srgb,
+      var(--site-bg) clamp(90%, calc(94% * var(--glass-user-tint, 1)), 100%),
+      transparent
+    );
+    box-shadow: var(--liquid-edge), var(--site-shadow);
+  }
+  :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):not([data-liquid-material='off']) {
+    border-color: color-mix(in srgb, var(--site-border) 85%, var(--site-glass-light));
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 35%, transparent);
+    background-color: color-mix(in srgb, var(--site-text) 4%, var(--site-bg));
+    border-radius: var(--site-radius-sm);
+  }
+  .glass-interactive {
+    position: relative;
+    transition:
+      background-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+  .glass-interactive:hover {
+    background-color: var(--site-surface-hover);
+  }
+  .glass-interactive:active {
+    scale: 0.97;
+  }
+  .glass-scrim {
+    background: color-mix(in srgb, var(--site-bg) 60%, transparent);
+  }
+  .glass-opaque {
+    background: var(--site-surface-opaque, var(--site-bg));
+  }
+  /* Fixed descendants keep the viewport as their containing block. */
+  .glass-chrome--aside {
+    position: relative;
+    background: var(--site-bg);
+    border-color: var(--site-border);
+    box-shadow: var(--liquid-edge);
+  }
+  /* Legacy modifier names are API aliases only: no SVG lens or sweep renderer. */
+  .glass-refract::before,
+  .glass-liquid::after {
+    content: none;
+  }
+  @media (max-width: 767.98px) {
+    :is(.glass-fill, .glass-pane, .glass-chrome) {
+      background-color: color-mix(in srgb, var(--site-bg) 88%, transparent);
+    }
+  }
+  [data-slot='button']:not([data-variant='link']):not([data-liquid-material='off']) {
+    background-image: var(--liquid-coat);
+    box-shadow: var(--liquid-edge), var(--site-shadow-sm);
+  }
+  [data-slot='button'][data-variant='ghost'] {
+    background-image: none;
+    box-shadow: none;
+  }
+  /* Standalone game menus use the same viewport contract without AppShell.
+     Apply the coat to menu controls, leaving live canvas/HUD gameplay alone. */
+  :is(.app-page, .app-screen)
+    :is(button, [role='button']):not([data-liquid-material='off']):not([data-fluid-press='none']) {
+    background-image: var(--liquid-coat);
+  }
+
+  /* The engine's slab. The canvas is the host's last child, painted BEHIND its content: `isolation` makes the host the
+     stacking context the negative z-index is resolved in, so the canvas sits above the host's own tint and below every
+     in-flow child, positioned or not. The shader draws the bevel, rim light and ripples, so the static CSS edge and coat
+     step aside; the host keeps its tint (the interior shows through it), border and drop shadow. */
+  .liquid-glass-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    user-select: none;
+  }
+  [data-liquid-canvas='on'] {
+    isolation: isolate;
+  }
+  [data-liquid-canvas='on'][data-liquid-static] {
+    position: relative;
+  }
+  :is(.glass-pane, .glass-chrome, .glass-overlay)[data-liquid-canvas='on']:not(
+      [data-liquid-material='off']
+    ) {
+    background-image: none;
+    box-shadow: var(--site-shadow);
+  }
+
+  /* A separate clipped carrier owns the moving light. No pseudo collisions,
+     gradient-position animation, backdrop filters or inherited CSS writes. */
+  .liquid-light {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    contain: strict;
+    z-index: 1;
+  }
+  .liquid-light > span {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--site-glass-light, white) 36%, transparent),
+      transparent
+    );
+    opacity: 0.55;
+    will-change: transform;
+  }
+}
+
+/* Accessibility rules intentionally outrank both theme and material layers. */
+:is(.reduce-transparency, .style-high-contrast)
+  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset),
+:is(.reduce-transparency, .style-high-contrast) [data-slot='button'] {
+  background-image: none !important;
+}
+:is(.reduce-motion, .reduce-transparency, .style-high-contrast, .perf-lite) .liquid-light,
+.app-high-contrast .liquid-light {
+  display: none !important;
+}
+:is(.reduce-transparency, .style-high-contrast, .perf-lite) .liquid-glass-canvas,
+.app-high-contrast .liquid-glass-canvas {
+  display: none !important;
+}
+@media (prefers-reduced-motion: reduce),
+  (prefers-reduced-transparency: reduce),
+  (forced-colors: active),
+  print {
+  .liquid-light {
+    display: none !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active), print {
+  .liquid-glass-canvas {
+    display: none !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset) {
+    background-image: none !important;
+  }
+}

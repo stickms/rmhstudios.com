@@ -23,12 +23,12 @@ import { createFileRoute, redirect, Outlet, useRouterState } from '@tanstack/rea
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { StudioTabs, STUDIO_TAB_PATHS, type StudioTabPath } from '@/components/creator-studio/StudioTabs';
-import { ARCADE_SUB_TABS, type ArcadeSubTab } from '@/components/creator-studio/ArcadeSection';
-import '@/components/rmhvibe/vibe.css';
-import '@/components/library/library.css';
-import '@/components/builds/builds.css';
-import '@/components/creator-studio/creator-studio.css';
-import '@/components/creator-studio/storefront.css';
+import { ARCADE_SUB_TABS, type ArcadeSubTab } from '@/components/creator-studio/arcade-tabs';
+import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
+import { LibraryStyles } from '@/components/library/LibraryStyles';
+import { BuildsStyles } from '@/components/builds/BuildsStyles';
+import { CreatorStudioStyles } from '@/components/creator-studio/CreatorStudioStyles';
+import { StorefrontStyles } from '@/components/creator-studio/StorefrontStyles';
 
 /**
  * Where each legacy `?tab=` value now lives.
@@ -88,28 +88,35 @@ function CreateLayout() {
     STUDIO_TAB_PATHS.find((p) => p === pathname.replace(/\/+$/, '')) ?? '/create';
 
   return (
-    <PageLayout
-      title={t('create', { defaultValue: 'Create' })}
-      description={t('studio-sub', {
-        defaultValue:
-          'Generate shareable pages, dive into our games and apps, and craft AI personas — your whole creative toolkit in one place.',
-      })}
-    >
-      {/* `.cstudio-screen` stays as the wrapper: it declares `--studio-gutter`
-          and the sticky-group height every `.cstudio-*` descendant reads. What
-          it no longer carries is a bespoke hero — the page title is the shared
-          `PageLayout` header now, the same one /predictions and /developer use,
-          so Create stops being the one page with its own headline scale. */}
-      <div className="cstudio-screen vibe-screen min-h-screen">
-        {/* §16.2: the shared strip in the shared position. This used to add
-            `.cstudio-tabs` — its own 40px gutter and a sticky offset — so
-            Create's strip was 710px wide where every other page's was 766px,
-            and it was the only one that followed you down the page. It also
-            passed `iconOnly`, which is why two of its labels read "User B…" and
-            "AI Pers…". */}
-        <StudioTabs active={active} />
-        <Outlet />
-      </div>
-    </PageLayout>
+    <>
+      <VibeStyles />
+      <LibraryStyles />
+      <BuildsStyles />
+      <CreatorStudioStyles />
+      <StorefrontStyles />
+      <PageLayout
+        title={t('create', { defaultValue: 'Create' })}
+        description={t('studio-sub', {
+          defaultValue:
+            'Generate shareable pages, dive into our games and apps, and craft AI personas — your whole creative toolkit in one place.',
+        })}
+      >
+        {/* `.cstudio-screen` stays as the wrapper: it declares `--studio-gutter`
+            and the sticky-group height every `.cstudio-*` descendant reads. What
+            it no longer carries is a bespoke hero — the page title is the shared
+            `PageLayout` header now, the same one /predictions and /developer use,
+            so Create stops being the one page with its own headline scale. */}
+        <div className="cstudio-screen vibe-screen min-h-screen">
+          {/* §16.2: the shared strip in the shared position. This used to add
+              `.cstudio-tabs` — its own 40px gutter and a sticky offset — so
+              Create's strip was 710px wide where every other page's was 766px,
+              and it was the only one that followed you down the page. It also
+              passed `iconOnly`, which is why two of its labels read "User B…" and
+              "AI Pers…". */}
+          <StudioTabs active={active} />
+          <Outlet />
+        </div>
+      </PageLayout>
+    </>
   );
 }

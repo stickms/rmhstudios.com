@@ -1,12 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, stripSearchParams } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ExploreColumn } from '@/components/feed/ExploreColumn';
+import { SurpriseButton } from '@/components/discovery/SurpriseButton';
 import { SavedSearches } from '@/components/search/SavedSearches';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { listExplore } from '@/lib/explore.server';
 import { getSidebarData } from '@/lib/sidebar-data';
 import { isSearchTab, type SearchTab } from '@/lib/search/types';
@@ -27,8 +27,7 @@ import { isSearchTab, type SearchTab } from '@/lib/search/types';
 // leaderboard stays client-fetched — it is below the fold and shouldn't hold up
 // a blocking loader.
 const fetchExplore = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   const [discovery, sidebar] = await Promise.all([
     listExplore(session?.user?.id ?? null),
     getSidebarData(),
@@ -43,6 +42,12 @@ export const Route = createFileRoute('/_site/explore')({
     // result renderer can never disagree about which corpora a tab covers.
     tab: isSearchTab(search.tab) ? search.tab : ('top' as SearchTab),
   }),
+  // The defaults never reach the URL. Without this the canonical form of a
+  // bare `/explore` — the nav's own link — was `/explore?q=&tab=top`, so every
+  // direct visit, reload and shared link answered with a 307 and paid a second
+  // round trip before the first byte of the page (docs/ui-perf-audit-2026-10-09.md,
+  // LOAD-1). Stripping them makes `/explore` its own canonical address.
+  search: { middlewares: [stripSearchParams({ q: '', tab: 'top' as SearchTab })] },
   loader: () => fetchExplore(),
   head: () => ({
     meta: buildMeta({
@@ -81,6 +86,9 @@ function ExplorePage() {
         defaultValue: 'Search people, posts, builds and writing across RMH Studios.',
       })}
     >
+      <div className="flex justify-end px-4 pt-3">
+        <SurpriseButton />
+      </div>
       <SavedSearches currentQuery={q} />
       <ExploreColumn
         initialQuery={q}

@@ -28,6 +28,7 @@ import {
   type Difficulty,
   type MatchDuration,
 } from '@/lib/laundry-sort/constants';
+import { BasketCard } from '@/components/arcade/BasketCard';
 import { useLaundryStore } from '@/lib/laundry-sort/store';
 import { LeaderboardPanel } from './LeaderboardPanel';
 import { WashLegend } from './WashLegend';
@@ -229,11 +230,14 @@ export function MainMenu({
           </ul>
         </div>
 
-        <div className="ls-panel-strong flex min-h-0 flex-col p-4 sm:p-6">
-          <h3 className="mb-3 text-sm font-bold uppercase tracking-widest">
-            {t('leaderboard', { defaultValue: 'Leaderboard' })}
-          </h3>
-          <LeaderboardPanel refreshKey={leaderboardKey} />
+        <div className="flex min-h-0 flex-col gap-3">
+          <BasketCard signedIn={signedIn} onPlay={onSolo} />
+          <div className="ls-panel-strong flex min-h-0 flex-col p-4 sm:p-6">
+            <h3 className="mb-3 text-sm font-bold uppercase tracking-widest">
+              {t('leaderboard', { defaultValue: 'Leaderboard' })}
+            </h3>
+            <LeaderboardPanel refreshKey={leaderboardKey} />
+          </div>
         </div>
       </div>
     </div>

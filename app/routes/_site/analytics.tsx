@@ -15,7 +15,7 @@ function AnalyticsPage() {
   const { data: session, isPending } = useSession();
 
   return (
-    <PageLayout title={t('creator-analytics', { defaultValue: 'Creator Analytics' })} wide>
+    <PageLayout title={t('creator-analytics', { defaultValue: 'Creator analytics' })} wide>
       <div className="min-w-0 px-4 pb-[var(--site-page-bottom-space)]">
         {isPending ? (
           <div className="flex justify-center py-20">

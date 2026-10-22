@@ -5,7 +5,13 @@
  * Mobile (< md): a bottom sheet that slides up from the bottom edge.
  * Desktop (>= md): a centered dialog that scales in, identical to Dialog.
  * Transform/opacity only; the glass blur is never animated (janky). Gated on
- * no-preference so reduced-motion users get an instant appearance. */
+ * no-preference so reduced-motion users get an instant appearance.
+ *
+ * The present rides the sheet spring (`--spring-sheet`, globals.css §7.1 —
+ * APPLE_SPRING.sheet sampled), the way a UIKit sheet comes up. A phone dismiss
+ * crosses the whole screen height, so it takes the travel exit
+ * (`--motion-out-travel`, accelerating) instead of the 0.1s fade-in-place
+ * clock: 0.1s across ~800px read as the sheet vanishing, not leaving. */
 @media (prefers-reduced-motion: no-preference) {
  [data-slot="sheet-overlay"][data-state="open"] {
  animation: ui-sheet-overlay-in var(--motion-in) var(--motion-ease-in);
@@ -14,7 +20,21 @@
  animation: ui-sheet-overlay-out var(--motion-out) var(--motion-ease-out) forwards;
  }
  [data-slot="sheet-content"][data-state="open"] {
- animation: ui-sheet-content-in var(--motion-in) var(--motion-ease-in);
+ animation:
+ ui-sheet-fade-in var(--motion-in) var(--motion-ease-in),
+ ui-sheet-content-in var(--spring-sheet-duration) var(--spring-sheet);
+ }
+ [data-slot="sheet-content"][data-state="closed"] {
+ animation: ui-sheet-content-out var(--motion-out-travel) var(--motion-ease-out-travel) forwards;
+ }
+}
+/* Desktop: the sheet is a centred dialog, so it moves like one — the smooth
+ * spring, not the sheet spring's longer travel (see dialog.css). */
+@media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+ [data-slot="sheet-content"][data-state="open"] {
+ animation:
+ ui-sheet-fade-in var(--motion-in) var(--motion-ease-in),
+ ui-sheet-content-in var(--spring-smooth-duration) var(--spring-smooth);
  }
  [data-slot="sheet-content"][data-state="closed"] {
  animation: ui-sheet-content-out var(--motion-out) var(--motion-ease-out) forwards;
@@ -32,7 +52,13 @@
  }
 }
 
-/* Mobile: slide up from the bottom edge. */
+/* Mobile: slide up from the bottom edge, whole — no fade, as on iOS (the
+ * fade-in is a no-op here and real on desktop). */
+@keyframes ui-sheet-fade-in {
+ from {
+ opacity: 1;
+ }
+}
 @keyframes ui-sheet-content-in {
  from {
  transform: translateY(100%);
@@ -45,18 +71,24 @@
 }
 
 /* Desktop: centered scale-in (composes with the -50%/-50% translate set via
- * Tailwind's native `translate` property, exactly like Dialog). */
+ * Tailwind's native `translate` property, exactly like Dialog). One path both
+ * ways: the exit ends on the enter's start frame (they used to be 12px in,
+ * 8px out). */
 @media (min-width: 768px) {
- @keyframes ui-sheet-content-in {
+ @keyframes ui-sheet-fade-in {
  from {
  opacity: 0;
+ }
+ }
+ @keyframes ui-sheet-content-in {
+ from {
  transform: translateY(12px) scale(0.96);
  }
  }
  @keyframes ui-sheet-content-out {
  to {
  opacity: 0;
- transform: translateY(8px) scale(0.96);
+ transform: translateY(12px) scale(0.96);
  }
  }
 }

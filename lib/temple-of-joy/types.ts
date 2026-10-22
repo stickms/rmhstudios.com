@@ -625,6 +625,10 @@ export interface GameState {
     joy: number;
     sinnerJoy: number;
     manna: number;
+    /** Seconds of the absence that earned income (the rest ran only the slow layers). */
+    counted?: number;
+    /** Share of the rate kept while away, 0..1. */
+    efficiency?: number;
     /** Whether the report is still worth showing. */
     pending: boolean;
   };

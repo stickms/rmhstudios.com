@@ -36,6 +36,7 @@ import { PianoRollView } from '@/components/studio/piano-roll/PianoRollView';
 import { PatternView } from '@/components/studio/pattern/PatternView';
 import { SampleBrowser } from '@/components/studio/SampleBrowser';
 import { KeybindSettings } from '@/components/studio/KeybindSettings';
+import { StudioCreativeButtons } from '@/components/studio/creative/StudioCreativeButtons';
 import { MIN_BPM, MAX_BPM, SNAP_VALUES } from '@/lib/studio/constants';
 import type { ViewMode, ToolMode } from '@/lib/studio/types';
 
@@ -247,6 +248,8 @@ function TransportBar({
 
       {/* Right-side controls */}
       <div className="flex items-center gap-1">
+        <StudioCreativeButtons />
+
         {/* Sample browser toggle */}
         <button
           onClick={() => useStudioStore.getState().toggleSampleBrowser()}

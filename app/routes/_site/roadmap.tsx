@@ -16,12 +16,11 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest as getHttpRequest } from '@tanstack/react-start/server';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { RoadmapSection } from '@/components/roadmap/RoadmapSection';
 import { RequestBoard } from '@/components/requests/RequestBoard';
 import { PageFrame } from '@/components/feed/PageLayout';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { listRequests } from '@/lib/requests/board.server';
 import type { RequestBoardPage } from '@/lib/requests/schema';
 
@@ -36,8 +35,7 @@ interface RoadmapPayload {
  * on first paint; every subsequent filter/sort goes through `/api/requests`.
  */
 const fetchBoard = createServerFn({ method: 'GET' }).handler(async (): Promise<RoadmapPayload> => {
-  const request = getHttpRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   const userId = session?.user?.id ?? null;
   const board = await listRequests({ sort: 'top', viewerId: userId });
   return {

@@ -19,30 +19,29 @@ import { useTranslation } from 'react-i18next';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
-import { Sparkles, ShoppingBag, Store as StoreIcon } from 'lucide-react';
-import { auth } from '@/lib/auth';
+import { CalendarClock, Sparkles, ShoppingBag, Store as StoreIcon } from 'lucide-react';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { MEMBER_FEATURES, type MemberFeature } from '@/lib/entitlements/features';
 import { ShopColumn } from '@/components/feed/ShopColumn';
 import { MarketColumn } from '@/components/market/MarketColumn';
+import { DailyTab } from '@/components/economy-plus/DailyTab';
 import type { LiquidTab } from '@/components/ui/liquid-tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { getShopData } from '@/lib/shop/list.server';
 import { browse } from '@/lib/market/market.server';
 import type { MarketListingView } from '@/components/market/ListingCard';
 
-const STORE_TABS = ['membership', 'shop', 'market'] as const;
+const STORE_TABS = ['membership', 'shop', 'daily', 'market'] as const;
 type StoreTab = (typeof STORE_TABS)[number];
 
 // Membership tier + shop catalog + active marketplace, all server-side so every
 // tab is present at first paint / prefetched on intent instead of fetching on
 // mount.
 const fetchStore = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   const userId = session?.user?.id ?? null;
   const [tier, shop, listings] = await Promise.all([
     userId ? getUserTier(userId) : Promise.resolve('free' as Tier),
@@ -86,6 +85,7 @@ export const Route = createFileRoute('/_site/store/')({
 
 function Store() {
   const { t } = useTranslation('site');
+  const { t: te } = useTranslation('f-economy-plus');
   const { tier: currentTier, shop, listings, viewerId } = Route.useLoaderData();
   const { tab = 'membership', feature } = Route.useSearch();
   const navigate = useNavigate();
@@ -104,6 +104,7 @@ function Store() {
       icon: Sparkles,
     },
     { id: 'shop', label: t('store-tab-shop', { defaultValue: 'Shop' }), icon: ShoppingBag },
+    { id: 'daily', label: te('store-tab-daily', { defaultValue: 'Daily' }), icon: CalendarClock },
     { id: 'market', label: t('store-tab-market', { defaultValue: 'Market' }), icon: StoreIcon },
   ];
 
@@ -143,6 +144,11 @@ function Store() {
       {tab === 'shop' && (
         <div role="tabpanel" id="store-panel-shop" aria-labelledby="store-tab-shop">
           <ShopColumn initialData={shop} />
+        </div>
+      )}
+      {tab === 'daily' && (
+        <div role="tabpanel" id="store-panel-daily" aria-labelledby="store-tab-daily">
+          <DailyTab signedIn={!!viewerId} />
         </div>
       )}
       {tab === 'market' && (

@@ -41,6 +41,7 @@ import { isImage, openApp, showMessage } from '../actions';
 import type { AppProps } from '../apps';
 import { Icon } from '../icons';
 import { useOs } from '../store';
+import './paint.css';
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 16;

@@ -1,0 +1,42 @@
+# rmh on-call watchdog — deploy with:
+#   npx wrangler@4 deploy --config deploy/oncall-watchdog/wrangler.toml
+# Setup order (prove the gates reject unsigned requests first): see README.md.
+
+name = "rmh-oncall-watchdog"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+# Served on its workers.dev URL (https://rmh-oncall-watchdog.<subdomain>.workers.dev).
+# It lives in a Cloudflare account separate from the one that owns
+# rmhstudios.com, so it can't take a route on that zone — and it doesn't need
+# to: every caller is gated by its own check (Discord's signature, the VPS's
+# HMAC), not by the hostname. No preview URLs.
+workers_dev = true
+preview_urls = false
+
+[triggers]
+crons = ["* * * * *"]
+
+[[durable_objects.bindings]]
+name = "ONCALL_STATE"
+class_name = "OncallState"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["OncallState"]
+
+[observability]
+enabled = true
+
+# Not secret. Secrets (DISCORD_BOT_TOKEN, ONCALL_SIGNING_SECRET, ONCALL_WEBHOOK_URL) go in via
+# `wrangler secret put`, never in this file.
+[vars]
+SITE_URL = "https://rmhstudios.com"
+STATUS_URL = "https://status.rmhstudios.com"
+RUNBOOK_BASE = "https://github.com/stickms/rmhstudios.com/blob/main/docs/runbooks/oncall"
+ONCALL_ROLE_ID = "1562519841837949010"
+# Fill in from the Discord developer portal / channel (Developer Mode → Copy ID):
+DISCORD_APPLICATION_ID = "1562545025034756127"
+DISCORD_PUBLIC_KEY = "6fe9bb3d38594a3f7b3677c0ca442c71cfeb8562fa7ad56da65b80b65c2cf6dd"
+ONCALL_CHANNEL_ID = "1562519217587363861"
+ESCALATION_ROLE_ID = ""

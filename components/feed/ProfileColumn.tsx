@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from'react';
+import { lazy, Suspense, useEffect, useState, useRef, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { toast } from'sonner';
 import { BadgeCheck, ShieldCheck } from'lucide-react';
 import { Spinner } from'@/components/ui/spinner';
-import { TipDialog } from'@/components/economy/TipDialog';
 import { GiftSubDialog } from'@/components/economy/GiftSubDialog';
 import { useNavigate } from'@tanstack/react-router';
 import { Button } from'@/components/ui/button';
@@ -22,31 +21,30 @@ import { useUserDisplayStore } from'@/stores/userDisplayStore';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { ProfileShowcase } from'@/components/profile/ProfileShowcase';
 import { ProfileHero } from'@/components/profile/ProfileHero';
+import { useProfileSong } from'@/hooks/useProfileSong';
 import type { ProfileData } from'@/components/profile/profile-types';
+import { useShelvesTab } from'@/components/reading/useShelvesTab';
+import { useKudosTabLabel } from'@/components/gifting/useKudosTabLabel';
+import { profilePostsFirstPageUrl } from '@/lib/feed/profile-prefetch';
+import { takeOrFetch } from '@/lib/route/intent-fetch';
 
-type ProfileTab ='rmharks'|'likes'|'achievements';
+type ProfileTab ='rmharks'|'likes'|'achievements'|'guestbook'|'shelves'|'kudos';
 
-interface SpotifyController {
- addListener: (
- event:'playback_update',
- listener: (event: { data: { isPaused: boolean } }) => void,
- ) => void;
- pause: () => void;
- play: () => void;
-}
-
-interface SpotifyIframeApi {
- createController: (
- container: HTMLElement,
- options: { uri: string; width: number; height: number },
- ready: (controller: SpotifyController) => void,
- ) => void;
-}
-
-type SpotifyWindow = Window & {
- SpotifyIframeApi?: SpotifyIframeApi;
- onSpotifyIframeApiReady?: (api: SpotifyIframeApi) => void;
-};
+// Plan U15 — loaded the first time the tab is opened, never on a plain profile view.
+const GuestbookPanel = lazy(() => import('@/components/profile/GuestbookPanel'));
+// P13 reading (L7) — the shelves panel is lazy; only the tiny tab hook ships here.
+// P11 gifting (G4) — kudos panel and the birthday chip load only when needed.
+const KudosPanel = lazy(() => import('@/components/gifting/KudosPanel'));
+const BirthdayBadge = lazy(() => import('@/components/gifting/BirthdayBadge'));
+const ProfileShelvesPanel = lazy(() => import('@/components/reading/ProfileShelves'));
+// P7 — only fetched when a visitor taps a song that has no preview clip.
+const ProfileSongEmbed = lazy(() => import('@/components/profile/plus/ProfileSongEmbed'));
+// Lazy and mounted on first open, as in RMHarkOverflowMenu: the dialog
+// validates with the API's zod schema, which would otherwise put zod on every
+// profile page for a button most visitors never press.
+const TipDialog = lazy(() =>
+ import('@/components/economy/TipDialog').then((m) => ({ default: m.TipDialog })),
+);
 
 export function ProfileColumn({
  userId,
@@ -68,11 +66,14 @@ export function ProfileColumn({
  const [notFound, setNotFound] = useState(initialProfile === null);
  const [showEdit, setShowEdit] = useState(false);
  const [tipOpen, setTipOpen] = useState(false);
+ const [tipMounted, setTipMounted] = useState(false);
  const [giftOpen, setGiftOpen] = useState(false);
  const [membershipBusy, setMembershipBusy] = useState(false);
  const [tab, setTab] = useState<ProfileTab>('rmharks');
  const [socialModal, setSocialModal] = useState<'followers'|'following'| null>(null);
  const { refresh: refreshResolvedUser } = useResolvedUser();
+ const kudosTabLabel = useKudosTabLabel();
+ const shelvesTab = useShelvesTab(profile?.id, !!profile?.isOwnProfile);
 
  // Use freshest user data from cache (may have been updated by RMHark fetches)
  const cachedUser = useUserDisplayStore((state) =>
@@ -97,11 +98,13 @@ export function ProfileColumn({
  const likedSentinelRef = useRef<HTMLDivElement>(null);
  const likedInitialFetched = useRef(false);
 
- // Spotify IFrame API state
- const [isPlaying, setIsPlaying] = useState(false);
- const embedContainerRef = useRef<HTMLDivElement>(null);
- const controllerRef = useRef<SpotifyController | null>(null);
- const scriptLoadedRef = useRef(false);
+ // Profile song (P7): tap-to-play preview or tap-to-load Spotify embed; nothing
+ // is fetched or loaded until the visitor taps.
+ const song = useProfileSong(
+ profile
+ ? { spotifyId: profile.profileSongSpotifyId, previewUrl: profile.profileSongPreviewUrl }
+ : null,
+ );
 
  const { t } = useTranslation('feed');
  const { data: session } = useSession();
@@ -172,72 +175,28 @@ export function ProfileColumn({
  setLikedHasMore(true);
  setLoadingLiked(false);
  likedInitialFetched.current = false;
- setTab('rmharks');
+ // `/u/<id>#guestbook` (the guestbook notification's link) opens that tab.
+ setTab(window.location.hash ==='#guestbook'?'guestbook':'rmharks');
  }, [userId]);
-
- // Spotify IFrame API — load script & create controller for profile song
- useEffect(() => {
- const spotifyId = profile?.profileSongSpotifyId;
- if (!spotifyId) return;
-
- let cancelled = false;
-
- const initController = (iframeApi: SpotifyIframeApi) => {
- if (cancelled || !embedContainerRef.current) return;
- iframeApi.createController(
- embedContainerRef.current,
- { uri: `spotify:track:${spotifyId}`, width: 0, height: 0 },
- (ctrl) => {
- if (cancelled) return;
- controllerRef.current = ctrl;
- ctrl.addListener('playback_update', (e: { data: { isPaused: boolean } }) => {
- setIsPlaying(!e.data.isPaused);
- });
- },
- );
- };
-
- const spotifyWindow = window as SpotifyWindow;
- if (spotifyWindow.SpotifyIframeApi) {
- initController(spotifyWindow.SpotifyIframeApi);
- } else if (!scriptLoadedRef.current) {
- scriptLoadedRef.current = true;
- spotifyWindow.onSpotifyIframeApiReady = (iframeApi) => {
- spotifyWindow.SpotifyIframeApi = iframeApi;
- initController(iframeApi);
- };
- const script = document.createElement('script');
- script.src ='https://open.spotify.com/embed/iframe-api/v1';
- script.async = true;
- document.body.appendChild(script);
- }
-
- return () => {
- cancelled = true;
- controllerRef.current = null;
- };
- }, [profile?.profileSongSpotifyId]);
-
- const handleTogglePlay = useCallback(() => {
- const ctrl = controllerRef.current;
- if (!ctrl) return;
- if (isPlaying) {
- ctrl.pause();
- } else {
- ctrl.play();
- }
- }, [isPlaying]);
 
  // Fetch RMHarks
  const fetchRMHarks = useCallback(async () => {
  if (loadingItems) return;
  setLoadingItems(true);
  try {
- const params = new URLSearchParams({ limit:'20'});
- if (cursor) params.set('cursor', cursor);
+ let data;
+ if (cursor) {
+ const params = new URLSearchParams({ limit:'20', cursor });
  const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/rmharks?${params}`);
  if (!res.ok) return;
- const data = await res.json();
+ data = await res.json();
+ } else {
+ // The first page may already be in flight from the route's beforeLoad
+ // (lib/feed/profile-prefetch); take it rather than asking twice.
+ const first = await takeOrFetch(profilePostsFirstPageUrl(userId));
+ if (first.status < 200 || first.status >= 300) return;
+ data = first.data as { items: FeedItem[]; nextCursor: string | null; hasMore: boolean };
+ }
  // Update user display cache
  const users: FeedItemUser[] = [];
  for (const item of data.items as FeedItem[]) {
@@ -451,6 +410,8 @@ export function ProfileColumn({
  }
 
  const showLikesTab = profile.isOwnProfile || profile.showLikes;
+ const showGuestbookTab =
+ profile.isOwnProfile || (!!profile.guestbookMode && profile.guestbookMode !=='off');
 
  // An equipped premium theme recolors this profile by overriding the accent CSS
  // variables for the column's subtree (follow button, links, name, tab indicator,
@@ -496,20 +457,29 @@ export function ProfileColumn({
  displayName={displayName}
  displayImage={displayImage}
  signedIn={Boolean(session)}
- isPlaying={isPlaying}
+ isPlaying={song.isPlaying}
  membershipBusy={membershipBusy}
  messageSending={messageSending}
  messageError={messageError}
- onTogglePlay={handleTogglePlay}
+ onTogglePlay={song.toggle}
  onEdit={() => setShowEdit(true)}
  onFollow={handleFollowToggle}
  onMessage={handleMessage}
- onTip={() => setTipOpen(true)}
+ onTip={() => {
+ setTipMounted(true);
+ setTipOpen(true);
+ }}
  onGift={() => setGiftOpen(true)}
  onJoinMembership={handleJoinMembership}
  onShowSocial={setSocialModal}
  onShowAchievements={() => handleTabChange('achievements')}
  />
+
+ {profile.birthdayToday && (
+ <Suspense fallback={null}>
+ <BirthdayBadge />
+ </Suspense>
+ )}
 
  <div className="px-3 pt-3">
  <ProfileShowcase
@@ -538,6 +508,11 @@ export function ProfileColumn({
  ? [{ id:'likes', label: t('likes', { defaultValue:'Likes'}) }]
  : []),
  { id:'achievements', label: t('achievements', { defaultValue:'Achievements'}) },
+ ...(showGuestbookTab
+ ? [{ id:'guestbook', label: t('guestbook-tab', { defaultValue:'Guestbook'}) }]
+ : []),
+ ...(shelvesTab.show ? [{ id:'shelves', label: shelvesTab.label }] : []),
+ { id:'kudos', label: kudosTabLabel },
  ]}
  value={tab}
  onChange={(id) => handleTabChange(id as ProfileTab)}
@@ -626,8 +601,58 @@ export function ProfileColumn({
  </div>
  )}
 
+ {tab ==='guestbook'&& (
+ <Suspense
+ fallback={
+ <div className="flex justify-center py-12">
+ <Spinner />
+ </div>
+ }
+ >
+ <GuestbookPanel
+ ownerId={profile.id}
+ onModeChange={(mode) => setProfile((p) => (p ? { ...p, guestbookMode: mode } : p))}
+ />
+ </Suspense>
+ )}
+
+ {tab ==='kudos'&& (
+ <Suspense
+ fallback={
+ <div className="flex justify-center py-12">
+ <Spinner />
+ </div>
+ }
+ >
+ <KudosPanel ownerId={profile.id} isOwner={profile.isOwnProfile} />
+ </Suspense>
+ )}
+
+ {tab ==='shelves'&& (
+ <Suspense
+ fallback={
+ <div className="flex justify-center py-12">
+ <Spinner />
+ </div>
+ }
+ >
+ <ProfileShelvesPanel ownerId={profile.id} />
+ </Suspense>
+ )}
+
+ {song.embedOpen && profile.profileSongSpotifyId && (
+ <Suspense fallback={null}>
+ <ProfileSongEmbed
+ spotifyId={profile.profileSongSpotifyId}
+ title={profile.profileSongTitle}
+ onClose={song.closeEmbed}
+ />
+ </Suspense>
+ )}
+
  {/* Tip dialog (non-owner) */}
- {profile && !profile.isOwnProfile && (
+ {profile && !profile.isOwnProfile && tipMounted && (
+ <Suspense fallback={null}>
  <TipDialog
  open={tipOpen}
  onOpenChange={setTipOpen}
@@ -636,6 +661,7 @@ export function ProfileColumn({
  entityType="profile"
  entityId={profile.id}
  />
+ </Suspense>
  )}
 
  {/* Gift membership dialog (non-owner) */}

@@ -11,7 +11,7 @@
  * never breaks the originating write.
  */
 
-import { prisma } from "@/lib/prisma.server";
+import { findUsersByHandles } from "@/lib/handles/lookup.server";
 import { feedEventBus } from "@/lib/feed-sse";
 import { createNotification } from "@/lib/notifications.server";
 import { parseHandles } from "@/lib/feed/mentions";
@@ -37,13 +37,8 @@ export async function notifyMentions(input: NotifyMentionsInput): Promise<void> 
   const handles = parseHandles(input.content);
   if (handles.length === 0) return;
 
-  const mentioned = await prisma.user.findMany({
-    where: {
-      id: { not: input.author.id }, // never self-notify
-      OR: handles.map((h) => ({ handle: { equals: h, mode: "insensitive" as const } })),
-    },
-    select: { id: true },
-  });
+  // perf: index-backed lower(handle) match instead of per-handle ILIKE (seq scan).
+  const mentioned = await findUsersByHandles(handles, { excludeUserId: input.author.id }); // never self-notify
   if (mentioned.length === 0) return;
 
   // Live toast for any mentioned user with an open stream.

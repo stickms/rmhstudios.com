@@ -2,17 +2,10 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-/**
- * The shared content surface, rendered in the Liquid Glass material.
- *
- * Default is the L1 `.glass-fill` tier (tint + rim, no backdrop blur) because
- * cards are the most repeated surface on the site; `pane` promotes a singular
- * panel to L2 `.glass-pane` (blur + noise), and `interactive` adds the hover
- * tint-raise, the press flex, and the rim glint raised from its L1 ambient rest
- * to full on hover (the pointer-tracked hotspot this used to add went with the
- * rest of the site's cursor reactivity — globals.css §5.1). The classes carry the
- * material — themes and the degradation tiers (high-contrast, reduced
- * transparency, perf-lite) restyle them centrally in `app/globals.css`.
+/** Shared material surface. Repeated content uses tint/rim without blur;
+ * `pane` promotes a singular panel to native backdrop frost. The document's
+ * liquid runtime owns nearby tap waves and cursor lighting. Palette, fallbacks
+ * and performance budgets are defined in docs/liquid-glass-system.md.
  */
 function Card({
   className,
@@ -20,7 +13,7 @@ function Card({
   interactive = false,
   ...props
 }: React.ComponentProps<'div'> & {
-  /** Use the L2 `.glass-pane` (blur + noise) instead of the default L1 fill. */
+  /** Use the L2 `.glass-pane` (native frost) instead of the default L1 fill. */
   pane?: boolean;
   /** Add hover tint-raise + press flex + the hover-raised rim glint. */
   interactive?: boolean;
@@ -32,7 +25,7 @@ function Card({
       // that reads as a crisp press on a button reads as a wobble on something
       // the width of the column. `.glass-interactive:active` remains the
       // reduced-motion fallback (both drive the same `scale` property, so the
-      // spring simply wins while it is running — see globals.css §glass).
+      // spring simply wins while it is running — see app/liquid-glass.css).
       data-fluid-press={interactive ? 'firm' : undefined}
       className={cn(
         'flex flex-col gap-5 py-5 text-site-text sm:gap-6 sm:py-6',

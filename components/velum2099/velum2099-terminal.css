@@ -13,14 +13,20 @@
     position: relative;
 }
 
-/* CRT scanline overlay */
+/* CRT scanline overlay.
+   The crawl is a transform on a layer one pattern period (3px) taller than the
+   screen, stepped a whole pixel at a time. It used to animate
+   `background-position`, which repaints a full-viewport gradient on the main
+   thread every frame for as long as the terminal is open; a transform is
+   composited from the same raster forever. Same speed (12.5px/s), crisp lines
+   (whole-pixel steps never resample the 1px rules). */
 .velum2099-root #terminal-screen::before {
     content: '';
     position: fixed;
-    top: 0;
+    top: -3px;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: calc(100% + 3px);
     background: repeating-linear-gradient(0deg,
             rgba(0, 0, 0, 0.06) 0px,
             rgba(0, 0, 0, 0.06) 1px,
@@ -28,7 +34,7 @@
             transparent 3px);
     pointer-events: none;
     z-index: 100;
-    animation: velum-scanlineShift 8s linear infinite;
+    animation: velum-scanlineShift 0.24s steps(3, end) infinite;
 }
 
 /* CRT vignette */
@@ -48,11 +54,11 @@
 
 @keyframes velum-scanlineShift {
     0% {
-        background-position: 0 0;
+        transform: translateY(0);
     }
 
     100% {
-        background-position: 0 100px;
+        transform: translateY(3px);
     }
 }
 
@@ -85,6 +91,15 @@
 
 .velum2099-root #terminal-screen {
     animation: velum-flicker 4s infinite;
+}
+
+/* A whole-screen flicker is a flash, and a crawling overlay is motion: neither
+   belongs on a reduced-motion screen. */
+@media (prefers-reduced-motion: reduce) {
+    .velum2099-root #terminal-screen,
+    .velum2099-root #terminal-screen::before {
+        animation: none;
+    }
 }
 
 /* Terminal text glow */

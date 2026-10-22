@@ -13,5 +13,6 @@
   "prompt-aria-label": "Describe the page you want to create",
   "prompt-placeholder": "Where do you want to go?",
   "search-aria-label": "Search pages",
-  "search-placeholder": "Search pages..."
+  "search-placeholder": "Search pages...",
+  "prompt-heading": "Describe a page to generate"
 }

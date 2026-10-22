@@ -60,6 +60,8 @@ import { BindingsScreen } from './screens/BindingsScreen';
 import { CreditsScreen } from './screens/CreditsScreen';
 import { LevelCard, bestTimeFor } from './screens/LevelCard';
 import { Lobby } from './screens/Lobby';
+import { PartyModifierBadges, PartyModifierToggles } from './PartyModifiers';
+import { anyModifier, NO_MODIFIERS, type PartyModifiers } from '@/lib/bums-rush/modifiers';
 import { ModeSelect } from './screens/ModeSelect';
 import { PauseMenu } from './screens/PauseMenu';
 import { ResultsCard } from './screens/ResultsCard';
@@ -140,6 +142,7 @@ export function BumsRushGame({ initialRoomCode }: Props) {
       mySeats: lobby.state.mySeats,
       seatViews: start.seats,
       startedAt: start.startedAt,
+      modifiers: lobby.state.room?.modifiers ?? null,
       reportResult: (envelope) => {
         void lobby.lobby?.reportResult(envelope);
       },
@@ -159,7 +162,8 @@ export function BumsRushGame({ initialRoomCode }: Props) {
 
   const onFinish = useCallback(
     (result: LevelResult) => {
-      recordResult(result);
+      // Party-modifier runs are play, not progress: no clear, no board.
+      if (!result.modded) recordResult(result);
       loadManifest()
         .then((manifest) => setNextLevelId(nextLevel(manifest, result.levelId)?.id ?? null))
         .catch(() => setNextLevelId(null));
@@ -281,6 +285,7 @@ function DocumentScreens({
 }: DocumentScreensProps) {
   const profile = useBumsRushStore((s) => s.profile);
   const online = connection !== 'error';
+  const [partyMods, setPartyMods] = useState<PartyModifiers>(NO_MODIFIERS);
 
   const openLobby = useCallback(
     (then?: (bridge: LobbyBridge) => void) => {
@@ -352,9 +357,15 @@ function DocumentScreens({
           initialCode={initialRoomCode}
           onCreate={() =>
             void connectLobby().then(() =>
-              lobbyBridge.lobby?.createRoom({ mode: 'campaign', private: true }),
+              lobbyBridge.lobby?.createRoom({
+                mode: 'campaign',
+                private: true,
+                ...(anyModifier(partyMods) ? { modifiers: partyMods } : {}),
+              }),
             )
           }
+          createExtras={<PartyModifierToggles value={partyMods} onChange={setPartyMods} />}
+          roomExtras={<PartyModifierBadges modifiers={lobbyBridge.state.room?.modifiers} />}
           onJoin={(code) => void connectLobby().then(() => lobbyBridge.lobby?.joinRoom(code))}
           onReady={(seat: SeatIndex, ready) => lobbyBridge.lobby?.setReady(seat, ready)}
           onStart={() => lobbyBridge.lobby?.start()}

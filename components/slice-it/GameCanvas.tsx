@@ -27,7 +27,7 @@ import { m as motion } from 'framer-motion';
 import { fadeRise, popIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { COMBO_MILESTONES, GameEngine } from '@/lib/slice-it/engine';
-import { requestScreenWakeLock } from '@/lib/shared/platform';
+import { useGameSession } from '@/hooks/useGameSession';
 import { useSliceItStore, approachSeconds, reactionWindowMs } from '@/lib/slice-it/store';
 import { visibilityAlpha } from '@/lib/slice-it/modifiers';
 import { AudioManager } from '@/lib/audio/AudioManager';
@@ -1346,10 +1346,10 @@ export function GameCanvas() {
   // the browser drops the lock the instant the tab is hidden and does not
   // restore it, so a run that only acquired once would keep the screen awake
   // until the first notification banner and never again after.
-  useEffect(() => {
-    if (status !== 'PLAYING') return;
-    return requestScreenWakeLock();
-  }, [status]);
+  //
+  // Pause-on-hide is NOT delegated here: the engine's own visibility handler
+  // already pauses solo runs and knows not to pause a multiplayer chart.
+  useGameSession({ id: 'slice-it', active: status === 'PLAYING' });
 
   // Guard navigation during a run — the browser-level half of the same care
   // the multiplayer pause handler already takes about not losing someone's

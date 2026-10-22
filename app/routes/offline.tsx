@@ -7,6 +7,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { WifiOff, RotateCw } from 'lucide-react';
+import { OfflineGame } from '@/components/access/OfflineGame';
 
 export const Route = createFileRoute('/offline')({
   head: () => ({
@@ -25,7 +26,7 @@ function OfflinePage() {
     // so the offline card floats on it as glass. Pure CSS, zero network needed.
     <div className="flex min-h-dvh items-center justify-center px-6">
       <div className="glass-pane flex w-full max-w-sm flex-col items-center gap-4 rounded-site p-8 text-center">
-        {/* Etched medallion: a recessed well cradling the wifi-off glyph. */}
+        {/* Medallion: a small glass field holding the wifi-off glyph. */}
         <div className="glass-inset flex h-16 w-16 items-center justify-center rounded-full">
           <WifiOff className="h-7 w-7 text-site-text-dim" aria-hidden />
         </div>
@@ -45,6 +46,7 @@ function OfflinePage() {
           <RotateCw className="h-4 w-4" aria-hidden />
           {t('offline-retry', { defaultValue: 'Try again' })}
         </button>
+        <OfflineGame />
       </div>
     </div>
   );

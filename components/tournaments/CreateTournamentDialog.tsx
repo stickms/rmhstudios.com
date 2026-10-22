@@ -1,5 +1,6 @@
 'use client';
 
+import { SwissFormatOption } from '@/components/competitive/SwissStandings';
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +32,7 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [gameId, setGameId] = useState(WAGER_ELIGIBLE_GAMES[0].id);
-  const [format, setFormat] = useState<'SINGLE_ELIM' | 'ROUND_ROBIN'>('SINGLE_ELIM');
+  const [format, setFormat] = useState<'SINGLE_ELIM' | 'ROUND_ROBIN' | 'SWISS'>('SINGLE_ELIM');
   const [entryFee, setEntryFee] = useState(0);
   const [seedPool, setSeedPool] = useState(0);
   const [maxPlayers, setMaxPlayers] = useState(8);
@@ -110,7 +111,7 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
               <Select
                 id="t-format"
                 value={format}
-                onChange={(e) => setFormat(e.target.value as 'SINGLE_ELIM' | 'ROUND_ROBIN')}
+                onChange={(e) => setFormat(e.target.value as 'SINGLE_ELIM' | 'ROUND_ROBIN' | 'SWISS')}
               >
                 <option value="SINGLE_ELIM">
                   {t('single-elim', { defaultValue: 'Single elimination' })}
@@ -118,6 +119,7 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
                 <option value="ROUND_ROBIN">
                   {t('round-robin', { defaultValue: 'Round robin' })}
                 </option>
+                <SwissFormatOption />
               </Select>
             </div>
           </div>

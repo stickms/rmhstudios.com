@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
+import { invalidateNotificationPrefs } from '@/lib/notifications.server';
 
 /**
  * POST /api/settings/email-digest — toggle the weekly digest opt-in.
@@ -29,6 +30,7 @@ export const Route = createFileRoute('/api/settings/email-digest')({
             create: { userId, emailDigest: body.enabled },
             update: { emailDigest: body.enabled },
           });
+          invalidateNotificationPrefs(userId);
 
           return Response.json({ ok: true, enabled: body.enabled });
         },

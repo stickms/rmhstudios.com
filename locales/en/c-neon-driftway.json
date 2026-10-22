@@ -82,5 +82,13 @@
   "webgl-required-title": "3D not available",
   "you-label": "(You)",
   "you-label-short": "You",
-  "your-score": "Your Score"
+  "your-score": "Your Score",
+  "ghost-mode-off": "Ghost: off",
+  "ghost-mode-pb": "Ghost: your best",
+  "ghost-mode-top": "Ghost: world #1",
+  "ghost-pb-label": "Your best",
+  "ghost-toggle-aria": "Change race ghost",
+  "ghost-top-label": "World #1",
+  "paused-photo-hint": "Press P for photo mode",
+  "photo-mode": "Photo mode"
 }

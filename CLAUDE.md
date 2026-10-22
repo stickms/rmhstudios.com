@@ -24,24 +24,24 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 
 ## Repository map
 
-| Path           | What                                                                                                                                                                  | Details                                          |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `app/`         | TanStack Start routes: pages, API routes, `globals.css` (the `--site-*` theme tokens), router. `routeTree.gen.ts` is GENERATED — never edit.                          | [`app/CLAUDE.md`](app/CLAUDE.md)                 |
-| `components/`  | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper; `shared/` = the full-screen app tier (`--app-*`, `AppShell`). | [`components/CLAUDE.md`](components/CLAUDE.md)   |
-| `lib/`         | Shared logic: auth, prisma, feed, economy, i18n, motion tokens, per-game logic, `.server.ts` server-only modules.                                                     | [`lib/CLAUDE.md`](lib/CLAUDE.md)                 |
-| `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / jobs (pg-boss) workers.               | [`server/CLAUDE.md`](server/CLAUDE.md)           |
-| `go-services/` | **Go** microservice fleet (Bazel + gazelle): `supervisor`, `status`, `assets` run in prod; the gateway + Go hubs were removed (rewrite §5.2).                         | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
-| `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                        | `lib/CLAUDE.md`                                  |
-| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidPress`/`useFluidDrag`, `useLiquidBackground`, `useReveal`, …).                             | `lib/CLAUDE.md`                                  |
-| `prisma/`      | `schema.prisma` (323 models, 71 enums, ~8.9k lines) + migrations.                                                                                                       | `lib/CLAUDE.md`                                  |
-| `locales/`     | 16 shipped locales × 67 registered namespaces; `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                   | `lib/CLAUDE.md` §i18n                            |
-| `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                 | —                                                |
-| `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                  | —                                                |
-| `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                               | `docs/README.md`                                 |
-| `deploy/`      | Apache vhosts, blue/green hotswap, DB backups, Terraform (DNS), runbooks.                                                                                             | [`docs/architecture.md`](docs/architecture.md)   |
-| `docs/`        | Reference docs, design docs, plans, runbooks — also **published** as a Sphinx/MyST Read the Docs site in 16 languages.                                                | [`docs/README.md`](docs/README.md)               |
+| Path           | What                                                                                                                                                                     | Details                                          |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| `app/`         | TanStack Start routes: pages, API routes, `globals.css` (the `--site-*` theme tokens), router. `routeTree.gen.ts` is GENERATED — never edit.                             | [`app/CLAUDE.md`](app/CLAUDE.md)                 |
+| `components/`  | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper; `shared/` = the full-screen app tier (`--app-*`, `AppShell`).    | [`components/CLAUDE.md`](components/CLAUDE.md)   |
+| `lib/`         | Shared logic: auth, prisma, feed, economy, i18n, motion tokens, per-game logic, `.server.ts` server-only modules.                                                        | [`lib/CLAUDE.md`](lib/CLAUDE.md)                 |
+| `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / jobs (pg-boss) workers.                  | [`server/CLAUDE.md`](server/CLAUDE.md)           |
+| `go-services/` | **Go** microservice fleet (Bazel + gazelle): `supervisor`, `status`, `assets` run in prod; the gateway + Go hubs were removed (rewrite §5.2).                            | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
+| `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                           | `lib/CLAUDE.md`                                  |
+| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidPress`/`useFluidDrag`, `useLiquidBackground`, `useReveal`, …).                                | `lib/CLAUDE.md`                                  |
+| `prisma/`      | `schema.prisma` (323 models, 71 enums, ~8.9k lines) + migrations.                                                                                                        | `lib/CLAUDE.md`                                  |
+| `locales/`     | 16 shipped locales × 67 registered namespaces; `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                      | `lib/CLAUDE.md` §i18n                            |
+| `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                    | —                                                |
+| `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                     | —                                                |
+| `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                                  | `docs/README.md`                                 |
+| `deploy/`      | Apache vhosts, blue/green hotswap, DB backups, Terraform (DNS), runbooks.                                                                                                | [`docs/architecture.md`](docs/architecture.md)   |
+| `docs/`        | Reference docs, design docs, plans, runbooks — also **published** as a Sphinx/MyST Read the Docs site in 16 languages.                                                   | [`docs/README.md`](docs/README.md)               |
 | `testing/`     | RMHBox phase tests (the mission-critical remainder) + the unwired browser smoke. Most other suites are colocated under `lib/`; discovery is a glob, nothing to register. | [`docs/testing.md`](docs/testing.md)             |
-| `cli/`         | `rmhcode` CLI (wraps Claude Code; publishes User Builds).                                                                                                             | —                                                |
+| `cli/`         | `rmhcode` CLI (wraps Claude Code; publishes User Builds).                                                                                                                | —                                                |
 
 ## Commands
 
@@ -54,6 +54,7 @@ pnpm lint                    # eslint (jsx-a11y at warn — add no new warnings)
 pnpm format                  # prettier
 pnpm test                    # main test suite (~20s; mission-critical scope — docs/testing.md)
 pnpm test:epic               # epic content-build suite (needs Chromium)
+pnpm test:integration        # real flows vs a running app + throwaway Postgres (docs/testing.md §8)
 pnpm build                   # vibe-packages → vite build → esbuild 6 server bundles
 pnpm i18n:extract            # after adding t() strings
 pnpm check:consistency       # THE COMMIT GATE — run before every commit (see below)
@@ -114,7 +115,7 @@ Two rules about the gate itself:
 Every commit also carries the smaller invariants: no secrets, no hand-edited
 generated files (`app/routeTree.gen.ts`, `lib/i18n/resources.<locale>.ts`), no
 new type or lint warnings versus the base branch, and a message that explains
-*why*.
+_why_.
 
 ## Cross-cutting conventions (the ones agents break most)
 
@@ -142,9 +143,12 @@ new type or lint warnings versus the base branch, and a message that explains
    `.glass-pane` singular panels · `.glass-chrome` sticky chrome ·
    `.glass-overlay` floating UI · `.glass-inset` fields), not a hand-rolled
    `bg-site-surface border rounded-site` box — the class is what carries the
-   material and what the degradation tiers switch off. **Nothing tracks the
-   cursor** (retired 2026-08-01) and nothing writes a custom property to
-   `<html>` per frame. The statement of the language is
+   material and what the degradation tiers switch off. **Liquid glass** is shader-drawn: `lib/liquid/glass/engine.ts` paints
+   `glass-pane/chrome/overlay` (and `app-glass`) as clear slabs with a refracting,
+   lit rim and a cursor that is a light; `lib/liquid/runtime.ts` is the
+   translate-only neighbour push; the globe is a dough simulation (`lib/dough.ts`).
+   **No `backdrop-filter` in any glass role.** Never add per-component pointer
+   loops or animated root custom properties. See `docs/liquid-glass-system.md`. The statement of the language is
    [`design.md`](design.md) at the root; **before any UI commit** read
    [`docs/design-language.md`](docs/design-language.md) §0 (the definition of
    done) and the checklist in
@@ -203,13 +207,13 @@ webhook listener (`webhook-server.cjs`) → `./deploy.sh production <sha>` pulls
 those images → prisma migrate → blue/green web hotswap (port 7005/7015 flip).
 
 CI is 11 workflows: `web-ci.yml` (typecheck, lint, tests, build, production
-dependency audit — **all blocking**), `epic-tests.yml` (the epic content-build
+dependency audit, integration suite — **all blocking**), `epic-tests.yml` (the epic content-build
 suite, path-filtered to `scripts/epic/**`), `go-microservices.yml` (Bazel test),
 `senior-review.yml` (LLM review gate), `deploy.yml`, `synthetic-perf.yml`,
 `i18n-translate.yml`, and the build/deploy guards `build-vibe-packages`,
 `compose-validate`, `prisma-validate`, `prisma-migrate-status`. Run the core
-checks locally before opening a pull request. Which suite runs where, and why
-the deploy's own test step is advisory while the PR's is not:
+checks locally before opening a pull request. Which suite runs where, and what
+gates a deploy:
 [`docs/testing.md`](docs/testing.md) §CI.
 
 ## Trust order for conflicting information

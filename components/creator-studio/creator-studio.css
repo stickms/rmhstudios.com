@@ -18,47 +18,6 @@
   background: transparent;
 }
 
-/* ── Header / hero ───────────────────────────────────────────────────────── */
-.cstudio-head {
-  padding: clamp(28px, 6vw, 64px) var(--studio-gutter) 0;
-}
-
-.cstudio-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--site-text-dim, #8a8a90);
-}
-
-.cstudio-eyebrow__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 9999px;
-  background: var(--site-accent, #6c5cff);
-  box-shadow: 0 0 12px var(--site-accent, #6c5cff);
-}
-
-.cstudio-title {
-  margin-top: 10px;
-  font-size: clamp(1.9rem, 5vw, 2.9rem);
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  color: var(--site-text, #f5f5f7);
-}
-
-.cstudio-sub {
-  margin-top: 10px;
-  max-width: 54ch;
-  font-size: 0.98rem;
-  line-height: 1.5;
-  color: var(--site-text-muted, #a9a9b2);
-}
-
 /* ── Tab bar placement ───────────────────────────────────────────────────── */
 /* §16.2: the tab bar is now the shared `LiquidTabs` component (sheet + flowing
    capsule + roving nav + goo morph all live there). This class only POSITIONS
@@ -195,17 +154,14 @@
   border: 1px solid var(--site-border, #232328);
 }
 .cstudio-ranked__toggle:hover {
+  /* The surface everts in (`data-evert`, globals.css §7.3). */
   color: var(--site-text, #f5f5f7);
-  background: var(--site-surface, #18181b);
 }
 
 .cstudio-ranked__link {
   color: var(--site-accent, #6c5cff);
   background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
   border: 1px solid color-mix(in srgb, var(--site-accent, #6c5cff) 30%, transparent);
-}
-.cstudio-ranked__link:hover {
-  background: color-mix(in srgb, var(--site-accent, #6c5cff) 22%, transparent);
 }
 
 .cstudio-ranked__chev {

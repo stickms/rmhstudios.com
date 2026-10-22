@@ -369,7 +369,7 @@ describe('startViewportPrefetch', () => {
     // Second page view: budget resets, so /c is now reachable — but /a and /b
     // stay deduped for the page's lifetime (they are in the nav on every page).
     navigate();
-    vi.advanceTimersByTime(200);
+    vi.advanceTimersByTime(1200);
     dom.enter();
     vi.advanceTimersByTime(50);
 
@@ -387,7 +387,9 @@ describe('startViewportPrefetch', () => {
 
     navigate();
     expect(dom.observed).toHaveLength(1); // still the first arm — no sync re-scan
-    vi.advanceTimersByTime(200);
+    vi.advanceTimersByTime(1199);
+    expect(dom.observed).toHaveLength(1); // nor while the arriving page settles
+    vi.advanceTimersByTime(1);
     expect(dom.observed).toHaveLength(2);
   });
 

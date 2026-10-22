@@ -3,16 +3,21 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { logAdminAction } from '@/lib/admin-audit.server';
+import { takedownStamp } from '@/lib/profile/stamps.server';
+import { createNotification } from '@/lib/notifications.server';
+import { takedownRing } from '@/lib/profile/webrings.server';
 
 /**
  * POST /api/admin/reports/$id — act on a report. Admin only.
  * Body: { action: 'review' | 'resolve' | 'dismiss', note?, deleteContent? }
- * When deleteContent is true on a rmhark/comment report, the content is
- * soft-deleted (deletedByAdmin) as part of resolving.
+ * When deleteContent is true on a rmhark/comment/stamp/webring report, the content is
+ * soft-deleted (deletedByAdmin, or removedAt for stamps and rings) as part of resolving.
  */
 const actionSchema = z.object({
   action: z.enum(['review', 'resolve', 'dismiss']),
   note: z.string().max(1000).optional(),
+  // S4: macro-filled message sent to the reported author as a notification.
+  message: z.string().trim().max(1000).optional(),
   deleteContent: z.boolean().optional(),
 });
 
@@ -51,6 +56,15 @@ export const Route = createFileRoute('/api/admin/reports/$id')({
                   where: { id: report.entityId },
                   data: { deletedAt: new Date(), deletedByAdmin: true },
                 });
+              } else if (report.entityType === 'stamp') {
+                await takedownStamp(report.entityId);
+              } else if (report.entityType === 'webring') {
+                await takedownRing(report.entityId);
+              } else if (report.entityType === 'ladder-interview') {
+                await prisma.ladderInterviewReport.update({
+                  where: { id: report.entityId },
+                  data: { status: 'hidden' },
+                });
               }
             } catch (e) {
               console.error('Report content takedown failed:', e);
@@ -61,11 +75,21 @@ export const Route = createFileRoute('/api/admin/reports/$id')({
             where: { id: params.id },
             data: {
               status: newStatus,
-              moderatorNote: body.note?.trim() || report.moderatorNote,
+              moderatorNote: body.note?.trim() || body.message || report.moderatorNote,
               resolvedById: terminal ? session.user.id : report.resolvedById,
               resolvedAt: terminal ? new Date() : report.resolvedAt,
             },
           });
+
+          if (body.message && body.action === 'resolve' && report.targetUserId) {
+            await createNotification({
+              userId: report.targetUserId,
+              type: 'SYSTEM',
+              entityType: 'report',
+              entityId: report.id,
+              preview: body.message,
+            });
+          }
 
           await logAdminAction(session.user.id, `report.${body.action}`, {
             targetType: report.entityType,

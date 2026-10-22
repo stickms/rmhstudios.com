@@ -558,7 +558,10 @@ self.addEventListener('push', (event) => {
     icon: payload.icon || '/images/icons/icon-192.png',
     badge: payload.badge || '/images/icons/icon-192.png',
     tag: payload.tag || undefined,
-    data: { url: payload.url || '/notifications' },
+    data: { url: payload.url || '/notifications', nid: payload.nid || null },
+    // Buttons (U6). Only sent when the push mirrors a real notification row,
+    // and only verbs the server will accept for that row.
+    actions: Array.isArray(payload.actions) && payload.nid ? payload.actions.slice(0, 2) : [],
   };
   // The badge moves with the notification, not with the next app launch: a push
   // that arrives with the app closed is precisely the case the icon count is for.
@@ -567,11 +570,37 @@ self.addEventListener('push', (event) => {
   );
 });
 
+/**
+ * A button on a notification (U6): do it in the background, with the session
+ * cookie, and only open a window if it failed — so the user's intent is never
+ * silently dropped (signed out, offline, row deleted).
+ */
+async function runNotificationAction(action, data) {
+  try {
+    const res = await fetch('/api/push/action', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nid: data.nid, action }),
+    });
+    if (!res.ok) return false;
+    // Acting on a notification reads it, so the icon badge comes down one.
+    await setBadge(Math.max(0, (await readBadgeCount()) - 1)).catch(() => {});
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/notifications';
+  const data = event.notification.data || {};
+  const url = data.url || '/notifications';
   event.waitUntil(
     (async () => {
+      if (event.action && data.nid) {
+        if (await runNotificationAction(event.action, data)) return;
+      }
       const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       for (const client of clientList) {
         if ('focus' in client) {

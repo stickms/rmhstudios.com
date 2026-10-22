@@ -7,7 +7,7 @@
   },
   "notes": {
     "platform_shell_eager_js": "Sum of brotli sizes of entry (isEntry) JS chunks — the code parsed before interactivity on the feed shell.",
-    "platform_eager_css": "Sum of brotli sizes of CSS emitted for entry chunks (the render-blocking stylesheet).",
+    "platform_eager_css": "Sum of brotli sizes of the render-blocking CSS on a site page: CSS emitted for entry chunks plus the site-tier entry sheet (app/site-tier.css) that __root.tsx links through a ?url import.",
     "total_client_js_warn": "Whole client JS surface across all lazy chunks; informational drift signal, not a per-page cost."
   }
 }

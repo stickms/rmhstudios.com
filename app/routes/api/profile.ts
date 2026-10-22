@@ -2,7 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { updateProfileSchema } from '@/lib/profile-schema';
-import { handleSchema, canChangeHandle } from '@/lib/handle';
+import { canChangeHandle } from '@/lib/handle';
+import { handleSchema } from '@/lib/handle-schema';
 import { invalidateUserDisplay } from '@/lib/user-display.server';
 
 export const Route = createFileRoute('/api/profile')({

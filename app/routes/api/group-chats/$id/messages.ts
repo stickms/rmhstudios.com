@@ -8,6 +8,8 @@ import { publishGroupMessage } from '@/lib/group-events';
 import { gifUrlSchema, feedImageUrlSchema } from '@/lib/rmhark-schema';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
+import { liveMessages } from '@/lib/chat-plus/expiry.server';
+import { messageStamp } from '@/lib/chat-plus/post.server';
 
 const schema = z.object({
   content: z.string().max(2000).optional(),
@@ -40,7 +42,12 @@ export const Route = createFileRoute('/api/group-chats/$id/messages')({
 
         const after = new URL(request.url).searchParams.get('after');
         const messages = await prisma.groupMessage.findMany({
-          where: { groupId: params.id, ...(after ? { createdAt: { gt: new Date(after) } } : {}) },
+          where: {
+            groupId: params.id,
+            threadParentId: null,
+            AND: [liveMessages()],
+            ...(after ? { createdAt: { gt: new Date(after) } } : {}),
+          },
           orderBy: { createdAt: 'asc' },
           take: 100,
           select: groupMessageSelect,
@@ -66,7 +73,7 @@ export const Route = createFileRoute('/api/group-chats/$id/messages')({
 
         const membership = await prisma.groupChatMember.findUnique({
           where: { groupId_userId: { groupId: params.id, userId } },
-          select: { id: true },
+          select: { id: true, group: { select: { disappearAfterSec: true } } },
         });
         if (!membership) return Response.json({ error: 'Not found' }, { status: 404 });
 
@@ -94,6 +101,12 @@ export const Route = createFileRoute('/api/group-chats/$id/messages')({
               imageUrls: imageUrls ?? [],
               pollQuestion: poll?.question ?? null,
               pollOptions: poll?.options ?? [],
+              // M3 + M6: expiry from the group's timer, and the shared-media flags.
+              ...messageStamp(membership.group.disappearAfterSec, {
+                content: text,
+                gifUrl,
+                imageUrls,
+              }),
             },
             select: groupMessageSelect,
           }),

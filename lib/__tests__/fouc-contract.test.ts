@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { collectRoutes, parseRouteTree } from '../../testing/e2e/fouc-routes.mjs';
@@ -382,7 +382,7 @@ describe('FOUC contract: hydration', () => {
    * client; this keeps it installed.
    */
   it('the router applies the server-side not-found head cut on the client', () => {
-    expect(read('app/router.tsx')).toMatch(/installNotFoundHeadGuard\(router\.looseRoutesById\)/);
+    expect(read('app/router.tsx')).toMatch(/installNotFoundHeadGuard\(router\.routesById\)/);
   });
 
   /**
@@ -406,8 +406,13 @@ describe('FOUC contract: hydration', () => {
       'admin-only MDX editor, behind auth: not in the audit, nothing public to swap',
     'app/routes/_site/admin/blog/new.tsx': 'admin-only MDX editor, behind auth',
     'app/routes/_site/admin/slice-it-content.tsx': 'admin-only dashboard, behind auth',
-    'app/routes/_site/services/index.tsx':
-      'the car and fashion previews open from a click inside the page; the page itself is static',
+    // The two 3D showcases moved off /services' tab strip onto pages of their
+    // own (minimalism audit, 2026-10-09). The page header is server-rendered;
+    // only the three.js stage is lazy, behind a height-holding fallback.
+    'app/routes/_site/services/cars.tsx':
+      'the three.js fleet stage is client-only; title and lede server-render, the fallback holds its height',
+    'app/routes/_site/services/fashion.tsx':
+      'the three.js wardrobe stage is client-only; title and lede server-render, the fallback holds its height',
     'app/routes/altair/index.tsx':
       'client-only game screen: the server renders the fallback, so there is no server markup to lose',
     'app/routes/altair/multiplayer/$lobbyId.tsx':
@@ -566,23 +571,11 @@ describe('FOUC contract: coverage', () => {
 
 /** Source files under the scanned roots whose text matches `pattern`. */
 function grepRepoMatching(pattern: RegExp): string[] {
-  const hits: string[] = [];
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) {
-        walk(full);
-      } else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) {
-        if (pattern.test(readFileSync(full, 'utf8'))) hits.push(full.slice(REPO.length + 1));
-      }
-    }
-  };
-  for (const root of ['lib', 'components', 'app', 'stores', 'hooks']) {
-    const dir = join(REPO, root);
-    if (existsSync(dir)) walk(dir);
-  }
-  return hits;
+  // Same scope as before (lib, components, app, stores, hooks; test files
+  // excluded), but over the shared read-once tree — see repoSources().
+  return repoSources()
+    .filter((f) => !/\.test\.tsx?$/.test(f.path) && pattern.test(f.text))
+    .map((f) => f.path);
 }
 
 /**
@@ -593,8 +586,19 @@ function grepRepoMatching(pattern: RegExp): string[] {
  * wherever it runs — the commit hook, CI and a contributor's machine — and does
  * not depend on a binary being on PATH.
  */
-function grepRepo(needle: string): string[] {
-  const hits: string[] = [];
+// The tree is read ONCE and shared by every grepRepo / grepRepoMatching call. Re-walking it per
+// needle (one full read of every .ts/.tsx file per APP_ROUTE_THEME_BG key) put
+// that test past vitest's 5 s timeout on slower machines — a flake that, with
+// the deploy's test step a hard gate, can block a release.
+let sourceCache: { path: string; text: string }[] | null = null;
+// Pay the one full read up front, with its own budget, so no single test's
+// 5 s timeout includes it (it took up to ~4.9 s on a loaded laptop).
+beforeAll(() => {
+  repoSources();
+}, 60_000);
+function repoSources(): { path: string; text: string }[] {
+  if (sourceCache) return sourceCache;
+  const files: { path: string; text: string }[] = [];
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
@@ -602,12 +606,21 @@ function grepRepo(needle: string): string[] {
       if (entry.isDirectory()) {
         walk(full);
       } else if (/\.tsx?$/.test(entry.name)) {
-        if (readFileSync(full, 'utf8').includes(needle)) {
-          hits.push(full.slice(REPO.length + 1));
-        }
+        files.push({ path: full.slice(REPO.length + 1), text: readFileSync(full, 'utf8') });
       }
     }
   };
-  for (const root of ['lib', 'components', 'app', 'stores']) walk(join(REPO, root));
-  return hits;
+  for (const root of ['lib', 'components', 'app', 'stores', 'hooks']) {
+    const dir = join(REPO, root);
+    if (existsSync(dir)) walk(dir);
+  }
+  sourceCache = files;
+  return files;
+}
+
+function grepRepo(needle: string): string[] {
+  // grepRepo's scope never included hooks/ — keep it that way.
+  return repoSources()
+    .filter((f) => !f.path.startsWith('hooks/') && f.text.includes(needle))
+    .map((f) => f.path);
 }

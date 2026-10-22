@@ -69,27 +69,3 @@
 }
 
 /* ══ Timer ═══════════════════════════════════════════════════════════ */
-
-/* The ring sweeps one second per second, so a linear ease is the honest one —
-   any curve would make the countdown lie about its own rate. */
-.rmhstudy-timer-ring {
-  transition: stroke-dashoffset 1s linear;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rmhstudy-timer-ring {
-    transition: none;
-  }
-}
-
-.rmhstudy-phase-working {
-  color: var(--rmhstudy-work);
-}
-
-.rmhstudy-phase-short_break {
-  color: var(--rmhstudy-break);
-}
-
-.rmhstudy-phase-long_break {
-  color: var(--rmhstudy-long-break);
-}

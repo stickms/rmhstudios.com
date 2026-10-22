@@ -5,6 +5,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
+import { getShopItem } from '@/lib/shop/catalog';
 import type { WishlistEntityType, WishlistItemView } from '@/lib/wishlist/types';
 
 export async function addWish(
@@ -13,7 +14,11 @@ export async function addWish(
 ): Promise<void> {
   await prisma.wishlistEntry.upsert({
     where: {
-      userId_entityType_entityId: { userId, entityType: input.entityType, entityId: input.entityId },
+      userId_entityType_entityId: {
+        userId,
+        entityType: input.entityType,
+        entityId: input.entityId,
+      },
     },
     create: {
       userId,
@@ -68,14 +73,25 @@ async function hydrate(rows: WishRow[]): Promise<WishlistItemView[]> {
         href: `/u/${r.entityId}`,
       };
     }
+    // Shop and market entries resolve to the catalog name (P10/C8: the alert
+    // job notifies about these, so the list must be able to show what they are).
+    const catalogName =
+      r.entityType === 'shop_item' || r.entityType === 'market_cosmetic'
+        ? getShopItem(r.entityId)?.name
+        : undefined;
     return {
       id: r.id,
       entityType: r.entityType as WishlistEntityType,
       entityId: r.entityId,
       targetPrice: r.targetPrice,
       createdAt: r.createdAt.toISOString(),
-      title: r.entityId,
-      href: null,
+      title: catalogName ?? r.entityId,
+      href:
+        r.entityType === 'shop_item'
+          ? '/store?tab=shop'
+          : r.entityType === 'market_cosmetic'
+            ? '/store?tab=market'
+            : null,
     };
   });
 }

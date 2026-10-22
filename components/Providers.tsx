@@ -9,6 +9,7 @@ import {
   useMemo,
 } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { setSharedQueryClient } from '@/lib/query-client-ref';
 import { useLocation, useRouterState } from '@tanstack/react-router';
 import { MotionConfig, LazyMotion } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -37,6 +38,13 @@ import {
   REDUCE_MOTION_KEY,
   GLASS_LEVEL_KEY,
   COLOR_VISION_KEY,
+  NAV_TRANSITION_KEY,
+  DEFAULT_NAV_TRANSITION,
+  ALWAYS_EVERT_GLOBE_KEY,
+  EVERSION_LEVEL_KEY,
+  DEFAULT_EVERSION_LEVEL,
+  isEversionLevel,
+  isNavTransition,
   isGlassLevel,
   applyGlassLevel,
   isColorVisionMode,
@@ -44,6 +52,8 @@ import {
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
 import { useFluidPressLayer } from '@/hooks/useFluidPress';
+import { useLiquidInteractions } from '@/hooks/useLiquidInteractions';
+import { useEvertPointLayer } from '@/hooks/useEvertPoint';
 import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useLocaleStore, writeLocaleCookie } from '@/stores/localeStore';
@@ -54,8 +64,11 @@ import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
 import { CallMount } from '@/components/call/CallMount';
 import { GroupCallMount } from '@/components/groupcall/GroupCallMount';
+import { AccessMount } from '@/components/access/AccessMount';
+import { DelightMount } from '@/components/delight/DelightMount';
 import { ThemePreviewBar } from '@/components/themes/ThemePreviewBar';
 import { RecentsTracker } from '@/components/site/RecentsTracker';
+import { PatchNotesMount } from '@/components/arcade/PatchNotesMount';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import type { Locale } from '@/lib/i18n/config';
@@ -63,6 +76,8 @@ import type { LocaleBundle } from '@/lib/i18n/resources';
 import { recoverViewTransition } from '@/lib/view-transition';
 import { applyPerfTier } from '@/lib/perf-tier';
 import { installScrollbarReveal } from '@/lib/scrollbar-reveal';
+import { installSwapReveal } from '@/lib/swap-reveal';
+import { isRetryable, maxRetries, retryDelayMs } from '@/lib/http';
 
 // perf audit §4.3: build the QueryClient PER component instance (via useState
 // below), not once at module scope. A module-scope client is shared by every
@@ -77,7 +92,13 @@ function makeQueryClient() {
       queries: {
         staleTime: 60_000, // 1 minute — serve cached data before refetching
         gcTime: 10 * 60_000, // keep unused data 10 min so back-nav doesn't refetch
-        retry: 1,
+        // Retry only what retrying can fix — a dropped connection, a timeout, a
+        // 429 or a 5xx — never a 4xx the user needs to see now. One more attempt
+        // on a 2G-class link, exponential backoff with jitter, and a server's
+        // Retry-After honoured (lib/http). Offline, React Query's default
+        // `networkMode: 'online'` pauses queries and resumes them on reconnect.
+        retry: (failureCount, error) => failureCount < maxRetries() && isRetryable(error),
+        retryDelay: (attempt, error) => retryDelayMs(attempt, error),
         // Slow-WiFi friendly: don't re-hit the network just because the user
         // tab-switched. Reconnects still revalidate stale data.
         refetchOnWindowFocus: false,
@@ -286,6 +307,12 @@ export function Providers({
 }: ProvidersProps) {
   // Per-request/per-mount QueryClient (perf audit §4.3) — see makeQueryClient.
   const [queryClient] = useState(makeQueryClient);
+  // Lets the globe eversion's AFTER readiness gate ask whether the destination still has queries
+  // loading (lib/query-client-ref.ts: a variable and a type, nothing to bundle).
+  useEffect(() => {
+    setSharedQueryClient(queryClient);
+    return () => setSharedQueryClient(null);
+  }, [queryClient]);
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
   const preview = useThemeStore((s) => s.preview);
@@ -298,6 +325,9 @@ export function Providers({
   const customAccent = useThemeStore((s) => s.customAccent);
   const reduceMotion = useThemeStore((s) => s.reduceMotion);
   const colorVision = useThemeStore((s) => s.colorVision);
+  const navTransition = useThemeStore((s) => s.navTransition);
+  const alwaysEvertGlobe = useThemeStore((s) => s.alwaysEvertGlobe);
+  const eversionLevel = useThemeStore((s) => s.eversionLevel);
   const userTheme = useThemeStore((s) => s.userTheme);
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
@@ -319,19 +349,19 @@ export function Providers({
   // at all on a page with no consumer for it. `pathname` re-runs that check.
   useSpatialParallax(pathname);
 
-  // The Liquid Glass optics runtime. Cursor reactivity is retired (the glass
-  // answers a static sun, not the pointer — see the §5.1 note in globals.css), so
-  // what is left is one listener that only attaches when the visitor has opted
-  // into device tilt: the aurora canvas' parallax follow on touch hardware.
-  // `useGlassLight` used to sit here and is gone — its whole job was the pointer
-  // hotspot and a scene light nothing consumed.
+  // The backdrop stays still; bounded material responses live on surfaces.
   useLiquidBackground();
+  useLiquidInteractions();
 
   // The fluid-interfaces press layer (WWDC 2018 §803 principle 1: instantaneous,
   // interruptible response to touch). One delegated pointerdown listener springs
   // any element carrying `data-fluid-press`; it is idle at rest, self-gates on
   // reduced motion, and releases the press if the gesture turns into a scroll.
   useFluidPressLayer();
+
+  // The eversion state layer's input (globals.css §7.3): where each `data-evert` control turns inside out from
+  // (the pointer's entry, the finger, the exit) and when a press is down. Delegated, passive, no frame loop.
+  useEvertPointLayer();
 
   // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
   // so a user whose locale was resolved via Accept-Language (no cookie yet) gets
@@ -494,7 +524,7 @@ export function Providers({
   // in `--site-*` tokens, so an app-tier ground under it is a dark field around a
   // Daylight card. The pre-paint script makes the same call from the same flag
   // (`notFoundThemeScript` in `__root.tsx`), so the two agree from frame 0.
-  const globalNotFound = useRouterState({ select: (s) => s.matches[0]?.globalNotFound === true });
+  const globalNotFound = useRouterState({ select: (s) => s.matches[0]?._notFound === true });
   const isAppRoute = isAppThemeRoute(pathname) && !globalNotFound;
 
   // `html.app-route` resolves the site surfaces to their opaque twins, withholds
@@ -530,6 +560,10 @@ export function Providers({
   // Scrollbars reveal on scroll rather than sitting on screen permanently
   // (lib/scrollbar-reveal.ts + the §Scrollbars block in app/globals.css).
   useEffect(() => installScrollbarReveal(), []);
+
+  // Content that replaces a skeleton/spinner fades in rather than snapping in —
+  // what a slow connection makes visible on every loading state (lib/swap-reveal).
+  useEffect(() => installSwapReveal(), []);
 
   // Hydrate style from localStorage on mount. Self-heal legacy values: any
   // retired style still persisted from before a catalog change (e.g. the old
@@ -580,6 +614,11 @@ export function Providers({
     if (ca && HEX_RE.test(ca)) st.setCustomAccent(ca);
     const cv = localStorage.getItem(COLOR_VISION_KEY);
     if (isColorVisionMode(cv)) st.setColorVision(cv);
+    const nt = localStorage.getItem(NAV_TRANSITION_KEY);
+    if (isNavTransition(nt)) st.setNavTransition(nt);
+    if (localStorage.getItem(ALWAYS_EVERT_GLOBE_KEY) === '1') st.setAlwaysEvertGlobe(true);
+    const el = localStorage.getItem(EVERSION_LEVEL_KEY);
+    if (isEversionLevel(el)) st.setEversionLevel(el);
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
     try {
@@ -692,6 +731,16 @@ export function Providers({
     applyColorVision(html, colorVision);
     if (colorVision !== 'none') localStorage.setItem(COLOR_VISION_KEY, colorVision);
     else localStorage.removeItem(COLOR_VISION_KEY);
+    // Eversion transition choice: cache only (no DOM effect) so the controller can
+    // read it synchronously; the default is expressed by absence.
+    if (navTransition !== DEFAULT_NAV_TRANSITION)
+      localStorage.setItem(NAV_TRANSITION_KEY, navTransition);
+    else localStorage.removeItem(NAV_TRANSITION_KEY);
+    if (alwaysEvertGlobe) localStorage.setItem(ALWAYS_EVERT_GLOBE_KEY, '1');
+    else localStorage.removeItem(ALWAYS_EVERT_GLOBE_KEY);
+    if (eversionLevel !== DEFAULT_EVERSION_LEVEL)
+      localStorage.setItem(EVERSION_LEVEL_KEY, eversionLevel);
+    else localStorage.removeItem(EVERSION_LEVEL_KEY);
     // Custom accent (raw hex) overrides the preset accent applied just above.
     if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
       const { hex, fg } = ensureReadableAccent(customAccent);
@@ -743,6 +792,9 @@ export function Providers({
     customAccent,
     reduceMotion,
     colorVision,
+    navTransition,
+    alwaysEvertGlobe,
+    eversionLevel,
     userTheme,
     userThemePreview,
   ]);
@@ -852,6 +904,9 @@ export function Providers({
             reduceMotion?: boolean | null;
             glassLevel?: number | null;
             colorVision?: string | null;
+            navTransition?: string | null;
+            alwaysEvertGlobe?: boolean | null;
+            eversionLevel?: string | null;
           };
           if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
             store.setFontScale(Number(r.fontScale));
@@ -861,6 +916,10 @@ export function Providers({
           if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
             store.setCustomAccent(r.customAccent);
           if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
+          if (isNavTransition(r.navTransition)) store.setNavTransition(r.navTransition);
+          if (typeof r.alwaysEvertGlobe === 'boolean')
+            store.setAlwaysEvertGlobe(r.alwaysEvertGlobe);
+          if (isEversionLevel(r.eversionLevel)) store.setEversionLevel(r.eversionLevel);
           // Glass clarity (§5.46): the account stop wins; otherwise map a legacy
           // reduce-transparency flag to stop 0 (Opaque). glassLevel is authoritative
           // for the reduce-transparency class going forward.
@@ -916,6 +975,7 @@ export function Providers({
                   <SilentErrorBoundary label="global-chrome">
                     <CommandPaletteMount />
                     <RecentsTracker />
+                    <PatchNotesMount />
                     {/* §14: the floating try-before-buy / preview-on-site confirm bar,
                         mounted globally so it survives navigation under a previewed theme. */}
                     <ThemePreviewBar />
@@ -924,6 +984,8 @@ export function Providers({
                         answering one must survive navigating away. */}
                     <CallMount />
                     <GroupCallMount />
+                    <AccessMount />
+                    <DelightMount />
                   </SilentErrorBoundary>
                 </ConfirmProvider>
               </ResolvedUserCtx.Provider>

@@ -5,6 +5,7 @@ import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { connectToRmhMusic, emit } from '@/lib/rmhmusic/socket';
 import { C2S, S2C } from '@/lib/rmhmusic/events';
 import RoomBrowser from '@/components/rmhmusic/RoomBrowser';
+import RadioJoinCard from '@/components/rmhmusic/RadioJoinCard';
 import Visualizer from '@/components/rmhmusic/Visualizer';
 import { Link, useRouter } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -174,6 +175,8 @@ export default function RmhMusicPage() {
             </button>
           </div>
         </motion.div>
+
+        <RadioJoinCard />
 
         {/* Room Browser */}
         <motion.div

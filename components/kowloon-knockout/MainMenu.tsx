@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { COMBO_DEFS } from '@/lib/kowloon-knockout/game/combat/combos';
 import { useTranslation } from 'react-i18next';
 import GraphicsSettings from './GraphicsSettings';
+import { TrainingMenuButton } from './TrainingRoom';
 
 export default function MainMenu() {
     const { t } = useTranslation("c-kowloon-knockout");
@@ -86,6 +87,8 @@ export default function MainMenu() {
                     >
                         {t("versus", { defaultValue: "VERSUS" })}
                     </motion.button>
+
+                    <TrainingMenuButton />
 
                     <motion.button
                         className="neon-button neon-button-controls"

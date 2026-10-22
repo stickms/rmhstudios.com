@@ -211,8 +211,8 @@ export default function MediaQueue() {
       {showAddModal && (
         <AddMediaModal
           onClose={() => setShowAddModal(false)}
-          onAdd={(url, title) => {
-            emit(C2S.QUEUE_ADD, { url, title: title || undefined });
+          onAdd={(items) => {
+            for (const { url, title } of items) emit(C2S.QUEUE_ADD, { url, title: title || undefined });
             setShowAddModal(false);
           }}
         />

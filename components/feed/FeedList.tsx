@@ -6,6 +6,7 @@ import { useWindowVirtualizer, type VirtualItem } from'@tanstack/react-virtual';
 import { useFeedStore } from'@/stores/feedStore';
 import type { FeedItem as FeedItemType } from'@/lib/feed-types';
 import { FeedItem } from'./FeedItem';
+import { useHideBots } from'@/lib/devplatform/hide-bots';
 import { ArrowUp } from'lucide-react';
 import { Spinner } from'@/components/ui/spinner';
 import { PostListSkeleton } from'@/components/ui/skeletons/PostCardSkeleton';
@@ -80,7 +81,9 @@ export function FeedList({
  // fetch. Only for the default For You surface the prefetch corresponds to.
  const usingInitial =
  !initialized && items.length === 0 && !following && !!initialItems && initialItems.length > 0;
- const displayItems = usingInitial ? initialItems : items;
+ const hideBots = useHideBots();
+ const baseItems = usingInitial ? initialItems : items;
+ const displayItems = hideBots ? baseItems.filter((i) => !i.user?.isBot) : baseItems;
  // Stable ids mean new pages, optimistic posts, and flushed SSE items animate
  // once, while cached/refetched objects and virtualizer remounts never replay.
  const enteringIds = useStableListMotion(
@@ -348,7 +351,7 @@ export function FeedList({
  onClick={retry}
  className="px-5 py-2 rounded-site-sm bg-site-accent text-site-accent-fg text-sm font-bold hover:bg-site-accent-hover transition-colors"
  >
- {t('retry', { defaultValue:'Retry'})}
+ {t('retry', { defaultValue:'Try again'})}
  </button>
  </div>
  )}
@@ -401,7 +404,7 @@ export function FeedList({
  onClick={retry}
  className="px-4 py-1.5 rounded-site-sm border border-site-border bg-site-surface text-site-text text-sm font-medium hover:bg-site-surface-hover transition-colors"
  >
- {t('retry', { defaultValue:'Retry'})}
+ {t('retry', { defaultValue:'Try again'})}
  </button>
  </div>
  )}

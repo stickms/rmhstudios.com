@@ -15,6 +15,7 @@ import viCCursedLogic from "@/locales/vi/c-cursed-logic.json";
 import viCDailyPuzzles from "@/locales/vi/c-daily-puzzles.json";
 import viCDoctrine from "@/locales/vi/c-doctrine.json";
 import viCDreamRift from "@/locales/vi/c-dream-rift.json";
+import viCDunesday from "@/locales/vi/c-dunesday.json";
 import viCEconomy from "@/locales/vi/c-economy.json";
 import viCForestExplorer from "@/locales/vi/c-forest-explorer.json";
 import viCGabrielsHorn from "@/locales/vi/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const viResources = {
   "c-daily-puzzles": viCDailyPuzzles,
   "c-doctrine": viCDoctrine,
   "c-dream-rift": viCDreamRift,
+  "c-dunesday": viCDunesday,
   "c-economy": viCEconomy,
   "c-forest-explorer": viCForestExplorer,
   "c-gabriels-horn": viCGabrielsHorn,

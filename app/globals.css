@@ -1,4 +1,3 @@
-@import 'tailwindcss';
 /* Self-hosted Inter (the body/display font) — served same-origin from the build
    output instead of Google Fonts, so first paint no longer depends on a
    third-party origin (perf audit §6.3). `wght.css` is the weight-axis-only,
@@ -15,6 +14,7 @@
    painted in Georgia and re-shaped in front of the reader. A declaration costs
    only its text; a file downloads only when a page actually uses the face. */
 @import './fonts/site-display.css';
+@import './liquid-glass.css';
 
 /* Scope Tailwind's content scanning to code that actually renders in the browser.
    Without this, auto-detection also scans build/test/infra/docs directories and
@@ -30,6 +30,9 @@
 @source not "../go-services";
 @source not "../docs";
 @source not "../deploy";
+/* Tests never ship, and their fixtures are full of class-like strings. */
+@source not "../**/__tests__";
+@source not "../**/*.test.{ts,tsx}";
 /* MEASURED AND REJECTED (2026-08-13): also excluding `../locales`, `../data`,
    `../prisma` and `../public`.
 
@@ -151,6 +154,27 @@
 }
 @utility duration-site-slow {
   transition-duration: calc(var(--site-transition-speed, 200ms) * 1.5);
+}
+
+/* ── The defaults behind ~1,650 bare `transition` / `transition-colors` /
+   `transition-transform` / `transition-opacity` call sites ─────────────────
+   Tailwind's own defaults are 150ms on `cubic-bezier(0.4, 0, 0.2, 1)` —
+   Material's "standard" curve, which accelerates out of rest and arrives
+   flat. That was the motion of most hovers, tints and toggles on the site,
+   underneath a motion system (`lib/motion.ts`, §7.1) built on a decelerating
+   iOS-family curve. These pin the defaults to that system: `EASE.standard`
+   (fast out of the gate, a long soft landing — the curve UIKit's ease-out
+   approximates) on the theme's own clock, `duration-site-fast` (150ms at the
+   default 200ms speed, so nothing gets slower; 112ms in `ultra`, which now
+   reaches every one of these instead of a handful). `ease-out` / `ease-in-out`
+   take the same family so a hand-written utility agrees with the default.
+   Inline so the `var()` resolves on the element — the theme scalar can be
+   overridden below :root. */
+@theme inline {
+  --default-transition-duration: calc(var(--site-transition-speed, 200ms) * 0.75);
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 /* A horizontal scroller's right edge, faded so the clipped item reads as
@@ -325,13 +349,17 @@
   /* ── The display scale (audit SPA-006) ──────────────────────────────────
      `--site-font-display` was tokenised but its SIZE never was, so 44 files each
      invented their own clamp/weight/tracking and the shared page header topped
-     out at 3.4rem while /design's reference h1 is 10rem. These four steps carry
+     out at 3.4rem while /design's reference h1 is 10rem. These steps carry
      the whole look — size, weight, leading AND tracking together, because the
      tight leading and negative tracking are what make big type read as editorial
      rather than merely large. Lifted from the /design page (globals.css
      §"Standalone design-system story"), which is the reference implementation.
 
-     Use them through `.site-display-1..4`; never re-type a clamp on a page.
+     Use them through `.site-display-3` / `.site-display-4`; never re-type a
+     clamp on a page. (Steps 1 and 2, the full-bleed hero sizes, had no users
+     and were removed on 2026-10-09 — restore them from git history, with their
+     classes, if a hero needs them. The numbering is kept so the remaining steps
+     don't rename under 50 call sites.)
 
      On the middle (vw) term: /design's h1 can afford `11vw` because it is a
      full-bleed hero. A page TITLE lives in a ~44rem column, so a vw term tuned
@@ -339,12 +367,6 @@
      `4vw` middle term rendered the new header SMALLER than the 3.4rem cap it was
      meant to replace. These terms are tuned so each step is comfortably larger
      than what it replaces at ordinary column widths, not just at the extremes. */
-  --site-display-1: clamp(2.75rem, 9vw, 10rem);
-  --site-display-1-leading: 0.86;
-  --site-display-1-tracking: -0.065em;
-  --site-display-2: clamp(2.25rem, 6.5vw, 7rem);
-  --site-display-2-leading: 0.94;
-  --site-display-2-tracking: -0.055em;
   --site-display-3: clamp(1.9rem, 5.5vw, 4.5rem);
   --site-display-3-leading: 1;
   --site-display-3-tracking: -0.05em;
@@ -378,8 +400,6 @@
 
   /* Reveal-on-scroll, one curve for the whole site (audit SPA-003). */
   --site-reveal-distance: 18px;
-  --site-reveal-duration: 700ms;
-  --site-reveal-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Layout rhythm — generous minimalist negative space & clean breathing room */
   --site-page-gutter: clamp(0.75rem, 1.5vw, 1.25rem);
@@ -387,8 +407,6 @@
   /* The gap between two MAJOR sections of an editorial page — an order of
      magnitude more air than --site-section-gap, which stays what it is so
      existing callers don't shift (audit SPA-005). */
-  --site-section-block: clamp(3.5rem, 10vw, 9rem);
-  --site-section-inline: clamp(0rem, 4vw, 4rem);
   --site-panel-padding: clamp(1rem, 2vw, 1.5rem);
   --site-shell-gap: clamp(0.75rem, 1.25vw, 1.25rem);
   --site-sticky-edge: clamp(0.375rem, 0.8vw, 0.625rem);
@@ -1343,9 +1361,8 @@ html:not(.app-route) .site-aurora::before {
      which is fine, it's the crisp in-viewport aurora. Painting the aurora BEHIND
      the browser chrome is handled by the root canvas background (see the mobile
      html:not(.app-route) rule), the one layer iOS lets reach those strips. */
-  /* Oversized by 14% on every side so the slow drift + the pointer/motion
-     parallax below can translate the layer a few percent without ever revealing
-     an unpainted edge. */
+  /* Oversized by 14% on every side so the tilt parallax below can translate
+     the layer a few percent without ever revealing an unpainted edge. */
   inset: -14%;
   z-index: -1;
   background-image: var(--site-canvas);
@@ -1353,46 +1370,28 @@ html:not(.app-route) .site-aurora::before {
   background-size: 100% 100%;
   pointer-events: none;
   transform-origin: center;
-  /* Two independent transform channels compose here (translate applies before
-     transform): `translate` carries the live pointer / device-motion parallax
-     (written as --aurora-mx/--aurora-my by hooks/useLiquidBackground), while the
-     `aurora-drift` keyframes animate `transform` for the ambient flow. Easing the
-     translate gives the reactive follow a liquid trail instead of a hard snap. */
+  /* `translate` carries the opt-in device-tilt parallax (written as
+     --aurora-mx/--aurora-my by hooks/useLiquidBackground, event-driven, never a
+     loop); the transition gives that follow a liquid trail.
+
+     There is NO ambient drift any more. Both aurora layers used to run an
+     infinite 34s/52s scale-rotate-drift keyframe so the backdrop "was never
+     static". That was exactly the problem: a backdrop that is never static is a
+     page that never goes idle — a new full-viewport composite on every vsync,
+     forever, 2.4× as many on a 144Hz panel as on a 60Hz one. Handhelds already
+     had it frozen (the handheld block below); desktop now matches. Measured cost
+     and the companion change to the radial rings/blobs: the note above
+     `.radial-backdrop__field` in components/radial/radial.css. Gate:
+     lib/__tests__/static-backdrop.test.ts. */
   translate: var(--aurora-mx, 0px) var(--aurora-my, 0px);
   transition: translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-  animation: aurora-drift 34s ease-in-out infinite alternate;
-  will-change: transform, translate;
-}
-
-/* The ambient "liquid" flow: an ultra-slow scale/rotate/drift so the shared
-   backdrop every glass surface samples is never static — glass reads as living
-   material. Transform-only (GPU-composited, no per-frame layout/paint). Neutered
-   automatically under reduced motion by the global 0.01ms animation reset. */
-/* 5 stops (same 34s, same amplitude as the original 3) — a less elliptical,
-   more organic path so the near field never reads as a looping ellipse. */
-@keyframes aurora-drift {
-  0% {
-    transform: scale(1.06) rotate(0deg) translate3d(0, 0, 0);
-  }
-  25% {
-    transform: scale(1.1) rotate(0.5deg) translate3d(1.2%, -0.6%, 0);
-  }
-  50% {
-    transform: scale(1.13) rotate(0.7deg) translate3d(1.6%, -1.4%, 0);
-  }
-  75% {
-    transform: scale(1.09) rotate(-0.3deg) translate3d(-0.6%, 0.4%, 0);
-  }
-  100% {
-    transform: scale(1.07) rotate(-0.7deg) translate3d(-1.5%, 1.2%, 0);
-  }
 }
 
 /* Aurora layer 2 — the far field (§5.1). A depth sibling behind the near layer:
-   it counter-drifts slower and follows the pointer at −0.6× the near layer's
-   parallax (reusing --aurora-mx/my written by useLiquidBackground — NO new JS),
-   so pointer motion resolves into depth rather than a flat slide. z-index:-2
-   keeps it behind the near layer. Same kill-switches as the near layer below. */
+   it follows the tilt at −0.6× the near layer's parallax (reusing --aurora-mx/my
+   written by useLiquidBackground — NO new JS), so motion resolves into depth
+   rather than a flat slide. z-index:-2 keeps it behind the near layer. Same
+   kill-switches as the near layer below. */
 html:not(.app-route):not(.style-high-contrast) .site-aurora::after {
   content: '';
   position: absolute;
@@ -1412,23 +1411,10 @@ html:not(.app-route):not(.style-high-contrast) .site-aurora::after {
     );
   translate: calc(var(--aurora-mx, 0px) * -0.6) calc(var(--aurora-my, 0px) * -0.6);
   transition: translate 0.9s cubic-bezier(0.22, 1, 0.36, 1); /* lazier trail */
-  animation: aurora-drift-far 52s ease-in-out infinite alternate;
-  will-change: transform, translate;
-}
-@keyframes aurora-drift-far {
-  0% {
-    transform: scale(1.1) rotate(0.4deg) translate3d(-1.2%, 0.8%, 0);
-  }
-  50% {
-    transform: scale(1.04) rotate(-0.5deg) translate3d(1.4%, -1%, 0);
-  }
-  100% {
-    transform: scale(1.12) rotate(0.3deg) translate3d(-0.8%, 1.2%, 0);
-  }
 }
 
 /* Low-end devices and high-contrast (canvas is `none` there) pay nothing for the
-   ambient flow or the parallax follow — both aurora layers. */
+   parallax follow — both aurora layers. */
 html.perf-lite .site-aurora::before,
 html.perf-lite .site-aurora::after,
 html.style-high-contrast .site-aurora::before,
@@ -1475,674 +1461,8 @@ html.app-route {
   initial-value: 1;
 }
 
-@layer components {
-  /* ── L1 · glass-fill ── repeated content (feed cards, rows, tiles). Tint + rim
-     via shadow-site-sm. NO blur — cheap, unlimited per page; the canvas provides
-     the colour variance underneath so the tint reads as glass (§4.4).
-
-     L1 ANSWERS THE LIGHT TOO. v2 §4 promised "one light, every surface answers
-     it", but only L2+ ever carried the glint layer — and L1 is the tier the site
-     is mostly MADE of, so on a typical page the great majority of the glass was
-     optically dead and the material read as flat paper with a hairline. Two
-     things were in the way, both fixed here:
-
-       • the tint was set with the `background` SHORTHAND, which resets
-         `background-image` — so L1 structurally could not carry a layer. It is
-         `background-color` now.
-       • the glint's strength is `--glass-glint-opacity × --glass-glint-hover`,
-         and the only rule that ever set the hover multiplier was the interactive
-         one, which rests it at 0. L1 rests at `--glass-glint-rest` instead, so
-         the specular is always present but AMBIENT — a quiet gradient of light
-         falling across the surface, well below the hover hotspot it rises to.
-
-     Both layers clip to padding-box, unlike L2+: L1 keeps its visible hairline
-     (the edge is what separates one repeated row from the next), and a border-box
-     layer under an opaque border is painted over anyway. Cost is two background
-     layers and no filter, so the tier is still unlimited per page.
-
-     DO NOT add `contain: layout paint` here (OPT-15), and here is the audit that
-     says so, because "L1 is the repeated-card tier, therefore it is the safe set
-     to contain" is a very reasonable-sounding wrong answer.
-
-     `contain: paint` clips the subtree and makes the element the containing block
-     for `position: fixed` descendants. That is only safe if everything that
-     deliberately overflows a card is portalled out of it — which §5.1 asserts,
-     since floating UI must be `.glass-overlay` and L4 surfaces are portalled. The
-     assertion does not hold in the code, though it holds for more of it than it
-     used to. Portalled: `Dialog`, `Sheet`, `Select` and `ProfileHoverCard`
-     (Radix portals), `Tooltip` and `ReactionMenu` (explicit `createPortal`), and
-     everything on `AnchoredMenu` — which is now `RMHarkOverflowMenu`,
-     `RMHarkActions`' repost menu, `CommentItem`, `GroupChatView`,
-     `ConversationView`, `PartyBar`, `BuildFilters`, `MessageActions`,
-     `EventTime` and `ComposeBox`. The first two are the ones that sat inside the
-     `.glass-fill` feed card, so containing the L1 role no longer clips them.
-
-     Also portalled, by their own `createPortal` rather than by AnchoredMenu:
-     `LibraryContextMenu`, `QuickPanel`, `LanguageSwitcher` and
-     `NotificationsPopover`.
-
-     STILL IN PLACE — anchored `absolute … top-full` inside their host,
-     `.glass-overlay` or not: `ComposeModal`'s (+) menu, `MentionTextarea`,
-     `HandleInput`, both `LocationSearch`es, `EmojiPickerButton`, and
-     `AlbumViewer` / `BookReader`.
-
-     `ComposeModal`'s is deliberate and must stay: it opens INSIDE a z-50 dialog,
-     and a panel portalled to `<body>` at `--z-menu` (40) would render
-     UNDERNEATH the dialog that opened it. The rest are autocompletes, pickers
-     and reader chrome whose panel is tied to a field's or a page's own layout —
-     candidates for AnchoredMenu, not oversights. None of them is inside a
-     `.glass-fill` card, which is what this note is actually about.
-
-     The role is also not only repeated cards in practice: it is `Card`'s default
-     tier, so it is also on `NotFound`, `RouteErrorFallback`, `ProfileEditModal`'s
-     sections and its `sticky bottom-0` footer, `ProfileHero`'s absolutely-placed
-     song badge and a 12px avatar disc. One property on a selector with ~150 call
-     sites across 86 files, whose failure mode is silent clipping, is not a
-     containment win.
-
-     If containment is wanted, it belongs on a specific surface that is verifiably
-     already clipping (`.social-post` is `overflow: hidden` in feed.css, so paint
-     containment there is a visual no-op) — not on the tier class. */
-  .glass-fill {
-    --glass-glint-hover: var(--glass-glint-rest, 0.45);
-    background-color: var(--site-glass-tint);
-    background-image: var(--site-glass-noise), var(--glass-glint-layer);
-    background-clip: padding-box;
-    background-origin: padding-box;
-    background-attachment: scroll, var(--glass-glint-attach, scroll);
-    box-shadow: var(--site-shadow-sm);
-    border: var(--site-border-width) solid var(--site-border);
-    border-radius: var(--site-radius);
-  }
-
-  /* ── L2 · glass-pane ── singular panels (heroes, composer, settings sections,
-     tier cards). Blur + saturate + micro-noise. Budgeted (§6.1). position:relative
-     so the optics ring (::before, §2.1) anchors here. */
-  .glass-pane {
-    position: relative;
-    /* §4.35 layer order (load-bearing): tint (background-color) clips to the LAST
-       layer's clip = border-box, so the material fills under the transparent
-       border and the edge is the same sheet; noise stays padding-box; the glint
-       is the border-box layer, so its specular lives in the 1px border ring. */
-    /* §5.46: tint alpha scales with the clarity slider — Airy/Clear (<1) mix
-       toward transparent, Calm (>1) toward --site-surface-opaque; the clamps make
-       each half a no-op in the other's regime and guard against negative %. */
-    background-color: color-mix(
-      in srgb,
-      var(--site-surface-opaque) clamp(0%, calc((var(--glass-user-tint, 1) - 1) * 100%), 100%),
-      color-mix(
-        in srgb,
-        var(--site-glass-tint) clamp(0%, calc(var(--glass-user-tint, 1) * 100%), 100%),
-        transparent
-      )
-    );
-    background-image: var(--site-glass-noise), var(--glass-glint-layer);
-    background-clip: padding-box, border-box;
-    background-origin: padding-box, border-box;
-    background-attachment: scroll, var(--glass-glint-attach, scroll);
-    box-shadow: var(--site-shadow-sm);
-    border: var(--site-border-width) solid transparent;
-    border-radius: var(--site-radius);
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1)))
-      saturate(var(--site-glass-saturate));
-    backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1)))
-      saturate(var(--site-glass-saturate));
-  }
-
-  /* ── L3 · glass-chrome ── persistent chrome (sidebar, sticky headers, dock).
-     More of the aurora shows through; condenses on scroll via [data-scrolled].
-     Thinner optics-ring bevel than panes (§2.1); position:relative anchors the
-     ring ::before (a position utility from the shell overrides it where set). */
-  .glass-chrome {
-    position: relative;
-    --glass-bevel: 8px;
-    /* §4.35: single glint layer over a border-box tint + transparent border (the
-       lit edge IS the border). border-box sizing (Tailwind preflight) → the added
-       border costs no outer layout. */
-    /* §5.46: the --site-bg mix % scales with the clarity slider (a plain factor
-       works here — the mix tops out well under 100% even at Calm's 1.35). */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) calc(32% * var(--glass-user-tint, 1)),
-      transparent
-    );
-    background-image: var(--glass-glint-layer);
-    background-clip: border-box;
-    background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, scroll);
-    border: var(--site-border-width) solid transparent;
-    box-shadow: var(--site-shadow-sm);
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
-  }
-  .glass-chrome[data-scrolled] {
-    /* background-color only (NOT the `background` shorthand) so the glint layer
-       survives the condense; the --glass-glint-opacity bump then rides it (§7). */
-    background-color: color-mix(
-      in srgb,
-      var(--site-bg) calc(55% * var(--glass-user-tint, 1)),
-      transparent
-    );
-    --glass-glint-opacity: 1; /* condensed chrome catches more light (§4.2/§7) */
-    /* The condensed tier only nudges the blur radius. Large blur-kernel swaps on
-       a sticky element force expensive backdrop re-rasterization during scroll;
-       opacity carries most of the legibility change while the small blur delta
-       stays smooth at the display's native refresh rate. The aside
-       variant reads --site-glass-blur-chrome on ::before but never carries
-       [data-scrolled], so it is unaffected. */
-    -webkit-backdrop-filter: blur(
-        calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))
-      )
-      saturate(150%);
-    backdrop-filter: blur(
-        calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))
-      )
-      saturate(150%);
-  }
-  /* Fixed asides: blur lives on ::before so fixed descendants (LeftSidebar's
-     non-portaled user menu) keep the VIEWPORT as their containing block. NEVER
-     put backdrop-filter on the aside itself (§3.3.1). Because ::before is the
-     blur carrier here, the glint can't ride a pseudo — it lives in the aside's
-     own border-box background layer (§4.35); the old ::after ring is deleted. */
-  .glass-chrome--aside {
-    position: relative;
-    --glass-bevel: 8px;
-    /* §4.35: the aside carries its glint in its OWN background now (its ::after
-       ring was deleted). Blur stays on ::before (§3.3.1 containing-block rule),
-       so the glint cannot ride a pseudo here — it rides the border-box layer. */
-    /* Keep the oversized Safari drawer continuous with the root colour exposed
-       behind the translucent bottom tab bar. The deliberate 100lvh + bleed
-       geometry remains unchanged; only the material base is made opaque so the
-       browser-chrome region does not read as a separate coloured strip. */
-    background-color: var(--site-bg);
-    background-image: var(--glass-glint-layer);
-    background-clip: border-box;
-    background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, scroll);
-    border: var(--site-border-width) solid transparent;
-  }
-  .glass-chrome--aside::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    border-radius: inherit;
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
-      saturate(150%);
-  }
-
-  /* ── L4 · glass-overlay ── floating UI (dialogs, popovers, menus, palette,
-     toasts, tooltips). More opaque so text never ghosts through. position:relative
-     anchors the optics ring (::before, §2.1). */
-  .glass-overlay {
-    position: relative;
-    /* Last-line viewport safety for every floating surface, including older
-       hand-positioned menus that measure nothing themselves. `useMenuViewportFit`
-       still supplies precise x/y clamping; these limits guarantee that no popover
-       can exceed the visible screen or trap unreachable content. */
-    max-inline-size: calc(100dvw - var(--safe-left, 0px) - var(--safe-right, 0px) - 24px);
-    max-block-size: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px) - 24px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    /* §4.35: single glint layer, tint fills to border-box, transparent border. */
-    /* ── The legibility floor (load-bearing) ──────────────────────────────────
-       This tier is the one surface on the site that exists to be READ the moment
-       it appears — a menu, a select list, an autocomplete, a tooltip, a dialog.
-       Nobody scrolls a popover into a comfortable position; they open it, read a
-       label and choose. So unlike every other tier, its opacity is not purely a
-       matter of taste, and it does not get to bottom out.
-
-       Two things had it ghosting anyway. It was 62%, raised once to 80%, and even
-       80% left labels sitting on whatever was behind them over a photo or a dark
-       feature panel — 30px of blur is separation, not contrast. Worse, the Glass
-       clarity slider (§5.46) MULTIPLIED that: at Airy/Clear `--glass-user-tint`
-       runs below 1, so a visitor who asked for a slightly airier site got 80% ×
-       0.7 = 56% on their dropdowns and lost them entirely against a busy page.
-
-       Hence `clamp()`: the base is 90%, the slider still moves it, and 78% is the
-       hard floor no preference can push it under. Airy still reads as airier —
-       everywhere else on the page, and in the blur here — but a menu stays a
-       menu. `clamp()` also caps at 100%, so a Calm/Opaque setting cannot mint an
-       invalid percentage. */
-    background-color: var(--site-glass-overlay-fill);
-    background-image: var(--glass-glint-layer);
-    background-clip: border-box;
-    background-origin: border-box;
-    background-attachment: var(--glass-glint-attach, scroll);
-    box-shadow: var(--site-shadow);
-    border: var(--site-border-width) solid transparent;
-    border-radius: var(--site-radius);
-    -webkit-backdrop-filter: blur(
-        calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))
-      )
-      saturate(180%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1)))
-      saturate(180%);
-  }
-
-  /* No backdrop-filter, no translucency. Every tier above leans on the blur to
-     separate itself from what is behind it; where the engine cannot blur (older
-     WebKit, a blocked filter, a print context) the tint alone is doing the whole
-     job and the read surfaces lose. This is the tier layer's own last resort, and
-     it is deliberately not per-component: a surface either has the material or it
-     has the opaque fallback, and the choice is made once, here.
-
-     `.glass-fill` is excluded on purpose — L1 has no blur by design, so it never
-     depended on one, and turning every card and list row opaque would flatten the
-     whole page for a capability it was not using. */
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    :is(.glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
-      background-color: var(--site-surface-opaque);
-    }
-  }
-
-  /* Full-screen mobile editors intentionally consume the visual viewport. This
-     opt-in overrides the generic popover clamp above; safe-area padding remains
-     owned by the Dialog/Sheet primitive so controls clear notches and home bars. */
-  @media (max-width: 767px) {
-    .glass-overlay[data-mobile-fullscreen='true'] {
-      max-inline-size: none;
-      max-block-size: none;
-    }
-  }
-
-  /* Dialog / drawer backdrops. Blur stays low + constant (cheap; never
-     transitioned during a drag). */
-  .glass-scrim {
-    background: rgb(0 0 0 / 0.5);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
-  }
-
-  /* Recessed wells (inputs, search fields) — a hole in the glass: dark top inner
-     shadow, faint light bottom inner edge (§4.2). No backdrop blur (legibility). */
-  .glass-inset {
-    background: var(--site-glass-ink);
-    /* §4.35: wells keep a border at half strength so a recessed field still reads
-       as carved INTO the sheet (not outlined on it) now that slabs go borderless. */
-    border: var(--site-border-width) solid color-mix(in srgb, var(--site-border) 50%, transparent);
-    border-radius: var(--site-radius-sm);
-    box-shadow:
-      inset 0 1px 2px rgb(0 0 0 / 0.35),
-      inset 0 -1px 0 var(--site-glass-rim-soft);
-  }
-
-  /* ── `.textarea-autosize` — grow with the content, without a layout read ────
-     `<Textarea autosize>` opts in. The browser sizes the control inside the
-     layout pass it is already running; the JS this replaces
-     (`el.style.height = 'auto'` then reading `el.scrollHeight`) forces a
-     SYNCHRONOUS layout on every keystroke, which is the shape it is worth
-     removing. See docs/performance-audit-2026-08-12.md §1.7.
-
-     Gated on `@supports` so an engine without `field-sizing` keeps exactly the
-     fixed-height behaviour it has today — this can only ever be an upgrade. The
-     `min-h-24` utility on the primitive still sets the floor; the ceiling here
-     hands overflow back to the scrollbar rather than letting a long paste push
-     the page. */
-  @supports (field-sizing: content) {
-    .textarea-autosize {
-      field-sizing: content;
-      max-block-size: var(--textarea-max-block, 40vh);
-      overflow-y: auto;
-    }
-  }
-
-  /* Shared sticky geometry. The primary chrome owns the page-edge inset and a
-     full section of breathing room below it. A secondary sticky is an explicit
-     cascade level: it clears the compact 56px primary header instead of racing it
-     for the same `top`. Related controls should still be merged into one surface. */
-  .site-sticky-chrome {
-    position: sticky;
-    inset-block-start: var(--site-sticky-edge);
-    z-index: 30;
-    margin-inline: var(--site-page-gutter);
-    margin-block-end: calc(var(--site-sticky-edge) + var(--site-section-gap));
-    border-radius: var(--site-radius);
-    isolation: isolate;
-  }
-
-  .site-sticky-secondary {
-    position: sticky;
-    inset-block-start: var(--site-sticky-secondary-top);
-    z-index: 20;
-  }
-
-  .site-sticky-contained {
-    position: sticky;
-    inset-block-start: var(--site-sticky-edge);
-    z-index: 20;
-    align-self: start;
-  }
-
-  /* Full-screen fixed takeovers that must hide the page beneath (§3.3.2). */
-  .glass-opaque {
-    background: var(--site-bg) !important;
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-  }
-
-  /* ── Reactivity (§5.1–5.2): hover tint-raise, press flex, pointer specular. ──
-     The transform easing is the springy glass curve (EASE.glass) so a press
-     releases with a little elastic overshoot — the surface reads as soft, liquid
-     material rather than a rigid slab. */
-  .glass-interactive {
-    position: relative;
-    transition:
-      background-color var(--site-transition-speed),
-      box-shadow var(--site-transition-speed),
-      scale var(--site-press-duration, 180ms) var(--ease-glass);
-  }
-  .glass-interactive:hover {
-    background-color: var(--site-glass-tint-strong);
-  }
-  /* The press cue is the independent `scale` property, NOT `transform: scale()`.
-     Two reasons, both structural:
-       1. `scale` composes with whatever `transform` the element already carries
-          (a layout utility, a framer-motion animation) instead of erasing it.
-       2. The fluid press layer (hooks/useFluidPress) drives the same property
-          inline, so its spring simply wins while a finger is down and hands the
-          element back to this rule afterwards. With `transform` here the two
-          would MULTIPLY and every press would double-squish.
-     This rule stays as the fallback for reduced motion and for the frame before
-     the layer's first tick — it is not dead code. */
-  .glass-interactive:active {
-    scale: 0.97;
-  }
-  /* ── The pointer hotspot is GONE (§5.1, cursor-reactivity retirement) ──
-     `.glass-interactive` used to grow an `::after` carrying a 220px radial
-     gradient positioned from `--glass-px/--glass-py`, which a document-level
-     `pointermove` listener rewrote on the hovered element every animation
-     frame. Two costs, both paid in the frames that most need to be free:
-
-       1. Moving the gradient's centre is a REPAINT of the whole card, at
-          pointer rate. A gradient is not a compositable property — there is no
-          transform that slides it — so each frame re-rasterised the element's
-          full box. On a grid of hovered cards that is the single most
-          expensive thing an idle-looking page does.
-       2. Finding the element to write to meant `closest('[data-glass-light]')`
-          up the ancestor chain plus a cached `getBoundingClientRect()` per
-          frame, inside a rAF that ran after other writers had already dirtied
-          layout.
-
-     The material does not need it. Glass reads as lit from the always-on rim
-     glint (§4.35), which answers a STATIC sun, and hover is already announced
-     twice over — by the tint-raise above and by `--glass-glint-hover` below,
-     which lifts L1's ambient glint to full. Both are cheap: a background-colour
-     swap and a registered-custom-property fade, no per-frame work at all.
-
-     If a cursor-tracked specular is ever wanted back, it belongs on a
-     compositor-friendly carrier (a transform-translated child layer), never on
-     a repainted gradient position, and it must be gated behind the same tier
-     switches as the rest of the optics. */
-
-  /* ══ Pseudo-element contract v2 (§2 + §4.35, load-bearing) ═════════════════
-     The specular rim glint is NO LONGER a masked ::before ring — it is a
-     border-box background LAYER on each surface (see the elevation classes
-     above, painted via --glass-glint-layer). That frees the pseudos:
-       • ::before = REFRACTION ONLY (the masked bevel band carrying the lens
-         filter, below). Non-refract surfaces have NO ::before at all.
-       • ::after  = FREE. It used to be the pointer hotspot; with cursor
-         reactivity retired nothing owns it, so a component may use it — but
-         only for something static.
-       • .glass-chrome--aside keeps blur on ::before (§3.3.1); its old ::after
-         ring is deleted — it now glints from its own background.
-     Never add a third pseudo owner. */
-
-  /* Hover-raised glint for repeated interactive fills (cards, tiles): the same
-     border-box glint layer as the always-on surfaces, with --glass-glint-hover
-     multiplying its opacity from the L1 ambient rest up to 1 (hover), so the
-     hovered fill is still unmistakably the one that is lit. It used to rest at
-     0, which — combined with the transparent border below — left an interactive
-     card with no edge and no light at all until the pointer arrived; on touch,
-     where there is no hover, that was its permanent state. Transparent border →
-     the lit edge IS the border (§4.35), now at rest as well as on hover. */
-  .glass-fill.glass-interactive {
-    --glass-glint-hover: var(--glass-glint-rest, 0.45);
-    background-image: var(--site-glass-noise), var(--glass-glint-layer);
-    background-clip: padding-box, border-box;
-    background-origin: padding-box, border-box;
-    background-attachment: scroll, var(--glass-glint-attach, scroll);
-    border-color: transparent;
-    transition:
-      background-color var(--site-transition-speed),
-      box-shadow var(--site-transition-speed),
-      transform var(--site-press-duration, 180ms) var(--ease-glass),
-      --glass-glint-hover 0.14s ease;
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .glass-fill.glass-interactive:hover {
-      --glass-glint-hover: 1;
-    }
-  }
-  /* Small capsules take a thinner refraction bevel (per-component opt-in). */
-  .glass-bevel-sm {
-    --glass-bevel: 6px;
-  }
-
-  /* ── Edge lens refraction (§3) — hero/chrome only, ≤2 per page, never in
-     scroll containers. ::before is REFRACTION-ONLY (§4.35): the masked bevel band
-     carries the lens filter and paints NO glint. The ring geometry (mask / inset /
-     bevel) lives here now. Content that could reach the band sits at z-index ≥ 1.
-     Fallback (FF/Safari without url() in backdrop-filter): plain edge blur, or the
-     mirror branch below. Chromium: the lens displacement map (per-element size
-     from lib/glass-lens.ts, else the static #glass-lens). */
-  .glass-refract {
-    position: relative;
-  }
-  .glass-refract::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    padding: var(--glass-bevel, 12px); /* band width = glass edge bevel */
-    -webkit-mask:
-      linear-gradient(#000 0 0) content-box exclude,
-      linear-gradient(#000 0 0);
-    mask:
-      linear-gradient(#000 0 0) content-box exclude,
-      linear-gradient(#000 0 0);
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
-  }
-  /* Chromatic dispersion (§3.4) — the static rim fringe. Sanctioned surfaces:
-     login card, /store featured tier, command palette, design lab. */
-  .glass-refract--prism::before {
-    box-shadow:
-      inset 0 0 0 1px rgba(255, 80, 120, 0.14),
-      inset 0 0 0 2px rgba(80, 160, 255, 0.12);
-  }
-
-  /* ── The SVG displacement lens (§3.3–§3.6) is PARKED, not deleted ──────────
-     The three `url(#glass-lens…)` filters still ship (components/ui/liquid-glass.tsx)
-     and lib/glass-lens.ts still knows how to size them per element, but no rule
-     consumes them: current Chromium composites the displacement MAP itself into
-     the masked bevel — a grey/rainbow strip down the right and bottom edges of
-     every refract surface (verified on the login card, the /store featured tier
-     and the design lab hero) instead of bending the backdrop through it. The
-     mirror branch (Gecko/WebKit, §3.6) rides the same feImage map, so it is
-     parked with it rather than shipping one engine a different artifact.
-     What remains is the honest part of the optic: the masked bevel band above
-     still frosts the backdrop at its edge (2px blur), so a hero still reads as a
-     thick sheet of glass with a soft lip — just without the chromatic bend.
-     Re-enable by restoring the `@supports (backdrop-filter: url('#glass-lens'))`
-     upgrades here and the initGlassLens() call in hooks/useGlassLight.ts. */
-
-  /* ── Liquid sheen (§5.2) — a slow diagonal specular that drifts across a
-     surface like light over wet glass. SIGNATURE surfaces only — ration like
-     .glass-refract (≤3 ambient per page); NOT for list items.
-
-     ## The band travels on the compositor, not through paint (v3)
-
-     Through v2 this was one element with an animated `background-position`.
-     Background position is a PAINT property: there is no transform that slides
-     a gradient, so every frame of the sweep re-rasterised the host's entire box
-     — forever, since the animation is `infinite`. On a 120Hz panel that is 120
-     full-element repaints a second for an ambient decoration, on a surface that
-     is by definition one of the largest on the page (a login card, a pricing
-     slab). It was the last standing per-frame paint on the site.
-
-     The band is now its own layer on `::after` — a fixed gradient, moved with
-     `translate3d`. Transform is a compositor property: the layer is rasterised
-     ONCE and then transformed by the GPU, so the sweep costs no main-thread
-     work and no repaint at all after the first frame. `::after` is available
-     because the pointer hotspot that used to own it is retired (§5.1.1); this
-     is the one thing that took its place, and it is static.
-
-     Three details are load-bearing:
-
-       1. **The host clips** (`overflow: clip`). A moving layer has to leave the
-          pane, and nothing else can stop it being visible outside — a
-          `clip-path` or `mask` on the layer itself is applied BEFORE its
-          transform, so it travels with the band instead of holding still.
-          `clip` rather than `hidden`: it creates no scroll container and no
-          containing block for absolute descendants, so it cannot turn a pane
-          into a scroll port or re-parent a popover.
-       2. **A host with a deliberately overflowing child opts into a bleed**
-          via `--glass-sheen-bleed` (see `.pricing-card--featured`, whose ribbon
-          straddles the top edge). Default 0 = the sheen is clipped exactly at
-          the edge.
-       3. **`z-index: -1`** puts the layer above the host's own background and
-          below every piece of its content — the same place the background layer
-          used to occupy. It needs the host to be a stacking context, which
-          `isolation: isolate` guarantees rather than relying on the tier class
-          happening to carry a `backdrop-filter`. Isolation also scopes the
-          `screen` blend to the host's own background, which is exactly what
-          `background-blend-mode: screen` did.
-
-     The band rests fully off-pane at both ends of the keyframe, so a stopped
-     animation (perf-lite, reduced motion) is never frozen mid-sweep. */
-  .glass-liquid {
-    background-image: var(--site-glass-noise);
-    isolation: isolate;
-    overflow: clip;
-    overflow-clip-margin: var(--glass-sheen-bleed, 0px);
-  }
-  .glass-liquid::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    z-index: -1;
-    pointer-events: none;
-    /* ── Geometry: the v2 background layer, one for one ────────────────────
-       The gradient, its 260% width and its travel are the v2 values converted
-       from background-position to translate, so the output is pixel-identical
-       and only the mechanism changed. Do not "simplify" these numbers — the
-       first attempt used a narrower band with rounder stops and it showed hard
-       vertical seams, because at 115deg a gradient's stops run along the TILTED
-       axis: `transparent 0%` is a corner, not an edge, so the band's own box
-       edges cut through mid-gradient colour. At 260% those seams sit outside
-       the clip for the whole travel.
-
-       The translate percentages are of the band's own width (2.6 × host), and
-       they are the algebra of the v2 keyframe. A background-position of P% on a
-       layer wider than its box resolves to `P × (box − image)` = `P × −1.6W`:
-         150%  → −2.40W  ÷ 2.6W = −92.3%   (rest, band clear to the left)
-         −60%  → +0.96W  ÷ 2.6W = +36.9%   (clear to the right)
-       So the sweep runs left→right, which is the direction it always ran. */
-    width: 260%;
-    background-image: linear-gradient(
-      115deg,
-      transparent 30%,
-      color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 46%,
-      color-mix(in srgb, var(--site-glass-light) 85%, transparent) 50%,
-      color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 54%,
-      transparent 70%
-    );
-    mix-blend-mode: screen;
-    transform: translate3d(-92.3%, 0, 0);
-    animation: glass-sheen 9s ease-in-out infinite;
-    /* Promotes the band to its own composited layer up front, so the first
-       frame of a sweep does not stall waiting for a raster. Safe here in a way
-       it is not on `[data-fluid-press]` (see the note in §Interaction): this is
-       ≤3 elements per page, by contract, not several hundred. */
-    will-change: transform;
-  }
-  html.perf-lite .glass-liquid::after {
-    animation: none; /* band rests off-pane — nothing stuck mid-sweep */
-    will-change: auto;
-  }
-
-  /* One-shot hover sweep for signature CTAs (§5.2/§5.3) — buttons + tab capsules.
-     Provides its own sheen band so it works on surfaces without .glass-liquid;
-     re-triggers each hover. Resting band sits off-pane (150%) → invisible. */
-  .glass-sheen-hover {
-    background-image: linear-gradient(
-      115deg,
-      transparent 38%,
-      color-mix(in srgb, var(--site-glass-rim) 55%, transparent) 47%,
-      color-mix(in srgb, var(--site-glass-light) 85%, transparent) 50%,
-      color-mix(in srgb, var(--site-glass-rim) 55%, transparent) 53%,
-      transparent 62%
-    );
-    background-size: 260% 100%;
-    background-repeat: no-repeat;
-    background-position: 150% 0;
-  }
-  .glass-sheen-hover:hover {
-    animation: glass-sheen-once 0.9s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  /* Mobile glass needs a stronger opacity floor: the smaller viewport places
-     text directly over more of the moving aurora, and iOS's safety tier disables
-     the aside blur carrier. Keep the material translucent, but never so clear
-     that page content competes with navigation, headers, cards, or menus. */
-  @media (max-width: 767.98px) {
-    /* background-COLOR, never the shorthand: the shorthand would reset the
-       noise + glint layers L1 carries (see the .glass-fill note above) and
-       silently strip the material back to a flat tint on phones only. */
-    .glass-fill {
-      background-color: color-mix(
-        in srgb,
-        var(--site-surface-opaque) clamp(24%, calc(34% * var(--glass-user-tint, 1)), 46%),
-        var(--site-glass-tint)
-      );
-    }
-    .glass-pane {
-      background-color: color-mix(
-        in srgb,
-        var(--site-surface-opaque) clamp(34%, calc(46% * var(--glass-user-tint, 1)), 62%),
-        var(--site-glass-tint)
-      );
-    }
-    .glass-chrome {
-      background-color: color-mix(
-        in srgb,
-        var(--site-bg) clamp(58%, calc(72% * var(--glass-user-tint, 1)), 90%),
-        transparent
-      );
-    }
-    .glass-chrome[data-scrolled] {
-      background-color: color-mix(
-        in srgb,
-        var(--site-bg) clamp(70%, calc(82% * var(--glass-user-tint, 1)), 94%),
-        transparent
-      );
-    }
-    .glass-chrome--aside {
-      background-color: color-mix(
-        in srgb,
-        var(--site-bg) clamp(78%, calc(88% * var(--glass-user-tint, 1)), 96%),
-        transparent
-      );
-    }
-    .glass-overlay {
-      background-color: color-mix(
-        in srgb,
-        var(--site-bg) clamp(76%, calc(86% * var(--glass-user-tint, 1)), 96%),
-        transparent
-      );
-    }
-  }
-}
+/* Liquid material is implemented independently in liquid-glass.css.
+   The former frost/lens/sheen implementation has been removed. */
 
 /* Touch / coarse pointers (§4.35): use a simpler linear top-edge sun. All input
    modes are element-anchored now; the coarse tier merely reduces paint cost. Tilt
@@ -2289,6 +1609,19 @@ html.style-high-contrast .lg-goo {
 }
 [data-sonner-toast][data-type='success'] {
   animation: toast-success-flash 0.8s ease-out;
+}
+
+/* Toast travel on the site's spring. Sonner moves a toast (in, out, restack,
+   swipe-back) with `transition: transform 400ms, opacity 400ms, height 400ms`
+   and no timing function — CSS `ease`, which creeps out of rest and is the
+   most web-looking curve there is. Its durations are kept exactly (its
+   unmount timers are written against them); only the shape changes, to the
+   smooth spring's response compressed into that window — the same
+   fast-out-long-landing a UIKit banner has. A transition, so a toast that is
+   restacked mid-move retargets from where it is. `html` for specificity:
+   sonner injects its stylesheet after ours. */
+html [data-sonner-toast] {
+  transition-timing-function: var(--spring-smooth), var(--spring-smooth), var(--spring-smooth), ease;
 }
 
 /* ── Global degradations ──────────────────────────────────────────────────── */
@@ -2562,11 +1895,17 @@ html.ios-webkit .glass-liquid::after {
 /* Respect the OS "reduce motion" preference site-wide: neutralize enter
    animations, transitions and smooth scrolling that can trigger vestibular
    discomfort, while preserving essential loading feedback (spinners, skeleton
-   pulse). Games render motion via canvas/WebGL, so gameplay is unaffected. */
+   pulse). Games render motion via canvas/WebGL, so gameplay is unaffected.
+
+   The eversion is exempt (owner, 2026-10-21: "it should always play by
+   default"): the controls' state layer (§7.3: `[data-evert]`, `.evert-ghost`),
+   the globe that pops up for a navigation (`.evert-popup`), the hub that hands
+   its globe over and the effect's own overlay. Only the site's own Reduce
+   motion switch (`html.reduce-motion`, below) stands those down. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *)),
+  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *))::before,
+  :not(:is([data-evert], .evert-ghost, .evert-popup, .evert-popup *, .eversion-overlay, .eversion-overlay *, .radial-hub, .radial-hub *))::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -2858,6 +2197,15 @@ html.readable-font body {
   --radius-bum: var(--bum-radius);
   --radius-bum-sm: var(--bum-radius-sm);
   --radius-bum-lg: var(--bum-radius-lg);
+
+  /* `animate-pulse-settle` — Tailwind's pulse, three times, then at rest. For
+     an indicator that has to catch the eye on arrival (a LIVE dot, a call to
+     action) without keeping the page from ever going idle: an `animate-pulse`
+     that never stops is one perpetual animation, and one is enough to make the
+     compositor render every vsync for as long as the tab is open (perf audit
+     2026-10-08). Loading placeholders keep plain `animate-pulse` — they are
+     transient by construction. */
+  --animate-pulse-settle: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) 3;
 
   /* Altair Specific */
   --color-neon-glow: #d8b4fe;
@@ -3167,14 +2515,6 @@ html.readable-font body {
     height: 100dvh;
   }
 
-  .pt-safe {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
   /* Center-column bottom padding. Mobile _site pages scroll the DOCUMENT, so
      content flows behind Safari chrome and the home indicator. The old 92px
      reserve belonged to a bottom dock that no longer exists; keeping it left a
@@ -3323,6 +2663,18 @@ html.readable-font body {
   }
   .vibe-app:has([data-floating='cookie']) {
     --float-lift-cookie: 156px;
+  }
+  /* The notice is server-rendered for everyone (lib/cookie-consent.ts) and
+     hidden pre-paint for a visitor who already answered. Until hydration
+     unmounts it, it is still IN the DOM, so the `:has()` lift above would
+     still match — this keeps the floating stack exactly where it would be
+     without it, so there is nothing to shift when it goes. (0,2,1) beats the
+     (0,2,0) above. */
+  html.cookie-consented .vibe-app {
+    --float-lift-cookie: 0px;
+  }
+  html.cookie-consented [data-floating='cookie'] {
+    display: none;
   }
   .vibe-app:has([data-floating='miniplayer']) {
     --float-lift-miniplayer: 68px;
@@ -3587,85 +2939,6 @@ html.readable-font body {
   animation: shake 0.5s ease-in-out infinite;
 }
 
-/* Neon glow effect */
-.neon-glow {
-  text-shadow:
-    0 0 5px currentColor,
-    0 0 15px currentColor,
-    0 0 40px currentColor;
-}
-
-/* Grid background - MORE VISIBLE *
-
-/* Neon border glow */
-.neon-border {
-  box-shadow:
-    0 0 5px var(--neon-pink),
-    0 0 15px var(--neon-pink),
-    inset 0 0 8px rgba(255, 0, 255, 0.15);
-}
-
-/* RAINBOW GLOW - animated box shadow cycling through rainbow colors */
-@keyframes rainbow-glow {
-  0%,
-  100% {
-    border-color: #ff0000 !important;
-    box-shadow:
-      0 0 12px #ff0000,
-      0 0 30px #ff0000 !important;
-  }
-
-  33% {
-    border-color: #00ff00 !important;
-    box-shadow:
-      0 0 12px #00ff00,
-      0 0 30px #00ff00 !important;
-  }
-
-  66% {
-    border-color: #0000ff !important;
-    box-shadow:
-      0 0 12px #0000ff,
-      0 0 30px #0000ff !important;
-  }
-}
-
-.rainbow-glow {
-  animation: rainbow-glow 3s linear infinite !important;
-}
-
-/* Inner rainbow glow for cards - simplified for performance */
-@keyframes rainbow-glow-inner {
-  0%,
-  100% {
-    border-color: rgba(255, 255, 255, 0.6) !important;
-    box-shadow:
-      0 0 10px rgba(255, 255, 255, 0.6),
-      0 0 25px rgba(255, 0, 0, 0.4),
-      inset 0 0 10px rgba(255, 255, 255, 0.08) !important;
-  }
-
-  33% {
-    border-color: rgba(255, 255, 255, 0.6) !important;
-    box-shadow:
-      0 0 10px rgba(255, 255, 255, 0.6),
-      0 0 25px rgba(0, 255, 255, 0.4),
-      inset 0 0 10px rgba(255, 255, 255, 0.08) !important;
-  }
-
-  66% {
-    border-color: rgba(255, 255, 255, 0.6) !important;
-    box-shadow:
-      0 0 10px rgba(255, 255, 255, 0.6),
-      0 0 25px rgba(148, 0, 211, 0.4),
-      inset 0 0 10px rgba(255, 255, 255, 0.08) !important;
-  }
-}
-
-.rainbow-glow-inner {
-  animation: rainbow-glow-inner 2s linear infinite !important;
-}
-
 /* ==================== REDUCED MOTION ==================== */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -3684,19 +2957,6 @@ html.readable-font body {
   .rainbow-text {
     background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan), var(--neon-purple));
     background-size: 100% 100%;
-  }
-
-  .neon-glow {
-    text-shadow: 0 0 5px currentColor !important;
-  }
-
-  .neon-border {
-    box-shadow: 0 0 5px var(--neon-pink) !important;
-  }
-
-  .rainbow-glow-inner {
-    animation: none !important;
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.2) !important;
   }
 }
 
@@ -3831,7 +3091,7 @@ body {
       textarea
     ):not([data-slot]) {
     color: var(--site-text);
-    background: var(--site-glass-ink);
+    background: color-mix(in srgb, var(--site-text) 5%, var(--site-glass-tint-strong));
     border: var(--site-border-width) solid color-mix(in srgb, var(--site-border) 60%, transparent);
     border-radius: var(--site-radius-sm);
   }
@@ -3839,7 +3099,7 @@ body {
   :where(.vibe-app) select:not([data-slot='select']) {
     min-block-size: 2.5rem;
     color: var(--site-text);
-    background-color: var(--site-glass-ink);
+    background-color: color-mix(in srgb, var(--site-text) 5%, var(--site-glass-tint-strong));
     border: var(--site-border-width) solid color-mix(in srgb, var(--site-border) 60%, transparent);
     border-radius: var(--site-radius-sm);
   }
@@ -3980,10 +3240,11 @@ select:-webkit-autofill:focus {
 
 /* Keyboard focus — a clear ring that adopts the active theme accent.
    :focus-visible keeps it to keyboard / assistive-tech users (never on
-   mouse/tap). The design-system Button already draws its own ring, so it's
-   excluded to avoid doubling up. */
+   mouse/tap). Button takes this ring too (amended 2026-10-20: it drew its own
+   softer box-shadow ring, which could not turn out from inside it like every
+   other control's, §7.3). */
 a:focus-visible,
-button:not([data-slot='button']):focus-visible,
+button:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 input:focus-visible,
@@ -4412,20 +3673,13 @@ img.emoji {
   --doctrine-bg-primary: #0a0a0b;
   --doctrine-bg-secondary: #141416;
   --doctrine-bg-tertiary: #1c1c20;
-  --doctrine-bg-elevated: #232328;
   --doctrine-text-primary: #f5f5f5;
-  --doctrine-text-secondary: #a1a1aa;
   --doctrine-text-muted: #52525b;
   --doctrine-accent: #f97316;
   --doctrine-accent-muted: rgba(249, 115, 22, 0.2);
-  --doctrine-success: #22c55e;
-  --doctrine-warning: #eab308;
   --doctrine-error: #ef4444;
 
   /* Tier Colors */
-  --doctrine-tier-public: #6b7280;
-  --doctrine-tier-insider: #f59e0b;
-  --doctrine-tier-operator: #ef4444;
 
   /* Reaction Colors */
   --doctrine-reaction-fire: #f97316;
@@ -4596,17 +3850,12 @@ input[type='number'] {
  * helpers are shared by every Dream Rift menu/overlay so the chrome stays
  * cohesive; the in-canvas HUD mirrors the same palette in renderer.ts. */
 :root {
-  --dr-ink: #0b0712;
-  --dr-ink-panel: #150d22;
-  --dr-ink-panel-2: #1d1430;
   --dr-gold: #e7cd8c;
   --dr-gold-soft: #d8b768;
-  --dr-gold-deep: #a3823f;
   --dr-cream: #f3ead2;
   --dr-cream-dim: rgba(243, 234, 210, 0.58);
   --dr-cream-faint: rgba(243, 234, 210, 0.34);
   --dr-crimson: #d4405a;
-  --dr-crimson-deep: #8c2438;
   --dr-serif: var(--font-cinzel), Georgia, 'Times New Roman', serif;
   --dr-serif-body: var(--font-playfair), Georgia, serif;
 }
@@ -4728,13 +3977,46 @@ input[type='number'] {
   font-family: var(--dr-serif-body);
 }
 
+/* ─── Images fade in as their bytes land (lib/media-reveal.ts) ────────────
+ * `html.media-reveal` is stamped by a pre-paint script that also marks every
+ * <img> `data-loaded` on load/error, so without JavaScript nothing is hidden.
+ * Opacity only — never layout — so it cannot shift anything. The LCP image
+ * (`fetchpriority=high`), an image with no src (it would never load), opted-out
+ * images and reduced motion are never hidden. Full-screen apps keep their own
+ * image handling. Base layer, so a component's own fade utilities still win. */
+@layer base {
+  @media (prefers-reduced-motion: no-preference) {
+    html.media-reveal:not(.reduce-motion):not(.app-route)
+      img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal]) {
+      transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    html.media-reveal:not(.reduce-motion):not(.app-route)
+      img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal]):not([data-loaded]) {
+      opacity: 0;
+    }
+  }
+  /* Paper has no load event to wait for. */
+  @media print {
+    html.media-reveal img {
+      opacity: 1 !important;
+    }
+  }
+}
+
 /* ─── Per-page content transition ────────────────────────────────────────
  * Only the content column(s) animate on navigation — the left nav rail lives
  * outside the content <main> (see app/routes/_site.tsx), so it never moves.
  * Route-to-route navigation remounts the content, replaying this enter
  * animation. `backwards` fill applies the start frame immediately (no flash)
  * and leaves NO lingering transform afterward (so `position: fixed`
- * descendants are unaffected once the animation settles). */
+ * descendants are unaffected once the animation settles).
+ *
+ * Deliberately NOT on the sampled spring (`--spring-smooth`, §7.1) like the
+ * floating surfaces: while any transform is running on a page root, its
+ * `position: fixed` descendants (the compose FAB, floating lanes) are laid out
+ * against the page box instead of the viewport. 0.16s of that is invisible;
+ * the spring's 0.64s settle would park the FAB at the bottom of the document
+ * for over half a second on every navigation. */
 @keyframes page-enter {
   from {
     opacity: 0;
@@ -4751,6 +4033,16 @@ input[type='number'] {
 .page-root > [data-page-enter-complete],
 .page-root > [data-route-pending] {
   animation: none !important;
+}
+/* Not on the document's own first paint. The enter is for ARRIVING by a
+ * navigation; on a fresh load the server-rendered page is already there, and
+ * fading it in from opacity 0 hid it at first contentful paint — an element
+ * painted at opacity 0 is not an LCP candidate, so the home feed's first card
+ * never counted (docs/performance-audit-2026-10-21.md §Home LCP).
+ * `data-navigated` is set on the first client navigation (`app/routes/__root.tsx`),
+ * which marks the page then on screen complete first so it never replays. */
+html:not([data-navigated]) .page-root > * {
+  animation: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -4900,6 +4192,32 @@ input[type='number'] {
   --motion-collapse: 0.11s;
   --motion-ease-in: cubic-bezier(0.16, 1, 0.3, 1);
   --motion-ease-out: ease-in;
+  /* An exit that has a long way to travel (a phone sheet leaving through the
+     bottom edge). `--motion-out` is right for a panel that fades where it
+     stands; 0.1s across a whole screen height is a teleport, not a dismissal.
+     Accelerating, so it leaves the way a flicked sheet does. */
+  --motion-out-travel: 0.24s;
+  --motion-ease-out-travel: cubic-bezier(0.32, 0, 0.67, 0);
+
+  /* ── The Apple springs, as CSS easings ──────────────────────────────────
+     `APPLE_SPRING` in `lib/motion.ts` (framer) and `SPRINGS` in `lib/fluid.ts`
+     (imperative) are the site's motion. CSS has no spring, but `linear()` can
+     carry one exactly: these are the step responses of `spring(d, bounce)`
+     sampled at 41 evenly spaced points from rest until the motion is within
+     0.05% of its target, and `--spring-*-duration` is that settle time — so
+     `animation: x var(--spring-smooth-duration) var(--spring-smooth)` IS the
+     framer spring, not a curve that resembles it. The perceptual duration
+     (0.4s / 0.55s) is shorter than the settle; the last third is sub-pixel.
+     `lib/__tests__/motion-spring-easings.test.ts` re-derives every stop.
+
+     Use them on ENTERS and on transitions of `transform`/`scale`/`translate`.
+     Not on colour: `snappy` overshoots, and an overshooting colour clamps. */
+  --spring-smooth: linear(0, 0.0268, 0.091, 0.1748, 0.2662, 0.3577, 0.4448, 0.5249, 0.5969, 0.6603, 0.7154, 0.7628, 0.8032, 0.8374, 0.8661, 0.89, 0.91, 0.9265, 0.9401, 0.9513, 0.9605, 0.968, 0.9741, 0.9791, 0.9831, 0.9864, 0.9891, 0.9912, 0.9929, 0.9943, 0.9955, 0.9964, 0.9971, 0.9977, 0.9981, 0.9985, 0.9988, 0.9991, 0.9992, 0.9994, 1);
+  --spring-smooth-duration: 0.64s;
+  --spring-snappy: linear(0, 0.0243, 0.085, 0.1673, 0.2604, 0.3564, 0.4501, 0.5378, 0.6177, 0.6886, 0.7503, 0.803, 0.8472, 0.8839, 0.9137, 0.9376, 0.9564, 0.9711, 0.9822, 0.9904, 0.9964, 1.0006, 1.0033, 1.005, 1.0059, 1.0063, 1.0062, 1.0059, 1.0054, 1.0048, 1.0042, 1.0036, 1.0031, 1.0026, 1.0021, 1.0017, 1.0013, 1.001, 1.0008, 1.0006, 1);
+  --spring-snappy-duration: 0.6s;
+  --spring-sheet: linear(0, 0.0162, 0.0577, 0.1156, 0.1831, 0.2552, 0.3284, 0.4001, 0.4685, 0.5325, 0.5915, 0.6452, 0.6936, 0.7367, 0.7749, 0.8084, 0.8377, 0.8631, 0.8851, 0.9039, 0.92, 0.9337, 0.9452, 0.955, 0.9632, 0.97, 0.9757, 0.9804, 0.9843, 0.9875, 0.9901, 0.9923, 0.994, 0.9954, 0.9965, 0.9974, 0.9981, 0.9986, 0.999, 0.9994, 1);
+  --spring-sheet-duration: 0.67s;
 }
 
 /* Outside the motion query on purpose: the anchor is not an animation, and a
@@ -4919,10 +4237,8 @@ input[type='number'] {
      cage and the staged row reveal against whatever travel the host had, and
      both of those are gone. */
   :is([data-motion='rise'], [data-slot='dialog-content'], [data-slot='sheet-content']) {
-    --motion-open: var(--motion-in);
   }
   [data-motion='pop'] {
-    --motion-open: var(--motion-bloom);
   }
 }
 
@@ -4941,8 +4257,14 @@ input[type='number'] {
     pointer-events: none;
   }
 
+  /* Two clocks, on purpose. The panel is READABLE on the quick opacity ramp
+     (the number that decides whether it "opened"), and its travel lands on the
+     smooth spring — so it settles the way a SwiftUI panel does instead of
+     decelerating into a stop at a fixed 0.22s. */
   [data-motion='rise']:not([data-state='closed']) {
-    animation: motion-rise-in var(--motion-in) var(--motion-ease-in);
+    animation:
+      motion-fade-in var(--motion-in) var(--motion-ease-in),
+      motion-rise-move var(--spring-smooth-duration) var(--spring-smooth);
   }
   [data-motion='rise'][data-state='closed'] {
     animation: motion-rise-out var(--motion-out) var(--motion-ease-out) forwards;
@@ -5045,6 +4367,14 @@ input[type='number'] {
     transform: translateY(8px) scale(0.97);
   }
 }
+/* The travel half of the rise, for the spring clock (the opacity half is
+   `motion-fade-in`). Same start frame as `motion-rise-in` and as the exit's end
+   frame, so open and close are one path run both ways. */
+@keyframes motion-rise-move {
+  from {
+    transform: translateY(8px) scale(0.97);
+  }
+}
 @keyframes motion-rise-out {
   to {
     opacity: 0;
@@ -5061,6 +4391,379 @@ input[type='number'] {
  * re-animating. Toggled by components/ui/BackNavAnimation.tsx. */
 html.nav-pop .page-root > * {
   animation: none !important;
+}
+
+/* ─── §7.3 Eversion: a control's state turns inside out ───────────────────
+ * The navigation globe ends by turning itself inside out; every control on the
+ * site changes state the same way, at the scale of a button (owner, 2026-10-20:
+ * "an eversion animation on state change that smoothly and seamlessly plays …
+ * for hover and focus and click"). The new state is not faded in over the old
+ * one: it emerges from INSIDE it, swelling out of one point into the control's
+ * whole shape on a spring, and goes back into that point the same way.
+ *
+ * - One layer per control: `[data-evert]::before`, behind the label, painted in
+ *   `--evert-tint`, the control's own shape (`border-radius: inherit`) scaled
+ *   from 0 to 1 about the point (`scale` + `transform-origin`). It can never
+ *   leave the control's box. Nothing else on the control moves, so a label
+ *   never rotates, scales or leaves its pixel grid (§7.1: the retired menu cage).
+ * - It is a TRANSFORM so it runs on the compositor (amended 2026-10-20). It was a
+ *   `clip-path` circle, which the main thread animates; pressing something that
+ *   navigates starts the route's render on that same thread, and a probe showed
+ *   no frame at all for ~630 ms after the click, so the press tint stood still
+ *   until the new page had painted and the owner saw no animation. A compositor
+ *   transform keeps moving through that render.
+ * - The point is where you are. `hooks/useEvertPoint.ts` writes `--evert-x/-y`
+ *   on the control itself (never on <html>) once per event: the
+ *   pointer's entry point for a hover, the finger for a press, the exit point as
+ *   a hover leaves, so the state is swallowed back where the pointer went. No
+ *   pointer (keyboard, a programmatic change): the centre. Nothing tracks the
+ *   cursor (§5.1.1): one rect read per enter, press or leave.
+ * - The spring is a TRANSITION on a sampled `linear()` easing (`--evert-ease`,
+ *   `spring(0.3, 0.15)` from lib/fluid.ts; marks that land, `--evert-ease-pop`,
+ *   `spring(0.32, 0.3)`). A transition never plays on mount, so a page that loads
+ *   with boxes ticked does not animate them, and an interrupted one retargets
+ *   from where it is. `lib/__tests__/evert-spring.test.ts` re-derives the stops.
+ * - Cost: `scale` on a control-sized layer, `transform` on marks and knobs,
+ *   `opacity` for the press deepening, all composited; `clip-path` only on the
+ *   16-40px fills of checkboxes, radios and switches, which never navigate. No
+ *   shadow, no layout property, no gradient position, no filter, no per-frame
+ *   script.
+ * - Touch: hover is only ever a fine pointer's (`(hover: hover)`), so a phone
+ *   never shows a sticky hover. A press everts from the finger and is held for
+ *   at least `EVERT_MIN_PRESS_MS` so a quick tap is still seen.
+ * - Every control, tagged or not (amended 2026-10-21: "ensure the eversion
+ *   ALWAYS PLAYS ON EVERY BUTTON, INPUT BOX, ETC"): one nobody tagged is adopted
+ *   on first contact (lib/evert-auto.ts) - `data-evert="auto"`, or, where it
+ *   cannot hold the layer (fields, selects, a taken `::before`), the
+ *   `.evert-ghost` below.
+ * - Degradation is here, not in components: the site's own Reduce motion switch
+ *   collapses every transition (the state still shows, it just arrives at once;
+ *   the OS preference does not, since 2026-10-21), `perf-lite` swaps the spring
+ *   for one short tween, forced colors drop the layer.
+ */
+:root {
+  --evert-in: 0.419s;
+  --evert-ease: linear(0, 0.0322, 0.1102, 0.2123, 0.3234, 0.4335, 0.5364, 0.6287, 0.7088, 0.7764, 0.8322, 0.8772, 0.9128, 0.9403, 0.9612, 0.9766, 0.9876, 0.9953, 1.0004, 1.0036, 1.0053, 1.0061, 1.0063, 1.006, 1.0054, 1.0048, 1.0041, 1.0034, 1.0028, 1.0022, 1.0017, 1.0013, 1);
+  --evert-pop-in: 0.524s;
+  --evert-ease-pop: linear(0, 0.0444, 0.1515, 0.2898, 0.4367, 0.5767, 0.701, 0.8049, 0.8872, 0.949, 0.9926, 1.021, 1.0374, 1.0448, 1.0458, 1.0426, 1.0371, 1.0305, 1.0238, 1.0176, 1.0121, 1.0077, 1.0042, 1.0016, 0.9999, 0.9987, 0.9981, 0.9979, 0.9979, 0.9981, 0.9984, 0.9987, 1);
+}
+@layer components {
+  /* `relative` in this layer so a control's own `absolute`/`fixed` utility still wins. */
+  [data-evert] {
+    position: relative;
+    isolation: isolate;
+  }
+  [data-evert]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--evert-tint, color-mix(in srgb, currentColor 10%, transparent));
+    scale: 0;
+    transform-origin: var(--evert-x, 50%) var(--evert-y, 50%);
+    opacity: var(--evert-rest-opacity, 0.72);
+    pointer-events: none;
+    transition:
+      scale var(--evert-in) var(--evert-ease),
+      opacity 0.12s ease-out;
+  }
+  /* On: pressed (pointer or touch), highlighted by a menu's roving focus, or keyboard-focused. */
+  [data-evert]:is([data-pressed], [data-highlighted], :focus-visible, :has(> :focus-visible))::before {
+    scale: 1;
+  }
+  /* A press deepens what is already there (a hovered control is already everted). */
+  [data-evert][data-pressed]::before {
+    opacity: 1;
+  }
+  [data-evert]:is(:disabled, [aria-disabled='true'], [data-disabled])::before {
+    scale: 0;
+  }
+  /* A control adopted on first contact (lib/evert-auto.ts) is held at rest for one style pass, so the hover or
+     focus that found it everts in rather than popping. */
+  [data-evert][data-evert-arming]::before {
+    scale: 0 !important;
+    transition: none !important;
+  }
+}
+
+/* The ghost of the layer, for a control that cannot hold its own (lib/evert-auto.ts, amended 2026-10-21): a text
+   field, a textarea or a select (no pseudo-elements), or a control whose `::before` the site already uses. One
+   body-level box laid over the control in its own shape, turned out of the same point on the same spring; a
+   translucent wash over the field rather than under its text, like the `over` variant. `translate` places it and
+   `scale` everts it, both on the compositor; it is re-placed only on scroll and resize while it is up. The `focus`
+   ghost stays on the focused field and carries the accent. */
+.evert-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: calc(var(--z-tooltip) - 1);
+  pointer-events: none;
+  contain: strict;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  color: var(--site-text);
+  scale: 0;
+  transform-origin: var(--evert-x, 50%) var(--evert-y, 50%);
+  opacity: 0.8;
+  transition:
+    scale var(--evert-in) var(--evert-ease),
+    opacity 0.12s ease-out;
+}
+.evert-ghost[data-on] {
+  scale: 1;
+}
+.evert-ghost[data-pressed] {
+  opacity: 1;
+}
+.evert-ghost[data-kind='focus'] {
+  background: color-mix(in srgb, var(--site-accent) 7%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--site-accent) 45%, transparent);
+  opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  @layer components {
+    [data-evert]:hover:not(:disabled, [aria-disabled='true'], [data-disabled])::before {
+      scale: 1;
+    }
+  }
+}
+
+/* Two variants of the layer, named in the attribute's value (`data-evert="select over"`):
+   - `select` adds a SECOND layer, `::after`, for a control's selected state - the nav
+     rail's current page, which changes as you navigate while the rail stays on screen.
+     It everts in `--evert-selected` out of wherever the control was pressed, and drains
+     out of the one that lost it, on the same spring. The control's own rule carries its
+     ink on the same curve (`.rad-rail__item`).
+   - `over` lifts the tint above the control's content, for cards whose art covers the
+     whole box (a tint under the art would never be seen). Translucent, so it reads as
+     light on the card rather than a cover over it. */
+@layer components {
+  [data-evert~='select']::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--evert-selected, var(--site-accent));
+    scale: 0;
+    transform-origin: var(--evert-x, 50%) var(--evert-y, 50%);
+    pointer-events: none;
+    transition: scale var(--evert-in) var(--evert-ease);
+  }
+  [data-evert~='select']:is([aria-current='page'], .is-active)::after {
+    scale: 1;
+  }
+  [data-evert~='over']::before {
+    z-index: 3;
+    --evert-tint: color-mix(in srgb, var(--site-text) 12%, transparent);
+  }
+}
+
+/* What each control everts into. Hover colours are the ones these controls always
+   had; they now arrive by eversion instead of a colour fade. */
+@layer components {
+  [data-slot='button']:is([data-variant='default'], [data-variant='accent']) {
+    --evert-tint: var(--site-accent-hover);
+    --evert-rest-opacity: 1;
+  }
+  [data-slot='button']:is([data-variant='outline'], [data-variant='secondary'], [data-variant='ghost']),
+  [data-slot='menu-item'],
+  [data-slot='select-item'],
+  [data-slot='select'][data-evert],
+  [role='tab'][data-evert],
+  [data-tab-active][data-evert],
+  .rad-rail__item,
+  .radial-topbar__btn,
+  .cstudio-ranked__toggle,
+  .rmhark__link,
+  .store-spot__link {
+    --evert-tint: var(--site-surface-hover);
+    --evert-rest-opacity: 1;
+  }
+  .radial-topbar__signin,
+  .radial-feed__compose {
+    --evert-tint: var(--site-accent);
+    --evert-rest-opacity: 1;
+  }
+  .radial-feed__compose {
+    --evert-tint: var(--site-accent-hover);
+  }
+  .cstudio-ranked__link {
+    --evert-tint: color-mix(in srgb, var(--site-accent) 22%, transparent);
+    --evert-rest-opacity: 1;
+  }
+  /* A feed card's link sits inside the card's padding; its tint reaches the card's own
+     edges (top and sides) so the card, not a box inside it, turns over. */
+  .rmhark__link[data-evert]::before {
+    inset: calc(var(--rad-card-pad) * -1) calc(var(--rad-card-pad) * -1) 0;
+    border-radius: var(--site-radius, 22px) var(--site-radius, 22px) 0 0;
+    /* The point is measured on the link; this layer starts one padding further out. */
+    transform-origin: calc(var(--evert-x, calc(50% - var(--rad-card-pad))) + var(--rad-card-pad))
+      calc(var(--evert-y, calc(50% - var(--rad-card-pad))) + var(--rad-card-pad));
+  }
+  [data-slot='button']:is([data-variant='accent-outline'], [data-variant='accent-ghost']) {
+    --evert-tint: var(--site-accent-dim);
+    --evert-rest-opacity: 1;
+  }
+  [data-slot='menu-item'][data-tone='danger'] {
+    --evert-tint: color-mix(in srgb, var(--site-danger) 10%, transparent);
+  }
+}
+
+/* The focus ring turns out from inside the control: its offset springs from
+   within the border to where it rests (from-only keyframes, so it lands on each
+   element's own offset). Colour and width never animate. Elements running their
+   own animation keep it. */
+@keyframes evert-focus {
+  from {
+    outline-offset: -4px;
+  }
+}
+:is(
+    a,
+    button,
+    select,
+    input,
+    summary,
+    [role='button'],
+    [role='tab'],
+    [role='link'],
+    [role='menuitem'],
+    [role='switch'],
+    [tabindex]:not([tabindex='-1'])
+  ):focus-visible:not([class*='animate-']) {
+  animation: evert-focus var(--evert-pop-in) var(--evert-ease-pop);
+}
+
+/* Switch: the "on" colour everts out of the knob as the knob travels, and swallows
+   back into it. The origin is the knob's resting place on the off side. */
+@layer components {
+  [data-slot='switch']::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--site-accent);
+    clip-path: circle(0 at 0.6875rem 50%);
+    transition: clip-path var(--evert-in) var(--evert-ease);
+    pointer-events: none;
+  }
+  [data-slot='switch'][aria-checked='true']::before {
+    clip-path: circle(2.5rem at 0.6875rem 50%);
+  }
+  [data-slot='switch'] > [data-switch-knob] {
+    position: relative;
+    transition:
+      translate var(--evert-pop-in) var(--evert-ease-pop),
+      background-color var(--evert-in) var(--evert-ease);
+  }
+}
+
+/* Native checkbox and radio: the accent everts out from the centre and the mark
+   springs in after it. Drawn with pseudo-elements, which Gecko does not render on
+   inputs, so Firefox keeps the native control (in the accent, via accent-color),
+   as does forced colors. Zero-specificity and in the components layer, so any
+   control with its own size, radius or colour utilities keeps them. */
+@supports not (-moz-appearance: none) {
+  @media not (forced-colors: active) {
+    @layer components {
+      :where(input[type='checkbox'], input[type='radio']) {
+        appearance: none;
+        position: relative;
+        display: inline-grid;
+        place-content: center;
+        flex-shrink: 0;
+        width: 1rem;
+        height: 1rem;
+        margin: 0;
+        vertical-align: middle;
+        border: 1.5px solid var(--site-border-bright);
+        border-radius: calc(var(--site-radius-sm) * 0.5);
+        background: var(--site-surface-opaque);
+        color: var(--site-accent-fg);
+        cursor: pointer;
+        transition: border-color var(--evert-in) var(--evert-ease);
+      }
+      :where(input[type='radio']) {
+        border-radius: 50%;
+      }
+      :where(input[type='checkbox'], input[type='radio'])::before {
+        content: '';
+        position: absolute;
+        inset: -1.5px;
+        border-radius: inherit;
+        background: var(--site-accent);
+        clip-path: circle(0 at 50% 50%);
+        transition: clip-path var(--evert-in) var(--evert-ease);
+      }
+      :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate)::before {
+        clip-path: circle(75% at 50% 50%);
+      }
+      :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate) {
+        border-color: var(--site-accent);
+      }
+      /* The tick: two borders of an L, turned to a check. It lands after the fill. */
+      :where(input[type='checkbox'])::after {
+        content: '';
+        position: relative;
+        width: 0.3125rem;
+        height: 0.5625rem;
+        margin-top: -0.125rem;
+        border: solid currentColor;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg) scale(0);
+        transition: transform 0.12s ease-in;
+      }
+      :where(input[type='checkbox']):checked::after {
+        transform: rotate(45deg) scale(1);
+        transition: transform var(--evert-pop-in) var(--evert-ease-pop) 0.06s;
+      }
+      :where(input[type='checkbox']):indeterminate::after {
+        width: 0.5rem;
+        height: 0;
+        margin-top: 0;
+        border-width: 0 0 2px;
+        transform: scale(1);
+        transition: transform var(--evert-pop-in) var(--evert-ease-pop) 0.06s;
+      }
+      :where(input[type='radio'])::after {
+        content: '';
+        position: relative;
+        width: 0.375rem;
+        height: 0.375rem;
+        border-radius: 50%;
+        background: currentColor;
+        transform: scale(0);
+        transition: transform 0.12s ease-in;
+      }
+      :where(input[type='radio']):checked::after {
+        transform: scale(1);
+        transition: transform var(--evert-pop-in) var(--evert-ease-pop) 0.06s;
+      }
+      :where(input[type='checkbox'], input[type='radio']):disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    }
+  }
+}
+
+/* perf-lite: one short tween instead of the sampled settle; the focus ring simply lands. */
+html.perf-lite {
+  --evert-in: 0.16s;
+  --evert-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --evert-pop-in: 0.16s;
+  --evert-ease-pop: cubic-bezier(0.22, 1, 0.36, 1);
+}
+html.perf-lite :focus-visible {
+  animation: none;
+}
+@media (forced-colors: active) {
+  [data-evert]::before,
+  [data-slot='switch']::before,
+  .evert-ghost {
+    display: none;
+  }
 }
 
 /* ─── Scoped shared-element View Transitions ─────────────────────────────
@@ -5379,24 +5082,12 @@ body {
    Size, weight, leading and tracking arrive together: at these sizes the tight
    leading and negative tracking ARE the look, and a page that sets only the size
    gets large-but-wrong type. Tokens in the `:root` block above. */
-.site-display-1,
-.site-display-2,
 .site-display-3,
 .site-display-4 {
   font-family: var(--site-font-display);
   font-weight: var(--site-display-weight);
   /* Long single words (a handle, a game title) must not spill the column. */
   overflow-wrap: anywhere;
-}
-.site-display-1 {
-  font-size: var(--site-display-1);
-  line-height: var(--site-display-1-leading);
-  letter-spacing: var(--site-display-1-tracking);
-}
-.site-display-2 {
-  font-size: var(--site-display-2);
-  line-height: var(--site-display-2-leading);
-  letter-spacing: var(--site-display-2-tracking);
 }
 .site-display-3 {
   font-size: var(--site-display-3);
@@ -5417,47 +5108,27 @@ body {
   text-transform: uppercase;
   color: var(--site-text-muted);
 }
+/* ── Section label ────────────────────────────────────────────────────────
+   The heading of a group INSIDE a page — "Trending", "Who to follow",
+   "Milestones", "Accent color". It used to be retyped by hand as a tiny
+   uppercase, letter-spaced, dimmed label in 20+ variants (`tracking-wide` vs
+   `-wider`, `dim` vs `muted`, `xs` vs `sm`, semibold vs bold) across 39 call
+   sites. It is one style now, in sentence case at full ink — a heading you
+   read rather than an eyebrow you decode (UI minimalism audit, 2026-10-09).
+   `lib/__tests__/design-consistency.test.ts` keeps uppercase off site-tier
+   h2/h3 so the variants don't regrow. */
+.site-section-label {
+  font-size: 0.875rem;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.006em;
+  color: var(--site-text);
+}
 .site-lede {
   max-width: 34rem;
   font-size: var(--site-lede-size);
   line-height: var(--site-lede-leading);
   color: var(--site-text-muted);
-}
-
-/* ── Section rhythm + hairline section head ─────────────────────────────── */
-.site-section {
-  padding-block: var(--site-section-block);
-  padding-inline: var(--site-section-inline);
-}
-.site-section-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: clamp(1.25rem, 4vw, 3rem);
-  /* A hairline, not a card edge — the structural signature of the reference. */
-  border-bottom: 1px solid var(--site-border);
-}
-
-/* ── Hairline rows (audit SPA-004) ────────────────────────────────────────
-   For a HOMOGENEOUS list, one hairline between rows instead of a bordered,
-   shadowed card per row. Cards remain correct for heterogeneous content — a
-   post, a product, a game card — where each item is its own object. */
-.site-rows > * + * {
-  border-top: 1px solid var(--site-border);
-}
-.site-rows > * {
-  padding-block: clamp(1rem, 3vw, 2rem);
-}
-
-/* ── Inverse block ────────────────────────────────────────────────────────
-   A full-bleed statement panel. `.site-inverse` (above) already remaps the whole
-   token contract, so descendants stay correct without per-element colours. */
-.site-inverse-block {
-  border-radius: var(--site-radius);
-  padding: clamp(2rem, 8vw, 8rem);
-  background: var(--site-inverse-bg);
-  color: var(--site-inverse-text);
 }
 
 /* ── Reveal on scroll (audit SPA-003) ─────────────────────────────────────
@@ -5503,8 +5174,6 @@ body {
   border-radius: var(--site-radius);
   background: color-mix(in srgb, var(--site-surface) 94%, transparent);
   box-shadow: var(--site-shadow-sm);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .spatial-design-nav a {
@@ -5945,28 +5614,6 @@ body {
   }
 }
 
-/* ── Parallax layers (native, zero-JS) ───────────────────────────────────────
-   A decorative element tagged `.u-parallax` drifts against the page scroll via
-   the `scroll()` timeline. Depth is set per-element with `--u-parallax` (px of
-   travel across the full scroll). Purely cosmetic; hidden work for the GPU. */
-@keyframes u-parallax-drift {
-  from {
-    transform: translateY(calc(var(--u-parallax, 60px) * -1));
-  }
-  to {
-    transform: translateY(var(--u-parallax, 60px));
-  }
-}
-@supports (animation-timeline: scroll()) {
-  @media not (prefers-reduced-motion: reduce) {
-    html:not(.reduce-motion) .u-parallax {
-      animation: u-parallax-drift linear both;
-      animation-timeline: scroll(root block);
-      will-change: transform;
-    }
-  }
-}
-
 /* Element-anchored parallax: drifts as its OWN box travels through the nearest
    scrollport, so it works no matter which ancestor scrolls (window on desktop,
    the inner feed scroller on phones) — no JS, no scroller wiring. */
@@ -5993,8 +5640,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .u-reveal,
   .u-reveal-soft,
-  .u-reveal-group > *,
-  .u-parallax {
+  .u-reveal-group > * {
     animation: none !important;
     transform: none !important;
     opacity: 1 !important;
@@ -6002,8 +5648,7 @@ body {
 }
 html.reduce-motion .u-reveal,
 html.reduce-motion .u-reveal-soft,
-html.reduce-motion .u-reveal-group > *,
-html.reduce-motion .u-parallax {
+html.reduce-motion .u-reveal-group > * {
   animation: none !important;
   transform: none !important;
   opacity: 1 !important;
@@ -6168,82 +5813,130 @@ html.reduce-motion .u-parallax {
 }
 
 /* ==========================================================================
-   LiquidTabs — active ink, and the 44px floor
+   LiquidTabs — the segmented control (2026-10-09)
    ------------------------------------------------------------------------
-   The active tab's label is only allowed to take `--site-accent-fg` when the
-   accent capsule is actually painted behind it. The capsule is a sibling
-   element (framer-motion owns its layout projection), so the two can come
-   apart: on high-contrast the strip rendered with accent-fg (black) labels and
-   no capsule, measuring 1.0:1 — a tab strip with no visible tabs. Keying the
-   flip on the capsule's presence means the failure mode is "no highlight",
-   not "no text".
+   A neutral raised THUMB on a flush TRACK, one row, labels never truncated.
+   The reasoning is in the `liquid-tabs.tsx` docblock; the short version:
+
+     - the active tab used to be a solid accent pill — on the default theme the
+       exact black pill every primary BUTTON is, so "where you are" and "what you
+       can do" looked identical. The accent is for actions now; selection is a
+       raised neutral thumb, Apple's segmented-control grammar.
+     - the strip used to be a wrapping grid of equal columns, which ellipsed long
+       labels ("RMHH…", "Everyt…") and turned six tabs into a 2×3 button grid on
+       a phone. It is one row now: equal segments up to four tabs, label-sized
+       beyond that, and a horizontal scroll with an edge fade when even that
+       doesn't fit.
+
+   The thumb's paint is three custom properties on the strip so a theme or a game
+   (Slice It!) re-skins it without forking the component.
    ========================================================================== */
+[data-slot='liquid-tabs'] {
+  /* Opaque in light themes; in dark ones a lifted grey, because the opaque
+     surface there is near-black and would sink INTO the track instead of
+     sitting on it. `light-dark()` keys on each theme's own `color-scheme`. The
+     first declaration is the fallback for an engine without `light-dark()`. */
+  --tab-thumb-bg: var(--site-surface-opaque);
+  --tab-thumb-bg: light-dark(
+    var(--site-surface-opaque),
+    color-mix(in srgb, var(--site-surface-opaque) 78%, var(--site-text))
+  );
+  --tab-thumb-ink: var(--site-text);
+  --tab-thumb-border: color-mix(in srgb, var(--site-border) 80%, transparent);
+
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  /* One row; overflow scrolls, never wraps. */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+[data-slot='liquid-tabs']::-webkit-scrollbar {
+  display: none;
+}
+
+/* Flex basis per mode. Items carry `min-w-max shrink-0`, so in both modes a
+   segment can grow to fill the track but can never be squeezed below its label. */
+[data-slot='liquid-tabs'][data-tab-fit='equal'] > * {
+  flex: 1 0 0%;
+}
+[data-slot='liquid-tabs'][data-tab-fit='content'] > * {
+  flex: 1 0 auto;
+}
+
+/* The edge fade — only on a side that actually has more tabs past it. Set by
+   `liquid-tabs.tsx` on the strip's own scroll; the mask is on the scroller, so
+   it fades the viewport edge, not a particular tab. */
+[data-slot='liquid-tabs'][data-fade-start='true'] {
+  mask-image: linear-gradient(to right, transparent, #000 2rem);
+}
+[data-slot='liquid-tabs'][data-fade-end='true'] {
+  mask-image: linear-gradient(to left, transparent, #000 2rem);
+}
+[data-slot='liquid-tabs'][data-fade-start='true'][data-fade-end='true'] {
+  mask-image: linear-gradient(to right, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+}
+[dir='rtl'] [data-slot='liquid-tabs'][data-fade-start='true'] {
+  mask-image: linear-gradient(to left, transparent, #000 2rem);
+}
+[dir='rtl'] [data-slot='liquid-tabs'][data-fade-end='true'] {
+  mask-image: linear-gradient(to right, transparent, #000 2rem);
+}
+[dir='rtl'] [data-slot='liquid-tabs'][data-fade-start='true'][data-fade-end='true'] {
+  mask-image: linear-gradient(to left, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+}
+
+/* The track. It rides `.glass-inset` (the field tier) and takes a touch more of
+   the theme's ink than a text field, so the opaque thumb separates from it on
+   Daylight (white on near-white would vanish) and on Midnight alike. It is a
+   flush fill like every field, not a recessed well — see `.glass-inset`. */
+[data-slot='liquid-tabs-sheet'] {
+  background: color-mix(in srgb, var(--site-text) 7%, var(--site-glass-tint-strong));
+}
+
+/* The thumb. */
+[data-tab-thumb] {
+  background: var(--tab-thumb-bg);
+  border: var(--site-border-width) solid var(--tab-thumb-border);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.08),
+    0 2px 8px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Ink on the thumb. Keyed on the thumb's PRESENCE, not on `aria-selected`: the
+   thumb is a separate element (framer-motion owns its projection), and on high
+   contrast a label in accent-fg with no thumb behind it once measured 1.0:1 — a
+   tab strip with no visible tabs. Keying the flip on the thumb means the failure
+   mode is "no highlight", never "no text". */
 [data-slot='liquid-tabs'] [data-tab-active='true']:has([data-tab-capsule]),
-/* Link mode puts the capsule beside the control rather than inside it, so the
+/* Link mode puts the thumb beside the control rather than inside it, so the
    ink has to reach one level down. */
 [data-slot='liquid-tabs']
   [data-tab-active='true']:has([data-tab-capsule])
   > :where(a, button) {
-  color: var(--site-accent-fg);
+  color: var(--tab-thumb-ink);
 }
 
-/* ==========================================================================
-   The segmented-control grid (§5.45)
-   ------------------------------------------------------------------------
-   `LiquidTabs` lays its tabs out as EQUAL COLUMNS spanning the track, not as a
-   flex row of content-sized pills. One declaration buys both halves of the
-   Apple segmented-control behaviour:
-
-     - equal widths, track always full — `1fr` columns, so two tabs take half
-       each instead of huddling in the middle of a wide sheet;
-     - no horizontal scrolling, ever — `auto-fit` packs as many columns as fit
-       and WRAPS the rest onto further rows, all still equal width. Apple's
-       guidance is that a segmented control which doesn't fit is the wrong
-       control, not one to make swipeable, and a scroll track hides destinations
-       behind a gesture with no affordance.
-
-   `--tab-seg-min` is the width below which a column will not be squeezed — hit
-   it and the strip wraps rather than shrinking further. `min(…, 100%)` is the
-   standard `auto-fit` guard: without it a container narrower than the minimum
-   overflows instead of collapsing to a single column.
-
-   This replaced a ResizeObserver that measured whether the strip fitted (to
-   decide whether centring it was safe) plus a `tab-sheet-scroll` overflow track.
-   The grid needs neither.
-   ========================================================================== */
-[data-slot='liquid-tabs'] {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(var(--tab-seg-min, 6.5rem), 100%), 1fr));
-  align-items: center;
-  gap: 0.25rem;
+/* High contrast is the absence of the material, so a hairline-and-shadow thumb
+   would be the only cue — and the shadow is stripped there. It keeps the filled
+   accent thumb with its paired ink. */
+.style-high-contrast [data-slot='liquid-tabs'] {
+  --tab-thumb-bg: var(--site-accent);
+  --tab-thumb-ink: var(--site-accent-fg);
+  --tab-thumb-border: var(--site-accent);
 }
-[data-slot='liquid-tabs'][data-tab-size='sm'] {
-  --tab-seg-min: 5.5rem;
-}
-/* A glyph strip needs far less room per segment than a labelled one, so it packs
-   more columns before it wraps. */
-[data-slot='liquid-tabs'][data-tab-icon-only] {
-  --tab-seg-min: 3.25rem;
-}
-
-/* Phones: the segment minimum comes from the strip's own longest label.
-   The grid only wraps to another row once a column can no longer meet
-   `--tab-seg-min`, so that minimum is also the promise about what fits. A flat
-   5.5rem broke the promise — a 390px screen packed three ~108px columns and
-   then ellipsed "Notifications" (85px of text in an 80px content box). But a
-   flat *larger* value is just as wrong in the other direction: RMHLadder's nine
-   short labels ("Jobs", "Alerts", "Health") fit three-up comfortably, and
-   forcing 8rem dropped them to two columns over five rows.
-   `liquid-tabs.tsx` therefore measures its own labels and writes
-   `--tab-seg-content`; the strip takes whichever is larger. Strips with short
-   labels keep their dense grid, and only the ones that need the room wrap. */
-@media (max-width: 767.98px) {
-  [data-slot='liquid-tabs']:not([data-tab-icon-only]) {
-    --tab-seg-min: max(5.5rem, var(--tab-seg-content, 0px));
+@media (forced-colors: active) {
+  [data-tab-thumb] {
+    background: Highlight;
+    border-color: Highlight;
   }
-  /* Glyph strips are unaffected — their segment holds an icon, not a word. */
-  [data-slot='liquid-tabs'][data-tab-icon-only] {
-    --tab-seg-min: 3.25rem;
+  [data-slot='liquid-tabs'] [data-tab-active='true']:has([data-tab-capsule]),
+  [data-slot='liquid-tabs'] [data-tab-active='true']:has([data-tab-capsule]) > :where(a, button) {
+    color: HighlightText;
   }
 }
 
@@ -6259,23 +5952,15 @@ html.reduce-motion .u-parallax {
 /* ==========================================================================
    Compact tab strips on small screens
    ------------------------------------------------------------------------
-   This used to hide the LABEL of every icon-bearing tab below 640px, on the
-   theory that the icon plus the accessible name were enough. They are not: it
-   left six near-interchangeable glyphs as the entirety of a page's navigation
-   (radio-waves = "Spaces", storefront vs bag on /market), and on /leaderboard
-   the page's name existed only inside a tab strip's aria-label — so no word
-   identifying the page appeared anywhere on a phone. Recognition, not recall.
-
-   Labels stay. A strip that doesn't fit now WRAPS onto further rows of equal
-   segments (see the segmented-control grid above) rather than scrolling, so there
-   is room for the labels at every width and nothing is hidden behind a swipe.
-   `iconOnly` callers keep a glyph strip on phones only — see below.
+   Labels stay at every width: a strip of near-interchangeable glyphs as the
+   entirety of a page's navigation is recall, not recognition (radio-waves =
+   "Spaces", storefront vs bag on /market). What phones give up instead is the
+   ICON — the label is the information and the glyph is decoration.
+   `iconOnly` callers are the exception: there the glyph IS the label, so it
+   stays and its text goes sr-only below md.
    ========================================================================== */
 @media (max-width: 767.98px) {
-  /* The one remaining label-hiding case: a caller that explicitly asked for a
-     compact strip. Even then the labels return at md, where there is room —
-     /library's six-way media switcher was abstract glyphs at EVERY width.
-     sr-only technique, never display:none, so the accessible name survives. */
+  /* sr-only technique, never display:none, so the accessible name survives. */
   [data-slot='liquid-tabs'] .liquid-tabs__label--compact {
     position: absolute;
     width: 1px;
@@ -6288,26 +5973,8 @@ html.reduce-motion .u-parallax {
     border-width: 0;
   }
 
-  /* Wrapping and shrink behaviour used to be patched in here for flex strips.
-     The grid above owns both at every width now.
-
-     What phones DO still need is room for the words. In a segmented control every
-     column is as wide as the widest one needs to be, so on a 320px screen a
-     three-tab strip gives each segment ~96px — and an icon plus its gap eats a
-     quarter of that, which is what turned "Messages" into "Messa…". The label is
-     the information and the glyph is decoration, so the glyph is what goes: below
-     md a strip that shows labels drops its icons and spends the width on text.
-     `iconOnly` strips are the exception — there the glyph IS the label, so it
-     stays (and its own label is the thing hidden, just above).
-
-     `> svg`, NOT `> svg:first-child`: the ACTIVE tab renders the flowing capsule
-     as its first child (`{capsule(active)}{content(tab)}` in liquid-tabs.tsx),
-     so `:first-child` matched every tab except the active one. The result was
-     backwards — the tab whose name matters most was the only one still paying
-     ~24px for a glyph, which is what turned the selected tab into "Messa…" on
-     /messages and "Everyt…" on /library while its neighbours showed their full
-     labels. The capsule and the count/badge are spans, so a plain child
-     combinator hits the icon and only the icon. */
+  /* `> svg`, NOT `> svg:first-child`: the ACTIVE tab renders the thumb as its
+     first child, so `:first-child` matched every tab except the active one. */
   [data-slot='liquid-tabs']:not([data-tab-icon-only]) :is(button, a) > svg {
     display: none;
   }
@@ -6397,11 +6064,6 @@ html.reduce-motion .u-parallax {
   }
 
   /* ── 1. Chrome, decoration and floating UI ─────────────────────────────── */
-  /* `.site-ring` / `.site-topbar` are the plan's names for the shell chrome;
-     the shipped classes are the `radial-*` / `rad-rail` set. Both are listed so
-     the rule survives a rename in either direction. */
-  .site-ring,
-  .site-topbar,
   .glass-chrome,
   .radial-skip,
   .radial-backdrop,
@@ -6544,4 +6206,111 @@ html.reduce-motion .u-parallax {
   main a[href^='#']::after {
     content: none;
   }
+}
+
+/* ── Access & comfort additions (lib/access/prefs.ts) ─────────────────────────
+   Every value below arrives as a custom property or attribute on <html>, set
+   once before first paint and again only when the member changes a setting. */
+
+/* Text spacing (WCAG 1.4.12). Unlayered on purpose: it must beat the `leading-*`
+   and `tracking-*` utilities, which live in the utilities layer. */
+html[data-text-spacing] body,
+html[data-text-spacing] body :where(p, li, dd, dt, td, th, label, blockquote, h1, h2, h3, h4, h5, h6, span, a, button, input, textarea, select) {
+  line-height: var(--rmh-ts-lh);
+  letter-spacing: var(--rmh-ts-ls);
+  word-spacing: var(--rmh-ts-ws);
+}
+
+/* Caption style for native WebVTT tracks. */
+video::cue {
+  font-size: calc(100% * var(--rmh-cue-scale, 1));
+  background-color: var(--rmh-cue-bg, rgb(0 0 0 / 0.6));
+  color: white;
+}
+
+/* Bedtime mode: during the member's quiet hours, one dimming layer and one
+   desaturating layer over the whole page. Fixed, inert, and skipped entirely by
+   the high-contrast theme and by print. */
+html[data-bedtime]:not(.style-high-contrast)::before,
+html[data-bedtime]:not(.style-high-contrast)::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2147483000;
+}
+html[data-bedtime]:not(.style-high-contrast)::before {
+  background: gray;
+  mix-blend-mode: saturation;
+  opacity: 0.4;
+}
+html[data-bedtime]:not(.style-high-contrast)::after {
+  background: black;
+  opacity: 0.22;
+}
+@media print {
+  html[data-bedtime]::before,
+  html[data-bedtime]::after {
+    content: none;
+  }
+}
+
+/* ── Delight: seasonal accents + April Fools mode (lib/delight/season.ts) ─────
+   `season-*` and `fools` are set on <html> before first paint. Nothing here
+   exists unless one of those classes does. The ribbon is a static 3px strip with
+   no layout cost; high-contrast and print skip it. */
+html[class*='season-']:not(.style-high-contrast) body::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 3px;
+  pointer-events: none;
+  z-index: 60;
+  background: var(--delight-ribbon);
+  background-size: 200% 100%;
+}
+html.season-valentines {
+  --delight-ribbon: linear-gradient(90deg, oklch(0.7 0.18 5), oklch(0.8 0.1 350), oklch(0.7 0.18 5));
+}
+html.season-earthday {
+  --delight-ribbon: linear-gradient(90deg, oklch(0.7 0.15 150), oklch(0.7 0.1 230), oklch(0.7 0.15 150));
+}
+html.season-halloween {
+  --delight-ribbon: linear-gradient(90deg, oklch(0.72 0.17 55), oklch(0.45 0.15 305), oklch(0.72 0.17 55));
+}
+html.season-winter {
+  --delight-ribbon: linear-gradient(90deg, oklch(0.7 0.17 25), oklch(0.75 0.15 150), oklch(0.85 0.05 240), oklch(0.7 0.17 25));
+}
+@media (prefers-reduced-motion: no-preference) {
+  html[class*='season-']:not(.reduce-motion) body::before {
+    animation: delight-ribbon 24s linear infinite;
+  }
+}
+@keyframes delight-ribbon {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media print {
+  html[class*='season-'] body::before {
+    content: none;
+  }
+}
+
+/* April Fools: copy-free, purely cosmetic swaps. The member's off switch removes
+   the class (components/delight/DelightMount.tsx). */
+html.fools h1::after {
+  content: ' 🤡';
+  content: ' 🤡' / '';
+}
+html.fools h2::after {
+  content: ' 🎈';
+  content: ' 🎈' / '';
+}
+html.fools .radial-core__mark {
+  font-size: 0;
+}
+html.fools .radial-core__mark::after {
+  content: 'RMHaha';
+  font-size: clamp(1rem, 4vw, 1.3rem);
 }

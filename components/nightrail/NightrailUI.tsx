@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -37,6 +38,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { TrickSubmit } from './TrickSubmit';
 import { useSession } from '@/components/Providers';
 import { TRICK_LIST } from '@/lib/nightrail/constants';
 import { LEVELS, LEVEL_ORDER } from '@/lib/nightrail/levels';
@@ -132,6 +134,7 @@ export function NightrailUI({
   const session = useSession();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   // A ref, not the state flag, guards the POST: state updates are async, and
   // two effect runs in the same tick would both read `false` and double-submit.
   const submitting = useRef(false);
@@ -166,7 +169,7 @@ export function NightrailUI({
 
     void (async () => {
       try {
-        await fetch(`/api/games/${GAME_ID}/score`, {
+        const res = await fetch(`/api/games/${GAME_ID}/score`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -177,19 +180,21 @@ export function NightrailUI({
             meta: { level: runStats.level },
           }),
         });
+        void takeScoreMoment(res);
         void fetchLeaderboard();
       } catch {
         /* ignore — the run is over either way */
       }
     })();
-  }, [uiState, runStats, session.data, fetchLeaderboard]);
+  }, [uiState, runStats, session.data, fetchLeaderboard, takeScoreMoment]);
 
   useEffect(() => {
     if (uiState === 'playing') {
       submitting.current = false;
       setScoreSubmitted(false);
+      clearScoreMoment();
     }
-  }, [uiState]);
+  }, [uiState, clearScoreMoment]);
 
   if (uiState === 'playing') return null;
 
@@ -446,6 +451,7 @@ export function NightrailUI({
   if (uiState === 'crashed' && runStats) {
     return (
       <div className={SCREEN}>
+        <ResultMomentSlot moment={scoreMoment} gameName="Nightrail" onDismiss={clearScoreMoment} />
         <div className="w-full max-w-md space-y-4">
           <div className="text-center">
             <h2 className="text-3xl font-black tracking-tight text-rose-500 sm:text-4xl">
@@ -494,6 +500,8 @@ export function NightrailUI({
             </Button>
           )}
 
+          {signedIn && scoreSubmitted ? <TrickSubmit runStats={runStats} /> : null}
+
           <div className="flex gap-2">
             <Button
               onClick={onRestart}
@@ -521,6 +529,7 @@ export function NightrailUI({
   if (uiState === 'runComplete' && runStats) {
     return (
       <div className={SCREEN}>
+        <ResultMomentSlot moment={scoreMoment} gameName="Nightrail" onDismiss={clearScoreMoment} />
         <div className="w-full max-w-md space-y-4">
           <div className="text-center">
             <div className={STAT_LABEL}>
@@ -615,6 +624,8 @@ export function NightrailUI({
               {t('sign-in-to-submit', { defaultValue: 'Sign In to Submit Score' })}
             </Button>
           )}
+
+          {signedIn && scoreSubmitted ? <TrickSubmit runStats={runStats} /> : null}
 
           <div className="flex gap-2">
             <Button

@@ -269,6 +269,7 @@
   "ladder.packetReveal": "Show value",
   "ladder.packetTitle": "Application packet — {{ats}} order",
   "ladder.packetUpload": "Upload your resume file on the employer’s form.",
+  "ladder.pay": "Pay",
   "ladder.posted": "Posted",
   "ladder.prepCountdown_one": "{{count}} days until your interview",
   "ladder.prepCountdown_other": "{{count}} days until your interview",
@@ -614,5 +615,8 @@
   "tips": "Tips",
   "upgrade": "Upgrade",
   "ventures-subtitle": "The brands and programmes built around RMH Studios.",
-  "your-current-plan": "Your current plan"
+  "your-current-plan": "Your current plan",
+  "services-cars-desc": "The fleet behind RMH Rideshare — every model, in 3D, turnable.",
+  "services-fashion-desc": "A 3D wardrobe built around a figure you design.",
+  "help-title": "Help"
 }

@@ -4,7 +4,7 @@ import { ColumnHeader } from'./ColumnHeader';
 /** A single community card placeholder — mirrors the real card's layout. */
 function CommunityCardSkeleton() {
  return (
- <li className="flex items-start gap-4 rounded-site border border-site-border bg-site-surface p-4">
+ <li className="flex items-start gap-4 rounded-site glass-fill p-4">
  <Skeleton className="h-14 w-14 shrink-0 rounded-site"/>
  <div className="min-w-0 flex-1 space-y-2">
  <Skeleton className="h-4 w-40"/>

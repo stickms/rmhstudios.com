@@ -50,7 +50,7 @@ export function LiveNowRail({ className }: { className?: string }) {
       aria-label={t('live-now', { defaultValue: 'Live now' })}
     >
       <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-danger">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-site-danger" aria-hidden />
+        <span className="h-2 w-2 animate-pulse-settle rounded-full bg-site-danger" aria-hidden />
         {t('live-now', { defaultValue: 'Live now' })}
       </div>
       <HorizontalScroller

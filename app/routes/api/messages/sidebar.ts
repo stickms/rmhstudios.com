@@ -24,6 +24,8 @@ export const Route = createFileRoute('/api/messages/sidebar')({
           { participantOneId: userId },
           { participantTwoId: userId },
         ],
+        // Saved Messages (a conversation with yourself) is not a person to message.
+        NOT: { participantOneId: userId, participantTwoId: userId },
       },
       orderBy: { lastMessageAt: "desc" },
       take: 5,

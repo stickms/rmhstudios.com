@@ -207,7 +207,7 @@ export function RankedColumn({
  {/* Issue a challenge */}
  <Reveal
  as="section"
- className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}
+ className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}
  >
  <h2 id="ranked-challenge-heading"className="mb-2 text-sm font-bold text-site-text">
  {t('challenge-a-player', { defaultValue:'Challenge a player'})}
@@ -249,14 +249,14 @@ export function RankedColumn({
  {/* Incoming challenges */}
  {incoming.length > 0 && (
  <Reveal as="section">
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2">
  {t('challenges-for-you', { defaultValue:'Challenges for you'})}
  </h2>
  <div className="space-y-2">
  {incoming.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -303,14 +303,14 @@ export function RankedColumn({
  {/* Outgoing challenges */}
  {outgoing.length > 0 && (
  <Reveal as="section">
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2">
  {t('your-challenges', { defaultValue:'Your challenges'})}
  </h2>
  <div className="space-y-2">
  {outgoing.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -333,14 +333,14 @@ export function RankedColumn({
  {/* Your ratings */}
  {ratings.length > 0 && (
  <Reveal as="section">
- <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2">
  {t('your-ratings', { defaultValue:'Your ratings'})}
  </h2>
  <div className="space-y-1">
  {ratings.map((r) => (
  <div
  key={r.game}
- className={`flex items-center justify-between gap-2 rounded-site border border-site-border bg-site-surface px-3 py-2.5 ${LIFT_CARD}`}
+ className={`flex items-center justify-between gap-2 rounded-site glass-fill px-3 py-2.5 ${LIFT_CARD}`}
  >
  <span className="flex min-w-0 items-center gap-2">
  <span className="truncate text-sm font-medium text-site-text">
@@ -363,7 +363,7 @@ export function RankedColumn({
  {/* Leaderboard */}
  <Reveal as="section">
  <div className="mb-2 flex items-center justify-between">
- <h2 id="ranked-leaderboard-heading"className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 id="ranked-leaderboard-heading"className="site-section-label flex items-center gap-1.5">
  <Trophy className="h-3.5 w-3.5"/> {t('leaderboard', { defaultValue:'Leaderboard'})}
  </h2>
  <Select
@@ -392,7 +392,7 @@ export function RankedColumn({
  {lb.map((row) => (
  <div
  key={row.user.id}
- className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
  >
  <span className="w-5 text-center text-xs font-bold text-site-text-dim">
  {row.rank}

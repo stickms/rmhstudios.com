@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { m as motion } from 'framer-motion';
-import { Loader2, ArrowLeft, Send, ImagePlus, ImagePlay, X, Plus } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, ImagePlus, ImagePlay, X, Plus, Reply } from 'lucide-react';
+import { SwipeRow } from '@/components/ui/swipe-row';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { EASE_OUT_EXPO } from '@/components/motion';
+import { APPLE_SPRING } from '@/lib/motion';
 import { Spinner } from '@/components/ui/spinner';
 import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -40,6 +41,28 @@ import { MessageEditor } from '@/components/messages/MessageEditor';
 import { DeletedMessage } from '@/components/messages/DeletedMessage';
 import { VoiceComposer, type SentVoiceMessage } from '@/components/voice/VoiceComposer';
 import { VoicePlayer } from '@/components/voice/VoicePlayer';
+import { ChatHeaderPlus } from '@/components/chat-plus/ChatHeaderPlus';
+import { ChatPinnedBar } from '@/components/chat-plus/ChatPinnedBar';
+import { ChatPlusHost } from '@/components/chat-plus/ChatPlusHost';
+import { ChatSystemLine } from '@/components/chat-plus/ChatSystemLine';
+import { ChatRichBody } from '@/components/chat-plus/ChatRichBody';
+import { ChecklistComposer } from '@/components/chat-plus/ChecklistComposer';
+import { MessageBadges, SeenIndicator } from '@/components/chat-plus/MessageBadges';
+import { MessagePlusItems } from '@/components/chat-plus/MessagePlusItems';
+import { SavedMessagesHeader } from '@/components/chat-plus/SavedMessagesRow';
+import { useSlashCommands } from '@/components/chat-plus/useSlashCommands';
+import {
+  useChatMeta,
+  useChatTheme,
+  useChatUpdates,
+  useExpiring,
+} from '@/components/chat-plus/hooks';
+import { applyChatUpdate } from '@/lib/chat-plus/apply-update';
+import { isCardKind, isLineKind, type PollView } from '@/lib/chat-plus/types';
+import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
+
+// P4 — "It's 2:14 AM for Ana": a tiny lazy chunk, fetched after the header is idle.
+const DmLocalTime = lazy(() => import('@/components/profile/plus/LocalTime'));
 
 interface Message {
   id: string;
@@ -59,6 +82,12 @@ interface Message {
   audioUrl?: string | null;
   audioDurationMs?: number | null;
   audioPeaks?: number[];
+  /** P04 — message kind (text when absent), structured payload, forward hops, expiry, DM poll. */
+  kind?: string;
+  meta?: unknown;
+  forwardCount?: number;
+  expiresAt?: string | null;
+  poll?: PollView | null;
 }
 
 /** The shape `message-edited` / `message-deleted` carry on the DM bus. */
@@ -89,6 +118,7 @@ interface OtherUser {
   name: string | null;
   image: string | null;
   username: string | null;
+  isBot?: boolean;
 }
 
 export function ConversationView({
@@ -187,9 +217,56 @@ export function ConversationView({
       ? newest.id
       : null;
 
+  // Swipe-to-reply (U11). DMs have no threaded replies, so a reply quotes the
+  // message into the composer — the same thing people already did by hand.
+  const quoteReply = useCallback((content: string) => {
+    const line = content.replace(/\s+/g, ' ').trim();
+    const quoted = line.length > 80 ? `${line.slice(0, 80)}…` : line;
+    setInput((prev) => `> ${quoted}\n${prev}`);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, []);
+
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
+
+  // P04 — per-chat extras (see components/chat-plus): theme, pins, live ticks and
+  // read receipts, slash commands, disappearing messages.
+  const chatRef = useMemo(() => ({ kind: 'dm' as const, id: conversationId }), [conversationId]);
+  const chatTheme = useChatTheme(chatRef);
+  const { data: chatMeta } = useChatMeta(chatRef);
+  const pinnedIds = useMemo(
+    () => new Set((chatMeta?.pins ?? []).map((p) => p.messageId)),
+    [chatMeta?.pins],
+  );
+  useChatUpdates(chatRef, (u) =>
+    setMessages((prev) => applyChatUpdate(prev, u, session?.user.id ?? '')),
+  );
+  const appendPosted = useCallback(
+    (raw: unknown) => {
+      const posted = raw as Message;
+      historyIds.current.add(posted.id);
+      setMessages((prev) => (prev.some((m) => m.id === posted.id) ? prev : [...prev, posted]));
+      setTimeout(scrollToBottom, 50);
+    },
+    [scrollToBottom],
+  );
+  const slash = useSlashCommands({
+    chat: chatRef,
+    draft: input,
+    setDraft: setInput,
+    inputRef,
+    onPosted: appendPosted,
+    onPickGif: (url) => {
+      setGifUrl(url);
+      setTimeout(() => inputRef.current?.focus(), 0);
+    },
+  });
+  const shownMessages = useExpiring(messages);
+  // M2: a conversation with yourself is Saved Messages.
+  const isSavedChat = !!otherUser && otherUser.id === session?.user.id;
+  // M8: the viewer's latest message, which is the one that carries "Seen".
+  const lastOwnId = [...shownMessages].reverse().find((m) => m.senderId === session?.user.id)?.id;
 
   // Fetch conversation info (other user) from conversations list
   const fetchConversationInfo = useCallback(async () => {
@@ -662,7 +739,10 @@ export function ConversationView({
       if (eventType === 'new-message') {
         const msg = data as Message & { conversationId: string };
         // Only handle messages for this conversation
-        if (msg.conversationId === conversationId && msg.senderId !== session.user.id) {
+        // System lines (timer, theme, pin, tip) are written under the actor's own
+        // id, so the actor's other tab needs them too.
+        const isLine = msg.kind === 'system' || msg.kind === 'tip';
+        if (msg.conversationId === conversationId && (msg.senderId !== session.user.id || isLine)) {
           handleIncomingMessage({
             id: msg.id,
             content: msg.content,
@@ -676,6 +756,11 @@ export function ConversationView({
             audioUrl: msg.audioUrl ?? null,
             audioDurationMs: msg.audioDurationMs ?? null,
             audioPeaks: msg.audioPeaks ?? [],
+            kind: msg.kind,
+            meta: msg.meta,
+            forwardCount: msg.forwardCount,
+            expiresAt: msg.expiresAt ?? null,
+            poll: msg.poll ?? null,
           });
         }
       } else if (eventType === 'message-edited' || eventType === 'message-deleted') {
@@ -795,6 +880,12 @@ export function ConversationView({
     const pendingImages = imageUrls;
     if ((!content && !pendingGif && pendingImages.length === 0) || sending) return;
 
+    // M4: a slash command is run (by the server, or locally for /remind and
+    // /gif) instead of being sent as text.
+    if (content.startsWith('/') && !pendingGif && pendingImages.length === 0) {
+      if (await slash.tryRun(content)) return;
+    }
+
     setSending(true);
     setError(null);
 
@@ -910,7 +1001,7 @@ export function ConversationView({
         </p>
         <Link to="/login" search={{ callbackURL: undefined }}>
           <Button variant="accent" size="sm">
-            {t('sign-in', { defaultValue: 'Sign In' })}
+            {t('sign-in', { defaultValue: 'Sign in' })}
           </Button>
         </Link>
       </div>
@@ -951,7 +1042,10 @@ export function ConversationView({
   // expand — and the document starts scrolling again exactly when the user is
   // reaching for the composer.
   return (
-    <div className="flex flex-col h-[calc(100svh-var(--rad-topbar-h,3.5rem)-var(--rad-top,0px)-var(--rad-bottom,0px))]">
+    <div
+      className="flex flex-col h-[calc(100svh-var(--rad-topbar-h,3.5rem)-var(--rad-top,0px)-var(--rad-bottom,0px))]"
+      style={chatTheme.rootStyle}
+    >
       {/* Header */}
       <div className="glass-chrome site-sticky-chrome shrink-0">
         <div className="flex items-center gap-3 px-4 py-3">
@@ -961,7 +1055,8 @@ export function ConversationView({
           >
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </Link>
-          {otherUser && (
+          {isSavedChat && <SavedMessagesHeader />}
+          {otherUser && !isSavedChat && (
             <Link
               to={
                 `/u/${(otherUser as { handle?: string | null }).handle || otherUser.id}` as string
@@ -976,19 +1071,23 @@ export function ConversationView({
                 className="ring-2 ring-site-bg"
               />
               <div>
-                <p className="font-display font-bold text-sm text-site-text">
+                <p className="flex items-center gap-1.5 font-display font-bold text-sm text-site-text">
                   {otherUser.name || 'Unknown'}
+                  {otherUser.isBot && <AutomatedBadge />}
                 </p>
                 {otherUser.username && (
                   <p className="text-xs text-site-text-dim">@{otherUser.username}</p>
                 )}
+                <Suspense fallback={null}>
+                  <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />
+                </Suspense>
               </div>
             </Link>
           )}
           {/* Voice call. Renders nothing when a call can't be placed (signed out,
               no WebRTC); the server is still the authority on whether this person
               accepts calls from you. */}
-          {otherUser && (
+          {otherUser && !isSavedChat && (
             <div className="ml-auto flex gap-1">
               <CallButton
                 user={{
@@ -1012,11 +1111,21 @@ export function ConversationView({
               />
             </div>
           )}
+          <ChatHeaderPlus chat={chatRef} className={isSavedChat || !otherUser ? 'ml-auto' : ''} />
         </div>
       </div>
+      <ChatPinnedBar
+        chat={chatRef}
+        viewerId={session.user.id}
+        names={otherUser ? { [otherUser.id]: otherUser.name } : {}}
+      />
 
       {/* Messages */}
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-4"
+        style={chatTheme.wallpaper}
+      >
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Spinner size={32} />
@@ -1031,26 +1140,26 @@ export function ConversationView({
                   className="text-sm text-site-accent hover:underline disabled:opacity-50"
                 >
                   {loadingOlder
-                    ? t('loading', { defaultValue: 'Loading...' })
+                    ? t('loading', { defaultValue: 'Loading…' })
                     : t('load-older-messages', { defaultValue: 'Load older messages' })}
                 </button>
               </div>
             )}
 
-            {messages.length === 0 && (
+            {shownMessages.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-sm text-site-text-muted">
                   {t('no-messages-yet', {
-                    defaultValue: 'No messages yet. Send one to start the conversation!',
+                    defaultValue: 'No messages yet',
                   })}
                 </p>
               </div>
             )}
 
-            {messages.map((msg, i) => {
+            {shownMessages.map((msg, i) => {
               const isSelf = msg.senderId === session.user.id;
-              const prevMsg = i > 0 ? messages[i - 1] : null;
-              const nextMsg = i < messages.length - 1 ? messages[i + 1] : null;
+              const prevMsg = i > 0 ? shownMessages[i - 1] : null;
+              const nextMsg = i < shownMessages.length - 1 ? shownMessages[i + 1] : null;
               const showDate = shouldShowDateSeparator(msg, prevMsg);
               // Show avatar on the last message in a consecutive group from the same sender
               const isFirstInGroup = !prevMsg || prevMsg.senderId !== msg.senderId || showDate;
@@ -1094,13 +1203,19 @@ export function ConversationView({
               // A tombstone has nothing to react to, and an optimistic bubble has
               // no server id yet — neither takes the long-press/right-click menu.
               const canReact = !deleted && !msg.id.startsWith('temp-');
+              // P04: centred lines (timer, pin, tip…) and card kinds (dice, checklist…).
+              const isLine = isLineKind(msg.kind);
+              const isCard = !deleted && isCardKind(msg.kind);
+              const authorName = isSelf
+                ? t('you-label', { defaultValue: 'You' })
+                : (otherUser?.name ?? t('user-fallback', { defaultValue: 'User' }));
 
               return (
                 <motion.div
                   key={msg.id}
                   initial={animateIn ? { opacity: 0, y: 8 } : false}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.26, ease: EASE_OUT_EXPO }}
+                  transition={APPLE_SPRING.snappy}
                 >
                   {showDate && (
                     <div className="flex items-center justify-center my-4">
@@ -1109,6 +1224,25 @@ export function ConversationView({
                       </span>
                     </div>
                   )}
+                  {isLine ? (
+                    <ChatSystemLine
+                      meta={msg.meta}
+                      fallback={msg.content}
+                      viewerId={session.user.id}
+                      nameOf={(id) => (otherUser && id === otherUser.id ? otherUser.name : null)}
+                    />
+                  ) : (
+                  <SwipeRow
+                    leading={
+                      canReact && !isEditing && !isVoice && msg.content.trim()
+                        ? {
+                            icon: Reply,
+                            label: t('dm-reply', { defaultValue: 'Reply' }),
+                            onAction: () => quoteReply(msg.content),
+                          }
+                        : undefined
+                    }
+                  >
                   <div
                     className={`group flex items-end gap-2 ${isLastInGroup ? 'mb-3' : 'mb-0.5'} ${isSelf ? 'flex-row-reverse' : ''}`}
                   >
@@ -1133,6 +1267,22 @@ export function ConversationView({
                           onCancel={() => setEditingId(null)}
                         />
                       </div>
+                    ) : isCard ? (
+                      <div className="max-w-[85%]">
+                        <MessageBadges
+                          forwardCount={msg.forwardCount}
+                          pinned={pinnedIds.has(msg.id)}
+                        />
+                        <ChatRichBody
+                          chat={chatRef}
+                          messageId={msg.id}
+                          kind={msg.kind ?? 'text'}
+                          meta={msg.meta}
+                          poll={msg.poll}
+                          authorName={authorName}
+                          disabled={msg.id.startsWith('temp-')}
+                        />
+                      </div>
                     ) : (
                       <div
                         className={`${isVoice ? 'w-[85%] max-w-[22rem]' : 'max-w-[75%]'} ${bubbleRounding} px-4 py-2.5 text-sm break-words ${
@@ -1144,6 +1294,11 @@ export function ConversationView({
                           <DeletedMessage deletedBy={msg.deletedBy} />
                         ) : (
                           <>
+                            <MessageBadges
+                              forwardCount={msg.forwardCount}
+                              pinned={pinnedIds.has(msg.id)}
+                              className="text-current opacity-70"
+                            />
                             {isVoice && (
                               <VoicePlayer
                                 src={msg.audioUrl as string}
@@ -1202,16 +1357,35 @@ export function ConversationView({
                         onEdit={() => setEditingId(msg.id)}
                         onUnsend={() => handleUnsend(msg.id)}
                         onHide={() => handleHide(msg.id)}
+                        onReply={isVoice ? undefined : () => quoteReply(msg.content)}
+                        extra={(close) => (
+                          <MessagePlusItems
+                            chat={chatRef}
+                            message={{
+                              id: msg.id,
+                              content: msg.content,
+                              kind: msg.kind,
+                              forwardCount: msg.forwardCount,
+                              hasAudio: isVoice,
+                            }}
+                            onDone={close}
+                          />
+                        )}
                         className="md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
                       />
                     )}
                   </div>
+                  </SwipeRow>
+                  )}
                   {(msg.reactions?.length ?? 0) > 0 && (
                     <ReactionChips
                       reactions={groupReactions(msg.reactions ?? [], session.user.id)}
                       onToggle={(emoji) => toggleReaction(msg.id, emoji)}
                       className={`mt-1 ${isSelf ? 'justify-end' : ''}`}
                     />
+                  )}
+                  {isSelf && msg.id === lastOwnId && msg.read && !isSavedChat && !deleted && (
+                    <SeenIndicator />
                   )}
                 </motion.div>
               );
@@ -1348,6 +1522,7 @@ export function ConversationView({
                   }}
                   onBlur={stopTyping}
                   onKeyDown={(e) => {
+                    if (slash.onKeyDown(e)) return;
                     if (shortcodes.onKeyDown(e)) return;
                     handleKeyDown(e);
                   }}
@@ -1358,7 +1533,9 @@ export function ConversationView({
                   style={{ minHeight: '42px' }}
                 />
                 {shortcodes.menu}
+                {slash.popover}
               </div>
+              <ChecklistComposer chat={chatRef} onPosted={appendPosted} disabled={sending} />
               <EmojiPickerButton
                 direction="up"
                 onSelect={insertEmoji}
@@ -1434,6 +1611,8 @@ export function ConversationView({
           )}
         </div>
       </div>
+
+      <ChatPlusHost viewerId={session.user.id} />
 
       {reactionMenu && (
         <ReactionMenu

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
+import { frameAlpha } from '@/lib/render/frame-alpha';
 import { RigidBody, CapsuleCollider, type RapierRigidBody } from '@react-three/rapier';
 import { Vector3 } from 'three';
 import { useCookgameStore } from '@/lib/cookgame/store';
@@ -31,7 +32,7 @@ export function PlayerController() {
     };
   }, []);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     const rb = body.current;
     if (!rb) return;
 
@@ -53,7 +54,11 @@ export function PlayerController() {
       z = (z / len) * speed;
     }
     const vel = rb.linvel();
-    rb.setLinvel({ x, y: vel.y, z }, true);
+    // Wake the body only to move it. Waking it every frame kept it from ever
+    // sleeping, and @react-three/rapier requests a frame for as long as any
+    // body is awake — so a player standing still behind a menu pinned the
+    // scene at the display's full rate (docs/performance-audit-2026-10-21.md).
+    rb.setLinvel({ x, y: vel.y, z }, len > 0);
 
     // Update character animation refs (no React state — read by Character's useFrame).
     const isMoving = Math.hypot(x, z) > 0.1;
@@ -65,7 +70,7 @@ export function PlayerController() {
     // Camera follows the body; lerp for smoothness.
     const t = rb.translation();
     camTarget.current.set(t.x + CAMERA_OFFSET.x, t.y + CAMERA_OFFSET.y, t.z + CAMERA_OFFSET.z);
-    camera.position.lerp(camTarget.current, 0.12);
+    camera.position.lerp(camTarget.current, frameAlpha(0.12, delta));
     camera.lookAt(t.x, t.y + 1, t.z);
 
     // Throttle store writes (~every 5 frames) to avoid render thrash.

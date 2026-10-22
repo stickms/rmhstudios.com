@@ -23,7 +23,7 @@ export async function getShopData(userId: string | null): Promise<ShopData> {
       prisma.userProfile.findUnique({ where: { userId }, select: { coins: true } }),
       prisma.userInventory.findMany({ where: { userId }, select: { itemId: true, equipped: true } }),
     ]);
-    coins = profile?.coins ?? 0;
+    coins = Number(profile?.coins ?? 0);
     owned = new Map(inv.map((i) => [i.itemId, i.equipped]));
   }
 

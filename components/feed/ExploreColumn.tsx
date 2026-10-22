@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useSession } from '@/components/Providers';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
@@ -118,6 +119,7 @@ export function ExploreColumn({
   blogPosts?: DiscoveryBlogPost[];
 }) {
   const { t } = useTranslation('feed');
+  const { data: session } = useSession();
   const tabLabel = useTabLabel();
   const kindHeading = useKindHeading();
   const navigate = useNavigate();
@@ -141,11 +143,27 @@ export function ExploreColumn({
    * `autoFocus` because the prop only acts on the initial mount, and the media
    * query does not resolve until after hydration (`useMediaQuery` reports false
    * on the server so it can't mismatch).
+   *
+   * After the arriving page has painted, not in the effect itself: `focus()`
+   * needs up-to-date style and layout, so calling it straight after a page
+   * switch's commit laid out the whole incoming page synchronously — ~55ms of
+   * the switch's one long task at 4× CPU (docs/performance-audit-2026-10-21.md
+   * §Navigation commit). One frame later that layout already exists and the
+   * call is free. `preventScroll`, because the field is at the top of the page
+   * and a back/forward arrival has just had its scroll position restored.
    */
   const fieldRef = useRef<HTMLInputElement | null>(null);
   const hasKeyboard = useMediaQuery('(pointer: fine)');
   useEffect(() => {
-    if (hasKeyboard) fieldRef.current?.focus();
+    if (!hasKeyboard) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const frame = requestAnimationFrame(() => {
+      timer = setTimeout(() => fieldRef.current?.focus({ preventScroll: true }), 0);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
   }, [hasKeyboard]);
 
   // Persist the active tab to the URL (alongside any query) so the selection
@@ -270,6 +288,24 @@ export function ExploreColumn({
 
       {/* One AI slot, two forms — see `ExploreAsk`. */}
       <ExploreAsk query={hasQuery ? trimmed : ''} />
+
+      {/* Signed out, /api/search answers from the static catalog only (games,
+          apps, pages). Say so, rather than letting the People tab read as "no
+          one by that name exists". */}
+      {hasQuery && !session && (
+        <p className="px-4 py-2 text-sm text-site-text-muted">
+          {t('search-signed-out-scope', {
+            defaultValue: 'Showing games, apps and pages.',
+          })}{' '}
+          <Link
+            to="/login"
+            search={{ callbackURL: '/explore' }}
+            className="font-semibold text-site-accent hover:underline"
+          >
+            {t('search-signed-out-cta', { defaultValue: 'Sign in to search people and posts' })}
+          </Link>
+        </p>
+      )}
 
       {/* "Did you mean" — offered whenever the best match is not convincing, so
           a near-miss (a typo, or the wrong name for a game) is one tap from the

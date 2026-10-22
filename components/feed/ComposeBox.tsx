@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useState, useRef, useEffect, useCallback } from 'react';
 // `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
 // is the component that honours it — `motion` bundles its own full feature
 // implementation, which lands in the SHARED ENTRY CHUNK when the module is
@@ -55,8 +55,23 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
   MAX_IMAGE_ALT_LENGTH,
-} from '@/lib/rmhark-schema';
+} from '@/lib/rmhark-limits';
 import { Link } from '@tanstack/react-router';
+import { TakeMenuItem, TakeChip } from './TakeCompose';
+import { AltTextNotice, useRequireAltText } from './AltTextNotice';
+import {
+  PostsPlusChips,
+  PostsPlusDialogs,
+  PostsPlusMenuItems,
+  usePostsPlusCompose,
+} from '@/components/posts-plus/PostsPlusCompose';
+import {
+  CodeEmbedChip,
+  CodeEmbedDialog,
+  CodeEmbedMenuItem,
+  useCodeEmbedCompose,
+} from '@/components/code-embed/CodeEmbedCompose';
+import { missingAltIndexes } from '@/lib/feed/alt-text';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { FeedItem } from '@/lib/feed-types';
@@ -69,6 +84,10 @@ import {
 
 const MAX_IMAGES = 4;
 
+// X1: the "Post as thread" preview + splitter. Mounted only once a draft is
+// longer than one post, so it is a separate chunk almost nobody downloads.
+const ThreadPostPanel = lazy(() => import('./ThreadPostPanel'));
+
 type Attachment = 'poll' | 'gif' | null;
 
 interface PollDraft {
@@ -80,7 +99,13 @@ interface PollDraft {
 export function ComposeBox({
   communityId,
   onPosted,
-}: { communityId?: string; onPosted?: (item: any) => void } = {}) {
+  extraBody,
+}: {
+  communityId?: string;
+  onPosted?: (item: any) => void;
+  /** Extra fields merged into the create body (community flair / challenge entry). */
+  extraBody?: Record<string, unknown>;
+} = {}) {
   const [content, setContent] = useState('');
   const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'CIRCLE'>('PUBLIC');
   const [replyControl, setReplyControl] = useState<'EVERYONE' | 'FOLLOWING' | 'MENTIONED'>(
@@ -88,6 +113,9 @@ export function ComposeBox({
   );
   const [replyOpen, setReplyOpen] = useState(false);
   const [isSensitive, setIsSensitive] = useState(false);
+  const [isTake, setIsTake] = useState(false); // X6: readers vote agree/disagree
+  const codeEmbed = useCodeEmbedCompose(); // F14 runnable snippet
+  const postsPlus = usePostsPlusCompose(); // X8 expiry, X5 series, X4 QOTD tag, Z7 capsule
   const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
   const [unlockPrice, setUnlockPrice] = useState(''); // coins to unlock;''= free
   const [submitting, setSubmitting] = useState(false);
@@ -153,7 +181,14 @@ export function ComposeBox({
   const hasGif = attachment === 'gif' && gifUrl.trim().length > 0;
   const hasImages = imageUrls.length > 0;
   const hasContent = content.trim().length > 0;
-  const canSubmit = (hasContent || hasPoll || hasGif || hasImages) && remaining >= 0 && !submitting;
+  // X12: with "Require alt text" on, every attached image needs a description.
+  const requireAlt = useRequireAltText(hasImages);
+  const missingAlt = requireAlt ? missingAltIndexes(imageUrls, imageAlts) : [];
+  const canSubmit =
+    (hasContent || hasPoll || hasGif || hasImages || !!codeEmbed.embed) &&
+    remaining >= 0 &&
+    !submitting &&
+    missingAlt.length === 0;
 
   const uploadImages = useCallback(async (files: File[]) => {
     if (files.length === 0) return;
@@ -259,10 +294,13 @@ export function ComposeBox({
     }
     if (audience !== 'PUBLIC') body.audience = audience;
     if (isSensitive) body.isSensitive = true;
+    if (isTake) body.isTake = true;
     if (replyControl !== 'EVERYONE') body.replyControl = replyControl;
     const price = parseInt(unlockPrice, 10);
     if (price > 0) body.unlockPrice = price;
     if (communityId) body.communityId = communityId;
+    if (extraBody) Object.assign(body, extraBody);
+    Object.assign(body, postsPlus.bodyFields, codeEmbed.bodyFields);
     return body;
   };
 
@@ -273,6 +311,7 @@ export function ComposeBox({
     setReplyControl('EVERYONE');
     setReplyOpen(false);
     setIsSensitive(false);
+    setIsTake(false);
     setUnlockPrice('');
     setAttachment(null);
     setPoll({ question: '', options: ['', ''], multiSelect: false });
@@ -285,6 +324,8 @@ export function ComposeBox({
     setScheduleAt('');
     setShowPriceModal(false);
     setShowCheatSheet(false);
+    postsPlus.reset();
+    codeEmbed.reset();
   };
 
   // A snapshot of the composer's contents, so an optimistic post that fails to
@@ -294,24 +335,30 @@ export function ComposeBox({
     audience,
     replyControl,
     isSensitive,
+    isTake,
+    codeEmbed: codeEmbed.embed,
     unlockPrice,
     attachment,
     poll,
     gifUrl,
     imageUrls,
     imageAlts,
+    postsPlus: { ttl: postsPlus.ttl, series: postsPlus.series, answering: postsPlus.answering },
   });
   const restoreDraft = (d: ReturnType<typeof snapshotDraft>) => {
     setContent(d.content);
     setAudience(d.audience);
     setReplyControl(d.replyControl);
     setIsSensitive(d.isSensitive);
+    setIsTake(d.isTake);
+    codeEmbed.setEmbed(d.codeEmbed);
     setUnlockPrice(d.unlockPrice);
     setAttachment(d.attachment);
     setPoll(d.poll);
     setGifUrl(d.gifUrl);
     setImageUrls(d.imageUrls);
     setImageAlts(d.imageAlts);
+    postsPlus.restore(d.postsPlus);
   };
 
   // Build the post the user *would* see, so it can appear at the top of the
@@ -345,6 +392,7 @@ export function ComposeBox({
       imageUrls: hasImages ? imageUrls : undefined,
       imageAlts: hasImages ? imageUrls.map((_, i) => imageAlts[i]?.trim() ?? '') : undefined,
       isSensitive,
+      isTake: isTake || undefined,
       replyControl,
       gifUrl: hasGif ? gifUrl.trim() : undefined,
       poll: hasPoll
@@ -473,6 +521,14 @@ export function ComposeBox({
     }
   };
 
+  // X1: the thread endpoint already created the whole chain; show its root at
+  // the top of the feed exactly as a single post would appear.
+  const handleThreadPosted = (root: FeedItem) => {
+    prependItem(root);
+    onPosted?.(root);
+    resetForm();
+  };
+
   // Save the composer contents as a draft (scheduledAt = null) or, when a time
   // is given, as a scheduled post.
   const handleSaveScheduled = async (scheduledAtIso: string | null) => {
@@ -514,7 +570,7 @@ export function ComposeBox({
         </p>
         <Link to="/login" search={{ callbackURL: undefined }}>
           <Button variant="accent" size="sm">
-            {t('sign-in', { defaultValue: 'Sign In' })}
+            {t('sign-in', { defaultValue: 'Sign in' })}
           </Button>
         </Link>
       </div>
@@ -626,7 +682,7 @@ export function ComposeBox({
               alt={
                 resolvedUser?.name || session.user.name || t('user-alt', { defaultValue: 'User' })
               }
-              loading="lazy"
+              loading="eager"
               decoding="async"
               width={40}
               height={40}
@@ -649,10 +705,17 @@ export function ComposeBox({
             onChange={setContent}
             placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
             rows={3}
-            maxLength={MAX_RMHARK_LENGTH}
+            // X1: no hard cap outside communities — a longer draft is offered as a
+            // thread below, and the Post button stays blocked while it is over the
+            // limit, so an over-length single post still cannot be sent.
+            maxLength={communityId ? MAX_RMHARK_LENGTH : undefined}
             // Recessed text well (§8.3): .glass-inset carries the border, radius and
             // inner shadow; accent border on focus is the input affordance.
-            className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
+            // `block`: a textarea is inline-block by default, so its wrapper
+            // reserved ~6px of baseline descender space under it — a gap nobody
+            // meant, and the last 6px of layout shift when this composer replaced
+            // its placeholder (which has no wrapper) on the feed.
+            className="block w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 handleSubmit();
@@ -663,6 +726,25 @@ export function ComposeBox({
           <ComposeAssist value={content} onChange={setContent} />
 
           <TagSuggest value={content} onChange={setContent} />
+
+          {remaining < 0 && !communityId && (
+            <Suspense fallback={null}>
+              <ThreadPostPanel
+                content={content}
+                blockedBy={
+                  hasImages || hasGif || hasPoll
+                    ? 'attachments'
+                    : audience !== 'PUBLIC' ||
+                        isSensitive ||
+                        replyControl !== 'EVERYONE' ||
+                        parseInt(unlockPrice, 10) > 0
+                      ? 'options'
+                      : null
+                }
+                onPosted={handleThreadPosted}
+              />
+            </Suspense>
+          )}
 
           {parseInt(unlockPrice, 10) > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -702,6 +784,10 @@ export function ComposeBox({
             </div>
           )}
 
+          {isTake && <TakeChip onRemove={() => setIsTake(false)} />}
+          <CodeEmbedChip ce={codeEmbed} />
+          <PostsPlusChips pp={postsPlus} />
+
           {/* Poll creator */}
           {attachment === 'poll' && (
             <div className="glass-fill mt-2 rounded-site p-3">
@@ -724,7 +810,7 @@ export function ComposeBox({
                 type="text"
                 value={poll.question}
                 onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
-                placeholder={t('poll-question-placeholder', { defaultValue: 'Ask a question...' })}
+                placeholder={t('poll-question-placeholder', { defaultValue: 'Ask a question…' })}
                 aria-label={t('poll-question-aria', { defaultValue: 'Poll question' })}
                 maxLength={MAX_POLL_QUESTION_LENGTH}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
@@ -742,8 +828,8 @@ export function ComposeBox({
                         setPoll((p) => ({ ...p, options: newOptions }));
                       }}
                       placeholder={t('poll-option-placeholder', {
-                        count: i + 1,
-                        defaultValue: 'Option {{count}}',
+                        index: i + 1,
+                        defaultValue: 'Option {{index}}',
                       })}
                       aria-label={t('poll-option-aria', {
                         count: i + 1,
@@ -909,6 +995,7 @@ export function ComposeBox({
               })}
             </div>
           )}
+          <AltTextNotice missing={missingAlt} onFix={setAltEditIndex} />
           {imageError && <p className="text-xs text-site-danger mt-1">{imageError}</p>}
 
           {/* Hidden file input */}
@@ -966,7 +1053,7 @@ export function ComposeBox({
               <AIGenerateButton
                 request={{ mode: 'post', draft: content }}
                 onGenerated={(text) => setContent(text)}
-                title={t('ai-generate-title', { defaultValue: 'Generate a post with AI' })}
+                title={t('ai-generate-title', { defaultValue: 'Generate a reply with AI' })}
               />
 
               {/* AI image button — locked (greyed + upgrade nudge) below HARD-R */}
@@ -1053,6 +1140,9 @@ export function ComposeBox({
                   </span>
                   {isSensitive && <Check className="w-4 h-4 text-site-warning" />}
                 </button>
+                <TakeMenuItem active={isTake} onToggle={() => setIsTake((v) => !v)} />
+                <CodeEmbedMenuItem ce={codeEmbed} onPick={() => setMenuOpen(false)} />
+                <PostsPlusMenuItems pp={postsPlus} onPick={() => setMenuOpen(false)} />
                 <div className="my-1 border-t border-site-border" />
                 <button
                   type="button"
@@ -1151,13 +1241,21 @@ export function ComposeBox({
 
               <Button variant="accent" size="sm" disabled={!canSubmit} onClick={handleSubmit}>
                 {submitting
-                  ? t('posting', { defaultValue: 'Posting...' })
+                  ? t('posting', { defaultValue: 'Posting…' })
                   : t('post-button', { defaultValue: 'Post' })}
               </Button>
             </div>
           </div>
         </div>
       </div>
+
+      <CodeEmbedDialog ce={codeEmbed} />
+      <PostsPlusDialogs
+        pp={postsPlus}
+        getBody={buildBody}
+        canSubmit={canSubmit}
+        onSealed={resetForm}
+      />
 
       {/* Post visibility (audience) picker — opened from the (+) menu */}
       {audienceOpen && (
@@ -1283,7 +1381,7 @@ export function ComposeBox({
                 defaultValue: 'Charge coins to unlock this post. Leave empty to keep it free.',
               })}
             </p>
-            <div className="flex items-center gap-2 rounded-site border border-site-border bg-site-surface px-3 py-2">
+            <div className="flex items-center gap-2 rounded-site glass-fill px-3 py-2">
               <Coins className="h-4 w-4 text-site-text-muted" />
               <input
                 type="number"
@@ -1457,7 +1555,7 @@ export function ComposeBox({
               placeholder={t('alt-text-placeholder', {
                 defaultValue: 'e.g. A golden retriever running on a beach at sunset',
               })}
-              className="w-full resize-none rounded-site-sm border border-site-border bg-site-surface p-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
+              className="w-full resize-none rounded-site-sm glass-inset p-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
             />
             <div className="mt-3 flex items-center justify-between">
               <span className="text-xs font-mono text-site-text-dim">

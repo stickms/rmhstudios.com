@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { classifyRumRoute, getRumRouteLabel, getRumThreshold } from '@/lib/rum-slo';
+import { recordTiming } from '@/lib/perf/process-metrics';
 
 /**
  * POST /api/rum — sink for Core Web Vitals reports from `lib/rum.ts`.
@@ -250,6 +251,18 @@ export const Route = createFileRoute('/api/rum')({
           // treating a single slow navigation as an aggregate percentile.
           // eslint-disable-next-line no-console -- normal metrics are informational, not warnings
           console.info('[rum:metric]', JSON.stringify(metric));
+          // Durable page-load metrics for the on-call dashboard + alarms: the
+          // millisecond vitals, per route class (a bounded set). CLS is
+          // unitless and BFCACHE a flag, so neither is a latency.
+          if (m.name === 'LCP' || m.name === 'INP' || m.name === 'TTFB' || m.name === 'FCP') {
+            recordTiming(`rum.${m.name.toLowerCase()}|${routeClass}`, m.value);
+          }
+          if (m.name === 'TTFB') {
+            // Lazy: keeps the DB client out of this module's import graph (schema tests).
+            void import('@/lib/ops/route-views.server').then((v) =>
+              v.recordRouteView(metric.route),
+            );
+          }
           if (m.rating === 'poor') {
             console.warn('[rum:poor]', JSON.stringify(metric));
           }

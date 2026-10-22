@@ -16,6 +16,7 @@
 
 import { Check, FileCode2, Loader2 } from 'lucide-react';
 import { useStickToBottom } from '@/hooks/useStickToBottom';
+import '@/components/rmhvibe/vibe.css';
 
 const FILES_MARKER = '===FILES===';
 const FILE_HEADER_RE = /^---\s*file:\s*(.+?)\s*---\s*$/gim;

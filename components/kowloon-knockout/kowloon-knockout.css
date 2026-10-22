@@ -27,16 +27,14 @@
    Neon Animations
    ============================================================ */
 
-@keyframes neonPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.85;
-  }
-}
-
+/* There is no neonPulse any more. It swung opacity 1 ↔ 0.85 forever
+   on 13 large layers (the skyline, four signs, four strips, two glows, the
+   title) — a flicker too faint to read as one, that kept the menu from ever
+   going idle: ~1.6 cores and 26fps at rest on desktop, a locked 60fps and
+   ~zero frames at rest with it frozen (perf audit 2026-10-08). The keyframe
+   also OVERRODE each layer's authored opacity (0.05–0.15), so what players
+   actually saw was the ~0.92 mid-point; those layers now declare exactly that,
+   statically, and look the same. */
 @keyframes neonFlicker {
   0% {
     opacity: 1;
@@ -74,17 +72,6 @@
   }
   50% {
     transform: translateY(-8px);
-  }
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
   }
 }
 
@@ -220,7 +207,7 @@
     radial-gradient(1px 1px at 72px 88%, #33ccff20 0%, transparent 100%),
     radial-gradient(1px 1px at 25px 75%, #cc33ff20 0%, transparent 100%);
   background-size: 80px 100%;
-  animation: neonPulse 4s ease-in-out infinite;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 /* Neon signs — Chinese characters floating in the scene */
@@ -242,7 +229,7 @@
   border-color: var(--neon-pink);
   text-shadow: 0 0 8px var(--neon-pink), 0 0 16px var(--neon-pink);
   box-shadow: 0 0 6px rgba(255, 51, 102, 0.3), inset 0 0 6px rgba(255, 51, 102, 0.1);
-  animation: neonPulse 3s ease-in-out infinite;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .neon-sign-2 {
@@ -252,7 +239,7 @@
   border-color: var(--neon-blue);
   text-shadow: 0 0 8px var(--neon-blue), 0 0 16px var(--neon-blue);
   box-shadow: 0 0 6px rgba(51, 204, 255, 0.3), inset 0 0 6px rgba(51, 204, 255, 0.1);
-  animation: neonPulse 4s ease-in-out infinite 1s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .neon-sign-3 {
@@ -262,7 +249,7 @@
   border-color: var(--neon-yellow);
   text-shadow: 0 0 8px var(--neon-yellow), 0 0 16px var(--neon-yellow);
   box-shadow: 0 0 6px rgba(255, 204, 0, 0.3), inset 0 0 6px rgba(255, 204, 0, 0.1);
-  animation: neonPulse 3.5s ease-in-out infinite 0.5s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
   font-size: 12px;
 }
 
@@ -273,7 +260,7 @@
   border-color: var(--neon-green);
   text-shadow: 0 0 8px var(--neon-green), 0 0 16px var(--neon-green);
   box-shadow: 0 0 6px rgba(51, 255, 153, 0.3), inset 0 0 6px rgba(51, 255, 153, 0.1);
-  animation: neonPulse 5s ease-in-out infinite 2s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
   font-size: 11px;
 }
 
@@ -289,8 +276,7 @@
   bottom: 10%;
   left: 20%;
   background: linear-gradient(180deg, transparent, var(--neon-pink), var(--neon-pink), transparent);
-  opacity: 0.15;
-  animation: neonPulse 3s ease-in-out infinite;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .neon-strip-2 {
@@ -298,8 +284,7 @@
   bottom: 15%;
   right: 22%;
   background: linear-gradient(180deg, transparent, var(--neon-blue), var(--neon-blue), transparent);
-  opacity: 0.12;
-  animation: neonPulse 4s ease-in-out infinite 1.5s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .neon-strip-3 {
@@ -307,8 +292,7 @@
   bottom: 5%;
   left: 35%;
   background: linear-gradient(180deg, transparent, var(--neon-yellow), transparent);
-  opacity: 0.1;
-  animation: neonPulse 3.5s ease-in-out infinite 0.8s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .neon-strip-4 {
@@ -316,8 +300,7 @@
   bottom: 12%;
   right: 38%;
   background: linear-gradient(180deg, transparent, var(--neon-purple), transparent);
-  opacity: 0.08;
-  animation: neonPulse 5s ease-in-out infinite 2.5s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 /* Ambient glow spots */
@@ -334,8 +317,7 @@
   bottom: 10%;
   left: 5%;
   background: var(--neon-pink);
-  opacity: 0.06;
-  animation: neonPulse 6s ease-in-out infinite;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .menu-glow-blue {
@@ -344,8 +326,7 @@
   bottom: 15%;
   right: 8%;
   background: var(--neon-blue);
-  opacity: 0.05;
-  animation: neonPulse 5s ease-in-out infinite 1s;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .menu-content {
@@ -358,7 +339,7 @@
 
 .kowloon-knockout .title-container {
   text-align: center;
-  animation: neonPulse 4s ease-in-out infinite;
+  opacity: 0.92; /* static neon — see the note under "Neon Animations" */
 }
 
 .kowloon-knockout .title-container.neon-flicker {
@@ -801,14 +782,6 @@
   transition: width 0.6s ease;
 }
 
-.kowloon-knockout .selected-indicator {
-  font-size: 8px;
-  color: #000;
-  padding: 4px 12px;
-  letter-spacing: 2px;
-  font-weight: bold;
-}
-
 .kowloon-knockout .select-step {
   display: flex;
   flex-direction: column;
@@ -846,25 +819,6 @@
   gap: 16px;
   flex-wrap: wrap;
   justify-content: center;
-}
-
-.kowloon-knockout .control-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.kowloon-knockout .control-key {
-  font-size: 8px;
-  padding: 3px 6px;
-  border: 1px solid var(--neon-blue);
-  color: var(--neon-blue);
-  font-family: inherit;
-}
-
-.kowloon-knockout .control-label {
-  font-size: 7px;
-  color: var(--text-dim);
 }
 
 /* ============================================================
@@ -1007,23 +961,6 @@
   font-size: 11px;
   color: var(--neon-pink);
   text-shadow: 0 0 6px var(--neon-pink);
-}
-
-.kowloon-knockout .lobby-match-info {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  font-size: 14px;
-  letter-spacing: 2px;
-}
-
-.kowloon-knockout .lobby-match-vs {
-  color: var(--text-dim);
-  font-size: 10px;
-}
-
-.kowloon-knockout .lobby-match-player {
-  text-transform: uppercase;
 }
 
 /* ============================================================
@@ -1264,3 +1201,40 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(3px); }
 }
+
+/* ── Training room panel ── */
+.kk-training-panel {
+  position: absolute;
+  top: 72px;
+  left: 8px;
+  width: min(236px, calc(100vw - 16px));
+  max-height: calc(100% - 96px);
+  overflow-y: auto;
+  padding: 8px 10px;
+  background: rgba(5, 0, 16, 0.78);
+  border: 1px solid #33ccff55;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 9px;
+  line-height: 1.5;
+}
+.kk-training-panel h2 { color: var(--neon-blue); font-size: 10px; letter-spacing: 2px; margin: 0 0 6px; }
+.kk-training-panel h3 { color: var(--neon-yellow); font-size: 8px; letter-spacing: 1px; margin: 6px 0 2px; }
+.kk-training-panel dl { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; margin: 0; }
+.kk-training-panel dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.kk-training-panel p { margin: 0; }
+.kk-train-held { font-size: 14px; color: var(--neon-green); }
+.kk-train-history { color: var(--text-dim); word-break: break-word; }
+.kk-train-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.kk-train-row button {
+  font: inherit;
+  min-height: 28px;
+  padding: 2px 8px;
+  color: var(--neon-blue);
+  background: transparent;
+  border: 1px solid var(--neon-blue);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.kk-train-row button:disabled { opacity: 0.35; cursor: default; }
+.kk-train-row button[aria-pressed='true'] { background: #33ccff33; box-shadow: 0 0 8px #33ccff; }

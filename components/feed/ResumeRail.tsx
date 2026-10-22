@@ -203,7 +203,11 @@ function describeState(state: ResumeState, t: Translate, locale: string): string
     case 'wave':
       return t('resume-wave', { defaultValue: 'Wave {{value}}', value: state.value });
     case 'score':
-      return t('resume-score', { defaultValue: '{{count}} point', count: state.value });
+      return t('resume-score', {
+        defaultValue_one: '{{count}} point',
+        defaultValue: '{{count}} points',
+        count: state.value,
+      });
     case 'percent':
       return t('resume-percent', { defaultValue: '{{value}}% read', value: state.value });
     case 'timeLeft':
@@ -212,9 +216,17 @@ function describeState(state: ResumeState, t: Translate, locale: string): string
         count: Math.max(1, Math.round(state.value / 60)),
       });
     case 'due':
-      return t('resume-due', { defaultValue: '{{count}} card due', count: state.value });
+      return t('resume-due', {
+        defaultValue_one: '{{count}} card due',
+        defaultValue: '{{count}} cards due',
+        count: state.value,
+      });
     case 'words':
-      return t('resume-words', { defaultValue: '{{count}} word', count: state.value });
+      return t('resume-words', {
+        defaultValue_one: '{{count}} word',
+        defaultValue: '{{count}} words',
+        count: state.value,
+      });
     case 'scheduled':
       return t('resume-scheduled', {
         defaultValue: 'Scheduled {{when}}',

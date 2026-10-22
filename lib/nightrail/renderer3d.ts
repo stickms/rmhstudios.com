@@ -36,6 +36,7 @@
  * so even naming the API in a comment would put this file on the list.
  */
 
+import { photoPixelRatio, type PhotoCamera } from '@/lib/game/photo-mode';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -474,6 +475,7 @@ export class NightrailRenderer3D {
 
     this.pushHistory(state);
     this.updateCamera(state, dt);
+    if (this.photo) this.applyPhotoCamera(this.photo);
     this.updateTrackVisibility(state.train.s);
     this.updateScenery(state.train.s);
     this.updateFeatures(state);
@@ -505,6 +507,73 @@ export class NightrailRenderer3D {
     this.pmrem?.dispose();
     this.composer?.dispose();
     this.renderer.dispose();
+  }
+
+  // ── Photo mode (U14) ──────────────────────────────────────────────────────
+
+  private photo: PhotoCamera | null = null;
+  /** The chase camera's pose when photo mode opened; offsets apply from it. */
+  private photoBase: { position: THREE.Vector3; quaternion: THREE.Quaternion } | null = null;
+
+  /** Override the chase camera (sim paused) — `null` restores normal play. */
+  setPhotoCamera(camera: PhotoCamera | null): void {
+    this.photo = camera;
+    if (!camera) {
+      if (this.photoBase) {
+        this.camera.position.copy(this.photoBase.position);
+        this.camera.quaternion.copy(this.photoBase.quaternion);
+      }
+      this.photoBase = null;
+      this.updateProjection();
+    }
+  }
+
+  private applyPhotoCamera(p: PhotoCamera): void {
+    // The chase rig is damped and world-space, so offsets are applied from a
+    // pose frozen on the first photo frame — never accumulated frame on frame.
+    if (!this.photoBase) {
+      this.photoBase = {
+        position: this.camera.position.clone(),
+        quaternion: this.camera.quaternion.clone(),
+      };
+    }
+    const toRad = Math.PI / 180;
+    this.camera.position.copy(this.photoBase.position);
+    this.camera.quaternion.copy(this.photoBase.quaternion);
+    this.camera.translateY(p.rise);
+    this.camera.translateZ(p.back);
+    this.camera.rotateY(p.yaw * toRad);
+    this.camera.rotateX(p.pitch * toRad);
+    this.camera.rotateZ(p.roll * toRad);
+    if (this.camera.fov !== p.fov) {
+      this.camera.fov = p.fov;
+      this.camera.updateProjectionMatrix();
+    }
+  }
+
+  /** One frame at up to 2× resolution with a CSS-filter look baked in. */
+  async capturePhoto(filter: string): Promise<Blob | null> {
+    if (this.disposed) return null;
+    const ratio = photoPixelRatio(this.renderer.getPixelRatio(), this.width, this.height);
+    this.renderer.setPixelRatio(ratio);
+    this.renderer.setSize(this.width, this.height, false);
+    this.composer?.setPixelRatio(ratio);
+    this.composer?.setSize(this.width, this.height);
+    this.renderFrame();
+
+    const src = this.renderer.domElement;
+    const out = document.createElement('canvas');
+    out.width = src.width;
+    out.height = src.height;
+    const ctx = out.getContext('2d');
+    if (ctx) {
+      ctx.filter = filter;
+      ctx.drawImage(src, 0, 0);
+    }
+    this.applyResolution();
+    this.renderFrame();
+    if (!ctx) return null;
+    return new Promise((resolve) => out.toBlob(resolve, 'image/webp', 0.92));
   }
 
   // ── Resolution + projection ───────────────────────────────────────────────

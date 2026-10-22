@@ -386,7 +386,7 @@ function DriverDashboard({
       toast.success(t('ride-accepted', { defaultValue: 'Ride accepted — head to the pickup!' }));
       load();
     } catch {
-      toast.error(t('error-generic', { defaultValue: 'Something went wrong.' }));
+      toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
     } finally {
       setBusy(null);
     }

@@ -11,7 +11,7 @@
  * Client-only; mounted by the library reader route when a book's format is "epub".
  */
 
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Bookmark, BookmarkCheck, Download, Info, Loader2, Maximize2, Minimize2, Palette } from 'lucide-react';
@@ -21,6 +21,9 @@ import { useBookState } from '@/lib/library/reader-store';
 import { BookCanvas } from './BookCanvas';
 import { Dropdown, MarksMenu, ChapterMenu, ScrubBar, type Chapter } from './BookReader';
 import { ReaderDetails } from './ReaderDetails';
+import { ReaderReadingTools, type ReaderTextSource } from '@/components/reading/ReaderReadingTools';
+import '@/components/library/library.css';
+import '@/components/rmhvibe/vibe.css';
 
 const THEME_KEY = 'rmh-epub-theme';
 const THEMES: EpubTheme[] = ['light', 'sepia', 'dark'];
@@ -138,10 +141,23 @@ export function EpubReader({ book }: { book: LibraryBook }) {
     }
   }, []);
 
+  // P13 reading (L1): the selectable-text view reads one chapter (spine item) at a time.
+  const textSource = useMemo<ReaderTextSource | null>(() => {
+    const store = storeRef.current;
+    if (status !== 'ready' || !store || store.chapterCount === 0) return null;
+    return {
+      unitLabel: 'chapter',
+      count: store.chapterCount,
+      current: store.chapterIndexForPage(curPage) + 1,
+      unitKey: (n) => `c${n}`,
+      load: (n) => store.chapterText(n - 1),
+    };
+  }, [status, curPage]);
+
   const bookmarked = marks.state.bookmarks.some((b) => b.page === curPage);
   const toggleBookmark = useCallback(() => {
     const ch = [...chapters].reverse().find((c) => c.page <= curPage);
-    const label = ch ? ch.title : t('page-n', { page: curPage, defaultValue: `Page ${curPage}` });
+    const label = ch ? ch.title : t('page-n', { page: curPage, defaultValue: 'Page {{page}}' });
     marks.toggleBookmark(curPage, label);
   }, [chapters, curPage, marks, t]);
 
@@ -209,6 +225,15 @@ export function EpubReader({ book }: { book: LibraryBook }) {
               onRemoveNote={marks.removeNote}
             />
           )}
+          <ReaderReadingTools
+            book={book}
+            source={textSource}
+            numPages={numPages}
+            curPage={curPage}
+            ready={status === 'ready'}
+            stageEl={readerRef.current?.querySelector<HTMLElement>('.lib-reader__stage') ?? null}
+            Dropdown={Dropdown}
+          />
           {status === 'ready' && <ThemeMenu theme={theme} onChange={changeTheme} />}
           <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={(event) => openDetails(event.currentTarget)} aria-label={t('book-details', { defaultValue: 'Book details' })} title={t('book-details', { defaultValue: 'Book details' })}>
             <Info size={16} />

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import type { FeedItem } from '@/lib/feed-types';
+import { loadFlairsForPosts } from '@/lib/communities/flairs.server';
 
 export interface CommunityAnnouncement {
   id: string;
@@ -25,6 +26,11 @@ export interface CommunityDetail {
   joined: boolean;
   role: string | null;
   announcements: CommunityAnnouncement[];
+  /** P06: posting settings (columns on `community`, so no extra query). */
+  flairRequired: boolean;
+  starThreshold: number;
+  verificationLevel: string;
+  verificationValue: number;
 }
 
 /**
@@ -50,6 +56,10 @@ export async function getCommunity(
       postCount: true,
       createdById: true,
       createdAt: true,
+      flairRequired: true,
+      starThreshold: true,
+      verificationLevel: true,
+      verificationValue: true,
     },
   });
   if (!community) return null;
@@ -100,19 +110,30 @@ export interface CommunityFeedResult {
 export async function getCommunityFeed(
   slug: string,
   viewerId: string | null,
-  opts: { cursor?: string | null; limit?: number } = {},
+  opts: { cursor?: string | null; limit?: number; flairId?: string | null } = {},
 ): Promise<CommunityFeedResult | null> {
   const community = await prisma.community.findUnique({ where: { slug }, select: { id: true } });
   if (!community) return null;
 
   const limit = Math.min(opts.limit ?? 20, 50);
-  const hidden = await getHiddenAuthorIds(viewerId);
+  // The viewer's membership rides the same round trip as the hidden-author
+  // lookup; it only supplies the followed flairs (N3) for the first page.
+  const [hidden, member] = await Promise.all([
+    getHiddenAuthorIds(viewerId),
+    viewerId && !opts.cursor && !opts.flairId
+      ? prisma.communityMember.findUnique({
+          where: { communityId_userId: { communityId: community.id, userId: viewerId } },
+          select: { followedFlairIds: true },
+        })
+      : Promise.resolve(null),
+  ]);
 
   const rows = await prisma.rMHark.findMany({
     where: {
       communityId: community.id,
       deletedAt: null,
       ...(hidden.length ? { userId: { notIn: hidden } } : {}),
+      ...(opts.flairId ? { communityFlair: { flairId: opts.flairId } } : {}),
     },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: limit + 1,
@@ -122,8 +143,29 @@ export async function getCommunityFeed(
 
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;
+
+  const [items, flairs] = await Promise.all([
+    mapRmharksWithBoundedReactions(page, viewerId),
+    loadFlairsForPosts(page.map((p) => p.id)),
+  ]);
+  for (const item of items) {
+    const flair = flairs.get(item.id);
+    if (flair) item.communityFlair = flair;
+  }
+
+  // N3: members who follow flairs see this page's posts in those flairs first
+  // (a stable reorder of the page, so pagination and cursors are unchanged and
+  // it costs no extra query — the flairs were loaded for the chips anyway).
+  const followed = new Set(member?.followedFlairIds ?? []);
+  const ordered =
+    followed.size > 0
+      ? [
+          ...items.filter((i) => i.communityFlair && followed.has(i.communityFlair.id)),
+          ...items.filter((i) => !(i.communityFlair && followed.has(i.communityFlair.id))),
+        ]
+      : items;
   return {
-    items: await mapRmharksWithBoundedReactions(page, viewerId),
+    items: ordered,
     nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
     hasMore,
   };

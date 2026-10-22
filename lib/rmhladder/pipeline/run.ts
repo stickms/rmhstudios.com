@@ -45,6 +45,10 @@ export interface RunPrisma {
       originalPostingUrl: string;
     }>;
     update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }>;
+    updateMany(args: {
+      where: { id: { in: string[] } };
+      data: Record<string, unknown>;
+    }): Promise<{ count: number }>;
     findMany(args: {
       where: Record<string, unknown>;
       select?: Record<string, unknown>;
@@ -57,6 +61,7 @@ export interface RunPrisma {
   };
   ladderVerification: {
     create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
+    createMany(args: { data: Array<Record<string, unknown>> }): Promise<{ count: number }>;
   };
   ladderReviewTask: {
     findFirst(args: { where: Record<string, unknown> }): Promise<{ id: string } | null>;

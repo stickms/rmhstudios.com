@@ -58,7 +58,8 @@ function ExamplePage() {
 `PageLayout` (`components/feed/PageLayout.tsx`) supplies a **flat, transparent
 big-type header** — its h1 in the theme display font, sitting directly on the
 radial ring backdrop (the radial content layer strips the old bordered header
-capsule) — plus an optional back arrow (`backTo`/`backLabel`), optional
+capsule), with **no kicker above it** (the stock "RMH Studios Presents" eyebrow
+was removed 2026-10-09) — plus an optional back arrow (`backTo`/`backLabel`), optional
 breadcrumbs, and the width-constrained center column. There is **no `border-r`
 app-frame edge** and no in-page sidebar — the shell owns navigation (the radial
 hub everywhere, plus a persistent nav rail ≥1120px). The center column carries
@@ -133,18 +134,14 @@ Work through this for every new or edited page:
       `bg-site-surface` still works (degrades to a translucent L1 tint).
 - [ ] Buttons via `<Button variant size>`; pills via `<Badge>`; icons from
       `lucide-react`.
-- [ ] Tab strips via `<LiquidTabs>` (`components/ui/liquid-tabs.tsx`) — the
-      active capsule flows between tabs. Each strip rides its own glass **sheet**
-      (`sheet` prop, default on) and sits **below** the hero / page-title
-      capsule in the content flow, separated by the standard gutter — never
-      inside the sticky header (§5.45). A strip that must stay
-      sticky keeps a `top` offset clearing the floating header but remains its
-      own sheet; on narrow screens wrap it in `tab-sheet-scroll` so it scrolls
-      horizontally instead of clipping. Exception: tab bars that are really
-      route links (RMHLadder) or need richer ARIA (`aria-controls`) keep their
-      own markup and add the `layoutId` capsule + sheet wrapper directly. Every
-      such custom capsule still carries the §5.47 morph underlay (`useLiquidMorph` + the two-layer outer-`layoutId`/inner-material span split) — a strip is
-      either fully liquid or it isn't shipped (§15.1).
+- [ ] Tab strips via `<LiquidTabs>` (`components/ui/liquid-tabs.tsx`), placed
+      by `<PageTabs>` **below** the page title — never inside the sticky
+      header (§5.45). The active tab is a neutral raised thumb, not an accent
+      pill; the strip stays on one row and scrolls (edge fade) rather than
+      wrapping or truncating. If the "tabs" would be product names that don't
+      fit a segmented control, the page is a list (`HubLinkRow`), not a strip.
+      Section headings inside a page use `.site-section-label` (sentence case),
+      never a hand-typed uppercase eyebrow — CI-enforced on h2/h3.
 - [ ] **Spacing rhythm (§15.4):** use `--site-section-gap` (12–16px) between
       sibling glass elements in a column; responsive `SiteShell` gutters between
       columns; `PageLayout`/`.site-sticky-chrome` owns the gap from a page header
@@ -167,24 +164,19 @@ Work through this for every new or edited page:
       `.site-sticky-chrome`; editor-internal sticky bars use
       `.site-sticky-contained`. Never pin two stickies to the same `top` — they
       overlap and hide each other while scrolled.
-- [ ] Liquid Glass optics are **live**, inside the radial shell included: the
-      tier you pick paints real material (tint, blur where the tier has it, rim
-      glint on panes/overlays/chrome, hover glint on fills) and every degradation
-      is central, so never branch per-component. Never rely on an optic for
+- [ ] Use the shared material roles throughout the radial shell. The chosen
+      tier supplies tint, clear coat/rim and native blur where appropriate;
+      repeated fills have no blur. Preference fallbacks are central. Never rely on an optic for
       **legibility** — text has to hold on `--site-surface-opaque` too, because
       high-contrast, reduced transparency and perf-lite all collapse to it. Opt
-      into the rationed extras only when a page's spec says so: `.glass-refract`
-      (≤2/page, hero/chrome only — a frosted edge bevel today; the displacement
-      lens is parked, see design-language.md), `.glass-refract--prism` (≤1/page,
-      static chromatic rim), `.glass-liquid` ambient sheen (≤3/page),
-      `.glass-sheen-hover` (primary CTAs).
-- [ ] **Nothing on the page reacts to pointer _position_.** No `pointermove`
-      listener, no gradient or background position driven by a cursor, no
-      per-card sheen or tilt hook — all of that was retired site-wide
-      (design-language.md §5.1.1), because moving a gradient repaints the whole
-      element at pointer rate. Hover is a state (`:hover`, a class), never a
-      coordinate; if you want light on a surface, the tier class already paints
-      it.
+      into material through the role class. Historical `refract`/`liquid` flags
+      are compatibility aliases; the former SVG lenses and sheen renderer were
+      replaced. See [the liquid glass contract](liquid-glass-system.md).
+- [ ] **Decorative pointer and tap responses use the shared liquid runtime.**
+      No per-card pointer listeners, gradient-position animation or tilt hook.
+      The runtime bounds discovery, nearby waves and one active cursor-light
+      carrier, follows preferences and releases effects at rest. Game/gesture
+      subtrees can use `data-liquid-motion="off"`. Hover remains a CSS state.
 - [ ] **Nothing writes a custom property to `<html>` per frame.** Root custom
       properties are inherited by the entire document and have no invalidation
       set, so one such write per frame is a whole-document restyle per frame —
@@ -354,11 +346,11 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    items (blur cost) or on an ancestor of a `position:fixed` element (containing
    block) — see design-language.md §5.1.
 8. Adding `react-icons`, new font imports, or one-off animation systems.
-8b. Re-introducing cursor tracking — a `pointermove` listener, a hover hotspot,
-   a card tilt, a "follow the mouse" glow. The whole class of effect was removed
-   in one pass (design-language.md §5.1.1). Same for a reveal-on-scroll that
-   defaults to `opacity: 0`: use `useReveal`, whose hidden state is opt-in and
-   therefore cannot strand content when the JS does not arrive.
+8b. Adding decorative pointer tracking outside `lib/liquid/runtime.ts`, or
+   moving a gradient centre/root custom property at pointer rate. Extend the
+   bounded shared field instead (see `docs/liquid-glass-system.md`). Also avoid
+   reveal-on-scroll that defaults to `opacity: 0`: use `useReveal`, whose hidden
+   state is opt-in and cannot strand content when JS does not arrive.
 9. Re-adding app-frame edges: `border-r border-site-border` on page columns,
    full-bleed `sticky top-0 border-b` headers, or a re-implemented sidebar — the
    radial shell owns the chrome (ring backdrop, top bar, central hub nav), and

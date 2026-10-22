@@ -118,16 +118,16 @@ func (r *Runner) loop(ctx context.Context) {
 func (r *Runner) runOnce(ctx context.Context) {
 	defer func() {
 		if r2 := recover(); r2 != nil {
-			r.metrics.JobRuns.WithLabelValues("recap", "panic").Inc()
+			r.metrics.RecordJob("recap", "panic")
 			r.log.Error("recap run panicked", "panic", r2)
 		}
 	}()
 	if err := r.processDueRecaps(ctx); err != nil {
-		r.metrics.JobRuns.WithLabelValues("recap", "error").Inc()
+		r.metrics.RecordJob("recap", "error")
 		r.log.Error("recap run failed", "error", err)
 		return
 	}
-	r.metrics.JobRuns.WithLabelValues("recap", "ok").Inc()
+	r.metrics.RecordJob("recap", "ok")
 }
 
 // processDueRecaps ports the Node processDueRecaps(): find due channels, build &

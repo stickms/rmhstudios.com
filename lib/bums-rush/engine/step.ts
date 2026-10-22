@@ -124,7 +124,8 @@ import {
 } from './props';
 import { createRng, hashSeed, type Rng } from './rng';
 import { createSignalBus, type SignalBus } from './signals';
-import { DT, ENGINE, P } from './tuning';
+import { applyPartyModifiers, DT, ENGINE, P } from './tuning';
+import type { PartyModifiers } from '../modifiers';
 import { assertBodyBudget, createPhysWorld, FILTERS, teleport, type PhysWorld } from './world';
 
 const { Engine } = Matter;
@@ -142,6 +143,8 @@ export interface SimulationOptions {
   catAfterWipes?: 0 | 3 | 6;
   viewport?: { width: number; height: number };
   seats?: { seat: SeatIndex; cosmetics: Cosmetics; assists: Assists }[];
+  /** Party modifiers (unranked rooms); omitted restores the authored tuning. */
+  modifiers?: PartyModifiers | null;
 }
 
 /**
@@ -215,6 +218,7 @@ function blankTransform(): SeatTransform {
 }
 
 export function createSimulation(level: Level, opts: SimulationOptions = {}): Simulation {
+  applyPartyModifiers(opts.modifiers);
   const rng: Rng = createRng(opts.seed ?? hashSeed(level.id));
   const world: PhysWorld = createPhysWorld(level);
   const signals: SignalBus = createSignalBus();

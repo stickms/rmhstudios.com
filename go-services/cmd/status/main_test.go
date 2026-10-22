@@ -206,7 +206,6 @@ func TestFunctionalProbesAssertContent(t *testing.T) {
 		{"Website", `id="main-content"`},
 		{"App readiness", `"status":"ok"`},
 		{"Content feed", "<rss"},
-		{"Sitemap", "<urlset"},
 	} {
 		tg := findTarget(targets, c.name)
 		if tg == nil {
@@ -214,6 +213,30 @@ func TestFunctionalProbesAssertContent(t *testing.T) {
 		}
 		if tg.Expect != c.want {
 			t.Fatalf("%q Expect = %q, want %q", c.name, tg.Expect, c.want)
+		}
+	}
+}
+
+// TestSitemapProbeAcceptsTheIndex pins the 0%-uptime bug: /sitemap.xml serves
+// a <sitemapindex> (app/routes/sitemap[.]xml.ts), and the probe used to demand
+// a <urlset>, so a correctly served sitemap failed every single check. Both
+// shapes are a working sitemap; an error page is neither.
+func TestSitemapProbeAcceptsTheIndex(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
+	tg := findTarget(buildTargets(defaultURLs(), 4*time.Second), "Sitemap")
+	if tg == nil {
+		t.Fatal("missing Sitemap target")
+	}
+	for _, c := range []struct {
+		body string
+		ok   bool
+	}{
+		{`<?xml version="1.0"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>https://rmhstudios.com/sitemaps/pages.xml</loc></sitemap></sitemapindex>`, true},
+		{`<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`, true},
+		{`<!doctype html><title>Not found</title>`, false},
+	} {
+		if got := tg.MatchesBody([]byte(c.body)); got != c.ok {
+			t.Errorf("MatchesBody(%.40q) = %v, want %v", c.body, got, c.ok)
 		}
 	}
 }

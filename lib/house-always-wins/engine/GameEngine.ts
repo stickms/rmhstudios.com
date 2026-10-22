@@ -56,6 +56,13 @@ export class GameEngine {
   onOpenPoker: () => void = () => {};
 
   private paused = false;
+  /**
+   * While a React overlay owns the screen nothing in the world moves, so the
+   * canvas under it is drawn ONCE and then left alone — it used to be repainted
+   * identically on every vsync for as long as the menu or the poker table stayed
+   * open (2.4× the work on a 144Hz panel for a frame nobody can see change).
+   */
+  private pausedFrameDrawn = false;
 
   constructor(canvas: HTMLCanvasElement, store: StoreAccess) {
     this.canvas = canvas;
@@ -84,6 +91,7 @@ export class GameEngine {
 
   setPaused(v: boolean) {
     this.paused = v;
+    this.pausedFrameDrawn = false;
     if (v) Input.clearHeld();
   }
   isPaused() {
@@ -132,7 +140,10 @@ export class GameEngine {
     this.lastTime = now;
     dt = Math.min(dt, MAX_DT);
     this.update(dt);
-    this.render();
+    if (!this.paused || !this.pausedFrameDrawn) {
+      this.render();
+      this.pausedFrameDrawn = this.paused;
+    }
     Input.endFrame();
     this.rafId = requestAnimationFrame(this.loop);
   };

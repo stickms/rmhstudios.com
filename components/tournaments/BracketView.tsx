@@ -41,6 +41,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
 
   const roundLabel = (round: number, total: number) => {
     if (tournament.format === 'ROUND_ROBIN') return t('matches', { defaultValue: 'Matches' });
+    if (tournament.format === 'SWISS') return t('round-n', { defaultValue: 'Round {{n}}', n: round });
     const fromEnd = total - round;
     if (fromEnd === 0) return t('final', { defaultValue: 'Final' });
     if (fromEnd === 1) return t('semis', { defaultValue: 'Semifinals' });
@@ -66,7 +67,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
       <div className="flex gap-4 min-w-max">
         {rounds.map(([round, matches]) => (
           <div key={round} className="flex flex-col gap-3 min-w-[220px]">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-site-text-dim px-1">
+            <h3 className="site-section-label px-1">
               {roundLabel(round, rounds.length)}
             </h3>
             {matches.map((m) => {

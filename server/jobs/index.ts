@@ -12,13 +12,25 @@
  * optimisation, never a correctness dependency.
  */
 import 'dotenv/config';
+import { installProcessGuards } from '../../lib/perf/process-guards';
+
 import { type Job } from 'pg-boss';
 import { createLogger } from '@/server/shared/logger';
+import { startProcessMetrics } from '../../lib/perf/process-metrics';
+import { registerPrismaPoolGauges, startPerfPublisher } from '../../lib/perf/publish.server';
+import { startOncallChecks } from '../../lib/oncall/checks.server';
+import { startMetricsRollup } from '../../lib/ops/metrics-store.server';
 import { getBoss, PROGRESSION_QUEUE } from '@/lib/jobs/boss.server';
 import { runProgression, type ProgressionJob } from '@/lib/social/engagement-effects.server';
 import { registerEventReminderWorker } from '@/lib/events.server';
 import { registerDigestCron } from '@/lib/digest/pipeline.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
+import { registerArcadeCrons } from '@/lib/arcade/jobs.server';
+import { registerEconomyCrons } from '@/lib/economy/jobs.server';
+import { registerCommunityCrons } from '@/lib/communities/jobs.server';
+import { registerGiftingCrons } from '@/lib/gifting/jobs.server';
+import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expiry.server';
+import { STUDY_BUDDY_QUEUE, registerStudyBuddyCron } from '@/lib/calendar/study-buddy-jobs.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@/lib/slice-it/regen.server';
 import { PF2E_REMINDER_QUEUE, registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
@@ -27,10 +39,30 @@ import {
   SOHUMTRACKER_ALERT_QUEUE,
   registerSohumTrackerAlertCron,
 } from '@/lib/sohumtracker/alerts.server';
+import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
+import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
+import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';
+import {
+  PROFILE_VISIT_SWEEP_QUEUE,
+  registerProfileVisitSweepCron,
+} from '@/lib/profile/visit-sweep.server';
+
+// Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
+installProcessGuards({ service: 'jobs' });
 
 const log = createLogger('jobs');
 
 async function main() {
+  // Process metrics for the admin performance page: sample this worker and publish
+  // a snapshot to Redis every 10 s (best-effort; see lib/perf/publish.server.ts).
+  try {
+    startProcessMetrics({ service: 'jobs' });
+    registerPrismaPoolGauges();
+    startPerfPublisher('jobs');
+  } catch {
+    // Telemetry must not stop the worker from starting.
+  }
+
   const boss = await getBoss(true);
   if (!boss) {
     log.error({
@@ -160,8 +192,119 @@ async function main() {
     });
   }
 
+  try {
+    await registerArcadeCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'arcade.rivals' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'arcade.rivals', err: (e as Error)?.message });
+  }
+
+  // Economy-plus (2026-10-12 batch): community goal deadlines + refunds (C5),
+  // scheduled gift delivery (C7) and the daily wishlist price alerts (C8). These
+  // move coins, so each handler is idempotent and claims its work conditionally.
+  try {
+    await registerEconomyCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'economy' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'economy', err: (e as Error)?.message });
+  }
+
+  // Gifting & events (2026-10-12 batch): daily birthday nudges (G1) and the
+  // exchange draw sweep (G3/F2). Both idempotent.
+  try {
+    await registerGiftingCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'gifting' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'gifting', err: (e as Error)?.message });
+  }
+
+  // Communities-plus (2026-10-12 batch): challenge winners (N5) and the daily
+  // top-contributors rebuild (N7). Both idempotent.
+  try {
+    await registerCommunityCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'communities' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'communities', err: (e as Error)?.message });
+  }
+
+  // P9 — nightly sweep of the profile visitor-counter dedupe ledger (rows older
+  // than two days). Housekeeping only: the counter total is stored on the profile.
+  try {
+    await registerProfileVisitSweepCron(boss);
+    log.info({ event: 'jobs.started', queue: PROFILE_VISIT_SWEEP_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: PROFILE_VISIT_SWEEP_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // M3 — disappearing messages. Expiry is enforced at read time; this sweep only
+  // deletes the rows (and skips any message with an open report).
+  try {
+    await registerChatExpiryCron(boss);
+    log.info({ event: 'jobs.started', queue: CHAT_EXPIRY_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: CHAT_EXPIRY_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // F5 — expire unmatched study-buddy requests and tell their owners.
+  try {
+    await registerStudyBuddyCron(boss);
+    log.info({ event: 'jobs.started', queue: STUDY_BUDDY_QUEUE });
+  } catch (e) {
+    log.error({
+      event: 'jobs.register_failed',
+      queue: STUDY_BUDDY_QUEUE,
+      err: (e as Error)?.message,
+    });
+  }
+
+  // posts-plus (2026-10-12 batch): post expiry sweep + daily auto-delete (X8), the
+  // dead-link rescue check (X11), and the publisher for due scheduled posts and
+  // time capsules (Z7) so they open on time without their author visiting.
+  try {
+    await registerPostsPlusCrons(boss);
+    log.info({ event: 'jobs.started', queue: 'posts-plus' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'posts-plus', err: (e as Error)?.message });
+  }
+
+  // P03 discovery: post-created fan-out (keyword alerts + community watchers), the
+  // daily "On this day" run, and the /today digest snapshot.
+  try {
+    await registerDiscoveryJobs(boss);
+    log.info({ event: 'jobs.started', queue: 'discovery' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'discovery', err: (e as Error)?.message });
+  }
+
+  // P16 D5: "when X then Y" recipes — polled triggers + personal-best events.
+  try {
+    await registerRecipeJobs(boss);
+    log.info({ event: 'jobs.started', queue: 'devplatform.recipes' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'devplatform.recipes', err: (e as Error)?.message });
+  }
+
+  // On-call app alarms (lib/oncall/checks.server.ts): once a minute, read the
+  // fleet's own telemetry and page the watchdog. Also this worker's heartbeat —
+  // if the jobs container dies, the silence pages. No-op until ONCALL_* are set.
+  const stopOncall = startOncallChecks();
+  // One-minute rollups of the fleet's telemetry into ops_metric_minute, for the
+  // /admin/alarms graphs (lib/ops/metrics-store.server.ts). Runs regardless of
+  // on-call being configured.
+  const stopRollup = startMetricsRollup();
+
   const shutdown = async (sig: string) => {
     log.info({ event: 'jobs.stopping', signal: sig });
+    stopOncall();
+    stopRollup();
     try {
       await boss.stop({ graceful: true });
     } catch {

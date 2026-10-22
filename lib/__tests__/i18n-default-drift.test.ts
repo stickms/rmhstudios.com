@@ -1,20 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
-import { CORE_NAMESPACES } from '@/lib/i18n/config';
 
 /**
  * A string's `defaultValue` and its English catalog entry must say the same
- * thing — for every namespace that is NOT bundled with the entry.
+ * thing — for every namespace.
  *
  * ## Why this is a FOUC gate
  *
- * English ships only the core namespaces (`CORE_NAMESPACES`, plus `c-ui`) in
- * the client entry; the rest of the catalog is backfilled after init
- * (`backfillEnRest` in `lib/i18n/instances.ts`), and the server renders with the
- * core set too. So a game or app page renders every non-core string from its
- * `defaultValue` first — on the server and on the client's first render — and
- * re-renders it from `locales/en/<ns>.json` when the backfill lands. Wherever
+ * No English catalog ships in the client entry (until 2026-10-09 the core
+ * namespaces did, ~136 KB minified, the largest thing in it). The whole catalog
+ * is backfilled after `load` + idle (`backfillEn` in `lib/i18n/instances.ts`),
+ * and the server renders without it. So every page renders every English string
+ * from its `defaultValue` first — on the server and on the client's first
+ * render — and re-renders it from `locales/en/<ns>.json` when the backfill lands. Wherever
  * the two differ, the reader watches the text change after it painted, and when
  * the backfill wins the race with hydration React fails to hydrate outright
  * (#418). Measured on `/rmh-capital` ("Latest Perspectives" → "Insights") and
@@ -37,8 +36,6 @@ import { CORE_NAMESPACES } from '@/lib/i18n/config';
  */
 
 const REPO = resolve(dirname(new URL(import.meta.url).pathname), '../..');
-const NON_BUNDLED = (ns: string) =>
-  !(CORE_NAMESPACES as readonly string[]).includes(ns) && ns !== 'c-ui';
 
 const catalogs = new Map<string, Record<string, unknown>>();
 for (const f of readdirSync(join(REPO, 'locales/en'))) {
@@ -113,7 +110,7 @@ interface Call {
   where: string;
   ns: string;
   key: string;
-  dv: string;
+  dv: string | null;
   one: string | null;
   other: string | null;
 }
@@ -142,17 +139,26 @@ function scan(): Call[] {
       if (!fns.size) continue;
       const names = [...fns.keys()].map((k) => k.replace(/[$]/g, '\\$')).join('|');
       const head = new RegExp(`(?<![\\w$.])(${names})\\(\\s*(['"])([^'"]+)\\2\\s*,\\s*\\{`, 'g');
+      // `t('key')` with no options at all: nothing to fall back on.
+      const bareCall = new RegExp(`(?<![\\w$.])(${names})\\(\\s*(['"])([^'"]+)\\2\\s*\\)`, 'g');
+      for (const m of src.matchAll(bareCall)) {
+        let ns = fns.get(m[1])!;
+        let key = m[3];
+        if (key.includes(':')) [ns, key] = key.split(':', 2) as [string, string];
+        if (!catalogs.has(ns)) continue;
+        const line = src.slice(0, m.index).split('\n').length;
+        calls.push({ where: `${full.slice(REPO.length + 1)}:${line}`, ns, key, dv: null, one: null, other: null });
+      }
       for (const m of src.matchAll(head)) {
         const open = (m.index ?? 0) + m[0].length - 1;
         const close = objectEnd(src, open);
         if (close < 0) continue;
         const obj = topLevel(src.slice(open, close + 1));
         const dv = prop(obj, 'defaultValue');
-        if (dv === null) continue;
         let ns = fns.get(m[1])!;
         let key = m[3];
         if (key.includes(':')) [ns, key] = key.split(':', 2) as [string, string];
-        if (!NON_BUNDLED(ns) || !catalogs.has(ns)) continue;
+        if (!catalogs.has(ns)) continue;
         const line = src.slice(0, m.index).split('\n').length;
         calls.push({
           where: `${full.slice(REPO.length + 1)}:${line}`,
@@ -169,8 +175,26 @@ function scan(): Call[] {
   return calls;
 }
 
-describe('i18n: defaults agree with the English catalog (non-bundled namespaces)', () => {
+describe('i18n: defaults agree with the English catalog', () => {
   const calls = scan();
+
+  it('every call carries a literal default', () => {
+    // With no catalog on the critical path a call without one renders its KEY
+    // until the backfill lands (and the server renders the key outright).
+    //
+    // A template-literal default (`Page ${n}`) counts as none: `i18n:extract`
+    // cannot read it, so it writes "" into locales/ — and i18next returns an
+    // empty catalog string as-is (`returnEmptyString`), so the text went BLANK
+    // the moment the catalog loaded. 19 strings in admin, c-library and c-circle
+    // did exactly that until 2026-10-09. Interpolate instead: 'Page {{page}}'.
+    const bare = calls
+      .filter((c) => c.dv === null && c.other === null && c.one === null)
+      .map((c) => `${c.where} ${c.ns}:${c.key}`);
+    expect(
+      bare,
+      "pass a literal defaultValue (or defaultValue_one + defaultValue for plurals); interpolate with '{{name}}', never ${}",
+    ).toEqual([]);
+  });
 
   it('finds the call sites it is meant to check', () => {
     // A scanner that silently matches nothing passes every assertion below.
@@ -181,7 +205,7 @@ describe('i18n: defaults agree with the English catalog (non-bundled namespaces)
     const drift = calls
       .filter((c) => {
         const v = catalogs.get(c.ns)![c.key];
-        return typeof v === 'string' && v !== c.dv;
+        return c.dv !== null && typeof v === 'string' && v !== c.dv;
       })
       .map(
         (c) =>
@@ -193,6 +217,7 @@ describe('i18n: defaults agree with the English catalog (non-bundled namespaces)
   it('every plural call carries the forms its catalog entry has', () => {
     const drift: string[] = [];
     for (const c of calls) {
+      if (c.dv === null && c.other === null && c.one === null) continue; // reported above
       const cat = catalogs.get(c.ns)!;
       if (c.key in cat || typeof cat[`${c.key}_other`] !== 'string') continue;
       const other = cat[`${c.key}_other`] as string;

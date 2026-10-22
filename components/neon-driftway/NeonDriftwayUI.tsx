@@ -1,9 +1,12 @@
 'use client';
 
+import { LiveryEditorButton } from './LiveryEditor';
 import { useCallback, useEffect, useState } from 'react';
+import { parseScoreMoment, ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
+import { GHOST_MODES, type GhostMode, type GhostTrace } from '@/lib/neon-driftway/ghost';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye } from 'lucide-react';
+import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye, Ghost } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { useNavigate } from '@tanstack/react-router';
 import { LEVELS } from '@/lib/neon-driftway/constants';
@@ -41,6 +44,9 @@ export function NeonDriftwayUI({
   canOfferHeadLook,
   headsetDetected,
   onSelectMode,
+  ghostMode,
+  onGhostModeChange,
+  getGhostTrace,
 }: {
   uiState: 'menu' | 'levelSelect' | 'playing' | 'gameOver' | 'levelComplete' | 'multiplayerMenu' | 'lobby' | 'multiplayerPlaying' | 'multiplayerGameOver';
   unlockedLevels: Set<LevelId>;
@@ -51,10 +57,16 @@ export function NeonDriftwayUI({
   onStartLevel: (id: LevelId) => void;
   onContinueEndless: () => void;
   onGoToMultiplayer?: () => void;
+  /** U9 — which ghost solo runs race against. */
+  ghostMode: GhostMode;
+  onGhostModeChange: (mode: GhostMode) => void;
+  /** The run just finished, as a ghost trace (null if too short). */
+  getGhostTrace: () => GhostTrace | null;
 } & VrProps) {
   const { t } = useTranslation("c-neon-driftway");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   const session = useSession();
   const navigate = useNavigate();
 
@@ -78,7 +90,7 @@ export function NeonDriftwayUI({
     setScoreSubmitted(true);
     (async () => {
       try {
-        await fetch('/api/neon-driftway/score', {
+        const res = await fetch('/api/neon-driftway/score', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -89,15 +101,36 @@ export function NeonDriftwayUI({
             level: runStats.level,
           }),
         });
+        const body: unknown = res.ok ? await res.json().catch(() => null) : null;
+        void takeScoreMoment(body);
+        // A new personal best becomes this level's ghost (U9). Only on a best,
+        // so a player stores one trace per level however often they play.
+        const trace = parseScoreMoment(body) ? getGhostTrace() : null;
+        if (trace) {
+          void fetch('/api/replays/ghost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              game: 'neon-driftway',
+              level: trace.level,
+              data: trace,
+              score: Math.round(runStats.score),
+              durationMs: Math.round(runStats.timeSurvivedMs),
+            }),
+          }).catch(() => {});
+        }
         fetchLeaderboard();
       } catch { /* ignore */ }
     })();
-  }, [uiState, runStats, scoreSubmitted, session.data, fetchLeaderboard]);
+  }, [uiState, runStats, scoreSubmitted, session.data, fetchLeaderboard, takeScoreMoment, getGhostTrace]);
 
   // Reset submit flag when starting new game
   useEffect(() => {
-    if (uiState === 'playing') setScoreSubmitted(false);
-  }, [uiState]);
+    if (uiState === 'playing') {
+      setScoreSubmitted(false);
+      clearScoreMoment();
+    }
+  }, [uiState, clearScoreMoment]);
 
   if (uiState === 'playing' || uiState === 'multiplayerPlaying' || uiState === 'multiplayerMenu' || uiState === 'lobby') return null;
 
@@ -211,6 +244,7 @@ export function NeonDriftwayUI({
                   <Play className="w-5 h-5 mr-2" />
                   {t("play", { defaultValue: "Play" })}
                 </Button>
+                <LiveryEditorButton />
                 {onGoToMultiplayer && (
                   <Button
                     onClick={onGoToMultiplayer}
@@ -268,6 +302,20 @@ export function NeonDriftwayUI({
 
           <h2 className="text-2xl sm:text-3xl font-black text-white text-center tracking-tight">{t("select-level", { defaultValue: "SELECT LEVEL" })}</h2>
 
+          <button
+            type="button"
+            onClick={() => onGhostModeChange(GHOST_MODES[(GHOST_MODES.indexOf(ghostMode) + 1) % GHOST_MODES.length])}
+            className="mx-auto flex items-center gap-2 rounded-full border border-zinc-600 bg-zinc-900/80 px-3 py-1.5 text-xs text-zinc-300 transition-colors hover:border-cyan-500 hover:text-white"
+            aria-label={t("ghost-toggle-aria", { defaultValue: "Change race ghost" })}
+          >
+            <Ghost className="h-3.5 w-3.5" aria-hidden />
+            {ghostMode === 'pb'
+              ? t("ghost-mode-pb", { defaultValue: "Ghost: your best" })
+              : ghostMode === 'top'
+                ? t("ghost-mode-top", { defaultValue: "Ghost: world #1" })
+                : t("ghost-mode-off", { defaultValue: "Ghost: off" })}
+          </button>
+
           <div className="grid gap-3">
             {levelIds.map(id => {
               const lvl = LEVELS[id];
@@ -319,6 +367,7 @@ export function NeonDriftwayUI({
 
     return (
       <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
+        <ResultMomentSlot moment={scoreMoment} gameName="Neon Driftway" onDismiss={clearScoreMoment} />
         <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
           <h2 className="text-3xl sm:text-4xl font-black text-red-500 text-center tracking-tight">{t("crashed", { defaultValue: "CRASHED" })}</h2>
 
@@ -412,6 +461,7 @@ export function NeonDriftwayUI({
 
     return (
       <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
+        <ResultMomentSlot moment={scoreMoment} gameName="Neon Driftway" onDismiss={clearScoreMoment} />
         <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
           <h2 className="text-3xl sm:text-4xl font-black text-green-400 text-center tracking-tight">{t("level-complete", { defaultValue: "LEVEL COMPLETE!" })}</h2>
 

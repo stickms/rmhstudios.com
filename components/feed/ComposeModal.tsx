@@ -30,7 +30,7 @@ import {
  MIN_POLL_OPTIONS,
  MAX_POLL_OPTIONS,
  MAX_IMAGE_ALT_LENGTH,
-} from'@/lib/rmhark-schema';
+} from'@/lib/rmhark-limits';
 import { clearComposeDraft, useComposeDraftAutosave } from'@/hooks/useComposeDraft';
 
 const MAX_IMAGES = 4;
@@ -358,7 +358,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  <Button variant="accent"size="sm"disabled={!canSubmit} onClick={handleSubmit}>
  {submitting
- ? t('posting', { defaultValue:'Posting...'})
+ ? t('posting', { defaultValue:'Posting…'})
  : t('post', { defaultValue:'Post'})}
  </Button>
  </div>
@@ -444,7 +444,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  value={poll.question}
  onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
  placeholder={t('poll-question-placeholder', {
- defaultValue:'Ask a question...',
+ defaultValue:'Ask a question…',
  })}
  maxLength={MAX_POLL_QUESTION_LENGTH}
  className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
@@ -462,8 +462,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setPoll((p) => ({ ...p, options: newOptions }));
  }}
  placeholder={t('poll-option-placeholder', {
- count: i + 1,
- defaultValue:'Option {{count}}',
+ index: i + 1,
+ defaultValue:'Option {{index}}',
  })}
  maxLength={MAX_POLL_OPTION_LENGTH}
  className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
@@ -693,7 +693,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  placeholder={t('alt-text-placeholder', {
  defaultValue:'e.g. A golden retriever running on a beach at sunset',
  })}
- className="w-full resize-none rounded-site-sm border border-site-border bg-site-surface p-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
+ className="w-full resize-none rounded-site-sm glass-inset p-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
  />
  <div className="mt-3 flex items-center justify-between">
  <span className="text-xs font-mono text-site-text-dim">

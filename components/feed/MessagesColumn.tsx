@@ -15,6 +15,10 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from'@/components/ui/dialog';
 import { subscribeMessageStream } from'@/lib/useUnreadCount';
 import { toast } from'sonner';
+import { ChatFolderBar } from'@/components/chat-plus/ChatFolderBar';
+import { SavedMessagesRow } from'@/components/chat-plus/SavedMessagesRow';
+import { SavedMessagesLabel } from'@/components/chat-plus/MessageBadges';
+import { AutomatedBadge } from'@/components/feed/AutomatedBadge';
 
 export interface ConversationItem {
  id: string;
@@ -23,6 +27,7 @@ export interface ConversationItem {
  name: string | null;
  image: string | null;
  username: string | null;
+ isBot?: boolean;
  };
  lastMessage: {
  id: string;
@@ -60,6 +65,10 @@ export function MessagesColumn({
  const [markingAll, setMarkingAll] = useState(false);
  const [newChatOpen, setNewChatOpen] = useState(false);
  const [query, setQuery] = useState('');
+ // M1: 'all' | 'unread' | a folder id — filtered server-side.
+ const [folder, setFolder] = useState('all');
+ const folderRef = useRef(folder);
+ folderRef.current = folder;
  const [searchResults, setSearchResults] = useState<ConversationItem[]>([]);
  const [searching, setSearching] = useState(false);
  const sentinelRef = useRef<HTMLDivElement>(null);
@@ -79,6 +88,8 @@ export function MessagesColumn({
  try {
  const params = new URLSearchParams();
  if (cursor && !isInitial) params.set('cursor', cursor);
+ if (folderRef.current === 'unread') params.set('filter', 'unread');
+ else if (folderRef.current !== 'all') params.set('folder', folderRef.current);
  const res = await fetch(`/api/messages?${params}`);
  if (!res.ok) return;
  const data = await res.json();
@@ -118,6 +129,20 @@ export function MessagesColumn({
  setMarkingAll(false);
  }
  }, [markingAll, fetchConversations]);
+
+ // Switching folder tabs refetches page one of that folder's list.
+ const fetchRef = useRef(fetchConversations);
+ fetchRef.current = fetchConversations;
+ const firstFolderRun = useRef(true);
+ useEffect(() => {
+ if (firstFolderRun.current) {
+ firstFolderRun.current = false;
+ return;
+ }
+ setLoading(true);
+ setHasMore(true);
+ void fetchRef.current(true);
+ }, [folder]);
 
  useEffect(() => {
  if (!initialFetched.current && session) {
@@ -257,7 +282,7 @@ export function MessagesColumn({
  </p>
  <Link to="/login"search={{ callbackURL: undefined }}>
  <Button variant="accent"size="sm">
- {t('sign-in', { defaultValue:'Sign In'})}
+ {t('sign-in', { defaultValue:'Sign in'})}
  </Button>
  </Link>
  </div>
@@ -321,7 +346,11 @@ export function MessagesColumn({
  )}
  </button>
  </div>
+ <ChatFolderBar value={folder} onChange={setFolder} />
  </div>
+
+ {/* Saved Messages (M2): pinned above the list. */}
+ {!query.trim() && folder === 'all' && <SavedMessagesRow />}
 
  {/* Search results */}
  {query.trim() ? (
@@ -461,13 +490,18 @@ function ConversationRow({
  <span
  className={`text-sm truncate ${conv.unreadCount > 0 ?'font-bold text-site-text':'font-medium text-site-text'}`}
  >
- {conv.otherUser.name || t('unknown-user', { defaultValue:'Unknown'})}
+ {conv.otherUser.id === currentUserId ? (
+ <SavedMessagesLabel />
+ ) : (
+ conv.otherUser.name || t('unknown-user', { defaultValue:'Unknown'})
+ )}
  </span>
- {conv.otherUser.username && (
+ {conv.otherUser.username && conv.otherUser.id !== currentUserId && (
  <span className="text-xs text-site-text-dim truncate">
  @{conv.otherUser.username}
  </span>
  )}
+ {conv.otherUser.isBot && <AutomatedBadge />}
  </div>
  <div className="flex items-center gap-2 shrink-0">
  {conv.lastMessage && (

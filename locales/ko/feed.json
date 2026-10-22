@@ -89,6 +89,8 @@
   "audience-followers": "팔로워",
   "audience-group-label": "이 게시물을 볼 수 있는 사람",
   "audience-only-me": "나만",
+  "auto-reinvest": "자동 재투자",
+  "auto-reinvest-hint": "이자가 매일 스테이크에 복리로 더해집니다",
   "avatar-alt": "아바타",
   "avatar-change-hint": "클릭하여 아바타 변경 (최대 {{maxMb}}MB)",
   "avatar-size-error": "",

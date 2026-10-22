@@ -66,7 +66,7 @@ function AdminAlbumsPage() {
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || t('album-create-failed', { defaultValue: 'Failed to create album' }));
       toast.success(
-        t('album-created', { title: data.album.title, defaultValue: `Created "${data.album.title}". Now upload media.` }),
+        t('album-created', { title: data.album.title, defaultValue: 'Created "{{title}}". Now upload media.' }),
       );
       // Straight to the manager so the admin can upload all images afterwards.
       navigate({ to: '/admin/albums/$id', params: { id: data.album.id } });

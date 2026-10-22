@@ -64,6 +64,9 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // their own canonicals, so they are listed too. (`/create/earnings` is not:
   // it is one viewer's own dashboard — see EXCLUDED_ROUTES.)
   { loc: '/games', changefreq: 'weekly', priority: 0.9 },
+  { loc: '/daily-mutator', changefreq: 'daily', priority: 0.6 },
+  { loc: '/connections', changefreq: 'daily', priority: 0.5 },
+  { loc: '/rmhbox-packs', changefreq: 'weekly', priority: 0.4 },
   { loc: '/apps', changefreq: 'weekly', priority: 0.9 },
   { loc: '/create', changefreq: 'daily', priority: 0.8 },
   { loc: '/create/builds', changefreq: 'daily', priority: 0.7 },
@@ -72,10 +75,12 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/library', changefreq: 'daily', priority: 0.8 },
   { loc: '/news', changefreq: 'daily', priority: 0.8 },
   { loc: '/communities', changefreq: 'daily', priority: 0.8 },
+  { loc: '/rings', changefreq: 'weekly', priority: 0.4 },
   // `/rmhladder`, `/homes` and `/rmhcode` are apps, so `catalogRoutes()`
   // already emits them — listing them here too would put the same URL in the
   // sitemap twice, which Search Console reports as a warning.
   { loc: '/rmhladder/jobs', changefreq: 'daily', priority: 0.8 },
+  { loc: '/homes/rent-split', changefreq: 'monthly', priority: 0.4 },
 
   // Secondary site surfaces.
   //
@@ -96,9 +101,20 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   { loc: '/groups', changefreq: 'weekly', priority: 0.5 },
   { loc: '/help', changefreq: 'monthly', priority: 0.6 },
   { loc: '/predictions', changefreq: 'daily', priority: 0.5 },
+  // The question of the day and its answers (posts-plus X4): new content daily.
+  { loc: '/qotd', changefreq: 'daily', priority: 0.5 },
+  // P18 delight: public timeline of site eras, and the daily nominated photo.
+  { loc: '/museum', changefreq: 'monthly', priority: 0.4 },
+  // P19 Z5: community pixel canvas (live board, timelapse after the event).
+  { loc: '/canvas', changefreq: 'weekly', priority: 0.4 },
+  { loc: '/photo-of-the-day', changefreq: 'daily', priority: 0.4 },
+  // The generated daily front page (P03 A3): rebuilt once a day from one snapshot row.
+  { loc: '/today', changefreq: 'daily', priority: 0.6 },
   // The Kaikai Debt Counter. `daily` rather than `weekly` despite being a joke:
   // the log grows every time anyone adds a line or scrolls past the frontier,
   // so the page's content genuinely changes faster than most of this list.
+  { loc: '/game-night', changefreq: 'weekly', priority: 0.5 },
+  { loc: '/jams', changefreq: 'daily', priority: 0.5 },
   { loc: '/kaikaidebtcounter', changefreq: 'daily', priority: 0.4 },
   { loc: '/quotes', changefreq: 'weekly', priority: 0.4 },
   { loc: '/ranked', changefreq: 'daily', priority: 0.5 },
@@ -108,12 +124,16 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // a page whose whole value is that today's contents differ from yesterday's.
   { loc: '/schedule', changefreq: 'daily', priority: 0.7 },
   { loc: '/services', changefreq: 'monthly', priority: 0.6 },
+  { loc: '/services/cars', changefreq: 'monthly', priority: 0.4 },
+  { loc: '/services/fashion', changefreq: 'monthly', priority: 0.4 },
   { loc: '/store', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study', changefreq: 'weekly', priority: 0.5 },
   { loc: '/study/browse', changefreq: 'daily', priority: 0.5 },
   { loc: '/tournaments', changefreq: 'daily', priority: 0.5 },
   { loc: '/ventures', changefreq: 'monthly', priority: 0.6 },
   { loc: '/wager', changefreq: 'daily', priority: 0.4 },
+
+  { loc: '/changelog', changefreq: 'weekly', priority: 0.4 },
 
   // Developer platform — the API is a promotable product surface.
   { loc: '/developer', changefreq: 'weekly', priority: 0.6 },
@@ -216,6 +236,9 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/create/earnings': 'personal', // the viewer's own coins, views and payouts
   '/bookmarks': 'redirect', // → /saves
   '/drafts': 'personal',
+  '/connections/new': 'personal', // signed-in authoring form
+  '/out': 'noindex', // link-warning interstitial; the destination rides in ?url=
+  '/safety/pile-on': 'personal', // the author's one-tap notice from a notification
   '/history': 'personal',
   '/alexdebtcounter': 'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
   '/sohumbum2': 'redirect', // → /sohumtracker (renamed; the old link was already shared)
@@ -223,8 +246,11 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/messages': 'personal',
   '/notifications': 'personal',
   '/progress': 'personal',
+  '/reading': 'personal', // highlights, shelves and the reading challenge
   '/recap': 'personal',
   '/saves': 'personal',
+  '/feeds': 'personal', // the viewer's own custom feeds and subscriptions (P03 A4)
+  '/series': 'personal', // the viewer's own series and the ones they follow
   '/share': 'personal',
   '/wallet': 'personal',
   '/trash': 'personal',
@@ -240,12 +266,14 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/rmhladder/alerts': 'personal',
   '/rmhladder/health': 'personal',
   '/rmhladder/pipeline': 'personal',
+  '/rmhladder/referrals': 'personal',
   '/rmhladder/resume': 'personal',
   '/rmhladder/review': 'personal',
   '/rmhladder/settings': 'personal',
   '/settings': 'personal',
   '/settings/account-status': 'personal',
   '/settings/appearance': 'personal',
+  '/settings/calendar': 'personal',
   '/settings/circle': 'personal',
   '/settings/content': 'personal',
   '/settings/layout': 'personal',
@@ -256,7 +284,16 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/settings/themes': 'personal',
   '/studio/themes': 'redirect', // → /settings/themes
   '/user-builds/manage': 'personal',
+  // P09 calendar: private scheduling tools, each page carries a `noindex` meta tag.
+  '/hunt': 'noindex', // P18 Z2: per-member hunt progress
+  '/translate': 'noindex', // P18 Y4: signed-in contribution tool
+  '/advent': 'noindex', // the viewer's own doors (P11 G2)
+  '/marathon': 'noindex', // P21 F15: a member's own watch lists
+  '/exchange': 'noindex', // gift and mixtape exchanges: the viewer's own list and the new-exchange form
+  '/when': 'noindex', // availability polls: a member's own list and the new-poll form
+  '/office-hours': 'noindex', // a member's own office-hours settings and bookings
   '/user-builds/submit': 'auth-gated',
+  '/rmhstudy/planner': 'auth-gated', // P21 F4: exam planner
   '/v/new': 'auth-gated',
   '/login': 'noindex',
   '/rmhcode/auth': 'auth-gated',
@@ -268,17 +305,30 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // ── admin ──
   '/admin': 'admin',
   '/admin/albums': 'admin',
+  '/admin/reading': 'admin',
   '/admin/analytics': 'admin',
+  '/admin/performance': 'admin',
+  '/admin/deepseek': 'admin',
+  '/admin/alarms': 'admin',
   '/admin/announcements': 'admin',
+  '/admin/insights': 'admin',
   '/admin/appeals': 'admin',
   '/admin/audit': 'admin',
+  '/admin/safety': 'admin',
   '/admin/blog': 'admin',
   '/admin/blog/new': 'admin',
   '/admin/economy': 'admin',
+  '/admin/delight': 'admin',
+  '/admin/bots': 'admin',
+  '/admin/canvas': 'admin', // P19 Z5/X3
+  '/admin/studio-challenges': 'admin', // P23 F12
   '/admin/library': 'admin',
+  '/admin/patch-notes': 'admin',
+  '/admin/release-notes': 'admin',
   '/admin/library-quota': 'redirect', // → /admin/library?tab=appeals
   '/admin/library-storage': 'redirect', // → /admin/library?tab=storage
   '/admin/predictions': 'admin',
+  '/admin/qotd': 'admin',
   '/admin/redemptions': 'admin',
   '/admin/reports': 'admin',
   '/admin/rideshare': 'admin',
@@ -331,6 +381,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // visitor had no way to reach, competing with `/design` (the actual public
   // write-up) for the same queries. It is tooling; developers reach it by URL.
   '/liquid-glass': 'noindex',
+  // The globe-eversion harness (T26): internal tooling, admin-only, noindex.
+  '/eversion-lab': 'admin',
   '/rmh-internal-affairs': 'noindex', // internal microsite
   '/secret': 'noindex', // easter eggs — indexing them defeats the point
   // One tabletop group's scheduling board. Unlisted rather than permissioned:
@@ -427,6 +479,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/personas/$id': 'community',
   '/study/$deckId': 'community',
   '/tournaments/$id': 'community',
+  '/jams/$slug': 'community',
   '/homes/listing/$id': 'homes',
   '/rmhladder/jobs/$jobId': 'jobs',
 
@@ -441,6 +494,14 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   // C1 — the chart editor. Auth-gated, and a chart's public surface is
   // `/games/slice-it` and the song's page, not its editing view.
   '/slice-it/edit/$songId': null,
+  // Member-run webrings: no sitemap shard enumerates them yet.
+  '/rings/$slug': null,
+  // P09 calendar: a poll is a private link between the people it was sent to, and an
+  // office-hours page is a booking form — both `noindex`.
+  '/marathon/$shareId': null, // P21 F15: a shared watch list, noindex
+  '/exchange/$id': null, // an exchange is a private link between its members, noindex
+  '/when/$id': null,
+  '/office-hours/$userId': null,
 
   // Dynamic and deliberately unlisted.
   '/deeplink/$page': null, // sub-pages of the raw-HTML Deeplink microsite
@@ -452,6 +513,8 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/profile/$id': null, // legacy alias of `/u/$userid`
   '/store/$userid': null, // mirrors the profile; would duplicate it
   '/thread/$rootId': null, // canonicalised to `/u/{handle}/post/{id}`
+  '/feeds/$id': null, // a member-defined feed; `noindex, follow`, reached from /feeds
+  '/series/$id': null, // one author's post series; `noindex, follow`, reached from the posts that belong to it
   '/sohumbum2/$date': null, // redirects to `/sohumtracker/{date}`
   // One day of the activity dossier. Unbounded (a new one every day) and
   // `noindex` like its parent — it exists to be pasted into a chat, where the
@@ -463,10 +526,13 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/tag/$tag': null, // unbounded tag space; crawlable via posts, not listed
   '/groups/$id': null, // membership-scoped
   '/spaces/$id': null, // live audio room, gone when it ends
+  '/controller/$code': null, // a phone pad paired to one live game screen
+  '/connections/u/$id': null, // member-made grids: unbounded user content, reached from /connections
   '/wager/$id': null, // settles and becomes stale within a day
   '/lists/$id': null, // personal
   '/messages/$conversationId': null, // personal
   '/admin/albums/$id': null,
+  '/news/stories/$slug': null, // curated story timelines, linked from each member article
   '/admin/blog/$slug/edit': null,
   '/altair/multiplayer/$lobbyId': null, // ephemeral lobby
   '/rmhbox/$lobbyId': null,

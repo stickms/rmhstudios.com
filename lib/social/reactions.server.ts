@@ -1,6 +1,8 @@
 // lib/social/reactions.server.ts
 import { prisma } from '@/lib/prisma.server';
 import type { ReactionRow, ReactionSummary } from '@/lib/social/reactions';
+import { isStarEmoji } from '@/lib/communities/plus';
+import { recordStarToggle } from '@/lib/communities/starboard.server';
 
 interface ToggleResult {
   found: boolean;
@@ -25,7 +27,7 @@ export async function togglePostReaction(
   const [post, existing] = await Promise.all([
     prisma.rMHark.findUnique({
       where: { id: postId },
-      select: { id: true, deletedAt: true },
+      select: { id: true, deletedAt: true, communityId: true, userId: true },
     }),
     prisma.rMHarkReaction.findUnique({
       where: { rmheetId_userId_emoji: { rmheetId: postId, userId, emoji } },
@@ -36,6 +38,17 @@ export async function togglePostReaction(
     await prisma.rMHarkReaction.delete({ where: { id: existing.id } });
   } else {
     await prisma.rMHarkReaction.create({ data: { rmheetId: postId, userId, emoji } });
+  }
+
+  // N2 starboard: a ⭐ in a community post is one indexed upsert, never a scan.
+  if (post.communityId && isStarEmoji(emoji)) {
+    await recordStarToggle({
+      postId,
+      communityId: post.communityId,
+      authorId: post.userId,
+      reactorId: userId,
+      reacted: !existing,
+    }).catch((e) => console.error('starboard error:', e));
   }
 
   // Bounded read — mirror lib/feed/timeline.ts loadReactionSummaries: a

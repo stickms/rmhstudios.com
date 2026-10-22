@@ -13,7 +13,7 @@
 
 import React from 'react';
 import satori from 'satori';
-import { Resvg } from '@resvg/resvg-js';
+import { dedupeOgRender, svgToPng } from './render.server';
 import {
   INK,
   MUTED,
@@ -56,7 +56,7 @@ export interface PostStoryData {
   authorImage: string | null;
 }
 
-export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer> {
+async function renderPostStoryImageUncached(data: PostStoryData): Promise<Buffer> {
   const cacheKey = data.id;
   const cached = pngCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < PNG_TTL) return cached.png;
@@ -122,8 +122,7 @@ export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer>
   });
 
   const svg = await satori(element, { ...STORY, fonts: satoriFonts() });
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: STORY.width } });
-  const png = Buffer.from(resvg.render().asPng());
+  const png = await svgToPng(svg, STORY.width);
 
   if (pngCache.size >= PNG_MAX) {
     const oldest = pngCache.keys().next().value;
@@ -131,4 +130,9 @@ export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer>
   }
   pngCache.set(cacheKey, { png, ts: Date.now() });
   return png;
+}
+
+// perf: in-flight dedupe - concurrent requests for one card share a single render.
+export function renderPostStoryImage(data: PostStoryData): Promise<Buffer> {
+  return dedupeOgRender(`story:${data.id}`, () => renderPostStoryImageUncached(data));
 }

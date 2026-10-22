@@ -152,7 +152,7 @@ function QuoteCard({ quote, index }: { quote: (typeof quotes)[number]; index: nu
   return (
     <div className="group relative pl-8 border-l-2 border-site-border hover:border-site-accent transition-colors duration-site-slow py-6">
       {/* Quote number badge */}
-      <div className="absolute -left-3 top-6 w-6 h-6 rounded-full bg-site-surface border border-site-border flex items-center justify-center group-hover:bg-site-accent/10 group-hover:border-site-accent transition-colors duration-site-slow">
+      <div className="absolute -left-3 top-6 w-6 h-6 rounded-full glass-fill flex items-center justify-center group-hover:bg-site-accent/10 group-hover:border-site-accent transition-colors duration-site-slow">
         <span className="text-xs font-mono text-site-text-muted group-hover:text-site-accent transition-colors duration-site-slow">
           {index + 1}
         </span>
@@ -185,7 +185,7 @@ function QuoteCard({ quote, index }: { quote: (typeof quotes)[number]; index: nu
           </svg>
           {quote.context}
         </span>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-site-surface border border-site-border text-xs font-medium text-site-text-muted">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full glass-fill text-xs font-medium text-site-text-muted">
           {quote.category}
         </span>
       </div>
@@ -200,7 +200,7 @@ function QuotesPage() {
       <div className="px-4 pt-4 pb-12 max-w-2xl mx-auto">
         {/* Hero section */}
         <Reveal className="text-center mb-12">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-site bg-site-surface border border-site-border flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-site glass-fill flex items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="36"
@@ -232,7 +232,7 @@ function QuotesPage() {
           {categories.map((cat) => (
             <span
               key={cat}
-              className="inline-flex items-center px-3 py-1 rounded-full bg-site-surface border border-site-border text-xs font-medium text-site-text-muted hover:text-site-accent hover:border-site-accent/50 transition-colors duration-site cursor-default"
+              className="inline-flex items-center px-3 py-1 rounded-full glass-fill text-xs font-medium text-site-text-muted hover:text-site-accent hover:border-site-accent/50 transition-colors duration-site cursor-default"
             >
               {cat}
             </span>

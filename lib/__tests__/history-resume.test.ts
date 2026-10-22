@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  shouldResume,
-  progressRatio,
-  historyBeatSchema,
-  RESUME_MIN_SECONDS,
-} from '@/lib/history/constants';
+import { shouldResume, progressRatio, RESUME_MIN_SECONDS } from '@/lib/history/constants';
+import { historyBeatSchema } from '@/lib/history/schema';
 
 describe('shouldResume', () => {
   it('does not resume when not meaningfully in', () => {

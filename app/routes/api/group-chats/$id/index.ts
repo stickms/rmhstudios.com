@@ -3,6 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
+import { liveMessages } from '@/lib/chat-plus/expiry.server';
 
 /** GET /api/group-chats/$id — group detail + messages (members only). */
 export const Route = createFileRoute('/api/group-chats/$id/')({
@@ -25,6 +26,10 @@ export const Route = createFileRoute('/api/group-chats/$id/')({
             ownerId: true,
             members: { select: { user: { select: userDisplaySelect } } },
             messages: {
+              // Side-thread replies (M7) and expired disappearing messages (M3)
+              // are not part of the main stream. `take` on an ascending order
+              // keeps the pre-existing behaviour of the first 200.
+              where: { threadParentId: null, AND: [liveMessages()] },
               orderBy: { createdAt: 'asc' },
               take: 200,
               select: groupMessageSelect,

@@ -61,6 +61,7 @@ export function Garments({ matchRef, quality }: Props) {
           quality={quality}
           timeRef={timeRef}
           heldRef={heldRef}
+          matchRef={matchRef}
         />
       ))}
     </>

@@ -83,14 +83,9 @@ const MAX_TILT = 15; // deg of rake at the edges of the focus band
  * at the band edge, against the 0.84 the two terms used to reach together.
  */
 const EDGE_Z = 150;
-const FADE_START = 0.62; // |t| where cards begin to dim
+/** Opacity of a card at the far edge of its tilt — the same 0.8 as the keyframes. */
+const EDGE_OPACITY = 0.8;
 const VISIBLE = 2.2; // |t| beyond which a card is off the focus band (flat, no layer)
-/**
- * Floor on a raked card's opacity. The fade used to bottom out around 0.18,
- * which is not "de-emphasised", it is unreadable — and any capture taken while
- * a card sat there (a programmatic scroll, a print) kept it as a ghost.
- */
-const MIN_OPACITY = 0.4;
 
 /** First index whose value is >= `target`, in a sorted array. */
 function lowerBound(values: number[], target: number): number {
@@ -134,6 +129,7 @@ export function RadialWheel({
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const slotsRef = useRef<HTMLElement[]>([]);
   const centersRef = useRef<number[]>([]);
+  const heightsRef = useRef<number[]>([]);
   const rafRef = useRef<number | null>(null);
   /**
    * The slot currently holding the focus line, for the haptic tick. Outlives the
@@ -166,10 +162,9 @@ export function RadialWheel({
     slotsRef.current = els;
     for (const el of els) el.style.transform = '';
     const scrollY = window.scrollY;
-    centersRef.current = els.map((el) => {
-      const r = el.getBoundingClientRect();
-      return r.top + scrollY + r.height / 2;
-    });
+    const rects = els.map((el) => el.getBoundingClientRect());
+    centersRef.current = rects.map((r) => r.top + scrollY + r.height / 2);
+    heightsRef.current = rects.map((r) => r.height);
     // The rake's bookkeeping describes the OLD element list, and the transforms
     // it was tracking have just been cleared above — so both are reset here or
     // the next pass would skip a write believing it had already made it.
@@ -204,7 +199,10 @@ export function RadialWheel({
     const viewCenter = window.scrollY + half;
     const els = slotsRef.current;
     const centers = centersRef.current;
+    const heights = heightsRef.current;
     const state = stateRef.current;
+    const viewTop = window.scrollY;
+    const viewBottom = viewTop + half * 2;
 
     /** Flatten a card that has left the band (or is leaving because of `reduced`). */
     const flatten = (i: number) => {
@@ -236,19 +234,25 @@ export function RadialWheel({
     for (let i = lo; i <= hi; i++) {
       const el = els[i];
       if (!el) continue;
-      const dy = centers[i] - viewCenter;
-      const t = dy / half;
-      const at = Math.abs(t);
-      if (at > VISIBLE) {
+      // Edge-only, matching the `radial-wheel-rake-in/-out` keyframes: a card
+      // tilts by the fraction of it that is off screen — coming in at the bottom
+      // or leaving at the top — and is flat (no transform, no layer) while it is
+      // fully in view. The old pass tilted every card in proportion to its
+      // distance from the centre, so every card on screen was a 3D layer
+      // re-composited each scroll frame (see the note in radial.css).
+      const h = heights[i] || 1;
+      const top = centers[i] - h / 2;
+      const bottom = top + h;
+      const below = Math.min(1, Math.max(0, (bottom - viewBottom) / h)); // entering
+      const above = Math.min(1, Math.max(0, (viewTop - top) / h)); // leaving
+      const off = Math.max(below, above);
+      if (off === 0 || off === 1) {
         flatten(i);
         continue;
       }
-      const rot = Math.max(-MAX_TILT, Math.min(MAX_TILT, -t * MAX_TILT));
-      const tz = -Math.min(at, 1) * EDGE_Z;
-      const op = Math.max(
-        MIN_OPACITY,
-        1 - Math.min(1, Math.max(0, at - FADE_START) / (VISIBLE - FADE_START)) * 0.82,
-      );
+      const rot = (above > below ? 1 : -1) * off * MAX_TILT;
+      const tz = -off * EDGE_Z;
+      const op = 1 - off * (1 - EDGE_OPACITY);
       // `will-change` on entry only — a layer that is created and thrown away
       // every frame is worse than no layer at all.
       if (!state[i]) {
@@ -257,7 +261,7 @@ export function RadialWheel({
       }
       // Per-card perspective() (rather than perspective on a container) keeps the
       // projection self-contained across browsers. Kept byte-identical in shape
-      // to the `radial-wheel-rake` keyframes in radial.css, so the two paths
+      // to the `radial-wheel-rake-in/-out` keyframes in radial.css, so the two paths
       // cannot drift into drawing subtly different cylinders.
       const transform = `perspective(1500px) translateZ(${tz.toFixed(1)}px) rotateX(${rot.toFixed(2)}deg)`;
       if (transform !== el.style.transform) el.style.transform = transform;

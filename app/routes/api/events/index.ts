@@ -3,8 +3,9 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { httpUrl } from '@/lib/url-safety';
+import { httpUrl } from '@/lib/url-schema';
 import { createEvent, listEvents, EventError, type EventScope } from '@/lib/events.server';
+import { eventRecurrenceSchema } from '@/lib/calendar/schema';
 
 const venueKindSchema = z.enum(['SPACE', 'TOURNAMENT', 'GAME', 'URL', 'IRL']);
 
@@ -18,6 +19,7 @@ const createSchema = z
     venueKind: venueKindSchema,
     venueRef: z.string().trim().max(191).optional(),
     capacity: z.coerce.number().int().min(1).max(1_000_000).optional(),
+    recurrence: eventRecurrenceSchema.optional(),
   })
   .superRefine((d, ctx) => {
     if (d.endsAt && d.endsAt <= d.startsAt) {
@@ -47,6 +49,8 @@ function mapEventError(err: EventError): [string, number] {
       return ['This event is full', 409];
     case 'CANCELED':
       return ['This event was canceled', 409];
+    case 'INVALID_RECURRENCE':
+      return ['Invalid repeat settings', 400];
     default:
       return ['Could not save event', 400];
   }
@@ -105,6 +109,7 @@ export const Route = createFileRoute('/api/events/')({
             venueKind: parsed.data.venueKind,
             venueRef: parsed.data.venueRef ?? null,
             capacity: parsed.data.capacity ?? null,
+            recurrence: parsed.data.recurrence ?? null,
           });
           return Response.json({ event }, { status: 201 });
         } catch (error) {

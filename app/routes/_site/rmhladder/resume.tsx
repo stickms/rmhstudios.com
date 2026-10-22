@@ -134,7 +134,7 @@ function ResumePage() {
       </Card>
 
       {resumes.length === 0 ? (
-        <div className="rounded-site border border-site-border bg-site-surface p-8 text-center text-site-text-muted">
+        <div className="rounded-site glass-fill p-8 text-center text-site-text-muted">
           {t('ladder.resume.empty', { defaultValue: 'No resumes yet. Upload one to get a private review and role matches.' })}
         </div>
       ) : resumes.map((resume) => {

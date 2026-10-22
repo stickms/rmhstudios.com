@@ -14,6 +14,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
 import type { HydratedSave, SaveFolderView } from '@/lib/saves/types';
+import { RemindersList } from '@/components/reminders/RemindersList';
+import { SaveNoteEditor } from '@/components/posts-plus/SaveNoteEditor';
+import { SaveNoteSearch } from '@/components/posts-plus/SaveNoteSearch';
 
 interface HubData {
   items: HydratedSave[];
@@ -22,6 +25,9 @@ interface HubData {
 }
 
 type FolderFilter = 'all' | 'default' | string;
+
+/** Not a folder: the pending-reminders view (U7). Folder ids are cuids, so this can't collide. */
+const REMINDERS = '__reminders';
 
 export function SavesHub({ initial }: { initial: HubData }) {
   const { t } = useTranslation('c-saves');
@@ -32,6 +38,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
+  const [q, setQ] = useState(''); // X9: search the owner's private notes
 
   const load = useCallback(
     async (f: FolderFilter, append = false, cur?: string | null) => {
@@ -40,6 +47,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
         const params = new URLSearchParams();
         if (f !== 'all') params.set('folder', f);
         if (append && cur) params.set('cursor', cur);
+        if (q.trim()) params.set('q', q.trim());
         const res = await fetch(`/api/saves?${params.toString()}`);
         if (!res.ok) throw new Error('load failed');
         const data = (await res.json()) as HubData;
@@ -52,7 +60,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
         setLoading(false);
       }
     },
-    [t],
+    [t, q],
   );
 
   // Refetch when the active folder changes (skip the first render — SSR data).
@@ -62,9 +70,12 @@ export function SavesHub({ initial }: { initial: HubData }) {
       setMounted(true);
       return;
     }
-    void load(filter);
+    if (filter === REMINDERS) return;
+    // Typing in the notes search waits for a pause; a folder change loads at once.
+    const id = window.setTimeout(() => void load(filter), q ? 300 : 0);
+    return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter, q]);
 
   async function createFolder() {
     const name = newName.trim();
@@ -128,6 +139,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
         {chip('all', t('all', { defaultValue: 'All' }))}
         {chip('default', t('unfiled', { defaultValue: 'Saved' }))}
         {folders.map((f) => chip(f.id, f.name, f.count))}
+        {chip(REMINDERS, t('reminders', { defaultValue: 'Reminders' }))}
         {creating ? (
           <span className="flex shrink-0 items-center gap-1">
             <Input
@@ -157,7 +169,11 @@ export function SavesHub({ initial }: { initial: HubData }) {
         )}
       </HorizontalScroller>
 
-      {items.length === 0 && !loading ? (
+      {filter !== REMINDERS && <SaveNoteSearch value={q} onChange={setQ} />}
+
+      {filter === REMINDERS ? (
+        <RemindersList />
+      ) : items.length === 0 && !loading ? (
         <EmptyState
           icon={Bookmark}
           title={t('empty-title', { defaultValue: 'Nothing saved here yet' })}
@@ -175,7 +191,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
         </ul>
       )}
 
-      {cursor ? (
+      {filter === REMINDERS ? null : cursor ? (
         <div className="mt-4 flex justify-center">
           <Button variant="outline" onClick={() => load(filter, true, cursor)} loading={loading}>
             {t('load-more', { defaultValue: 'Load more' })}
@@ -235,6 +251,7 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
   );
 
   return (
+    <>
     <Card interactive className="flex-row items-center gap-3 px-4 py-3">
       {save.href ? (
         <a href={save.href} className="flex min-w-0 flex-1 items-center gap-3">
@@ -251,5 +268,9 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
         label={t('remove', { defaultValue: 'Remove' })}
       />
     </Card>
+    <div className="px-3 pb-1">
+      <SaveNoteEditor entityType={save.entityType} entityId={save.entityId} initial={save.note} />
+    </div>
+    </>
   );
 }

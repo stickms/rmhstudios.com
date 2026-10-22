@@ -15,6 +15,7 @@
  */
 
 import { PHYSICS } from '../constants';
+import { MODIFIER_TUNING, type PartyModifiers } from '../modifiers';
 
 export const RETUNED = {
   /**
@@ -198,3 +199,30 @@ export const DT2 = P.FIXED_DT_MS * P.FIXED_DT_MS;
  */
 export const GRAVITY_SCALE = 0.001;
 export const GRAVITY_STEP = P.GRAVITY_Y * GRAVITY_SCALE * DT2;
+
+const BASE_P: Readonly<Record<string, number>> = { ...(P as unknown as Record<string, number>) };
+
+/**
+ * Party modifiers (unranked rooms only): rewrite the live `P` table from its
+ * pristine copy. Call with nothing to restore. Every reader of `P` follows,
+ * including the gravity feed-forward on arms, so low gravity does not float
+ * the arms away.
+ */
+export function applyPartyModifiers(m?: PartyModifiers | null): void {
+  const live = P as unknown as Record<string, number>;
+  Object.assign(live, BASE_P);
+  if (!m) return;
+  if (m.lowGravity) live.GRAVITY_Y = BASE_P.GRAVITY_Y * MODIFIER_TUNING.LOW_GRAVITY;
+  if (m.stickyHands) live.GRIP_BREAK_FORCE = BASE_P.GRIP_BREAK_FORCE * MODIFIER_TUNING.STICKY_GRIP;
+  if (m.giantHeads) {
+    const k = MODIFIER_TUNING.GIANT_HEAD;
+    live.HEAD_RADIUS = BASE_P.HEAD_RADIUS * k;
+    live.SHOULDER_OFFSET_X = BASE_P.SHOULDER_OFFSET_X * k;
+    live.SHOULDER_OFFSET_Y = BASE_P.SHOULDER_OFFSET_Y * k;
+  }
+}
+
+/** How much larger than authored the head is drawn right now (1 unless giant heads). */
+export function headDrawScale(): number {
+  return P.HEAD_RADIUS / BASE_P.HEAD_RADIUS;
+}

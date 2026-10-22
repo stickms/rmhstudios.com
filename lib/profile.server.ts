@@ -7,7 +7,10 @@ import { getEquippedCosmetics } from '@/lib/shop/equipped.server';
 import { profileLinkSchema, type ProfileLink } from '@/lib/profile-schema';
 import { getMembershipStatus } from '@/lib/memberships.server';
 import { resolveStatus, type UserStatus } from '@/lib/profile/status';
-import { parseLayout, type ProfileModule } from '@/lib/profile/modules';
+import { parseLayout, type ProfileModule } from '@/lib/profile/modules-schema';
+import { pronunciationUrl } from '@/lib/profile/plus';
+import { isBirthdayOn } from '@/lib/gifting/birthday';
+import { filterOnlineUsers } from '@/lib/hot-counters.server';
 
 /**
  * Coerce the JSON `links` column into a validated ProfileLink[]. Defends the
@@ -34,6 +37,7 @@ const profileSelect = {
   isBot: true,
   createdAt: true,
   lastSeenAt: true,
+  birthday: { select: { month: true, day: true } },
   profile: {
     select: {
       displayName: true,
@@ -44,6 +48,7 @@ const profileSelect = {
       website: true,
       links: true,
       showLikes: true,
+      guestbookMode: true,
       dmPrivacy: true,
       profileSongSpotifyId: true,
       profileSongTitle: true,
@@ -67,6 +72,9 @@ const profileSelect = {
   postCount: true,
   // Profile v2 (§12): the showcase module layout (empty = classic profile).
   profileLayout: { select: { modules: true } },
+  // P05: three small scalars for the header (pronouns, opt-in timezone, and the
+  // pronunciation clip's URL). Everything else those features show loads lazily.
+  profilePlus: { select: { pronouns: true, timezone: true, pronunciationKey: true } },
 } as const;
 
 export interface ProfilePayload {
@@ -94,6 +102,10 @@ export interface ProfilePayload {
   links: ProfileLink[];
   bannerUrl: string | null;
   showLikes: boolean;
+  /** Plan U15 — 'off' | 'following' | 'everyone'. */
+  guestbookMode: string;
+  /** G1 — true only on the owner's opted-in birthday (UTC). */
+  birthdayToday: boolean;
   dmPrivacy: string;
   profileSongSpotifyId: string | null;
   profileSongTitle: string | null;
@@ -102,6 +114,12 @@ export interface ProfilePayload {
   profileSongAlbumArt: string | null;
   status: UserStatus | null;
   modules: ProfileModule[];
+  /** P3 — optional pronouns, shown in the header. */
+  pronouns: string | null;
+  /** P4 — opt-in IANA zone; the local time is computed client-side. */
+  timezone: string | null;
+  /** P3 — playback URL of the <=5 s name-pronunciation clip, if recorded. */
+  pronunciationUrl: string | null;
   coins: number;
   followerCount: number;
   followingCount: number;
@@ -185,7 +203,7 @@ export async function getProfile(
   monthStart.setUTCDate(1);
   monthStart.setUTCHours(0, 0, 0, 0);
   const wantsTipGoal = !!user.profile?.tipGoal && user.profile.tipGoal > 0;
-  const [cosmetics, tipAgg, membership] = await Promise.all([
+  const [cosmetics, tipAgg, membership, onlineIds] = await Promise.all([
     getEquippedCosmetics(user.id),
     wantsTipGoal
       ? prisma.coinTransaction.aggregate({
@@ -199,10 +217,16 @@ export async function getProfile(
         })
       : Promise.resolve(null),
     getMembershipStatus(user.id, user.profile?.membershipPriceCoins ?? null, viewerId),
+    // The Redis presence set is written on every heartbeat; `lastSeenAt` only
+    // reaches Postgres ~every 5 min, so on its own it under-reports who is online.
+    filterOnlineUsers([user.id]).catch(() => null),
   ]);
-  const tipsThisMonth = tipAgg?._sum.amount ?? 0;
+  const tipsThisMonth = Number(tipAgg?._sum.amount ?? 0);
 
-  const isOnline = !!user.lastSeenAt && Date.now() - user.lastSeenAt.getTime() < 2 * 60 * 1000;
+  const isOnline =
+    onlineIds !== null
+      ? onlineIds.includes(user.id)
+      : !!user.lastSeenAt && Date.now() - user.lastSeenAt.getTime() < 2 * 60 * 1000;
 
   return {
     cosmetics,
@@ -228,6 +252,8 @@ export async function getProfile(
     links: parseProfileLinks(user.profile?.links),
     bannerUrl: user.profile?.bannerUrl ?? null,
     showLikes: user.profile?.showLikes ?? false,
+    guestbookMode: user.profile?.guestbookMode ?? 'off',
+    birthdayToday: !!user.birthday && isBirthdayOn(user.birthday.month, user.birthday.day, new Date()),
     dmPrivacy: user.profile?.dmPrivacy ?? 'EVERYONE',
     profileSongSpotifyId: user.profile?.profileSongSpotifyId ?? null,
     profileSongTitle: user.profile?.profileSongTitle ?? null,
@@ -236,7 +262,10 @@ export async function getProfile(
     profileSongAlbumArt: user.profile?.profileSongAlbumArt ?? null,
     status: resolveStatus(user.profile),
     modules: parseLayout(user.profileLayout?.modules),
-    coins: user.profile?.coins ?? 10,
+    pronouns: user.profilePlus?.pronouns ?? null,
+    timezone: user.profilePlus?.timezone ?? null,
+    pronunciationUrl: pronunciationUrl(user.id, user.profilePlus?.pronunciationKey),
+    coins: Number(user.profile?.coins ?? 10),
     followerCount: user.followerCount,
     followingCount: user.followingCount,
     rmharkCount: user.postCount,

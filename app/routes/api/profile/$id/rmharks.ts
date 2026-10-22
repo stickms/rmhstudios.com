@@ -1,19 +1,23 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { audienceWhere } from '@/lib/feed/audience.server';
 import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
+import { isExpired } from '@/lib/posts-plus/constants';
 
 function pollInclude(userId: string | null) {
   return {
     include: {
       options: {
         orderBy: { position: 'asc' as const },
-        include: {
-          _count: { select: { votes: true } },
+        select: {
+          id: true,
+          text: true,
+          // perf: denormalized tally (maintained by the vote route) instead of a
+          // correlated COUNT per option.
+          voteCount: true,
           ...(userId ? { votes: { where: { userId }, select: { id: true, optionId: true } } } : {}),
         },
       },
@@ -23,7 +27,7 @@ function pollInclude(userId: string | null) {
 
 function mapPoll(poll: any): FeedPoll | undefined {
   if (!poll) return undefined;
-  const totalVotes = poll.options.reduce((sum: number, o: any) => sum + (o._count?.votes ?? 0), 0);
+  const totalVotes = poll.options.reduce((sum: number, o: any) => sum + (o.voteCount ?? 0), 0);
   return {
     id: poll.id,
     question: poll.question,
@@ -33,7 +37,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
     options: poll.options.map((o: any) => ({
       id: o.id,
       text: o.text,
-      voteCount: o._count?.votes ?? 0,
+      voteCount: o.voteCount ?? 0,
     })),
     myVotes: poll.options.filter((o: any) => o.votes?.length > 0).map((o: any) => o.id),
   };
@@ -101,7 +105,7 @@ function mapOriginal(
 export const Route = createFileRoute('/api/profile/$id/rmharks')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ request, params, userId: viewerId }) => {
         const { id: idOrHandle } = params;
         const resolvedUser = await prisma.user.findUnique({
           where: { handle: idOrHandle },
@@ -111,15 +115,6 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
         const { searchParams } = new URL(request.url);
         const cursor = searchParams.get('cursor');
         const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
-
-        // Get viewer session (optional, for liked/reposted status)
-        let viewerId: string | null = null;
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          viewerId = session?.user?.id ?? null;
-        } catch {
-          // Not logged in
-        }
 
         const cursorDate = cursor ? new Date(cursor) : undefined;
 
@@ -134,7 +129,9 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
         const aud = audienceWhere(viewerId, viewerFollowsOwner ? [userId] : []);
 
         // Fetch user's own RMHarks and their reposts in parallel (exclude deleted)
-        const [rmharks, reposts] = await Promise.all([
+        // perf: the pinned post (first page only) rides in the same parallel batch
+        // instead of a serial query after the merge.
+        const [rmharksRaw, repostsRaw, pinned] = await Promise.all([
           prisma.rMHark.findMany({
             where: {
               userId,
@@ -161,12 +158,27 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
               },
             },
           }),
+          cursorDate
+            ? Promise.resolve(null)
+            : prisma.rMHark.findFirst({
+                where: { userId, deletedAt: null, pinnedAt: { not: null }, ...aud },
+                include: rmharkInclude(viewerId),
+              }),
         ]);
+
+        // posts-plus X8: posts past their TTL are hidden at read time (the sweep
+        // job soft-deletes them within minutes; this closes the gap).
+        const rmharks = rmharksRaw.filter((r) => !isExpired(r.expiresAt));
+        const reposts = repostsRaw.filter((rp) => !isExpired(rp.rmhark.expiresAt));
 
         // Bounded reaction summaries for every post on the page (own + the posts
         // underlying reposts), two aggregate queries total (perf audit §2.3).
         const reactionSummaries = await loadBoundedReactionSummaries(
-          [...rmharks.map((r: any) => r.id), ...reposts.map((rp: any) => rp.rmhark.id)],
+          [
+            ...rmharks.map((r: any) => r.id),
+            ...reposts.map((rp: any) => rp.rmhark.id),
+            ...(pinned ? [pinned.id] : []),
+          ],
           viewerId,
         );
 
@@ -192,6 +204,9 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
               imageUrls: r.imageUrls ?? undefined,
               imageAlts: r.imageAlts ?? undefined,
               isSensitive: r.isSensitive ?? false,
+              isTake: r.isTake || undefined,
+              seriesId: r.seriesId ?? undefined,
+              expiresAt: r.expiresAt?.toISOString(),
               reactions: reactionSummaries.get(r.id) ?? [],
             },
             r,
@@ -223,6 +238,9 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
               imageUrls: r.imageUrls ?? undefined,
               imageAlts: r.imageAlts ?? undefined,
               isSensitive: r.isSensitive ?? false,
+              isTake: r.isTake || undefined,
+              seriesId: r.seriesId ?? undefined,
+              expiresAt: r.expiresAt?.toISOString(),
               reactions: reactionSummaries.get(r.id) ?? [],
             },
             r,
@@ -241,13 +259,8 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
         // (deduped from the regular list below it).
         let items = merged;
         if (!cursorDate) {
-          const pinned = await prisma.rMHark.findFirst({
-            where: { userId, deletedAt: null, pinnedAt: { not: null }, ...aud },
-            include: rmharkInclude(viewerId),
-          });
           if (pinned) {
             const p: any = pinned;
-            const pinnedSummaries = await loadBoundedReactionSummaries([p.id], viewerId);
             const pinnedItem: FeedItem = applyLock(
               {
                 id: p.id,
@@ -269,7 +282,10 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
                 imageUrls: p.imageUrls ?? undefined,
                 imageAlts: p.imageAlts ?? undefined,
                 isSensitive: p.isSensitive ?? false,
-                reactions: pinnedSummaries.get(p.id) ?? [],
+                isTake: p.isTake || undefined,
+                seriesId: p.seriesId ?? undefined,
+                expiresAt: p.expiresAt?.toISOString(),
+                reactions: reactionSummaries.get(p.id) ?? [],
               },
               p,
               viewerId,

@@ -5,7 +5,7 @@
 > step-by-step "build a page that fits" checklist, see
 > [`docs/page-consistency.md`](./page-consistency.md).
 >
-> For the *statement* of the language — what the design is, why it is that way,
+> For the _statement_ of the language — what the design is, why it is that way,
 > and the laws behind these rules, without the values that move — see
 > [`design.md`](../design.md) at the repo root. **This file is the authority**
 > whenever the two disagree.
@@ -21,20 +21,17 @@ architecture. Two ideas, one language:
   hub** that, when tapped, sends the orb to the middle of the screen and swells
   it into a **liquid globe** — the destinations pinned to a glass sphere you
   turn, hold and let go of to travel — and that **ripples when you poke it**. A
-  fixed **ring backdrop**, a drifting blob field and a slowly breathing aurora
-  keep the whole surface feeling liquid and continuous. Mobile-first, with a
+  fixed **ring backdrop**, a soft blob field and the aurora keep the whole
+  surface feeling continuous — and **still**: nothing in the backdrop animates,
+  on any tier, so a page at rest goes idle (§5.5 Living backdrop;
+  `lib/__tests__/static-backdrop.test.ts`). Mobile-first, with a
   strict **high-contrast monochrome** palette.
-- **Avant-garde glass.** The material is Apple's Liquid Glass used
-  _theatrically_, not literally: physically-plausible layered translucent glass
-  with **live optics** — an always-on specular rim glint lit by a static scene
-  sun, lens-model edge refraction (with an optional chromatic **prism** on one
-  flagship surface), a two-layer drifting aurora canvas, micro-noise, and
-  travelling liquid sheens that ride the compositor — deployed for signature
-  radial moments (the menu is an **expanding circular veil** growing from the
-  centre, not a drawn disc, with a glass sphere suspended in it). It is
-  expressed as an **elevation system of explicit CSS classes** (`.glass-fill` /
-  `.glass-pane` / `.glass-chrome` / `.glass-overlay` / `.glass-inset`, plus the
-  modifiers in §5.1) placed _on_ components.
+- **Avant-garde glass.** A shared material language of translucent tint,
+  directional rim and clear coat. Singular panes/chrome/overlays use native
+  backdrop frost; repeated cards use a cheaper tint/rim tier. The public role
+  classes are `.glass-fill`, `.glass-pane`, `.glass-chrome`, `.glass-overlay`
+  and `.glass-inset`. Nearby tap waves and cursor lighting are owned by one
+  bounded document runtime; the globe adds a dielectric coat and contact dent.
 
 **Everything rests on one contract:** a single set of CSS custom properties
 (`--site-*`) that every theme re-defines. Components never hardcode colors,
@@ -42,41 +39,36 @@ radii, fonts, or shadows — they consume the contract through Tailwind utilitie
 so any theme (and any accent preset layered on top) restyles the entire site
 without a single component change.
 
-> **What ships today — read this first.** Both layers are live. The **radial**
-> layer (shell, hub, liquid globe, wheel feed) ships in
-> [`components/radial/`](../components/radial/README.md), and the **Liquid Glass
-> material is rendered on top of it**: the radial shell no longer demotes the
-> glass classes to flat cards, the aurora canvas paints and drifts behind
-> everything, and surfaces are translucent by token (`--site-surface` is a tint,
-> not paper) so both the `.glass-*` tiers and the many pages that simply paint
-> `bg-site-surface` sample the same scene. The elevation tiers, rim glint (on L1
-> as well as L2+), frosted edge bevel and travelling sheen are all on. The
-> navigation globe **ripples when you poke it**.
+> **Superseded in part (2026-10-22).** Glass is no longer frosted blur. Singular
+> glass is a clear, shader-drawn slab with a refracting, lit rim and a cursor that
+> is a light, and **no glass role uses `backdrop-filter`** (see
+> [`liquid-glass-system.md`](liquid-glass-system.md)). Everywhere below that speaks
+> of a tier's "backdrop blur", its "≤8 backdrop-filters" budget, or an
+> `@supports not (backdrop-filter)` fallback, read it as: the budget is **≤8 shader
+> slabs per viewport**, `glass-fill` is never a slab, and the CSS material is the
+> fallback in every engine. The role-by-purpose rules are unchanged.
 >
-> Two things are **not** live, and both are deliberate:
+> **Current implementation (2026-10-21).** The radial shell and navigator live
+> in [`components/radial/`](../components/radial/README.md). Material rendering is
+> `app/liquid-glass.css`, with an app-token adapter in `app-theme.css` and shared
+> input in `lib/liquid/runtime.ts`.
 >
-> - **Nothing tracks the cursor** (§5.1.1, 2026-08-01). The hovered-glass
->   hotspot, the aurora's pointer parallax, the ring backdrop's, the per-card
->   sheens and pointer tilts, and the scene-light hook that fed them are all
->   deleted. The glass answers a **static sun**; hover is a state change, not a
->   coordinate. If a doc, a comment or a code path still implies otherwise, it
->   is stale.
-> - **The SVG displacement lens is parked** (`url(#glass-lens)`, §5.1
->   `.glass-refract`) — current Chromium composites the displacement map into
->   the bevel instead of bending the backdrop through it, so refract surfaces
->   keep the frosted edge band (and the prism keeps its static chromatic rim)
->   without the bend. The filters and `lib/glass-lens.ts` still ship; re-enabling
->   means restoring the `@supports` upgrades in `app/globals.css` and giving
->   `initGlassLens()` a caller (its old one, `useGlassLight`, is gone).
+> [`liquid-glass-system.md`](liquid-glass-system.md) supersedes the historical
+> lens, sheen and blanket cursor-retirement implementation notes below. The old
+> SVG lens filters and `lib/glass-lens.ts` were removed. Historical modifier names
+> are compatibility aliases; they do not restore the old optics. Ordinary HTML
+> uses native frost and an approximate clear coat. The independent globe coat
+> models dielectric lighting; eversion refracts existing captured page textures.
+> The contract documents optical limits, preference fallbacks and finite motion.
 >
-> Also deleted, and worth knowing so you don't go looking for it: the **GL/WebGPU
-> shader tier** (`lib/liquid-gl/`, ~2,240 lines) whose `initLiquidGL()` never had
-> a caller. `liquid-morph` is the SVG-metaball path it always
-> actually ran; comments there that mention a "shader body" are historical.
+> The older unused `lib/liquid-gl/` tier also remains deleted; `liquid-morph`
+> is the SVG-metaball path. Historical performance findings below still explain
+> why viewport blur, root writes and blanket capture loops must not return.
 
 **Current companions:** [radial UI + the globe](../components/radial/README.md) ·
 [the per-page checklist](./page-consistency.md) ·
-[UI audit 2026-08-01](./ui-audit-2026-08-01.md) (the most recent site-tier pass) ·
+[UI audit 2026-10-09](./ui-audit-2026-10-09.md) (the most recent site-tier pass) ·
+[UI audit 2026-08-01](./ui-audit-2026-08-01.md) ·
 [performance audit 2026-08-01](./performance-audit-2026-08-01.md) (why the
 cursor effects went).
 
@@ -130,7 +122,7 @@ per-page checklist with code.)
    phone width and a desktop width, and once with reduced motion on. Three
    themes × two widths is the floor; the audit matrix in
    `docs/ui-audit-2026-07-28.md` §1 is the extended version, and
-   `docs/ui-audit-2026-08-01.md` is the most recent pass over the site tier.
+   `docs/ui-audit-2026-10-09.md` is the most recent pass over the site tier.
 
 **When the system does not have what you need**, extend the system — add the
 token, add the variant, add the primitive — and say so in the commit message.
@@ -234,8 +226,14 @@ useful (turning the globe) keeps working.
 
 ## 1. The token contract (`app/globals.css`)
 
-Tailwind v4 is imported at the top of `app/globals.css`; an `@theme inline`
-block binds the `--site-*` variables to utility classes. The `:root` block is
+Tailwind v4 is imported by the two **entry sheets** that wrap `app/globals.css`
+— `app/site-tier.css` (what `_site` pages load; it skips the utilities only
+full-screen games and apps use) and `app/app-tier.css` (the superset every
+full-screen route loads). `lib/style-tier.ts` picks one per route, and
+`lib/__tests__/style-tiers.test.ts` keeps the site sheet's skip list honest;
+`app/site-tier.css`'s header explains why the app tier is a superset. Inside
+`globals.css`, an `@theme inline` block binds the `--site-*` variables to
+utility classes. The `:root` block is
 the **default theme** — the strict-monochrome Radial Avant-Garde Glass baseline (a
 light palette: white canvas, ink text and accent). At runtime the default is the
 **absence** of any `.style-*` class on `<html>`; a `.style-default` block also
@@ -246,37 +244,37 @@ active. Keep the two in sync.
 Tokens every theme defines (set in `:root`, overridden by each `.style-*`
 class):
 
-| Group             | Tokens                                                                                                                                                                                                                                                      |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Backgrounds       | `--site-bg`, `--site-bg-subtle`, `--site-canvas` (the aurora painted on `<body>`)                                                                                                                                                                           |
-| Surfaces          | `--site-surface`, `--site-surface-hover`, `--site-surface-active`, `--site-surface-opaque` (autofill / reduced-transparency fallback)                                                                                                                       |
-| Glass material    | `--site-glass-tint`, `--site-glass-tint-strong`, `--site-glass-ink`, `--site-glass-rim`, `--site-glass-rim-soft`, `--site-glass-light`, `--site-glass-blur-{pane,chrome,overlay}`, `--site-glass-saturate`, `--site-glass-depth(-sm)`, `--site-glass-noise` |
-| Borders           | `--site-border`, `--site-border-bright`, `--site-border-width` (1px default; 2px in high-contrast)                                                                                                                                                          |
-| Text              | `--site-text`, `--site-text-muted`, `--site-text-dim`                                                                                                                                                                                                       |
-| Accent            | `--site-accent`, `--site-accent-fg`, `--site-accent-hover`, `--site-accent-dim`                                                                                                                                                                             |
-| Status            | `--site-success`, `--site-danger`, `--site-warning`                                                                                                                                                                                                         |
-| Elevation / shape | `--site-shadow` (prominent: modals/popovers/floating chrome), `--site-shadow-sm` (resting: cards/surfaces), `--site-radius`, `--site-radius-sm`, `--site-control-radius` (shared button geometry)                                                           |
-| Layout rhythm     | `--site-page-gutter`, `--site-section-gap`, `--site-panel-padding`, `--site-shell-gap`, `--site-sticky-edge`, `--site-sticky-primary-height`, `--site-sticky-secondary-top`, `--site-touch-target`, `--site-page-bottom-space`                              |
-| Typography        | `--site-font-display`, `--site-font-body`, `--site-font-mono`                                                                                                                                                                                               |
-| Motion / flourish | `--site-transition-speed` (200ms default), `--site-press-duration`, `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform`                                                                       |
+| Group             | Tokens                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Backgrounds       | `--site-bg`, `--site-bg-subtle`, `--site-canvas` (the aurora painted on `<body>`)                                                                                                                                                                                                                                                                                  |
+| Surfaces          | `--site-surface`, `--site-surface-hover`, `--site-surface-active`, `--site-surface-opaque` (autofill / reduced-transparency fallback)                                                                                                                                                                                                                              |
+| Glass material    | `--site-glass-tint`, `--site-glass-tint-strong`, `--site-glass-ink`, `--site-glass-rim`, `--site-glass-rim-soft`, `--site-glass-light`, `--site-glass-blur-{pane,chrome,overlay}`, `--site-glass-saturate`, `--site-glass-depth(-sm)`, `--site-glass-noise`                                                                                                        |
+| Borders           | `--site-border`, `--site-border-bright`, `--site-border-width` (1px default; 2px in high-contrast)                                                                                                                                                                                                                                                                 |
+| Text              | `--site-text`, `--site-text-muted`, `--site-text-dim`                                                                                                                                                                                                                                                                                                              |
+| Accent            | `--site-accent`, `--site-accent-fg`, `--site-accent-hover`, `--site-accent-dim`                                                                                                                                                                                                                                                                                    |
+| Status            | `--site-success`, `--site-danger`, `--site-warning`                                                                                                                                                                                                                                                                                                                |
+| Elevation / shape | `--site-shadow` (prominent: modals/popovers/floating chrome), `--site-shadow-sm` (resting: cards/surfaces), `--site-radius`, `--site-radius-sm`, `--site-control-radius` (shared button geometry)                                                                                                                                                                  |
+| Layout rhythm     | `--site-page-gutter`, `--site-section-gap`, `--site-panel-padding`, `--site-shell-gap`, `--site-sticky-edge`, `--site-sticky-primary-height`, `--site-sticky-secondary-top`, `--site-touch-target`, `--site-page-bottom-space`                                                                                                                                     |
+| Typography        | `--site-font-display`, `--site-font-body`, `--site-font-mono`                                                                                                                                                                                                                                                                                                      |
+| Motion / flourish | `--site-transition-speed` (200ms default), `--site-press-duration`, `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform`                                                                                                                                                                              |
 | Media overlays    | `--site-media-scrim`, `--site-media-scrim-strong`, `--site-media-scrim-hover`, `--site-media-veil`, `--site-media-ink` — for anything that sits **on a photograph**, where theme-tracking ink would be wrong. Two shapes read them: the chip/control backings (`bg-site-media-*`), and the layer utilities `.media-scrim` / `.media-scrim-full` / `.text-on-media` |
-| Podium            | `--site-podium-gold`, `--site-podium-silver`, `--site-podium-bronze`                                                                                                                                                                                        |
+| Podium            | `--site-podium-gold`, `--site-podium-silver`, `--site-podium-bronze`                                                                                                                                                                                                                                                                                               |
 
 ### Tailwind utilities — use these, never raw hex/oklch
 
-| Purpose            | Utilities                                                                                                                                                 |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Backgrounds        | `bg-site-bg`, `bg-site-bg-subtle`, `bg-site-surface`, `bg-site-surface-hover`, `bg-site-surface-active`                                                   |
-| Borders            | `border-site-border`, `border-site-border-bright`                                                                                                         |
-| Text               | `text-site-text`, `text-site-text-muted`, `text-site-text-dim`                                                                                            |
-| Accent             | `bg-site-accent`, `text-site-accent`, `text-site-accent-fg`, `bg-site-accent-hover`, `bg-site-accent-dim`                                                 |
-| Status             | `text-site-success`, `text-site-danger`, `text-site-warning` (and `bg-` and `-fg` variants)                                                               |
-| Media overlays     | `bg-site-media-scrim`, `bg-site-media-scrim-strong`, `bg-site-media-scrim-hover`, `bg-site-media-veil`, `text-site-media-ink`                            |
-| Podium             | `text-site-podium-gold`, `-silver`, `-bronze`                                                                                                             |
-| Duration           | `duration-site` (the theme's `--site-transition-speed`), `duration-site-fast` (0.75×), `duration-site-slow` (1.5×) — Tailwind has no duration theme namespace, so these are `@utility` classes |
-| Radius             | `rounded-site`, `rounded-site-sm` (theme-aware — do not use `rounded-lg`/`rounded-xl` for site chrome)                                                    |
-| Shadow             | `shadow-site` (prominent), `shadow-site-sm` (resting)                                                                                                     |
-| Fonts              | `font-body` / `font-sans` (`--site-font-body`), `font-mono` (`--site-font-mono`), `font-display` (`--site-font-display`), `font-serif` (Playfair), `font-comic` (Bangers) — the first three resolve through the theme contract, so a theme that sets its own faces is obeyed everywhere |
+| Purpose        | Utilities                                                                                                                                                                                                                                                                               |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backgrounds    | `bg-site-bg`, `bg-site-bg-subtle`, `bg-site-surface`, `bg-site-surface-hover`, `bg-site-surface-active`                                                                                                                                                                                 |
+| Borders        | `border-site-border`, `border-site-border-bright`                                                                                                                                                                                                                                       |
+| Text           | `text-site-text`, `text-site-text-muted`, `text-site-text-dim`                                                                                                                                                                                                                          |
+| Accent         | `bg-site-accent`, `text-site-accent`, `text-site-accent-fg`, `bg-site-accent-hover`, `bg-site-accent-dim`                                                                                                                                                                               |
+| Status         | `text-site-success`, `text-site-danger`, `text-site-warning` (and `bg-` and `-fg` variants)                                                                                                                                                                                             |
+| Media overlays | `bg-site-media-scrim`, `bg-site-media-scrim-strong`, `bg-site-media-scrim-hover`, `bg-site-media-veil`, `text-site-media-ink`                                                                                                                                                           |
+| Podium         | `text-site-podium-gold`, `-silver`, `-bronze`                                                                                                                                                                                                                                           |
+| Duration       | `duration-site` (the theme's `--site-transition-speed`), `duration-site-fast` (0.75×), `duration-site-slow` (1.5×) — Tailwind has no duration theme namespace, so these are `@utility` classes                                                                                          |
+| Radius         | `rounded-site`, `rounded-site-sm` (theme-aware — do not use `rounded-lg`/`rounded-xl` for site chrome)                                                                                                                                                                                  |
+| Shadow         | `shadow-site` (prominent), `shadow-site-sm` (resting)                                                                                                                                                                                                                                   |
+| Fonts          | `font-body` / `font-sans` (`--site-font-body`), `font-mono` (`--site-font-mono`), `font-display` (`--site-font-display`), `font-serif` (Playfair), `font-comic` (Bangers) — the first three resolve through the theme contract, so a theme that sets its own faces is obeyed everywhere |
 
 Extra breakpoint: `xs` = 480px (defined in the `@theme inline` block).
 
@@ -339,10 +337,10 @@ material in its own palette over its own `--site-canvas` aurora. (The old
 **The picker ships three**, and they are one system in three accessibility
 modes rather than a gallery of moods — light, dark, and the no-glass fallback:
 
-| Shipped in `SITE_STYLES` | Label             | What it is                                                                                                                                                        |
-| ------------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `default` (no class)     | **Daylight** ☀    | The site default. Strict black-&-white, ink accent, translucent white frost over a white aurora. `color-scheme: light`, document bg `#ffffff`.                    |
-| `graphite`               | **Midnight** ◐    | The dark twin: OLED-black ground, near-white ink, graphite elevated surfaces, hairline light borders, one calm blue signal. `color-scheme: dark`, bg `#000000`.  |
+| Shipped in `SITE_STYLES` | Label               | What it is                                                                                                                                                      |
+| ------------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `default` (no class)     | **Daylight** ☀      | The site default. Strict black-&-white, ink accent, translucent white frost over a white aurora. `color-scheme: light`, document bg `#ffffff`.                  |
+| `graphite`               | **Midnight** ◐      | The dark twin: OLED-black ground, near-white ink, graphite elevated surfaces, hairline light borders, one calm blue signal. `color-scheme: dark`, bg `#000000`. |
 | `high-contrast`          | **High contrast** ◑ | WCAG AAA, and **the absence of the material**: opaque surfaces, no blur, no glint, no aurora, 2px borders, yellow accent. Everything must survive it.           |
 
 Four more palettes stay in `globals.css` as complete, ready token sets — they
@@ -355,7 +353,7 @@ Persisted-but-unknown ids (a retired decorative theme, or the old `liquid-glass`
 id) self-heal to `default` during hydration.
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
-`GlassFilter` — the v2 lens-filter host mounted globally in `__root.tsx`) with a
+`GlassFilter` — the tab-capsule merge host, with no optical lenses) with a
 design-lab reference at `/liquid-glass`. A **Glass clarity** slider (Settings →
 Appearance, §5.46) tunes how much scene shows through in five stops
 (`0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear`): stop 0 is the opaque
@@ -414,18 +412,18 @@ token contract (so no component knows it happened), and all of it is applied
 account-synced. The shared constants, zod schema and storage keys are
 `lib/appearance/prefs.ts`; the settings UI is Settings → Appearance.
 
-| Setting              | Mechanism                                                                                       | Key                  |
-| -------------------- | ------------------------------------------------------------------------------------------------- | -------------------- |
-| **Accent preset**    | 14 curated colors overriding only `--site-accent*` as inline styles on `<html>` (§2)             | `rmh-custom-accent`  |
-| **Text size**        | Four scales (87.5 / 100 / 112.5 / 125%) — a root font-size multiplier, so every `rem` follows    | `rmh-font-scale`     |
-| **Density**          | `cozy` \| `compact` → `html[data-density]`; compact tightens `[data-slot="card"]` padding and gap. Font sizes and touch targets deliberately unchanged | `rmh-density`        |
-| **Readable font**    | `html.readable-font` swaps the **body** face to a high-legibility stack (Atkinson Hyperlegible → Verdana → system) with loosened tracking, word spacing and leading. Headings keep the theme display face | `rmh-readable-font`  |
-| **Reduce motion**    | In-account switch that sets `html.reduce-motion`, on equal footing with the OS preference         | `rmh-reduce-motion`  |
-| **Glass clarity**    | Five stops (§5.46), below                                                                        | `rmh-glass-level`    |
-| **Colour vision**    | `html[data-color-vision=…]` retint of the semantic tokens, below                                  | `rmh-color-vision`   |
-| **Tilt effects**     | The one surviving motion input: `deviceorientation` drives the aurora on touch. iOS needs an explicit `requestPermission()` gesture, which this row performs — we never prompt on load | `rmh-motion-ok`      |
+| Setting           | Mechanism                                                                                                                                                                                                 | Key                 |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| **Accent preset** | 14 curated colors overriding only `--site-accent*` as inline styles on `<html>` (§2)                                                                                                                      | `rmh-custom-accent` |
+| **Text size**     | Four scales (87.5 / 100 / 112.5 / 125%) — a root font-size multiplier, so every `rem` follows                                                                                                             | `rmh-font-scale`    |
+| **Density**       | `cozy` \| `compact` → `html[data-density]`; compact tightens `[data-slot="card"]` padding and gap. Font sizes and touch targets deliberately unchanged                                                    | `rmh-density`       |
+| **Readable font** | `html.readable-font` swaps the **body** face to a high-legibility stack (Atkinson Hyperlegible → Verdana → system) with loosened tracking, word spacing and leading. Headings keep the theme display face | `rmh-readable-font` |
+| **Reduce motion** | In-account switch that sets `html.reduce-motion`, on equal footing with the OS preference                                                                                                                 | `rmh-reduce-motion` |
+| **Glass clarity** | Five stops (§5.46), below                                                                                                                                                                                 | `rmh-glass-level`   |
+| **Colour vision** | `html[data-color-vision=…]` retint of the semantic tokens, below                                                                                                                                          | `rmh-color-vision`  |
+| **Tilt effects**  | The one surviving motion input: `deviceorientation` drives the aurora on touch. iOS needs an explicit `requestPermission()` gesture, which this row performs — we never prompt on load                    | `rmh-motion-ok`     |
 
-**Colour vision is a first-class axis, not a filter.** On this site colour *is*
+**Colour vision is a first-class axis, not a filter.** On this site colour _is_
 state — win/loss, up/down, rarity, health, leaderboard deltas, moderation status
 — and roughly 8% of men and 0.5% of women have some colour-vision deficiency, so
 it was the largest group the suite was missing. Three modes retint the three
@@ -433,7 +431,7 @@ it was the largest group the suite was missing. Three modes retint the three
 a palette that stays separable under that deficiency, on the Okabe–Ito basis:
 
 - `deuteranopia` / `protanopia` (red–green): success becomes **blue** and warning
-  a high-lightness amber, so the three differ in hue *and* lightness instead of
+  a high-lightness amber, so the three differ in hue _and_ lightness instead of
   leaning on a red/green contrast the viewer cannot see.
 - `tritanopia` (blue–yellow): red and green read normally and stay; the yellow
   warning becomes **magenta**.
@@ -482,8 +480,8 @@ mode list, the CSS blocks, the pre-paint script) is CI-enforced — §13.
 ### 5.1 The glass elevation classes (use these for surfaces)
 
 Glass is opt-in per element via these classes (in `app/globals.css`). Pick by
-role, not by looks — the tier decides blur cost (see the redesign doc §6 budget:
-≤8 backdrop-filters per viewport, **0** on repeated list items).
+role, not by looks — the tier decides cost (budget: ≤8 shader slabs per
+viewport, **0** on repeated list items).
 
 | Class                               | Tier            | Use for                                                                                             |
 | ----------------------------------- | --------------- | --------------------------------------------------------------------------------------------------- |
@@ -491,21 +489,21 @@ role, not by looks — the tier decides blur cost (see the redesign doc §6 budg
 | `.glass-pane`                       | L2 (blur+noise) | Singular panels: heroes, composers, settings sections, tier cards. Budgeted.                        |
 | `.glass-chrome` (`--aside` variant) | L3              | Persistent chrome: sidebar, sticky headers, mobile dock. Condenses on scroll via `[data-scrolled]`. |
 | `.glass-overlay`                    | L4              | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips.                           |
-| `.glass-inset`                      | —               | Recessed wells: inputs, search fields.                                                              |
+| `.glass-inset`                      | —               | Fields: inputs, search fields, tab tracks. A flush fill of the glass — never a recessed well.       |
 | `.glass-scrim`                      | —               | Dialog/drawer backdrops.                                                                            |
 
 Modifiers layer **on top of** a tier class. Each carries a per-page budget —
 they are signature moments, not defaults:
 
-| Modifier                                     | Budget      | What it adds                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| -------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.glass-interactive`                         | unlimited   | Hover tint-raise, springy press flex (`--ease-glass`), and — **paired with `.glass-fill`** — the specular rim glint raised from ambient to full on hover. The glint selector is `.glass-fill.glass-interactive`: on its own, `.glass-interactive` still gives the press, but there is no rim to light. It used to add a **pointer-tracked** diffuse hotspot on `::after`; that is retired (§5.1.1) and `::after` now carries the travelling sheen (§5.1.2).                                                              |
-| `.glass-refract` + `data-glass-lens`         | **≤2/page** | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`; Chromium bends the backdrop, Gecko/WebKit displace a mirrored aurora copy — §3.6). Pressing deepens the bend (`:active`, ×1.6, §3.7). Not compatible with `.glass-chrome--aside` (see below). |
-| `.glass-refract--prism`                      | **≤1/page** | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. Sanctioned users: login card, command palette, `/store` featured tier, design lab.                                                                                                                                                                                                                                                                  |
-| `.glass-liquid` (or `<GlassPane liquid>`)    | **≤3/page** | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, never on list items.                                                                                                                                                                                                                       |
-| `.glass-sheen-hover`                         | unlimited   | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in).                                                                                                                                                                                                                                                                                                                                      |
-| `.glass-bevel-sm`                            | unlimited   | Narrow 6px optics ring for small capsules — the `LiquidTabs` sheet pill (§5.45), plus discs like BackToTop.                                                                                                                                                                                                                                                                                                                       |
-| `.glass-opaque`                              | —           | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                                                                                                                                                                                                                                                                             |
+| Modifier                                  | Budget      | What it adds                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.glass-interactive`                      | unlimited   | Hover tint-raise, springy press flex (`--ease-glass`), and — **paired with `.glass-fill`** — the specular rim glint raised from ambient to full on hover. The glint selector is `.glass-fill.glass-interactive`: on its own, `.glass-interactive` still gives the press, but there is no rim to light. It used to add a **pointer-tracked** diffuse hotspot on `::after`; that is retired (§5.1.1) and `::after` now carries the travelling sheen (§5.1.2). |
+| `.glass-refract` + `data-glass-lens`      | **≤2/page** | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`; Chromium bends the backdrop, Gecko/WebKit displace a mirrored aurora copy — §3.6). Pressing deepens the bend (`:active`, ×1.6, §3.7). Not compatible with `.glass-chrome--aside` (see below).                           |
+| `.glass-refract--prism`                   | **≤1/page** | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. Sanctioned users: login card, command palette, `/store` featured tier, design lab.                                                                                                                                                                                                                                                                                            |
+| `.glass-liquid` (or `<GlassPane liquid>`) | **≤3/page** | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, never on list items.                                                                                                                                                                                                                                                 |
+| `.glass-sheen-hover`                      | unlimited   | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in).                                                                                                                                                                                                                                                                                                                                                                |
+| `.glass-bevel-sm`                         | unlimited   | Narrow 6px optics ring for small capsules — the `LiquidTabs` sheet pill (§5.45), plus discs like BackToTop.                                                                                                                                                                                                                                                                                                                                                 |
+| `.glass-opaque`                           | —           | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                                                                                                                                                                                                                                                                                                       |
 
 Sticky glass uses the shared layout contract rather than local `top-*` values:
 
@@ -526,13 +524,13 @@ secondary level only when the two surfaces mount independently.
 Nothing on the site follows the pointer any more. The glass answers a **static
 sun**; hover is a state change, not a position. What was removed, and why:
 
-| Effect                                       | What it cost                                                                                                                                             |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.glass-interactive::after` diffuse hotspot  | A 220px radial gradient whose **centre** moved with the cursor. Gradient position is not compositable — every frame repainted the element's whole box.   |
-| `hooks/useGlassLight`                        | A document `pointermove` listener: a `closest()` ancestor walk, a cached `getBoundingClientRect()`, two custom-property writes per frame — feeding a scene light whose only consumer (`lib/liquid-gl`) is never initialised. |
-| `useLiquidBackground`'s fine-pointer branch  | Woke a rAF and re-composited two viewport-sized aurora layers on every frame the mouse moved.                                                            |
-| `RadialShell`'s ring parallax                | A `pointermove` listener plus a rAF lerp, mounted on **every route**, still scheduling frames a third of a second after the pointer stopped.             |
-| `hooks/useCardSheen`, `hooks/usePointerParallax`, `hooks/useParallax` | Per-component cursor tracking. `usePointerParallax` was mounted **per card** in the arcade hub — N listeners, N spring sets and N `preserve-3d` layers on one page. |
+| Effect                                                                | What it cost                                                                                                                                                                                                                 |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.glass-interactive::after` diffuse hotspot                           | A 220px radial gradient whose **centre** moved with the cursor. Gradient position is not compositable — every frame repainted the element's whole box.                                                                       |
+| `hooks/useGlassLight`                                                 | A document `pointermove` listener: a `closest()` ancestor walk, a cached `getBoundingClientRect()`, two custom-property writes per frame — feeding a scene light whose only consumer (`lib/liquid-gl`) is never initialised. |
+| `useLiquidBackground`'s fine-pointer branch                           | Woke a rAF and re-composited two viewport-sized aurora layers on every frame the mouse moved.                                                                                                                                |
+| `RadialShell`'s ring parallax                                         | A `pointermove` listener plus a rAF lerp, mounted on **every route**, still scheduling frames a third of a second after the pointer stopped.                                                                                 |
+| `hooks/useCardSheen`, `hooks/usePointerParallax`, `hooks/useParallax` | Per-component cursor tracking. `usePointerParallax` was mounted **per card** in the arcade hub — N listeners, N spring sets and N `preserve-3d` layers on one page.                                                          |
 
 Two things survive, because neither is a cursor: the **device-tilt** aurora
 (opt-in, touch-only, Settings → Appearance) and `useDeviceAttitude` (§7, an
@@ -562,7 +560,7 @@ Three things make it work, and the middle one is the reason it could not have
 been done before §5.1.1:
 
 1. **The host clips.** A moving layer has to leave the pane, and a `clip-path`
-   or `mask` on the layer itself is applied *before* its transform, so it travels
+   or `mask` on the layer itself is applied _before_ its transform, so it travels
    with the band. `overflow: clip` (not `hidden`) creates no scroll container
    and no containing block for absolute descendants.
 2. **`::after` was free**, because the pointer hotspot that owned it is retired.
@@ -587,8 +585,8 @@ micro-noise, at an **ambient** resting strength (`--glass-glint-rest`, 0.45× th
 theme's `--glass-glint-opacity`); `.glass-interactive` raises it to 1 on hover, so
 the hovered fill is still unmistakably the lit one. This is a v2 amendment: the
 glint was L2-and-up only, and the multiplier rested at **0**, which meant the tier
-the site is mostly *made* of was optically dead — and an interactive fill (whose
-border is transparent so the lit edge *is* the border) had no edge and no light at
+the site is mostly _made_ of was optically dead — and an interactive fill (whose
+border is transparent so the lit edge _is_ the border) had no edge and no light at
 all until a pointer arrived, i.e. permanently, on touch. Two things had to change
 in `globals.css` for it to be possible at all, and both are load-bearing:
 
@@ -597,12 +595,12 @@ in `globals.css` for it to be possible at all, and both are load-bearing:
   The same applies to anything that re-tints a fill (`.social-post:hover`, the
   mobile opacity floor): re-tint with `background-color` or you silently strip the
   material. The degradation blocks (high-contrast, reduced transparency) use the
-  shorthand *deliberately*, to drop the layers along with the translucency.
+  shorthand _deliberately_, to drop the layers along with the translucency.
 - L1's layers clip to **padding-box**, unlike L2+: a fill keeps its visible
   hairline (it is what separates one repeated row from the next), and a border-box
   layer under an opaque border is painted over anyway.
 
-Wells (`.glass-inset`, half-strength border) carry no glint. Pseudo contract:
+Fields (`.glass-inset`, half-strength border) carry no glint and no shadow. Pseudo contract:
 `::before` is refraction-only (the masked lens band) or the aside blur; `::after`
 is the travelling sheen on `.glass-liquid` (§5.1.2) and otherwise free, now that
 the pointer light that used to own it is gone (§5.1.1) — a component may take it
@@ -620,8 +618,8 @@ by design (it is the repeated-card tier); a menu built on it sits transparent
 over whatever it opened on top of. This is CI-enforced — see §13.
 
 **Reach for the tier class, not its box-model equivalent.** `bg-site-surface
-border border-site-border rounded-site shadow-site-sm` renders the same *box* as
-`.glass-fill` and none of its *material* — no noise, no glint, and nothing for the
+border border-site-border rounded-site shadow-site-sm` renders the same _box_ as
+`.glass-fill` and none of its _material_ — no noise, no glint, and nothing for the
 degradation tiers to switch off. Hand-rolled recipes had spread to roughly 500
 call sites (with comments that still named the tier they had been flattened out
 of, and a `data-glass-light` or a lone `.glass-interactive` whose effect the
@@ -659,7 +657,7 @@ Always reach for these before writing new markup. Helper: `cn()` from
 | --------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Button` / `buttonVariants`                                                 | `components/ui/button.tsx`                               | CVA. Variants: `default`, `destructive`, `danger`, `outline`, `secondary`, `ghost`, `link`, `accent`, `accent-outline`, `accent-ghost`. Sizes: `xs`, `sm`, `default`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. `asChild` supported. **`loading` prop** (+ optional `loadingText`) shows an inline spinner, sets `aria-busy`, and disables the button — reach for this instead of hand-rolling `disabled={x}` + a separate `<Loader2>`.                                                                                           |
 | `Badge` / `badgeVariants`                                                   | `components/ui/badge.tsx`                                | CVA pill. Variants: `default`, `accent`, `solid`, `success`, `warning`, `danger`, `outline`.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `Card` + Header/Title/Description/Action/Content/Footer                     | `components/ui/card.tsx`                                 | The shared content surface, in the glass material. **L1 `.glass-fill`** by default (cards are the most repeated surface on the site, and L1 is the tier with no backdrop blur); `pane` promotes it to L2 `.glass-pane`; `interactive` adds the hover tint-raise, the hover-raised rim glint and the press flex. It also carries `data-fluid-press="firm"` when interactive — a card is column-wide, and the 4% squash that reads as crisp on a button reads as a wobble at that size.                                                    |
+| `Card` + Header/Title/Description/Action/Content/Footer                     | `components/ui/card.tsx`                                 | The shared content surface, in the glass material. **L1 `.glass-fill`** by default (cards are the most repeated surface on the site, and L1 is the tier with no backdrop blur); `pane` promotes it to L2 `.glass-pane`; `interactive` adds the hover tint-raise, the hover-raised rim glint and the press flex. It also carries `data-fluid-press="firm"` when interactive — a card is column-wide, and the 4% squash that reads as crisp on a button reads as a wobble at that size.                                                  |
 | `Dialog` (Radix wrapper)                                                    | `components/ui/dialog.tsx`                               | Centered, viewport-clamped glass content with safe internal spacing and a translated close control. Pass `mobileFullscreen` for complex/wide editors; they consume the phone visual viewport with safe-area padding, then return to a centered dialog from `sm`.                                                                                                                                                                                                                                                                       |
 | `Input`, `Textarea`                                                         | `components/ui/input.tsx`, `textarea.tsx`                | `bg-site-surface`, `rounded-site-sm`, hairline border, accent focus ring.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `Select`                                                                    | `components/ui/select.tsx`                               | Radix Select in a native-`<select>` shim: callers still write `<option>` children and read `e.target.value` off `onChange`, but the **option list is ours** — a `glass-overlay` popup in the theme's own tokens, not the OS picker (the old §15.6 exemption, now closed). `tier="app"` repaints it in the `--app-*` contract and portals into the `.app-theme` shell, for the full-screen apps. `<option value="">` placeholders are supported (mapped around Radix's reserved empty value); multi-select is not.                      |
@@ -699,8 +697,8 @@ close-button clearance stay consistent.
 
 The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which now
 renders the **radial shell** ([`components/radial/RadialShell.tsx`](../components/radial/RadialShell.tsx)):
-a fixed **ring backdrop** (concentric hairlines plus a drifting blob field — it
-is static under the pointer now, §5.1.1), a slim sticky **utility top bar**
+a fixed **ring backdrop** (concentric hairlines plus a soft blob field — static:
+it neither follows the pointer, §5.1.1, nor animates on its own, §5.5), a slim sticky **utility top bar**
 (brand · search · inbox · avatar), the **frame** and the central **RMH hub**
 (`RadialHub`). The shell's backdrop layer paints only the rings and blobs; the
 **aurora canvas** is the document's own `.site-aurora` element (rendered in
@@ -806,19 +804,31 @@ gated off there too, via `html.app-route`).
 
 ## 7. Motion
 
+- **Arrivals fade in — automatically.** Two site-wide mechanisms make a slow
+  connection read as "filling in" rather than "popping in", and neither needs
+  anything from a component: every `<img>` fades from 0 to 1 as its bytes land
+  (`lib/media-reveal.ts` + globals.css), and content that replaces a
+  `Skeleton`, `Spinner`, `[data-skeleton]` or `[aria-busy="true"]` placeholder
+  fades in (`lib/swap-reveal.ts`). Both are opacity-only (they cannot shift
+  layout), skip reduced motion, and never touch the LCP image
+  (`fetchpriority="high"`). So: **render a canonical placeholder while you wait**
+  (it is what the reveal keys on), **reserve the content's box** (width/height
+  or aspect-ratio on media, a skeleton the size of what replaces it), and put
+  `data-no-reveal` on anything that must not fade (a live value that updates
+  in place). Do not hand-roll a per-component fade for the same job.
 - **Radial motion (the shipped layer).** The radial UI is CSS/rAF-driven and
   framer-motion-free for the shell: the feed **wheel** rakes each card onto a
   shallow cylinder from a **scroll-driven CSS animation** (`animation-timeline:
-  view()`), falling back to a rAF window-scroll pass with cached offsets where
+view()`), falling back to a rAF window-scroll pass with cached offsets where
   the browser has no view timeline and to a flat column on iOS WebKit — where a
-  scroll *event* is delivered after the compositor has already scrolled, so a
+  scroll _event_ is delivered after the compositor has already scrolled, so a
   hand-driven rake can only ever be a frame late (`RadialWheel`), the **hub**
   glides the orb to centre and blooms the
   **liquid globe** under an expanding `clip-path` **circular veil** (CSS phase
   machine + one mount-bounded rAF loop for the sphere's spin, dwell and ripple),
   and page headers/heroes rise in on mount (`radial-page-rise`). The **ring
-  backdrop** and its blob field drift on their own compositor keyframes — they no
-  longer parallax to the pointer (§5.1.1). All of it is `transform`/`opacity`
+  backdrop** and its blob field are static — no pointer parallax (§5.1.1) and no
+  ambient keyframes (§5.5 Living backdrop). All of it is `transform`/`opacity`
   only and gated off under reduced motion; optional scroll **haptics**
   (`navigator.vibrate`) tick as cards cross the focus line.
 - **framer-motion** is the animation library. Reach for the shared motion
@@ -894,11 +904,20 @@ gated off there too, via `html.app-route`).
 - **Living backdrop (two layers, one host):** the aurora is the shared scene
   every `backdrop-filter` on the page samples. Both layers are pseudo-elements
   of **`.site-aurora`**, a leaf element rendered in `app/routes/__root.tsx`:
-  `::before` runs an ultra-slow transform-only `aurora-drift` keyframe, and a
-  far-field `::after` (per-theme `--site-aurora-far-*` stops) counter-drifts on
-  its own slower keyframe, so the two separate into depth on their own. Both are
-  gated off under reduced motion, `html.perf-lite` and `html.app-route`, and
-  stop in high-contrast (canvas is `none` there).
+  `::before` is the near field and `::after` (per-theme `--site-aurora-far-*`
+  stops) the far field, offset so the two read as depth. **Neither animates.**
+  Both used to run ultra-slow infinite drift keyframes (34s / 52s), with the
+  rings breathing and the blobs drifting in `radial.css` on top — each
+  "transform-only, compositor, costs the main thread nothing", and each claim
+  true. What it cost was idleness: one perpetual layer means the page renders a
+  new frame every vsync forever. Measured on `/` (1920×1080, vsync-capped
+  Chromium): ~1020ms/s of browser CPU and 16.7fps with the motion, 63ms/s and a
+  locked 60fps without it — and removing `backdrop-filter` instead changed
+  nothing ([perf audit 2026-10-08](performance-audit-2026-10-08.md)). The only
+  movement left is the opt-in device-tilt parallax (event-driven `translate`,
+  below), which settles. `lib/__tests__/static-backdrop.test.ts` fails the build
+  if a backdrop layer animates again. Both layers are gated off under
+  `html.app-route` and stop in high-contrast (canvas is `none` there).
 
   Two details are load-bearing. **The host is not `<body>` and not `<html>`.**
   The layers used to be `body::before/::after`, which forced their offset custom
@@ -910,6 +929,7 @@ gated off there too, via `html.app-route`).
   that reads it.** And the aurora is deliberately dormant on iOS/WebKit
   (`html.ios-webkit` takes the static CSS aurora): moving a fixed, oversized
   gradient under several translucent surfaces can wedge WebKit's compositor.
+
 - **The scene light is static, and the only live input is tilt.**
   `hooks/useGlassLight.ts` is deleted — nothing writes `--light-x/--light-y` any
   more, and no rule reads them; each glass rim's glint sits at the `var()`
@@ -945,16 +965,22 @@ gated off there too, via `html.app-route`).
   wake the normally-idle sampler. (Comments in `liquid-morph.tsx` still say
   "shader body" in places — that is the deleted GL tier, and the SVG/CSS path
   they describe is the one that always ran.)
-- **Liquid tabs:** tab strips use `components/ui/liquid-tabs.tsx` — each rides
-  its own L1 **glass sheet** (`glass-fill glass-bevel-sm rounded-full` pill,
-  `sheet` prop default) placed **below** the hero/page-title capsule, never
-  inside header chrome (§5.45; see `page-consistency.md`). The active capsule is
-  a `layoutId` glass pill that flows between tabs on `SPRING.snappy` and jumps
-  under reduced motion; on capable engines it also **morphs** — velocity
-  squash/stretch plus a `#glass-goo` metaball trail (`liquid-morph.tsx`, §5.47),
-  stripped under reduced-motion / perf-lite / high-contrast. Link-based or
-  `aria-controls`-rich tab bars keep their own markup and add the `layoutId`
-  capsule directly (creator studio, RMHLadder).
+- **Liquid tabs:** tab strips use `components/ui/liquid-tabs.tsx`, placed
+  **below** the page title, never inside header chrome (§5.45; see
+  `page-consistency.md`). Since the 2026-10-09 minimalism audit the strip is a
+  **segmented control**: a neutral raised **thumb** (`[data-tab-thumb]`, opaque
+  surface + hairline + small shadow) on a flush `.glass-inset` **track**,
+  with the label in full ink. The accent fill is reserved for actions — a solid
+  accent pill read exactly like a primary button. High contrast keeps the
+  filled accent thumb. The thumb's paint is `--tab-thumb-bg` / `-ink` /
+  `-border` on the strip, so a game re-skins it with variables (Slice It!).
+  **One row; labels never truncate:** ≤4 tabs split the track equally, more
+  size to their labels, and a strip that still overflows scrolls with an edge
+  fade and keeps the active tab in view — it never wraps into a grid. The thumb
+  is a `layoutId` element that flows between tabs on `SPRING.snappy` and jumps
+  under reduced motion. Link-mode strips (`renderTab`) get the same thumb.
+  A hub whose "tabs" would be product names (/services, /ventures) is a list
+  (`HubLinkRow`), not a strip.
 - **Liquid opens:** card→detail navigations morph the clicked glass slab into
   the detail hero via `runViewTransition(el, { liquid: true })` + `liquidVTName()`
   (`lib/view-transition.ts`, §5.48) — the VT name is set at click time and
@@ -980,11 +1006,11 @@ gated off there too, via `html.app-route`).
   consumer, so the exit rides Radix's own `data-state` instead), and equally the
   hand-rolled menus that mount on open and unmount on close. Three values:
 
-  | attribute            | for                                 | travel                   |
-  | -------------------- | ----------------------------------- | ------------------------ |
-  | `data-motion="fade"` | a scrim / backdrop                  | `overlay`                |
+  | attribute            | for                                 | travel                     |
+  | -------------------- | ----------------------------------- | -------------------------- |
+  | `data-motion="fade"` | a scrim / backdrop                  | `overlay`                  |
   | `data-motion="pop"`  | a popover, menu, select, hover card | the anchored spring, below |
-  | `data-motion="rise"` | modal / dialog content              | `modalContent`           |
+  | `data-motion="rise"` | modal / dialog content              | `modalContent`             |
 
   `Dialog` and `Sheet` need no attribute — the rules name their `data-slot`s
   directly, so every one on the site is covered without a markup change.
@@ -1000,6 +1026,7 @@ gated off there too, via `html.app-route`).
   `Sheet` keep their own bespoke TRAVEL (a sheet slides from an edge, which none
   of the three shapes covers) but share the tokens and the cage — they used to
   hardcode three different answers between them.
+
 - **Every floating surface opens the way Apple's menus open: an anchored,
   uniform scale-and-fade on one spring, content arriving with the panel.**
   Scale 0.92 → 1 from the trigger's own corner, opacity 0 → 1 over the first
@@ -1042,6 +1069,27 @@ gated off there too, via `html.app-route`).
   every menu, select, dialog and sheet the site opens. `--motion-wobble`,
   `--motion-cage-*`, `.motion-cage`, `motion-pop-cage` and `motion-pop-reveal`
   are all gone, and the test above fails if any of them comes back.
+
+- **The rest of the CSS motion rides the same springs, as `linear()` easings.**
+  `--spring-smooth` / `--spring-snappy` / `--spring-sheet` (globals.css §7.1)
+  are `APPLE_SPRING.smooth` / `.snappy` / `.sheet` sampled at 41 points to
+  within 0.05% of rest, with `--spring-*-duration` = that settle time; use them
+  as a pair (`animation: x var(--spring-smooth-duration) var(--spring-smooth)`).
+  `lib/__tests__/motion-spring-easings.test.ts` re-derives every stop. The
+  `rise` menus, dialogs and sheets move on them: the travel lands on the spring
+  while opacity runs on its own quick `--motion-in` ramp, so a panel is readable
+  by ~80ms and the spring's sub-pixel tail never holds content back. Dialogs and
+  desktop sheets take `smooth`; the phone bottom sheet takes `sheet`, and its
+  dismiss, which crosses the whole screen, takes `--motion-out-travel` (0.24s,
+  accelerating) rather than the 0.1s fade-in-place exit. Every enter/exit pair
+  is one path run both ways — the exit ends on the enter's start frame. Two
+  exceptions, both deliberate: the per-page enter stays a 0.16s tween (a running
+  transform on a page root re-anchors its `position: fixed` descendants, and a
+  0.64s settle would park the compose FAB at the bottom of the document), and
+  exits stay short tweens (a dismissal should feel immediate, and a spring from
+  rest starts slowly). Bare Tailwind `transition*` utilities default to
+  `EASE.standard` on `duration-site-fast` rather than Tailwind's Material curve.
+
 - **The close is real, on both kinds of surface.** A dismissal is not a
   performance — a quick uniform reabsorb toward the anchor over
   `--motion-collapse` (110ms) with `pointer-events: none`, so a panel that is
@@ -1071,7 +1119,6 @@ gated off there too, via `html.app-route`).
   length of its own exit is worse than no exit at all.
 
   The anchor is stated three ways, in priority order:
-
   1. `--motion-origin` on the element, for a menu that picks its side at runtime
      (`LanguageSwitcher` hands it the same collision decision it used to place
      itself, so a list that flipped above its trigger grows upward out of it);
@@ -1089,6 +1136,7 @@ gated off there too, via `html.app-route`).
   Retiring the last two menus that still answered this privately — `lib-ctx-in`
   at 120ms and `vibe-model-pop` at 140ms — is what closed the loop §7.1 was
   opened to close.
+
 - **There is exactly one open, and every floating surface takes it.** There used
   to be two: `data-motion` for most things and `useLiquidPop` (§15.6) for the
   feed's menus — a goo-filtered droplet that budded off the trigger and
@@ -1097,6 +1145,74 @@ gated off there too, via `html.app-route`).
   twelve of them and the other forty opened differently. The hook is **deleted**;
   its consumers take `data-motion="pop"` + `usePopPresence`, which is two lines
   and no portal.
+- **Eversion: a control's state turns inside out** (globals.css §7.3,
+  2026-10-20). The globe ends a navigation by turning itself inside out, and every
+  control changes state the same way at its own scale. The new state is never
+  faded in over the old one: a tint emerges from INSIDE the control, swelling out
+  of one point into the control's whole shape on a spring, and goes back into
+  that point the same way.
+  - **Opt in with `data-evert`.** The layer is the control's `::before`, painted
+    in `--evert-tint`, behind the label: the control's own shape scaled 0 → 1
+    about the point. Nothing else on the control moves, so a label never
+    rotates or scales. `Button` (every variant but `link`, in its own hover
+    colour), `LiquidTabs` tabs, `MenuItem` rows, `Select` (trigger and items),
+    the nav rail, the top bar's buttons and sign-in, the compose button, the
+    feed's post cards and the store's cards carry it; their hover background
+    rules are gone, because the hover colour arrives by eversion now. The layer
+    turns out on a fine pointer's hover, a press (`data-pressed`), a menu's
+    roving highlight (`data-highlighted`) and keyboard focus.
+  - **Untagged controls are adopted** (2026-10-21: "ensure the eversion ALWAYS
+    PLAYS ON EVERY BUTTON, INPUT BOX, ETC"). The same listener finds the button,
+    link, tab, menu item, option or field under a first hover, press or focus
+    and, if nobody tagged it, adopts it (`lib/evert-auto.ts`): `data-evert="auto"`
+    when its `::before` is free (armed at rest for one style pass, so the state
+    already on it everts in), or the `.evert-ghost` — one body-level box in the
+    control's shape over it, `translate`d into place and `scale`d out of the same
+    point — for what cannot hold the layer: text fields, textareas and selects
+    (no pseudo-elements), and controls whose `::before` is taken. The `focus`
+    ghost stays on a focused field in the accent. Left alone: the switch, native
+    checkboxes and radios, the hub's orb and globe, anything under
+    `[data-evert-off]`, and anything half the viewport in size. Tag a control
+    yourself when it needs a tint of its own (`--evert-tint`).
+  - **Two variants.** `data-evert="select"` adds a second layer (`::after`) for
+    a selected state: the nav rail's current page pours out of the item you
+    pressed and drains out of the one you left, because the rail stays on
+    screen across the navigation. `data-evert="over"` lifts a translucent tint
+    above the content, for cards whose art covers the whole box.
+  - **It is a transform, so it survives a navigation.** It was a `clip-path`
+    circle, which the main thread animates. Pressing something that navigates
+    starts the route's render on that thread, and a probe showed no frame for
+    ~630 ms after the click, so the tint stood still until the new page had
+    painted. `scale` runs on the compositor and keeps moving through it.
+  - **Controls with a mark** evert in their own form. `Switch`: the "on" colour
+    pours out of the knob as the knob travels on the landing spring. Native
+    checkboxes and radios (drawn site-wide, except on Gecko and under forced
+    colors, which keep the native control): the accent everts from the centre,
+    then the tick or dot springs in.
+  - **The point is where you are.** `hooks/useEvertPoint.ts` is one delegated,
+    passive listener, mounted in `Providers.tsx`. It writes `--evert-x/-y`
+    on the control (never on `<html>`), once per event: the pointer's entry for
+    a hover, the finger for a press, the exit as a hover leaves, the centre for
+    keyboard focus. It never tracks the cursor (§5.1.1). A tap is held for
+    `EVERT_MIN_PRESS_MS` so a quick one is still seen.
+  - **Springs as transitions.** `--evert-ease` (`spring(0.3, 0.15)`) and
+    `--evert-ease-pop` (`spring(0.32, 0.3)`, for marks that land) are `linear()`
+    easings sampled from `lib/fluid.ts` (`springLinearEasing`), and
+    `lib/__tests__/evert-spring.test.ts` re-derives them. A transition never
+    plays on mount (a page that loads with boxes ticked does not animate them)
+    and retargets from where it is when interrupted.
+  - **Cost.** `scale` on control-sized layers, `transform`/`translate` on marks
+    and knobs, and `opacity` for the press deepening, all composited, plus
+    `clip-path` on the 16–40 px fills of checkboxes, radios and switches. No
+    shadow, layout property, filter or per-frame script. Measured on a 4×-throttled phone
+    profile: one control everting keeps 60 fps at the 95th percentile; twelve at
+    once drop about one frame in twenty under software raster.
+  - **Degradation is central.** Hover only exists under
+    `(hover: hover) and (pointer: fine)`, so a phone never shows a sticky hover.
+    The site's Reduce motion switch collapses it (the state still shows, at
+    once); the OS preference does not (2026-10-21: "it should always play by
+    default"). `perf-lite`
+    swaps the springs for one short tween. Forced colors drop the layer.
 - **Never `transition-all`, and never animate a layout property.** `all` makes
   the engine watch every animatable property on the element, so a class change
   that happens to touch `width`/`padding`/`gap` animates a reflow nobody asked
@@ -1110,6 +1226,7 @@ gated off there too, via `html.app-route`).
   `origin-left` + `transform: scaleX(p)`, not an animated `width`; a column chart
   is `origin-bottom` + `scaleY`. See `components/onboarding/FirstWeekCard.tsx`,
   `components/feed/PollDisplay.tsx` and `components/feed/InsightsModal.tsx`.
+
 - **A menu that fetches on open must reserve the size it is about to be.** The
   animation is never what is wrong when a panel opens and then jumps: the box
   moved after the animation had committed to it. A one-line "Loading…" note is
@@ -1117,7 +1234,6 @@ gated off there too, via `html.app-route`).
   so the open animated to the wrong height and corrected itself a moment later.
   Waiting for the data is not the fix; that is a menu that does not respond to
   being clicked. Predict the size instead, from two sources in order:
-
   1. **What it was last time.** `hooks/useReservedRows.ts` remembers the row
      count per panel key for the session. Exact from the second open, and it
      self-corrects as an inbox fills or empties.
@@ -1137,6 +1253,24 @@ gated off there too, via `html.app-route`).
   The bars are `aria-hidden`; announce the state once via `role="status"` with
   an `sr-only` label, because a screen reader needs "Loading…" and not eighteen
   empty boxes.
+
+- **Exception: the Globe Eversion is a one-shot navigation transition, and it
+  is longer than 0.3s.** "Nothing here is slower than 0.3s" is the rule for
+  state changes; confirming a destination in the hub is a navigation, and the
+  hub may play a ~4.6s WebGL2 effect instead of the veil (WRAP the page onto the
+  globe, EVERT it, UNWRAP the destination, and it ends there —
+  `components/radial/README.md` _Globe Eversion_, `lib/eversion/README.md`). It
+  is allowed because it stays inside everything else this section protects:
+  it is a **one-shot canvas**, mounted for one navigation and removed, not an
+  ambient layer; it writes **no per-frame custom property to `<html>`** (the
+  renderer draws into its own canvas, in a worker where it can); it **does not
+  track the cursor** (§5.1.1); **reduced motion** (OS or the account toggle)
+  never runs it and gets the ordinary fade; it **always plays in full**
+  (4.6 s, under WCAG 2.2.2's five seconds; no input speeds it up, amended
+  2026-10-20), and back/forward never animates; and it follows the **degradation tiers** (the minimum tier on
+  `perf-lite`, today's navigation when WebGL2 or the capture is unavailable). It
+  is dark behind `isEversionEnabled()` until the device lab signs off. A second
+  long navigation effect is not covered by this exception.
 - `hooks/usePopPresence.ts` — keeps a hand-rolled menu mounted through its
   `data-motion="pop"` close, and supplies the `data-state` to play it with. See
   the close note above; pair it with `hooks/useMenuViewportFit.ts`, which takes
@@ -1160,9 +1294,12 @@ Global (in `globals.css`):
 
 - Keyboard focus: `:focus-visible { outline: 2px solid var(--site-accent); outline-offset: 2px }`
   covers every interactive element (links, buttons, `[role]`, `[tabindex]`).
-  Text inputs opt out (border + caret instead); `Button` opts out too (via its
-  `data-slot="button"`) and draws its own softer
-  `focus-visible:ring-site-accent/50 ring-2 ring-offset-2`. **Don't add another
+  Text inputs opt out (border + caret instead). `Button` takes the global ring
+  too (since 2026-10-20; it drew its own softer box-shadow ring, which could not
+  evert with everything else's, §7 _Eversion_). The ring **turns out from inside
+  the control**: its offset springs from within the border to where it rests
+  (`@keyframes evert-focus`, from-only, so it lands on each element's own
+  offset); colour and width never animate. **Don't add another
   `focus-visible:ring` to an element the global outline already covers — you'll
   get a doubled indicator.** Reach for a self-drawn ring only when the element
   is excluded from (or not matched by) the global rule.
@@ -1348,19 +1485,19 @@ helpers"), deliberately global rather than in `app-theme.css`, so a game with
 its own design system does not have to adopt the app palette just to stop its
 bottom bar hiding under a phone's browser chrome.
 
-| Primitive                    | Use it for                                                                                                                                      |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.app-viewport`              | The root of a non-scrolling app shell. `100vh` then `100dvh` — the fallback pair, not Tailwind's single-declaration `h-dvh`.                     |
-| `.app-page`                  | The root of a full-screen screen that is a **document** — a landing, a lobby, a results card. Scrolls the page, not a box inside it. See rule 6. |
-| `.app-screen`                | A menu / results / lobby screen: full height, centred **while it fits**, scrolled when it does not.                                              |
-| `.app-stage-fit` + `.app-stage` | A fixed-aspect playfield. Put the HUD **inside** `.app-stage` when it must track the world, outside when it should use the letterbox.        |
-| `.app-hud` / `.app-hud-fixed`   | A full-bleed chrome layer, inset by the device's safe area. Geometry only — it does not touch `pointer-events`.                              |
-| `.app-safe-top/-bottom/-x/-pad` | Insets on a surface that is itself full-bleed but whose contents are not (a translucent bar, a letterbox gradient).                          |
-| `useKeyboardInset` + `--kb-inset` | The software keyboard's measured height, so a fixed-height shell can end where the keyboard begins. `AppShell` mounts it for the app tier. |
+| Primitive                         | Use it for                                                                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.app-viewport`                   | The root of a non-scrolling app shell. `100vh` then `100dvh` — the fallback pair, not Tailwind's single-declaration `h-dvh`.                     |
+| `.app-page`                       | The root of a full-screen screen that is a **document** — a landing, a lobby, a results card. Scrolls the page, not a box inside it. See rule 6. |
+| `.app-screen`                     | A menu / results / lobby screen: full height, centred **while it fits**, scrolled when it does not.                                              |
+| `.app-stage-fit` + `.app-stage`   | A fixed-aspect playfield. Put the HUD **inside** `.app-stage` when it must track the world, outside when it should use the letterbox.            |
+| `.app-hud` / `.app-hud-fixed`     | A full-bleed chrome layer, inset by the device's safe area. Geometry only — it does not touch `pointer-events`.                                  |
+| `.app-safe-top/-bottom/-x/-pad`   | Insets on a surface that is itself full-bleed but whose contents are not (a translucent bar, a letterbox gradient).                              |
+| `useKeyboardInset` + `--kb-inset` | The software keyboard's measured height, so a fixed-height shell can end where the keyboard begins. `AppShell` mounts it for the app tier.       |
 
 Six rules, each of which was a shipped defect before it was a rule:
 
-1. **The world runs to the edge; the controls do not.** Artwork *should* pass
+1. **The world runs to the edge; the controls do not.** Artwork _should_ pass
    under the notch. A pause button must not. Anything pinned to a viewport edge
    adds `var(--safe-top|right|bottom|left)` to its offset, or sits in an
    `.app-hud` layer that already has. Picture **landscape** when you check —
@@ -1373,12 +1510,12 @@ Six rules, each of which was a shipped defect before it was a rule:
    which states the fit in container-query units where there is nothing left to
    clamp.
 3. **Centring an overflowing flex container hides the top of it.** Content
-   taller than the container overflows past *both* edges, and scroll offsets
+   taller than the container overflows past _both_ edges, and scroll offsets
    cannot go negative, so the top is unreachable — with or without
    `overflow-y: auto`. Use `items-center-safe` / `justify-center-safe` (CSS:
    `align-items: safe center`) on anything that both centres and can scroll.
 4. **A full-screen canvas clamps its device-pixel ratio.** Fill rate scales with
-   the *square* of the ratio: a 3× phone at native asks for nine times the
+   the _square_ of the ratio: a 3× phone at native asks for nine times the
    pixels of a 1× screen, sixty times a second. 2D surfaces go through
    `gameSurfaceDpr()` (`lib/display-scale.ts`, capped at 2); 3D surfaces through
    the tier system (`lib/render/tier.ts`). Whatever sizes the drawing **buffer**
@@ -1392,7 +1529,7 @@ Six rules, each of which was a shipped defect before it was a rule:
    bottom 40% of the screen — and `dvh` does not help, because it tracks the
    browser's toolbars, not the keyboard. So the engine moves the only thing it
    can, the visual viewport: it pans, and where the field still will not fit, it
-   scales. Players report that as *the app zooming when they try to type*. Size
+   scales. Players report that as _the app zooming when they try to type_. Size
    such a surface `calc(100dvh - var(--kb-inset, 0px))` and mount
    `useKeyboardInset`; the shell then ends where the keyboard begins and there is
    nothing left to reveal. Two companions on the field itself: don't `autoFocus`
@@ -1408,7 +1545,7 @@ Six rules, each of which was a shipped defect before it was a rule:
    at full height for the whole visit, which is why the feed, which flows in the
    document, feels taller than an app screen on the same phone. Use `.app-page`:
    `min-height: 100svh`, a flex column, no inner scroller, and the safe-area
-   gutter at the end. The rule of thumb is what the screen *is*, not where it
+   gutter at the end. The rule of thumb is what the screen _is_, not where it
    lives: if the content is a column you read top to bottom, it is a document,
    even inside a game. RMHType's room is both in turn — `.app-page` as a lobby,
    `.app-viewport` once the race starts — and resets `window.scrollY` across the
@@ -1468,6 +1605,7 @@ remain the authority:
   palette, the composer and every Radix open/close pair.
   The only allowlist entry across rules 5–9 is `/login`, for the third-party
   provider brand marks.
+
 - **`lib/__tests__/game-viewport-consistency.test.ts` — the full-screen
   viewport contract (§12.1).** A static scan over the thirty game/app
   directories that fails on: (1) a scrolling flex/grid container that centres on

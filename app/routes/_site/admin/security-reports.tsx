@@ -65,7 +65,7 @@ function AdminSecurityReportsPage() {
     try {
       const res = await updateSecurityReport({ data: { id, status: next } });
       if (res.ok) {
-        toast.success(t('marked-status', { label: SECURITY_STATUS_LABELS[next], defaultValue: `Marked ${SECURITY_STATUS_LABELS[next]}` }));
+        toast.success(t('marked-status', { label: SECURITY_STATUS_LABELS[next], defaultValue: 'Marked {{label}}' }));
         if (next !== status) setItems((prev) => prev.filter((r) => r.id !== id));
         setCounts((prev) => ({ ...prev }));
         load(status);

@@ -2,14 +2,13 @@ import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { definePage } from '@/lib/route/define-page';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { Trophy } from 'lucide-react';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { JourneyColumn } from '@/components/feed/JourneyColumn';
 import { useSession } from '@/components/Providers';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { listAchievements } from '@/lib/achievements.server';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
@@ -17,8 +16,7 @@ import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 // first paint / prefetched on intent instead of fetched on mount. Signed-out
 // visitors get `null` (the page shows the sign-in prompt instead).
 const fetchAchievements = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   if (!session) return { achievements: null };
   return { achievements: await listAchievements(session.user.id) };
 });

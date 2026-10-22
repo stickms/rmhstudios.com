@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { MusicManager } from "@/lib/house-always-wins/music";
 import { SfxManager } from "@/lib/house-always-wins/sfx";
 import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
+import { NgPlusSlot } from "./NgPlus";
 import { OBJECTIVES } from "@/lib/house-always-wins/quests";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Check, Volume2, VolumeX, Music, Music2 } from "lucide-react";
@@ -182,6 +183,8 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
             </span>
           </div>
         </div>
+
+        <NgPlusSlot />
 
         {/* Controls */}
         <div className="mb-5 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px] text-[#6b6155]">

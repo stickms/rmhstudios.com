@@ -4,12 +4,12 @@
  *
  * ## The bug this works around
  *
- * When a loader throws `notFound()`, TanStack's server-side `loadMatches` walks
- * up to the nearest route with a `notFoundComponent` — the "boundary", which is
- * the root for most of this site — and runs `head()` only for the matches up to
- * and including it (`headMaxIndex` in `router-core/load-matches`). The client's
- * `hydrate()` (`router-core/ssr/ssr-client`) does not apply that cut: it runs
- * `head()` and `scripts()` for EVERY matched route. So the two sides render
+ * When a loader throws `notFound()`, TanStack's server-side loader walks up to
+ * the nearest route with a `notFoundComponent` — the "boundary", which is the
+ * root for most of this site — and runs `head()` only for the matches up to
+ * and including it (`loaderEnd` in `router-core/load-server`). The client's
+ * hydrate path (`projectLane` in `router-core/load-client`) does not apply that
+ * cut: it runs `head()` and `scripts()` for EVERY matched route. So the two sides render
  * different `<head>`s whenever a route between the boundary and the thrower
  * contributes a `<script>`.
  *
@@ -36,20 +36,20 @@
 interface MatchLike {
   index: number;
   status?: string;
-  globalNotFound?: boolean;
+  _notFound?: boolean;
 }
 
 /**
  * The index of the match that renders a not-found, or `-1` if none does.
  *
- * Mirrors how `load-matches` marks it: a ROOT boundary is left `success` with
- * `globalNotFound: true`; any other boundary gets `status: 'notFound'`. The
+ * Mirrors how `load-server` marks it: a ROOT boundary is left `success` with
+ * `_notFound: true` (named `globalNotFound` before router-core 1.171.2x); any other boundary gets `status: 'notFound'`. The
  * thrower is also `notFound`, but it is never above its own boundary, so the
  * lowest index is the boundary either way.
  */
 export function notFoundBoundaryIndex(matches: readonly MatchLike[]): number {
   for (const m of matches) {
-    if (m.globalNotFound || m.status === 'notFound') return m.index;
+    if (m._notFound || m.status === 'notFound') return m.index;
   }
   return -1;
 }
@@ -73,7 +73,7 @@ const GUARDED = Symbol.for('rmh.notFoundHeadGuard');
  * more than once per page, and the route objects are module singletons, so a
  * second call must not stack a second wrapper on the first.
  */
-export function installNotFoundHeadGuard(routesById: Record<string, unknown>): void {
+export function installNotFoundHeadGuard(routesById: object): void {
   for (const route of Object.values(routesById) as RouteLike[]) {
     const options = route?.options;
     if (!options) continue;

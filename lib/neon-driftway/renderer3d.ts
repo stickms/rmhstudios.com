@@ -26,6 +26,7 @@
  * adapts to whatever frame budget the device actually has.
  */
 
+import { photoPixelRatio, type PhotoCamera } from '@/lib/game/photo-mode';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -40,8 +41,9 @@ import {
   LANE_WIDTH, SHOULDER_WIDTH, GUARDRAIL_HEIGHT,
   MAX_OBSTACLES, MAX_PARTICLES, METRES_PER_DISTANCE,
   MPS_PER_UNIT, V_MAX_BOOST, V_MAX_NORMAL, BOOST_MAX,
-  STEER_MAX_LATERAL, roadHalf,
+  STEER_MAX_LATERAL, roadHalf, CAR_BODY_COLOR,
 } from './constants';
+import { drawLivery, type Livery } from './livery';
 
 // ── Framing ─────────────────────────────────────────────────────────────────
 
@@ -193,6 +195,9 @@ export class NeonDriftwayRenderer3D {
   // Cockpit parts that animate
   private steeringWheel = new THREE.Group();
   private hood!: THREE.Mesh;
+  private wheelBoss!: THREE.Mesh;
+  private liveryTexture: THREE.CanvasTexture | null = null;
+  private livery: Livery | null = null;
 
   // Ghost cars
   private ghosts: { group: THREE.Group; label: THREE.Sprite; body: THREE.Mesh }[] = [];
@@ -256,6 +261,32 @@ export class NeonDriftwayRenderer3D {
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
+
+  /** Paint the bonnet and wheel hub with a livery; `null` restores the stock car. */
+  setLivery(livery: Livery | null): void {
+    this.livery = livery;
+    const mat = this.hood.material as THREE.MeshStandardMaterial;
+    const boss = this.wheelBoss.material as THREE.MeshBasicMaterial;
+    this.liveryTexture?.dispose();
+    this.liveryTexture = null;
+    if (!livery) {
+      mat.map = null;
+      mat.color.set(CAR_BODY_COLOR);
+      boss.color.set(0x00d5ff);
+    } else {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      if (ctx) drawLivery(ctx, 256, livery);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      this.liveryTexture = tex;
+      mat.map = tex;
+      mat.color.set(0xffffff);
+      boss.color.set(`#${livery.accent1}`);
+    }
+    mat.needsUpdate = true;
+  }
 
   /** Re-dress the scene for a level. Cheap enough to call on every run. */
   setLevel(level: LevelConfig): void {
@@ -380,6 +411,7 @@ export class NeonDriftwayRenderer3D {
 
     this.updateLook(dt, game);
     this.updateCarRig(dt, game);
+    if (this.photo) this.applyPhotoCamera(this.photo);
     this.updateRoad(game);
     this.updateStreamedProps(game);
     this.updateObstacles(game);
@@ -405,10 +437,62 @@ export class NeonDriftwayRenderer3D {
     for (const texture of this.ghostLabelCache.values()) texture.dispose();
     this.ghostLabelCache.clear();
     this.roadTexture?.dispose();
+    this.liveryTexture?.dispose();
     this.envTarget?.dispose();
     this.pmrem?.dispose();
     this.composer?.dispose();
     this.renderer.dispose();
+  }
+
+  // ── Photo mode (U14) ──────────────────────────────────────────────────────
+
+  private photo: PhotoCamera | null = null;
+
+  /** Override the cockpit camera (sim paused) — `null` restores normal play. */
+  setPhotoCamera(camera: PhotoCamera | null): void {
+    this.photo = camera;
+    if (!camera) this.updateProjection();
+  }
+
+  private applyPhotoCamera(p: PhotoCamera): void {
+    const toRad = Math.PI / 180;
+    // The camera rides the car rig, so these are cockpit-relative: look around
+    // from the seat, or rise/pull back far enough to frame the hood and road.
+    this.camera.position.set(EYE_X, EYE_HEIGHT + p.rise, EYE_Z + p.back);
+    this.camera.rotation.set(p.pitch * toRad, p.yaw * toRad, p.roll * toRad, 'YXZ');
+    if (this.camera.fov !== p.fov) {
+      this.camera.fov = p.fov;
+      this.camera.updateProjectionMatrix();
+    }
+  }
+
+  /**
+   * One frame at up to 2× resolution, with `filter` (a CSS filter string)
+   * baked in through a 2D canvas. Read back in the same task as the render, so
+   * no `preserveDrawingBuffer` (and its per-frame cost) is needed.
+   */
+  async capturePhoto(filter: string): Promise<Blob | null> {
+    if (this.disposed || this.stereo) return null;
+    const ratio = photoPixelRatio(this.renderer.getPixelRatio(), this.width, this.height);
+    this.renderer.setPixelRatio(ratio);
+    this.renderer.setSize(this.width, this.height, false);
+    this.composer?.setPixelRatio(ratio);
+    this.composer?.setSize(this.width, this.height);
+    this.renderFrame();
+
+    const src = this.renderer.domElement;
+    const out = document.createElement('canvas');
+    out.width = src.width;
+    out.height = src.height;
+    const ctx = out.getContext('2d');
+    if (ctx) {
+      ctx.filter = filter;
+      ctx.drawImage(src, 0, 0);
+    }
+    this.applyResolution();
+    this.renderFrame();
+    if (!ctx) return null;
+    return new Promise((resolve) => out.toBlob(resolve, 'image/webp', 0.92));
   }
 
   // ── Resolution + projection ───────────────────────────────────────────────
@@ -513,7 +597,7 @@ export class NeonDriftwayRenderer3D {
     // Wheel turns much further than the car leans — it reads as driver input.
     const steerNorm = clamp(car.vx / STEER_MAX_LATERAL, -1, 1);
     this.steeringWheel.rotation.z = -steerNorm * 2.2;
-    (this.hood.material as THREE.MeshStandardMaterial).color.set(car.bodyColor);
+    if (!this.livery) (this.hood.material as THREE.MeshStandardMaterial).color.set(car.bodyColor);
   }
 
   private updateRoad(game: NeonDriftwayEngine): void {
@@ -775,7 +859,8 @@ export class NeonDriftwayRenderer3D {
   }
 
   private updateGhosts(game: NeonDriftwayEngine): void {
-    if (!game.isMultiplayer) {
+    // Solo runs can carry one race ghost (U9) through the same map.
+    if (!game.isMultiplayer && game.remotePlayers.size === 0) {
       for (const ghost of this.ghosts) ghost.group.visible = false;
       return;
     }
@@ -1701,6 +1786,7 @@ export class NeonDriftwayRenderer3D {
       new THREE.MeshBasicMaterial({ color: 0x00d5ff }),
     );
     boss.position.z = -0.014;
+    this.wheelBoss = boss;
     this.steeringWheel.add(boss);
     this.steeringWheel.position.set(EYE_X, 0.72, -0.72);
     this.steeringWheel.rotation.x = 1.1;

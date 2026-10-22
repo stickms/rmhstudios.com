@@ -9,6 +9,8 @@
  */
 
 import 'dotenv/config';
+import { installProcessGuards } from '../../lib/perf/process-guards';
+
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
 import { config } from './config';
@@ -17,10 +19,15 @@ import { RoomManager } from './room-manager';
 import { SyncEngine } from './sync-engine';
 import { MediaQueue } from './media-queue';
 import { ChatHandler } from './chat-handler';
+import { PartyHandler } from './party-handler';
 import { ReconnectionHandler } from './reconnection';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
+import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
+
+// Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
+installProcessGuards({ service: 'rmhtube' });
 
 if (!config.CORS_ORIGIN) {
   logger.error({ event: 'fatal_missing_cors', message: 'CORS_ORIGIN must be set (RMHTUBE_CORS_ORIGIN or SOCKET_CORS_ORIGIN)' });
@@ -30,6 +37,9 @@ if (!config.CORS_ORIGIN) {
 // ─── Health-check HTTP handler ───────────────────────────────────
 
 function requestHandler(req: IncomingMessage, res: ServerResponse): void {
+  // Process metrics for the admin performance page (compose-network only; see
+  // lib/perf/hub.ts).
+  if (handleInternalMetrics(req, res)) return;
   if (req.url === '/health' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
@@ -59,6 +69,9 @@ const io = new Server(httpServer, {
   },
 });
 
+// Metrics: connection/room gauges + inbound-event counters (lib/perf/hub.ts).
+instrumentHub(io, 'rmhtube');
+
 // ─── Auth middleware ──────────────────────────────────────────────
 
 io.use(authMiddleware);
@@ -68,7 +81,9 @@ io.use(authMiddleware);
 const roomManager   = new RoomManager(io);
 const syncEngine    = new SyncEngine(io, roomManager);
 const mediaQueue    = new MediaQueue(io, roomManager, syncEngine);
+syncEngine.setAdvanceHandler((room) => mediaQueue.advanceQueue(room));
 const chatHandler   = new ChatHandler(io, roomManager);
+const partyHandler  = new PartyHandler(io, roomManager);
 const reconnection  = new ReconnectionHandler(io, roomManager);
 
 // ─── Connection handler ──────────────────────────────────────────
@@ -83,6 +98,7 @@ io.on('connection', (socket) => {
 
   // Register domain event handlers
   roomManager.handleConnection(socket);
+  partyHandler.handleConnection(socket); // before syncEngine: it reads a seek pre-apply
   syncEngine.handleConnection(socket);
   mediaQueue.handleConnection(socket);
   chatHandler.handleConnection(socket);
@@ -98,6 +114,7 @@ io.on('connection', (socket) => {
 // ─── Periodic tasks ──────────────────────────────────────────────
 
 syncEngine.startHeartbeat();
+partyHandler.start();
 roomManager.startGarbageCollector();
 
 // ─── Graceful shutdown ───────────────────────────────────────────
@@ -110,6 +127,7 @@ function shutdown(signal: string): void {
   });
 
   syncEngine.stopHeartbeat();
+  void partyHandler.stop();
   roomManager.stopGarbageCollector();
 
   httpServer.close(() => {

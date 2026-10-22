@@ -84,6 +84,13 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // UI minimalism audit (2026-10-09): /create's prompt heading, which replaced
+  // the second "RMH Studios presents / The everything platform." hero.
+  // English-only until the translate pipeline runs (needs DEEPSEEK_API_KEY).
+  v: ['prompt-heading'],
+  // The Predictions Open/Resolved/Mine filter moved onto LiquidTabs and needed
+  // an accessible name for the strip (2026-10-09). Same pipeline caveat.
+  'c-predictions': ['filter-aria-label'],
   // ── The Next 100 (2026-08-05) ──────────────────────────────────────────
   // Badge-rarity tiers (F7), profile-completeness steps (B22) and the shared
   // Undo affordance (B1). English-only until `pnpm i18n:translate &&
@@ -119,7 +126,28 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // validation copy, the RMHLadder overview's first pass through t()). Runtime
   // falls back to English per key until `pnpm i18n:translate && pnpm
   // i18n:resources` has been run and the catalogs committed.
-  'settings-appearance': ['browse-themes', 'custom-accent-none', 'theme', 'theme-desc'],
+  'settings-appearance': [
+    'browse-themes',
+    'custom-accent-none',
+    'theme',
+    'theme-desc',
+    // Globe-eversion "Navigation transition" row (T21, 2026-10-17). English-only
+    // until the translate pipeline runs on the en change; remove with it.
+    'nav-transition',
+    'nav-transition-equirect',
+    'nav-transition-equirect-desc',
+    'nav-transition-lambert',
+    'nav-transition-lambert-desc',
+    'nav-transition-mercator',
+    'nav-transition-mercator-desc',
+    'nav-transition-peirce',
+    'nav-transition-peirce-desc',
+    'nav-transition-preview',
+    'nav-transition-random',
+    'nav-transition-random-desc',
+    'nav-transition-stereographic',
+    'nav-transition-stereographic-desc',
+  ],
   pages: [
     'already-have-account-prompt',
     'no-account-prompt',
@@ -131,7 +159,12 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   ],
   library: ['no-books-hint', 'no-books-title', 'no-results-hint'],
   'games-hub': ['no-guides-hint', 'no-reviews-hint', 'guide-body-guide-view'],
-  'c-rmhmusic': ['back-to-builds'],
+  'c-rmhmusic': [
+    'back-to-builds',
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'mini-pop-in',
+    'mini-pop-out',
+  ],
   'c-rmhcalculator': ['back-to-builds'],
   'c-news': [
     'filters',
@@ -156,7 +189,20 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   'c-kowloon-knockout': ['copy-link', 'punches-game-view'],
   'c-laundry-sort': ['copy-invite-link', 'copy-link-failed', 'link-copied'],
   'c-massive-march': ['copy-link', 'talking-hud'],
-  'c-neon-driftway': ['copy-code', 'copy-invite-link', 'select-level-ndwmultiplayer-lobby'],
+  'c-neon-driftway': [
+    'copy-code',
+    'copy-invite-link',
+    'select-level-ndwmultiplayer-lobby',
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'ghost-mode-off',
+    'ghost-mode-pb',
+    'ghost-mode-top',
+    'ghost-pb-label',
+    'ghost-toggle-aria',
+    'ghost-top-label',
+    'paused-photo-hint',
+    'photo-mode',
+  ],
   'c-rmhbox': [
     'copy-invite-link',
     'finished-clicks-wiki-race-game',
@@ -298,6 +344,17 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'cars-xl-tagline',
   ],
   feed: [
+    // Globe eversion Settings > Preview on a device that cannot run it (Fix E1,
+    // 2026-10-17). English-only until the translate pipeline runs; remove with it.
+    'eversion-preview-unavailable',
+    // UI minimalism audit (2026-10-09): the live rail's footer link, renamed
+    // from "Explore everything" under a new key. Same pipeline caveat.
+    'explore-more-link',
+    // Search audit (2026-10-09): what a signed-out search covers, now that
+    // /api/search answers signed-out visitors from the static catalog.
+    'search-no-matches-signed-out',
+    'search-signed-out-cta',
+    'search-signed-out-scope',
     // Extract backlog, 2026-09-15 — see the block at the end of this map.
     'drop-images-here',
     'edit-history-added',
@@ -529,8 +586,23 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'settings-back',
     'settings-premium-themes-equip-link',
     'settings-premium-themes-or',
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'dm-reply',
+    'remind-later',
+    'remind-me',
+    'remind-post-label',
+    'snooze',
+    'guestbook-tab',
   ],
   site: [
+    // Feature batch (2026-10-12) — English-only until the translate pipeline runs.
+    'ladder.pay',
+    // UI minimalism audit (2026-10-09): one-line descriptions for the two 3D
+    // showcases now listed on the /services hub. Same pipeline caveat.
+    'services-cars-desc',
+    'services-fashion-desc',
+    // /help's title, which was a hardcoded English "Help" in a bespoke header.
+    'help-title',
     // The accessible name of the Games ⇄ Apps catalog strip (2026-08-08). Same
     // pipeline caveat as the `feed` block above — English-only until
     // `pnpm i18n:translate && pnpm i18n:resources` runs.
@@ -751,6 +823,33 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'score-hud',
     'start-game-multiplayer-lobby',
     'waiting-for-players-game-canvas',
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'moment-dismiss',
+    'moment-first',
+    'moment-pb',
+    'moment-previous',
+    'moment-rank',
+    'moment-share',
+    'shortcut-restart',
+    'photo-again',
+    'photo-back',
+    'photo-capture',
+    'photo-download',
+    'photo-exit',
+    'photo-fov',
+    'photo-look',
+    'photo-look-noir',
+    'photo-look-none',
+    'photo-look-vivid',
+    'photo-look-warm',
+    'photo-mode',
+    'photo-pitch',
+    'photo-preview',
+    'photo-reset',
+    'photo-rise',
+    'photo-roll',
+    'photo-share',
+    'photo-yaw',
   ],
   // ── Extract backlog flushed (2026-09-15) ───────────────────────────────
   // 369 English strings that were live in the source but had never been
@@ -1012,6 +1111,26 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'lamp-perfect_one',
     'lamp-perfect_other',
     'remove-selected',
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'guestbook-closed',
+    'guestbook-delete',
+    'guestbook-delete-error',
+    'guestbook-empty',
+    'guestbook-hide',
+    'guestbook-mode-error',
+    'guestbook-mode-everyone',
+    'guestbook-mode-following',
+    'guestbook-mode-off',
+    'guestbook-more',
+    'guestbook-open-hint',
+    'guestbook-placeholder',
+    'guestbook-sign',
+    'guestbook-sign-error',
+    'guestbook-signed',
+    'guestbook-unhide',
+    'guestbook-who',
+    'guestbook-who-desc',
+    'someone',
   ],
   'c-roadmap': [
     'request-board-lede',
@@ -1136,6 +1255,74 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   'c-user-builds': ['view-source-build-card'],
   'r-strategies': ['leaderboards-index'],
   'r-rmhbox': ['player-count-of-max'],
+  'settings-notifications': [
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'tab-badge',
+    'tab-badge-desc',
+  ],
+  'c-saves': [
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'remind-cancel',
+    'remind-cancel-error',
+    'remind-error',
+    'remind-hour',
+    'remind-pick',
+    'remind-presets',
+    'remind-save',
+    'remind-set',
+    'remind-title',
+    'remind-tomorrow',
+    'remind-tonight',
+    'remind-week',
+    'reminders',
+    'reminders-empty-desc',
+    'reminders-empty-title',
+  ],
+  'c-rmhtube': [
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'bring-back',
+    'popped-out',
+    'raw-link-check',
+    'back-10',
+    'control-requested',
+    'forward-10',
+    'make-leader-named',
+    'request-control',
+    'seek-bar',
+    'seek-bar-readonly',
+    'take-control',
+    'wants-control',
+    // RMHTube features (2026-10-11): start offsets, multi-link add, sync status.
+    'pause',
+    'play',
+    'add-batch-to-queue_one',
+    'add-batch-to-queue_other',
+    'batch-cancel',
+    'batch-count_one',
+    'batch-count_other',
+    'error-start-time',
+    'start-at-label',
+    'sync-buffering',
+    'sync-catching-up',
+    'sync-idle',
+    'sync-jump-live',
+    'sync-leader',
+    'sync-paused-local',
+    'sync-resync',
+    'sync-stat-clock',
+    'sync-stat-offset',
+    'sync-stat-rate',
+    'sync-stat-rtt',
+    'sync-stat-seek-cost',
+    'sync-stat-seeks',
+    'sync-status-title',
+    'sync-synced',
+  ],
+  'c-nightrail': [
+    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
+    'photo-mode',
+    'photo-mode-key',
+  ],
 };
 
 // ─── Registry parity ────────────────────────────────────────────────────────

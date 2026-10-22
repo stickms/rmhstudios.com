@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Swords, ChevronDown, ArrowUpRight } from 'lucide-react';
+import '@/components/creator-studio/creator-studio.css';
 
 interface Rating {
   game: string;
@@ -64,7 +65,9 @@ export function RankedSummary() {
     : hasRatings
       ? t('ranked-summary-rated', { defaultValue: 'Your current ranked standings.' })
       : signedIn
-        ? t('ranked-summary-none', { defaultValue: 'Challenge other players to climb the leaderboards.' })
+        ? t('ranked-summary-none', {
+            defaultValue: 'Challenge other players to climb the leaderboards.',
+          })
         : t('ranked-summary-signed-out', { defaultValue: 'Sign in to compete in ranked matches.' });
 
   return (
@@ -89,6 +92,7 @@ export function RankedSummary() {
           <button
             type="button"
             className="cstudio-ranked__toggle"
+            data-evert=""
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
@@ -97,7 +101,7 @@ export function RankedSummary() {
               : t('ranked-summary-show', { defaultValue: 'Standings' })}
             <ChevronDown size={15} className={`cstudio-ranked__chev ${open ? 'is-open' : ''}`} />
           </button>
-          <Link to="/ranked" className="cstudio-ranked__link">
+          <Link to="/ranked" className="cstudio-ranked__link" data-evert="">
             {t('ranked-summary-view-all', { defaultValue: 'View all' })}
             <ArrowUpRight size={15} />
           </Link>

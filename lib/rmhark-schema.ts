@@ -1,20 +1,35 @@
 import { z } from "zod";
 import { isFeedImageUrl } from "@/lib/storage/keys";
 
-export const MAX_RMHARK_LENGTH = 280;
-export const MAX_RMHARK_IMAGES = 4;
-// Per-image alt text (accessibility). Kept generous so screen-reader users get
-// a full description; empty string = "no description provided".
-export const MAX_IMAGE_ALT_LENGTH = 1000;
+import {
+  MAX_RMHARK_LENGTH,
+  MAX_RMHARK_IMAGES,
+  MAX_IMAGE_ALT_LENGTH,
+  MAX_COMMENT_LENGTH,
+  MAX_POLL_QUESTION_LENGTH,
+  MAX_POLL_OPTION_LENGTH,
+  MIN_POLL_OPTIONS,
+  MAX_POLL_OPTIONS,
+} from "@/lib/rmhark-limits";
+import { postsPlusComposeFields } from "@/lib/posts-plus/schema";
+import { codeEmbedSchema } from "@/lib/code-embed/schema";
+
+// Re-exported for the API routes. Client code imports `@/lib/rmhark-limits`
+// directly — this module is zod.
+export {
+  MAX_RMHARK_LENGTH,
+  MAX_RMHARK_IMAGES,
+  MAX_IMAGE_ALT_LENGTH,
+  MAX_COMMENT_LENGTH,
+  MAX_POLL_QUESTION_LENGTH,
+  MAX_POLL_OPTION_LENGTH,
+  MIN_POLL_OPTIONS,
+  MAX_POLL_OPTIONS,
+};
 // Accepts the local proxy path or the public CDN URL (see isFeedImageUrl).
 export const feedImageUrlSchema = z
   .string()
   .refine(isFeedImageUrl, "Invalid image reference");
-export const MAX_COMMENT_LENGTH = 500;
-export const MAX_POLL_QUESTION_LENGTH = 200;
-export const MAX_POLL_OPTION_LENGTH = 80;
-export const MIN_POLL_OPTIONS = 2;
-export const MAX_POLL_OPTIONS = 4;
 
 const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
 
@@ -86,6 +101,15 @@ export const createRMHarkSchema = z
     unlockPrice: z.number().int().min(0).max(1_000_000).optional(),
     // Optional community to post into (viewer must be a member).
     communityId: z.string().max(64).optional(),
+    // Take meter (X6): readers vote agree/disagree; the split shows after voting.
+    isTake: z.boolean().optional(),
+    // P23 F14: a runnable HTML/CSS/JS snippet shown click-to-run in a sandboxed iframe.
+    codeEmbed: codeEmbedSchema.optional(),
+    // P06 communities-plus: flair (N1) and challenge entry (N5); community posts only.
+    flairId: z.string().max(64).optional(),
+    challengeId: z.string().max(64).optional(),
+    // posts-plus: X8 expiry (ttl), X5 series, X4 question-of-the-day answer.
+    ...postsPlusComposeFields,
   })
   .refine(
     (data) =>
@@ -93,6 +117,7 @@ export const createRMHarkSchema = z
       data.poll ||
       data.gifUrl ||
       (data.imageUrls?.length ?? 0) > 0 ||
+      !!data.codeEmbed ||
       !!data.originalId,
     { message: "Post must have text, a poll, an image/GIF, or be a quote" }
   )
@@ -117,6 +142,8 @@ export const createCommentSchema = z.object({
     .min(1, "Comment cannot be empty")
     .max(MAX_COMMENT_LENGTH, `Comment must be at most ${MAX_COMMENT_LENGTH} characters`),
   parentId: z.string().optional(),
+  // S1: set when the author chose to post after the "reconsider" prompt.
+  confirmReconsider: z.boolean().optional(),
 });
 
 export type CreateRMHarkInput = z.infer<typeof createRMHarkSchema>;

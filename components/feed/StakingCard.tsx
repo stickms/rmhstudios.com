@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Loader2, PiggyBank, TrendingUp } from'lucide-react';
 import { Button } from'@/components/ui/button';
+import { Switch } from'@/components/ui/switch';
 import { Spinner } from'@/components/ui/spinner';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 
@@ -11,6 +12,7 @@ interface Stake {
  principal: number;
  accrued: number;
  apr: number;
+ autoReinvest: boolean;
  balance: number;
 }
 
@@ -65,7 +67,7 @@ export function StakingCard() {
 
  if (loading) {
  return (
- <section className="rounded-site border border-site-border bg-site-surface p-4">
+ <section className="rounded-site glass-fill p-4">
  <div className="flex justify-center py-4">
  <Spinner size={20} />
  </div>
@@ -78,7 +80,7 @@ export function StakingCard() {
  const validAmt = Number.isFinite(amt) && amt > 0;
 
  return (
- <section className="rounded-site border border-site-border bg-site-surface p-4">
+ <section className="rounded-site glass-fill p-4">
  <div className="mb-3 flex items-center justify-between">
  <div className="flex items-center gap-2">
  <PiggyBank className="h-4 w-4 text-site-accent"/>
@@ -138,6 +140,18 @@ export function StakingCard() {
  >
  {t("unstake", { defaultValue:"Unstake"})}
  </Button>
+ </div>
+ <div className="mt-3 flex items-center justify-between gap-2">
+ <div className="min-w-0">
+ <p id="stake-auto-reinvest" className="text-xs font-semibold text-site-text">{t("auto-reinvest", { defaultValue:"Auto-reinvest"})}</p>
+ <p className="text-[10px] text-site-text-dim">{t("auto-reinvest-hint", { defaultValue:"Interest compounds into your stake daily"})}</p>
+ </div>
+ <Switch
+ checked={data.autoReinvest}
+ disabled={busy !== null}
+ aria-labelledby="stake-auto-reinvest"
+ onCheckedChange={(on) => act('/api/staking/settings', { autoReinvest: on },'reinvest')}
+ />
  </div>
  {data.accrued > 0 && (
  <button

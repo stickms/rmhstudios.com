@@ -14,7 +14,7 @@ export type ConnectionStatus = 'disconnected' | 'connecting' | 'waiting' | 'read
 
 /** Everything GameView needs to instantiate the correct session. */
 export type Runtime =
-    | { kind: 'local'; config: MatchConfig }
+    | { kind: 'local'; config: MatchConfig; training?: boolean }
     | { kind: 'host'; config: MatchConfig }
     | { kind: 'guest'; seats: MatchSeat[]; localSeat: number; mode: MatchMode };
 
@@ -64,6 +64,7 @@ interface GameStore {
     clearLobbyRoom: () => void;
 
     startLocalMatch: () => void;
+    startTraining: () => void;
     startHostMatch: (seats: MatchSeat[], mode: MatchMode, maxRounds: number, aiDifficulty: number, localSeat: number) => void;
     startGuestMatch: (seats: MatchSeat[], mode: MatchMode, localSeat: number) => void;
 
@@ -160,6 +161,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const { selectedClass, playerCount, mode, aiDifficulty, maxRounds } = get();
         const config = buildLocalConfig(selectedClass, playerCount, mode, aiDifficulty, maxRounds);
         set({ runtime: { kind: 'local', config }, isMultiplayer: false, phase: 'fight' });
+    },
+    startTraining: () => {
+        const { selectedClass } = get();
+        const config: MatchConfig = {
+            mode: 'ffa', maxRounds: 1, aiDifficulty: 0,
+            seats: [
+                { seat: 0, className: selectedClass, team: 0, kind: 'human-local', displayName: 'YOU' },
+                { seat: 1, className: selectedClass === 'iron_bull' ? 'stone_tiger' : 'iron_bull', team: 1, kind: 'remote', displayName: 'DUMMY' },
+            ],
+        };
+        set({ runtime: { kind: 'local', config, training: true }, isMultiplayer: false, phase: 'fight' });
     },
     startHostMatch: (seats, mode, maxRounds, aiDifficulty, localSeat) => {
         const config = buildHostConfig(seats, mode, maxRounds, aiDifficulty, localSeat);

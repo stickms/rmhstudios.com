@@ -228,7 +228,7 @@ export function PersonaChatColumn({
  })}
  rows={1}
  maxLength={1000}
- className="max-h-32 flex-1 resize-none rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="max-h-32 flex-1 resize-none rounded-site glass-inset px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <Button
  variant="accent"

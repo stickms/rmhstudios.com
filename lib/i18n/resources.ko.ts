@@ -15,6 +15,7 @@ import koCCursedLogic from "@/locales/ko/c-cursed-logic.json";
 import koCDailyPuzzles from "@/locales/ko/c-daily-puzzles.json";
 import koCDoctrine from "@/locales/ko/c-doctrine.json";
 import koCDreamRift from "@/locales/ko/c-dream-rift.json";
+import koCDunesday from "@/locales/ko/c-dunesday.json";
 import koCEconomy from "@/locales/ko/c-economy.json";
 import koCForestExplorer from "@/locales/ko/c-forest-explorer.json";
 import koCGabrielsHorn from "@/locales/ko/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const koResources = {
   "c-daily-puzzles": koCDailyPuzzles,
   "c-doctrine": koCDoctrine,
   "c-dream-rift": koCDreamRift,
+  "c-dunesday": koCDunesday,
   "c-economy": koCEconomy,
   "c-forest-explorer": koCForestExplorer,
   "c-gabriels-horn": koCGabrielsHorn,

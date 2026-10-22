@@ -33,6 +33,7 @@ import { updateEnemyAI as updateEnemyAISystem, setEnemyPropHash } from './enemy-
 import { spawnBoss, updateBoss, snapshotBossHp, enforceBossDpsCap, BossState } from './boss-system';
 import { CatalystRuntimeState, createCatalystRuntimeStates, updateCatalysts, onCatalystHit, onCatalystKill, onCatalystDamageTaken, onCatalystAttack } from './catalyst-system';
 import { SpatialHash } from './spatial-hash';
+import { RenderInterpolator } from './interpolation';
 import { DestructibleProp, PROP_COLLISION_OFFSET_Y } from './tile-generator';
 
 // ---- Callbacks --------------------------------------------------------------
@@ -824,6 +825,10 @@ export function createGameLoop(
   let lastTime: number = 0;
   let accumulator: number = 0;
   const FIXED_DT = 1 / 60; // 60 Hz physics
+  // Blends the last two sim states for drawing, so motion is continuous on
+  // 120/144/240Hz panels instead of hitching in uneven 60Hz strides. Render-only
+  // — see ./interpolation.ts.
+  const interpolator = new RenderInterpolator();
 
   // ---- WebGL setup ----
   const gl = initWebGL(canvas);
@@ -937,6 +942,7 @@ export function createGameLoop(
     // frame rate. This ensures identical movement speed at 30, 60, or 144 FPS.
     accumulator += frameDelta;
     while (accumulator >= FIXED_DT) {
+      interpolator.capture(world);
       // Berserker stats change with HP (recompute each step since combat changes HP)
       if (world.classId === 'berserker') {
         effectiveStats = recomputeStats();
@@ -1199,17 +1205,28 @@ export function createGameLoop(
 
     // ---- Per-frame updates (outside fixed timestep) ----
 
-    // 13. Camera follows at frame rate for smooth visual tracking
-    updateCamera(world.camera, world.player, frameDelta);
-    tileGen.update(world.camera);
+    // 13–14. Camera + render at the interpolated pose. The camera follows the
+    // BLENDED player — following the raw one chases a target that hitches in
+    // 60Hz strides, which is what made the whole screen judder at 144Hz. The
+    // blend is undone straight after, so the next step simulates from the true
+    // positions. (A pickup spawned inside the blend is not in the blended set,
+    // so the restore leaves it exactly where it was spawned.)
+    interpolator.apply(world, accumulator / FIXED_DT);
+    try {
+      // 13. Camera follows at frame rate for smooth visual tracking
+      updateCamera(world.camera, world.player, frameDelta);
+      tileGen.update(world.camera);
 
-    // 13b. Spawn structure pickups queued by tile generator
-    for (const pp of tileGen.drainPendingPickups()) {
-      spawnPickup(world, pp.x, pp.y, pp.type as PickupEntity['type'], pp.value);
+      // 13b. Spawn structure pickups queued by tile generator
+      for (const pp of tileGen.drainPendingPickups()) {
+        spawnPickup(world, pp.x, pp.y, pp.type as PickupEntity['type'], pp.value);
+      }
+
+      // 14. Render
+      renderFrame(renderer, world, tileGen);
+    } finally {
+      interpolator.restore();
     }
-
-    // 14. Render
-    renderFrame(renderer, world, tileGen);
 
     // 15. Check death
     if (world.player.hp <= 0) {

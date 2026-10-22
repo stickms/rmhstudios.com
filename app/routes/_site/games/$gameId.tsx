@@ -1,15 +1,17 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { GameHub } from '@/components/games/GameHub';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { games } from '@/lib/games';
 import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { jsonLdScript, videoGameSchema, breadcrumbSchema } from '@/lib/schema';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
+import { aiAvailable } from '@/lib/devplatform/ai.server';
 import { listReviews, getRatingAgg, listGuides } from '@/lib/games/meta.server';
 import type { ReviewView, RatingAgg, GuideSummary } from '@/lib/games/reviews';
+import { getTrickOfTheWeek } from '@/lib/trick-week/trick-week.server';
+import type { TrickView } from '@/lib/trick-week/trick-week';
 
 interface HubPayload {
   gameId: string;
@@ -22,6 +24,10 @@ interface HubPayload {
   reviews: ReviewView[];
   guides: GuideSummary[];
   signedIn: boolean;
+  /** I1: show the AI "How do I play?" panel. */
+  aiEnabled: boolean;
+  /** R21: last week's winning Nightrail trick (Nightrail hub only). */
+  trickOfTheWeek: TrickView | null;
 }
 
 const fetchHub = createServerFn({ method: 'GET' })
@@ -29,13 +35,13 @@ const fetchHub = createServerFn({ method: 'GET' })
   .handler(async ({ data: gameId }): Promise<HubPayload> => {
     const game = games.find((g) => g.id === gameId);
     if (!game) throw notFound();
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    const session = await getRequestSession();
     const viewerId = session?.user.id ?? null;
-    const [reviews, agg, guides] = await Promise.all([
+    const [reviews, agg, guides, trickOfTheWeek] = await Promise.all([
       listReviews(gameId, viewerId),
       getRatingAgg(gameId),
       listGuides(gameId, viewerId),
+      gameId === 'nightrail' ? getTrickOfTheWeek().catch(() => null) : null,
     ]);
     return {
       gameId,
@@ -48,6 +54,8 @@ const fetchHub = createServerFn({ method: 'GET' })
       reviews,
       guides,
       signedIn: !!viewerId,
+      aiEnabled: !!viewerId && aiAvailable(),
+      trickOfTheWeek,
     };
   });
 

@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { TagColumn } from '@/components/feed/TagColumn';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { listTagFeed, type TagFeedResult } from '@/lib/tags.server';
 import { SITE_URL } from '@/lib/seo';
 
@@ -13,8 +12,7 @@ import { SITE_URL } from '@/lib/seo';
 const fetchTagFeed = createServerFn({ method: 'GET' })
   .validator((tag: string) => tag)
   .handler(async ({ data: tag }): Promise<{ data: TagFeedResult }> => {
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    const session = await getRequestSession();
     return { data: await listTagFeed(tag, { viewerId: session?.user?.id ?? null }) };
   });
 

@@ -134,6 +134,9 @@ describe('bundle budget', () => {
     writeFileSync(path.join(dir, '.output/public/assets/entry.js'), 'export const value = 1;');
     writeFileSync(path.join(dir, '.output/public/assets/lazy.js'), 'export const lazy = 2;');
     writeFileSync(path.join(dir, '.output/public/assets/root.css'), 'html{color:black}');
+    // The site's render-blocking entry sheet, linked from __root's head — strict
+    // mode fails when a build has none to measure.
+    writeFileSync(path.join(dir, '.output/public/assets/site-tier-test.css'), 'a{color:red}');
     writeFileSync(
       path.join(dir, '.output/server/_tanstack-start-manifest_test.mjs'),
       `export const tsrStartManifest = () => ({ routes: { __root__: {

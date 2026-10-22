@@ -15,6 +15,7 @@ import enCCursedLogic from "@/locales/en/c-cursed-logic.json";
 import enCDailyPuzzles from "@/locales/en/c-daily-puzzles.json";
 import enCDoctrine from "@/locales/en/c-doctrine.json";
 import enCDreamRift from "@/locales/en/c-dream-rift.json";
+import enCDunesday from "@/locales/en/c-dunesday.json";
 import enCEconomy from "@/locales/en/c-economy.json";
 import enCForestExplorer from "@/locales/en/c-forest-explorer.json";
 import enCGabrielsHorn from "@/locales/en/c-gabriels-horn.json";
@@ -71,6 +72,11 @@ import enCWager from "@/locales/en/c-wager.json";
 import enCWishlist from "@/locales/en/c-wishlist.json";
 import enCommon from "@/locales/en/common.json";
 import enErrors from "@/locales/en/errors.json";
+import enFEconomyPlus from "@/locales/en/f-economy-plus.json";
+import enFFeedPlus from "@/locales/en/f-feed-plus.json";
+import enFMessaging from "@/locales/en/f-messaging.json";
+import enFPostsPlus from "@/locales/en/f-posts-plus.json";
+import enFProfilePlus from "@/locales/en/f-profile-plus.json";
 import enFeed from "@/locales/en/feed.json";
 import enGamesHub from "@/locales/en/games-hub.json";
 import enGroups from "@/locales/en/groups.json";
@@ -116,6 +122,7 @@ const enResources = {
   "c-daily-puzzles": enCDailyPuzzles,
   "c-doctrine": enCDoctrine,
   "c-dream-rift": enCDreamRift,
+  "c-dunesday": enCDunesday,
   "c-economy": enCEconomy,
   "c-forest-explorer": enCForestExplorer,
   "c-gabriels-horn": enCGabrielsHorn,
@@ -172,6 +179,11 @@ const enResources = {
   "c-wishlist": enCWishlist,
   "common": enCommon,
   "errors": enErrors,
+  "f-economy-plus": enFEconomyPlus,
+  "f-feed-plus": enFFeedPlus,
+  "f-messaging": enFMessaging,
+  "f-posts-plus": enFPostsPlus,
+  "f-profile-plus": enFProfilePlus,
   "feed": enFeed,
   "games-hub": enGamesHub,
   "groups": enGroups,

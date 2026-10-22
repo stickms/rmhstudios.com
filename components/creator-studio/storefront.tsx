@@ -24,6 +24,8 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Info } from 'lucide-react';
 import { IMAGE_VARIANTS, variantUrl } from '@/lib/images/variants.gen';
+import { DeferOnNavigate } from '@/components/ui/defer-on-navigate';
+import '@/components/creator-studio/storefront.css';
 
 /** A single thing on the shelf — a game, app, persona, build, or page. */
 export type StoreItem = {
@@ -129,6 +131,8 @@ function PrimaryWrapper({
   const shared = {
     className,
     'aria-label': ariaLabel,
+    // A press turns light out of the card from the finger, over its art (globals.css §7.3).
+    'data-evert': 'over',
     style: { '--card-hue': String(item.hue ?? 220) } as React.CSSProperties,
   };
   if (item.to) {
@@ -254,7 +258,11 @@ function Art({
       }}
     />
   ) : (
-    <div className="store-art__placeholder" style={{ backgroundImage: hueGradient(item.hue) }} aria-hidden="true">
+    <div
+      className="store-art__placeholder"
+      style={{ backgroundImage: hueGradient(item.hue) }}
+      aria-hidden="true"
+    >
       <span className="store-art__mark">{fallbackMark(item)}</span>
     </div>
   );
@@ -276,16 +284,17 @@ function TagRow({ tags }: { tags?: string[] }) {
 /** The big top banner. */
 function HeroCard({ item }: { item: StoreItem }) {
   return (
-    <div className="store-hero" style={{ '--card-hue': String(item.hue ?? 220) } as React.CSSProperties}>
+    <div
+      className="store-hero"
+      style={{ '--card-hue': String(item.hue ?? 220) } as React.CSSProperties}
+    >
       <PrimaryWrapper item={item} className="store-hero__link" ariaLabel={item.title}>
         <div className="store-hero__art">
           <Art item={item} {...coverFor(item)} eager sizes="100vw" />
           <span className="store-hero__scrim" aria-hidden="true" />
         </div>
         <div className="store-hero__body">
-          <span className="store-hero__eyebrow">
-            {item.badge ?? 'Featured'}
-          </span>
+          <span className="store-hero__eyebrow">{item.badge ?? 'Featured'}</span>
           <h3 className="store-hero__title">{item.title}</h3>
           {item.description && <p className="store-hero__desc">{item.description}</p>}
           <TagRow tags={item.tags} />
@@ -326,7 +335,7 @@ function MosaicCard({ item, wide, index }: { item: StoreItem; wide: boolean; ind
       className={`store-card ${wide ? 'is-wide' : ''}`}
       style={{ animationDelay: `${(index % 10) * 45}ms` }}
     >
-      <PrimaryWrapper item={item} className="store-card__link" ariaLabel={item.title}>
+      <PrimaryWrapper item={item} className="store-card__link glass-fill" ariaLabel={item.title}>
         <div className="store-art store-card__art">
           <Art item={item} {...coverFor(item)} />
           {item.badge && <span className="store-art__badge">{item.badge}</span>}
@@ -340,7 +349,12 @@ function MosaicCard({ item, wide, index }: { item: StoreItem; wide: boolean; ind
         </div>
       </PrimaryWrapper>
       {item.detailsTo && (
-        <Link to={item.detailsTo as string} className="store-card__details" aria-label={item.detailsLabel ?? 'Details'} title={item.detailsLabel ?? 'Details'}>
+        <Link
+          to={item.detailsTo as string}
+          className="store-card__details"
+          aria-label={item.detailsLabel ?? 'Details'}
+          title={item.detailsLabel ?? 'Details'}
+        >
           <Info size={15} />
         </Link>
       )}
@@ -373,7 +387,12 @@ export function Storefront({
   // the cards already on screen. We re-arrange from scratch only when the set is
   // genuinely replaced (a new search, or a fresh `seed` from a page refresh),
   // detected by the incoming `items` no longer starting with the same prefix.
-  const orderRef = useRef<{ seed: number; featured: boolean; srcIds: string[]; displayIds: string[] }>({
+  const orderRef = useRef<{
+    seed: number;
+    featured: boolean;
+    srcIds: string[];
+    displayIds: string[];
+  }>({
     seed: NaN,
     featured,
     srcIds: [],
@@ -438,11 +457,16 @@ export function Storefront({
             </section>
           )}
 
-          <div className="store-mosaic">
-            {mosaic.map((item, i) => (
-              <MosaicCard key={item.id} item={item} wide={flags[i] ?? false} index={i} />
-            ))}
-          </div>
+          {/* With a hero, the mosaic starts below the fold, and it is most of
+              the page's DOM — so on a page switch it is built after the hero
+              has painted rather than inside the same commit. */}
+          <DeferOnNavigate enabled={Boolean(hero)} minHeight="60vh">
+            <div className="store-mosaic">
+              {mosaic.map((item, i) => (
+                <MosaicCard key={item.id} item={item} wide={flags[i] ?? false} index={i} />
+              ))}
+            </div>
+          </DeferOnNavigate>
         </>
       )}
     </div>

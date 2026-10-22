@@ -5,6 +5,7 @@ import { useTranslation } from'react-i18next';
 import { ArrowLeft, MessageCircle } from'lucide-react';
 import { toast } from'sonner';
 import { Spinner } from'@/components/ui/spinner';
+import { useReconsider } from'@/components/safety/use-reconsider';
 import { Button } from'@/components/ui/button';
 import { RMHarkOverflowMenu } from'./RMHarkOverflowMenu';
 import { useLocaleStore } from'@/stores/localeStore';
@@ -14,14 +15,19 @@ import { useFreshUser, useUserDisplayStore } from'@/stores/userDisplayStore';
 import { useFeedStore } from'@/stores/feedStore';
 import { RMHarkActions } from'./RMHarkActions';
 import { CommentItem } from'./CommentItem';
+import { HiddenRepliesGroup } from'./HiddenReplies';
 import { AIGenerateButton } from'./AIGenerateButton';
 import { MentionTextarea } from'./MentionTextarea';
 import type { Comment } from'./CommentItem';
-import { MAX_COMMENT_LENGTH } from'@/lib/rmhark-schema';
+import { MAX_COMMENT_LENGTH } from'@/lib/rmhark-limits';
 import { Link, useNavigate } from'@tanstack/react-router';
 import type { FeedItem } from'@/lib/feed-types';
 import { RMHarkContent, extractFirstUrl } from'./RMHarkContent';
 import { PollDisplay } from'./PollDisplay';
+import { TakeMeterLazy } from'./TakeMeterLazy';
+import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
+import { RunnableEmbed } from '@/components/code-embed/RunnableEmbed';
+import { PostPlusBadges } from'@/components/posts-plus/PostPlusBadges';
 import { GifEmbed } from'./GifEmbed';
 import { PostImageGrid } from'./PostImageGrid';
 import { SensitiveMedia } from'./SensitiveMedia';
@@ -33,6 +39,8 @@ import { UserAvatar } from'./UserAvatar';
 import { ThreadSummary } from'./ThreadSummary';
 import { RelatedPosts } from'./RelatedPosts';
 import { EditHistoryButton } from'./EditHistory';
+import { postBodyUrl, postCommentsUrl } from '@/lib/feed/post-detail-prefetch';
+import { peekIntentFetch, takeOrFetch } from '@/lib/route/intent-fetch';
 
 interface PostDetailProps {
  postId: string;
@@ -46,15 +54,28 @@ export function PostDetail({ postId }: PostDetailProps) {
  // liquid-open morph target) renders INSTANTLY — no skeleton flash, no second
  // entrance when the fetch lands. Warm opens (from the feed) hit this; a cold URL
  // load finds no seed and shows the spinner until the fetch resolves.
+ // A post with no feed seed may still have arrived before this page mounted:
+ // the route's `beforeLoad` and the card's intent handlers start its fetches
+ // (lib/feed/post-detail-prefetch). Settled ones render in the first commit.
+ const [arrived] = useState(() => ({
+ body: peekIntentFetch(postBodyUrl(postId)),
+ comments: peekIntentFetch(postCommentsUrl(postId)),
+ }));
  const [post, setPost] = useState<FeedItem | null>(
- () => useFeedStore.getState().items.find((i) => i.id === postId) ?? null,
+ () =>
+ useFeedStore.getState().items.find((i) => i.id === postId) ??
+ (arrived.body?.status === 200 ? (arrived.body.data as FeedItem) : null),
  );
- const [comments, setComments] = useState<Comment[]>([]);
+ const [comments, setComments] = useState<Comment[]>(() =>
+ Array.isArray(arrived.comments?.data) ? (arrived.comments.data as Comment[]) : [],
+ );
  const [loading, setLoading] = useState(
- () => !useFeedStore.getState().items.some((i) => i.id === postId),
+ () => !useFeedStore.getState().items.some((i) => i.id === postId) && !arrived.body,
  );
- const [loadingComments, setLoadingComments] = useState(true);
- const [notFound, setNotFound] = useState(false);
+ const [loadingComments, setLoadingComments] = useState(
+ () => !Array.isArray(arrived.comments?.data),
+ );
+ const [notFound, setNotFound] = useState(() => arrived.body?.status === 404);
  const [commentContent, setCommentContent] = useState('');
  const [submitting, setSubmitting] = useState(false);
  const { data: session } = useSession();
@@ -142,15 +163,19 @@ export function PostDetail({ postId }: PostDetailProps) {
  // §17.2: keep the seeded hero on screen while the full record loads (only show
  // the spinner when there was no seed) so the morph never lands on a skeleton.
  const seed = useFeedStore.getState().items.find((i) => i.id === postId) ?? null;
+ // A request already started for this open (the route's beforeLoad, the card's
+ // intent) is taken once here instead of issuing a second one.
+ const url = postBodyUrl(postId);
  if (seed) setPost(seed);
- setLoading(!seed);
- fetch(`/api/rmharks/${postId}`)
- .then(async (res) => {
- if (res.status === 404) {
+ setLoading(!seed && !peekIntentFetch(url));
+ takeOrFetch(url)
+ .then(({ status, data: body }) => {
+ if (status === 404) {
  setNotFound(true);
  return;
  }
- const data = await res.json();
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ const data = body as any;
  // Update user display cache
  const users = [];
  if (data.user) users.push(data.user);
@@ -165,23 +190,27 @@ export function PostDetail({ postId }: PostDetailProps) {
 
  // Fetch comments
  useEffect(() => {
- setLoadingComments(true);
- fetch(`/api/rmharks/${postId}/comment`)
- .then((res) => res.json())
- .then((data) => setComments(data))
+ const url = postCommentsUrl(postId);
+ setLoadingComments(!Array.isArray(peekIntentFetch(url)?.data));
+ takeOrFetch(url)
+ .then(({ data }) => setComments(Array.isArray(data) ? (data as Comment[]) : []))
  .catch(console.error)
  .finally(() => setLoadingComments(false));
  }, [postId]);
 
+ const reconsider = useReconsider();
  const handleSubmit = async () => {
  if (!commentContent.trim() || submitting) return;
  setSubmitting(true);
  try {
- const res = await fetch(`/api/rmharks/${postId}/comment`, {
+ const res = await reconsider((confirmReconsider) =>
+ fetch(`/api/rmharks/${postId}/comment`, {
  method:'POST',
  headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ content: commentContent.trim() }),
- });
+ body: JSON.stringify({ content: commentContent.trim(), confirmReconsider }),
+ }),
+ );
+ if (!res) return;
  if (res.ok) {
  const comment = await res.json();
  setComments((prev) => [comment, ...prev]);
@@ -235,6 +264,17 @@ export function PostDetail({ postId }: PostDetailProps) {
  },
  [bumpFeedComment],
  );
+
+ // X2: flip a reply's hidden flag in place (it regroups under "Hidden replies").
+ const handleHiddenChange = useCallback((commentId: string, hidden: boolean) => {
+ const setDeep = (list: Comment[]): Comment[] =>
+ list.map((c) => ({
+ ...c,
+ ...(c.id === commentId ? { hidden } : {}),
+ ...(c.replies?.length ? { replies: setDeep(c.replies) } : {}),
+ }));
+ setComments((prev) => setDeep(prev));
+ }, []);
 
  const formatFullDate = (dateStr: string) => {
  const d = new Date(dateStr);
@@ -364,6 +404,32 @@ export function PostDetail({ postId }: PostDetailProps) {
  }
  />
  </div>
+ )}
+
+ {/* Take meter (X6) — only on posts the author marked as a take */}
+ {post.isTake && !post.locked && (
+ <div className="mb-3">
+ <TakeMeterLazy postId={postId} />
+ </div>
+ )}
+
+ {post.hasEmbed && !post.locked && <RunnableEmbed postId={postId} />}
+
+ {/* Context notes (X3) — a button until opened; open straight away when a note is visible */}
+ {!post.locked && (
+ <div className="mb-3">
+ <ContextNotesLazy postId={postId} hasNote={post.hasNote} />
+ </div>
+ )}
+
+ {/* Series part (X5) and auto-delete (X8) badges */}
+ {!post.locked && (
+ <PostPlusBadges
+ postId={postId}
+ seriesId={post.seriesId}
+ expiresAt={post.expiresAt}
+ className="mb-3"
+ />
  )}
 
  {/* Image / GIF — hidden behind a content warning when marked sensitive.
@@ -519,7 +585,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  onClick={handleSubmit}
  >
  {submitting
- ? t('posting', { defaultValue:'Posting...'})
+ ? t('posting', { defaultValue:'Posting…'})
  : t('reply', { defaultValue:'Reply'})}
  </Button>
  </div>
@@ -556,17 +622,20 @@ export function PostDetail({ postId }: PostDetailProps) {
  // owner's"double load animation"). `initial={false}`mounts the
  // replies already-settled — the page/morph is the single entrance;
  // reduced motion collapsed this anyway.
+ <>
  <motion.div
  className="divide-y divide-site-border"
  variants={staggerContainer(0.03)}
  initial={false}
  animate="animate"
  >
- {comments.map((comment, i) => {
+ {comments.filter((c) => !c.hidden).map((comment, i) => {
  const node = (
  <CommentItem
  comment={comment}
  postId={postId}
+ postAuthorId={post.user?.id}
+ onHiddenChange={handleHiddenChange}
  sessionUser={
  session?.user
  ? {
@@ -589,6 +658,31 @@ export function PostDetail({ postId }: PostDetailProps) {
  );
  })}
  </motion.div>
+ <HiddenRepliesGroup count={comments.filter((c) => c.hidden).length}>
+ {comments
+ .filter((c) => c.hidden)
+ .map((comment) => (
+ <CommentItem
+ key={comment.id}
+ comment={comment}
+ postId={postId}
+ postAuthorId={post.user?.id}
+ onHiddenChange={handleHiddenChange}
+ sessionUser={
+ session?.user
+ ? {
+ ...session.user,
+ image: resolvedUser?.image || session.user.image,
+ name: resolvedUser?.name || session.user.name,
+ }
+ : undefined
+ }
+ onReplyAdded={handleReplyAdded}
+ onCommentRemoved={handleCommentRemoved}
+ />
+ ))}
+ </HiddenRepliesGroup>
+ </>
  )}
  </div>
  )}

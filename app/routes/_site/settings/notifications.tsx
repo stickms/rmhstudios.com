@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { DiscoverySettings } from '@/components/discovery/DiscoverySettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
 
 export const Route = createFileRoute('/_site/settings/notifications')({
@@ -18,6 +19,7 @@ function NotificationSettingsPage() {
     >
       <div className="px-4 pt-4 pb-12">
         <NotificationSettings />
+        <DiscoverySettings />
       </div>
     </PageLayout>
   );

@@ -8,9 +8,10 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { sendPushToUser, pushTitleFor } from '@/lib/push/send.server';
+import { sendPushToUser, pushTitleFor, pushActionsFor } from '@/lib/push/send.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { redisEnabled, redisGetJSON, redisSetJSON, redisIncrBy } from '@/lib/redis.server';
+import { cachedNullable, invalidateCached } from '@/lib/cached.server';
 import type { NotificationType } from '@prisma/client';
 
 /**
@@ -154,18 +155,42 @@ const UNMUTABLE_ENTITY_TYPES: ReadonlySet<string> = new Set([
   // New-device / new-location sign-in alerts (B11). The email goes out
   // regardless; this is what puts the matching row in the notification centre.
   'security',
+  // A reminder the user set for themselves (U7). Turning off "system"
+  // notifications is not a request to silently drop a reminder they asked for.
+  'reminder',
 ]);
+
+const PREF_TTL_MS = 60_000;
+const prefKey = (userId: string) => `notif-pref:${userId}`;
 
 /** True when the recipient has this notification type turned off. */
 async function isMuted(input: CreateNotificationInput): Promise<boolean> {
   if (input.type === 'SYSTEM' && input.entityType && UNMUTABLE_ENTITY_TYPES.has(input.entityType)) {
     return false;
   }
-  const prefs = await prisma.notificationPreference.findUnique({
-    where: { userId: input.userId },
-  });
+  // perf: this ran an uncached SELECT for EVERY notification created (likes and
+  // comments fan out heavily). 60s L1/L2 cache; every preference writer calls
+  // invalidateNotificationPrefs() so a toggle takes effect immediately.
+  const prefs = await cachedNullable(prefKey(input.userId), PREF_TTL_MS, () =>
+    prisma.notificationPreference.findUnique({
+      where: { userId: input.userId },
+      select: {
+        likes: true,
+        comments: true,
+        follows: true,
+        mentions: true,
+        reposts: true,
+        system: true,
+      },
+    }),
+  );
   if (!prefs) return false; // no row = defaults = everything on
   return !prefs[PREF_FIELD[input.type]];
+}
+
+/** Drop the cached mute preferences — call after ANY write to notificationPreference. */
+export function invalidateNotificationPrefs(userId: string): void {
+  void invalidateCached(prefKey(userId));
 }
 
 export async function createNotification(input: CreateNotificationInput): Promise<void> {
@@ -198,7 +223,8 @@ export async function createNotification(input: CreateNotificationInput): Promis
       }
     }
 
-    await prisma.notification.create({
+    const created = await prisma.notification.create({
+      select: { id: true },
       data: {
         userId: input.userId,
         actorId: input.actorId ?? null,
@@ -224,6 +250,8 @@ export async function createNotification(input: CreateNotificationInput): Promis
       body: input.preview ?? undefined,
       url: input.link ?? '/notifications',
       tag: input.entityType && input.entityId ? `${input.entityType}:${input.entityId}` : undefined,
+      nid: created.id,
+      actions: pushActionsFor(input.type, input.entityType),
     });
   } catch (err) {
     console.error('[notifications] failed to create notification:', err);

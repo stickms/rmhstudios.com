@@ -196,7 +196,7 @@ export function ProfileCosmetics() {
         <section key={kind} aria-labelledby={`cosmetics-${kind}-heading`}>
           <h2
             id={`cosmetics-${kind}-heading`}
-            className="mb-2 text-xs font-bold uppercase tracking-wider text-site-text-dim"
+            className="site-section-label mb-2"
           >
             {KIND_LABELS[kind]}
           </h2>

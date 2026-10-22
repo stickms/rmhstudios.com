@@ -16,7 +16,7 @@ Current production (Docker Compose on the VPS):
 
 | Service                             | Runtime  | Port                          | Entry                                        |
 | ----------------------------------- | -------- | ----------------------------- | -------------------------------------------- |
-| `web` (Nitro SSR)                   | **Node** | 7005 (blue/green spare: 7015) | `.output/server/index.mjs`                   |
+| `web` (Nitro SSR)                   | **Node** | 7005 (blue/green spare: 7015) | `server/web-cluster.mjs` → `.output/server/worker.mjs` |
 | `socket` (games hub)                | **Node** | 7001                          | `dist-server/server/socket-server/index.cjs` |
 | `rmhbox` (party games)              | **Node** | 7676                          | `dist-server/server/rmhbox/index.cjs`        |
 | `rmhtube` (watch together)          | **Node** | 7003                          | `dist-server/server/rmhtube/index.cjs`       |
@@ -97,7 +97,11 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   consumer that drains queues and runs background work that used to block
   request handlers: `engagement.progression` (achievements/XP/quests/webhooks),
   `event.reminder` (T-24h/T-15m RSVP reminders), and the `email.weekly-digest`
-  cron. Owns pg-boss queue maintenance/scheduling (the web tier is send-only).
+  cron. Hourly `ops.deepseek-balance` (`:05` UTC, `lib/jobs/maintenance.server.ts`)
+  samples the DeepSeek account balance into `deepseek_balance_snapshot` for
+  `/admin/deepseek` and prunes rows older than 400 days; it skips silently when
+  `DEEPSEEK_API_KEY` is unset.
+  Owns pg-boss queue maintenance/scheduling (the web tier is send-only).
   Degrades safely: with no `DATABASE_URL` it exits and the web tier runs the
   work inline. Logic lives in `lib/jobs/` + `lib/social/engagement-effects.server.ts`.
 - **`nitro/`** — not a service: Nitro startup plugins for the web tier,
@@ -110,6 +114,17 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   (per-worker cold-start warmup: opens the Prisma pool + primes the anon
   homepage feed/sidebar caches so the first request after a deploy/restart
   isn't cold).
+- **Metrics** — every Node process runs the `lib/perf/` collector
+  (`process-metrics.ts`); each hub serves `GET /internal/metrics` (compose-network
+  only, optional `INTERNAL_METRICS_TOKEN`), web workers and `jobs` publish to Redis.
+  Read at `/admin/performance`; see `docs/runbooks/performance-metrics.md`.
+- **`web-cluster.mjs`** — the web container's PID 1 (Dockerfile `CMD`). A
+  cluster primary that runs Nitro's `.output/server/worker.mjs` × `WEB_WORKERS`,
+  REPLACES a worker that exits (logging its exit code or signal; `SIGKILL` is
+  the OOM killer) and forwards SIGTERM so the workers drain. It exists because
+  Nitro's own node-cluster primary forks once and never replaces a worker: two
+  deaths took the whole container down (2026-10-21). Tested by
+  `server/__tests__/web-cluster.test.ts`.
 - **`shared/`** — `createLogger(service)` (structured JSON lines),
   `createServerPrismaClient(logger)` (`@prisma/adapter-pg`, pool
   `SERVER_DB_POOL_SIZE` default 5), `createRateLimiter(rules)` (per

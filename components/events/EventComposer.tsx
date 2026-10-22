@@ -14,6 +14,12 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import type { EventDTO, EventVenueKindValue } from '@/lib/events.server';
+import {
+  NO_RECURRENCE,
+  RecurrenceFields,
+  buildRecurrence,
+  type RecurrenceDraft,
+} from '@/components/calendar/RecurrenceFields';
 
 interface EventComposerProps {
   open: boolean;
@@ -79,6 +85,7 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
   const [venueKind, setVenueKind] = useState<EventVenueKindValue>('IRL');
   const [venueRef, setVenueRef] = useState('');
   const [capacity, setCapacity] = useState('');
+  const [recurrence, setRecurrence] = useState<RecurrenceDraft>(NO_RECURRENCE);
   const [submitting, setSubmitting] = useState(false);
 
   const venue = VENUE_KINDS.find((v) => v.value === venueKind)!;
@@ -95,6 +102,7 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
     setVenueKind('IRL');
     setVenueRef('');
     setCapacity('');
+    setRecurrence(NO_RECURRENCE);
   };
 
   const submit = async () => {
@@ -118,6 +126,7 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
           venueKind,
           venueRef: venueRef.trim() || undefined,
           capacity: capacity ? Number(capacity) : undefined,
+          recurrence: buildRecurrence(recurrence),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -229,6 +238,8 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
               onChange={(e) => setVenueRef(e.target.value)}
             />
           </label>
+
+          <RecurrenceFields value={recurrence} onChange={setRecurrence} />
         </div>
 
         <DialogFooter>

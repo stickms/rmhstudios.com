@@ -1,6 +1,27 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { Pool } from 'pg';
+// Aliased: this module already exports a `recordQuery` (the budget counter below).
+import { recordQuery as recordQueryMetric } from './perf/process-metrics';
+import { guardPool } from './perf/process-guards';
+
+/* ─── BIGINT columns ─────────────────────────────────────────────────────────
+ *
+ * Coin balances, ledger amounts and vault stakes are BIGINT, which Prisma reads
+ * as a JS `bigint` — and `JSON.stringify` THROWS on a bigint. Call sites convert
+ * with `Number()` where the type checker sees them, but an aggregate spread into
+ * `Response.json` is invisible to it. So teach bigint to serialize, once, in the
+ * module every database-reading process loads: as a number while it is exact
+ * (every coin amount — MAX_TRANSACTION is 1e13), as a string past 2^53 so a
+ * value is never silently rounded.
+ */
+const bigintProto = BigInt.prototype as unknown as { toJSON?: () => number | string };
+bigintProto.toJSON ??= function (this: bigint) {
+  return this <= BigInt(Number.MAX_SAFE_INTEGER) && this >= BigInt(Number.MIN_SAFE_INTEGER)
+    ? Number(this)
+    : this.toString();
+};
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient; prismaRead: PrismaClient };
 
@@ -188,7 +209,29 @@ const queryBudgetExtension = Prisma.defineExtension({
   query: {
     async $allOperations({ model, operation, args, query }) {
       recordQuery(model, operation);
-      return query(args);
+      // Time the query for the admin performance page (lib/perf). Wall time of
+      // `query(args)` includes waiting for a pool connection, which is the point:
+      // a slow op and a starved pool both show up here. The recorder swallows its
+      // own errors and a failed query is re-thrown untouched.
+      const startedAt = performance.now();
+      try {
+        const result = await query(args);
+        recordQueryMetric({
+          op: `${model ?? 'raw'}.${operation}`,
+          durationMs: performance.now() - startedAt,
+          ok: true,
+          label: budgetStorage.getStore()?.label,
+        });
+        return result;
+      } catch (error) {
+        recordQueryMetric({
+          op: `${model ?? 'raw'}.${operation}`,
+          durationMs: performance.now() - startedAt,
+          ok: false,
+          label: budgetStorage.getStore()?.label,
+        });
+        throw error;
+      }
     },
   },
 });
@@ -283,7 +326,49 @@ function withExtensions(client: PrismaClient): PrismaClient {
   return extended as unknown as PrismaClient;
 }
 
-function createAdapter(connectionString: string, poolSize: number): PrismaPg {
+/**
+ * The pg pools behind the two clients, kept so the admin performance page can
+ * read `totalCount` / `idleCount` / `waitingCount`. PrismaPg builds its pool
+ * privately when handed a config, so the pool is constructed here and handed in
+ * instead (PrismaPg 7 accepts a `pg.Pool` and, with `disposeExternalPool`, ends
+ * it on `$disconnect` exactly as it ends its own).
+ */
+type TrackedPools = {
+  primary?: { pool: Pool; max: number };
+  replica?: { pool: Pool; max: number };
+};
+// On `globalThis` for the same reason the clients are: outside production a
+// hot-reload re-evaluates this module but reuses the cached clients, and the
+// re-evaluated copy must still find their pools.
+const trackedPools = ((globalThis as { __rmhDbPools?: TrackedPools }).__rmhDbPools ??= {});
+
+export interface DbPoolStat {
+  total: number;
+  idle: number;
+  waiting: number;
+  max: number;
+}
+
+/** Live connection-pool counters; `replica` is absent without DATABASE_REPLICA_URL. */
+export function dbPoolStats(): { primary: DbPoolStat | null; replica?: DbPoolStat } {
+  const read = (t?: { pool: Pool; max: number }): DbPoolStat | null =>
+    t
+      ? {
+          total: t.pool.totalCount,
+          idle: t.pool.idleCount,
+          waiting: t.pool.waitingCount,
+          max: t.max,
+        }
+      : null;
+  const replica = read(trackedPools.replica);
+  return { primary: read(trackedPools.primary), ...(replica ? { replica } : {}) };
+}
+
+function createAdapter(
+  connectionString: string,
+  poolSize: number,
+  role: 'primary' | 'replica',
+): PrismaPg {
   // PrismaPg wraps a pg Pool — configure pool sizing for predictable behaviour under load.
   // perf audit §2/§4: the web container serves every page + API request from this
   // single pool, so the old default of 10 was trivially exhausted under concurrency
@@ -292,12 +377,49 @@ function createAdapter(connectionString: string, poolSize: number): PrismaPg {
   // DATABASE_POOL_SIZE — see .env.example / deploy/postgres/postgresql.tuning.conf),
   // and the acquire timeout lowered from 10s→5s so overload FAILS FAST instead of
   // piling up multi-second waits behind an already-saturated pool.
-  return new PrismaPg({
+  //
+  // perf: server-side timeouts, so ONE slow query or a stuck transaction cannot
+  // hold a pool slot indefinitely (every other request then fails the 5s acquire
+  // above). pg sends these as startup parameters on each new connection.
+  //   DATABASE_STATEMENT_TIMEOUT_MS      cancel any single statement past N ms
+  //   DATABASE_IDLE_TX_TIMEOUT_MS        kill a session left idle inside a tx past N ms
+  // OFF by default (unset/0) so scripts, jobs and cron workers that import this
+  // module keep today's behaviour; docker-compose.yml turns them on for `web`
+  // only. Code that legitimately exceeds them opts out per transaction with
+  // `SET LOCAL statement_timeout = …` / `SET LOCAL idle_in_transaction_session_timeout = 0`
+  // (see lib/ops/cohorts.server.ts, lib/kaikai-debt/ledger.server.ts).
+  // NOTE: PgBouncer in transaction mode (compose `pgbouncer` profile) IGNORES
+  // startup parameters, so behind a pooler these have no effect; the equivalent
+  // there is `ALTER ROLE <app role> SET statement_timeout = …` (and likewise
+  // idle_in_transaction_session_timeout), which applies server-side regardless.
+  const statementTimeout = optionalMs('DATABASE_STATEMENT_TIMEOUT_MS');
+  const idleTxTimeout = optionalMs('DATABASE_IDLE_TX_TIMEOUT_MS');
+  const poolConfig = {
     connectionString,
     max: poolSize,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
-  });
+    ...(statementTimeout ? { statement_timeout: statementTimeout } : {}),
+    ...(idleTxTimeout ? { idle_in_transaction_session_timeout: idleTxTimeout } : {}),
+  };
+  const pool = guardPool(new Pool(poolConfig), { pool: `prisma:${role}` });
+  const adapter = new PrismaPg(pool, { disposeExternalPool: true });
+  // PrismaPg recognises a pool with `instanceof pg.Pool`; if a duplicate `pg`
+  // copy ever made that fail it would treat our Pool as a config object. The
+  // private `externalPool` field is only set when recognition worked — if it did
+  // not, discard this pool (nothing has connected) and use the original config path.
+  if ((adapter as unknown as { externalPool?: Pool | null }).externalPool !== pool) {
+    void pool.end().catch(() => {});
+    return new PrismaPg(poolConfig);
+  }
+  trackedPools[role] = { pool, max: poolSize };
+  return adapter;
+}
+
+/** A positive millisecond count from the environment, or undefined (= off). */
+function optionalMs(envVar: string): number | undefined {
+  const raw = parseInt(process.env[envVar] || '', 10);
+  return Number.isFinite(raw) && raw > 0 ? raw : undefined;
 }
 
 function poolSize(envVar: string, fallback: number): number {
@@ -356,7 +478,7 @@ function createPrismaClient(): PrismaClient {
   warnIfPooledWithoutDirect(connectionString);
 
   const client = new PrismaClient({
-    adapter: createAdapter(connectionString, poolSize('DATABASE_POOL_SIZE', 20)),
+    adapter: createAdapter(connectionString, poolSize('DATABASE_POOL_SIZE', 20), 'primary'),
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
@@ -371,7 +493,7 @@ function createReadClient(): PrismaClient | null {
     // The replica gets its own pool. Sharing the primary's would defeat the
     // whole exercise: the reason to route reads away is that they were
     // competing with writes for connections.
-    adapter: createAdapter(replicaUrl, poolSize('DATABASE_REPLICA_POOL_SIZE', 10)),
+    adapter: createAdapter(replicaUrl, poolSize('DATABASE_REPLICA_POOL_SIZE', 10), 'replica'),
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 

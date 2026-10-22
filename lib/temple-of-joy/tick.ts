@@ -394,6 +394,8 @@ export function applyVigil(
       joy,
       sinnerJoy: sinnerStep.sinners.reduce((sum, s) => sum + s.swallowed, 0),
       manna: mannaStep.ripened,
+      counted: countedSeconds,
+      efficiency,
       pending: elapsedSeconds > 60,
     },
   };

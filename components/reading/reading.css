@@ -1,0 +1,210 @@
+/*
+ * Reading package (L1/L2/L6/L8/Y2) — highlight paint, sidenotes, glossary
+ * popovers and the reading ruler. Everything reads from the --site-* contract.
+ */
+
+/* ── L1 / L8: painted with the CSS Custom Highlight API (no DOM mutation) ── */
+::highlight(rf-mine) {
+  background-color: color-mix(in oklab, var(--site-accent) 30%, transparent);
+  color: inherit;
+}
+::highlight(rf-note) {
+  background-color: color-mix(in oklab, var(--site-accent) 30%, transparent);
+  text-decoration: underline;
+  text-decoration-style: solid;
+  text-decoration-color: var(--site-accent);
+  text-underline-offset: 3px;
+  color: inherit;
+}
+::highlight(rf-popular) {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-decoration-color: color-mix(in oklab, var(--site-accent) 75%, transparent);
+  text-underline-offset: 4px;
+}
+::highlight(rf-flash) {
+  background-color: color-mix(in oklab, var(--site-accent) 55%, transparent);
+  color: inherit;
+}
+
+/* ── L2: footnote reference, sidenote, popover ── */
+.rf-fn {
+  position: relative;
+}
+.rf-fn__ref {
+  display: inline-block;
+  min-inline-size: 1.1em;
+  padding-inline: 0.15em;
+  margin-inline-start: 0.1em;
+  font-size: 0.72em;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: super;
+  text-align: center;
+  color: var(--site-accent);
+  text-decoration: none;
+  border-radius: var(--site-radius-sm);
+}
+.rf-fn__ref:hover {
+  text-decoration: underline;
+}
+.rf-sn {
+  display: none;
+}
+.rf-article[data-sidenotes='on'] .rf-sn {
+  display: block;
+  float: right;
+  clear: right;
+  inline-size: 14rem;
+  margin-inline-end: -15.5rem;
+  margin-block: 0.15rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.5;
+  text-align: start;
+  color: var(--site-text-muted);
+}
+.rf-article[data-sidenotes='on'] .rf-sn__n {
+  margin-inline-end: 0.35em;
+  font-weight: 600;
+  color: var(--site-accent);
+}
+[dir='rtl'] .rf-article[data-sidenotes='on'] .rf-sn {
+  float: left;
+  clear: left;
+  margin-inline-end: 0;
+  margin-inline-start: -15.5rem;
+}
+.rf-article[data-sidenotes='on'] .rf-footnotes {
+  display: none;
+}
+.rf-footnotes {
+  margin-block-start: 3rem;
+  padding-block-start: 1rem;
+  border-block-start: 1px solid var(--site-border);
+  font-size: 0.875rem;
+  color: var(--site-text-muted);
+}
+.rf-footnotes ol {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  list-style: decimal;
+}
+.rf-footnotes li {
+  margin-block: 0.4rem;
+  padding-inline-start: 0.25rem;
+}
+.rf-footnotes li:target {
+  color: var(--site-text);
+}
+
+/* ── shared popover (footnote on narrow screens, glossary everywhere) ── */
+.rf-pop {
+  position: fixed;
+  z-index: 70;
+  inline-size: min(22rem, calc(100vw - 1.5rem));
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--site-radius-sm);
+  font-size: 0.875rem;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.5;
+  text-align: start;
+  color: var(--site-text);
+}
+.rf-pop__title {
+  margin-block-end: 0.25rem;
+  font-weight: 600;
+}
+.rf-pop a {
+  color: var(--site-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── L6: glossary term ── */
+.rf-term {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: help;
+  text-decoration: underline dotted var(--site-accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  border-radius: var(--site-radius-sm);
+}
+.rf-term:hover,
+.rf-term[aria-expanded='true'] {
+  background: color-mix(in oklab, var(--site-accent) 14%, transparent);
+}
+
+/* ── L1: floating selection toolbar ── */
+.rf-seltool {
+  position: fixed;
+  z-index: 70;
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: var(--site-radius-sm);
+}
+
+/* ── Y2: reading ruler (never cursor-tracked: follows keys and scroll) ── */
+.rf-ruler {
+  position: fixed;
+  inset-inline: 0;
+  inset-block: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+.rf-ruler--contained {
+  position: absolute;
+}
+.rf-ruler__dim {
+  position: absolute;
+  inset-inline: 0;
+  background: color-mix(in oklab, var(--site-bg) 72%, transparent);
+}
+.rf-ruler__dim--top {
+  top: 0;
+  block-size: var(--rf-ruler-top, 40%);
+}
+.rf-ruler__dim--bottom {
+  bottom: 0;
+  top: calc(var(--rf-ruler-top, 40%) + var(--rf-ruler-h, 2.6em));
+}
+.rf-ruler__band {
+  position: absolute;
+  inset-inline: 0;
+  top: var(--rf-ruler-top, 40%);
+  block-size: var(--rf-ruler-h, 2.6em);
+  border-block: 2px solid color-mix(in oklab, var(--site-accent) 60%, transparent);
+}
+.rf-ruler[data-motion='smooth'] .rf-ruler__dim--top,
+.rf-ruler[data-motion='smooth'] .rf-ruler__dim--bottom,
+.rf-ruler[data-motion='smooth'] .rf-ruler__band {
+  transition:
+    top 150ms ease-out,
+    block-size 150ms ease-out;
+}
+
+/* ── library reader text view ── */
+.rf-textview {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: var(--site-bg);
+  color: var(--site-text);
+}
+.rf-textview__body {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+.rf-textview__body p {
+  margin-block: 0 1em;
+}

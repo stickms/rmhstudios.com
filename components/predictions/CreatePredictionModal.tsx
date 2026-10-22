@@ -80,7 +80,7 @@ export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
             onChange={(e) => setTitle(e.target.value)}
             maxLength={160}
             placeholder={t('title-placeholder', { defaultValue: 'Will RMHbox hit 1,000 daily players by August?' })}
-            className="bg-site-surface border border-site-border rounded-site-sm px-3 py-2 text-sm text-site-text"
+            className="glass-inset rounded-site-sm px-3 py-2 text-sm text-site-text"
           />
         </div>
 
@@ -94,7 +94,7 @@ export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
             maxLength={1000}
             rows={3}
             placeholder={t('details-placeholder', { defaultValue: 'How this resolves, sources, edge cases…' })}
-            className="bg-site-surface border border-site-border rounded-site-sm px-3 py-2 text-sm text-site-text resize-none"
+            className="glass-inset rounded-site-sm px-3 py-2 text-sm text-site-text resize-none"
           />
         </div>
 
@@ -106,7 +106,7 @@ export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
             type="datetime-local"
             value={closesAt}
             onChange={(e) => setClosesAt(e.target.value)}
-            className="bg-site-surface border border-site-border rounded-site-sm px-3 py-2 text-sm text-site-text"
+            className="glass-inset rounded-site-sm px-3 py-2 text-sm text-site-text"
           />
         </div>
 

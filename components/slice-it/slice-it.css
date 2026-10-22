@@ -184,16 +184,6 @@
  * is `.neumorphic-inset`; the timeline the notes sit in is `.editor-timeline`.
  */
 
-/* Pressed state. Neumorphism's affordance is depth, so "active" is the
-   raised surface becoming inset — the button physically goes down. */
-.neumorphic-pressed {
-  background: var(--slice-bg);
-  box-shadow:
-    inset 4px 4px 8px var(--slice-shadow-dark),
-    inset -4px -4px 8px var(--slice-shadow-light);
-  border-radius: 15px;
-}
-
 /* Toolbar buttons: smaller radius and shadow so a row of them does not read as
    a row of pillows. Scale the offsets with the element, not a fixed 9px. */
 .neumorphic-sm {
@@ -224,8 +214,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .neumorphic,
-  .neumorphic-sm,
-  .neumorphic-pressed {
+  .neumorphic-sm {
     transition: none;
   }
 }
@@ -321,31 +310,20 @@
 }
 
 /*
- * `LiquidTabs` in the game's palette — the same fix, and the same cause, as the
- * slider above.
+ * LiquidTabs' selected segment in Slice It!'s own accent.
  *
- * The active capsule paints `bg-site-accent` and its ink resolves from
- * `--site-accent-fg`. Inside `.slice-theme` those are the ROOT theme's tokens,
- * which measured `#000000` on the shipped dark theme: the grid/table switch's
- * selected segment rendered as a black pill in a game whose entire accent
- * language is `--slice-primary` blue. Scoped by `[data-tab-capsule]`, the hook
- * `globals.css` already exposes for exactly this kind of re-skin, so the tab
- * strip stays the one sanctioned switcher rather than being forked.
+ * The thumb paints `--tab-thumb-bg` with `--tab-thumb-ink` on top (globals.css
+ * §LiquidTabs). Those default to the ROOT theme's neutral surface, which inside
+ * `.slice-theme` is a grey slab in a game whose entire accent language is
+ * `--slice-primary` blue. The strip exposes its paint as custom properties for
+ * exactly this kind of re-skin, so the tab strip stays the one sanctioned
+ * switcher rather than being forked. `--slice-primary` is a mid blue at every
+ * theme, so white is the safe ink.
  */
-.slice-theme [data-tab-capsule] > span {
-  background: var(--slice-primary);
-}
-
-/*
- * The ink on top of that capsule.
- *
- * `--site-accent-fg` is chosen to contrast with `--site-accent`, and we have
- * just replaced the fill — so the foreground has to move with it or the label
- * is a contrast failure the moment the two disagree. `--slice-primary` is a
- * mid blue at every theme, so white is the safe pairing.
- */
-.slice-theme [data-tab-capsule] ~ * {
-  --site-accent-fg: #ffffff;
+.slice-theme [data-slot='liquid-tabs'] {
+  --tab-thumb-bg: var(--slice-primary);
+  --tab-thumb-ink: #ffffff;
+  --tab-thumb-border: var(--slice-primary);
 }
 
 /*
@@ -416,7 +394,6 @@
 .neumorphic-chip,
 .neumorphic-chrome,
 .neumorphic-inset,
-.neumorphic-pressed,
 .neumorphic-active {
   transition:
     box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1),

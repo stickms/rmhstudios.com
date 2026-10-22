@@ -9,12 +9,11 @@
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Clock, Trophy } from 'lucide-react';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getReplay } from '@/lib/replays.server';
-import { REPLAY_GAME_TITLES } from '@/lib/game/replay';
+import { REPLAY_GAME_TITLES } from '@/lib/game/replay-meta';
 import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { GameReplayPlayer } from '@/components/replays/GameReplayPlayer';
 
@@ -26,8 +25,7 @@ const fetchReplay = createServerFn({ method: 'GET' })
 
     // Unlisted replays only render for their owner.
     if (replay.visibility !== 'public') {
-      const request = getRequest();
-      const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+      const session = await getRequestSession();
       if (!session || session.user.id !== replay.author.id) return { replay: null };
     }
     return { replay };

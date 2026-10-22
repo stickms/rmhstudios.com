@@ -13,6 +13,7 @@
  * showed what an editor typed would be empty on the days the site is busiest.
  */
 
+import { gridAnchor } from '@/lib/competitive/game-night';
 import { prisma } from '@/lib/prisma.server';
 import {
   buildGrid,
@@ -48,13 +49,14 @@ export async function getGrid(from: Date = new Date(), days = 7): Promise<GridVi
   const start = startOfDay(from);
   const end = new Date(start.getTime() + clamped * DAY_MS);
 
-  const [editorial, tournaments, events] = await Promise.all([
+  const [editorial, tournaments, events, nights] = await Promise.all([
     editorialSlots(start, end),
     tournamentSlots(start, end),
     eventSlots(start, end),
+    gameNightSlots(),
   ]);
 
-  const occurrences = buildGrid([...editorial, ...tournaments, ...events], start, end);
+  const occurrences = buildGrid([...editorial, ...tournaments, ...events, ...nights], start, end);
 
   return {
     from: start.toISOString(),
@@ -138,6 +140,25 @@ async function eventSlots(from: Date, to: Date): Promise<SlotDefinition[]> {
       ? Math.max(0, Math.round((e.endsAt.getTime() - e.startsAt.getTime()) / 60_000))
       : 60,
     recurrence: 'once' as const,
+    until: null,
+  }));
+}
+
+/** Weekly game-night rotations (E8): one recurring weekly slot each. */
+async function gameNightSlots(): Promise<SlotDefinition[]> {
+  const rows = await prisma.gameNight.findMany({
+    where: { enabled: true },
+    take: 20,
+    select: { id: true, title: true, weekday: true, startMinute: true, durationMinutes: true },
+  });
+  return rows.map((n) => ({
+    id: `game-night:${n.id}`,
+    kind: 'game-night' as const,
+    title: n.title,
+    href: '/game-night',
+    startsAt: gridAnchor(n),
+    durationMinutes: n.durationMinutes,
+    recurrence: 'weekly' as const,
     until: null,
   }));
 }

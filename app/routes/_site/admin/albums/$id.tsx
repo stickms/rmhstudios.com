@@ -132,10 +132,11 @@ function ManageAlbumPage() {
     if (!album) return;
     if (
       !(await confirm({
-        title: t('album-delete-confirm', { title: album.title, defaultValue: `Delete album "${album.title}"?` }),
+        title: t('album-delete-confirm', { title: album.title, defaultValue: 'Delete album "{{title}}"?' }),
         description: t('album-delete-desc', {
           count: album.slides.length,
-          defaultValue: `All ${album.slides.length} item(s) will be removed. This cannot be undone.`,
+          defaultValue_one: 'The 1 item will be removed. This cannot be undone.',
+          defaultValue: 'All {{count}} items will be removed. This cannot be undone.',
         }),
         danger: true,
       }))
@@ -221,7 +222,8 @@ function ManageAlbumPage() {
             <p className="font-mono text-xs uppercase tracking-widest text-site-text-dim">
               {t('slides-count-reorder', {
                 count: slides.length,
-                defaultValue: `${slides.length} item${slides.length === 1 ? '' : 's'} · drag to reorder`,
+                defaultValue_one: '{{count}} item · drag to reorder',
+                defaultValue: '{{count}} items · drag to reorder',
               })}
             </p>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
@@ -255,7 +257,7 @@ function ManageAlbumPage() {
                     aria-label={t('delete-slide', {
                       type: slide.type,
                       index: index + 1,
-                      defaultValue: `Delete ${slide.type} ${index + 1}`,
+                      defaultValue: 'Delete {{type}} {{index}}',
                     })}
                     // Always visible on touch (no hover); softens in on hover on pointer devices.
                     className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink transition-colors hover:bg-site-danger sm:size-6 sm:opacity-70 sm:group-hover:opacity-100"

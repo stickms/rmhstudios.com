@@ -22,7 +22,8 @@
 import { BaseMinigame } from '../base-minigame';
 import type { MinigameContext, MinigameResults } from '../base-minigame';
 import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
-import { selectRoundPrompts, assignPromptsToPlayers } from '@/lib/rmhbox/wit-war/data-loader';
+import { selectRoundPrompts, assignPromptsToPlayers, loadPrompts } from '@/lib/rmhbox/wit-war/data-loader';
+import { loadPackPrompts } from '../../pack-loader';
 import { SubmitAnswerSchema, CastVoteSchema } from '@/lib/rmhbox/wit-war/schemas';
 import {
   WW_TOTAL_ROUNDS,
@@ -50,6 +51,11 @@ export class WitWarMinigame extends BaseMinigame {
   private startedAt: number = 0;
   /** Handle for the current voting timeout, so early-end can cancel it. */
   private votingTimeoutHandle: NodeJS.Timeout | null = null;
+  /** Audience (spectator) votes for the current matchup; counted as ONE aggregated vote. */
+  private audienceVotes = new Map<string, string>();
+  /** Custom prompt pool (community pack); undefined = built-in prompts. */
+  private promptPool: string[] | undefined;
+  private audienceChanges = new Map<string, number>();
 
   get spectatorMode(): 'competitive-individual' { return 'competitive-individual'; }
 
@@ -64,6 +70,21 @@ export class WitWarMinigame extends BaseMinigame {
     this.startedAt = Date.now();
     this.initializeState();
 
+    // Optional community pack (R2): resolve it before the first round; any failure
+    // falls back to the built-in prompts.
+    const packCode = this.getSetting('packCode', '');
+    if (!packCode) return this.begin();
+    void loadPackPrompts(packCode, 'wit-war').then((prompts) => {
+      if (!this.isRunning) return;
+      if (prompts) {
+        const needed = this.context.players.size * this.state.totalRounds;
+        this.promptPool = prompts.length >= needed ? prompts : prompts.concat(loadPrompts());
+      }
+      this.begin();
+    });
+  }
+
+  private begin(): void {
     logger.info({
       event: 'wit_war:start',
       lobbyId: this.context.lobbyId,
@@ -105,7 +126,7 @@ export class WitWarMinigame extends BaseMinigame {
 
     const playerIds = Array.from(this.context.players.keys());
     const promptCount = playerIds.length;
-    const prompts = selectRoundPrompts(promptCount, this.state.usedPromptIndices);
+    const prompts = selectRoundPrompts(promptCount, this.state.usedPromptIndices, this.promptPool);
 
     for (const p of prompts) {
       this.state.usedPromptIndices.add(p.index);
@@ -242,6 +263,8 @@ export class WitWarMinigame extends BaseMinigame {
     }
 
     this.state.phase = WitWarPhase.VOTING;
+    this.audienceVotes.clear();
+    this.audienceChanges.clear();
     const matchup = this.state.matchups[this.state.currentMatchupIndex];
     const duration = this.getSetting('votingDuration', WW_VOTING_DURATION);
 
@@ -277,8 +300,13 @@ export class WitWarMinigame extends BaseMinigame {
   }
 
   private resolveMatchup(matchup: WWMatchup): void {
-    const votesForA = Object.values(matchup.votes).filter((v) => v === matchup.playerA).length;
-    const votesForB = Object.values(matchup.votes).filter((v) => v === matchup.playerB).length;
+    let votesForA = Object.values(matchup.votes).filter((v) => v === matchup.playerA).length;
+    let votesForB = Object.values(matchup.votes).filter((v) => v === matchup.playerB).length;
+    // Audience counts as a single player's vote: the majority pick (ties abstain).
+    let audA = 0;
+    for (const v of this.audienceVotes.values()) audA += v === matchup.playerA ? 1 : -1;
+    if (audA > 0) votesForA++;
+    else if (audA < 0) votesForB++;
     const totalVotes = votesForA + votesForB;
 
     if (totalVotes === 0) {
@@ -517,6 +545,25 @@ export class WitWarMinigame extends BaseMinigame {
       this.clearTrackedTimeout(this.votingTimeoutHandle);
       this.endMatchupVoting();
     }
+  }
+
+  /** Audience vote (spectators). Max 5 changes each; aggregated into one vote at resolve time. */
+  handleAudienceVote(userId: string, data: unknown): void {
+    if (this.state.phase !== WitWarPhase.VOTING) return;
+    const parsed = CastVoteSchema.safeParse(data);
+    if (!parsed.success) return;
+    const { matchupIndex, votedForUserId } = parsed.data;
+    const matchup = this.state.matchups[matchupIndex];
+    if (matchupIndex !== this.state.currentMatchupIndex || !matchup) return;
+    if (votedForUserId !== matchup.playerA && votedForUserId !== matchup.playerB) return;
+    const changes = this.audienceChanges.get(userId) ?? 0;
+    if (changes >= 5) return;
+    this.audienceChanges.set(userId, changes + 1);
+    this.audienceVotes.set(userId, votedForUserId);
+    this.context.broadcastAction({
+      type: 'WW_AUDIENCE_COUNT',
+      payload: { matchupIndex, count: this.audienceVotes.size },
+    });
   }
 
   // ─── State Getters ──────────────────────────────────────────

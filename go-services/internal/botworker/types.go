@@ -2,7 +2,9 @@
 // It maintains a pool of AI-generated bot users and posts in-voice from them
 // throughout the day. Bots never reveal they are bots.
 //
-// Pacing constants are copied verbatim from the Node source (intEnv defaults).
+// The constants below are the built-in defaults. LoadConfig (settings.go)
+// overrides them from the BOT_* environment, and the admin-saved
+// "bot_worker_settings" row overrides the pool/posting knobs at runtime.
 package botworker
 
 import "time"
@@ -21,6 +23,13 @@ const (
 	maxPostsPerTick = 5
 	// botImageProbability is the chance a given post gets an AI-generated image.
 	botImageProbability = 0.05
+	// genConcurrency is how many DeepSeek generations a post tick runs at once.
+	// Serial generation (up to 60s each) stalls a tick past its interval once
+	// the per-tick cap grows, and the reentrancy guard then skips whole ticks.
+	genConcurrency = 4
+	// settingsPollInterval is how often the pool loop re-reads the admin
+	// settings, so a save takes effect within a minute.
+	settingsPollInterval = 1 * time.Minute
 
 	// replyTickInterval matches postTickInterval in the Node defaults.
 	replyTickInterval = postTickInterval
@@ -80,7 +89,7 @@ type Persona struct {
 //	botLastPostAt → "botLastPostAt" TIMESTAMPTZ
 //	isBot         → "isBot"        BOOLEAN
 type BotUser struct {
-	ID           string
-	BotPersona   string
+	ID            string
+	BotPersona    string
 	BotLastPostAt *time.Time
 }

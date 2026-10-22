@@ -16,3 +16,10 @@ export const SYNC_DRIFT_TOLERANCE_MS = 2_000;
 export const ROOM_EMPTY_TIMEOUT_MS = 5 * 60 * 1000;
 export const DISCONNECT_GRACE_PERIOD_MS = 30_000;
 export const ROOM_GC_INTERVAL_MS = 60_000;
+
+// ─── Community radio (T4) ────────────────────────────────────────
+
+export const RADIO_CODE = 'RADIO';
+export const RADIO_MAX_DJS = 8;
+/** Tracks are 30 s previews, so a turn never runs longer than this. */
+export const RADIO_TURN_MAX_MS = 30_000;

@@ -23,6 +23,7 @@ import { redisRateLimit, redisIncrBy } from '@/lib/redis.server';
 import { prisma } from '@/lib/prisma.server';
 import { recordUsage } from '@/lib/api/usage.server';
 import type { Tier } from '@/lib/entitlements';
+import { sandboxResponse } from '@/lib/api/test-mode';
 
 interface LimitResult {
   allowed: boolean;
@@ -243,6 +244,24 @@ export async function withDeveloperApi(
     error: res.error,
     noContent: res.noContent,
   };
+
+  // 4b. Test-mode keys never reach the handler: fixtures for reads, no-op acks
+  // for writes. Same auth, scope, and rate limits as a live key.
+  if (auth.testMode) {
+    let reqBody: unknown = null;
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      reqBody = await request.clone().json().catch(() => null);
+    }
+    const sandbox = sandboxResponse(request.method, new URL(request.url).pathname, reqBody, () =>
+      randomBytes(8).toString('hex'),
+    );
+    recordUsage(auth.keyId, cost, sandbox ? sandbox.status : 404);
+    if (!sandbox) return res.error('not_found', 'No such endpoint.', 404);
+    const sandboxHeaders = { 'X-RMH-Test-Mode': 'true' };
+    return sandbox.body === null
+      ? res.noContent(sandboxHeaders)
+      : res.json(sandbox.body, sandbox.status, sandboxHeaders);
+  }
 
   // 5. Idempotency replay for writes carrying an Idempotency-Key.
   const idemKey = options.idempotent ? request.headers.get('idempotency-key')?.trim() : null;

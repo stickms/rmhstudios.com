@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
+import { invalidateCached } from '@/lib/cached.server';
+import { appearanceSeedKey } from '@/lib/appearance/seed-cache.server';
 import { SITE_STYLES } from '@/stores/themeStore';
 import { ACCENT_PRESETS } from '@/lib/appearance';
 import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
@@ -54,6 +56,9 @@ export const Route = createFileRoute('/api/preferences/appearance')({
           reduceMotion: row?.reduceMotion ?? false,
           glassLevel: row?.glassLevel ?? null,
           colorVision: row?.colorVision ?? null,
+          navTransition: row?.navTransition ?? null,
+          alwaysEvertGlobe: row?.alwaysEvertGlobe ?? false,
+          eversionLevel: row?.eversionLevel ?? null,
         });
       }),
 
@@ -70,6 +75,9 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             reduceMotion,
             glassLevel,
             colorVision,
+            navTransition,
+            alwaysEvertGlobe,
+            eversionLevel,
           } = body;
           // Custom accent is normalized/nudged through the contrast guard so the
           // stored value is guaranteed to carry a legible label (AA).
@@ -83,6 +91,9 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             ...(customAccent !== undefined ? { customAccent } : {}),
             ...(reduceMotion !== undefined ? { reduceMotion } : {}),
             ...(glassLevel !== undefined ? { glassLevel } : {}),
+            ...(navTransition !== undefined ? { navTransition } : {}),
+            ...(alwaysEvertGlobe !== undefined ? { alwaysEvertGlobe } : {}),
+            ...(eversionLevel !== undefined ? { eversionLevel } : {}),
             // 'none' is stored as null so the column means "no override".
             ...(colorVision !== undefined
               ? { colorVision: colorVision === 'none' ? null : colorVision }
@@ -99,6 +110,9 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             },
             update: { style, accent, reduceTransparency, ...comfort },
           });
+          // perf: the root loader caches the seed row (__root.tsx); drop it so the
+          // next render reflects this save on every instance.
+          await invalidateCached(appearanceSeedKey(session.user.id));
           return Response.json({
             style: row.style ?? null,
             accent: row.accent ?? null,
@@ -109,6 +123,10 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             customAccent: row.customAccent ?? null,
             reduceMotion: row.reduceMotion ?? false,
             glassLevel: row.glassLevel ?? null,
+            colorVision: row.colorVision ?? null,
+            navTransition: row.navTransition ?? null,
+            alwaysEvertGlobe: row.alwaysEvertGlobe ?? false,
+            eversionLevel: row.eversionLevel ?? null,
           });
         },
       ),

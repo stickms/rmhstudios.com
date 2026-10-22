@@ -13,6 +13,9 @@ import { personSchema, jsonLdScript } from '@/lib/schema';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getProfile } from '@/lib/profile.server';
+import { listAchievements } from '@/lib/achievements.server';
+import { pickAchievementStrip } from '@/lib/achievements/strip';
+import { prefetchProfilePosts } from '@/lib/feed/profile-prefetch';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
@@ -27,7 +30,15 @@ const fetchProfileData = createServerFn({ method: 'GET' })
       isAdmin: Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin),
     };
 
-    const [sidebar, profile] = await Promise.all([getSidebarData(), getProfile(id, viewer)]);
+    const [sidebar, found] = await Promise.all([getSidebarData(), getProfile(id, viewer)]);
+    // The header's achievement strip rides with the page rather than arriving
+    // after hydration and growing the header under the reader (see
+    // lib/achievements/strip.ts). A failure here just means the strip falls
+    // back to its own client fetch.
+    const achievements = found ? await listAchievements(found.id).catch(() => null) : null;
+    const profile = found
+      ? { ...found, achievementStrip: achievements ? pickAchievementStrip(achievements) : undefined }
+      : null;
 
     let meta = {
       title: 'User Not Found | RMH',
@@ -61,6 +72,12 @@ const fetchProfileData = createServerFn({ method: 'GET' })
   });
 
 export const Route = createFileRoute('/_site/u/$userid/')({
+  // The post list is requested by `ProfileColumn` after it mounts; start it at
+  // the navigation so it runs alongside this loader (lib/feed/profile-prefetch).
+  // Not on a preload — speculation stays code + loader only.
+  beforeLoad: ({ params, preload }) => {
+    if (!preload) prefetchProfilePosts(params.userid.replace(/^@/, ''));
+  },
   loader: ({ params }) => fetchProfileData({ data: params.userid }),
   head: ({ loaderData }) => ({
     meta: [

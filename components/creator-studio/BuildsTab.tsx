@@ -18,6 +18,9 @@ import { Plus, Heart } from 'lucide-react';
 import type { CuratedBuild } from '@/lib/builds/curated';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
 import { Select } from '@/components/ui/select';
+import '@/components/builds/builds.css';
+import '@/components/creator-studio/storefront.css';
+import '@/components/rmhvibe/vibe.css';
 
 type UserSort = 'recent' | 'popular' | 'views';
 type CuratedSort = 'featured' | 'name';

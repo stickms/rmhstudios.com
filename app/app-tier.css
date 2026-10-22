@@ -1,0 +1,11 @@
+/* ==========================================================================
+   APP-TIER ENTRY SHEET — what full-screen games and apps load, render-blocking.
+
+   The superset of `site-tier.css`: the same `globals.css` body and Tailwind's
+   utilities for every source directory, site and game alike. It deliberately
+   carries no tier exclusions — see the header of `site-tier.css` for why the
+   app tier must be a superset rather than "just the game utilities", and
+   `lib/style-tier.ts` for which routes get which sheet.
+   ========================================================================== */
+@import 'tailwindcss';
+@import './globals.css';

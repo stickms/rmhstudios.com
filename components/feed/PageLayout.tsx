@@ -106,12 +106,11 @@ interface PageLayoutProps {
 /**
  * Compact, mobile-first title block shared by standard routes.
  *
- * The kicker above the title uses the key `rmh-studios-presents`. It replaced
- * `rmh-digital-space` under a NEW key rather than by editing that key's
- * `defaultValue`, because `defaultValue` is only consulted when a key is
- * MISSING from the catalog — all 16 shipped locales already carried a
- * translation for the old key, so an in-place edit would have changed the
- * wording in English and nowhere else.
+ * There is no kicker above the title. Every standard page used to print
+ * "RMH STUDIOS PRESENTS" there — the same eyebrow on ~90 routes, directly under
+ * a top bar that already says RMH Studios, so it carried no information about
+ * the page it sat on and pushed every title down a line (UI minimalism audit,
+ * 2026-10-09). The meta row now exists only when it has a job: the back link.
  *
  * Do not put a `{/* … *\/}` comment immediately before a `t()` call in this
  * file's JSX: `i18next-parser` silently skips the call that follows one, the key
@@ -145,8 +144,8 @@ export function PageLayout({
           className="page-heading"
           aria-describedby={description ? descriptionId : undefined}
         >
-          <div className="page-heading__meta site-kicker">
-            {backTo ? (
+          {backTo && (
+            <div className="page-heading__meta">
               <Link
                 to={backTo}
                 className="page-heading__back"
@@ -155,10 +154,8 @@ export function PageLayout({
                 <ArrowLeft aria-hidden />
                 <span>{backLabel ?? t('back', { defaultValue: 'Back' })}</span>
               </Link>
-            ) : (
-              <span>{t('rmh-studios-presents', { defaultValue: 'RMH Studios Presents' })}</span>
-            )}
-          </div>
+            </div>
+          )}
 
           {breadcrumbs && breadcrumbs.length > 0 && (
             <Breadcrumbs items={breadcrumbs} className="page-heading__breadcrumbs" />

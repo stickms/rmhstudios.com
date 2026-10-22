@@ -44,6 +44,146 @@ production uses — the `supervisor` (background workers), `status`, and
 `assets`. The Node hubs are the realtime tier. Recover the deleted topology from
 git history (tag `pre-rewrite-go-realtime`) if it is ever revived.
 
+### Diagrams
+
+Rendered by GitHub and by the docs site (`sphinxcontrib-mermaid`). Dashed edges
+are optional or dormant paths (`redis-state`, `pgbouncer`, direct-to-R2 media,
+path-filtered workflows). Keep these in step with `docker-compose.yml`,
+`deploy.sh` and `.github/workflows/` — when they disagree, the files win.
+
+**Runtime — what serves a request**
+
+```mermaid
+flowchart LR
+  subgraph Clients
+    B["Browser / PWA<br/>React 19 + TanStack"]
+    API3P["3rd-party apps<br/>(Bearer API keys)"]
+    DACT["Discord Activity"]
+  end
+
+  subgraph Cloudflare["Cloudflare (TLS, CDN, DNS)"]
+    CF["Proxy + cache"]
+    R2[("R2 object storage<br/>media · library · models")]
+  end
+
+  subgraph VPS["Oracle ARM VPS — Docker Compose (all ports bound to 127.0.0.1)"]
+    AP["Apache :80<br/>only front door · CSP/headers"]
+
+    subgraph Node["Node tier"]
+      WEB["web — Nitro SSR<br/>pages + API routes<br/>Better Auth · defineHandler<br/>:7005 ⇄ :7015 blue/green"]
+      SOCK["socket :7001<br/>games + RMHMusic"]
+      BOX["rmhbox :7676<br/>party games"]
+      TUBE["rmhtube :7003<br/>watch-together"]
+      JOBS["jobs<br/>pg-boss queues"]
+      LAD["ladder-worker<br/>cron"]
+      HOM["homes-worker<br/>cron"]
+    end
+
+    subgraph Go["Go tier (Bazel)"]
+      SUP["supervisor :9090<br/>discord-bot · recap · doctrine<br/>vibe · bot-worker · streak-saver"]
+      STAT["status :7008<br/>uptime dashboard"]
+      ASSET["assets :7007<br/>range-aware R2 streaming"]
+    end
+
+    subgraph Data["Data plane"]
+      RED[("redis<br/>LRU cache")]
+      REDS[("redis-state<br/>durable · dormant")]
+      PGB["pgbouncer<br/>opt-in · dormant"]
+    end
+
+  end
+
+  PG[("PostgreSQL on host<br/>Prisma 7 · pgvector")]
+
+  subgraph Ext["External services"]
+    STRIPE["Stripe<br/>memberships"]
+    OAUTH["OAuth: Discord · Google · GitHub"]
+    AI["AI: Anthropic · DeepSeek · Kimi<br/>embeddings"]
+    MISC["Spotify · Klipy GIFs · web push · email"]
+    DISC["Discord<br/>deploy embeds · bot · #rmh-oncall"]
+  end
+
+  WD["On-call watchdog<br/>Cloudflare Worker (off-box)<br/>probes every minute · pages @oncall"]
+
+  B -->|HTTPS| CF
+  API3P -->|/api/v1| CF
+  DACT --> CF
+  CF -->|HTTP| AP
+  B -.->|static media| R2
+
+  AP -->|"/"| WEB
+  AP -->|"/socket/"| SOCK
+  AP -->|"/rmhbox-ws/"| BOX
+  AP -->|"/rmhtube-ws/"| TUBE
+
+  WEB --> PG
+  WEB --> RED
+  WEB -.-> REDS
+  WEB -.-> PGB
+  PGB -.-> PG
+  SOCK --> PG
+  BOX --> PG
+  TUBE --> PG
+  JOBS --> PG
+  LAD --> PG
+  HOM --> PG
+  SUP --> PG
+  ASSET --> R2
+  WEB --> R2
+
+  WEB --> STRIPE
+  WEB --> OAUTH
+  WEB --> AI
+  WEB --> MISC
+  SUP --> DISC
+  SUP --> AI
+  STAT -->|probes| AP
+
+  WD -->|"probes / and /api/ready"| CF
+  WD --> DISC
+  VPS -.->|"signed alerts + heartbeats"| WD
+```
+
+**Delivery — push to production**
+
+```mermaid
+flowchart LR
+  DEV["Developer / agent<br/>pnpm check:consistency<br/>(pre-commit gate)"] -->|PR| PR
+
+  subgraph PRCI["PR checks — web-ci.yml (parallel, ~2 min)"]
+    PR["Pull request"] --> TC["typecheck + lint<br/>+ docs freshness"]
+    PR --> T1["test (1/2)"]
+    PR --> T2["test (2/2)"]
+    PR --> BLD["build<br/>+ bundle budgets"]
+    PR --> AUD["audit"]
+    PR --> INT["integration<br/>built app + Postgres"]
+    PR --> REV["senior-review<br/>(LLM)"]
+    PR -.->|path-filtered| OTHER["go · prisma · compose<br/>· epic workflows"]
+  end
+
+  PRCI -->|merge| MAIN["main"]
+
+  subgraph DEPLOY["deploy.yml (parallel)"]
+    MAIN --> CI["ci: typecheck · lint · unit"]
+    MAIN --> INT2["integration (merged commit)"]
+    MAIN --> IMG["build: 2 ARM64 images<br/>buildx bake → GHCR"]
+    IMG -.->|live CI checklist| DISC2["Discord embed"]
+    CI --> GATE{"deploy-gate<br/>all green?"}
+    INT2 --> GATE
+    IMG --> GATE
+  end
+
+  GATE -->|no| BLOCK["🔴 BLOCKED<br/>nothing ships"]
+  GATE -->|"yes: HMAC webhook"| VPSD
+
+  subgraph VPSD["VPS — deploy.sh (flock-serialized)"]
+    F["fetch + reset<br/>(self-restart if changed)"] --> P["pull images"] --> M["prisma migrate deploy"] --> S["start services"] --> SW["blue/green web swap"] --> BK["smoke test + 5-min bake"] --> H["health checks"]
+    BK -->|"3 failures / crash"| RB["↩️ auto-rollback<br/>to previous web"]
+  end
+
+  VPSD -.->|stage checklist| DISC2
+```
+
 ## 2. Images: two, from one Dockerfile
 
 The root `Dockerfile` builds both production images; `vite build` runs once:
@@ -51,7 +191,7 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
 | Image                   | Target        | Contents                                                                                                                              | Runs                                        |
 | ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | `rmhstudios-app` (slim) | `runner`      | Node app: `.output/` (Nitro) + `dist-server/*.cjs` bundles                                                                            | web, socket, rmhbox, rmhtube, ladder-worker, homes-worker, jobs |
-| `rmhstudios-app-full`   | `runner-full` | slim image + Chromium + git + Go binaries in `/app/bin/` (built by the Dockerfile's `go-builder` stage — plain `go build`, not Bazel) | supervisor, status, assets                  |
+| `rmhstudios-app-full`   | `runner-full` | shared runtime base + Chromium + Go binaries in `/app/bin/` (built by the Dockerfile's `go-builder` stage — plain `go build`, not Bazel); no Node app layers | supervisor, status, assets                  |
 
 ## 3. Deploy pipeline (push → production)
 
@@ -75,10 +215,23 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
    - `docker compose up -d --scale web=0` — everything **except** web
    - **blue/green web hotswap** (`deploy/hotswap-web.sh`): start the new web
      container on the spare port (7005 ⇄ 7015), health-gate it, flip Apache's
-     active-port include with a graceful reload, stop the old container
+     active-port include with a graceful reload, stop (not delete) the old container
+   - **smoke gate + bake** (`deploy/smoke-test.sh`): probe the real user path
+     through Apache — `/` renders, `/api/ready` is 200, `/blog/rss.xml` and
+     `/sitemap.xml` carry their XML — once right after the flip, then every 20s
+     for `BAKE_SECONDS` (default 300) with the old container kept stopped as a
+     rollback target. 3 consecutive failed rounds, or the new container dying
+     or restarting, **automatically flips traffic back** to the old container
+     (only if the old one comes back healthy — a shared-dependency outage
+     leaves the new one live and fails the deploy loudly instead). The deploy
+     flock is held through the bake, so a newer push queues behind it.
    - parallel health checks; prune stale + rollback images
-3. **Rollback:** previous SHA-tagged images are kept (one per env); replaced
-   Node workers can be revived by restoring their compose command blocks (see
+3. **Rollback:** *web* rolls back automatically during the bake (above) and the
+   deploy reports "auto-rolled back" to Discord + the commit status. The
+   rollback is web-only and runs after migrations, so a release must keep the
+   old web compatible with its schema (expand/contract). Beyond the bake,
+   previous SHA-tagged images are kept (one per env); replaced Node workers can
+   be revived by restoring their compose command blocks (see
    `docs/runbooks/2026-06-22-go-runtime-cutover.md`).
 
 ## 4. CI
@@ -91,8 +244,8 @@ what each one gates:
 
 | Workflow                 | Gates                                                                                                                                                                                                          |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `deploy.yml`             | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above). Its in-workflow `ci` job re-runs typecheck/lint/tests; the test step is advisory there because the PR already gated it.       |
-| `web-ci.yml`             | Frontend gate on PRs: `tsc --noEmit` + `eslint` + docs freshness + `pnpm test` (check job — **all blocking**), `build:frontend:sourcemap` + the two size gates (build job), `pnpm audit --prod` (audit job)     |
+| `deploy.yml`             | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above). Its in-workflow `ci` job re-runs typecheck/lint/tests and its `integration` job the integration suite on the merge result — all block the deploy. The Discord embed shows a live CI checklist (`.github/scripts/ci-checklist.sh`) before the VPS stages take over.                        |
+| `web-ci.yml`             | Frontend gate on PRs: `tsc --noEmit` + `eslint` + docs freshness + `pnpm test` (check job — **all blocking**), `build:frontend:sourcemap` + the two size gates (build job), `pnpm audit --prod` (audit job), `pnpm test:integration` against the booted app + Postgres (integration job, blocking) |
 | `epic-tests.yml`         | The epic content-build suite (`pnpm test:epic`) with a Chromium install; path-filtered to `scripts/epic/**`                                                                                                     |
 | `go-microservices.yml`   | Go fleet: `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`. (The Postgres-backed e2e + `helm lint` jobs were removed with the Go realtime/Helm topology — design §5.2.) |
 | `senior-review.yml`      | LLM review gate on PRs (Claude Opus over the diff; fails on a FAIL verdict; short-circuits green for non-owner authors)                                                                                        |

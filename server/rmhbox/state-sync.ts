@@ -210,10 +210,13 @@ export class StateSyncService {
    * players and spectators in a lobby.
    */
   private sendFullSyncToAll(lobby: RMHboxLobby): void {
+    // perf: roster/match history/spectator view are identical for every
+    // recipient; build them once per tick and add only the per-player bits.
+    const shared = this.lobbyManager.buildSharedClientParts(lobby);
     // Send per-player scoped state snapshots
     for (const [userId, player] of lobby.players) {
       if (player.isConnected && player.socketId) {
-        const clientState = this.buildClientState(lobby, userId);
+        const clientState = this.lobbyManager.buildClientState(lobby, userId, shared);
         this.io
           .to(`lobby:${lobby.id}:player:${userId}`)
           .emit(S2C.LOBBY_STATE_SNAPSHOT, clientState);
@@ -223,7 +226,7 @@ export class StateSyncService {
     // Spectators get the spectator view
     for (const [userId, spectator] of lobby.spectators) {
       if (spectator.isConnected && spectator.socketId) {
-        const clientState = this.buildClientState(lobby, userId);
+        const clientState = this.lobbyManager.buildClientState(lobby, userId, shared);
         this.io
           .to(`lobby:${lobby.id}:player:${userId}`)
           .emit(S2C.LOBBY_STATE_SNAPSHOT, clientState);

@@ -122,8 +122,6 @@
 .rmht .foot-base{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
   margin-top:clamp(44px,7vh,76px);padding-top:26px;border-top:1px solid var(--line);
   font-size:.66rem;letter-spacing:.12em;color:var(--ink-faint)}
-
-@keyframes rmht-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.78)}}
 @keyframes rmht-rise{to{opacity:1;transform:none}}
 @keyframes rmht-spin{to{transform:rotate(360deg)}}
 @keyframes rmht-glow{0%,100%{filter:drop-shadow(0 0 5px rgba(255,255,255,.12))}50%{filter:drop-shadow(0 0 22px rgba(255,255,255,.45))}}

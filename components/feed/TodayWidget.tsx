@@ -70,7 +70,13 @@ function TaskRow({
   );
 }
 
-export function TodayWidget() {
+/**
+ * @param onSettled Called once this widget knows what it will render — its data
+ *   arrived, the fetch failed, or there is no session to fetch for. The live rail
+ *   keeps its ambient column invisible until every widget has settled and then
+ *   reveals it in one piece, so cards never land on top of one another.
+ */
+export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
   const isDesktop = useIsDesktop();
@@ -84,14 +90,21 @@ export function TodayWidget() {
       if (res.ok) setData(await res.json());
     } catch {
       // decorative — leave empty
+    } finally {
+      onSettled?.();
     }
-  }, []);
+  }, [onSettled]);
 
   // Desktop-only (this lives in the `hidden xl:block`right sidebar) and deferred
   // to idle so it doesn't fetch on mobile or contend during hydration.
   useEffect(() => {
     if (session?.user && isDesktop && idle) void load();
   }, [session?.user, isDesktop, idle, load]);
+
+  // Nothing to fetch for a signed-out visitor: settled from the start.
+  useEffect(() => {
+    if (!session?.user) onSettled?.();
+  }, [session?.user, onSettled]);
 
   if (!session?.user || !data) return null;
 

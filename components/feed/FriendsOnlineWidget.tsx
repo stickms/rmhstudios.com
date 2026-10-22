@@ -21,7 +21,12 @@ interface OnlineFriend {
  activity: { kind:'rmhtube'|'rmhmusic'; label: string; href: string } | null;
 }
 
-export function FriendsOnlineWidget() {
+/**
+ * @param onSettled Called once the first friends snapshot is known (or there is
+ *   no session). See `TodayWidget` — the live rail reveals its ambient column in
+ *   one piece once every widget has settled.
+ */
+export function FriendsOnlineWidget({ onSettled }: { onSettled?: () => void } = {}) {
  const { t } = useTranslation('feed');
  const { data: session } = useSession();
  const isDesktop = useIsDesktop();
@@ -37,8 +42,15 @@ export function FriendsOnlineWidget() {
  // phone never makes the server compute the follow-graph fan-out at all.
  useEffect(() => {
  if (!session?.user || !isDesktop || !idle) return;
- return subscribePulse(['friends'], (data) => setFriends(data.friends as OnlineFriend[] | null));
- }, [session?.user, isDesktop, idle]);
+ return subscribePulse(['friends'], (data) => {
+ setFriends(data.friends as OnlineFriend[] | null);
+ onSettled?.();
+ });
+ }, [session?.user, isDesktop, idle, onSettled]);
+
+ useEffect(() => {
+ if (!session?.user || friends !== null) onSettled?.();
+ }, [session?.user, friends, onSettled]);
 
  // Render nothing until we know there's at least one friend online — keeps the
  // sidebar clean for solo sessions.

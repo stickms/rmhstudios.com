@@ -353,6 +353,9 @@ export const NeonDriftwayHud = forwardRef<HudHandle, Props>(function NeonDriftwa
         <span className="text-zinc-300" style={{ fontSize: '0.9em', marginTop: '0.4em' }}>
           {t('paused-hint', { defaultValue: 'Tap the screen or press Esc to resume' })}
         </span>
+        <span className="text-zinc-400" style={{ fontSize: '0.8em', marginTop: '0.3em' }}>
+          {t('paused-photo-hint', { defaultValue: 'Press P for photo mode' })}
+        </span>
       </div>
     </div>
   );

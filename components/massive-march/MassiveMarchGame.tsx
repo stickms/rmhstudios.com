@@ -23,6 +23,7 @@ import { MainMenu } from './screens/MainMenu';
 import { Lobby } from './screens/Lobby';
 import { Ending } from './screens/Ending';
 import { BOARD, INK, MarchButton, Panel } from './ui';
+import { useGameSession } from '@/hooks/useGameSession';
 
 const WorldView = lazy(() =>
   import('./world/WorldView').then((m) => ({ default: m.WorldView })),
@@ -54,6 +55,10 @@ export function MassiveMarchGame() {
   // …and the person opening that link is very often signed out, so login has to
   // come back to the walk they were invited to rather than the front screen.
   const invite = useLobbyInvite();
+
+  // Session contract: screen on while walking the island. A walk is shared
+  // (the world keeps going for the crew), so there is nothing to pause.
+  useGameSession({ id: 'massive-march', active: screen === 'world' });
 
   if (isPending) {
     return <Standby>{t('loading', { defaultValue: 'Getting your boots…' })}</Standby>;

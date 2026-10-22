@@ -101,7 +101,7 @@ export function MessagesRightSidebar() {
  <div className="text-xs text-site-text-dim px-2 space-y-1">
  <p>RMH | The Everything Platform</p>
  <div className="flex flex-wrap gap-x-2 gap-y-0.5">
- <Link to="/blog"className="hover:text-site-text transition-colors">{t("nav-blog", { defaultValue:"Blog"})}</Link>
+ <Link to="/library" className="hover:text-site-text transition-colors">{t("nav-blog", { defaultValue:"Blog"})}</Link>
  <Link to="/roadmap"className="hover:text-site-text transition-colors">{t("nav-roadmap", { defaultValue:"Roadmap"})}</Link>
  </div>
  </div>

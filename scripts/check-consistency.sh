@@ -263,11 +263,11 @@ review_site "Hex colour literal" \
   '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]([^0-9a-fA-F]|$)' \
   'Site UI reads colour from --site-* tokens; a fixed-palette domain gets its own scoped variable group.'
 
-# Site tier only: a game legitimately reads the pointer as GAMEPLAY input
-# (mouse-look, aiming). What was retired is pointer-position styling on the site.
-review_site "Pointer-position effect (retired 2026-08-01, §5.1.1)" \
+# Site tier: decorative effects belong to the shared bounded material runtime;
+# games and gesture hooks retain their own input semantics.
+review_site "Pointer-position effect — verify shared liquid runtime ownership" \
   "(pointermove|mousemove)" \
-  'Nothing on a site page reacts to pointer position. Hover is a state, never a coordinate. (Gesture drags via hooks/useFluidDrag are the sanctioned exception.)'
+  'Decorative light/waves belong to lib/liquid/runtime.ts (docs/liquid-glass-system.md). No per-card listeners, animated gradient centres or inherited root writes. Gesture/gameplay input remains local.'
 
 review "Per-frame write to a root custom property" \
   '^(components|app|hooks|lib)/.*\.tsx?$' \
@@ -356,6 +356,8 @@ else
     lib/__tests__/motion-pop-spring.test.ts
     lib/__tests__/game-viewport-consistency.test.ts
     lib/__tests__/filter-cost-budget.test.ts
+    lib/__tests__/static-backdrop.test.ts
+    lib/__tests__/route-css-imports.test.ts
     lib/__tests__/theme-tokens.test.ts
     lib/__tests__/appearance-contrast.test.ts
     lib/__tests__/color-vision-a11y.test.ts
@@ -419,11 +421,11 @@ else
       skip "tsc --noEmit" "no TypeScript changed"
     fi
 
-    if has '^(lib/api/registry\.ts|lib/games\.ts|lib/apps\.ts|app/routes/)'; then
-      if pnpm run docs:api:check && pnpm run docs:site:check; then
+    if has '^(lib/api/(registry|openapi)\.ts|lib/games\.ts|lib/apps\.ts|app/routes/)'; then
+      if pnpm run docs:api:check && pnpm run docs:site:check && pnpm run sdk:check; then
         pass "generated docs are current"
       else
-        fail "generated docs are stale — run pnpm docs:api && pnpm docs:site"
+        fail "generated docs are stale — run pnpm docs:api && pnpm docs:site && pnpm sdk:generate"
       fi
     else
       skip "docs freshness" "registry/catalog/routes untouched"

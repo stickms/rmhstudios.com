@@ -14,14 +14,44 @@ import {
 import { generateRoomCode } from '../../lib/rmhmusic/utils';
 import type { ServerRoom, ServerMember } from './types';
 import type { ClientRoomState, ClientMemberInfo, PublicRoomInfo } from '../../lib/rmhmusic/types';
-import { CHAT_HISTORY_LENGTH } from '../../lib/rmhmusic/constants';
+import { CHAT_HISTORY_LENGTH, RADIO_CODE } from '../../lib/rmhmusic/constants';
 
 export class RoomManager {
   public rooms = new Map<string, ServerRoom>();
   private socketToRoom = new Map<string, string>();
   private userToSocket = new Map<string, string>();
+  private gcTimer: ReturnType<typeof setInterval> | null = null;
+
+  /** Radio hooks (T4): set by the RadioManager; plain rooms never touch them. */
+  public onMemberJoined?: (room: ServerRoom, socket: Socket) => void;
+  public onMemberRemoved?: (room: ServerRoom, userId: string) => void;
 
   constructor(private io: Server) {}
+
+  /** The one always-on community radio room (T4). Recreated at start-up. */
+  public createRadioRoom(): ServerRoom {
+    const now = Date.now();
+    const room: ServerRoom = {
+      id: 'radio',
+      code: RADIO_CODE,
+      name: 'Community radio',
+      hostUserId: 'radio',
+      isPublic: true,
+      password: null,
+      maxMembers: 200,
+      members: new Map(),
+      queue: [],
+      currentTrack: null,
+      playback: { trackUri: null, positionMs: 0, isPlaying: false, updatedAt: now },
+      chat: [],
+      seq: 0,
+      createdAt: now,
+      lastActivityAt: now,
+      radio: true,
+    };
+    this.rooms.set(room.id, room);
+    return room;
+  }
 
   handleConnection(socket: Socket): void {
     const userId = (socket.data as any).userId as string;
@@ -158,6 +188,7 @@ export class RoomManager {
     socket.join(room.id);
 
     socket.emit(S2C.ROOM_STATE_SNAPSHOT, this.toClientState(room, userId));
+    this.onMemberJoined?.(room, socket);
 
     if (!existing) {
       this.broadcastAction(room, 'MEMBER_JOINED', { userId, userName, avatarUrl });
@@ -205,8 +236,9 @@ export class RoomManager {
     room.members.delete(userId);
     this.socketToRoom.delete(socket.id);
     socket.leave(roomId);
+    this.onMemberRemoved?.(room, userId);
 
-    if (room.members.size === 0) {
+    if (room.members.size === 0 && !room.radio) {
       this.rooms.delete(roomId);
       logger.info({ event: 'room_deleted_empty', roomId });
       return;
@@ -254,7 +286,7 @@ export class RoomManager {
         roomId: room.id,
         code: room.code,
         name: room.name,
-        hostName: room.members.get(room.hostUserId)?.userName ?? 'Unknown',
+        hostName: room.radio ? 'Community radio' : (room.members.get(room.hostUserId)?.userName ?? 'Unknown'),
         memberCount: room.members.size,
         maxMembers: room.maxMembers,
         currentTrack: room.currentTrack?.title ?? null,
@@ -333,18 +365,26 @@ export class RoomManager {
       chat: room.chat.slice(-CHAT_HISTORY_LENGTH),
       myUserId: userId,
       seq: room.seq,
+      radio: room.radio,
     };
   }
 
   public startGC() {
-    setInterval(() => {
+    if (this.gcTimer) return;
+    this.gcTimer = setInterval(() => {
       const now = Date.now();
       for (const [roomId, room] of this.rooms) {
-        if (room.members.size === 0 && now - room.lastActivityAt > config.emptyTimeoutMs) {
+        if (!room.radio && room.members.size === 0 && now - room.lastActivityAt > config.emptyTimeoutMs) {
           this.rooms.delete(roomId);
           logger.info({ event: 'gc_removed_empty_room', roomId });
         }
       }
     }, config.gcIntervalMs);
+    this.gcTimer.unref();
+  }
+
+  public stop() {
+    if (this.gcTimer) clearInterval(this.gcTimer);
+    this.gcTimer = null;
   }
 }

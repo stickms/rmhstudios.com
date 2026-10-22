@@ -43,6 +43,8 @@ import {
   type CameraSeat,
   type EdgeIndicator,
 } from '@/lib/bums-rush/engine';
+import { applyPartyModifiers } from '@/lib/bums-rush/engine/tuning';
+import { anyModifier, type PartyModifiers } from '@/lib/bums-rush/modifiers';
 import { loadLevel, loadShowdownArena } from '@/lib/bums-rush/levels';
 import { createRenderer, type BumsRushRenderer } from '@/lib/bums-rush/render';
 import {
@@ -68,6 +70,7 @@ import {
   type SeatInputState,
   type TouchArmState,
 } from '@/lib/bums-rush/input';
+import { useGameSession } from '@/hooks/useGameSession';
 import {
   GuestInterpolator,
   HostLoop,
@@ -116,6 +119,7 @@ export interface SessionNet {
   mySeats: readonly SeatIndex[];
   seatViews: readonly SeatView[];
   startedAt: number;
+  modifiers?: PartyModifiers | null;
   reportResult: (envelope: unknown) => void;
 }
 
@@ -234,6 +238,10 @@ export function useLevelSession(options: LevelSessionOptions): LevelSessionApi {
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
 
+  // Session contract: screen on during a level. Pause-on-hide is the
+  // session's own visibility handler below (it knows about local seats).
+  useGameSession({ id: 'bums-rush', active: status === 'running' && !paused });
+
   const joinPendingRef = useRef<PendingJoin | null>(pendingJoin);
   joinPendingRef.current = pendingJoin;
 
@@ -343,6 +351,8 @@ export function useLevelSession(options: LevelSessionOptions): LevelSessionApi {
 
     registry.join(primaryKind === 'touch' ? touchDeviceIdentity() : keyboardDeviceIdentity('keyboard-p1'));
 
+    // Tuning table follows the room's party modifiers (reset on cleanup).
+    applyPartyModifiers(net?.modifiers ?? null);
     if (isGuest) {
       guest = new GuestInterpolator();
       guestAdapter = createGuestRenderAdapter(level, solo);
@@ -357,6 +367,7 @@ export function useLevelSession(options: LevelSessionOptions): LevelSessionApi {
         reducedMotion: opts.reducedMotion,
         catAfterWipes: opts.settings.catAfterWipes,
         pvp: mode === 'showdown',
+        modifiers: net?.modifiers ?? null,
       });
       const firstSeat = (net?.mySeats[0] ?? 0) as SeatIndex;
       seats.push({
@@ -437,6 +448,7 @@ export function useLevelSession(options: LevelSessionOptions): LevelSessionApi {
             objectiveIds: event.objectives,
             assisted: event.assisted,
             catUsed: false,
+            modded: anyModifier(net?.modifiers),
             seats: seats.map((s) => ({ seat: s.seat, userId: null })),
           });
           break;
@@ -761,6 +773,7 @@ export function useLevelSession(options: LevelSessionOptions): LevelSessionApi {
       host?.stop();
       renderer.dispose();
       sim?.dispose();
+      applyPartyModifiers(null);
       keyboard.dispose();
       mouse.dispose();
       touchStateRef.current = createTouchArmState();

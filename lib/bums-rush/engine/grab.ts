@@ -25,7 +25,7 @@ import Matter from 'matter-js';
 import { MATERIALS, NET } from '../constants';
 import type { MaterialId, SeatIndex, Vec2 } from '../types';
 import type { Character } from './character';
-import { DT2, ENGINE, GRAVITY_STEP, P } from './tuning';
+import { DT2, ENGINE, GRAVITY_SCALE, P } from './tuning';
 import { cancelSeparation, correctPosition, type BodyMeta, type PhysWorld } from './world';
 
 const { Body, Constraint } = Matter;
@@ -409,7 +409,7 @@ export function gripLoad(ctx: GrabContext, state: GrabState, grip: Grip): number
     const ch = ctx.characters[seat];
     if (!ch) continue;
     fx += CHARACTER_MASS * ch.accX;
-    fy += CHARACTER_MASS * (ch.accY - GRAVITY_STEP);
+    fy += CHARACTER_MASS * (ch.accY - P.GRAVITY_Y * GRAVITY_SCALE * DT2);
   }
   return Math.hypot(fx, fy) / DT2;
 }

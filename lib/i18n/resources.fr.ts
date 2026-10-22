@@ -15,6 +15,7 @@ import frCCursedLogic from "@/locales/fr/c-cursed-logic.json";
 import frCDailyPuzzles from "@/locales/fr/c-daily-puzzles.json";
 import frCDoctrine from "@/locales/fr/c-doctrine.json";
 import frCDreamRift from "@/locales/fr/c-dream-rift.json";
+import frCDunesday from "@/locales/fr/c-dunesday.json";
 import frCEconomy from "@/locales/fr/c-economy.json";
 import frCForestExplorer from "@/locales/fr/c-forest-explorer.json";
 import frCGabrielsHorn from "@/locales/fr/c-gabriels-horn.json";
@@ -111,6 +112,7 @@ const frResources = {
   "c-daily-puzzles": frCDailyPuzzles,
   "c-doctrine": frCDoctrine,
   "c-dream-rift": frCDreamRift,
+  "c-dunesday": frCDunesday,
   "c-economy": frCEconomy,
   "c-forest-explorer": frCForestExplorer,
   "c-gabriels-horn": frCGabrielsHorn,

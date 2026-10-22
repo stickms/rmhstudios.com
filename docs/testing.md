@@ -27,6 +27,7 @@ pnpm test lib/slice-it        # one file or directory
 pnpm test:watch               # watch mode
 pnpm test:coverage            # V8 coverage → text + coverage/index.html + lcov
 pnpm test:epic                # epic content-build suite (needs Chromium)
+pnpm test:integration         # real flows against a running app + throwaway Postgres (see §8)
 make test                     # Go (Bazel) + the frontend vitest suite
 ```
 
@@ -225,6 +226,222 @@ against `pnpm dev` — it must run against `.output`. Its commit-time half,
 Full detail, including why each detector asks its question when it does:
 [`fouc.md`](./fouc.md).
 
+### 6. Frame-budget audit (not in CI)
+
+`testing/e2e/frame-budget.mjs` drives the **built** app and asks the question a
+high-refresh display asks of a page: does it go **idle** at rest, and how much
+headroom does it have while scrolling? Per route it counts compositor frames
+produced with nobody touching the page, browser-wide CPU at rest (every
+Chromium process, so compositor/GPU cost is visible — main-thread metrics never
+see it), perpetual animations by selector, and rAF cadence idle and scrolling.
+
+```bash
+pnpm build && PORT=7005 node .output/server/index.mjs &
+BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs              # default route set
+BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs --all --gate # every page; fail if a site page never idles
+```
+
+Absolute fps here is SwiftShader's, so compare builds and routes, not devices.
+Its commit-time half is `lib/__tests__/static-backdrop.test.ts` (in
+`GATE_TESTS`). Findings and the measured before/after:
+[`performance-audit-2026-10-08.md`](./performance-audit-2026-10-08.md).
+
+**Page switches.** Its sibling `testing/e2e/page-switch.mjs` times the other
+half of "does it feel fast": a click in the shell's nav rail, from a settled
+page, to the destination painted — plus the longest frame, summed blocking
+time, style+layout and layout shift over the switch (Long Animation Frames
+API), under CPU throttling and added latency. `--mode hover` lets the router's
+intent preload run first; `--mode press` is a touch tap (`pointerdown`, 90ms,
+click — timed from the finger going down); `a>b:c` starts from a page reached
+within the visit; `~card` as the destination taps the first post card (a `div`,
+not a link) and waits for the post page. Each row also says how often the
+router's pending skeleton or an in-page spinner showed, and what the click and
+the settled page view fetched. `--cold` uses a fresh browser context per sample
+(`Network.clearBrowserCache` leaves the memory cache warm), `--kbps` throttles
+bandwidth, `--settle` sets the dwell before the click.
+
+```bash
+BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs                # default switches, 4× CPU, tap
+BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs --mode hover --cpu 1 --rtt 0
+BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs --pair /explore:~card --mode press --cold --rtt 150 --kbps 1600
+```
+
+The paint marker is a destination element that did not exist before the click:
+the outgoing page's own `main h1` is still mounted when the URL flips, and
+counting it made every h1 destination look ready a frame after the click.
+
+Findings and the measured before/after:
+[`performance-audit-2026-10-21.md`](./performance-audit-2026-10-21.md) §Navigation commit and
+§Instant navigation.
+
+### 7. Globe eversion suites (`lib/eversion/`, `testing/e2e/eversion-*.mjs`)
+
+The hub navigation effect (spec: [`plans/2026-10-17-globe-eversion.md`](./plans/2026-10-17-globe-eversion.md)
+§11) is tested in three layers. The first is part of `pnpm test`; the other two
+need Chromium and are NOT in the main suite.
+
+**a. Unit (in `pnpm test`).** `lib/eversion/__tests__/` covers spec gates 1-24
+(projections, LUT, Thurston oracle, orientation, morph, timeline properties, the
+runner's sequence against scripted ports, the BEFORE scheduler, eligibility,
+flags) plus `bundle-leaks.test.ts`, which gives the static-closure leak scan in
+`scripts/check-bundle-budget.ts` a positive and a negative control and keeps every
+module fingerprint true. `pnpm exec vitest run lib/eversion` runs just these
+(~30 s).
+
+`settle.test.ts` holds the AFTER readiness gate's decision logic (skeletons, queries, images, fonts, quiet window,
+soft/hard bounds, no latency when settled) and `unwrap-end.test.ts` the overlapping crossfade ending.
+`testing/e2e/eversion-late-content.mjs` (dev server, Chromium; not in CI) delays the destination's `/api`,
+server-fn and image requests by 400-1500 ms, runs the real effect and requires SSIM(AFTER bitmap, settled live page)
+
+> = 0.92 (it scored 0.62 with the gate bypassed, and 0.97-1.00 with it).
+
+**b. Fixture e2e (no server, no build).** Each script bundles its own fixture
+page with esbuild around the real modules and serves it from a fake origin, with
+WebGL2 from SwiftShader:
+
+```bash
+node testing/e2e/eversion-metrics-selftest.mjs   # the measurement helpers, first
+node testing/e2e/eversion-host.mjs               # worker/main host, frame pacing
+node testing/e2e/eversion-renderer.mjs           # renderer lifecycle
+node testing/e2e/eversion-gl.mjs                 # shaders: parity (S#27), two-sidedness (S#28)
+node testing/e2e/eversion-wedge.mjs              # the last UNWRAP frame is the flat page; the azimuthal wedge mask is smooth
+node testing/e2e/eversion-controller.mjs         # run orchestration against a fake router (~25 s)
+```
+
+`CHROMIUM_PATH=/path/to/chrome` overrides the browser. `eversion-gl.mjs` skips
+Firefox/WebKit when absent (explicit `SKIP` lines) but asserts a floor on the
+number of checks that ran, so a run that skipped its way to green fails.
+
+**c. App e2e (against a running server).** These drive the real app with the
+effect forced on by `?eversion`:
+
+```bash
+# built app (what CI runs): needs DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL
+pnpm run build:frontend:sourcemap && PORT=7005 node .output/server/index.mjs &
+export BASE_URL=http://localhost:7005
+
+node testing/e2e/eversion-load.mjs               # S#40: nothing before load; LCP/TBT; delayed-load control
+PROFILE=desktop THEME=dark node testing/e2e/eversion-hub.mjs   # S#25/26: entry points, dismissals, fallbacks
+node testing/e2e/eversion-edge.mjs               # S#34/35: fallbacks, fault injection, router edge cases
+node testing/e2e/eversion-capture.mjs            # S#29/46: capture fidelity (SSIM), right-edge parity and lifecycle
+```
+
+**Smoothness (S#31/S#32) needs a dev server, not the build.** It does not record the
+screen: it scrubs the timeline in the lab (the core's `scrub` debug op, driven through
+`window.__eversionLab`, present only with `?eversion-debug`) at a fixed step - every 16 ms,
+8 ms within 48 ms of each stage boundary and scripted event - screenshots each still and
+runs the jerk detector over consecutive stills. The verdict therefore does not depend on how
+fast the rig draws (the old screencast sampled ~1.5 fps on software GL and could neither
+pass a clean run nor find an injected cut). The lab route is dev-only, so:
+
+```bash
+EVERSION_LAB_OPEN=1 XAI_API_KEY=x OPENAI_API_KEY=x pnpm exec vite dev --port 7371 --strictPort --host 127.0.0.1
+BASE_URL=http://127.0.0.1:7371 node testing/e2e/eversion-smoothness.mjs --quick   # ~11 min on a loaded 4-core software-GL box
+node testing/e2e/eversion-smoothness.mjs                                          # all themes, 20 seeded fast-forwards
+node testing/e2e/eversion-smoothness.mjs --screencast                             # ALSO the optional real-hub screencast variant (needs >= ~10 fps)
+```
+
+Scenarios: uninterrupted per theme, seeded fast-forwards, AFTER ready at 4 s, a failing (500)
+destination, and a self-proof. A hard cut is a step larger than BOTH its neighbours by 2x (C2
+continuity makes every legitimate speed-up a ramp); the run's median is deliberately not the
+yardstick, because the change per step varies ~100x across one correct run. The self-proof
+injects a 30 % radius step (the `inject-hard-cut` debug op) at 2000 ms and requires the
+detector to flag exactly that step while the unmodified run reports none. Luminance (S#32) is
+read off the same stills. The stills are of the lab's synthetic pages in the theme's own
+background, so what is judged is the effect's motion; the CSS hub and orb fades are not in
+them. CI runs `--quick` against a throwaway dev server in its own step (the glob skips it).
+
+For iteration, a dev server works for everything except the load gate's chunk
+identification: `EVERSION_LAB_OPEN=1 XAI_API_KEY=x OPENAI_API_KEY=x pnpm exec vite dev --port 7331`
+(a git worktree needs its own `pnpm install`; the dummy keys exist because the
+homes image module constructs a client at import time).
+`eversion-lab.mjs` (the admin-only `/eversion-lab` scrub page) needs the dev-only
+`EVERSION_LAB_OPEN` and so is **excluded from CI** - a production build ignores it.
+
+`eversion-load.mjs` (S#40) and `eversion-perf.mjs` (S#43) compare against the
+committed `testing/e2e/baselines/eversion-load.json` and `eversion-frames.json`.
+**A missing baseline fails both gates on CI** (`CI` set; `eversion-perf` only
+informs locally). Neither script ever writes one as a side effect of a run:
+a baseline taken from the run under test would make the gate compare a build with
+itself and pass for ever. Thresholds and the late-`load` negative control are in
+the spec's S#40 amendment. The late-`load` control holds `load` open for 8 s and
+fails if ANY eversion request (the prefetch chunk included, not just the bridge)
+is seen before it; `lib/eversion/__tests__/hub-load-gating.test.ts` pins the same
+rule at source level so a regression fails in `pnpm test` before a browser runs.
+
+**Producing baselines.** They must come from a CI runner on a production build -
+SwiftShader numbers from a laptop would fail every run on CI. Start the `web-ci`
+workflow with `workflow_dispatch` and `update-baselines` ticked: the
+`eversion-e2e` job then runs only `eversion-load.mjs` and `eversion-perf.mjs`
+with `--update-baselines` and uploads `testing/e2e/baselines/` as the
+`eversion-baselines` artifact (14 days). Download it, commit the two JSON files
+in a PR of their own, and say which run produced them. Refresh the same way when a
+deliberate change moves the numbers (a Chromium bump, a slower-but-better effect).
+
+**CI.** The `eversion-e2e` job in `web-ci.yml` builds WITH sourcemaps (the
+attribution checks read them), serves `.output`, and runs every
+`testing/e2e/eversion-*.mjs` except `eversion-lab.mjs` and `eversion-smoothness*.mjs` (own step, above); `eversion-hub.mjs` runs
+once per profile x theme (desktop/mobile x dark/light/high-contrast). It does
+**not run on PRs** for now: the suite does not finish inside its timeout (22 of 23
+PR runs were cancelled in `eversion-behaviour.mjs`), so on PRs it held a runner
+for ~40 min and reported nothing. Run it on a branch with
+`gh workflow run web-ci.yml --ref <branch>`. When re-enabled on PRs, the job is
+path-filtered by `eversion-changes` to what the effect depends on: `lib/eversion`,
+`components/radial`, the settings row and its preference API/schema, the theme
+store, `lib/perf-tier*` and `lib/render`, the glass layer, the two English
+namespaces it uses, `package.json`, the lockfile, the Vite config, the bundle
+budget script, the baselines and this workflow - not every route, store or English
+string. It runs nightly on `main`. It is `continue-on-error` until T37 makes it
+blocking, which hides a red job from the PR's checks, so each script's verdict is
+also written to the job summary (`GITHUB_STEP_SUMMARY`) and every failure is an
+`::error::` annotation. Open the job summary after a nightly.
+
+### 8. Integration suite (`vitest.integration.config.ts`, `testing/integration/`)
+
+`pnpm test:integration`. Black-box tests of real user flows against a **running,
+built** app and a **real** Postgres — the layer the main suite deliberately never
+touches. Blocking on every PR (the `integration` job in `web-ci.yml`).
+
+| File | Covers |
+| --- | --- |
+| `auth.test.ts` | email sign-up → session → handle assigned; sign-out revokes the session; wrong password sets no session; writes need a session |
+| `posts.test.ts` | create + read back; invalid body → 400 and nothing written; another user's like (toggle) and comment; only the author can delete (soft delete → tombstone) |
+| `coins.test.ts` | a tip moves exactly the amount and writes one ledger row; overdraft and self-tip are refused with every balance unchanged |
+| `developer-api.test.ts` | free accounts cannot mint keys; a paid key authenticates `/api/v1/me`; revoked and made-up keys → 401; scopes (read-only key cannot post, `write:posts` can) |
+| `public.test.ts` | `/api/ready`, the OpenAPI 3.1 spec, `/` SSR and the sitemap — the deploy smoke probes, run before merge |
+
+How it works: `global-setup.ts` waits for `/api/ready`, then signs up the shared
+cast (`alice`, `bob`, `carol`) once and hands their cookies to the files via
+`inject()`. `lib/client.ts` is a cookie-jar `fetch` client (it sends the
+`Origin` Better Auth's CSRF check wants) plus a `pg` pool on the **same**
+database, used only to seed what no endpoint can (a paid subscription, a starting
+coin balance) and to assert on what a response cannot prove (the ledger row, the
+`deletedAt` stamp). Files run one at a time and the app's per-IP rate limits stay
+on (10 sign-ups / posts per minute); the suite budgets its requests under them.
+
+Locally — never against a database you care about:
+
+```bash
+pnpm build:frontend
+DATABASE_URL=postgresql://…/scratch pnpm exec prisma migrate deploy
+DATABASE_URL=… BETTER_AUTH_SECRET=local-secret-at-least-32-chars-long BETTER_AUTH_URL=http://localhost:7005 PORT=7005 \
+  node .output/server/index.mjs &
+INTEGRATION_BASE_URL=http://localhost:7005 DATABASE_URL=… pnpm test:integration
+```
+
+(`INTEGRATION_BASE_URL`, not `BASE_URL`: Vite reserves that name and vitest
+overwrites it.) Restart the server between back-to-back runs — the rate-limit
+counters are in memory.
+
+**Found by this suite:** a session's cookies copied before sign-out kept writing
+for up to 5 minutes, because `session.cookieCache` let `getSession` trust the
+signed cookie without reading the (deleted) session row. Fixed by forcing
+`disableCookieCache` on non-GET requests (the wrapper at the bottom of
+`lib/auth.ts`); `auth.test.ts` › *a revoked session cookie cannot write* pins it.
+
+Out of scope (each needs external services): Stripe checkout/webhooks, OAuth
+providers, the Socket.IO hubs, email delivery.
+
 ### Coverage
 
 ```bash
@@ -241,21 +458,27 @@ a target to farm.
 
 ## CI
 
-Ten workflows live in `.github/workflows/`. The ones that touch tests/quality:
+Ten workflows live in `.github/workflows/`. The ones that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from a cache keyed on the lockfile + Prisma schema and only installs on a miss):
 
-| Workflow                   | Runs                                                                                    | Gate?                                                                                    |
-| -------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `web-ci.yml` (`check` job) | `tsc --noEmit` → `eslint` → docs freshness → `pnpm test`                                | **all block**, tests included (as of 2026-08-08)                                         |
-| `web-ci.yml` (`build` job) | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                            |
-| `web-ci.yml` (`audit` job) | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                  |
-| `epic-tests.yml`           | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                           |
-| `deploy.yml` (`ci` job)    | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | typecheck + lint block; the **test step is advisory** here by owner decision — see below |
-| `go-microservices.yml`     | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                   |
+| Workflow                      | Runs                                                                                    | Gate?                                                                                    |
+| ----------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `web-ci.yml` (`typecheck`)    | `tsc --noEmit` → `eslint` → docs freshness                                              | **all block**                                                                            |
+| `web-ci.yml` (`test (1/2)`, `test (2/2)`) | `pnpm test --shard=N/2` — the unit suite split across two parallel jobs     | **blocks**, tests included (as of 2026-08-08)                                            |
+| `web-ci.yml` (`build` job)    | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                            |
+| `web-ci.yml` (`audit` job)    | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                  |
+| `web-ci.yml` (`integration`)  | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`    | **blocks**; see §8                                                                       |
+| `epic-tests.yml`              | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                           |
+| `deploy.yml` (`ci` job)       | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | blocks — typecheck, lint and test all gate the deploy; see below                         |
+| `deploy.yml` (`integration`)  | same as web-ci's `integration`, on the **merged** commit                                | **blocks the deploy**; runs in parallel with the image build                             |
+| `web-ci.yml` (`eversion-e2e`) | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7          |
+| `go-microservices.yml`        | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                   |
 
-**Where enforcement lives.** `main` is reached only through a pull request, and
-web-ci's Test step is a hard gate, so a red test stops the change before it
-merges. The deploy's own `ci` job re-runs the suite as a second look and stays
-advisory by owner decision, so a flake cannot wedge a release.
+**Where enforcement lives.** web-ci's Test step is a hard gate on the PR, and
+the deploy's own `ci` job re-runs the suite on the merge result as a hard gate
+too. It used to be advisory on the premise that `main` is reached only through a
+PR — but nothing enforced that (no branch protection), so a direct push or a
+merge over a red PR could ship untested code. It costs no wall-clock: `ci` runs
+in parallel with the image build.
 
 The web-ci test step was advisory for a long stretch, for a reason that no
 longer holds: `i18n-catalogs` was permanently red, and the Test step used to sit

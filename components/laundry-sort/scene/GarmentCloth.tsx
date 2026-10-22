@@ -35,6 +35,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { WASH_COLORS } from '@/lib/laundry-sort/constants';
 import { writeShell } from '@/lib/laundry-sort/shell';
+import type { LaundryMatch } from '@/lib/laundry-sort/match';
 import type { Garment } from '@/lib/laundry-sort/solver';
 import type { QualityFlags } from '@/lib/render/tier';
 import { weaveTexture } from '../weave';
@@ -49,9 +50,11 @@ interface Props {
   timeRef: { current: number };
   /** Highlighted while the player is holding it — one of possibly several. */
   heldRef: { current: ReadonlySet<number> | null };
+  /** Read for `alpha` at draw time — see the blend in the frame callback. */
+  matchRef: React.RefObject<LaundryMatch | null>;
 }
 
-export function GarmentCloth({ garment, quality, timeRef, heldRef }: Props) {
+export function GarmentCloth({ garment, quality, timeRef, heldRef, matchRef }: Props) {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial>(null);
   const wash = WASH_COLORS[garment.colorIndex] ?? WASH_COLORS[0];
@@ -77,10 +80,26 @@ export function GarmentCloth({ garment, quality, timeRef, heldRef }: Props) {
   const texture = useMemo(() => weaveTexture(wash.weave), [wash.weave]);
   const baseColor = useMemo(() => new THREE.Color(wash.hex), [wash.hex]);
 
+  // Scratch for the interpolated pose, one per garment, allocated once.
+  const blended = useMemo(() => new Float32Array(garment.pos.length), [garment]);
+
   useFrame(() => {
     const mesh = meshRef.current;
     const material = materialRef.current;
     if (!mesh || !material) return;
+
+    // Draw the cloth between its last two 60Hz ticks rather than AT the last
+    // one, so it moves continuously on a 120/144/240Hz panel. Alpha and the
+    // two position buffers are written together inside `match.advance()`, so
+    // reading them here is consistent whatever order R3F runs frame callbacks.
+    const a = matchRef.current?.alpha ?? 1;
+    let drawPos = garment.pos;
+    if (a < 1) {
+      const cur = garment.pos;
+      const prev = garment.renderPrev;
+      for (let i = 0; i < cur.length; i++) blended[i] = prev[i] + (cur[i] - prev[i]) * a;
+      drawPos = blended;
+    }
 
     const position = geometry.getAttribute('position') as THREE.BufferAttribute;
     const normal = geometry.getAttribute('normal') as THREE.BufferAttribute;
@@ -90,7 +109,7 @@ export function GarmentCloth({ garment, quality, timeRef, heldRef }: Props) {
     writeShell(
       topology.shell,
       topology.indices,
-      garment.pos,
+      drawPos,
       position.array as Float32Array,
       normal.array as Float32Array,
     );

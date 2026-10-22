@@ -13,6 +13,7 @@ import type { Post } from '@/lib/blog';
 import { useReveal } from './LibraryReveal';
 import { useLiquidLink } from '@/hooks/useLiquidLink';
 import { liquidVTName } from '@/lib/view-transition';
+import '@/components/library/library.css';
 
 export function LibraryBlogRow({ posts, query = '' }: { posts: Partial<Post>[]; query?: string }) {
   const { t } = useTranslation('library');

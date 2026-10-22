@@ -5,7 +5,16 @@ import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { rsvp, unrsvp, EventError } from '@/lib/events.server';
 
-const rsvpSchema = z.object({ status: z.enum(['going', 'maybe']) });
+const rsvpSchema = z.object({
+  status: z.enum(['going', 'maybe']),
+  // K4 — repeating events: carry the RSVP over to every occurrence, or pin it to one date.
+  everyTime: z.boolean().optional(),
+  occurrenceAt: z.coerce.date().optional(),
+});
+const withdrawQuery = z.object({
+  scope: z.enum(['occurrence', 'all']).optional(),
+  occurrenceAt: z.coerce.date().optional(),
+});
 
 function mapEventError(err: EventError): [string, number] {
   switch (err.code) {
@@ -42,7 +51,10 @@ export const Route = createFileRoute('/api/events/$id/rsvp')({
           const parsed = rsvpSchema.safeParse(await request.json().catch(() => ({})));
           if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
 
-          const result = await rsvp(params.id, session.user.id, parsed.data.status);
+          const result = await rsvp(params.id, session.user.id, parsed.data.status, {
+            everyTime: parsed.data.everyTime,
+            occurrenceAt: parsed.data.occurrenceAt,
+          });
           return Response.json(result);
         } catch (error) {
           if (error instanceof EventError) {
@@ -54,9 +66,20 @@ export const Route = createFileRoute('/api/events/$id/rsvp')({
         }
       },
 
-      DELETE: defineHandler({}, async ({ params, session }) => {
-        const result = await unrsvp(params.id, session.user.id);
-        return Response.json(result);
+      DELETE: defineHandler({ query: withdrawQuery }, async ({ params, session, query }) => {
+        try {
+          const result = await unrsvp(params.id, session.user.id, {
+            scope: query.scope,
+            occurrenceAt: query.occurrenceAt,
+          });
+          return Response.json(result);
+        } catch (error) {
+          if (error instanceof EventError) {
+            const [message, status] = mapEventError(error);
+            return Response.json({ error: message }, { status });
+          }
+          throw error;
+        }
       }),
     },
   },

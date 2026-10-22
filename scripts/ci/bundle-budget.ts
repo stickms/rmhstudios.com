@@ -222,6 +222,19 @@ async function main(): Promise<number> {
       eagerCssFiles.push(...tanStackAssets.css);
     }
   }
+  // The site's render-blocking entry sheet is linked from `__root.tsx`'s head
+  // through a `?url` import, so neither manifest lists it — and it is by far the
+  // largest eager CSS a page pays for (this budget measured only the 3 KB entry
+  // `index-*.css` until 2026-10-09). Count the site-tier sheet: what every
+  // `_site` page blocks on. The app-tier superset is a game's cost, not the
+  // platform shell's (app/site-tier.css explains the split).
+  const siteSheet = outputFiles.find((f) => /[\\/]site-tier-[\w-]+\.css$/.test(f));
+  if (siteSheet) eagerCssFiles.push(siteSheet);
+  else if (STRICT) {
+    console.error('bundle-budget: no site-tier-*.css in the client build; cannot verify eager CSS.');
+    return 1;
+  }
+
   if (!manifestSource || eagerJsFiles.length === 0) {
     const message = 'bundle-budget: no usable client entry manifest found.';
     if (STRICT) {

@@ -10,6 +10,7 @@ import { stageOf } from '@/lib/forest-explorer/garden';
 import { useRenderQuality } from '@/lib/render/useRenderQuality';
 import AdaptiveQuality from '@/components/render/AdaptiveQuality';
 import { ExploreScene } from './ExploreScene';
+import { GardenWorldsCard, GardenWorldsLoader } from './GardenWorlds';
 
 export function ExploreGame() {
     const [locked, setLocked] = useState(false);
@@ -44,6 +45,7 @@ export function ExploreGame() {
 
     return (
         <div className="w-full h-full relative select-none" style={{ touchAction: 'none' }}>
+            <GardenWorldsLoader />
             <Canvas
                 shadows={quality.shadows}
                 dpr={dpr}
@@ -117,6 +119,7 @@ export function ExploreGame() {
                                 {t("garden-status", { defaultValue: "🌼 Your garden: {{count}} plants, {{blooms}} blooming — they grow even while you're away", count: plants.length, blooms: bloomCount })}
                             </p>
                         )}
+                        <GardenWorldsCard />
                         <button
                             className={`w-full py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
                                 muted

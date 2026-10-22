@@ -180,7 +180,7 @@ function Section({
  if (rows.length === 0) return null;
  return (
  <Reveal as="section">
- <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2 flex items-center gap-1.5">
  <Icon className="h-3.5 w-3.5"/> {title}
  </h2>
  <div className="space-y-2">
@@ -189,7 +189,7 @@ function Section({
  return (
  <div
  key={r.id}
- className={`rounded-site border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}
+ className={`rounded-site glass-fill p-3 ${LIFT_CARD}`}
  >
  <p className="whitespace-pre-wrap break-words text-sm text-site-text">
  {r.content || (

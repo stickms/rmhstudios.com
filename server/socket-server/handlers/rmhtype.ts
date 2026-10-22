@@ -14,6 +14,7 @@ import { awardAppProgress } from '../economy';
 import { PresenceGrace } from '../../shared/presence-grace';
 import { S2C } from '../../../lib/rmhtype/events';
 import { generateTypingPassage } from '../../../lib/ai/text.server';
+import { parseSoloSource, pickCodeSnippet, extractLorePassage } from '../../../lib/rmhtype/sources';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -667,7 +668,9 @@ function startProgressBroadcast(io: Server, room: TypeRoom): void {
       });
     }
     if (progress.length > 0) {
-      io.to(`rmhtype:${room.roomId}`).emit('rmhtype:game:progress', progress);
+      // perf: volatile — every frame carries full per-player state, so a missed one is
+      // replaced 200ms later; don't let connectionStateRecovery retain them.
+      io.to(`rmhtype:${room.roomId}`).volatile.emit('rmhtype:game:progress', progress);
     }
   }, PROGRESS_BROADCAST_INTERVAL_MS);
 }
@@ -1661,7 +1664,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
 
   socket.on(
     'rmhtype:solo:start',
-    async (payload?: { difficulty?: string; passageLength?: string; topic?: string }) => {
+    async (payload?: { difficulty?: string; passageLength?: string; topic?: string; source?: string }) => {
     if (!checkRateLimit(socket.id, 'rmhtype:solo:start')) {
       socket.emit('rmhtype:error', { message: 'Rate limit exceeded' });
       return;
@@ -1687,9 +1690,45 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     // A topic asks for a passage written to order. The text is produced HERE,
     // never accepted from the client: the passage is what scoring is measured
     // against, so a client-supplied one would be a client-supplied WPM.
-    const topic = typeof payload?.topic === 'string' ? sanitizeString(payload.topic, 80) : '';
+    const source = parseSoloSource(payload?.source);
+    const topic =
+      source === 'standard' && typeof payload?.topic === 'string'
+        ? sanitizeString(payload.topic, 80)
+        : '';
     let passage = selectPassage(soloSettings);
     let aiPassage = false;
+
+    // Code and lore passages are practice-only, like a written-to-order one.
+    if (source === 'code') {
+      const snip = pickCodeSnippet();
+      passage = { id: `code-${snip.id}`, text: snip.text, difficulty, wordCount: snip.text.split(/\s+/).length };
+      aiPassage = true;
+    } else if (source === 'lore') {
+      try {
+        const rows = await getPrismaClient().newsArticle.findMany({
+          where: { status: 'PUBLISHED' },
+          orderBy: { date: 'desc' },
+          take: 40,
+          select: { id: true },
+        });
+        const pick = rows[Math.floor(Math.random() * rows.length)];
+        const row = pick
+          ? await getPrismaClient().newsArticle.findUnique({
+              where: { id: pick.id },
+              select: { content: true },
+            })
+          : null;
+        const text = row ? extractLorePassage(row.content, passageLength) : null;
+        if (text) {
+          passage = { id: `lore-${pick!.id}`, text, difficulty, wordCount: text.split(' ').length };
+          aiPassage = true;
+        }
+      } catch (err) {
+        logger.warn({ event: 'rmhtype_lore_passage_error', userId, error: String(err) });
+      }
+      if (!aiPassage) socket.emit('rmhtype:solo:aiUnavailable', {});
+      if (!socket.connected) return;
+    }
 
     if (topic) {
       if (!checkRateLimit(socket.id, 'rmhtype:solo:ai')) {

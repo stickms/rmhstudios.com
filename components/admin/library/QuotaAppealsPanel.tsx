@@ -80,7 +80,7 @@ export function QuotaAppealsPanel() {
           approve
             ? t('quota-approved', {
                 total: grantedTotal,
-                defaultValue: `Approved — cap set to ${grantedTotal}.`,
+                defaultValue: 'Approved — cap set to {{total}}.',
               })
             : t('quota-denied', { defaultValue: 'Request denied.' }),
         );

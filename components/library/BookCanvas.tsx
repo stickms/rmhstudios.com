@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import * as THREE from 'three';
 import { surfaceDprFor } from '@/lib/display-scale';
 import { useDisplayScale } from '@/hooks/useDisplayScale';
+import '@/components/library/library.css';
 
 const PI = Math.PI;
 

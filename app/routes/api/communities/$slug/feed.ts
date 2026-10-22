@@ -10,9 +10,12 @@ export const Route = createFileRoute('/api/communities/$slug/feed')({
         const url = new URL(request.url);
         const cursor = url.searchParams.get('cursor');
         const limit = parseInt(url.searchParams.get('limit') || '20');
+        // N1: filter the feed to one flair.
+        const flairId = url.searchParams.get('flair');
         const feed = await getCommunityFeed(params.slug, session?.user?.id ?? null, {
           cursor,
           limit,
+          flairId,
         });
         if (!feed) return Response.json({ error: 'Not found' }, { status: 404 });
         return Response.json(feed);

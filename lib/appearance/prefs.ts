@@ -12,6 +12,8 @@
  * `/api/preferences/appearance` ever receives.
  */
 
+import { NAV_TRANSITIONS, type NavTransition } from '@/lib/eversion/types';
+
 export const FONT_SCALES = [875, 1000, 1125, 1250] as const;
 export type FontScale = (typeof FONT_SCALES)[number];
 export const DEFAULT_FONT_SCALE = 1000;
@@ -42,12 +44,7 @@ export const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 // The retint alone is not sufficient — colour must never be the ONLY carrier of
 // meaning — which is why `components/ui/badge.tsx` also pairs each status
 // variant with a distinct glyph.
-export const COLOR_VISION_MODES = [
-  'none',
-  'deuteranopia',
-  'protanopia',
-  'tritanopia',
-] as const;
+export const COLOR_VISION_MODES = ['none', 'deuteranopia', 'protanopia', 'tritanopia'] as const;
 export type ColorVisionMode = (typeof COLOR_VISION_MODES)[number];
 export const DEFAULT_COLOR_VISION: ColorVisionMode = 'none';
 
@@ -122,9 +119,64 @@ export function applyGlassLevel(html: HTMLElement, level: number) {
   }
 }
 
+// ── Navigation transition (globe eversion, spec §9.3) ───────────────────────
+// Which projection the page-to-page eversion uses, or `random` (a fresh draw
+// per navigation). The value list is owned by the eversion contract so the API
+// enum, the select and the controller can never disagree; it is re-exported here
+// because this module is the one the store and the no-flash cache import.
+// `lib/eversion/types.ts` imports nothing at runtime, so this stays zod-free
+// and adds nothing to the client critical path.
+//
+// The default is Mercator (amended 2026-10-19; it was `random`): the owner asked
+// for "a better projection of the page onto the sphere". Mercator is conformal, so
+// every letter keeps its shape on the globe (only its size grows toward the
+// poles), the page wraps round the globe like a wall map onto a globe, and it is
+// the same every time. Equirectangular - what NASA's globe textures use - stretches
+// text sideways; Peirce and the azimuthal maps fold the page into petals and
+// wedges. A visitor who chose another keeps it.
+export const DEFAULT_NAV_TRANSITION: NavTransition = 'mercator';
+export { NAV_TRANSITIONS };
+export type { NavTransition };
+
+export function isNavTransition(v: unknown): v is NavTransition {
+  return typeof v === 'string' && (NAV_TRANSITIONS as readonly string[]).includes(v);
+}
+
+/** An absent or unknown stored value means the default, never an error. */
+export function resolveNavTransition(v: unknown): NavTransition {
+  return isNavTransition(v) ? v : DEFAULT_NAV_TRANSITION;
+}
+
+// ── Eversion level (amended 2026-10-21) ─────────────────────────────────────
+// How much of the site the Globe Eversion carries: `all` (default) = every
+// page transition (full-screen from the liquid-globe hub; anywhere else the
+// pressed control plays a button-sized eversion and the navigation is never
+// held); `globe` = only a navigation confirmed through the liquid-globe hub
+// (hold-release, pin click, Enter). Page navigations only: the per-control
+// "evert every button/input" state animation is a different thing and not
+// governed by this. Defined here (not in lib/eversion) so the root's static
+// closure and the settings panel get it without touching the effect's runtime.
+export const EVERSION_LEVELS = ['all', 'globe'] as const;
+export type EversionLevel = (typeof EVERSION_LEVELS)[number];
+export const DEFAULT_EVERSION_LEVEL: EversionLevel = 'all';
+
+export function isEversionLevel(v: unknown): v is EversionLevel {
+  return typeof v === 'string' && (EVERSION_LEVELS as readonly string[]).includes(v);
+}
+
+/** An absent or unknown stored value means the default, never an error. */
+export function resolveEversionLevel(v: unknown): EversionLevel {
+  return isEversionLevel(v) ? v : DEFAULT_EVERSION_LEVEL;
+}
+
 export const FONT_SCALE_KEY = 'rmh-font-scale';
 export const DENSITY_KEY = 'rmh-density';
 export const READABLE_FONT_KEY = 'rmh-readable-font';
 export const CUSTOM_ACCENT_KEY = 'rmh-custom-accent';
 export const REDUCE_MOTION_KEY = 'rmh-reduce-motion';
 export const COLOR_VISION_KEY = 'rmh-color-vision';
+export const NAV_TRANSITION_KEY = 'rmh-nav-transition';
+/** Eversion level: cached as 'globe' when set, absent when 'all' (the default). */
+export const EVERSION_LEVEL_KEY = 'rmh-eversion-level';
+/** "Always evert globe": cached as '1' when on, absent when off (the default). */
+export const ALWAYS_EVERT_GLOBE_KEY = 'rmh-always-evert-globe';

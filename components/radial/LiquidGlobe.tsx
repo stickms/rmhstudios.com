@@ -12,14 +12,15 @@ import {
   type Ref,
   type RefObject,
 } from 'react';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { vibrate } from '@/lib/shared/platform';
+import { supportsWebGL, vibrate } from '@/lib/shared/platform';
+import { prefersLessData } from '@/lib/viewport-prefetch';
 import {
   DECELERATION,
   RIPPLE,
+  VELOCITY_WINDOW_MS,
   VelocityTracker,
   gestureConfidence,
   projectDistance,
@@ -33,6 +34,12 @@ import {
   unrotateSphere,
 } from '@/lib/fluid';
 import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
+import { DoughBody } from '@/lib/dough';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import type { GlobeStartState } from '@/lib/eversion/types';
+import type { EntryPoint } from '@/lib/eversion/marks';
+import type { JellyFrame, JellyGlass } from './jelly-glass';
+import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
 
 /**
  * The **liquid globe** navigator — the site's navigation as a glass sphere you
@@ -109,6 +116,8 @@ const IDLE_SPIN = 5.5;
 const DWELL_MS = 620;
 /** Hold required after a decisive flick. Never goes below this. */
 const DWELL_MIN_MS = 260;
+/** How long a pin must stay locked before its route is preloaded (see `warmLocked`). */
+const LOCK_PRELOAD_SETTLE_MS = 90;
 /** Angular speed (deg/s) at or under which an approach reads as browsing. */
 const BROWSING_SPEED = 150;
 /** Angular speed (deg/s) at or over which it reads as certainty. */
@@ -130,6 +139,54 @@ const MAX_SPIN = 900;
 const PERSP = 3.1;
 /** Foreshortening at depth `z` on the unit sphere (z = 1 front, −1 back). */
 const kAt = (z: number) => PERSP / (PERSP - z * 0.5);
+
+/* ── Refraction ──────────────────────────────────────────────────────────────
+   The globe is a thick ball of glass, so what is BEHIND its front face — the far
+   half of the cage, the far pins, a ripple's crest on the back — is seen through
+   it, and a ball lens magnifies the middle of what it looks through and crowds
+   the edge of it toward the rim.
+
+   That is geometry, so it is done here, on the projected point, rather than by
+   sampling the cage as a texture in the material's shader: the lines stay vector
+   and the cost is one division per back-face sample. `a` grows with depth behind
+   the limb (0 at the limb, `LENS` at the back pole), so the mapping is the
+   identity where the two faces meet and the cage never tears at the edge. It is
+   monotonic in r for any `a < 1`, and pins the limb itself (r = 1) in place.
+
+   Display only, like the ripple and the soft body: the lock reads the true
+   projection, and nothing behind the limb can be locked anyway. */
+const LENS = 0.42;
+/** Scale for a projected back-face point at radius² `x² + y²` and depth `z` (< 0). */
+const lensScale = (x: number, y: number, z: number) => {
+  if (z >= 0) return 1;
+  const a = LENS * -z;
+  return (1 + a) / (1 + a * (x * x + y * y));
+};
+
+/**
+ * Whether this visit gets the shader material (`./jelly-glass`). The CSS glass
+ * stays for high contrast (legibility over sheen), the reduced-transparency
+ * settings and `perf-lite` (a weak device should not pay for a second GL
+ * context), and anywhere WebGL will not start.
+ */
+function jellyEligible(): boolean {
+  if (typeof window === 'undefined') return false;
+  const html = document.documentElement.classList;
+  if (
+    html.contains('style-high-contrast') ||
+    html.contains('perf-lite') ||
+    html.contains('reduce-transparency')
+  ) {
+    return false;
+  }
+  if (
+    window.matchMedia?.('(prefers-reduced-transparency: reduce)').matches ||
+    window.matchMedia?.('(prefers-contrast: more)').matches
+  ) {
+    return false;
+  }
+  return supportsWebGL();
+}
 
 /**
  * Reticle radius, as a planar distance on the unit sphere. Every pin sits ON the
@@ -274,7 +331,23 @@ const CAGE_MAX_DPR = 2;
  * scales with the square of it — so it is only just larger than the worst case
  * (~5.5% swell + a ~2px capped stroke on a ~320px stage), not a round 25%.
  */
-const CAGE_BLEED = 0.09;
+const CAGE_BLEED = 0.11;
+
+/* ── The dough body ──────────────────────────────────────────────────────────
+   Grab the globe and it gives like dough (owner, 2026-10-22: it used to "morph like a stretchy ball … I want it to
+   truly morph like little bits at a time almost like dough"). The model is `lib/dough.ts`: a displacement FIELD with an
+   elastic layer that rebounds and a plastic layer that holds a dent and eases out, a press that pushes material out of
+   the contact and banks it up around it (volume is conserved by construction), and a drag that grips and kneads the
+   material under the finger. The field is evaluated at the points the paint pass already draws (every cage sample,
+   every pin) after they are projected, and the SAME field is uploaded as a texture to the coat shader, which inverts it
+   per pixel — so the silhouette, the lighting and the wireframe all describe one surface. Nothing is allocated
+   (`DEFORM_OUT` is the one scratch pair), and at rest it costs nothing at all: `step` says when the body is deformed,
+   and only then does the frame loop repaint for it.
+
+   It is DISPLAY ONLY, like the ripple and the wobble: the lock, the magnetism and the dwell keep reading the true
+   projection, so a squeeze can never move a destination into or out of the reticle. The cage's bleed above makes
+   room for it (a full tug at the limb plus the stretch plus a ripple's swell, ~0.2 of the radius). */
+const DEFORM_OUT = new Float64Array(2);
 
 /* ── The ripple ──────────────────────────────────────────────────────────────
    A press on the sphere sends a wave out across it. The shape of the wave — a
@@ -362,6 +435,9 @@ const WOBBLE_SPRING = spring(0.78, 0.62);
 const WOBBLE_DEG = 5.5;
 /** Below this the rock is finished, in degrees and degrees/second. */
 const WOBBLE_REST = 0.02;
+/** Eversion-time jelly impulse cadence (ms): pseudo-random but bounded and cheap. */
+const EVERT_JELLY_PULSE_MIN = 70;
+const EVERT_JELLY_PULSE_MAX = 150;
 /**
  * The initial velocity that makes {@link WOBBLE_SPRING} peak at one degree —
  * i.e. its damped natural frequency, since a spring released from rest at zero
@@ -400,6 +476,35 @@ interface LiquidGlobeProps {
    * not a control is a drag surface; see the listener that consumes this.
    */
   surfaceRef?: RefObject<HTMLElement | null>;
+  /**
+   * An invisible warm-up mount (see RadialHub's rehearsal). Everything runs —
+   * the mount, the canvas, the first frames — except anything a person could
+   * feel: no haptics. Fixed for the life of the mount.
+   */
+  rehearsal?: boolean;
+  /**
+   * Globe Eversion hand-off (docs/plans/2026-10-17-globe-eversion.md §9.1).
+   *
+   * When present, confirming a destination calls this INSTEAD of
+   * `onDismiss()` + `navigate()`: the receiver owns both the hub's dismissal and
+   * the router call, because the effect starts the navigation itself (before the
+   * animation, so the destination is on the globe from its first frame) and needs
+   * the globe's pose to begin from. It is
+   * given the pose as the hub's own units — degrees and deg/s, CSS px — so the
+   * WebGL sphere can start exactly where this one is.
+   *
+   * Absent, nothing about this component changes. External pins never use it
+   * (they hard-navigate, as always), and neither does the idle rehearsal, which
+   * is never confirmed by a person. Read through a ref, so an unstable callback
+   * from the parent does not re-subscribe the pointer listeners.
+   */
+  onNavigate?: (
+    node: NavLeaf,
+    state: GlobeStartState,
+    entry: Exclude<EntryPoint, 'preview'>,
+    /** The pose at any later moment: the effect starts once the destination is rendered, from the pose then. */
+    live: () => GlobeStartState,
+  ) => void;
 }
 
 export function LiquidGlobe({
@@ -409,12 +514,60 @@ export function LiquidGlobe({
   tabIndex,
   rootRef,
   surfaceRef,
+  rehearsal = false,
+  onNavigate,
 }: LiquidGlobeProps) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
+  const router = useRouter();
+  // Honour both the account preference and the OS motion setting.
   const reduced = useReducedMotion();
 
   const nodes = useMemo(() => place(items), [items]);
+
+  /* ── Warm the destination in the reticle ──────────────────────────────────
+     On a phone the globe IS the navigation, and none of the router's intent
+     preloading reaches it: there is no hover, and the press that grabs the globe
+     lands on the stage rather than on a <Link>. So the first byte of a
+     destination used to leave only once the dwell had completed and `go` ran —
+     its loader and its code both on the critical path of the page switch.
+
+     A pin locking into the reticle is a stronger signal than a hover: the user
+     has aimed at it, and the dwell they must now hold (260–620ms) is time the
+     preload gets for free. A short settle keeps a flick that sweeps several
+     pins through the reticle from warming each one it passes; the router's own
+     preload cache dedupes repeats. Never in the idle rehearsal, never for an
+     external link, and never when the user has asked to save data
+     (docs/ui-perf-audit-2026-10-09.md, NAV-4). */
+  const lockPreload = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warmLocked = useCallback(
+    (idx: number) => {
+      if (lockPreload.current !== null) {
+        clearTimeout(lockPreload.current);
+        lockPreload.current = null;
+      }
+      const node = idx >= 0 ? nodes[idx] : undefined;
+      if (!node || node.external || quiet.current || prefersLessData()) return;
+      lockPreload.current = setTimeout(() => {
+        lockPreload.current = null;
+        void Promise.resolve(router.preloadRoute({ to: node.href } as never)).catch(() => {});
+      }, LOCK_PRELOAD_SETTLE_MS);
+    },
+    [nodes, router],
+  );
+  const warmLockedRef = useRef(warmLocked);
+  warmLockedRef.current = warmLocked;
+  useEffect(
+    () => () => {
+      if (lockPreload.current !== null) clearTimeout(lockPreload.current);
+    },
+    [],
+  );
+  // Read through a ref so the frame loop and handlers can check it without it
+  // becoming an effect dependency; it never changes for a given mount.
+  const quiet = useRef(rehearsal);
+  const onNavigateRef = useRef(onNavigate);
+  onNavigateRef.current = onNavigate;
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const cageRef = useRef<HTMLCanvasElement | null>(null);
@@ -528,6 +681,31 @@ export function LiquidGlobe({
    * feature.
    */
   const wobble = useRef<{ yaw: number; vYaw: number; pitch: number; vPitch: number } | null>(null);
+  /** The dough body (see the note above `DEFORM_OUT`), and where the finger holding it is, in radii. */
+  const [jelly] = useState(() => new DoughBody());
+  const grabAt = useRef({ x: 0, y: 0, left: 0, top: 0, r: 1 });
+  const everting = useRef(false);
+  const nextEvertPulse = useRef(0);
+  const glassRef = useRef<HTMLSpanElement | null>(null);
+  const contactRef = useRef<HTMLSpanElement | null>(null);
+  const paintedGlass = useRef('');
+  /**
+   * The shader material (`./jelly-glass`), once its chunk has loaded — null for
+   * the CSS glass. It redraws only when the SURFACE changes (a ripple, the soft
+   * body), never for a turn: a uniform glass ball looks the same at any rotation.
+   */
+  const jellyGlass = useRef<JellyGlass | null>(null);
+  /** Force one material frame (attach, resize). */
+  const jellyDirty = useRef(false);
+  /** Whether the last paint drew a moving surface, so the frame it comes to rest is drawn too. */
+  const jellyLive = useRef(false);
+  /** The material's per-frame inputs, preallocated — the loop must not allocate. Ripples are (x, y, z, age) × 3. */
+  const [jellyFrame] = useState<JellyFrame>(() => ({
+    ripples: new Float32Array(12),
+    gx: 0,
+    gy: 0,
+    pinch: 0,
+  }));
 
   // Only these three reach the render: the caption, the ring's state classes.
   const [lock, setLock] = useState(-1);
@@ -548,6 +726,11 @@ export function LiquidGlobe({
     rot.current.pitch = n ? clamp(-n.lat + 9, -PITCH_LIMIT, PITCH_LIMIT) : -8;
     rot.current.vYaw = 0;
     rot.current.vPitch = 0;
+    // A rehearsal turns the globe half a revolution on the settle spring, so the
+    // frame loop's projection, magnet and paint run hot for every frame of the
+    // warm-up. A globe that sits still paints once and goes idle — which left the
+    // first REAL open running that code cold.
+    if (quiet.current) settle.current = { yaw: rot.current.yaw + 180, pitch: rot.current.pitch };
     dirty.current = true;
     // Orientation is chosen once per mount (the hub mounts this on open), not on
     // every route change behind an open menu.
@@ -625,6 +808,12 @@ export function LiquidGlobe({
           width: parseFloat(cs.getPropertyValue('--cage-width')) || 1,
         };
       }
+      // The material's backing store tracks the stage the same way (its own,
+      // lower DPR ceiling — see JELLY_MAX_DPR).
+      if (jellyGlass.current) {
+        jellyGlass.current.resize(size, window.devicePixelRatio || 1);
+        jellyDirty.current = true;
+      }
       dirty.current = true;
     };
     read();
@@ -634,18 +823,269 @@ export function LiquidGlobe({
     return () => ro.disconnect();
   }, []);
 
+  /* ── The material ────────────────────────────────────────────────────────
+     A gelatinous glass ball — reflection, Fresnel rim, specular, the room seen
+     upside-down through it, a caustic, the accent as its subsurface tint — is a
+     fragment shader (`./jelly-glass`), loaded as its own chunk so none of it is
+     on the entry or the hub's first paint. The idle rehearsal mounts this
+     component once before the first real open, so the chunk is fetched and the
+     page's one GL context and program are built there, off the open.
+
+     The CSS glass stays underneath as the fallback, and the stage only drops it
+     (`data-jelly="on"`) once the material has drawn its first frame, so the swap
+     happens inside one frame and there is never a frame with neither. */
+  useEffect(() => {
+    let cancelled = false;
+    let loading = false;
+    let glass: JellyGlass | null = null;
+    let factory: typeof import('./jelly-glass') | null = null;
+    const stage = stageRef.current;
+    const host = glassRef.current;
+    const root = document.documentElement;
+    const preferences = [
+      matchMedia('(prefers-reduced-transparency: reduce)'),
+      matchMedia('(prefers-contrast: more)'),
+      matchMedia('(forced-colors: active)'),
+    ];
+    /* The page behind the hub, refracted through the ball. The glass engine keeps the latest snapshot of the page (taken
+       while it was idle, i.e. BEFORE the hub opened); the coat samples it through a ball-lens model at the hub's own blur.
+       Placing it reads layout, so it happens when the globe attaches, resizes, finishes blooming, or a new picture lands,
+       never per frame. */
+    const attachScene = (g: JellyGlass) => {
+      const scene = currentScene();
+      if (!stage || !scene || !g.setScene(scene)) return;
+      const rect = stage.getBoundingClientRect();
+      g.place(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+        sizeRef.current / 2,
+        window.scrollX - scene.scrollX,
+        window.scrollY - scene.scrollY,
+      );
+    };
+    const refreshScene = () => {
+      if (cancelled || !glass?.ready || jellyGlass.current !== glass) return;
+      attachScene(glass);
+      jellyDirty.current = true;
+      dirty.current = true;
+    };
+    const globeRoot = stage?.closest('.radial-globe') ?? null;
+    const onBloomEnd = (e: Event) => {
+      if (e.target === globeRoot) refreshScene();
+    };
+    globeRoot?.addEventListener('animationend', onBloomEnd);
+    window.addEventListener('resize', refreshScene);
+    const stopScene = onSceneChange(refreshScene);
+    const sync = () => {
+      if (cancelled || !host || !stage) return;
+      if (reduced || !jellyEligible() || preferences.some((q) => q.matches)) {
+        if (glass?.canvas.parentElement === host) glass.canvas.remove();
+        jellyGlass.current = null;
+        delete stage.dataset.jelly;
+        return;
+      }
+      if (!factory) {
+        if (!loading) {
+          loading = true;
+          void import('./jelly-glass')
+            .then((m) => {
+              if (cancelled) return;
+              factory = m;
+              sync();
+            })
+            .catch(() => {
+              /* Keep the CSS fallback if the optional chunk fails. */
+            });
+        }
+        return;
+      }
+      glass = factory.acquireJellyGlass();
+      if (!glass) return;
+      const g = glass;
+      g.onChange = sync;
+      if (!g.ready) {
+        jellyGlass.current = null;
+        delete stage.dataset.jelly;
+        return;
+      }
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--site-accent)';
+      probe.style.backgroundColor = 'var(--site-bg)';
+      host.appendChild(probe);
+      const ps = getComputedStyle(probe);
+      const accentCss = ps.color;
+      const bgCss = ps.backgroundColor;
+      probe.remove();
+      const ink = factory.resolveColor(getComputedStyle(host).color || 'rgb(0 0 0)', [0, 0, 0]);
+      const accent = factory.resolveColor(accentCss, [0.4, 0.5, 1]);
+      const bg = factory.resolveColor(bgCss, [1, 1, 1]);
+      const lum = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2];
+      g.resize(sizeRef.current, window.devicePixelRatio || 1);
+      g.palette({ ink, accent, light: lum > 0.5 ? 1 : 0, bg: [bg[0], bg[1], bg[2]] }, RIPPLE);
+      attachScene(g);
+      const f = jellyFrame;
+      f.ripples.fill(0);
+      for (let i = 3; i < 12; i += 4) f.ripples[i] = -1;
+      f.gx = f.gy = f.pinch = 0;
+      host.appendChild(g.canvas);
+      g.setField(jelly.field, jelly.version);
+      g.render(f);
+      jellyGlass.current = g;
+      jellyDirty.current = true;
+      dirty.current = true;
+      stage.dataset.jelly = 'on';
+    };
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { attributes: true, attributeFilter: ['class', 'style'] });
+    preferences.forEach((q) => q.addEventListener('change', sync));
+    sync();
+    return () => {
+      cancelled = true;
+      stopScene();
+      globeRoot?.removeEventListener('animationend', onBloomEnd);
+      window.removeEventListener('resize', refreshScene);
+      observer.disconnect();
+      preferences.forEach((q) => q.removeEventListener('change', sync));
+      // The single cached canvas may already belong to a newer mount.
+      if (glass?.onChange === sync) glass.onChange = null;
+      if (glass?.canvas.parentElement === host) glass.canvas.remove();
+      jellyGlass.current = null;
+      if (stage) delete stage.dataset.jelly;
+    };
+  }, [jelly, jellyFrame, reduced]);
+
+  /* ── Where the globe is on screen, for the eversion hand-off ──────────────
+     The WebGL sphere has to start on top of this one, so the hand-off needs the
+     stage's centre in VIEWPORT px — the one number nothing here tracked, because
+     the frame loop works in the stage's own coordinates. It is measured where the
+     size already is (mount, resize) and cached, so `go()` reads no layout.
+
+     Not on mount alone: the globe BLOOMS out of the orb on a scale keyframe about
+     the ROOT's centre, and the stage sits off that centre (the title card and the
+     foot clearance are in the same box), so a rect read mid-bloom is both
+     smaller and displaced. `settled` is therefore only set once the bloom's
+     `animationend` has fired; a confirmation that beats it (a pin click in the
+     first half-second) measures once on the spot rather than hand over a pose
+     that is not where the globe is. */
+  const centreCache = useRef<{ x: number; y: number; settled: boolean } | null>(null);
+  const bloomed = useRef(false);
+  const measureCentre = useCallback(() => {
+    const el = stageRef.current;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    const next = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      settled: bloomed.current,
+    };
+    centreCache.current = next;
+    return next;
+  }, []);
+  // Only when a hand-off is wired: without one the cache has no reader, and the
+  // component must not gain a mount-time layout read or a resize listener.
+  const handOffWired = !!onNavigate;
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || quiet.current || !handOffWired) return;
+    const root = stage.closest('.radial-globe');
+    const onBloomEnd = (e: Event) => {
+      if (e.target !== root) return;
+      bloomed.current = true;
+      measureCentre();
+    };
+    const onResize = () => {
+      measureCentre();
+    };
+    root?.addEventListener('animationend', onBloomEnd);
+    window.addEventListener('resize', onResize);
+    measureCentre();
+    return () => {
+      root?.removeEventListener('animationend', onBloomEnd);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [measureCentre, handOffWired]);
+
+  /**
+   * The globe's pose at the instant of confirmation, in the hub's units
+   * (degrees, deg/s, CSS px — `GlobeStartState`).
+   *
+   * What the visitor SEES is the pose to hand over, not the aim: `rot` plus the
+   * poke-wobble that is drawn over it (see `draw` in the frame loop). The
+   * velocity follows the same rule. While a finger has been moving, the windowed
+   * tracker is the truth — `rot.v*` is zeroed for the whole of a drag. Once the
+   * finger has been still for longer than the tracker's window (a hold, which is
+   * how most confirmations arrive) its samples are STALE rather than zero, so
+   * they are ignored and the settle spring's own velocity is used: zero for a
+   * hold, the throw's remainder for a pin clicked while the globe coasts.
+   * Clamped to `MAX_SPIN`, the same guard the release throw uses.
+   *
+   * Only refs and one `performance.now()` — no layout read (the centre is cached
+   * above) and nothing written, so the frame loop's "no writes at rest" holds.
+   */
+  const snapshotGlobeState = useCallback((): GlobeStartState => {
+    const r = rot.current;
+    const wob = wobble.current;
+    const fresh = performance.now() - lastMoveAt.current <= VELOCITY_WINDOW_MS;
+    const yawVel = (fresh ? yawV.current.get() : r.vYaw) + (wob ? wob.vYaw : 0);
+    const pitchVel = (fresh ? pitchV.current.get() : r.vPitch) + (wob ? wob.vPitch : 0);
+    const cached = centreCache.current;
+    const c = cached && cached.settled ? cached : measureCentre();
+    return {
+      yaw: r.yaw + (wob ? wob.yaw : 0),
+      pitch: r.pitch + (wob ? wob.pitch : 0),
+      yawVel: clamp(yawVel, -MAX_SPIN, MAX_SPIN),
+      pitchVel: clamp(pitchVel, -MAX_SPIN, MAX_SPIN),
+      centre: [c ? c.x : 0, c ? c.y : 0],
+      radius: sizeRef.current / 2,
+    };
+  }, [measureCentre]);
+
   const go = useCallback(
-    (node: GlobeNode) => {
-      vibrate(18);
+    (node: GlobeNode, entry: Exclude<EntryPoint, 'preview'> = 'release') => {
+      if (!quiet.current) vibrate(18);
       swallowClick.current = true;
       if (node.external) {
         window.location.href = node.href;
         return;
       }
+      const handOff = onNavigateRef.current;
+      if (handOff && !quiet.current) {
+        handOff(node, snapshotGlobeState(), entry, snapshotGlobeState);
+        return;
+      }
       onDismiss();
       void navigate({ to: node.href } as never);
     },
-    [navigate, onDismiss],
+    [navigate, onDismiss, snapshotGlobeState],
+  );
+
+  /**
+   * A pin's own click — a mouse click, a tap that skipped the hold, or Enter on a
+   * focused pin (which the browser delivers as a click). These never ran through
+   * `go()`: the pin is a real `<Link>`, so the router navigated by itself and
+   * this only dismissed the hub. For the eversion hand-off they have to converge
+   * with hold-release, so — when a hand-off is wired, and only for a plain
+   * left-click on an internal pin — the click is claimed (`preventDefault`, which
+   * the Link honours by not navigating) and sent through `go()`. A modified click
+   * (new tab, new window) and every click with no hand-off are exactly what they
+   * were. `go()` arms `swallowClick` for the release that follows a HOLD; a click
+   * IS that release, so the flag is cleared again or it would eat the next tap.
+   */
+  const onPinClick = useCallback(
+    (e: ReactMouseEvent<HTMLElement>, node: GlobeNode) => {
+      const plain = e.button === 0 && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
+      if (!onNavigateRef.current || quiet.current || node.external || !plain) {
+        onDismiss();
+        return;
+      }
+      e.preventDefault();
+      // Enter on a focused pin is delivered as a click with `detail === 0`; a
+      // pointer click always has at least 1. That is the only way to tell the
+      // two entry points apart, and the marks record which one ran (S#25).
+      go(node, e.detail === 0 ? 'enter' : 'click');
+      swallowClick.current = false;
+    },
+    [go, onDismiss],
   );
 
   /* ── The frame loop ───────────────────────────────────────────────────────
@@ -851,6 +1291,7 @@ export function LiquidGlobe({
       const cp = Math.cos(draw.pitch * DEG);
       const sp = Math.sin(draw.pitch * DEG);
       const paint = cagePaint.current;
+      const soft = jelly.active();
 
       // Clear the whole BLED canvas, not the globe's box: a ripple's swell (and
       // the crest's capped stroke) is drawn out there, so anything short of this
@@ -928,8 +1369,21 @@ export function LiquidGlobe({
           const y2 = by2 * cp - z1 * sp;
           const z2 = by2 * sp + z1 * cp;
           const k = kAt(z2);
-          if (s === 0) ctx.moveTo(x1 * R * k, y2 * R * k);
-          else ctx.lineTo(x1 * R * k, y2 * R * k);
+          let sx = x1 * k;
+          let sy2 = y2 * k;
+          if (z2 < 0) {
+            // Seen through the ball (see `lensScale`).
+            const m = lensScale(sx, sy2, z2);
+            sx *= m;
+            sy2 *= m;
+          }
+          if (soft) {
+            jelly.deform(sx, sy2, DEFORM_OUT, z2);
+            sx = DEFORM_OUT[0]!;
+            sy2 = DEFORM_OUT[1]!;
+          }
+          if (s === 0) ctx.moveTo(sx * R, sy2 * R);
+          else ctx.lineTo(sx * R, sy2 * R);
         }
         ctx.stroke();
       };
@@ -1022,8 +1476,20 @@ export function LiquidGlobe({
               continue;
             }
             const k = kAt(z2);
-            if (drawing) ctx.lineTo(x1 * R * k, y2 * R * k);
-            else ctx.moveTo(x1 * R * k, y2 * R * k);
+            let cx = x1 * k;
+            let cy2 = y2 * k;
+            if (z2 < 0) {
+              const m = lensScale(cx, cy2, z2);
+              cx *= m;
+              cy2 *= m;
+            }
+            if (soft) {
+              jelly.deform(cx, cy2, DEFORM_OUT, z2);
+              cx = DEFORM_OUT[0]!;
+              cy2 = DEFORM_OUT[1]!;
+            }
+            if (drawing) ctx.lineTo(cx * R, cy2 * R);
+            else ctx.moveTo(cx * R, cy2 * R);
             drawing = true;
           }
           ctx.stroke();
@@ -1068,6 +1534,62 @@ export function LiquidGlobe({
       // cage after them must sample the same instant, or the wave that lifts a
       // pin is not the wave drawn under it.
       primeWaves(now);
+      const soft = jelly.active();
+
+      // The glass disc stays put: the coat shader draws the deformed silhouette itself, from the same field the cage
+      // and pins are displaced by, so there is no whole-disc transform to disagree with the local dough.
+      if (paintedGlass.current !== 'none' && glassRef.current) {
+        paintedGlass.current = 'none';
+        glassRef.current.style.transform = '';
+      }
+      // A small shaded contact footprint explains the depth change even at the
+      // centre of the disc, where a symmetric indentation has no 2D translation.
+      // Only a leaf transform/opacity changes; never the body's gradient centre.
+      if (contactRef.current) {
+        const depth = Math.min(1, Math.abs(jelly.pinch) / 0.16);
+        contactRef.current.style.opacity = soft ? depth.toFixed(3) : '0';
+        if (soft)
+          contactRef.current.style.transform = `translate3d(${(jelly.gx * R).toFixed(2)}px,${(jelly.gy * R).toFixed(2)}px,0) scale(${(0.85 + depth * 0.15).toFixed(3)})`;
+      }
+      // The material redraws only while the SURFACE is moving (a ripple, the
+      // soft body), plus the one frame it comes to rest on. A turn alone does
+      // not touch it: a uniform glass ball looks the same at any rotation. It is
+      // held still during the eversion, which owns the GPU for that second.
+      const jg = jellyGlass.current;
+      // Only the mount that holds the shared canvas draws into it.
+      if (jg && jg.canvas.parentElement === glassRef.current) {
+        const live = soft || waveCount > 0;
+        if ((live || jellyLive.current || jellyDirty.current) && !everting.current) {
+          // The ripples' impact points, turned by the DRAWN rotation into the
+          // material's screen space — the same rotation the cage is drawn at.
+          const cy = Math.cos(draw.yaw * DEG);
+          const sy = Math.sin(draw.yaw * DEG);
+          const cp = Math.cos(draw.pitch * DEG);
+          const sp = Math.sin(draw.pitch * DEG);
+          const f = jellyFrame;
+          for (let i = 0; i < 3; i++) {
+            const o = i * 4;
+            if (i >= waveCount) {
+              f.ripples[o + 3] = -1;
+              continue;
+            }
+            const w = waveWin[i];
+            const x1 = w.bx * cy + w.bz * sy;
+            const z1 = -w.bx * sy + w.bz * cy;
+            f.ripples[o] = x1;
+            f.ripples[o + 1] = w.by * cp - z1 * sp;
+            f.ripples[o + 2] = w.by * sp + z1 * cp;
+            f.ripples[o + 3] = waveAge[i]!;
+          }
+          f.gx = soft ? jelly.gx : 0;
+          f.gy = soft ? jelly.gy : 0;
+          f.pinch = soft ? jelly.pinch : 0;
+          jg.setField(jelly.field, jelly.version);
+          jg.render(f);
+          jellyDirty.current = false;
+          jellyLive.current = live;
+        }
+      }
 
       for (let rank = 0; rank < count; rank++) {
         const i = order[rank];
@@ -1087,8 +1609,21 @@ export function LiquidGlobe({
         const n = nodes[i];
         const swell = 1 + waveAt(n.bx, n.by, n.bz);
 
+        let sx = px[i] * k * swell;
+        let sy = py[i] * k * swell;
+        if (z < 0) {
+          // A far pin is seen through the ball, exactly as the cage behind it is.
+          const m = lensScale(sx, sy, z);
+          sx *= m;
+          sy *= m;
+        }
+        if (soft) {
+          jelly.deform(sx, sy, DEFORM_OUT, z);
+          sx = DEFORM_OUT[0]!;
+          sy = DEFORM_OUT[1]!;
+        }
         const transform =
-          `translate3d(${(px[i] * R * k * swell).toFixed(2)}px, ${(py[i] * R * k * swell).toFixed(2)}px, 0)` +
+          `translate3d(${(sx * R).toFixed(2)}px, ${(sy * R).toFixed(2)}px, 0)` +
           ` scale(${k.toFixed(3)})`;
         if (transform !== last.transform) {
           last.transform = transform;
@@ -1204,6 +1739,30 @@ export function LiquidGlobe({
           wobble.current = null;
         }
         dirty.current = true;
+      }
+
+      // 0c. The soft body. While held, the grabbed region chases the finger's velocity (zero once it holds still);
+      //     after, every mode springs back. Repaints only while something is deformed.
+      if (!reduced) {
+        if (drag.current.active) {
+          const R = Math.max(1, sizeRef.current / 2);
+          const at = grabAt.current;
+          const vx = stationary ? 0 : yawV.current.get() / ROT_PER_PX / R;
+          const vy = stationary ? 0 : -pitchV.current.get() / ROT_PER_PX / R;
+          jelly.drag(at.x, at.y, vx, vy);
+        }
+        if (everting.current && now >= nextEvertPulse.current) {
+          const t = now * 0.001;
+          // Deterministic "random": two incommensurate frequencies per axis.
+          const vx = (Math.sin(t * 11.7) + Math.sin(t * 7.1 + 1.3)) * 1.9;
+          const vy = (Math.cos(t * 9.3 + 0.7) + Math.sin(t * 6.4 + 0.2)) * 1.9;
+          jelly.nudge(vx, vy, 0.85);
+          const jitter = 0.5 + 0.5 * Math.sin(t * 5.9 + 0.4);
+          nextEvertPulse.current =
+            now + EVERT_JELLY_PULSE_MIN + (EVERT_JELLY_PULSE_MAX - EVERT_JELLY_PULSE_MIN) * jitter;
+          dirty.current = true;
+        }
+        if (jelly.step(dt)) dirty.current = true;
       }
 
       // 1. Motion. Dragging writes the rotation directly (in the pointer handler);
@@ -1339,11 +1898,12 @@ export function LiquidGlobe({
           dwellRef.current = DWELL_MS + (DWELL_MIN_MS - DWELL_MS) * confidence;
         }
         setLock(lockIdx);
+        warmLockedRef.current(lockIdx);
         if (readyRef.current) {
           readyRef.current = false;
           setReady(false);
         }
-        if (lockIdx >= 0) vibrate(6);
+        if (lockIdx >= 0 && !quiet.current) vibrate(6);
       }
       // Both rates ride the frozen dwell, so a confident lock also drains
       // proportionally fast — the ring keeps one consistent sense of "how much
@@ -1357,7 +1917,7 @@ export function LiquidGlobe({
       if (clamped >= 1 && !readyRef.current) {
         readyRef.current = true;
         setReady(true);
-        vibrate([10, 30, 16]);
+        if (!quiet.current) vibrate([10, 30, 16]);
       } else if (clamped < 1 && readyRef.current) {
         readyRef.current = false;
         setReady(false);
@@ -1366,7 +1926,7 @@ export function LiquidGlobe({
 
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [nodes, reduced]);
+  }, [nodes, reduced, jelly, jellyFrame]);
 
   /* ── Pointer ──────────────────────────────────────────────────────────────
      `pointerdown` is taken on the stage (so a press that lands on a pin still
@@ -1441,6 +2001,7 @@ export function LiquidGlobe({
       const w = (wobble.current ??= { yaw: 0, vYaw: 0, pitch: 0, vPitch: 0 });
       w.vYaw -= hit.x * WOBBLE_DEG * WOBBLE_KICK;
       w.vPitch += hit.y * WOBBLE_DEG * WOBBLE_KICK;
+      jelly.nudge(-hit.x * 8, hit.y * 8, 1.1);
 
       // Un-rotate the impact into the globe's own frame — the exact inverse of
       // the yaw-then-pitch `project()` applies. This is what makes the ripple a
@@ -1456,7 +2017,7 @@ export function LiquidGlobe({
       live.push(impact);
       dirty.current = true;
     },
-    [reduced],
+    [reduced, jelly],
   );
 
   /** Take hold of the globe. Shared by every surface that can start a drag. */
@@ -1464,6 +2025,20 @@ export function LiquidGlobe({
     (e: PointerEvent | ReactPointerEvent<HTMLElement>) => {
       if (e.button > 0) return;
       strike(e.clientX, e.clientY);
+      // Where the finger took hold, for the soft body: the stage's box once per press (never in the frame loop),
+      // and the finger in radii of the sphere from then on.
+      const stage = stageRef.current;
+      if (stage && !reduced) {
+        const rect = stage.getBoundingClientRect();
+        const r = Math.max(1, rect.width / 2);
+        const at = grabAt.current;
+        at.left = rect.left;
+        at.top = rect.top;
+        at.r = r;
+        at.x = (e.clientX - rect.left - r) / r;
+        at.y = (e.clientY - rect.top - r) / r;
+        jelly.grab(at.x, at.y);
+      }
       drag.current = {
         active: true,
         id: e.pointerId,
@@ -1492,7 +2067,7 @@ export function LiquidGlobe({
       pitchV.current.add(rot.current.pitch, now);
       setGrabbing(true);
     },
-    [strike],
+    [strike, reduced, jelly],
   );
 
   const onPointerDown = useCallback(
@@ -1562,6 +2137,9 @@ export function LiquidGlobe({
 
       const now = performance.now();
       lastMoveAt.current = now;
+      const at = grabAt.current;
+      at.x = (e.clientX - at.left - at.r) / at.r;
+      at.y = (e.clientY - at.top - at.r) / at.r;
 
       const r = rot.current;
       r.yaw += dx * ROT_PER_PX;
@@ -1585,6 +2163,7 @@ export function LiquidGlobe({
       if (!d.active || e.pointerId !== d.id) return;
       d.active = false;
       d.held = false;
+      jelly.release();
       setGrabbing(false);
       // The whole gesture, in one line: a full ring at the moment you let go is
       // the navigation. Anything else just leaves the globe where you put it.
@@ -1656,6 +2235,7 @@ export function LiquidGlobe({
       d.active = false;
       d.held = false;
       d.id = -1;
+      jelly.release();
       // The release this drag armed a swallow for is not coming either, so
       // clearing it here stops it eating the next real tap on the way back in.
       swallowClick.current = false;
@@ -1672,7 +2252,23 @@ export function LiquidGlobe({
       window.removeEventListener('pointercancel', onCancel);
       window.removeEventListener('blur', onLeave);
     };
-  }, [go, nodes]);
+  }, [go, nodes, jelly]);
+
+  // While the hub is in the eversion hand-off, the globe keeps a soft, irregular jelly motion so the hand-over
+  // never reads as the ball freezing under a separate animation.
+  useEffect(() => {
+    const root = stageRef.current?.closest('.radial-hub');
+    if (!root) return;
+    const read = () => {
+      const active = root.getAttribute('data-phase') === 'everting';
+      everting.current = active;
+      if (active) nextEvertPulse.current = 0;
+    };
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(root, { attributes: true, attributeFilter: ['data-phase'] });
+    return () => mo.disconnect();
+  }, []);
 
   /**
    * A release that has already been spent — on a drag, or on a completed dwell —
@@ -1760,7 +2356,7 @@ export function LiquidGlobe({
             'data-fluid-press': 'lift',
             'aria-label': label,
             onFocus: () => faceNode(n),
-            onClick: onDismiss,
+            onClick: (e: ReactMouseEvent<HTMLElement>) => onPinClick(e, n),
           };
           return (
             <li
@@ -1794,7 +2390,7 @@ export function LiquidGlobe({
         })}
       </ul>
     ),
-    [nodes, t, tabIndex, faceNode, onDismiss, setPinRef, setLabelRef],
+    [nodes, t, tabIndex, faceNode, onPinClick, setPinRef, setLabelRef],
   );
 
   return (
@@ -1827,7 +2423,9 @@ export function LiquidGlobe({
         {/* The glass body itself: a flat disc of shading over the cage, so the
             wireframe reads as structure suspended INSIDE a liquid ball rather
             than as a drawing on top of one. */}
-        <span className="radial-globe__glass" aria-hidden />
+        <span ref={glassRef} className="radial-globe__glass" aria-hidden>
+          <span ref={contactRef} className="radial-globe__contact" />
+        </span>
 
         {/* PINS — projected here rather than placed in the 3D cage, so their type
             stays flat, crisp and billboarded instead of skewing with the sphere. */}
@@ -1842,11 +2440,10 @@ export function LiquidGlobe({
       {/* TITLE — a fixed billing card, not a running commentary. The destination
           under the reticle names itself AT the pin (radial.css keeps the locked
           pin's label even at the widths where the rest are hidden), which is
-          where the eye already is, so this space is free to be the marquee. */}
+          where the eye already is, so this space is free to be the marquee.
+          No "RMH PRESENTS" kicker above it any more — the same stock eyebrow
+          the 2026-10-09 minimalism pass removed from every page title. */}
       <div className="radial-globe__title">
-        <p className="radial-globe__presents">
-          {t('globe-presents', { defaultValue: 'RMH Presents' })}
-        </p>
         <p className="radial-globe__wordmark">
           {t('globe-wordmark', { defaultValue: 'The Liquid Globe' })}
         </p>

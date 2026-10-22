@@ -188,6 +188,18 @@ function makeFakeRunPrisma(initialSources: SourceRow[]): RunPrisma & {
         }
         return { id: where.id };
       },
+      async updateMany({ where, data }) {
+        for (const id of where.id.in) {
+          const row = jobsById.get(id);
+          if (!row) continue;
+          const updated: AnyRow = { ...row, ...(data as AnyRow) };
+          jobsById.set(id, updated);
+          const sourceId = row.sourceId as string | undefined;
+          const externalId = row.externalId as string | undefined;
+          if (sourceId && externalId) jobsByIdentity.set(`${sourceId}:${externalId}`, updated);
+        }
+        return { count: where.id.in.length };
+      },
       async findMany({ where }) {
         return [...jobsById.values()]
           .filter((j) => {
@@ -210,6 +222,10 @@ function makeFakeRunPrisma(initialSources: SourceRow[]): RunPrisma & {
         const row: AnyRow = { id: `v-${++vSeq}`, ...(data as AnyRow) };
         verifications.push(row);
         return { id: row.id as string };
+      },
+      async createMany({ data }) {
+        for (const d of data) verifications.push({ id: `v-${++vSeq}`, ...(d as AnyRow) });
+        return { count: data.length };
       },
     },
 

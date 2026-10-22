@@ -24,9 +24,9 @@ import { fuzzyTerms, type FuzzyTerms } from './db.server';
 import { searchPeopleScored, personToHit, type ScoredPerson } from './people.server';
 import { searchPostsScored, postToHit, resolveCommunityId, type ScoredPost } from './posts.server';
 import { searchDocs, type DocCorpusName } from './docs.server';
-import { searchCatalog } from './catalog';
+import { catalogNames, searchCatalog, SITE_DESTINATIONS } from './catalog';
 import { expandQuery, isExpansionAvailable } from './expand.server';
-import { CONFIDENCE, confidenceOf, scoreRecord } from './score';
+import { CONFIDENCE, confidenceOf, scoreField, scoreRecord } from './score';
 import { normalizeQuery } from './normalize';
 import {
   SEARCH_TAB_KINDS,
@@ -53,7 +53,13 @@ const NO_MATCH = '__none__';
 export interface UniversalSearchInput {
   query: string;
   tab?: SearchTab;
-  viewerId: string;
+  /**
+   * The signed-in viewer, or null for a signed-out visitor. A signed-out search
+   * covers only the static catalog — games, apps and destination pages — which
+   * is an in-memory scan with no database or model cost, so it is safe to serve
+   * anonymously. People, posts and the document corpora stay signed-in only.
+   */
+  viewerId: string | null;
   /** Signed-out visitors don't see auth-gated destinations. */
   signedIn?: boolean;
   /**
@@ -234,17 +240,34 @@ function buildTop(groups: Partial<Record<SearchKind, SearchHit[]>>): SearchHit[]
 
 /**
  * A free "did you mean" derived from the static catalog: the closest game, app
- * or page title even when it scored below the match floor. Costs nothing and
- * covers the most common miss (a mistyped game name).
+ * or page TITLE to what was typed. Costs nothing and covers the most common
+ * miss (a mistyped game name).
+ *
+ * Title only, on purpose. Scoring the whole record (descriptions, keywords)
+ * found real-but-irrelevant overlaps and offered them as corrections — "audit"
+ * suggested "Spaces" and "hello" suggested "Dream Rift" (2026-10-09). A
+ * suggestion is a claim that you misspelled a name; only a name can back it.
  */
 function catalogSuggestion(normalized: string, signedIn: boolean): string | undefined {
   if (normalized.length < 3) return undefined;
-  const scanned = searchCatalog(normalized, { signedIn, limit: 1, floor: 0.22 });
-  const best = [scanned.game[0], scanned.app[0], scanned.page[0]]
-    .filter((h): h is SearchHit => Boolean(h))
-    .sort((a, b) => b.score - a.score)[0];
+  const titles = signedIn
+    ? catalogNames()
+    : catalogNames().filter(
+        (title) => !SITE_DESTINATIONS.some((d) => d.requiresAuth && d.title === title),
+      );
+  let best: { title: string; score: number } | undefined;
+  for (const title of titles) {
+    const { score } = scoreField(normalized, title);
+    if (score >= SUGGESTION_FLOOR && (!best || score > best.score)) best = { title, score };
+  }
   return best && best.score < CONFIDENCE.high ? best.title : undefined;
 }
+
+/**
+ * How close a title has to be to count as a misspelling of it. Keeps one- and
+ * two-letter slips ("slce it", "tournamnet", "rmhtbe") and drops coincidences.
+ */
+const SUGGESTION_FLOOR = 0.5;
 
 function toLegacyDoc(hit: SearchHit): LegacyDoc {
   return {
@@ -256,11 +279,17 @@ function toLegacyDoc(hit: SearchHit): LegacyDoc {
   };
 }
 
+/** What a signed-out search may cover: the static, in-memory catalog. */
+const ANONYMOUS_KINDS: ReadonlySet<SearchKind> = new Set<SearchKind>(['game', 'app', 'page']);
+
 /** Run a full universal search. Never throws for a single failing corpus. */
 export async function universalSearch(input: UniversalSearchInput): Promise<SearchResponse> {
   const tab: SearchTab = input.tab ?? 'top';
-  const signedIn = input.signedIn !== false;
-  const kinds = new Set<SearchKind>(SEARCH_TAB_KINDS[tab]);
+  const anonymous = input.viewerId === null;
+  const signedIn = !anonymous && input.signedIn !== false;
+  const kinds = new Set<SearchKind>(
+    SEARCH_TAB_KINDS[tab].filter((k) => !anonymous || ANONYMOUS_KINDS.has(k)),
+  );
   const perKind = tab === 'top' ? TOP_PER_KIND : FOCUSED_PER_KIND;
 
   // Operators refine posts; the leftover free text drives every corpus.
@@ -270,7 +299,9 @@ export async function universalSearch(input: UniversalSearchInput): Promise<Sear
 
   const wantsPosts = kinds.has('post');
   const [hiddenAuthorIds, authorId, communityId] = await Promise.all([
-    wantsPosts ? getHiddenAuthorIds(input.viewerId).catch(() => []) : Promise.resolve([]),
+    wantsPosts && input.viewerId
+      ? getHiddenAuthorIds(input.viewerId).catch(() => [])
+      : Promise.resolve([]),
     parsed.from
       ? prisma.user
           .findFirst({ where: { handle: parsed.from }, select: { id: true } })
@@ -308,9 +339,23 @@ export async function universalSearch(input: UniversalSearchInput): Promise<Sear
   let expandedWith: string[] | undefined;
   let suggestion = catalogSuggestion(terms.q, signedIn);
 
-  if (input.assist && terms.q && topScore < CONFIDENCE.medium && isExpansionAvailable()) {
+  // Never for a signed-out search: the assist pass is a paid model call.
+  if (
+    input.assist &&
+    !anonymous &&
+    terms.q &&
+    topScore < CONFIDENCE.medium &&
+    isExpansionAvailable()
+  ) {
     const expansion = await expandQuery(text);
-    const retryTerms = [expansion.correction, ...expansion.terms].filter(Boolean).slice(0, 2);
+    // The model is told the catalog's names and asked to put an exact match
+    // first, so its first term is the most valuable retry; the spelling
+    // correction comes next. Two passes at most — each one is a DB fan-out.
+    const retryTerms = [
+      ...new Set([expansion.terms[0], expansion.correction, ...expansion.terms.slice(1)]),
+    ]
+      .filter((term): term is string => Boolean(term))
+      .slice(0, 2);
     if (expansion.correction) suggestion = expansion.correction;
 
     if (retryTerms.length) {

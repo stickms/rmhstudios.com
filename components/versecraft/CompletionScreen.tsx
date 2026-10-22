@@ -6,6 +6,7 @@ import { useGameStore } from '@/lib/versecraft/store';
 import { spriteUrl } from '@/lib/versecraft/sprites/registry';
 import { makePersonalizer } from '@/lib/versecraft/gen/personalize';
 import { ShareSeed } from './ShareSeed';
+import { PublishSeedButton } from './SeedGallery';
 
 const REL_LABELS = ['Stranger', 'Acquaintance', 'Familiar', 'Friendly', 'Close', 'Trusted', 'Confidant', 'Bonded', 'Devoted', 'Intimate', 'Soulbound'];
 
@@ -55,6 +56,7 @@ export function CompletionScreen() {
         <div className="flex flex-col items-center gap-2 mb-6">
           <span className="text-xs" style={{ color: '#a89888' }}>Share this version</span>
           <ShareSeed seed={world.seed} />
+          <PublishSeedButton seed={world.seed} />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

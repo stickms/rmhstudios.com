@@ -44,6 +44,8 @@
 import { responseHeaders } from './security-headers';
 import { markScope, serverTimingHeader } from '../../lib/otel/timing';
 import { enterTrace, spanFromHeader, type TraceScope } from '../../lib/otel/trace';
+import { recordCounter, recordError, recordRequest } from '../../lib/perf/process-metrics';
+import { normalizeRoute } from '../../lib/perf/route-label';
 
 /** The subset of Nitro's HTTPEvent this plugin touches. */
 interface TracedEvent {
@@ -171,6 +173,22 @@ export default function otelPlugin(nitroApp: NitroAppLike): void {
 
       const budget = budgets.get(event as object);
       if (budget && budgetApi) budgetApi.reportQueryBudget(budget);
+
+      // Feed the performance collector (lib/perf/process-metrics.ts). The scope's
+      // `startedAt` is the same origin the `total` phase above is measured from, so
+      // the admin page's latency and the Server-Timing header agree. The route is
+      // the bounded `normalizeRoute` label — NOT `routeLabel` above, which keeps two
+      // raw segments and would put every handle and id in a metric key. The
+      // collector never throws, but it sits inside this try regardless.
+      if (scope) {
+        recordRequest({
+          route: normalizeRoute(event.req?.url),
+          method: event.req?.method,
+          status: _res?.status ?? 200,
+          durationMs: performance.now() - scope.startedAt,
+          queries: budget?.count,
+        });
+      }
     } catch {
       // Never let correlation break a response.
     }
@@ -179,7 +197,34 @@ export default function otelPlugin(nitroApp: NitroAppLike): void {
   // The 500 path. `lib/api/handler.server.ts` owns the API error envelope; this
   // is the tier below it — anything that escapes a route entirely — and is the
   // one place a trace id can be attached to it without touching that wrapper.
-  nitroApp.hooks.hook('error', ((error: unknown, ctx: { event?: TracedEvent }) => {
+  nitroApp.hooks.hook('error', ((error: unknown, ctx: { event?: TracedEvent; tags?: string[] }) => {
+    // Nitro traps process-level failures and reports them here tagged
+    // `unhandledRejection` / `uncaughtException` (no event). Count them under the
+    // same names the hubs and workers use (lib/perf/process-guards.ts) so one
+    // alarm covers every Node process.
+    try {
+      if (ctx?.tags?.includes('unhandledRejection')) recordCounter('process.unhandled_rejection');
+      if (ctx?.tags?.includes('uncaughtException')) recordCounter('process.uncaught_exception');
+    } catch {
+      // Telemetry must not become the error.
+    }
+    // The admin performance page's error feed. Separate try so a failure here
+    // cannot skip the log line below, and only 5xx: Nitro also reports 4xx
+    // HTTPErrors (a 404 is not a server fault) through this hook.
+    try {
+      const e = error as { status?: number; statusCode?: number } | undefined;
+      const status = Number(e?.status ?? e?.statusCode ?? 500);
+      if (status >= 500) {
+        recordError({
+          route: normalizeRoute(ctx?.event?.req?.url),
+          status,
+          message: error instanceof Error ? error.message : String(error),
+          traceId: ctx?.event ? scopes.get(ctx.event as object)?.span.traceId : undefined,
+        });
+      }
+    } catch {
+      // Telemetry must not become the error.
+    }
     try {
       const span = ctx?.event ? scopes.get(ctx.event as object)?.span : undefined;
       if (!span) return;

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 /**
@@ -37,7 +38,14 @@ export const Route = createFileRoute('/api/messages/search')({
                 {
                   AND: [
                     { OR: mine },
-                    { messages: { some: { content: { contains: q, mode: 'insensitive' } } } },
+                    {
+                      messages: {
+                        some: {
+                          content: { contains: q, mode: 'insensitive' },
+                          AND: [liveMessages()],
+                        },
+                      },
+                    },
                   ],
                 },
               ],
@@ -51,6 +59,7 @@ export const Route = createFileRoute('/api/messages/search')({
                   name: true,
                   image: true,
                   username: true,
+                  isBot: true,
                   profile: { select: { displayName: true, customImage: true } },
                 },
               },
@@ -60,10 +69,12 @@ export const Route = createFileRoute('/api/messages/search')({
                   name: true,
                   image: true,
                   username: true,
+                  isBot: true,
                   profile: { select: { displayName: true, customImage: true } },
                 },
               },
               messages: {
+                where: { AND: [liveMessages()] },
                 orderBy: { createdAt: 'desc' },
                 take: 1,
                 select: {
@@ -86,6 +97,7 @@ export const Route = createFileRoute('/api/messages/search')({
                 where: {
                   conversationId: { in: ids },
                   content: { contains: q, mode: 'insensitive' },
+                  AND: [liveMessages()],
                 },
                 orderBy: { createdAt: 'desc' },
                 distinct: ['conversationId'],
@@ -106,6 +118,7 @@ export const Route = createFileRoute('/api/messages/search')({
                 name: resolved.name,
                 image: resolved.image,
                 username: otherUser.username,
+                isBot: otherUser.isBot,
               },
               lastMessage: lastMessage
                 ? {

@@ -14,12 +14,18 @@
  * a handful of times per run.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Camera } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { isLowPowerDevice, requestScreenWakeLock, supportsWebGL } from '@/lib/shared/platform';
+import { isLowPowerDevice, supportsWebGL } from '@/lib/shared/platform';
+import { useGameSession } from '@/hooks/useGameSession';
+
+// U14 — loaded only when a player opens photo mode.
+const PhotoMode = lazy(() => import('@/components/games/PhotoMode'));
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { createRun, emptyInput, stepRun, type RunState } from '@/lib/nightrail/game';
+import { createRun, emptyInput, stepRun, withInterpolatedPose, type RunState } from '@/lib/nightrail/game';
 import { NightrailRenderer3D } from '@/lib/nightrail/renderer3d';
+import { FrameCap, MENU_BACKDROP_FPS } from '@/lib/render/frame-cap';
 import { NightrailAudio } from '@/lib/nightrail/audio';
 import { LEVELS, LEVEL_ORDER } from '@/lib/nightrail/levels';
 import type { InputState, LevelId, RunStats, TrickDirection } from '@/lib/nightrail/types';
@@ -92,6 +98,10 @@ export function NightrailGame() {
   const rendererRef = useRef<NightrailRenderer3D | null>(null);
   const audioRef = useRef<NightrailAudio | null>(null);
   const hudRef = useRef<HudHandle>(null);
+  const photoModeRef = useRef(false);
+  // The key handler is bound once; these always point at the newest callbacks.
+  const openPhotoModeRef = useRef<() => void>(() => {});
+  const closePhotoModeRef = useRef<() => void>(() => {});
   const inputRef = useRef<InputState>(emptyInput());
 
   const [uiState, setUiState] = useState<UIState>('menu');
@@ -108,6 +118,15 @@ export function NightrailGame() {
   unlocksRef.current = unlockedLevels;
   const uiStateRef = useRef(uiState);
   uiStateRef.current = uiState;
+  /**
+   * The menu backdrop needs a redraw. Only read under reduced motion, where the
+   * idle cruise stands still and drawing it every frame would repaint the same
+   * picture forever; set by anything that changes that picture.
+   */
+  const backdropDirtyRef = useRef(true);
+  useEffect(() => {
+    backdropDirtyRef.current = true;
+  }, [uiState]);
 
   useEffect(() => {
     if (!supportsWebGL()) setWebglReady(false);
@@ -145,6 +164,7 @@ export function NightrailGame() {
       // A hidden or zero-size container would poison the projection matrix.
       if (rect.width < 2 || rect.height < 2) return;
       renderer.setSize(rect.width, rect.height, window.devicePixelRatio || 1);
+      backdropDirtyRef.current = true;
     };
     applySize();
 
@@ -217,7 +237,14 @@ export function NightrailGame() {
           input.boost = down;
           break;
         case 'Escape':
-          input.pause = down;
+          // In photo mode Escape closes the panel; it must not also unpause.
+          if (!photoModeRef.current) input.pause = down;
+          break;
+        case 'KeyP':
+          if (down && !e.repeat) {
+            if (photoModeRef.current) closePhotoModeRef.current();
+            else openPhotoModeRef.current();
+          }
           break;
         case 'KeyR':
           input.restart = down;
@@ -329,10 +356,15 @@ export function NightrailGame() {
     startLevel(level);
   }, [startLevel]);
 
-  useEffect(() => {
-    if (uiState !== 'playing') return;
-    return requestScreenWakeLock();
-  }, [uiState]);
+  // Session contract: screen on while riding, pause when the tab hides.
+  // Restart stays on the game's own R binding (input.restart).
+  useGameSession({
+    id: 'nightrail',
+    active: uiState === 'playing',
+    onPause: () => {
+      if (runRef.current?.phase === 'playing') runRef.current.phase = 'paused';
+    },
+  });
 
   // ── The single rAF loop ──
 
@@ -343,6 +375,7 @@ export function NightrailGame() {
     /** Previous frame's gamepad trick direction, so a held stick fires once. */
     let padTrick: TrickDirection | null = null;
     let prevPause = false;
+    const cap = new FrameCap();
 
     const loop = (timestamp: number) => {
       rafId = requestAnimationFrame(loop);
@@ -395,7 +428,11 @@ export function NightrailGame() {
           run.train.mode === 'airborne',
         );
 
-        renderer.draw(run, dt);
+        // Paused, the train holds still under the pause menu: the sim still
+        // ticks (it reads the unpause), the picture only needs the backdrop
+        // rate.
+        const drawDt = cap.tick(timestamp, dt, run.phase === 'paused' ? MENU_BACKDROP_FPS : null);
+        if (drawDt !== null) withInterpolatedPose(run, () => renderer.draw(run, drawDt));
         hudRef.current?.sync(run);
 
         if (run.phase === 'runComplete' || run.phase === 'crashed') {
@@ -418,8 +455,18 @@ export function NightrailGame() {
       } else {
         // Menus sit in front of a slow idle cruise rather than a black screen,
         // so the game is showing you what it is before you have pressed
-        // anything.
-        renderer.draw(run, reducedMotion ? 0 : dt * 0.35);
+        // anything — behind a blurred menu, at the backdrop rate rather than
+        // the panel's. Under reduced motion the cruise stands still, so it is
+        // drawn only when something changed the picture.
+        if (reducedMotion) {
+          if (backdropDirtyRef.current) {
+            backdropDirtyRef.current = false;
+            renderer.draw(run, 0);
+          }
+          return;
+        }
+        const drawDt = cap.tick(timestamp, dt, MENU_BACKDROP_FPS);
+        if (drawDt !== null) renderer.draw(run, drawDt * 0.35);
       }
     };
 
@@ -427,9 +474,27 @@ export function NightrailGame() {
     return () => cancelAnimationFrame(rafId);
   }, [webglReady, reducedMotion]);
 
+  // ── Photo mode (U14): pause the run, hide the HUD, frame a shot ──
+  const [photoMode, setPhotoMode] = useState(false);
+  const openPhotoMode = useCallback(() => {
+    const run = runRef.current;
+    if (!run || uiStateRef.current !== 'playing') return;
+    if (run.phase !== 'playing' && run.phase !== 'paused') return;
+    run.phase = 'paused';
+    photoModeRef.current = true;
+    setPhotoMode(true);
+  }, []);
+  const closePhotoMode = useCallback(() => {
+    photoModeRef.current = false;
+    setPhotoMode(false);
+  }, []);
+  openPhotoModeRef.current = openPhotoMode;
+  closePhotoModeRef.current = closePhotoMode;
+
   // Tapping the scene resumes — the pause panel is drawn by the HUD, which is
   // `pointer-events-none`, so the canvas underneath is what receives the tap.
   const resume = useCallback(() => {
+    if (photoModeRef.current) return;
     const run = runRef.current;
     if (run?.phase === 'paused') run.phase = 'playing';
     audioRef.current?.unlock();
@@ -466,9 +531,28 @@ export function NightrailGame() {
         style={{ touchAction: 'none' }}
       />
 
-      <NightrailHud ref={hudRef} visible={uiState === 'playing'} />
+      <NightrailHud ref={hudRef} visible={uiState === 'playing' && !photoMode} />
 
-      <NightrailTouchControls inputRef={inputRef} visible={uiState === 'playing'} />
+      <NightrailTouchControls inputRef={inputRef} visible={uiState === 'playing' && !photoMode} />
+
+      {uiState === 'playing' && !photoMode && (
+        <button
+          type="button"
+          onClick={openPhotoMode}
+          aria-label={t('photo-mode', { defaultValue: 'Photo mode' })}
+          title={t('photo-mode-key', { defaultValue: 'Photo mode (P)' })}
+          className="absolute z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/75 backdrop-blur-sm transition-colors hover:text-white"
+          style={{ top: 'calc(var(--safe-top) + 3.5rem)', right: 'calc(var(--safe-right) + 0.65rem)' }}
+        >
+          <Camera className="h-4 w-4" aria-hidden />
+        </button>
+      )}
+
+      {photoMode && rendererRef.current && (
+        <Suspense fallback={null}>
+          <PhotoMode adapter={rendererRef.current} gameName="Nightrail" onExit={closePhotoMode} />
+        </Suspense>
+      )}
 
       <NightrailUI
         uiState={uiState}

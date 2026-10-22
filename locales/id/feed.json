@@ -89,6 +89,8 @@
   "audience-followers": "Pengikut",
   "audience-group-label": "Siapa yang dapat melihat postingan ini",
   "audience-only-me": "Hanya saya",
+  "auto-reinvest": "Investasi ulang otomatis",
+  "auto-reinvest-hint": "Bunga dimajemukkan ke stake Anda setiap hari",
   "avatar-alt": "Avatar",
   "avatar-change-hint": "Klik untuk mengganti avatar (maks {{maxMb}} MB)",
   "avatar-size-error": "",

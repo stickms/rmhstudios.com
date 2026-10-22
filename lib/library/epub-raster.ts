@@ -168,6 +168,44 @@ export class EpubRasterStore {
     return out;
   }
 
+  // ─── plain text, for the reader's highlight / note text view ────────────────
+
+  /** Number of spine documents (chapters) in the book. */
+  get chapterCount(): number {
+    return this.book.spine?.length ?? this.book.spine?.spineItems?.length ?? 0;
+  }
+
+  /** 0-based spine index of the chapter containing a 1-based page. */
+  chapterIndexForPage(page: number): number {
+    try {
+      const cfi = this.book.locations.cfiFromLocation(page - 1);
+      const section = cfi ? this.book.spine.get(cfi) : null;
+      return typeof section?.index === 'number' ? section.index : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  /** Plain text of one chapter: block elements as paragraphs, blank-line separated. */
+  async chapterText(index: number): Promise<string> {
+    const section = this.book.spine.get(index);
+    if (!section) return '';
+    const root: Element | undefined = await section.load(this.book.load.bind(this.book));
+    if (!root) return '';
+    const BLOCKS = 'p,h1,h2,h3,h4,h5,h6,li,blockquote,pre,figcaption,dd,dt';
+    const paras: string[] = [];
+    root.querySelectorAll(BLOCKS).forEach((el) => {
+      // Leaf blocks only, so <blockquote><p> is not read twice.
+      if (el.querySelector(BLOCKS)) return;
+      const text = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+      if (text) paras.push(text);
+    });
+    const text = paras.length
+      ? paras.join('\n\n')
+      : (root.textContent ?? '').replace(/[ \t]+/g, ' ').trim();
+    return text;
+  }
+
   setFocus(page: number): void {
     this.focus = page;
   }

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { recordClientError } from '@/lib/ops/error-inbox.server';
 
 /**
  * POST /api/client-error — sink for client-side error reports.
@@ -58,6 +59,8 @@ export const Route = createFileRoute('/api/client-error')({
             ip,
           }),
         );
+
+        recordClientError(e);
 
         return new Response(null, { status: 204 });
       },

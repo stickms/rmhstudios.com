@@ -6,6 +6,7 @@ import {
   FileText,
   Gauge,
   GitPullRequestArrow,
+  Handshake,
   LayoutDashboard,
   Settings,
   ShieldCheck,
@@ -29,6 +30,7 @@ const PUBLIC_NAV: NavItem[] = [
 
 const PERSONAL_NAV: NavItem[] = [
   { label: 'Resume', to: '/rmhladder/resume', icon: FileText },
+  { label: 'Referrals', to: '/rmhladder/referrals', icon: Handshake },
   { label: 'Pipeline', to: '/rmhladder/pipeline', icon: GitPullRequestArrow },
   { label: 'Alerts', to: '/rmhladder/alerts', icon: Bell },
   { label: 'Settings', to: '/rmhladder/settings', icon: Settings },

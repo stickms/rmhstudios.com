@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
+import '@/components/creator-studio/storefront.css';
 
 interface Persona {
   id: string;
@@ -108,13 +109,13 @@ export function PersonasTab({ seed }: { seed: number }) {
         {p.isPublic === false && (
           <>
             <span aria-hidden> · </span>
-            <Lock className="h-3 w-3" /> {t('private', { defaultValue: 'private' })}
+            <Lock className="h-3 w-3" /> {t('private', { defaultValue: 'Private' })}
           </>
         )}
         {showOwner && p.owner && (
           <>
             <span aria-hidden> · </span>
-            {t('by-owner', { owner: p.owner.name || p.owner.handle || t('someone', { defaultValue: 'someone' }), defaultValue: 'by {{owner}}' })}
+            {t('by-owner', { owner: p.owner.name || p.owner.handle || t('someone', { defaultValue: 'Someone' }), defaultValue: 'by {{owner}}' })}
           </>
         )}
       </span>
@@ -224,7 +225,7 @@ export function PersonasTab({ seed }: { seed: number }) {
 
       {mine.length > 0 && (
         <section className="mb-6">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-personas', { defaultValue: 'Your personas' })}</h2>
+          <h2 className="site-section-label mb-2">{t('your-personas', { defaultValue: 'Your personas' })}</h2>
           <div className="store-personas__mine">
             {mine.map((p) => (
               <Link

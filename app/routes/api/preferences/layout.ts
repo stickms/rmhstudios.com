@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { layoutPrefsSchema, parseLayoutPref } from '@/lib/home-widgets';
+import { parseLayoutPref } from '@/lib/home-widgets';
+import { layoutPrefsSchema } from '@/lib/home-widgets-schema';
 
 /**
  * GET  /api/preferences/layout — the caller's sidebar pin/hide + home widget

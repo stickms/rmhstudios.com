@@ -29,6 +29,20 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
+# On-call (deploy/oncall-send.sh): a successful run checks in as "pg-backup";
+# the off-box watchdog pages Sev2 (A04) after 26h without one. A failed run
+# also raises a Sev3 (BACKUP) right away, so the morning digest names the
+# cause instead of just the silence. Best effort — never changes our exit code.
+ONCALL_SEND="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/oncall-send.sh"
+oncall() { [ -f "$ONCALL_SEND" ] && bash "$ONCALL_SEND" "$@" || true; }
+on_exit() {
+  local rc=$?
+  if [ "$rc" -ne 0 ]; then
+    oncall alert firing BACKUP 3 "Nightly database backup failed" "pg-backup.sh exited $rc on $(hostname) — journalctl -u rmh-db-backup.service -n 100"
+  fi
+}
+trap on_exit EXIT
+
 fail() {
   echo "pg-backup: FATAL: $*" >&2
   exit 1
@@ -106,3 +120,5 @@ prune daily "$RETAIN_DAILY"
 prune monthly "$RETAIN_MONTHLY"
 
 echo "pg-backup: OK ($DAILY_KEY)"
+oncall heartbeat pg-backup
+oncall alert resolved BACKUP 3 "Nightly database backup failed" "backed up ${DAILY_KEY} (${SIZE} bytes)"

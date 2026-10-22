@@ -45,6 +45,8 @@ const post = (body: unknown, headers: Record<string, string> = {}) =>
     headers: {
       'content-type': 'application/json',
       'cf-connecting-ip': `${Math.random()}`,
+      // defineHandler skips Better Auth for cookie-less callers.
+      cookie: 'better-auth.session_token=abc',
       ...headers,
     },
     body: JSON.stringify(body),
@@ -147,9 +149,8 @@ describe('idempotency', () => {
 
   it('ignores the key for anonymous callers', async () => {
     getSession.mockResolvedValue(null);
-    const h = defineHandler(
-      { auth: 'optional', idempotent: true },
-      async () => Response.json({ ok: true }),
+    const h = defineHandler({ auth: 'optional', idempotent: true }, async () =>
+      Response.json({ ok: true }),
     );
     const res = await h({ params: {}, request: post({}, { 'idempotency-key': 'k1' }) });
 

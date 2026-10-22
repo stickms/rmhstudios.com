@@ -25,6 +25,7 @@ import {
   type Pronouns, type Environment, type TimeOfDay, type ChoiceTone, type Attraction,
   type ArcOutline, type ChapterBeat, type LedgerEntry,
 } from './world-types';
+import { timedAiFetch } from '../../ai/timed-fetch.server';
 
 /** Speaker tokens that mean "the player is talking aloud". */
 const MC_TOKENS = new Set(['mc', 'you', 'player', '{mc}', MC_SPEAKER]);
@@ -49,7 +50,7 @@ function attractionNote(a: Attraction | undefined): string {
   }
 }
 
-const deepseek = new OpenAI({
+const deepseek = new OpenAI({ fetch: timedAiFetch,
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,

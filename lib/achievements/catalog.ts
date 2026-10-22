@@ -55,6 +55,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // ─── Engagement ─────────────────────────────────────────────────────────
   { id: 'special.streak_7', name: 'Regular', description: 'Reach a 7-day check-in streak.', icon: '🔥', category: 'special', tier: 'silver', coinReward: 30, target: 1 },
   { id: 'special.streak_30', name: 'Dedicated', description: 'Reach a 30-day check-in streak.', icon: '⚡', category: 'special', tier: 'gold', coinReward: 150, target: 1 },
+  { id: 'special.site_hunter', name: 'Site Hunter', description: 'Finish a site-wide hunt.', icon: '🧭', category: 'special', tier: 'silver', coinReward: 0, target: 1 },
   { id: 'special.night_owl', name: 'Night Owl', description: 'Post between 2am and 5am.', icon: '🦉', category: 'special', tier: 'bronze', coinReward: 10, target: 1, secret: true },
 
   // ─── Games ───────────────────────────────────────────────────────────────

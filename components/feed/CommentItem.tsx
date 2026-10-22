@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from'react';
 import { Link } from'@tanstack/react-router';
+import { useReconsider } from'@/components/safety/use-reconsider';
 import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck, Languages, Image as ImageIcon } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { useConfirm } from'@/components/ui/confirm-dialog';
-import { MAX_COMMENT_LENGTH } from'@/lib/rmhark-schema';
+import { MAX_COMMENT_LENGTH } from'@/lib/rmhark-limits';
 import { RMHarkContent } from'./RMHarkContent';
 import ChatMediaEmbed, { stripEmbedUrls, extractMediaEmbeds } from'@/components/shared/ChatMediaEmbed';
 import { GifPicker } from'@/components/feed/GifPicker';
@@ -30,6 +31,7 @@ import { applyReactionToggle } from'@/lib/social/reactions';
 import { ReactionMenu } from'@/components/shared/ReactionMenu';
 import { ReactionChips } from'@/components/shared/ReactionChips';
 import { useReactionTrigger } from'@/lib/emoji/use-reaction-trigger';
+import { HideReplyMenuItem, HiddenRepliesGroup } from'./HiddenReplies';
 
 export interface Comment {
  id: string;
@@ -45,6 +47,8 @@ export interface Comment {
  replies?: Comment[];
  deletedAt?: string | null;
  deletedByAdmin?: boolean;
+ /** X2: the post's author folded this reply under "Hidden replies". */
+ hidden?: boolean;
  /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
  reactions?: ReactionSummary[];
  /** Client-only: optimistic comment awaiting its server round-trip. */
@@ -74,9 +78,13 @@ interface CommentItemProps {
  onCommentRemoved?: (commentId: string) => void;
  /** Nesting level — used to cap indentation on long reply chains. */
  depth?: number;
+ /** The post author's id — only they get the hide/unhide reply control (X2). */
+ postAuthorId?: string;
+ /** Called after the author hides/unhides a reply so the page can regroup it. */
+ onHiddenChange?: (commentId: string, hidden: boolean) => void;
 }
 
-export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onCommentRemoved, depth = 0 }: CommentItemProps) {
+export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onCommentRemoved, depth = 0, postAuthorId, onHiddenChange }: CommentItemProps) {
  const { t } = useTranslation("feed");
  const confirm = useConfirm();
  const locale = useLocaleStore((s) => s.locale);
@@ -232,18 +240,40 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  }
  };
 
+ const hiddenReplies = (comment.replies ?? []).filter((reply) => reply.hidden);
+ const renderReply = (reply: Comment) => (
+ <CommentItem
+ key={reply.id}
+ comment={reply}
+ postId={postId}
+ sessionUser={sessionUser}
+ onReplyAdded={onReplyAdded}
+ onCommentRemoved={onCommentRemoved}
+ postAuthorId={postAuthorId}
+ onHiddenChange={onHiddenChange}
+ // Reset depth after an expanded thread so indentation
+ // restarts shallow instead of running off-screen.
+ depth={threadExpanded ? 0 : depth + 1}
+ />
+ );
+
+ const reconsider = useReconsider();
  const handleSubmitReply = async () => {
  if (!replyContent.trim() || submitting) return;
  setSubmitting(true);
  try {
- const res = await fetch(`/api/rmharks/${postId}/comment`, {
+ const res = await reconsider((confirmReconsider) =>
+ fetch(`/api/rmharks/${postId}/comment`, {
  method:'POST',
  headers: {'Content-Type':'application/json'},
  body: JSON.stringify({
  content: replyContent.trim(),
  parentId: comment.id,
+ confirmReconsider,
  }),
- });
+ }),
+ );
+ if (!res) return;
  if (res.ok) {
  const newReply = await res.json();
  onReplyAdded?.(comment.id, newReply);
@@ -329,6 +359,15 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  >
  {translating ? t('translating', { defaultValue:'Translating…'}) : translatedText ? (showTranslated ? t('show-original', { defaultValue:'Show original'}) : t('show-translation', { defaultValue:'Show translation'})) : t('translate', { defaultValue:'Translate'})}
  </MenuItem>
+ )}
+ {!!sessionUser?.id && sessionUser.id === postAuthorId && !comment.pending && (
+ <HideReplyMenuItem
+ postId={postId}
+ commentId={comment.id}
+ hidden={!!comment.hidden}
+ onChanged={(h) => onHiddenChange?.(comment.id, h)}
+ onDone={() => setMenuOpen(false)}
+ />
  )}
  {isAuthor && (
  <MenuItem
@@ -429,7 +468,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  autoFocus
  value={replyContent}
  onChange={setReplyContent}
- placeholder={t('reply-placeholder', { handle: freshCommentUser.handle || freshCommentUser.name ||'Unknown', defaultValue:'Reply to @{{handle}}...'})}
+ placeholder={t('reply-placeholder', { handle: freshCommentUser.handle || freshCommentUser.name ||'Unknown', defaultValue:'Post your reply...'})}
  rows={2}
  maxLength={MAX_COMMENT_LENGTH}
  className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-xs rounded-site-sm p-2 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
@@ -479,7 +518,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  onClick={handleSubmitReply}
  className="h-6 text-xs px-2.5"
  >
- {submitting ? t('posting', { defaultValue:'Posting...'}) : t('reply', { defaultValue:'Reply'})}
+ {submitting ? t('posting', { defaultValue:'Posting…'}) : t('reply', { defaultValue:'Reply'})}
  </Button>
  </div>
  </div>
@@ -509,19 +548,10 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  </button>
  ) : (
  <div className="mt-2 ml-2 border-l-2 border-site-border pl-3 space-y-1">
- {comment.replies!.map((reply) => (
- <CommentItem
- key={reply.id}
- comment={reply}
- postId={postId}
- sessionUser={sessionUser}
- onReplyAdded={onReplyAdded}
- onCommentRemoved={onCommentRemoved}
- // Reset depth after an expanded thread so indentation
- // restarts shallow instead of running off-screen.
- depth={threadExpanded ? 0 : depth + 1}
- />
- ))}
+ {comment.replies!.filter((reply) => !reply.hidden).map(renderReply)}
+ <HiddenRepliesGroup count={hiddenReplies.length}>
+ {hiddenReplies.map(renderReply)}
+ </HiddenRepliesGroup>
  </div>
  )
  )}

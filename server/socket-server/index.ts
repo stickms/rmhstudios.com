@@ -8,12 +8,15 @@
  */
 
 import 'dotenv/config';
+import { guardPool, installProcessGuards } from '../../lib/perf/process-guards';
+
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
 import { config } from './config';
 import { logger } from './logger';
 import { disconnectPrisma } from './prisma-client';
 import { cleanupRateLimits } from './rate-limit';
+import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // ─── Game Handlers ──────────────────────────────────────────────
 import { registerSliceItHandlers, handleSliceItDisconnect } from './handlers/slice-it';
@@ -37,6 +40,7 @@ import {
   handleRochesterOffensiveDisconnect,
 } from './handlers/rochester-offensive';
 import { registerRmhMusicHandlers, handleRmhMusicDisconnect } from './handlers/rmhmusic';
+import { registerStudioJamHandlers } from './handlers/studio-jam';
 import {
   registerBlackjackHandlers,
   handleBlackjackDisconnect,
@@ -85,6 +89,10 @@ import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './handlers/matchmaking';
 import { registerCallHandlers, handleCallDisconnect } from './handlers/call';
 import { registerGroupCallHandlers, handleGroupCallDisconnect } from './handlers/group-call';
+import { registerControllerHandlers, handleControllerDisconnect } from './handlers/controller';
+
+// Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
+installProcessGuards({ service: 'socket-server' });
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -105,12 +113,17 @@ let authPool: Pool | null = null;
 function getAuthPool(): Pool | null {
   if (!config.DATABASE_URL) return null;
   if (!authPool) {
-    authPool = new Pool({
-      connectionString: config.DATABASE_URL,
-      max: 10,
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 5_000,
-    });
+    // guardPool: an idle client dropped by a Postgres restart must not crash the hub.
+    authPool = guardPool(
+      new Pool({
+        connectionString: config.DATABASE_URL,
+        // perf: one session lookup per connect, 4 is plenty; override with AUTH_DB_POOL_SIZE.
+        max: Number(process.env.AUTH_DB_POOL_SIZE) || 4,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 5_000,
+      }),
+      { service: 'socket-server', pool: 'auth' },
+    );
   }
   return authPool;
 }
@@ -425,6 +438,9 @@ async function softAuthMiddleware(
 // ─── Health-check HTTP handler ──────────────────────────────────
 
 function requestHandler(_req: IncomingMessage, res: ServerResponse): void {
+  // Process metrics for the admin performance page (compose-network only; see
+  // lib/perf/hub.ts).
+  if (handleInternalMetrics(_req, res)) return;
   if (_req.url === '/health' && _req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
@@ -481,6 +497,9 @@ const io = new Server(httpServer, {
   connectionStateRecovery: {},
 });
 
+// Metrics: connection/room gauges + inbound-event counters (lib/perf/hub.ts).
+instrumentHub(io, 'socket');
+
 // ─── Auth middleware ────────────────────────────────────────────
 
 io.use(softAuthMiddleware);
@@ -502,6 +521,7 @@ io.on('connection', (socket) => {
   registerKowloonKnockoutHandlers(io, socket);
   registerRochesterOffensiveHandlers(io, socket);
   registerRmhMusicHandlers(io, socket);
+  registerStudioJamHandlers(io, socket); // F13: self-cleans on disconnect
   registerBlackjackHandlers(io, socket);
   registerHoldemHandlers(io, socket);
   registerBaccaratHandlers(io, socket);
@@ -523,6 +543,7 @@ io.on('connection', (socket) => {
   registerMatchmakingHandlers(io, socket);
   registerCallHandlers(io, socket);
   registerGroupCallHandlers(io, socket);
+  registerControllerHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -533,6 +554,7 @@ io.on('connection', (socket) => {
     handleMatchmakingDisconnect(socket);
     void handleCallDisconnect(io, socket);
     void handleGroupCallDisconnect(io, socket);
+    handleControllerDisconnect(io, socket);
     handleSynapseStormDisconnect(io, socket);
     handleSliceItDisconnect(io, socket);
     handleNeonDriftwayDisconnect(io, socket);

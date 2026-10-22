@@ -1,6 +1,7 @@
 "use client";
 
 import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
+import { NgPlusTag } from "./NgPlus";
 import { currentObjective } from "@/lib/house-always-wins/quests";
 import { ABILITY_LABEL, type AbilityId } from "@/lib/house-always-wins/types";
 import { Coins, KeyRound, TrendingDown, Target } from "lucide-react";
@@ -83,6 +84,8 @@ export function HUD({ areaLabel, prompt }: HUDProps) {
           </span>
         </div>
       </div>
+
+      <NgPlusTag />
 
       {/* Interact prompt */}
       {prompt && (

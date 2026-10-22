@@ -39,13 +39,18 @@ function resolveTab(params: URLSearchParams): SearchTab {
  * pass came back weak (see lib/search/expand.server.ts). Latency-sensitive
  * callers omit it.
  *
- * Requires a session and is rate-limited: search runs several DB scans and
- * bypasses the anonymous page cache, so it must not be an anon DoS surface.
+ * Signed-out callers are answered too, but only from the static catalog
+ * (games, apps, destination pages): an in-memory scan with no DB or model cost.
+ * This used to 401 them, and every surface rendered the 401 as "No results" —
+ * so a visitor typing a game's exact name on /explore was told it did not
+ * exist. People, posts and the document corpora still need a session (they
+ * run several DB scans and bypass the anonymous page cache), and the
+ * model-assisted retry never runs for a signed-out search. Rate-limited per IP.
  */
 export const Route = createFileRoute('/api/search')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ request, session }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ request, userId }) => {
         const { allowed } = await checkRateLimit(getClientIp(request), {
           limit: 60,
           windowMs: 60_000,
@@ -73,9 +78,9 @@ export const Route = createFileRoute('/api/search')({
           const results = await universalSearch({
             query: q.slice(0, 200),
             tab,
-            viewerId: session.user.id,
-            signedIn: true,
-            assist: params.get('assist') === '1',
+            viewerId: userId,
+            signedIn: Boolean(userId),
+            assist: Boolean(userId) && params.get('assist') === '1',
           });
           return Response.json(results);
         } catch (error) {

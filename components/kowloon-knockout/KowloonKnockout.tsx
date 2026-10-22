@@ -11,12 +11,16 @@ import MultiplayerLobby from '@/components/kowloon-knockout/MultiplayerLobby';
 import ResultScreen from '@/components/kowloon-knockout/ResultScreen';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import './kowloon-knockout.css';
+import { useGameSession } from '@/hooks/useGameSession';
 
 const GameView = lazy(() => import('@/components/kowloon-knockout/arena/GameView'));
 
 export default function KowloonKnockout() {
   const { t } = useTranslation("c-kowloon-knockout");
   const { phase, setPhase } = useGameStore();
+  // Session contract: screen on through a fight. A fight has no pause (online
+  // rounds can't stop), so there is no onPause.
+  useGameSession({ id: 'kowloon-knockout', active: phase === 'fight' || phase === 'countdown' });
   useMultiplayerSync();
 
   // Someone opened an invite link. Put the lobby up; it does the joining once

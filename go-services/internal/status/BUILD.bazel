@@ -3,23 +3,41 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "status",
     srcs = [
+        "api.go",
+        "assets.go",
+        "assets_extra.go",
+        "charts.go",
+        "compress.go",
         "dashboard.go",
+        "incidents.go",
+        "notify.go",
+        "oncall.go",
+        "pages.go",
         "persist.go",
         "probe.go",
         "slo.go",
         "status.go",
+        "track.go",
+        "view.go",
+        "workers.go",
     ],
     importpath = "github.com/rmhstudios/rmh-go/internal/status",
     visibility = ["//go-services:__subpackages__"],
+    deps = ["//go-services/pkg/oncall"],
 )
 
 go_test(
     name = "status_test",
     srcs = [
         "dashboard_test.go",
+        "features_test.go",
+        "fixture_test.go",
+        "oncall_test.go",
         "persist_test.go",
         "probe_test.go",
         "render_test.go",
+        "workers_test.go",
     ],
     embed = [":status"],
+    deps = ["//go-services/pkg/oncall"],
 )

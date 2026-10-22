@@ -123,19 +123,12 @@
         radial-gradient(circle at 30% 40%, rgba(0, 229, 255, 0.06) 0%, transparent 40%),
         radial-gradient(circle at 70% 60%, rgba(255, 110, 199, 0.05) 0%, transparent 40%),
         radial-gradient(circle at 50% 90%, rgba(118, 255, 3, 0.04) 0%, transparent 30%);
-    animation: menuBgPulse 6s ease-in-out infinite;
-}
-
-@keyframes menuBgPulse {
-
-    0%,
-    100% {
-        opacity: 0.6;
-    }
-
-    50% {
-        opacity: 1;
-    }
+    /* Static at the old pulse's mid-point. It used to breathe 0.6 ↔ 1 forever —
+       a full-screen layer UNDER the menu's eight backdrop-filter panes, so the
+       menu never went idle: ~1.7 cores and 33fps at rest on desktop, a locked
+       60fps with it still (perf audit 2026-10-08). The logo pulse and the start
+       button shimmer stay; they are small and they are the call to action. */
+    opacity: 0.8;
 }
 
 .menu-content {

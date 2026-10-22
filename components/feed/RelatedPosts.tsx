@@ -32,7 +32,7 @@ export function RelatedPosts({ postId }: { postId: string }) {
  // `divide-y`stack, so"more like this"reads like the feed, not a table.
  return (
  <Reveal as="section"className="border-t border-site-border pt-3">
- <h2 className="px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t("related-posts", { defaultValue:"Related posts"})}</h2>
+ <h2 className="site-section-label px-4 pb-1">{t("related-posts", { defaultValue:"Related posts"})}</h2>
  <div className="space-y-3 px-3 pb-3">
  {items.map((item) => (
  <RMHarkCard key={item.id} item={item} />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { OfficeHoursProfileButton } from '@/components/calendar/OfficeHoursProfileButton';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import {
@@ -39,6 +40,7 @@ import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { safeHref } from '@/lib/url-safety';
 import { getFeaturedProfileLink } from '@/lib/profile/featured-links';
 import { SITE_URL } from '@/lib/seo';
+import { ProfileIdentityExtras } from './plus/ProfileIdentityExtras';
 import type { ProfileData } from './profile-types';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
@@ -288,6 +290,7 @@ export function ProfileHero({
                   <AnimatedCount value={profile.coins} format={(value) => value.toLocaleString()} />
                 </Link>
               </div>
+              <ProfileIdentityExtras profile={profile} name={name} />
             </div>
 
             <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
@@ -362,6 +365,7 @@ export function ProfileHero({
                       image: profile.image ?? null,
                     }}
                   />
+                  <OfficeHoursProfileButton userId={profile.id} />
                   <Button
                     variant="outline"
                     size="icon"
@@ -521,7 +525,11 @@ export function ProfileHero({
           ) : null}
 
           <div className="mt-4">
-            <AchievementBadgeStrip userId={profile.id} onShowAll={onShowAchievements} />
+            <AchievementBadgeStrip
+              userId={profile.id}
+              initial={profile.achievementStrip}
+              onShowAll={onShowAchievements}
+            />
           </div>
 
           {!profile.isOwnProfile ? (
@@ -620,7 +628,7 @@ export function ProfileHero({
 
       {profile.modules?.length || profile.isOwnProfile ? (
         <div className="pt-1">
-          <div className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+          <div className="site-section-label mb-2 flex items-center gap-2 px-1">
             <Trophy className="size-3.5" aria-hidden />
             {t('profile-showcase', { defaultValue: 'Showcase' })}
           </div>

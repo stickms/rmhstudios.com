@@ -3,6 +3,7 @@
 import { useState } from'react';
 import { Link } from'@tanstack/react-router';
 import { useTranslation } from'react-i18next';
+import { SafeLink } from'@/components/safety/SafeLink';
 
 interface RMHarkContentProps {
  text: string;
@@ -56,16 +57,9 @@ function renderTokens(text: string, keyPrefix: string): React.ReactNode {
  }
  if (URL_REGEX.test(part)) {
  return (
- <a
- key={key}
- href={part}
- target="_blank"
- rel="noopener noreferrer"
- onClick={(e) => e.stopPropagation()}
- className="text-site-accent hover:underline break-all"
- >
+ <SafeLink key={key} href={part} className="text-site-accent hover:underline break-all">
  {part}
- </a>
+ </SafeLink>
  );
  }
  return <span key={key}>{part}</span>;

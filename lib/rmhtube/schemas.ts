@@ -88,6 +88,16 @@ export const PingSchema = z.object({
   clientTime: z.number(),
 });
 
+/**
+ * Play / pause. `time` is the leader's own playhead at the edge: anchoring a
+ * native pause at the server's projection instead froze the room up to a tick
+ * plus a one-way latency away from the frame the leader actually stopped on.
+ * Absent for the site's buttons, which act on the room's projection.
+ */
+export const PlaybackEdgeSchema = z
+  .object({ time: z.number().min(0).max(172_800).optional() })
+  .optional();
+
 export const SetSpeedSchema = z.object({
   speed: z.number().min(0.25).max(4),
 });
@@ -148,6 +158,13 @@ export const ChatPinSchema = z.object({
 });
 
 // ─── Phase 4: Leader Management ──────────────────────────────────
+
+/**
+ * `itemId` names the item being skipped. Auto-advance on `ended` always sends
+ * it, so a duplicate or late skip can never move past an unwatched item; a
+ * manual skip button may omit it.
+ */
+export const QueueSkipSchema = z.object({ itemId: z.string().max(64).optional() }).optional();
 
 export const SetLeaderSchema = z.object({
   targetUserId: z.string(),

@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, useLocation } from '@tanstack/react-router';
+import { Link, useLocation, useRouterState } from '@tanstack/react-router';
 import { Bell, MessageCircle, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useResolvedUser, useSession } from '@/components/Providers';
@@ -13,6 +13,7 @@ import { RadialHub } from './RadialHub';
 import { RadialNavRail } from './RadialNavRail';
 import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
+import { TabBadge } from '@/components/site/TabBadge';
 
 /**
  * The four quick panels, behind a lazy boundary — same treatment, and the same
@@ -36,7 +37,9 @@ const NotificationsPanel = lazy(() =>
 const MessagesPanel = lazy(() =>
   import('./TopBarPanels').then((m) => ({ default: m.MessagesPanel })),
 );
-const ProfilePanel = lazy(() => import('./TopBarPanels').then((m) => ({ default: m.ProfilePanel })));
+const ProfilePanel = lazy(() =>
+  import('./TopBarPanels').then((m) => ({ default: m.ProfilePanel })),
+);
 
 let panelsPreloaded = false;
 /**
@@ -91,8 +94,12 @@ const panelIntentProps = {
  * spent on a backdrop are frames not spent on the thing the pointer is actually
  * heading for.
  *
- * What is left is static geometry plus the CSS blob field's own slow keyframes,
- * which run on the compositor and cost the main thread nothing.
+ * What is left is static geometry, full stop. The rings used to breathe and the
+ * blobs to drift on CSS keyframes — "compositor-only, free for the main thread",
+ * which was true, and beside the point: a backdrop that never holds still is a
+ * page that never goes idle, re-composited on every vsync for as long as the tab
+ * is open (perf audit 2026-10-08; the measured table is above
+ * `.radial-backdrop__field` in radial.css).
  */
 function RadialBackdrop() {
   return (
@@ -102,13 +109,10 @@ function RadialBackdrop() {
           <span key={i} className="radial-backdrop__ring" style={{ ['--i' as string]: i }} />
         ))}
       </div>
-      {/* Blob field: a few slow-drifting blobs that swell together and pull
-          apart like lava — the liquid substrate the glass surfaces float over.
-          The fusing comes from the blobs' own soft-edged gradients, and always
-          did: a viewport-sized SVG filter with animating children re-rasterises
-          every frame and cost this page ~4x its frame time (see the cost note in
-          radial.css above the field's media query). CSS still keeps the whole
-          layer off phones / reduced-motion. */}
+      {/* Blob field: a few soft, overlapping blobs — the liquid substrate the
+          glass surfaces float over. Static (see above); the soft-edged
+          gradients do the fusing, never an SVG filter (see the cost note in
+          radial.css). CSS keeps the layer off phone widths. */}
       <div className="radial-backdrop__field">
         {[0, 1, 2, 3].map((i) => (
           <span key={i} className="radial-backdrop__blob" style={{ ['--i' as string]: i }} />
@@ -186,7 +190,8 @@ function RadialTopBar() {
   const close = () => setPanel(null);
 
   return (
-    <header className="radial-topbar">
+    <header className="radial-topbar glass-chrome rounded-none border-x-0 border-t-0">
+      <TabBadge count={unread + notifications} />
       <Link
         to="/"
         className="radial-topbar__brand"
@@ -203,6 +208,7 @@ function RadialTopBar() {
           type="button"
           ref={searchRef}
           className="radial-topbar__btn"
+          data-evert=""
           data-fluid-press=""
           onClick={() => toggle('search')}
           {...panelIntentProps}
@@ -222,6 +228,7 @@ function RadialTopBar() {
               type="button"
               ref={messagesRef}
               className="radial-topbar__btn max-sm:hidden"
+              data-evert=""
               data-fluid-press=""
               onClick={() => toggle('messages')}
               {...panelIntentProps}
@@ -240,6 +247,7 @@ function RadialTopBar() {
               type="button"
               ref={bellRef}
               className="radial-topbar__btn"
+              data-evert=""
               data-fluid-press=""
               onClick={() => toggle('notifications')}
               {...panelIntentProps}
@@ -296,6 +304,7 @@ function RadialTopBar() {
             to="/login"
             search={{ callbackURL: undefined }}
             className="radial-topbar__signin"
+            data-evert=""
             data-fluid-press=""
           >
             {t('sign-in', { defaultValue: 'Sign in' })}
@@ -331,8 +340,17 @@ interface RadialShellProps {
  */
 export function RadialShell({ children, overlays }: RadialShellProps) {
   const { t } = useTranslation('common');
-  const { pathname } = useLocation();
-  const isHome = pathname === '/';
+  // The home layout follows the page actually ON SCREEN, not the URL. The URL
+  // changes the instant a navigation starts, while the outgoing page stays
+  // rendered until the incoming one (or its pending skeleton) commits — so
+  // keying the shell on `pathname` dropped the home spacing under the still-
+  // visible feed and jolted it 14px for a frame on every switch away from Home
+  // (docs/ui-perf-audit-2026-10-09.md, SLOW-3). `resolvedLocation` moves with
+  // the commit; it is unset only before the first resolve, where the two agree.
+  const renderedPathname = useRouterState({
+    select: (s) => (s.resolvedLocation ?? s.location).pathname,
+  });
+  const isHome = renderedPathname === '/';
   const [railSlot, setRailSlot] = useState<HTMLElement | null>(null);
   const railSlotRef = useRef<HTMLDivElement | null>(null);
 

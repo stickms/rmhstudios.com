@@ -114,7 +114,7 @@ export function NotificationsPopover({
   const openPanel = () => {
     // Small screens: the full page beats a cramped popover inside the drawer.
     if (window.innerWidth < 768) {
-      navigate({ to: '/notifications' });
+      navigate({ to: '/messages', search: { tab: 'notifications' } });
       return;
     }
     const rect = btnRef.current?.getBoundingClientRect();
@@ -182,7 +182,7 @@ export function NotificationsPopover({
     }
     const link = resolveLink(n);
     if (link) navigate({ to: link });
-    else navigate({ to: '/notifications' });
+    else navigate({ to: '/messages', search: { tab: 'notifications' } });
   };
 
   const label = t('notifications', { defaultValue: 'Notifications' });
@@ -309,7 +309,8 @@ export function NotificationsPopover({
             </div>
 
             <Link
-              to="/notifications"
+              to="/messages"
+              search={{ tab: 'notifications' }}
               onClick={() => setOpen(false)}
               className="block border-t border-site-border px-3 py-2 text-center text-sm font-medium text-site-accent transition-colors hover:bg-site-surface-hover"
             >

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { m as motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { GeneratingState } from './GeneratingState';
+import { SeedGalleryButton } from './SeedGallery';
 
 const EXAMPLE_PROMPTS = [
   'a burnt-out comp-sci senior who secretly writes poetry at 3am',
@@ -250,6 +251,7 @@ export function WorldSetup() {
                 Load
               </button>
             </div>
+            <div className="mt-2"><SeedGalleryButton /></div>
           </div>
 
           <button

@@ -1,9 +1,9 @@
 /// <reference types="vite/client" />
 import {
-  HeadContent,
   Outlet,
   Scripts,
   createRootRoute,
+  useRouter,
   useRouterState,
   useNavigate,
 } from '@tanstack/react-router';
@@ -19,10 +19,15 @@ import {
   THEME_EXCLUDED_EXCEPTIONS,
 } from '@/components/Providers';
 import { GlassFilter } from '@/components/ui/liquid-glass';
+import { SiteHeadContent } from '@/components/SiteHeadContent';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
+import { EversionRoot } from '@/components/radial/eversion/EversionRoot';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { markDocumentHydrated, trackHistoryActions } from '@/components/ui/defer-on-navigate';
+import { markPageEnterComplete } from '@/lib/motion';
+import { startViewportPrefetch } from '@/lib/viewport-prefetch';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { installGlobalErrorHandlers } from '@/lib/client-errors';
@@ -32,21 +37,26 @@ import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
 import { DEFAULT_OG_IMAGE, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, absoluteUrl } from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { prisma } from '@/lib/prisma.server';
+import { cachedNullable } from '@/lib/cached.server';
+import { appearanceSeedKey } from '@/lib/appearance/seed-cache.server';
 import {
   accountAppearanceSeed,
   accountSeedScript,
   type AppearanceSeed,
 } from '@/lib/appearance/account-seed';
-import {
-  APP_ROUTE_THEME_BG,
-  APP_THEME_BG,
-  THEME_BG,
-  DEFAULT_STYLE,
-} from '@/stores/themeStore';
+import { APP_ROUTE_THEME_BG, APP_THEME_BG, THEME_BG, DEFAULT_STYLE } from '@/stores/themeStore';
 import { ACCENT_MAP } from '@/lib/appearance';
 import { GLASS_LEVEL_VARS, GLASS_LEVEL_KEY } from '@/lib/appearance/prefs';
+import { ACCESS_PREPAINT_SCRIPT } from '@/lib/access/prefs';
+import { DELIGHT_PREPAINT_SCRIPT } from '@/lib/delight/season';
 import { PERF_TIER_SCRIPT } from '@/lib/perf-tier';
-import appCss from '@/app/globals.css?url';
+import { MEDIA_REVEAL_SCRIPT } from '@/lib/media-reveal';
+import { COOKIE_CONSENT_SCRIPT } from '@/lib/cookie-consent';
+// Two entry sheets over the one `globals.css` body — app/site-tier.css explains
+// the split, lib/style-tier.ts picks per route.
+import siteTierCss from '@/app/site-tier.css?url';
+import appTierCss from '@/app/app-tier.css?url';
+import { hasStylesheet, styleTierFor } from '@/lib/style-tier';
 // The Latin subset of the self-hosted body font. Imported for its hashed URL so
 // the document can PRELOAD it — see the `links` block in `head()` below.
 import interLatinWoff2 from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
@@ -81,6 +91,8 @@ const SESSION_LOADER_TIMEOUT_MS = 800;
  * root loader's session wait (see SESSION_LOADER_TIMEOUT_MS). The timer is
  * cleared once `p` settles so a resolved promise can't leak a pending timeout.
  */
+const APPEARANCE_SEED_TIMEOUT_MS = 400;
+
 function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   return new Promise<T>((resolve) => {
     const timer = setTimeout(() => resolve(fallback), ms);
@@ -115,22 +127,32 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
     // lib/appearance/account-seed.ts. One indexed lookup on a session we have
     // already resolved; a failure here degrades to the idle sync rather than
     // taking the user lookup down with it.
-    const appearanceRow = await prisma.appearancePreference
-      .findUnique({
-        where: { userId: u.id },
-        select: {
-          style: true,
-          accent: true,
-          fontScale: true,
-          density: true,
-          readableFont: true,
-          customAccent: true,
-          reduceMotion: true,
-          glassLevel: true,
-          colorVision: true,
-        },
-      })
-      .catch(() => null);
+    // perf: this ran an uncached query on every signed-in render. Cache the row
+    // for 5 min (invalidated by the appearance PUT in
+    // app/routes/api/preferences/appearance.ts, so a save is never stale), and
+    // give it its OWN short timeout: a slow query drops only the seed, never the
+    // user (the loader keeps running and still warms the cache). The loader
+    // throws on DB failure so an error is not cached as "no row".
+    const appearanceRow = await withTimeout(
+      cachedNullable(appearanceSeedKey(u.id), 300_000, () =>
+        prisma.appearancePreference.findUnique({
+          where: { userId: u.id },
+          select: {
+            style: true,
+            accent: true,
+            fontScale: true,
+            density: true,
+            readableFont: true,
+            customAccent: true,
+            reduceMotion: true,
+            glassLevel: true,
+            colorVision: true,
+          },
+        }),
+      ).catch(() => null),
+      APPEARANCE_SEED_TIMEOUT_MS,
+      null,
+    );
     return {
       appearanceSeed: appearanceRow ? accountAppearanceSeed(appearanceRow) : null,
       user: {
@@ -251,7 +273,7 @@ const themeScript = buildThemeScript(false);
  * pre-paint Slice It's dark app ground under the site's Daylight `NotFound` card;
  * whatever the URL, a root-level 404 is a SITE page. The root `head()` runs after
  * the loaders on the server, so it already knows, and `Providers` reads the same
- * `globalNotFound` flag to agree after hydration.
+ * `_notFound` flag to agree after hydration.
  */
 const notFoundThemeScript = buildThemeScript(true);
 
@@ -269,6 +291,9 @@ const platformScript = `(function(){try{var u=navigator.userAgent||"";var ios=/i
  * attribute and also for client navigations.
  */
 const localeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )rmh-lang=([^;]+)/);var l=m?decodeURIComponent(m[1]):"en";var S=${JSON.stringify([...LOCALES])};var R=${JSON.stringify([...RTL_LOCALES])};if(S.indexOf(l)<0)l="en";document.documentElement.lang=l;document.documentElement.setAttribute("dir",R.indexOf(l)>=0?"rtl":"ltr")}catch(e){}})()`;
+
+/** Pre-paint text spacing, caption style and bedtime mode (lib/access/prefs). */
+const accessScript = ACCESS_PREPAINT_SCRIPT;
 
 const bodyThemeScript = `if(window.__themeBg)document.body.style.backgroundColor=window.__themeBg`;
 
@@ -388,9 +413,31 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   // hydration (perf audit §4.1; see lib/i18n/instances.ts). SSR renders from the
   // same core set, so hydration still matches.
   if (locale === DEFAULT_LOCALE) return { locale, resources: null };
-  await preloadLocale(locale);
-  return { locale, resources: localeCoreResources(locale) };
+  try {
+    await preloadLocale(locale);
+    return { locale, resources: localeCoreResources(locale) };
+  } catch {
+    // A failed locale chunk load must not take the whole document down with a
+    // 500 / "Something went wrong": render English (the always-available
+    // defaultValues) and let the client backfill the real locale.
+    return { locale: DEFAULT_LOCALE, resources: null };
+  }
 });
+
+/**
+ * Fallback for the i18n server function failing on the CLIENT (a network blip
+ * on a loader refetch, after the one retry in lib/server-fn-retry.ts). The
+ * tab already holds the active locale's resources, so keep `<html lang>`'s
+ * locale and send no new bundle rather than throwing the root loader.
+ */
+function i18nFallback(): { locale: Locale; resources: null } {
+  let locale: Locale = DEFAULT_LOCALE;
+  if (typeof document !== 'undefined') {
+    const lang = document.documentElement.lang as Locale;
+    if ((LOCALES as readonly string[]).includes(lang)) locale = lang;
+  }
+  return { locale, resources: null };
+}
 
 /** Check if a URL path is a Discord Activity route (embedded iframe) */
 function isDiscordRoute(pathname: string): boolean {
@@ -418,7 +465,7 @@ export const Route = createRootRoute({
         resolved: false,
         appearanceSeed: null,
       }),
-      getInitialI18n(),
+      getInitialI18n().catch(i18nFallback),
     ]);
     return {
       user: user.user,
@@ -439,7 +486,14 @@ export const Route = createRootRoute({
     // is the snapshot taken before the loaders ran. The client's hydrate()
     // restores the flag before running this head, so both sides emit the same
     // script.
-    const globalNotFound = ctx.match?.globalNotFound === true;
+    const globalNotFound = ctx.match?._notFound === true;
+    const appCss =
+      styleTierFor(
+        (ctx.matches ?? []).map((m) => m.routeId),
+        hasStylesheet(appTierCss),
+      ) === 'app'
+        ? appTierCss
+        : siteTierCss;
 
     if (discord) {
       // Minimal head for a Discord Activity: no external fonts, no preconnects,
@@ -469,6 +523,8 @@ export const Route = createRootRoute({
           { children: PERF_TIER_SCRIPT },
           ...(accountSeed ? [{ children: accountSeed }] : []),
           { children: globalNotFound ? notFoundThemeScript : themeScript },
+          { children: accessScript },
+          { children: DELIGHT_PREPAINT_SCRIPT },
           { children: localeScript },
         ],
       };
@@ -522,9 +578,9 @@ export const Route = createRootRoute({
         },
         // Inter's Latin subset, requested in parallel with the stylesheet rather
         // than after it. A font declared inside a stylesheet is not discoverable
-        // until that sheet has been downloaded AND parsed, and globals.css is
-        // 433 KB — so the 47 KB font that renders essentially all of the page's
-        // text used to start on the far side of that, and `font-display: swap`
+        // until that sheet has been downloaded AND parsed, and the entry sheet
+        // is ~315 KB on a site page — so the 47 KB font that renders essentially
+        // all of the page's text used to start on the far side of that, and `font-display: swap`
         // paid for it with a visible fallback-to-Inter reflow. Only the Latin
         // subset is preloaded: the other six (Cyrillic, Greek, Vietnamese, …)
         // stay behind their `unicode-range` so a Latin-script visitor never
@@ -548,6 +604,9 @@ export const Route = createRootRoute({
         // devices it protects render the full effect stack for the entire
         // load. See lib/perf-tier.ts §PERF_TIER_SCRIPT.
         { children: PERF_TIER_SCRIPT },
+        // Must precede every <img>: marks images as their bytes land so they
+        // fade in instead of popping in on a slow connection (lib/media-reveal).
+        { children: MEDIA_REVEAL_SCRIPT },
         // A signed-in visitor's ACCOUNT appearance, written into localStorage so
         // that `themeScript` — the next line, and unchanged — paints the
         // account's theme on the first frame instead of this device's. Without
@@ -557,7 +616,12 @@ export const Route = createRootRoute({
         // with nothing saved. lib/appearance/account-seed.ts has the rules.
         ...(accountSeed ? [{ children: accountSeed }] : []),
         { children: globalNotFound ? notFoundThemeScript : themeScript },
+        { children: accessScript },
+        { children: DELIGHT_PREPAINT_SCRIPT },
         { children: localeScript },
+        // Hides the server-rendered cookie notice before first paint for a
+        // visitor who has already answered it — lib/cookie-consent.ts.
+        { children: COOKIE_CONSENT_SCRIPT },
         // Browser-driven document prefetch on hover. Ignored by engines that
         // don't implement it; see SPECULATION_EXCLUDED_PATHS for the safety list.
         { type: 'speculationrules', children: speculationRules },
@@ -589,7 +653,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang={locale} dir={dirFor(locale)} suppressHydrationWarning>
       <head>
-        <HeadContent />
+        <SiteHeadContent />
         {/* Reveals are now pure CSS (`animation-timeline: view()`), and their
             hidden start state lives only inside `@supports` + `@media not
             (prefers-reduced-motion)` — so a no-JS render was never hiding
@@ -627,9 +691,7 @@ function RootDocument({ children }: { children: ReactNode }) {
             So it must stay a leaf: never render children into it. */}
         <div className="site-aurora" aria-hidden />
         {children}
-        {/* The Liquid Glass lens filters (#glass-lens / -press / -prism, plus the
-            #glass-goo metaball filter). One hidden SVG host for the whole
-            document — every `.glass-refract` surface samples it by url(). */}
+        {/* The tab capsule's #glass-goo host. Glass optics do not use SVG lenses. */}
         <GlassFilter />
         <Scripts />
       </body>
@@ -640,6 +702,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const router = useRouter();
   const { user: initialUser, sessionResolved, locale, i18nResources } = Route.useLoaderData();
 
   // Restore the exact feed position on back/forward (and cover the mobile scroll
@@ -653,7 +716,36 @@ function RootComponent() {
     installGlobalErrorHandlers();
     initWebVitals();
     registerServiceWorker();
+    // From here on, a mount is a page switch, not hydration — the point after
+    // which `DeferOnNavigate` may split a page's first render.
+    markDocumentHydrated();
   }, []);
+
+  // Tells `DeferOnNavigate` a back/forward arrival from a link click — read from
+  // the history itself, because `popstate` listeners registered after the
+  // router run only once React has already rendered the restored page.
+  useEffect(() => trackHistoryActions(router.history), [router]);
+
+  // The touch-device link prefetcher (lib/viewport-prefetch), started once the
+  // document has hydrated rather than from `getRouter()`: a preload issued while
+  // the router is still adopting the server's matches re-runs the root loader
+  // and holds hydration up behind it (app/router.tsx). It still waits for `load`.
+  useEffect(() => startViewportPrefetch(router), [router]);
+
+  // The `page-enter` fade is for arriving by a navigation, so globals.css holds
+  // it off until the first one: on a fresh load it hid the server-rendered page
+  // at first paint and kept the home feed out of LCP. History subscribers run
+  // before the router renders the next page, so the flag is in place for it;
+  // the page on screen now is marked complete first, so flipping the flag never
+  // replays the fade on it (a same-page REPLACE such as a tab change).
+  useEffect(() => {
+    const unsubscribe = router.history.subscribe(() => {
+      unsubscribe();
+      markPageEnterComplete();
+      document.documentElement.setAttribute('data-navigated', '');
+    });
+    return unsubscribe;
+  }, [router]);
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK
@@ -677,6 +769,7 @@ function RootComponent() {
     >
       <NavigationProgress />
       <BackNavAnimation />
+      <EversionRoot />
       <TwemojiProvider>
         <Outlet />
       </TwemojiProvider>

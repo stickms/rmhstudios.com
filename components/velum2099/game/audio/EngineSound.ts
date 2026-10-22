@@ -1,12 +1,12 @@
 // @ts-nocheck
 /* ═══════════════════════════════════════════
-import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
-
    NEURODRIVE — Engine Sound Synthesizer
    4-cylinder engine idle/rev + turbo spool + BOV
    + 6-speed automatic gearbox with shift sounds
    All Web Audio API — no external files
    ═══════════════════════════════════════════ */
+
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
 
 // Speed ceiling for each gear (m/s) — gear 1 through 5
 const GEAR_TOPS = [14, 26, 38, 50, 65];

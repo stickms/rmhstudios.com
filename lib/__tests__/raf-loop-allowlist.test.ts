@@ -54,6 +54,16 @@ import { join } from 'node:path';
  *                                       cleanup, and both effects only run while
  *                                       the menu is open — a page at rest has
  *                                       neither.
+ *   - lib/liquid/glass/engine.ts    — the glass engine's frame. Event-driven, never a
+ *                                       standing loop: a frame is requested only while
+ *                                       the cursor light is easing, a tap's ripple is
+ *                                       alive (a fixed ~1.2s), the refracted rim is
+ *                                       fading in after a snapshot, or once for a
+ *                                       surface whose size/theme/scroll changed. Every
+ *                                       frame re-derives `again` from that state and
+ *                                       reschedules ONLY if something is still moving,
+ *                                       so a page at rest has no loop. Reads rects, writes
+ *                                       canvases only; cancelled on teardown.
  *   - components/radial/LiquidGlobe.tsx — the navigation globe's spin/dwell loop.
  *                                       Bounded by MOUNT, like a game's: RadialHub
  *                                       renders it only while the hub is open, and
@@ -104,6 +114,20 @@ import { join } from 'node:path';
  *                                       loop. While it runs it writes only
  *                                       transform/opacity/custom properties and
  *                                       strokes one canvas, and reads no layout.
+ *   - components/radial/eversion/useEversionController.ts — the eversion controller's two
+ *                                       one-shot rAF waits (`nextFrame()`): each resolves one
+ *                                       promise and never re-requests a frame.
+ *   - lib/eversion/gl/worker.ts, lib/eversion/gl/host.ts — the globe-eversion
+ *                                       navigation effect's frame loop (the
+ *                                       worker's own scheduler, and the same
+ *                                       core's in-thread scheduler where workers
+ *                                       cannot present). Bounded by the
+ *                                       navigation: the loop starts at `start`
+ *                                       and stops at `done`/`abort`/
+ *                                       `context-lost`; no loop runs at rest.
+ *                                       The core requests a frame only while a
+ *                                       run is live and the page is visible, and
+ *                                       `host.ts` disposes it on `pagehide`.
  *   - app/routes/_site/library/index.tsx — one-shot rAF that starts the
  *                                       scroll-settle glide after a category
  *                                       switch; cancelled in cleanup and on the
@@ -143,10 +167,16 @@ const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores'];
 
 /** Files permitted to call requestAnimationFrame (see the doc block above). */
 const ALLOW = new Set<string>([
+  // Cursor light is an input-throttled one-shot. Neighbouring waves use finite
+  // native animations, without a JS loop. Preferences, visibility and unmount
+  // cancel effects and restore the affected inline properties.
+  'lib/liquid/runtime.ts',
+  'lib/liquid/glass/engine.ts',
   'app/routes/_site/library/index.tsx',
   'app/routes/_site/rmhladder/pipeline.tsx',
   'components/assistant/ConciergePanel.tsx',
   'components/breakpoint/GameView.tsx',
+  'components/canvas/CanvasReplay.tsx', // P19 Z5: stops at the last pixel; cancelled on unmount/pause
   // Bum's Rush runs exactly ONE loop for the whole game — engine step, render,
   // input polling and the host's network tick all ride it, which is why the
   // HUD can exist without a second rAF anywhere in `components/bums-rush/`.
@@ -174,12 +204,21 @@ const ALLOW = new Set<string>([
   // `document.hidden`, is never started under reduced motion, and is cancelled
   // on unmount. Transform-only, writes nothing to <html>.
   'components/dunesday/os/frame.ts',
+  // R3F menu-backdrop cap: while a menu covers a `frameloop="demand"` scene it
+  // invalidates on the vsync ticks `FrameCap` lets through. It runs only while
+  // `fps` is non-null (a menu is open); the effect's teardown cancels it, and a
+  // hidden tab runs no rAF callbacks.
+  'components/render/FrameCap.tsx',
   'components/daily-puzzles/globeset/GlobeSetGlobe.tsx',
   'components/dream-rift/MenuBackdrop.tsx',
   // One-shot, not a loop: a single deferred frame that restores the caret after
   // a smart-paste rewrites the textarea value (B16). It schedules no successor,
   // so it settles by construction.
   'components/feed/ComposeBox.tsx',
+  // One-shot, no loop: the search field's autofocus waits one frame (rAF →
+  // setTimeout) so `focus()` reads the layout the frame already computed instead
+  // of forcing one mid page switch; both handles are cancelled on unmount.
+  'components/feed/ExploreColumn.tsx',
   'components/feed/GhostTextArea.tsx',
   'components/feed/HandleInput.tsx',
   'components/feed/MentionTextarea.tsx',
@@ -253,6 +292,14 @@ const ALLOW = new Set<string>([
   'components/studio/mixer/VUMeter.tsx',
   'components/synapse-storm/PuzzleCard.tsx',
   'components/temple-of-joy/TempleGlobes.tsx',
+  // Globe eversion (T25): bounded by the navigation — the loop starts at `start` and stops at
+  // `done`/`abort`/`context-lost`; no loop runs at rest.
+  'lib/eversion/gl/host.ts',
+  'lib/eversion/gl/worker.ts',
+  // Globe eversion (T31): ONE-SHOT rAFs, never a loop. `nextFrame()` resolves a single promise
+  // (the two-frame waits before the AFTER capture and before `reveal`, spec §6.3/§6.6), with a
+  // 100 ms timer so a hidden tab cannot hang it. Nothing re-requests a frame from the callback.
+  'components/radial/eversion/useEversionController.ts',
   'components/temple-of-joy/TempleOfJoyGame.tsx',
   // The headline joy/rate readouts write textContent on a frame loop
   // rather than re-rendering their subtree 60 times a second.
@@ -279,6 +326,12 @@ const ALLOW = new Set<string>([
   'lib/kowloon-knockout/net/session.ts',
   'lib/library/epub-raster.ts',
   'lib/library/page-store.ts',
+  // Display refresh-rate probe for the 3D governor's target. Bounded by
+  // construction, not by mount: exactly SAMPLE_FRAMES (40) callbacks, once per
+  // document, then it stops for good and only the cached number is read. It
+  // runs only on pages that mount a governed Canvas, and writes nothing to the
+  // DOM.
+  'lib/render/refresh-rate.ts',
   'lib/rmhmusic/spotify-player.ts',
   'lib/rmhvibe/vibe.server.ts',
   'lib/vega/VegaGame.ts',

@@ -12,6 +12,7 @@ import HUD from './HUD';
 import ShopPanel from './ShopPanel';
 import MembersPanel from './MembersPanel';
 import ChatBox from './ChatBox';
+import { FarmTourViewer } from './FarmTour';
 import './rmh-farming-sim.css';
 
 function Toasts() {
@@ -60,6 +61,7 @@ export default function RmhFarmingSim() {
                 <MainMenu />
             )}
             <Toasts />
+            <FarmTourViewer />
         </div>
     );
 }

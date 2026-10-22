@@ -184,7 +184,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
 
  <div className="space-y-8 p-4">
  {/* Level card */}
- <section className="rounded-site border border-site-border bg-site-surface p-4">
+ <section className="rounded-site glass-fill p-4">
  <div className="flex items-center justify-between gap-3">
  <div className="flex items-center gap-3">
  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
@@ -325,7 +325,7 @@ function QuestSection({
  if (quests.length === 0) return null;
  return (
  <section>
- <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <h2 className="site-section-label mb-2 flex items-center gap-1.5">
  <Icon className="h-3.5 w-3.5"/> {title}
  </h2>
  <div className="space-y-2">
@@ -334,7 +334,7 @@ function QuestSection({
  return (
  <div
  key={q.id}
- className="flex items-start gap-3 rounded-site border border-site-border bg-site-surface p-3"
+ className="flex items-start gap-3 rounded-site glass-fill p-3"
  >
  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm bg-site-accent/12 text-site-accent">
  <Target className="h-4 w-4"/>

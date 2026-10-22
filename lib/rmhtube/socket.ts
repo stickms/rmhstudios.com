@@ -13,8 +13,11 @@ import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRmhTubeStore } from './store';
+import { usePartyStore } from './party-store';
+import type { PartyState } from './party';
 import { C2S, S2C } from './events';
 import { toast } from './toast-store';
+import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
 import { recordPong, beginClockSyncBurst, resetClock } from './clock';
 import { CLOCK_SYNC_SAMPLES, CLOCK_SYNC_INTERVAL_MS } from './constants';
 import type { VideoState } from './types';
@@ -53,13 +56,33 @@ function stopClockSync() {
 
 // ─── Connection ─────────────────────────────────────────────────────────────
 
-export async function connectToRmhTube(): Promise<Socket> {
+/**
+ * The connect in flight. `client` is only assigned after the session lookup
+ * resolves, so two callers inside that window (React's dev double-mount, or
+ * the landing page handing over to the room page) each built a client: the
+ * first socket leaked with every handler still bound, and the hub — which
+ * allows one socket per user — kicked one of them with DUPLICATE_SESSION.
+ */
+let connecting: Promise<Socket> | null = null;
+
+export function connectToRmhTube(): Promise<Socket> {
   if (client) {
     client.reconnectNow();
-    return client.socket;
+    return Promise.resolve(client.socket);
   }
+  connecting ??= openClient().finally(() => {
+    connecting = null;
+  });
+  return connecting;
+}
 
+/** Bumped by a disconnect, so a connect that was mid-flight does not resurrect the client. */
+let generation = 0;
+
+async function openClient(): Promise<Socket> {
+  const started = generation;
   const session = await authClient.getSession();
+  if (started !== generation) throw new Error('Disconnected');
   if (!session?.data?.session?.token) {
     store().setConnectionStatus('error');
     throw new Error('Not authenticated');
@@ -124,6 +147,8 @@ function registerHandlers(socket: Socket) {
   // `applyVideoState` checks.
   socket.on(S2C.SYNC_STATE, (videoState: VideoState) => store().applyVideoState(videoState));
 
+  socket.on(S2C.PARTY_STATE, (state: PartyState) => usePartyStore.getState().setParty(state));
+
   // ─── Chat ─────────────────────────────────────────────────────────────
   socket.on(S2C.CHAT_TYPING_INDICATOR, (data: { userId: string; userName: string }) => {
     const room = store().room;
@@ -164,6 +189,8 @@ function registerHandlers(socket: Socket) {
     const room = store().room;
     if (room) useRmhTubeStore.setState({ room: { ...room, queue: data.queue } });
   });
+
+  bindSlowModeEvents(socket, 'tube');
 
   // ─── Removal / errors ─────────────────────────────────────────────────
   socket.on(S2C.ERROR, (error: { code?: string; message?: string; roomId?: string }) => {
@@ -206,6 +233,7 @@ export function reconnectNow(): void {
 }
 
 export function disconnectFromRmhTube(): void {
+  generation += 1;
   stopClockSync();
   for (const timer of typingTimers.values()) clearTimeout(timer);
   typingTimers.clear();
@@ -213,6 +241,7 @@ export function disconnectFromRmhTube(): void {
   client?.destroy();
   client = null;
   store().reset();
+  usePartyStore.getState().reset();
 }
 
 export function emit(event: string, data?: unknown, options?: { queue?: boolean }): boolean {

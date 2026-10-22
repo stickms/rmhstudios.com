@@ -96,6 +96,7 @@ func sweep(ctx context.Context, d worker.Deps) {
 	rows, err := d.DB.Pool.Query(ctx, findAtRisk, minStreak, lowerHours, upperHours, dedupeHours, batchLimit)
 	if err != nil {
 		d.Logger.Error("streak-saver: query at-risk failed", "error", err)
+		d.Metrics.RecordJob("streak_sweep", "error")
 		return
 	}
 	type target struct {
@@ -108,6 +109,7 @@ func sweep(ctx context.Context, d worker.Deps) {
 		if err := rows.Scan(&t.userID, &t.current); err != nil {
 			d.Logger.Error("streak-saver: scan failed", "error", err)
 			rows.Close()
+			d.Metrics.RecordJob("streak_sweep", "error")
 			return
 		}
 		targets = append(targets, t)
@@ -115,6 +117,7 @@ func sweep(ctx context.Context, d worker.Deps) {
 	rows.Close()
 	if err := rows.Err(); err != nil {
 		d.Logger.Error("streak-saver: rows error", "error", err)
+		d.Metrics.RecordJob("streak_sweep", "error")
 		return
 	}
 
@@ -133,6 +136,9 @@ func sweep(ctx context.Context, d worker.Deps) {
 		// the internal secret / VAPID configured).
 		pushReminders(ctx, d.Logger, reminders)
 	}
+	// The sweep itself worked (individual insert failures are logged above):
+	// this is what the on-call staleness alarm watches.
+	d.Metrics.RecordJob("streak_sweep", "ok")
 }
 
 // newCUID generates a compact, collision-resistant id compatible with Prisma's

@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect, stripSearchParams } from '@tanstack/react-router';
 import { isSearchTab, type SearchTab } from '@/lib/search/types';
 
 /**
@@ -15,6 +15,9 @@ export const Route = createFileRoute('/_site/search')({
     q: (search.q as string) || '',
     tab: isSearchTab(search.tab) ? search.tab : ('top' as SearchTab),
   }),
+  // As on /explore: without it a bare `/search` first 307s to its own
+  // normalised `?q=&tab=top` form, and only THEN to /explore — two hops.
+  search: { middlewares: [stripSearchParams({ q: '', tab: 'top' as SearchTab })] },
   beforeLoad: ({ search }) => {
     throw redirect({ to: '/explore', search: { q: search.q, tab: search.tab }, replace: true });
   },

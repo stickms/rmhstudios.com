@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { reportClientError } from '@/lib/client-errors';
+import { isStaleBuildError, reloadForStaleBuild } from '@/lib/stale-build';
 
 interface Props {
   children: ReactNode;
@@ -76,6 +77,9 @@ export class GameErrorBoundary extends Component<Props, State> {
       source: `game-boundary:${this.props.gameName ?? 'unknown'}`,
       componentStack: info.componentStack ?? undefined,
     });
+    // Games are lazily loaded; a chunk deleted by a deploy is fixed by a reload
+    // onto the current build, not by Retry (see lib/stale-build.ts).
+    if (isStaleBuildError(error)) reloadForStaleBuild();
   }
 
   render() {

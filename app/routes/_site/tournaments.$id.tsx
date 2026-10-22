@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
 import { BracketView } from '@/components/tournaments/BracketView';
+import { SwissStandings } from '@/components/competitive/SwissStandings';
+import { PickemPanel } from '@/components/competitive/PickemPanel';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
 import { prisma } from '@/lib/prisma.server';
 import { getWagerGame } from '@/lib/wager/eligible-games';
@@ -309,7 +311,7 @@ function TournamentDetailPage() {
         {/* Bracket (live / complete) */}
         {(tourney.status === 'LIVE' || tourney.status === 'COMPLETE') && (
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-site-text-dim mb-2">
+            <h2 className="site-section-label mb-2">
               {t('bracket-tournaments-id', { defaultValue: 'Bracket' })}
             </h2>
             <BracketView
@@ -328,9 +330,17 @@ function TournamentDetailPage() {
           </div>
         )}
 
+        {tourney.format === 'SWISS' && tourney.status !== 'REGISTRATION' && (
+          <SwissStandings tournament={tourney} />
+        )}
+
+        {tourney.format === 'SINGLE_ELIM' && tourney.status !== 'CANCELLED' && (
+          <PickemPanel tournament={tourney} signedIn={!!viewerId} />
+        )}
+
         {/* Entrants */}
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-site-text-dim mb-2">
+          <h2 className="site-section-label mb-2">
             {t('entrants', { defaultValue: 'Entrants' })} ({tourney.playerCount})
           </h2>
           <div className="grid gap-2 sm:grid-cols-2">

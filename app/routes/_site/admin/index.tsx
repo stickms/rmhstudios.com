@@ -2,10 +2,21 @@
  * Admin Dashboard Route
  */
 
+import { AdminReleaseNotesLink } from '@/components/devplatform/AdminReleaseNotesLink';
+import { AdminSafetyLink } from '@/components/safety/AdminSafetyLink';
 import { useTranslation } from "react-i18next";
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
+import { AdminQotdLink } from '@/components/posts-plus/AdminQotdLink';
+import { AdminDelightLink } from '@/components/delight/AdminDelightLink';
+import { AdminCanvasLink } from '@/components/canvas/admin/AdminCanvasLink';
+import { AdminChallengeLink } from '@/components/admin/studio-challenges/AdminChallengeLink';
+import { AdminReadingLink } from '@/components/reading/admin/AdminReadingLink';
+import { InsightsLink } from '@/components/admin/InsightsLink';
+import { PerformanceLink } from '@/components/admin/PerformanceLink';
+import { DeepseekLink } from '@/components/admin/DeepseekLink';
+import { OncallLink } from '@/components/admin/OncallLink';
 
 export const Route = createFileRoute('/_site/admin/')({
   head: () => ({
@@ -142,6 +153,8 @@ function AdminDashboardPage() {
             </p>
           </Link>
 
+          <AdminReleaseNotesLink />
+
           <Link
             to="/admin/predictions"
             className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
@@ -149,6 +162,24 @@ function AdminDashboardPage() {
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("predictions-title", { defaultValue: "Prediction Markets" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
               {t("predictions-description", { defaultValue: "Approve or deny submitted predictions, and resolve open markets to YES or NO to pay out winners." })}
+            </p>
+          </Link>
+
+          <InsightsLink />
+
+          <PerformanceLink />
+
+          <DeepseekLink />
+
+          <OncallLink />
+
+          <Link
+            to="/admin/bots"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("bots-title", { defaultValue: "AI Bots" })}</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              {t("bots-description", { defaultValue: "Set the bot pool size, how fast new bots are minted, and how often they post. Shows live bot and post counts." })}
             </p>
           </Link>
 
@@ -211,6 +242,13 @@ function AdminDashboardPage() {
               {t("audit-log-description", { defaultValue: "A record of admin actions — report decisions, bans, strikes, and announcements." })}
             </p>
           </Link>
+
+          <AdminSafetyLink />
+          <AdminQotdLink />
+          <AdminDelightLink />
+          <AdminCanvasLink />
+          <AdminChallengeLink />
+          <AdminReadingLink />
         </div>
       </div>
     </PageLayout>

@@ -9,6 +9,7 @@ import PlayerBar from '@/components/rmhmusic/PlayerBar';
 import SearchPanel from '@/components/rmhmusic/SearchPanel';
 import ChatPanel from '@/components/rmhmusic/ChatPanel';
 import GuessPanel from '@/components/rmhmusic/GuessPanel';
+import RadioPanel from '@/components/rmhmusic/RadioPanel';
 
 export default function PlayerPage() {
   const { room, currentTrack } = useRmhMusicStore();
@@ -16,6 +17,19 @@ export default function PlayerPage() {
 
   const handlePlay = useCallback(async (track: any) => {
     if (!track.previewUrl) return;
+
+    // Community radio (T4): a pick goes to the DJ's queue; the server decides when it plays.
+    if (room?.radio) {
+      emit(C2S.RADIO_QUEUE, {
+        spotifyUri: track.uri ?? track.spotifyUri,
+        title: track.title,
+        artist: track.artist,
+        albumArt: track.albumArt ?? '',
+        durationMs: track.durationMs,
+        previewUrl: track.previewUrl,
+      });
+      return;
+    }
 
     play(track.previewUrl, {
       spotifyUri: track.uri ?? track.spotifyUri,
@@ -43,9 +57,18 @@ export default function PlayerPage() {
     }
   }, [play, room]);
 
+  const isRadio = !!room?.radio;
+
   // Sync playback from room events (non-host)
   useEffect(() => {
     if (!room || room.hostUserId === room.myUserId) return;
+
+    // Joining mid-track (radio): the server already sent MUSIC_PLAY, so start from the store.
+    const now = useRmhMusicStore.getState();
+    if (isRadio && now.playback.isPlaying && now.currentTrack?.previewUrl) {
+      play(now.currentTrack.previewUrl, now.currentTrack);
+      if (now.playback.positionMs > 0) seek(now.playback.positionMs);
+    }
 
     const unsub = useRmhMusicStore.subscribe((state, prevState) => {
       const track = state.currentTrack;
@@ -60,7 +83,7 @@ export default function PlayerPage() {
     });
 
     return unsub;
-  }, [room?.roomId, room?.hostUserId, room?.myUserId, play, pause, resume, seek]);
+  }, [room?.roomId, room?.hostUserId, room?.myUserId, isRadio, play, pause, resume, seek]);
 
   return (
     <div className="app-ground relative" style={{ background: 'var(--site-bg)' }}>
@@ -77,6 +100,7 @@ export default function PlayerPage() {
         </div>
       )}
 
+      {room?.radio && <RadioPanel />}
       <SearchPanel onPlay={handlePlay} />
       <ChatPanel />
       <GuessPanel />

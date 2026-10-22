@@ -1,0 +1,409 @@
+/* ==========================================================================
+   Globe Eversion — the page-side CSS (docs/plans/2026-10-17-globe-eversion.md
+   §6.4, §6.6, §9.2 step 3, §10.1). OWNER: T19.
+
+   Everything the effect needs from the STYLESHEET and nothing it can do with a
+   class toggle: the controller (T31) adds and removes these hooks once each, it
+   never writes a style per frame. Tokens only — no raw colour, radius or
+   `transition-all` — and nothing here takes a `backdrop-filter`, because the
+   canvas animates continuously and a viewport-sized backdrop-filter under an
+   animating layer re-blurs in full every frame (components/radial/README.md).
+
+   Imported by `EversionRoot.tsx`, which `__root.tsx` mounts on every page
+   (amended 2026-10-21: it used to be radial.css's, and so only the shell's): a
+   transition that leaves or enters a full-screen route draws its layers at the
+   top of <body>, where the shell's stylesheet is not loaded.
+   ========================================================================== */
+
+/* The timeline's WRAP curve for the sphere's radius and centre: a quintic from rest
+   to rest (smootherstep), as a CSS easing, so the hub's glass globe swells on the
+   sphere's own curve (radial.css, `data-eversion-swell`). 33 evenly spaced stops;
+   lib/eversion/__tests__/eversion-css.test.ts re-derives them. */
+:root {
+  --eversion-ease-wrap: linear(0, 0.0003, 0.0022, 0.0071, 0.0161, 0.0298, 0.0488, 0.0733, 0.1035, 0.1392, 0.18, 0.2255, 0.2752, 0.3283, 0.384, 0.4416, 0.5, 0.5584, 0.616, 0.6717, 0.7248, 0.7745, 0.82, 0.8608, 0.8965, 0.9267, 0.9512, 0.9702, 0.9839, 0.9929, 0.9978, 0.9997, 1);
+}
+
+/* ── The overlay ───────────────────────────────────────────────────────────
+   One fixed layer holding the effect's canvas. It sits JUST UNDER the hub's own
+   overlay, not over it: the hub fades out over `HUB_FADE_MS` (radial.css,
+   `data-phase='everting'`) and the canvas — already opaque and showing the flat
+   page the visitor was looking at — is what that fade reveals, so the hand-off
+   has no frame where neither is up.
+
+   `contain: strict` (size + layout + paint + style) because nothing inside may
+   influence, or be influenced by, the page behind it: the canvas is sized by
+   the viewport, not by its content, and a contained subtree is never part of
+   the page's layout or paint invalidation. It carries no `backdrop-filter` and
+   never will. `touch-action: none` so a finger on it can neither scroll the
+   page beneath nor start a browser gesture. A touch does nothing to the run: it
+   always plays in full (amended 2026-10-20; it used to fast-forward, spec §7.6). */
+.eversion-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-hub-overlay) - 1);
+  contain: strict;
+  touch-action: none;
+  opacity: 1;
+}
+
+/* The context-loss path (spec §9.4): the canvas is gone, so the overlay lets go
+   of the screen with a short fade rather than a cut. 200 ms is the figure the
+   spec gives; opacity is the only property that moves. */
+.eversion-overlay--fading {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* ── The frozen picture (amended 2026-10-19) ───────────────────────────────
+   The run renders the destination BEFORE the animation, while the hub is still
+   open: the live page changes underneath, so the visitor is shown the page they
+   are leaving as a picture (the BEFORE capture, `overlay-store.ts#holdPicture`).
+
+   While the destination renders, its layer sits just over the page content
+   (`--z-content` + 1: over `.radial-frame` and the backdrop; the cover hides the
+   top bar, whose picture is in the capture) and UNDER every floating element: the
+   cookie bar (z-40), menus and quick panels (`--z-menu`), the mini-player
+   (`--z-floating`): those stay live and on top while the destination renders.
+   The picture carries them too (they are part of the page, and blurred with it
+   behind an open hub: radial.css), so when the layer is lifted over them it
+   shows them exactly as they were and nothing about them changes. Two frames
+   before the hub lets go,
+   `--up` lifts the layer to the overlay's level (it comes after the overlay in
+   the document, so it paints over the canvas, still under the hub): the canvas's
+   first frame can never show above it.
+
+   The picture must look like the page it replaces, which behind an open hub is
+   BLURRED by the same `filter` radial.css gives the shell layers, and is not on
+   the tiers that opt out of that blur (perf-lite, reduce-transparency,
+   ios-webkit: the veil carries it alone there). With the hub closed (the
+   Settings Preview) it is sharp, as the page is.
+
+   It is static while it waits: the blur is rasterised once. When the hub lets go
+   (the commit), `--focus` pulls the blur to sharp over the hub's own fade
+   (`HOLD_FADE_MS` = `HUB_FADE_MS`) - the blur RADIUS moves, never an opacity, so
+   there is no double image - and WRAP starts only then, on a canvas whose first
+   frame is this same page, sharp. The picture is then simply dropped
+   (`releasePicture`): it is replaced by itself. */
+.eversion-hold-layer {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-content) + 1);
+  contain: strict;
+  pointer-events: none;
+}
+.eversion-hold-layer--up {
+  z-index: calc(var(--z-hub-overlay) - 1);
+}
+.eversion-hold {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.radial-hub:is([data-phase='open'], [data-phase='everting']) .eversion-hold {
+  filter: blur(var(--hub-page-blur, 20px));
+}
+.radial-hub .eversion-hold-layer--focus .eversion-hold {
+  filter: blur(0px);
+  transition: filter 250ms var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+}
+html:is(.perf-lite, .reduce-transparency, .ios-webkit) .radial-hub .eversion-hold {
+  filter: none;
+}
+
+/* ── Hiding the live page (spec §6.6) ──────────────────────────────────────
+   While the opaque canvas covers the screen, the shell under it would keep
+   compositing — and the top bar and the page's glass surfaces carry
+   `backdrop-filter`, which re-blurs in full each frame anything above it
+   animates. So on `cover` the controller adds this one class and the shell
+   layers stop being drawn at all.
+
+   `opacity`, not `visibility`: computed `opacity` is not inherited, so the
+   BEFORE/AFTER capture override can restore the clone root alone, whereas
+   `visibility: hidden` would be inlined on every cloned descendant. The top bar
+   is listed with `.radial-frame` and the backdrop layer for the same reason the
+   hub's own page blur lists all three (they are the three shell siblings). The
+   aurora (`.site-aurora`) is a document-level layer under the canvas and is
+   covered by it; that is accepted (spec §6.6). Removed on `uncover` (UNWRAP's
+   last ~260 ms), before `reveal`, so the live page is already painted under
+   the canvas by the time the page texture starts to dissolve. */
+html.eversion-cover .radial-frame,
+html.eversion-cover .radial-backdrop,
+html.eversion-cover .radial-topbar {
+  opacity: 0;
+}
+
+/* ── Handing the live page back (spec amendment 2026-10-18 §6.6a) ───────────
+   The final dissolve is a CROSSFADE of the canvas's flat AFTER picture onto the
+   live page, so the live page has to BE that picture: sharp, fully opaque, and
+   not moving on its own.
+
+   What it used to be instead is the owner's "glitchy extra step". The hub holds
+   the shell's three layers at `filter: blur(20px)` for as long as its phase is
+   `open` OR `everting` (radial.css), and `everting` lasts until the run is over.
+   So when the cover came off, the canvas faded onto a 20px-blurred copy of the
+   page, and one frame after the fade the hub closed, the blur dropped and the
+   page popped sharp: a second, separate event after the animation had ended.
+
+   `eversion-live` is set from the first `cover` (the page is invisible then, so
+   dropping the blur is unseen) and released a couple of frames after the run
+   ends, by which time the hub has closed. It also pins `transition: none`, so
+   the layers come back at full opacity in the frame the cover class goes, and it
+   lets the feed's compose button, which the hub hides until it is `closed`,
+   dissolve in with the page instead of popping in a frame after. The floating UI
+   (the cookie bar, the mini-player) drops the blur the open hub gave it in the
+   same way: it is in the AFTER picture, sharp. The orb needs nothing here: it is
+   opaque and docked under the canvas from the commit on (radial.css), and in the
+   AFTER picture, so the dissolve lands on it exactly. */
+html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-backdrop,
+html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-topbar,
+html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-frame,
+html.eversion-live
+  .radial-shell:has(.radial-hub[data-phase='everting'])
+  > [data-floating]:not([data-floating='hub']) {
+  filter: none;
+  transition: none;
+}
+/* The same while the destination is rendered under the frozen picture (the hub
+   is still `open`, the shell already covered): the page is laid out and captured
+   exactly as it will be handed back, not as the blurred layer whose `filter`
+   re-anchors every fixed element in it. Invisible: the shell is covered. */
+html.eversion-live.eversion-cover
+  .radial-shell:has(.radial-hub[data-phase='open'])
+  .radial-backdrop,
+html.eversion-live.eversion-cover .radial-shell:has(.radial-hub[data-phase='open']) .radial-topbar,
+html.eversion-live.eversion-cover .radial-shell:has(.radial-hub[data-phase='open']) .radial-frame {
+  filter: none;
+  transition: none;
+}
+html.eversion-live .radial-shell:has(.radial-hub[data-phase='everting']) .radial-feed__compose {
+  visibility: visible;
+}
+
+/* ── Settling for the AFTER capture (spec §6.4) ────────────────────────────
+   The controller sets `data-eversion-settle` on <html> while it waits for the
+   destination to reach the state the capture should freeze. Entrance
+   animations (`radial-page-rise`, `globe-in`, image and swap reveals, the
+   `both`-fill keyframes in general) start from an invisible `from` frame, so a
+   capture taken mid-entrance bakes a half-faded page into the texture.
+
+   Collapsing the durations rather than `animation: none` is deliberate: the
+   keyframes still run and jump straight to their END state (every entrance in
+   the site fills `both`), so the page is captured as it will rest, and nothing
+   that depended on an `animationend` event is left waiting for one. Transitions
+   are collapsed alike. The attribute is short-lived and set on one element, so
+   the universal selector is paid for only for the length of a capture.
+
+   The hub is spared: the destination is captured while it is still open and
+   moving on screen (amended 2026-10-19), and it is not part of the picture. So
+   is the globe that pops up out of a pressed link (amended 2026-10-21), for the
+   same reason. */
+html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .evert-popup *),
+html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .evert-popup *)::before,
+html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .evert-popup *)::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0s !important;
+  transition-duration: 0.001ms !important;
+  transition-delay: 0s !important;
+}
+
+/* ── The pop-up globe (amended 2026-10-21) ─────────────────────────────────
+   Every page transition runs the effect, and one that did not start on the
+   hub's globe gets this one (`popup.ts`): it blooms out of the press point,
+   turns while the destination renders behind the frozen page, and is handed
+   over exactly as the hub's globe is - from the effect's first frame it swells
+   and travels onto the sphere on WRAP's own curve and dissolves into it.
+
+   Body-level and one z-step over the run's body-level layers (`.eversion-overlay`
+   at `--z-hub-overlay` - 1). Only `scale`, `transform`, `rotate` and `opacity`
+   move, all on the compositor; nothing on it is focusable or announced. The
+   meridians turn by squashing (`scale` on x), the cheapest honest way to show a
+   sphere spinning. Colours are the theme's. */
+.evert-popup {
+  position: fixed;
+  left: var(--popup-x);
+  top: var(--popup-y);
+  z-index: calc(var(--z-hub-overlay) + 1);
+  width: var(--popup-size);
+  height: var(--popup-size);
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+  contain: layout paint style;
+  /* The page's own surface, lit from the top left and shaded toward the accent at the limb: the sphere it
+     dissolves into is the page wrapped onto a globe, so it is the page's colour, not a coloured marble. */
+  background: radial-gradient(
+    circle at 32% 28%,
+    var(--site-surface) 0%,
+    color-mix(in oklab, var(--site-accent) 10%, var(--site-surface)) 42%,
+    color-mix(in oklab, var(--site-accent) 30%, var(--site-surface)) 82%,
+    color-mix(in oklab, var(--site-accent) 48%, var(--site-surface)) 100%
+  );
+  border: var(--site-border-width, 1px) solid var(--site-border-bright, var(--site-border));
+  box-shadow: var(--site-shadow-sm, none);
+  transform-origin: var(--popup-ox) var(--popup-oy);
+  animation: evert-popup-in var(--evert-pop-in, 0.52s) var(--evert-ease-pop, ease-out) both;
+  will-change: transform, opacity;
+}
+.evert-popup__meridian,
+.evert-popup__equator {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in oklab, var(--site-accent) 32%, transparent);
+}
+.evert-popup__meridian {
+  animation: evert-popup-turn 2.4s linear infinite;
+}
+.evert-popup__meridian:nth-child(2) {
+  animation-delay: -0.8s;
+}
+.evert-popup__meridian:nth-child(3) {
+  animation-delay: -1.6s;
+}
+.evert-popup__equator {
+  inset: 42% 6%;
+}
+@keyframes evert-popup-in {
+  from {
+    scale: 0;
+  }
+  to {
+    scale: 1;
+  }
+}
+@keyframes evert-popup-turn {
+  0% {
+    scale: 1 1;
+    opacity: 0.2;
+  }
+  50% {
+    scale: 0.04 1;
+    opacity: 1;
+  }
+  100% {
+    scale: 1 1;
+    opacity: 0.2;
+  }
+}
+/* The hand-over: the hub globe's `globe-swell` / `globe-dissolve`, about the globe's own centre. */
+.evert-popup[data-eversion-swell] {
+  transform-origin: 50% 50%;
+  animation:
+    evert-popup-swell var(--eversion-wrap, 700ms) var(--eversion-ease-wrap) both,
+    evert-popup-dissolve calc(var(--eversion-wrap, 700ms) * 0.45) cubic-bezier(0.4, 0, 1, 1)
+      calc(var(--eversion-wrap, 700ms) * 0.45) both;
+}
+@keyframes evert-popup-swell {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translate(var(--eversion-dx, 0px), var(--eversion-dy, 0px))
+      scale(var(--eversion-swell, 1));
+  }
+}
+@keyframes evert-popup-dissolve {
+  to {
+    opacity: 0;
+  }
+}
+/* No run after all: back into the press point it came out of. */
+.evert-popup[data-leaving] {
+  animation: evert-popup-out 0.32s cubic-bezier(0.4, 0, 1, 1) both;
+}
+@keyframes evert-popup-out {
+  from {
+    scale: 1;
+  }
+  to {
+    scale: 0;
+  }
+}
+/* The site's own Reduce motion switch: no globe at all (the run is not eligible either). */
+html.reduce-motion .evert-popup {
+  display: none;
+}
+@media (forced-colors: active) {
+  .evert-popup {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+}
+
+/* ── The mini "puddle" response (mini-globe.ts, amended 2026-10-21) ──────────────────────────────────────────────
+   Non-hub navigations are no longer mini eversions on a control. Instead a ripple expands from the press point and
+   nearby UI responds by distance (WAAPI in mini-globe.ts). The layer itself is one fixed, pointer-inert element with
+   transform/opacity-only motion. */
+.evert-mini-ripple {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-hub-overlay) + 1);
+  pointer-events: none;
+  contain: strict;
+  will-change: opacity;
+  animation: evert-mini-layer var(--evert-mini-ms, 460ms) ease-out both;
+}
+.evert-mini-ripple::before,
+.evert-mini-ripple::after {
+  content: '';
+  position: absolute;
+  left: var(--evert-ripple-x, 50%);
+  top: var(--evert-ripple-y, 50%);
+  width: calc(var(--evert-ripple-r, 20px) * 2);
+  height: calc(var(--evert-ripple-r, 20px) * 2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0.04);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+.evert-mini-ripple::before {
+  border: 1px solid color-mix(in oklab, var(--site-accent) 42%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--site-text) 10%, transparent) inset,
+    0 0 30px -10px color-mix(in oklab, var(--site-accent) 34%, transparent);
+  opacity: 0;
+  animation: evert-mini-wave var(--evert-mini-ms, 460ms) cubic-bezier(0.12, 0.8, 0.24, 1) both;
+}
+.evert-mini-ripple::after {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--site-accent) 24%, transparent) 0%,
+    color-mix(in oklab, var(--site-text) 8%, transparent) 28%,
+    transparent 60%
+  );
+  opacity: 0;
+  animation: evert-mini-glow calc(var(--evert-mini-ms, 460ms) * 0.9) ease-out both;
+}
+@keyframes evert-mini-layer {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes evert-mini-wave {
+  0% {
+    transform: translate(-50%, -50%) scale(0.03);
+    opacity: 0.8;
+  }
+  48% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+@keyframes evert-mini-glow {
+  0% {
+    transform: translate(-50%, -50%) scale(0.02);
+    opacity: 0.22;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.94);
+    opacity: 0;
+  }
+}

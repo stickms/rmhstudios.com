@@ -36,10 +36,14 @@ RMH mark is that centre, and it is always on screen.
   screen, swells, and dissolves into a glass sphere with every destination
   pinned to it. You _turn_ it to find where you want to go, hold on a
   destination, and let go to travel.
-- Behind everything, a fixed **ring backdrop**, a drifting field of soft blobs
-  and a slowly-breathing **aurora canvas** keep the surface feeling continuous —
-  one scene, not a stack of screens. It moves on its own, ambiently; it does not
-  follow you (§3).
+- Behind everything, a fixed **ring backdrop**, a field of soft blobs and an
+  **aurora canvas** keep the surface feeling continuous — one scene, not a stack
+  of screens. It is **still**: it neither follows you (§3) nor moves on its own.
+  It used to drift and breathe forever, and a backdrop that is never still is a
+  page that never goes idle — a full composite on every vsync, 144 or 240 times a
+  second on a high-refresh panel, for decoration nobody is watching
+  ([perf audit 2026-10-08](docs/performance-audit-2026-10-08.md)). Motion is
+  spent on what you touch.
 
 The consequence worth internalising: **navigating is a physical act here.** That
 raises the bar on the physics (§4) and it means chrome is never allowed to be
@@ -47,15 +51,18 @@ inert.
 
 ### Avant-garde glass — surfaces are a material, not a colour
 
-The material is Apple's Liquid Glass, used _theatrically_ rather than literally:
-layered translucent glass with **live optics** — a specular rim glint on every
-tier, frosted edge bevels, micro-noise, a slowly drifting aurora canvas, and
-travelling sheens that ride the compositor.
+The material uses translucent tint, a directional rim and a clear coat.
+Singular panes, chrome and overlays sample live content with native backdrop
+frost. Repeated cards use tint and reflection without adding blur samplers.
+A bounded shared runtime supplies nearby tap waves and surface-local cursor
+lighting. The globe has a dielectric coat that refracts the page behind it and a dough body that dents, kneads and eases back.
 
-The distinction that matters: a surface here is **translucent over a shared
-scene**, not an opaque card with a shadow. Every pane samples the same drifting
-aurora, so panes at different depths relate to each other automatically, and a
-theme change is a change of _light_, not a repaint of a thousand components.
+These are different optical capabilities behind one material language. Native
+HTML panels preserve live content and accessibility with an approximate clear
+coat; the globe models dielectric reflection/transmission, and eversion can
+refract its captured page textures. The [implementation contract](docs/liquid-glass-system.md)
+records those limits, ownership, fallbacks and budgets. Themes change the
+material's palette through the same tokens throughout the site.
 
 The default palette is strict **high-contrast monochrome** — white canvas, ink
 text, ink accent, hairline black borders — rendered as glass. Restraint in the
@@ -107,7 +114,7 @@ the surface _is_, not by how you want it to look — the tier decides the cost.
 | **L2** | `.glass-pane`    | Singular panels: heroes, composers, settings sections | Blur. Budgeted.                        |
 | **L3** | `.glass-chrome`  | Persistent chrome: sticky headers, rails, docks       | Blur; condenses on scroll.             |
 | **L4** | `.glass-overlay` | Floating UI: dialogs, popovers, menus, toasts         | Blur; more opaque so text can't ghost. |
-| —      | `.glass-inset`   | Recessed wells: inputs, search fields                 | A hole in the sheet.                   |
+| —      | `.glass-inset`   | Fields: inputs, search fields, tab tracks             | A flush pool of the glass. No shadow.  |
 | —      | `.glass-scrim`   | Dialog and drawer backdrops                           | —                                      |
 
 Modifiers (`.glass-interactive`, `.glass-refract`, `.glass-liquid`,
@@ -122,23 +129,27 @@ in its own border ring. This includes L1: the tier the site is mostly _made_ of
 rests at an ambient glint strength that hover raises to full. Glass that does not
 answer the light is just tinted paper.
 
-**The light does not follow the cursor, and neither does anything else.** Every
-pointer-tracked effect the site once had — the diffuse hotspot on hovered glass,
-the aurora's pointer parallax, the ring backdrop's, the per-card sheens and
-tilts — was retired in one pass, because gradient position and background
-position are _paint_ properties: moving them repaints the whole element, at
-pointer rate, during exactly the gestures with a frame budget to defend. Hover is
-now a **state**, not a coordinate. If a cursor-tracked specular is ever wanted
-back it belongs on a compositor-friendly carrier (a transform-translated child
-layer), behind the same tier switches as the rest of the optics. Two things
-survive, because neither is a cursor: the opt-in device-tilt aurora on touch, and
-the device-attitude "inspect this object" control, which also has a drag and
-keyboard path.
+**Light and pressure belong to the material.** The shared runtime carries a
+small cursor light on a transform-only leaf and sends attenuated tap waves into
+at most eight nearby surfaces. It never paints a replacement cursor, moves a
+gradient centre, or animates a root variable. The background remains still.
+Reduced motion, reduced transparency and high contrast remove decorative
+responses live. See [the implementation contract](docs/liquid-glass-system.md).
 
 **A tier class is not decoration you can inline.** `bg-site-surface border
 border-site-border rounded-site shadow-site-sm` renders the same _box_ as
 `.glass-fill` and none of its _material_ — no noise, no glint, and nothing for
 the degradation tiers to switch off. Reach for the tier.
+
+**Nothing is debossed.** Glass sits _on_ the page and is lit from above — the
+globe is the reference object: a specular bloom, a bright rim, depth that rises
+toward you. A dark inner shadow under a top edge reads the other way, as a slot
+carved _into_ the page, and that is not this material. Fields are the theme's ink
+at a whisper over the glass tint (`.glass-inset`): they grey slightly off a light
+page and lift slightly off a dark one, with a hairline and no shadow. An inset
+_highlight_ (a light top rim) is the glint and is fine; an inset _shadow_ is not.
+`design-consistency.test.ts` fails a site-tier `shadow-inner` or dark
+`shadow-[inset_…]` (audit: `docs/ui-perf-audit-2026-10-09.md`).
 
 **Budgets are real.** Backdrop blur is per-element GPU work: at most ~8 blurred
 surfaces per viewport, and **zero on repeated list items**. This is why L1 exists
@@ -381,8 +392,8 @@ If you remember six things:
    continuously animating may sit above a full-viewport blur.
 4. **Motion is shared physics, and it composites.** Springs with velocity,
    intent read from projection, response on pointer-down; the formulas live in
-   one file. `transform`/`opacity` only — nothing tracks the pointer, and
-   nothing writes a custom property to `<html>` per frame.
+   one file. `transform`/`opacity` and independent transforms only; the shared light
+   carrier may track input, but nothing writes root variables per frame.
 5. **Degrade centrally.** High contrast, reduced motion, reduced transparency and
    `perf-lite` are the token layer's job — and legibility may never depend on an
    optic.

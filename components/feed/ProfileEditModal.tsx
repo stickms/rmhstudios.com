@@ -41,7 +41,7 @@ import { Switch } from'@/components/ui/switch';
 import { Textarea } from'@/components/ui/textarea';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';
-import { MAX_PROFILE_LINKS } from'@/lib/profile-schema';
+import { MAX_PROFILE_LINKS } from'@/lib/profile-limits';
 import { cn } from'@/lib/utils';
 import { ImageCropModal } from'./ImageCropModal';
 import { SpotifySongSearch, type SpotifyTrack } from'./SpotifySongSearch';
@@ -180,7 +180,7 @@ function EditorPreview({
  {name || t('display-name-placeholder', { defaultValue:'Your display name'})}
  </p>
  <p className="truncate text-xs text-site-text-dim">
- @{handle || t('handle-placeholder', { defaultValue:'your_handle'})}
+ @{handle || t('handle-placeholder', { defaultValue:'@handle'})}
  </p>
  <p
  className={cn(

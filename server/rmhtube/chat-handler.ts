@@ -19,11 +19,24 @@ import { C2S, S2C } from '../../lib/rmhtube/events';
 import { ChatSchema, ChatReactSchema, ChatPinSchema } from '../../lib/rmhtube/schemas';
 import { sanitizeString } from '../../lib/rmhtube/utils';
 import type { RoomManager } from './room-manager';
+import { RoomSlowMode } from '../shared/room-slow-mode';
+import { slowModeEvents } from '../../lib/safety/slow-mode-events';
 import type { ChatMessage } from './types';
 
 const EmptySchema = z.object({}).optional();
+const SLOW = slowModeEvents('tube');
+const SlowSetSchema = z.object({ seconds: z.number().int().min(0).max(300) });
 
 export class ChatHandler {
+  // S3: host-set slow mode + raid protection, enforced before a message exists.
+  private slowMode = new RoomSlowMode(async (userId) => {
+    const row = await getPrismaClient().user.findUnique({
+      where: { id: userId },
+      select: { createdAt: true },
+    });
+    return row ? row.createdAt.getTime() : null;
+  });
+
   constructor(
     private io: Server,
     private roomManager: RoomManager,
@@ -33,6 +46,11 @@ export class ChatHandler {
     socket.on(
       C2S.ROOM_CHAT,
       validated(socket, C2S.ROOM_CHAT, ChatSchema, (s, p) => this.onChat(s, p)),
+    );
+
+    socket.on(
+      SLOW.SET,
+      validated(socket, SLOW.SET, SlowSetSchema, (s, p) => this.onSlowModeSet(s, p.seconds)),
     );
 
     socket.on(
@@ -64,6 +82,17 @@ export class ChatHandler {
 
     const content = sanitizeString(payload.content, config.CHAT_MAX_LENGTH);
     if (!content) return;
+
+    const verdict = await this.slowMode.check(room.id, userId, room.hostUserId === userId);
+    if (!verdict.ok) {
+      socket.emit(SLOW.REJECTED, {
+        roomId: room.id,
+        reason: verdict.reason,
+        retryInMs: verdict.reason === 'cooldown' ? verdict.retryInMs : 0,
+      });
+      socket.emit(SLOW.STATE, this.slowMode.state(room.id));
+      return;
+    }
 
     // ── Reply resolution ──
     let replyToId: string | null = null;
@@ -116,6 +145,14 @@ export class ChatHandler {
     this.persistMessage(room.id, message).catch((err) => {
       logger.error({ event: 'db_chat_persist_failed', roomId: room.id, error: String(err) });
     });
+  }
+
+  private onSlowModeSet(socket: Socket, seconds: number): void {
+    const userId = socket.data.userId as string;
+    const room = this.roomManager.getRoomForUser(userId);
+    if (!room || room.hostUserId !== userId) return;
+    if (this.slowMode.setCooldown(room.id, seconds) === null) return;
+    this.io.to(room.id).emit(SLOW.STATE, this.slowMode.state(room.id));
   }
 
   // ─── Typing Indicators ─────────────────────────────────────

@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Plus, TrendingUp } from 'lucide-react';
+import { Plus, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Spinner } from '@/components/ui/spinner';
 import { PredictionCard } from './PredictionCard';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { CreatePredictionModal } from './CreatePredictionModal';
@@ -57,23 +59,20 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
 
   return (
     <div className="flex flex-col gap-4 p-3 sm:p-4">
-      {/* Filter row + create */}
+      {/* Filter row + create. The filters were a hand-rolled row of tinted
+          buttons with no tab semantics and their own active style — a third
+          switcher look on the same page as the Markets/Games strip above it.
+          They are the shared strip now, small, at the width three short labels
+          need. */}
       <div className="flex items-center gap-2">
-        <div className="flex gap-1.5">
-          {filters.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={`px-3 py-1.5 rounded-site-sm text-sm font-medium transition-colors ${
-                filter === f.id
-                  ? 'bg-site-accent-dim text-site-accent'
-                  : 'text-site-text-dim hover:text-site-text hover:bg-site-surface-hover'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        <LiquidTabs
+          size="sm"
+          className="w-auto min-w-0 max-w-xs flex-1"
+          tabs={filters}
+          value={filter}
+          onChange={(id) => setFilter(id as Filter)}
+          aria-label={t('filter-aria-label', { defaultValue: 'Filter markets' })}
+        />
         <Button
           variant="accent"
           size="sm"
@@ -92,7 +91,7 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
       {/* List */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-7 h-7 text-site-accent animate-spin" />
+          <Spinner />
         </div>
       ) : markets.length === 0 ? (
         <Reveal className="flex flex-col items-center justify-center py-16 text-center gap-3 text-site-text-dim">

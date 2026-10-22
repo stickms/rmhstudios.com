@@ -1682,15 +1682,20 @@
   transform: translate(-50%, -50%);
 }
 
+/* Two passes (out and back), then the swooshes rest. They used to sway forever:
+   transforms on SVG <path> children are not compositor-accelerated, so the
+   whole logon artwork was re-rasterised every frame for as long as the screen
+   stayed up — ~1 core and 52fps at rest on desktop (perf audit 2026-10-08).
+   `both` holds each at its last keyframe, so nothing snaps when they stop. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-logon-sw1 {
-    animation: ds-logon-sway 14s ease-in-out infinite alternate;
+    animation: ds-logon-sway 14s ease-in-out 2 alternate both;
   }
   .ds-logon-sw2 {
-    animation: ds-logon-sway 10s ease-in-out -4s infinite alternate-reverse;
+    animation: ds-logon-sway 10s ease-in-out -4s 2 alternate-reverse both;
   }
   .ds-logon-sw3 {
-    animation: ds-logon-sway 8s ease-in-out -2s infinite alternate;
+    animation: ds-logon-sway 8s ease-in-out -2s 2 alternate both;
   }
 }
 

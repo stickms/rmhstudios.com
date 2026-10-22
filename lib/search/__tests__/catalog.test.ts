@@ -86,3 +86,41 @@ describe('searchCatalog', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 });
+
+/**
+ * Regressions from the 2026-10-09 search audit: plain-word queries for real
+ * destinations that found nothing, and near-miss words that found the wrong
+ * thing with medium confidence.
+ */
+describe('searchCatalog — 2026-10-09 audit regressions', () => {
+  const best = (query: string) => {
+    const r = searchCatalog(q(query), { signedIn: true, limit: 5 });
+    return [...r.game, ...r.app, ...r.page].sort((a, b) => b.score - a.score)[0];
+  };
+
+  it.each([
+    ['tournament', '/tournaments'],
+    ['rideshare', '/rideshare'],
+    ['dark mode', '/settings/appearance'],
+    ['blackjack', '/predictions'],
+    ['services', '/services'],
+    ['developer api', '/developer'],
+  ])('"%s" leads with %s', (query, href) => {
+    const hit = best(query);
+    expect(hit?.href).toBe(href);
+    expect(hit?.score).toBeGreaterThanOrEqual(CONFIDENCE.medium);
+  });
+
+  it('does not offer the Pricing page for "racing" (two edits, different first letter)', () => {
+    const { page } = searchCatalog(q('racing'), { signedIn: true });
+    const pricing = page.find((p) => p.id === 'pricing');
+    expect(pricing === undefined || pricing.score < CONFIDENCE.medium).toBe(true);
+  });
+
+  it('lists every destination title for the expansion model', async () => {
+    const { catalogNames } = await import('../catalog');
+    const names = catalogNames();
+    expect(names).toContain('Tournaments');
+    expect(new Set(names).size).toBe(names.length);
+  });
+});

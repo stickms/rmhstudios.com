@@ -9,7 +9,8 @@ import type { RealtimeStatus, PeerWaitState } from '@/lib/shared/realtime/types'
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
-import { isNewerAnchor, initialVideoState } from './sync-math';
+import { acceptServerAnchor, initialVideoState, type PendingLocalAnchor } from './sync-math';
+import { toast } from './toast-store';
 import type {
   ClientRoomState,
   ClientMemberInfo,
@@ -100,6 +101,13 @@ function sanitizeSettings(raw: unknown): RmhTubeUserSettings {
  */
 const CHAT_SCROLLBACK = 200;
 
+/**
+ * The leader's unconfirmed optimistic anchor, if any (see
+ * `acceptServerAnchor`). Module state rather than store state: it is
+ * bookkeeping for the merge rule, and nothing renders from it.
+ */
+let pendingLocalAnchor: PendingLocalAnchor | null = null;
+
 // ─── Store Interface ─────────────────────────────────────────────
 
 export interface RmhTubeStore {
@@ -155,19 +163,33 @@ export const useRmhTubeStore = create<RmhTubeStore>()(
       },
 
       applyFullSync: (fullState) => {
+        pendingLocalAnchor = null;
         set({ room: fullState, lastSeq: fullState.seq, systemMessages: [] });
       },
 
       applyVideoState: (videoState) => {
         set((state) => {
           if (!state.room) return {};
-          if (!isNewerAnchor(state.room.videoState, videoState)) return {};
+          if (!acceptServerAnchor(state.room.videoState, videoState, pendingLocalAnchor, Date.now())) {
+            return {};
+          }
+          // The server has spoken at (or past) our optimistic revision.
+          if (pendingLocalAnchor && videoState.rev >= pendingLocalAnchor.baseRev) pendingLocalAnchor = null;
           return { room: { ...state.room, videoState } };
         });
       },
 
       setVideoState: (videoState) => {
-        set((state) => (state.room ? { room: { ...state.room, videoState } } : {}));
+        set((state) => {
+          if (!state.room) return {};
+          if (videoState.rev > state.room.videoState.rev) {
+            pendingLocalAnchor = {
+              baseRev: pendingLocalAnchor?.baseRev ?? state.room.videoState.rev,
+              at: Date.now(),
+            };
+          }
+          return { room: { ...state.room, videoState } };
+        });
       },
 
       updateSettings: (partial) => {
@@ -282,6 +304,7 @@ export function applyRoomAction(
       store?.addSystemMessage('leave', `${room.members.find(m => m.userId === data.userId)?.userName ?? 'Someone'} left the room`);
       return {
         ...room,
+        controlRequests: (room.controlRequests ?? []).filter((id) => id !== data.userId),
         members: room.members.filter((m) => m.userId !== data.userId),
       };
 
@@ -289,6 +312,7 @@ export function applyRoomAction(
       store?.addSystemMessage('kick', `${room.members.find(m => m.userId === data.userId)?.userName ?? 'Someone'} was kicked`);
       return {
         ...room,
+        controlRequests: (room.controlRequests ?? []).filter((id) => id !== data.userId),
         members: room.members.filter((m) => m.userId !== data.userId),
       };
 
@@ -484,11 +508,30 @@ export function applyRoomAction(
         playedItems: adoptQueue(data.playedItems as QueueBroadcastItem[], room.myUserId),
       };
 
+    case 'CONTROL_REQUESTED': {
+      const requester = data.userId as string;
+      const pending = room.controlRequests ?? [];
+      if (pending.includes(requester)) return room;
+      store?.addSystemMessage('leader_change', `${data.userName} asked for playback control`);
+      // Only the people who can act on it are interrupted.
+      if (room.myUserId === room.hostUserId || room.myUserId === room.leaderUserId) {
+        toast.info(`${data.userName} asked for control — give it from the member list`);
+      }
+      return { ...room, controlRequests: [...pending, requester] };
+    }
+
     case 'LEADER_CHANGED': {
       const newLeaderId = data.newLeaderUserId as string;
-      store?.addSystemMessage('leader_change', `${data.newLeaderUserName} is now the leader`);
+      const why =
+        data.reason === 'failover'
+          ? ' (the previous leader disconnected)'
+          : data.reason === 'restored'
+            ? ' again'
+            : '';
+      store?.addSystemMessage('leader_change', `${data.newLeaderUserName} is now the leader${why}`);
       return {
         ...room,
+        controlRequests: (room.controlRequests ?? []).filter((id) => id !== newLeaderId),
         leaderUserId: newLeaderId,
         members: room.members.map((m) => ({
           ...m,

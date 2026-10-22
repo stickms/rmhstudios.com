@@ -19,10 +19,11 @@
  */
 
 import OpenAI from 'openai';
+import { timedAiFetch } from '../ai/timed-fetch.server';
 
 // Reuse the existing DeepSeek key already configured for the discord bot and the
 // vibe generator. Never sent to the client.
-const deepseek = new OpenAI({
+const deepseek = new OpenAI({ fetch: timedAiFetch,
   // `|| 'missing'` rather than `!`: the SDK throws on an absent key at
   // CONSTRUCTION, and this module sits in the route-entry import graph that
   // `loadEntries()` walks before serving any request — so an unset key here

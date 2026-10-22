@@ -378,7 +378,7 @@ function PlayModal({
  onChange={(e) => setGuess(e.target.value)}
  onKeyDown={(e) => e.key ==='Enter'&& submit()}
  placeholder={t('your-guess-placeholder', { defaultValue:'Your guess…'})}
- className="flex-1 rounded-site-sm border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="flex-1 rounded-site-sm glass-inset px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <Button
  variant="accent"

@@ -164,14 +164,165 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * The critical path is still 3.5% (raw) and 3.9% (brotli) under its own budgets.
  * The new band is measured + 0.68%, the same ratio as the previous raises.
  *
+ * **2026-10-08 — entry raised 307,700 → 537,900 B; critical-path brotli
+ * LOWERED 370,000 → 359,500 B (OPT-01 line).** No feature bought these bytes:
+ * the same code moved. Vite 8.2 → 8.3 brought rolldown 1.2.3 → 1.2.13, whose
+ * automatic chunking folds the small shared chunks of the static graph into the
+ * entry instead of emitting each as its own file. Bisected by upgrading ONLY
+ * `vite` on a clean `main` (dbc9f9b): entry 298.9 → 517.1 KB, critical path
+ * 112 → 62 chunks, brotli 347.9 → 330.2 KB. With every other dependency at
+ * latest too, measured with `vite build --sourcemap`:
+ *
+ *   | metric                | main (dbc9f9b) | this tree |
+ *   | --------------------- | -------------: | --------: |
+ *   | entry, raw            |      306,088 B | 534,208 B |
+ *   | critical path, raw    |    1,247,737 B | 1,245,932 B |
+ *   | critical path, brotli |      356,219 B | 347,293 B |
+ *   | chunks on the path    |            112 |        67 |
+ *
+ * Every page downloads the whole critical path before it hydrates, so this is
+ * fewer bytes in 45 fewer requests — the regression the entry budget exists to
+ * catch (a library leaking onto every page) would grow the critical path, and
+ * it shrank. Unlike `codeSplitting.minSize` (measured and rejected in
+ * vite.config.ts), the chunks merged here were already on the critical path;
+ * nothing route-only was pulled in. React 19.3 grows react-dom by ~28 KB raw,
+ * which the merge more than pays for. zod is held at 4.4.x: 4.5 and 4.6 grow
+ * it past its dated entry-composition cap, and that cap shrinks, not grows.
+ *
+ * The entry band is measured + 0.68%, as before. The brotli band is
+ * re-anchored to the new measurement + 3.5% (the original 2026-08-05
+ * headroom), handing back the ~9 KB this upgrade saved instead of letting it
+ * become slack for the next regression to spend.
+ *
  * Budgets that only ever move up are theatre. Per OPT-01: raising one requires
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
-  entryRaw: 307_700,
+  entryRaw: 537_900,
   criticalPathRaw: 1_291_000,
-  criticalPathBrotli: 370_000,
+  criticalPathBrotli: 359_500,
 };
+
+/**
+ * ── Globe eversion: zero cost to page load (S#39, spec §8.1 / §11.3) ───────
+ *
+ * The eversion (docs/plans/2026-10-17-globe-eversion.md) is a WebGL2 renderer,
+ * a render worker, a DOM-capture library and a pile of projection math. None of
+ * it may be in the entry's STATIC closure: it is fetched by
+ * `lib/eversion/prefetch.ts` after `window` `load`, through dynamic imports, so
+ * a visitor who never opens the navigator never pays a byte of it.
+ *
+ * The byte budgets above would NOT catch a leak. They have 4-5% headroom, and
+ * a static import of the eversion (~100 KB) could hide inside a raise that
+ * names some other feature — and worse, `routeTree.gen.ts` imports every route
+ * statically, so one top-level `import` in any file the shell reaches drags the
+ * whole renderer onto every page. So this is a membership check, not a size
+ * check: the budgets say "not too big", this says "not THIS".
+ *
+ * How a module is recognised in emitted JS (chunk names are content hashes and
+ * the bundler merges small chunks into the entry, so file names say nothing):
+ *
+ *   1. A sourcemap next to the chunk, when the build emitted one. Its `sources`
+ *      array lists every module folded into that chunk, so a path fragment is
+ *      exact. CI builds with `--sourcemap` (build:frontend:sourcemap), so this
+ *      is the authoritative path.
+ *   2. Otherwise a `fingerprint` — a string literal unique to the module that
+ *      survives minification (an error message, a storage key). Weaker: it only
+ *      covers modules that have such a literal, so a plain `build:frontend`
+ *      verifies less than the sourcemap build. The report says which it used.
+ *
+ * Deliberately NOT listed: `lib/eversion/debug.ts` (a tiny leaf the registrants
+ * import statically on purpose — its heavy half is `debug-overlay.ts`, which IS
+ * listed and is reached only through a dynamic import), `flags.ts`, `marks.ts`,
+ * `eligibility.ts`, `types.ts`, `constants.ts` (small and needed by the hub's
+ * own eligibility check).
+ *
+ * Adding a runtime module? Add its path fragment here. Dropping one that the
+ * hub genuinely needs statically? Move the part it needs into a leaf instead
+ * of shrinking this list.
+ */
+export const EVERSION_RUNTIME_MODULES: ReadonlyArray<{
+  /** Substring of the module's source path (matched against sourcemap `sources`). */
+  fragment: string;
+  /** Optional minification-proof literal from the module, for builds without maps. */
+  fingerprint?: string;
+}> = [
+  { fragment: 'lib/eversion/gl/host', fingerprint: 'rmh-eversion-host-demoted' },
+  { fragment: 'lib/eversion/gl/core', fingerprint: 'eversion: prime before init' },
+  {
+    fragment: 'lib/eversion/gl/renderer',
+    fingerprint: 'eversion: WebGL2 is not available on this canvas',
+  },
+  {
+    fragment: 'lib/eversion/gl/worker',
+    fingerprint: 'eversion: requestAnimationFrame is not available in this worker',
+  },
+  {
+    fragment: 'lib/eversion/gl/shaders',
+    fingerprint: 'vec3 evertNormal(float theta, float phi, Frame fr)',
+  },
+  {
+    fragment: 'lib/eversion/gl/uniforms',
+    fingerprint: 'snapshot.rippleAge (seconds; -1 = not emitted)',
+  },
+  { fragment: 'lib/eversion/gl/governor-tiers' },
+  { fragment: 'lib/eversion/capture', fingerprint: 'eversion: capture sandbox did not load' },
+  { fragment: 'lib/eversion/projection-lut', fingerprint: 'toHalfFloatSplit: dst length mismatch' },
+  { fragment: 'lib/eversion/thurston' },
+  { fragment: 'lib/eversion/timeline' },
+  { fragment: 'lib/eversion/prefetch', fingerprint: 'eversion: prefetch failed' },
+  { fragment: 'lib/eversion/settle', fingerprint: 'eversion: settle probe needs a document' },
+  { fragment: 'lib/eversion/debug-overlay', fingerprint: 'eversion debug' },
+  {
+    fragment: 'node_modules/modern-screenshot',
+    fingerprint: 'Error receiving message from worker',
+  },
+  {
+    fragment: 'components/radial/eversion/useEversionController',
+    fingerprint: 'rmh-eversion-controller',
+  },
+  { fragment: 'components/radial/eversion/EversionBridge', fingerprint: 'rmh-eversion-bridge' },
+];
+
+export interface EversionLeak {
+  chunk: string;
+  fragment: string;
+  via: 'sourcemap' | 'fingerprint';
+}
+
+/** Which eversion runtime modules are inside the given (static-closure) chunks. */
+export function eversionLeaks(
+  outDir: string,
+  chunks: readonly string[],
+  modules = EVERSION_RUNTIME_MODULES,
+): { leaks: EversionLeak[]; mapped: number } {
+  const leaks: EversionLeak[] = [];
+  let mapped = 0;
+  for (const chunk of chunks) {
+    const mapFile = path.join(outDir, `${chunk}.map`);
+    let sources: string[] | null = null;
+    if (existsSync(mapFile)) {
+      try {
+        sources =
+          (JSON.parse(readFileSync(mapFile, 'utf8')) as { sources?: string[] }).sources ?? [];
+        mapped++;
+      } catch {
+        sources = null; // unreadable map: fall back to the fingerprints
+      }
+    }
+    const text = sources ? '' : readFileSync(path.join(outDir, chunk), 'utf8');
+    for (const { fragment, fingerprint } of modules) {
+      if (sources) {
+        if (sources.some((src) => src.includes(fragment))) {
+          leaks.push({ chunk, fragment, via: 'sourcemap' });
+        }
+      } else if (fingerprint && text.includes(fingerprint)) {
+        leaks.push({ chunk, fragment, via: 'fingerprint' });
+      }
+    }
+  }
+  return { leaks, mapped };
+}
 
 /**
  * A build carrying `--sourcemap` (which the entry-composition guard needs)
@@ -360,6 +511,7 @@ async function main(): Promise<number> {
     );
   }
 
+  const { leaks, mapped } = eversionLeaks(OUT_DIR, files);
   let failed = false;
   console.log('\n  bundle budget — transitive STATIC closure of the client entry');
   console.log('  ──────────────────────────────────────────────────────────────');
@@ -373,9 +525,26 @@ async function main(): Promise<number> {
         ` / ${kb(budget).padStart(10)} budget (${sign}${delta.toFixed(1)}%)`,
     );
   }
+  const evOk = leaks.length === 0;
+  if (!evOk) failed = true;
+  console.log(
+    `  [${evOk ? 'ok  ' : 'FAIL'}] ${'eversion on path (S#39)'.padEnd(22)} ${String(leaks.length).padStart(10)} module(s)` +
+      ` (${mapped}/${files.length} chunks checked by sourcemap, the rest by fingerprint)`,
+  );
   console.log('  ──────────────────────────────────────────────────────────────');
   console.log(`  entry: ${entry}`);
   console.log(`  chunks on the critical path: ${files.length}\n`);
+
+  if (!evOk) {
+    console.error(
+      'check-bundle-budget: FAIL (S#39) — the globe eversion runtime is on the critical path:\n' +
+        leaks.map((l) => `    ${l.fragment}  in  ${l.chunk}  (${l.via})`).join('\n') +
+        '\n  It must be reached only through dynamic import() (lib/eversion/prefetch.ts, loaded' +
+        '\n  by RadialHub behind isEversionEnabled). Find the static import with' +
+        '\n  `pnpm run check:entry-composition`, or grep for the module above.' +
+        '\n  See the EVERSION_RUNTIME_MODULES note in scripts/check-bundle-budget.ts.',
+    );
+  }
 
   if (failed) {
     console.error(

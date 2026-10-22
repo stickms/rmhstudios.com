@@ -25,7 +25,8 @@ export async function listScheduled(
   await publishDueForUser(userId);
 
   const rows = await prisma.scheduledPost.findMany({
-    where: { userId, publishedId: null },
+    // Time capsules (Z7) have their own list; they would only be noise here.
+    where: { userId, publishedId: null, isCapsule: false },
     orderBy: [{ scheduledAt: 'asc' }, { updatedAt: 'desc' }],
   });
 

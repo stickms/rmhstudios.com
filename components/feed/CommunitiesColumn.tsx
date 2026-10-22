@@ -130,31 +130,49 @@ export function CommunitiesColumn({
 
   return (
     <div>
-      <ColumnHeader
-        // Embedded (a tab on /communities), the page already renders its own
-        // "Communities" title above the tab sheet — repeating it here shipped the
-        // same word twice, in two different faces. Same pattern as
-        // NotificationsColumn / GroupChatsColumn: drop the title when embedded.
-        icon={embedded ? undefined : Users}
-        title={embedded ? undefined : t('communities-heading', { defaultValue: 'Communities' })}
-        sticky={!embedded}
-        actions={
-          session && (
+      {embedded ? (
+        // A tab on /communities: the page already has its title and tab strip,
+        // so this is just the toolbar — search and the one action on a single
+        // row, the same shape the Inbox uses. It used to be a title-less header
+        // holding only the button, a hairline, the search, and another
+        // hairline: two dividers and a whole row spent on one button.
+        <div className="flex items-center gap-2 px-3 pb-3">
+          <SearchField
+            containerClassName="flex-1"
+            value={query}
+            onValueChange={setQuery}
+            placeholder={t('search-communities', { defaultValue: 'Search communities' })}
+            aria-label={t('search-communities', { defaultValue: 'Search communities' })}
+          />
+          {session && (
             <Button size="sm" variant="accent" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" /> {t('new-button', { defaultValue: 'New' })}
             </Button>
-          )
-        }
-      />
-
-      <div className="border-b border-site-border p-3">
-        <SearchField
-          value={query}
-          onValueChange={setQuery}
-          placeholder={t('search-communities', { defaultValue: 'Search communities…' })}
-          aria-label={t('search-communities', { defaultValue: 'Search communities' })}
-        />
-      </div>
+          )}
+        </div>
+      ) : (
+        <>
+          <ColumnHeader
+            icon={Users}
+            title={t('communities-heading', { defaultValue: 'Communities' })}
+            actions={
+              session && (
+                <Button size="sm" variant="accent" onClick={() => setCreateOpen(true)}>
+                  <Plus className="h-4 w-4" /> {t('new-button', { defaultValue: 'New' })}
+                </Button>
+              )
+            }
+          />
+          <div className="border-b border-site-border p-3">
+            <SearchField
+              value={query}
+              onValueChange={setQuery}
+              placeholder={t('search-communities', { defaultValue: 'Search communities' })}
+              aria-label={t('search-communities', { defaultValue: 'Search communities' })}
+            />
+          </div>
+        </>
+      )}
 
       {loading && items.length === 0 ? (
         <CommunityListSkeleton />
@@ -203,7 +221,7 @@ export function CommunitiesColumn({
               <RevealItem as="li" key={c.id}>
                 <Link
                   to={`/c/${c.slug}` as string}
-                  className="flex items-start gap-4 rounded-site border border-site-border bg-site-surface p-4 transition-[translate,border-color,background-color] duration-site hover:-translate-y-0.5 hover:border-site-accent/50 hover:bg-site-surface-hover"
+                  className="flex items-start gap-4 rounded-site glass-fill p-4 transition-[translate,border-color,background-color] duration-site hover:-translate-y-0.5 hover:border-site-accent/50 hover:bg-site-surface-hover"
                 >
                   <div
                     className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-3xl"

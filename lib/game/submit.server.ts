@@ -18,6 +18,7 @@
  */
 
 import { rateLimit } from '@/lib/rate-limit';
+import { emitPersonalBest } from '@/lib/devplatform/recipes.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 import { reportGameResult } from '@/lib/game/results.server';
 import { validateScore, rejectionMessage, type ScoreRejection } from '@/lib/game/registry';
@@ -41,8 +42,24 @@ export interface SubmitScoreInput {
   meta?: Record<string, number>;
 }
 
+/**
+ * What made this run worth celebrating (plan U4). Absent on an ordinary run.
+ *
+ * - `first-score` — the player's first recorded run in this game.
+ * - `pb` — beat their stored best (`previous` is that best).
+ * `rank` is where the run now sits on the global board; it is only computed on
+ * a personal best, so an ordinary submission pays nothing for this.
+ */
+export interface ScoreMoment {
+  kind: 'first-score' | 'pb';
+  score: number;
+  previous: number | null;
+  rank: number | null;
+}
+
 export type SubmitScoreResult =
-  { ok: true } | { ok: false; status: number; error: string; reason?: ScoreRejection };
+  | { ok: true; moment?: ScoreMoment }
+  | { ok: false; status: number; error: string; reason?: ScoreRejection };
 
 /**
  * Strip a submitted display name to the characters the player tables accept.
@@ -104,6 +121,13 @@ export async function submitGameScore(input: SubmitScoreInput): Promise<SubmitSc
     };
   }
 
+  // Read the stored best BEFORE writing, so the comparison is against the
+  // previous run rather than this one. Best-effort: a failed read just means no
+  // celebration, never a failed submission.
+  const previous = adapter.personalBest
+    ? await adapter.personalBest(input.userId).catch(() => undefined)
+    : undefined;
+
   await adapter.submit({
     userId: input.userId,
     score,
@@ -122,5 +146,33 @@ export async function submitGameScore(input: SubmitScoreInput): Promise<SubmitSc
     cleared: progress,
   }).catch(() => {});
 
-  return { ok: true };
+  const moment = await momentFor(adapter, score, previous);
+  if (moment?.kind === 'pb') void emitPersonalBest(input.userId, input.gameId, score);
+  return { ok: true, moment };
+}
+
+async function momentFor(
+  adapter: NonNullable<ReturnType<typeof getGameAdapter>>,
+  score: number,
+  previous: number | null | undefined,
+): Promise<ScoreMoment | undefined> {
+  const kind = classifyRun(score, previous, adapter.lowerIsBetter ?? false);
+  if (!kind) return undefined;
+  const rank = adapter.rankOf ? await adapter.rankOf(score).catch(() => null) : null;
+  return { kind, score, previous: previous ?? null, rank };
+}
+
+/**
+ * Pure half of the moment decision. `previous === undefined` means the stored
+ * best could not be read — no moment, rather than a false "first score". A
+ * zero score is never a moment (an instant quit is not a personal best).
+ */
+export function classifyRun(
+  score: number,
+  previous: number | null | undefined,
+  lowerIsBetter: boolean,
+): ScoreMoment['kind'] | null {
+  if (previous === undefined || score <= 0) return null;
+  if (previous === null) return 'first-score';
+  return (lowerIsBetter ? score < previous : score > previous) ? 'pb' : null;
 }

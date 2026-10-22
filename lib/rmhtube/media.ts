@@ -84,12 +84,12 @@ export function parseMedia(raw: string): ParsedMedia | null {
 
   const host = parsed.hostname.replace(/^www\./, '').toLowerCase();
 
-  if (YOUTUBE_HOSTS.has(host)) return parseYouTube(parsed, host);
+  if (YOUTUBE_HOSTS.has(host)) return withStartOf(parsed, parseYouTube(parsed, host));
   if (host === 'twitch.tv' || host === 'go.twitch.tv' || host === 'player.twitch.tv') {
-    return parseTwitch(parsed);
+    return withStartOf(parsed, parseTwitch(parsed));
   }
-  if (host === 'vimeo.com' || host === 'player.vimeo.com') return parseVimeo(parsed);
-  if (FILE_EXTENSIONS.test(parsed.pathname)) return parseFile(parsed);
+  if (host === 'vimeo.com' || host === 'player.vimeo.com') return withStartOf(parsed, parseVimeo(parsed));
+  if (FILE_EXTENSIONS.test(parsed.pathname)) return withStartOf(parsed, parseFile(parsed));
 
   return null;
 }
@@ -139,12 +139,10 @@ function parseYouTube(parsed: URL, host: string): ParsedMedia | null {
 }
 
 function youtubeMedia(parsed: URL, id: string, liveHint: LiveHint): ParsedMedia {
-  // Normalise to /watch?v=, preserving only the start-time parameter the
-  // player understands. Dropping the rest keeps tracking junk out of the DB
-  // and makes two links to the same video compare equal.
+  // Normalise to /watch?v=. Dropping the rest keeps tracking junk out of the
+  // DB and makes two links to the same video compare equal; a start time
+  // (`?t=`) is carried separately, as the `#t=` every provider shares.
   const url = new URL(`https://www.youtube.com/watch?v=${id}`);
-  const start = parsed.searchParams.get('t');
-  if (start) url.searchParams.set('t', start);
 
   return {
     mediaType: 'youtube',
@@ -227,7 +225,7 @@ function parseFile(parsed: URL): ParsedMedia {
   const name = decodeURIComponent(parsed.pathname.split('/').pop() ?? '');
   return {
     mediaType: 'direct',
-    url: parsed.toString(),
+    url: playableUrl(parsed.toString()),
     id: null,
     // An HLS or DASH manifest is live about as often as it is not, and the
     // manifest itself is what says which. The player finds out; we don't guess.
@@ -239,6 +237,135 @@ function parseFile(parsed: URL): ParsedMedia {
 
 function isAdaptive(pathname: string): boolean {
   return HLS_EXTENSION.test(pathname) || DASH_EXTENSION.test(pathname);
+}
+
+/**
+ * Whether the player for this item is a plain `<video>` (a progressive file).
+ *
+ * Every other provider — YouTube, Twitch, Vimeo, HLS, DASH — is a custom
+ * element, and custom elements only upgrade in the window whose registry
+ * defined them. Rendered into a Document Picture-in-Picture window they would
+ * stay inert, so the pop-out (U10) is offered for native video only.
+ */
+export function isNativeVideo(mediaType: MediaType, url: string): boolean {
+  if (mediaType !== 'direct') return false;
+  try {
+    const u = new URL(url);
+    // A probed stream without an extension carries it as a `#.m3u8` / `#.mpd`
+    // hint (see probe.server.ts), so the hash counts too.
+    return !isAdaptive(u.pathname) && !isAdaptive(u.hash.replace(/^#/, '/'));
+  } catch {
+    return false;
+  }
+}
+
+// ─── Start offsets ───────────────────────────────────────────────
+//
+// "Start at 1:30" is a property of the queue item, not of the player. Handed
+// to the player (YouTube's `?t=`, a media fragment's `#t=`) it put the leader
+// at 1:30 and every viewer at the room's anchor of 0 — and the room then
+// dragged one of them to the other. So the offset is read out of the link,
+// stored on the item's URL in one canonical place — a `t=<seconds>` part of the
+// fragment, which never reaches any server — and applied by the hub as the
+// item's first anchor. The player is only ever given `playableUrl`, without it.
+
+const MAX_START_S = 24 * 60 * 60;
+
+/**
+ * Seconds from a timestamp as people and providers write one: `90`, `90.5`,
+ * `90s`, `1m30s`, `1h2m3s`, `1:30`, `01:02:03`, `npt:90`, or a media
+ * fragment's `10,20` range (its start). Null when it isn't one.
+ */
+export function parseTimestamp(raw: string | null | undefined): number | null {
+  if (!raw) return null;
+  const value = raw.trim().toLowerCase().replace(/^npt:/, '').split(',')[0]!;
+  let seconds: number;
+  if (/^\d+(\.\d+)?$/.test(value)) {
+    seconds = Number(value);
+  } else if (/^\d+(:\d{1,2}){1,2}(\.\d+)?$/.test(value)) {
+    seconds = value.split(':').reduce((acc, part) => acc * 60 + Number(part), 0);
+  } else {
+    const m = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s)?$/.exec(value);
+    if (!m || (!m[1] && !m[2] && !m[3])) return null;
+    seconds = Number(m[1] ?? 0) * 3600 + Number(m[2] ?? 0) * 60 + Number(m[3] ?? 0);
+  }
+  return Number.isFinite(seconds) && seconds > 0 ? Math.min(seconds, MAX_START_S) : null;
+}
+
+/** The `&`-separated parts of a URL fragment, without the `#`. */
+function hashParts(hash: string): string[] {
+  return hash.replace(/^#/, '').split('&').filter(Boolean);
+}
+
+function startFromHash(hash: string): number | null {
+  const part = hashParts(hash).find((p) => p.startsWith('t='));
+  return part ? parseTimestamp(decodeURIComponent(part.slice(2))) : null;
+}
+
+/** The start offset a pasted link asks for, in any of the forms providers use. */
+function requestedStart(parsed: URL): number | null {
+  const host = parsed.hostname.replace(/^www\./, '').toLowerCase();
+  if (YOUTUBE_HOSTS.has(host)) {
+    const q = parseTimestamp(parsed.searchParams.get('t') ?? parsed.searchParams.get('start'));
+    if (q) return q;
+  }
+  if (host === 'twitch.tv' || host === 'go.twitch.tv' || host === 'player.twitch.tv') {
+    const q = parseTimestamp(parsed.searchParams.get('t'));
+    if (q) return q;
+  }
+  return startFromHash(parsed.hash);
+}
+
+function withStartOf(parsed: URL, media: ParsedMedia | null): ParsedMedia | null {
+  // A live broadcast has no position to start from.
+  if (!media || media.liveHint === 'live') return media;
+  return { ...media, url: withStart(media.url, requestedStart(parsed)) };
+}
+
+/** `url` with its start offset set to `seconds` (or removed, for null/0). */
+export function withStart(url: string, seconds: number | null): string {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return url;
+  }
+  const rest = hashParts(u.hash).filter((p) => !p.startsWith('t='));
+  const start = seconds && seconds > 0 ? Math.min(seconds, MAX_START_S) : null;
+  const parts = start ? [`t=${Math.round(start * 10) / 10}`, ...rest] : rest;
+  u.hash = parts.join('&');
+  return u.toString();
+}
+
+/**
+ * Where a queue item begins, in seconds (0 for the start). Reads the canonical
+ * `#t=` and — for items queued before it existed — YouTube's `?t=`.
+ */
+export function startOffset(url: string): number {
+  try {
+    return requestedStart(new URL(url)) ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * The URL to hand the player: the start offset removed (the room's anchor
+ * applies it), everything else — including a `#.m3u8` engine hint — kept.
+ */
+export function playableUrl(url: string): string {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return url;
+  }
+  const host = u.hostname.replace(/^www\./, '').toLowerCase();
+  if (YOUTUBE_HOSTS.has(host)) {
+    u.searchParams.delete('t');
+    u.searchParams.delete('start');
+  }
+  return withStart(u.toString(), null);
 }
 
 // ─── Back-compat helpers ─────────────────────────────────────────
@@ -255,4 +382,23 @@ export function detectMediaType(url: string): MediaType | null {
 export function extractYouTubeId(url: string): string | null {
   const media = parseMedia(url);
   return media?.mediaType === 'youtube' ? media.id : null;
+}
+
+/**
+ * Could this be a raw media link the server can identify by asking the host?
+ * True for any http(s) URL `parseMedia` doesn't place and that isn't a known
+ * provider's page (a YouTube channel, a Twitch clip) — those are definitely not
+ * playable, and probing them would only fetch an HTML page.
+ */
+export function maybeRawMediaUrl(raw: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(raw.trim());
+  } catch {
+    return false;
+  }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+  const host = u.hostname.replace(/^www\./, '').toLowerCase();
+  if (YOUTUBE_HOSTS.has(host) || host.endsWith('twitch.tv') || host.endsWith('vimeo.com')) return false;
+  return true;
 }

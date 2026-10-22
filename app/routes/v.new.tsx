@@ -16,7 +16,7 @@ import { streamVibe, VibeStreamError } from '@/lib/rmhvibe/vibe-stream';
 import { asVibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
 import { VibeProgress } from '@/components/rmhvibe/VibeProgress';
-import '@/components/rmhvibe/vibe.css';
+import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 
 const GENERIC_ERROR = 'Something went wrong while generating. Give it another go.';
 
@@ -113,26 +113,29 @@ function VibeNew() {
   if (error) return <VibeError message={error} />;
 
   return (
-    <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 px-6 py-12">
-      <div className="vibe-spinner" aria-hidden="true" />
-      <div className="text-center">
-        <p className="vibe-rise text-lg font-semibold tracking-tight">{t("creating-your-vibe", { defaultValue: "Creating your vibe…" })}</p>
-        <p className="vibe-rise-2 vibe-hint mt-2">
-          {content
-            ? t("writing-the-code", { defaultValue: "Writing the code." })
-            : thinking
-              ? t("thinking-it-through", { defaultValue: "Thinking it through." })
-              : t("warming-up-the-model", { defaultValue: "Warming up the model." })}
-        </p>
+    <>
+      <VibeStyles />
+      <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 px-6 py-12">
+        <div className="vibe-spinner" aria-hidden="true" />
+        <div className="text-center">
+          <p className="vibe-rise text-lg font-semibold tracking-tight">{t("creating-your-vibe", { defaultValue: "Creating your vibe…" })}</p>
+          <p className="vibe-rise-2 vibe-hint mt-2">
+            {content
+              ? t("writing-the-code", { defaultValue: "Writing the code." })
+              : thinking
+                ? t("thinking-it-through", { defaultValue: "Thinking it through." })
+                : t("warming-up-the-model", { defaultValue: "Warming up the model." })}
+          </p>
+        </div>
+        {/* Show the thinking until code starts, then swap to the live file list so the
+            long writing phase isn't a blank spinner. */}
+        {content ? (
+          <VibeProgress content={content} />
+        ) : (
+          <ThinkingStream text={thinking} className="vibe-think--lg" />
+        )}
       </div>
-      {/* Show the thinking until code starts, then swap to the live file list so the
-          long writing phase isn't a blank spinner. */}
-      {content ? (
-        <VibeProgress content={content} />
-      ) : (
-        <ThinkingStream text={thinking} className="vibe-think--lg" />
-      )}
-    </div>
+    </>
   );
 }
 

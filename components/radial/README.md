@@ -10,26 +10,39 @@ rest of the site
 through the shared `--site-*` design tokens (retuned to high-contrast monochrome
 in `app/globals.css`).
 
+## Current material contract
+
+The October 21 liquid-glass replacement is documented in
+[`docs/liquid-glass-system.md`](../../docs/liquid-glass-system.md). It supersedes
+historical lens/sheen and blanket cursor-retirement notes below. The scene
+backdrop stays still; bounded surface-local lighting and nearby tap waves use
+one document runtime. The navigator now has an independent dielectric coat and
+a shared local contact indentation for cage/pins, with CSS and preference
+fallbacks. Historical compositor measurements still explain the blur budgets;
+they do not validate the replacement on native hardware.
+
 ## Files
 
-| File                 | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| File                 | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `RadialWheel.tsx`    | The feed as a gently-curved column on the **document's own scroll** (no inner scroll region — so mobile Safari collapses its toolbars). Cards flow at natural heights (variable, never overlapping) and are raked onto a shallow cylinder by a **scroll-driven CSS animation** (`animation-timeline: view()`, in `radial.css`), evaluated on the thread that owns the scroll so the curve cannot lag it. Two fallbacks, picked once on mount: a rAF window-scroll pass from cached offsets (no layout thrash) where the browser has no view timeline, and **no rake at all** on iOS WebKit, where a scroll event arrives after the compositor has already scrolled and a hand-driven pass can only draw a frame behind the column. Optional non-raked `lead` slot (the compose box). Reduced-motion / `perf-lite` → plain list. The haptic focus tick rides an IntersectionObserver line across the viewport's middle, not the rake. Fires `onEndReached` for lazy loading. |
-| `RadialHub.tsx`      | The persistent navigator's **phase state machine** (closed → open → closing) and chrome. Tapping the fixed RMH orb sends it to the centre of the screen, where it **swells and dissolves into the liquid globe**; an expanding circular **veil** sinks the page behind it, and the foot capsule (identity · settings · sign out · close) rises. Consumes `lib/sidebar-nav`, honours auth/admin gating, owns Escape / outside-tap / focus restoration. The globe is mounted **only** while the menu is up.                                                                                                                                                 |
-| `LiquidGlobe.tsx`    | **The navigator itself** — the destinations as pins on a glass sphere you turn to find where you want to go. Drag (pointer or finger) to spin, release to coast; magnetism eases the nearest destination into the **reticle** once the spin settles; **hold** with the pointer down and the reticle's ring fills; **let go once it is full** and you land there. Let go early, or drag away, and the ring drains — nothing navigates without a deliberate hold-and-release. **Poke it and it ripples** — a wave spreads from the point you touched and travels with the surface. Wireframe = one canvas, pins = JS-projected real links (click, Enter and screen readers all work without the gesture) — both from the same projection. See "The globe" below. |
-| `RadialShell.tsx`    | The application frame for every standard (`_site`) route: fixed ring backdrop, slim utility top bar, the **three-track frame** (nav rail · `<main>` · live rail) and the hub. The backdrop layer paints **only** the rings and the blob field — the aurora canvas is the document's own `.site-aurora` element (rendered in `app/routes/__root.tsx`), so it drifts on its own compositor keyframes and is the one scene every `backdrop-filter` on the page samples. The rings used to drift against the pointer, driven by a `pointermove` listener and a rAF lerp mounted on **every** route; that went with the rest of the site's cursor reactivity (`docs/design-language.md` §5.1.1) and must not come back. |
-| `RadialNavRail.tsx`  | Desktop-only left rail: the same `SIDEBAR_NAV` source of truth as the hub, shown persistently ≥1120px with live inbox/notification/admin badges.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `RadialLiveRail.tsx` | Desktop-only right rail (≥1440px): who's online, the daily loop, friends online, trending tags, who to follow — plus the slot a page's `PageLayout` `rightSidebar` portals into (`rail-slot.tsx`).                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `RadialSideFeed.tsx` | The home deck's second feed (≥1280px): Following · News · Games, with its own local cache so it never fights the singleton `feedStore` driving the wheel.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `QuickPanel.tsx`     | Shell for the top bar's preview popovers — anchoring, viewport clamping (`useMenuViewportFit`), Escape / outside-press dismissal, focus.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `TopBarPanels.tsx`   | The four quick panels: search (live results), notifications, messages, and the account menu. Each previews, then links through to its full page.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `RadialFeed.tsx`     | The home feed — drives `RadialWheel` off the shared `feedStore` (streamed first page, live SSE, lazy pagination). Leads with an inline `ComposeBoxLazy` (the first rmhark follows it); a floating compose button opens the full `ComposeModal`.                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `WheelCard.tsx`      | The compact monochrome feed unit (rmhark or platform announcement).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `RmharkMedia.tsx`    | A post's pictures inside the card: up to four tiles, the rest summarised as "+N". Two rules are load-bearing — a lone image's aspect is **clamped** to 4:5…16:9 (the wheel is a glance; a 1:4 panorama would own three screens of it, and the full frame is one tap away on the post page), and every tile reserves a **numeric** aspect box before decode, because the wheel caches each card's document centre and a late image with no reserved box costs a re-measure of every mounted slot on top of the layout shift it causes. |
-| `RmhLogo.tsx`        | The RMH mark — a 6-fold radial spirograph, path baked, drawn as line-art in `currentColor` (so it inherits the orb's accent-contrast ink) with `pathLength={1}` so the stroke-draw bloom is resolution-independent. |
-| `rail-slot.tsx`      | The context carrying the live rail's DOM node, so a page's `PageLayout` `rightSidebar` can **portal** into it. A portal rather than lifting the node into shell state on purpose: a `setState(node)` in an effect re-runs on every render (the element is a fresh object each time) and loops forever. `null` during SSR and below the rail's breakpoint — callers must tolerate its absence. |
-| `Parallax.tsx`       | Reusable **scroll**-linked parallax layer (framer-motion `useScroll` → GPU transforms; static under reduced motion). Scroll-linked, not pointer-linked — nothing on the site parallaxes to the cursor any more.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `radial.css`         | All radial styling. Every colour is a `--site-*` token (theme-safe); accent text comes from `--site-accent-fg`, which each theme/preset authors and `ensureReadableAccent()` contrast-checks. Mobile-first and viewport-safe. Its final section radialises **content pages** too: it flattens PageLayout's `.page-heading` card and **unpins sticky** headers/tabs/search so every `_site` route flows like the feed. It does **not** touch the material — the Liquid Glass classes render at full strength inside the shell.                                                                                                                             |
+| `RadialHub.tsx`      | The persistent navigator's **phase state machine** (closed → open → closing) and chrome. Tapping the fixed RMH orb sends it to the centre of the screen, where it **swells and dissolves into the liquid globe**; an expanding circular **veil** sinks the page behind it, and the foot capsule (identity · settings · sign out · close) rises. Consumes `lib/sidebar-nav`, honours auth/admin gating, owns Escape / outside-tap / focus restoration. The globe is mounted **only** while the menu is up.                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `hub-handoff.ts`     | The hub's hand-off to the Globe Eversion as a React-free state machine: who navigates, when the hub may react to input, and the fallback to today's navigation. See _Globe Eversion_ below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `eversion/`          | The effect's components: `EversionBridge` (lazy entry), `EversionOverlay`, `useEversionController`, `useBeforeCapture`, `eversion.css`, and the admin-only `lab/` harness.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `LiquidGlobe.tsx`    | **The navigator itself** — the destinations as pins on a glass sphere you turn to find where you want to go. Drag (pointer or finger) to spin, release to coast; magnetism eases the nearest destination into the **reticle** once the spin settles; **hold** with the pointer down and the reticle's ring fills; **let go once it is full** and you land there. Let go early, or drag away, and the ring drains — nothing navigates without a deliberate hold-and-release. **Poke it and it ripples** — a wave spreads from the point you touched and travels with the surface. Wireframe = one canvas, pins = JS-projected real links (click, Enter and screen readers all work without the gesture) — both from the same projection. See "The globe" below.                                                                                                                                                                                                              |
+| `RadialShell.tsx`    | The application frame for every standard (`_site`) route: fixed ring backdrop, slim utility top bar, the **three-track frame** (nav rail · `<main>` · live rail) and the hub. The backdrop layer paints **only** the rings and the blob field — the aurora canvas is the document's own `.site-aurora` element (rendered in `app/routes/__root.tsx`), so it drifts on its own compositor keyframes and is the one scene every `backdrop-filter` on the page samples. The rings used to drift against the pointer, driven by a `pointermove` listener and a rAF lerp mounted on **every** route; that went with the rest of the site's cursor reactivity (`docs/design-language.md` §5.1.1) and must not come back.                                                                                                                                                                                                                                                          |
+| `RadialNavRail.tsx`  | Desktop-only left rail: the same `SIDEBAR_NAV` source of truth as the hub, shown persistently ≥1120px with live inbox/notification/admin badges.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `RadialLiveRail.tsx` | Desktop-only right rail (≥1440px): who's online, the daily loop, friends online, trending tags, who to follow — plus the slot a page's `PageLayout` `rightSidebar` portals into (`rail-slot.tsx`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `RadialSideFeed.tsx` | The home deck's second feed (≥1280px): Following · News · Games, with its own local cache so it never fights the singleton `feedStore` driving the wheel.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `QuickPanel.tsx`     | Shell for the top bar's preview popovers — anchoring, viewport clamping (`useMenuViewportFit`), Escape / outside-press dismissal, focus.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `TopBarPanels.tsx`   | The four quick panels: search (live results), notifications, messages, and the account menu. Each previews, then links through to its full page.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `RadialFeed.tsx`     | The home feed — drives `RadialWheel` off the shared `feedStore` (streamed first page, live SSE, lazy pagination). Leads with an inline `ComposeBoxLazy` (the first rmhark follows it); a floating compose button opens the full `ComposeModal`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `WheelCard.tsx`      | The compact monochrome feed unit (rmhark or platform announcement).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `RmharkMedia.tsx`    | A post's pictures inside the card: up to four tiles, the rest summarised as "+N". Two rules are load-bearing — a lone image's aspect is **clamped** to 4:5…16:9 (the wheel is a glance; a 1:4 panorama would own three screens of it, and the full frame is one tap away on the post page), and every tile reserves a **numeric** aspect box before decode, because the wheel caches each card's document centre and a late image with no reserved box costs a re-measure of every mounted slot on top of the layout shift it causes.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `RmhLogo.tsx`        | The RMH mark — a 6-fold radial spirograph, path baked, drawn as line-art in `currentColor` (so it inherits the orb's accent-contrast ink) with `pathLength={1}` so the stroke-draw bloom is resolution-independent.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `rail-slot.tsx`      | The context carrying the live rail's DOM node, so a page's `PageLayout` `rightSidebar` can **portal** into it. A portal rather than lifting the node into shell state on purpose: a `setState(node)` in an effect re-runs on every render (the element is a fresh object each time) and loops forever. `null` during SSR and below the rail's breakpoint — callers must tolerate its absence.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `Parallax.tsx`       | Reusable **scroll**-linked parallax layer (framer-motion `useScroll` → GPU transforms; static under reduced motion). Scroll-linked, not pointer-linked — nothing on the site parallaxes to the cursor any more.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `radial.css`         | All radial styling. Every colour is a `--site-*` token (theme-safe); accent text comes from `--site-accent-fg`, which each theme/preset authors and `ensureReadableAccent()` contrast-checks. Mobile-first and viewport-safe. Its final section radialises **content pages** too: it flattens PageLayout's `.page-heading` card and **unpins sticky** headers/tabs/search so every `_site` route flows like the feed. It does **not** touch the material — the Liquid Glass classes render at full strength inside the shell.                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ## The desktop frame
 
@@ -272,7 +285,7 @@ screen, and each is easy to undo by accident:
   times the weight of the equator, pulling the eye off the reticle.
 - **It does not touch the hit test.** `project()` — what the lock, the snap cone
   and the dwell are all measured from — runs undisplaced; the swell is applied in
-  the *paint*. A decoration must never be able to shake a destination into or out
+  the _paint_. A decoration must never be able to shake a destination into or out
   of the reticle under a finger that is holding on it.
 - **It rides the existing frame loop.** No second rAF, no React state, no
   per-frame allocation: live ripples are a ref the loop reads, capped at three
@@ -280,16 +293,188 @@ screen, and each is easy to undo by accident:
   when nothing is rippling — so a visitor who only ever turns the globe pays one
   comparison per sample.
 
-The wave's *shape* is `lib/fluid` §rippleWave, shared rather than local for the
+The wave's _shape_ is `lib/fluid` §rippleWave, shared rather than local for the
 same reason the spring and the rubber band are. It is a Ricker wavelet on a
 quadratic decay: a crest flanked by shallow troughs, so the surface it crosses
 rises, falls back below rest, and settles — a ripple, not a shockwave. Retune the
 feel there, and it stays testable (`lib/__tests__/fluid.test.ts`) and available to
 anything else that ever needs to answer a touch this way.
 
-**Reduced motion stands it down completely** (OS preference or the account
-toggle). An unrequested full-surface animation is exactly what that preference is
-asking not to see; the press still turns the globe as it always did.
+**The site's Reduce motion switch stands it down completely** (since 2026-10-21
+the OS preference does not: the owner asked for the motion to play by default).
+The press still turns the globe as it always did.
+
+### The dough body
+
+Grab the globe and it gives like dough (2026-10-22: it used to "morph like a
+stretchy ball … I want it to truly morph like little bits at a time almost like
+dough"). The first soft body (2026-10-21) was three global springs around one
+Gaussian: it had no memory of _where_ material had been pushed, so the only thing
+it could do was stretch as a whole. The replacement keeps its state in space.
+
+- **A displacement field, not a few springs.** `lib/dough.ts` holds the in-plane
+  displacement `u(x)` of every piece of material on a 48×48 grid, in two layers:
+  an **elastic** one (a damped spring that rebounds, so a release wobbles a
+  little) and a **plastic** one (held strain flows into it and it eases out over
+  ~1.4s, so a dent outlives the finger). A press pushes material _out of_ the
+  contact and banks it up around it. Height is derived, `h = −0.12·∇·u`, so volume
+  is conserved by construction (asserted in `lib/__tests__/dough.test.ts`). A drag
+  grips the material under the finger and carries it: it piles up ahead and leaves
+  a groove behind, which is what the plastic layer remembers.
+- **One field, three readers.** The paint pass samples it on the CPU at the points
+  it already draws (`DoughBody.deform`: every cage sample, the ripple crest, every
+  pin; the same call the old body had, so the callers did not change). The coat
+  shader reads the same field as a half-float texture and inverts it per pixel, so
+  the **silhouette bulges** past the rest limb and the lighting wraps every dent.
+  The CSS disc no longer takes an affine transform and no longer clips.
+- **Free at rest.** `step()` says whether the body is deformed; only then does the
+  loop repaint for it. The field upload is skipped unless its `version` changed.
+- **Display only**, like the ripple and the wobble: `project()` never reads it, so
+  a squeeze cannot move a destination into or out of the reticle.
+- The canvas hangs outside the disc by 11% of its diameter (`JELLY_BLEED`, the same
+  fraction as the cage) so the silhouette has somewhere to go.
+- The stage's box is read once per press, never in the frame loop; the finger's
+  velocity is the drag's own (`VelocityTracker`), so nothing new listens.
+
+### The material (jelly glass)
+
+The ball reads as thick, gelatinous glass (2026-10-21: "more jelly refractive
+reflective like a gelatinous glass surface"). Two halves, split by what each is
+cheapest at:
+
+- **Refraction is geometry** (`lensScale` in `LiquidGlobe.tsx`). Everything
+  behind the front face — the far half of the cage, the far pins, a crest on the
+  back — goes through a ball-lens remap that magnifies the middle and crowds the
+  rim, growing with depth (identity at the limb, so the cage never tears). One
+  division per back-face sample; the lines stay vector-crisp. Display only.
+- **Light is a shader** (`jelly-glass.ts`, its own lazy chunk, ~3 KB gzip):
+  a softbox reflection and sky placed in reflection space, Fresnel, a hard
+  glint plus a kicker, a hairline at the limb with an absorption band inside it,
+  the room seen upside-down through the ball, a crescent caustic on the far inner
+  rim, and the theme accent as the jelly's subsurface tint. Ripples bend its
+  normals (the light runs over the wave) and the dough field's height tilts them
+  too, so a press dimples the glint and a drag smears a groove through it.
+- **It refracts the page** (2026-10-22: "the same effect"). The glass engine keeps
+  a snapshot of the page taken while it was idle, i.e. before the hub opened
+  (`lib/liquid/glass/scene-store.ts`); the coat samples it through a ball-lens
+  model (inverted, magnified, slightly dispersed) at mip level 5, to match the
+  hub's 20px blur, driven by the surface normal so it warps with every dent. It is
+  placed (a layout read) when the globe attaches, finishes blooming, resizes, or a
+  new picture lands, never per frame.
+- **It costs nothing at rest or while spinning.** A uniform glass ball looks the
+  same at any rotation, so the shader is redrawn only while the surface moves (a
+  ripple, the dough body) plus the frame it settles on, and never during the
+  eversion. Measured: 0 GL draws idle, ~70 over a poke's whole life; the CSS
+  sheen's infinite animation is retired while the material is up.
+- **One GL context per page**, shared by every mount; the idle rehearsal builds
+  it, so the real open never compiles a shader. The stage only drops the CSS
+  glass (`data-jelly="on"`) after the first frame is drawn, and a lost context
+  hands back to it.
+- **Not everywhere.** High contrast, reduced transparency (setting or media
+  query), `prefers-contrast: more`, `perf-lite` and no-WebGL keep the CSS glass;
+  refraction applies in all of them. Reduced motion keeps the material, static.
+
+## Globe Eversion (the hub's navigation transition)
+
+> **The ending is one movement (2026-10-18).** The canvas dissolves onto the live page during UNWRAP's last 200 ms and
+> ends with it. While a run owns the page `html.eversion-live` (eversion.css) holds the shell layers sharp and
+> transition-free, because the hub otherwise keeps them at `blur(20px)` until its phase leaves `everting` (the old
+> "glitchy extra step": a fade onto a blurred page, then a pop). The compose button and the orb come in with the
+> dissolve. AFTER is captured only once the destination is settled (`lib/eversion/settle.ts`).
+
+Confirming a destination in the hub can play a one-shot WebGL2 transition instead
+of the veil-and-navigate: the current page **WRAPs** onto the liquid globe through
+a map projection, the globe performs Thurston's corrugated sphere **EVERSION**
+with the destination on the inside, the destination **UNWRAPs** onto the live
+page, where the effect **ends** (there is no stage after UNWRAP: the AFTER page is
+flat and full-screen and the canvas hands off to the identical live page).
+It is **on** for every visitor (`EVERSION_ENABLED = true`), enabled by the owner
+ahead of the device lab (T38) and visual sign-off (T28); set it back to `false`
+to restore today's navigation site-wide.
+
+**Pointers.** The module map, conventions, the ending, router/fault cases and
+render-side robustness live in [`lib/eversion/README.md`](../../lib/eversion/README.md);
+the decisions, timeline maths, capture rules and the 46 numbered tests (`S#n`)
+are in the spec,
+[`docs/plans/2026-10-17-globe-eversion.md`](../../docs/plans/2026-10-17-globe-eversion.md),
+with the task plan beside it. The components here are in `eversion/`
+(`EversionBridge`, `EversionOverlay`, `useEversionController`,
+`useBeforeCapture`, `eversion.css`, the `lab/` harness).
+
+### How the hub hands off
+
+- **Entry points.** A release of the drag on a pin (`release`), a click or tap
+  on a pin (`click`), and Enter on the focused pin (`enter`). Settings >
+  Appearance > Preview runs the same effect without navigating (`preview`).
+- **`hub-handoff.ts` decides who navigates.** It is a plain state machine (unit
+  tested without React): one hand-off at a time, checked before eligibility;
+  the hub flips to its `everting` look only at the controller's commit, so every
+  earlier failure is **today's navigation, untouched** and has nothing to undo.
+  There is no fallback that adds a visible delay: no controller, no WebGL2,
+  reduced motion, a render host or BEFORE capture that is not ready yet all
+  answer immediately with the ordinary dismiss-and-navigate.
+- **It always plays in full** (amended 2026-10-20; it used to fast-forward on
+  input). No tap, click or key speeds it up, before `start` or after it: a tap
+  while the destination rendered was queued and ran the whole animation in
+  650 ms. While a run is `busy`, the hub's close / toggle / Escape do nothing.
+- **Back/forward never animates.** A traversal during priming reports
+  `traversal` and the hub just closes; mid-run it aborts with a crossfade onto
+  the live page. A run always ends: a stall watchdog force-ends it with a fade.
+- **Reduced motion** (OS or the account toggle) runs today's veil-and-navigate
+  fade unchanged, never the effect. `perf-lite` runs it at the minimum tier.
+- **The orb returns through the hub's ordinary closed-state fade.** It is hidden
+  during the run (`data-phase='everting'`, `opacity` + `pointer-events` only, so it
+  never moves) and fades back in (`opacity 0.34s ease`, the base `.radial-hub__orb`
+  rule) when the hub goes `closed` at `done`: the live page is already showing, so
+  there is no globe to crossfade with and no hard cut. An aborted or context-lost
+  run gets the same fade.
+
+### The flag, the settings row and the lab
+
+- **`isEversionEnabled()`** (`lib/eversion/flags.ts`) is
+  `EVERSION_ENABLED || ?eversion`. The query override is **latched once per page
+  load**, because the router drops the param on the first client navigation. It
+  is honoured in production too, so QA can opt in while the constant is `false`;
+  whether it survives the flip is a deliberate T39 decision. **`?eversion-debug`**
+  (`isEversionDebugEnabled()`) loads the debug surface (`window.__eversion`) and
+  appears in no static closure otherwise.
+- **Settings row.** `NavTransitionRow` in `components/settings/AppearancePanel.tsx`
+  (Settings > Appearance) is **hidden while the flag is off**. When on it offers
+  the projection (Random, Mercator, Peirce quincuncial, stereographic, Lambert
+  azimuthal, equirectangular) with **Random as the default** (it never repeats the
+  previous projection) plus a Preview button. After the flip, confirm the row is
+  visible, defaults to Random, persists and previews (tasks T39 acceptance).
+- **"Globe eversion" (the eversion level, 2026-10-21).** A select under "Navigation transition"
+  (`EversionLevelRow`; same flag and Reduce-motion rules): **Every navigation** (default) or **Only the liquid
+  globe**. At the second, `eversion-nav.ts` lets every navigation that does not start from the hub through untouched
+  (no hold, no pop-up globe, no added latency; plain `<a>`s are left to the browser) and only hub-confirmed
+  navigations (hold-release, pin click, Enter, anything asked for while the hub is open) run the effect. The level
+  is read per navigation, so switching it needs no reload. Page navigations only: the per-control press animation is
+  separate. Stored as `eversionLevel` (account column + `rmh-eversion-level` cache; absent = `all`). Spec amendment
+  2026-10-21 (f).
+- **"Always evert globe" (removed from Settings 2026-10-21).** A switch next to the transition picker
+  (`AlwaysEvertRow` in `AppearancePanel.tsx`; hidden while the flag is off, disabled
+  with a hint while reduced motion is on) that forces the effect on devices where it
+  is normally skipped to keep navigation fast: a host still starting, a BEFORE
+  picture not ready, a slow overlay. It lengthens those bounded waits and never
+  overrides reduced motion, WebGL2, back/forward or a busy runner. Stored as
+  `alwaysEvertGlobe` (account column + `rmh-always-evert-globe` cache), default off.
+  The gate-by-gate table is in
+  [`lib/eversion/README.md`](../../lib/eversion/README.md).
+- **Lab route `/eversion-lab`.** The device-lab and e2e harness
+  (`app/routes/eversion-lab.tsx`, `eversion/lab/`): `noindex`, in no sitemap or
+  nav, **admin-gated**. `EVERSION_LAB_OPEN=1` skips the admin check for the e2e
+  runs, and only outside a production build (`labAccessAllowed`); in production
+  it is ignored.
+
+### Rules that bite
+
+- Everything heavy (capture library, render host, prefetch) sits behind
+  `EversionBridge`, loaded with `React.lazy` after the hub's idle window. The
+  hub's static imports are the flag and nothing else; the bundle-budget gate
+  enforces it.
+- The effect is a dark launch: with the flag off, nothing here changes any
+  visitor's navigation (the flag-off e2e proves it).
 
 ## What makes it smooth (measured — don't undo these)
 

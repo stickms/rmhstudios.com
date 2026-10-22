@@ -16,7 +16,6 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import {
   BookOpen,
   CloudUpload,
@@ -40,10 +39,11 @@ import { listAllBooks } from '@/lib/library/library.server';
 import { listAlbums } from '@/lib/albums.server';
 import { listCollectionsView, type Viewer } from '@/lib/library/collections.server';
 import { listPlaylists } from '@/lib/playlists.server';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getAllPosts, type Post } from '@/lib/blog';
 import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
+import { LibraryReadingMount } from '@/components/reading/LibraryReadingMount';
 import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AdSlot } from '@/components/ads/AdSlot';
@@ -57,9 +57,9 @@ import { useContextMenu } from '@/components/library/LibraryContextMenu';
 import { LibraryCollections } from '@/components/library/LibraryCollections';
 import { LibraryAlbums } from '@/components/library/LibraryAlbums';
 import { BlurImage } from '@/components/ui/BlurImage';
+import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
+import { LibraryStyles } from '@/components/library/LibraryStyles';
 import type { CollectionView } from '@/lib/library/collections';
-import '@/components/rmhvibe/vibe.css';
-import '@/components/library/library.css';
 
 const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
   books: await listAllBooks(),
@@ -71,8 +71,7 @@ const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
 // observer sorts by on-screen position, so this follows the JSX order below)
 // instead of popping in late.
 const fetchCollections = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   const viewer: Viewer = session
     ? { id: session.user.id, isAdmin: Boolean((session.user as { isAdmin?: boolean }).isAdmin) }
     : null;
@@ -93,8 +92,7 @@ const fetchAlbums = createServerFn({ method: 'GET' }).handler(async () => ({
 // "Music" section. Signed-out visitors get null (the section shows a sign-in
 // prompt), mirroring the old page's behavior.
 const fetchPlaylists = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const session = await getRequestSession();
   if (!session) return { playlists: null };
   return { playlists: await listPlaylists(session.user.id) };
 });
@@ -491,227 +489,230 @@ function Library() {
   const hasUnmigrated = useMemo(() => books.some((b) => !b.id), [books]);
 
   return (
-    <PageLayout
-      title={t('library-heading', { defaultValue: 'Library' })}
-      description={t('archive-description', {
-        defaultValue:
-          'Books, photo albums, essays, playlists, field notes, and strange ideas—floating together in one playful archive.',
-      })}
-      headerRight={
-        // The page's one control, in the shared header's action slot. It used to
-        // sit in a bespoke `.lib-head` bar above a full-width hero slab; the bar
-        // and the hero are gone so this page opens exactly like every other one.
-        // The playground, the explorer and the shelves below are untouched — and
-        // so is the per-book 3D inspect button, which is where turning a volume
-        // over with the phone lives now.
-        session.data ? (
-          <button
-            type="button"
-            className="lib-upload__open"
-            onClick={() => setUploadOpen(true)}
-            aria-label={t('upload-label', { defaultValue: 'Upload a PDF' })}
-          >
-            <Upload size={15} aria-hidden="true" />
-            <span className="lib-upload__open-label">
+    <>
+      <VibeStyles />
+      <LibraryStyles />
+      <PageLayout
+        title={t('library-heading', { defaultValue: 'Library' })}
+        description={t('archive-description', {
+          defaultValue:
+            'Books, photo albums, essays, playlists, field notes, and strange ideas—floating together in one playful archive.',
+        })}
+        headerRight={
+          // The page's one control, in the shared header's action slot. It used to
+          // sit in a bespoke `.lib-head` bar above a full-width hero slab; the bar
+          // and the hero are gone so this page opens exactly like every other one.
+          // The playground, the explorer and the shelves below are untouched — and
+          // so is the per-book 3D inspect button, which is where turning a volume
+          // over with the phone lives now.
+          //
+          // The shared `Button`, labelled at every width. It was a bespoke
+          // `.lib-upload__open` pill whose label collapsed below 640px, which left
+          // an unlabelled upload glyph alone on its own row under the lede.
+          session.data ? (
+            <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
+              <Upload className="size-4" aria-hidden="true" />
               {t('upload-button', { defaultValue: 'Add a book' })}
-            </span>
-          </button>
-        ) : undefined
-      }
-    >
-      <div className="vibe-screen lib lib--glass-playground min-h-screen">
-        {/* The strip sits OUTSIDE `.lib-playground`. The playground is the 3D
-            stage for the shelf — it owns the perspective, the orbit handlers and
-            its own `--lib-gutter` inset — and page chrome inside it inherited
-            that inset, which is what still left this strip 710px wide against
-            everyone else's 766px after the explorer card was gone. */}
-        {/* Tabs, then the field — the shared order every tabbed page uses
-                (`PageTabs`). This was a single `.lib-explorer` glass card that
-                held the search ABOVE the strip and gave both its own padding,
-                which is why the library's strip was 694px wide where its
-                neighbours' were 766px and why its search sat where their tabs
-                did. The category counts still ride on the tabs themselves. */}
-        <PageTabs
-          tabs={
-            [
-              {
-                id: 'all',
-                label: t('cat-all', { defaultValue: 'Everything' }),
-                icon: LayoutGrid,
-              },
-              {
-                id: 'books',
-                label: t('cat-books', { defaultValue: 'Books' }),
-                icon: BookOpen,
-              },
-              {
-                id: 'albums',
-                label: t('cat-albums', { defaultValue: 'Albums' }),
-                icon: Disc3,
-              },
-              {
-                id: 'music',
-                label: t('cat-music', { defaultValue: 'Music' }),
-                icon: ListMusic,
-              },
-              {
-                id: 'collections',
-                label: t('cat-collections', { defaultValue: 'Collections' }),
-                icon: Layers,
-              },
-              {
-                id: 'reads',
-                label: t('cat-reads', { defaultValue: 'Reads' }),
-                icon: Newspaper,
-              },
-            ] as LiquidTab[]
-          }
-          value={view}
-          onChange={(next) => setView(next as LibraryView)}
-          aria-label={t('sections-label', { defaultValue: 'Library sections' })}
-          search={
-            <SearchField
-              value={query}
-              onValueChange={setQuery}
-              aria-label={t('search-label', { defaultValue: 'Search the library' })}
-              placeholder={t('search-placeholder', {
-                defaultValue: 'Search books, albums, playlists, and reads…',
-              })}
-            />
-          }
-        />
-
-        <div className="lib-playground" ref={playgroundRef} {...orbit}>
-          <LibraryRevealProvider instant={hasFiltered}>
-            {shows('reads') && <LibraryBlogRow posts={blogPosts} query={query} />}
-
-            {shows('books') && isAdmin && hasUnmigrated && (
-              <div className="lib-edit__migrate">
-                <span>
-                  {t('migrate-prompt', {
-                    defaultValue:
-                      'Some books are still bundled on disk. Move them to object storage to manage them.',
-                  })}
-                </span>
-                <button
-                  type="button"
-                  className="lib-upload__btn lib-upload__btn--primary"
-                  onClick={runMigration}
-                  disabled={migrating}
-                >
-                  <CloudUpload size={14} aria-hidden="true" />
-                  {migrating
-                    ? t('migrate-running', { defaultValue: 'Migrating…' })
-                    : t('migrate-button', { defaultValue: 'Migrate to S3' })}
-                </button>
-              </div>
-            )}
-
-            {shows('albums') && <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />}
-
-            {shows('collections') && (
-              <LibraryCollections
-                books={books}
-                collections={collections}
-                onChanged={refreshCollections}
-                isAdmin={isAdmin}
-                myHandle={myHandle}
-                canCreate={Boolean(session.data)}
-                query={query}
+            </Button>
+          ) : undefined
+        }
+      >
+        <div className="vibe-screen lib lib--glass-playground min-h-screen">
+          {/* The strip sits OUTSIDE `.lib-playground`. The playground is the 3D
+              stage for the shelf — it owns the perspective, the orbit handlers and
+              its own `--lib-gutter` inset — and page chrome inside it inherited
+              that inset, which is what still left this strip 710px wide against
+              everyone else's 766px after the explorer card was gone. */}
+          {/* Tabs, then the field — the shared order every tabbed page uses
+                  (`PageTabs`). This was a single `.lib-explorer` glass card that
+                  held the search ABOVE the strip and gave both its own padding,
+                  which is why the library's strip was 694px wide where its
+                  neighbours' were 766px and why its search sat where their tabs
+                  did. The category counts still ride on the tabs themselves. */}
+          <PageTabs
+            tabs={
+              [
+                {
+                  id: 'all',
+                  label: t('cat-all', { defaultValue: 'Everything' }),
+                  icon: LayoutGrid,
+                },
+                {
+                  id: 'books',
+                  label: t('cat-books', { defaultValue: 'Books' }),
+                  icon: BookOpen,
+                },
+                {
+                  id: 'albums',
+                  label: t('cat-albums', { defaultValue: 'Albums' }),
+                  icon: Disc3,
+                },
+                {
+                  id: 'music',
+                  label: t('cat-music', { defaultValue: 'Music' }),
+                  icon: ListMusic,
+                },
+                {
+                  id: 'collections',
+                  label: t('cat-collections', { defaultValue: 'Collections' }),
+                  icon: Layers,
+                },
+                {
+                  id: 'reads',
+                  label: t('cat-reads', { defaultValue: 'Reads' }),
+                  icon: Newspaper,
+                },
+              ] as LiquidTab[]
+            }
+            value={view}
+            onChange={(next) => setView(next as LibraryView)}
+            aria-label={t('sections-label', { defaultValue: 'Library sections' })}
+            search={
+              <SearchField
+                value={query}
+                onValueChange={setQuery}
+                aria-label={t('search-label', { defaultValue: 'Search the library' })}
+                placeholder={t('search-placeholder', {
+                  defaultValue: 'Search books, albums, playlists, and reads…',
+                })}
               />
-            )}
+            }
+          />
 
-            {shows('music') && (
-              <section className="lib__section lib__section--catalog lib__section--music glass-fill lib-section-shell">
-                <div className="lib__section-head">
-                  <h2 className="lib__section-title">
-                    {t('section-music', { defaultValue: 'Music' })}
-                  </h2>
-                  {playlists && (
-                    <span className="lib__section-count">
-                      {t('playlist-count', {
-                        count: playlists.length,
-                        defaultValue: '{{count}} playlists',
-                      })}
-                    </span>
-                  )}
+          {shows('books') ? <LibraryReadingMount /> : null}
+
+          <div className="lib-playground" ref={playgroundRef} {...orbit}>
+            <LibraryRevealProvider instant={hasFiltered}>
+              {shows('reads') && <LibraryBlogRow posts={blogPosts} query={query} />}
+
+              {shows('books') && isAdmin && hasUnmigrated && (
+                <div className="lib-edit__migrate">
+                  <span>
+                    {t('migrate-prompt', {
+                      defaultValue:
+                        'Some books are still bundled on disk. Move them to object storage to manage them.',
+                    })}
+                  </span>
+                  <button
+                    type="button"
+                    className="lib-upload__btn lib-upload__btn--primary"
+                    onClick={runMigration}
+                    disabled={migrating}
+                  >
+                    <CloudUpload size={14} aria-hidden="true" />
+                    {migrating
+                      ? t('migrate-running', { defaultValue: 'Migrating…' })
+                      : t('migrate-button', { defaultValue: 'Migrate to S3' })}
+                  </button>
                 </div>
-                <PlaylistsColumn initialData={{ playlists }} embedded searchQuery={query} />
-              </section>
-            )}
+              )}
 
-            {shows('books') &&
-              (filtered.length === 0 ? (
-                // Canonical EmptyState, and state-aware copy: the bare
-                // "No books match that search." line claimed a search was
-                // responsible even when the field was untouched. (The music
-                // section on this same page already used EmptyState.)
-                <EmptyState
-                  icon={BookOpen}
-                  title={
-                    query
-                      ? t('no-results', { defaultValue: 'No books match that search.' })
-                      : t('no-books-title', { defaultValue: 'No books here yet' })
-                  }
-                  description={
-                    query
-                      ? t('no-results-hint', {
-                          defaultValue: 'Try a different title, author, or subject.',
-                        })
-                      : t('no-books-hint', {
-                          defaultValue: 'Books added to the library will show up here.',
-                        })
-                  }
-                  action={
-                    query ? (
-                      <Button variant="outline" onClick={() => setQuery('')}>
-                        {t('clear-search', { defaultValue: 'Clear search' })}
-                      </Button>
-                    ) : undefined
-                  }
+              {shows('albums') && <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />}
+
+              {shows('collections') && (
+                <LibraryCollections
+                  books={books}
+                  collections={collections}
+                  onChanged={refreshCollections}
+                  isAdmin={isAdmin}
+                  myHandle={myHandle}
+                  canCreate={Boolean(session.data)}
+                  query={query}
                 />
-              ) : (
-                <>
-                  <Section
-                    title={t('section-curated', { defaultValue: 'Curated' })}
-                    books={curated}
-                    isAdmin={isAdmin}
-                    onEdit={setEditing}
-                    onInspect={setInspecting}
-                    onMove={(book, dir) => move(curated, book, dir)}
-                    onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
-                    onChanged={refresh}
-                  />
-                  <Section
-                    title={t('section-community', { defaultValue: 'Community uploads' })}
-                    books={community}
-                    isAdmin={isAdmin}
-                    onEdit={setEditing}
-                    onInspect={setInspecting}
-                    onMove={(book, dir) => move(community, book, dir)}
-                    onReorder={(draggedId, targetId) =>
-                      reorderWithin(community, draggedId, targetId)
+              )}
+
+              {shows('music') && (
+                <section className="lib__section lib__section--catalog lib__section--music glass-fill lib-section-shell">
+                  <div className="lib__section-head">
+                    <h2 className="lib__section-title">
+                      {t('section-music', { defaultValue: 'Music' })}
+                    </h2>
+                    {playlists && (
+                      <span className="lib__section-count">
+                        {t('playlist-count', {
+                          count: playlists.length,
+                          defaultValue: '{{count}} playlists',
+                        })}
+                      </span>
+                    )}
+                  </div>
+                  <PlaylistsColumn initialData={{ playlists }} embedded searchQuery={query} />
+                </section>
+              )}
+
+              {shows('books') &&
+                (filtered.length === 0 ? (
+                  // Canonical EmptyState, and state-aware copy: the bare
+                  // "No books match that search." line claimed a search was
+                  // responsible even when the field was untouched. (The music
+                  // section on this same page already used EmptyState.)
+                  <EmptyState
+                    icon={BookOpen}
+                    title={
+                      query
+                        ? t('no-results', { defaultValue: 'No books match that search.' })
+                        : t('no-books-title', { defaultValue: 'No books here yet' })
                     }
-                    onChanged={refresh}
-                    showAttribution
+                    description={
+                      query
+                        ? t('no-results-hint', {
+                            defaultValue: 'Try a different title, author, or subject.',
+                          })
+                        : t('no-books-hint', {
+                            defaultValue: 'Books added to the library will show up here.',
+                          })
+                    }
+                    action={
+                      query ? (
+                        <Button variant="outline" onClick={() => setQuery('')}>
+                          {t('clear-search', { defaultValue: 'Clear search' })}
+                        </Button>
+                      ) : undefined
+                    }
                   />
-                </>
-              ))}
-          </LibraryRevealProvider>
+                ) : (
+                  <>
+                    <Section
+                      title={t('section-curated', { defaultValue: 'Curated' })}
+                      books={curated}
+                      isAdmin={isAdmin}
+                      onEdit={setEditing}
+                      onInspect={setInspecting}
+                      onMove={(book, dir) => move(curated, book, dir)}
+                      onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
+                      onChanged={refresh}
+                    />
+                    <Section
+                      title={t('section-community', { defaultValue: 'Community uploads' })}
+                      books={community}
+                      isAdmin={isAdmin}
+                      onEdit={setEditing}
+                      onInspect={setInspecting}
+                      onMove={(book, dir) => move(community, book, dir)}
+                      onReorder={(draggedId, targetId) =>
+                        reorderWithin(community, draggedId, targetId)
+                      }
+                      onChanged={refresh}
+                      showAttribution
+                    />
+                  </>
+                ))}
+            </LibraryRevealProvider>
+          </div>
         </div>
-      </div>
-      {/* After the last row of the archive. Renders nothing for members, for
-          anyone who hasn't answered the cookie banner, and when no publisher id
-          is configured — see lib/ads/adsense.ts. */}
-      <AdSlot placement="index-footer" className="mt-(--site-section-gap)" />
-      {uploadOpen && (
-        <UploadModal isAdmin={isAdmin} onClose={() => setUploadOpen(false)} onUploaded={refresh} />
-      )}
-      {editing && (
-        <LibraryEditModal book={editing} onClose={() => setEditing(null)} onSaved={refresh} />
-      )}
-      {inspecting && <Book3DViewer book={inspecting} onClose={() => setInspecting(null)} />}
-    </PageLayout>
+        {/* After the last row of the archive. Renders nothing for members, for
+            anyone who hasn't answered the cookie banner, and when no publisher id
+            is configured — see lib/ads/adsense.ts. */}
+        <AdSlot placement="index-footer" className="mt-(--site-section-gap)" />
+        {uploadOpen && (
+          <UploadModal isAdmin={isAdmin} onClose={() => setUploadOpen(false)} onUploaded={refresh} />
+        )}
+        {editing && (
+          <LibraryEditModal book={editing} onClose={() => setEditing(null)} onSaved={refresh} />
+        )}
+        {inspecting && <Book3DViewer book={inspecting} onClose={() => setInspecting(null)} />}
+      </PageLayout>
+    </>
   );
 }
 

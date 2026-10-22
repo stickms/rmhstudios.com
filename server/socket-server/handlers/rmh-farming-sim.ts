@@ -21,6 +21,12 @@ import { generateRoomCode } from '../utils';
 import { checkRateLimit } from '../rate-limit';
 import { getPrismaClient } from '../prisma-client';
 import { logger } from '../logger';
+import {
+  festivalById,
+  festivalIdFromKey,
+  festivalOn,
+  type FestivalProgress,
+} from '../../../lib/rmh-farming-sim/festivals';
 
 // ── Event constants ────────────────────────────────────────────────
 const C2S = {
@@ -276,6 +282,7 @@ interface Farm {
   joinRequests: MemberRec[];
   presence: Map<string, PresenceRec>; // userId -> presence (currently inside)
   shippedValue: number; // lifetime earnings (leaderboard-ish)
+  festival: FestivalProgress | null; // today's festival contest score + one-per-farm purchases
   presenceDirty: boolean; // someone moved/joined/left since last presence tick
   emptySince: number | null; // ms epoch when presence last dropped to 0 (for GC eviction); null while occupied
 }
@@ -327,6 +334,7 @@ function newFarmObject(userId: string, userName: string): Farm {
     joinRequests: [],
     presence: new Map(),
     shippedValue: 0,
+    festival: null,
     presenceDirty: false,
     emptySince: null,
   };
@@ -353,6 +361,7 @@ function serializeSave(farm: Farm) {
     tools: farm.tools,
     members: farm.members,
     shippedValue: farm.shippedValue,
+    festival: farm.festival,
   };
 }
 
@@ -381,6 +390,14 @@ function hydrateFarm(row: { ownerId: string; code: string; name: string; saveDat
     joinRequests: [],
     presence: new Map(),
     shippedValue: typeof s.shippedValue === 'number' ? s.shippedValue : 0,
+    festival:
+      s.festival && typeof s.festival.key === 'string' && Array.isArray(s.festival.bought)
+        ? {
+            key: s.festival.key,
+            score: Math.max(0, Math.floor(Number(s.festival.score) || 0)),
+            bought: s.festival.bought.filter((b: unknown) => typeof b === 'string').slice(0, 8),
+          }
+        : null,
     presenceDirty: false,
     emptySince: null,
   };
@@ -393,25 +410,45 @@ function markDirty(farm: Farm): void {
 async function persistFarm(farm: Farm): Promise<void> {
   const db = getPrismaClient() as any;
   try {
+    // perf: serialize once — the save blob is the same for create and update.
+    const saveData = serializeSave(farm);
     await db.farmingSimFarm.upsert({
       where: { ownerId: farm.id },
       create: {
         ownerId: farm.id,
         code: farm.code,
         name: farm.name,
-        saveData: serializeSave(farm),
+        saveData,
         shippedValue: farm.shippedValue,
       },
       update: {
         code: farm.code,
         name: farm.name,
-        saveData: serializeSave(farm),
+        saveData,
         shippedValue: farm.shippedValue,
       },
     });
+    const fest = farm.festival;
+    if (fest && fest.score > 0) {
+      await db.farmFestivalEntry.upsert({
+        where: { festivalKey_userId: { festivalKey: fest.key, userId: farm.id } },
+        create: { festivalKey: fest.key, userId: farm.id, name: farm.ownerName.slice(0, 64), score: fest.score },
+        update: { name: farm.ownerName.slice(0, 64), score: fest.score },
+      });
+    }
   } catch (e) {
     logger.warn({ event: 'rfs_persist_error', farmId: farm.id, error: String(e) });
   }
+}
+
+/** Today's festival progress for a farm, starting a fresh one when a new festival day begins. */
+function festivalFor(farm: Farm, now = new Date()): FestivalProgress | null {
+  const on = festivalOn(now);
+  if (!on) return null;
+  if (!farm.festival || farm.festival.key !== on.key) {
+    farm.festival = { key: on.key, score: 0, bought: [] };
+  }
+  return farm.festival;
 }
 
 /** Load (or create + persist) the caller's own farm, using the cache first. */
@@ -524,6 +561,7 @@ function serializeStats(farm: Farm, p?: PresenceRec) {
     weather: farm.weather,
     shippedValue: farm.shippedValue,
     energy: p?.energy ?? MAX_ENERGY,
+    festival: festivalFor(farm),
   };
 }
 
@@ -573,12 +611,23 @@ function broadcastMembers(farm: Farm): void {
   const payload = serializeMembers(farm);
   for (const s of socketsInFarm(farm)) s.emit(S2C.MEMBERS, payload);
 }
-function broadcastPresence(farm: Farm): void {
+function broadcastPresence(farm: Farm, opts: { volatile?: boolean } = {}): void {
   // Emitting the current full presence clears the dirty flag; the throttled
   // loop won't re-broadcast this farm until someone next moves/joins/leaves.
   farm.presenceDirty = false;
   const payload = serializePresence(farm);
-  for (const s of socketsInFarm(farm)) s.emit(S2C.PRESENCE, payload);
+  // perf: the payload is identical for everyone, so address all sockets in one
+  // emit (every socket auto-joins a room named by its id) and the packet is
+  // encoded once instead of once per socket. This avoids a bookkeeping room
+  // that every exit path (kick, leave, disconnect, farm switch) would have to
+  // remember to leave.
+  const ids: string[] = [];
+  for (const p of farm.presence.values()) ids.push(p.socketId);
+  if (ids.length === 0) return;
+  // Only the 10Hz movement loop is volatile: its full-state frame is replaced by
+  // the next one. Join/leave broadcasts stay reliable — nothing re-sends them.
+  const target = ioRef.to(ids);
+  (opts.volatile ? target.volatile : target).emit(S2C.PRESENCE, payload);
 }
 function broadcastTiles(farm: Farm, indices: number[]): void {
   if (indices.length === 0) return;
@@ -842,6 +891,8 @@ function onHarvest(socket: Socket, payload: any): void {
     p.energy -= ENERGY_COST;
 
     const { mult } = qualityMultiplier(crop, def);
+    const fest = festivalFor(farm);
+    if (fest) fest.score += Math.round(def.sellPrice * mult);
     // store produce keyed with quality so sell value is preserved
     const key =
       mult >= 2 ? `${crop.cropId}#gold` : mult >= 1.5 ? `${crop.cropId}#silver` : crop.cropId;
@@ -874,6 +925,10 @@ function onBuy(socket: Socket, payload: any): void {
   const kind = String(payload?.kind || ''); // 'seed'
   const itemId = String(payload?.itemId || '');
   const qty = Math.max(1, Math.min(999, Math.floor(Number(payload?.qty) || 1)));
+  if (kind === 'festival') {
+    buyFestivalItem(socket, farm, itemId);
+    return;
+  }
   if (kind !== 'seed') return;
   const def = CROP_BY_ID.get(itemId);
   if (!def) return;
@@ -888,6 +943,33 @@ function onBuy(socket: Socket, payload: any): void {
   broadcastStats(farm);
   markDirty(farm);
   toast(socket, `Bought ${qty} ${def.name} seed${qty > 1 ? 's' : ''}.`, 'success');
+}
+
+function buyFestivalItem(socket: Socket, farm: Farm, itemId: string): void {
+  const fest = festivalFor(farm);
+  const def = fest ? festivalById(festivalIdFromKey(fest.key)) : undefined;
+  const item = def?.items.find((i) => i.id === itemId);
+  if (!fest || !item) {
+    toast(socket, 'That festival stall is closed.', 'error');
+    return;
+  }
+  if (fest.bought.includes(item.id)) {
+    toast(socket, 'Your farm already bought this today.', 'error');
+    return;
+  }
+  if (farm.money < item.cost) {
+    toast(socket, 'Not enough money.', 'error');
+    return;
+  }
+  farm.money -= item.cost;
+  fest.bought.push(item.id);
+  for (const [cropId, n] of Object.entries(item.seeds)) {
+    if (CROP_BY_ID.has(cropId)) farm.seeds[cropId] = (farm.seeds[cropId] ?? 0) + n;
+  }
+  broadcastFarmInventory(farm);
+  broadcastStats(farm);
+  markDirty(farm);
+  toast(socket, `Bought ${item.name}.`, 'success');
 }
 
 function produceSellValue(key: string): { value: number; name: string } | null {
@@ -1200,7 +1282,7 @@ function startPresenceLoop(): void {
     for (const farm of farms.values()) {
       // Only re-broadcast farms where someone actually moved (or joined/
       // left) since the last tick — an idle farm needs no packets.
-      if (farm.presence.size > 0 && farm.presenceDirty) broadcastPresence(farm);
+      if (farm.presence.size > 0 && farm.presenceDirty) broadcastPresence(farm, { volatile: true });
     }
   }, 100);
   if (presenceTimer.unref) presenceTimer.unref();

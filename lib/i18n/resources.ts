@@ -7,12 +7,17 @@
 // still the FULL ~290 KB catalog (all 66 namespaces, including ~20 games/apps the
 // current route never renders) parsed on every page's critical path.
 //
-// Now the split is finer:
-//   - Only the CORE en namespaces (site chrome, nav, feed, shared UI) are bundled
-//     statically — the strings any route may paint. This is the eager entry cost.
-//   - The rest of the en catalog is its own chunk (resources.en.ts), backfilled
-//     on the client right after init (instances.ts) so every en key still resolves
-//     but its ~210 KB no longer sits in the first-paint/hydration path.
+// Then only the CORE en namespaces (~136 KB minified) — still the largest single
+// item in the entry chunk of every page (CSS/JS audit 2026-10-09).
+//
+// Now NO catalog is bundled:
+//   - English renders from each `t()` call's `defaultValue`, on the server and on
+//     the client's first render alike, so hydration matches by construction.
+//     `lib/__tests__/i18n-default-drift.test.ts` holds every default equal to
+//     `locales/en`, so the catalog arriving later changes nothing on screen.
+//   - The full en catalog is its own chunk (resources.en.ts), backfilled on the
+//     client after `load` + idle (instances.ts) — for other locales' fallback and
+//     for any key read without a default.
 //   - zh / ar / … are code-split: each is its own chunk, fetched on demand via
 //     LOCALE_LOADERS only when that language becomes active (initial SSR carries
 //     the active non-en language inline via the root loader; see instances.ts).
@@ -22,7 +27,6 @@
 // language on demand (no longer all 16 statically at boot — cold-start win) and
 // caches it for the synchronous SSR i18n init.
 import type { Locale } from '@/lib/i18n/config';
-import enCore from '@/lib/i18n/resources.en-core';
 
 /** A JSON-serializable value — keeps LocaleBundle valid as TanStack loader/server-fn
  *  output (a bare `Record<string, unknown>` is rejected by its serializer checks). */
@@ -31,14 +35,8 @@ type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string
 /** A full resource bundle for one language: { [namespace]: translations }. */
 export type LocaleBundle = Record<string, JsonValue>;
 
-/** The core en namespaces — always bundled (fallback + first-paint for every
- *  route). The remaining namespaces load via {@link loadEnResources}. */
-export const EN_CORE_RESOURCES: LocaleBundle = enCore as LocaleBundle;
-
-/** The full en catalog (all namespaces) as its own async chunk. Backfills the
- *  non-core namespaces after init and backs the `en` LOCALE_LOADER; rolldown
- *  dedupes the core JSON already in the entry, so this chunk carries only the
- *  extra (game/app) namespaces. */
+/** The full en catalog (all namespaces) as its own async chunk. Backfilled after
+ *  init (lib/i18n/instances.ts) and backs the `en` LOCALE_LOADER. */
 export const loadEnResources = (): Promise<LocaleBundle> =>
   import('@/lib/i18n/resources.en').then((m) => m.default as LocaleBundle);
 

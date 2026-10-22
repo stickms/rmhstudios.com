@@ -270,6 +270,15 @@ mixed-format image, which is the worst of both.)
 
 ### 6. `runner-full` carrying an unused Node runtime ⛔
 
+> **Superseded (2026-10-10).** `runner-full` is now built on a shared
+> `runtime-base` stage instead of `FROM runner`. The reasoning below missed
+> that Chromium sat ABOVE the per-commit `.output` layer, so its ~400 MB layer
+> was rebuilt, re-compressed, re-pushed and re-pulled by the VPS on every deploy
+> (deploy run 37999110833: apk 7.4s + 14.5s export, after vite). Sharing
+> `runtime-base` keeps the base-layer dedupe this section wanted to protect,
+> while the Chromium layer is now cached across commits. See the Stage 4b
+> comment in the Dockerfile.
+
 `runner-full` is `FROM runner`, so it ships the full production `node_modules`,
 `.output` and `dist-server` — while its three compose services (`supervisor`,
 `status`, `assets`) execute only static Go binaries. Confirmed by grep: no Go

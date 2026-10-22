@@ -41,6 +41,20 @@ export const config = {
   ROOM_IDLE_TIMEOUT_MS: envInt('RMHTUBE_IDLE_TIMEOUT', 30 * 60 * 1000),
   ROOM_EMPTY_TIMEOUT_MS: envInt('RMHTUBE_EMPTY_TIMEOUT', 5 * 60 * 1000),
   DISCONNECT_GRACE_PERIOD_MS: envInt('RMHTUBE_GRACE_MS', 120_000),
+  /**
+   * How long a disconnected leader keeps control before it fails over to
+   * someone connected. Long enough to ride out a page refresh or a network
+   * blip; short enough that a closed laptop does not leave the room with no
+   * one able to pause or skip for the full two-minute grace period.
+   */
+  LEADER_FAILOVER_MS: envInt('RMHTUBE_LEADER_FAILOVER_MS', 8_000),
+  /**
+   * The room advances on its own once its projected position is this far past
+   * the item's known duration. A leader who is present reports `ended` long
+   * before this; it only fires when nobody is left to (a failover gap, a tab
+   * that froze on the last frame), which used to stall the queue for good.
+   */
+  END_OF_ITEM_GRACE_S: envInt('RMHTUBE_END_GRACE_S', 4),
   ROOM_GC_INTERVAL_MS: envInt('RMHTUBE_GC_INTERVAL', 60_000),
 
   // ─── Rate Limits ───
@@ -69,6 +83,17 @@ export const config = {
     'rmhtube:room:create_invite': { max: 5,   windowMs: 3_600_000 },
     'rmhtube:room:set_status':    { max: 10,  windowMs: 60_000 },
     'rmhtube:room:check_history': { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:request_control': { max: 3, windowMs: 60_000 },
+
+    // Watch-party extras
+    'rmhtube:party:sync':             { max: 30, windowMs: 60_000 },
+    'rmhtube:party:predict_open':     { max: 10, windowMs: 60_000 },
+    'rmhtube:party:predict_pick':     { max: 20, windowMs: 60_000 },
+    'rmhtube:party:predict_resolve':  { max: 10, windowMs: 60_000 },
+    'rmhtube:party:bingo_start':      { max: 5,  windowMs: 60_000 },
+    'rmhtube:party:bingo_call':       { max: 60, windowMs: 60_000 },
+    'rmhtube:party:bingo_claim':      { max: 10, windowMs: 60_000 },
+    'rmhtube:party:bingo_end':        { max: 10, windowMs: 60_000 },
 
     // Sync. The leader reports every 2 s (30/min) and both sides fire extra on
     // tab-return, so the ceiling sits at four times the steady rate.
@@ -97,6 +122,7 @@ export const config = {
     'rmhtube:chat:typing':        { max: 30,  windowMs: 60_000 },
     'rmhtube:chat:react':         { max: 30,  windowMs: 60_000 },
     'rmhtube:chat:pin':           { max: 10,  windowMs: 60_000 },
+    'safety:slowmode:tube:set':   { max: 20,  windowMs: 60_000 },
     'rmhtube:reaction:send':      { max: 30,  windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 

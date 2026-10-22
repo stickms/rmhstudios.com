@@ -1,0 +1,9 @@
+{
+  "name": "@rmhstudios/sdk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Typed client for the RMH Studios REST API (generated).",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

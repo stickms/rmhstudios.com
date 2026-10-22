@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Check, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -18,12 +18,17 @@ import {
   MODULE_KINDS,
   MODULE_LABELS,
   MAX_MODULES,
+  isPlusModuleKind,
   type ProfileModule,
   type ModuleKind,
 } from '@/lib/profile/modules';
 import type { UserStatus } from '@/lib/profile/status';
 import type { WishlistItemView } from '@/lib/wishlist/types';
 import { SliceItModule } from '@/components/profile/modules/SliceItModule';
+
+// P05 (Top Four, /now, stamps, webrings, skills, counter) — fetched only when a
+// profile actually carries one of these modules.
+const PlusModules = lazy(() => import('@/components/profile/plus/PlusModules'));
 
 export interface ShowcaseProfile {
   id: string;
@@ -122,7 +127,7 @@ export function ProfileShowcase({
       ) : null}
 
       {modules.map((m, i) => (
-        <ModuleBlock key={`${m.kind}-${i}`} module={m} profile={profile} />
+        <ModuleBlock key={`${m.kind}-${i}`} module={m} profile={profile} isOwner={isOwner} />
       ))}
 
       <Sheet open={open} onOpenChange={setOpen}>
@@ -238,7 +243,15 @@ export function ProfileShowcase({
   );
 }
 
-function ModuleBlock({ module, profile }: { module: ProfileModule; profile: ShowcaseProfile }) {
+function ModuleBlock({
+  module,
+  profile,
+  isOwner,
+}: {
+  module: ProfileModule;
+  profile: ShowcaseProfile;
+  isOwner: boolean;
+}) {
   const { t } = useTranslation('c-profile-modules');
   const title = t(`module-${module.kind}`, { defaultValue: MODULE_LABELS[module.kind] });
 
@@ -291,6 +304,19 @@ function ModuleBlock({ module, profile }: { module: ProfileModule; profile: Show
 
   if (module.kind === 'slice-it') {
     return <SliceItModule title={title} userId={profile.id} />;
+  }
+
+  if (isPlusModuleKind(module.kind)) {
+    return (
+      <Suspense fallback={null}>
+        <PlusModules
+          module={module as Parameters<typeof PlusModules>[0]['module']}
+          title={title}
+          userId={profile.id}
+          isOwner={isOwner}
+        />
+      </Suspense>
+    );
   }
 
   return null;

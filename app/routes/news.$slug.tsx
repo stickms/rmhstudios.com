@@ -7,7 +7,6 @@ import { createServerFn } from '@tanstack/react-start';
 import { getNewsArticleBySlug } from '@/lib/news';
 import { buildCanonical, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
-import ReactMarkdown from 'react-markdown';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Calendar, ExternalLink } from 'lucide-react';
 // `m as motion`, not `motion` — the same alias the six other route modules that
@@ -24,14 +23,18 @@ import { ShareButton } from '@/components/blog/ShareButton';
 import { liquidVTName } from '@/lib/view-transition';
 import { getCategoryColor } from '@/lib/news-categories';
 import { useTranslation } from 'react-i18next';
-import { markdownComponents } from '@/components/blog/MDXAnimations';
+import { ArticleBody } from '@/components/reading/ArticleBody';
+import { StoryBanner } from '@/components/reading/StoryBanner';
+import { getStoryForArticle } from '@/lib/reading/stories.server';
 import { AdSlot } from '@/components/ads/AdSlot';
 
 const fetchArticle = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
     const article = await getNewsArticleBySlug(slug);
-    return article;
+    if (!article) return null;
+    // L5: "Part of story: X" is part of the server HTML, so it never shifts the layout.
+    return { ...article, story: await getStoryForArticle(slug) };
   });
 
 export const Route = createFileRoute('/news/$slug')({
@@ -144,6 +147,11 @@ function NewsArticlePage() {
           >
             {article.description}
           </motion.p>
+          {article.story && (
+            <motion.div variants={staggerItem}>
+              <StoryBanner story={article.story} />
+            </motion.div>
+          )}
         </header>
 
         {article.sourceUrl && (
@@ -173,11 +181,10 @@ function NewsArticlePage() {
           </motion.div>
         )}
 
-        {/* `markdownComponents` carries the body's styling; the `prose-*`
-            classes that used to wrap it were inert (no typography plugin). */}
-        <div className="max-w-none break-words">
-          <ReactMarkdown components={markdownComponents}>{article.content}</ReactMarkdown>
-        </div>
+        {/* The body's styling lives in `markdownComponents`, applied inside
+            ArticleBody (which also adds sidenotes, glossary links, highlights
+            and the reading ruler). */}
+        <ArticleBody kind="news" slug={slug} content={article.content} />
 
         <hr className="my-12 border-(--site-border)" />
 

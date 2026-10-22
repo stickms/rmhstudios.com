@@ -2,54 +2,35 @@
  * Profile v2 — the module catalog (§12 of
  * docs/plans/2026-07-20-parity-qol-customization-design.md).
  *
- * A profile showcase is an ordered list of typed blocks. This is the schema of
- * record: unknown kinds/fields are dropped at read time (forward-safe). Empty =
- * the classic profile. Client-safe (editor + renderer + API).
+ * A profile showcase is an ordered list of typed blocks. This module is the
+ * client-safe catalog (kinds, labels, limits) the editor and renderer read; the
+ * schema of record — and `parseLayout` / `withModule`, which run it — is in
+ * `./modules-schema`. Kept zod-free because the showcase renders on every
+ * profile page.
  */
-import { z } from 'zod';
 
-export const MAX_MODULES = 6;
+export type { ProfileModule, TopFourItem } from './modules-schema';
 
-export const MODULE_KINDS = ['about', 'stats', 'status', 'wishlist', 'slice-it'] as const;
+export const MAX_MODULES = 12;
+
+export const MODULE_KINDS = [
+  'about',
+  'stats',
+  'status',
+  'wishlist',
+  'slice-it',
+  // P05 (profiles). Rendered by the lazy `components/profile/plus/PlusModules`.
+  'top-four',
+  'now',
+  'stamps',
+  'webrings',
+  'endorsements',
+  'counter',
+] as const;
 export type ModuleKind = (typeof MODULE_KINDS)[number];
 
-// Per-kind config (kept small + serializable).
-const configByKind = {
-  about: z.object({ text: z.string().max(600).default('') }),
-  stats: z.object({}).strip(),
-  status: z.object({}).strip(),
-  wishlist: z.object({}).strip(),
-  'slice-it': z.object({}).strip(),
-} as const;
-
-export const moduleSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('about'), config: configByKind.about }),
-  z.object({ kind: z.literal('stats'), config: configByKind.stats.optional().default({}) }),
-  z.object({ kind: z.literal('status'), config: configByKind.status.optional().default({}) }),
-  z.object({ kind: z.literal('wishlist'), config: configByKind.wishlist.optional().default({}) }),
-  z.object({ kind: z.literal('slice-it'), config: configByKind['slice-it'].optional().default({}) }),
-]);
-
-export type ProfileModule = z.infer<typeof moduleSchema>;
-
-export const layoutSchema = z.object({
-  modules: z.array(moduleSchema).max(MAX_MODULES),
-});
-
-/**
- * Parse a stored modules JSON into a safe list — invalid/unknown entries are
- * dropped rather than trusted, and the list is capped.
- */
-export function parseLayout(raw: unknown): ProfileModule[] {
-  if (!Array.isArray(raw)) return [];
-  const out: ProfileModule[] = [];
-  for (const entry of raw) {
-    const parsed = moduleSchema.safeParse(entry);
-    if (parsed.success) out.push(parsed.data);
-    if (out.length >= MAX_MODULES) break;
-  }
-  return out;
-}
+/** P1 — Top Four: four pinned favourites, each a game or app from the catalogs. */
+export const TOP_FOUR_SIZE = 4;
 
 export const MODULE_LABELS: Record<ModuleKind, string> = {
   about: 'About',
@@ -57,4 +38,25 @@ export const MODULE_LABELS: Record<ModuleKind, string> = {
   status: 'Status',
   wishlist: 'Wishlist',
   'slice-it': 'Slice It!',
+  'top-four': 'Top four',
+  now: 'Now',
+  stamps: 'Stamp wall',
+  webrings: 'Webrings',
+  endorsements: 'Skills',
+  counter: 'Visitor counter',
 };
+
+/** The kinds rendered by the lazy P05 module bundle rather than inline. */
+export const PLUS_MODULE_KINDS = [
+  'top-four',
+  'now',
+  'stamps',
+  'webrings',
+  'endorsements',
+  'counter',
+] as const satisfies readonly ModuleKind[];
+export type PlusModuleKind = (typeof PLUS_MODULE_KINDS)[number];
+
+export function isPlusModuleKind(kind: string): kind is PlusModuleKind {
+  return (PLUS_MODULE_KINDS as readonly string[]).includes(kind);
+}

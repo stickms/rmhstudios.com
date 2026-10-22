@@ -1,8 +1,15 @@
+import type { AchievementStripData } from '@/lib/achievements/strip';
 import type { ProfileModule } from '@/lib/profile/modules';
 import type { UserStatus } from '@/lib/profile/status';
 
 export interface ProfileData {
   id: string;
+  /**
+   * The header's achievement strip, when the server sent it with the page
+   * (profile route loader). Absent on client refetches; the strip then fetches
+   * its own.
+   */
+  achievementStrip?: AchievementStripData;
   name: string | null;
   username: string | null;
   handle: string | null;
@@ -18,6 +25,10 @@ export interface ProfileData {
   links?: { label: string; url: string }[];
   bannerUrl?: string | null;
   showLikes: boolean;
+  /** Plan U15 — 'off' | 'following' | 'everyone'. Older payloads omit it. */
+  guestbookMode?: string;
+  /** G1 — true only on the owner's opted-in birthday. */
+  birthdayToday?: boolean;
   dmPrivacy: string;
   profileSongSpotifyId: string | null;
   profileSongTitle: string | null;
@@ -26,6 +37,10 @@ export interface ProfileData {
   profileSongAlbumArt: string | null;
   status?: UserStatus | null;
   modules?: ProfileModule[];
+  /** P05 identity extras — absent on older payloads. */
+  pronouns?: string | null;
+  timezone?: string | null;
+  pronunciationUrl?: string | null;
   followerCount: number;
   followingCount: number;
   rmharkCount: number;

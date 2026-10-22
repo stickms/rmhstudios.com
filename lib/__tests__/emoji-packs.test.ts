@@ -11,19 +11,8 @@ import {
   EMOJI_CATEGORIES,
   CATEGORY_META,
 } from '@/lib/emoji/catalog';
-import {
-  resolveCustomShortcodes,
-  resolveShortcode,
-  packUsableBy,
-  packListable,
-  slugifyPackName,
-  shortcodeSchema,
-  addItemSchema,
-  createPackSchema,
-  SHORTCODE_RE,
-  type InstalledPack,
-  type PackItem,
-} from '@/lib/emoji/packs';
+import { resolveCustomShortcodes, resolveShortcode, packUsableBy, packListable, slugifyPackName, SHORTCODE_RE, type InstalledPack, type PackItem } from '@/lib/emoji/packs';
+import { shortcodeSchema, addItemSchema, createPackSchema } from '@/lib/emoji/packs-schema';
 
 const MAP = shortcodes as Record<string, string>;
 const CATALOG = buildCatalog(MAP);

@@ -92,7 +92,7 @@ export function ThemeGallery() {
     <div className="space-y-5">
       {GROUPS.map((group) => (
         <div key={group}>
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-site-text-dim">
+          <h3 className="site-section-label mb-2">
             {t(`settings-theme-group-${group.toLowerCase()}`, { defaultValue: group })}
           </h3>
           {/* Leaving a group's grid reverts any hover preview to the committed

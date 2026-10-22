@@ -20,8 +20,9 @@ import { getPremiumTheme } from '@/lib/shop/themes';
 import { PinnedHero } from './PinnedHero';
 import { ColumnHeader } from './ColumnHeader';
 import { Reveal } from '@/components/motion';
+import { ShopWishButton } from '@/components/economy-plus/ShopWishButton';
 
-interface ShopItemView {
+export interface ShopItemView {
   id: string;
   kind: ShopItemKind;
   name: string;
@@ -34,7 +35,7 @@ interface ShopItemView {
   equipped: boolean;
 }
 
-function Preview({ item }: { item: ShopItemView }) {
+export function Preview({ item }: { item: ShopItemView }) {
   const { t } = useTranslation('feed');
   const { kind, data } = item;
   if (kind === 'BADGE' || kind === 'PET') {
@@ -224,7 +225,6 @@ export function ShopColumn({
  viewport-heights below the fold and no product was visible on the
  first screen at any size. */
           screens={1.2}
-          eyebrow={t('shop-eyebrow', { defaultValue: 'Cosmetics & flair' })}
           title={t('shop-title', { defaultValue: 'Shop' })}
           subtitle={t('shop-hero-sub', {
             defaultValue:
@@ -311,7 +311,8 @@ export function ShopColumn({
                   </p>
                 )}
               </div>
-              <div className="shrink-0">
+              <div className="flex shrink-0 items-center gap-2">
+                {signedIn && !item.owned && <ShopWishButton itemId={item.id} />}
                 {!signedIn ? (
                   <span className="inline-flex items-center gap-1 text-xs text-site-text-muted">
                     <CoinIcon className="h-3.5 w-3.5" /> {item.price}

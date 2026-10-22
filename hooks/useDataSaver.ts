@@ -23,39 +23,20 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import {
+  DATA_SAVER_EVENT,
+  DATA_SAVER_KEY,
+  connectionClass,
+  readConnection,
+} from '@/lib/network-quality';
 
-export const DATA_SAVER_KEY = 'rmh-data-saver';
-/** Fired on the window when the preference changes, so open tabs agree. */
-export const DATA_SAVER_EVENT = 'rmh:data-saver';
+// The key and event are owned by lib/network-quality, which the speculative
+// prefetchers read too — so this setting reaches them.
+export { DATA_SAVER_EVENT, DATA_SAVER_KEY };
 
 export const DATA_SAVER_PREFERENCES = ['auto', 'on', 'off'] as const;
 export type DataSaverPreference = (typeof DATA_SAVER_PREFERENCES)[number];
 export const DEFAULT_DATA_SAVER_PREFERENCE: DataSaverPreference = 'auto';
-
-/**
- * The Network Information API, typed here rather than imported: it is not in
- * TypeScript's `lib.dom` (no cross-browser support), and every member is
- * optional because partial implementations are the norm — Chrome on desktop
- * exposes `effectiveType` but not `saveData`.
- */
-interface NetworkInformationLike {
-  readonly saveData?: boolean;
-  readonly effectiveType?: string;
-  addEventListener?: (type: 'change', listener: () => void) => void;
-  removeEventListener?: (type: 'change', listener: () => void) => void;
-}
-
-interface NavigatorWithConnection extends Navigator {
-  readonly connection?: NetworkInformationLike;
-}
-
-/** Connection classes we treat as "too slow for the nice-to-haves". */
-const SLOW_TYPES = new Set(['slow-2g', '2g']);
-
-function connection(): NetworkInformationLike | undefined {
-  if (typeof navigator === 'undefined') return undefined;
-  return (navigator as NavigatorWithConnection).connection;
-}
 
 function isPreference(value: unknown): value is DataSaverPreference {
   return typeof value === 'string' && (DATA_SAVER_PREFERENCES as readonly string[]).includes(value);
@@ -90,9 +71,7 @@ export function setDataSaverPreference(preference: DataSaverPreference): void {
 export function resolveDataSaver(preference: DataSaverPreference): boolean {
   if (preference === 'on') return true;
   if (preference === 'off') return false;
-  const conn = connection();
-  if (!conn) return false;
-  return conn.saveData === true || SLOW_TYPES.has(conn.effectiveType ?? '');
+  return readConnection()?.saveData === true || connectionClass() === 'slow';
 }
 
 export function useDataSaver(): boolean {
@@ -102,7 +81,7 @@ export function useDataSaver(): boolean {
     const sync = () => setSaving(resolveDataSaver(readDataSaverPreference()));
     sync();
 
-    const conn = connection();
+    const conn = readConnection();
     conn?.addEventListener?.('change', sync);
     window.addEventListener(DATA_SAVER_EVENT, sync);
     // Cross-tab: changing the setting in one tab should quiet the others too.

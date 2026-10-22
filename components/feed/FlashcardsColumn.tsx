@@ -108,7 +108,7 @@ export function FlashcardsColumn({
     <Link
       key={d.id}
       to={`/study/${d.id}` as string}
-      className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}
+      className={`flex items-center gap-3 rounded-site glass-fill p-3 ${LIFT_CARD}`}
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-site bg-site-accent/12 text-site-accent">
         <Layers className="h-5 w-5" />
@@ -124,7 +124,7 @@ export function FlashcardsColumn({
           })}
           {showOwner && d.user
             ? t('deck-by-owner', {
-                owner: d.user.name || d.user.handle || t('someone', { defaultValue: 'someone' }),
+                owner: d.user.name || d.user.handle || t('someone', { defaultValue: 'Someone' }),
                 defaultValue: '· by {{owner}}',
               })
             : ''}
@@ -242,14 +242,14 @@ export function FlashcardsColumn({
       <div className="space-y-6 p-4">
         {mine.length > 0 && (
           <Reveal as="section">
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
+            <h2 className="site-section-label mb-2">
               {t('your-decks', { defaultValue: 'Your decks' })}
             </h2>
             <div className="space-y-2">{mine.map((d) => DeckCard(d))}</div>
           </Reveal>
         )}
         <Reveal as="section">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-muted">
+          <h2 className="site-section-label mb-2">
             {t('public-decks', { defaultValue: 'Public decks' })}
           </h2>
           {popular.length === 0 ? (

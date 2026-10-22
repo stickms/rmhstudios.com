@@ -94,6 +94,17 @@ logger.warn = (msg, options) => {
   originalWarn(msg, options);
 };
 
+// `"use client"` (on ~1,200 modules, a holdover from the Next.js era) means
+// nothing to TanStack Start, which has no React Server Components, so Rolldown's
+// "module level directive may not be preserved" check is pure noise here. It is
+// switched OFF at the source rather than filtered in `onwarn`: filtering still
+// builds every diagnostic (a code frame per file, ~2,500 of them across the client
+// and Nitro builds — 90% of the build's log volume) only to throw it away, and in
+// the Docker build all of that is streamed through BuildKit's progress output.
+// Shared by every Rolldown invocation below, including Nitro's server build,
+// which does not inherit `build.rolldownOptions`.
+const rolldownChecks = { moduleLevelDirective: false };
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function onwarn(warning: any, warn: any) {
   if (warning.code === 'UNRESOLVED_IMPORT' && warning.exporter?.includes('.prisma/client')) return;
@@ -332,6 +343,11 @@ export default defineConfig({
         '.prisma',
         '@resvg/resvg-js',
         'satori',
+        // satori (>= 0.33) shapes text with harfbuzzjs, which reads `hb.wasm`
+        // from beside its own module at runtime. An import trace copies the .js
+        // and misses the .wasm, so every OG card 500s; the trailing `*` asks
+        // for a full-package trace instead.
+        'harfbuzzjs*',
         'esbuild',
         'reflect-metadata',
       ],
@@ -359,13 +375,22 @@ export default defineConfig({
         fileURLToPath(new URL('./server/nitro/anon-html-cache.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/warmup.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/drain.ts', import.meta.url)),
+        //  - keepalive: raises Node's 5 s keep-alive timeout above Apache's pooled
+        //    upstream connection lifetime (stale-connection 502s).
+        fileURLToPath(new URL('./server/nitro/keepalive.ts', import.meta.url)),
         //  - otel: W3C trace context per request (E1) — adopts the inbound
         //    `traceparent`, binds it to the request's async context, echoes it
         //    back as `Server-Timing` (which is how lib/rum.ts stamps the RUM
         //    beacon), and opens/closes the per-request query budget (E3).
         fileURLToPath(new URL('./server/nitro/otel.ts', import.meta.url)),
+        //  - perf: starts the per-worker performance collector (event-loop delay,
+        //    GC, CPU, minute buckets) and publishes its snapshot to Redis every
+        //    10 s so the admin performance page sees every cluster worker.
+        //    otel.ts feeds it requests and errors.
+        fileURLToPath(new URL('./server/nitro/perf.ts', import.meta.url)),
       ],
       rollupConfig: {
+        checks: rolldownChecks,
         external: heavyExternals.map(
           (pkg) => new RegExp(`^${pkg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/.+)?$`),
         ),
@@ -388,7 +413,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 4000,
     sourcemap: false,
     reportCompressedSize: false,
-    rolldownOptions: { onwarn },
+    rolldownOptions: { onwarn, checks: rolldownChecks },
   },
   environments: {
     client: {
@@ -398,6 +423,7 @@ export default defineConfig({
       build: {
         rolldownOptions: {
           onwarn,
+          checks: rolldownChecks,
           output: {
             manualChunks,
           },

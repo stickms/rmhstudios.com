@@ -60,7 +60,7 @@ export const Route = createFileRoute('/api/games/synapse-storm/score')({
             { status: result.status },
           );
         }
-        return Response.json({ success: true });
+        return Response.json({ success: true, moment: result.moment ?? null });
       }),
     },
   },
