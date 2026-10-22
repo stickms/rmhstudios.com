@@ -31,11 +31,20 @@ shipped row, evidence class (`exact` / `latency`), and the link.
 | 0 | | | | | [`results/ws-0.md`](results/ws-0.md) |
 | 1–7 | | | | | `results/ws-N.md` (WS7: Go services) |
 
-Rows run WS0 to WS7; WS7 (Go services) reports `go test -bench` and
+Rows run WS0 to WS9 (WS8, search and tags, and WS9, worker indexes, were added mid-program); WS7 (Go services) reports `go test -bench` and
 `pg_stat_statements` evidence (`01-method.md` §1.7) and its `make test` result.
 Stage A changes that failed re-measurement in Stage B are counted as rejected.
 
-## 3. Regressions checked
+## 3. Correctness and privacy fixes found during the program
+Defects found while reading the paths to speed them up, separate from the speed
+work and at least as important. One row per defect: what a viewer could do, the
+fix, what the fix costs (extra queries), the commit, and the test that fails on
+the parent.
+
+| # | Defect | Fix | Cost of the fix | Commit | Test |
+|---|---|---|---|---|---|
+
+## 4. Regressions checked
 The `02-budgets.md` §3 check across the merged tree: every route, both auth
 modes, p50 TTFB worse by more than the larger of 10 % or 5 ms, or any added
 query.
@@ -46,7 +55,7 @@ query.
 State the command. "None found" is a result only if the command and the route
 count are written next to it.
 
-## 4. Rejected ideas registry
+## 5. Rejected ideas registry
 Merged from the Rejected table of every `results/ws-N.md`, so a future pass does
 not retry them. Binding in the same way as the loading audit's
 "Measured and rejected" table: not re-attempted without new evidence.
@@ -54,14 +63,14 @@ not retry them. Binding in the same way as the loading audit's
 | WS | Idea | Route(s) | Metric | Before | After | Why it didn't help |
 |---|---|---|---:|---:|---:|---|
 
-## 5. Follow-ups and handoffs not done
+## 6. Follow-ups and handoffs not done
 Deferred leads and unrouted handoffs, each with what would unblock it, plus
 infrastructure proposals that are out of scope (`index.md` §3).
 
 | Source | Item | file:line | Why not done | Unblock |
 |---|---|---|---|---|
 
-## 6. Production verification plan
+## 7. Production verification plan
 Per [`performance-slo.md`](../performance-slo.md): which RUM and synthetic
 windows the operator compares after deploy, against which baseline values from
 §1, the thresholds, and the rollback policy there (unchanged). List every new
@@ -71,6 +80,6 @@ purge if it misbehaves.
 | Signal | Window | Baseline | Alert / rollback threshold |
 |---|---|---:|---|
 
-## Rule objections
+## 8. Rule objections
 Collected from the workstream ledgers, with the coordinator's ruling.
 ```

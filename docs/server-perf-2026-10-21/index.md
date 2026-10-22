@@ -18,7 +18,7 @@ and for the person reviewing it. Read it in order the first time; afterwards
 | [`05-agent-protocol.md`](05-agent-protocol.md) | The operating procedure for an implementing agent: setup, build lock, commits, reporting |
 | `results/ws-*.md` | One ledger per workstream, written by its agent. Every claimed win is a row with before/after numbers |
 | [`06-report-template.md`](06-report-template.md) | The skeleton `06-report.md` follows |
-| `06-report.md` | Written at integration: the merged before/after, what shipped, what was rejected |
+| [`06-report.md`](06-report.md) | **Start here for the outcome.** Written at integration: the merged before/after, the correctness and privacy fixes, what shipped, what was rejected, what is left, and the production verification plan |
 
 ---
 
