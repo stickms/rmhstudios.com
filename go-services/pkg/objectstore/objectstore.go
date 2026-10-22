@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
 // ErrNotFound is returned by Get when the key does not exist.
@@ -28,6 +29,17 @@ var ErrRangeNotSatisfiable = errors.New("objectstore: range not satisfiable")
 
 // ErrNotModified is returned when a conditional Get matched (S3 answered 304).
 var ErrNotModified = errors.New("objectstore: not modified")
+
+// NotModifiedError is the concrete error behind ErrNotModified. It carries the
+// validators the bucket sent on its 304 so a caller can relay them; either may
+// be empty if the upstream sent none. errors.Is(err, ErrNotModified) holds.
+type NotModifiedError struct {
+	ETag         string
+	LastModified string
+}
+
+func (e *NotModifiedError) Error() string        { return ErrNotModified.Error() }
+func (e *NotModifiedError) Is(target error) bool { return target == ErrNotModified }
 
 // GetOptions are the optional request headers relayed to the bucket.
 type GetOptions struct {
@@ -127,7 +139,13 @@ func (s *S3) Get(ctx context.Context, key string, opts GetOptions) (*Object, err
 	if err != nil {
 		var statusErr interface{ HTTPStatusCode() int }
 		if errors.As(err, &statusErr) && statusErr.HTTPStatusCode() == http.StatusNotModified {
-			return nil, ErrNotModified
+			nm := &NotModifiedError{}
+			var re *smithyhttp.ResponseError
+			if errors.As(err, &re) && re.Response != nil && re.Response.Response != nil {
+				nm.ETag = re.Response.Header.Get("ETag")
+				nm.LastModified = re.Response.Header.Get("Last-Modified")
+			}
+			return nil, nm
 		}
 		var nsk *types.NoSuchKey
 		if errors.As(err, &nsk) {

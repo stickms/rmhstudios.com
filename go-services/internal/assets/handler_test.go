@@ -147,7 +147,7 @@ func TestBadRangeReturns416(t *testing.T) {
 }
 
 func TestConditionalGetRelaysValidatorsAndReturns304(t *testing.T) {
-	fs := &fakeStore{err: objectstore.ErrNotModified}
+	fs := &fakeStore{err: &objectstore.NotModifiedError{ETag: `"abc"`, LastModified: "Wed, 21 Oct 2026 07:28:00 GMT"}}
 	h := NewHandler(fs, log.New("assets", "error"))
 	r := newReq("GET", "/library/book.pdf", "")
 	r.Header.Set("If-None-Match", `"abc"`)
@@ -161,8 +161,39 @@ func TestConditionalGetRelaysValidatorsAndReturns304(t *testing.T) {
 	if w.Code != http.StatusNotModified || w.Body.Len() != 0 {
 		t.Errorf("status = %d, body %d bytes; want 304 with no body", w.Code, w.Body.Len())
 	}
-	if w.Header().Get("ETag") != `"abc"` || w.Header().Get("Cache-Control") != cacheControl {
+	if w.Header().Get("ETag") != `"abc"` || w.Header().Get("Last-Modified") != "Wed, 21 Oct 2026 07:28:00 GMT" ||
+		w.Header().Get("Cache-Control") != cacheControl {
 		t.Errorf("304 headers: %v", w.Header())
+	}
+}
+
+// The 304 carries the UPSTREAM's validators, never the request's If-None-Match:
+// "*" and a list must not come back as a bogus ETag, and an upstream that sent
+// none yields no ETag at all.
+func TestNotModifiedNeverEchoesRequestValidator(t *testing.T) {
+	for name, tc := range map[string]struct {
+		inm  string
+		err  error
+		etag string
+	}{
+		"star, upstream etag": {"*", &objectstore.NotModifiedError{ETag: `"v9"`}, `"v9"`},
+		"list, upstream etag": {`"a", "b"`, &objectstore.NotModifiedError{ETag: `"b"`}, `"b"`},
+		"star, no validators": {"*", &objectstore.NotModifiedError{}, ""},
+		"bare sentinel":       {`"a"`, objectstore.ErrNotModified, ""},
+	} {
+		t.Run(name, func(t *testing.T) {
+			h := NewHandler(&fakeStore{err: tc.err}, log.New("assets", "error"))
+			r := newReq("GET", "/library/book.pdf", "")
+			r.Header.Set("If-None-Match", tc.inm)
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, r)
+			if w.Code != http.StatusNotModified {
+				t.Fatalf("status = %d, want 304", w.Code)
+			}
+			if got := w.Header().Get("ETag"); got != tc.etag {
+				t.Errorf("ETag = %q, want %q", got, tc.etag)
+			}
+		})
 	}
 }
 

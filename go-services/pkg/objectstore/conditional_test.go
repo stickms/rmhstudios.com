@@ -16,6 +16,8 @@ func TestGetConditionalAgainstFakeS3(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotINM, gotIMS, gotRange = r.Header.Get("If-None-Match"), r.Header.Get("If-Modified-Since"), r.Header.Get("Range")
 		if gotINM == `"v1"` {
+			w.Header().Set("ETag", `"v1"`)
+			w.Header().Set("Last-Modified", "Wed, 21 Oct 2026 07:00:00 GMT")
 			w.WriteHeader(http.StatusNotModified)
 			return
 		}
@@ -36,6 +38,10 @@ func TestGetConditionalAgainstFakeS3(t *testing.T) {
 	_, err = s.Get(context.Background(), "music/a.mp3", GetOptions{IfNoneMatch: `"v1"`, IfModifiedSince: "Wed, 21 Oct 2026 07:28:00 GMT"})
 	if !errors.Is(err, ErrNotModified) {
 		t.Fatalf("err = %v, want ErrNotModified", err)
+	}
+	var nm *NotModifiedError
+	if !errors.As(err, &nm) || nm.ETag != `"v1"` || nm.LastModified != "Wed, 21 Oct 2026 07:00:00 GMT" {
+		t.Errorf("304 validators not carried: %+v", nm)
 	}
 	if gotINM != `"v1"` || gotIMS != "Wed, 21 Oct 2026 07:28:00 GMT" {
 		t.Errorf("validators on the wire: INM=%q IMS=%q", gotINM, gotIMS)

@@ -85,8 +85,17 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// Revalidation hit: no body leaves the bucket or this process.
 			hdr := w.Header()
 			hdr.Set("Cache-Control", cacheControl)
-			if inm := r.Header.Get("If-None-Match"); inm != "" && !strings.Contains(inm, ",") {
-				hdr.Set("ETag", inm)
+			// Relay the bucket's own validators, never the request's: echoing
+			// If-None-Match would turn "*" or a list into a bogus ETag. With no
+			// upstream validators the headers are simply omitted.
+			var nm *objectstore.NotModifiedError
+			if errors.As(err, &nm) {
+				if nm.ETag != "" {
+					hdr.Set("ETag", nm.ETag)
+				}
+				if nm.LastModified != "" {
+					hdr.Set("Last-Modified", nm.LastModified)
+				}
 			}
 			w.WriteHeader(http.StatusNotModified)
 		case errors.Is(err, objectstore.ErrNotFound):
