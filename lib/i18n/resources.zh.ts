@@ -41,11 +41,13 @@ import zhCProfileModules from "@/locales/zh/c-profile-modules.json";
 import zhCRebarRutabaga from "@/locales/zh/c-rebar-rutabaga.json";
 import zhCRideshare from "@/locales/zh/c-rideshare.json";
 import zhCRmhCapital from "@/locales/zh/c-rmh-capital.json";
+import zhCRmhDatacenter from "@/locales/zh/c-rmh-datacenter.json";
 import zhCRmhPmc from "@/locales/zh/c-rmh-pmc.json";
 import zhCRmhbox from "@/locales/zh/c-rmhbox.json";
 import zhCRmhcalculator from "@/locales/zh/c-rmhcalculator.json";
 import zhCRmhcode from "@/locales/zh/c-rmhcode.json";
 import zhCRmhcoins from "@/locales/zh/c-rmhcoins.json";
+import zhCRmhfashion from "@/locales/zh/c-rmhfashion.json";
 import zhCRmhmusic from "@/locales/zh/c-rmhmusic.json";
 import zhCRmhstudy from "@/locales/zh/c-rmhstudy.json";
 import zhCRmhtech from "@/locales/zh/c-rmhtech.json";
@@ -69,6 +71,37 @@ import zhCVoidBreaker from "@/locales/zh/c-void-breaker.json";
 import zhCWager from "@/locales/zh/c-wager.json";
 import zhCWishlist from "@/locales/zh/c-wishlist.json";
 import zhCommon from "@/locales/zh/common.json";
+import zhErrors from "@/locales/zh/errors.json";
+import zhFAccess from "@/locales/zh/f-access.json";
+import zhFAction from "@/locales/zh/f-action.json";
+import zhFArcade from "@/locales/zh/f-arcade.json";
+import zhFAsyncGames from "@/locales/zh/f-async-games.json";
+import zhFCalendar from "@/locales/zh/f-calendar.json";
+import zhFCanvas from "@/locales/zh/f-canvas.json";
+import zhFCommunitiesPlus from "@/locales/zh/f-communities-plus.json";
+import zhFCompetitive from "@/locales/zh/f-competitive.json";
+import zhFCreative from "@/locales/zh/f-creative.json";
+import zhFDeepseek from "@/locales/zh/f-deepseek.json";
+import zhFDelight from "@/locales/zh/f-delight.json";
+import zhFDevplatform from "@/locales/zh/f-devplatform.json";
+import zhFDiscovery from "@/locales/zh/f-discovery.json";
+import zhFEconomyPlus from "@/locales/zh/f-economy-plus.json";
+import zhFFeedPlus from "@/locales/zh/f-feed-plus.json";
+import zhFForecasting from "@/locales/zh/f-forecasting.json";
+import zhFGifting from "@/locales/zh/f-gifting.json";
+import zhFLadderHomes from "@/locales/zh/f-ladder-homes.json";
+import zhFMessaging from "@/locales/zh/f-messaging.json";
+import zhFOncall from "@/locales/zh/f-oncall.json";
+import zhFOps from "@/locales/zh/f-ops.json";
+import zhFParty from "@/locales/zh/f-party.json";
+import zhFPerf from "@/locales/zh/f-perf.json";
+import zhFPostsPlus from "@/locales/zh/f-posts-plus.json";
+import zhFProfilePlus from "@/locales/zh/f-profile-plus.json";
+import zhFReading from "@/locales/zh/f-reading.json";
+import zhFSafety from "@/locales/zh/f-safety.json";
+import zhFTools from "@/locales/zh/f-tools.json";
+import zhFWatch from "@/locales/zh/f-watch.json";
+import zhFWorlds from "@/locales/zh/f-worlds.json";
 import zhFeed from "@/locales/zh/feed.json";
 import zhGamesHub from "@/locales/zh/games-hub.json";
 import zhGroups from "@/locales/zh/groups.json";
@@ -140,11 +173,13 @@ const zhResources = {
   "c-rebar-rutabaga": zhCRebarRutabaga,
   "c-rideshare": zhCRideshare,
   "c-rmh-capital": zhCRmhCapital,
+  "c-rmh-datacenter": zhCRmhDatacenter,
   "c-rmh-pmc": zhCRmhPmc,
   "c-rmhbox": zhCRmhbox,
   "c-rmhcalculator": zhCRmhcalculator,
   "c-rmhcode": zhCRmhcode,
   "c-rmhcoins": zhCRmhcoins,
+  "c-rmhfashion": zhCRmhfashion,
   "c-rmhmusic": zhCRmhmusic,
   "c-rmhstudy": zhCRmhstudy,
   "c-rmhtech": zhCRmhtech,
@@ -168,6 +203,37 @@ const zhResources = {
   "c-wager": zhCWager,
   "c-wishlist": zhCWishlist,
   "common": zhCommon,
+  "errors": zhErrors,
+  "f-access": zhFAccess,
+  "f-action": zhFAction,
+  "f-arcade": zhFArcade,
+  "f-async-games": zhFAsyncGames,
+  "f-calendar": zhFCalendar,
+  "f-canvas": zhFCanvas,
+  "f-communities-plus": zhFCommunitiesPlus,
+  "f-competitive": zhFCompetitive,
+  "f-creative": zhFCreative,
+  "f-deepseek": zhFDeepseek,
+  "f-delight": zhFDelight,
+  "f-devplatform": zhFDevplatform,
+  "f-discovery": zhFDiscovery,
+  "f-economy-plus": zhFEconomyPlus,
+  "f-feed-plus": zhFFeedPlus,
+  "f-forecasting": zhFForecasting,
+  "f-gifting": zhFGifting,
+  "f-ladder-homes": zhFLadderHomes,
+  "f-messaging": zhFMessaging,
+  "f-oncall": zhFOncall,
+  "f-ops": zhFOps,
+  "f-party": zhFParty,
+  "f-perf": zhFPerf,
+  "f-posts-plus": zhFPostsPlus,
+  "f-profile-plus": zhFProfilePlus,
+  "f-reading": zhFReading,
+  "f-safety": zhFSafety,
+  "f-tools": zhFTools,
+  "f-watch": zhFWatch,
+  "f-worlds": zhFWorlds,
   "feed": zhFeed,
   "games-hub": zhGamesHub,
   "groups": zhGroups,
