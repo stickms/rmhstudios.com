@@ -73,6 +73,7 @@
 
 import { GLOBE_PERSP } from '../../globe';
 import { RIPPLE } from '../../fluid';
+import { GLASS_OPTICS_GLSL } from '../../liquid/optics';
 import {
   EVERSION_STRIPS,
   LAMBERT_BASE,
@@ -493,7 +494,7 @@ float wedgeGlass(float wedgeAmount) {
  *   cosmos's sun), a GGX highlight and a Schlick-Fresnel reflection of a procedural studio environment: a clear
  *   coat on the page, a dielectric where there is no page. The cosmos, with one sun and plain Lambert.
  * - **2 (high):** on top, a flowing micro-surface on the shading normal (the "liquid" sheen), a thin-film
- *   shimmer and a dispersed (chromatic) rim on the glass, the starfield refracted through it; in the cosmos, both
+ *   shimmer, wavelength-dependent refraction and dielectric reflectance; in the cosmos, both
  *   suns, atmospheres, ocean glint, and shadows (moons on planets, rings on the giant and the giant on its rings).
  *
  * Every added term is multiplied by the morph weight (and glass by its lift), so the flat endpoints are the
@@ -593,10 +594,9 @@ vec3 starfield(vec2 p, float t) {
 const MATERIAL_GLSL = /* glsl */ `
 ${MATERIAL_DEFINES}
 ${NOISE_GLSL}
+${GLASS_OPTICS_GLSL}
 float fresnelSchlick(float c) {
-  float m = 1.0 - c;
-  float m2 = m * m;
-  return 0.04 + 0.96 * m2 * m2 * m;
+  return glassFresnel(c).g;
 }
 /* R = Rx(tilt) * Ry(spin), as the vertex shader poses the surface. */
 vec3 poseDir(vec3 q) {
@@ -652,10 +652,9 @@ vec3 thinFilm(float nv, float t) {
   vec3 phase = vec3(0.0, 0.33, 0.67) + 1.8 * (1.0 - nv) + 0.12 * sin(t * 0.7);
   return 0.5 * cos(TAU * phase);
 }
-/* High: a rim whose red, green and blue fall off at slightly different rates (dispersion). */
-vec3 dispersedRim(float facing) {
-  float x = clamp(1.0 - abs(facing), 0.0, 1.0);
-  return vec3(pow(x, RIM_POWER * 0.8), pow(x, RIM_POWER), pow(x, RIM_POWER * 1.25)) * RIM_STRENGTH * 0.9;
+/* High: dielectric reflection from the same wavelength-dependent indices. */
+vec3 dielectricRim(float facing) {
+  return glassFresnel(facing) * RIM_STRENGTH * 0.9;
 }
 `;
 
@@ -1135,6 +1134,17 @@ vec3 planetTone(vec3 c) {
   float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
   return mix(c, clamp(c + 1.0 - 2.0 * l, 0.0, 1.0), k);
 }
+vec3 transmittedPage(sampler2D page, vec2 uv, mat3x2 offsets, vec2 gx, vec2 gy) {
+#if QUALITY >= 2
+  return vec3(
+    textureGrad(page, clamp(uv + offsets[0], 0.0, 1.0), gx, gy).r,
+    textureGrad(page, clamp(uv + offsets[1], 0.0, 1.0), gx, gy).g,
+    textureGrad(page, clamp(uv + offsets[2], 0.0, 1.0), gx, gy).b
+  );
+#else
+  return textureGrad(page, clamp(uv + offsets[1], 0.0, 1.0), gx, gy).rgb;
+#endif
+}
 void main() {
   float theta = v_domain.x;
   float phi = v_domain.y;
@@ -1203,12 +1213,16 @@ void main() {
   /* Snell transmission through a thin glass coat. UV displacement is in
      screen pixels, vanishes at both flat endpoints and never crosses a cut.
      Existing captures are reused; there is no additional texture or pass. */
-  vec2 transmission = vec2(0.0);
+  mat3x2 transmission = mat3x2(vec2(0.0), vec2(0.0), vec2(0.0));
 #if QUALITY >= 1
   if (!cut) {
     vec3 surfaceNormal = gl_FrontFacing ? nn : -nn;
-    vec3 transmitted = refract(vec3(0.0, 0.0, -1.0), surfaceNormal, 1.0 / 1.45);
-    transmission = transmitted.xy * (6.0 / u_viewport) * v_morph * (1.0 - flatness);
+    vec2 reach = (6.0 / u_viewport) * v_morph * (1.0 - flatness);
+    transmission[1] = glassSlabOffset(surfaceNormal, GLASS_IOR_RGB.g, 1.0) * reach;
+#if QUALITY >= 2
+    transmission[0] = glassSlabOffset(surfaceNormal, GLASS_IOR_RGB.r, 1.0) * reach;
+    transmission[2] = glassSlabOffset(surfaceNormal, GLASS_IOR_RGB.b, 1.0) * reach;
+#endif
   }
 #endif
 #if QUALITY >= 1
@@ -1223,13 +1237,13 @@ void main() {
   float litB = LAMBERT_BASE + LAMBERT_GAIN * max(dot(-nn, L), 0.0);
   vec3 page = vec3(0.0);
   if (side > 0.0) {
-    vec3 pg = planetTone(textureGrad(u_before, clamp(uvF + transmission, 0.0, 1.0), gx, gy).rgb);
+    vec3 pg = planetTone(transmittedPage(u_before, uvF, transmission, gx, gy));
     page += side * mix(pg, pg * litF, v_morph);
   }
   if (side < 1.0) {
-    vec2 cb = clamp(uvB + transmission, 0.0, 1.0);
     vec3 pg = planetTone(
-      mix(textureGrad(u_placeholder, cb, gx, gy).rgb, textureGrad(u_after, cb, gx, gy).rgb, u_afterMix));
+      mix(transmittedPage(u_placeholder, uvB, transmission, gx, gy),
+          transmittedPage(u_after, uvB, transmission, gx, gy), u_afterMix));
     vec3 shaded = mix(pg * litB * SIDE_DARKEN, u_colAccent.rgb, SIDE_TINT);
     page += (1.0 - side) * mix(pg, shaded, v_morph);
   }
@@ -1266,7 +1280,7 @@ void main() {
   page = mix(page, coat, v_morph);
 
   /* Glass: what is behind it (the veil, or the starfield seen through it, refracted), the environment at Fresnel
-     strength, the highlight, and on high a thin-film shimmer and a dispersed rim. */
+     strength, the highlight, and on high a thin-film shimmer and spectral dielectric rim. */
   vec3 behind = veil;
 #if QUALITY >= 2
   vec2 refr = N.xy * GLASS_REFRACT_PX;
@@ -1275,7 +1289,7 @@ void main() {
   vec3 glass = mix(behind, env, clamp(F * GLASS_REFLECT + 0.06, 0.0, 1.0)) + spec;
 #if QUALITY >= 2
   glass += thinFilm(nv, u_time) * F * THIN_FILM;
-  glass += dispersedRim(facing) * u_colCageMajor.rgb * lift;
+  glass += dielectricRim(facing) * u_colCageMajor.rgb * lift;
 #else
   glass = mix(glass, u_colCageMajor.rgb, glassRim * 0.8);
 #endif

@@ -441,7 +441,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
       radius: s.radius,
       bezel,
       thickness,
-      disperse: 0.11,
       sceneX,
       sceneY,
       sceneW: scene?.width ?? 1,

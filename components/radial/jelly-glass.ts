@@ -36,6 +36,7 @@
  */
 
 import { CONTACT, DOUGH_EXTENT, DOUGH_N } from '@/lib/dough';
+import { GLASS_OPTICS_GLSL } from '@/lib/liquid/optics';
 import type { SharedScene } from '@/lib/liquid/glass/scene-store';
 
 /** Everything the material needs for one frame. All coordinates are in radii of the sphere, y DOWN. */
@@ -131,6 +132,8 @@ const float EXTENT = ${DOUGH_EXTENT.toFixed(4)};
 const float CONTACT_R = ${CONTACT.toFixed(4)};
 const float CELL = ${((2 * DOUGH_EXTENT) / (DOUGH_N - 1)).toFixed(5)};
 
+${GLASS_OPTICS_GLSL}
+
 vec3 field(vec2 q) {
   return texture(uField, q / (2.0 * EXTENT) + 0.5).xyz;
 }
@@ -202,7 +205,7 @@ void main() {
   vec3 rf = reflect(-v, n);
 
   // ── Reflection: the studio, mirrored, weighted by Fresnel ──
-  float fres = 0.033736 + 0.966264 * pow(rim, 5.0); // IOR 1.45
+  float fres = glassFresnel(nz).g;
   float sky = 1.0 - smoothstep(-0.9, 0.3, rf.y);
   float win = box(rf.xy, vec2(-0.56, -0.66), vec2(0.13, 0.055), 0.035);
   float floorDark = smoothstep(-0.1, 0.8, rf.y);
@@ -222,9 +225,9 @@ void main() {
 
   // ── Transmission: the room behind, upside-down, and the key light focused into a crescent ──
   float thick = nz;
-  vec3 entryRay = refract(-v, n, 1.0 / 1.45);
-  vec3 exitNormal = normalize(vec3(X + entryRay.xy * 2.0 * nz, -nz));
-  vec3 throughRay = refract(entryRay, -exitNormal, 1.45);
+  vec3 entryPoint = vec3(X, sqrt(max(0.0, 1.0 - min(r2, 1.0))));
+  vec3 exitG;
+  vec3 throughRay = glassSphereRay(entryPoint, n, GLASS_IOR_RGB.g, exitG);
   float tband = smoothstep(0.15, 0.85, throughRay.y) * (1.0 - smoothstep(0.8, 0.97, r)) * 0.16;
   vec2 cdir = normalize(vec2(0.62, 0.78));
   float along = max(dot(r > 1e-4 ? X / r : vec2(0.0), cdir), 0.0);
@@ -261,27 +264,30 @@ void main() {
   col *= 1.0 - floorDark * 0.25 * fres;
 
   // ── The page, seen through the ball ──
-  // A ball lens inverts and magnifies what is behind it: each pixel's ray, after the two surfaces, lands on the page on
-  // the OPPOSITE side of the centre, further out the closer it is to the limb. The red and blue channels land a hair
-  // apart (dispersion), more so toward the rim where the glass is steepest.
+  // Air -> glass -> air for each wavelength. The background plane is three
+  // radii behind the centre, beyond the focal point, so the ball inverts it.
   if (uSceneOn > 0.001) {
-    // From the surface normal, not from the two-surface refraction above: that one has a total-internal-reflection cutoff
-    // (refract() returns zero past a critical angle), and a sampling point that jumps there draws a visible ring on the
-    // ball. The normal is smooth everywhere, and it carries every dent and ripple, so the image warps with the surface.
-    vec2 q = -n.xy * 0.95 - X * 0.3;
-    vec2 spread = normalize(q + vec2(1e-4)) * (0.008 + 0.03 * rim) * uPlace.z * uSceneInv;
-    vec2 uv = (uPlace.xy + q * uPlace.z) * uSceneInv;
+    vec3 exitR, exitB;
+    vec3 rayR = glassSphereRay(entryPoint, n, GLASS_IOR_RGB.r, exitR);
+    vec3 rayB = glassSphereRay(entryPoint, n, GLASS_IOR_RGB.b, exitB);
+    vec3 sampleR = glassSphereSample(exitR, rayR, -3.0);
+    vec3 sampleG = glassSphereSample(exitG, throughRay, -3.0);
+    vec3 sampleB = glassSphereSample(exitB, rayB, -3.0);
+    vec2 uvR = (uPlace.xy + sampleR.xy * uPlace.z) * uSceneInv;
+    vec2 uvG = (uPlace.xy + sampleG.xy * uPlace.z) * uSceneInv;
+    vec2 uvB = (uPlace.xy + sampleB.xy * uPlace.z) * uSceneInv;
     // Premultiplied, and not opaque everywhere: what the capture could not paint is transparent (rgb 0), so its
     // coverage weights the page in. Taken as opaque, those texels (smeared further by the mip blur) darkened the ball.
-    vec4 sG = textureLod(uScene, uv, uLod);
+    vec4 sG = textureLod(uScene, uvG, uLod);
     float sa = sG.a;
     vec3 page = vec3(
-      textureLod(uScene, uv + spread, uLod).r,
+      textureLod(uScene, uvR, uLod).r,
       sG.g,
-      textureLod(uScene, uv - spread, uLod).b
+      textureLod(uScene, uvB, uLod).b
     );
     page = mix(page, uBg * sa, 0.28);
-    float la = uSceneOn * (1.0 - smoothstep(0.9, 1.0, r)) * 0.94;
+    float la = uSceneOn * (1.0 - smoothstep(0.9, 1.0, r)) * 0.94
+      * min(sampleR.z, min(sampleG.z, sampleB.z));
     col = col * (1.0 - la * sa) + page * la;
     a = a * (1.0 - la * sa) + la * sa;
   }
