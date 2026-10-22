@@ -748,6 +748,15 @@ if [ "$full_pull_ok" -ne 0 ]; then
     exit 1
 fi
 
+# Before :latest moves, keep what it pointed at as :rollback — the release the
+# non-web services are restored to if they fail their health checks after
+# `compose up` (rollback_non_web below). Absent on a first deploy: no rollback.
+for img in "$IMAGE_NAME" "$FULL_IMAGE_NAME"; do
+    if "$DOCKER_BIN" image inspect "${img}:latest" >/dev/null 2>&1; then
+        "$DOCKER_BIN" tag "${img}:latest" "${img}:rollback" || true
+    fi
+done
+
 # Retag the pulled images to the local names docker-compose.yml references — both
 # :latest (the compose `image:`) and :${GIT_SHA} (instant rollback target).
 # Layers are shared, so the extra tags cost almost no disk.
@@ -1172,45 +1181,88 @@ check_supervisor() {
 }
 
 stage health
-step_start "Running health checks (ports + supervisor, parallel)..."
-port_ok=0
-sup_ok=0
-failed_ports=""
+step_start "Running health checks (hubs, status, supervisor, workers — parallel)..."
 
-check_port "$PORT_SOCKET"  & p_socket=$!
-check_port "$PORT_RMHBOX"  & p_rmhbox=$!
-check_port "$PORT_RMHTUBE" & p_rmhtube=$!
-check_port "$PORT_STATUS"  & p_status=$!
-check_supervisor           & p_sup=$!
+# HTTP /health on each hub + status (a listening port alone said nothing about a
+# hub that accepted connections but could not serve them).
+check_http() {
+    local port=$1
+    for _ in $(seq 1 "${HTTP_HEALTH_TRIES:-24}"); do
+        curl -fsS --max-time 4 "http://127.0.0.1:${port}/health" >/dev/null 2>&1 && return 0
+        sleep 5
+    done
+    return 1
+}
 
-# Label each job with its compose service name so a failure says WHICH service
-# never published its port. The old report was a bare "port health check failed"
-# covering all four at once — and check_port's own per-port line could not be
-# reached (see above) — so the only artifact of a failed deploy named neither
-# the port nor the service. The labels below are the compose service names
-# verbatim, which also lets the log dump be scoped to what actually failed.
-for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status"; do
-    if ! wait "${job#*:}"; then
-        port_ok=1
-        failed_ports="${failed_ports} ${job%%:*}"
-    fi
-done
-wait "$p_sup" || sup_ok=1
+# The cron/queue workers have no port: healthy = still running, with no new
+# restarts, after a settle window (a crash-loop shows up as RestartCount moving).
+WORKER_SERVICES="jobs ladder-worker homes-worker"
+worker_state() { # → "<running> <restartCount>" or "missing"
+    local id
+    id=$(dc ps -q "$1" 2>/dev/null | head -n1)
+    [ -n "$id" ] || { echo missing; return; }
+    "$DOCKER_BIN" inspect -f '{{.State.Running}} {{.RestartCount}}' "$id" 2>/dev/null || echo missing
+}
+check_workers() {
+    local svc before after failed="" base=""
+    for svc in $WORKER_SERVICES; do base="${base}${svc}|$(worker_state "$svc")"$'\n'; done
+    sleep "${WORKER_SETTLE_SECONDS:-30}"
+    for svc in $WORKER_SERVICES; do
+        before=$(printf '%s' "$base" | grep "^${svc}|" | cut -d'|' -f2-); after=$(worker_state "$svc")
+        case "$after" in
+            "true "*) [ "$after" = "$before" ] || failed="$failed $svc" ;;
+            *) failed="$failed $svc" ;;
+        esac
+    done
+    [ -z "$failed" ] || { echo "$failed"; return 1; }
+}
 
-if [ $port_ok -ne 0 ]; then
-    log "ERROR: port health check failed for:${failed_ports}"
-    log "--- Container logs (${failed_ports# }) ---"
-    # Intentional word splitting: $failed_ports is a space-separated list of
-    # compose service names, so the dump covers exactly the failing services.
+# Runs every check in one parallel wave; prints the failing service names.
+run_health_checks() {
+    local failed="" job wf
+    check_http "$PORT_SOCKET"  & local p_socket=$!
+    check_http "$PORT_RMHBOX"  & local p_rmhbox=$!
+    check_http "$PORT_RMHTUBE" & local p_rmhtube=$!
+    check_http "$PORT_STATUS"  & local p_status=$!
+    check_supervisor           & local p_sup=$!
+    wf=$(mktemp); check_workers > "$wf" & local p_workers=$!
+    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status" "supervisor:$p_sup"; do
+        wait "${job#*:}" || failed="$failed ${job%%:*}"
+    done
+    wait "$p_workers" || failed="$failed $(cat "$wf")"
+    rm -f "$wf"
+    echo "$failed" | xargs
+}
+
+# Restore the non-web services to the release they ran before this deploy (the
+# :rollback images), then re-check them. Web is left alone: it already passed
+# its own smoke test + bake in the hotswap, and rolls back on its own.
+rollback_non_web() {
+    local img
+    for img in "$IMAGE_NAME" "$FULL_IMAGE_NAME"; do
+        "$DOCKER_BIN" image inspect "${img}:rollback" >/dev/null 2>&1 || return 1
+    done
+    log "Rolling back non-web services to the previous release..."
+    for img in "$IMAGE_NAME" "$FULL_IMAGE_NAME"; do
+        "$DOCKER_BIN" tag "${img}:rollback" "${img}:latest" || return 1
+    done
+    dc up -d --no-build --remove-orphans --scale web=0 || return 1
+    local still
+    still=$(run_health_checks)
+    [ -z "$still" ] || { log "Still unhealthy after rollback: $still"; return 1; }
+}
+
+failed_services=$(run_health_checks)
+if [ -n "$failed_services" ]; then
+    log "ERROR: health checks failed for: ${failed_services}"
+    log "--- Container logs (${failed_services}) ---"
     # shellcheck disable=SC2086
-    dc logs --tail=50 $failed_ports 2>&1 || true
-    update_deploy_status fail "port health check failed:${failed_ports}"
-    exit 1
-fi
-if [ $sup_ok -ne 0 ]; then
-    log "ERROR: supervisor /health did not come up on :${SUPERVISOR_METRICS_PORT} after 120s."
-    dc logs --tail=50 supervisor 2>&1 || true
-    update_deploy_status fail "supervisor health check failed"
+    dc logs --tail=50 $failed_services 2>&1 || true
+    if rollback_non_web; then
+        update_deploy_status rolledback "${failed_services} failed health checks — non-web services restored to the previous release (web stays on this one)"
+        exit 1
+    fi
+    update_deploy_status fail "${failed_services} failed health checks and ROLLBACK FAILED — needs a human"
     exit 1
 fi
 
