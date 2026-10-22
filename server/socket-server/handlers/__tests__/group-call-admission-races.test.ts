@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Server, Socket } from 'socket.io';
 import { GCALL_C2S, GCALL_S2C } from '../../../../lib/groupcall/events';
-import { getBusy } from '../../busy-registry';
+import { claimBusy, getBusy, releaseBusy } from '../../busy-registry';
 import { __liveGroupCallCount, registerGroupCallHandlers } from '../group-call';
 
 const mocks = vi.hoisted(() => ({
   prisma: {
     communityMember: { findUnique: vi.fn() },
-    user: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn(), findMany: vi.fn() },
+    userBlock: { findMany: vi.fn() },
+    notificationPreference: { findMany: vi.fn() },
+    follow: { findMany: vi.fn() },
     groupCall: { create: vi.fn(), update: vi.fn() },
     groupCallParticipant: { upsert: vi.fn() },
   },
@@ -39,21 +42,23 @@ interface FakeClient {
 
 const io = {
   to: () => ({ emit: () => {} }),
-  in: () => ({ socketsLeave: () => {}, fetchSockets: async () => [] }),
-  sockets: { sockets: new Map() },
+  // Everyone is online, so invitee screening admits on privacy alone.
+  in: () => ({ socketsLeave: () => {}, fetchSockets: async () => [{ id: 'online' }] }),
+  sockets: { sockets: new Map<string, Socket>() },
 } as unknown as Server;
 
-function connect(userId: string): FakeClient {
+function connect(userId: string, socketId = `${userId}-socket`): FakeClient {
   const handlers = new Map<string, Handler>();
   const emitted: FakeClient['emitted'] = [];
   const socket = {
-    id: `${userId}-socket`,
+    id: socketId,
     data: { userId, userName: userId },
     on: (event: string, handler: Handler) => handlers.set(event, handler),
     emit: (event: string, payload: Record<string, unknown>) => emitted.push({ event, payload }),
     join: () => {},
     leave: () => {},
   } as unknown as Socket;
+  (io.sockets.sockets as Map<string, Socket>).set(socketId, socket);
   registerGroupCallHandlers(io, socket);
   return {
     socket,
@@ -89,6 +94,18 @@ describe('group-call admission races', () => {
   beforeEach(() => {
     mocks.prisma.communityMember.findUnique.mockReset().mockResolvedValue({ userId: 'member' });
     mocks.prisma.user.findUnique.mockReset();
+    mocks.prisma.user.findMany
+      .mockReset()
+      .mockImplementation(({ where }: { where: { id: { in: string[] } } }) =>
+        Promise.resolve(where.id.in.map((id) => ({ id, name: id, image: null, handle: null }))),
+      );
+    mocks.prisma.userBlock.findMany.mockReset().mockResolvedValue([]);
+    mocks.prisma.notificationPreference.findMany
+      .mockReset()
+      .mockImplementation(({ where }: { where: { userId: { in: string[] } } }) =>
+        Promise.resolve(where.userId.in.map((userId) => ({ userId, callPrivacy: 'everyone' }))),
+      );
+    mocks.prisma.follow.findMany.mockReset().mockResolvedValue([]);
     mocks.prisma.groupCall.create.mockReset().mockResolvedValue({});
     mocks.prisma.groupCall.update.mockReset().mockResolvedValue({});
     mocks.prisma.groupCallParticipant.upsert.mockReset().mockResolvedValue({});
@@ -153,6 +170,63 @@ describe('group-call admission races', () => {
 
     await one.send(GCALL_C2S.LEAVE, { callId });
     await two.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('does not ring an invitee who was claimed by another call during screening', async () => {
+    const hostRow = gate<unknown>();
+    holdPeerRows(new Map([['adhoc-host', hostRow.promise]]));
+    const host = connect('adhoc-host');
+    const starting = host.send(GCALL_C2S.START, { origin: 'adhoc', inviteeIds: ['adhoc-callee'] });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Another room rings (and claims) the callee while this START is parked.
+    expect(claimBusy('adhoc-callee', 'gcall', 'other-room')).toBe(true);
+    hostRow.open({ id: 'adhoc-host', name: 'Host', image: null, handle: null });
+    await starting;
+
+    expect(host.emitted).toContainEqual({
+      event: GCALL_S2C.REJECTED,
+      payload: expect.objectContaining({ reason: 'busy', operation: 'start' }),
+    });
+    expect(__liveGroupCallCount()).toBe(0);
+    expect(getBusy('adhoc-host')).toBeNull();
+    expect(getBusy('adhoc-callee')).toEqual({ kind: 'gcall', id: 'other-room' });
+    releaseBusy('adhoc-callee', 'other-room');
+  });
+
+  it('does not bind a socket that disconnected while its START was in flight', async () => {
+    const row = gate<unknown>();
+    holdPeerRows(new Map([['vanishing-host', row.promise]]));
+    const host = connect('vanishing-host');
+    const starting = host.send(GCALL_C2S.START, { origin: 'community', originId: 'community-c' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    (host.socket as unknown as { disconnected: boolean }).disconnected = true;
+    row.open({ id: 'vanishing-host', name: 'Gone', image: null, handle: null });
+    await starting;
+
+    expect(__liveGroupCallCount()).toBe(0);
+    expect(getBusy('vanishing-host')).toBeNull();
+  });
+
+  it('tells the old tab it is out when the call moves to another tab', async () => {
+    holdPeerRows(new Map());
+    const tabA = connect('two-tabs', 'tab-a');
+    await tabA.send(GCALL_C2S.START, { origin: 'community', originId: 'community-d' });
+    const callId = joinedCallId(tabA);
+    expect(callId).toBeDefined();
+
+    const tabB = connect('two-tabs', 'tab-b');
+    await tabB.send(GCALL_C2S.JOIN, { callId });
+
+    expect(joinedCallId(tabB)).toBe(callId);
+    expect(tabA.emitted).toContainEqual({
+      event: GCALL_S2C.ENDED,
+      payload: expect.objectContaining({ callId, reason: 'left' }),
+    });
+
+    await tabB.send(GCALL_C2S.LEAVE, { callId });
     expect(__liveGroupCallCount()).toBe(0);
   });
 });

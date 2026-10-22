@@ -324,6 +324,12 @@ let client: RealtimeClient | null = null;
 let mesh: GroupCallMesh | null = null;
 let iceServers: IceServer[] = [];
 let mediaAttempt = 0;
+/**
+ * The room our last `JOIN` went to. A cancel before the JOIN left (during the
+ * mic prompt) has nothing to take back, and a `LEAVE` sent anyway comes back as
+ * a `not-participant` error that would kill a quick re-join of the same room.
+ */
+let joinSentFor: string | null = null;
 let incomingExpiryTimer: ReturnType<typeof setTimeout> | null = null;
 /**
  * Our own userId, cached from the session.
@@ -501,6 +507,7 @@ async function openLocalMedia(attempt: number): Promise<boolean> {
  */
 function finish(reason: GroupCallEndReason, notify: 'decline' | 'leave' | 'end' | 'none'): void {
   mediaAttempt += 1;
+  joinSentFor = null;
   clearIncomingExpiry();
   const s = store();
   s.setLastInviteRejection(null);
@@ -581,6 +588,12 @@ export function initGroupCalls(): void {
 function rejoinAfterReconnect(): void {
   const s = store();
   if (s.phase === 'active' && s.callId) {
+    // The server dropped (or is about to move) our leg, and every peer tears
+    // down its connection to us and negotiates afresh when we come back. Ours
+    // must go too: an old leg cannot accept a new DTLS session, and a peer
+    // waiting on our offer would never get one. `JOINED` rebuilds them all.
+    mesh?.syncPeers([]);
+    joinSentFor = s.callId;
     client?.emit(GCALL_C2S.JOIN, { callId: s.callId });
     return;
   }
@@ -591,7 +604,12 @@ function rejoinAfterReconnect(): void {
     finish('failed', 'none');
     return;
   }
-  if (s.phase === 'joining' && s.callId) client?.emit(GCALL_C2S.JOIN, { callId: s.callId });
+  // Re-send only a JOIN that had already gone out. One still waiting on the
+  // mic prompt sends its own once the mic opens; sending it now would admit us
+  // with no microphone and then discard the mesh when the prompt resolves.
+  if (s.phase === 'joining' && s.callId && joinSentFor === s.callId) {
+    client?.emit(GCALL_C2S.JOIN, { callId: s.callId });
+  }
 }
 
 function bindSocket(socket: Socket): void {
@@ -615,6 +633,8 @@ function bindSocket(socket: Socket): void {
       s.setStartedAt(payload.startedAt);
       mesh?.setSelfId(payload.selfId);
       syncMesh();
+      // The server re-admitted us unmuted; say so again if we are not.
+      if (s.muted) client?.emit(GCALL_C2S.STATE, { callId: payload.callId, muted: true });
       return;
     }
 
@@ -921,6 +941,7 @@ export async function joinGroupCall(callId: string): Promise<void> {
     return;
   }
 
+  joinSentFor = callId;
   const sent = client?.emit(GCALL_C2S.JOIN, { callId }) ?? false;
   if (!sent) finish('failed', 'none');
 }
@@ -937,6 +958,14 @@ export function leaveGroupCall(): void {
   if (phase === 'idle' || phase === 'ended') return;
   if (phase === 'incoming') {
     finish('declined', 'decline');
+    return;
+  }
+  const { callId, ringingFrom } = store();
+  if (phase === 'joining' && callId && joinSentFor !== callId) {
+    // Cancelled during the mic prompt: the server never saw a JOIN. A ring we
+    // were answering is still ringing there, so decline it; a room we were
+    // walking into knows nothing of us.
+    finish('left', ringingFrom ? 'decline' : 'none');
     return;
   }
   finish('left', 'leave');

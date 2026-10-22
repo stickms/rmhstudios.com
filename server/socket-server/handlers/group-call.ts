@@ -779,7 +779,11 @@ async function isOriginMember(
  * The timer is the server's, not the client's, so a client that ignores its own
  * countdown cannot leave a room ringing on someone's phone indefinitely.
  */
-function addRinging(io: Server, call: LiveGroupCall, peer: CallPeer): void {
+function addRinging(io: Server, call: LiveGroupCall, peer: CallPeer): boolean {
+  // Screening checked `getBusy` before an await; the invitee may have been
+  // claimed by another room or a 1:1 since. Claim first and touch nothing on a
+  // loss — overwriting `byUser` would point their disconnect at the wrong room.
+  if (!claimBusy(peer.id, 'gcall', call.id)) return false;
   const participant: LiveParticipant = {
     userId: peer.id,
     name: peer.name,
@@ -793,7 +797,6 @@ function addRinging(io: Server, call: LiveGroupCall, peer: CallPeer): void {
   call.invited.add(peer.id);
   call.rung += 1;
   byUser.set(peer.id, call.id);
-  claimBusy(peer.id, 'gcall', call.id);
 
   const timer = setTimeout(() => {
     const live = calls.get(call.id);
@@ -807,6 +810,7 @@ function addRinging(io: Server, call: LiveGroupCall, peer: CallPeer): void {
   call.ringTimers.set(peer.id, timer);
 
   persistParticipant(call, participant, { left: false, at: Date.now() });
+  return true;
 }
 
 /**
@@ -989,6 +993,14 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     if (existing && existing.joinedAt !== null && existing.socketId !== socket.id) {
       const previous = existing.socketId ? io.sockets.sockets.get(existing.socketId) : undefined;
       previous?.leave(callRoom(call.id));
+      // The old tab is told it is out, or it keeps an open microphone and an
+      // in-call bar for a room that no longer routes anything to it. Sent to
+      // that one socket: the new tab shares the user room.
+      previous?.emit(GCALL_S2C.ENDED, {
+        callId: call.id,
+        reason: 'left' satisfies GroupCallEndReason,
+        durationSec: Math.max(0, Math.round((Date.now() - call.startedAt) / 1000)),
+      });
       broadcast(io, call, GCALL_S2C.PEER_LEFT, {
         callId: call.id,
         userId,
@@ -1059,6 +1071,10 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     if (!identity) return reject('gone', operation, { callId: call.id });
     // Others may have joined while we awaited membership or the peer row.
     if (isRosterFull(joinedCount(call))) return reject('full', operation, { callId: call.id });
+    // This socket closed while we awaited. Its disconnect handler has already
+    // run and found nothing to clean up, so binding it now would leave a ghost
+    // on the roster and a busy claim nobody releases.
+    if (socket.disconnected) return;
     if (!claimBusy(userId, 'gcall', call.id)) {
       return reject('busy', operation, { callId: call.id });
     }
@@ -1132,6 +1148,9 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       if (getBusy(userId)) return reject('busy', 'start', { origin, originId: null });
 
       const host = await loadPeer(userId, selfName(), selfImage());
+      // Gone while we awaited: a room bound to a dead socket would hold the
+      // host busy with nothing left to send the LEAVE that frees them.
+      if (socket.disconnected) return;
       const call = openRoom(socket, {
         host,
         origin,
@@ -1141,15 +1160,20 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       if (!call) return reject('busy', 'start', { origin, originId: null });
       // Everyone onto the roster first, so both the host's `joined` and every
       // invitee's card describe the same complete room.
-      for (const peer of admitted) addRinging(io, call, peer);
+      const rung = admitted.filter((peer) => addRinging(io, call, peer));
+      if (rung.length === 0) {
+        // Everyone became busy while we were screening them.
+        endRoom(io, call, 'unanswered');
+        return reject('busy', 'start', { origin, originId: null });
+      }
       emitJoined(socket, call, userId);
-      for (const peer of admitted) emitIncoming(io, call, peer.id);
+      for (const peer of rung) emitIncoming(io, call, peer.id);
       logger.info({
         event: 'group_call_started',
         callId: call.id,
         origin,
         hostId: userId,
-        rung: admitted.length,
+        rung: rung.length,
       });
       return;
     }
@@ -1179,6 +1203,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     const racedCall = raced ? calls.get(raced) : undefined;
     if (racedCall) return void (await enterRoom(racedCall, 'start'));
 
+    if (socket.disconnected) return;
     const call = openRoom(socket, { host, origin, originId, conversationId: null });
     if (!call) return reject('busy', 'start', { origin, originId });
     emitJoined(socket, call, userId);
@@ -1234,8 +1259,14 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       if (admitted.length === 0) {
         return reject(strongestReason(refusals), 'invite', { callId });
       }
-      const rung = admitted.filter((peer) => !call.participants.has(peer.id));
-      for (const peer of rung) addRinging(io, call, peer);
+      // Re-checked after the await: another invite may have filled the roster
+      // or rung the same person, and a busy claim may have been taken since.
+      const space = MAX_GROUP_CALL_PARTICIPANTS - call.participants.size;
+      const rung = admitted
+        .filter((peer) => !call.participants.has(peer.id))
+        .slice(0, Math.max(0, space))
+        .filter((peer) => addRinging(io, call, peer));
+      if (rung.length === 0) return reject('busy', 'invite', { callId });
       // Deltas before cards, so an invitee already on the roster learns about
       // the others in this batch and the new ones get a complete list.
       for (const peer of rung) {

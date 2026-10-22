@@ -228,13 +228,23 @@ export async function getInvitableUsers(
   const limit = Math.min(Math.max(1, opts.limit ?? INVITABLE_LIMIT), INVITABLE_LIMIT);
   const q = opts.q?.trim() ?? '';
 
-  const friends = await getActiveFriends(viewerId).catch(() => []);
+  const [friends, blocks] = await Promise.all([
+    getActiveFriends(viewerId).catch(() => []),
+    // Either direction: the hub would drop them silently anyway, so listing
+    // them only produces a "call" that never rings.
+    prisma.userBlock.findMany({
+      where: { OR: [{ blockerId: viewerId }, { blockedId: viewerId }] },
+      select: { blockerId: true, blockedId: true },
+    }),
+  ]);
   const needle = q.toLowerCase();
   const matches = (u: { name: string | null; handle: string | null; username: string | null }) =>
     !needle || [u.name, u.handle, u.username].some((v) => v?.toLowerCase().includes(needle));
 
   const out: InvitableUser[] = [];
+  // Seeded with the viewer and everyone on either side of a block with them.
   const seen = new Set<string>([viewerId]);
+  for (const b of blocks) seen.add(b.blockerId === viewerId ? b.blockedId : b.blockerId);
 
   for (const friend of friends) {
     if (seen.has(friend.user.id) || !matches(friend.user)) continue;
@@ -246,9 +256,11 @@ export async function getInvitableUsers(
   if (!q) return out;
 
   // `excludeUserId` keeps the viewer out at the SQL level; `seen` then drops the
-  // mutuals already placed above so nobody appears twice with a different flag.
+  // mutuals already placed above (so nobody appears twice with a different
+  // flag) and anyone on either side of a block.
   const found = await searchPeople(q.slice(0, 64), {
-    limit: limit - out.length,
+    // Over-fetch by the block count so filtered hits do not shorten the page.
+    limit: Math.min(limit - out.length + blocks.length, 2 * INVITABLE_LIMIT),
     excludeUserId: viewerId,
   }).catch(() => []);
 

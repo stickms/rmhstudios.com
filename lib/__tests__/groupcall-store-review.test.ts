@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => {
     handlers,
     emits,
     meshes,
+    options: null as null | { onConnect?: (socket: unknown, info: { isReconnect: boolean }) => void },
     getSession: vi.fn(async () => ({ data: { user: { id: 'self' } } })),
     openMicrophone: vi.fn(async () => {}),
     client: {
@@ -38,7 +39,10 @@ vi.mock('@/lib/auth-client', () => ({
 }));
 
 vi.mock('@/lib/shared/realtime/client', () => ({
-  createRealtimeClient: () => mocks.client,
+  createRealtimeClient: (options: typeof mocks.options) => {
+    mocks.options = options;
+    return mocks.client;
+  },
 }));
 
 vi.mock('@/lib/groupcall/support', () => ({
@@ -237,5 +241,74 @@ describe('group-call review regressions', () => {
     });
     expect(activeMesh.closed).toBe(false);
     warn.mockRestore();
+  });
+
+  it('rebuilds every peer leg when it re-joins after a reconnect', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ iceServers: [] }) })),
+    );
+    const groupCall = await import('@/lib/groupcall/store');
+    await groupCall.joinGroupCall('room-id');
+    mocks.handlers.get(GCALL_S2C.JOINED)?.({
+      callId: 'room-id',
+      origin: 'community',
+      originId: 'community-id',
+      conversationId: null,
+      selfId: 'self',
+      hostId: 'peer',
+      participants: [],
+      startedAt: Date.now(),
+    });
+    expect(groupCall.useGroupCallStore.getState().phase).toBe('active');
+    const mesh = mocks.meshes[0];
+    mesh.syncPeers.mockClear();
+    mocks.emits.length = 0;
+
+    mocks.options?.onConnect?.({}, { isReconnect: true });
+
+    // Every old leg goes before the JOIN, so JOINED negotiates them afresh.
+    expect(mesh.syncPeers).toHaveBeenCalledWith([]);
+    expect(mocks.emits).toContainEqual({ event: 'gcall:join', payload: { callId: 'room-id' } });
+  });
+
+  it('does not re-send a JOIN that is still waiting on the microphone', async () => {
+    let grantMicrophone!: () => void;
+    mocks.openMicrophone.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          grantMicrophone = resolve;
+        }),
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ iceServers: [] }) })),
+    );
+    const groupCall = await import('@/lib/groupcall/store');
+    const joining = groupCall.joinGroupCall('room-id');
+    await vi.waitFor(() => expect(mocks.meshes).toHaveLength(1));
+
+    mocks.options?.onConnect?.({}, { isReconnect: true });
+    expect(mocks.emits.filter(({ event }) => event === 'gcall:join')).toHaveLength(0);
+
+    grantMicrophone();
+    await joining;
+    expect(mocks.emits.filter(({ event }) => event === 'gcall:join')).toHaveLength(1);
+  });
+
+  it('sends no LEAVE when cancelled before its JOIN went out', async () => {
+    mocks.openMicrophone.mockImplementationOnce(() => new Promise<void>(() => {}));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ iceServers: [] }) })),
+    );
+    const groupCall = await import('@/lib/groupcall/store');
+    void groupCall.joinGroupCall('room-id');
+    await vi.waitFor(() => expect(mocks.meshes).toHaveLength(1));
+
+    groupCall.leaveGroupCall();
+
+    expect(groupCall.useGroupCallStore.getState().phase).toBe('ended');
+    expect(mocks.emits.some(({ event }) => event === 'gcall:leave')).toBe(false);
   });
 });
