@@ -9,9 +9,12 @@ Worktree baseline taken 2026-10-21, commit e97b5192 (then merged with `claude/fo
 | 2 | `auth: 'optional'` -> `'none'` where nothing reads the viewer | slice-it/showcase, ai/takeaways, canvas/log, canvas/state, slice-it/replay, slice-it/replay/$id, community-pages/$id/revisions, handles/history | `auth.api.getSession` calls per request | 1 | 0 | c5d1f872 | `api-dead-session.test.ts` (fails if one route is reverted — checked) | exact |
 | 3 | Public cache policy on 8 anonymous-invariant GETs | doctrine/puzzles/leaderboard, dream-rift/coop, forecasting/seasons, slice-it/showcase (`leaderboard` 30/60/300); tournaments, achievements/$userId, doctrine/incidents (`liveList` 15/30/60); pf2ecal/sessions/archive (`archive` 300/900/3600) | GETs with a declared `cache` option | 44 | 52 | a010f2d6 | `api-cache-policy.test.ts`: static scan clean + dynamic call with/without cookie, Authorization, Accept-Language: 0 session reads, only IP/conditional/encoding headers read, identical status and body (33 of 47 public routes return 2xx under the empty Prisma stub; the rest are covered by the read assertions) | exact |
 | 4 | `apiCache.invalidate*` now also publishes on the existing `cache:invalidate` Redis channel (hook in `lib/cache.ts`, registered by `lib/cached.server.ts` at module load; origin id stops echo loops; `cached.server` drops via `dropLocal*`; local-only without `REDIS_URL`) | the ~25 `apiCache.invalidate*` call sites (communities automod/settings/flairs, link-risk, muted words, tiers, ops notices, ...), no file edited | processes that see an invalidation | 1 (the writer) | all (2 web workers, plus the second container during a swap) | this round's commit | `lib/__tests__/api-cache-bridge.test.ts`: two simulated processes on a fake bus; key and prefix; exactly one publish (no loop); own echo ignored; no Redis = local-only | exact |
-| 5 | `apiCache` FIFO capped at 1000 -> LRU, default 5000, `API_CACHE_MAX_ENTRIES` (clamped 100..100000) | every `apiCache` / `cached()` L1 user | hot shared key survives a flood of per-user keys | evicted (FIFO) | kept (LRU) | this round's commit | same test file (LRU order, overwrite, flood, env/clamp) | exact |
+| 5 | ~~`apiCache` FIFO -> LRU, `API_CACHE_MAX_ENTRIES`~~ **Superseded by main `7cff5e5a6` / `ff05b6a36`** (true LRU + byte budget sized from the worker heap; the knob is gone). The Redis invalidation bridge (#4) was kept and now sits on the `apiCache` facade. | - | - | - | - | - | - | superseded |
+| 6 | Server-side response micro-cache in `defineHandler` for `cache.visibility: 'public'` + `auth: 'none'` GETs (closes D1). Own LRU (500 entries / 16 MB, `API_RESPONSE_CACHE_ENTRIES`, 0 disables), TTL `min(sMaxAge, 30 s)`, single-flight, 200 only, <= 64 KB, per worker | /api/tournaments, /api/forecasting/seasons, /api/dream-rift/coop (the three public routes that query the DB; the other five declared routes issue no query on this dataset and are unchanged within noise) | anon p50 ms / rps @c=16 / queries | 1.9 / 935 / 1 ; 1.8 / 1036 / 1 ; 1.8 / 1041 / 1 | 0.8 / 1243 / 0 ; 1.0 / 1673 / 0 ; 1.1 / 1562 / 0 | this round's commit | `api-response-cache.test.ts` (no cross-key bleed, TTL, no cache of errors/Set-Cookie/oversize, single-flight) and `api-cache-policy.test.ts` (dynamic public check clears the cache per call) | latency (production build, single process, same build with the knob 0 vs default, 100 samples + 5 s at c=16) |
 
-Memory estimate for #5 (03-rules section 2): typical value 1-8 KB, rare 20-40 KB; 5000 entries at ~5 KB is ~25 MB per web worker, ~50 MB for the 2 workers. Hit-rate change is not measured (Stage B).
+Row 6 checklist (03-rules section 2): key = method+path+query (a public route reads no session/cookie/header, proven by the triage scan and the dynamic test); visibility = only routes the triage proves anonymous-invariant, `auth: 'none'`, no membership gate; invalidation = TTL only, stated cap 30 s (<= the route's own `sMaxAge`); coherence = deliberately per worker, not `cached()`: a worker's entry is at most 30 s old and no write path needs to purge a public-declared route; stampede = single-flight; memory = hard ceiling 16 MB per worker (byte budget) plus 500 entries; test = above. Cluster note: with N workers each fills its own copy, so the hit rate is about 1/N of a shared cache for low-rate routes, and the saving is largest on hot routes. The measured win is on a dataset where these queries are tiny (1 ms); on a real table the saving per hit is the query time.
+
+Row 5's memory estimate is void: main's byte budget replaces it.
 
 Caveat on the value of #3: the repo has no Apache or Cloudflare cache rule for `/api` (`deploy/` checked). Cloudflare does not cache JSON by default, so `s-maxage` on `/api` is inert until an operator adds a cache rule (a coordinator item for the report, not a code change); the browser `max-age`, ETag and 304 are real today. See Deferred D1 for a server-side answer that does not depend on that.
 
@@ -640,3 +643,23 @@ Columns: `dH` = on `defineHandler`, `raw` = not; `declared` = `cache` option or 
 | `lib/search/expand.server.ts` | no | 1/2/0 | `key` | - |
 | `lib/trick-week/trick-week.server.ts` | no | 1/1/0 | `key` | - |
 | `lib/wrapped/narrative.server.ts` | no | 1/2/0 | `key` | - |
+
+
+## Stage B (merged tree) additions
+
+**Handler fixed overhead** (production build, one process, Redis on; `results` scratchpad `ws3-off.json`, micro-cache off, 100 sequential samples + 5 s at c=16):
+
+| Route | shape | p50 ms | p95 ms | rps @c=16 |
+|---|---|---:|---:|---:|
+| /api/health | no wrapper floor | 0.7 | 0.9 | 1588 |
+| /api/delight/config anon | defineHandler none + rate limit + policy | 1.2 | 1.5 | 1663 |
+| /api/experiments anon (no cookie) | defineHandler optional + rate limit read | 1.8 | 2.4 | 1400 |
+| /api/experiments signed | same + session + one cached read | 2.2 | 2.7 | 837 |
+
+The wrapper costs about 0.5 ms over the floor with no cookie (rate-limit EVALSHA round trip, which main already made one RTT), and a signed request adds about 0.4 ms p50 and cuts c=16 throughput by 40% (session resolve + tier). Nothing is done twice that I could see; all inside the `api` budget. No change made.
+
+**Public policy latency/throughput**: see row 6; the five routes with no query sit at 1.0-1.2 ms / 1.5-1.7k rps either way.
+
+**New main GETs triaged** (`pnpm tsx scripts/api-cache-triage.ts`, 512 GET/HEAD, 5 new): /api/admin/deepseek/balance, /api/admin/deepseek/history, /api/admin/perf, /api/admin/perf/db, /api/admin/perf/heap are all `auth: 'admin'`, already `no-store`; left private/no-store by design, no edit.
+
+**Not measured**: `/api/pf2ecal/sessions/archive` returned 400 without params (excluded).

@@ -46,6 +46,11 @@ import type { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { measure } from '@/lib/otel/timing';
 import { hasSessionCookie } from '@/lib/session-cookie';
+import {
+  responseCacheKey,
+  responseCacheTtlMs,
+  withResponseCache,
+} from '@/lib/api/response-cache.server';
 import type { RateLimitPolicy, WithRateLimitOptions } from '@/lib/rate-limit';
 import { withRateLimitAsync } from '@/lib/rate-limit.server';
 import { canUse, upgradeRequiredBody, type MemberFeature } from '@/lib/entitlements/features';
@@ -566,6 +571,14 @@ export function defineHandler<
   // process down at boot instead of quietly leaking on the first cache hit.
   if (options.cache) assertCacheSpec(options.cache, mode, options.feature);
   const wantsEtag = options.etag ?? Boolean(options.cache);
+  // A public policy on a route that never resolves a viewer: the response is the
+  // same for everyone, so a hot GET can be answered from memory for the part of
+  // its declared window we are willing to hold it (`response-cache.server.ts`).
+  const microCacheable =
+    options.cache?.visibility === 'public' &&
+    mode === 'none' &&
+    !options.feature &&
+    !options.idempotent;
 
   return async ({ request, params }) => {
     try {
@@ -579,7 +592,8 @@ export function defineHandler<
         // A transport/DB hiccup in the session lookup must not 500 a route that
         // tolerates anonymous callers — it degrades to "signed out" instead.
         // Timed as the `sess` Server-Timing phase.
-        const lookup = () => measure('sess', () => auth.api.getSession({ headers: request.headers }));
+        const lookup = () =>
+          measure('sess', () => auth.api.getSession({ headers: request.headers }));
         session = mode === 'optional' ? await lookup().catch(() => null) : await lookup();
       }
 
@@ -703,7 +717,14 @@ export function defineHandler<
 
       let response: Response;
       try {
-        response = await handler(ctx);
+        const microTtl =
+          microCacheable && request.method === 'GET'
+            ? responseCacheTtlMs(options.cache?.sMaxAge)
+            : 0;
+        response =
+          microTtl > 0
+            ? await withResponseCache(responseCacheKey(request), microTtl, async () => handler(ctx))
+            : await handler(ctx);
       } catch (handlerError) {
         // Release the claim so a genuine retry can run — a failed request must
         // not burn its key for the next 24 hours.
