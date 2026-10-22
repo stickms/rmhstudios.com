@@ -84,15 +84,30 @@ export async function getCommunity(
   // A private community is listed, so its existence is not secret; its content
   // is. A non-member gets the metadata only - no announcements, no post count.
   if (community.isPrivate && !role) {
+    // Explicit allow-list: only what the locked card/page renders (plus ids the
+    // invite page needs). Owner id, verification, starboard and flair settings
+    // are members-only, so they get neutral placeholders, never the real values.
     return {
-      ...community,
+      id: community.id,
+      slug: community.slug,
+      name: community.name,
+      description: community.description,
+      icon: community.icon,
+      color: community.color,
+      isPrivate: true,
+      memberCount: community.memberCount,
+      createdById: '',
+      createdAt: '',
       postCount: 0,
-      createdAt: community.createdAt.toISOString(),
       joined: false,
       role: null,
       announcements: [],
       locked: true,
       requestState: viewerId ? await getOwnRequestState(community.id, viewerId) : null,
+      flairRequired: false,
+      starThreshold: 0,
+      verificationLevel: 'none',
+      verificationValue: 0,
     };
   }
 
