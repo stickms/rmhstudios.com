@@ -187,7 +187,7 @@
     "web-push": "^3.6.7",
     "web-vitals": "^6.2.3",
     "ws": "^8.22.0",
-    "zod": "^4.4.3",
+    "zod": "^4.6.5",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
