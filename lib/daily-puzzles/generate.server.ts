@@ -32,13 +32,14 @@ import {
     type AnyPuzzle,
     type DailyPuzzleMode,
 } from './generate-core';
+import { timedAiFetch } from '../ai/timed-fetch.server';
 
 export { AI_PUZZLE_MODES, isAIPuzzleMode };
 export type { DailyPuzzleMode };
 
 // maxRetries: 0 so there is no automatic retry loop — reliability comes from the
 // deterministic fallback, not from retrying a slow/failing upstream.
-const deepseek = new OpenAI({
+const deepseek = new OpenAI({ fetch: timedAiFetch,
     apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
     baseURL: 'https://api.deepseek.com/v1',
     maxRetries: 0,

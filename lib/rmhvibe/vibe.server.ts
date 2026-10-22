@@ -29,6 +29,7 @@ import {
   BundleError,
   injectVibeStorageShim,
 } from '@/lib/rmhvibe/vibe-bundle.server';
+import { timedAiFetch } from '../ai/timed-fetch.server';
 
 export type VibeMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
@@ -61,7 +62,7 @@ function getClient(provider: VibeProvider): OpenAI {
   if (!apiKey) throw new MissingKeyError(provider);
   // maxRetries: 1 — streaming stalls are handled by the timers below; we don't want
   // the SDK silently retrying a long generation for minutes behind the scenes.
-  const client = new OpenAI({ baseURL: cfg.baseURL, apiKey, maxRetries: 1 });
+  const client = new OpenAI({ fetch: timedAiFetch, baseURL: cfg.baseURL, apiKey, maxRetries: 1 });
   clients[provider] = client;
   return client;
 }

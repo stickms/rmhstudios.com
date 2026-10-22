@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 897 files across 192 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 899 files across 192 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-86 routes.
+88 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -101,6 +101,8 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/link-rules` | `DELETE` `GET` `POST` | `app/routes/api/admin/link-rules.ts` |
 | `/api/admin/mod-macros` | `DELETE` `GET` `POST` | `app/routes/api/admin/mod-macros.ts` |
 | `/api/admin/oncall` | `GET` | `app/routes/api/admin/oncall.ts` |
+| `/api/admin/oncall-rules` | `GET` `PATCH` | `app/routes/api/admin/oncall-rules.ts` |
+| `/api/admin/oncall-series` | `GET` | `app/routes/api/admin/oncall-series.ts` |
 | `/api/admin/perf` | `GET` | `app/routes/api/admin/perf/index.ts` |
 | `/api/admin/perf/db` | `GET` | `app/routes/api/admin/perf/db.ts` |
 | `/api/admin/perf/heap` | `GET` | `app/routes/api/admin/perf/heap.ts` |

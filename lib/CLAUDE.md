@@ -83,6 +83,14 @@ bundle only**. SSR/server builds get the real module.
   everywhere (Web Audio — **always** go through `getAudioContext()`, never
   `new AudioContext()` — plus haptics, idle callbacks, wake lock, fullscreen,
   WebGL detection). `app-toast.ts` is the toast store for the full-screen apps.
+- **Liquid glass:** `liquid/glass/` — `engine.ts` (the document service: discovery,
+  cursor light, tap ripples, the one on-demand frame), `shader.ts` + `renderer.ts`
+  (the slab optics; one shared WebGL 2 context), `policy.ts` and `color.ts` (pure,
+  unit-tested decisions), `scene.ts` + `scene-store.ts` (the page snapshot the rim
+  refracts, built on `eversion/capture`). `liquid/runtime.ts` is the
+  translate-only neighbour push. `dough.ts` is the globe's soft-body field
+  (pure, unit-tested). Contract:
+  [`docs/liquid-glass-system.md`](../docs/liquid-glass-system.md).
 - **Moderation/admin:** `moderation.server.ts`, `admin-audit.server.ts`,
   `admin-review.server.ts`, `security-reports.ts`.
 - **Webhooks (outbound developer API):** `webhooks/` (emit, events,
@@ -185,8 +193,8 @@ don't remove that plugin.
   `lib/__tests__/test-discovery.test.ts` is the gate that keeps that from
   recurring.) `pnpm test <path>` takes any file or directory.
 - **Scope: mission critical only.** On 2026-08-08 the suite was narrowed to what
-  breaks money, user data, privacy, auth or a deploy; 180 files covering *how
-  the games play* were deleted to get the run from ~37s to ~20s. Before adding a
+  breaks money, user data, privacy, auth or a deploy; 180 files covering _how
+  the games play_ were deleted to get the run from ~37s to ~20s. Before adding a
   test, check it meets one of the five criteria in
   [`docs/testing.md`](../docs/testing.md) §What is not tested — a correct,
   passing gameplay test is still the wrong thing to add here.
@@ -214,7 +222,7 @@ every commit. On top of what it checks:
 
 - [ ] **`.server` discipline:** anything touching Prisma, `node:*`, secrets or
       heavy Node deps is named `*.server.ts`, the specifier literally contains
-      `.server`, and no client component imports it (it fails at *runtime* with
+      `.server`, and no client component imports it (it fails at _runtime_ with
       `undefined` exports, not at build time).
 - [ ] **One way to do each thing:** coins only through `awardCoins()`, user
       shapes through `userDisplaySelect`/`resolveUser`, user-supplied URLs

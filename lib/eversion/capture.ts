@@ -472,10 +472,12 @@ async function loadLibrary(): Promise<Lib> {
  */
 function makeFilter(
   exclude: readonly string[],
+  hide: readonly string[],
   flight: Flight,
   view: { width: number; height: number },
 ): (node: Node) => boolean {
   const selector = exclude.join(',');
+  const hideSelector = hide.join(',');
   const marginX = view.width * STUB_MARGIN;
   const marginY = view.height * STUB_MARGIN;
   const stubs = new WeakSet<Node>();
@@ -520,6 +522,17 @@ function makeFilter(
         if (el.matches(selector)) return false;
       } catch {
         /* a selector the browser rejects excludes nothing */
+      }
+    }
+    // A hidden element keeps its box (so nothing after it reflows) but nothing inside it is cloned.
+    if (hideSelector) {
+      try {
+        if (el.matches(hideSelector)) {
+          stubs.add(el);
+          return true;
+        }
+      } catch {
+        /* a selector the browser rejects hides nothing */
       }
     }
     // `display: none` paints nothing and nothing in it can: its subtree is pure cost.
@@ -804,7 +817,9 @@ class CaptureSession implements CaptureApi {
     // other engines need not). `overflow: hidden` keeps the clone from ever scrolling.
     ctx.style = { overflow: 'hidden', scrollbarGutter: 'auto', opacity: '1' };
     ctx.fetch.placeholderImage = fill;
-    ctx.filter = makeFilter(exclude, flight, { width, height });
+    const hide = options.hide ?? [];
+    const hideSelector = hide.join(',');
+    ctx.filter = makeFilter(exclude, hide, flight, { width, height });
 
     // The library clones the tree with `await`s that are all already-resolved
     // promises, so the whole walk is ONE macrotask: no timer (the timeout), no
@@ -825,6 +840,13 @@ class CaptureSession implements CaptureApi {
       if (!style) return slice;
       style.setProperty('animation', 'none');
       style.setProperty('transition', 'none');
+      if (hideSelector) {
+        try {
+          if (el.matches(hideSelector)) style.setProperty('visibility', 'hidden');
+        } catch {
+          /* a selector the browser rejects hides nothing */
+        }
+      }
       // A surface that is blurred live cannot be blurred in the image: it gets its
       // designed opaque fallback. One that is not (`.glass-fill` has no blur by
       // design) already looks like what the visitor sees, and flattening it would

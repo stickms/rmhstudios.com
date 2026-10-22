@@ -5174,8 +5174,6 @@ body {
   border-radius: var(--site-radius);
   background: color-mix(in srgb, var(--site-surface) 94%, transparent);
   box-shadow: var(--site-shadow-sm);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .spatial-design-nav a {

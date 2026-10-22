@@ -54,6 +54,16 @@ import { join } from 'node:path';
  *                                       cleanup, and both effects only run while
  *                                       the menu is open — a page at rest has
  *                                       neither.
+ *   - lib/liquid/glass/engine.ts    — the glass engine's frame. Event-driven, never a
+ *                                       standing loop: a frame is requested only while
+ *                                       the cursor light is easing, a tap's ripple is
+ *                                       alive (a fixed ~1.2s), the refracted rim is
+ *                                       fading in after a snapshot, or once for a
+ *                                       surface whose size/theme/scroll changed. Every
+ *                                       frame re-derives `again` from that state and
+ *                                       reschedules ONLY if something is still moving,
+ *                                       so a page at rest has no loop. Reads rects, writes
+ *                                       canvases only; cancelled on teardown.
  *   - components/radial/LiquidGlobe.tsx — the navigation globe's spin/dwell loop.
  *                                       Bounded by MOUNT, like a game's: RadialHub
  *                                       renders it only while the hub is open, and
@@ -161,6 +171,7 @@ const ALLOW = new Set<string>([
   // native animations, without a JS loop. Preferences, visibility and unmount
   // cancel effects and restore the affected inline properties.
   'lib/liquid/runtime.ts',
+  'lib/liquid/glass/engine.ts',
   'app/routes/_site/library/index.tsx',
   'app/routes/_site/rmhladder/pipeline.tsx',
   'components/assistant/ConciergePanel.tsx',

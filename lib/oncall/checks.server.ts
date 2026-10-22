@@ -14,11 +14,14 @@ import { collectPerfOverview } from '../perf/admin.server';
 import { prisma } from '../prisma.server';
 import { getBoss } from '../jobs/boss.server';
 import { oncallClient, type OncallClient } from './client.server';
+import { evaluateMetricAlarms } from '../ops/alarm-rules.server';
+import { alarmInstance, formatValue, type RuleEvaluation } from '../ops/alarm-rules';
 import {
   Debouncer,
   evaluate,
   newMemory,
   type CheckInputs,
+  type Condition,
   type QueueFacts,
   type Transition,
 } from './rules';
@@ -72,6 +75,26 @@ export async function gatherInputs(now = Date.now()): Promise<CheckInputs> {
   return { now, overview, db, queues, outboxOldestPendingMs: outbox };
 }
 
+/** A metric alarm rule's evaluation (lib/ops/alarm-rules.ts) as a debounced condition. */
+function metricCondition(e: RuleEvaluation): Condition {
+  const r = e.rule;
+  const where = e.dim ? ` (${e.dim})` : '';
+  const source = r.overridden
+    ? `set on /admin/alarms; code default ${formatValue(r.codeThreshold, r.unit)}`
+    : 'lib/ops/alarm-rules.ts';
+  return {
+    id: r.id,
+    instance: alarmInstance(r, e.dim),
+    sev: r.sev,
+    title: `${r.title}${where}`,
+    active: e.active,
+    detail: `${r.metric} ${r.stat === 'value' ? '' : `${r.stat} `}${formatValue(e.current, r.unit)} over the last ${r.forMinutes}m${e.samples ? ` (${e.samples} samples)` : ''}. Threshold ${formatValue(r.threshold, r.unit)} (${source}).`,
+    // The rule's own window already smooths it; two clean checks resolve.
+    forChecks: 1,
+    clearChecks: 2,
+  };
+}
+
 async function deliver(client: OncallClient, debouncer: Debouncer, tr: Transition): Promise<void> {
   const c = tr.condition;
   try {
@@ -110,7 +133,13 @@ export function startOncallChecks(): () => void {
     running = true;
     try {
       const input = await gatherInputs();
-      const transitions = debouncer.step(evaluate(input, memory), input.now);
+      const metricConditions = await settle(evaluateMetricAlarms(input.now)).then((evals) =>
+        (evals ?? []).map(metricCondition),
+      );
+      const transitions = debouncer.step(
+        [...evaluate(input, memory), ...metricConditions],
+        input.now,
+      );
       for (const tr of transitions) await deliver(client, debouncer, tr);
       // Last, so a check that throws above doesn't count as alive.
       await client
