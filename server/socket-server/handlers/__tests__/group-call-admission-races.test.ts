@@ -159,7 +159,7 @@ describe('group-call admission races', () => {
     expect(joiner.emitted).toContainEqual({
       event: GCALL_S2C.REJECTED,
       // An open room's refusals never carry its id.
-      payload: { reason: 'gone', operation: 'join' },
+      payload: { reason: 'gone', operation: 'join', origin: 'community', originId: 'community-a' },
     });
     expect(joiner.emitted.some((e) => e.event === GCALL_S2C.JOINED)).toBe(false);
     expect(getBusy('race-joiner')).toBeNull();
@@ -638,13 +638,13 @@ describe('group-call admission races', () => {
     await outsider.send(GCALL_C2S.START, { origin: 'community', originId: 'community-live' });
     await outsider.send(GCALL_C2S.START, { origin: 'community', originId: 'community-quiet' });
 
+    // Byte for byte the same apart from the id the caller sent us.
     const refusals = outsider.emitted
       .filter((e) => e.event === GCALL_S2C.REJECTED)
-      .map((e) => ({ reason: e.payload.reason, callId: e.payload.callId }));
-    expect(refusals).toEqual([
-      { reason: 'not-member', callId: undefined },
-      { reason: 'not-member', callId: undefined },
-    ]);
+      .map((e) => JSON.stringify({ ...e.payload, originId: '<sent>' }));
+    expect(refusals).toHaveLength(2);
+    expect(refusals[0]).toBe(refusals[1]);
+    expect(refusals[0]).not.toContain('callId');
     await member.send(GCALL_C2S.LEAVE, { callId });
   });
 
@@ -670,6 +670,28 @@ describe('group-call admission races', () => {
     });
     expect(joinedCallId(late)).toBeUndefined();
     await host.send(GCALL_C2S.END, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('starts a taken-over leg unmuted', async () => {
+    holdPeerRows(new Map());
+    const host = connect('mute-host');
+    const tabA = connect('mute-user', 'mute-tab-a');
+    await host.send(GCALL_C2S.START, { origin: 'community', originId: 'community-n' });
+    const callId = joinedCallId(host) as string;
+    await tabA.send(GCALL_C2S.JOIN, { callId });
+    await tabA.send(GCALL_C2S.STATE, { callId, muted: true });
+
+    const tabB = connect('mute-user', 'mute-tab-b');
+    await tabB.send(GCALL_C2S.JOIN, { callId });
+
+    const joined = tabB.emitted.find((e) => e.event === GCALL_S2C.JOINED);
+    const me = (joined?.payload.participants as Array<{ userId: string; muted: boolean }>).find(
+      (p) => p.userId === 'mute-user',
+    );
+    expect(me?.muted).toBe(false);
+    await tabB.send(GCALL_C2S.LEAVE, { callId });
+    await host.send(GCALL_C2S.LEAVE, { callId });
     expect(__liveGroupCallCount()).toBe(0);
   });
 });

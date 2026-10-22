@@ -1149,7 +1149,13 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     // between "live room" and "no room" — would tell a non-member that a space
     // they cannot see has a call going, which `LOOKUP` deliberately hides.
     // An ad-hoc room's guests were sent its id; naming it tells them nothing.
-    const roomRef = call.origin === 'adhoc' ? { callId: call.id } : undefined;
+    // An open room's refusal carries exactly the fields a START refused before
+    // any room exists does (origin and originId, which the caller sent), so
+    // the payloads are identical down to their shape.
+    const roomRef =
+      call.origin === 'adhoc'
+        ? { callId: call.id }
+        : { origin: call.origin, originId: call.originId };
 
     const busy = getBusy(userId);
     if (busy && busy.id !== call.id) return reject('busy', operation, roomRef);
@@ -1197,6 +1203,10 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         reason: 'left' satisfies GroupCallLeaveReason,
       });
       existing.socketId = socket.id;
+      // The new leg's microphone starts unmuted; its client re-publishes a
+      // mute it is carrying. Keeping the old leg's flag would show a live mic
+      // as muted to everyone.
+      existing.muted = false;
       void socket.join(callRoom(call.id));
       emitJoined(socket, call, userId);
       broadcast(io, call, GCALL_S2C.PEER_JOINED, {
