@@ -128,10 +128,17 @@ void main() {
     vec2 uvR = (base + shift * (1.0 + uDisperse)) * uSceneMap.zw;
     vec2 uvG = (base + shift) * uSceneMap.zw;
     vec2 uvB = (base + shift * (1.0 - uDisperse)) * uSceneMap.zw;
-    vec3 c = vec3(texture(uScene, uvR).r, texture(uScene, uvG).g, texture(uScene, uvB).b);
+    vec4 sR = texture(uScene, uvR);
+    vec4 sG = texture(uScene, uvG);
+    vec4 sB = texture(uScene, uvB);
+    // The picture is premultiplied and NOT opaque everywhere: anything it could not paint (a WebGL canvas, a region no
+    // background covers) is transparent, i.e. rgb 0. Painting those texels as an opaque rim is what turned the edges
+    // black once a snapshot landed; the sampled coverage keeps them clear, so the live DOM shows through instead.
+    float sa = sG.a;
+    vec3 c = vec3(sR.r, sG.g, sB.b);
     // The slab's own tint, so the rim matches the interior it fades into.
-    c = mix(c, uTint.rgb, uTint.a);
-    rim = vec4(c, 1.0) * band;
+    c = mix(c, uTint.rgb * sa, uTint.a);
+    rim = vec4(c, sa) * band;
   }
 
   // ── Light ──
