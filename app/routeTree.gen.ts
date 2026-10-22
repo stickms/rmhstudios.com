@@ -955,6 +955,7 @@ import { Route as ApiGuidesIdPublishRouteImport } from './routes/api/guides/$id.
 import { Route as ApiHomesListingsIdRouteImport } from './routes/api/homes/listings.$id'
 import { Route as ApiHuntAnswerIndexRouteImport } from './routes/api/hunt/answer/index'
 import { Route as ApiHuntMarkerIndexRouteImport } from './routes/api/hunt/marker/index'
+import { Route as ApiInternalOpsDeployEventRouteImport } from './routes/api/internal/ops/deploy-event'
 import { Route as ApiJamsSlugEntryRouteImport } from './routes/api/jams/$slug/entry'
 import { Route as ApiJamsSlugRateRouteImport } from './routes/api/jams/$slug/rate'
 import { Route as ApiLibraryCollectionIdRouteImport } from './routes/api/library/collection/$id'
@@ -6098,6 +6099,12 @@ const ApiHuntMarkerIndexRoute = ApiHuntMarkerIndexRouteImport.update({
   path: '/api/hunt/marker/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalOpsDeployEventRoute =
+  ApiInternalOpsDeployEventRouteImport.update({
+    id: '/api/internal/ops/deploy-event',
+    path: '/api/internal/ops/deploy-event',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiJamsSlugEntryRoute = ApiJamsSlugEntryRouteImport.update({
   id: '/entry',
   path: '/entry',
@@ -8700,6 +8707,7 @@ export interface FileRoutesByFullPath {
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
+  '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/jams/$slug/entry': typeof ApiJamsSlugEntryRoute
   '/api/jams/$slug/rate': typeof ApiJamsSlugRateRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
@@ -9934,6 +9942,7 @@ export interface FileRoutesByTo {
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
+  '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/jams/$slug/entry': typeof ApiJamsSlugEntryRoute
   '/api/jams/$slug/rate': typeof ApiJamsSlugRateRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
@@ -11196,6 +11205,7 @@ export interface FileRoutesById {
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/guides/$id/publish': typeof ApiGuidesIdPublishRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
+  '/api/internal/ops/deploy-event': typeof ApiInternalOpsDeployEventRoute
   '/api/jams/$slug/entry': typeof ApiJamsSlugEntryRoute
   '/api/jams/$slug/rate': typeof ApiJamsSlugRateRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
@@ -12458,6 +12468,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
     | '/api/homes/listings/$id'
+    | '/api/internal/ops/deploy-event'
     | '/api/jams/$slug/entry'
     | '/api/jams/$slug/rate'
     | '/api/library/collection/$id'
@@ -13692,6 +13703,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
     | '/api/homes/listings/$id'
+    | '/api/internal/ops/deploy-event'
     | '/api/jams/$slug/entry'
     | '/api/jams/$slug/rate'
     | '/api/library/collection/$id'
@@ -14953,6 +14965,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/stream'
     | '/api/guides/$id/publish'
     | '/api/homes/listings/$id'
+    | '/api/internal/ops/deploy-event'
     | '/api/jams/$slug/entry'
     | '/api/jams/$slug/rate'
     | '/api/library/collection/$id'
@@ -15907,6 +15920,7 @@ export interface RootRouteChildren {
   ApiGroupChatsIdMessagesRoute: typeof ApiGroupChatsIdMessagesRouteWithChildren
   ApiGroupChatsIdReactRoute: typeof ApiGroupChatsIdReactRoute
   ApiGroupChatsIdStreamRoute: typeof ApiGroupChatsIdStreamRoute
+  ApiInternalOpsDeployEventRoute: typeof ApiInternalOpsDeployEventRoute
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
@@ -22707,6 +22721,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHuntMarkerIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/ops/deploy-event': {
+      id: '/api/internal/ops/deploy-event'
+      path: '/api/internal/ops/deploy-event'
+      fullPath: '/api/internal/ops/deploy-event'
+      preLoaderRoute: typeof ApiInternalOpsDeployEventRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/jams/$slug/entry': {
       id: '/api/jams/$slug/entry'
       path: '/entry'
@@ -27627,6 +27648,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGroupChatsIdMessagesRoute: ApiGroupChatsIdMessagesRouteWithChildren,
   ApiGroupChatsIdReactRoute: ApiGroupChatsIdReactRoute,
   ApiGroupChatsIdStreamRoute: ApiGroupChatsIdStreamRoute,
+  ApiInternalOpsDeployEventRoute: ApiInternalOpsDeployEventRoute,
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
