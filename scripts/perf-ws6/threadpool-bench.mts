@@ -4,11 +4,16 @@ import { lookup } from 'node:dns/promises';
 import sharp from 'sharp';
 import { optimizeImage, type ImageFormat } from '@/lib/image-optimize';
 
-const base = await sharp('public/og-spatial.png').resize(2048, 1536, { fit: 'cover' }).jpeg({ quality: 88 }).toBuffer();
+const base = await sharp('public/og-spatial.png')
+  .resize(2048, 1536, { fit: 'cover' })
+  .jpeg({ quality: 88 })
+  .toBuffer();
 
 async function probe(label: string, encodes: number, f: ImageFormat, w: number) {
   const lat: number[] = [];
-  const jobs = Array.from({ length: encodes }, (_, i) => optimizeImage(base, { width: w - i, quality: 80, format: f }));
+  const jobs = Array.from({ length: encodes }, (_, i) =>
+    optimizeImage(base, { width: w - i, quality: 80, format: f }),
+  );
   // fire probes 20ms in, while the pool is saturated
   await new Promise((r) => setTimeout(r, 20));
   for (let i = 0; i < 5; i++) {
@@ -19,7 +24,9 @@ async function probe(label: string, encodes: number, f: ImageFormat, w: number) 
   }
   await Promise.all(jobs);
   lat.sort((a, b) => a - b);
-  console.log(`${label.padEnd(34)} fs.stat+dns.lookup latency during encodes: median ${lat[2].toFixed(1)} ms, max ${lat[4].toFixed(1)} ms`);
+  console.log(
+    `${label.padEnd(34)} fs.stat+dns.lookup latency during encodes: median ${lat[2].toFixed(1)} ms, max ${lat[4].toFixed(1)} ms`,
+  );
 }
 
 // idle baseline

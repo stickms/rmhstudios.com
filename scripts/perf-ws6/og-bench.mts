@@ -62,7 +62,10 @@ await measure('page-card game(art)', (i) =>
     lead: 'fighting · arcade',
     art: '/images/games/Kowloon-Knockout.webp',
     path: '/games/kk',
-    stats: [{ value: '4.5', label: 'rating', lead: true }, { value: '12', label: 'reviews' }],
+    stats: [
+      { value: '4.5', label: 'rating', lead: true },
+      { value: '12', label: 'reviews' },
+    ],
   }),
 );
 await measure('page-card no-art', (i) =>
