@@ -87,7 +87,7 @@ export async function getHallOfFame(
   const limit = Math.min(opts.limit ?? 20, 40);
   const settings = await getCommunitySettings(communityId);
   const threshold = settings?.starThreshold ?? 5;
-  const visible = await viewerVisiblePostWhere(viewerId);
+  const visible = await viewerVisiblePostWhere(viewerId, { hideMuted: true });
 
   const rows = await prisma.communityStarPost.findMany({
     where: {

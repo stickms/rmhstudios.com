@@ -46,8 +46,8 @@ const post = () => ({
   communityId: null,
 });
 
-async function visible(rows: Row[]): Promise<string[]> {
-  const where = await viewerVisiblePostWhere(VIEWER);
+async function visible(rows: Row[], opts?: { hideMuted?: boolean }): Promise<string[]> {
+  const where = await viewerVisiblePostWhere(VIEWER, opts);
   return rows
     .map((r) => withAuthorGraph(r, VIEWER, s))
     .filter((r) => evalWhere(r, where))
@@ -75,6 +75,20 @@ describe('mute vs block (item 1)', () => {
     s.muted = ['muted'];
     s.blocked = ['blocked'];
     expect(await visible(rows)).toEqual(['by-muted']);
+  });
+});
+
+describe('feed callers keep hiding muted authors (hideMuted)', () => {
+  it('community feed / hall of fame / list timeline drop muted authors too', async () => {
+    const rows = [
+      { id: 'by-muted', userId: 'muted', audience: 'PUBLIC', deletedAt: null },
+      { id: 'by-blocked', userId: 'blocked', audience: 'PUBLIC', deletedAt: null },
+      { id: 'ok', userId: 'ok', audience: 'PUBLIC', deletedAt: null },
+    ];
+    s.muted = ['muted'];
+    s.blocked = ['blocked'];
+    expect(await visible(rows, { hideMuted: true })).toEqual(['ok']);
+    expect(await visible(rows)).toEqual(['by-muted', 'ok']);
   });
 });
 

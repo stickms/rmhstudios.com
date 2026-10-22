@@ -7,7 +7,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { getBlockedAuthorIds } from '@/lib/moderation.server';
+import { getBlockedAuthorIds, getHiddenAuthorIds } from '@/lib/moderation.server';
 
 /**
  * A Prisma `where` fragment restricting rMHark queries to what `viewerId` may
@@ -136,20 +136,28 @@ export async function circleOwnerIds(viewerId: string | null): Promise<string[]>
  * does not make a post unreadable. Nest it under the relation:
  * `{ rmhark: await viewerVisiblePostWhere(viewerId) }`.
  *
+ * FEEDS (community feed, hall of fame, list timeline) pass `{ hideMuted: true }`:
+ * they also drop muted authors, as every other feed does. Reads by id never do.
+ *
  * Costs the viewer's cached block set (an in-process hit when warm); the
  * follow / supporter / circle checks run inside the one query. Anonymous
  * viewers cost nothing.
  */
-export async function viewerVisiblePostWhere(viewerId: string | null): Promise<Record<string, unknown>> {
+export async function viewerVisiblePostWhere(
+  viewerId: string | null,
+  opts: { hideMuted?: boolean } = {},
+): Promise<Record<string, unknown>> {
   if (!viewerId) {
     return { deletedAt: null, audience: 'PUBLIC' as const, ...communityVisibleWhere(null) };
   }
-  const blocked = await getBlockedAuthorIds(viewerId);
+  const excluded = opts.hideMuted
+    ? await getHiddenAuthorIds(viewerId)
+    : await getBlockedAuthorIds(viewerId);
   return {
     deletedAt: null,
     ...audienceWhereExact(viewerId),
     ...communityVisibleWhere(viewerId),
-    ...(blocked.length ? { userId: { notIn: blocked } } : {}),
+    ...(excluded.length ? { userId: { notIn: excluded } } : {}),
   };
 }
 

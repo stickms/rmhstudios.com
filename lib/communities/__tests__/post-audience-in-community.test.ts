@@ -25,7 +25,10 @@ vi.mock('@/lib/prisma.server', () => ({
   },
 }));
 vi.mock('@/lib/social/follow-graph.server', () => ({ getFollowingIds: async () => ['followed-1'] }));
-vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: async () => ['hidden-1'] }));
+vi.mock('@/lib/moderation.server', () => ({
+  getHiddenAuthorIds: async () => ['hidden-1'],
+  getBlockedAuthorIds: async () => [],
+}));
 vi.mock('@/lib/notifications.server', () => ({ createNotification: vi.fn() }));
 vi.mock('@/lib/feed/map-feed-item.server', () => ({
   rmharkIncludeLite: () => ({}),
@@ -53,7 +56,11 @@ function expectAudienceRule(where: Record<string, unknown>) {
   const or = where.OR as Array<Record<string, unknown>>;
   expect(Array.isArray(or)).toBe(true);
   expect(or).toContainEqual({ audience: 'PUBLIC' });
-  expect(or).toContainEqual({ audience: 'FOLLOWERS', userId: { in: ['followed-1'] } });
+  // Exact relation predicate (no capped follow list): the viewer follows the author.
+  expect(or).toContainEqual({
+    audience: 'FOLLOWERS',
+    user: { followers: { some: { followerId: 'viewer-1' } } },
+  });
   expect(or).toContainEqual({ userId: 'viewer-1' });
   // PRIVATE is reachable only through the author-is-viewer branch.
   expect(JSON.stringify(or)).not.toContain('"PRIVATE"');
