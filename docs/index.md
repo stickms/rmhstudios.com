@@ -89,8 +89,6 @@ server-perf-2026-10-21/01-method
 server-perf-2026-10-21/02-budgets
 server-perf-2026-10-21/03-rules
 server-perf-2026-10-21/04-workstreams
-server-perf-2026-10-21/05-agent-protocol
-server-perf-2026-10-21/06-report-template
 server-perf-2026-10-21/06-report
 server-perf-2026-10-21/results/ws-0
 server-perf-2026-10-21/results/ws-1

@@ -1,8 +1,8 @@
 # Server-side performance program: report
 
 Merged tree `4662bbbfa` (integration tip), baseline `8e107956` (`results/baseline.json`), written 2026-10-22.
-Governing documents: [`index.md`](index.md), [`02-budgets.md`](02-budgets.md) (ratified in this change),
-[`06-report-template.md`](06-report-template.md). Ledgers: [`results/ws-0.md`](results/ws-0.md) to
+Governing documents: [`index.md`](index.md), [`01-method.md`](01-method.md), [`02-budgets.md`](02-budgets.md) (ratified in this change),
+[`03-rules.md`](03-rules.md). Ledgers: [`results/ws-0.md`](results/ws-0.md) to
 [`results/ws-9.md`](results/ws-9.md).
 
 ## Summary
@@ -44,9 +44,9 @@ Commands (same flags as `results/ws-0.md` recorded for the baseline; both runs o
 `NODE_ENV=production RMH_PERF_HEADERS=1`, Redis on, one process):
 
 ```bash
-flock /tmp/rmh-perf-build.lock pnpm build
-node --env-file=.env .output/server/index.mjs &                                 # outside the lock
-flock /tmp/rmh-perf-build.lock node scripts/perf/server-bench.mjs --base http://localhost:7105 --auth both \
+pnpm build
+node --env-file=.env .output/server/index.mjs &
+node scripts/perf/server-bench.mjs --base http://localhost:7105 --auth both \
   --routes scripts/perf/server-routes.json --warmup 5 --samples 30 --concurrency 16 --duration 4 \
   --out docs/server-perf-2026-10-21/results/after.json            # and again to after-run2.json
 node scripts/perf/server-bench.mjs --compare docs/server-perf-2026-10-21/results/baseline.json \
@@ -388,7 +388,7 @@ it. "Rejected on correctness" rows have no timing because the objection is that 
 
 ## 6. Follow-ups and handoffs not done
 
-Deferred leads and unrouted handoffs, each with what would unblock it. Items 1-14 were named by the coordinator at
+Deferred leads and unrouted handoffs, each with what would unblock it. Items 1-14 were named by the integrator at
 integration; the rest are open rows from the ledgers. Infrastructure proposals are marked `ops` (out of scope, `index.md` section 3).
 
 ### 6.1 Named at integration
@@ -495,7 +495,7 @@ If any of these misbehaves in production, this is what to purge. Every one is bo
 
 ## 8. Rule objections
 
-Collected from the workstream ledgers (WS1 to WS9 recorded none), with the coordinator's ruling where one was given.
+Collected from the workstream ledgers (WS1 to WS9 recorded none), with the integrator's ruling where one was given.
 
 | From | Objection | Ruling |
 |---|---|---|
