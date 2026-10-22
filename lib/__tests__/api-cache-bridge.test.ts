@@ -40,7 +40,9 @@ vi.mock('@/lib/redis.server', () => ({
 async function boot() {
   vi.resetModules();
   const cache = await import('@/lib/cache');
-  await import('@/lib/cached.server');
+  const cached = await import('@/lib/cached.server');
+  // Server start-up does this (server/nitro/cache-bridge.ts); importing alone must not.
+  cached.startCacheBridge();
   return cache;
 }
 

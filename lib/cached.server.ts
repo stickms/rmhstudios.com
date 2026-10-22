@@ -699,7 +699,16 @@ export async function invalidateCachedPrefix(prefix: string): Promise<void> {
   }
 }
 
-// Subscribe and install the `apiCache` bridge as soon as the module loads, not on
-// the first `cached()` call: a process that only ever uses `apiCache` directly
-// must still receive (and publish) invalidations. No-op without Redis.
-ensureSubscribed();
+/**
+ * Subscribe to the invalidation channel and install the `apiCache` publish bridge. Idempotent.
+ *
+ * Importing this module opens NO Redis connection (a short-lived script that imports it must exit).
+ * The bridge is installed lazily on the first `cached*()` / `invalidateCached*()` call or the first
+ * `apiCache.invalidate*`. A process that only ever READS `apiCache` would never trigger that, so
+ * long-running servers call this at start-up: the web tier from `server/nitro/cache-bridge.ts`.
+ */
+export function startCacheBridge(): void {
+  ensureSubscribed();
+}
+
+apiCache.setBridgeInstaller(ensureSubscribed);
