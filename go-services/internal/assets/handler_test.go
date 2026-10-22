@@ -15,12 +15,13 @@ import (
 
 type fakeStore struct {
 	gotKey, gotRange string
+	gotOpts          objectstore.GetOptions
 	obj              *objectstore.Object
 	err              error
 }
 
-func (f *fakeStore) Get(_ context.Context, key, rng string) (*objectstore.Object, error) {
-	f.gotKey, f.gotRange = key, rng
+func (f *fakeStore) Get(_ context.Context, key string, opts objectstore.GetOptions) (*objectstore.Object, error) {
+	f.gotKey, f.gotRange, f.gotOpts = key, opts.Range, opts
 	return f.obj, f.err
 }
 
@@ -142,5 +143,40 @@ func TestBadRangeReturns416(t *testing.T) {
 	h.ServeHTTP(w, newReq("GET", "/music/song.mp3", "bytes=999999-"))
 	if w.Code != http.StatusRequestedRangeNotSatisfiable {
 		t.Errorf("status = %d, want 416", w.Code)
+	}
+}
+
+func TestConditionalGetRelaysValidatorsAndReturns304(t *testing.T) {
+	fs := &fakeStore{err: objectstore.ErrNotModified}
+	h := NewHandler(fs, log.New("assets", "error"))
+	r := newReq("GET", "/library/book.pdf", "")
+	r.Header.Set("If-None-Match", `"abc"`)
+	r.Header.Set("If-Modified-Since", "Wed, 21 Oct 2026 07:28:00 GMT")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+
+	if fs.gotOpts.IfNoneMatch != `"abc"` || fs.gotOpts.IfModifiedSince != "Wed, 21 Oct 2026 07:28:00 GMT" {
+		t.Errorf("validators not relayed: %+v", fs.gotOpts)
+	}
+	if w.Code != http.StatusNotModified || w.Body.Len() != 0 {
+		t.Errorf("status = %d, body %d bytes; want 304 with no body", w.Code, w.Body.Len())
+	}
+	if w.Header().Get("ETag") != `"abc"` || w.Header().Get("Cache-Control") != cacheControl {
+		t.Errorf("304 headers: %v", w.Header())
+	}
+}
+
+func TestSetsContentLength(t *testing.T) {
+	fs := &fakeStore{obj: &objectstore.Object{
+		Body: body("PDFDATA"), ContentType: "application/pdf", ContentLength: 7, Status: http.StatusOK,
+	}}
+	h := NewHandler(fs, log.New("assets", "error"))
+	for _, m := range []string{"GET", "HEAD"} {
+		fs.obj.Body = body("PDFDATA")
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, newReq(m, "/library/book.pdf", ""))
+		if got := w.Header().Get("Content-Length"); got != "7" {
+			t.Errorf("%s Content-Length = %q, want 7", m, got)
+		}
 	}
 }
