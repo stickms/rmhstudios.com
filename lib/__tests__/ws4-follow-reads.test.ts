@@ -12,6 +12,7 @@ const h = vi.hoisted(() => ({
   followFindMany: vi.fn(),
   profileFindMany: vi.fn(),
   rmharkFindMany: vi.fn(),
+  queryRaw: vi.fn(),
   getFollowingIds: vi.fn(),
   getHiddenAuthorIds: vi.fn(),
 }));
@@ -21,6 +22,7 @@ vi.mock('@/lib/prisma.server', () => {
     follow: { findMany: h.followFindMany },
     userProfile: { findMany: h.profileFindMany },
     rMHark: { findMany: h.rmharkFindMany },
+    $queryRaw: h.queryRaw,
     hashtag: { findMany: async () => [] },
     community: { findMany: async () => [] },
     libraryDocument: { findMany: async () => [] },
@@ -70,19 +72,27 @@ describe('friends leaderboard', () => {
 });
 
 describe('tag feed', () => {
+  // WS8: the tag feed picks the page's ids with a raw keyset scan (audience filter
+  // included) and then hydrates them, so the follow ids travel as bound values of
+  // that query rather than in a Prisma `where`.
+  const boundValues = () =>
+    (h.queryRaw.mock.calls[0][0] as { values: unknown[] }).values.flat(Infinity as 1);
+
   it('reads the follow graph through getFollowingIds, never follow.findMany', async () => {
+    h.queryRaw.mockResolvedValue([]);
     await listTagFeed('rust', { viewerId: 'me' });
     expect(h.followFindMany).not.toHaveBeenCalled();
     expect(h.getFollowingIds).toHaveBeenCalledWith('me');
-    expect(h.rmharkFindMany).toHaveBeenCalledTimes(1);
-    expect(h.rmharkFindMany.mock.calls[0][0].where._aud).toEqual(['me', ['a', 'b']]);
+    expect(h.queryRaw).toHaveBeenCalledTimes(1);
+    expect(boundValues()).toEqual(expect.arrayContaining(['a', 'b']));
   });
 
   it('a signed-out read touches no follow data at all', async () => {
+    h.queryRaw.mockResolvedValue([]);
     await listTagFeed('rust', { viewerId: null });
     expect(h.getFollowingIds).not.toHaveBeenCalled();
     expect(h.followFindMany).not.toHaveBeenCalled();
-    expect(h.rmharkFindMany.mock.calls[0][0].where._aud).toEqual([null, []]);
+    expect(boundValues()).not.toEqual(expect.arrayContaining(['a', 'b']));
   });
 });
 
