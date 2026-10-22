@@ -392,13 +392,19 @@ type inactiveRep struct {
 
 // applyReputationDecay decays totalXp by 5% for users inactive for more than 7
 // days (and with totalXp > 0), writing a ledger row for each. Faithful to the
-// Node applyReputationDecay. The Monday gate lives in the scheduler.
+// Node applyReputationDecay. The Monday gate lives in the scheduler; the
+// once-per-week guarantee lives in the database ("lastDecayedAt", see
+// decayUpdateSQL), so the hourly Monday ticks after the first are no-ops.
 func (w *Worker) applyReputationDecay(ctx context.Context) error {
+	now := time.Now().UTC()
+	if w.nowFn != nil {
+		now = w.nowFn().UTC()
+	}
 	// oneWeekAgo = now - 7 days. Node uses local Date here; we use UTC for
 	// determinism, which matches the rest of the worker's UTC scheduling.
-	oneWeekAgo := time.Now().UTC().AddDate(0, 0, -7)
+	oneWeekAgo := now.AddDate(0, 0, -7)
 
-	reps, err := w.inactiveReputations(ctx, oneWeekAgo)
+	reps, err := w.inactiveReputations(ctx, oneWeekAgo, now)
 	if err != nil {
 		return err
 	}
@@ -414,7 +420,7 @@ func (w *Worker) applyReputationDecay(ctx context.Context) error {
 	}
 	// Two statements for the whole pass instead of two per user: the loop used
 	// to issue 2N round trips (N = inactive players) on the shared pool.
-	if err := w.applyDecayBatch(ctx, reps, ids, newXps, reason); err != nil {
+	if err := w.applyDecayBatch(ctx, reps, ids, newXps, reason, now); err != nil {
 		return err
 	}
 	if len(reps) > 0 {
@@ -423,11 +429,13 @@ func (w *Worker) applyReputationDecay(ctx context.Context) error {
 	return nil
 }
 
-// inactiveReputations finds reputations with lastActiveAt < cutoff and totalXp > 0.
-func (w *Worker) inactiveReputations(ctx context.Context, cutoff time.Time) ([]inactiveRep, error) {
+// inactiveReputations finds reputations with lastActiveAt < cutoff and totalXp > 0
+// that have not already been decayed in the ISO week containing now (UTC).
+func (w *Worker) inactiveReputations(ctx context.Context, cutoff, now time.Time) ([]inactiveRep, error) {
 	rows, err := w.db.Pool.Query(ctx,
-		`SELECT "id", "totalXp" FROM "doctrine_reputation" WHERE "lastActiveAt" < $1 AND "totalXp" > 0`,
-		cutoff,
+		`SELECT "id", "totalXp" FROM "doctrine_reputation" WHERE "lastActiveAt" < $1 AND "totalXp" > 0
+		 AND ("lastDecayedAt" IS NULL OR "lastDecayedAt" < date_trunc('week', $2::timestamp))`,
+		cutoff, now,
 	)
 	if err != nil {
 		w.metrics.DBQueries.WithLabelValues("error").Inc()
@@ -458,9 +466,18 @@ func (w *Worker) inactiveReputations(ctx context.Context, cutoff time.Time) ([]i
 // overwritten: that row is skipped (RETURNING omits it) and gets no ledger row.
 // The ledger delta is computed in SQL from the old total, so for every row that
 // IS decayed the delta equals the change actually written.
-const decayUpdateSQL = `UPDATE "doctrine_reputation" r SET "totalXp" = t.xp
+//
+// It is also conditional on the row not having been decayed yet in the ISO week
+// containing $4 (the pass time, UTC; date_trunc('week') is Monday 00:00), and
+// stamps "lastDecayedAt" = $4 in the same statement. That makes the hourly
+// Monday ticks idempotent: the first pass of the week decays a row, the other
+// 23 (and any restart or second supervisor instance) match nothing. Row locks
+// serialise two concurrent passes, and the loser re-checks the guard against the
+// winner's committed stamp.
+const decayUpdateSQL = `UPDATE "doctrine_reputation" r SET "totalXp" = t.xp, "lastDecayedAt" = $4::timestamp
 	FROM unnest($1::text[], $2::int[], $3::int[]) AS t(id, xp, old)
 	WHERE r."id" = t.id AND r."totalXp" = t.old
+	  AND (r."lastDecayedAt" IS NULL OR r."lastDecayedAt" < date_trunc('week', $4::timestamp))
 	RETURNING r."id"`
 
 const decayLedgerSQL = `INSERT INTO "doctrine_reputation_ledger"
@@ -471,7 +488,7 @@ const decayLedgerSQL = `INSERT INTO "doctrine_reputation_ledger"
 // applyDecayBatch applies newXps to reps[i] and logs the ledger rows in ONE
 // transaction, so a failure leaves no half-decayed pass (previously a mid-loop
 // error left earlier users decayed and unlogged-or-logged inconsistently).
-func (w *Worker) applyDecayBatch(ctx context.Context, reps []inactiveRep, ids []string, newXps []int32, reason string) error {
+func (w *Worker) applyDecayBatch(ctx context.Context, reps []inactiveRep, ids []string, newXps []int32, reason string, now time.Time) error {
 	if len(reps) == 0 {
 		return nil
 	}
@@ -485,7 +502,7 @@ func (w *Worker) applyDecayBatch(ctx context.Context, reps []inactiveRep, ids []
 		return err
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
-	rows, err := tx.Query(ctx, decayUpdateSQL, ids, newXps, olds)
+	rows, err := tx.Query(ctx, decayUpdateSQL, ids, newXps, olds, now)
 	if err != nil {
 		w.metrics.DBQueries.WithLabelValues("error").Inc()
 		return err

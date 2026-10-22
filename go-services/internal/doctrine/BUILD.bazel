@@ -30,6 +30,7 @@ go_test(
     ],
     embed = [":doctrine"],
     deps = [
+        "//go-services/pkg/db",
         "//go-services/pkg/log",
         "//go-services/pkg/telemetry",
         "//go-services/pkg/worker",
