@@ -417,10 +417,8 @@ func (w *Worker) applyReputationDecay(ctx context.Context) error {
 	if err := w.applyDecayBatch(ctx, reps, ids, newXps, reason); err != nil {
 		return err
 	}
-	decayed := len(reps)
-
-	if decayed > 0 {
-		w.log.Info("applied reputation decay", "users", decayed)
+	if len(reps) > 0 {
+		w.log.Info("applied reputation decay", "candidates", len(reps))
 	}
 	return nil
 }
@@ -454,10 +452,16 @@ func (w *Worker) inactiveReputations(ctx context.Context, cutoff time.Time) ([]i
 	return out, nil
 }
 
-// decayUpdateSQL / decayLedgerSQL write a whole decay pass at once; the ledger
-// delta is computed in SQL from the old total so it cannot drift from the update.
+// decayUpdateSQL / decayLedgerSQL write a whole decay pass at once. The update
+// is conditional on the total still being the one the new value was computed
+// from ($3), so an XP award landing between the read and this write is never
+// overwritten: that row is skipped (RETURNING omits it) and gets no ledger row.
+// The ledger delta is computed in SQL from the old total, so for every row that
+// IS decayed the delta equals the change actually written.
 const decayUpdateSQL = `UPDATE "doctrine_reputation" r SET "totalXp" = t.xp
-	FROM unnest($1::text[], $2::int[]) AS t(id, xp) WHERE r."id" = t.id`
+	FROM unnest($1::text[], $2::int[], $3::int[]) AS t(id, xp, old)
+	WHERE r."id" = t.id AND r."totalXp" = t.old
+	RETURNING r."id"`
 
 const decayLedgerSQL = `INSERT INTO "doctrine_reputation_ledger"
 	  ("id", "reputationId", "action", "xpDelta", "reason", "metadata", "createdAt")
@@ -471,10 +475,8 @@ func (w *Worker) applyDecayBatch(ctx context.Context, reps []inactiveRep, ids []
 	if len(reps) == 0 {
 		return nil
 	}
-	lids := make([]string, len(reps))
 	olds := make([]int32, len(reps))
 	for i, r := range reps {
-		lids[i] = uuid.NewString()
 		olds[i] = int32(r.totalXp)
 	}
 	tx, err := w.db.Pool.Begin(ctx)
@@ -483,18 +485,50 @@ func (w *Worker) applyDecayBatch(ctx context.Context, reps []inactiveRep, ids []
 		return err
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
-	if _, err := tx.Exec(ctx, decayUpdateSQL, ids, newXps); err != nil {
+	rows, err := tx.Query(ctx, decayUpdateSQL, ids, newXps, olds)
+	if err != nil {
 		w.metrics.DBQueries.WithLabelValues("error").Inc()
 		return err
 	}
-	if _, err := tx.Exec(ctx, decayLedgerSQL, lids, ids, newXps, olds, reason); err != nil {
+	applied := map[string]bool{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			w.metrics.DBQueries.WithLabelValues("error").Inc()
+			return err
+		}
+		applied[id] = true
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
 		w.metrics.DBQueries.WithLabelValues("error").Inc()
 		return err
+	}
+	// Ledger rows only for the reputations the conditional UPDATE changed.
+	var lids, rids []string
+	var lnew, lold []int32
+	for i, id := range ids {
+		if applied[id] {
+			lids = append(lids, uuid.NewString())
+			rids = append(rids, id)
+			lnew = append(lnew, newXps[i])
+			lold = append(lold, olds[i])
+		}
+	}
+	if len(rids) > 0 {
+		if _, err := tx.Exec(ctx, decayLedgerSQL, lids, rids, lnew, lold, reason); err != nil {
+			w.metrics.DBQueries.WithLabelValues("error").Inc()
+			return err
+		}
 	}
 	if err := tx.Commit(ctx); err != nil {
 		w.metrics.DBQueries.WithLabelValues("error").Inc()
 		return err
 	}
 	w.metrics.DBQueries.WithLabelValues("ok").Add(2)
+	if skipped := len(ids) - len(applied); skipped > 0 {
+		w.log.Info("decay skipped reputations changed since read", "users", skipped)
+	}
 	return nil
 }

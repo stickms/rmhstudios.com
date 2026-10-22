@@ -11,7 +11,8 @@ import (
 // The batched decay statements against a real Postgres (set RMH_PERF_DSN to a
 // migrated database), inside a rolled-back transaction: the update lands, and
 // the ledger delta computed in SQL equals newXp - oldXp, as the per-user loop
-// wrote it.
+// wrote it. A reputation whose total changed after the read is left alone (the
+// concurrent award is not overwritten) and gets no ledger row.
 func TestDecayBatchSQL(t *testing.T) {
 	dsn := os.Getenv("RMH_PERF_DSN")
 	if dsn == "" {
@@ -52,20 +53,36 @@ func TestDecayBatchSQL(t *testing.T) {
 	ids := []string{"rep-a", "rep-b"}
 	newXps := []int32{950, 35}
 	olds := []int32{1000, 37}
-	if _, err := tx.Exec(ctx, decayUpdateSQL, ids, newXps); err != nil {
-		t.Fatalf("update: %v", err)
-	}
-	if _, err := tx.Exec(ctx, decayLedgerSQL, []string{"l-a", "l-b"}, ids, newXps, olds, "Weekly inactivity decay (-5%)"); err != nil {
-		t.Fatalf("ledger: %v", err)
-	}
-	var xpA, xpB, dA, dB int
-	var act string
-	if err := tx.QueryRow(ctx, `SELECT (SELECT "totalXp" FROM "doctrine_reputation" WHERE id='rep-a'), (SELECT "totalXp" FROM "doctrine_reputation" WHERE id='rep-b'),
-		(SELECT "xpDelta" FROM "doctrine_reputation_ledger" WHERE id='l-a'), (SELECT "xpDelta" FROM "doctrine_reputation_ledger" WHERE id='l-b'),
-		(SELECT "action" FROM "doctrine_reputation_ledger" WHERE id='l-a')`).Scan(&xpA, &xpB, &dA, &dB, &act); err != nil {
+	// An XP award lands after the inactive read: rep-b is no longer 37.
+	if _, err := tx.Exec(ctx, `UPDATE "doctrine_reputation" SET "totalXp" = 137 WHERE id = 'rep-b'`); err != nil {
 		t.Fatal(err)
 	}
-	if xpA != 950 || xpB != 35 || dA != -50 || dB != -2 || act != "WEEKLY_DECAY" {
-		t.Fatalf("got xp %d/%d delta %d/%d action %s", xpA, xpB, dA, dB, act)
+	rrows, err := tx.Query(ctx, decayUpdateSQL, ids, newXps, olds)
+	if err != nil {
+		t.Fatalf("update: %v", err)
+	}
+	var applied []string
+	for rrows.Next() {
+		var id string
+		_ = rrows.Scan(&id)
+		applied = append(applied, id)
+	}
+	rrows.Close()
+	if len(applied) != 1 || applied[0] != "rep-a" {
+		t.Fatalf("applied = %v, want only rep-a (rep-b changed since the read)", applied)
+	}
+	if _, err := tx.Exec(ctx, decayLedgerSQL, []string{"l-a"}, []string{"rep-a"}, []int32{950}, []int32{1000}, "Weekly inactivity decay (-5%)"); err != nil {
+		t.Fatalf("ledger: %v", err)
+	}
+	var xpA, xpB, dA, nB int
+	var act string
+	if err := tx.QueryRow(ctx, `SELECT (SELECT "totalXp" FROM "doctrine_reputation" WHERE id='rep-a'), (SELECT "totalXp" FROM "doctrine_reputation" WHERE id='rep-b'),
+		(SELECT "xpDelta" FROM "doctrine_reputation_ledger" WHERE id='l-a'), (SELECT count(*) FROM "doctrine_reputation_ledger" WHERE "reputationId"='rep-b'),
+		(SELECT "action" FROM "doctrine_reputation_ledger" WHERE id='l-a')`).Scan(&xpA, &xpB, &dA, &nB, &act); err != nil {
+		t.Fatal(err)
+	}
+	// rep-a decayed; rep-b keeps the concurrent award (137), un-decayed and unlogged.
+	if xpA != 950 || xpB != 137 || dA != -50 || nB != 0 || act != "WEEKLY_DECAY" {
+		t.Fatalf("got xp %d/%d delta %d ledger(b)=%d action %s", xpA, xpB, dA, nB, act)
 	}
 }
