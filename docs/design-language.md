@@ -1061,6 +1061,26 @@ view()`), falling back to a rAF window-scroll pass with cached offsets where
   `--motion-cage-*`, `.motion-cage`, `motion-pop-cage` and `motion-pop-reveal`
   are all gone, and the test above fails if any of them comes back.
 
+- **The rest of the CSS motion rides the same springs, as `linear()` easings.**
+  `--spring-smooth` / `--spring-snappy` / `--spring-sheet` (globals.css §7.1)
+  are `APPLE_SPRING.smooth` / `.snappy` / `.sheet` sampled at 41 points to
+  within 0.05% of rest, with `--spring-*-duration` = that settle time; use them
+  as a pair (`animation: x var(--spring-smooth-duration) var(--spring-smooth)`).
+  `lib/__tests__/motion-spring-easings.test.ts` re-derives every stop. The
+  `rise` menus, dialogs and sheets move on them: the travel lands on the spring
+  while opacity runs on its own quick `--motion-in` ramp, so a panel is readable
+  by ~80ms and the spring's sub-pixel tail never holds content back. Dialogs and
+  desktop sheets take `smooth`; the phone bottom sheet takes `sheet`, and its
+  dismiss, which crosses the whole screen, takes `--motion-out-travel` (0.24s,
+  accelerating) rather than the 0.1s fade-in-place exit. Every enter/exit pair
+  is one path run both ways — the exit ends on the enter's start frame. Two
+  exceptions, both deliberate: the per-page enter stays a 0.16s tween (a running
+  transform on a page root re-anchors its `position: fixed` descendants, and a
+  0.64s settle would park the compose FAB at the bottom of the document), and
+  exits stay short tweens (a dismissal should feel immediate, and a spring from
+  rest starts slowly). Bare Tailwind `transition*` utilities default to
+  `EASE.standard` on `duration-site-fast` rather than Tailwind's Material curve.
+
 - **The close is real, on both kinds of surface.** A dismissal is not a
   performance — a quick uniform reabsorb toward the anchor over
   `--motion-collapse` (110ms) with `pointer-events: none`, so a panel that is

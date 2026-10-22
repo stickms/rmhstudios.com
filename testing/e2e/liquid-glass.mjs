@@ -15,10 +15,20 @@ mkdirSync(out, { recursive: true });
 const result = await build({
   stdin: {
     contents: `import {installLiquidInteractions} from './lib/liquid/runtime';
-    import {createGlobeMaterial} from './lib/liquid/globe-material';
+    import {acquireJellyGlass,resolveColor} from './components/radial/jelly-glass';
+    import {RIPPLE} from './lib/fluid';
     window.stopLiquid=installLiquidInteractions();
-    window.material=createGlobeMaterial(document.querySelector('canvas'));
-    window.paint=(pinch=0)=>window.material?.draw({radius:100,dpr:1,grabX:.35,grabY:.2,pinch,stretchX:1,stretchY:1});
+    window.material=acquireJellyGlass();
+    if(window.material) document.body.append(window.material.canvas);
+    window.paint=(pinch=0)=>{
+      const g=window.material;
+      if(!g) return;
+      g.resize(200,1);
+      const style=getComputedStyle(document.documentElement);
+      const bg=resolveColor(style.getPropertyValue('--site-bg').trim(),[1,1,1]);
+      g.palette({ink:resolveColor(style.getPropertyValue('--site-text').trim(),[0,0,0]),accent:resolveColor(style.getPropertyValue('--site-accent').trim(),[.4,.5,1]),light:bg[0]>.5?1:0},RIPPLE);
+      g.render({ripples:new Float32Array([0,0,0,-1,0,0,0,-1,0,0,0,-1]),gx:.35,gy:.2,dx:0,dy:0,pinch});
+    };
     window.paint();`,
     resolveDir: root,
     loader: 'ts',
@@ -71,7 +81,7 @@ try {
     <article id="left" class="glass-fill"><h2>Clear content</h2><button>Activate</button><input aria-label="Message"></article>
     <article id="right" class="glass-pane"><h2>Liquid pane</h2><p>Live, selectable HTML.</p></article>
     <article id="off" class="glass-pane" data-liquid-motion="off">Motion opted out</article>
-    <article id="far" class="glass-overlay">Overlay clarity</article><canvas></canvas>`;
+    <article id="far" class="glass-overlay">Overlay clarity</article>`;
   await page.route('https://rmh-glass.test/', (route) =>
     route.fulfill({ contentType: 'text/html', body: markup }),
   );
@@ -280,10 +290,7 @@ try {
         (el) => getComputedStyle(el).transform === 'none' && el.getAnimations().length === 0,
       ),
   );
-  check(
-    'independent globe dielectric shader compiles',
-    await page.evaluate(() => !!window.material),
-  );
+  check('shared globe dielectric shader compiles', await page.evaluate(() => !!window.material));
   const before = await page.locator('canvas').screenshot();
   await page.evaluate(() => window.paint(0.16));
   const after = await page.locator('canvas').screenshot();
@@ -299,7 +306,7 @@ try {
   await page.screenshot({ path: join(out, `${browserName}-phone.png`) });
   await page.evaluate(() => {
     window.stopLiquid();
-    window.material?.dispose();
+    window.material?.canvas.remove();
   });
   check('cleanup removes decorated layers', (await page.locator('.liquid-light').count()) === 0);
   const phone = await browser.newPage({
@@ -348,7 +355,7 @@ try {
   );
   await phone.evaluate(() => {
     window.stopLiquid();
-    window.material?.dispose();
+    window.material?.canvas.remove();
   });
   await phone.close();
   check('no browser runtime errors', errors.length === 0);

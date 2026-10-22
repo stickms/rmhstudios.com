@@ -156,6 +156,27 @@
   transition-duration: calc(var(--site-transition-speed, 200ms) * 1.5);
 }
 
+/* ── The defaults behind ~1,650 bare `transition` / `transition-colors` /
+   `transition-transform` / `transition-opacity` call sites ─────────────────
+   Tailwind's own defaults are 150ms on `cubic-bezier(0.4, 0, 0.2, 1)` —
+   Material's "standard" curve, which accelerates out of rest and arrives
+   flat. That was the motion of most hovers, tints and toggles on the site,
+   underneath a motion system (`lib/motion.ts`, §7.1) built on a decelerating
+   iOS-family curve. These pin the defaults to that system: `EASE.standard`
+   (fast out of the gate, a long soft landing — the curve UIKit's ease-out
+   approximates) on the theme's own clock, `duration-site-fast` (150ms at the
+   default 200ms speed, so nothing gets slower; 112ms in `ultra`, which now
+   reaches every one of these instead of a handful). `ease-out` / `ease-in-out`
+   take the same family so a hand-written utility agrees with the default.
+   Inline so the `var()` resolves on the element — the theme scalar can be
+   overridden below :root. */
+@theme inline {
+  --default-transition-duration: calc(var(--site-transition-speed, 200ms) * 0.75);
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
 /* A horizontal scroller's right edge, faded so the clipped item reads as
    "there is more" instead of as a broken layout.
 
@@ -1588,6 +1609,19 @@ html.style-high-contrast .lg-goo {
 }
 [data-sonner-toast][data-type='success'] {
   animation: toast-success-flash 0.8s ease-out;
+}
+
+/* Toast travel on the site's spring. Sonner moves a toast (in, out, restack,
+   swipe-back) with `transition: transform 400ms, opacity 400ms, height 400ms`
+   and no timing function — CSS `ease`, which creeps out of rest and is the
+   most web-looking curve there is. Its durations are kept exactly (its
+   unmount timers are written against them); only the shape changes, to the
+   smooth spring's response compressed into that window — the same
+   fast-out-long-landing a UIKit banner has. A transition, so a toast that is
+   restacked mid-move retargets from where it is. `html` for specificity:
+   sonner injects its stylesheet after ours. */
+html [data-sonner-toast] {
+  transition-timing-function: var(--spring-smooth), var(--spring-smooth), var(--spring-smooth), ease;
 }
 
 /* ── Global degradations ──────────────────────────────────────────────────── */
@@ -3975,7 +4009,14 @@ input[type='number'] {
  * Route-to-route navigation remounts the content, replaying this enter
  * animation. `backwards` fill applies the start frame immediately (no flash)
  * and leaves NO lingering transform afterward (so `position: fixed`
- * descendants are unaffected once the animation settles). */
+ * descendants are unaffected once the animation settles).
+ *
+ * Deliberately NOT on the sampled spring (`--spring-smooth`, §7.1) like the
+ * floating surfaces: while any transform is running on a page root, its
+ * `position: fixed` descendants (the compose FAB, floating lanes) are laid out
+ * against the page box instead of the viewport. 0.16s of that is invisible;
+ * the spring's 0.64s settle would park the FAB at the bottom of the document
+ * for over half a second on every navigation. */
 @keyframes page-enter {
   from {
     opacity: 0;
@@ -4151,6 +4192,32 @@ html:not([data-navigated]) .page-root > * {
   --motion-collapse: 0.11s;
   --motion-ease-in: cubic-bezier(0.16, 1, 0.3, 1);
   --motion-ease-out: ease-in;
+  /* An exit that has a long way to travel (a phone sheet leaving through the
+     bottom edge). `--motion-out` is right for a panel that fades where it
+     stands; 0.1s across a whole screen height is a teleport, not a dismissal.
+     Accelerating, so it leaves the way a flicked sheet does. */
+  --motion-out-travel: 0.24s;
+  --motion-ease-out-travel: cubic-bezier(0.32, 0, 0.67, 0);
+
+  /* ── The Apple springs, as CSS easings ──────────────────────────────────
+     `APPLE_SPRING` in `lib/motion.ts` (framer) and `SPRINGS` in `lib/fluid.ts`
+     (imperative) are the site's motion. CSS has no spring, but `linear()` can
+     carry one exactly: these are the step responses of `spring(d, bounce)`
+     sampled at 41 evenly spaced points from rest until the motion is within
+     0.05% of its target, and `--spring-*-duration` is that settle time — so
+     `animation: x var(--spring-smooth-duration) var(--spring-smooth)` IS the
+     framer spring, not a curve that resembles it. The perceptual duration
+     (0.4s / 0.55s) is shorter than the settle; the last third is sub-pixel.
+     `lib/__tests__/motion-spring-easings.test.ts` re-derives every stop.
+
+     Use them on ENTERS and on transitions of `transform`/`scale`/`translate`.
+     Not on colour: `snappy` overshoots, and an overshooting colour clamps. */
+  --spring-smooth: linear(0, 0.0268, 0.091, 0.1748, 0.2662, 0.3577, 0.4448, 0.5249, 0.5969, 0.6603, 0.7154, 0.7628, 0.8032, 0.8374, 0.8661, 0.89, 0.91, 0.9265, 0.9401, 0.9513, 0.9605, 0.968, 0.9741, 0.9791, 0.9831, 0.9864, 0.9891, 0.9912, 0.9929, 0.9943, 0.9955, 0.9964, 0.9971, 0.9977, 0.9981, 0.9985, 0.9988, 0.9991, 0.9992, 0.9994, 1);
+  --spring-smooth-duration: 0.64s;
+  --spring-snappy: linear(0, 0.0243, 0.085, 0.1673, 0.2604, 0.3564, 0.4501, 0.5378, 0.6177, 0.6886, 0.7503, 0.803, 0.8472, 0.8839, 0.9137, 0.9376, 0.9564, 0.9711, 0.9822, 0.9904, 0.9964, 1.0006, 1.0033, 1.005, 1.0059, 1.0063, 1.0062, 1.0059, 1.0054, 1.0048, 1.0042, 1.0036, 1.0031, 1.0026, 1.0021, 1.0017, 1.0013, 1.001, 1.0008, 1.0006, 1);
+  --spring-snappy-duration: 0.6s;
+  --spring-sheet: linear(0, 0.0162, 0.0577, 0.1156, 0.1831, 0.2552, 0.3284, 0.4001, 0.4685, 0.5325, 0.5915, 0.6452, 0.6936, 0.7367, 0.7749, 0.8084, 0.8377, 0.8631, 0.8851, 0.9039, 0.92, 0.9337, 0.9452, 0.955, 0.9632, 0.97, 0.9757, 0.9804, 0.9843, 0.9875, 0.9901, 0.9923, 0.994, 0.9954, 0.9965, 0.9974, 0.9981, 0.9986, 0.999, 0.9994, 1);
+  --spring-sheet-duration: 0.67s;
 }
 
 /* Outside the motion query on purpose: the anchor is not an animation, and a
@@ -4190,8 +4257,14 @@ html:not([data-navigated]) .page-root > * {
     pointer-events: none;
   }
 
+  /* Two clocks, on purpose. The panel is READABLE on the quick opacity ramp
+     (the number that decides whether it "opened"), and its travel lands on the
+     smooth spring — so it settles the way a SwiftUI panel does instead of
+     decelerating into a stop at a fixed 0.22s. */
   [data-motion='rise']:not([data-state='closed']) {
-    animation: motion-rise-in var(--motion-in) var(--motion-ease-in);
+    animation:
+      motion-fade-in var(--motion-in) var(--motion-ease-in),
+      motion-rise-move var(--spring-smooth-duration) var(--spring-smooth);
   }
   [data-motion='rise'][data-state='closed'] {
     animation: motion-rise-out var(--motion-out) var(--motion-ease-out) forwards;
@@ -4291,6 +4364,14 @@ html:not([data-navigated]) .page-root > * {
 @keyframes motion-rise-in {
   from {
     opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+/* The travel half of the rise, for the spring clock (the opacity half is
+   `motion-fade-in`). Same start frame as `motion-rise-in` and as the exit's end
+   frame, so open and close are one path run both ways. */
+@keyframes motion-rise-move {
+  from {
     transform: translateY(8px) scale(0.97);
   }
 }

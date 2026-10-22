@@ -14,7 +14,7 @@ filters were removed, not enabled again. The October 21 implementation plan is
 | One document interaction service           | `lib/liquid/runtime.ts`, mounted by `hooks/useLiquidInteractions.ts` in `Providers` |
 | Wave timing and attenuation                | `lib/liquid/interaction.ts`                                                         |
 | Contact indentation and shoulder           | `lib/soft-body.ts`                                                                  |
-| Independent dielectric globe coat          | `lib/liquid/globe-material.ts`                                                      |
+| Lazy dielectric globe coat                 | `components/radial/jelly-glass.ts`                                                  |
 | Globe projection, cage, pins and picking   | `components/radial/LiquidGlobe.tsx`                                                 |
 | Captured-page transmission during eversion | `lib/eversion/gl/shaders.ts`                                                        |
 
@@ -110,11 +110,11 @@ the global stretch separately preserves modal volume. This is a reduced-order
 approximation, not a finite-element simulation. Cage and pin paint sample the
 same field, while picking and dwell continue to use undeformed coordinates.
 
-The independently compiled globe coat uses Snell transmission (IOR 1.45),
+The lazy globe coat uses Snell transmission (IOR 1.45),
 Schlick Fresnel reflection, studio highlights and a contact-dependent normal.
-One context exists only while the hub is mounted. DPR is capped at 1.5;
-resources are explicitly freed, and context loss leaves the CSS rim and
-functional navigation intact. The procedural environment models reflected
+One page-cached context is reused across hub mounts. DPR is capped at 1.5;
+the canvas detaches on unmount, issues no draws at rest and yields during
+eversion. Context loss leaves the CSS rim and functional navigation intact. The procedural environment models reflected
 light, not a screenshot of the surrounding page. During eversion, the existing
 captured-page textures provide real source imagery for a restrained
 normal-driven transmission offset. It vanishes at flat endpoints and avoids
@@ -164,3 +164,12 @@ suite checks shader compilation, geometry parity and flat-page endpoints.
 Actual execution results are recorded in the pull request; a listed command is
 not itself a passing result. Native iOS/Android/macOS hardware testing remains
 separate from browser-engine testing.
+
+## Integration with the concurrent globe update
+
+Main's October 21 globe/motion update was integrated before delivery. The lazy
+`jelly-glass` renderer is the single coat owner; a second prototype renderer was
+removed. Contact normals use the same footprint constant as `SoftBody.depth`,
+and the coat now follows OS/account preferences and theme changes live. The
+back-face lens projection, ripple lighting, page-cached context, CSS spring
+easings and navigation/prefetch changes from main are retained.

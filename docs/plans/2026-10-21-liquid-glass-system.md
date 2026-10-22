@@ -115,3 +115,12 @@ third-party code is copied; links document the evaluated approaches.
 Implementation results and actual executed checks will be recorded in
 `docs/liquid-glass-system.md` as work proceeds. Optional suites and unavailable
 device/browser checks must be distinguished from passes.
+
+## Integration adjustment
+
+A concurrent main update landed a lazy jelly renderer and shared CSS spring
+easings during implementation. Preserve that work and its navigation/prefetch
+changes. Extend its single renderer with the shared contact normal, Snell
+transmission and live preference handling; remove the redundant prototype coat.
+Re-run the affected browser contracts, full tests, typecheck, gate and build
+after merging main.

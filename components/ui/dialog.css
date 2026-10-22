@@ -18,8 +18,15 @@
   [data-slot='dialog-overlay'][data-state='closed'] {
     animation: ui-dialog-overlay-out var(--motion-out) var(--motion-ease-out) forwards;
   }
+  /* Readable on the quick opacity ramp (0.92 by 80ms); the 12px of travel
+     lands on the smooth spring (`--spring-smooth`, globals.css §7.1 —
+     APPLE_SPRING.smooth sampled), so the panel settles instead of braking on a
+     fixed clock. `smooth`, not `sheet`: a dialog is a state change in place,
+     and the sheet spring's longer travel read as hesitation on a centred panel. */
   [data-slot='dialog-content'][data-state='open'] {
-    animation: ui-dialog-content-in var(--motion-in) var(--motion-ease-in);
+    animation:
+      ui-dialog-fade-in var(--motion-in) var(--motion-ease-in),
+      ui-dialog-content-in var(--spring-smooth-duration) var(--spring-smooth);
   }
   [data-slot='dialog-content'][data-state='closed'] {
     animation: ui-dialog-content-out var(--motion-out) var(--motion-ease-out) forwards;
@@ -36,15 +43,22 @@
     opacity: 0;
   }
 }
-@keyframes ui-dialog-content-in {
+@keyframes ui-dialog-fade-in {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.985);
+  }
+}
+/* Open and close are ONE path run both ways: the exit ends on exactly the frame
+   the enter starts from. They used to disagree (in from 14px/0.985, out to
+   8px/0.96), so a dialog arrived from one place and left for another. */
+@keyframes ui-dialog-content-in {
+  from {
+    transform: translateY(12px) scale(0.97);
   }
 }
 @keyframes ui-dialog-content-out {
   to {
     opacity: 0;
-    transform: translateY(8px) scale(0.96);
+    transform: translateY(12px) scale(0.97);
   }
 }

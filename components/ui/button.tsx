@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 // (globals.css §7.3), out of the press point or the pointer's entry point, in the variant's own hover
 // colour (`--evert-tint`). Focus is the site-wide ring (§8), which turns out from inside the button.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-[0.78rem] font-semibold tracking-[-0.01em] transition-[scale,color,background-color,border-color,opacity] duration-180 ease-out active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-[0.78rem] font-semibold tracking-[-0.01em] transition-[scale,color,background-color,border-color,opacity] duration-site-fast ease-out active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
   {
     variants: {
       variant: {
