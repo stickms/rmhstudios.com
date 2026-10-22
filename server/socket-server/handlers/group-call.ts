@@ -212,6 +212,15 @@ interface LiveGroupCall {
    * than of how fast the first query happened to be.
    */
   persistChain: Promise<void>;
+  /**
+   * Admissions to this room, one at a time.
+   *
+   * Each admission checks blocks against the roster and then awaits before it
+   * commits, so two that overlap each see a roster without the other: two
+   * people with a block between them could both get in and be meshed. Running
+   * them in turn means the second check sees the first person in the room.
+   */
+  admission: Promise<void>;
 }
 
 /**
@@ -561,7 +570,9 @@ function persistRoomEnded(call: LiveGroupCall, reason: GroupCallEndReason, at: n
     prisma.groupCall.update({
       where: { id: call.id },
       data: {
-        status: persistedStatus(reason, call.othersJoined),
+        // An open room is never rung, so it cannot be "missed": somebody sat in
+        // it, alone or not, and then it closed.
+        status: persistedStatus(reason, call.othersJoined || call.origin !== 'adhoc'),
         endedAt: new Date(at),
         peakParticipants: call.peakParticipants,
       },
@@ -972,6 +983,16 @@ function dropParticipant(
   pushActive(io, call, true);
 }
 
+/** Run `work` after every admission to `call` already queued, and before the next. */
+function admit<T>(call: LiveGroupCall, work: () => Promise<T>): Promise<T> {
+  const run = call.admission.then(work, work);
+  call.admission = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
 /** Cancel a held seat, if there is one. */
 function clearGrace(call: LiveGroupCall, userId: string): void {
   const timer = call.graceTimers.get(userId);
@@ -1093,7 +1114,10 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
    * Shared by `JOIN` and by a `START` that turned out to be a join, because
    * "create or join" must not mean two different admissions.
    */
-  const enterRoom = async (
+  const enterRoom = (call: LiveGroupCall, operation: 'start' | 'join'): Promise<void> =>
+    admit(call, () => enterRoomInTurn(call, operation));
+
+  const enterRoomInTurn = async (
     call: LiveGroupCall,
     operation: 'start' | 'join',
   ): Promise<void> => {
@@ -1169,7 +1193,8 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // back. The contract has no "not invited"; `not-member` is the member of
       // `GroupCallRejectReason` that means "this room is not open to you".
       if (!existing && !call.invited.has(userId)) {
-        return reject('not-member', operation, { callId: call.id });
+        // Not on the guest list: from where they stand there is no call here.
+        return reject('gone', operation, { callId: call.id });
       }
       // Walking back in from the guest list: they were screened against the
       // room as it was when they were rung, and it may since hold somebody
@@ -1179,7 +1204,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         // will be meshed with us the moment they answer.
         const others = [...call.participants.keys()].filter((id) => id !== userId);
         if (await hasBlockWithAny(userId, others)) {
-          return reject('not-member', operation, { callId: call.id });
+          return reject('privacy', operation, { callId: call.id });
         }
       }
       if (isRosterFull(joinedCount(call))) {
@@ -1205,7 +1230,9 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // while that one is in it.
       const others = [...call.participants.keys()].filter((id) => id !== userId);
       if (await hasBlockWithAny(userId, others)) {
-        return reject('blocked', operation, { callId: call.id });
+        // `privacy`, never `blocked`: which of the two set the block, and that
+        // it is somebody in this room, is not this joiner's to learn.
+        return reject('privacy', operation, { callId: call.id });
       }
     }
 
@@ -1297,7 +1324,8 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // Calling the same person again straight after is a ring nobody asked
       // for; to them it reads as a line that is still busy.
       const inviteeIds = requested.filter((id) => !recentlyRang(userId, id));
-      if (inviteeIds.length === 0) return reject('busy', 'start', { origin, originId: null });
+      // `failed` ("couldn't connect"), not `busy`: the caller is not on a call.
+      if (inviteeIds.length === 0) return reject('failed', 'start', { origin, originId: null });
       if (getBusy(userId)) return reject('busy', 'start', { origin, originId: null });
 
       const { admitted, refusals } = await screenInvitees(io, userId, inviteeIds);
@@ -1416,45 +1444,51 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         !call.declinedBy.has(id) &&
         !recentlyRang(userId, id),
     );
-    if (targets.length === 0) return fail('malformed', 'Nobody to invite');
+    // Everyone asked for is already here, declined this room, or was rung a
+    // moment ago. A refusal the inviter sees, not a protocol error they don't.
+    if (targets.length === 0) return reject('busy', 'invite', { callId });
 
     if (call.origin === 'adhoc') {
-      // Ringing invitees hold a roster slot even before they answer, so the
-      // roster — not the joined count — is what a mid-call invite can fill.
-      const room = MAX_GROUP_CALL_PARTICIPANTS - call.participants.size;
-      if (room <= 0) return reject('full', 'invite', { callId });
-      const { admitted, refusals } = await screenInvitees(
-        io,
-        userId,
-        targets.slice(0, room),
-        [...call.participants.keys()].filter((id) => id !== userId),
-      );
-      if (calls.get(callId) !== call) return reject('gone', 'invite', { callId });
-      if (admitted.length === 0) {
-        return reject(strongestReason(refusals), 'invite', { callId });
-      }
-      // Re-checked after the await: another invite may have filled the roster
-      // or rung the same person, and a busy claim may have been taken since.
-      const space = MAX_GROUP_CALL_PARTICIPANTS - call.participants.size;
-      const rung = admitted
-        .filter((peer) => !call.participants.has(peer.id))
-        .slice(0, Math.max(0, space))
-        .filter((peer) => addRinging(io, call, peer));
-      if (rung.length === 0) return reject('busy', 'invite', { callId });
-      // Deltas before cards, so an invitee already on the roster learns about
-      // the others in this batch and the new ones get a complete list.
-      for (const peer of rung) {
-        broadcast(io, call, GCALL_S2C.PEER_JOINED, {
-          callId: call.id,
-          participant: participantView(call, call.participants.get(peer.id) as LiveParticipant),
-        });
-      }
-      for (const peer of rung) {
-        noteRang(userId, peer.id);
-        emitIncoming(io, call, peer.id);
-      }
-      emitRoster(io, call);
-      return;
+      // In turn with every other admission to this room, so the block screen
+      // sees anyone admitted while it was waiting (see `LiveGroupCall.admission`).
+      return admit(call, async () => {
+        // Ringing invitees hold a roster slot even before they answer, so the
+        // roster — not the joined count — is what a mid-call invite can fill.
+        const room = MAX_GROUP_CALL_PARTICIPANTS - call.participants.size;
+        if (room <= 0) return reject('full', 'invite', { callId });
+        const { admitted, refusals } = await screenInvitees(
+          io,
+          userId,
+          targets.slice(0, room),
+          [...call.participants.keys()].filter((id) => id !== userId),
+        );
+        if (calls.get(callId) !== call) return reject('gone', 'invite', { callId });
+        if (admitted.length === 0) {
+          return reject(strongestReason(refusals), 'invite', { callId });
+        }
+        // Re-checked after the await: another invite may have filled the roster
+        // or rung the same person, and a busy claim may have been taken since.
+        const space = MAX_GROUP_CALL_PARTICIPANTS - call.participants.size;
+        const rung = admitted
+          .filter((peer) => !call.participants.has(peer.id))
+          .slice(0, Math.max(0, space))
+          .filter((peer) => addRinging(io, call, peer));
+        if (rung.length === 0) return reject('busy', 'invite', { callId });
+        // Deltas before cards, so an invitee already on the roster learns about
+        // the others in this batch and the new ones get a complete list.
+        for (const peer of rung) {
+          broadcast(io, call, GCALL_S2C.PEER_JOINED, {
+            callId: call.id,
+            participant: participantView(call, call.participants.get(peer.id) as LiveParticipant),
+          });
+        }
+        for (const peer of rung) {
+          noteRang(userId, peer.id);
+          emitIncoming(io, call, peer.id);
+        }
+        emitRoster(io, call);
+        return;
+      });
     }
 
     // Contract decision #3: in an open room an invite is a courtesy ping, not
@@ -1747,6 +1781,7 @@ function openRoom(
     rung: 0,
     declined: 0,
     persistChain: Promise.resolve(),
+    admission: Promise.resolve(),
   };
 
   calls.set(id, call);
@@ -1827,10 +1862,15 @@ async function communityMembersAmong(
 export async function sweepCommunityMembership(io: Server): Promise<void> {
   for (const call of [...calls.values()]) {
     if (call.origin !== 'community' || !call.originId) continue;
-    const members = await communityMembersAmong(call.originId, [...call.participants.keys()]);
+    // Judge only the people asked about: someone who joined while the query
+    // was out was admitted on a fresh membership check of their own.
+    const asked = [...call.participants.keys()];
+    const members = await communityMembersAmong(call.originId, asked);
     if (!members || calls.get(call.id) !== call) continue;
-    for (const userId of [...call.participants.keys()]) {
-      if (!members.has(userId)) evictOriginMember(io, 'community', call.originId, userId);
+    for (const userId of asked) {
+      if (!members.has(userId) && call.participants.has(userId)) {
+        evictOriginMember(io, 'community', call.originId, userId);
+      }
     }
   }
 

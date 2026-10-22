@@ -418,7 +418,8 @@ describe('group-call admission races', () => {
 
     expect(blocked.emitted).toContainEqual({
       event: GCALL_S2C.REJECTED,
-      payload: expect.objectContaining({ reason: 'blocked', operation: 'join' }),
+      // Never `blocked`: the joiner is not told who in the room it came from.
+      payload: expect.objectContaining({ reason: 'privacy', operation: 'join' }),
     });
     expect(getBusy('open-blocked')).toBeNull();
     await blocker.send(GCALL_C2S.LEAVE, { callId });
@@ -437,9 +438,10 @@ describe('group-call admission races', () => {
     host.emitted.length = 0;
     await host.send(GCALL_C2S.START, { origin: 'adhoc', inviteeIds: ['cool-target'] });
 
+    // `failed`, not `busy`: the caller is not on a call.
     expect(host.emitted).toContainEqual({
       event: GCALL_S2C.REJECTED,
-      payload: expect.objectContaining({ reason: 'busy', operation: 'start' }),
+      payload: expect.objectContaining({ reason: 'failed', operation: 'start' }),
     });
     expect(__liveGroupCallCount()).toBe(0);
     expect(getBusy('cool-target')).toBeNull();
@@ -488,5 +490,56 @@ describe('group-call admission races', () => {
 
     await stays.send(GCALL_C2S.LEAVE, { callId });
     expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('admits one at a time, so two people with a block cannot both slip in', async () => {
+    holdPeerRows(new Map());
+    blocksBetween([{ blockerId: 'race-x', blockedId: 'race-y' }]);
+    const host = connect('race-room-host');
+    await host.send(GCALL_C2S.START, { origin: 'community', originId: 'community-i' });
+    const callId = joinedCallId(host) as string;
+
+    const xRow = gate<unknown>();
+    const yRow = gate<unknown>();
+    holdPeerRows(
+      new Map([
+        ['race-x', xRow.promise],
+        ['race-y', yRow.promise],
+      ]),
+    );
+    const x = connect('race-x');
+    const y = connect('race-y');
+    const xJoin = x.send(GCALL_C2S.JOIN, { callId });
+    const yJoin = y.send(GCALL_C2S.JOIN, { callId });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    xRow.open({ id: 'race-x', name: 'X', image: null, handle: null });
+    yRow.open({ id: 'race-y', name: 'Y', image: null, handle: null });
+    await Promise.all([xJoin, yJoin]);
+
+    expect(joinedCallId(x)).toBe(callId);
+    expect(joinedCallId(y)).toBeUndefined();
+    expect(getBusy('race-y')).toBeNull();
+
+    await x.send(GCALL_C2S.LEAVE, { callId });
+    await host.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('records an open room as a call that happened, even with one person in it', async () => {
+    holdPeerRows(new Map());
+    const solo = connect('solo-host');
+    await solo.send(GCALL_C2S.START, { origin: 'community', originId: 'community-j' });
+    const callId = joinedCallId(solo) as string;
+    await solo.send(GCALL_C2S.LEAVE, { callId });
+
+    await vi.waitFor(() =>
+      expect(mocks.prisma.groupCall.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: callId },
+          data: expect.objectContaining({ status: 'ENDED' }),
+        }),
+      ),
+    );
   });
 });

@@ -55,7 +55,11 @@ import {
   participantCount,
   pendingInvitees,
 } from '@/lib/groupcall/state';
-import type { GroupCallEndReason, GroupCallOrigin } from '@/lib/groupcall/events';
+import {
+  MAX_GROUP_CALL_PARTICIPANTS,
+  type GroupCallEndReason,
+  type GroupCallOrigin,
+} from '@/lib/groupcall/events';
 import { GroupCallRoster } from '@/components/groupcall/GroupCallRoster';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -86,7 +90,11 @@ function useElapsed(startedAt: number | null): number {
   return durationSeconds(startedAt, now);
 }
 
-function endReasonLabel(reason: GroupCallEndReason | null, t: Translate): string {
+function endReasonLabel(
+  reason: GroupCallEndReason | null,
+  origin: GroupCallOrigin | null,
+  t: Translate,
+): string {
   switch (reason) {
     case 'host-ended':
       return t('ended-host-ended', { defaultValue: 'The host ended the call' });
@@ -110,6 +118,12 @@ function endReasonLabel(reason: GroupCallEndReason | null, t: Translate): string
       return t('ended-not-member', { defaultValue: "You're not a member of this space" });
     case 'blocked':
     case 'privacy':
+      // Walking into a space's room is not calling a person; it gets its own
+      // equally uninformative line, so a refusal says nothing about who in the
+      // room it came from.
+      if (origin === 'community' || origin === 'party') {
+        return t('ended-cannot-join', { defaultValue: "You can't join this voice room" });
+      }
       // One key for two reasons, exactly as the 1:1 overlay does it: a caller
       // must not be able to tell a block from a privacy setting, and two keys
       // with identical English are two keys a translator can make differ.
@@ -180,7 +194,14 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
 
   useEffect(() => {
     if (!lastInviteRejection || lastInviteRejection.callId !== callId) return;
-    toast.error(t('invite-failed', { defaultValue: "Couldn't invite anyone to this call." }));
+    toast.error(
+      lastInviteRejection.reason === 'full'
+        ? t('room-full', {
+            max: MAX_GROUP_CALL_PARTICIPANTS,
+            defaultValue: 'This call is full — it holds up to {{max}} people.',
+          })
+        : t('invite-failed', { defaultValue: "Couldn't invite anyone to this call." }),
+    );
     setLastInviteRejection(null);
   }, [callId, lastInviteRejection, setLastInviteRejection, t]);
 
@@ -303,7 +324,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
     phase === 'joining'
       ? t('joining', { defaultValue: 'Joining…' })
       : phase === 'ended'
-        ? endReasonLabel(endReason, t)
+        ? endReasonLabel(endReason, origin, t)
         : formatDuration(elapsed);
 
   /*
@@ -319,7 +340,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
     phase === 'joining'
       ? t('joining', { defaultValue: 'Joining…' })
       : phase === 'ended'
-        ? endReasonLabel(endReason, t)
+        ? endReasonLabel(endReason, origin, t)
         : t('in-call', { defaultValue: "You're in the call" });
 
   return createPortal(
