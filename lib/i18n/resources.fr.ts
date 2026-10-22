@@ -41,11 +41,13 @@ import frCProfileModules from "@/locales/fr/c-profile-modules.json";
 import frCRebarRutabaga from "@/locales/fr/c-rebar-rutabaga.json";
 import frCRideshare from "@/locales/fr/c-rideshare.json";
 import frCRmhCapital from "@/locales/fr/c-rmh-capital.json";
+import frCRmhDatacenter from "@/locales/fr/c-rmh-datacenter.json";
 import frCRmhPmc from "@/locales/fr/c-rmh-pmc.json";
 import frCRmhbox from "@/locales/fr/c-rmhbox.json";
 import frCRmhcalculator from "@/locales/fr/c-rmhcalculator.json";
 import frCRmhcode from "@/locales/fr/c-rmhcode.json";
 import frCRmhcoins from "@/locales/fr/c-rmhcoins.json";
+import frCRmhfashion from "@/locales/fr/c-rmhfashion.json";
 import frCRmhmusic from "@/locales/fr/c-rmhmusic.json";
 import frCRmhstudy from "@/locales/fr/c-rmhstudy.json";
 import frCRmhtech from "@/locales/fr/c-rmhtech.json";
@@ -68,6 +70,37 @@ import frCVoidBreaker from "@/locales/fr/c-void-breaker.json";
 import frCWager from "@/locales/fr/c-wager.json";
 import frCWishlist from "@/locales/fr/c-wishlist.json";
 import frCommon from "@/locales/fr/common.json";
+import frErrors from "@/locales/fr/errors.json";
+import frFAccess from "@/locales/fr/f-access.json";
+import frFAction from "@/locales/fr/f-action.json";
+import frFArcade from "@/locales/fr/f-arcade.json";
+import frFAsyncGames from "@/locales/fr/f-async-games.json";
+import frFCalendar from "@/locales/fr/f-calendar.json";
+import frFCanvas from "@/locales/fr/f-canvas.json";
+import frFCommunitiesPlus from "@/locales/fr/f-communities-plus.json";
+import frFCompetitive from "@/locales/fr/f-competitive.json";
+import frFCreative from "@/locales/fr/f-creative.json";
+import frFDeepseek from "@/locales/fr/f-deepseek.json";
+import frFDelight from "@/locales/fr/f-delight.json";
+import frFDevplatform from "@/locales/fr/f-devplatform.json";
+import frFDiscovery from "@/locales/fr/f-discovery.json";
+import frFEconomyPlus from "@/locales/fr/f-economy-plus.json";
+import frFFeedPlus from "@/locales/fr/f-feed-plus.json";
+import frFForecasting from "@/locales/fr/f-forecasting.json";
+import frFGifting from "@/locales/fr/f-gifting.json";
+import frFLadderHomes from "@/locales/fr/f-ladder-homes.json";
+import frFMessaging from "@/locales/fr/f-messaging.json";
+import frFOncall from "@/locales/fr/f-oncall.json";
+import frFOps from "@/locales/fr/f-ops.json";
+import frFParty from "@/locales/fr/f-party.json";
+import frFPerf from "@/locales/fr/f-perf.json";
+import frFPostsPlus from "@/locales/fr/f-posts-plus.json";
+import frFProfilePlus from "@/locales/fr/f-profile-plus.json";
+import frFReading from "@/locales/fr/f-reading.json";
+import frFSafety from "@/locales/fr/f-safety.json";
+import frFTools from "@/locales/fr/f-tools.json";
+import frFWatch from "@/locales/fr/f-watch.json";
+import frFWorlds from "@/locales/fr/f-worlds.json";
 import frFeed from "@/locales/fr/feed.json";
 import frGamesHub from "@/locales/fr/games-hub.json";
 import frGroups from "@/locales/fr/groups.json";
@@ -138,11 +171,13 @@ const frResources = {
   "c-rebar-rutabaga": frCRebarRutabaga,
   "c-rideshare": frCRideshare,
   "c-rmh-capital": frCRmhCapital,
+  "c-rmh-datacenter": frCRmhDatacenter,
   "c-rmh-pmc": frCRmhPmc,
   "c-rmhbox": frCRmhbox,
   "c-rmhcalculator": frCRmhcalculator,
   "c-rmhcode": frCRmhcode,
   "c-rmhcoins": frCRmhcoins,
+  "c-rmhfashion": frCRmhfashion,
   "c-rmhmusic": frCRmhmusic,
   "c-rmhstudy": frCRmhstudy,
   "c-rmhtech": frCRmhtech,
@@ -165,6 +200,37 @@ const frResources = {
   "c-wager": frCWager,
   "c-wishlist": frCWishlist,
   "common": frCommon,
+  "errors": frErrors,
+  "f-access": frFAccess,
+  "f-action": frFAction,
+  "f-arcade": frFArcade,
+  "f-async-games": frFAsyncGames,
+  "f-calendar": frFCalendar,
+  "f-canvas": frFCanvas,
+  "f-communities-plus": frFCommunitiesPlus,
+  "f-competitive": frFCompetitive,
+  "f-creative": frFCreative,
+  "f-deepseek": frFDeepseek,
+  "f-delight": frFDelight,
+  "f-devplatform": frFDevplatform,
+  "f-discovery": frFDiscovery,
+  "f-economy-plus": frFEconomyPlus,
+  "f-feed-plus": frFFeedPlus,
+  "f-forecasting": frFForecasting,
+  "f-gifting": frFGifting,
+  "f-ladder-homes": frFLadderHomes,
+  "f-messaging": frFMessaging,
+  "f-oncall": frFOncall,
+  "f-ops": frFOps,
+  "f-party": frFParty,
+  "f-perf": frFPerf,
+  "f-posts-plus": frFPostsPlus,
+  "f-profile-plus": frFProfilePlus,
+  "f-reading": frFReading,
+  "f-safety": frFSafety,
+  "f-tools": frFTools,
+  "f-watch": frFWatch,
+  "f-worlds": frFWorlds,
   "feed": frFeed,
   "games-hub": frGamesHub,
   "groups": frGroups,

@@ -8,6 +8,7 @@
   "edit": "Chỉnh sửa",
   "edit-build": "Chỉnh sửa bản dựng",
   "error-loading-build": "Lỗi khi tải bản dựng",
+  "like-count_one": "{{count}} lượt thích",
   "like-count_other": "{{count}} lượt thích",
   "manage-subtitle": "Quản lý các bản dựng đã xuất bản và bản nháp của bạn",
   "my-builds": "Bản dựng của tôi",
@@ -15,7 +16,7 @@
   "no-builds-description": "Tạo bản dựng đầu tiên của bạn và chia sẻ với cộng đồng.",
   "no-builds-yet": "Chưa có bản dựng nào",
   "prefer-the-cli": "Thích dùng CLI hơn?",
-  "share-project-with-community": "Chia sẻ dự án của bạn với cộng đồng. Bạn có thể lưu dưới dạng bản nháp và xuất bản sau.",
+  "share-project-with-community": "Chia sẻ dự án của bạn với cộng đồng.",
   "sign-in": "Đăng nhập",
   "sign-in-required": "Cần đăng nhập",
   "sign-in-to-manage": "Bạn cần đăng nhập để quản lý các bản dựng của mình.",
@@ -23,5 +24,6 @@
   "submit-a-build": "Gửi một bản dựng",
   "update-build-details": "Cập nhật chi tiết bản dựng của bạn bên dưới.",
   "view": "Xem",
+  "view-count_one": "{{count}} lượt xem",
   "view-count_other": "{{count}} lượt xem"
 }

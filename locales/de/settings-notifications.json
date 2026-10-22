@@ -17,5 +17,7 @@
   "quiet-end": "Quiet hours end",
   "quiet-hours": "Quiet hours",
   "quiet-start": "Quiet hours start",
+  "tab-badge": "Ungelesen-Zähler im Browser-Tab",
+  "tab-badge-desc": "Zeigt die Anzahl ungelesener Nachrichten und Benachrichtigungen im Tab-Titel und -Symbol auf diesem Gerät an.",
   "to": "To"
 }

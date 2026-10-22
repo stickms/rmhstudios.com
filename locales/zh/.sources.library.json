@@ -1,10 +1,13 @@
 {
+  "book-count_one": "{{count}} books",
   "library-heading": "Library",
   "no-results": "No books match that search.",
   "open-book": "Open {{title}}",
   "open-menu": "Open menu",
+  "page-count_one": "{{count}} pages",
+  "playlist-count_one": "{{count}} playlists",
   "search-label": "Search the library",
-  "search-placeholder": "Search the library...",
-  "upload-button": "Upload",
-  "upload-label": "Upload a book"
+  "search-placeholder": "Search books, albums, playlists, and reads…",
+  "upload-button": "Add a book",
+  "upload-label": "Upload a PDF"
 }
