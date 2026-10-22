@@ -170,6 +170,15 @@ const ALLOW = new Set<string>([
   // cancel effects and restore the affected inline properties.
   'lib/liquid/runtime.ts',
   'lib/liquid/glass/engine.ts',
+  // The globe cursor (owner, 2026-10-22: "a constantly everting globe"). The one
+  // standing loop on a site page, and it is standing only while it IS the pointer:
+  // a frame is scheduled while the mouse is over the document or a fade, sparkle,
+  // ripple or trail is still settling (`GlobeCursorEngine.busy()`), and never
+  // otherwise — pointer out of the window, window blurred, touch input, tab
+  // hidden. Under reduced motion it draws one still frame per pointer event and
+  // no loop at all. Mounted once per document; unmount cancels the frame. It
+  // loads only on a fine, hovering pointer with the cursor switched on.
+  'components/globe-cursor/GlobeCursor.tsx',
   'app/routes/_site/library/index.tsx',
   'app/routes/_site/rmhladder/pipeline.tsx',
   'components/assistant/ConciergePanel.tsx',
