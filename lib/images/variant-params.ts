@@ -51,3 +51,33 @@ export function snapQuality(raw: string | null | undefined, fallback = 80): numb
   const clamped = Math.min(Math.max(n, 1), 100);
   return Math.min(100, Math.max(5, Math.round(clamped / 5) * 5));
 }
+
+/**
+ * Library covers are always shelf thumbnails or blur placeholders, so they get
+ * a much smaller preset set than the general ladder. Snapping `w`, `h` and `q`
+ * independently on the general ladder still allowed 27 x 27 x 20 combinations
+ * per cover on an unauthenticated route; here the key space is
+ * (8 sizes) x (2 qualities) x (formats) per cover.
+ */
+export const COVER_WIDTHS: readonly number[] = [32, 320, 480, 640, 800, 1024, 1280, 1600];
+export const COVER_QUALITIES: readonly number[] = [50, 80];
+
+/**
+ * `w`/`h`/`q` for a library cover, jointly: a single size (width wins; `h` is
+ * used only when `w` is absent, as the sole bound) from {@link COVER_WIDTHS}, so
+ * the other axis is derived from the cover's aspect ratio, and quality from
+ * {@link COVER_QUALITIES}.
+ */
+export function snapCoverVariant(
+  w: string | null | undefined,
+  h: string | null | undefined,
+  q: string | null | undefined,
+): { width?: number; height?: number; quality: number } {
+  const pick = (raw: string | null | undefined) => {
+    const n = snapDimension(raw);
+    return n === undefined ? undefined : (COVER_WIDTHS.find((r) => r >= n) ?? 1600);
+  };
+  const width = pick(w);
+  const height = width === undefined ? pick(h) : undefined;
+  return { width, height, quality: snapQuality(q) <= 65 ? 50 : 80 };
+}
