@@ -60,7 +60,6 @@ vi.mock('../audience.server', async () => {
 });
 
 import { getTimeline } from '../timeline';
-import { encodeCursor } from '../cursor';
 import { apiCache } from '../../cache';
 import { evalWhere, type Row } from './where-eval';
 
