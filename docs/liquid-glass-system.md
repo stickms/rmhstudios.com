@@ -20,6 +20,7 @@ same optics plus a **dough** simulation.
 | Fallback material (always complete without WebGL) | `app/liquid-glass.css` (site), `components/shared/app-theme.css` (app tier)     |
 | The document service (discovery, loop, input)     | `lib/liquid/glass/engine.ts`, mounted by `hooks/useLiquidInteractions.ts`       |
 | The optics                                        | `lib/liquid/glass/shader.ts` (GLSL ES 3.00)                                     |
+| Wavelengths, dispersion and shared Snell geometry | `lib/liquid/optics.ts` (SCHOTT N-BK7 Sellmeier model)                            |
 | One shared GL context, draw + copy                | `lib/liquid/glass/renderer.ts`                                                  |
 | Per-surface decisions (bevel, budget, coverage)   | `lib/liquid/glass/policy.ts` (pure, unit-tested)                                |
 | Computed colour → RGBA                            | `lib/liquid/glass/color.ts` (pure, unit-tested)                                 |
@@ -101,12 +102,23 @@ convex squircle height field `h = bz·(1 − (1 − t)³)^⅓`, `t = d/bz`, give
 normal that tilts outward at the rim and is flat inside `bz` (the bevel width, 8–18px,
 `policy.bevelFor`).
 
-Refraction. A ray straight down meets that surface, bends by Snell's law (IOR 1.5) and
-travels `thickness` (0.85 × bevel) before it reaches the page, so the rim shows page content
-from a point shifted **inward** (never outside the snapshot). Red, green and blue shift by
-slightly different amounts (dispersion 0.07). Only the bevel band is painted opaque
+Refraction. Three rays meet the surface and independently obey Snell's law. The shared
+Sellmeier model uses SCHOTT N-BK7 coefficients at 656.2725 nm (red), 546.074 nm (green),
+and 435.8343 nm (blue): the refractive indices are approximately 1.51432, 1.51872 and
+1.52668. Blue bends more than red. The page-plane intersection divides each ray's lateral
+direction by its depth direction, then multiplies by `thickness` (0.95 × bevel); this is
+a geometric ray intersection, with no adjustable RGB offset or dispersion multiplier.
+Only the bevel band is painted opaque
 (`t < 0.55`, fading to nothing by `t = 1`), which is also where refraction goes to zero, so
 there is no seam and no double image.
+
+The coefficients and reference indices come from the
+[SCHOTT N-BK7 datasheet](https://media.schott.com/api/public/content/41e799d0bf874807a0bb8e702fbb75b5?v=54856406);
+exact spectral-line wavelengths are listed in SCHOTT TIE-29. This is a three-wavelength
+approximation over an RGB page capture; the capture does not contain a full light spectrum.
+Indices are precomputed once, so shader work stays at three scene samples per slab/globe.
+Eversion uses the same model: the high tier traces three wavelengths, mid retains one
+representative green ray within its existing texture budget, and low keeps its static coat.
 
 Light. Blinn-Phong glints from a fixed key light (up-left) and from the cursor (a point
 light 96px above the surface, reach 440px, falling off smoothly), a dimmer counter-glint on
@@ -216,9 +228,14 @@ which inverts it per pixel to find the material at each point. So the **silhouet
 the lighting wraps around every dent (lit wall, shadowed wall, a bright lip on the
 shoulder), and the wireframe all describe one surface.
 
-**Lens.** The coat refracts the page behind the hub as a ball lens (inverted, magnified,
-slightly dispersed), from the shared snapshot sampled at mip level 5 so the ball carries its own blur (the hub's page blur is a light 6px; the ball does the heavy lifting). It is driven by the surface normal, not by a two-surface refraction: that has a
-total-internal-reflection cutoff that drew a visible ring on the ball.
+**Lens.** The coat traces air → glass → air separately for all three wavelengths,
+intersecting each entry ray with the reference sphere to find its actual exit normal.
+The background plane sits three radii behind the centre, beyond the focal point, so the
+page appears inverted. The shared snapshot is sampled at mip level 5, retaining the
+ball's own blur. Dents and ripples bend the entry normal; the exit geometry remains the
+reference sphere. The old approximate exit normal caused an artificial total-internal-
+reflection ring; exact sphere intersections avoid it. A ray that truly totally reflects
+or turns toward the viewer contributes reflection rather than an invalid background sample.
 
 Needs WebGL 2 (a half-float texture that filters linearly); without it the globe keeps its
 CSS body and still deforms its cage and pins.
@@ -271,6 +288,7 @@ pnpm check:consistency
 pnpm build
 export CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome
 node testing/e2e/glass-slab.mjs          # shader contract over a loud synthetic page
+node testing/e2e/glass-dispersion.mjs    # GPU Snell/sphere parity, RGB ordering, all eversion tiers
 node testing/e2e/liquid-glass-engine.mjs # the engine on a real DOM, real capture, real CSS
 node testing/e2e/dough-globe.mjs         # dough sim + coat shader + lens
 node testing/e2e/liquid-glass.mjs        # neighbour push + older contract

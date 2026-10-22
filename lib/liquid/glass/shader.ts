@@ -5,9 +5,9 @@
  * edge; a convex bevel height field `h(d)` (steep at the rim, flat inside `uBezel`) gives it a surface normal; and
  * everything the eye reads as glass follows from that normal:
  *
- * - **Refraction.** A ray straight down meets the surface, bends by Snell's law (IOR 1.5, air → glass) and travels
+ * - **Refraction.** A ray straight down meets the surface, bends by Snell's law (air → N-BK7 crown glass) and travels
  *   the glass thickness before it reaches the page, so the page seen at the rim comes from `thickness · tan(θ₁ - θ₂)`
- *   away. Red, green and blue use slightly different shifts (dispersion), which is where the prismatic fringe comes
+ *   away. Red, green and blue have independent wavelength-dependent indices and rays, which is where dispersion comes
  *   from. The page is a snapshot texture (`uScene`); with none, the rim is simply not refracted.
  * - **Reflection.** Fresnel reflectance (Schlick) brightens grazing angles; a fixed key light up-left and the CURSOR
  *   (a point light above the surface) add Blinn-Phong glints that slide around the bevel as it moves; a dimmer
@@ -24,8 +24,9 @@
  * construction (`uPx`), so the look does not depend on an engine's `fwidth`.
  */
 
+import { GLASS_OPTICS_GLSL } from '../optics';
+
 export const GLASS_RIPPLES = 3;
-export const GLASS_IOR = 1.5;
 
 export const VERT = `#version 300 es
 in vec2 aPos;
@@ -46,7 +47,6 @@ uniform float uThickness;  // glass thickness behind the bevel, CSS px (how far 
 uniform sampler2D uScene;  // page snapshot, row 0 = top
 uniform vec4 uSceneMap;    // x,y = scene position of the surface's top-left (CSS px); z,w = 1/scene size
 uniform float uSceneOn;    // 0..1, fades the refracted rim in
-uniform float uDisperse;   // channel spread, fraction of the shift
 
 uniform vec4 uTint;        // the surface's own tint (rgb, alpha) — the refracted rim must match the interior
 uniform vec3 uRim;         // colour of the light (the theme's glass-light)
@@ -58,6 +58,8 @@ uniform vec2 uTilt;        // smoothed unit-disc cursor pose; optical tilt only,
 uniform vec4 uRip[${GLASS_RIPPLES}];   // ripple: x,y (surface px), age (s, <0 = empty), amplitude
 uniform vec4 uRipShape;    // speed px/s, width px, life s, slope gain
 uniform float uPress;      // 0..1: a pressed surface flattens its bevel
+
+${GLASS_OPTICS_GLSL}
 
 float sdRoundRect(vec2 q, vec2 halfSize, float r) {
   vec2 e = abs(q) - halfSize + vec2(r);
@@ -122,12 +124,10 @@ void main() {
   vec4 rim = vec4(0.0);
   float band = (1.0 - smoothstep(0.55, 1.0, t)) * uSceneOn;
   if (band > 0.001) {
-    vec3 ray = refract(vec3(0.0, 0.0, -1.0), n, 1.0 / ${GLASS_IOR.toFixed(2)});
-    vec2 shift = ray.xy / max(-ray.z, 0.2) * uThickness;
     vec2 base = P + uSceneMap.xy;
-    vec2 uvR = (base + shift * (1.0 + uDisperse)) * uSceneMap.zw;
-    vec2 uvG = (base + shift) * uSceneMap.zw;
-    vec2 uvB = (base + shift * (1.0 - uDisperse)) * uSceneMap.zw;
+    vec2 uvR = (base + glassSlabOffset(n, GLASS_IOR_RGB.r, uThickness)) * uSceneMap.zw;
+    vec2 uvG = (base + glassSlabOffset(n, GLASS_IOR_RGB.g, uThickness)) * uSceneMap.zw;
+    vec2 uvB = (base + glassSlabOffset(n, GLASS_IOR_RGB.b, uThickness)) * uSceneMap.zw;
     vec4 sR = texture(uScene, uvR);
     vec4 sG = texture(uScene, uvG);
     vec4 sB = texture(uScene, uvB);
@@ -145,7 +145,7 @@ void main() {
   vec3 V = vec3(0.0, 0.0, 1.0);
   vec3 key = normalize(vec3(-0.46, -0.62, 0.64));
   vec3 fillL = normalize(vec3(0.55, 0.5, 0.67));
-  float fres = 0.04 + 0.96 * pow(1.0 - max(n.z, 0.0), 5.0);
+  float fres = glassFresnel(n.z).g;
   float keySpec = pow(max(dot(n, normalize(key + V)), 0.0), 120.0) * 0.8;
   float fillSpec = pow(max(dot(n, normalize(fillL + V)), 0.0), 70.0) * 0.26;
 

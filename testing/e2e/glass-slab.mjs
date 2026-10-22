@@ -53,7 +53,7 @@ const bundle = await build({
         const it = state.items.find((i) => i.name === name);
         const rip = over.ripples ?? ripples();
         return r.draw({
-          width: it.w, height: it.h, dpr: 2, radius: it.r, bezel: it.bz, thickness: it.bz * 0.85, disperse: over.disperse ?? 0.07,
+          width: it.w, height: it.h, dpr: 2, radius: it.r, bezel: it.bz, thickness: it.bz * 0.85,
           sceneX: it.x, sceneY: it.y, sceneW: W, sceneH: H, sceneOn: over.sceneOn ?? 1,
           tint: [0.96, 0.97, 1, 0.1], rim: [1, 1, 1], ink: over.ink ?? [0.05, 0.07, 0.12], dark: 0,
           lightX: over.lightX ?? -999, lightY: over.lightY ?? -999, lightZ: 90, lightOn: over.lightOn ?? 0,
