@@ -20,8 +20,8 @@ describe.skipIf(!URL)('acceptInvite concurrency (real database)', () => {
     process.env.DATABASE_URL = URL;
     ({ prisma } = await import('@/lib/prisma.server'));
     ({ acceptInvite } = await import('@/lib/communities/invites.server'));
-    const users = await prisma.user.findMany({ select: { id: true }, take: 41 });
-    expect(users.length).toBeGreaterThanOrEqual(41);
+    const users = await prisma.user.findMany({ select: { id: true }, take: 42 });
+    expect(users.length).toBeGreaterThanOrEqual(42);
     const [owner, ...rest] = users;
     userIds = rest.map((u) => u.id);
     const c = await prisma.community.create({
@@ -79,7 +79,7 @@ describe.skipIf(!URL)('acceptInvite concurrency (real database)', () => {
     });
     const outcomes = await Promise.all(
       [revoked.code, expired.code, exhausted.code, 'no-such-code'].map((code) =>
-        acceptInvite(communityId, userIds[1], code),
+        acceptInvite(communityId, userIds[40], code),
       ),
     );
     for (const o of outcomes) expect(o).toEqual({ ok: false, reason: 'invalid' });
