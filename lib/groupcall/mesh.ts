@@ -750,6 +750,9 @@ export class GroupCallMesh {
 
   private setStatus(leg: MeshLeg, status: GroupCallPeerStatus): void {
     if (leg.status === status) return;
+    // A torn-down leg's late rejection must not speak for the peer's
+    // replacement leg: status is reported by userId, not by leg.
+    if (leg.closed && status !== 'closed') return;
     leg.status = status;
     leg.changedAt = Date.now();
     if (!this.closed) this.callbacks.onPeerStatus(leg.userId, status);

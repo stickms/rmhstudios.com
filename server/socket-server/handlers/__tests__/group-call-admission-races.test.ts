@@ -7,12 +7,13 @@ import {
   __liveGroupCallCount,
   evictOriginMember,
   handleGroupCallDisconnect,
+  sweepCommunityMembership,
   registerGroupCallHandlers,
 } from '../group-call';
 
 const mocks = vi.hoisted(() => ({
   prisma: {
-    communityMember: { findUnique: vi.fn() },
+    communityMember: { findUnique: vi.fn(), findMany: vi.fn() },
     user: { findUnique: vi.fn(), findMany: vi.fn() },
     userBlock: { findMany: vi.fn(), findFirst: vi.fn() },
     notificationPreference: { findMany: vi.fn() },
@@ -51,7 +52,7 @@ const io = {
   to: () => ({ emit: () => {} }),
   // Everyone is online, so invitee screening admits on privacy alone.
   in: () => ({ socketsLeave: () => {}, fetchSockets: async () => [{ id: 'online' }] }),
-  sockets: { sockets: new Map<string, Socket>() },
+  sockets: { sockets: new Map<string, Socket>(), adapter: { rooms: new Map<string, Set<string>>() } },
 } as unknown as Server;
 
 function connect(userId: string, socketId = `${userId}-socket`): FakeClient {
@@ -114,6 +115,7 @@ const joinedCallId = (client: FakeClient): string | undefined =>
 describe('group-call admission races', () => {
   beforeEach(() => {
     mocks.prisma.communityMember.findUnique.mockReset().mockResolvedValue({ userId: 'member' });
+    mocks.prisma.communityMember.findMany.mockReset().mockResolvedValue([]);
     mocks.prisma.user.findUnique.mockReset();
     mocks.prisma.user.findMany
       .mockReset()
@@ -400,6 +402,90 @@ describe('group-call admission races', () => {
     expect(joinedCallId(back)).toBeUndefined();
 
     evictOriginMember(io, 'community', 'community-f', 'reclaim-away');
+    await stays.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('keeps someone out of an open room while a person they have a block with is in it', async () => {
+    holdPeerRows(new Map());
+    blocksBetween([{ blockerId: 'open-blocker', blockedId: 'open-blocked' }]);
+    const blocker = connect('open-blocker');
+    const blocked = connect('open-blocked');
+    await blocker.send(GCALL_C2S.START, { origin: 'community', originId: 'community-g' });
+    const callId = joinedCallId(blocker) as string;
+
+    await blocked.send(GCALL_C2S.JOIN, { callId });
+
+    expect(blocked.emitted).toContainEqual({
+      event: GCALL_S2C.REJECTED,
+      payload: expect.objectContaining({ reason: 'blocked', operation: 'join' }),
+    });
+    expect(getBusy('open-blocked')).toBeNull();
+    await blocker.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('does not let the same person be rung again within the cooldown', async () => {
+    holdPeerRows(new Map());
+    const host = connect('cool-host');
+    await host.send(GCALL_C2S.START, { origin: 'adhoc', inviteeIds: ['cool-target'] });
+    const callId = joinedCallId(host) as string;
+    await host.send(GCALL_C2S.END, { callId });
+    expect(getBusy('cool-target')).toBeNull();
+
+    // A fresh room straight away, ringing the same person.
+    host.emitted.length = 0;
+    await host.send(GCALL_C2S.START, { origin: 'adhoc', inviteeIds: ['cool-target'] });
+
+    expect(host.emitted).toContainEqual({
+      event: GCALL_S2C.REJECTED,
+      payload: expect.objectContaining({ reason: 'busy', operation: 'start' }),
+    });
+    expect(__liveGroupCallCount()).toBe(0);
+    expect(getBusy('cool-target')).toBeNull();
+  });
+
+  it('counts leaving a ring as declining it', async () => {
+    holdPeerRows(new Map());
+    const host = connect('ringleave-host');
+    const invitee = connect('ringleave-b');
+    await host.send(GCALL_C2S.START, { origin: 'adhoc', inviteeIds: ['ringleave-b'] });
+    const callId = joinedCallId(host) as string;
+
+    await invitee.send(GCALL_C2S.LEAVE, { callId });
+
+    // Everyone who was rung said no, so the host hears "declined".
+    expect(__liveGroupCallCount()).toBe(0);
+    // History is written on a fire-and-forget chain.
+    await vi.waitFor(() =>
+      expect(mocks.prisma.groupCall.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: callId },
+          data: expect.objectContaining({ status: 'DECLINED' }),
+        }),
+      ),
+    );
+  });
+
+  it('sweeps people who stopped being community members out of its voice room', async () => {
+    holdPeerRows(new Map());
+    const stays = connect('sweep-stays');
+    const kicked = connect('sweep-kicked');
+    await stays.send(GCALL_C2S.START, { origin: 'community', originId: 'community-h' });
+    const callId = joinedCallId(stays) as string;
+    await kicked.send(GCALL_C2S.JOIN, { callId });
+
+    mocks.prisma.communityMember.findMany.mockResolvedValue([{ userId: 'sweep-stays' }]);
+    await sweepCommunityMembership(io);
+
+    expect(getBusy('sweep-kicked')).toBeNull();
+    expect(getBusy('sweep-stays')).toEqual({ kind: 'gcall', id: callId });
+
+    // An unreadable membership table evicts nobody.
+    mocks.prisma.communityMember.findMany.mockRejectedValue(new Error('db down'));
+    await sweepCommunityMembership(io);
+    expect(getBusy('sweep-stays')).toEqual({ kind: 'gcall', id: callId });
+
     await stays.send(GCALL_C2S.LEAVE, { callId });
     expect(__liveGroupCallCount()).toBe(0);
   });

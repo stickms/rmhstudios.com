@@ -610,6 +610,8 @@ export function persistedParticipantStatus(args: {
     case 'failed':
       return 'FAILED';
     default:
-      return 'INVITED';
+      // Rung and gone without answering — the room ended, or their device did.
+      // From their side that is a missed call; `INVITED` is only the live ring.
+      return args.left ? 'MISSED' : 'INVITED';
   }
 }

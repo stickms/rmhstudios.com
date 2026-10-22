@@ -227,6 +227,27 @@ const byUser = new Map<string, string>();
 const byOrigin = new Map<string, string>();
 
 /**
+ * How soon one person may ring (or ping) the same person again. Per pair rather
+ * than per socket, so neither a second room nor a second tab resets it.
+ */
+export const RING_COOLDOWN_MS = 30_000;
+/** `${from}>${to}` → when `from` last rang or pinged `to`. */
+const lastRung = new Map<string, number>();
+
+function recentlyRang(from: string, to: string, now = Date.now()): boolean {
+  const at = lastRung.get(`${from}>${to}`);
+  return at !== undefined && now - at < RING_COOLDOWN_MS;
+}
+
+function noteRang(from: string, to: string, now = Date.now()): void {
+  // Bounded without a timer: prune the stale entries once the map is large.
+  if (lastRung.size > 10_000) {
+    for (const [key, at] of lastRung) if (now - at >= RING_COOLDOWN_MS) lastRung.delete(key);
+  }
+  lastRung.set(`${from}>${to}`, now);
+}
+
+/**
  * Close persisted rooms left behind when the previous signaling process died.
  *
  * Only rows created before `before` (this process's boot) are touched: the
@@ -1154,9 +1175,9 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // room as it was when they were rung, and it may since hold somebody
       // they have a block with. In a mesh that is a direct connection.
       if (!existing) {
-        const others = [...call.participants.values()]
-          .filter((p) => p.joinedAt !== null && p.userId !== userId)
-          .map((p) => p.userId);
+        // Everyone on the roster, ringing included: whoever is ringing now
+        // will be meshed with us the moment they answer.
+        const others = [...call.participants.keys()].filter((id) => id !== userId);
         if (await hasBlockWithAny(userId, others)) {
           return reject('not-member', operation, { callId: call.id });
         }
@@ -1178,6 +1199,14 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         participantCount: joinedCount(call),
       });
       if (!verdict.allowed) return reject(verdict.reason, operation, { callId: call.id });
+      // A shared community is not consent to a direct connection. Everyone in
+      // a mesh sees everyone else's IP and hears their voice, so a block in
+      // either direction with anybody in the room keeps this person out
+      // while that one is in it.
+      const others = [...call.participants.keys()].filter((id) => id !== userId);
+      if (await hasBlockWithAny(userId, others)) {
+        return reject('blocked', operation, { callId: call.id });
+      }
     }
 
     // Every await happens before this point. From the re-checks below to the
@@ -1259,12 +1288,16 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     const conversationId = asId(payload?.conversationId) || null;
 
     if (origin === 'adhoc') {
-      const inviteeIds = asIdList(payload?.inviteeIds, MAX_GROUP_CALL_INVITES).filter(
+      const requested = asIdList(payload?.inviteeIds, MAX_GROUP_CALL_INVITES).filter(
         (id) => id !== userId,
       );
-      if (inviteeIds.length === 0) {
+      if (requested.length === 0) {
         return fail('malformed', 'An ad-hoc call needs somebody to ring');
       }
+      // Calling the same person again straight after is a ring nobody asked
+      // for; to them it reads as a line that is still busy.
+      const inviteeIds = requested.filter((id) => !recentlyRang(userId, id));
+      if (inviteeIds.length === 0) return reject('busy', 'start', { origin, originId: null });
       if (getBusy(userId)) return reject('busy', 'start', { origin, originId: null });
 
       const { admitted, refusals } = await screenInvitees(io, userId, inviteeIds);
@@ -1296,7 +1329,10 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         return reject('busy', 'start', { origin, originId: null });
       }
       emitJoined(socket, call, userId);
-      for (const peer of rung) emitIncoming(io, call, peer.id);
+      for (const peer of rung) {
+        noteRang(userId, peer.id);
+        emitIncoming(io, call, peer.id);
+      }
       logger.info({
         event: 'group_call_started',
         callId: call.id,
@@ -1374,7 +1410,11 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     }
 
     const targets = asIdList(payload?.userIds, MAX_GROUP_CALL_INVITES).filter(
-      (id) => id !== userId && !call.participants.has(id) && !call.declinedBy.has(id),
+      (id) =>
+        id !== userId &&
+        !call.participants.has(id) &&
+        !call.declinedBy.has(id) &&
+        !recentlyRang(userId, id),
     );
     if (targets.length === 0) return fail('malformed', 'Nobody to invite');
 
@@ -1409,7 +1449,10 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
           participant: participantView(call, call.participants.get(peer.id) as LiveParticipant),
         });
       }
-      for (const peer of rung) emitIncoming(io, call, peer.id);
+      for (const peer of rung) {
+        noteRang(userId, peer.id);
+        emitIncoming(io, call, peer.id);
+      }
       emitRoster(io, call);
       return;
     }
@@ -1420,7 +1463,15 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     // and the invitee still has to pass the membership rule when they act on
     // it. The privacy/block screen still runs: a ping is a notification, and a
     // blocked stranger must not be able to send one.
-    const { admitted } = await screenInvitees(io, userId, targets);
+    // Screened against everyone in the room, not just the sender: the card
+    // names the host and shows the roster, and accepting it meshes the
+    // invitee with all of them.
+    const { admitted } = await screenInvitees(
+      io,
+      userId,
+      targets,
+      [...call.participants.keys()].filter((id) => id !== userId),
+    );
     if (calls.get(callId) !== call) return;
     const originId = call.originId ?? '';
     const eligible = await Promise.all(
@@ -1428,7 +1479,9 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     );
     if (calls.get(callId) !== call) return;
     for (const peer of eligible) {
-      if (peer) emitIncoming(io, call, peer.id);
+      if (!peer) continue;
+      noteRang(userId, peer.id);
+      emitIncoming(io, call, peer.id);
     }
   });
 
@@ -1470,10 +1523,17 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     }
 
     const durationSec = Math.max(0, Math.round((Date.now() - call.startedAt) / 1000));
-    dropParticipant(io, call, userId, 'left');
+    // Leaving a room you were only being rung into is declining it, and the
+    // room's own outcome ("everyone declined") has to count it as one.
+    const ringing = call.participants.get(userId)?.joinedAt === null;
+    if (ringing) {
+      call.declined += 1;
+      call.declinedBy.add(userId);
+    }
+    dropParticipant(io, call, userId, ringing ? 'declined' : 'left');
     io.to(userRoom(userId)).emit(GCALL_S2C.ENDED, {
       callId: call.id,
-      reason: 'left',
+      reason: ringing ? 'declined' : 'left',
       durationSec,
     });
     settle(io, call);
@@ -1710,9 +1770,10 @@ function openRoom(
  * whole of an open room's admission rule, so it has to keep holding after
  * they are in, not just at the door.
  *
- * Wired for parties, whose membership lives in this process. A community
- * membership is removed by the web tier, which has no channel to this hub yet;
- * those are re-checked only at the next `JOIN`/`LOOKUP`.
+ * Wired for parties, whose membership lives in this process, the moment it
+ * changes. A community membership is removed by the web tier, which has no
+ * channel to this hub, so {@link sweepCommunityMembership} catches those within
+ * {@link MEMBERSHIP_SWEEP_MS}.
  */
 export function evictOriginMember(
   io: Server,
@@ -1731,6 +1792,87 @@ export function evictOriginMember(
 }
 
 onPartyMemberRemoved((io, partyId, userId) => evictOriginMember(io, 'party', partyId, userId));
+
+/** How often community voice rooms and presence feeds re-check membership. */
+export const MEMBERSHIP_SWEEP_MS = 60_000;
+const COMMUNITY_PRESENCE_PREFIX = 'gcall:origin:community:';
+
+/**
+ * Which of `userIds` are still members of the community, or `null` when that
+ * cannot be read. `null` evicts nobody: a database blip must not empty a room.
+ */
+async function communityMembersAmong(
+  communityId: string,
+  userIds: readonly string[],
+): Promise<Set<string> | null> {
+  if (userIds.length === 0) return new Set();
+  try {
+    const rows = await getPrismaClient().communityMember.findMany({
+      where: { communityId, userId: { in: [...userIds] } },
+      select: { userId: true },
+    });
+    return new Set(rows.map((r) => r.userId));
+  } catch (err) {
+    logger.warn({ event: 'group_call_membership_sweep_failed', communityId, error: String(err) });
+    return null;
+  }
+}
+
+/**
+ * Take people who are no longer community members out of its voice room and
+ * its presence feed (a private community's "who is talking right now").
+ *
+ * One query per community with a live room or a subscriber, once a minute.
+ */
+export async function sweepCommunityMembership(io: Server): Promise<void> {
+  for (const call of [...calls.values()]) {
+    if (call.origin !== 'community' || !call.originId) continue;
+    const members = await communityMembersAmong(call.originId, [...call.participants.keys()]);
+    if (!members || calls.get(call.id) !== call) continue;
+    for (const userId of [...call.participants.keys()]) {
+      if (!members.has(userId)) evictOriginMember(io, 'community', call.originId, userId);
+    }
+  }
+
+  const presenceRooms = [...io.sockets.adapter.rooms.keys()].filter((room) =>
+    room.startsWith(COMMUNITY_PRESENCE_PREFIX),
+  );
+  for (const room of presenceRooms) {
+    const communityId = room.slice(COMMUNITY_PRESENCE_PREFIX.length);
+    const sockets = await io.in(room).fetchSockets();
+    const userIds = [
+      ...new Set(
+        sockets
+          .map((s) => s.data.userId)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0),
+      ),
+    ];
+    const members = await communityMembersAmong(communityId, userIds);
+    if (!members) continue;
+    for (const s of sockets) {
+      const id = s.data.userId;
+      if (typeof id !== 'string' || !members.has(id)) s.leave(room);
+    }
+  }
+}
+
+/** Run {@link sweepCommunityMembership} on its interval. Never keeps the process alive. */
+export function startCommunityMembershipSweep(io: Server): () => void {
+  let running = false;
+  const timer = setInterval(() => {
+    if (running) return;
+    running = true;
+    sweepCommunityMembership(io)
+      .catch((err: unknown) =>
+        logger.warn({ event: 'group_call_membership_sweep_failed', error: String(err) }),
+      )
+      .finally(() => {
+        running = false;
+      });
+  }, MEMBERSHIP_SWEEP_MS);
+  timer.unref?.();
+  return () => clearInterval(timer);
+}
 
 /**
  * A dropped socket.

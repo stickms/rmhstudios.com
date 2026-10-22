@@ -883,6 +883,10 @@ describe('persistence mapping', () => {
     expect(persistedParticipantStatus({ joined: false, left: false, reason: 'host-ended' })).toBe(
       'INVITED',
     );
+    // A ring that ended with the room (or their device) is a missed call.
+    expect(persistedParticipantStatus({ joined: false, left: true, reason: 'host-ended' })).toBe(
+      'MISSED',
+    );
   });
 
   it('handles every leave reason a participant can be dropped for', () => {
@@ -892,11 +896,13 @@ describe('persistence mapping', () => {
       expect(members).toContain(persistedParticipantStatus({ joined: false, left: true, reason }));
       expect(members).toContain(persistedParticipantStatus({ joined: true, left: true, reason }));
     }
-    // `left` is the one leave reason with no never-joined meaning — somebody who
-    // never got in did not leave — so it falls back to INVITED rather than
-    // claiming they were in the room.
+    // `left` has no never-joined meaning — somebody who never got in did not
+    // leave — so a ring that ended that way (their last device went) is a
+    // missed call: never LEFT, which would claim they were in the room, and
+    // not INVITED, which reads as still ringing. The boot sweep writes the
+    // same thing for rows a dead process left INVITED.
     expect(persistedParticipantStatus({ joined: false, left: true, reason: 'left' })).toBe(
-      'INVITED',
+      'MISSED',
     );
   });
 });

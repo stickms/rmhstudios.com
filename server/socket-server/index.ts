@@ -92,6 +92,7 @@ import {
   registerGroupCallHandlers,
   handleGroupCallDisconnect,
   reconcileOrphanedGroupCalls,
+  startCommunityMembershipSweep,
 } from './handlers/group-call';
 import { registerControllerHandlers, handleControllerDisconnect } from './handlers/controller';
 
@@ -635,3 +636,7 @@ httpServer.listen(config.PORT, () => {
 reconcileOrphanedGroupCalls(bootedAt).catch((err: unknown) => {
   logger.warn({ event: 'group_call_orphan_reconciliation_failed', error: String(err) });
 });
+
+// Community removals happen in the web tier, which cannot reach this process;
+// this is how a removed member leaves the community's voice room.
+startCommunityMembershipSweep(io);
