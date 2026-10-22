@@ -232,8 +232,8 @@ describe('the frozen picture (the destination is rendered before the animation, 
   it("is blurred exactly as radial.css blurs the shell behind an open hub, with the shell's own radius", () => {
     expect(
       rule(".radial-hub:is([data-phase='open'], [data-phase='everting']) .eversion-hold"),
-    ).toMatch(/filter: blur\(var\(--hub-page-blur, 20px\)\);/);
-    expect(radial).toMatch(/filter: blur\(var\(--hub-page-blur, 20px\)\);/);
+    ).toMatch(/filter: blur\(var\(--hub-page-blur, 6px\)\);/);
+    expect(radial).toMatch(/filter: blur\(var\(--hub-page-blur, 6px\)\);/);
   });
 
   it('is sharp on every tier that opts the shell out of that blur (and outranks the blur rule)', () => {
@@ -264,7 +264,7 @@ describe('the frozen picture (the destination is rendered before the animation, 
 
   it('the floating UI blurs with the page behind an open hub (the picture carries it), but not on the opt-out tiers', () => {
     expect(flatRadial).toMatch(
-      /\.radial-shell:has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) > \[data-floating\]:not\(\[data-floating='hub'\]\) \{ filter: blur\(var\(--hub-page-blur, 20px\)\);/,
+      /\.radial-shell:has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) > \[data-floating\]:not\(\[data-floating='hub'\]\) \{ filter: blur\(var\(--hub-page-blur, 6px\)\);/,
     );
     expect(flatRadial).toMatch(
       /html:is\(\.perf-lite, \.reduce-transparency, \.ios-webkit\) \.radial-shell:has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) > \[data-floating\]:not\(\[data-floating='hub'\]\) \{ filter: none;/,

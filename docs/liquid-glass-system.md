@@ -181,8 +181,7 @@ the lighting wraps around every dent (lit wall, shadowed wall, a bright lip on t
 shoulder), and the wireframe all describe one surface.
 
 **Lens.** The coat refracts the page behind the hub as a ball lens (inverted, magnified,
-slightly dispersed), from the shared snapshot sampled at mip level 5 to match the hub's 20px
-blur. It is driven by the surface normal, not by a two-surface refraction: that has a
+slightly dispersed), from the shared snapshot sampled at mip level 5 so the ball carries its own blur (the hub's page blur is a light 6px; the ball does the heavy lifting). It is driven by the surface normal, not by a two-surface refraction: that has a
 total-internal-reflection cutoff that drew a visible ring on the ball.
 
 Needs WebGL 2 (a half-float texture that filters linearly); without it the globe keeps its

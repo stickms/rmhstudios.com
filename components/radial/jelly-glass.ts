@@ -63,7 +63,7 @@ export interface JellyPalette {
 }
 
 /**
- * Mip level the refracted page is read at. The hub blurs the page behind the globe by `--hub-page-blur` (20px), and a ball
+ * Mip level the refracted page is read at. The hub blurs the page behind the globe only lightly (`--hub-page-blur`, 6px) because the ball itself blurs it; a ball
  * showing a SHARPER picture of the thing behind it than the thing itself would read as a sticker, not a lens.
  */
 export const JELLY_SCENE_LOD = 5;

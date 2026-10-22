@@ -1070,7 +1070,7 @@ body:has(.radial-shell) .call-banner {
   block-size: 4rem;
   background: radial-gradient(circle, var(--site-bg), transparent);
   clip-path: circle(40% at 50% 50%);
-  filter: blur(var(--hub-page-blur, 20px));
+  filter: blur(var(--hub-page-blur, 6px));
 }
 /* Transparent full-screen click-catcher (closes on an outside tap); sits below
    the veil + globe so only empty regions dismiss the menu.
@@ -1182,10 +1182,10 @@ body:has(.radial-shell) .call-banner {
      The blur comes from the layers below, which hold still; the veil only tints. */
   background: radial-gradient(
     circle farthest-corner at 50% 50%,
-    color-mix(in srgb, var(--site-bg) 55%, transparent) 0%,
-    color-mix(in srgb, var(--site-bg) 66%, transparent) 42%,
-    color-mix(in srgb, var(--site-bg) 76%, transparent) 76%,
-    color-mix(in srgb, var(--site-bg) 84%, transparent) 100%
+    color-mix(in srgb, var(--site-bg) 30%, transparent) 0%,
+    color-mix(in srgb, var(--site-bg) 38%, transparent) 42%,
+    color-mix(in srgb, var(--site-bg) 50%, transparent) 76%,
+    color-mix(in srgb, var(--site-bg) 60%, transparent) 100%
   );
   /* The disc only ever has to reach the farthest CORNER — half the viewport
      diagonal, which at any aspect ratio is at most 0.708vmax*100. This used to
@@ -1229,6 +1229,10 @@ body:has(.radial-shell) .call-banner {
    globe animating in a layer above never invalidates it. Same visual, opposite
    cost curve.
 
+   The blur is deliberately LIGHT (6px, `--hub-page-blur`): the globe lenses and blurs the page behind it itself (the
+   coat reads the page snapshot at a high mip level), so a heavy blur around it is a second blur on top of the first and
+   leaves the page as a grey wash instead of something still recognisably there.
+
    Applied to the three shell siblings rather than to `.radial-shell`, because
    the hub is also a child of the shell and must stay sharp.
 
@@ -1244,7 +1248,7 @@ body:has(.radial-shell) .call-banner {
 .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
 .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting']))
   > [data-floating]:not([data-floating='hub']) {
-  filter: blur(var(--hub-page-blur, 20px));
+  filter: blur(var(--hub-page-blur, 6px));
   /* The transition lives HERE, on the open state, so it governs the way IN and
      NOT the way out. That asymmetry is the fix for a reported bug: the whole
      feed disappeared for the length of the close and then popped back.
