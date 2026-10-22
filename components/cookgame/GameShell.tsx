@@ -1,6 +1,6 @@
 "use client";
 import { Suspense } from 'react';
-import { Link } from '@tanstack/react-router';
+import { ClientOnly, Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 // Static, not `lazy()`: the shell already rides in the /cookgame route's own
@@ -8,6 +8,12 @@ import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 // server-rendered game to "LOADING..." for ~1.5s and brought it back
 // (docs/fouc-audit-2026-10-06.md §13).
 import { CookGameGame } from './CookGameGame';
+
+const LOADING = (
+  <div className="flex items-center justify-center w-full h-full text-neutral-600 text-sm font-mono tracking-widest animate-pulse">
+    LOADING...
+  </div>
+);
 
 export function GameShell({ userName }: { userName?: string | null }) {
   const goBack = useBackOrFallback();
@@ -26,9 +32,14 @@ export function GameShell({ userName }: { userName?: string | null }) {
         {userName && <span className="min-w-0 truncate text-neutral-600 text-xs font-mono">{userName}</span>}
       </div>
       <div className="flex-1 min-h-0 bg-black">
-        <Suspense fallback={<div className="flex items-center justify-center w-full h-full text-neutral-600 text-sm font-mono tracking-widest animate-pulse">LOADING...</div>}>
-          <CookGameGame />
-        </Suspense>
+        {/* <Canvas> cannot render on the server (@react-three/fiber is externalized
+            and sees a second React: "reading 'useMemo' of null"), so SSR emits the
+            same fallback and the canvas mounts after hydration. */}
+        <ClientOnly fallback={LOADING}>
+          <Suspense fallback={LOADING}>
+            <CookGameGame />
+          </Suspense>
+        </ClientOnly>
       </div>
     </div>
   );
