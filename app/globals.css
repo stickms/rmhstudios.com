@@ -457,6 +457,9 @@
   /* Tooltips portal to <body> and must clear the z-50 dialogs/sheets they can
      be triggered from inside, so they sit above the whole stack. */
   --z-tooltip: 9999;
+  /* The globe cursor (components/globe-cursor) IS the pointer, so it draws over
+     everything, tooltips included. Click-through, portalled to <body>. */
+  --z-cursor: 10000;
 
   /* Width of the shell's desktop rails. `--site-rail-width` is the historical
      name the layout constants in lib/layout-width.ts reference; it was never

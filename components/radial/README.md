@@ -266,7 +266,11 @@ Rules that are easy to break when touching the geometry or the loop:
   hidden), so the eye never has to leave the reticle, and a screen-reader-only
   live region carries the same information for non-sighted visitors.
 
-### The ripple
+### Retired ripple model
+
+Click and tap ripples are disabled throughout the site, including the navigation
+globe and the custom cursor. The following describes retained legacy rendering
+math; it is no longer emitted by pointer interactions.
 
 Press the sphere and a wave spreads out across it from the exact point you
 touched, swelling the wireframe as it passes, carrying a bright crest, and dying
