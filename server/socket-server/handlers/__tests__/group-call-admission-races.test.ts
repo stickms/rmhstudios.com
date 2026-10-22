@@ -158,7 +158,8 @@ describe('group-call admission races', () => {
 
     expect(joiner.emitted).toContainEqual({
       event: GCALL_S2C.REJECTED,
-      payload: expect.objectContaining({ reason: 'gone', operation: 'join', callId }),
+      // An open room's refusals never carry its id.
+      payload: { reason: 'gone', operation: 'join' },
     });
     expect(joiner.emitted.some((e) => e.event === GCALL_S2C.JOINED)).toBe(false);
     expect(getBusy('race-joiner')).toBeNull();
@@ -623,6 +624,52 @@ describe('group-call admission races', () => {
     expect(getBusy('callback-friend')).not.toBeNull();
     const second = joinedCallId(host) as string;
     await host.send(GCALL_C2S.LEAVE, { callId: second });
+    expect(__liveGroupCallCount()).toBe(0);
+  });
+
+  it('answers a non-member the same whether or not the space has a live room', async () => {
+    holdPeerRows(new Map());
+    const member = connect('same-member');
+    await member.send(GCALL_C2S.START, { origin: 'community', originId: 'community-live' });
+    const callId = joinedCallId(member) as string;
+
+    mocks.prisma.communityMember.findUnique.mockResolvedValue(null);
+    const outsider = connect('same-outsider');
+    await outsider.send(GCALL_C2S.START, { origin: 'community', originId: 'community-live' });
+    await outsider.send(GCALL_C2S.START, { origin: 'community', originId: 'community-quiet' });
+
+    const refusals = outsider.emitted
+      .filter((e) => e.event === GCALL_S2C.REJECTED)
+      .map((e) => ({ reason: e.payload.reason, callId: e.payload.callId }));
+    expect(refusals).toEqual([
+      { reason: 'not-member', callId: undefined },
+      { reason: 'not-member', callId: undefined },
+    ]);
+    await member.send(GCALL_C2S.LEAVE, { callId });
+  });
+
+  it('checks blocks again when a ringing invitee answers', async () => {
+    holdPeerRows(new Map());
+    const host = connect('answer-host');
+    const early = connect('answer-early');
+    const late = connect('answer-late');
+    await host.send(GCALL_C2S.START, {
+      origin: 'adhoc',
+      inviteeIds: ['answer-early', 'answer-late'],
+    });
+    const callId = joinedCallId(host) as string;
+    await early.send(GCALL_C2S.JOIN, { callId });
+
+    // A block appears while `answer-late` is still ringing.
+    blocksBetween([{ blockerId: 'answer-early', blockedId: 'answer-late' }]);
+    await late.send(GCALL_C2S.JOIN, { callId });
+
+    expect(late.emitted).toContainEqual({
+      event: GCALL_S2C.REJECTED,
+      payload: expect.objectContaining({ reason: 'privacy', operation: 'join' }),
+    });
+    expect(joinedCallId(late)).toBeUndefined();
+    await host.send(GCALL_C2S.END, { callId });
     expect(__liveGroupCallCount()).toBe(0);
   });
 });

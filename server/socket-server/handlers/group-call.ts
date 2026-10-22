@@ -1144,17 +1144,15 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     const userId = uid();
     if (!userId) return fail('unauthenticated', 'Sign in to join a call');
 
+    // Refusals from an open room never name it. Most are sent before (or
+    // instead of) a membership pass, and a callId — or a reply that differs
+    // between "live room" and "no room" — would tell a non-member that a space
+    // they cannot see has a call going, which `LOOKUP` deliberately hides.
+    // An ad-hoc room's guests were sent its id; naming it tells them nothing.
+    const roomRef = call.origin === 'adhoc' ? { callId: call.id } : undefined;
+
     const busy = getBusy(userId);
-    if (busy && busy.id !== call.id) {
-      // No callId for an open room: this refusal is sent before membership is
-      // checked, and naming the room would tell a non-member that a space they
-      // cannot see has a live call (which `LOOKUP` deliberately hides).
-      return reject(
-        'busy',
-        operation,
-        call.origin === 'adhoc' ? { callId: call.id } : undefined,
-      );
-    }
+    if (busy && busy.id !== call.id) return reject('busy', operation, roomRef);
 
     const existing = call.participants.get(userId);
 
@@ -1171,9 +1169,9 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         // so a database blip here costs a reconnect, not a place in the room.
         const member = await isOriginMember(call.origin, call.originId ?? '', userId);
         if (calls.get(call.id) !== call || call.participants.get(userId) !== existing) {
-          return reject('gone', operation, { callId: call.id });
+          return reject('gone', operation, roomRef);
         }
-        if (!member) return reject('not-member', operation, { callId: call.id });
+        if (!member) return reject('not-member', operation, roomRef);
         if (socket.disconnected) return;
         if (existing.socketId === socket.id) {
           emitJoined(socket, call, userId);
@@ -1223,21 +1221,19 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // `GroupCallRejectReason` that means "this room is not open to you".
       if (!existing && !call.invited.has(userId)) {
         // Not on the guest list: from where they stand there is no call here.
-        return reject('gone', operation, { callId: call.id });
+        return reject('gone', operation, roomRef);
       }
-      // Walking back in from the guest list: they were screened against the
-      // room as it was when they were rung, and it may since hold somebody
-      // they have a block with. In a mesh that is a direct connection.
-      if (!existing) {
-        // Everyone on the roster, ringing included: whoever is ringing now
-        // will be meshed with us the moment they answer.
-        const others = [...call.participants.keys()].filter((id) => id !== userId);
-        if (await hasBlockWithAny(userId, others)) {
-          return reject('privacy', operation, { callId: call.id });
-        }
+      // Answering a ring, or walking back in from the guest list: they were
+      // screened against the room as it was when they were rung, and a block
+      // may have appeared since (or the room may hold somebody new). In a mesh
+      // that is a direct connection, so ask again at the door. Everyone on the
+      // roster counts, ringing included: they are meshed the moment they answer.
+      const others = [...call.participants.keys()].filter((id) => id !== userId);
+      if (await hasBlockWithAny(userId, others)) {
+        return reject('privacy', operation, roomRef);
       }
       if (isRosterFull(joinedCount(call))) {
-        return reject('full', operation, { callId: call.id });
+        return reject('full', operation, roomRef);
       }
     } else {
       const originId = call.originId ?? '';
@@ -1252,7 +1248,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         banned: false,
         participantCount: joinedCount(call),
       });
-      if (!verdict.allowed) return reject(verdict.reason, operation, { callId: call.id });
+      if (!verdict.allowed) return reject(verdict.reason, operation, roomRef);
       // A shared community is not consent to a direct connection. Everyone in
       // a mesh sees everyone else's IP and hears their voice, so a block in
       // either direction with anybody in the room keeps this person out
@@ -1261,7 +1257,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       if (await hasBlockWithAny(userId, others)) {
         // `privacy`, never `blocked`: which of the two set the block, and that
         // it is somebody in this room, is not this joiner's to learn.
-        return reject('privacy', operation, { callId: call.id });
+        return reject('privacy', operation, roomRef);
       }
     }
 
@@ -1273,24 +1269,24 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       ? null
       : await loadPeer(userId, selfName(), selfImage());
 
-    if (calls.get(call.id) !== call) return reject('gone', operation, { callId: call.id });
+    if (calls.get(call.id) !== call) return reject('gone', operation, roomRef);
     const onRoster = call.participants.get(userId);
     // Another tab of ours got in while we were waiting; that tab is the leg.
     if (onRoster && onRoster.joinedAt !== null) {
-      return reject('busy', operation, { callId: call.id });
+      return reject('busy', operation, roomRef);
     }
     // We were ringing when we started and have since been dropped (declined
     // from another tab, or the ring ran out): that invitation is over.
     const identity = onRoster ?? peer;
-    if (!identity) return reject('gone', operation, { callId: call.id });
+    if (!identity) return reject('gone', operation, roomRef);
     // Others may have joined while we awaited membership or the peer row.
-    if (isRosterFull(joinedCount(call))) return reject('full', operation, { callId: call.id });
+    if (isRosterFull(joinedCount(call))) return reject('full', operation, roomRef);
     // This socket closed while we awaited. Its disconnect handler has already
     // run and found nothing to clean up, so binding it now would leave a ghost
     // on the roster and a busy claim nobody releases.
     if (socket.disconnected) return;
     if (!claimBusy(userId, 'gcall', call.id)) {
-      return reject('busy', operation, { callId: call.id });
+      return reject('busy', operation, roomRef);
     }
 
     const at = Date.now();
