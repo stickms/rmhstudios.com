@@ -1138,6 +1138,7 @@ import { Route as ApiWhenIdRespondRouteImport } from './routes/api/when/$id/resp
 import { Route as ApiWorldsVisitCodeRouteImport } from './routes/api/worlds/visit.$code'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
 import { Route as SiteAdminBlogSlugEditRouteImport } from './routes/_site/admin/blog/$slug/edit'
+import { Route as SiteCSlugInviteCodeRouteImport } from './routes/_site/c.$slug_.invite.$code'
 import { Route as SiteGamesGameIdGuidesGuideIdRouteImport } from './routes/_site/games/$gameId_.guides.$guideId'
 import { Route as SiteUUseridPostPostidRouteImport } from './routes/_site/u/$userid/post/$postid'
 import { Route as ApiAccountRecoveryContactsIdRouteImport } from './routes/api/account/recovery/contacts/$id'
@@ -7053,6 +7054,11 @@ const SiteAdminBlogSlugEditRoute = SiteAdminBlogSlugEditRouteImport.update({
   path: '/blog/$slug/edit',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteCSlugInviteCodeRoute = SiteCSlugInviteCodeRouteImport.update({
+  id: '/c/$slug_/invite/$code',
+  path: '/c/$slug/invite/$code',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteGamesGameIdGuidesGuideIdRoute =
   SiteGamesGameIdGuidesGuideIdRouteImport.update({
     id: '/games/$gameId_/guides/$guideId',
@@ -8923,6 +8929,7 @@ export interface FileRoutesByFullPath {
   '/api/versecraft/seeds/': typeof ApiVersecraftSeedsIndexRoute
   '/api/when/$id/': typeof ApiWhenIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
+  '/c/$slug/invite/$code': typeof SiteCSlugInviteCodeRoute
   '/games/$gameId/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/account/recovery/contacts/$id': typeof ApiAccountRecoveryContactsIdRoute
@@ -10157,6 +10164,7 @@ export interface FileRoutesByTo {
   '/api/versecraft/seeds': typeof ApiVersecraftSeedsIndexRoute
   '/api/when/$id': typeof ApiWhenIdIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
+  '/c/$slug/invite/$code': typeof SiteCSlugInviteCodeRoute
   '/games/$gameId/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/account/recovery/contacts/$id': typeof ApiAccountRecoveryContactsIdRoute
@@ -11419,6 +11427,7 @@ export interface FileRoutesById {
   '/api/versecraft/seeds/': typeof ApiVersecraftSeedsIndexRoute
   '/api/when/$id/': typeof ApiWhenIdIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
+  '/_site/c/$slug_/invite/$code': typeof SiteCSlugInviteCodeRoute
   '/_site/games/$gameId_/guides/$guideId': typeof SiteGamesGameIdGuidesGuideIdRoute
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/account/recovery/contacts/$id': typeof ApiAccountRecoveryContactsIdRoute
@@ -12681,6 +12690,7 @@ export interface FileRouteTypes {
     | '/api/versecraft/seeds/'
     | '/api/when/$id/'
     | '/admin/blog/$slug/edit'
+    | '/c/$slug/invite/$code'
     | '/games/$gameId/guides/$guideId'
     | '/u/$userid/post/$postid'
     | '/api/account/recovery/contacts/$id'
@@ -13915,6 +13925,7 @@ export interface FileRouteTypes {
     | '/api/versecraft/seeds'
     | '/api/when/$id'
     | '/admin/blog/$slug/edit'
+    | '/c/$slug/invite/$code'
     | '/games/$gameId/guides/$guideId'
     | '/u/$userid/post/$postid'
     | '/api/account/recovery/contacts/$id'
@@ -15176,6 +15187,7 @@ export interface FileRouteTypes {
     | '/api/versecraft/seeds/'
     | '/api/when/$id/'
     | '/_site/admin/blog/$slug/edit'
+    | '/_site/c/$slug_/invite/$code'
     | '/_site/games/$gameId_/guides/$guideId'
     | '/_site/u/$userid/post/$postid'
     | '/api/account/recovery/contacts/$id'
@@ -23992,6 +24004,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminBlogSlugEditRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/c/$slug_/invite/$code': {
+      id: '/_site/c/$slug_/invite/$code'
+      path: '/c/$slug/invite/$code'
+      fullPath: '/c/$slug/invite/$code'
+      preLoaderRoute: typeof SiteCSlugInviteCodeRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/games/$gameId_/guides/$guideId': {
       id: '/_site/games/$gameId_/guides/$guideId'
       path: '/games/$gameId/guides/$guideId'
@@ -25218,6 +25237,7 @@ interface SiteRouteChildren {
   SiteHomesListingIdRoute: typeof SiteHomesListingIdRoute
   SiteNewsStoriesSlugRoute: typeof SiteNewsStoriesSlugRoute
   SiteUUseridIndexRoute: typeof SiteUUseridIndexRoute
+  SiteCSlugInviteCodeRoute: typeof SiteCSlugInviteCodeRoute
   SiteGamesGameIdGuidesGuideIdRoute: typeof SiteGamesGameIdGuidesGuideIdRoute
   SiteUUseridPostPostidRoute: typeof SiteUUseridPostPostidRoute
 }
@@ -25369,6 +25389,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteHomesListingIdRoute: SiteHomesListingIdRoute,
   SiteNewsStoriesSlugRoute: SiteNewsStoriesSlugRoute,
   SiteUUseridIndexRoute: SiteUUseridIndexRoute,
+  SiteCSlugInviteCodeRoute: SiteCSlugInviteCodeRoute,
   SiteGamesGameIdGuidesGuideIdRoute: SiteGamesGameIdGuidesGuideIdRoute,
   SiteUUseridPostPostidRoute: SiteUUseridPostPostidRoute,
 }
