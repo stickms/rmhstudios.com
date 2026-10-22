@@ -93,10 +93,19 @@ describe('the soft body', () => {
     b.grab(0.4, 0.1);
     b.drag(0.4, 0.1, 30, 10);
     run(b, 0.3);
-    const t0 = performance.now();
-    for (let i = 0; i < 10_000; i++) b.deform(Math.cos(i), Math.sin(i), out);
-    // The cage draws ~1,000 samples a frame; this is ten frames' worth.
-    expect(performance.now() - t0).toBeLessThan(16);
+    // The cage draws ~1,000 samples a frame; each pass is ten frames' worth.
+    const pass = () => {
+      const t0 = performance.now();
+      for (let i = 0; i < 10_000; i++) b.deform(Math.cos(i), Math.sin(i), out);
+      return performance.now() - t0;
+    };
+    // Warm up the JIT, then keep the FASTEST of five passes. A single
+    // wall-clock sample measures the shared CI runner as much as the code — one
+    // pass took 16.7 ms on a PR that never touched this (2026-10-22) — while a
+    // genuine regression makes every pass slow, so the minimum still catches it.
+    pass();
+    const best = Math.min(...Array.from({ length: 5 }, pass));
+    expect(best).toBeLessThan(16);
   });
 });
 
