@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Server, Socket } from 'socket.io';
 import { GCALL_C2S, GCALL_S2C } from '../../../../lib/groupcall/events';
 import { claimBusy, getBusy, releaseBusy } from '../../busy-registry';
+import { isPartyMember } from '../party';
 import {
   GROUP_CALL_SEAT_GRACE_MS,
   __liveGroupCallCount,
@@ -737,5 +738,88 @@ describe('group-call admission races', () => {
 
     expect(host.emitted.slice(before)).toEqual([]);
     await host.send(GCALL_C2S.LEAVE, { callId });
+  });
+
+  it('reports a mid-call invite refused by a block as `privacy`', async () => {
+    holdPeerRows(new Map());
+    const host = connect('midblock-host');
+    const guest = connect('midblock-guest');
+    await host.send(GCALL_C2S.START, { origin: 'adhoc', inviteeIds: ['midblock-guest'] });
+    const callId = joinedCallId(host) as string;
+    await guest.send(GCALL_C2S.JOIN, { callId });
+    blocksBetween([{ blockerId: 'midblock-target', blockedId: 'midblock-host' }]);
+
+    await host.send(GCALL_C2S.INVITE, { callId, userIds: ['midblock-target'] });
+
+    const refusal = host.emitted.find(
+      (e) => e.event === GCALL_S2C.REJECTED && e.payload.operation === 'invite',
+    );
+    expect(refusal?.payload.reason).toBe('privacy');
+    await host.send(GCALL_C2S.END, { callId });
+  });
+
+  it('stays silent when an open-room ping is repeated inside the cooldown', async () => {
+    holdPeerRows(new Map());
+    const host = connect('repeat-host');
+    await host.send(GCALL_C2S.START, { origin: 'community', originId: 'community-p' });
+    const callId = joinedCallId(host) as string;
+    const before = host.emitted.length;
+
+    await host.send(GCALL_C2S.INVITE, { callId, userIds: ['repeat-target'] });
+    await host.send(GCALL_C2S.INVITE, { callId, userIds: ['repeat-target'] });
+
+    expect(host.emitted.slice(before)).toEqual([]);
+    await host.send(GCALL_C2S.LEAVE, { callId });
+  });
+
+  it('does not let a dropped ring back in on the JOIN that raced it', async () => {
+    holdPeerRows(new Map());
+    const host = connect('dropped-host');
+    const tabA = connect('dropped-guest', 'dropped-tab-a');
+    const tabB = connect('dropped-guest', 'dropped-tab-b');
+    await host.send(GCALL_C2S.START, {
+      origin: 'adhoc',
+      inviteeIds: ['dropped-guest', 'dropped-other'],
+    });
+    const callId = joinedCallId(host) as string;
+
+    // Tab A answers; its block check is slow. Tab B declines meanwhile.
+    const check = gate<null>();
+    mocks.prisma.userBlock.findFirst.mockImplementationOnce(() => check.promise);
+    const answering = tabA.send(GCALL_C2S.JOIN, { callId });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await tabB.send(GCALL_C2S.DECLINE, { callId });
+    check.open(null);
+    await answering;
+
+    expect(joinedCallId(tabA)).toBeUndefined();
+    expect(getBusy('dropped-guest')).toBeNull();
+    await host.send(GCALL_C2S.END, { callId });
+  });
+
+  it('asks party membership once more right before seating', async () => {
+    holdPeerRows(new Map());
+    const member = vi.mocked(isPartyMember);
+    member.mockReturnValue(true);
+    const host = connect('party-host');
+    await host.send(GCALL_C2S.START, { origin: 'party', originId: 'party-q' });
+    const callId = joinedCallId(host) as string;
+
+    const row = gate<unknown>();
+    holdPeerRows(new Map([['party-leaver', row.promise]]));
+    const leaver = connect('party-leaver');
+    const joining = leaver.send(GCALL_C2S.JOIN, { callId });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // They leave the party while their peer row loads.
+    member.mockImplementation((_party, userId) => userId !== 'party-leaver');
+    row.open({ id: 'party-leaver', name: 'Leaver', image: null, handle: null });
+    await joining;
+
+    expect(joinedCallId(leaver)).toBeUndefined();
+    expect(getBusy('party-leaver')).toBeNull();
+    member.mockReset();
+    member.mockReturnValue(true);
+    await host.send(GCALL_C2S.LEAVE, { callId });
+    expect(__liveGroupCallCount()).toBe(0);
   });
 });

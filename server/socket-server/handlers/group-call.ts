@@ -854,6 +854,16 @@ async function screenInvitees(
 }
 
 /** The most final of a set of refusals, for a `START` that reached nobody. */
+/**
+ * The reason a refused ring is reported to whoever rang. `blocked` and
+ * `privacy` read the same on screen, and on the wire they must too, or the
+ * caller learns which of the two it was.
+ */
+function reportedRefusal(reasons: readonly GroupCallRejectReason[]): GroupCallRejectReason {
+  const reason = strongestReason(reasons);
+  return reason === 'blocked' ? 'privacy' : reason;
+}
+
 function strongestReason(reasons: readonly GroupCallRejectReason[]): GroupCallRejectReason {
   for (const candidate of REJECT_PRECEDENCE) {
     if (reasons.includes(candidate)) return candidate;
@@ -1175,6 +1185,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     if (busy && busy.id !== call.id) return reject('busy', operation, roomRef);
 
     const existing = call.participants.get(userId);
+    const wasRinging = existing !== undefined && existing.joinedAt === null;
 
     // Already in, from another tab: move the media leg rather than opening a
     // second one. Peers are told the old leg went and a new one arrived, which
@@ -1291,12 +1302,15 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
 
     if (calls.get(call.id) !== call) return reject('gone', operation, roomRef);
     const onRoster = call.participants.get(userId);
+    // Ringing when this began and dropped since (declined from another tab,
+    // or the ring ran out — they were told ENDED): that invitation is over,
+    // and the guest list must not quietly let them back in on the same JOIN.
+    if (wasRinging && !onRoster) return reject('gone', operation, roomRef);
     // Another tab of ours got in while we were waiting; that tab is the leg.
     if (onRoster && onRoster.joinedAt !== null) {
       return reject('busy', operation, roomRef);
     }
-    // We were ringing when we started and have since been dropped (declined
-    // from another tab, or the ring ran out): that invitation is over.
+    // The row to seat them with: their roster entry, or the one just loaded.
     const identity = onRoster ?? peer;
     if (!identity) return reject('gone', operation, roomRef);
     // Others may have joined while we awaited membership or the peer row.
@@ -1305,6 +1319,12 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     // run and found nothing to clean up, so binding it now would leave a ghost
     // on the roster and a busy claim nobody releases.
     if (socket.disconnected) return;
+    // Party membership is in this process and can be read synchronously, so
+    // ask it once more: a member who left during the awaits above was not on
+    // the roster for `evictOriginMember` to remove. (Communities are swept.)
+    if (call.origin === 'party' && !isPartyMember(call.originId ?? '', userId)) {
+      return reject('not-member', operation, roomRef);
+    }
     if (!claimBusy(userId, 'gcall', call.id)) {
       return reject('busy', operation, roomRef);
     }
@@ -1381,13 +1401,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
       // block from a busy line from a closed tab, exactly as in the 1:1 flow.
       // Refusing *everybody* is a call that did not happen, and gets a reason.
       if (admitted.length === 0) {
-        // `blocked` and `privacy` read the same on screen; on the wire they
-        // must too, or a one-person START tells the host which it was.
-        const reason = strongestReason(refusals);
-        return reject(reason === 'blocked' ? 'privacy' : reason, 'start', {
-          origin,
-          originId: null,
-        });
+        return reject(reportedRefusal(refusals), 'start', { origin, originId: null });
       }
       if (getBusy(userId)) return reject('busy', 'start', { origin, originId: null });
 
@@ -1508,18 +1522,15 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     const inviterStillIn = (): boolean =>
       calls.get(callId) === call && call.participants.get(userId) === inviter;
 
-    const targets = asIdList(payload?.userIds, MAX_GROUP_CALL_INVITES).filter(
-      (id) =>
-        id !== userId &&
-        !call.participants.has(id) &&
-        !call.declinedBy.has(id) &&
-        !recentlyRang(userId, id),
+    const asked = asIdList(payload?.userIds, MAX_GROUP_CALL_INVITES).filter(
+      (id) => id !== userId && !call.participants.has(id) && !call.declinedBy.has(id),
     );
-    // Everyone asked for is already here, declined this room, or was rung a
-    // moment ago. A refusal the inviter sees, not a protocol error they don't.
-    if (targets.length === 0) return reject('busy', 'invite', { callId });
+    const targets = asked.filter((id) => !recentlyRang(userId, id));
 
     if (call.origin === 'adhoc') {
+      // Everyone asked for is already here, declined this room, or was rung a
+      // moment ago. A refusal the inviter sees, not a protocol error they don't.
+      if (targets.length === 0) return reject('busy', 'invite', { callId });
       // In turn with every other admission to this room, so the block screen
       // sees anyone admitted while it was waiting (see `LiveGroupCall.admission`).
       return admit(call, async () => {
@@ -1535,7 +1546,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         );
         if (!inviterStillIn()) return reject('gone', 'invite', { callId });
         if (admitted.length === 0) {
-          return reject(strongestReason(refusals), 'invite', { callId });
+          return reject(reportedRefusal(refusals), 'invite', { callId });
         }
         // Re-checked after the await: another invite may have filled the roster
         // or rung the same person, and a busy claim may have been taken since.
@@ -1561,6 +1572,12 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
         return;
       });
     }
+
+    // Every attempt starts the cooldown, pinged or not, and an empty batch is
+    // as silent as a full one: if only real pings were throttled, re-asking
+    // within the cooldown would reveal which earlier ones had landed.
+    for (const id of targets) noteRang(userId, id);
+    if (targets.length === 0) return;
 
     // Contract decision #3: in an open room an invite is a courtesy ping, not
     // an admission grant. Nobody is ever rung into an open room, so nothing
@@ -1588,9 +1605,7 @@ export function registerGroupCallHandlers(io: Server, socket: Socket): void {
     // private space, and who is online or busy: a ping is a courtesy, and its
     // sender learns nothing from it either way.
     for (const peer of eligible) {
-      if (!peer) continue;
-      noteRang(userId, peer.id);
-      emitIncoming(io, call, peer.id);
+      if (peer) emitIncoming(io, call, peer.id);
     }
   });
 
