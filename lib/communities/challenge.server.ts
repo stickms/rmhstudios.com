@@ -12,7 +12,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import type { ChallengeDTO } from '@/lib/communities/plus-schema';
+import type { ChallengeDTO } from '@/lib/communities/plus';
 import { ensureWinnerFlair } from '@/lib/communities/flairs.server';
 import { challengePhase, pickWinner, validateChallengeWindows } from '@/lib/communities/challenge';
 

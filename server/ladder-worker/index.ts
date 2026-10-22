@@ -9,6 +9,8 @@
  */
 
 import 'dotenv/config';
+import { installProcessGuards } from '../../lib/perf/process-guards';
+
 import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { randomUUID } from 'node:crypto';
@@ -46,6 +48,9 @@ import {
   type WorkerLeasePrisma,
 } from '../../lib/rmhladder/worker-lease';
 import { runCleanup, cleanupOptionsFromEnv, type CleanupPrisma } from '../../lib/cleanup.server';
+
+// Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
+installProcessGuards({ service: 'ladder-worker' });
 
 // ─── Prisma Client (standalone for worker process) ──────────────
 

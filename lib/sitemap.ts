@@ -307,6 +307,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/admin/albums': 'admin',
   '/admin/reading': 'admin',
   '/admin/analytics': 'admin',
+  '/admin/performance': 'admin',
+  '/admin/deepseek': 'admin',
   '/admin/announcements': 'admin',
   '/admin/insights': 'admin',
   '/admin/appeals': 'admin',

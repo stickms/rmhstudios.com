@@ -13,7 +13,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchJson } from '@/lib/http';
-import { addDays } from '@/lib/delight/schema';
+import { addDays } from '@/lib/delight/shared';
 
 interface Entry {
   id: string;

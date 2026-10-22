@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { feedSignalSchema, normalizeTag, FEED_SIGNAL_KINDS, mutedTagWhere } from '@/lib/feed/signals';
+import { normalizeTag, FEED_SIGNAL_KINDS, mutedTagWhere } from '@/lib/feed/signals';
+import { feedSignalSchema } from '@/lib/feed/signals-schema';
 
 
 describe('feed signals', () => {

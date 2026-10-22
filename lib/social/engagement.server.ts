@@ -39,10 +39,15 @@ export interface LikeResult {
  * Set the like state of a post to `liked` for `userId`. Idempotent: a no-op when
  * already in the requested state. Returns the resulting like state + count.
  */
-export async function setPostLike(
+export function setPostLike(userId: string, postId: string, liked: boolean): Promise<LikeResult> {
+  return applyPostLike(userId, postId, liked);
+}
+
+/** `desired === 'toggle'` flips whatever the single read of the viewer's like row finds. */
+async function applyPostLike(
   userId: string,
   postId: string,
-  liked: boolean,
+  desired: boolean | 'toggle',
 ): Promise<LikeResult> {
   // The post row and the viewer's existing like are independent lookups — fetch
   // them together instead of serially on the highest-traffic write path.
@@ -62,6 +67,7 @@ export async function setPostLike(
     prisma.rMHarkLike.findUnique({ where: { rmheetId_userId: { rmheetId: postId, userId } } }),
   ]);
   if (!post) return { ok: false, found: false, liked: false, likeCount: 0 };
+  const liked = desired === 'toggle' ? !existing : desired;
 
   // Already in the requested state — no-op.
   if (liked && existing) return { ok: true, found: true, liked: true, likeCount: post.likeCount };
@@ -141,11 +147,9 @@ export async function setPostLike(
 
 /** Toggle a like (used by the in-app web route). */
 export async function togglePostLike(userId: string, postId: string): Promise<LikeResult> {
-  const existing = await prisma.rMHarkLike.findUnique({
-    where: { rmheetId_userId: { rmheetId: postId, userId } },
-    select: { id: true },
-  });
-  return setPostLike(userId, postId, !existing);
+  // perf: this used to read the like row here and then again inside setPostLike;
+  // the toggle now resolves its direction from setPostLike's own (single) read.
+  return applyPostLike(userId, postId, 'toggle');
 }
 
 // ─── Comments ──────────────────────────────────────────────────────────────

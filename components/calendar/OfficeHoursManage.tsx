@@ -17,7 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { CopyButton } from '@/components/ui/copy-button';
-import { OFFICE_HOURS_SLOT_LENGTHS } from '@/lib/calendar/schema';
+import { OFFICE_HOURS_SLOT_LENGTHS } from '@/lib/calendar/office-hours';
 import { SITE_URL } from '@/lib/seo';
 import type { OfficeHoursBookingView, OfficeHoursConfigView } from '@/lib/calendar/types';
 import { api, viewerTimeZone } from './api';

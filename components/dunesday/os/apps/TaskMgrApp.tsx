@@ -28,6 +28,7 @@ import type { AppProps } from '../apps';
 import { Icon } from '../icons';
 import { PopupMenu, type MenuItem } from '../Menu';
 import { useOs, type AppId, type Win } from '../store';
+import './utilities.css';
 
 type Section = 'apps' | 'procs' | 'perf';
 const SECTIONS: Section[] = ['apps', 'procs', 'perf'];

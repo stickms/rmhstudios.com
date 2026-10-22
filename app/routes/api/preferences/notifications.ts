@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { notifPrefsSchema } from '@/lib/notify/categories';
+import { invalidateNotificationPrefs } from '@/lib/notifications.server';
+import { notifPrefsSchema } from '@/lib/notify/categories-schema';
 
 /**
  * GET /api/preferences/notifications — the caller's category×channel matrix +
@@ -42,6 +43,7 @@ export const Route = createFileRoute('/api/preferences/notifications')({
             create: { userId: session.user.id, ...data },
             update: data,
           });
+          invalidateNotificationPrefs(session.user.id);
           return Response.json({
             matrix: row.matrix ?? {},
             quietStart: row.quietStart ?? null,

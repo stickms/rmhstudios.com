@@ -60,7 +60,7 @@ export const Route = createFileRoute('/api/admin/analytics')({
           },
           content: { posts: totalPosts, posts7, comments: totalComments, builds: totalBuilds },
           moderation: { pendingReports },
-          economy: { coinsInCirculation: coinsAgg._sum.coins ?? 0 },
+          economy: { coinsInCirculation: Number(coinsAgg._sum.coins ?? 0) },
           postsPerDay: postSeries.map((r) => ({
             day: r.day.toISOString().slice(0, 10),
             count: Number(r.count),

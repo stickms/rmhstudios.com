@@ -1,21 +1,12 @@
-import { z } from 'zod';
+// zod-free: every post card's `RunnableEmbed` imports this module. The input
+// schema is in `./schema` (type-only import below is erased).
+import type { CodeEmbed } from './schema';
+
+export type { CodeEmbed };
 
 /** Per-field and total size limits for a runnable post embed (F14). */
 export const EMBED_FIELD_MAX = 10_000;
 export const EMBED_TOTAL_MAX = 24_000;
-
-export const codeEmbedSchema = z
-  .object({
-    html: z.string().max(EMBED_FIELD_MAX).default(''),
-    css: z.string().max(EMBED_FIELD_MAX).default(''),
-    js: z.string().max(EMBED_FIELD_MAX).default(''),
-  })
-  .refine((e) => e.html.length + e.css.length + e.js.length > 0, { message: 'Snippet is empty' })
-  .refine((e) => e.html.length + e.css.length + e.js.length <= EMBED_TOTAL_MAX, {
-    message: 'Snippet is too large',
-  });
-
-export type CodeEmbed = z.infer<typeof codeEmbedSchema>;
 
 /**
  * No network of any kind (no default-src means no fetch/XHR/WebSocket/frames/

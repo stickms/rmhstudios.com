@@ -44,12 +44,7 @@ export const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 // The retint alone is not sufficient — colour must never be the ONLY carrier of
 // meaning — which is why `components/ui/badge.tsx` also pairs each status
 // variant with a distinct glyph.
-export const COLOR_VISION_MODES = [
-  'none',
-  'deuteranopia',
-  'protanopia',
-  'tritanopia',
-] as const;
+export const COLOR_VISION_MODES = ['none', 'deuteranopia', 'protanopia', 'tritanopia'] as const;
 export type ColorVisionMode = (typeof COLOR_VISION_MODES)[number];
 export const DEFAULT_COLOR_VISION: ColorVisionMode = 'none';
 
@@ -152,6 +147,28 @@ export function resolveNavTransition(v: unknown): NavTransition {
   return isNavTransition(v) ? v : DEFAULT_NAV_TRANSITION;
 }
 
+// ── Eversion level (amended 2026-10-21) ─────────────────────────────────────
+// How much of the site the Globe Eversion carries: `all` (default) = every
+// page transition (full-screen from the liquid-globe hub; anywhere else the
+// pressed control plays a button-sized eversion and the navigation is never
+// held); `globe` = only a navigation confirmed through the liquid-globe hub
+// (hold-release, pin click, Enter). Page navigations only: the per-control
+// "evert every button/input" state animation is a different thing and not
+// governed by this. Defined here (not in lib/eversion) so the root's static
+// closure and the settings panel get it without touching the effect's runtime.
+export const EVERSION_LEVELS = ['all', 'globe'] as const;
+export type EversionLevel = (typeof EVERSION_LEVELS)[number];
+export const DEFAULT_EVERSION_LEVEL: EversionLevel = 'all';
+
+export function isEversionLevel(v: unknown): v is EversionLevel {
+  return typeof v === 'string' && (EVERSION_LEVELS as readonly string[]).includes(v);
+}
+
+/** An absent or unknown stored value means the default, never an error. */
+export function resolveEversionLevel(v: unknown): EversionLevel {
+  return isEversionLevel(v) ? v : DEFAULT_EVERSION_LEVEL;
+}
+
 export const FONT_SCALE_KEY = 'rmh-font-scale';
 export const DENSITY_KEY = 'rmh-density';
 export const READABLE_FONT_KEY = 'rmh-readable-font';
@@ -159,5 +176,7 @@ export const CUSTOM_ACCENT_KEY = 'rmh-custom-accent';
 export const REDUCE_MOTION_KEY = 'rmh-reduce-motion';
 export const COLOR_VISION_KEY = 'rmh-color-vision';
 export const NAV_TRANSITION_KEY = 'rmh-nav-transition';
+/** Eversion level: cached as 'globe' when set, absent when 'all' (the default). */
+export const EVERSION_LEVEL_KEY = 'rmh-eversion-level';
 /** "Always evert globe": cached as '1' when on, absent when off (the default). */
 export const ALWAYS_EVERT_GLOBE_KEY = 'rmh-always-evert-globe';

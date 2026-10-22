@@ -25,6 +25,8 @@
 #   DISCORD_WEBHOOK_URL  when unset the script no-ops (the feature is simply off)
 #   DISCORD_MSG_ID       required for `edit`; `post` appends it to $GITHUB_ENV so
 #                        later steps (and the trigger payload) can read it
+#   DISCORD_FIELDS       optional JSON array of embed fields (the CI checklist —
+#                        see ci-checklist.sh); omitted from the embed when unset
 # ─────────────────────────────────────────────────────────────────────────────
 set -uo pipefail
 
@@ -39,12 +41,16 @@ if [ -z "${DISCORD_WEBHOOK_URL:-}" ]; then
     exit 0
 fi
 
+fields="${DISCORD_FIELDS:-[]}"
+jq -e 'type == "array"' <<<"$fields" >/dev/null 2>&1 || fields='[]'
+
 payload=$(jq -nc \
     --arg t "$title" \
     --arg d "$description" \
     --arg f "$footer" \
     --argjson c "$color" \
-    '{embeds:[{title:$t, description:$d, color:$c, footer:{text:$f}}]}') || {
+    --argjson fl "$fields" \
+    '{embeds:[{title:$t, description:$d, color:$c, footer:{text:$f}} + (if ($fl | length) > 0 then {fields:$fl} else {} end)]}') || {
     echo "Could not build Discord payload — skipping."
     exit 0
 }

@@ -25,6 +25,7 @@
 
 import { apiCache, CACHE_PROCESS_ID } from '@/lib/cache';
 import { measure } from '@/lib/otel/timing';
+import { cacheNamespace, recordCache } from '@/lib/perf/process-metrics';
 import {
   redisCacheMGet,
   redisEnabled,
@@ -243,7 +244,10 @@ async function cachedUntimed<T>(
 
   // L1
   const local = apiCache.get<T>(key);
-  if (local !== undefined) return local;
+  if (local !== undefined) {
+    recordCache('l1_hit', cacheNamespace(key));
+    return local;
+  }
 
   // Coalesce concurrent local callers.
   const existing = inflight.get(key)?.promise;
@@ -256,6 +260,7 @@ async function cachedUntimed<T>(
       if (useL2 && redisEnabled()) {
         const remote = await redisGetJSON<T>(key);
         if (remote !== null && remote !== undefined) {
+          recordCache('l2_hit', cacheNamespace(key));
           if (isCurrentFlight(inflight, key, flight)) {
             // `ttlOf` and not `ttlMs`: seeding L1 from L2 must not promote a
             // cached miss to the (much longer) positive TTL.
@@ -265,6 +270,7 @@ async function cachedUntimed<T>(
         }
       }
       // Loader
+      recordCache('miss', cacheNamespace(key));
       const value = await loader();
       const store = opts.shouldCache ? opts.shouldCache(value) : true;
       if (store && isCurrentFlight(inflight, key, flight)) {
@@ -374,15 +380,20 @@ async function cachedMissUntimed<T>(
   const useL2 = opts.l2 !== false;
   const ttlMs = opts.negativeTtlMs ?? NEGATIVE_TTL_MS;
 
-  if (isNegative(apiCache.get(key))) return null;
+  if (isNegative(apiCache.get(key))) {
+    recordCache('l1_hit', cacheNamespace(key));
+    return null;
+  }
   if (useL2 && redisEnabled()) {
     const remote = await redisGetJSON<unknown>(key);
     if (isNegative(remote)) {
+      recordCache('l2_hit', cacheNamespace(key));
       apiCache.set(key, remote, ttlMs);
       return null;
     }
   }
 
+  recordCache('miss', cacheNamespace(key));
   const value = await loader();
   if (value !== null && value !== undefined) return value;
 
@@ -452,7 +463,10 @@ async function cachedManyUntimed<T>(
   for (const key of unique) {
     const local = apiCache.get<unknown>(key);
     if (local === undefined) missing.push(key);
-    else if (!isNegative(local)) found.set(key, local as T);
+    else {
+      recordCache('l1_hit', cacheNamespace(key));
+      if (!isNegative(local)) found.set(key, local as T);
+    }
   }
 
   // L2 — ONE round trip for the entire L1 miss set.
@@ -466,6 +480,7 @@ async function cachedManyUntimed<T>(
         stillMissing.push(key);
         continue;
       }
+      recordCache('l2_hit', cacheNamespace(key));
       apiCache.set(key, value, ttlOf(value));
       if (!isNegative(value)) found.set(key, value as T);
     }
@@ -486,6 +501,7 @@ async function cachedManyUntimed<T>(
     claimed.set(key, flight);
   }
 
+  for (const key of missing) recordCache('miss', cacheNamespace(key));
   try {
     const loaded = await loadMissing(missing);
     for (const key of missing) {
@@ -598,7 +614,12 @@ async function cachedSWRUntimed<T>(
   // L1 — fresh returns immediately; stale returns immediately + refreshes.
   const local = apiCache.get<SWREntry<T>>(key);
   if (local && typeof local === 'object' && 'freshUntil' in local) {
-    if (Date.now() >= local.freshUntil) void swrRefresh(key, opts, loader);
+    if (Date.now() >= local.freshUntil) {
+      recordCache('stale', cacheNamespace(key));
+      void swrRefresh(key, opts, loader);
+    } else {
+      recordCache('l1_hit', cacheNamespace(key));
+    }
     return local.v;
   }
 
@@ -614,6 +635,7 @@ async function cachedSWRUntimed<T>(
       if (useL2 && redisEnabled()) {
         const remote = await redisGetJSON<SWREntry<T>>(key);
         if (remote && typeof remote === 'object' && 'freshUntil' in remote) {
+          recordCache(Date.now() >= remote.freshUntil ? 'stale' : 'l2_hit', cacheNamespace(key));
           if (isCurrentFlight(swrInflight, key, flight)) {
             apiCache.set(key, remote, hardTtl);
             if (Date.now() >= remote.freshUntil) void swrRefresh(key, opts, loader);
@@ -622,6 +644,7 @@ async function cachedSWRUntimed<T>(
         }
       }
       // Cold — compute synchronously (this is the only blocking path).
+      recordCache('miss', cacheNamespace(key));
       const value = await loader();
       const entry: SWREntry<T> = { v: value, freshUntil: Date.now() + opts.ttlMs };
       if (isCurrentFlight(swrInflight, key, flight)) {

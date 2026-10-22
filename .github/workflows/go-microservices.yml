@@ -1,7 +1,10 @@
 name: go-microservices
 
 on:
+  # `push` is main-only: a PR branch's pushes are already covered by the
+  # `pull_request` trigger below, and an unfiltered `push` ran every Go PR twice.
   push:
+    branches: [main]
     paths:
       - "go-services/**"
       - ".github/workflows/go-microservices.yml"

@@ -62,6 +62,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:epic": "vitest run --config vitest.epic.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "epic:test": "pnpm run test:epic",
     "epic:build": "node_modules/.bin/tsx scripts/epic/build-epic.ts",
     "i18n:extract": "i18next 'app/**/*.{ts,tsx}' 'components/**/*.{ts,tsx}'",

@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 883 files across 192 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 891 files across 192 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-78 routes.
+85 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -71,6 +71,9 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/curated-builds/image` | `POST` | `app/routes/api/admin/curated-builds/image.ts` |
 | `/api/admin/curated-builds/image/:filename` | `GET` | `app/routes/api/admin/curated-builds/image/$filename.ts` |
 | `/api/admin/curated-builds/image/proxy` | `GET` | `app/routes/api/admin/curated-builds/image/proxy.ts` |
+| `/api/admin/deepseek/balance` | `GET` | `app/routes/api/admin/deepseek/balance.ts` |
+| `/api/admin/deepseek/history` | `GET` | `app/routes/api/admin/deepseek/history.ts` |
+| `/api/admin/deepseek/refresh` | `POST` | `app/routes/api/admin/deepseek/refresh.ts` |
 | `/api/admin/delight/fools` | `GET` `POST` | `app/routes/api/admin/delight/fools/index.ts` |
 | `/api/admin/delight/fortunes` | `GET` | `app/routes/api/admin/delight/fortunes/index.ts` |
 | `/api/admin/delight/fortunes/:id` | `POST` | `app/routes/api/admin/delight/fortunes/$id/index.ts` |
@@ -97,6 +100,10 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/library/storage-health` | `GET` | `app/routes/api/admin/library/storage-health.ts` |
 | `/api/admin/link-rules` | `DELETE` `GET` `POST` | `app/routes/api/admin/link-rules.ts` |
 | `/api/admin/mod-macros` | `DELETE` `GET` `POST` | `app/routes/api/admin/mod-macros.ts` |
+| `/api/admin/perf` | `GET` | `app/routes/api/admin/perf/index.ts` |
+| `/api/admin/perf/db` | `GET` | `app/routes/api/admin/perf/db.ts` |
+| `/api/admin/perf/heap` | `GET` | `app/routes/api/admin/perf/heap.ts` |
+| `/api/admin/perf/profile` | `POST` | `app/routes/api/admin/perf/profile.ts` |
 | `/api/admin/predictions` | `GET` | `app/routes/api/admin/predictions/index.ts` |
 | `/api/admin/predictions/:id/moderate` | `POST` | `app/routes/api/admin/predictions/$id/moderate.ts` |
 | `/api/admin/predictions/:id/resolve` | `POST` | `app/routes/api/admin/predictions/$id/resolve.ts` |
@@ -1877,12 +1884,13 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/staking`
 
-3 routes.
+4 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/staking` | `GET` | `app/routes/api/staking/index.ts` |
 | `/api/staking/deposit` | `POST` | `app/routes/api/staking/deposit.ts` |
+| `/api/staking/settings` | `POST` | `app/routes/api/staking/settings.ts` |
 | `/api/staking/withdraw` | `POST` | `app/routes/api/staking/withdraw.ts` |
 
 ## `/api/stamps`

@@ -1,21 +1,10 @@
 import { z } from 'zod';
 
-// Client-safe constants + zod for the creator coin → value bridge.
+import { MIN_REDEMPTION_COINS, redemptionKinds } from './redemption';
 
-/** Coins burned per one month of subscription credit, by tier. */
-export const COINS_PER_SUB_MONTH: Record<'starter' | 'pro', number> = {
-  starter: 5_000,
-  pro: 12_000,
-};
-
-/** Minimum coins for any redemption. */
-export const MIN_REDEMPTION_COINS = 500;
-/** Payouts (cash) are gated behind a higher floor + verified-creator status. */
-export const MIN_PAYOUT_COINS = 50_000;
-/** Indicative fiat value of a coin for merch/payout display (cents per 1000 coins). */
-export const CENTS_PER_1000_COINS = 100; // 1000 coins ≈ $1.00 (policy lever)
-
-export const redemptionKinds = ['SUB_CREDIT', 'MERCH', 'PAYOUT'] as const;
+// zod for the creator coin → value bridge. The constants and `redemptionCost`
+// live in `./redemption` (zod-free, for the earnings tab) and are re-exported.
+export * from './redemption';
 
 export const requestRedemptionSchema = z
   .object({
@@ -43,11 +32,3 @@ export const reviewRedemptionSchema = z.object({
   externalRef: z.string().max(120).optional(),
 });
 export type ReviewRedemptionInput = z.infer<typeof reviewRedemptionSchema>;
-
-/** Coins burned for a given redemption request (server + client agree). */
-export function redemptionCost(input: RequestRedemptionInput): number {
-  if (input.kind === 'SUB_CREDIT') {
-    return COINS_PER_SUB_MONTH[input.tier!] * (input.months ?? 1);
-  }
-  return input.amountCoins ?? 0;
-}

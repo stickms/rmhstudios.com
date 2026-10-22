@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { altTextSettingSchema } from '@/lib/feed/alt-text';
+import { altTextSettingSchema } from '@/lib/feed/alt-text-schema';
 import { getRequireAltText, setRequireAltText } from '@/lib/feed/alt-text.server';
 
 /**

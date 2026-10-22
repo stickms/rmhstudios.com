@@ -35,8 +35,8 @@ Wants=postgresql.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-# EDIT this path to the repo's location on the VPS.
-ExecStart=/bin/bash /opt/rmhstudios.com/deploy/apply-perf-tuning.sh
+# Repo path on the VPS (deploy.sh REPO_DIR; this said /opt/rmhstudios.com, which it is not).
+ExecStart=/bin/bash /home/rmhstudios/rmhstudios.com/deploy/apply-perf-tuning.sh
 # The script itself uses sudo for the privileged copies/reloads; run the unit as
 # root so those succeed without an interactive prompt.
 User=root

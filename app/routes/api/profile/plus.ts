@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { plusUpdateSchema, pronunciationUrl } from '@/lib/profile/plus';
+import { pronunciationUrl } from '@/lib/profile/plus';
+import { plusUpdateSchema } from '@/lib/profile/plus-schema';
 import { getPlusView, profileHasModules, updatePlus } from '@/lib/profile/plus.server';
 
 /**

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { createPackSchema } from '@/lib/party/packs';
+import { createPackSchema } from '@/lib/party/packs-schema';
 import { createPack, listPacks } from '@/lib/party/packs.server';
 
 /**

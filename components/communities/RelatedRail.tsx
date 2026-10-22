@@ -3,7 +3,7 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
-import type { SisterDTO } from '@/lib/communities/plus-schema';
+import type { SisterDTO } from '@/lib/communities/plus';
 
 /** N8 — the "Related communities" rail. */
 export function RelatedRail({ sisters }: { sisters: SisterDTO[] }) {

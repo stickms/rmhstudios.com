@@ -6,33 +6,12 @@
  * also does not neutralize those schemes in `href`/`src`, so rendering a
  * user-supplied `javascript:...` value into an anchor is a stored-XSS sink.
  *
- * - `httpUrl()` builds a zod schema that only accepts http(s) URLs (validation).
+ * - `httpUrl()` (in `lib/url-schema.ts`) builds a zod schema that only accepts
+ *   http(s) URLs (validation). It is kept out of this module so that the
+ *   render-side helper below does not bring zod onto every page that shows a
+ *   user link.
  * - `safeHref()` sanitizes a value at the render sink (defense in depth).
  */
-
-import { z } from 'zod';
-
-/**
- * A zod schema that accepts only well-formed `http(s)` URLs up to `max` chars.
- * Compose with `.optional()` / `.nullable()` / `.or(z.literal(''))` as needed.
- */
-export function httpUrl(max = 500) {
-  return z
-    .string()
-    .max(max)
-    .url()
-    .refine((u) => /^https?:\/\//i.test(u), {
-      message: 'Only http(s) URLs are allowed',
-    });
-}
-
-/**
- * Convenience variant that also accepts the empty string (unset), matching the
- * `.or(z.literal(''))` composition used by existing schemas.
- */
-export function httpUrlOrEmpty(max = 500) {
-  return httpUrl(max).or(z.literal(''));
-}
 
 /**
  * Sanitize a URL for use in an anchor `href` / element `src`. Returns the URL

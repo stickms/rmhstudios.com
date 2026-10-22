@@ -205,7 +205,7 @@ export async function buyTheme(buyerId: string, id: string): Promise<BuyResult> 
       }
 
       const buyer = await tx.userProfile.findUnique({ where: { userId: buyerId }, select: { coins: true } });
-      return { balance: buyer?.coins ?? 0 };
+      return { balance: Number(buyer?.coins ?? 0) };
     });
   } catch (err) {
     if (err instanceof InsufficientFundsError) throw new ThemeError('INSUFFICIENT_COINS');

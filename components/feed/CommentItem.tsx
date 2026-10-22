@@ -6,7 +6,7 @@ import { useReconsider } from'@/components/safety/use-reconsider';
 import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck, Languages, Image as ImageIcon } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { useConfirm } from'@/components/ui/confirm-dialog';
-import { MAX_COMMENT_LENGTH } from'@/lib/rmhark-schema';
+import { MAX_COMMENT_LENGTH } from'@/lib/rmhark-limits';
 import { RMHarkContent } from'./RMHarkContent';
 import ChatMediaEmbed, { stripEmbedUrls, extractMediaEmbeds } from'@/components/shared/ChatMediaEmbed';
 import { GifPicker } from'@/components/feed/GifPicker';

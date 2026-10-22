@@ -1,22 +1,8 @@
 /**
- * RMHMusic — Standalone Server Prisma Client
- * Delegates to the shared factory for consistent pool configuration.
+ * RMHMusic — Prisma Client
+ *
+ * RMHMusic is not a standalone server: it is mounted inside the socket-server
+ * hub (server/CLAUDE.md), so it reuses the hub client rather than building a
+ * second connection pool in the same process.
  */
-import { createServerPrismaClient, disconnectPrisma as _disconnect } from '../shared/prisma-client';
-import { logger } from './logger';
-
-let prismaInstance: ReturnType<typeof createServerPrismaClient> | null = null;
-
-export function getPrismaClient() {
-  if (!prismaInstance) {
-    prismaInstance = createServerPrismaClient(logger);
-  }
-  return prismaInstance;
-}
-
-export async function disconnectPrisma(): Promise<void> {
-  if (prismaInstance) {
-    await _disconnect(prismaInstance, logger);
-    prismaInstance = null;
-  }
-}
+export { getPrismaClient, disconnectPrisma } from '../socket-server/prisma-client';

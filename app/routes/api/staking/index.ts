@@ -15,7 +15,7 @@ export const Route = createFileRoute('/api/staking/')({
             select: { coins: true },
           }),
         ]);
-        return Response.json({ ...stake, balance: profile?.coins ?? 0 });
+        return Response.json({ ...stake, balance: Number(profile?.coins ?? 0) });
       }),
     },
   },

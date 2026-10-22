@@ -134,6 +134,8 @@ vi.mock('@/lib/prisma.server', () => {
     follow: { findUnique: async () => null },
     closeFriend: { findUnique: async () => null, findMany: async () => [] },
     creatorMembership: { findUnique: async () => null },
+    // handle->user lookup for @mentions is a raw index-backed query (lib/handles/lookup.server.ts)
+    $queryRaw: async () => [{ id: 'mentioned', handle: 'mentioned' }],
     $transaction: async (ops: unknown) => {
       h.writes.push('transaction');
       if (typeof ops === 'function') return (ops as (tx: unknown) => unknown)(prisma);
@@ -213,7 +215,7 @@ const call = (route: unknown, method: string, params: Record<string, string>, bo
   (route as { options: { server: { handlers: Record<string, Handler> } } }).options.server.handlers[method]({
     request: new Request('https://x.test/x', {
       method,
-      headers: { 'cf-connecting-ip': '1.1.1.1', 'content-type': 'application/json' },
+      headers: { 'cf-connecting-ip': '1.1.1.1', cookie: 'better-auth.session_token=t', 'content-type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
     }),
     params,

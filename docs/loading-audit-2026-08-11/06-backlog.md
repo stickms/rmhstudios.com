@@ -165,6 +165,12 @@ across frames so the freeze becomes a progress bar. `/rmhmusic` is in the same
 class and deserves its own profile. See
 [`../3d-performance-audit.md`](../3d-performance-audit.md).
 
+> **Re-measured 2026-10-21 on a real GPU: does not reproduce.** 0–70 ms of
+> ≥ 50 ms frames unthrottled, 180–380 ms at 4× CPU, the largest of them the
+> shared entry chunk and hydration rather than anything 3D. `/rmhmusic` was not
+> re-measured (signed-in only). Same pass capped the 3D menu backdrops at 60fps (no faster on high-refresh panels).
+> [`../performance-audit-2026-10-21.md`](../performance-audit-2026-10-21.md) §3D idle.
+
 ### 8 — Harvest the query budget ⭐ S, high information per hour
 
 The instrumentation exists and is wired (`enterQueryBudget` in

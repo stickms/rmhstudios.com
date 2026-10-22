@@ -2,7 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { previewBulk } from '@/lib/bulk/bulk.server';
-import { BULK_KINDS, bulkFilterSchema } from '@/lib/bulk/types';
+import { BULK_KINDS } from '@/lib/bulk/types';
+import { bulkFilterSchema } from '@/lib/bulk/schema';
 
 const bodySchema = z.object({
   kind: z.enum(BULK_KINDS),

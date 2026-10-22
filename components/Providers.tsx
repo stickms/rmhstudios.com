@@ -41,6 +41,9 @@ import {
   NAV_TRANSITION_KEY,
   DEFAULT_NAV_TRANSITION,
   ALWAYS_EVERT_GLOBE_KEY,
+  EVERSION_LEVEL_KEY,
+  DEFAULT_EVERSION_LEVEL,
+  isEversionLevel,
   isNavTransition,
   isGlassLevel,
   applyGlassLevel,
@@ -322,6 +325,7 @@ export function Providers({
   const colorVision = useThemeStore((s) => s.colorVision);
   const navTransition = useThemeStore((s) => s.navTransition);
   const alwaysEvertGlobe = useThemeStore((s) => s.alwaysEvertGlobe);
+  const eversionLevel = useThemeStore((s) => s.eversionLevel);
   const userTheme = useThemeStore((s) => s.userTheme);
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
@@ -615,6 +619,8 @@ export function Providers({
     const nt = localStorage.getItem(NAV_TRANSITION_KEY);
     if (isNavTransition(nt)) st.setNavTransition(nt);
     if (localStorage.getItem(ALWAYS_EVERT_GLOBE_KEY) === '1') st.setAlwaysEvertGlobe(true);
+    const el = localStorage.getItem(EVERSION_LEVEL_KEY);
+    if (isEversionLevel(el)) st.setEversionLevel(el);
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
     try {
@@ -734,6 +740,9 @@ export function Providers({
     else localStorage.removeItem(NAV_TRANSITION_KEY);
     if (alwaysEvertGlobe) localStorage.setItem(ALWAYS_EVERT_GLOBE_KEY, '1');
     else localStorage.removeItem(ALWAYS_EVERT_GLOBE_KEY);
+    if (eversionLevel !== DEFAULT_EVERSION_LEVEL)
+      localStorage.setItem(EVERSION_LEVEL_KEY, eversionLevel);
+    else localStorage.removeItem(EVERSION_LEVEL_KEY);
     // Custom accent (raw hex) overrides the preset accent applied just above.
     if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
       const { hex, fg } = ensureReadableAccent(customAccent);
@@ -787,6 +796,7 @@ export function Providers({
     colorVision,
     navTransition,
     alwaysEvertGlobe,
+    eversionLevel,
     userTheme,
     userThemePreview,
   ]);
@@ -898,6 +908,7 @@ export function Providers({
             colorVision?: string | null;
             navTransition?: string | null;
             alwaysEvertGlobe?: boolean | null;
+            eversionLevel?: string | null;
           };
           if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
             store.setFontScale(Number(r.fontScale));
@@ -910,6 +921,7 @@ export function Providers({
           if (isNavTransition(r.navTransition)) store.setNavTransition(r.navTransition);
           if (typeof r.alwaysEvertGlobe === 'boolean')
             store.setAlwaysEvertGlobe(r.alwaysEvertGlobe);
+          if (isEversionLevel(r.eversionLevel)) store.setEversionLevel(r.eversionLevel);
           // Glass clarity (§5.46): the account stop wins; otherwise map a legacy
           // reduce-transparency flag to stop 0 (Opaque). glassLevel is authoritative
           // for the reduce-transparency class going forward.

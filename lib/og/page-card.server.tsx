@@ -27,6 +27,7 @@
 
 import React from 'react';
 import satori from 'satori';
+import { dedupeOgRender, svgToPng } from './render.server';
 import {
   DIM,
   HAIRLINE_W,
@@ -34,10 +35,8 @@ import {
   MUTED,
   RADIUS_SM,
   SCALE,
-  createCardCache,
   fetchAvatarDataUri,
   loadFonts,
-  rasterizeSvg,
   satoriFonts,
   stripEmoji,
   truncate,
@@ -59,9 +58,8 @@ import {
 } from '@/lib/og/chrome.server';
 import { loadOgImage } from '@/lib/og/media.server';
 
-// TTL is applied per call (`PageCardData.ttlMs`), so the cache-wide one is only
-// the ceiling for callers that don't set it.
-const pngCache = createCardCache({ max: 160, ttlMs: 30 * 60 * 1000 });
+const pngCache = new Map<string, { png: Buffer; ts: number }>();
+const PNG_MAX = 160;
 
 const PANE_PAD = 30 * SCALE;
 const PANE_PAD_STORY = 44 * SCALE;
@@ -115,18 +113,16 @@ function clean(s: string | null | undefined, n: number): string {
   return truncate(stripEmoji(s ?? ''), n);
 }
 
-export function renderPageCard(data: PageCardData): Promise<Buffer> {
+async function renderPageCardUncached(data: PageCardData): Promise<Buffer> {
   const variant: PageCardVariant = data.variant === 'story' ? 'story' : 'landscape';
+  const size = variant === 'story' ? STORY : LANDSCAPE;
   const ttl = data.ttlMs ?? 30 * 60 * 1000;
 
   // The art is part of the key rather than trusted to the caller's: it is drawn,
   // and the rule for this cache is that everything drawn is in the key.
   const cacheKey = `${variant}:${data.cacheKey}:${data.art ?? ''}`;
-  return pngCache.getOrRender(cacheKey, () => drawPageCard(data, variant), ttl);
-}
-
-async function drawPageCard(data: PageCardData, variant: PageCardVariant): Promise<Buffer> {
-  const size = variant === 'story' ? STORY : LANDSCAPE;
+  const cached = pngCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < ttl) return cached.png;
 
   await loadFonts();
 
@@ -325,5 +321,17 @@ async function drawPageCard(data: PageCardData, variant: PageCardVariant): Promi
   });
 
   const svg = await satori(element, { ...size, fonts: satoriFonts() });
-  return rasterizeSvg(svg, size.width);
+  const png = await svgToPng(svg, size.width);
+
+  if (pngCache.size >= PNG_MAX) {
+    const oldest = pngCache.keys().next().value;
+    if (oldest !== undefined) pngCache.delete(oldest);
+  }
+  pngCache.set(cacheKey, { png, ts: Date.now() });
+  return png;
+}
+
+// perf: in-flight dedupe - concurrent requests for one card share a single render.
+export function renderPageCard(data: PageCardData): Promise<Buffer> {
+  return dedupeOgRender(`page:${data.variant === 'story' ? 'story' : 'landscape'}:${data.cacheKey}:${data.art ?? ''}`, () => renderPageCardUncached(data));
 }

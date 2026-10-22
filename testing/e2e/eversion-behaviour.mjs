@@ -164,6 +164,24 @@ const INIT = {
       /* storage blocked */
     }
   },
+  /** The visitor's stored eversion level (signed-out cache; Providers hydrates the store from it). */
+  forceLevel: function (value) {
+    try {
+      localStorage.setItem('rmh-eversion-level', value);
+    } catch {
+      /* storage blocked */
+    }
+  },
+  /** Counts every pop-up globe (`.evert-popup`) added to the document. */
+  popupWatch: function () {
+    const look = (n) =>
+      n.nodeType === 1 && (n.matches?.('.evert-popup') || n.querySelector?.('.evert-popup'));
+    new MutationObserver((records) => {
+      for (const r of records)
+        for (const n of r.addedNodes)
+          if (look(n)) window.__popupSeen = (window.__popupSeen || 0) + 1;
+    }).observe(document, { childList: true, subtree: true });
+  },
   /** No `OffscreenCanvas`: the host runs the same core in-thread (spec §3.2). */
   noOffscreen: function () {
     window.OffscreenCanvas = undefined;
@@ -963,6 +981,72 @@ async function settingsPersistScenario(ctx) {
   }
 }
 
+/* ── Eversion level (amended 2026-10-21): `all` vs `globe` ────────────────── */
+
+/**
+ * `globe`: a plain link navigation shows no eversion marks, no overlay and no pop-up globe, and lands normally;
+ * a hub pin still runs the full effect. `all`: the same link navigation everts (marks, and the pop-up globe).
+ * Signed-out half only (the level is cached in localStorage like S#37's projection).
+ */
+async function eversionLevelScenario(ctx) {
+  const linkRun = async (level) => {
+    const app = await newApp(ctx, { init: [[INIT.forceLevel, level], INIT.popupWatch] });
+    const { page, s } = app;
+    const link = page.locator('a[href="/games"]:visible, a[href="/explore"]:visible').first();
+    check(37, (await link.count()) === 1, `level ${level}: no plain page link on the home page`);
+    const href = await link.getAttribute('href');
+    await s.clearMarks();
+    const overlayBefore = app.overlay.seen;
+    await link.click();
+    await page.waitForURL((u) => u.pathname === href, { timeout: 30_000 });
+    // `all` runs the whole effect: wait for it to finish before looking. `globe` has nothing to wait for.
+    if (level === 'all')
+      await s.waitForMark(EVERSION_MARKS.done, { timeout: RUN_MS }).catch(() => {});
+    else await page.waitForTimeout(2500);
+    const state = await page.evaluate(() => ({
+      marks: performance.getEntriesByType('mark').filter((m) => m.name.startsWith('eversion:'))
+        .length,
+      popups: window.__popupSeen || 0,
+      overlayNow: !!document.querySelector('.eversion-overlay, .evert-popup'),
+    }));
+    const overlays = app.overlay.seen - overlayBefore;
+    return { app, href, state, overlays };
+  };
+
+  const globe = await linkRun('globe');
+  try {
+    check(
+      37,
+      globe.state.marks === 0 && globe.state.popups === 0 && globe.overlays === 0,
+      `globe level: a link navigation to ${globe.href} ran the effect ${JSON.stringify({ ...globe.state, overlays: globe.overlays })}`,
+    );
+    check(37, !globe.state.overlayNow, 'globe level: an eversion layer is on screen after a link');
+    // A hub pin still runs the full effect at this level.
+    const run = await hubRun(globe.app, { entry: 'click', href: '/', ff: true });
+    check(
+      37,
+      !!run.start && markOrderProblem(run.marks) === null,
+      'globe level: the hub pin did not run the full effect',
+    );
+  } finally {
+    await globe.app.s.close();
+  }
+
+  const all = await linkRun('all');
+  try {
+    check(
+      37,
+      all.state.marks > 0 && all.state.popups > 0,
+      `all level: a link navigation to ${all.href} did not evert ${JSON.stringify(all.state)}`,
+    );
+  } finally {
+    await all.app.s.close();
+  }
+  ctx.numbers.push(
+    'S#37 eversion level (signed out): globe = link lands with 0 marks and 0 pop-ups, hub pin everts; all = link everts',
+  );
+}
+
 /** One Preview run (fast-forwarded). Returns the start mark's detail. */
 async function previewOnce(app) {
   const { s, page } = app;
@@ -1076,6 +1160,7 @@ const PLAN = [
   },
   { s: 37, name: 'settings persistence', scope: 'once', run: settingsPersistScenario },
   { s: 37, name: 'forced projection + random', scope: 'once', run: settingsProjectionScenario },
+  { s: 37, name: 'eversion level', scope: 'once', run: eversionLevelScenario },
 ];
 
 function expand() {

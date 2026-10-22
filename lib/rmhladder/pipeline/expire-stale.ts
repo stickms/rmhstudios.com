@@ -16,16 +16,18 @@ export function decideAgeExpiry(args: {
   return args.now.getTime() - seen.getTime() > args.maxAgeMs;
 }
 
+const EXPIRE_CHUNK = 500;
+
 export interface ExpireStalePrisma {
   ladderJob: {
     findMany(args: {
       where: Record<string, unknown>;
       select?: Record<string, unknown>;
     }): Promise<Array<{ id: string; lastSeenAt: Date | null; discoveredAt: Date }>>;
-    update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }>;
+    updateMany(args: { where: { id: { in: string[] } }; data: Record<string, unknown> }): Promise<{ count: number }>;
   };
   ladderVerification: {
-    create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
+    createMany(args: { data: Array<Record<string, unknown>> }): Promise<{ count: number }>;
   };
 }
 
@@ -48,30 +50,30 @@ export async function expireStaleJobs(
     select: { id: true, lastSeenAt: true, discoveredAt: true },
   });
 
-  let expired = 0;
-  for (const job of candidates) {
-    if (
-      !decideAgeExpiry({
+  // perf: decide in memory, then write in chunks. Every expired job gets the
+  // same update payload and a verification row differing only by jobId, so this
+  // is two statements per 500 jobs instead of two per job, serially.
+  const staleIds = candidates
+    .filter((job) =>
+      decideAgeExpiry({
         lastSeenAt: job.lastSeenAt,
         discoveredAt: job.discoveredAt,
         now: opts.now,
         maxAgeMs: opts.maxAgeMs,
-      })
+      }),
     )
-      continue;
-    await prisma.ladderJob.update({
-      where: { id: job.id },
+    .map((job) => job.id);
+
+  const evidence = `Age backstop: not seen on any board for over ${Math.round(opts.maxAgeMs / (24 * 60 * 60 * 1_000))} days.`;
+  for (let i = 0; i < staleIds.length; i += EXPIRE_CHUNK) {
+    const ids = staleIds.slice(i, i + EXPIRE_CHUNK);
+    await prisma.ladderJob.updateMany({
+      where: { id: { in: ids } },
       data: { status: 'expired', lastCheckedAt: opts.now },
     });
-    await prisma.ladderVerification.create({
-      data: {
-        jobId: job.id,
-        status: 'expired',
-        confidence: 80,
-        evidence: `Age backstop: not seen on any board for over ${Math.round(opts.maxAgeMs / (24 * 60 * 60 * 1_000))} days.`,
-      },
+    await prisma.ladderVerification.createMany({
+      data: ids.map((jobId) => ({ jobId, status: 'expired', confidence: 80, evidence })),
     });
-    expired++;
   }
-  return { expired };
+  return { expired: staleIds.length };
 }

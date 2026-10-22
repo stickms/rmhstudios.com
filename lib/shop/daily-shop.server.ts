@@ -54,7 +54,7 @@ export async function getDailyShop(
       prisma.userProfile.findUnique({ where: { userId }, select: { coins: true } }),
     ]);
     owned = new Set(inv.map((i) => i.itemId));
-    coins = profile?.coins ?? 0;
+    coins = Number(profile?.coins ?? 0);
   }
 
   const items: DailyShopItem[] = [];
@@ -151,7 +151,7 @@ export async function purchaseBundle(
     where: { userId },
     select: { coins: true },
   });
-  return { newBalance: profile?.coins ?? 0, price: check.price, listPrice: check.listPrice };
+  return { newBalance: Number(profile?.coins ?? 0), price: check.price, listPrice: check.listPrice };
 }
 
 export { bundlePrice };

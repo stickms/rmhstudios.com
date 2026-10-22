@@ -8,6 +8,8 @@
  */
 
 import 'dotenv/config';
+import { guardPool, installProcessGuards } from '../../lib/perf/process-guards';
+
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
 import { config } from './config';
@@ -15,7 +17,7 @@ import { logger } from './logger';
 import { disconnectPrisma, getPrismaClient } from './prisma-client';
 import { warmPrismaClient } from '../shared/prisma-client';
 import { cleanupRateLimits } from './rate-limit';
-import { handlePerfProbeRequest } from '../shared/perf-probe';
+import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // ─── Game Handlers ──────────────────────────────────────────────
 import { registerSliceItHandlers, handleSliceItDisconnect } from './handlers/slice-it';
@@ -89,6 +91,9 @@ import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './hand
 import { registerCallHandlers, handleCallDisconnect } from './handlers/call';
 import { registerControllerHandlers, handleControllerDisconnect } from './handlers/controller';
 
+// Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
+installProcessGuards({ service: 'socket-server' });
+
 // ─── Startup validation ─────────────────────────────────────────
 
 if (!config.CORS_ORIGIN) {
@@ -108,12 +113,17 @@ let authPool: Pool | null = null;
 function getAuthPool(): Pool | null {
   if (!config.DATABASE_URL) return null;
   if (!authPool) {
-    authPool = new Pool({
-      connectionString: config.DATABASE_URL,
-      max: 10,
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 5_000,
-    });
+    // guardPool: an idle client dropped by a Postgres restart must not crash the hub.
+    authPool = guardPool(
+      new Pool({
+        connectionString: config.DATABASE_URL,
+        // perf: one session lookup per connect, 4 is plenty; override with AUTH_DB_POOL_SIZE.
+        max: Number(process.env.AUTH_DB_POOL_SIZE) || 4,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 5_000,
+      }),
+      { service: 'socket-server', pool: 'auth' },
+    );
   }
   return authPool;
 }
@@ -428,8 +438,9 @@ async function softAuthMiddleware(
 // ─── Health-check HTTP handler ──────────────────────────────────
 
 function requestHandler(_req: IncomingMessage, res: ServerResponse): void {
-  // Bench-only (RMH_PERF_HUB=1); a no-op that returns false otherwise.
-  if (handlePerfProbeRequest(_req, res)) return;
+  // Process metrics for the admin performance page (compose-network only; see
+  // lib/perf/hub.ts).
+  if (handleInternalMetrics(_req, res)) return;
   if (_req.url === '/health' && _req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
@@ -485,6 +496,9 @@ const io = new Server(httpServer, {
   // did not, so every blip forced a fresh connection + auth round-trip.
   connectionStateRecovery: {},
 });
+
+// Metrics: connection/room gauges + inbound-event counters (lib/perf/hub.ts).
+instrumentHub(io, 'socket');
 
 // ─── Auth middleware ────────────────────────────────────────────
 

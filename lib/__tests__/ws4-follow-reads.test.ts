@@ -43,6 +43,7 @@ vi.mock('@/lib/feed/timeline', () => ({
 }));
 vi.mock('@/lib/feed/audience.server', () => ({
   audienceWhere: (viewerId: string | null, following: string[]) => ({ _aud: [viewerId, following] }),
+  communityVisibleWhere: () => ({}),
 }));
 
 import { getLeaderboard } from '@/lib/leaderboard.server';

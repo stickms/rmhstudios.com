@@ -2,13 +2,8 @@ import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { normalizeCompanyName } from './normalize';
-import {
-  MAX_REPORTS_PER_COMPANY,
-  REFERRAL_MAX_OPEN_OFFERS,
-  REFERRAL_MAX_PENDING_REQUESTS,
-  type createInterviewReportSchema,
-  type createOfferSchema,
-} from './community';
+import { MAX_REPORTS_PER_COMPANY, REFERRAL_MAX_OPEN_OFFERS, REFERRAL_MAX_PENDING_REQUESTS } from './community';
+import { type createInterviewReportSchema, type createOfferSchema } from './community-schema';
 import type { z } from 'zod';
 
 export type Result<T> = { ok: true; value: T } | { ok: false; status: number; error: string };

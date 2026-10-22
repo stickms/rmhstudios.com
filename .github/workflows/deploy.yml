@@ -3,9 +3,10 @@
 # VPS for the release.
 #
 # Flow (every push to main):
-#   1. `ci` (typecheck/lint/test) and `build` (images) run IN PARALLEL. The CI
-#      gate no longer serializes in front of the ~8 min build — it runs in the
-#      build's shadow, so a green deploy costs ~max(ci, build), not ci + build.
+#   1. `ci` (typecheck/lint/test), `integration` (the integration suite against
+#      the built app + a throwaway Postgres) and `build` (images) run IN
+#      PARALLEL. The checks no longer serialize in front of the build — they run
+#      in its shadow, so a green deploy costs ~max(ci, integration, build).
 #   2. `build` builds BOTH images from ONE shared BuildKit graph via
 #      `docker buildx bake` (see docker-bake.hcl): the slim web image (`runner`)
 #      and the full supervisor/status image (`runner-full`: Go binaries +
@@ -13,8 +14,8 @@
 #      expensive Vite build; runner-full builds in parallel with it and, on a
 #      web-only commit, gets no new layers at all. Both are pushed to GHCR
 #      tagged with the commit SHA (+ :latest).
-#   3. `deploy-gate` waits for ci + build, then POSTs the HMAC-signed request to
-#      the VPS listener — but ONLY when both are green. The listener runs
+#   3. `deploy-gate` waits for ci + integration + build, then POSTs the
+#      HMAC-signed request to the VPS listener — but ONLY when all are green. The listener runs
 #      `deploy.sh production <sha>`, which PULLS these images, migrates, and
 #      blue/green-swaps — see deploy.sh.
 #
@@ -105,19 +106,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-        with:
-          version: 10
-
-      # Node 24.21.0 to match the production Dockerfile.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24.21.0
-          cache: pnpm
-
-      # postinstall runs `prisma generate` (schema-only, no DB needed).
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
+      - uses: ./.github/actions/setup-deps
 
       # Persist tsc's incremental program graph + eslint's result cache across
       # runs so warm runs only re-check changed files. Both tools invalidate by
@@ -176,19 +166,15 @@ jobs:
           mkdir -p .cache/eslint
           pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache --cache-strategy content
 
-      # Advisory (warn, don't block) by owner decision: a failing test does not
-      # gate the deploy — typecheck + lint above stay hard gates, and the image
-      # build in `build` still blocks on any build-time breakage. A red test
-      # turns this step's annotation red and shows in the run summary, but `ci`
-      # still succeeds so `deploy-gate` proceeds.
-      #
-      # This is coherent because ENFORCEMENT LIVES ON THE PR: `main` is reached
-      # only through a pull request, and web-ci's Test step is a hard gate as of
-      # the 2026-08-08 testing audit. So a red test stops the change before it
-      # merges; this run is a second look at the merge result, not the gate.
+      # A HARD GATE. This used to be advisory on the premise that `main` is
+      # reached only through a PR whose web-ci Test step already gated it — but
+      # nothing enforced that premise (no branch protection on `main`), so a
+      # direct push or a merge over a red PR shipped untested code. It is also
+      # free in wall-clock: `ci` runs in parallel with the ~3 min image build, and
+      # the suite takes ~2 min, so blocking on it does not delay a green deploy.
+      # A red test here means the merge result is broken — fix it, don't ship it.
       - name: Test
         run: pnpm test
-        continue-on-error: true
 
   build:
     # NO `needs:` — runs concurrently with `ci`; `deploy-gate` waits on both.
@@ -201,6 +187,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      # The Discord CI checklist reads this run's job/step states.
+      actions: read
     outputs:
       commit_short: ${{ steps.commit.outputs.short }}
       commit_msg: ${{ steps.commit.outputs.msg }}
@@ -270,6 +258,20 @@ jobs:
           # Stamp the build start so the "images pushed" edit can show how long the
           # build took. Runs even when Discord is off (the step is only ref-gated).
           echo "BUILD_START_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
+
+      # The embed's CI checklist (Typecheck · Lint · Unit tests · Integration
+      # tests · Images), rendered from the GitHub API's view of this run and
+      # edited by ONE writer — this background watcher — so the parallel jobs
+      # can't overwrite each other's partial state. See .github/scripts/ci-checklist.sh.
+      - name: Discord — start the CI checklist
+        if: github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -n "${DISCORD_WEBHOOK_URL:-}" ] && [ -n "${DISCORD_MSG_ID:-}" ] || { echo "Discord off — no checklist."; exit 0; }
+          nohup bash .github/scripts/ci-checklist.sh watch > "$RUNNER_TEMP/ci-checklist.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/ci-checklist.pid"
 
       # Export the Discord message id (set into $GITHUB_ENV by discord-notify.sh
       # `post`) as a JOB OUTPUT so deploy-gate can EDIT the same embed after the
@@ -426,19 +428,17 @@ jobs:
           set -euo pipefail
           docker buildx bake -f docker-bake.hcl --push web full
 
-      - name: Discord — images pushed, awaiting CI gate
+      # Keep the job (and so the watcher) alive until every check has finished,
+      # so the checklist reaches its final ✅/❌ state. This adds no deploy latency:
+      # `deploy-gate` waits on `ci` and `integration` anyway.
+      - name: Discord — CI checklist (wait for every check)
         if: github.ref == 'refs/heads/main'
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          # Build duration = now − the stamp from the "build started" step.
-          now=$(date +%s)
-          start="${BUILD_START_EPOCH:-$now}"
-          elapsed=$(( now - start ))
-          dur="$(( elapsed / 60 ))m $(( elapsed % 60 ))s"
-          bash .github/scripts/discord-notify.sh edit 3447003 \
-            "🔵 [PRODUCTION] Commit ${COMMIT_SHORT:-} — images built + pushed to GHCR in ${dur}, awaiting CI gate…" \
-            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
+          pidfile="$RUNNER_TEMP/ci-checklist.pid"
+          [ -f "$pidfile" ] || exit 0
+          pid=$(cat "$pidfile")
+          for _ in $(seq 1 180); do kill -0 "$pid" 2>/dev/null || break; sleep 10; done
+          cat "$RUNNER_TEMP/ci-checklist.log" 2>/dev/null || true
 
       - name: Discord — build superseded (cancelled)
         if: cancelled() && github.ref == 'refs/heads/main'
@@ -451,18 +451,90 @@ jobs:
             "⏹️ [PRODUCTION] Commit ${COMMIT_SHORT:-} — build superseded by a newer commit" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
 
+  # ── Integration gate ────────────────────────────────────────────────────────
+  # The integration suite (testing/integration/, docs/testing.md §8) on the
+  # MERGED commit. The PR already ran it against its own branch, but `main` after
+  # a merge is a different tree whenever two PRs land close together — the same
+  # reason `ci` re-runs the unit suite here. Same job as web-ci.yml's
+  # `integration`; runs in parallel with `build`, so it costs no wall-clock.
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
+      BETTER_AUTH_SECRET: ci-integration-not-a-real-secret-00000000000
+      BETTER_AUTH_URL: http://localhost:7005
+      PORT: '7005'
+      INTEGRATION_BASE_URL: http://localhost:7005
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Postgres boots IN THE BACKGROUND while deps restore and the app builds,
+      # instead of as a `services:` container — those start (pull + init, ~16 s)
+      # before the first step, on the job's critical path. pgvector's image: the
+      # migration history needs the extension to replay. Published on loopback
+      # only. "Wait for Postgres" below gates the first step that needs it.
+      - name: Start Postgres (background)
+        run: |
+          nohup sh -c 'docker run -d --name pg -p 127.0.0.1:5432:5432 \
+            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=rmh \
+            pgvector/pgvector:pg16' > "$RUNNER_TEMP/pg-start.log" 2>&1 &
+      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
+      - uses: ./.github/actions/setup-deps
+      - name: Restore image variants
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: public/images/_variants
+          key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            image-variants-${{ runner.os }}-
+      - name: Build
+        run: pnpm run build:frontend
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 60); do
+            if docker exec pg pg_isready -U postgres -h 127.0.0.1 >/dev/null 2>&1; then echo "postgres ready (${i}s into the wait)"; exit 0; fi
+            sleep 1
+          done
+          echo "postgres never became ready"; cat "$RUNNER_TEMP/pg-start.log"; docker logs pg 2>&1 | tail -40 || true
+          exit 1
+      - name: Migrate database
+        run: pnpm exec prisma migrate deploy
+      - name: Start the built server
+        run: |
+          nohup node .output/server/index.mjs > "$RUNNER_TEMP/server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/server.pid"
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null "$INTEGRATION_BASE_URL/api/ready"; then echo "server ready after ${i}s"; exit 0; fi
+            sleep 1
+          done
+          echo "server did not become ready"
+          tail -80 "$RUNNER_TEMP/server.log"
+          exit 1
+      - name: Integration tests
+        run: pnpm test:integration
+      - name: Server log (on failure)
+        if: failure()
+        run: tail -200 "$RUNNER_TEMP/server.log" || true
+      - name: Stop the server
+        if: always()
+        run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
+
   # ── Deploy gate: fire the VPS webhook ONLY when CI + build are green ──────────
   # `if: always()` so this runs even when `ci` fails (so it can mark the embed
   # red). The trigger step is guarded on BOTH jobs succeeding; the failure step
   # fires when either genuinely failed. Cancellation (superseded) is handled by
   # `build` above, so neither step runs then.
   deploy-gate:
-    needs: [ci, build]
+    needs: [ci, integration, build]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
+      actions: read  # final render of the Discord CI checklist
     steps:
       # deploy-gate runs .github/scripts/discord-notify.sh, so it needs the repo on
       # disk. WITHOUT this checkout the gate-failed / trigger-failed alerts silently
@@ -483,8 +555,9 @@ jobs:
         # stalled run that hit its timeout-minutes — also alerts, not just a clean
         # lint/test failure. This exactly complements the trigger step's
         # `success && success` guard, so precisely one of the two steps runs.
-        if: needs.ci.result != 'success' || needs.build.result != 'success'
+        if: needs.ci.result != 'success' || needs.integration.result != 'success' || needs.build.result != 'success'
         env:
+          GH_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}
           COMMIT_SHORT: ${{ needs.build.outputs.commit_short }}
@@ -497,15 +570,17 @@ jobs:
             # edit-or-post: if `build` died before posting the 🟡 embed there is no
             # id to edit, so post a fresh red alert instead of silently no-opping.
             # Fall back to the raw SHA for the label if the build never exported one.
+            # Final render of the CI checklist, so the red embed shows WHICH check failed.
+            DISCORD_FIELDS=$(bash .github/scripts/ci-checklist.sh fields | jq -c '.fields' 2>/dev/null || echo '[]') \
             bash .github/scripts/discord-notify.sh edit-or-post 15158332 \
-              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-${GIT_SHA:0:7}} — deploy BLOCKED (CI=${{ needs.ci.result }}, build=${{ needs.build.result }}); nothing shipped" \
+              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-${GIT_SHA:0:7}} — deploy BLOCKED (CI=${{ needs.ci.result }}, integration=${{ needs.integration.result }}, build=${{ needs.build.result }}); nothing shipped" \
               "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}" || true
           fi
-          echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, build=${{ needs.build.result }}. Images (if any) are inert; nothing shipped."
+          echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, integration=${{ needs.integration.result }}, build=${{ needs.build.result }}. Images (if any) are inert; nothing shipped."
           exit 1
 
       - name: Trigger VPS deploy (webhook listener)
-        if: needs.ci.result == 'success' && needs.build.result == 'success'
+        if: needs.ci.result == 'success' && needs.integration.result == 'success' && needs.build.result == 'success'
         env:
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
@@ -544,7 +619,7 @@ jobs:
           esac
 
       - name: Discord — trigger failed (post-build handoff)
-        if: failure() && needs.ci.result == 'success' && needs.build.result == 'success' && github.ref == 'refs/heads/main'
+        if: failure() && needs.ci.result == 'success' && needs.integration.result == 'success' && needs.build.result == 'success' && github.ref == 'refs/heads/main'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}

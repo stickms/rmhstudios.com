@@ -62,6 +62,10 @@ export default defineConfig({
       // needs 60s timeouts, so it is its own suite: `pnpm test:epic`
       // (vitest.epic.config.ts), gated by .github/workflows/epic-tests.yml.
       'scripts/epic/**',
+      // The integration suite drives a RUNNING app and a real Postgres, so it
+      // is its own suite: `pnpm test:integration` (vitest.integration.config.ts),
+      // gated by the `integration` job in .github/workflows/web-ci.yml.
+      'testing/integration/**',
     ],
     environment: 'node',
     globals: true,

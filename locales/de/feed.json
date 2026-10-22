@@ -92,6 +92,8 @@
   "audience-followers": "Follower",
   "audience-group-label": "Wer kann diesen Beitrag sehen",
   "audience-only-me": "Nur ich",
+  "auto-reinvest": "Automatisch reinvestieren",
+  "auto-reinvest-hint": "Zinsen werden täglich deinem Einsatz gutgeschrieben",
   "avatar-alt": "Avatar",
   "avatar-change-hint": "Klicke, um den Avatar zu ändern (max. {{maxMb}} MB)",
   "avatar-size-error": "",

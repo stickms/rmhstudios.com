@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
 import { normalizeMessage, topFrameOf } from './schema';
 
@@ -60,34 +60,48 @@ export async function flushClientErrors(): Promise<void> {
   const batch = [...buffer.values()];
   buffer.clear();
   const rel = release();
-  const now = new Date();
+  const nowIso = new Date().toISOString();
   try {
+    // perf: this was a findUnique + upsert/update per fingerprint, serially
+    // (up to 100 round trips per flush). Now one statement for the whole batch.
     const total = await prisma.clientErrorGroup.count();
-    for (const p of batch) {
-      const existing = await prisma.clientErrorGroup.findUnique({
-        where: { fingerprint: p.fingerprint },
-        select: { id: true, resolvedAt: true },
-      });
-      if (!existing) {
-        if (total >= MAX_GROUPS) continue;
-        await prisma.clientErrorGroup.upsert({
-          where: { fingerprint: p.fingerprint },
-          create: { ...p, firstRelease: rel, lastRelease: rel },
-          update: { count: { increment: p.count }, lastSeenAt: now, lastRelease: rel },
-        });
-        continue;
-      }
-      await prisma.clientErrorGroup.update({
-        where: { id: existing.id },
-        data: {
-          count: { increment: p.count },
-          lastSeenAt: now,
-          lastRelease: rel,
-          // A resolved group that reappears has regressed.
-          ...(existing.resolvedAt ? { resolvedAt: null, regressedAt: now } : {}),
-        },
-      });
+    if (total >= MAX_GROUPS) {
+      // Group table is full: existing fingerprints still accumulate, new ones
+      // are dropped (the same cap the per-row path applied).
+      await prisma.$executeRaw`
+        UPDATE "client_error_group" g SET
+          "count" = g."count" + t."cnt",
+          "lastSeenAt" = ${nowIso}::timestamp,
+          "lastRelease" = ${rel},
+          "regressedAt" = CASE WHEN g."resolvedAt" IS NOT NULL THEN ${nowIso}::timestamp ELSE g."regressedAt" END,
+          "resolvedAt" = NULL
+        FROM unnest(${batch.map((p) => p.fingerprint)}::text[], ${batch.map((p) => p.count)}::int[]) AS t("fp", "cnt")
+        WHERE g."fingerprint" = t."fp"`;
+      return;
     }
+    await prisma.$executeRaw`
+      INSERT INTO "client_error_group"
+        ("id", "fingerprint", "message", "topFrame", "source", "sampleUrl", "count",
+         "firstSeenAt", "lastSeenAt", "firstRelease", "lastRelease")
+      SELECT t."id", t."fp", t."msg", t."frame", t."src", t."url", t."cnt",
+             ${nowIso}::timestamp, ${nowIso}::timestamp, ${rel}, ${rel}
+      FROM unnest(
+        ${batch.map(() => randomUUID())}::text[],
+        ${batch.map((p) => p.fingerprint)}::text[],
+        ${batch.map((p) => p.message)}::text[],
+        ${batch.map((p) => p.topFrame)}::text[],
+        ${batch.map((p) => p.source)}::text[],
+        ${batch.map((p) => p.sampleUrl)}::text[],
+        ${batch.map((p) => p.count)}::int[]
+      ) AS t("id", "fp", "msg", "frame", "src", "url", "cnt")
+      ON CONFLICT ("fingerprint") DO UPDATE SET
+        "count" = "client_error_group"."count" + EXCLUDED."count",
+        "lastSeenAt" = EXCLUDED."lastSeenAt",
+        "lastRelease" = EXCLUDED."lastRelease",
+        -- A resolved group that reappears has regressed (RHS reads the OLD row).
+        "regressedAt" = CASE WHEN "client_error_group"."resolvedAt" IS NOT NULL
+                             THEN EXCLUDED."lastSeenAt" ELSE "client_error_group"."regressedAt" END,
+        "resolvedAt" = NULL`;
   } catch {
     /* the error sink must never take the request down */
   }

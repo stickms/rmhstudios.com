@@ -410,19 +410,21 @@ function markDirty(farm: Farm): void {
 async function persistFarm(farm: Farm): Promise<void> {
   const db = getPrismaClient() as any;
   try {
+    // perf: serialize once — the save blob is the same for create and update.
+    const saveData = serializeSave(farm);
     await db.farmingSimFarm.upsert({
       where: { ownerId: farm.id },
       create: {
         ownerId: farm.id,
         code: farm.code,
         name: farm.name,
-        saveData: serializeSave(farm),
+        saveData,
         shippedValue: farm.shippedValue,
       },
       update: {
         code: farm.code,
         name: farm.name,
-        saveData: serializeSave(farm),
+        saveData,
         shippedValue: farm.shippedValue,
       },
     });
@@ -612,12 +614,23 @@ function broadcastMembers(farm: Farm): void {
   const payload = serializeMembers(farm);
   emitToFarm(farm, S2C.MEMBERS, payload);
 }
-function broadcastPresence(farm: Farm): void {
+function broadcastPresence(farm: Farm, opts: { volatile?: boolean } = {}): void {
   // Emitting the current full presence clears the dirty flag; the throttled
   // loop won't re-broadcast this farm until someone next moves/joins/leaves.
   farm.presenceDirty = false;
   const payload = serializePresence(farm);
-  emitToFarm(farm, S2C.PRESENCE, payload);
+  // perf: the payload is identical for everyone, so address all sockets in one
+  // emit (every socket auto-joins a room named by its id) and the packet is
+  // encoded once instead of once per socket. This avoids a bookkeeping room
+  // that every exit path (kick, leave, disconnect, farm switch) would have to
+  // remember to leave.
+  const ids: string[] = [];
+  for (const p of farm.presence.values()) ids.push(p.socketId);
+  if (ids.length === 0) return;
+  // Only the 10Hz movement loop is volatile: its full-state frame is replaced by
+  // the next one. Join/leave broadcasts stay reliable — nothing re-sends them.
+  const target = ioRef.to(ids);
+  (opts.volatile ? target.volatile : target).emit(S2C.PRESENCE, payload);
 }
 function broadcastTiles(farm: Farm, indices: number[]): void {
   if (indices.length === 0) return;
@@ -1268,7 +1281,7 @@ function startPresenceLoop(): void {
     for (const farm of farms.values()) {
       // Only re-broadcast farms where someone actually moved (or joined/
       // left) since the last tick — an idle farm needs no packets.
-      if (farm.presence.size > 0 && farm.presenceDirty) broadcastPresence(farm);
+      if (farm.presence.size > 0 && farm.presenceDirty) broadcastPresence(farm, { volatile: true });
     }
   }, 100);
   if (presenceTimer.unref) presenceTimer.unref();

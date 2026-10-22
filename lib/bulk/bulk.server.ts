@@ -37,22 +37,8 @@ import { prisma } from '@/lib/prisma.server';
 import { unfollowUser } from '@/lib/social/engagement.server';
 import { softDeleteCommentAsAuthor, softDeletePostAsAuthor } from '@/lib/trash/trash.server';
 import { excerptOf } from '@/lib/trash/types';
-import {
-  BULK_CHUNK_SIZE,
-  BULK_SAMPLE_SIZE,
-  buildWhere,
-  bulkFilterSchema,
-  droppedFilters,
-  isBulkKind,
-  isTerminal,
-  normalizeFilter,
-  type BulkFilter,
-  type BulkKind,
-  type BulkOperationView,
-  type BulkPreview,
-  type BulkSample,
-  type BulkStatus,
-} from '@/lib/bulk/types';
+import { BULK_CHUNK_SIZE, BULK_SAMPLE_SIZE, buildWhere, droppedFilters, isBulkKind, isTerminal, normalizeFilter, type BulkFilter, type BulkKind, type BulkOperationView, type BulkPreview, type BulkSample, type BulkStatus } from '@/lib/bulk/types';
+import { bulkFilterSchema } from '@/lib/bulk/schema';
 
 /** How long a `RUNNING` row may go without progress before it is reclaimable. */
 export const STALLED_AFTER_MS = 10 * 60 * 1000;

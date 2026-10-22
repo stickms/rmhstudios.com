@@ -7,23 +7,16 @@
  * The data lives in `ProfilePlus` (one optional row per member). Everything
  * here is pure: validation, the 60-day "stale" rule for /now, link-splitting for
  * /now text, and the Intl-based clock used for "It's 2:14 am for Ana".
+ *
+ * zod-free — the profile page renders /now and the local clock from here. The
+ * settings-write schema is in `./plus-schema`.
  */
-import { z } from 'zod';
 
 /* -------------------------------------------------------------------------- */
 /* P3 — pronouns                                                              */
 /* -------------------------------------------------------------------------- */
 
 export const PRONOUNS_MAX = 40;
-
-/** Letters, numbers, spaces and the separators people actually write ("she/her", "they/them, he"). */
-const PRONOUNS_RE = /^[\p{L}\p{M}\p{N} /,'’.-]+$/u;
-
-export const pronounsSchema = z
-  .string()
-  .trim()
-  .max(PRONOUNS_MAX)
-  .refine((v) => v === '' || PRONOUNS_RE.test(v), 'Pronouns may only use letters, spaces and /');
 
 /* -------------------------------------------------------------------------- */
 /* P3 — pronunciation clip                                                    */
@@ -54,12 +47,6 @@ export function isValidTimeZone(tz: string): boolean {
     return false;
   }
 }
-
-export const timezoneSchema = z
-  .string()
-  .trim()
-  .max(64)
-  .refine((v) => v === '' || isValidTimeZone(v), 'Unknown time zone');
 
 export interface LocalClock {
   /** "2:14 AM" — in the viewer's locale and 12/24-hour preference. */
@@ -101,8 +88,6 @@ export function localClock(
 export const NOW_MAX = 500;
 /** After this many days without an edit the block greys out. */
 export const NOW_STALE_DAYS = 60;
-
-export const nowTextSchema = z.string().trim().max(NOW_MAX);
 
 /** True when the /now text was last updated more than {@link NOW_STALE_DAYS} ago. */
 export function nowIsStale(
@@ -153,16 +138,8 @@ export function splitNowText(text: string): NowSegment[] {
 /* Settings write                                                             */
 /* -------------------------------------------------------------------------- */
 
-/** PUT body for `/api/profile/plus`. Each field is optional; an empty string clears it. */
-export const plusUpdateSchema = z.object({
-  pronouns: pronounsSchema.optional(),
-  timezone: timezoneSchema.optional(),
-  nowText: nowTextSchema.optional(),
-  counterEnabled: z.boolean().optional(),
-  /** Show the Skills module so members can endorse this profile (P8's opt-in). */
-  endorsementsEnabled: z.boolean().optional(),
-});
-export type PlusUpdateInput = z.infer<typeof plusUpdateSchema>;
+/** PUT body for `/api/profile/plus` — the schema is `plusUpdateSchema` in `./plus-schema`. */
+export type { PlusUpdateInput } from './plus-schema';
 
 /** What `GET /api/profile/$id/plus` returns (public, opt-in fields only). */
 export interface ProfilePlusView {

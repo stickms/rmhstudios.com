@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MenuItem } from '@/components/ui/menu';
-import { resolvePreset, type ReminderKind, type ReminderPreset } from '@/lib/reminders/schema';
+import { resolvePreset, type ReminderKind, type ReminderPreset } from '@/lib/reminders/shared';
 
 export interface RemindTarget {
   kind: ReminderKind;

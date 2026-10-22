@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { respondSchema } from '@/lib/rmhladder/community';
+import { respondSchema } from '@/lib/rmhladder/community-schema';
 import { respondToRequest } from '@/lib/rmhladder/community.server';
 
 /**

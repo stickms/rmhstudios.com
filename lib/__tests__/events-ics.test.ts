@@ -13,7 +13,7 @@
  * than imported once — see the module docs.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { calendarFeedICS, eventToICS, type ICSEvent } from '@/lib/events-ics';
 
 const BASE: ICSEvent = {
@@ -115,10 +115,20 @@ describe('calendarFeedICS — subscription properties', () => {
   it('leaves the calendar properties out entirely when not asked for', () => {
     // Guards the existing single-event download path: adding subscription
     // support must not change what `/api/events/:id/ics` emits.
-    const ics = calendarFeedICS([BASE]);
-    expect(ics).not.toContain('X-WR-CALNAME');
-    expect(ics).not.toContain('REFRESH-INTERVAL');
-    expect(ics).toBe(eventToICS(BASE));
+    // The clock is frozen because both builders stamp DTSTAMP from `new Date()`
+    // at second precision: unfrozen, the two calls straddle a second boundary
+    // now and then and the byte comparison fails on the stamp alone (it
+    // blocked a production deploy on 2026-10-21).
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-21T17:33:37.999Z'));
+    try {
+      const ics = calendarFeedICS([BASE]);
+      expect(ics).not.toContain('X-WR-CALNAME');
+      expect(ics).not.toContain('REFRESH-INTERVAL');
+      expect(ics).toBe(eventToICS(BASE));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('escapes a calendar name containing TEXT specials', () => {

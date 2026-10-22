@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { reportPackSchema } from '@/lib/party/packs';
+import { reportPackSchema } from '@/lib/party/packs-schema';
 import { reportPack } from '@/lib/party/packs.server';
 
 /** POST /api/rmhbox/packs/:id/report — flag a pack; repeat reporters are ignored. */

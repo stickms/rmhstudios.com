@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { ringSlugSchema } from '@/lib/profile/webrings';
+import { ringSlugSchema } from '@/lib/profile/webrings-schema';
 import { randomRingHop } from '@/lib/profile/webrings.server';
 
 /**

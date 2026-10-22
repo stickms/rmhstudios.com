@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma.server';
+import { invalidateNotificationPrefs } from '@/lib/notifications.server';
 import { verifyUnsubToken } from '@/lib/email/unsubscribe';
 
 /**
@@ -60,6 +61,7 @@ export const Route = createFileRoute('/api/email/unsubscribe')({
             create: { userId, emailDigest: false },
             update: { emailDigest: false },
           });
+          invalidateNotificationPrefs(userId);
 
           return page(
             'You’re unsubscribed',

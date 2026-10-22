@@ -663,6 +663,10 @@ model AppearancePreference {
   /// "Always evert globe" (spec amendment 2026-10-18): run the eversion even
   /// where it is skipped for performance. Never overrides reduced motion.
   alwaysEvertGlobe   Boolean @default(false)
+  /// Eversion level (spec amendment 2026-10-21): 'all' | 'globe' (see
+  /// EVERSION_LEVELS in lib/appearance/prefs.ts); null -> 'all'. Nullable with
+  /// no backfill so the old image never names it.
+  eversionLevel      String? @db.VarChar(8)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -2919,6 +2923,8 @@ model RMHarkLike {
   // The interest-profile builder samples a viewer's most recent likes
   // (where userId, order by createdAt desc, take 80) — this backs that scan.
   @@index([userId, createdAt(sort: Desc)])
+  // Per-post "recent likers" scans (where rmheetId, order by createdAt desc).
+  @@index([rmheetId, createdAt(sort: Desc)])
   @@map("rmheet_like")
 }
 
@@ -3160,7 +3166,7 @@ model UserProfile {
   wishlistPublic Boolean @default(true)
 
   // RMH Coins
-  coins          Int     @default(10)
+  coins          BigInt  @default(10)
   hasProfilePet  Boolean @default(false)
   showProfilePet Boolean @default(true)
 
@@ -3735,6 +3741,8 @@ model DirectMessage {
   @@index([senderId])
   @@index([conversationId, attachFlags, createdAt])
   @@index([expiresAt])
+  // Unread-badge counts: conversationId IN (...) AND read = false AND senderId <> me.
+  @@index([conversationId, read, senderId])
   @@map("direct_message")
 }
 
@@ -5860,6 +5868,7 @@ model UserInventory {
 
   @@unique([userId, itemId])
   @@index([userId, kind])
+  @@index([userId, equipped])
   @@map("user_inventory")
 }
 
@@ -5896,7 +5905,7 @@ model CoinTransaction {
   id          String      @id @default(cuid())
   senderId    String? // null for system faucets (rewards, quests, refunds)
   recipientId String? // null for sinks (coins destroyed: shop, unlocks, fees)
-  amount      Int
+  amount      BigInt
   type        CoinTxnType
   note        String?     @db.VarChar(280)
   entityType  String?     @db.VarChar(32) // e.g. "rmhark", "profile"
@@ -6281,13 +6290,15 @@ model DailyWheelSpin {
 /// each deposit/withdraw first rolls elapsed time into `accrued` so we never
 /// need a background job. `lastAccrued` marks the last roll-up time.
 model CoinStake {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  principal   Int      @default(0)
-  accrued     Int      @default(0)
-  lastAccrued DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  principal    BigInt   @default(0)
+  accrued      BigInt   @default(0)
+  /// Compound interest into principal instead of holding it for a claim.
+  autoReinvest Boolean  @default(false)
+  lastAccrued  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -12647,4 +12658,26 @@ model BotWorkerSettings {
   updatedAt          DateTime @updatedAt
 
   @@map("bot_worker_settings")
+}
+
+/// Hourly samples of the DeepSeek account balance (/admin/deepseek). The jobs
+/// worker upserts one 'cron' row per currency per UTC hour (idempotent under
+/// pg-boss at-least-once delivery); a manual "Refresh now" upserts the 'manual'
+/// row for its hour, so the two sources never overwrite each other. Rows older
+/// than 400 days are pruned by the same job.
+model DeepseekBalanceSnapshot {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  hourBucket      DateTime // createdAt truncated to the UTC hour
+  currency        String // "CNY" | "USD"
+  isAvailable     Boolean
+  totalBalance    Decimal  @db.Decimal(14, 4)
+  grantedBalance  Decimal  @db.Decimal(14, 4)
+  toppedUpBalance Decimal  @db.Decimal(14, 4)
+  source          String // "cron" | "manual"
+
+  @@unique([currency, hourBucket, source])
+  @@index([currency, createdAt])
+  @@index([createdAt])
+  @@map("deepseek_balance_snapshot")
 }

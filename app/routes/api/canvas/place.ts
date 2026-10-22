@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { placePixel } from '@/lib/canvas/canvas.server';
-import { placePixelSchema } from '@/lib/canvas/shared';
+import { placePixelSchema } from '@/lib/canvas/schema';
 
 /** POST /api/canvas/place — place one pixel; the per-member cooldown is enforced in the DB (Z5). */
 export const Route = createFileRoute('/api/canvas/place')({

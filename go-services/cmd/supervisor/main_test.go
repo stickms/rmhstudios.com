@@ -88,3 +88,44 @@ func TestRunGroupBoundsDrainOnStuckWorker(t *testing.T) {
 		t.Fatal("runGroup did not force-exit past the drain deadline")
 	}
 }
+
+// A panicking worker is recovered and restarted in place; its sibling keeps
+// running and the group does not unwind.
+func TestRunGroupRestartsPanickingWorker(t *testing.T) {
+	prevMin := panicBackoffMin
+	panicBackoffMin = time.Millisecond
+	defer func() { panicBackoffMin = prevMin }()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	attempts := make(chan int, 8)
+	n := 0
+	runs := map[string]worker.RunFunc{
+		"steady": func(ctx context.Context, d worker.Deps) error { <-ctx.Done(); return nil },
+		"flaky": func(ctx context.Context, d worker.Deps) error {
+			n++
+			attempts <- n
+			if n < 3 {
+				panic("boom")
+			}
+			<-ctx.Done()
+			return nil
+		},
+	}
+	done := make(chan error, 1)
+	go func() { done <- runGroup(ctx, runs, depsFor, testLogger, time.Second) }()
+
+	deadline := time.After(2 * time.Second)
+	for got := 0; got < 3; {
+		select {
+		case got = <-attempts:
+		case err := <-done:
+			t.Fatalf("group exited early: %v", err)
+		case <-deadline:
+			t.Fatalf("worker was not restarted (attempts=%d)", got)
+		}
+	}
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatalf("expected clean stop, got %v", err)
+	}
+}

@@ -383,6 +383,9 @@ const WOBBLE_SPRING = spring(0.78, 0.62);
 const WOBBLE_DEG = 5.5;
 /** Below this the rock is finished, in degrees and degrees/second. */
 const WOBBLE_REST = 0.02;
+/** Eversion-time jelly impulse cadence (ms): pseudo-random but bounded and cheap. */
+const EVERT_JELLY_PULSE_MIN = 70;
+const EVERT_JELLY_PULSE_MAX = 150;
 /**
  * The initial velocity that makes {@link WOBBLE_SPRING} peak at one degree —
  * i.e. its damped natural frequency, since a spring released from rest at zero
@@ -629,6 +632,8 @@ export function LiquidGlobe({
   /** The soft body (see the note above `DEFORM_OUT`), and where the finger holding it is, in radii. */
   const [jelly] = useState(() => new SoftBody());
   const grabAt = useRef({ x: 0, y: 0, left: 0, top: 0, r: 1 });
+  const everting = useRef(false);
+  const nextEvertPulse = useRef(0);
   const glassRef = useRef<HTMLSpanElement | null>(null);
   const paintedGlass = useRef('');
 
@@ -1481,6 +1486,17 @@ export function LiquidGlobe({
           const vy = stationary ? 0 : -pitchV.current.get() / ROT_PER_PX / R;
           jelly.drag(at.x, at.y, vx, vy);
         }
+        if (everting.current && now >= nextEvertPulse.current) {
+          const t = now * 0.001;
+          // Deterministic "random": two incommensurate frequencies per axis.
+          const vx = (Math.sin(t * 11.7) + Math.sin(t * 7.1 + 1.3)) * 1.9;
+          const vy = (Math.cos(t * 9.3 + 0.7) + Math.sin(t * 6.4 + 0.2)) * 1.9;
+          jelly.nudge(vx, vy, 0.85);
+          const jitter = 0.5 + 0.5 * Math.sin(t * 5.9 + 0.4);
+          nextEvertPulse.current =
+            now + EVERT_JELLY_PULSE_MIN + (EVERT_JELLY_PULSE_MAX - EVERT_JELLY_PULSE_MIN) * jitter;
+          dirty.current = true;
+        }
         if (jelly.step(dt)) dirty.current = true;
       }
 
@@ -1720,6 +1736,7 @@ export function LiquidGlobe({
       const w = (wobble.current ??= { yaw: 0, vYaw: 0, pitch: 0, vPitch: 0 });
       w.vYaw -= hit.x * WOBBLE_DEG * WOBBLE_KICK;
       w.vPitch += hit.y * WOBBLE_DEG * WOBBLE_KICK;
+      jelly.nudge(-hit.x * 8, hit.y * 8, 1.1);
 
       // Un-rotate the impact into the globe's own frame — the exact inverse of
       // the yaw-then-pitch `project()` applies. This is what makes the ripple a
@@ -1735,7 +1752,7 @@ export function LiquidGlobe({
       live.push(impact);
       dirty.current = true;
     },
-    [reduced],
+    [reduced, jelly],
   );
 
   /** Take hold of the globe. Shared by every surface that can start a drag. */
@@ -1971,6 +1988,22 @@ export function LiquidGlobe({
       window.removeEventListener('blur', onLeave);
     };
   }, [go, nodes, jelly]);
+
+  // While the hub is in the eversion hand-off, the globe keeps a soft, irregular jelly motion so the hand-over
+  // never reads as the ball freezing under a separate animation.
+  useEffect(() => {
+    const root = stageRef.current?.closest('.radial-hub');
+    if (!root) return;
+    const read = () => {
+      const active = root.getAttribute('data-phase') === 'everting';
+      everting.current = active;
+      if (active) nextEvertPulse.current = 0;
+    };
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(root, { attributes: true, attributeFilter: ['data-phase'] });
+    return () => mo.disconnect();
+  }, []);
 
   /**
    * A release that has already been spent — on a drag, or on a completed dwell —

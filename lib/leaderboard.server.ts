@@ -62,7 +62,7 @@ async function buildEntries(
     userId: r.userId,
     xp: r.xp,
     level: levelFromXp(r.xp),
-    coins: r.coins,
+    coins: Number(r.coins),
     isViewer: viewerId != null && r.userId === viewerId,
     user: resolveUser(r.user),
   }));

@@ -17,13 +17,24 @@ vi.mock('@/lib/auth', () => ({
 
 import { defineHandler, apiError } from '@/lib/api/handler.server';
 
+// Requests carry a session cookie by default: defineHandler skips Better Auth for
+// cookie-less callers (see 'session short-circuit' below), and these tests drive
+// the outcome through the mocked getSession.
+const COOKIE = 'better-auth.session_token=abc';
 const req = (url = 'https://rmhstudios.com/api/test', init: RequestInit = {}) =>
-  new Request(url, { headers: { 'cf-connecting-ip': `${Math.random()}` }, ...init });
+  new Request(url, {
+    headers: { 'cf-connecting-ip': `${Math.random()}`, cookie: COOKIE },
+    ...init,
+  });
 
 const post = (body: unknown, url = 'https://rmhstudios.com/api/test') =>
   new Request(url, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'cf-connecting-ip': `${Math.random()}` },
+    headers: {
+      'content-type': 'application/json',
+      'cf-connecting-ip': `${Math.random()}`,
+      cookie: COOKIE,
+    },
     body: typeof body === 'string' ? body : JSON.stringify(body),
   });
 
@@ -102,9 +113,8 @@ describe('validation', () => {
   });
 
   it('surfaces the zod message only when verboseValidationErrors is set', async () => {
-    const h = defineHandler(
-      { body: schema, verboseValidationErrors: true },
-      async () => Response.json({ ok: true }),
+    const h = defineHandler({ body: schema, verboseValidationErrors: true }, async () =>
+      Response.json({ ok: true }),
     );
     const res = await h({ params: {}, request: post({ name: 'wayyy too long' }) });
     expect(res.status).toBe(400);
@@ -117,9 +127,8 @@ describe('validation', () => {
     const strict = defineHandler({ body: optional }, async () => Response.json({ ok: true }));
     expect((await strict({ params: {}, request: post('') })).status).toBe(400);
 
-    const lenient = defineHandler(
-      { body: optional, allowEmptyBody: true },
-      async ({ body }) => Response.json({ got: body }),
+    const lenient = defineHandler({ body: optional, allowEmptyBody: true }, async ({ body }) =>
+      Response.json({ got: body }),
     );
     const res = await lenient({ params: {}, request: post('') });
     expect(res.status).toBe(200);
@@ -261,31 +270,27 @@ describe('cache spec', () => {
     // The whole safety story: this throws while the route module is being
     // imported, so the server does not boot and the mistake cannot deploy.
     expect(() =>
-      defineHandler(
-        { auth: 'required', cache: { visibility: 'public', maxAge: 60 } },
-        async () => Response.json({}),
+      defineHandler({ auth: 'required', cache: { visibility: 'public', maxAge: 60 } }, async () =>
+        Response.json({}),
       ),
     ).toThrow(/cache.visibility 'public' with auth 'required'/);
 
     expect(() =>
-      defineHandler(
-        { auth: 'admin', cache: { visibility: 'public', maxAge: 60 } },
-        async () => Response.json({}),
+      defineHandler({ auth: 'admin', cache: { visibility: 'public', maxAge: 60 } }, async () =>
+        Response.json({}),
       ),
     ).toThrow(/cache.visibility 'public' with auth 'admin'/);
   });
 
   it('allows public on auth none/optional', () => {
     expect(() =>
-      defineHandler(
-        { auth: 'none', cache: { visibility: 'public', maxAge: 60 } },
-        async () => Response.json({}),
+      defineHandler({ auth: 'none', cache: { visibility: 'public', maxAge: 60 } }, async () =>
+        Response.json({}),
       ),
     ).not.toThrow();
     expect(() =>
-      defineHandler(
-        { auth: 'optional', cache: { visibility: 'public', maxAge: 60 } },
-        async () => Response.json({}),
+      defineHandler({ auth: 'optional', cache: { visibility: 'public', maxAge: 60 } }, async () =>
+        Response.json({}),
       ),
     ).not.toThrow();
   });
@@ -299,9 +304,8 @@ describe('cache spec', () => {
       ),
     ).toThrow(/must be 'public' or 'private'/);
     expect(() =>
-      defineHandler(
-        { auth: 'none', cache: { visibility: 'public', maxAge: -1 } },
-        async () => Response.json({}),
+      defineHandler({ auth: 'none', cache: { visibility: 'public', maxAge: -1 } }, async () =>
+        Response.json({}),
       ),
     ).toThrow(/non-negative/);
   });
@@ -468,5 +472,61 @@ describe('conditional requests (ETag / 304)', () => {
     // of bug that only shows up in production.
     const res = await cached({ hello: 'world' })({ params: {}, request: req() });
     await expect(res.json()).resolves.toEqual({ hello: 'world' });
+  });
+});
+
+describe('session short-circuit (no session cookie)', () => {
+  const anon = () =>
+    new Request('https://rmhstudios.com/api/test', {
+      headers: { 'cf-connecting-ip': `${Math.random()}` },
+    });
+
+  it('required: 401 with the same body, without calling Better Auth', async () => {
+    const h = defineHandler({}, async () => Response.json({ ok: true }));
+    const res = await h({ params: {}, request: anon() });
+    expect(res.status).toBe(401);
+    await expect(res.json()).resolves.toEqual({ error: 'Unauthorized' });
+    expect(getSession).not.toHaveBeenCalled();
+  });
+
+  it('admin: 401 (not 403) without calling Better Auth', async () => {
+    const h = defineHandler({ auth: 'admin' }, async () => Response.json({ ok: true }));
+    expect((await h({ params: {}, request: anon() })).status).toBe(401);
+    expect(getSession).not.toHaveBeenCalled();
+  });
+
+  it('optional: null userId without calling Better Auth', async () => {
+    const h = defineHandler({ auth: 'optional' }, async ({ userId }) => Response.json({ userId }));
+    const res = await h({ params: {}, request: anon() });
+    await expect(res.json()).resolves.toEqual({ userId: null });
+    expect(getSession).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'better-auth.session_token=x',
+    '__Secure-better-auth.session_token=x',
+    'a=1; better-auth.session_data=x',
+    '__Secure-better-auth.session_data=x',
+  ])('still resolves the session when the cookie is %s', async (cookie) => {
+    const h = defineHandler({}, async ({ userId }) => Response.json({ userId }));
+    const res = await h({
+      params: {},
+      request: new Request('https://rmhstudios.com/api/test', {
+        headers: { 'cf-connecting-ip': `${Math.random()}`, cookie },
+      }),
+    });
+    expect(getSession).toHaveBeenCalledTimes(1);
+    await expect(res.json()).resolves.toEqual({ userId: 'u1' });
+  });
+
+  it('an unrelated cookie does not trigger a lookup', async () => {
+    const h = defineHandler({ auth: 'optional' }, async ({ userId }) => Response.json({ userId }));
+    await h({
+      params: {},
+      request: new Request('https://rmhstudios.com/api/test', {
+        headers: { 'cf-connecting-ip': `${Math.random()}`, cookie: 'theme=dark' },
+      }),
+    });
+    expect(getSession).not.toHaveBeenCalled();
   });
 });

@@ -13,7 +13,7 @@ import {
   STAR_THRESHOLD_MAX,
   STAR_THRESHOLD_MIN,
   type CommunityExtrasDTO,
-} from '@/lib/communities/plus-schema';
+} from '@/lib/communities/plus';
 import type { VerificationLevel } from '@/lib/communities/verification';
 
 export function ModSettings({

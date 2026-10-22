@@ -488,12 +488,19 @@ COPY --link --chown=1001:1001 data ./data
 COPY --link --chown=1001:1001 prisma ./prisma
 COPY --link --chown=1001:1001 prisma.config.ts ./prisma.config.ts
 COPY --link --chown=1001:1001 package.json ./package.json
+# The web container's PID 1 (server/web-cluster.mjs): a cluster primary that
+# REPLACES a worker that dies and forwards SIGTERM to the workers. Nitro's own
+# node-cluster primary (.output/server/index.mjs) forks once and never replaces
+# one, so two worker deaths left nothing listening and the container restarted
+# under live traffic (Apache AH00957 + 503s, 2026-10-21). It runs the same
+# .output/server/worker.mjs, and falls back to index.mjs for a single-process build.
+COPY --link --chown=1001:1001 server/web-cluster.mjs ./server/web-cluster.mjs
 
 USER app
 
 EXPOSE 7005 7001 7676 7003
 
-CMD ["node", ".output/server/index.mjs"]
+CMD ["node", "server/web-cluster.mjs"]
 
 # ── Stage 4b: Full runtime (Go supervisor + status + assets) ─────────────────
 # Everything ONLY the background fleet needs:

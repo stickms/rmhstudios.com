@@ -10,7 +10,7 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { FOOLS_FLAG_KEY, FOOLS_OFF_KEY } from '@/lib/delight/season';
-import type { DelightConfig } from '@/lib/delight/schema';
+import type { DelightConfig } from '@/lib/delight/shared';
 
 const CFG_KEY = 'rmh-delight-cfg';
 const TTL_MS = 10 * 60_000;

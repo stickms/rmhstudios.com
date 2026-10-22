@@ -54,7 +54,11 @@ export function PlayerController() {
       z = (z / len) * speed;
     }
     const vel = rb.linvel();
-    rb.setLinvel({ x, y: vel.y, z }, true);
+    // Wake the body only to move it. Waking it every frame kept it from ever
+    // sleeping, and @react-three/rapier requests a frame for as long as any
+    // body is awake — so a player standing still behind a menu pinned the
+    // scene at the display's full rate (docs/performance-audit-2026-10-21.md).
+    rb.setLinvel({ x, y: vel.y, z }, len > 0);
 
     // Update character animation refs (no React state — read by Character's useFrame).
     const isMoving = Math.hypot(x, z) > 0.1;

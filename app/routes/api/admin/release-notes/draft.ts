@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { draftSchema } from '@/lib/devplatform/release-notes';
+import { draftSchema } from '@/lib/devplatform/release-notes-schema';
 import { aiAvailable, draftReleaseNote } from '@/lib/devplatform/ai.server';
 
 /** POST — draft a changelog entry from pasted PR titles/bodies (not saved; a human edits it). */

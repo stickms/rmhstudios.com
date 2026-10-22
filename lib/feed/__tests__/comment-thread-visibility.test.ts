@@ -65,7 +65,7 @@ import { Route as RepostersRoute } from '../../../app/routes/api/rmharks/$id/com
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 const get = (route: unknown, params: Record<string, string>) =>
   (route as { options: { server: { handlers: { GET: Handler } } } }).options.server.handlers.GET({
-    request: new Request('https://x.test/x', { headers: { 'cf-connecting-ip': '1.1.1.1' } }),
+    request: new Request('https://x.test/x', { headers: { 'cf-connecting-ip': '1.1.1.1', cookie: 'better-auth.session_token=t' } }),
     params,
   });
 

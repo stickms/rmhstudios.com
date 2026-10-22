@@ -6,10 +6,11 @@ import {
   isValidTimeZone,
   nowIsStale,
   NOW_STALE_DAYS,
-  plusUpdateSchema,
   splitNowText,
 } from '@/lib/profile/plus';
-import { MAX_MODULES, moduleSchema, withModule, type ProfileModule } from '@/lib/profile/modules';
+import { plusUpdateSchema } from '@/lib/profile/plus-schema';
+import { MAX_MODULES } from '@/lib/profile/modules';
+import { moduleSchema, withModule, type ProfileModule } from '@/lib/profile/modules-schema';
 import { qrMatrix } from '@/lib/profile/qr';
 import { ringSlugBase } from '@/lib/profile/webrings';
 

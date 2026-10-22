@@ -286,6 +286,30 @@ is replaced by `AFTER_STABLE_FRAMES`, `AFTER_QUIET_MS`, `AFTER_QUIET_CAP_MS`, `A
 - **Every control everts.** See design-language §7 _Eversion_: a control nobody tagged gets the state layer on first
   contact (`lib/evert-auto.ts`), or a ghost of it where it cannot hold one (text fields, selects).
 
+### Amendment 2026-10-21 (f) - the eversion level: all navigations (default) or only the liquid globe
+
+> Owner, verbatim: "recent changes run the eversion animation on all navigations. Make this the default behavior but
+> add a setting override that allows users to specify eversion level: all navs or only liquid globe."
+
+- **The setting.** `eversionLevel`, two values: `all` (the default, and what an absent value means) is amendment (e)
+  unchanged; `globe` limits the page-transition effect to navigations confirmed through the liquid-globe hub
+  (hold-release, pin click, Enter, and the hub's own globe while it is open). Settings > Appearance > Comfort, a
+  "Globe eversion" select next to "Navigation transition": "Every navigation" / "Only the liquid globe".
+- **At `globe` the interceptor stands aside.** `eversion-nav.ts` asks `carriesNavigation(level, hubOpen)` first, on
+  every navigation, before anything is held or queued: a `<Link>`, `navigate()`, back/forward or plain `<a>` off the
+  hub returns `false` from the history blocker (nothing is held, no microtask, no timer, no pop-up globe, no added
+  latency) and plain anchors are left to the browser as before amendment (e). The hub's own confirmed navigations
+  never passed through the blocker (they push with `ignoreBlocker`), so they are untouched. A navigation asked for
+  while the hub is open is still handed to its globe. The level is read from the store on every navigation, so a
+  change applies to the next one with no reload.
+- **Scope.** Page navigations only. The per-control "evert every button and input" state animation
+  (`lib/evert-auto.ts`) is unaffected, and the Settings description says so.
+- **Persistence**, exactly like `navTransition`: `appearance_preference."eversionLevel" VARCHAR(8)` NULL (additive
+  migration `20261021130000_appearance_eversion_level`; NULL means `all`), `PUT/GET /api/preferences/appearance`,
+  `themeStore.eversionLevel`, the signed-out `rmh-eversion-level` localStorage cache (written only for `globe`),
+  hydrated and synced in `Providers.tsx`. The orphaned `alwaysEvertGlobe` column from (e) is still in the schema, API
+  and store, unused; it is left alone here.
+
 ## 0. The effect in one paragraph
 
 You confirm a destination on the liquid globe. The globe **swells** to fill most
@@ -313,7 +337,7 @@ question list in that conversation.
 | 1   | Entry points                | **All** of them: hold-and-release on the reticle, pin click, keyboard Enter on a focused pin. External links keep today's hard navigation.                                                                                                                                                                                                |
 | 2   | Which globes                | **Only the hub navigator.**                                                                                                                                                                                                                                                                                                               |
 | 3   | Frequency                   | **Every navigation.** No "first time only", no off switch in Settings (but see §1.1 for the accessibility fallback).                                                                                                                                                                                                                      |
-| 4   | Skipping                    | **Click/tap/key fast-forwards smoothly.** No hard cuts, ever. _Amended 2026-10-20 (d): reversed, nothing skips; the run always plays in full._                                                                                                                                                                                             |
+| 4   | Skipping                    | **Click/tap/key fast-forwards smoothly.** No hard cuts, ever. _Amended 2026-10-20 (d): reversed, nothing skips; the run always plays in full._                                                                                                                                                                                            |
 | 5   | "Before" page               | The page **as it was before the menu opened** — no veil, no globe.                                                                                                                                                                                                                                                                        |
 | 6   | Extent                      | **Viewport only** at the current scroll position.                                                                                                                                                                                                                                                                                         |
 | 7   | Capture fidelity            | **Fastest viable**, performance-first, but accuracy matters.                                                                                                                                                                                                                                                                              |

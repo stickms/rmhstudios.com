@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  AWARD_CATALOG,
-  getAward,
-  recipientShare,
-  giveAwardSchema,
-} from '@/lib/awards/catalog';
+import { AWARD_CATALOG, getAward, recipientShare } from '@/lib/awards/catalog';
+import { giveAwardSchema } from '@/lib/awards/catalog-schema';
 
 describe('award catalog', () => {
   it('has unique ids and sane economics (net burn)', () => {

@@ -75,10 +75,23 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
    - `docker compose up -d --scale web=0` — everything **except** web
    - **blue/green web hotswap** (`deploy/hotswap-web.sh`): start the new web
      container on the spare port (7005 ⇄ 7015), health-gate it, flip Apache's
-     active-port include with a graceful reload, stop the old container
+     active-port include with a graceful reload, stop (not delete) the old container
+   - **smoke gate + bake** (`deploy/smoke-test.sh`): probe the real user path
+     through Apache — `/` renders, `/api/ready` is 200, `/blog/rss.xml` and
+     `/sitemap.xml` carry their XML — once right after the flip, then every 20s
+     for `BAKE_SECONDS` (default 300) with the old container kept stopped as a
+     rollback target. 3 consecutive failed rounds, or the new container dying
+     or restarting, **automatically flips traffic back** to the old container
+     (only if the old one comes back healthy — a shared-dependency outage
+     leaves the new one live and fails the deploy loudly instead). The deploy
+     flock is held through the bake, so a newer push queues behind it.
    - parallel health checks; prune stale + rollback images
-3. **Rollback:** previous SHA-tagged images are kept (one per env); replaced
-   Node workers can be revived by restoring their compose command blocks (see
+3. **Rollback:** *web* rolls back automatically during the bake (above) and the
+   deploy reports "auto-rolled back" to Discord + the commit status. The
+   rollback is web-only and runs after migrations, so a release must keep the
+   old web compatible with its schema (expand/contract). Beyond the bake,
+   previous SHA-tagged images are kept (one per env); replaced Node workers can
+   be revived by restoring their compose command blocks (see
    `docs/runbooks/2026-06-22-go-runtime-cutover.md`).
 
 ## 4. CI
@@ -91,8 +104,8 @@ what each one gates:
 
 | Workflow                 | Gates                                                                                                                                                                                                          |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `deploy.yml`             | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above). Its in-workflow `ci` job re-runs typecheck/lint/tests; the test step is advisory there because the PR already gated it.       |
-| `web-ci.yml`             | Frontend gate on PRs: `tsc --noEmit` + `eslint` + docs freshness + `pnpm test` (check job — **all blocking**), `build:frontend:sourcemap` + the two size gates (build job), `pnpm audit --prod` (audit job)     |
+| `deploy.yml`             | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above). Its in-workflow `ci` job re-runs typecheck/lint/tests and its `integration` job the integration suite on the merge result — all block the deploy. The Discord embed shows a live CI checklist (`.github/scripts/ci-checklist.sh`) before the VPS stages take over.                        |
+| `web-ci.yml`             | Frontend gate on PRs: `tsc --noEmit` + `eslint` + docs freshness + `pnpm test` (check job — **all blocking**), `build:frontend:sourcemap` + the two size gates (build job), `pnpm audit --prod` (audit job), `pnpm test:integration` against the booted app + Postgres (integration job, blocking) |
 | `epic-tests.yml`         | The epic content-build suite (`pnpm test:epic`) with a Chromium install; path-filtered to `scripts/epic/**`                                                                                                     |
 | `go-microservices.yml`   | Go fleet: `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`. (The Postgres-backed e2e + `helm lint` jobs were removed with the Go realtime/Helm topology — design §5.2.) |
 | `senior-review.yml`      | LLM review gate on PRs (Claude Opus over the diff; fails on a FAIL verdict; short-circuits green for non-owner authors)                                                                                        |

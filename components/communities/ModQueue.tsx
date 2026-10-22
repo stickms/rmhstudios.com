@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import { MacroField } from '@/components/safety/MacroField';
-import type { ModItemDTO } from '@/lib/communities/plus-schema';
+import type { ModItemDTO } from '@/lib/communities/plus';
 
 export function ModQueue({ slug }: { slug: string }) {
   const { t } = useTranslation('f-communities-plus');

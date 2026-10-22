@@ -15,7 +15,7 @@ import {
   ONBOARDING_MAX_QUESTIONS,
   type FlairDTO,
   type OnboardingQuestionDTO,
-} from '@/lib/communities/plus-schema';
+} from '@/lib/communities/plus';
 
 interface DraftOption {
   label: string;
