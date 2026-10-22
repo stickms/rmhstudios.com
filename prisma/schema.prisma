@@ -12876,3 +12876,19 @@ model OpsAlarmOverride {
 
   @@map("ops_alarm_override")
 }
+
+/// One row per production deploy result, written by deploy.sh through
+/// /api/internal/ops/deploy-event. Drawn as markers on the /admin/alarms graphs
+/// so on-call can see whether a metric moved right after a deploy.
+model OpsDeployEvent {
+  id     BigInt   @id @default(autoincrement())
+  at     DateTime @default(now())
+  /// Short commit hash that was deployed (or attempted).
+  sha    String   @db.VarChar(40)
+  /// "success" | "rolledback" | "fail"
+  status String   @db.VarChar(20)
+  detail String?  @db.VarChar(300)
+
+  @@index([at])
+  @@map("ops_deploy_event")
+}
