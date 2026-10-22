@@ -738,3 +738,129 @@ applied throttling it is flat (206–227 → 220–224ms).
   carried in the data.
 - What Lantern still charges to LCP from the critical path (see §Critical CSS
   - preload priority).
+
+---
+
+## Instant navigation
+
+The ask: from a tap or click to the next page's content on screen, as close to
+one frame as possible. Every lever below was measured on a built app before it
+was kept; two were measured and dropped.
+
+### Method
+
+`pnpm build:frontend` of `main` (`1d5e604`) and of this branch, served side by
+side on 127.0.0.1 against the embedded Postgres from §Home LCP (40 users, 400
+posts), signed out, desktop viewport. `testing/e2e/page-switch.mjs` at 4× CPU,
+medians of 3, three conditions per build:
+
+- **tap** — `el.click()`, 100ms RTT.
+- **press** — what a phone sends: `pointerdown`, the ~90ms a finger stays down,
+  then the click. Timed from the finger going down.
+- **press, cold, slow 4G** — a fresh browser context per sample (nothing
+  cached), 150ms RTT, 1.6 Mbps.
+
+The harness gained what this needed ([`testing.md`](testing.md) §6): the press
+mode, a real cold mode, `~card` (tap a post card, which is a `div`, not a link),
+byte and request accounting for the click and for the settled page view, and a
+count of how often the router's pending skeleton or an in-page spinner showed.
+It also had a measuring bug: the outgoing page's `main h1` is still mounted when
+the URL flips, so every h1 destination "painted" a frame after the click. Only
+a marker element that did not exist before the click counts now; the baseline
+below was re-measured with the fix.
+
+### Where the time was
+
+| Switch (tap, 4×, 100ms RTT) | paint | what it waited on |
+| --- | ---: | --- |
+| nav-rail switches (`/`, `/explore`, `/games`, `/library`, …) | 115–250ms | the incoming page's render (`max frame` ≈ paint) — CPU, not network |
+| profile → a post | 327ms | spinner on 3/3 |
+| explore → a post | 579ms | router skeleton on 3/3, spinner on 3/3 |
+
+Rail links are already warm by the time anyone clicks them (intent preload on
+hover, the viewport prefetcher, `touchstart` on `<Link>`), so what is left
+there is render cost. Posts were the outlier, for two reasons stacked:
+
+1. **A request waterfall.** `PostDetail` fetches the post body and its comments
+   from a mount effect. Opened from anywhere but the home feed (whose store
+   seeds it), that is the route's loader and chunk, THEN — after a spinner frame
+   — `/api/rmharks/:id` and `/comment`. Post cards are `div`s, so they also get
+   no `<Link>` preload on touch.
+2. **The pending skeleton's timings.** `defaultPendingMs: 180` is one round
+   trip on a phone. A loader that took ~200ms put the skeleton up at 180ms and
+   `defaultPendingMinMs: 220` held it to ~400ms — a page that was ready at
+   200ms appeared at 400.
+
+### Kept
+
+| | Change | Where |
+| --- | --- | --- |
+| NAV-I1 | The post body and comments start as the open begins — the route's `beforeLoad` (every navigation; not a preload) and a press on the card body — and `PostDetail` takes them, rendering an already-answered post in its first commit. | `lib/route/intent-fetch.ts`, `lib/feed/post-detail-prefetch.ts`, `app/routes/_site/u/$userid/post/$postid.tsx`, `components/feed/PostDetail.tsx`, `components/feed/RMHarkCard.tsx` |
+| NAV-I2 | Same for a profile's first page of posts, from its `beforeLoad`. | `lib/feed/profile-prefetch.ts`, `app/routes/_site/u/$userid/index.tsx`, `components/feed/ProfileColumn.tsx` |
+| NAV-I3 | `defaultPendingMs` 180 → 400, `defaultPendingMinMs` 220 → 200. Under 400ms the click is already acknowledged (press state, `NavigationProgress` from 90ms), so the old page stays and the new one replaces it directly. | `app/router.tsx` |
+
+The responses NAV-I1/2 hold are per-viewer (a post's liked state and
+visibility), so `intent-fetch` is built around never showing a stale one: in
+memory, per tab; **taken once**; started only when the open is already
+happening — never on hover, focus or a speculative preload, because a like can
+land between a hover and the open but not between a press and its click; and
+once answered, usable for 1s only — long enough for the page that started it
+to mount, too short to survive a long-press reaction and then an open. In
+flight it stays usable (up to 15s), which is when it helps most.
+`lib/__tests__/intent-fetch.test.ts` holds those rules.
+
+### Results
+
+`main` → this branch, paint in ms (skeleton / spinner seen, of 3):
+
+| Switch | tap | press | press, cold, slow 4G |
+| --- | ---: | ---: | ---: |
+| profile → a post | 327 (1/3) → **248** (0/0) | 675 (2/3) → **275** (0/0) | 763 (3/3) → **315** (0/0) |
+| explore → a post | 579 (3/3) → **285** (0/0) | 687 (3/3) → **313** (0/0) | 772 (3/3) → **360** (0/0) |
+| `/games` → `/store` | 249 → 241 | 273 → 268 | 659 (3/3 skeleton) → **530** (0) |
+| post → profile, first post card on screen | 403 → **329** | — | 610 → **478** |
+| the nav-rail switches | 115–217 → 110–215 | 226–335 → 226–321 | 246–363 → 246–361 |
+
+No skeleton and no post spinner in any sample on the branch. Data requests per
+post open are unchanged (8 → 8): the head start replaces the page's own
+requests, it never adds one. A page view fetches nothing new (requests after
+`load`: 11–48 per page, identical on both builds) — none of this speculates.
+Post → profile's header lands one longer frame later on a tap (290 → 338ms)
+because the post list now arrives in the same frame instead of a round trip
+after it; the list itself is on screen 74–132ms sooner.
+
+### Measured and dropped
+
+- **Code-only warm-up of the nav rail's route chunks at idle** (one
+  `router.loadRouteChunk` per idle slot, after `load` + 3s, behind
+  `shouldSpeculate`). Cost: 48 chunks, 54.5 KB brotli (185 KB raw), 48 requests
+  on a cold-cache page load. Benefit: none measurable. On a fast link the chunk
+  is one quick round trip and the switch is render-bound (`/games` → `/store`
+  241 vs 234ms); on a slow one `shouldSpeculate` correctly turns it off (at
+  300ms RTT it never ran). Removed.
+- **Starting the post fetches on hover/focus too.** It would buy desktop the
+  hover-to-click gap, but a hover can be followed by a like and then the open
+  within a second, and the page would show the pre-like state. Desktop opens
+  are already ~250ms; not worth a stale like.
+- **View Transitions.** The post open already runs one (`runLiquidOpen`) and
+  nothing measured here pointed at it; adding more would add a capture frame
+  to every switch.
+
+### Not done
+
+- **Rail switches are render-bound** (`max frame` 100–230ms at 4×). That is the
+  incoming page's commit — §Navigation commit's territory, not the router's.
+- **`/store`'s loader returns 45 KB** (one server function) on every open; a
+  smaller payload, or a `staleTime` on that route, is the next lever there.
+- **A post opened from a `<Link>`** (a notification, search) still gets only
+  the loader on hover; its body starts at `beforeLoad`. Fine on desktop, where
+  that link is usually already warm.
+- **Back to a profile refetches its posts** (take-once, by design). Keeping the
+  last list for an instant back navigation needs a revalidation story for the
+  per-viewer fields first.
+- **The post page is still client-rendered on a cold URL load** (SSR shows the
+  spinner; the body is not in the loader). That is first load, not navigation,
+  but it is a large LCP cost on every shared post link.
+
+Evidence (runs, JSON, request logs): `/tmp/ui-review/nav/` on the measuring
+machine.

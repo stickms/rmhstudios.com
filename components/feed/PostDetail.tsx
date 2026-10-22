@@ -39,6 +39,8 @@ import { UserAvatar } from'./UserAvatar';
 import { ThreadSummary } from'./ThreadSummary';
 import { RelatedPosts } from'./RelatedPosts';
 import { EditHistoryButton } from'./EditHistory';
+import { postBodyUrl, postCommentsUrl } from '@/lib/feed/post-detail-prefetch';
+import { peekIntentFetch, takeOrFetch } from '@/lib/route/intent-fetch';
 
 interface PostDetailProps {
  postId: string;
@@ -52,15 +54,28 @@ export function PostDetail({ postId }: PostDetailProps) {
  // liquid-open morph target) renders INSTANTLY — no skeleton flash, no second
  // entrance when the fetch lands. Warm opens (from the feed) hit this; a cold URL
  // load finds no seed and shows the spinner until the fetch resolves.
+ // A post with no feed seed may still have arrived before this page mounted:
+ // the route's `beforeLoad` and the card's intent handlers start its fetches
+ // (lib/feed/post-detail-prefetch). Settled ones render in the first commit.
+ const [arrived] = useState(() => ({
+ body: peekIntentFetch(postBodyUrl(postId)),
+ comments: peekIntentFetch(postCommentsUrl(postId)),
+ }));
  const [post, setPost] = useState<FeedItem | null>(
- () => useFeedStore.getState().items.find((i) => i.id === postId) ?? null,
+ () =>
+ useFeedStore.getState().items.find((i) => i.id === postId) ??
+ (arrived.body?.status === 200 ? (arrived.body.data as FeedItem) : null),
  );
- const [comments, setComments] = useState<Comment[]>([]);
+ const [comments, setComments] = useState<Comment[]>(() =>
+ Array.isArray(arrived.comments?.data) ? (arrived.comments.data as Comment[]) : [],
+ );
  const [loading, setLoading] = useState(
- () => !useFeedStore.getState().items.some((i) => i.id === postId),
+ () => !useFeedStore.getState().items.some((i) => i.id === postId) && !arrived.body,
  );
- const [loadingComments, setLoadingComments] = useState(true);
- const [notFound, setNotFound] = useState(false);
+ const [loadingComments, setLoadingComments] = useState(
+ () => !Array.isArray(arrived.comments?.data),
+ );
+ const [notFound, setNotFound] = useState(() => arrived.body?.status === 404);
  const [commentContent, setCommentContent] = useState('');
  const [submitting, setSubmitting] = useState(false);
  const { data: session } = useSession();
@@ -148,15 +163,19 @@ export function PostDetail({ postId }: PostDetailProps) {
  // §17.2: keep the seeded hero on screen while the full record loads (only show
  // the spinner when there was no seed) so the morph never lands on a skeleton.
  const seed = useFeedStore.getState().items.find((i) => i.id === postId) ?? null;
+ // A request already started for this open (the route's beforeLoad, the card's
+ // intent) is taken once here instead of issuing a second one.
+ const url = postBodyUrl(postId);
  if (seed) setPost(seed);
- setLoading(!seed);
- fetch(`/api/rmharks/${postId}`)
- .then(async (res) => {
- if (res.status === 404) {
+ setLoading(!seed && !peekIntentFetch(url));
+ takeOrFetch(url)
+ .then(({ status, data: body }) => {
+ if (status === 404) {
  setNotFound(true);
  return;
  }
- const data = await res.json();
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ const data = body as any;
  // Update user display cache
  const users = [];
  if (data.user) users.push(data.user);
@@ -171,10 +190,10 @@ export function PostDetail({ postId }: PostDetailProps) {
 
  // Fetch comments
  useEffect(() => {
- setLoadingComments(true);
- fetch(`/api/rmharks/${postId}/comment`)
- .then((res) => res.json())
- .then((data) => setComments(data))
+ const url = postCommentsUrl(postId);
+ setLoadingComments(!Array.isArray(peekIntentFetch(url)?.data));
+ takeOrFetch(url)
+ .then(({ data }) => setComments(Array.isArray(data) ? (data as Comment[]) : []))
  .catch(console.error)
  .finally(() => setLoadingComments(false));
  }, [postId]);

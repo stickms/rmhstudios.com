@@ -1628,6 +1628,35 @@ html.ios-webkit .radial-hub__veil {
   }
 }
 
+/* ── The jelly material ────────────────────────────────────────────────────
+   The shader layer (`components/radial/jelly-glass.ts`): reflection, Fresnel rim,
+   specular, transmission, caustic and the accent's subsurface tint, drawn over
+   the cage inside the glass disc — so it takes the soft body's affine transform
+   with the disc, and its own shader follows the local lobe. LiquidGlobe sets
+   `data-jelly="on"` on the stage once the material has drawn its first frame;
+   until then (and wherever it is not eligible — high contrast, reduced
+   transparency, `perf-lite`, no WebGL) the CSS glass above is the material.
+
+   The disc keeps its rim hairline and its drop shadow (box-shadow); only the
+   painted gradients and the drifting sheen are the shader's now. That also
+   retires the sheen's infinite animation while the material is up, so an
+   untouched globe composites nothing of its own. */
+.radial-globe__jelly {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.radial-globe__stage[data-jelly='on'] .radial-globe__glass {
+  background: none;
+}
+.radial-globe__stage[data-jelly='on'] .radial-globe__glass::after {
+  content: none;
+  animation: none;
+}
+
 /* ── Pins ────────────────────────────────────────────────────────────────── */
 .radial-globe__pins {
   position: absolute;

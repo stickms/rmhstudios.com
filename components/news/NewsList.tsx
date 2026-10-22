@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select } from '@/components/ui/select';
 import { Reveal } from '@/components/motion';
+import { APPLE_SPRING } from '@/lib/motion';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
 import { NewsCategoryTabs } from './NewsCategoryTabs';
@@ -275,7 +276,10 @@ export function NewsList({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.25 }}
+              // A spring, not a 0.25s tween: `layout` reflows the grid on every
+              // filter change, and a card caught mid-move retargets from where it
+              // is instead of restarting.
+              transition={APPLE_SPRING.smooth}
             >
               <NewsCard article={article} index={i} />
             </motion.div>
