@@ -53,6 +53,9 @@ type Config struct {
 	// Oncall, when non-nil, gets a heartbeat after each probe cycle and every
 	// automatic incident as an alarm (oncall.go). nil = on-call not configured.
 	Oncall *oncall.Client
+	// SupervisorMetricsURL is read once a minute for Go worker health alarms
+	// (workers.go); empty, or Oncall nil, disables them.
+	SupervisorMetricsURL string
 	// Announcement is an optional static banner (STATUS_ANNOUNCEMENT).
 	Announcement      string
 	AnnouncementLevel string
@@ -67,6 +70,7 @@ type Service struct {
 	notifier  *WebhookNotifier
 	oncall    *OncallNotifier
 	heartbeat *heartbeater
+	workers   *workerWatch
 	startedAt time.Time
 }
 
@@ -148,7 +152,11 @@ func New(cfg Config) *Service {
 	if cfg.Oncall != nil {
 		hb = &heartbeater{client: cfg.Oncall, logger: cfg.Logger, interval: HeartbeatInterval}
 	}
-	return &Service{cfg: cfg, prober: p, store: store, notifier: notifier, oncall: oncallNotifier, heartbeat: hb, startedAt: time.Now()}
+	return &Service{
+		cfg: cfg, prober: p, store: store, notifier: notifier, oncall: oncallNotifier, heartbeat: hb,
+		workers:   newWorkerWatch(cfg.SupervisorMetricsURL, cfg.Oncall, cfg.Logger),
+		startedAt: time.Now(),
+	}
 }
 
 // Store exposes the incident store (tests, cmd wiring).
@@ -166,6 +174,7 @@ func (s *Service) Start(ctx context.Context) {
 	if s.oncall != nil {
 		go s.oncall.Run(ctx)
 	}
+	go s.workers.run(ctx)
 	go func() {
 		s.prober.ProbeOnce(ctx)
 		s.store.Tick(time.Now())

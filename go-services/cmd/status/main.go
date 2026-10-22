@@ -134,10 +134,13 @@ func main() {
 		WebhookSecret: config.GetString("STATUS_WEBHOOK_SECRET", ""),
 		// On-call watchdog (deploy/oncall-watchdog): heartbeat + incident
 		// alarms. Unset (or a secret under 32 chars) = disabled.
-		Oncall:            oncall.New(config.GetString("ONCALL_URL", ""), config.GetString("ONCALL_SIGNING_SECRET", "")),
-		Announcement:      config.GetString("STATUS_ANNOUNCEMENT", ""),
-		AnnouncementLevel: config.GetString("STATUS_ANNOUNCEMENT_LEVEL", "info"),
-		AnnouncementLink:  config.GetString("STATUS_ANNOUNCEMENT_LINK", ""),
+		Oncall: oncall.New(config.GetString("ONCALL_URL", ""), config.GetString("ONCALL_SIGNING_SECRET", "")),
+		// Go worker health alarms read the supervisor's metrics (same host as its
+		// /health probe above).
+		SupervisorMetricsURL: config.GetString("STATUS_SUPERVISOR_METRICS_URL", strings.TrimSuffix(urls.Supervisor, "/health")+"/metrics"),
+		Announcement:         config.GetString("STATUS_ANNOUNCEMENT", ""),
+		AnnouncementLevel:    config.GetString("STATUS_ANNOUNCEMENT_LEVEL", "info"),
+		AnnouncementLink:     config.GetString("STATUS_ANNOUNCEMENT_LINK", ""),
 	}
 
 	svc := status.New(cfg)
