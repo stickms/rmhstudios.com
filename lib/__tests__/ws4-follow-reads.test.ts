@@ -1,10 +1,11 @@
 /**
  * WS4 — three read paths used to run their own unbounded `follow.findMany` for the
  * viewer's whole follow list on every cold read: the friends leaderboard, the
- * hashtag feed and Explore. All three now use `getFollowingIds` (capped at 5,000, cached 30 s,
- * invalidated on follow/unfollow/block — the list the feed itself filters by).
- *
- * These tests count Prisma calls: none of the modules may touch `follow` directly.
+ * hashtag feed and Explore. The friends leaderboard uses `getFollowingIds` (capped at 5,000,
+ * cached 30 s, invalidated on follow/unfollow/block): it ranks people and gates nothing.
+ * The tag feed and Explore decide VISIBILITY / SUGGESTIONS, so they must be exact and no
+ * longer use the capped list (review item 5): the tag feed asks the database inside its one
+ * raw query, Explore probes `follow` for the bounded suggestion pool only.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -33,7 +34,10 @@ vi.mock('@/lib/prisma.server', () => {
 vi.mock('@/lib/cached.server', () => ({
   cached: (_key: string, _ttl: number, load: () => Promise<unknown>) => load(),
 }));
-vi.mock('@/lib/social/follow-graph.server', () => ({ getFollowingIds: h.getFollowingIds }));
+vi.mock('@/lib/social/follow-graph.server', () => ({
+  getFollowingIds: h.getFollowingIds,
+  friendsLeaderboardKey: (id: string) => `leaderboard:friends:${id}`,
+}));
 vi.mock('@/lib/moderation.server', () => ({ getHiddenAuthorIds: h.getHiddenAuthorIds }));
 vi.mock('@/lib/feed/map-feed-item.server', () => ({
   rmharkIncludeLite: () => ({}),
@@ -44,7 +48,7 @@ vi.mock('@/lib/feed/timeline', () => ({
   applyMutedWords: (items: unknown[]) => items,
 }));
 vi.mock('@/lib/feed/audience.server', () => ({
-  audienceWhere: (viewerId: string | null, following: string[]) => ({ _aud: [viewerId, following] }),
+  audienceWhereExact: (viewerId: string | null) => ({ _aud: [viewerId] }),
   communityVisibleWhere: () => ({}),
 }));
 
@@ -73,18 +77,18 @@ describe('friends leaderboard', () => {
 
 describe('tag feed', () => {
   // WS8: the tag feed picks the page's ids with a raw keyset scan (audience filter
-  // included) and then hydrates them, so the follow ids travel as bound values of
-  // that query rather than in a Prisma `where`.
+  // included) and then hydrates them. The follower check is a correlated EXISTS in
+  // that query, so no follow ids are bound at all.
   const boundValues = () =>
     (h.queryRaw.mock.calls[0][0] as { values: unknown[] }).values.flat(Infinity as 1);
 
-  it('reads the follow graph through getFollowingIds, never follow.findMany', async () => {
+  it('checks follows exactly inside the one raw query, not via the capped list', async () => {
     h.queryRaw.mockResolvedValue([]);
     await listTagFeed('rust', { viewerId: 'me' });
     expect(h.followFindMany).not.toHaveBeenCalled();
-    expect(h.getFollowingIds).toHaveBeenCalledWith('me');
+    expect(h.getFollowingIds).not.toHaveBeenCalled();
     expect(h.queryRaw).toHaveBeenCalledTimes(1);
-    expect(boundValues()).toEqual(expect.arrayContaining(['a', 'b']));
+    expect(boundValues()).not.toEqual(expect.arrayContaining(['a', 'b']));
   });
 
   it('a signed-out read touches no follow data at all', async () => {
@@ -97,10 +101,11 @@ describe('tag feed', () => {
 });
 
 describe('explore', () => {
-  it('reads the follow graph through getFollowingIds, never follow.findMany', async () => {
+  it('excludes followed accounts with one bounded probe, not the capped list', async () => {
     h.rmharkFindMany.mockResolvedValue([{ id: 'p1' }]);
+    h.followFindMany.mockResolvedValue([]);
     await listExplore('me');
-    expect(h.followFindMany).not.toHaveBeenCalled();
-    expect(h.getFollowingIds).toHaveBeenCalledWith('me');
+    expect(h.getFollowingIds).not.toHaveBeenCalled();
+    expect(h.followFindMany).toHaveBeenCalledTimes(1);
   });
 });

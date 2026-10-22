@@ -1,6 +1,5 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { getFollowingIds } from '@/lib/social/follow-graph.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import type { FeedItem } from '@/lib/feed-types';
@@ -36,13 +35,7 @@ export async function listTagFeed(
   const cursor = opts.cursor ?? null;
   const limit = Math.min(opts.limit ?? 20, 50);
 
-  // The shared, capped, cached follow list (invalidated on follow/unfollow/block)
-  // — the same one the feed filters by — not an unbounded `follow.findMany`.
-  // Independent reads, issued together.
-  const [hidden, followingIds] = await Promise.all([
-    getHiddenAuthorIds(viewerId),
-    viewerId ? getFollowingIds(viewerId) : Promise.resolve<string[]>([]),
-  ]);
+  const hidden = await getHiddenAuthorIds(viewerId);
 
   // Two steps, on purpose (WS8). Step 1 picks the page's ids as a keyset scan of
   // the tag's own post_hashtag rows, newest first, via
@@ -57,13 +50,23 @@ export async function listTagFeed(
   // `ORDER BY rmheet.createdAt DESC, rmheet.id DESC`.
   //
   // Every visibility predicate of the old `where` is kept in SQL form: not
-  // deleted, not a hidden author, audienceWhere() (PUBLIC / own / FOLLOWERS the
-  // viewer follows; SUPPORTERS and CIRCLE are empty sets, as before), and
+  // deleted, not a hidden author, the audience rule of audienceWhereExact()
+  // (PUBLIC / own / FOLLOWERS the viewer follows / SUPPORTERS of an author the
+  // viewer supports / CIRCLE of a circle the viewer is in), and
   // communityVisibleWhere() (private community posts only for its members).
+  // The follow, membership and circle checks are correlated EXISTS probes on
+  // their unique indexes: exact for any follow count (no capped id list) and
+  // nothing bound as a parameter.
   const audience = viewerId
     ? Prisma.sql`(r.audience = 'PUBLIC'::"RMHarkAudience"
         OR r."userId" = ${viewerId}
-        OR (r.audience = 'FOLLOWERS'::"RMHarkAudience" AND r."userId" = ANY(${followingIds}::text[])))`
+        OR (r.audience = 'FOLLOWERS'::"RMHarkAudience" AND EXISTS (
+          SELECT 1 FROM follow f WHERE f."followerId" = ${viewerId} AND f."followingId" = r."userId"))
+        OR (r.audience = 'SUPPORTERS'::"RMHarkAudience" AND EXISTS (
+          SELECT 1 FROM creator_membership cm
+          WHERE cm."supporterId" = ${viewerId} AND cm."creatorId" = r."userId" AND cm."expiresAt" > now()))
+        OR (r.audience = 'CIRCLE'::"RMHarkAudience" AND EXISTS (
+          SELECT 1 FROM close_friend cf WHERE cf."memberId" = ${viewerId} AND cf."ownerId" = r."userId")))`
     : Prisma.sql`r.audience = 'PUBLIC'::"RMHarkAudience"`;
   const communityVisible = viewerId
     ? Prisma.sql`(r."communityId" IS NULL OR NOT EXISTS (
