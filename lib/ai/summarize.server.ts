@@ -6,8 +6,9 @@
  */
 
 import OpenAI from 'openai';
+import { timedAiFetch } from './timed-fetch.server';
 
-const deepseek = new OpenAI({
+const deepseek = new OpenAI({ fetch: timedAiFetch,
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
