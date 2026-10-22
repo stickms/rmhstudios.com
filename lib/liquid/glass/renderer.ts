@@ -162,14 +162,19 @@ export class GlassRenderer {
     return true;
   }
 
-  /** Upload a page snapshot. The bitmap is NOT closed here; the caller owns it. */
+  /**
+   * Upload a page snapshot. The bitmap is NOT closed here; the caller owns it. The shader reads it as premultiplied
+   * (transparent texels must stay transparent, not turn into an opaque black rim), so a canvas source is premultiplied
+   * on upload. An ImageBitmap ignores the flag; whichever way the browser hands it over, a fully transparent texel
+   * is rgb 0 with alpha 0, and the shader clamps colour to alpha, so a straight-alpha upload cannot paint black either.
+   */
   setScene(source: ImageBitmap | HTMLCanvasElement): boolean {
     const gl = this.gl;
     if (!gl || !this.tex || this.lost) return false;
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.tex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     try {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
     } catch {
