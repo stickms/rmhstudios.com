@@ -72,7 +72,12 @@ function pushWindow(mem: RuleMemory, key: string, value: number, size: number): 
 }
 
 /** Increase of a cumulative per-process counter since the last check (a restarted process starts from 0). */
-function counterDelta(mem: RuleMemory, snaps: ProcessSnapshot[], read: (s: ProcessSnapshot) => number, name: string): number {
+function counterDelta(
+  mem: RuleMemory,
+  snaps: ProcessSnapshot[],
+  read: (s: ProcessSnapshot) => number,
+  name: string,
+): number {
   let total = 0;
   for (const s of snaps) {
     const key = `${s.service}:${s.hostname}:${s.pid}`;
@@ -87,7 +92,9 @@ function counterDelta(mem: RuleMemory, snaps: ProcessSnapshot[], read: (s: Proce
 
 /** Complete one-minute buckets in the last `minutes`. */
 function lastMinutes(series: MinuteBucket[], now: number, minutes: number): MinuteBucket[] {
-  return series.filter((b) => b.t + 60_000 <= now && b.t >= now - (minutes + 1) * 60_000).slice(-minutes);
+  return series
+    .filter((b) => b.t + 60_000 <= now && b.t >= now - (minutes + 1) * 60_000)
+    .slice(-minutes);
 }
 
 function windowStats(buckets: MinuteBucket[]) {
@@ -130,11 +137,14 @@ export function evaluate(input: CheckInputs, mem: RuleMemory): Condition[] {
     const snaps = [...o.processes, ...o.hubs.filter((h): h is ProcessSnapshot => !('error' in h))];
     // Forget processes that are gone (restarts mint new pids), so memory stays bounded.
     const present = new Set(snaps.map((s) => `${s.service}:${s.hostname}:${s.pid}`));
-    for (const key of Object.keys(mem.lastCounters)) if (!present.has(key)) delete mem.lastCounters[key];
+    for (const key of Object.keys(mem.lastCounters))
+      if (!present.has(key)) delete mem.lastCounters[key];
     const byService = new Map<string, ProcessSnapshot[]>();
     for (const s of snaps) byService.set(s.service, [...(byService.get(s.service) ?? []), s]);
     for (const [service, list] of byService) {
-      const heap = Math.max(...list.map((s) => (s.memory.heapLimit ? pct(s.memory.heapUsed, s.memory.heapLimit) : 0)));
+      const heap = Math.max(
+        ...list.map((s) => (s.memory.heapLimit ? pct(s.memory.heapUsed, s.memory.heapLimit) : 0)),
+      );
       out.push({
         id: 'B02',
         instance: service,
@@ -159,9 +169,24 @@ export function evaluate(input: CheckInputs, mem: RuleMemory): Condition[] {
     }
 
     // ── Process-level errors (lib/perf/process-guards.ts counters) ────────────
-    const rejections = pushWindow(mem, 'rejections', counterDelta(mem, snaps, (s) => s.counters['process.unhandled_rejection'] ?? 0, 'rej'), 10);
-    const uncaught = pushWindow(mem, 'uncaught', counterDelta(mem, snaps, (s) => s.counters['process.uncaught_exception'] ?? 0, 'unc'), 10);
-    const poolErrors = pushWindow(mem, 'poolErrors', counterDelta(mem, snaps, (s) => s.counters['db.pool_error'] ?? 0, 'pool'), 10);
+    const rejections = pushWindow(
+      mem,
+      'rejections',
+      counterDelta(mem, snaps, (s) => s.counters['process.unhandled_rejection'] ?? 0, 'rej'),
+      10,
+    );
+    const uncaught = pushWindow(
+      mem,
+      'uncaught',
+      counterDelta(mem, snaps, (s) => s.counters['process.uncaught_exception'] ?? 0, 'unc'),
+      10,
+    );
+    const poolErrors = pushWindow(
+      mem,
+      'poolErrors',
+      counterDelta(mem, snaps, (s) => s.counters['db.pool_error'] ?? 0, 'pool'),
+      10,
+    );
     out.push({
       id: 'B14',
       sev: 3,
@@ -243,7 +268,8 @@ export function evaluate(input: CheckInputs, mem: RuleMemory): Condition[] {
         sev: money ? 2 : 3,
         title: money ? `Economy job failing: ${q.name}` : `Background job failing: ${q.name}`,
         active: money ? recent > 0 : recent >= 5,
-        detail: `${recent} new failed job(s) in ${q.name} in the last 15m (${q.failedCount} retained). ${money ? 'Coins/gifts may not have been applied.' : ''}`.trim(),
+        detail:
+          `${recent} new failed job(s) in ${q.name} in the last 15m (${q.failedCount} retained). ${money ? 'Coins/gifts may not have been applied.' : ''}`.trim(),
         forChecks: 1,
         clearChecks: 15,
       });

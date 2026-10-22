@@ -29,14 +29,25 @@ export interface OncallAlert {
   source: string;
 }
 
-export function signOncall(secret: string, ts: string, nonce: string, method: string, path: string, body: string): string {
-  const mac = createHmac('sha256', secret).update(`v1:${ts}:${nonce}:${method.toUpperCase()}:${path}:${body}`);
+export function signOncall(
+  secret: string,
+  ts: string,
+  nonce: string,
+  method: string,
+  path: string,
+  body: string,
+): string {
+  const mac = createHmac('sha256', secret).update(
+    `v1:${ts}:${nonce}:${method.toUpperCase()}:${path}:${body}`,
+  );
   return `v1=${mac.digest('hex')}`;
 }
 
 export interface OncallClient {
   heartbeat(name: string): Promise<void>;
   send(alert: OncallAlert): Promise<void>;
+  /** Signed GET; resolves to the parsed JSON body. */
+  get<T>(path: string): Promise<T>;
 }
 
 export function oncallClient(
@@ -78,8 +89,25 @@ export function oncallClient(
     throw last instanceof Error ? last : new Error(String(last));
   }
 
+  async function get<T>(path: string): Promise<T> {
+    const ts = String(Math.floor(Date.now() / 1000));
+    const nonce = randomBytes(16).toString('hex');
+    const res = await fetchImpl(`${base}${path}`, {
+      headers: {
+        'user-agent': 'rmh-oncall-client/1',
+        'x-oncall-timestamp': ts,
+        'x-oncall-nonce': nonce,
+        'x-oncall-signature': signOncall(secret, ts, nonce, 'GET', path, ''),
+      },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!res.ok) throw new Error(`oncall ${path}: HTTP ${res.status}`);
+    return (await res.json()) as T;
+  }
+
   return {
     heartbeat: (name) => post(`/v1/heartbeat/${name}`, ''),
     send: (alert) => post('/v1/alert', JSON.stringify(alert)),
+    get,
   };
 }
