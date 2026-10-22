@@ -59,5 +59,12 @@ export const Route = createFileRoute('/_site/')({
 
 function Home() {
   const { initialFeed } = Route.useLoaderData();
+  // On first load the loader never ran here: this is the router's copy of the
+  // streamed promise, deserialized from the SSR payload and untracked. Tracking
+  // it before `<Await>` reads it lets hydration take the already-streamed page
+  // synchronously, so the server-rendered feed hydrates in place instead of
+  // suspending and being client-rendered over (docs/performance-audit-2026-10-21.md
+  // §Home LCP). Idempotent, and a no-op on the server.
+  trackPromise(initialFeed);
   return <RadialFeed initialFeed={initialFeed} />;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useEffect, useState, type ReactNode } from 'react';
+import { startTransition, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 
 /**
  * Paint the top of a page first, the rest a moment later — on page switches only.
@@ -88,8 +88,30 @@ function shouldDeferNow(): boolean {
  * hydration and on back/forward, for the reasons above). `enabled` is read once,
  * at mount.
  */
+/**
+ * True while THIS component is rendering on the server or hydrating, false on a
+ * client-only mount. React reads `getServerSnapshot` for every hydrating render
+ * — including the separate, later pass in which a dehydrated Suspense boundary
+ * hydrates — so this is per-component, where `markDocumentHydrated` is per
+ * document. The difference is not academic: the home feed sits inside the
+ * `<Suspense>` around `<Await>`, which hydrates AFTER the root's commit has
+ * already flipped `documentHydrated`; reading only the flag, the wheel rendered
+ * its first four cards against fifteen server-rendered ones, hydration failed
+ * (#418), and React client-rendered the whole first feed over the server HTML
+ * (docs/performance-audit-2026-10-21.md §Home LCP).
+ */
+const noopSubscribe = () => () => {};
+function useIsHydrating(): boolean {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => false,
+    () => true,
+  );
+}
+
 export function useDeferOnNavigate(enabled = true): boolean {
-  const [ready, setReady] = useState(() => !(enabled && shouldDeferNow()));
+  const hydrating = useIsHydrating();
+  const [ready, setReady] = useState(() => hydrating || !(enabled && shouldDeferNow()));
 
   useEffect(() => {
     if (ready) return;

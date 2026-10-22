@@ -4672,6 +4672,16 @@ input[type='number'] {
 .page-root > [data-route-pending] {
   animation: none !important;
 }
+/* Not on the document's own first paint. The enter is for ARRIVING by a
+ * navigation; on a fresh load the server-rendered page is already there, and
+ * fading it in from opacity 0 hid it at first contentful paint — an element
+ * painted at opacity 0 is not an LCP candidate, so the home feed's first card
+ * never counted (docs/performance-audit-2026-10-21.md §Home LCP).
+ * `data-navigated` is set on the first client navigation (`app/routes/__root.tsx`),
+ * which marks the page then on screen complete first so it never replays. */
+html:not([data-navigated]) .page-root > * {
+  animation: none;
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    §7.1 — `data-motion`: the enter/exit vocabulary for floating surfaces
