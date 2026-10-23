@@ -10,23 +10,24 @@ selected states and status indicators. No glass role uses `backdrop-filter`.
 
 ## Roles and rendering budget
 
-| Surface                                         | Material                                    | Snapshot refraction                 |
-| ----------------------------------------------- | ------------------------------------------- | ----------------------------------- |
-| `glass-fill`, `glass-inset`, buttons and fields | CSS clear coat and hairline                 | No                                  |
-| `glass-pane`, `app-glass`                       | Bounded shader bevel with live DOM interior | Explicit opt-in only                |
-| `glass-chrome`, `glass-overlay`                 | Bounded shader bevel with live DOM interior | Yes, when a settled snapshot exists |
-| `[data-liquid-glass]`                           | Explicit shader opt-in                      | With `="refract"`                   |
+| Surface                                         | Material                                     | Snapshot refraction                 |
+| ----------------------------------------------- | -------------------------------------------- | ----------------------------------- |
+| `glass-fill`, `glass-inset`, buttons and fields | Shader bevel within budget; CSS coat past it | Explicit opt-in only                |
+| `glass-pane`, `app-glass`                       | Bounded shader bevel with live DOM interior  | Explicit opt-in only                |
+| `glass-chrome`, `glass-overlay`                 | Bounded shader bevel with live DOM interior  | Yes, when a settled snapshot exists |
+| `[data-liquid-glass]`                           | Explicit shader opt-in                       | With `="refract"`                   |
 
 A single `GlassRenderer` owns one WebGL2 context, program and scene texture. It copies
-finished draws to per-surface 2D canvases behind the live content. Only eight visible
-surfaces are admitted, ordered overlay → chrome → pane → other explicit opt-ins.
-Repeated cards and small controls never compete for that budget by default. Canvases
+finished draws to per-surface 2D canvases behind the live content. Up to 24 visible
+surfaces are admitted, ordered overlay → chrome → pane → fill → control → other, so a
+screen full of buttons never starves a card or a menu; anything past the budget keeps the
+CSS material. Canvases
 are excluded from discovery so an engine-owned canvas cannot adopt itself recursively.
 `data-liquid-material="off"` and `data-liquid-glass="off"` opt out.
 
 Surfaces smaller than 16px or larger than 640,000 CSS px² keep the CSS material.
 Backing scale is capped at 2, or 1.5 above 250,000 CSS px². The shared framebuffer grows
-only when necessary. Bevels are 3–12 CSS px; optical thickness is 0.6 times the bevel.
+only when necessary. Bevels are 3–24 CSS px; optical thickness is 0.95 times the bevel.
 The interior remains transparent so live text, video and input never acquire a stale
 second image. Content panes do not sample their own captured text.
 

@@ -93,7 +93,7 @@ try {
     <header class="glass-chrome" id="chrome"><b>Chrome</b> <button id="btn">Press</button></header>
     <main>
       <section class="glass-pane" id="pane"><h2 style="margin:0">Pane</h2><input id="field" aria-label="Message"></section>
-      <section class="glass-fill" id="fill">Fill: a repeated card, CSS material</section>
+      <section class="glass-fill" id="fill">Fill: a repeated card, drawn last</section>
       <section class="glass-pane" id="off" data-liquid-material="off">Opted out</section>
       <section class="glass-chrome glass-chrome--aside" id="aside">Opaque aside</section>
       <div class="glass-pane" id="tiny"></div>
@@ -126,12 +126,12 @@ try {
   check('a visible glass-pane gets a canvas', await has('#pane'));
   check('sticky glass-chrome gets a canvas', await has('#chrome'));
   check('a fixed glass-overlay gets a canvas', await has('#overlay'));
-  check('glass-fill keeps the CSS material without spending a shader slot', !(await has('#fill')));
+  check('glass-fill (a repeated card) gets a lit canvas', await has('#fill'));
   check('data-liquid-material="off" never does', !(await has('#off')));
   check('the opaque aside never does', !(await has('#aside')));
   check('a surface too small for a bevel never does', !(await has('#tiny')));
   const count = await page.$$eval('canvas[data-liquid-glass]', (n) => n.length);
-  check(`exactly the three eligible surfaces are drawn (${count})`, count === 3);
+  check(`exactly the four eligible surfaces are drawn (${count})`, count === 4);
 
   // ── Behind the content, taking no input ──
   const stack = await page.$eval('#pane', (host) => {
@@ -219,7 +219,7 @@ try {
   check('floating glass has an opaque, refracted rim', (await alphaAt('#chrome', 0.5, 0.96)) > 200);
   check(
     'content glass never refracts a stale duplicate of its own text or hover',
-    (await alphaAt('#pane', 0.5, 0.96)) < 200,
+    (await alphaAt('#fill', 0.5, 0.96)) < 200 && (await alphaAt('#pane', 0.5, 0.96)) < 200,
   );
 
   // ── Cursor light settles, while a tap never emits a wave ──
@@ -336,7 +336,7 @@ try {
   await settle(400);
   check(
     'and clearing it brings them back',
-    (await page.$$('canvas[data-liquid-glass]')).length === 3,
+    (await page.$$('canvas[data-liquid-glass]')).length === 4,
   );
   await page.emulateMedia({ forcedColors: 'active' });
   await settle(300);
@@ -361,7 +361,7 @@ try {
   await settle(300);
   check(
     'and one removed leaves no canvas behind',
-    (await page.$$('canvas[data-liquid-glass]')).length === 3,
+    (await page.$$('canvas[data-liquid-glass]')).length === 4,
   );
 
   await page.screenshot({ path: join(out, `${browserName}-engine.png`) });

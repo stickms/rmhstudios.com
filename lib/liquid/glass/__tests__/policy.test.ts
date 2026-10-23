@@ -17,11 +17,11 @@ import {
 
 describe('bevel and thickness', () => {
   it('scales with the short side and never exceeds sane limits', () => {
-    expect(bevelFor(1200, 56, 0)).toBeLessThanOrEqual(12);
-    expect(bevelFor(1200, 56, 0)).toBeGreaterThanOrEqual(4);
-    expect(bevelFor(400, 300, 24)).toBeLessThanOrEqual(12);
+    expect(bevelFor(1200, 56, 0)).toBeLessThanOrEqual(24);
+    expect(bevelFor(1200, 56, 0)).toBeGreaterThanOrEqual(8);
+    expect(bevelFor(400, 300, 24)).toBeLessThanOrEqual(24);
     expect(bevelFor(30, 30, 15)).toBeLessThan(15);
-    expect(bevelFor(2000, 2000, 80)).toBe(12);
+    expect(bevelFor(2000, 2000, 80)).toBe(24);
   });
   it('refracts less deep than the bevel is wide, so rim content is not sampled from past the band', () => {
     for (const b of [8, 12, 18]) expect(thicknessFor(b)).toBeLessThan(b);

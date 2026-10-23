@@ -6,9 +6,9 @@
 export const GLASS_BUDGET = {
   /**
    * Surfaces drawn at once. Each is one canvas and one draw; more costs memory before it costs frames. Only VISIBLE surfaces
-   * count. Repeated cards and small controls use CSS rather than additional canvases.
+   * count, so this is "how many cards fit on screen", with headroom.
    */
-  maxSurfaces: 8,
+  maxSurfaces: 24,
   /** CSS px². Above this a surface falls back to the CSS material. */
   maxArea: 640_000,
   /** CSS px. Smaller than this has no room for a bevel. */
@@ -22,13 +22,13 @@ export const GLASS_BUDGET = {
 /** Bevel width for a surface: wide enough to refract visibly, never so wide that content sits inside it. */
 export function bevelFor(width: number, height: number, radius: number): number {
   const short = Math.min(width, height);
-  const wanted = Math.min(short * 0.14, Math.max(radius * 0.5, 8));
-  return Math.max(3, Math.min(12, Math.round(wanted), Math.floor(short / 2) - 1));
+  const wanted = Math.min(short * 0.26, Math.max(radius * 0.9, 16));
+  return Math.max(3, Math.min(24, Math.round(wanted), Math.floor(short / 2) - 1));
 }
 
 /** How far behind the surface the page appears to be: the reach of refraction. Shorter than the bevel by design. */
 export function thicknessFor(bevel: number): number {
-  return bevel * 0.6;
+  return bevel * 0.95;
 }
 
 /** Backing-store scale for a surface. */

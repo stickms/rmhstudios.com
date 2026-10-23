@@ -4,7 +4,7 @@
  * Shader-backed surfaces own their lighting. Clicks and taps never emit waves.
  */
 const SURFACES =
-  '.glass-fill,.glass-pane,.glass-chrome,.glass-overlay,.glass-interactive,.app-glass,[data-liquid-surface],.app-theme [class~="bg-(--app-surface)"]';
+  '.glass-fill,.glass-pane,.glass-chrome,.glass-overlay,.glass-interactive,.app-glass,[data-evert],[data-liquid-surface],.app-theme [class~="bg-(--app-surface)"]';
 const EXCLUDE =
   '[data-liquid-motion="off"],[data-fluid-press="none"],[data-fluid-press="off"],.eversion-overlay,.evert-ghost,.radial-globe__stage,canvas,input,textarea,select,[contenteditable="true"],[disabled],[aria-disabled="true"]';
 export function installLiquidInteractions(doc: Document = document): () => void {
