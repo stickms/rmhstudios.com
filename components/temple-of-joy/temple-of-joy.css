@@ -3942,15 +3942,6 @@ button.toj-row:active:not(:disabled) {
     }
   }
 
-  /* The switch is the control a thumb misses most often: the track is only
-     24px tall. Rather than redesign it, grow an invisible hit area past it —
-     the switch looks identical and answers to a 44px target. */
-  .toj-switch::before {
-    content: '';
-    position: absolute;
-    inset: -10px -8px;
-  }
-
   /* A range input's native thumb is fine on touch, but the track needs the
      height to be draggable without grabbing the panel underneath. */
   .toj-slider {

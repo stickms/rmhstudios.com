@@ -766,12 +766,11 @@ html[data-app-dark='1'] .pf2e-segmented-thumb {
   }
 }
 
-/* A UISegmentedControl is 32pt tall and a switch is 51×31pt — Apple's own
-   sizes, which the page should not fatten. They meet the 44px minimum with a
-   transparent expander instead. Vertical only: their neighbours sit beside
-   them, so nothing is stolen. */
-.pf2e-segment::after,
-.pf2e-switch::after {
+/* A UISegmentedControl is 32pt tall — Apple's own size, which the page should
+   not fatten. It meets the 44px minimum with a transparent expander instead.
+   Vertical only: its neighbours sit beside it, so nothing is stolen. (The
+   switch is the shared ui/switch, which carries its own 44px hit area.) */
+.pf2e-segment::after {
   content: '';
   position: absolute;
   left: 0;
@@ -780,22 +779,6 @@ html[data-app-dark='1'] .pf2e-segmented-thumb {
   height: 44px;
   transform: translateY(-50%);
   pointer-events: none;
-}
-
-/* The switch already uses ::after for its knob, so its hit expander is a
-   ::before instead. */
-.pf2e-switch::after {
-  content: none;
-}
-
-.pf2e-switch::before {
-  content: '';
-  position: absolute;
-  left: -4px;
-  right: -4px;
-  top: 50%;
-  height: 44px;
-  transform: translateY(-50%);
 }
 
 /* ── Availability ──────────────────────────────────────────────────────────
