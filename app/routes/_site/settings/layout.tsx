@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { WidgetEditor } from '@/components/home/WidgetEditor';
 import { SidebarEditMode } from '@/components/site/SidebarEditMode';
+import { DesktopNavSetting } from '@/components/settings/DesktopNavSetting';
 import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
 
 export const Route = createFileRoute('/_site/settings/layout')({
@@ -33,6 +34,15 @@ function LayoutSettingsPage() {
           })}
         >
           <WidgetEditor />
+        </SettingsSection>
+
+        <SettingsSection
+          title={t('desktop-nav', { defaultValue: 'Desktop navigation' })}
+          description={t('desktop-nav-desc', {
+            defaultValue: 'Choose what fills the left column on a wide screen.',
+          })}
+        >
+          <DesktopNavSetting />
         </SettingsSection>
 
         <SettingsSection

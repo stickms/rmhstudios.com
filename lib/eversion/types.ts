@@ -102,6 +102,13 @@ export interface GlobeStartState {
   pitch: number;
   yawVel: number;
   pitchVel: number;
+  /**
+   * Twist about the viewing axis, applied LAST: the hub's globe is a free
+   * trackball, so its orientation is `Rz(roll)·Rx(pitch)·Ry(yaw)`. Absent = 0
+   * (an upright pose — every caller other than the hub's globe).
+   */
+  roll?: number;
+  rollVel?: number;
   centre: readonly [number, number];
   radius: number;
 }
@@ -383,6 +390,7 @@ export const CHANNEL_IDS = [
   'evert',
   'spin',
   'tilt',
+  'roll',
   'afterMix',
   'unwrap',
   'pageAlpha',
@@ -420,8 +428,13 @@ export interface TimelineSnapshot {
   evert: number;
   /** Yaw about the polar axis, radians. Unbounded (turns accumulate). */
   spin: number;
-  /** Axis tilt toward the viewer, radians. `R = Rx(tilt)·Ry(spin)` (`SPIN_AXIS`). */
+  /** Axis tilt toward the viewer, radians. `R = Rz(roll)·Rx(tilt)·Ry(spin)` (`SPIN_AXIS`). */
   tilt: number;
+  /**
+   * Twist about the viewing axis, radians: the hub trackball's roll at the hand-off,
+   * unwound to 0 by the time the tilt is level.
+   */
+  roll: number;
   /** Globe radius in CSS px (effective: the channel times the extent fit). */
   radius: number;
   /** Globe centre in CSS px, viewport coordinates (effective: the channel times the extent fit). */

@@ -17,7 +17,7 @@ import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
+import type { NavLeaf } from '@/lib/sidebar-nav';
 import { isEversionEnabled } from '@/lib/eversion/flags';
 import type { EntryPoint } from '@/lib/eversion/marks';
 import type { EversionNode, GlobeStartState } from '@/lib/eversion/types';
@@ -37,6 +37,7 @@ import { inShell } from './eversion/eversion-nav';
 import { createHandOff, type HandOffHow } from './hub-handoff';
 import { whenQuiet } from './quiet';
 import { RmhLogo } from './RmhLogo';
+import { isGlobeDocked, useGlobeDestinations } from './globe-dock';
 
 /**
  * The globe is the single biggest module in the `_site` shell's eager graph, and
@@ -196,18 +197,7 @@ export function RadialHub() {
    */
   const [rehearsing, setRehearsing] = useState(false);
 
-  const leaves = useMemo<NavLeaf[]>(() => {
-    const out: NavLeaf[] = [];
-    for (const item of SIDEBAR_NAV) {
-      if (isNavGroup(item)) out.push(...item.children);
-      else out.push(item);
-    }
-    return out.filter((leaf) => {
-      if (leaf.requiresAuth && !session) return false;
-      if (leaf.requiresAdmin && !user?.isAdmin) return false;
-      return true;
-    });
-  }, [session, user?.isAdmin]);
+  const leaves = useGlobeDestinations();
 
   const clearTimer = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -328,6 +318,9 @@ export function RadialHub() {
     // enough to stay behind the page's own first paint.
     // Once the chunk is in, rehearse the open — see `rehearsing` below.
     const warm = () => {
+      // Docked on a wide screen the orb is retired and the dock owns the globe;
+      // a rehearsal mount would only take the shared jelly canvas away from it.
+      if (isGlobeDocked()) return;
       // The globe eversion's warm-up is the root's now (`EversionRoot`).
       void preloadGlobe()?.then(() => {
         if (rehearsed || phaseRef.current !== 'closed') return;

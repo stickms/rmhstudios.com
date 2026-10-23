@@ -555,6 +555,7 @@ export function createRenderer(
     if (l.u_stageParams) writeStageParams(l.u_stageParams, evert);
     g.uniform1f(l.u_spin, s.spin);
     g.uniform1f(l.u_tilt, s.tilt);
+    g.uniform1f(l.u_roll, s.roll);
     g.uniform1f(l.u_radius, s.radius);
     g.uniform2f(l.u_centre, s.centreX, s.centreY);
     g.uniform1f(l.u_afterMix, s.afterMix);

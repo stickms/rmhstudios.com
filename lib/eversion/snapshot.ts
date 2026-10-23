@@ -27,6 +27,7 @@ export function createSnapshot(): TimelineSnapshot {
     evert: 0,
     spin: 0,
     tilt: 0,
+    roll: 0,
     radius: 0,
     centreX: 0,
     centreY: 0,
@@ -50,6 +51,7 @@ export function copySnapshot(
   dst.evert = src.evert;
   dst.spin = src.spin;
   dst.tilt = src.tilt;
+  dst.roll = src.roll;
   dst.radius = src.radius;
   dst.centreX = src.centreX;
   dst.centreY = src.centreY;

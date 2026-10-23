@@ -73,6 +73,7 @@ export const UNIFORMS = [
   },
   { name: 'u_spin', type: 'float', cadence: 'frame', from: 'snapshot.spin (radians)' },
   { name: 'u_tilt', type: 'float', cadence: 'frame', from: 'snapshot.tilt (radians)' },
+  { name: 'u_roll', type: 'float', cadence: 'frame', from: 'snapshot.roll (radians)' },
   { name: 'u_radius', type: 'float', cadence: 'frame', from: 'snapshot.radius (CSS px)' },
   {
     name: 'u_centre',

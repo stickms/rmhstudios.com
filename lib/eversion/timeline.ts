@@ -187,6 +187,7 @@ const C_HUB_FADE = CHANNEL_IDS.indexOf('hubFade');
 const C_EVERT = CHANNEL_IDS.indexOf('evert');
 const C_SPIN = CHANNEL_IDS.indexOf('spin');
 const C_TILT = CHANNEL_IDS.indexOf('tilt');
+const C_ROLL = CHANNEL_IDS.indexOf('roll');
 const C_AFTER_MIX = CHANNEL_IDS.indexOf('afterMix');
 const C_UNWRAP = CHANNEL_IDS.indexOf('unwrap');
 const C_PAGE_ALPHA = CHANNEL_IDS.indexOf('pageAlpha');
@@ -200,6 +201,7 @@ const CHANNEL_INDEX: Readonly<Record<ChannelId, number>> = {
   evert: C_EVERT,
   spin: C_SPIN,
   tilt: C_TILT,
+  roll: C_ROLL,
   afterMix: C_AFTER_MIX,
   unwrap: C_UNWRAP,
   pageAlpha: C_PAGE_ALPHA,
@@ -509,6 +511,7 @@ class TimelineEngine {
     this.plan(C_UNWRAP, PLAN_MS.unwrap[0], UNWRAP_SPAN_MS, 0);
 
     this.planInitialTilt(globe.pitch * DEG, clampSpeed(globe.pitchVel));
+    this.planInitialRoll((globe.roll ?? 0) * DEG, clampSpeed(globe.rollVel ?? 0));
     this.planInitialSpin(globe.yaw * DEG, clampSpeed(globe.yawVel));
     this.spinDir = this.spinGoal < globe.yaw * DEG ? -1 : 1;
   }
@@ -549,6 +552,17 @@ class TimelineEngine {
     setSegment(this.seg, base + n * SEG_STRIDE, tStart, rise, x, vStart, 0, peak, 0, 0);
     this.nSeg[C_TILT] = n + 1;
     this.addSlot(C_TILT, Math.max(PLAN_MS.tiltEnd - (tStart + rise), MIN_SEG_MS), 0);
+  }
+
+  /**
+   * Roll: the hub trackball's twist about the viewing axis → 0, level by the time
+   * the tilt is. The hub's roll velocity is honoured (C¹ at the hand-off); one
+   * quintic over the tilt's whole window is long enough that even a hard twist
+   * only carries on a little before it turns round.
+   */
+  protected planInitialRoll(roll0: number, v0: number): void {
+    setSegment(this.seg, C_ROLL * CH_STRIDE, 0, PLAN_MS.tiltEnd, roll0, v0, 0, 0, 0, 0);
+    this.nSeg[C_ROLL] = 1;
   }
 
   /**
@@ -954,6 +968,7 @@ class TimelineEngine {
     this.timer[T_UNCOVER] = this.uncoverAt(this.unwrapEnd, u);
     // The tilt must be level by the same moment, however far along it is.
     if (this.channelEnd(C_TILT) > landBy) this.plan(C_TILT, u, Math.max(landBy - u, MIN_SEG_MS), 0);
+    if (this.channelEnd(C_ROLL) > landBy) this.plan(C_ROLL, u, Math.max(landBy - u, MIN_SEG_MS), 0);
   }
 
   /**
@@ -1106,6 +1121,8 @@ class TimelineEngine {
     s.spin = e[0]!;
     this.eval(C_TILT, t, e);
     s.tilt = e[0]!;
+    this.eval(C_ROLL, t, e);
+    s.roll = e[0]!;
     this.eval(C_HUB_FADE, t, e);
     s.hubFade = clamp01(e[0]!);
     this.eval(C_AFTER_MIX, t, e);
@@ -1194,6 +1211,7 @@ export class Timeline extends TimelineEngine implements TimelineApi {
     this.compressChannel(C_HUB_FADE, tf, r);
     this.compressChannel(C_AFTER_MIX, tf, r);
     this.compressChannel(C_TILT, tf, r);
+    this.compressChannel(C_ROLL, tf, r);
     // The crossfade's end is read back from the channel, so the gate agrees with
     // the segment even when compression hit the minimum segment length.
     if (this.afterState === AFTER_FADING && this.readyAt > tf) {

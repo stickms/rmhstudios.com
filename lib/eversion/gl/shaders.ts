@@ -600,12 +600,14 @@ ${LIQUID_GLOBE_MATERIAL_GLSL}
 float fresnelSchlick(float c) {
   return glassFresnel(c).g;
 }
-/* R = Rx(tilt) * Ry(spin), as the vertex shader poses the surface. */
+/* R = Rz(roll) * Rx(tilt) * Ry(spin), as the vertex shader poses the surface. */
 vec3 poseDir(vec3 q) {
   float cy = cos(u_spin), sy = sin(u_spin), ct = cos(u_tilt), st = sin(u_tilt);
+  float cr = cos(u_roll), sr = sin(u_roll);
   float x1 = q.x * cy + q.z * sy;
   float z1 = -q.x * sy + q.z * cy;
-  return vec3(x1, q.y * ct - z1 * st, q.y * st + z1 * ct);
+  float y2 = q.y * ct - z1 * st;
+  return vec3(x1 * cr - y2 * sr, x1 * sr + y2 * cr, q.y * st + z1 * ct);
 }
 /* High: a flowing micro-surface riding the body's own coordinates (so it travels with the eversion), strongest
    while the sphere is turning inside out. Its gradient tilts the shading normal: the liquid sheen. */
@@ -939,6 +941,7 @@ uniform float u_wrap;
 uniform float u_unwrap;
 uniform float u_spin;
 uniform float u_tilt;
+uniform float u_roll;
 uniform float u_radius;
 uniform vec2 u_centre;
 uniform vec2 u_viewport;
@@ -968,11 +971,12 @@ float rippleAt(float age, float dist) {
   return RIPPLE_AMPLITUDE * (1.0 - q * q) * exp(-0.5 * q * q) * decay * decay;
 }
 
-/* R = Rx(tilt) * Ry(spin): the same arithmetic as viewOf in lib/globe.ts. */
-vec3 spinTilt(vec3 q, float cy, float sy, float ct, float st) {
+/* R = Rz(roll) * Rx(tilt) * Ry(spin): viewOf in lib/globe.ts, then the hub trackball's twist (0 once unwound). */
+vec3 spinTilt(vec3 q, float cy, float sy, float ct, float st, float cr, float sr) {
   float x1 = q.x * cy + q.z * sy;
   float z1 = -q.x * sy + q.z * cy;
-  return vec3(x1, q.y * ct - z1 * st, q.y * st + z1 * ct);
+  float y2 = q.y * ct - z1 * st;
+  return vec3(x1 * cr - y2 * sr, x1 * sr + y2 * cr, q.y * st + z1 * ct);
 }
 
 void main() {
@@ -987,8 +991,9 @@ void main() {
   vec3 n = evertNormal(theta, phi, fr);
   float cy = cos(u_spin), sy = sin(u_spin);
   float ct = cos(u_tilt), st = sin(u_tilt);
-  vec3 v = spinTilt(F, cy, sy, ct, st);
-  vec3 nv = spinTilt(n, cy, sy, ct, st);
+  float cr = cos(u_roll), sr = sin(u_roll);
+  vec3 v = spinTilt(F, cy, sy, ct, st, cr, sr);
+  vec3 nv = spinTilt(n, cy, sy, ct, st, cr, sr);
 
 #if QUALITY >= 1
   /* Liquid: a slow, low-order swell travelling over the surface (it rides the body's own (theta, phi), so it
@@ -1099,6 +1104,7 @@ uniform float u_planet;
 uniform float u_time;
 uniform float u_spin;
 uniform float u_tilt;
+uniform float u_roll;
 uniform float u_pixelRatio;
 uniform vec3 u_lightDir;
 uniform vec4 u_lightCol;
