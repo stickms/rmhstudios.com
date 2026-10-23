@@ -4,7 +4,7 @@
  * The only party UI on the room's first paint: a small button. The panel and
  * the timed-comment overlay are separate chunks, loaded on click / when idle.
  */
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PartyPopper } from 'lucide-react';
 import { emit } from '@/lib/rmhtube/socket';
@@ -18,6 +18,7 @@ const Overlay = lazy(() => import('./PartyOverlay'));
 export default function PartyLauncher() {
   const { t } = useTranslation('f-watch');
   const [open, setOpen] = useState(false);
+  const panelId = useId();
   const roomId = useRmhTubeStore((s) => s.room?.roomId);
   const live = usePartyStore(
     (s) => s.party?.prediction?.status === 'open' || (!!s.party?.bingo && !s.party.bingo.winner),
@@ -34,6 +35,7 @@ export default function PartyLauncher() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
+        aria-controls={open ? panelId : undefined}
         title={t('party-title', { defaultValue: 'Watch party games' })}
         className="relative rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
       >
@@ -48,7 +50,7 @@ export default function PartyLauncher() {
       </button>
       {open && (
         <Suspense fallback={null}>
-          <Panel onClose={() => setOpen(false)} />
+          <Panel id={panelId} onClose={() => setOpen(false)} />
         </Suspense>
       )}
     </>
