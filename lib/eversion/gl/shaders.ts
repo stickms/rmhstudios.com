@@ -1214,14 +1214,12 @@ void main() {
 #endif
   vec3 page = vec3(0.0);
   if (side > 0.0) {
-    vec2 lensUv = mix(uvF, pageUv, v_morph);
-    vec3 pg = transmittedPage(u_before, lensUv, transmission, gx, gy);
+    vec3 pg = transmittedPage(u_before, uvF, transmission, gx, gy);
     page += side * pg;
   }
   if (side < 1.0) {
-    vec2 lensUv = mix(uvB, pageUv, v_morph);
-    vec3 pg = mix(transmittedPage(u_placeholder, lensUv, transmission, gx, gy),
-                  transmittedPage(u_after, lensUv, transmission, gx, gy), u_afterMix);
+    vec3 pg = mix(transmittedPage(u_placeholder, uvB, transmission, gx, gy),
+                  transmittedPage(u_after, uvB, transmission, gx, gy), u_afterMix);
     page += (1.0 - side) * pg;
   }
 
