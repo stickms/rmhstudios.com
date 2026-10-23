@@ -7,7 +7,7 @@
  *
  * It asserts what the design promises: which surfaces become glass (and which never do), that the canvas sits BEHIND the
  * content and takes no input, that the interior stays transparent (the live DOM shows through), that floating glass
- * refracts the page once a snapshot lands, that the cursor light and tap ripples move the surface and then settle, that
+ * refracts the page once a snapshot lands, that cursor light settles and taps never emit waves, that
  * nothing draws at rest, that preferences remove every canvas live, that dynamic content joins and leaves cleanly, that
  * no surface uses `backdrop-filter` (the one thing that differs per engine), and that teardown leaves no trace.
  */
@@ -93,7 +93,7 @@ try {
     <header class="glass-chrome" id="chrome"><b>Chrome</b> <button id="btn">Press</button></header>
     <main>
       <section class="glass-pane" id="pane"><h2 style="margin:0">Pane</h2><input id="field" aria-label="Message"></section>
-      <section class="glass-fill" id="fill">Fill: a repeated card, drawn last</section>
+      <section class="glass-fill" id="fill">Fill: a repeated card, CSS material</section>
       <section class="glass-pane" id="off" data-liquid-material="off">Opted out</section>
       <section class="glass-chrome glass-chrome--aside" id="aside">Opaque aside</section>
       <div class="glass-pane" id="tiny"></div>
@@ -126,12 +126,12 @@ try {
   check('a visible glass-pane gets a canvas', await has('#pane'));
   check('sticky glass-chrome gets a canvas', await has('#chrome'));
   check('a fixed glass-overlay gets a canvas', await has('#overlay'));
-  check('glass-fill (a repeated card) gets a lit canvas', await has('#fill'));
+  check('glass-fill keeps the CSS material without spending a shader slot', !(await has('#fill')));
   check('data-liquid-material="off" never does', !(await has('#off')));
   check('the opaque aside never does', !(await has('#aside')));
   check('a surface too small for a bevel never does', !(await has('#tiny')));
   const count = await page.$$eval('canvas[data-liquid-glass]', (n) => n.length);
-  check(`exactly the four eligible surfaces are drawn (${count})`, count === 4);
+  check(`exactly the three eligible surfaces are drawn (${count})`, count === 3);
 
   // ── Behind the content, taking no input ──
   const stack = await page.$eval('#pane', (host) => {
@@ -219,10 +219,10 @@ try {
   check('floating glass has an opaque, refracted rim', (await alphaAt('#chrome', 0.5, 0.96)) > 200);
   check(
     'content glass never refracts a stale duplicate of its own text or hover',
-    (await alphaAt('#fill', 0.5, 0.96)) < 200 && (await alphaAt('#pane', 0.5, 0.96)) < 200,
+    (await alphaAt('#pane', 0.5, 0.96)) < 200,
   );
 
-  // ── Cursor light and ripples move the surface, then it settles ──
+  // ── Cursor light settles, while a tap never emits a wave ──
   const box = await (await page.$('#pane')).boundingBox();
   await page.mouse.move(box.x + box.width + 400, box.y - 200);
   await settle(450);
@@ -239,19 +239,21 @@ try {
   const gone = await snap('#pane');
   check('and returns to rest when it leaves', diff(far, gone) < 0.5);
   await page.mouse.move(box.x + box.width + 120, box.y + 30);
+  await settle(700);
+  const beforeTap = await snap('#pane');
   await page.mouse.down();
   await settle(220);
-  const rippling = await snap('#pane');
+  const duringTap = await snap('#pane');
   await page.mouse.up();
-  // Move the cursor away too, so the only thing that could still be changing the surface is the ripple.
+  // Cursor lighting may settle; a click must add no independent wave.
   await page.mouse.move(box.x + box.width + 400, box.y - 200, { steps: 4 });
   await settle(1700);
   const calm = await snap('#pane');
   check(
-    `a tap beside the pane ripples its surface (Δ ${diff(gone, rippling).toFixed(2)})`,
-    diff(gone, rippling) > 0.15,
+    `a tap beside the pane adds no wave (Δ ${diff(beforeTap, duringTap).toFixed(2)})`,
+    diff(beforeTap, duringTap) < 0.8,
   );
-  check('and the ripple has fully gone by its lifetime', diff(gone, calm) < 0.8);
+  check('and cursor lighting returns to rest', diff(gone, calm) < 0.8);
 
   // Optical tilt follows the cursor; the card's hit area and text never move.
   const origin = await page.locator('#pane').boundingBox();
@@ -281,8 +283,8 @@ try {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await settle(650);
   check(
-    'reduced motion returns the glass to a neutral optical pose',
-    (await page.evaluate(() => window.glassPoses.pane)).every((v) => v === 0),
+    'OS motion preference keeps the shared optical response',
+    (await page.evaluate(() => window.glassPoses.pane)).some((v) => v !== 0),
   );
   await page.emulateMedia({ reducedMotion: 'no-preference' });
 
@@ -334,7 +336,7 @@ try {
   await settle(400);
   check(
     'and clearing it brings them back',
-    (await page.$$('canvas[data-liquid-glass]')).length === 4,
+    (await page.$$('canvas[data-liquid-glass]')).length === 3,
   );
   await page.emulateMedia({ forcedColors: 'active' });
   await settle(300);
@@ -359,7 +361,7 @@ try {
   await settle(300);
   check(
     'and one removed leaves no canvas behind',
-    (await page.$$('canvas[data-liquid-glass]')).length === 4,
+    (await page.$$('canvas[data-liquid-glass]')).length === 3,
   );
 
   await page.screenshot({ path: join(out, `${browserName}-engine.png`) });

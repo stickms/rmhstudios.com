@@ -109,7 +109,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
   const queries = {
     transparency: win.matchMedia('(prefers-reduced-transparency: reduce)'),
     forced: win.matchMedia('(forced-colors: active)'),
-    motion: win.matchMedia('(prefers-reduced-motion: reduce)'),
     fine: win.matchMedia('(hover: hover) and (pointer: fine)'),
     print: win.matchMedia('print'),
   };
@@ -149,7 +148,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
     queries.print.matches ||
     root.matches('.reduce-transparency,.style-high-contrast,.perf-lite') ||
     !!doc.querySelector('.app-high-contrast');
-  const motionOk = () => !queries.motion.matches && !root.matches('.reduce-motion');
   // While the hub is open the page behind it is blurred and covered, and the picture taken BEFORE it opened is the one
   // the globe is refracting; a new one now would be of the wrong thing.
   const hubOpen = () => !!doc.querySelector('.radial-hub:not([data-phase="closed"])');
@@ -438,7 +436,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       again = sceneFade !== sceneFadeTarget;
     }
 
-    const lightOk = !scrolling && pointerLive && queries.fine.matches && motionOk();
+    const lightOk = !scrolling && pointerLive && queries.fine.matches;
     // Read all geometry before any canvas/attribute writes. Interleaving these
     // phases forced synchronous layout once per slab in Firefox.
     const active = [...surfaces.values()]

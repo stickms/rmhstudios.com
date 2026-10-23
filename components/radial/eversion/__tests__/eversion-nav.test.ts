@@ -428,15 +428,15 @@ describe('which layer a run draws in', () => {
 describe('the effect plays by default (owner, 2026-10-21)', () => {
   const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
 
-  it('eligibility and controls respect system and site motion preferences', () => {
+  it('eligibility and settings use the shared animation scheme', () => {
     const src = read('components/radial/eversion/useBeforeCapture.ts').replace(
       /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
       '',
     );
-    expect(src).toMatch(/reducedMotion: siteReducedMotion\(\)/);
-    expect(src).toMatch(/prefersReducedMotion\(\)/);
-    expect(read('components/radial/RadialHub.tsx')).toMatch(/useReducedMotion/);
-    expect(read('components/settings/AppearancePanel.tsx')).toMatch(/useReducedMotion/);
+    expect(src).not.toMatch(/siteReducedMotion|prefersReducedMotion/);
+    expect(read('components/settings/AppearancePanel.tsx')).not.toMatch(
+      /setReduceMotion|useReducedMotion/,
+    );
   });
 
   it('every run takes the generous waits that used to be "Always evert globe"’s', () => {

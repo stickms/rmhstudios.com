@@ -187,7 +187,8 @@ _why_.
    `ogCardPath(kind, id)`; cards are rendered by `lib/og/` and documented in
    [`docs/open-graph.md`](docs/open-graph.md).
 7. **Accessibility:** Radix/native primitives, focus-visible rings are
-   global, skip link exists, respect `useReducedMotion`. Test `light` and
+   global, skip link exists. Motion follows the shared token scheme; the retired
+   reduced-motion setting and OS overrides must not return. Test `light` and
    `high-contrast` themes.
 8. **Security:** zod-validate all input; rate-limit writes/AI/uploads;
    user-supplied URL fetches through `lib/ssrf-guard.server`; CSP/security

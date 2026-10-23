@@ -66,9 +66,9 @@ rounded-site shadow-site-sm` renders the same _box_ and none of the
 - **Strings:** every user-visible string through `t("key", { defaultValue })`.
   Component namespaces are `c-<area>` (e.g. `c-ui`, `c-rmhbox`); pages mostly
   use `site`. Run `pnpm i18n:extract` after adding strings.
-- **Motion:** framer-motion inline props; global `MotionConfig` already
-  respects reduced motion. Use `hooks/useReducedMotion` for imperative
-  animation and `hooks/useCelebration` for confetti.
+- **Motion:** framer-motion inline props and shared motion tokens; global
+  `MotionConfig` uses the same scheme for every account and device. Do not add
+  reduced-motion preference branches. Use `hooks/useCelebration` for confetti.
 - **Toasts:** `import { toast } from "sonner"` — the themed `<Toaster>` is
   already mounted in `Providers.tsx`.
 - **Session:** client components read auth via `useSession()` from

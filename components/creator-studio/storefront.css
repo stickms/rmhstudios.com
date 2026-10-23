@@ -83,15 +83,6 @@
 }
 
 /* Reduced motion still wants the image, just not the fade. */
-@media (prefers-reduced-motion: reduce) {
-  .store-art__img {
-    transition: transform calc(var(--site-transition-speed) * 3) var(--ease-glass);
-  }
-}
-
-.reduce-motion .store-art__img {
-  transition: none;
-}
 
 .store-art__placeholder {
   display: grid;
@@ -674,18 +665,4 @@
      piece of site chrome beside it. */
   padding: 14px var(--site-panel-padding, 1.25rem);
   border-radius: var(--site-radius, 14px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .store-hero,
-  .store-card {
-    animation: none;
-    opacity: 1;
-  }
-  .store-art__img,
-  .store-spot__link,
-  .store-card__link,
-  .store-card__hoverdesc {
-    transition: none;
-  }
 }

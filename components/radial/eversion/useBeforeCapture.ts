@@ -11,7 +11,6 @@ import type { EligibilityInputs } from '@/lib/eversion/eligibility';
 import { isEversionEnabled } from '@/lib/eversion/flags';
 import { detectHostMode } from '@/lib/eversion/gl/host';
 import { isEversionReady } from '@/lib/eversion/prefetch';
-import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import type { CaptureApi, FallbackReason } from '@/lib/eversion/types';
 import { detectTier } from './detect-tier';
 import { overlayStore } from './overlay-store';
@@ -31,17 +30,8 @@ const AHEAD_MIN_GAP_MS = 5000;
  * reader that throws (T25's detection before it lands, a sandboxed frame) is an
  * UNKNOWN, and unknown is ineligible (see `eligibility.ts`).
  *
- * System and account motion preferences both disable the effect.
+ * Motion uses the shared site scheme; capability and readiness gate capture.
  */
-/** Imperative motion eligibility for capture and navigation. */
-export function siteReducedMotion(): boolean {
-  try {
-    return prefersReducedMotion();
-  } catch {
-    return false;
-  }
-}
-
 export function readEligibilityInputs(): EligibilityInputs {
   const guard = <T>(read: () => T, unknown: T): T => {
     try {
@@ -52,7 +42,6 @@ export function readEligibilityInputs(): EligibilityInputs {
   };
   return {
     flagEnabled: isEversionEnabled(),
-    reducedMotion: siteReducedMotion(),
     // Any mode ('worker' or 'main') means WebGL2 is there; the host throws when
     // it cannot say.
     webgl2: guard<boolean | null>(() => detectHostMode() != null, null),

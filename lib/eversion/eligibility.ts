@@ -42,11 +42,8 @@ import type { FallbackReason } from './types';
 export interface EligibilityInputs {
   /** `isEversionEnabled()`. */
   flagEnabled: boolean;
-  /**
-   * The site's Reduce motion switch (Settings › Appearance). NOT the OS `prefers-reduced-motion` query (amended
-   * 2026-10-21): the effect plays by default, and is turned off only where the visitor turned it off here.
-   */
-  reducedMotion: boolean;
+  /** @deprecated Ignored legacy input. Motion uses the shared site scheme. */
+  reducedMotion?: boolean;
   /** Cached WebGL2 detection; `null` when it could not be determined. */
   webgl2: boolean | null;
   /** `isEversionReady()` — the eversion chunk (and its dependencies) is loaded. */
@@ -65,7 +62,6 @@ export type HostLifeState = 'idle' | 'initialising' | 'ready' | 'failed';
 /** The ineligibility reasons, in precedence order (also the order the tests walk). */
 export const INELIGIBILITY_ORDER: readonly FallbackReason[] = [
   'flag-off',
-  'reduced-motion',
   'no-webgl2',
   'chunk-not-ready',
 ];
@@ -73,7 +69,6 @@ export const INELIGIBILITY_ORDER: readonly FallbackReason[] = [
 /** Why the effect cannot run now; `null` when it can. */
 export function evaluateEligibility(inputs: EligibilityInputs): FallbackReason | null {
   if (!inputs.flagEnabled) return 'flag-off';
-  if (inputs.reducedMotion) return 'reduced-motion';
   if (inputs.webgl2 !== true) return 'no-webgl2';
   if (!inputs.chunkReady) return 'chunk-not-ready';
   if (inputs.hostState !== undefined) {

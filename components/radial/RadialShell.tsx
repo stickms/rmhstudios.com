@@ -379,6 +379,7 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
     <div
       ref={shellRef}
       className="vibe-app site-shell radial-shell"
+      data-fluid-press-scope=""
       data-layout={layout}
       data-home={isHome || undefined}
     >

@@ -98,9 +98,6 @@ export function LibraryRevealProvider({
       });
       return;
     }
-    const reduce =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
     const obs = new IntersectionObserver(
       (entries) => {
@@ -109,10 +106,6 @@ export function LibraryRevealProvider({
           const el = entry.target as HTMLElement;
           obs.unobserve(el);
           registered.current.delete(el);
-          if (reduce) {
-            el.dataset.revealed = 'true';
-            continue;
-          }
           pending.current.push(el);
         }
         if (pending.current.length > 0 && frame.current == null) {

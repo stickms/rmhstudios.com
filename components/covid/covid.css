@@ -1007,19 +1007,6 @@
   transform: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .cvd-root *,
-  .cvd-root *::before,
-  .cvd-root *::after {
-    transition-duration: 0.01ms !important;
-    animation: none !important;
-  }
-  .cvd-root .reveal {
-    opacity: 1 !important;
-    transform: none !important;
-  }
-}
-
 @media (forced-colors: active) {
   .cvd-root .frame-map,
   .cvd-root .hero-mark {

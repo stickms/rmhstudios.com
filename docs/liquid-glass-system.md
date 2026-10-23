@@ -34,8 +34,8 @@ second image. Content panes do not sample their own captured text.
 
 Clicks and taps never emit ripples, propagate waves to nearby UI, or change surrounding
 layout. A fine pointer can move a restrained reflected light and optically tilt the
-bevel; text and hit areas remain fixed. Reduced motion and coarse pointers disable
-that movement. The fallback runtime moves a decorative leaf below the content.
+bevel; text and hit areas remain fixed. Coarse pointers disable that movement.
+The fallback runtime moves a decorative leaf below the content.
 No component installs its own cursor loop, animates root properties or reads geometry
 for every individual pointer event.
 
@@ -49,6 +49,20 @@ and dialogs use `--site-radius`. Avatars, circular icons, badges, the hub and th
 retain their explicit circular shapes. Full-width mobile navigation strips keep square
 outer edges. Loading buttons reserve both label states. Route placeholders use the
 shell's actual column measure without adding another sidebar gutter.
+
+Repeated cards retain a visible CSS reflection coat, translucent theme tint and
+directional hairline in both light and dark themes, including on touch. They do not
+need shader admission to read as glass. Hover changes the tint without replacing
+the coat. Reduced transparency and high contrast still replace it with opaque surfaces.
+
+Tab tracks use the control radius; inset segments, hover layers and selection thumbs
+subtract the track's padding so their corners remain concentric. The radial shell
+opts ordinary buttons into the delegated press spring. Tab buttons, route tabs and
+portalled menu items opt in explicitly. Legacy controls and links share short colour
+and opacity transitions; explicit gesture opt-outs remain in force. Motion follows
+one shared scheme on every device. The website motion setting, its stored values
+and browser/OS motion overrides are retired. The legacy motion hook exports return
+false without subscriptions so older feature modules use the same scheme.
 
 ## Snapshot lifecycle
 
@@ -89,7 +103,6 @@ reflection; it does not claim wave-optics diffraction or ray-traced live page co
 | Condition                                                                | Result                                                                           |
 | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
 | No WebGL2 / context loss / outside budget                                | Complete CSS clear coat and border                                               |
-| Reduced motion                                                           | Static material, no cursor movement or globe transition                          |
 | Touch                                                                    | Static pane material; direct globe manipulation remains available                |
 | Reduced transparency / high contrast / forced colors / perf-lite / print | No shader canvases; readable fallback surfaces                                   |
 | Hidden tab                                                               | Frames stop; teardown releases observers, timers, canvases and context resources |

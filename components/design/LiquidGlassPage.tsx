@@ -30,7 +30,6 @@ export function LiquidGlassPage() {
   useEffect(() => {
     const page = pageRef.current;
     if (!page || typeof IntersectionObserver === 'undefined') return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     page.dataset.animate = '';
     const elements = Array.from(page.querySelectorAll<HTMLElement>('[data-spatial-reveal]'));

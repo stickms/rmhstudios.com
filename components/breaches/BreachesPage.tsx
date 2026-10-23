@@ -263,12 +263,7 @@ export function BreachesPage() {
     const page = pageRef.current;
     if (!page || typeof IntersectionObserver === 'undefined') return;
 
-    const prefersReduced = window.matchMedia?.(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-    if (prefersReduced) return;
-
-    page.setAttribute('data-animate', '');
+page.setAttribute('data-animate', '');
     const revealables = Array.from(
       page.querySelectorAll<HTMLElement>('.sec-reveal'),
     );

@@ -466,11 +466,6 @@
     opacity: 0.35;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .rmhcalc-reasoning__spark.is-active {
-    animation: none;
-  }
-}
 
 /* ─── Graphing layout ─────────────────────────────────────────────── */
 

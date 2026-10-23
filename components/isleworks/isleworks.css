@@ -774,15 +774,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .isw *,
-  .isw *::before,
-  .isw *::after {
-    animation-duration: 0.001ms !important;
-    transition-duration: 0.001ms !important;
-  }
-}
-
 /* Touch targets: the 30–34px HUD buttons are fine for a mouse, but a thumb needs
    the 44px floor. Declared after the narrow-screen rule so it wins at any width. */
 @media (pointer: coarse) {

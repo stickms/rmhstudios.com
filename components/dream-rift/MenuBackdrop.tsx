@@ -40,7 +40,6 @@ export function MenuBackdrop({ className }: { className?: string }) {
         const ctx = canvas.getContext('2d', { alpha: true });
         if (!ctx) return;
 
-        const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         let w = 0;
         let h = 0;
@@ -50,7 +49,7 @@ export function MenuBackdrop({ className }: { className?: string }) {
 
         const seed = () => {
             const small = w < 560;
-            const nB = reduced ? 0 : small ? 22 : 40;
+            const nB = small ? 22 : 40;
             const nS = small ? 50 : 90;
             bullets = Array.from({ length: nB }, () => spawnBullet(w, h));
             stars = Array.from({ length: nS }, () => ({
@@ -131,7 +130,6 @@ export function MenuBackdrop({ className }: { className?: string }) {
             }
             ctx.restore();
 
-            if (reduced) cancelAnimationFrame(raf); // draw one static frame only
         };
         raf = requestAnimationFrame(frame);
 

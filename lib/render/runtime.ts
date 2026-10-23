@@ -17,11 +17,6 @@ function isMobileViewport(): boolean {
     return window.matchMedia?.(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`).matches ?? window.innerWidth < MOBILE_BREAKPOINT;
 }
 
-function prefersReducedMotion(): boolean {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-}
-
 export interface RuntimeQuality {
     tier: RenderTier;
     quality: QualityFlags;
@@ -37,7 +32,7 @@ export function detectRuntimeQuality(): RuntimeQuality {
         gpuTier,
         isMobile: isMobileViewport(),
         devicePixelRatio,
-        reducedMotion: prefersReducedMotion(),
+        reducedMotion: false,
     });
     const [, max] = resolveDpr(tier, devicePixelRatio);
     return { tier, quality: TIER_QUALITY[tier], pixelRatio: max };

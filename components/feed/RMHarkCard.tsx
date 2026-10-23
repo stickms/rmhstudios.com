@@ -264,6 +264,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  // press flex plus the hover raise of that glint. The spacing, hover tint and
  // the rest state's border stay in feed.css.
  role={openable ? 'link' : undefined}
+ data-fluid-press={openable ? 'firm' : 'none'}
  tabIndex={openable ? 0 : undefined}
  className={`glass-fill glass-interactive social-post relative p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent ${
  item.pending

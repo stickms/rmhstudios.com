@@ -643,8 +643,7 @@
 
 /* ══ Motion (hover tints only; off for reduced motion and the OS "still" pref) ══ */
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-calc .ds-calc-key,
+.ds-calc .ds-calc-key,
   .ds-calc .ds-calc-menubar button,
   .ds-tm .ds-tm-seg,
   .ds-tm .ds-tm-menubar button,
@@ -654,14 +653,14 @@
       border-color 120ms ease;
   }
 
-  .ds-tm .ds-tm-meter span,
+.ds-tm .ds-tm-meter span,
   .ds-tm .ds-tm-gauge-bar span {
     transition:
       width 400ms ease,
       height 400ms ease;
   }
 
-  .ds-calc:is(.ds-os--still *) .ds-calc-key,
+.ds-calc:is(.ds-os--still *) .ds-calc-key,
   .ds-calc:is(.ds-os--still *) .ds-calc-menubar button,
   .ds-tm:is(.ds-os--still *) .ds-tm-seg,
   .ds-tm:is(.ds-os--still *) .ds-tm-menubar button,
@@ -670,4 +669,3 @@
   .ds-tm:is(.ds-os--still *) .ds-tm-gauge-bar span {
     transition: none;
   }
-}

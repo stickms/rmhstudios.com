@@ -35,6 +35,7 @@ const result = await build({
     loader: 'ts',
   },
   bundle: true,
+  loader: { '.wasm': 'dataurl' },
   write: false,
   format: 'iife',
   target: 'es2022',
@@ -144,8 +145,8 @@ try {
   await page.evaluate(() => document.documentElement.classList.add('reduce-motion'));
   await advance(40);
   check(
-    'live account preference removes cursor light',
-    (await page.locator('.liquid-light').count()) === 0,
+    'retired account preference leaves cursor light active',
+    (await page.locator('.liquid-light').count()) > 0,
   );
   await page.mouse.click(405, 160);
   await advance(150);
@@ -157,7 +158,10 @@ try {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.mouse.move(160, 130);
   await advance(40);
-  check('OS reduced motion prevents lighting', (await page.locator('.liquid-light').count()) === 0);
+  check(
+    'OS motion preference keeps shared lighting',
+    (await page.locator('.liquid-light').count()) > 0,
+  );
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.locator('input').fill('Text entry is intact');
   check(

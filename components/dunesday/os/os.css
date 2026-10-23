@@ -242,14 +242,13 @@
   opacity: 0.5;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-wall--aurora .ds-wall-aurora {
+.ds-wall--aurora .ds-wall-aurora {
     animation: ds-aurora-drift 18s ease-in-out infinite alternate;
   }
-  .ds-wall-cloud {
+
+.ds-wall-cloud {
     animation: ds-cloud-drift 60s linear infinite alternate;
   }
-}
 
 @keyframes ds-aurora-drift {
   from {
@@ -1692,17 +1691,15 @@
    whole logon artwork was re-rasterised every frame for as long as the screen
    stayed up — ~1 core and 52fps at rest on desktop (perf audit 2026-10-08).
    `both` holds each at its last keyframe, so nothing snaps when they stop. */
-@media (prefers-reduced-motion: no-preference) {
-  .ds-logon-sw1 {
+.ds-logon-sw1 {
     animation: ds-logon-sway 14s ease-in-out 2 alternate both;
   }
-  .ds-logon-sw2 {
+.ds-logon-sw2 {
     animation: ds-logon-sway 10s ease-in-out -4s 2 alternate-reverse both;
   }
-  .ds-logon-sw3 {
+.ds-logon-sw3 {
     animation: ds-logon-sway 8s ease-in-out -2s 2 alternate both;
   }
-}
 
 @keyframes ds-logon-sway {
   from {
@@ -2037,12 +2034,10 @@
   opacity: 0.25;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-busy-ring > span::before {
+.ds-busy-ring > span::before {
     animation: ds-busy-dot 0.8s linear infinite;
     animation-delay: inherit;
   }
-}
 
 @keyframes ds-busy-dot {
   0% {
@@ -2771,11 +2766,9 @@
   background: linear-gradient(90deg, transparent, #3399ff, transparent);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-ie-loading {
+.ds-ie-loading {
     animation: ds-ie-load 1.2s ease-in-out infinite;
   }
-}
 
 @keyframes ds-ie-load {
   from {
@@ -3539,11 +3532,9 @@
   transform-origin: bottom;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-wmp--playing .ds-wmp-viz span {
+.ds-wmp--playing .ds-wmp-viz span {
     animation: ds-wmp-eq 1.4s ease-in-out infinite alternate;
   }
-}
 
 @keyframes ds-wmp-eq {
   0% {

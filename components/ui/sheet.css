@@ -12,25 +12,23 @@
  * crosses the whole screen height, so it takes the travel exit
  * (`--motion-out-travel`, accelerating) instead of the 0.1s fade-in-place
  * clock: 0.1s across ~800px read as the sheet vanishing, not leaving. */
-@media (prefers-reduced-motion: no-preference) {
- [data-slot="sheet-overlay"][data-state="open"] {
+[data-slot="sheet-overlay"][data-state="open"] {
  animation: ui-sheet-overlay-in var(--motion-in) var(--motion-ease-in);
  }
- [data-slot="sheet-overlay"][data-state="closed"] {
+[data-slot="sheet-overlay"][data-state="closed"] {
  animation: ui-sheet-overlay-out var(--motion-out) var(--motion-ease-out) forwards;
  }
- [data-slot="sheet-content"][data-state="open"] {
+[data-slot="sheet-content"][data-state="open"] {
  animation:
  ui-sheet-fade-in var(--motion-in) var(--motion-ease-in),
  ui-sheet-content-in var(--spring-sheet-duration) var(--spring-sheet);
  }
- [data-slot="sheet-content"][data-state="closed"] {
+[data-slot="sheet-content"][data-state="closed"] {
  animation: ui-sheet-content-out var(--motion-out-travel) var(--motion-ease-out-travel) forwards;
  }
-}
 /* Desktop: the sheet is a centred dialog, so it moves like one — the smooth
  * spring, not the sheet spring's longer travel (see dialog.css). */
-@media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+@media (min-width: 768px) {
  [data-slot="sheet-content"][data-state="open"] {
  animation:
  ui-sheet-fade-in var(--motion-in) var(--motion-ease-in),

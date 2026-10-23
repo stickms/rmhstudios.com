@@ -25,7 +25,6 @@ export const appearanceComfortSchema = z.object({
   density: z.enum(DENSITIES).nullable().optional(),
   readableFont: z.boolean().optional(),
   customAccent: z.string().regex(HEX_RE).nullable().optional(),
-  reduceMotion: z.boolean().optional(),
   colorVision: z.enum(COLOR_VISION_MODES).nullable().optional(),
   navTransition: z.enum(NAV_TRANSITIONS).nullable().optional(),
   alwaysEvertGlobe: z.boolean().optional(),

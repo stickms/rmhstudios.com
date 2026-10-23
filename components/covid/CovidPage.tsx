@@ -496,8 +496,7 @@ export function CovidPage() {
     window.addEventListener('scroll', onScroll, { passive: true });
 
     let observer: IntersectionObserver | null = null;
-    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (!reduced && typeof IntersectionObserver !== 'undefined') {
+    if (typeof IntersectionObserver !== 'undefined') {
       root.setAttribute('data-animate', '');
       observer = new IntersectionObserver(
         (entries) => {

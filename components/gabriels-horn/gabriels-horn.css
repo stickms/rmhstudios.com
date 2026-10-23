@@ -572,19 +572,6 @@ button.gh-card[data-selected='true']:not(:disabled):hover {
   border-color: var(--gh-card, var(--app-border-bright));
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .gh-card {
-    transition: none;
-  }
-  .gh-card[data-selected='true'],
-  button.gh-card:not(:disabled):hover,
-  button.gh-card:not(:disabled):active {
-    /* The lift is how a picked-up card says it is picked up, so the state is
-       kept and only the travel is dropped. */
-    transform: none;
-  }
-}
-
 /* Windows High Contrast: the OS owns the palette, so hand the surfaces back. */
 @media (forced-colors: active) {
   .gh-card,

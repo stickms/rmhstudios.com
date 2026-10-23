@@ -129,7 +129,6 @@ export default function RmhtechLanding() {
     window.addEventListener('resize', resize, { passive: true })
     resize()
 
-    const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches
     let raf = 0
     let running = false
     const start = performance.now()
@@ -139,7 +138,7 @@ export default function RmhtechLanding() {
       raf = requestAnimationFrame(frame)
     }
     const play = () => {
-      if (running || reduce) return
+      if (running) return
       running = true
       raf = requestAnimationFrame(frame)
     }
@@ -150,12 +149,7 @@ export default function RmhtechLanding() {
     }
 
     requestAnimationFrame(() => cv.classList.add('on'))
-    if (reduce) {
-      gl.uniform1f(uT, 8.0)
-      gl.drawArrays(gl.TRIANGLES, 0, 3)
-    } else {
-      play()
-    }
+    play()
     const onVis = () => (document.hidden ? stop() : play())
     document.addEventListener('visibilitychange', onVis)
 

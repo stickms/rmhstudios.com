@@ -122,13 +122,10 @@ describe('§7.3 — the layer costs what the design language allows', () => {
     expect(SECTION).toMatch(/@media \(forced-colors: active\)\s*\{[^}]*\[data-evert\]::before/);
   });
 
-  it('both system and account motion preferences stop decorative transitions', () => {
-    expect(CSS).toMatch(
-      /html\.reduce-motion \*,\s*html\.reduce-motion \*::before,\s*html\.reduce-motion \*::after\s*\{[^}]*transition-duration: 0\.01ms !important/,
-    );
-    expect(CSS).toMatch(
-      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\*,\s*\*::before,\s*\*::after/,
-    );
+  it('uses one animation scheme without system or account motion overrides', () => {
+    const rules = CSS.replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(rules).not.toMatch(/@media[^{}]*prefers-reduced-motion/);
+    expect(rules).not.toMatch(/html\.reduce-motion\s/);
   });
 });
 

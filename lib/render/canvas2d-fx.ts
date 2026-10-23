@@ -28,10 +28,5 @@ export function canvasGlowEnabled(): boolean {
   if (typeof document === 'undefined') return true;
   const root = document.documentElement;
   if (root.classList.contains('perf-lite')) return false;
-  try {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
-  } catch {
-    /* matchMedia unavailable — keep the effects */
-  }
   return true;
 }

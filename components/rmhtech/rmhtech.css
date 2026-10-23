@@ -135,9 +135,3 @@
 @media(max-width:760px){.rmht .foot-grid{grid-template-columns:1fr 1fr}.rmht .foot-brand{grid-column:1/-1}}
 @media(max-width:460px){.rmht .foot-grid{grid-template-columns:1fr}}
 .rmht :is(a,button,input,textarea,select){border-radius:12px}
-@media(prefers-reduced-motion:reduce){
-  .rmht .liquid{transform:none;will-change:auto}
-  .rmht *,.rmht *::before,.rmht *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
-  .rmht .ai-logo-wrap,.rmht .eyebrow,.rmht h1,.rmht .sub,.rmht .metal{opacity:1;transform:none}
-  .rmht .ai-logo{animation:none;filter:none}
-}

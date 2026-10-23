@@ -294,7 +294,7 @@
 .feed-tabs {
   overflow: hidden;
   border: 1px solid var(--site-border);
-  border-radius: var(--site-radius);
+  border-radius: var(--site-control-radius);
   background: var(--site-surface);
   box-shadow: var(--site-shadow-sm);
 }
@@ -341,7 +341,7 @@
   min-height: 2.5rem;
   flex: 0 0 auto;
   padding-inline: 0.75rem;
-  border-radius: 999px;
+  border-radius: var(--site-control-radius);
   color: var(--site-text-dim);
   font-size: 0.72rem;
   font-weight: 680;
@@ -378,19 +378,14 @@
 
 .social-post {
   overflow: hidden;
-  /* `.glass-fill.glass-interactive` zeroes the border so the lit edge IS the
-     border (§4.35). That reads right on a card floating by itself; a TIMELINE of
-     them needs a resting hairline, or consecutive posts fuse into one grey
-     column and the reading rhythm goes. So the rest state keeps the token
-     border and the glint rides inside it. */
-  border-color: var(--site-border);
+  /* The glass role owns the resting coat and directional rim. */
   transition:
-    border-color 160ms ease,
-    background-color 160ms ease,
+    border-color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
+    background-color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
     /* `scale`, not `transform`: the press cue is the independent property now
        (`.glass-interactive:active`, globals.css) so it composes with whatever
        transform the card carries instead of erasing it. */
-    scale 140ms var(--ease-out);
+    scale calc(var(--site-transition-speed) * 0.75) var(--ease-out);
 }
 
 .social-feed-row {
@@ -617,17 +612,5 @@
     background: var(--site-surface);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .feed-tabs button,
-  .social-post {
-    transform: none !important;
-    /* The post's press moved from `transform` to the independent `scale`
-       property when it became `.glass-interactive`; without this line the
-       reduced-motion opt-out silently stopped covering it. */
-    scale: none !important;
-    transition-duration: 1ms;
   }
 }

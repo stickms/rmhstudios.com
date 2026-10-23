@@ -153,7 +153,7 @@ export function DunesdayOS() {
   }, []);
 
   return (
-    <MotionConfig reducedMotion={prefs.reduceMotion ? 'always' : 'user'}>
+    <MotionConfig reducedMotion="never">
       <div
         ref={rootRef}
         className={cn(
@@ -161,7 +161,6 @@ export function DunesdayOS() {
           `ds-glass--${prefs.glass}`,
           !prefs.transparency && 'ds-os--opaque',
           prefs.highContrast && 'ds-os--contrast',
-          prefs.reduceMotion && 'ds-os--still',
           compact && 'ds-os--compact',
         )}
         data-night={state.night}

@@ -30,13 +30,13 @@
  * effect in `components/Providers.tsx` field for field, and must keep doing so —
  * this file decides only WHEN the account's values apply, never WHICH win. That
  * includes the one rule worth knowing about: the GET handler returns `false`
- * rather than `null` for a `readableFont` or `reduceMotion` the account never
- * set, and the runtime applies any boolean, so for those two the account always
+ * rather than `null` for a `readableFont` the account never
+ * set, and the runtime applies any boolean, so for that field the account always
  * wins. Changing that is a settings decision, not a flash fix, and it belongs in
  * the API and the runtime together if it is ever made.
  *
- * Retired glass clarity and reduce-transparency preferences are never seeded:
- * every account uses the shared default glass material.
+ * Retired glass clarity, reduce-transparency and motion preferences are never
+ * seeded: every account uses the shared material and animation scheme.
  */
 import { ACCENT_STORAGE_KEY, isAccentId } from '@/lib/appearance';
 import {
@@ -46,7 +46,6 @@ import {
   FONT_SCALE_KEY,
   HEX_RE,
   READABLE_FONT_KEY,
-  REDUCE_MOTION_KEY,
   isColorVisionMode,
 } from '@/lib/appearance/prefs';
 import { SITE_STYLES } from '@/stores/themeStore';
@@ -62,7 +61,6 @@ export interface AccountAppearanceRow {
   density?: string | null;
   readableFont?: boolean | null;
   customAccent?: string | null;
-  reduceMotion?: boolean | null;
   colorVision?: string | null;
 }
 
@@ -110,10 +108,6 @@ export function accountAppearanceSeed(
   // header: the API sends `false` for unset, so this always applies.
   if (typeof row.readableFont === 'boolean')
     seed[READABLE_FONT_KEY] = row.readableFont ? '1' : null;
-
-  // `if (typeof r.reduceMotion === 'boolean') setReduceMotion(...)` — likewise.
-  if (typeof row.reduceMotion === 'boolean')
-    seed[REDUCE_MOTION_KEY] = row.reduceMotion ? '1' : null;
 
   // `if (typeof r.customAccent === 'string' && HEX_RE.test(...)) setCustomAccent(...)`
   if (typeof row.customAccent === 'string' && HEX_RE.test(row.customAccent)) {

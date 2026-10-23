@@ -127,7 +127,6 @@ export const FONT_SCALE_KEY = 'rmh-font-scale';
 export const DENSITY_KEY = 'rmh-density';
 export const READABLE_FONT_KEY = 'rmh-readable-font';
 export const CUSTOM_ACCENT_KEY = 'rmh-custom-accent';
-export const REDUCE_MOTION_KEY = 'rmh-reduce-motion';
 export const COLOR_VISION_KEY = 'rmh-color-vision';
 export const NAV_TRANSITION_KEY = 'rmh-nav-transition';
 /** Eversion level: cached as 'globe' when set, absent when 'all' (the default). */

@@ -1,23 +1,22 @@
 /* One reversible path for dialogs and their scrim. Longhand scale leaves the
    positioning transform intact. A reopen during exit continues from its current
    opacity and scale; Radix retains the node for the presence animation. */
-@media (prefers-reduced-motion: no-preference) {
-  :is([data-slot='dialog-overlay'], [data-slot='dialog-content']) {
+:is([data-slot='dialog-overlay'], [data-slot='dialog-content']) {
     opacity: 1;
     scale: 1;
     transition:
       opacity var(--motion-out) var(--motion-ease-out),
       scale var(--motion-in) var(--motion-ease-in);
   }
-  :is([data-slot='dialog-overlay'], [data-slot='dialog-content'])[data-state='closed'] {
+:is([data-slot='dialog-overlay'], [data-slot='dialog-content'])[data-state='closed'] {
     opacity: 0;
     transition-duration: var(--motion-out);
     animation: ui-dialog-presence var(--motion-out) linear;
   }
-  [data-slot='dialog-content'][data-state='closed'] {
+[data-slot='dialog-content'][data-state='closed'] {
     scale: 0.98;
   }
-  @starting-style {
+@starting-style {
     :is([data-slot='dialog-overlay'], [data-slot='dialog-content'])[data-state='open'] {
       opacity: 0;
     }
@@ -25,7 +24,6 @@
       scale: 0.98;
     }
   }
-}
 @keyframes ui-dialog-presence {
   from {
     visibility: visible;

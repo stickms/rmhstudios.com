@@ -87,7 +87,9 @@ only destinations selected through the open liquid globe use eversion. A legacy
 `all` transition preference resolves to `globe`. The mobile shortcut bar and
 grouped desktop rail supplement the globe. Controls use short colour/opacity
 changes; floating surfaces use reversible transitions that preserve their current
-frame when interrupted. System and account reduced-motion preferences both apply.
+frame when interrupted. Motion uses one shared scheme on every device; the website
+reduced-motion setting and browser/OS motion overrides are retired. Historical
+reduced-motion guidance below is superseded by this contract.
 Page titles wrap by default, and search/filter rows must fit a 320px viewport.
 Search and filters sit directly below their tab group, before summaries or cards.
 Controls use `--site-control-radius` (the small radius), panels use `--site-radius`;

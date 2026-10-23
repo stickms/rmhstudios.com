@@ -27,14 +27,13 @@ export default function ContactPage({ initialType }: { initialType?: string }) {
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     setSent(true);
     e.currentTarget.reset();
     setType('General');
     requestAnimationFrame(() => {
       document
         .getElementById('form-success')
-        ?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   };
 

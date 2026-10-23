@@ -122,10 +122,13 @@ describe('PUT /api/preferences/appearance navTransition (S#24)', () => {
     expect(upsert.mock.calls[0][0].update.navTransition).toBeNull();
   });
 
-  it('leaves the column untouched when the field is omitted', async () => {
+  it('ignores retired motion preferences and leaves omitted columns untouched', async () => {
     const res = await put({ reduceMotion: true });
     expect(res.status).toBe(200);
     expect('navTransition' in upsert.mock.calls[0][0].update).toBe(false);
+    expect('reduceMotion' in upsert.mock.calls[0][0].update).toBe(false);
+    expect('reduceMotion' in upsert.mock.calls[0][0].create).toBe(false);
+    expect(await res.json()).not.toHaveProperty('reduceMotion');
   });
 
   it.each([['spherical'], ['RANDOM'], [''], [1], [true], [['random']]])(

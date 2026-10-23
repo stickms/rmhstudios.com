@@ -206,14 +206,6 @@ export default function PersonalizeApp(_: AppProps) {
             {t('pz-contrast', { defaultValue: 'High contrast' })}
           </label>
           <label className="ds-check">
-            <input
-              type="checkbox"
-              checked={prefs.reduceMotion}
-              onChange={(e) => set({ reduceMotion: e.target.checked })}
-            />
-            {t('pz-motion', { defaultValue: 'Turn off all unnecessary animations' })}
-          </label>
-          <label className="ds-check">
             <input type="checkbox" checked={!muted} onChange={toggleMuted} />
             {t('pz-sounds', { defaultValue: 'Play Dunesday 7 sounds' })}
           </label>

@@ -24,9 +24,6 @@ export function BrandMark() {
   );
 }
 
-const prefersReduced = () =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
 /**
  * Decrypt — a string that scrambles through monospace glyphs on mount before
  * settling into its real text. Renders the final text on the server and when
@@ -36,7 +33,6 @@ const GLYPHS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789/#%<>*·';
 export function Decrypt({ text, className }: { text: string; className?: string }) {
   const [out, setOut] = useState(text);
   useEffect(() => {
-    if (prefersReduced()) return;
     let raf = 0;
     const start = performance.now();
     const dur = Math.min(180 + text.length * 34, 900);

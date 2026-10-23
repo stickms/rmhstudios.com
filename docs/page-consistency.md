@@ -242,8 +242,8 @@ Work through this for every new or edited page:
 
 ### Motion & accessibility
 
-- [ ] framer-motion for JS animation (MotionConfig already gates reduced
-      motion); gate imperative animation with `useReducedMotion()`. Prefer the
+- [ ] framer-motion for JS animation, using the same token scheme for every
+      account and device, without reduced-motion preference branches. Prefer the
       shared tokens/variants in `lib/motion.ts` over ad-hoc `duration`/`ease`.
 - [ ] Card→detail navigations (posts, images, books, blog/news) open with the
       liquid morph: `runViewTransition(el, { liquid: true })` + `liquidVTName()`

@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Section, ToggleRow } from '@/components/settings/AppearancePanel';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 import {
   CURSOR_BLENDS,
   CURSOR_DETAILS,
@@ -42,7 +41,6 @@ export function GlobeCursorPanel() {
   const applyPreset = useGlobeCursorStore((st) => st.applyPreset);
   const randomize = useGlobeCursorStore((st) => st.randomize);
   const reset = useGlobeCursorStore((st) => st.reset);
-  const reduced = useReducedMotion();
 
   useEffect(() => hydrate(), [hydrate]);
 
@@ -104,14 +102,6 @@ export function GlobeCursorPanel() {
           checked={s.enabled}
           onChange={(enabled) => update({ enabled })}
         />
-        {reduced ? (
-          <p className="text-xs text-site-text-muted">
-            {t('globe-cursor-reduced', {
-              defaultValue:
-                'Reduced motion is on, so the globe holds still mid-eversion and the jelly, trail and sparkles are paused.',
-            })}
-          </p>
-        ) : null}
         <div className="flex flex-wrap gap-2">
           {GLOBE_CURSOR_PRESETS.map((id) => (
             <Button

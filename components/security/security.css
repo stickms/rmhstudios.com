@@ -442,11 +442,6 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
 }
 
 /* ─── Reduced motion: everything visible & still ────────────────────────────  */
-@media (prefers-reduced-motion: reduce) {
-  .sec-nav { animation: none; }
-  .sec-card:hover { transform: none; }
-  .sec-page[data-animate] .sec-reveal { opacity: 1; transform: none; transition: none; }
-}
 
 /* ─── Screen-reader-only (standalone page fallback) ──────────────────────────  */
 .sec-page .sr-only {
@@ -716,10 +711,6 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
 .sec-faq__q:focus-visible { outline: 2px solid var(--site-accent); outline-offset: -2px; }
 .sec-faq__a { margin: 0; padding: 0 clamp(18px, 3vw, 24px) 20px; font-size: 0.93rem; line-height: 1.62; color: var(--site-text-muted); }
 .sec-faq__a a { color: var(--site-accent); text-underline-offset: 3px; }
-
-@media (prefers-reduced-motion: reduce) {
-  .sec-faq__q::after { transition: none; }
-}
 
 /* ─── /security inside the shared legal frame ────────────────────────────────
    /security renders in LegalLayout's reading column (max-w-3xl, 720px of

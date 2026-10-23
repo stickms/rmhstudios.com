@@ -766,9 +766,6 @@ export function VoidBreakerGame() {
           0%   { transform: translateX(-130%) skewX(-12deg) }
           100% { transform: translateX(160%) skewX(-12deg) }
         }
-        @media (prefers-reduced-motion: reduce) {
-          .vb-anim { animation: none !important; }
-        }
       `}</style>
 
       {/* Background music — loops during gameplay */}

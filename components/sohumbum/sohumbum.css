@@ -357,23 +357,6 @@
 /* The storm layer is gated in JS (it also silences the thunder), but the CSS
    animations need their own escape hatch — a full-viewport strobe and an
    infinitely pulsing digit are exactly what this preference is asking about. */
-@media (prefers-reduced-motion: reduce) {
-  .sohumbum-main {
-    animation: none;
-  }
-
-  .sohumbum-box__value {
-    animation: none;
-  }
-
-  .sohumbum-box {
-    transition: none;
-  }
-
-  .sohumbum-box:hover {
-    transform: none;
-  }
-}
 
 @media screen and (max-width: 600px) {
   .sohumbum-countdown {
