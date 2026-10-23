@@ -55,7 +55,7 @@ export function LibraryDialogShell({ onClose, label, children }: LibraryDialogSh
           onMouseDown={onClose}
         >
           <DialogPrimitive.Title className="sr-only">
-            {label ?? t('library-dialog', { defaultValue: 'Dialog' })}
+            {label ?? t('library-heading', { defaultValue: 'Library' })}
           </DialogPrimitive.Title>
           {children}
         </DialogPrimitive.Content>
