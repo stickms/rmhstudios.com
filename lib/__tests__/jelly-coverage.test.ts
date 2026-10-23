@@ -25,7 +25,8 @@
  *
  * ## The baseline
  *
- * Frozen per file in `jelly-coverage.baseline.json` (beside this file). It is a ratchet:
+ * Frozen per file, sharded one JSON per directory in `jelly-coverage.baseline/` (beside this file; see
+ * jelly-coverage-shards.ts), so area PRs lower only their own shard. It is a ratchet:
  *
  *  - a file over its frozen count fails; a file not on the list must be at zero;
  *  - a file UNDER its frozen count also fails ("lower it"), so the list never quietly becomes permission.
@@ -34,15 +35,15 @@
  *
  *     JELLY_COVERAGE_BASELINE=lower pnpm exec vitest run lib/__tests__/jelly-coverage.test.ts
  *
- * `JELLY_COVERAGE_BASELINE=freeze` rewrites the file wholesale from the current tree. It exists for the initial
+ * `JELLY_COVERAGE_BASELINE=freeze` rewrites every shard from the current tree. It exists for the initial
  * freeze only; a raised number shows up in review as a diff to this JSON, and has to be argued for there.
  */
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { SHARD_DIR, loadShards, writeShards } from './jelly-coverage-shards';
 
 const ROOT = process.cwd();
-const BASELINE_FILE = join(ROOT, 'lib/__tests__/jelly-coverage.baseline.json');
 
 function collectTsx(dir: string, out: string[] = []): string[] {
   let entries;
@@ -139,14 +140,7 @@ function measure(): { m: Measured; jellyOff: string[] } {
 const { m: NOW, jellyOff: JELLY_OFF } = measure();
 const KINDS = ['surfaces', 'dialogs', 'switches'] as const;
 
-function loadBaseline(): Measured {
-  if (!existsSync(BASELINE_FILE)) return { surfaces: {}, dialogs: {}, switches: {} };
-  return JSON.parse(readFileSync(BASELINE_FILE, 'utf8')) as Measured;
-}
-
-function sorted(c: Counts): Counts {
-  return Object.fromEntries(Object.entries(c).sort(([a], [b]) => a.localeCompare(b)));
-}
+const loadBaseline = (): Measured => loadShards();
 
 // Opt-in maintenance modes (see the docblock). Never runs in CI or the commit gate: both leave the variable unset.
 const MODE = process.env.JELLY_COVERAGE_BASELINE;
@@ -159,9 +153,8 @@ if (MODE === 'freeze' || MODE === 'lower') {
       const v = MODE === 'freeze' ? n : Math.min(n, NOW[k][file] ?? 0);
       if (v > 0) next[k][file] = v;
     }
-    next[k] = sorted(next[k]);
   }
-  writeFileSync(BASELINE_FILE, `${JSON.stringify(next, null, 2)}\n`);
+  writeShards(next);
 }
 
 const BASELINE = loadBaseline();
@@ -185,7 +178,7 @@ describe('jelly coverage — the hand-rolled debt only goes down (04 §2.5, N5)'
     expect(FILES.length).toBeGreaterThan(1500);
     expect(FILES).toContain('components/feed/PageLayout.tsx');
     expect(FULLSCREEN_TIER_DIRS.has('rmhbox')).toBe(true);
-    expect(existsSync(BASELINE_FILE), 'the frozen baseline must exist').toBe(true);
+    expect(existsSync(SHARD_DIR), 'the frozen baseline shards must exist').toBe(true);
     expect(
       total(BASELINE.surfaces),
       'a baseline with no surfaces means the walker broke',

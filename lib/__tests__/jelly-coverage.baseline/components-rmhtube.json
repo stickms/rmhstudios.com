@@ -1,0 +1,15 @@
+{
+  "surfaces": {
+    "components/rmhtube/ChatMediaEmbed.tsx": 1,
+    "components/rmhtube/ChatPanel.tsx": 2,
+    "components/rmhtube/RmhTubeRoomPage.tsx": 1
+  },
+  "dialogs": {
+    "components/rmhtube/party/WatchPartyPanel.tsx": 1,
+    "components/rmhtube/SettingsPanel.tsx": 1,
+    "components/rmhtube/SyncStatus.tsx": 1
+  },
+  "switches": {
+    "components/rmhtube/SettingsPanel.tsx": 1
+  }
+}
