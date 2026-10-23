@@ -16,6 +16,7 @@
  * playing. The caller decides which this is; the menu only says so.
  */
 
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LogOut, Play, RotateCcw, Sliders } from 'lucide-react';
 import { PaperCard } from '../paper/PaperSurface';
@@ -44,12 +45,28 @@ export function PauseMenu({
   const { t } = useTranslation('c-bums-rush');
 
   // The dialog mounts inside the game root (nearest `.bums-theme` to this component, which
-  // carries `data-world` and the world paper overrides), so the paper tokens still apply. Escape
-  // is NOT handled by the dialog: the game's own input poll owns the pause key (bindings.ts
-  // `pause` -> useLevelSession), and a second handler would resume and immediately re-pause.
-  // Focus lands on Resume (the first control) on open. The shell is invisible and its built-in
-  // close button hidden: the PaperCard is the only thing drawn and Resume is the one way out.
+  // carries `data-world` and the world paper overrides), so the paper tokens still apply. Focus
+  // lands on Resume (the first control) on open. The shell is invisible and its built-in close
+  // button hidden: the PaperCard is the only thing drawn.
   const { host, sentinel } = useDialogHost('.bums-theme');
+
+  // Escape resumes, but on its KEYUP, never on Radix's keydown dismissal. The game's input poll
+  // (useLevelSession) is skipped while paused and pauses on the `pause` binding's rising edge
+  // against the last tick it saw; resuming on keydown would hand that poll a still-held Escape —
+  // after a pause from the HUD button its last tick says "not held", so it would re-pause on the
+  // very next frame. Released first, the poll sees nothing and the menu closes exactly once.
+  // Armed only by a fresh (non-repeat) keydown while the menu is open, so the release of the
+  // Escape that opened it — or a held Escape's auto-repeat — never resumes.
+  const escapeArmed = useRef(false);
+  useEffect(() => {
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || !escapeArmed.current) return;
+      escapeArmed.current = false;
+      onResume();
+    };
+    window.addEventListener('keyup', onKeyUp);
+    return () => window.removeEventListener('keyup', onKeyUp);
+  }, [onResume]);
 
   return (
     <>
@@ -58,9 +75,13 @@ export function PauseMenu({
     <Dialog open onOpenChange={(next) => { if (!next) onResume(); }}>
       <DialogContent
         container={host}
+        overlayClassName="bg-bum-paper/78"
         data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
         className="w-auto max-w-sm gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
-        onEscapeKeyDown={(event) => event.preventDefault()}
+        onEscapeKeyDown={(event) => {
+          event.preventDefault();
+          if (!event.repeat) escapeArmed.current = true;
+        }}
         onInteractOutside={(event) => event.preventDefault()}
       >
       <PaperCard
