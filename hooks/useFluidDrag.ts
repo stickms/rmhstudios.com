@@ -13,6 +13,8 @@ import { onJellyPointer } from '@/lib/jelly/pointer';
 import { reportJellyDrag } from '@/lib/jelly/physics';
 import { createSettle, type Settle } from '@/hooks/fluid-drag-settle';
 
+export { FLUID_DRAG_FRAME_ORDER } from '@/hooks/fluid-drag-settle';
+
 /**
  * A single-axis drag that behaves the way a native one does — principles 2–5 of
  * *Designing Fluid Interfaces*: it tracks the finger 1:1, resists at its limits
@@ -30,6 +32,14 @@ import { createSettle, type Settle } from '@/hooks/fluid-drag-settle';
  * the surface stretches along the motion and wobbles out of it, and `drag:start` /
  * `drag:end` reach the jelly bus. The hook still owns the drag position; jelly only
  * adds the deformation (scale or the slab's rim — never `translate`).
+ *
+ * Frames and pointers (CLAUDE.md "Design system: Plasmatic Jelly" → Performance): the settle spring
+ * (`createSettle` in `hooks/fluid-drag-settle.ts`) is a driver on the ONE jelly frame
+ * (`drive(fn, { order: FLUID_DRAG_FRAME_ORDER })` from `lib/jelly/frame.ts`) and the gesture's
+ * move/up/cancel come from the ONE pointer hub (`onJellyPointer` from `lib/jelly/pointer.ts`) — the hook owns no
+ * `requestAnimationFrame` and adds no window listeners. The driver runs before physics (10) so a drag owner's
+ * position for a frame is written before the soft body reads it; it is awake only between a release and the
+ * spring arriving, and is unregistered on unmount.
  *
  * ```tsx
  * const drag = useFluidDrag({

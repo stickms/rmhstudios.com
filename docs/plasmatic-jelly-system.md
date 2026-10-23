@@ -43,7 +43,7 @@ classes and no `data-material` flag (R5).
 | `glass-pane` (L2), `app-glass`       | admitted third; lit, refract by opt-in    | canvas slot or carrier                    | lattice rim only                    | yes                                  |
 | `glass-fill` (L1), cards             | within budget                             | carrier, else static haze floor           | envelope + lattice when admitted    | yes                                  |
 | `glass-inset`, fields                | within budget                             | rim-only carrier on the wrapper           | rim only; never moves while focused | **never** an endpoint                |
-| solid buttons (`[data-slot=button]`) | admitted last                             | static haze floor (never a canvas slot)   | envelope (press / hover dent)       | yes                                  |
+| solid buttons (`[data-slot=button]`) | admitted last                             | carrier (never a canvas slot)             | envelope (press / hover dent)       | yes                                  |
 | toasts (`[data-sonner-toast]`)       | —                                         | static haze floor                         | envelope                            | **never** struck                     |
 
 What draws what:
@@ -54,13 +54,24 @@ What draws what:
   context (`renderer.ts`) copies into a canvas that is the host's **last** child at a
   negative z-index inside an isolated stacking context.
 - **Haze (shader tier)** — `haze-shader.ts`: a low-resolution `.jelly-haze-canvas`
-  (≤ 256 px long side) with curl-noise flow, one domain-warp level and plasma only at the
-  crests. The host gets `data-jelly-haze="on"` after the first draw and the bus hears
-  `haze:change`.
+  (≤ 256 px long side) with a flow-map current (role axis + curl noise), three
+  counter-rotating Gaussian eddies per surface, a warped fbm body plus soft ridged current
+  filaments with crisp fronts (`HAZE_LOOK`), and plasma only at the crests. The interior is
+  damped by `--site-jelly-quiet` (0.75; 0.9 in Daylight) inside the α/2…α range the
+  legibility gate bounds; only the bevel may swing further (`--site-jelly-haze-edge`), so
+  the currents visibly run along every edge. The host gets `data-jelly-haze="on"` after the
+  first draw and the bus hears `haze:change`.
 - **Haze (CSS tier)** — `lib/jelly/flow-carriers.ts` injects a clipped, `aria-hidden`
   `.jelly-flow` span as the host's **first** child; its two inner spans animate
-  `transform` only (`jelly-drift` / `jelly-current` in `app/jelly-material.css`). Hosts
-  with text-only children never get one (React's `textContent` path would delete it).
+  `transform` only (`jelly-drift` / `jelly-current` in `app/jelly-material.css`): a half-density
+  veil with three slanted current streaks that turn and travel past each other. Speed is
+  per host: wide hosts are capped at 12 px/s, small ones (buttons) lifted to 6 px/s
+  (`cappedFlowSpeed`). Hosts with text-only children never get one (React's `textContent`
+  path would delete it), so `<Button>` wraps a plain-text label in a `display: contents`
+  span. After `IDLE_AFTER_MS` without input the service stamps `html[data-jelly-idle]`: the
+  CSS pauses the carriers and the service steps their `currentTime` on the engine's ambient
+  tick (`ambient:tick`), or its own idle-clock timer when no haze is ticking — the haze keeps
+  moving at the same speed, the page at rest draws ≤ the idle clock's frames, not vsync's.
 - **Static haze floor** — every role's background stack in `app/jelly-material.css`
   (milky gradient + `public/jelly/haze-tile.webp` grain), so a surface reads as jelly
   with no JavaScript or WebGL. It is the complete fallback tier.
@@ -76,7 +87,8 @@ What draws what:
   3–14 px inside the edge and exactly 0 at level 0. It moves in the haze slots (× 0.5
   under `calm`) and is static in the rim program elsewhere (including under `still`).
 
-Tokens: `--site-jelly-*` (haze per role, plasma A/B, strength, flow speed, quiet),
+Tokens: `--site-jelly-*` (haze per role, plasma A/B, strength, flow speed, quiet, bevel
+haze swing `-haze-edge`),
 `--site-arc-core` / `--site-arc-glow`, `--z-arcs` (45) / `--z-arcs-modal` (55), mirrored
 for the app tier as `--app-jelly-*`. High contrast zeroes them all. Role knobs
 (`--jelly-haze-a`, `--jelly-plasma-k`, `--jelly-flow-speed`, `--jelly-flow-axis-deg`) are
@@ -134,10 +146,11 @@ becomes **13 fps** (the 12 Hz floor + 1). The CPU target at rest stays **≤ 250
 free-standing `infinite` animation outside `.jelly-flow`.
 
 **The governor** (`lib/jelly/governor.ts`) is the battery and thermal answer. The engine
-feeds it each tick's cost and interval; after a 30-tick warm-up, a 2 s window whose p90
-cost exceeds 2 ms (3 ms handheld) or whose p90 interval exceeds 1.5× the period takes one
+feeds it each tick's cost, interval and the clock that tick ran at; after a 30-tick warm-up,
+a 2 s window whose p90 cost exceeds 6 ms (8 ms handheld; the cost includes the WebGL → 2D copies) or whose p90 interval exceeds 1.5×
+the period of the clock actually running (the 12 Hz idle floor is on time at 83 ms) takes one
 step down: clock 30 → 20 Hz · slots halved · carriers halved · ambient arcs off · haze at
-0.125 scale · clock 0. Downscale only, one step per window, reset on route change. The
+0.125 scale · floor clock 6 Hz (the ladder never freezes the haze). Downscale only, one step per window, reset on route change. The
 tier itself never flips on a frame-rate reading.
 
 ## 3. Soft body (R11, R12)
@@ -356,7 +369,7 @@ and over woken plasma in every theme (`jelly-legibility.test.ts`).
 | `lib/jelly/arcs/*`                                                                                   | arcs, charge, hops, breakdown, Coulomb; `renderer.ts` is a frame driver (order 30)                                                                                                                    |
 | `lib/liquid/glass/{engine,shader,jelly-glsl,haze-shader,renderer,policy,scene,scene-store,color}.ts` | rims, RGB edge, plasma, dent glow and light dot, pulse rings, haze canvases, the ambient clock, lattice stepping, snapshots; `engine.ts` is a frame driver (order 20) with pointer input from the hub |
 | `lib/liquid/runtime.ts`                                                                              | fallback cursor light on hosts the engine does not draw; a frame driver (order 25)                                                                                                                    |
-| `hooks/useLiquidInteractions.ts`                                                                     | mounts registry, engine, carriers, physics and arcs in one idle callback with one teardown                                                                                                            |
+| `hooks/useLiquidInteractions.ts`                                                                     | mounts the registry and physics at once (press feedback never waits), then carriers, arcs and the engine after `load` + idle; one teardown                                                            |
 | `app/jelly-material.css` · `app/jelly-arcs.css` · `app/jelly-coverage.css`                           | CSS tier, arc layer, coverage adapters; `app/liquid-glass.css` keeps the role base                                                                                                                    |
 | `components/shared/app-theme.css`                                                                    | the `--app-jelly-*` adapter for `.app-glass`                                                                                                                                                          |
 | `app/routes/jelly.tsx`                                                                               | the `/jelly` material lab (`/liquid-glass` redirects there)                                                                                                                                           |
@@ -367,7 +380,11 @@ the one exception) and never add their own pointer loop, deformation or arc code
 take jelly through role classes and `data-jelly*` attributes. The globe keeps its name,
 its dough simulation (`lib/dough.ts`) and its own coat (`components/radial/jelly-glass.ts`,
 "the globe's jelly coat" — unrelated to `lib/jelly/`); it shares the plasma palette only
-through tokens (R15).
+through tokens (R15). That coat draws the material's layers itself — haze, dormant plasma, the RGB-led rim and
+Fresnel edge — clipped to the sphere, so no globe element may ever be a rectangular host: `GLOBE_SELECTOR` in
+`lib/jelly/tiers.ts` is part of `OPT_OUT_SELECTOR` and of the engine's and registry's excludes, and click arcs never
+take a press on the globe (`lib/jelly/__tests__/globe-exclusion.test.ts`). The coat's private "drawn" flag is
+`data-globe-coat`, never `data-jelly` (a `data-jelly` stage was the square plasma outline of 2026-10-23).
 
 Retained from the liquid-glass contract, unchanged: the snapshot lifecycle
 (`scene.ts`: 260 ms coalescing, ≥ 1.5 s spacing, idle-time capture, 1.6 s mutation
@@ -385,7 +402,7 @@ and calls `d.wake()` when something starts to move. A driver runs on the next fr
 while it is awake; returning `true` keeps it awake, anything else lets it sleep. **When no
 driver is awake no frame is requested at all**, so the page at rest pays nothing beyond
 what the ambient clock asks for, and the clock asks by waking from a timer, never by
-spinning. Drivers run in ascending `order` (physics 10 → engine 20 → fallback light 25 → arcs 30), so a
+spinning. Drivers run in ascending `order` (`useFluidDrag` 5 → physics 10 → engine 20 → fallback light 25 → arcs 30), so a
 producer's state (the dent, the lattice drive, the charge) is drawn the same frame it is
 written. `stop()` unregisters and cancels a pending frame nobody else needs; one driver
 throwing is reported asynchronously and never stops the others.

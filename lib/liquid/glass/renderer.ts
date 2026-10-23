@@ -115,6 +115,11 @@ export interface HazeDraw {
   /** Flow speed, eddy amount, current axis (radians). */
   flow: [number, number, number];
   quiet: number;
+  /**
+   * Extra haze swing in the bevel, absolute alpha (`--site-jelly-haze-edge`): where the legibility bound behind text
+   * leaves a light theme ~4 sRGB levels, the currents running along the edges carry the motion. Omitted = 0.
+   */
+  edge?: number;
   /** Motion amplitude (1 lively, `CALM.amplitude` under calm). */
   amp: number;
   /** #989 dormant plasma; omitted = level 0, no rings. */
@@ -151,6 +156,7 @@ const HAZE_NAMES = [
   'uPlasma',
   'uFlow',
   'uQuiet',
+  'uEdge',
   'uAmp',
   'uPlasmaMotion',
   'uLevel',
@@ -394,6 +400,7 @@ export class GlassRenderer {
     gl.uniform1f(h.uPlasma, o.look.plasma);
     gl.uniform3f(h.uFlow, o.flow[0], o.flow[1], o.flow[2]);
     gl.uniform1f(h.uQuiet, o.quiet);
+    gl.uniform1f(h.uEdge, o.edge ?? 0);
     gl.uniform1f(h.uAmp, o.amp);
     gl.uniform1f(h.uPlasmaMotion, o.plasmaMotion ?? 1);
     gl.uniform1f(h.uLevel, o.plasma?.level ?? 0);

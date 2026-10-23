@@ -38,6 +38,11 @@ export type JellyEvents = {
   'charge:attract': { el: Element; nx: number; ny: number; force: number };
   /** physics → engine + arcs: plasma wake level of `el` (0 rest, `PLASMA.wake` hover, 1 press/focus/click). */
   'plasma:level': { el: Element; level: number };
+  /**
+   * engine → carriers: an ambient haze tick was drawn in this frame. Idle carriers advance on it, so the page at rest
+   * makes ONE frame per tick for haze and carriers together instead of two unsynchronised clocks' worth.
+   */
+  'ambient:tick': Record<string, never>;
 };
 
 export type JellyEventName = keyof JellyEvents;

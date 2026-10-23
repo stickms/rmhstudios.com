@@ -3,7 +3,9 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { msToAmbientTick } from '@/lib/jelly/ambient-tick';
 import { GlobeCursorEngine, type HoverKind } from '@/lib/globe-cursor/engine';
+import { IDLE_AFTER_MS, jellyBudget, jellyMode, onJellyEnvChange } from '@/lib/jelly/tiers';
 import type { GlobeCursorSettings } from '@/lib/globe-cursor/settings';
 import { useGlobeCursorStore } from '@/stores/globeCursorStore';
 
@@ -17,12 +19,23 @@ import { useGlobeCursorStore } from '@/stores/globeCursorStore';
  *
  * ## When the frame runs
  *
- * The owner asked for a globe that everts constantly, so while the pointer is
- * over the page the frame runs every vsync. It stops — no frame scheduled at
- * all — when the pointer leaves the window, when the tab is hidden (the browser
- * pauses it), once fades/sparkles/trail have settled, and under reduced motion,
- * where the globe is drawn still (one frame per pointer event) instead of
- * animating. Unmount cancels it.
+ * Every vsync only while something the hand did is still settling — the pointer
+ * moving, a spring, the fade, sparkles, the trail (`engine.busy()`).
+ *
+ * The owner asked for a globe that everts constantly, and it does, but the
+ * eversion is ambient motion, so with the pointer resting and everything settled
+ * it runs on the jelly ambient clock rather than on every vsync: a timer to the
+ * next tick of the shared grid (`lib/jelly/ambient-tick.ts`) at the tier's
+ * engaged rate for `IDLE_AFTER_MS` after the last input, then the idle floor —
+ * the same ticks the docked globe draws on, so the two land in one frame
+ * (R7: ≤ 13 frames/s at rest).
+ *
+ * Under jellyMotion `still` (WCAG 2.2.2), the degraded tiers, a game in play or a
+ * hidden tab (`jellyMode().ambient` false) the eversion and spin hold still and,
+ * once the cursor has come to rest under a still pointer, NO frame is scheduled
+ * at all. It also stops when the pointer leaves the window, and under reduced
+ * motion, where the globe is drawn still (one frame per pointer event). Unmount
+ * cancels it.
  */
 
 const STYLE_ID = 'rmh-globe-cursor-style';
@@ -113,9 +126,24 @@ export default function GlobeCursor() {
     };
 
     let raf = 0;
+    let timer: ReturnType<typeof setTimeout> | 0 = 0;
     let last = 0;
+    let lastInput = performance.now();
     let dirty: { x: number; y: number; w: number; h: number } | null = null;
     let lastHover: HoverKind | 'native' = 'none';
+
+    // The jelly policy, re-read only when it changes (never per frame): may the eversion run on its own, and at what
+    // ambient rates.
+    let engagedHz = 0;
+    let idleHz = 0;
+    const readEnv = () => {
+      const ambient = jellyMode().ambient;
+      const budget = jellyBudget();
+      engine.setAmbient(ambient);
+      engagedHz = ambient ? budget.clockHz : 0;
+      idleHz = ambient ? budget.idleClockHz : 0;
+      kick();
+    };
 
     const frame = (now: number) => {
       raf = 0;
@@ -135,12 +163,36 @@ export default function GlobeCursor() {
         );
       }
       dirty = engine.draw(ctx);
-      // Reduced motion draws one still frame per event; otherwise keep going while anything moves.
-      if (!reducedRef.current && engine.busy()) raf = requestAnimationFrame(frame);
-      else last = 0;
+      // Reduced motion draws one still frame per event. Otherwise: every vsync while anything settles, the ambient
+      // tick while only the eversion runs, and nothing at all once it rests (ambient motion off, or no pointer).
+      if (reducedRef.current) {
+        last = 0;
+        return;
+      }
+      if (engine.busy()) {
+        raf = requestAnimationFrame(frame);
+        return;
+      }
+      const at = performance.now();
+      const hz = engine.everting() ? (at - lastInput < IDLE_AFTER_MS ? engagedHz : idleHz) : 0;
+      const wait = msToAmbientTick(at, hz);
+      if (wait === Infinity) {
+        last = 0;
+        return;
+      }
+      // `last` is kept: the eversion advances by the real time between ticks.
+      timer = setTimeout(() => {
+        timer = 0;
+        if (!raf) raf = requestAnimationFrame(frame);
+      }, wait);
     };
     function kick() {
-      if (!raf) raf = requestAnimationFrame(frame);
+      if (raf) return;
+      if (timer) {
+        clearTimeout(timer);
+        timer = 0;
+      }
+      raf = requestAnimationFrame(frame);
     }
     kickRef.current = kick;
 
@@ -149,6 +201,7 @@ export default function GlobeCursor() {
     };
 
     const onMove = (e: PointerEvent) => {
+      lastInput = performance.now();
       if (e.pointerType !== 'mouse') {
         engine.leave();
         setNativeHidden(false);
@@ -172,6 +225,7 @@ export default function GlobeCursor() {
     };
     const onDown = (e: PointerEvent) => {
       if (e.pointerType !== 'mouse') return;
+      lastInput = performance.now();
       engine.down();
       kick();
     };
@@ -193,6 +247,8 @@ export default function GlobeCursor() {
     };
 
     resize();
+    readEnv();
+    const stopEnv = onJellyEnvChange(readEnv);
     window.addEventListener('resize', resize);
     document.addEventListener('pointermove', onMove, { passive: true });
     document.addEventListener('pointerover', onOver, { passive: true });
@@ -204,6 +260,8 @@ export default function GlobeCursor() {
 
     return () => {
       if (raf) cancelAnimationFrame(raf);
+      if (timer) clearTimeout(timer);
+      stopEnv();
       kickRef.current = () => {};
       engine.dispose();
       engineRef.current = null;

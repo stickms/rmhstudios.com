@@ -128,6 +128,13 @@ function Button({
             {loadingText}
           </span>
         </span>
+      ) : !asChild && (typeof children === 'string' || typeof children === 'number') ? (
+        // A plain-text label gets a layout-neutral (`display: contents`) element of its own, so the button is never
+        // "text-only" to React: React rewrites a lone string child with `textContent`, which would wipe the jelly
+        // flow carrier, so lib/jelly/flow-carriers.ts gives text-only hosts none and the button would never move.
+        <span data-slot="button-label" className="contents">
+          {children}
+        </span>
       ) : (
         children
       )}

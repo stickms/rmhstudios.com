@@ -13,10 +13,14 @@
  *   the hover or focus that is already on it still everts out of the point instead of popping in.
  * - **A control that cannot hold the layer** — a text field, a textarea or a select (replaced elements have no
  *   pseudo-elements), or one whose `::before` the site already uses — gets a ghost instead: one shared,
- *   body-level `.evert-ghost` laid over its box, its own shape (the control's computed radius), that everts out of
- *   the same point on the same spring. Two of them: one for hover and press, one that stays on the focused field.
- *   They are positioned with `translate` (the compositor), re-placed only on scroll and resize while one is up, and
- *   never per frame.
+ *   body-level `.evert-ghost` laid over its box, its own shape (the control's computed radius). Two of them: one for
+ *   hover and press (`data-liquid-glass="lit"`, so the glass engine draws the shared optical response on it), one
+ *   that stays on the focused field. They are positioned with `translate` (the compositor), re-placed only on scroll
+ *   and resize while one is up, and never per frame. Their base rules (fixed, inert, an opacity state like the
+ *   `[data-evert]::before` layer) live in app/globals.css next to that layer; the script and those rules ship
+ *   together — without the rules a ghost is a static block at the end of <body> (F2, after a39a095e). Kept rather
+ *   than retired: jelly's soft body never deforms a field (`input, textarea, select` are excluded) and an inline link
+ *   cannot hold a slab canvas, so the ghost is their only hover/focus surface.
  *
  * What is left alone: controls with their own state animation (the switch, native checkboxes and radios, the hub's
  * orb and globe), anything under `[data-evert-off]`, the effect's own layers, and anything as large as half the
