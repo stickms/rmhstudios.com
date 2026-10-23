@@ -2153,7 +2153,7 @@
  * reaching their end does not hand the gesture back to the page.
  */
 .toj-scrim,
-.toj-bowl {
+.toj-bowl-scrim {
   touch-action: none;
 }
 
@@ -3306,15 +3306,10 @@ button.toj-row:active:not(:disabled) {
    in landscape. What it borrows is the material — same surface, same rules,
    same gold. */
 
-.toj-bowl {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: max(var(--toj-safe-top), 0.5rem) 0.5rem max(var(--toj-safe-bottom), 0.5rem);
+/* The scrim behind the alley. `DialogContent` owns position and stacking; this
+   only paints it in the temple's ground, unanimated (see `DialogOverlay`). */
+.toj-bowl-scrim {
   background: color-mix(in oklab, var(--toj-ground-deep) 88%, transparent);
-  animation: toj-fade var(--toj-base) var(--toj-ease);
 }
 
 .toj-bowl-card {
