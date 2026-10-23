@@ -43,8 +43,8 @@ export function SwissStandings({ tournament }: { tournament: SerializedTournamen
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-site-border">
-                <td className="px-3 py-1.5 text-site-text-dim">{r.rank}</td>
-                <td className="px-3 py-1.5 truncate max-w-[14rem]">
+                <td className="px-3 py-2 text-site-text-dim">{r.rank}</td>
+                <td className="px-3 py-2 truncate max-w-56">
                   {r.name}
                   {r.hadBye && (
                     <span className="ml-2 text-xs text-site-text-dim">
@@ -52,8 +52,8 @@ export function SwissStandings({ tournament }: { tournament: SerializedTournamen
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-1.5 text-right font-medium">{r.points}</td>
-                <td className="px-3 py-1.5 text-right text-site-text-dim">{r.buchholz}</td>
+                <td className="px-3 py-2 text-right font-medium">{r.points}</td>
+                <td className="px-3 py-2 text-right text-site-text-dim">{r.buchholz}</td>
               </tr>
             ))}
           </tbody>

@@ -27,6 +27,7 @@ import {
 import { toast } from'sonner';
 import { UserAvatar } from'@/components/ui/UserAvatar';
 import { Button } from'@/components/ui/button';
+import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
 import { Reveal } from'@/components/motion';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
@@ -476,23 +477,19 @@ export function NotificationsColumn({
  {prefsOpen && <PreferencesPanel />}
 
  {loading ? (
- <div className="flex items-center justify-center py-20">
+ <div className="flex items-center justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  ) : items.length === 0 ? (
- <Reveal className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
- <div className="rounded-site glass-fill p-4">
- <Bell className="h-8 w-8 text-site-text-muted"/>
- </div>
- <p className="font-medium text-site-text">
- {t('no-notifications-yet', { defaultValue:'No notifications yet'})}
- </p>
- <p className="max-w-xs text-sm text-site-text-muted">
- {t('no-notifications-description', {
+ <Reveal>
+ <EmptyState
+ icon={Bell}
+ title={t('no-notifications-yet', { defaultValue:'No notifications yet'})}
+ description={t('no-notifications-description', {
  defaultValue:
 "When someone likes, comments on, reposts, or mentions you, it'll show up here.",
  })}
- </p>
+ />
  </Reveal>
  ) : (
  // Density page (§8.4): rows stay dense INSIDE one floating L1 `.glass-fill`

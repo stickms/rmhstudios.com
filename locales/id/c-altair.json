@@ -163,5 +163,6 @@
   "webgl-context-lost": "Konteks WebGL hilang! Harap muat ulang halaman.",
   "you": "(Anda)",
   "your-class": "Kelas Anda",
-  "zoom": "Zoom"
+  "zoom": "Zoom",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
 }

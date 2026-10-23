@@ -25,8 +25,8 @@ function ProfilePage() {
             {t("profile", { defaultValue: "Profile" })}
           </h1>
         </div>
-        <Link to="/strategies/profile/settings" className="p-2 rounded hover:bg-white/5 transition-colors">
-          <Settings size={16} className="text-white/30" />
+        <Link to="/strategies/profile/settings" aria-label={t("settings", { defaultValue: "Settings" })} className="size-11 flex items-center justify-center rounded hover:bg-white/5 transition-colors">
+          <Settings size={16} aria-hidden className="text-white/50" />
         </Link>
       </div>
 
@@ -56,13 +56,13 @@ function ProfilePage() {
 
           {/* Activity Heatmap */}
           <div className="rounded-lg p-4 space-y-3 overflow-x-auto" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <h3 className="text-sm md:text-xs font-mono uppercase tracking-wider text-white/40">{t("activity", { defaultValue: "Activity" })}</h3>
+            <h3 className="text-sm md:text-xs font-mono uppercase tracking-wider text-white/60">{t("activity", { defaultValue: "Activity" })}</h3>
             <ActivityHeatmap data={{}} weeks={16} />
           </div>
 
           {/* Links */}
           <div className="flex gap-3">
-            <Link to="/strategies/profile/reputation" className="text-sm md:text-xs text-white/30 hover:text-white/50 transition-colors min-h-[44px] md:min-h-0 flex items-center">
+            <Link to="/strategies/profile/reputation" className="text-sm md:text-xs text-white/50 hover:text-white/80 transition-colors min-h-11 md:min-h-0 flex items-center">
               {t("full-xp-breakdown", { defaultValue: "Full XP Breakdown →" })}
             </Link>
           </div>
@@ -76,7 +76,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg p-2.5 md:p-3 text-center" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
       <p className="text-base md:text-lg font-bold tabular-nums" style={{ color: 'var(--doctrine-accent)' }}>{value}</p>
-      <p className="text-xs md:text-[10px] text-white/30 mt-0.5">{label}</p>
+      <p className="text-xs text-white/50 mt-0.5">{label}</p>
     </div>
   );
 }

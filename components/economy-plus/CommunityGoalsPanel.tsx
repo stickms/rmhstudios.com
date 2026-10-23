@@ -53,7 +53,7 @@ export default function CommunityGoalsPanel() {
 
   if (isLoading || !data) {
     return (
-      <div className="space-y-3 px-3 pb-8">
+      <div className="space-y-3 px-3 pb-12">
         <Skeleton className="h-44 w-full" />
       </div>
     );
@@ -65,7 +65,7 @@ export default function CommunityGoalsPanel() {
   };
 
   return (
-    <div className="space-y-3 px-3 pb-8">
+    <div className="space-y-3 px-3 pb-12">
       <p className="px-1 text-sm text-site-text-muted">
         {t('cg-intro', {
           defaultValue:

@@ -15,6 +15,7 @@ import { useThemeStore } from '@/stores/themeStore';
 import { deriveAppliedTheme, type ThemeTokens, type UserThemeView } from '@/lib/themes/tokens';
 import { ThemeEditor } from './ThemeEditor';
 import { ThemeMiniShell } from './ThemeMiniShell';
+import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
 
 function PriceChip({ coins }: { coins: number | null }) {
   if (coins == null) return null;
@@ -74,8 +75,12 @@ export function ThemeStudio({
         const d = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(d?.error);
       }
-      setShop((prev) => prev.map((s) => (s.id === theme.id ? { ...s, owned: true, sales: s.sales + 1 } : s)));
-      setOwned((prev) => (prev.some((o) => o.id === theme.id) ? prev : [{ ...theme, owned: true }, ...prev]));
+      setShop((prev) =>
+        prev.map((s) => (s.id === theme.id ? { ...s, owned: true, sales: s.sales + 1 } : s)),
+      );
+      setOwned((prev) =>
+        prev.some((o) => o.id === theme.id) ? prev : [{ ...theme, owned: true }, ...prev],
+      );
       toast.success(t('bought', { defaultValue: 'Theme purchased — it is in your inventory' }));
     } catch (e) {
       toast.error(
@@ -108,7 +113,7 @@ export function ThemeStudio({
 
   if (editing !== null) {
     return (
-      <div className="px-4 pt-4 pb-12">
+      <SettingsPageBody>
         <ThemeEditor
           initial={editing === 'new' ? null : editing}
           onDone={() => {
@@ -116,55 +121,29 @@ export function ThemeStudio({
             void refreshMine();
           }}
         />
-      </div>
+      </SettingsPageBody>
     );
   }
 
   return (
-    <div className="px-4 pt-4 pb-16 space-y-8">
+    <SettingsPageBody>
       {/* ── Create: members only; non-members get an upsell (§14.2) ── */}
       {signedIn ? (
-        <section>
-          {isMember ? (
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-site-text">
-                {t('my-themes', { defaultValue: 'My themes' })}
-              </h2>
+        isMember ? (
+          <SettingsSection
+            title={t('my-themes', { defaultValue: 'My themes' })}
+            action={
               <Button variant="accent" size="sm" onClick={() => setEditing('new')}>
                 <Plus className="h-4 w-4" aria-hidden />
                 {t('new-theme', { defaultValue: 'New theme' })}
               </Button>
-            </div>
-          ) : (
-            // Stacks below `sm`: as one row the CTA is `flex: none` at ~150px,
-            // which left the copy about 110px on a phone — a two-word title over
-            // four lines. The button goes full width underneath instead, which is
-            // also the comfortable place to reach it.
-            <Card pane className="flex-col items-start gap-3 p-4 sm:flex-row sm:items-center">
-              <div className="flex min-w-0 items-start gap-3">
-                <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-site-text">
-                    {t('member-gate-title', { defaultValue: 'Create & sell themes with a membership' })}
-                  </p>
-                  <p className="text-xs text-site-text-muted">
-                    {t('member-gate-desc', {
-                      defaultValue: 'Anyone can buy themes with coins — designing and selling them is a member perk.',
-                    })}
-                  </p>
-                </div>
-              </div>
-              <Button asChild variant="accent" size="sm" className="w-full sm:ml-auto sm:w-auto">
-                <ViewTransitionLink to="/store">
-                  {t('member-gate-cta', { defaultValue: 'Become a member' })}
-                </ViewTransitionLink>
-              </Button>
-            </Card>
-          )}
-
-          {isMember ? (
-            mine.length === 0 ? (
-              <EmptyState icon={Palette} title={t('no-themes', { defaultValue: 'No themes yet' })} />
+            }
+          >
+            {mine.length === 0 ? (
+              <EmptyState
+                icon={Palette}
+                title={t('no-themes', { defaultValue: 'No themes yet' })}
+              />
             ) : (
               <ul className="space-y-2">
                 {mine.map((theme) => (
@@ -179,10 +158,14 @@ export function ThemeStudio({
                           <ThemeMiniShell tokens={theme.tokens} size="sm" className="!h-14" />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium text-site-text">{theme.name}</span>
+                          <span className="block truncate text-sm font-medium text-site-text">
+                            {theme.name}
+                          </span>
                           <span className="block text-xs text-site-text-muted">
                             {theme.status.toLowerCase()}
-                            {theme.status === 'PUBLISHED' ? ` · ${theme.sales} ${t('sales', { defaultValue: 'sales' })}` : ''}
+                            {theme.status === 'PUBLISHED'
+                              ? ` · ${theme.sales} ${t('sales', { defaultValue: 'sales' })}`
+                              : ''}
                           </span>
                         </span>
                       </button>
@@ -196,17 +179,42 @@ export function ThemeStudio({
                   </li>
                 ))}
               </ul>
-            )
-          ) : null}
-        </section>
+            )}
+          </SettingsSection>
+        ) : (
+          // Stacks below `sm`: as one row the CTA is `flex: none` at ~150px,
+          // which left the copy about 110px on a phone — a two-word title over
+          // four lines. The button goes full width underneath instead, which is
+          // also the comfortable place to reach it.
+          <Card pane className="flex-col items-start gap-3 p-4 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 items-start gap-3">
+              <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-site-text">
+                  {t('member-gate-title', {
+                    defaultValue: 'Create & sell themes with a membership',
+                  })}
+                </p>
+                <p className="text-xs text-site-text-muted">
+                  {t('member-gate-desc', {
+                    defaultValue:
+                      'Anyone can buy themes with coins — designing and selling them is a member perk.',
+                  })}
+                </p>
+              </div>
+            </div>
+            <Button asChild variant="accent" size="sm" className="w-full sm:ms-auto sm:w-auto">
+              <ViewTransitionLink to="/store">
+                {t('member-gate-cta', { defaultValue: 'Become a member' })}
+              </ViewTransitionLink>
+            </Button>
+          </Card>
+        )
       ) : null}
 
       {/* ── Owned inventory: Apply / Remove (§14.2) ── */}
       {signedIn && owned.length > 0 ? (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-site-text">
-            {t('owned-themes', { defaultValue: 'Your inventory' })}
-          </h2>
+        <SettingsSection title={t('owned-themes', { defaultValue: 'Your inventory' })}>
           <ul className="space-y-2">
             {owned.map((theme) => (
               <li key={theme.id}>
@@ -215,7 +223,9 @@ export function ThemeStudio({
                     <ThemeMiniShell tokens={theme.tokens} size="sm" className="!h-14" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-site-text">{theme.name}</span>
+                    <span className="block truncate text-sm font-medium text-site-text">
+                      {theme.name}
+                    </span>
                     <span className="block truncate text-xs text-site-text-muted">
                       {theme.author?.name ?? theme.author?.handle}
                     </span>
@@ -234,45 +244,51 @@ export function ThemeStudio({
               </li>
             ))}
           </ul>
-        </section>
+        </SettingsSection>
       ) : null}
 
       {/* ── Marketplace browse ── */}
-      <section>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-site-text">
-            {t('community-themes', { defaultValue: 'Community themes' })}
-          </h2>
-          <LiquidTabs
-            size="sm"
-            aria-label={t('sort-label', { defaultValue: 'Sort themes' })}
-            value={sort}
-            onChange={(id) => void changeSort(id as 'top' | 'new')}
-            tabs={[
-              { id: 'top', label: t('sort-top', { defaultValue: 'Top' }) },
-              { id: 'new', label: t('sort-new', { defaultValue: 'New' }) },
-            ]}
-          />
-        </div>
+      <SettingsSection title={t('community-themes', { defaultValue: 'Community themes' })}>
+        <LiquidTabs
+          size="sm"
+          aria-label={t('sort-label', { defaultValue: 'Sort themes' })}
+          value={sort}
+          onChange={(id) => void changeSort(id as 'top' | 'new')}
+          tabs={[
+            { id: 'top', label: t('sort-top', { defaultValue: 'Top' }) },
+            { id: 'new', label: t('sort-new', { defaultValue: 'New' }) },
+          ]}
+        />
         {shop.length === 0 ? (
-          <EmptyState icon={Palette} title={t('shop-empty', { defaultValue: 'No themes for sale yet' })} />
+          <EmptyState
+            icon={Palette}
+            title={t('shop-empty', { defaultValue: 'No themes for sale yet' })}
+          />
         ) : (
           <ul className={cn('grid gap-3 sm:grid-cols-2 lg:grid-cols-3', sorting && 'opacity-60')}>
             {shop.map((theme) => (
               <li key={theme.id}>
-                <Card interactive className="gap-3 p-3">
+                <Card interactive className="gap-3 px-4 py-3">
                   <ThemeMiniShell tokens={theme.tokens} size="sm" />
                   <div className="flex items-start justify-between gap-2">
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-site-text">{theme.name}</span>
+                      <span className="block truncate text-sm font-medium text-site-text">
+                        {theme.name}
+                      </span>
                       <span className="block truncate text-xs text-site-text-muted">
-                        {theme.author?.name ?? theme.author?.handle} · {theme.sales} {t('sales', { defaultValue: 'sales' })}
+                        {theme.author?.name ?? theme.author?.handle} · {theme.sales}{' '}
+                        {t('sales', { defaultValue: 'sales' })}
                       </span>
                     </span>
                     <PriceChip coins={theme.priceCoins} />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => preview(theme, true)} className="flex-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => preview(theme, true)}
+                      className="flex-1"
+                    >
                       <Eye className="h-4 w-4" aria-hidden />
                       {t('preview', { defaultValue: 'Preview' })}
                     </Button>
@@ -284,7 +300,13 @@ export function ThemeStudio({
                         t={t}
                       />
                     ) : (
-                      <Button variant="accent" size="sm" onClick={() => buy(theme)} disabled={!signedIn} className="flex-1">
+                      <Button
+                        variant="accent"
+                        size="sm"
+                        onClick={() => buy(theme)}
+                        disabled={!signedIn}
+                        className="flex-1"
+                      >
                         {t('buy-for', { defaultValue: 'Buy' })}
                       </Button>
                     )}
@@ -294,8 +316,8 @@ export function ThemeStudio({
             ))}
           </ul>
         )}
-      </section>
-    </div>
+      </SettingsSection>
+    </SettingsPageBody>
   );
 }
 

@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { CircleManager } from '@/components/circle/CircleManager';
+import { SettingsPageBody } from '@/components/settings/SettingsSection';
 
 export const Route = createFileRoute('/_site/settings/circle')({
   head: () => ({
@@ -10,15 +12,20 @@ export const Route = createFileRoute('/_site/settings/circle')({
 });
 
 function CircleSettingsPage() {
+  const { t } = useTranslation('feed');
+  const settingsLabel = t('settings', { defaultValue: 'Settings' });
+  const title = t('settings-circle-title', { defaultValue: 'Close Friends' });
   return (
     <PageLayout
-      title="Close Friends"
+      title={title}
+      wide
       backTo="/settings"
-      breadcrumbs={[{ label: 'Settings', to: '/settings' }, { label: 'Close Friends' }]}
+      backLabel={settingsLabel}
+      breadcrumbs={[{ label: settingsLabel, to: '/settings' }, { label: title }]}
     >
-      <div className="px-4 pt-4 pb-12">
+      <SettingsPageBody>
         <CircleManager />
-      </div>
+      </SettingsPageBody>
     </PageLayout>
   );
 }

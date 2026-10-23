@@ -293,7 +293,7 @@ export function ExploreColumn({
           apps, pages). Say so, rather than letting the People tab read as "no
           one by that name exists". */}
       {hasQuery && !session && (
-        <p className="px-4 py-2 text-sm text-site-text-muted">
+        <p className="px-4 pb-3 text-sm text-site-text-muted">
           {t('search-signed-out-scope', {
             defaultValue: 'Showing games, apps and pages.',
           })}{' '}
@@ -311,7 +311,7 @@ export function ExploreColumn({
           a near-miss (a typo, or the wrong name for a game) is one tap from the
           right query instead of a dead end. */}
       {hasQuery && meta.suggestion && (
-        <div className="border-b border-site-border px-4 py-2 text-sm text-site-text-muted">
+        <div className="px-4 pb-3 text-sm text-site-text-muted">
           {t('search-did-you-mean', { defaultValue: 'Did you mean' })}{' '}
           <button
             onClick={() => setQuery(meta.suggestion!)}

@@ -16,11 +16,11 @@ export function NewsSourceBadge({ publisher, url, className }: NewsSourceBadgePr
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center gap-1.5 text-xs text-(--site-text-dim) hover:text-(--site-accent) transition-colors group/source ${className ?? ''}`}
+            className={`inline-flex items-center gap-1.5 text-xs text-site-text-dim hover:text-site-accent transition-colors group/source ${className ?? ''}`}
             aria-label={t("read-original-article-on", { defaultValue: "Read original article on {{publisher}}", publisher })}
         >
-            <span className="truncate max-w-[120px]">{t("via-publisher", { defaultValue: "via {{publisher}}", publisher })}</span>
-            <ExternalLink className="w-3 h-3 shrink-0 opacity-50 group-hover/source:opacity-100 transition-opacity" />
+            <span className="truncate max-w-32">{t("via-publisher", { defaultValue: "via {{publisher}}", publisher })}</span>
+            <ExternalLink aria-hidden className="size-3 shrink-0 opacity-50 transition-opacity group-hover/source:opacity-100" />
         </a>
     );
 }

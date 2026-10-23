@@ -142,17 +142,17 @@ export function SellSheet({
             })}
           />
         ) : (
-          <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+          <div className="max-h-[60vh] space-y-2 overflow-y-auto pe-1">
             {sorted.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-3"
+                className="glass-fill flex items-center gap-3 rounded-site p-3"
               >
                 <MarketItemPreview kind={item.kind} data={item.data} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
                   <span
-                    className="text-[10px] font-bold uppercase"
+                    className="text-xs font-semibold uppercase"
                     style={{ color: RARITY_COLORS[item.rarity] }}
                   >
                     {item.rarity}

@@ -108,7 +108,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  {/* Avatar — the same box and classes as ComposeBox's, so the swap cannot
  move or re-ring it. `eager`: it is above the fold, and `lazy` here
  painted an empty circle for a frame between the initial and the image. */}
- <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0">
+ <div className="w-10 h-10 rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0">
  {image ? (
  <img
  src={buildOptimizedUrl(image, 80, 80)}

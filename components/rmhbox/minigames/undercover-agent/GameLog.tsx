@@ -54,22 +54,22 @@ export default function GameLog({ redTeam, blueTeam, logEntries }: GameLogProps)
   const { containerRef, contentRef } = useStickToBottom<HTMLDivElement, HTMLDivElement>();
 
   return (
-    <div className="flex flex-col rounded-xl border border-(--app-border) bg-(--app-surface) overflow-hidden">
+    <div className="flex flex-col rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) overflow-hidden">
       {/* Score header */}
       <div className="flex items-stretch border-b border-(--app-border)">
         {/* Red score */}
-        <div className="flex-1 flex flex-col items-center justify-center py-2 px-3 bg-red-500/10">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">{t("team-red", { defaultValue: "Red" })}</span>
-          <span className="text-lg font-mono font-bold text-red-400">
+        <div className="flex-1 flex flex-col items-center justify-center py-2 px-3 bg-(--app-danger)/10">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-(--app-danger)">{t("team-red", { defaultValue: "Red" })}</span>
+          <span className="text-lg font-mono font-bold text-(--app-danger)">
             {redTeam ? `${redTeam.agentsRevealed}/${redTeam.agentsTotal}` : '–'}
           </span>
         </div>
         {/* Divider */}
         <div className="w-px bg-(--app-border)" />
         {/* Blue score */}
-        <div className="flex-1 flex flex-col items-center justify-center py-2 px-3 bg-blue-500/10">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">{t("team-blue", { defaultValue: "Blue" })}</span>
-          <span className="text-lg font-mono font-bold text-blue-400">
+        <div className="flex-1 flex flex-col items-center justify-center py-2 px-3 bg-(--app-info)/10">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-(--app-info)">{t("team-blue", { defaultValue: "Blue" })}</span>
+          <span className="text-lg font-mono font-bold text-(--app-info)">
             {blueTeam ? `${blueTeam.agentsRevealed}/${blueTeam.agentsTotal}` : '–'}
           </span>
         </div>
@@ -90,7 +90,7 @@ export default function GameLog({ redTeam, blueTeam, logEntries }: GameLogProps)
         ) : (
           logEntries.map((entry) => {
             const Icon = LOG_ICONS[entry.type] ?? MessageSquare;
-            const teamColor = entry.team === 'red' ? 'text-red-400' : 'text-blue-400';
+            const teamColor = entry.team === 'red' ? 'text-(--app-danger)' : 'text-(--app-info)';
 
             return (
               <div

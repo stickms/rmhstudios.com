@@ -98,24 +98,24 @@ export default function RmhTypeMultiplayer() {
       <RmhTypeHeader backLabel="RMH Type" backHref="/rmhtype" />
 
       <div className="flex-1 p-4 md:p-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-8">
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Create Room */}
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-4">{t("create-room", { defaultValue: "Create Room" })}</h2>
 
               <div className="space-y-3 mb-4">
                 <div>
-                  <label className="block text-xs font-medium mb-1 text-(--app-text-muted)">{t("difficulty", { defaultValue: "Difficulty" })}</label>
-                  <div className="flex gap-1">
+                  <label className="block text-sm font-medium mb-2 text-(--app-text-muted)">{t("difficulty", { defaultValue: "Difficulty" })}</label>
+                  <div className="flex gap-2">
                     {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
                       <button
                         key={d}
                         onClick={() => setRoomDifficulty(d)}
-                        className={`flex-1 py-1.5 rounded text-xs font-medium capitalize transition-colors ${
+                        className={`flex-1 py-2 rounded-(--app-radius-sm) text-sm font-medium capitalize transition-colors ${
                           roomDifficulty === d
-                            ? 'bg-(--app-accent) text-white'
+                            ? 'bg-(--app-accent) text-(--app-accent-fg)'
                             : 'bg-(--app-bg) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
                         }`}
                       >
@@ -126,15 +126,15 @@ export default function RmhTypeMultiplayer() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1 text-(--app-text-muted)">{t("length", { defaultValue: "Length" })}</label>
-                  <div className="flex gap-1">
+                  <label className="block text-sm font-medium mb-2 text-(--app-text-muted)">{t("length", { defaultValue: "Length" })}</label>
+                  <div className="flex gap-2">
                     {(['short', 'medium', 'long'] as PassageLength[]).map((l) => (
                       <button
                         key={l}
                         onClick={() => setRoomLength(l)}
-                        className={`flex-1 py-1.5 rounded text-xs font-medium capitalize transition-colors ${
+                        className={`flex-1 py-2 rounded-(--app-radius-sm) text-sm font-medium capitalize transition-colors ${
                           roomLength === l
-                            ? 'bg-(--app-accent) text-white'
+                            ? 'bg-(--app-accent) text-(--app-accent-fg)'
                             : 'bg-(--app-bg) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
                         }`}
                       >
@@ -145,7 +145,7 @@ export default function RmhTypeMultiplayer() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1 text-(--app-text-muted)">{t("rounds-label", { defaultValue: "Rounds: {{count}}", count: roomRounds })}</label>
+                  <label className="block text-sm font-medium mb-2 text-(--app-text-muted)">{t("rounds-label", { defaultValue: "Rounds: {{count}}", count: roomRounds })}</label>
                   <input
                     type="range"
                     min={1}
@@ -160,14 +160,14 @@ export default function RmhTypeMultiplayer() {
               <button
                 onClick={handleCreateRoom}
                 disabled={connectionStatus !== 'connected'}
-                className="w-full py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                className="w-full py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
               >
                 {t("create-room", { defaultValue: "Create Room" })}
               </button>
             </div>
 
             {/* Join Room */}
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-4">{t("join-room", { defaultValue: "Join Room" })}</h2>
               <p className="text-sm mb-4 text-(--app-text-muted)">
                 {t("join-room-desc", { defaultValue: "Enter a 6-character room code to join a friend." })}
@@ -179,18 +179,18 @@ export default function RmhTypeMultiplayer() {
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   placeholder="ABCDEF"
-                  className="w-10 min-w-0 flex-1 px-4 py-3 rounded-lg font-mono text-lg uppercase tracking-widest text-center border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+                  className="w-10 min-w-0 flex-1 px-4 py-3 rounded-(--app-radius-sm) font-mono text-lg uppercase tracking-widest text-center border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
                 />
                 <button
                   type="submit"
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                  className="px-6 py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                  className="px-6 py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
                 >
                   {t("join", { defaultValue: "Join" })}
                 </button>
               </form>
 
-              <div className="mt-6 p-4 rounded-lg bg-(--app-bg) border border-(--app-border)">
+              <div className="mt-6 p-4 rounded-(--app-radius-sm) bg-(--app-bg) border border-(--app-border)">
                 <h3 className="text-sm font-semibold mb-2">{t("how-it-works", { defaultValue: "How it works" })}</h3>
                 <ul className="text-xs space-y-1 text-(--app-text-muted)">
                   <li>{t("how-step-1", { defaultValue: "1. Create a room or join with a code" })}</li>
@@ -204,7 +204,7 @@ export default function RmhTypeMultiplayer() {
           </div>
 
           {/* Public Rooms */}
-          <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+          <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Globe className="h-5 w-5 text-(--app-accent)" />
@@ -212,10 +212,11 @@ export default function RmhTypeMultiplayer() {
               </h2>
               <button
                 onClick={() => emit(C2S.ROOM_BROWSE, {})}
-                className="p-1.5 rounded-lg text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover) transition-colors"
+                className="p-1.5 rounded-(--app-radius-sm) text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover) transition-colors"
                 title={t("refresh", { defaultValue: "Refresh" })}
+                aria-label={t("refresh", { defaultValue: "Refresh" })}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="h-4 w-4" aria-hidden />
               </button>
             </div>
             {publicRooms.length === 0 ? (
@@ -228,10 +229,10 @@ export default function RmhTypeMultiplayer() {
                   <button
                     key={r.roomId}
                     onClick={() => emit(C2S.ROOM_JOIN, { roomCode: r.roomId })}
-                    className="w-full flex items-center justify-between p-3 rounded-lg bg-(--app-bg) border border-(--app-border) hover:border-(--app-accent) transition-colors text-left"
+                    className="w-full flex items-center justify-between p-3 rounded-(--app-radius-sm) bg-(--app-bg) border border-(--app-border) hover:border-(--app-accent) transition-colors text-left"
                   >
                     <div>
-                      <div className="font-medium text-sm">{r.hostUserName}&apos;s room</div>
+                      <div className="font-medium text-sm">{t("room-of-host", { defaultValue: "{{name}}'s room", name: r.hostUserName })}</div>
                       <div className="text-xs text-(--app-text-muted) mt-0.5">
                         <span className="capitalize">{r.difficulty}</span>
                         {' · '}

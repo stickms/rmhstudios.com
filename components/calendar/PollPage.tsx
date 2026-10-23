@@ -206,7 +206,7 @@ export default function PollPage({ id }: { id: string }) {
 
   if (isPending || (signedIn && state === 'loading')) {
     return (
-      <div className="space-y-3 p-4" aria-busy>
+      <div className="space-y-3 px-4 pt-4 pb-12" aria-busy>
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-96 w-full" />
       </div>
@@ -283,7 +283,7 @@ export default function PollPage({ id }: { id: string }) {
   ];
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
       <header className="space-y-1">
         <h2 className="font-display text-xl font-medium text-site-text">{poll.title}</h2>
         {poll.description && (
@@ -408,7 +408,7 @@ export default function PollPage({ id }: { id: string }) {
 
       {tab === 'group' && selected != null && (
         <section className="glass-fill rounded-site p-3" aria-live="polite">
-          <h3 className="text-sm font-bold text-site-text">
+          <h3 className="site-section-label">
             {new Intl.DateTimeFormat(i18n.language, {
               weekday: 'long',
               hour: 'numeric',
@@ -439,7 +439,7 @@ export default function PollPage({ id }: { id: string }) {
       )}
 
       <section className="space-y-2" aria-labelledby="poll-shortlist">
-        <h3 id="poll-shortlist" className="text-sm font-bold text-site-text">
+        <h3 id="poll-shortlist" className="site-section-label">
           {t('shortlist-title', { defaultValue: 'Best times' })}
         </h3>
         {ranked.runs.length === 0 ? (
@@ -488,7 +488,7 @@ export default function PollPage({ id }: { id: string }) {
       </section>
 
       <section className="space-y-2" aria-labelledby="poll-people">
-        <h3 id="poll-people" className="flex items-center gap-1.5 text-sm font-bold text-site-text">
+        <h3 id="poll-people" className="site-section-label flex items-center gap-2">
           <Users className="size-4" aria-hidden />
           {t('people-title', { defaultValue: 'Responses' })} ({people.length})
         </h3>

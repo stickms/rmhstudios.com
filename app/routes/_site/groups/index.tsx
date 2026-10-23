@@ -30,10 +30,8 @@ export const Route = createFileRoute('/_site/groups/')({
 function GroupsPage() {
   const { groups } = Route.useLoaderData();
   return (
-    <>
-      <PageFrame>
-        <GroupChatsColumn initialData={groups} />
-      </PageFrame>
-    </>
+    <PageFrame>
+      <GroupChatsColumn initialData={groups} />
+    </PageFrame>
   );
 }

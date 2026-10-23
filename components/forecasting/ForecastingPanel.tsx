@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
+import { Spinner } from '@/components/ui/spinner';
 import { SeasonAdminForm } from './SeasonAdminForm';
 
 interface Bucket {
@@ -47,7 +47,7 @@ function CalibrationCurve({ buckets }: { buckets: Bucket[] }) {
   return (
     <svg
       viewBox={`0 0 ${S} ${S}`}
-      className="w-40 h-40 shrink-0"
+      className="size-40 shrink-0"
       role="img"
       aria-label={t('curve-aria', {
         defaultValue: 'Calibration curve: forecast against observed frequency',
@@ -84,11 +84,11 @@ function CalibrationCard() {
   }, []);
   return (
     <section className="rounded-site glass-pane p-4 flex flex-col gap-3">
-      <h2 className="font-semibold text-site-text">
+      <h2 className="site-section-label">
         {t('calibration', { defaultValue: 'Your calibration' })}
       </h2>
       {!cal ? (
-        <Loader2 className="w-4 h-4 animate-spin text-site-text-dim" />
+        <Spinner size={16} />
       ) : !cal.enough ? (
         <p className="text-sm text-site-text-dim">
           {t('not-enough', {
@@ -100,7 +100,7 @@ function CalibrationCard() {
       ) : (
         <div className="flex items-center gap-4 flex-wrap">
           <CalibrationCurve buckets={cal.buckets} />
-          <dl className="grid grid-cols-[auto_auto] gap-x-4 gap-y-1 text-sm">
+          <dl className="grid grid-cols-[auto_auto] gap-x-4 gap-y-2 text-sm">
             <dt className="text-site-text-dim">{t('forecasts', { defaultValue: 'Forecasts' })}</dt>
             <dd className="tabular-nums">{cal.n}</dd>
             <dt className="text-site-text-dim">{t('brier', { defaultValue: 'Brier score' })}</dt>
@@ -128,11 +128,11 @@ function SeasonCard({ isAdmin }: { isAdmin: boolean }) {
   const board = data?.board;
   return (
     <section className="rounded-site glass-pane p-4 flex flex-col gap-3">
-      <h2 className="font-semibold text-site-text">
+      <h2 className="site-section-label">
         {t('season', { defaultValue: 'Forecasting season' })}
       </h2>
       {!data ? (
-        <Loader2 className="w-4 h-4 animate-spin text-site-text-dim" />
+        <Spinner size={16} />
       ) : !board ? (
         <p className="text-sm text-site-text-dim">
           {t('no-season', { defaultValue: 'No season is running yet.' })}
@@ -153,7 +153,7 @@ function SeasonCard({ isAdmin }: { isAdmin: boolean }) {
               {t('no-scores', { defaultValue: 'Scores appear once a season market resolves.' })}
             </p>
           ) : (
-            <ol className="flex flex-col gap-1">
+            <ol className="flex flex-col gap-2">
               {board.leaderboard.map((r, i) => (
                 <li key={r.userId} className="flex items-center gap-3 text-sm">
                   <span className="w-6 text-site-text-dim tabular-nums">{i + 1}</span>
@@ -179,7 +179,7 @@ export function ForecastingPanel({ signedIn }: { signedIn: boolean }) {
   const { data: session } = useSession();
   const isAdmin = Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
   return (
-    <div className="flex flex-col gap-4 p-3 sm:p-4">
+    <div className="flex flex-col gap-4 px-4 pb-12">
       <SeasonCard isAdmin={isAdmin} />
       {signedIn && <CalibrationCard />}
     </div>

@@ -330,10 +330,10 @@ function saveError(e: unknown, t: (k: string, o?: { defaultValue: string }) => s
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <details open className="glass-fill rounded-site">
-      <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-semibold text-site-text select-none">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center px-4 py-3 text-sm font-semibold text-site-text select-none">
         {title}
       </summary>
-      <div className="space-y-3 px-3 pt-1 pb-3">{children}</div>
+      <div className="space-y-3 px-4 pt-1 pb-4">{children}</div>
     </details>
   );
 }

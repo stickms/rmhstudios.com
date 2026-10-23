@@ -178,11 +178,11 @@ function JobsPage() {
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       {/* Filters */}
       <FilterChips search={search} onUpdate={updateFilter} showPersonalPresets={loaderData.isAuthenticated} />
       {loaderData.isAuthenticated && (
-        <div className="mb-4 flex justify-end">
+        <div className="flex justify-end">
           <SaveSearchDialog filters={search} />
         </div>
       )}
@@ -209,7 +209,7 @@ function JobsPage() {
             <Button
               type="button"
               variant="outline"
-              className="mx-auto mt-6 flex"
+              className="mx-auto mt-4 flex"
               loading={loadingMore}
               loadingText="Loading…"
               onClick={() => void handleLoadMore()}

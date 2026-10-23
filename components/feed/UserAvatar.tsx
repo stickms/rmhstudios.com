@@ -43,7 +43,7 @@ function UserAvatarImpl({ user, size ='md', linkToProfile = true }: UserAvatarPr
  const frame = user.cosmetics?.avatarFrame;
 
  const inner = (
- <div className={`${sizeClasses[size]} rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold shrink-0`}>
+ <div className={`${sizeClasses[size]} rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-bold shrink-0`}>
  {showImg ? (
  <img
  src={imgSrc}

@@ -2,6 +2,22 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
+/**
+ * The card parts step their padding up at `sm`. tailwind-merge cannot let an
+ * unprefixed caller override (`py-3`) beat a prefixed default (`sm:py-6`), so
+ * a compact card silently grew back to 24px from 640px up. Each responsive
+ * default is therefore applied only when the caller has not set that axis.
+ */
+function setsAxis(className: string | undefined, prefixes: readonly string[]) {
+  if (!className) return false;
+  return className
+    .split(/\s+/)
+    .some((cls) => prefixes.some((p) => cls.startsWith(`${p}-`) || cls.startsWith(`sm:${p}-`)));
+}
+const PAD_Y = ['p', 'py', 'pt', 'pb'] as const;
+const PAD_X = ['p', 'px', 'ps', 'pe', 'pl', 'pr'] as const;
+const GAP = ['gap', 'gap-y'] as const;
+
 /** Shared material surface. Repeated content uses tint/rim without blur;
  * `pane` promotes a singular panel to the bounded optical renderer. The document's
  * liquid runtime owns cursor lighting. Palette, fallbacks
@@ -28,7 +44,9 @@ function Card({
       // spring simply wins while it is running — see app/liquid-glass.css).
       data-fluid-press={interactive ? 'firm' : undefined}
       className={cn(
-        'flex flex-col gap-5 py-5 text-site-text sm:gap-6 sm:py-6',
+        'flex flex-col gap-5 py-5 text-site-text',
+        !setsAxis(className, GAP) && 'sm:gap-6',
+        !setsAxis(className, PAD_Y) && 'sm:py-6',
         pane ? 'glass-pane' : 'glass-fill',
         interactive && 'glass-interactive',
         className,
@@ -43,7 +61,8 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card-header"
       className={cn(
-        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-5 sm:px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-5 sm:[.border-b]:pb-6',
+        '@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-5 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-5 sm:[.border-b]:pb-6',
+        !setsAxis(className, PAD_X) && 'sm:px-6',
         className,
       )}
       {...props}
@@ -82,7 +101,13 @@ function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="card-content" className={cn('px-5 sm:px-6', className)} {...props} />;
+  return (
+    <div
+      data-slot="card-content"
+      className={cn('px-5', !setsAxis(className, PAD_X) && 'sm:px-6', className)}
+      {...props}
+    />
+  );
 }
 
 function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
@@ -90,7 +115,8 @@ function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card-footer"
       className={cn(
-        'flex items-center px-5 sm:px-6 [.border-t]:pt-5 sm:[.border-t]:pt-6',
+        'flex items-center px-5 [.border-t]:pt-5 sm:[.border-t]:pt-6',
+        !setsAxis(className, PAD_X) && 'sm:px-6',
         className,
       )}
       {...props}

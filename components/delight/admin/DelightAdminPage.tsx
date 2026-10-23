@@ -3,6 +3,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Cookie, Compass, Landmark, Languages, PartyPopper } from 'lucide-react';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,9 +29,10 @@ export function DelightAdminPage() {
         defaultValue:
           'Run the site hunt, curate the museum, moderate fortunes, flip April Fools, review translations.',
       })}
+      wide
       backTo="/admin"
     >
-      <div className="space-y-4 px-4 pt-4 pb-12">
+      <AdminBody>
         <LiquidTabs
           aria-label={t('admin-tabs', { defaultValue: 'Delight tools sections' })}
           value={tab}
@@ -63,7 +65,7 @@ export function DelightAdminPage() {
         <Suspense fallback={<Skeleton className="h-40 w-full" />}>
           <Panel />
         </Suspense>
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

@@ -125,7 +125,7 @@ function VenturesPage() {
         defaultValue: 'The brands and programmes built around RMH Studios.',
       })}
     >
-      <ul className="space-y-3 px-3 pb-12">
+      <ul className="space-y-3 px-4 pt-4 pb-12">
         {VENTURES.map((v) => (
           <li key={v.id}>
             <HubLinkRow

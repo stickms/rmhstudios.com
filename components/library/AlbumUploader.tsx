@@ -5,13 +5,14 @@
  * truly per-item — a live "Uploading 36/69" counter + overall bar, plus per-row
  * byte-level upload progress, a "processing" state while the server compresses
  * (sharp/ffmpeg), and automatic retry with backoff on transient failures (with a
- * manual Retry button as a fallback). Themed with album-admin.css to match the
- * rest of the site.
+ * manual Retry button as a fallback). Built from the site primitives and tokens
+ * (the bespoke album-admin.css it used to ship is gone).
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, Check, Film, Loader2, RotateCw, UploadCloud, X } from 'lucide-react';
-import './album-admin.css';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export type AdminSlide = { id: string; type: string; position: number; thumb: string; src: string };
 
@@ -47,7 +48,11 @@ const isPermanent = (msg?: string) =>
   !!msg && /unsupported|too large|not found|unauthor|invalid|no files/i.test(msg);
 
 /** Run `worker` over `ids` with at most `concurrency` in flight at once. */
-async function runPool<T>(ids: T[], concurrency: number, worker: (id: T) => Promise<void>): Promise<void> {
+async function runPool<T>(
+  ids: T[],
+  concurrency: number,
+  worker: (id: T) => Promise<void>,
+): Promise<void> {
   let cursor = 0;
   const lanes = Array.from({ length: Math.min(concurrency, ids.length) }, async () => {
     while (cursor < ids.length) await worker(ids[cursor++]);
@@ -55,10 +60,17 @@ async function runPool<T>(ids: T[], concurrency: number, worker: (id: T) => Prom
   await Promise.all(lanes);
 }
 
-type XhrResult = { status: number; body: { created?: AdminSlide[]; errors?: { error: string }[]; error?: string } | null };
+type XhrResult = {
+  status: number;
+  body: { created?: AdminSlide[]; errors?: { error: string }[]; error?: string } | null;
+};
 
 /** POST a FormData with real upload-progress events (fetch can't report these). */
-function xhrUpload(url: string, form: FormData, onProgress: (p: number) => void): Promise<XhrResult> {
+function xhrUpload(
+  url: string,
+  form: FormData,
+  onProgress: (p: number) => void,
+): Promise<XhrResult> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
@@ -111,7 +123,10 @@ export function AlbumUploader({
 
   // One attempt. Returns the created slides, or whether it's worth retrying.
   const attemptUpload = useCallback(
-    async (item: QueueItem, onProgress: (p: number) => void): Promise<{ done?: AdminSlide[]; retry?: boolean; message?: string }> => {
+    async (
+      item: QueueItem,
+      onProgress: (p: number) => void,
+    ): Promise<{ done?: AdminSlide[]; retry?: boolean; message?: string }> => {
       const form = new FormData();
       form.append('files', item.file);
       form.append('uploadKey', item.id); // stable across retries → idempotent server-side
@@ -125,9 +140,12 @@ export function AlbumUploader({
         const created = res.body?.created ?? [];
         if (created.length) return { done: created };
         const msg = res.body?.errors?.[0]?.error;
-        return isPermanent(msg) ? { message: msg } : { retry: true, message: msg ?? 'Processing failed' };
+        return isPermanent(msg)
+          ? { message: msg }
+          : { retry: true, message: msg ?? 'Processing failed' };
       }
-      if (res.status === 429 || res.status >= 500) return { retry: true, message: `Server error ${res.status}` };
+      if (res.status === 429 || res.status >= 500)
+        return { retry: true, message: `Server error ${res.status}` };
       return { message: res.body?.error ?? `Error ${res.status}` }; // 4xx → permanent
     },
     [albumId],
@@ -138,14 +156,20 @@ export function AlbumUploader({
     async (item: QueueItem) => {
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         patch(item.id, { status: 'uploading', attempt, progress: 0, error: undefined });
-        const r = await attemptUpload(item, (p) => patch(item.id, { progress: p, status: p >= 1 ? 'processing' : 'uploading' }));
+        const r = await attemptUpload(item, (p) =>
+          patch(item.id, { progress: p, status: p >= 1 ? 'processing' : 'uploading' }),
+        );
         if (r.done) {
           patch(item.id, { status: 'done', progress: 1, error: undefined });
           onUploaded(r.done);
           return;
         }
         if (!r.retry || attempt >= MAX_ATTEMPTS) {
-          patch(item.id, { status: 'error', error: r.message ?? 'Upload failed', permanent: !r.retry });
+          patch(item.id, {
+            status: 'error',
+            error: r.message ?? 'Upload failed',
+            permanent: !r.retry,
+          });
           return;
         }
         // Transient — wait, then retry (the row shows "Retrying…").
@@ -163,7 +187,11 @@ export function AlbumUploader({
     runningRef.current = true;
     try {
       let pending: QueueItem[];
-      while ((pending = itemsRef.current.filter((i) => i.status === 'queued' && !startedRef.current.has(i.id))).length) {
+      while (
+        (pending = itemsRef.current.filter(
+          (i) => i.status === 'queued' && !startedRef.current.has(i.id),
+        )).length
+      ) {
         for (const it of pending) startedRef.current.add(it.id);
         await runPool(pending, CONCURRENCY, uploadOne);
       }
@@ -232,7 +260,8 @@ export function AlbumUploader({
 
   const clearFinished = useCallback(() => {
     setItems((prev) => {
-      for (const it of prev) if (it.status === 'done' && it.preview) URL.revokeObjectURL(it.preview);
+      for (const it of prev)
+        if (it.status === 'done' && it.preview) URL.revokeObjectURL(it.preview);
       return prev.filter((i) => i.status !== 'done');
     });
   }, []);
@@ -240,13 +269,20 @@ export function AlbumUploader({
   const total = items.length;
   const done = items.filter((i) => i.status === 'done').length;
   const failed = items.filter((i) => i.status === 'error').length;
-  const busy = items.some((i) => i.status === 'queued' || i.status === 'uploading' || i.status === 'processing');
+  const busy = items.some(
+    (i) => i.status === 'queued' || i.status === 'uploading' || i.status === 'processing',
+  );
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   return (
-    <div className="aa__panel">
+    <div className="glass-pane space-y-3 rounded-site p-4">
       <div
-        className={`aa__drop${dragging ? ' is-drag' : ''}`}
+        className={cn(
+          'flex w-full cursor-pointer flex-col items-center gap-2 rounded-site border-2 border-dashed px-5 py-8 text-center text-site-text-muted transition-colors duration-site-fast',
+          dragging
+            ? 'border-site-accent bg-site-accent-dim text-site-text'
+            : 'border-site-border-bright hover:border-site-accent hover:text-site-text',
+        )}
         role="button"
         tabIndex={0}
         onClick={() => inputRef.current?.click()}
@@ -262,10 +298,13 @@ export function AlbumUploader({
           if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
         }}
       >
-        <span className="aa__drop-strong">
-          <UploadCloud size={18} aria-hidden="true" /> Drop photos &amp; videos, or click to choose
+        <span className="inline-flex items-center gap-2 font-semibold text-site-text">
+          <UploadCloud className="size-5" aria-hidden="true" /> Drop photos &amp; videos, or click
+          to choose
         </span>
-        <span className="aa__drop-hint">Select many at once. Images → WebP, videos → compressed MP4 + poster.</span>
+        <span className="text-xs">
+          Select many at once. Images → WebP, videos → compressed MP4 + poster.
+        </span>
       </div>
 
       <input
@@ -282,27 +321,42 @@ export function AlbumUploader({
 
       {total > 0 && (
         <>
-          <div className="aa__overall" role="status" aria-live="polite">
-            <span className="aa__overall-label">
-              {busy ? `Uploading ${done}/${total}…` : `${done}/${total} uploaded${failed ? `, ${failed} failed` : ''}`}
+          <div className="flex items-center gap-3" role="status" aria-live="polite">
+            <span className="whitespace-nowrap text-sm tabular-nums text-site-text">
+              {busy
+                ? `Uploading ${done}/${total}…`
+                : `${done}/${total} uploaded${failed ? `, ${failed} failed` : ''}`}
             </span>
-            <div className="aa__track" aria-hidden="true">
-              <div className="aa__fill" style={{ width: `${pct}%` }} />
-            </div>
+            <ProgressBar value={pct / 100} className="flex-1" />
             {!busy && done > 0 && (
-              <button type="button" className="aa__btn aa__btn--ghost" onClick={clearFinished}>
+              <Button type="button" variant="ghost" size="sm" onClick={clearFinished}>
                 Clear finished
-              </button>
+              </Button>
             )}
           </div>
 
-          <ul className="aa__queue">
+          <ul className="flex max-h-80 flex-col gap-3 overflow-y-auto sm:max-h-112">
             {items.map((it) => (
               <UploadRow key={it.id} item={it} onRetry={retryItem} onRemove={removeItem} />
             ))}
           </ul>
         </>
       )}
+    </div>
+  );
+}
+
+/** Determinate bar: a full-width fill scaled on X (transform, not width). */
+function ProgressBar({ value, className }: { value: number; className?: string }) {
+  return (
+    <div
+      className={cn('h-2 overflow-hidden rounded-full bg-site-surface-active', className)}
+      aria-hidden="true"
+    >
+      <div
+        className="h-full origin-left rounded-full bg-site-accent transition-transform duration-site"
+        style={{ transform: `scaleX(${Math.min(1, Math.max(0, value))})` }}
+      />
     </div>
   );
 }
@@ -320,58 +374,59 @@ function UploadRow({
   const pct = Math.round(it.progress * 100);
 
   return (
-    <li className="aa__row">
-      <div className="aa__thumb">
+    <li className="glass-fill flex items-center gap-3 rounded-site px-3 py-3">
+      <div className="relative size-12 shrink-0 overflow-hidden rounded-site-sm bg-site-surface-active">
         {it.preview ? (
-          <img src={it.preview} alt="" />
+          <img src={it.preview} alt="" className="size-full object-cover" />
         ) : (
-          <div className="aa__thumb-badge">
-            <Film size={18} aria-hidden="true" />
+          <div className="absolute inset-0 flex items-center justify-center bg-site-media-scrim text-site-media-ink">
+            <Film className="size-5" aria-hidden="true" />
           </div>
         )}
       </div>
 
-      <div className="aa__info">
-        <span className="aa__name" title={it.file.name}>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="truncate text-sm text-site-text" title={it.file.name}>
           {it.file.name}
         </span>
-        <span className="aa__meta">
+        <span className="flex items-center gap-2 text-xs text-site-text-muted">
           <span>{fmtSize(it.file.size)}</span>
           <StateBadge item={it} />
         </span>
         {active && (
-          <div className="aa__rowtrack" aria-hidden="true">
-            <div className="aa__rowfill" style={{ width: `${it.status === 'processing' ? 100 : pct}%` }} />
-          </div>
+          <ProgressBar value={it.status === 'processing' ? 1 : pct / 100} className="h-1" />
         )}
       </div>
 
       {it.status === 'error' && !it.permanent && (
-        <button type="button" className="aa__rowbtn aa__rowbtn--retry" onClick={() => onRetry(it.id)} title="Retry">
-          <RotateCw size={13} aria-hidden="true" /> Retry
-        </button>
+        <Button type="button" variant="accent-outline" size="xs" onClick={() => onRetry(it.id)}>
+          <RotateCw aria-hidden="true" /> Retry
+        </Button>
       )}
       {!active && (
-        <button
+        <Button
           type="button"
-          className="aa__rowbtn aa__rowbtn--remove"
+          variant="ghost"
+          size="icon-xs"
           onClick={() => onRemove(it.id)}
           aria-label="Remove"
           title="Remove"
         >
-          <X size={14} aria-hidden="true" />
-        </button>
+          <X aria-hidden="true" />
+        </Button>
       )}
     </li>
   );
 }
+
+const STATE = 'inline-flex items-center gap-1';
 
 function StateBadge({ item: it }: { item: QueueItem }) {
   const name = it.file.name;
   switch (it.status) {
     case 'queued':
       return (
-        <span className="aa__state aa__state--queued" aria-label={`${name}: queued`}>
+        <span className={STATE} aria-label={`${name}: queued`}>
           Queued
         </span>
       );
@@ -381,28 +436,31 @@ function StateBadge({ item: it }: { item: QueueItem }) {
           ? `Retrying (${it.attempt - 1}/${MAX_ATTEMPTS - 1})…`
           : `Uploading ${Math.round(it.progress * 100)}%`;
       return (
-        <span className="aa__state aa__state--up" aria-label={`${name}: ${text}`}>
-          <Loader2 size={12} className="aa__spin" aria-hidden="true" />
+        <span className={STATE} aria-label={`${name}: ${text}`}>
+          <Loader2 className="size-3 animate-spin" aria-hidden="true" />
           {text}
         </span>
       );
     }
     case 'processing':
       return (
-        <span className="aa__state aa__state--proc" aria-label={`${name}: processing`}>
-          <Loader2 size={12} className="aa__spin" aria-hidden="true" /> Processing…
+        <span className={STATE} aria-label={`${name}: processing`}>
+          <Loader2 className="size-3 animate-spin" aria-hidden="true" /> Processing…
         </span>
       );
     case 'done':
       return (
-        <span className="aa__state aa__state--done" aria-label={`${name}: added`}>
-          <Check size={12} aria-hidden="true" /> Added
+        <span className={cn(STATE, 'text-site-success')} aria-label={`${name}: added`}>
+          <Check className="size-3" aria-hidden="true" /> Added
         </span>
       );
     case 'error':
       return (
-        <span className="aa__state aa__state--err" aria-label={`${name}: failed — ${it.error ?? 'error'}`}>
-          <AlertCircle size={12} aria-hidden="true" /> {it.error ?? 'Failed'}
+        <span
+          className={cn(STATE, 'text-site-danger')}
+          aria-label={`${name}: failed — ${it.error ?? 'error'}`}
+        >
+          <AlertCircle className="size-3" aria-hidden="true" /> {it.error ?? 'Failed'}
         </span>
       );
     default:

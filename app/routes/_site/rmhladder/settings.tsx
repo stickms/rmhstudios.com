@@ -14,6 +14,10 @@ import {
   doUpdatePrefsSchema,
 } from '@/lib/rmhladder/server-fn-schemas.server';
 import { auth } from '@/lib/auth';
+import { useTranslation } from 'react-i18next';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { prisma } from '@/lib/prisma.server';
 import { getSettings, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
@@ -106,6 +110,7 @@ const PROGRAM_TYPES = [
 ] as const;
 
 function SettingsPage() {
+  const { t } = useTranslation('site');
   const loaded = Route.useLoaderData();
   const router = useRouter();
 
@@ -130,7 +135,7 @@ function SettingsPage() {
     const result = await doUpdatePrefs({ data: patch });
     if (!result.ok) {
       setPrefs(previous);
-      setError(result.error ?? 'Save failed');
+      setError(result.error ?? t('ladder.settings.saveFailed', { defaultValue: 'Save failed' }));
       return;
     }
     await router.invalidate();
@@ -178,7 +183,7 @@ function SettingsPage() {
       }),
     });
     if (!response.ok) {
-      setError('Could not update saved search');
+      setError(t('ladder.settings.updateSearchFailed', { defaultValue: 'Could not update saved search' }));
       return;
     }
     setSavedSearches((rows) =>
@@ -191,7 +196,7 @@ function SettingsPage() {
       method: 'DELETE',
     });
     if (!response.ok) {
-      setError('Could not delete saved search');
+      setError(t('ladder.settings.deleteSearchFailed', { defaultValue: 'Could not delete saved search' }));
       return;
     }
     setSavedSearches((rows) => rows.filter((row) => row.id !== id));
@@ -201,21 +206,34 @@ function SettingsPage() {
   const cities = ((prefs.preferredCities as string[]) ?? []).join(', ');
   const programTypes = (prefs.preferredProgramTypes as string[]) ?? [];
 
+  const sectionCls = 'glass-fill flex flex-col gap-4 rounded-site p-4 sm:p-5';
+  const fieldCls = 'flex flex-col gap-2 border-0 p-0 m-0';
+  const labelCls = 'text-sm font-medium text-site-text';
+  const hintCls = 'text-sm text-site-text-muted';
+
   return (
-    <div>
-      {error && <p className="rl-review-error rl-mono">{error}</p>}
+    <div className="space-y-4">
+      {error && (
+        <p role="alert" className="text-sm text-site-danger">
+          {error}
+        </p>
+      )}
 
-      <div className="rl-settings-grid">
-        <section className="rl-settings-section">
-          <h2 className="rl-eyebrow">Relevance</h2>
+      <div className="grid gap-4 md:grid-cols-2">
+        <section className={sectionCls} aria-labelledby="rl-set-relevance">
+          <h2 id="rl-set-relevance" className="site-section-label">
+            {t('ladder.settings.relevance', { defaultValue: 'Relevance' })}
+          </h2>
 
-          <label className="rl-field" htmlFor="rl-threshold">
-            <span className="rl-eyebrow">
-              Alert threshold · <span className="rl-mono">{threshold}</span>
+          <label className={fieldCls} htmlFor="rl-threshold">
+            <span className={labelCls}>
+              {t('ladder.settings.threshold', { defaultValue: 'Alert threshold' })} ·{' '}
+              <span className="rl-mono">{threshold}</span>
             </span>
             <input
               id="rl-threshold"
               type="range"
+              className="accent-site-accent"
               min={0}
               max={100}
               value={threshold}
@@ -231,9 +249,11 @@ function SettingsPage() {
             />
           </label>
 
-          <label className="rl-field" htmlFor="rl-cities">
-            <span className="rl-eyebrow">Preferred cities (comma-separated)</span>
-            <input
+          <label className={fieldCls} htmlFor="rl-cities">
+            <span className={labelCls}>
+              {t('ladder.settings.cities', { defaultValue: 'Preferred cities (comma-separated)' })}
+            </span>
+            <Input
               id="rl-cities"
               type="text"
               defaultValue={cities}
@@ -248,16 +268,20 @@ function SettingsPage() {
             />
           </label>
 
-          <fieldset className="rl-field">
-            <legend className="rl-eyebrow">Program types</legend>
-            <div className="rl-chip-row">
+          <fieldset className={fieldCls}>
+            <legend className={`${labelCls} mb-2`}>
+              {t('ladder.settings.programTypes', { defaultValue: 'Program types' })}
+            </legend>
+            <div className="flex flex-wrap gap-2">
               {PROGRAM_TYPES.map((pt) => {
                 const on = programTypes.includes(pt);
                 return (
-                  <button
+                  <Button
                     key={pt}
                     type="button"
-                    className={`rl-chip${on ? ' rl-chip--active' : ''}`}
+                    size="sm"
+                    variant={on ? 'accent' : 'outline'}
+                    className="min-h-11"
                     aria-pressed={on}
                     onClick={() =>
                       void patchPrefs({
@@ -268,15 +292,17 @@ function SettingsPage() {
                     }
                   >
                     {pt.replace(/_/g, ' ')}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
           </fieldset>
 
-          <label className="rl-field" htmlFor="rl-timezone">
-            <span className="rl-eyebrow">Timezone</span>
-            <input
+          <label className={fieldCls} htmlFor="rl-timezone">
+            <span className={labelCls}>
+              {t('ladder.settings.timezone', { defaultValue: 'Timezone' })}
+            </span>
+            <Input
               id="rl-timezone"
               type="text"
               defaultValue={(prefs.timezone as string) ?? 'America/New_York'}
@@ -288,11 +314,12 @@ function SettingsPage() {
           </label>
 
           <div className="grid grid-cols-2 gap-3">
-            <label className="rl-field" htmlFor="rl-quiet-start">
-              <span className="rl-eyebrow">Quiet hours start</span>
+            <label className={fieldCls} htmlFor="rl-quiet-start">
+              <span className={labelCls}>
+                {t('ladder.settings.quietStart', { defaultValue: 'Quiet hours start' })}
+              </span>
               <Select
                 id="rl-quiet-start"
-                controlSize="sm"
                 value={prefs.quietHoursStart == null ? '' : String(prefs.quietHoursStart)}
                 onChange={(e) =>
                   void patchPrefs({
@@ -300,7 +327,7 @@ function SettingsPage() {
                   })
                 }
               >
-                <option value="">Off</option>
+                <option value="">{t('ladder.settings.off', { defaultValue: 'Off' })}</option>
                 {Array.from({ length: 24 }, (_, hour) => (
                   <option key={hour} value={hour}>
                     {String(hour).padStart(2, '0')}:00
@@ -308,11 +335,12 @@ function SettingsPage() {
                 ))}
               </Select>
             </label>
-            <label className="rl-field" htmlFor="rl-quiet-end">
-              <span className="rl-eyebrow">Quiet hours end</span>
+            <label className={fieldCls} htmlFor="rl-quiet-end">
+              <span className={labelCls}>
+                {t('ladder.settings.quietEnd', { defaultValue: 'Quiet hours end' })}
+              </span>
               <Select
                 id="rl-quiet-end"
-                controlSize="sm"
                 value={prefs.quietHoursEnd == null ? '' : String(prefs.quietHoursEnd)}
                 onChange={(e) =>
                   void patchPrefs({
@@ -320,7 +348,7 @@ function SettingsPage() {
                   })
                 }
               >
-                <option value="">Off</option>
+                <option value="">{t('ladder.settings.off', { defaultValue: 'Off' })}</option>
                 {Array.from({ length: 24 }, (_, hour) => (
                   <option key={hour} value={hour}>
                     {String(hour).padStart(2, '0')}:00
@@ -330,15 +358,17 @@ function SettingsPage() {
             </label>
           </div>
 
-          <label className="rl-field" htmlFor="rl-resume-threshold">
-            <span className="rl-eyebrow">Minimum resume match (optional)</span>
-            <input
+          <label className={fieldCls} htmlFor="rl-resume-threshold">
+            <span className={labelCls}>
+              {t('ladder.settings.resumeMatch', { defaultValue: 'Minimum resume match (optional)' })}
+            </span>
+            <Input
               id="rl-resume-threshold"
               type="number"
               min={0}
               max={100}
               value={prefs.resumeMatchThreshold == null ? '' : Number(prefs.resumeMatchThreshold)}
-              placeholder="Any match"
+              placeholder={t('ladder.settings.anyMatch', { defaultValue: 'Any match' })}
               onChange={(e) =>
                 setPrefs((value) => ({
                   ...value,
@@ -354,70 +384,90 @@ function SettingsPage() {
           </label>
         </section>
 
-        <section className="rl-settings-section">
-          <h2 className="rl-eyebrow">Alerts</h2>
+        <section className={`${sectionCls} self-start`} aria-labelledby="rl-set-alerts">
+          <h2 id="rl-set-alerts" className="site-section-label">
+            {t('ladder.settings.alerts', { defaultValue: 'Alerts' })}
+          </h2>
 
-          <fieldset className="rl-field">
-            <legend className="rl-eyebrow">Digest</legend>
-            <div className="rl-chip-row">
+          <fieldset className={fieldCls}>
+            <legend className={`${labelCls} mb-2`}>
+              {t('ladder.settings.digest', { defaultValue: 'Digest' })}
+            </legend>
+            <div className="flex flex-wrap gap-2">
               {DIGESTS.map((d) => (
-                <button
+                <Button
                   key={d}
                   type="button"
-                  className={`rl-chip${prefs.digestFrequency === d ? ' rl-chip--active' : ''}`}
+                  size="sm"
+                  variant={prefs.digestFrequency === d ? 'accent' : 'outline'}
+                  className="min-h-11"
                   aria-pressed={prefs.digestFrequency === d}
                   onClick={() => void patchPrefs({ digestFrequency: d })}
                 >
                   {d}
-                </button>
+                </Button>
               ))}
             </div>
           </fieldset>
 
-          <fieldset className="rl-field">
-            <legend className="rl-eyebrow">Channels</legend>
-            <div className="rl-chip-row">
+          <fieldset className={fieldCls}>
+            <legend className={`${labelCls} mb-2`}>
+              {t('ladder.settings.channels', { defaultValue: 'Channels' })}
+            </legend>
+            <div className="flex flex-wrap gap-2">
               {(
                 [
-                  ['channelInApp', 'In-app'],
-                  ['channelEmail', 'Email'],
+                  ['channelInApp', t('ladder.settings.channelInApp', { defaultValue: 'In-app' })],
+                  ['channelEmail', t('ladder.settings.channelEmail', { defaultValue: 'Email' })],
                   ['channelDiscord', 'Discord'],
                 ] as const
               ).map(([key, label]) => {
                 const on = prefs[key] === true;
                 return (
-                  <button
+                  <Button
                     key={key}
                     type="button"
-                    className={`rl-chip${on ? ' rl-chip--active' : ''}`}
+                    size="sm"
+                    variant={on ? 'accent' : 'outline'}
+                    className="min-h-11"
                     aria-pressed={on}
                     onClick={() => void patchPrefs({ [key]: !on } as PrefsPatch)}
                   >
                     {label}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
           </fieldset>
 
-          <p className="rl-quicklist__empty">
-            Discord alerts use the Discord account linked to your RMH Studios sign-in; arbitrary
-            user IDs are never messaged.
+          <p className={hintCls}>
+            {t('ladder.settings.discordNote', {
+              defaultValue:
+                'Discord alerts use the Discord account linked to your RMH Studios sign-in; arbitrary user IDs are never messaged.',
+            })}
           </p>
 
-          <p className="rl-quicklist__empty">
-            Use boost keywords below to prioritize companies, skills, and role families.
+          <p className={hintCls}>
+            {t('ladder.settings.boostNote', {
+              defaultValue:
+                'Use boost keywords below to prioritize companies, skills, and role families.',
+            })}
           </p>
         </section>
 
-        <section className="rl-settings-section rl-settings-section--wide">
-          <h2 className="rl-eyebrow">Keywords</h2>
+        <section className={`${sectionCls} md:col-span-2`} aria-labelledby="rl-set-keywords">
+          <h2 id="rl-set-keywords" className="site-section-label">
+            {t('ladder.settings.keywords', { defaultValue: 'Keywords' })}
+          </h2>
 
-          <div className="rl-keyword-add">
-            <input
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
               type="text"
-              aria-label="New keyword"
-              placeholder="e.g. equity research"
+              className="w-full sm:w-64"
+              aria-label={t('ladder.settings.newKeyword', { defaultValue: 'New keyword' })}
+              placeholder={t('ladder.settings.keywordPlaceholder', {
+                defaultValue: 'e.g. equity research',
+              })}
               value={newKeyword.text}
               onChange={(e) => setNewKeyword((k) => ({ ...k, text: e.target.value }))}
               onKeyDown={(e) => {
@@ -425,70 +475,87 @@ function SettingsPage() {
               }}
             />
             <Select
-              aria-label="Keyword type"
-              controlSize="sm"
+              aria-label={t('ladder.settings.keywordType', { defaultValue: 'Keyword type' })}
               value={newKeyword.type}
               onChange={(e) =>
                 setNewKeyword((k) => ({ ...k, type: e.target.value as 'boost' | 'block' }))
               }
             >
-              <option value="boost">boost</option>
-              <option value="block">block</option>
+              <option value="boost">{t('ladder.settings.boost', { defaultValue: 'boost' })}</option>
+              <option value="block">{t('ladder.settings.block', { defaultValue: 'block' })}</option>
             </Select>
-            <input
+            <Input
               type="number"
-              aria-label="Keyword weight"
+              className="w-24"
+              aria-label={t('ladder.settings.keywordWeight', { defaultValue: 'Keyword weight' })}
               min={0}
               max={50}
               value={newKeyword.weight}
               disabled={newKeyword.type === 'block'}
               onChange={(e) => setNewKeyword((k) => ({ ...k, weight: Number(e.target.value) }))}
             />
-            <button type="button" className="rl-chip" onClick={() => void addKeyword()}>
-              Add
-            </button>
+            <Button type="button" variant="outline" onClick={() => void addKeyword()}>
+              {t('ladder.settings.add', { defaultValue: 'Add' })}
+            </Button>
           </div>
 
-          <div className="rl-chip-row">
+          <div className="flex flex-wrap items-center gap-2">
             {keywords.map((k) => (
               <span
                 key={`${k.type as string}-${k.keyword as string}`}
-                className={`rl-keyword-chip${k.type === 'block' ? ' rl-keyword-chip--block' : ''}`}
+                className={`inline-flex items-center gap-2 rounded-site-sm border py-1 pr-1 pl-3 text-sm ${
+                  k.type === 'block'
+                    ? 'border-site-danger/30 bg-site-danger/10'
+                    : 'border-site-accent/30 bg-site-accent-dim'
+                }`}
               >
                 {k.keyword as string}
-                {k.type === 'boost' && <span className="rl-mono"> +{k.weight as number}</span>}
+                {k.type === 'boost' && <span className="rl-mono">+{k.weight as number}</span>}
                 <button
                   type="button"
-                  aria-label={`Remove keyword ${k.keyword as string}`}
+                  className="touch-target inline-flex size-8 items-center justify-center rounded-site-sm text-site-text-muted transition-colors hover:text-site-text"
+                  aria-label={t('ladder.settings.removeKeyword', {
+                    defaultValue: 'Remove keyword {{keyword}}',
+                    keyword: k.keyword as string,
+                  })}
                   onClick={() =>
                     void removeKeyword(k.keyword as string, k.type as 'boost' | 'block')
                   }
                 >
-                  ×
+                  <X className="size-4" aria-hidden />
                 </button>
               </span>
             ))}
             {keywords.length === 0 && (
-              <p className="rl-quicklist__empty">
-                No keywords yet. Boosts raise a match's score; blocks hide it.
+              <p className={hintCls}>
+                {t('ladder.settings.noKeywords', {
+                  defaultValue: "No keywords yet. Boosts raise a match's score; blocks hide it.",
+                })}
               </p>
             )}
           </div>
         </section>
 
-        <section className="rl-settings-section rl-settings-section--wide">
-          <h2 className="rl-eyebrow">Company watchlist</h2>
-          <p className="rl-quicklist__empty">
-            Watchlisted companies receive a ranking boost in your job feed.
+        <section className={`${sectionCls} md:col-span-2`} aria-labelledby="rl-set-watchlist">
+          <h2 id="rl-set-watchlist" className="site-section-label">
+            {t('ladder.settings.watchlist', { defaultValue: 'Company watchlist' })}
+          </h2>
+          <p className={hintCls}>
+            {t('ladder.settings.watchlistNote', {
+              defaultValue: 'Watchlisted companies receive a ranking boost in your job feed.',
+            })}
           </p>
-          <div className="rl-keyword-add">
+          <div className="flex flex-wrap items-center gap-2">
             <Select
-              aria-label="Choose a company to watch"
-              controlSize="sm"
+              aria-label={t('ladder.settings.chooseCompany', {
+                defaultValue: 'Choose a company to watch',
+              })}
               value={watchlistChoice}
               onChange={(event) => setWatchlistChoice(event.target.value)}
             >
-              <option value="">Choose a company…</option>
+              <option value="">
+                {t('ladder.settings.chooseCompanyOption', { defaultValue: 'Choose a company…' })}
+              </option>
               {loaded.companies
                 .filter((company) => !watchlistCompanyIds.includes(company.id))
                 .map((company) => (
@@ -497,27 +564,35 @@ function SettingsPage() {
                   </option>
                 ))}
             </Select>
-            <button
+            <Button
               type="button"
-              className="rl-chip"
+              variant="outline"
               disabled={!watchlistChoice}
               onClick={() => void setWatchlist(watchlistChoice, true)}
             >
-              Watch
-            </button>
+              {t('ladder.settings.watch', { defaultValue: 'Watch' })}
+            </Button>
           </div>
-          <div className="rl-chip-row">
+          <div className="flex flex-wrap items-center gap-2">
             {watchlistCompanyIds.map((companyId) => {
               const company = loaded.companies.find((candidate) => candidate.id === companyId);
+              const name = company?.name ?? t('ladder.settings.company', { defaultValue: 'Company' });
               return (
-                <span key={companyId} className="rl-keyword-chip">
-                  {company?.name ?? 'Company'}
+                <span
+                  key={companyId}
+                  className="inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-accent-dim py-1 pr-1 pl-3 text-sm"
+                >
+                  {name}
                   <button
                     type="button"
-                    aria-label={`Stop watching ${company?.name ?? 'company'}`}
+                    className="touch-target inline-flex size-8 items-center justify-center rounded-site-sm text-site-text-muted transition-colors hover:text-site-text"
+                    aria-label={t('ladder.settings.stopWatching', {
+                      defaultValue: 'Stop watching {{name}}',
+                      name,
+                    })}
                     onClick={() => void setWatchlist(companyId, false)}
                   >
-                    ×
+                    <X className="size-4" aria-hidden />
                   </button>
                 </span>
               );
@@ -525,38 +600,48 @@ function SettingsPage() {
           </div>
         </section>
 
-        <section className="rl-settings-section rl-settings-section--wide">
-          <h2 className="rl-eyebrow">Saved searches</h2>
+        <section className={`${sectionCls} md:col-span-2`} aria-labelledby="rl-set-searches">
+          <h2 id="rl-set-searches" className="site-section-label">
+            {t('ladder.settings.savedSearches', { defaultValue: 'Saved searches' })}
+          </h2>
           {savedSearches.length === 0 ? (
-            <p className="rl-quicklist__empty">
-              Save filters from the Jobs page to manage their alerts here.
+            <p className={hintCls}>
+              {t('ladder.settings.noSearches', {
+                defaultValue: 'Save filters from the Jobs page to manage their alerts here.',
+              })}
             </p>
           ) : (
-            <div className="space-y-2">
+            <ul className="space-y-2">
               {savedSearches.map((search) => (
-                <div
+                <li
                   key={search.id as string}
-                  className="flex min-h-14 flex-wrap items-center gap-3 rounded-site-sm border border-site-border p-3"
+                  className="glass-inset flex min-h-14 flex-wrap items-center gap-2 rounded-site-sm px-3 py-2"
                 >
                   <span className="mr-auto font-medium">{search.name as string}</span>
-                  <button
+                  <Button
                     type="button"
-                    className={`rl-chip${search.alertsOn ? ' rl-chip--active' : ''}`}
+                    size="sm"
+                    variant={search.alertsOn ? 'accent' : 'outline'}
+                    className="min-h-11"
                     aria-pressed={Boolean(search.alertsOn)}
                     onClick={() => void updateSavedSearch(search, !search.alertsOn)}
                   >
-                    Alerts {search.alertsOn ? 'on' : 'off'}
-                  </button>
-                  <button
+                    {search.alertsOn
+                      ? t('ladder.settings.alertsOn', { defaultValue: 'Alerts on' })
+                      : t('ladder.settings.alertsOff', { defaultValue: 'Alerts off' })}
+                  </Button>
+                  <Button
                     type="button"
-                    className="rl-chip"
+                    size="sm"
+                    variant="outline"
+                    className="min-h-11"
                     onClick={() => void deleteSavedSearch(search.id as string)}
                   >
-                    Delete
-                  </button>
-                </div>
+                    {t('ladder.settings.delete', { defaultValue: 'Delete' })}
+                  </Button>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </section>
       </div>

@@ -93,7 +93,7 @@ export default function SyncStatus() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+        className="flex items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1.5 text-xs font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
         title={t('sync-status-title', { defaultValue: 'Sync status' })}
       >
         <span className={`inline-block h-2 w-2 rounded-full ${DOT[health]}`} aria-hidden />
@@ -107,7 +107,7 @@ export default function SyncStatus() {
           aria-label={t('sync-status-title', { defaultValue: 'Sync status' })}
           data-motion="pop"
           data-state={panel.state}
-          className="absolute bottom-full right-0 z-50 mb-1 w-60 origin-bottom-right rounded-lg border border-(--app-border) bg-(--app-surface) p-3 shadow-lg"
+          className="absolute bottom-full right-0 z-50 mb-1 w-60 origin-bottom-right rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) p-3 shadow-(--app-shadow)"
         >
           <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-(--app-text)">
             <span className={`inline-block h-2 w-2 rounded-full ${DOT[health]}`} aria-hidden />
@@ -127,7 +127,7 @@ export default function SyncStatus() {
               requestResync();
               setOpen(false);
             }}
-            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-colors bg-(--app-accent-dim) text-(--app-accent) hover:bg-(--app-surface-hover)"
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-(--app-radius-sm) py-1.5 text-xs font-medium transition-colors bg-(--app-accent-dim) text-(--app-accent) hover:bg-(--app-surface-hover)"
           >
             <RefreshCw className="h-3.5 w-3.5" aria-hidden />
             {isLive

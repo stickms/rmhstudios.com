@@ -23,7 +23,7 @@ export function CodexOpenButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="py-2 rounded-lg text-sm font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover)"
+      className="py-2 rounded-(--altair-radius) text-sm font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover)"
     >
       {t('codex-open', { defaultValue: 'Codex' })}
       <CodexBadge />
@@ -110,7 +110,7 @@ export default function CodexPanel({ onBack }: { onBack: () => void }) {
           return (
             <li
               key={entry.id}
-              className="rounded-lg border border-(--altair-border) bg-(--altair-surface) p-3"
+              className="rounded-(--altair-radius) border border-(--altair-border) bg-(--altair-surface) p-3"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-semibold text-(--altair-text)">
@@ -146,7 +146,7 @@ export default function CodexPanel({ onBack }: { onBack: () => void }) {
       </ul>
       <button
         onClick={onBack}
-        className="py-2 rounded-lg text-sm font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border)"
+        className="py-2 rounded-(--altair-radius) text-sm font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border)"
       >
         {t('codex-back', { defaultValue: 'Back to bestiary' })}
       </button>

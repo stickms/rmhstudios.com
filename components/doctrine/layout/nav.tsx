@@ -37,7 +37,7 @@ export function DoctrineNav() {
           <h2 className="text-sm font-bold tracking-widest uppercase" style={{ color: 'var(--doctrine-accent, #F97316)' }}>
             RMH Strategies
           </h2>
-          <p className="text-[10px] font-mono text-white/40 mt-0.5">
+          <p className="text-xs font-mono text-white/60 mt-0.5">
             {CURRENT_PHASE.name}
           </p>
         </Link>
@@ -64,14 +64,14 @@ export function DoctrineNav() {
 
               {/* Sahur indicator */}
               {item.label === 'Sahur' && sahurActive && (
-                <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 animate-pulse">
+                <span className="ml-auto text-xs font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 animate-pulse">
                   {t("live-badge", { defaultValue: "LIVE" })}
                 </span>
               )}
 
               {/* Incident count */}
               {item.label === 'Incidents' && activeIncidentCount > 0 && (
-                <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">
+                <span className="ml-auto text-xs font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">
                   {activeIncidentCount}
                 </span>
               )}

@@ -12,7 +12,7 @@ export default function CareersPage() {
           <p className="lede reveal d2">
             {t("careers-lede", { defaultValue: "RMH Capital is a place to do the most interesting work in finance — advising founders one year and global institutions the next — and to grow with a platform built for the long term." })}
           </p>
-          <div className="hero-actions reveal d3" style={{ marginTop: 34 }}>
+          <div className="hero-actions reveal d3" style={{ marginTop: 40 }}>
             <a className="btn btn-gold" href="#open-roles">{t("see-open-roles", { defaultValue: "See open roles" })} <span className="arw">→</span></a>
             <a className="btn btn-outline" href="#culture">{t("our-culture", { defaultValue: "Our culture" })} <span className="arw">→</span></a>
           </div>
@@ -51,7 +51,7 @@ export default function CareersPage() {
                 {t("culture-body-2", { defaultValue: "What makes it work is the people. We hire advisors first, specialists second, and we reward the colleagues who bring the whole firm to a problem. Ambition here is collaborative, and the work is genuinely interesting." })}
               </p>
             </div>
-            <div className="valuegrid reveal d1" style={{ gridTemplateColumns: '1fr 1fr', gap: 28 }}>
+            <div className="valuegrid two reveal d1">
               <div className="value"><h3>{t("value-ownership-title", { defaultValue: "Ownership" })}</h3><p>{t("value-ownership-body", { defaultValue: "Real responsibility early, and the autonomy to act on it." })}</p></div>
               <div className="value"><h3>{t("value-mentorship-title", { defaultValue: "Mentorship" })}</h3><p>{t("value-mentorship-body", { defaultValue: "Senior people who invest in how you think, not just what you produce." })}</p></div>
               <div className="value"><h3>{t("value-mobility-title", { defaultValue: "Mobility" })}</h3><p>{t("value-mobility-body", { defaultValue: "Move across businesses and markets as your interests grow." })}</p></div>
@@ -68,7 +68,7 @@ export default function CareersPage() {
         <div className="container">
           <div className="cta-band reveal">
             <span className="eyebrow center">{t("open-roles-eyebrow", { defaultValue: "Open Roles" })}</span>
-            <h2 style={{ marginTop: 18 }}>{t("open-roles-headline", { defaultValue: "Ready when you are." })}</h2>
+            <h2 style={{ marginTop: 20 }}>{t("open-roles-headline", { defaultValue: "Ready when you are." })}</h2>
             <p>
               {t("open-roles-body", { defaultValue: "We're hiring across investment banking, markets, technology, and corporate functions in our offices worldwide. Tell us where you'd make the biggest difference." })}
             </p>

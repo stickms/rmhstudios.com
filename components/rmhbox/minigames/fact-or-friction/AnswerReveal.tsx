@@ -59,9 +59,9 @@ export default function AnswerReveal({
       className="flex w-full flex-col gap-4"
     >
       {/* Correct answer highlight */}
-      <div className="rounded-xl border-2 border-green-500 bg-green-500/10 p-4 text-center">
-        <p className="mb-1 text-xs font-semibold uppercase text-green-400">{t("correct-answer", { defaultValue: "Correct Answer" })}</p>
-        <p className="text-lg font-bold text-green-400">
+      <div className="rounded-(--app-radius) border-2 border-(--app-success) bg-(--app-success)/10 p-4 text-center">
+        <p className="mb-1 text-xs font-semibold uppercase text-(--app-success)">{t("correct-answer", { defaultValue: "Correct Answer" })}</p>
+        <p className="text-lg font-bold text-(--app-success)">
           {LABELS[correctIndex]}. {correctAnswer}
         </p>
       </div>
@@ -73,15 +73,15 @@ export default function AnswerReveal({
           return (
             <div
               key={i}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+              className={`flex items-center gap-2 rounded-(--app-radius-sm) border px-3 py-2 text-sm ${
                 isCorrect
-                  ? 'border-green-500/50 bg-green-500/10 text-green-400'
+                  ? 'border-(--app-success)/50 bg-(--app-success)/10 text-(--app-success)'
                   : 'border-(--app-border) bg-(--app-bg) text-(--app-text-muted)'
               }`}
             >
               <span className="font-bold">{LABELS[i]}.</span>
               <span className="flex-1 truncate">{opt}</span>
-              {isCorrect && <Check className="h-4 w-4 shrink-0 text-green-400" />}
+              {isCorrect && <Check className="h-4 w-4 shrink-0 text-(--app-success)" />}
             </div>
           );
         })}
@@ -98,7 +98,7 @@ export default function AnswerReveal({
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.08, duration: 0.25 }}
-              className={`flex flex-col gap-1 rounded-lg border px-3 py-2 ${
+              className={`flex flex-col gap-1 rounded-(--app-radius-sm) border px-3 py-2 ${
                 isMe
                   ? 'border-(--app-accent)/50 bg-(--app-accent)/10'
                   : 'border-(--app-border) bg-(--app-bg)'
@@ -108,13 +108,13 @@ export default function AnswerReveal({
                 <div className="flex items-center gap-2">
                   {/* Status icon */}
                   {pr.isCorrect ? (
-                    <Check className="h-4 w-4 text-green-400" />
+                    <Check className="h-4 w-4 text-(--app-success)" />
                   ) : pr.passed ? (
-                    <SkipForward className="h-4 w-4 text-yellow-400" />
+                    <SkipForward className="h-4 w-4 text-(--app-warning)" />
                   ) : pr.timedOut ? (
                     <Clock className="h-4 w-4 text-(--app-text-muted)" />
                   ) : (
-                    <X className="h-4 w-4 text-red-400" />
+                    <X className="h-4 w-4 text-(--app-danger)" />
                   )}
 
                   <span className={`text-sm font-medium ${isMe ? 'text-(--app-accent)' : 'text-(--app-text)'}`}>
@@ -123,14 +123,14 @@ export default function AnswerReveal({
 
                   {/* First badge */}
                   {pr.isFirst && (
-                    <span className="flex items-center gap-0.5 rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-bold text-yellow-400">
+                    <span className="flex items-center gap-0.5 rounded-full bg-(--app-warning)/20 px-1.5 py-0.5 text-[10px] font-bold text-(--app-warning)">
                       <Zap className="h-3 w-3" /> {t("first-badge", { defaultValue: "First!" })} +{pr.speedBonus ?? FF_SPEED_BONUS}
                     </span>
                   )}
 
                   {/* Pass/timeout label */}
                   {pr.passed && (
-                    <span className="text-[10px] text-yellow-400">{t("passed", { defaultValue: "Passed" })}</span>
+                    <span className="text-[10px] text-(--app-warning)">{t("passed", { defaultValue: "Passed" })}</span>
                   )}
                   {pr.timedOut && (
                     <span className="text-[10px] text-(--app-text-muted)">{t("timed-out", { defaultValue: "Timed out" })}</span>
@@ -144,9 +144,9 @@ export default function AnswerReveal({
                   transition={{ delay: i * 0.08 + 0.15, type: 'spring' }}
                   className={`text-sm font-bold tabular-nums ${
                     pr.scoreChange > 0
-                      ? 'text-green-400'
+                      ? 'text-(--app-success)'
                       : pr.scoreChange < 0
-                        ? 'text-red-400'
+                        ? 'text-(--app-danger)'
                         : 'text-(--app-text-muted)'
                   }`}
                 >

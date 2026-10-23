@@ -84,7 +84,7 @@ export function WorldSetup() {
   }
 
   return (
-    <div className="relative flex flex-col items-center-safe min-h-[100dvh] overflow-y-auto py-12 px-4">
+    <div className="relative flex flex-col items-center-safe min-h-[100dvh] overflow-y-auto py-12 pl-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))]">
       <motion.div
         className="relative z-10 w-full max-w-lg"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Suspense } from 'react';
 import { useTranslation } from "react-i18next";
+import { Spinner } from '@/components/ui/spinner';
 
 // Static, not `lazy()`: Start already splits this route's component into its own
 // chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
@@ -17,10 +18,10 @@ function StudioPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen w-full items-center justify-center bg-[var(--site-bg)]">
+        <div className="app-viewport items-center justify-center bg-site-bg">
           <div className="flex flex-col items-center gap-4">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
-            <p className="text-sm text-[var(--site-muted)]">{t("loading", { defaultValue: "Loading RMH Studio..." })}</p>
+            <Spinner size={32} label={t("loading", { defaultValue: "Loading RMH Studio..." })} />
+            <p className="text-sm text-site-text-muted">{t("loading", { defaultValue: "Loading RMH Studio..." })}</p>
           </div>
         </div>
       }

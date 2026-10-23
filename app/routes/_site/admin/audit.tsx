@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -23,7 +24,7 @@ interface Entry {
 }
 
 function AuditLogPage() {
-  const { t } = useTranslation("admin");
+  const { t } = useTranslation('admin');
   const [items, setItems] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,25 +36,35 @@ function AuditLogPage() {
   }, []);
 
   return (
-    <PageLayout title={t("audit-log", { defaultValue: "Audit Log" })} wide backTo="/admin">
-      <div className="mx-auto max-w-3xl space-y-4 p-4 md:p-8">
-
+    <PageLayout title={t('audit-log', { defaultValue: 'Audit Log' })} wide backTo="/admin">
+      <AdminBody width="narrow">
         {loading ? (
           <div className="flex justify-center py-20">
             <Spinner />
           </div>
         ) : items.length === 0 ? (
-          <EmptyState description={t("no-admin-actions", { defaultValue: "No admin actions logged yet." })} />
+          <EmptyState
+            description={t('no-admin-actions', { defaultValue: 'No admin actions logged yet.' })}
+          />
         ) : (
           <ul className="glass-fill divide-y divide-site-border rounded-site overflow-hidden">
             {items.map((e) => (
-              <li key={e.id} className="flex items-center gap-3 px-4 py-2.5">
-                <UserAvatar src={e.admin.image} alt={e.admin.name || 'Admin'} size={28} fallbackName={e.admin.name || 'A'} />
+              <li key={e.id} className="flex items-center gap-3 px-4 py-3">
+                <UserAvatar
+                  src={e.admin.image}
+                  alt={e.admin.name || t('audit-admin-fallback', { defaultValue: 'Admin' })}
+                  size={28}
+                  fallbackName={e.admin.name || 'A'}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-site-text">
                     <span className="font-semibold">{e.admin.name || e.admin.handle}</span>{' '}
-                    <code className="glass-inset rounded-site-sm px-1.5 py-0.5 font-mono text-xs text-site-accent">{e.action}</code>
-                    {e.targetType && <span className="text-site-text-muted"> · {e.targetType}</span>}
+                    <code className="glass-inset rounded-site-sm px-2 py-0.5 font-mono text-xs text-site-accent">
+                      {e.action}
+                    </code>
+                    {e.targetType && (
+                      <span className="text-site-text-muted"> · {e.targetType}</span>
+                    )}
                   </p>
                   {e.detail && <p className="truncate text-xs text-site-text-muted">{e.detail}</p>}
                 </div>
@@ -64,7 +75,7 @@ function AuditLogPage() {
             ))}
           </ul>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

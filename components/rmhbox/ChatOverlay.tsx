@@ -45,7 +45,7 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
   );
 
   return (
-    <div className="flex flex-col rounded-xl bg-(--app-surface) border border-(--app-border) lg:min-h-0 lg:flex-1">
+    <div className="flex flex-col rounded-(--app-radius) bg-(--app-surface) border border-(--app-border) lg:min-h-0 lg:flex-1">
       {/* Mobile toggle header */}
       <button
         onClick={() => setMinimized(!minimized)}
@@ -95,11 +95,11 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
               onChange={(e) => setInput(e.target.value)}
               placeholder={t("type-a-message", { defaultValue: "Type a message…" })}
               maxLength={200}
-              className="flex-1 rounded-lg bg-(--app-bg) px-3 py-1.5 text-sm text-(--app-text) placeholder:text-(--app-text-muted) outline-none focus:ring-1 focus:ring-(--app-accent)"
+              className="flex-1 rounded-(--app-radius-sm) bg-(--app-bg) px-3 py-1.5 text-sm text-(--app-text) placeholder:text-(--app-text-muted) outline-none focus:ring-1 focus:ring-(--app-accent)"
             />
             <button
               type="submit"
-              className="rounded-lg bg-(--app-accent) p-2 text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover)"
+              className="rounded-(--app-radius-sm) bg-(--app-accent) p-2 text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover)"
               aria-label={t("send-message", { defaultValue: "Send message" })}
             >
               <Send className="h-4 w-4" />

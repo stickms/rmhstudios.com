@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Select } from '@/components/ui/select';
 import { AMENITY_OPTIONS, propertyTypeLabel } from '@/lib/homes/format';
 import {
@@ -140,36 +141,31 @@ export function ListingForm({ listing }: ListingFormProps) {
   const priceLabel = listingType === 'RENT' ? 'Monthly rent (USD)' : 'Sale price (USD)';
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-5">
+    <form onSubmit={submit} className="flex flex-col gap-4">
       {error && (
-        <div className="rounded-site border border-site-danger/40 bg-site-danger/10 px-3 py-2 text-sm text-site-danger">
+        <div role="alert" className="rounded-site border border-site-danger/40 bg-site-danger/10 px-4 py-3 text-sm text-site-danger">
           {error}
         </div>
       )}
 
       {/* Type + property */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-site-sm border border-site-border p-0.5">
-          {(['RENT', 'SALE'] as ListingType[]).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setListingType(t)}
-              className={`rounded-[6px] px-4 py-1.5 text-sm font-medium transition-colors ${
-                listingType === t
-                  ? 'bg-site-accent text-site-accent-fg'
-                  : 'text-site-text-muted hover:text-site-text'
-              }`}
-            >
-              {t === 'RENT' ? 'For rent' : 'For sale'}
-            </button>
-          ))}
-        </div>
+        <LiquidTabs
+          size="sm"
+          tabs={[
+            { id: 'RENT', label: 'For rent' },
+            { id: 'SALE', label: 'For sale' },
+          ]}
+          value={listingType}
+          onChange={(id) => setListingType(id as ListingType)}
+          aria-label="Listing type"
+          className="w-auto"
+        />
         <Select
           value={propertyType}
           onChange={(e) => setPropertyType(e.target.value as PropertyType)}
           aria-label="Property type"
-          className="w-auto min-w-[10rem]"
+          className="w-auto min-w-40"
         >
           {PROPERTY_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -251,7 +247,7 @@ export function ListingForm({ listing }: ListingFormProps) {
 
       {/* Location */}
       <div>
-        <span className="mb-1.5 block text-sm font-medium text-site-text">Location</span>
+        <span className="mb-2 block text-sm font-medium text-site-text">Location</span>
         <LocationSearch
           value={addressQuery}
           onQueryChange={(q) => {
@@ -280,7 +276,7 @@ export function ListingForm({ listing }: ListingFormProps) {
 
       {/* Photos */}
       <div>
-        <span className="mb-1.5 block text-sm font-medium text-site-text">Photos</span>
+        <span className="mb-2 block text-sm font-medium text-site-text">Photos</span>
         <ImageUploader
           value={images}
           aiImages={aiImages}
@@ -294,7 +290,7 @@ export function ListingForm({ listing }: ListingFormProps) {
 
       {/* Amenities */}
       <div>
-        <span className="mb-1.5 block text-sm font-medium text-site-text">Amenities</span>
+        <span className="mb-2 block text-sm font-medium text-site-text">Amenities</span>
         <div className="flex flex-wrap gap-2">
           {AMENITY_OPTIONS.map((a) => {
             const on = amenities.includes(a);
@@ -303,7 +299,7 @@ export function ListingForm({ listing }: ListingFormProps) {
                 key={a}
                 type="button"
                 onClick={() => toggleAmenity(a)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                className={`min-h-11 rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
                   on
                     ? 'border-site-accent bg-site-accent-dim text-site-accent'
                     : 'border-site-border text-site-text-muted hover:text-site-text'
@@ -317,8 +313,8 @@ export function ListingForm({ listing }: ListingFormProps) {
       </div>
 
       {/* Pets + availability */}
-      <div className="flex flex-wrap items-center gap-6">
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-site-text">
+      <div className="flex flex-wrap items-center gap-4">
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm text-site-text">
           <input
             type="checkbox"
             checked={petsAllowed}
@@ -369,7 +365,7 @@ function Field({
     <div className={inline ? 'flex items-center gap-2' : ''}>
       <label
         htmlFor={htmlFor}
-        className={`text-sm font-medium text-site-text ${inline ? '' : 'mb-1.5 block'}`}
+        className={`text-sm font-medium text-site-text ${inline ? '' : 'mb-2 block'}`}
       >
         {label}
       </label>

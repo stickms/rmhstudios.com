@@ -12,7 +12,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { Heart, MessageCircle, Repeat } from 'lucide-react';
+import { ExternalLink, Heart, MessageCircle, Repeat } from 'lucide-react';
 
 const fetchEmbed = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
@@ -72,22 +72,22 @@ function EmbedPost() {
 
   if (!post) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-site-bg p-4">
-        <div className="rounded-site border border-site-border bg-site-surface px-5 py-4 text-sm text-site-text-muted">
+      <main className="flex min-h-dvh items-center justify-center bg-site-bg p-4">
+        <div className="glass-fill px-5 py-4 text-sm text-site-text-muted">
           {t("post-not-embeddable", { defaultValue: "This post isn’t available to embed." })}
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="bg-site-bg p-3">
-      <article className="mx-auto max-w-xl rounded-site border border-site-border bg-site-surface p-4">
+    <main className="bg-site-bg p-3">
+      <article className="glass-fill mx-auto max-w-xl p-4">
         <div className="flex items-center gap-3">
           {post.user.image ? (
-            <img src={post.user.image} alt="" className="h-11 w-11 rounded-full object-cover" />
+            <img src={post.user.image} alt="" className="size-11 rounded-full object-cover" />
           ) : (
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-site-bg text-site-accent font-bold">
+            <div className="flex size-11 items-center justify-center rounded-full bg-site-surface text-site-accent font-bold">
               {(post.user.name || post.user.handle || 'R')[0]?.toUpperCase()}
             </div>
           )}
@@ -98,21 +98,21 @@ function EmbedPost() {
         </div>
 
         {post.content && (
-          <p className="mt-3 whitespace-pre-wrap break-words text-[15px] text-site-text">{post.content}</p>
+          <p className="mt-3 whitespace-pre-wrap break-words text-base text-site-text">{post.content}</p>
         )}
         {post.imageUrl && (
-          <img src={post.imageUrl} alt={post.imageAlt ?? ''} className="mt-3 max-h-80 w-full rounded-site object-cover" />
+          <img src={post.imageUrl} alt={post.imageAlt ?? ''} className="mt-3 max-h-80 w-full rounded-site-sm object-cover" />
         )}
 
-        <div className="mt-3 flex items-center gap-5 text-xs text-site-text-dim">
-          <span className="inline-flex items-center gap-1">
-            <Heart className="h-3.5 w-3.5" /> {post.likeCount}
+        <div className="mt-3 flex items-center gap-4 text-xs text-site-text-dim">
+          <span className="inline-flex items-center gap-1.5">
+            <Heart className="size-3.5" aria-hidden /> {post.likeCount}
           </span>
-          <span className="inline-flex items-center gap-1">
-            <Repeat className="h-3.5 w-3.5" /> {post.repostCount}
+          <span className="inline-flex items-center gap-1.5">
+            <Repeat className="size-3.5" aria-hidden /> {post.repostCount}
           </span>
-          <span className="inline-flex items-center gap-1">
-            <MessageCircle className="h-3.5 w-3.5" /> {post.commentCount}
+          <span className="inline-flex items-center gap-1.5">
+            <MessageCircle className="size-3.5" aria-hidden /> {post.commentCount}
           </span>
           <a
             href={postHref}
@@ -120,11 +120,11 @@ function EmbedPost() {
             rel="noopener noreferrer"
             className="ml-auto inline-flex items-center gap-1.5 font-semibold text-site-accent hover:underline"
           >
-            <span className="inline-block h-3.5 w-3.5 rounded bg-site-accent" />
-            View on RMH Studios
+            <ExternalLink className="size-3.5" aria-hidden />
+            {t('post-view-on-rmh', { defaultValue: 'View on RMH Studios' })}
           </a>
         </div>
       </article>
-    </div>
+    </main>
   );
 }

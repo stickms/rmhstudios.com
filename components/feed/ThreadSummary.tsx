@@ -39,7 +39,7 @@ export function ThreadSummary({ postId, commentCount }: { postId: string; commen
  };
 
  return (
- <div className="my-3 rounded-site glass-fill p-3">
+ <div className="my-3 rounded-site glass-fill px-4 py-3">
  {!requested ? (
  <button
  onClick={run}
@@ -57,7 +57,7 @@ export function ThreadSummary({ postId, commentCount }: { postId: string; commen
  <p className="text-sm text-site-text-muted">{error}</p>
  ) : (
  <div>
- <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <p className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
  <Sparkles className="h-3.5 w-3.5 text-site-accent"/> {t('ai-summary', { defaultValue:'AI summary'})}
  </p>
  <p className="whitespace-pre-line text-sm text-site-text">{summary}</p>

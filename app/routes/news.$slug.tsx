@@ -80,12 +80,12 @@ function NewsArticlePage() {
 
   if (!article) {
     return (
-      <main className="min-h-screen pt-20 pb-20 px-4 bg-(--site-bg)">
+      <main className="min-h-dvh bg-site-bg px-4 pt-16 pb-12">
         <div className="container mx-auto max-w-3xl text-center">
-          <h1 className="text-3xl font-bold text-(--site-text)">
+          <h1 className="text-3xl font-bold text-site-text">
             {t('article-not-found', { defaultValue: 'Article not found' })}
           </h1>
-          <Link to="/news" className="text-(--site-accent) mt-4 inline-block hover:underline">
+          <Link to="/news" className="text-site-accent mt-4 inline-block hover:underline">
             &larr; {t('back-to-news', { defaultValue: 'Back to News' })}
           </Link>
         </div>
@@ -96,7 +96,7 @@ function NewsArticlePage() {
   const categoryColor = getCategoryColor(article.category ?? '');
 
   return (
-    <article className="min-h-screen pt-20 pb-20 px-4 bg-(--site-bg) relative overflow-hidden">
+    <article className="relative min-h-dvh overflow-hidden bg-site-bg px-4 pt-16 pb-12">
       {/* The article reveals as a short stagger — back link, meta row, headline,
           lede, source card — on the shared `staggerContainer`/`staggerItem`
           variants. It used to be five hand-written `animate-in … duration-700
@@ -113,22 +113,22 @@ function NewsArticlePage() {
         <motion.div variants={staggerItem}>
         <Link
           to="/news"
-          className="inline-flex items-center gap-2 text-(--site-text-dim) hover:text-(--site-text) mb-8 transition-colors duration-site"
+          className="inline-flex min-h-11 items-center gap-2 text-site-text-dim hover:text-site-text mb-6 transition-colors duration-site"
         >
-          <ArrowLeft className="w-4 h-4" /> {t('back-to-news', { defaultValue: 'Back to News' })}
+          <ArrowLeft className="size-4" aria-hidden /> {t('back-to-news', { defaultValue: 'Back to News' })}
         </Link>
         </motion.div>
 
         {/* §5.48 liquid-open hero — the news card morphs into this header. */}
-        <header className="mb-12" style={{ viewTransitionName: liquidVTName('news', slug) }}>
+        <header className="mb-10" style={{ viewTransitionName: liquidVTName('news', slug) }}>
           <motion.div variants={staggerItem} className="flex flex-wrap items-center gap-3 mb-4">
             <span
-              className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${categoryColor.bg} ${categoryColor.text} ${categoryColor.border} border`}
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${categoryColor.bg} ${categoryColor.text} ${categoryColor.border} border`}
             >
               {article.category}
             </span>
-            <div className="flex items-center gap-2 text-(--site-accent) font-mono text-sm">
-              <Calendar className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-site-accent font-mono text-sm">
+              <Calendar className="size-4" aria-hidden />
               {article.date}
             </div>
             <ShareButton slug={slug} section="news" />
@@ -136,14 +136,14 @@ function NewsArticlePage() {
 
           <motion.h1
             variants={staggerItem}
-            className="text-3xl md:text-5xl font-black text-(--site-text) mb-6 tracking-tight leading-tight font-display"
+            className="text-3xl md:text-5xl font-black text-site-text mb-6 tracking-tight leading-tight font-display"
           >
             {article.title}
           </motion.h1>
 
           <motion.p
             variants={staggerItem}
-            className="text-xl text-(--site-text-muted) leading-relaxed border-l-4 border-(--site-accent) pl-6"
+            className="text-xl text-site-text-muted leading-relaxed border-l-4 border-site-accent pl-4 sm:pl-6"
           >
             {article.description}
           </motion.p>
@@ -157,15 +157,15 @@ function NewsArticlePage() {
         {article.sourceUrl && (
           <motion.div
             variants={staggerItem}
-            className="mb-10 p-6 rounded-site border border-(--site-border) bg-(--site-surface)"
+            className="glass-fill mb-10 p-4 sm:p-6"
           >
-            <p className="text-xs font-semibold uppercase tracking-widest text-(--site-accent) mb-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-site-accent mb-2">
               {t('original-source', { defaultValue: 'Original Source' })}
             </p>
-            <p className="text-(--site-text) font-bold text-lg mb-1 leading-snug">
+            <p className="text-site-text font-bold text-lg mb-1 leading-snug">
               {article.sourceTitle || article.title}
             </p>
-            <p className="text-(--site-text-dim) text-sm mb-3">
+            <p className="text-site-text-dim text-sm mb-3">
               {article.sourcePublisher}
               {article.sourceDate && ` \u00B7 ${article.sourceDate}`}
             </p>
@@ -173,10 +173,10 @@ function NewsArticlePage() {
               href={article.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-bold text-(--site-accent) hover:opacity-80 transition-opacity"
+              className="inline-flex items-center gap-2 text-sm font-bold text-site-accent hover:opacity-80 transition-opacity"
             >
               {t('read-original-article', { defaultValue: 'Read Original Article' })}{' '}
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="size-4" aria-hidden />
             </a>
           </motion.div>
         )}
@@ -186,14 +186,14 @@ function NewsArticlePage() {
             and the reading ruler). */}
         <ArticleBody kind="news" slug={slug} content={article.content} />
 
-        <hr className="my-12 border-(--site-border)" />
+        <hr className="my-10 border-site-border" />
 
         {/* Below the body, after the reader has the article. Renders nothing
             for members / un-consented visitors — see lib/ads/adsense.ts. */}
-        <AdSlot placement="article-end" className="mb-12" />
+        <AdSlot placement="article-end" className="mb-10" />
 
         <div className="text-center">
-          <p className="text-(--site-text-dim) italic">
+          <p className="text-site-text-dim italic">
             {t('end-of-article', { defaultValue: 'End of Article' })}
           </p>
         </div>

@@ -78,6 +78,7 @@ import type { Quat } from '@/lib/device-attitude';
 import { useSession } from '@/components/Providers';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Button } from '@/components/ui/button';
+import { PuzzlePage, PuzzleHeader } from '@/components/daily-puzzles/PuzzleShell';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { GlobeSetBoard } from './GlobeSetBoard';
@@ -631,32 +632,23 @@ export function GlobeSetGame() {
 
 
   return (
-    // `.app-page` is the contract for a full-screen screen that is a DOCUMENT
-    // (app/globals.css §"Full-screen app/game layout helpers"), and this is one.
-    // Without it this was a bare `mx-auto` column on an app route, where
-    // `html.app-route` withholds `scrollbar-gutter: stable` — so the moment the
-    // board grew past the window the document gained a scrollbar, the viewport
-    // narrowed by its width, and `mx-auto` re-centred the whole column sideways in
-    // front of the player. `testing/e2e/fouc.mjs` measured 7.3% of frame
-    // divergence across that, signed in and out. `.app-page` takes the gutter back
-    // (`html.app-route:has(.app-page)`) and brings `100svh` as the floor plus the
-    // home-indicator inset. Lights Out had the identical bug and the identical fix.
-    <div className="app-page">
-      <div className="mx-auto w-full max-w-5xl px-4 pb-12">
-      <header className="pt-2 text-center">
-        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-site-accent">
-          <Sparkles className="h-3.5 w-3.5" aria-hidden />
-          {t('globeset-title', { defaultValue: 'GlobeSet' })}
-        </p>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-site-text sm:text-4xl">
+    // The `.app-page` document (scrollbar gutter, `100svh` floor, home-indicator
+    // inset) now lives in the /daily layout route, so every puzzle shares it; this
+    // page is just its column. History: without `.app-page` the board's growth
+    // added a scrollbar and `mx-auto` re-centred the column sideways
+    // (`testing/e2e/fouc.mjs` measured 7.3% frame divergence).
+    <PuzzlePage width="lg">
+      <PuzzleHeader
+        icon={<Sparkles />}
+        title={t('globeset-title', { defaultValue: 'GlobeSet' })}
+        subtitle={<>{dateKey} · {t('puzzle-number', { defaultValue: 'Puzzle #{{n}}', n: puzzleNumber })}</>}
+      >
+        <p className="text-sm text-site-text-muted">
           {t('globeset-headline', { defaultValue: 'Turn the globe' })}
-        </h1>
-        <p className="mt-2 text-sm text-site-text-muted">
-          {dateKey} · {t('puzzle-number', { defaultValue: 'Puzzle #{{n}}', n: puzzleNumber })}
         </p>
-      </header>
+      </PuzzleHeader>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Boxed rather than left to fill the row: LiquidTabs' sheet is `w-full`,
             so on a desktop width two tabs stretch into a pair of half-page
             slabs and push the controls beside them onto their own line. */}
@@ -767,7 +759,7 @@ export function GlobeSetGame() {
       ) : (
         <>
           {!summary && (
-            <div className="mt-5">
+            <div className="mt-4">
               <GlobeSetHud
                 elapsedSeconds={Math.round(elapsedMs / 1000)}
                 progress={runProgress(run)}
@@ -781,7 +773,7 @@ export function GlobeSetGame() {
             </div>
           )}
 
-          <div className="mt-5">
+          <div className="mt-4">
             <AnimatePresence mode="wait" initial={false}>
               {summary ? (
                 <motion.div
@@ -884,7 +876,6 @@ export function GlobeSetGame() {
       )}
 
         <GlobeSetRules open={rulesOpen} onOpenChange={setRulesOpen} />
-      </div>
-    </div>
+    </PuzzlePage>
   );
 }

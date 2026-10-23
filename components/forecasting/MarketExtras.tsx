@@ -24,9 +24,9 @@ export function MarketExtras({ marketId, signedIn, held }: Props) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="inline-flex items-center gap-1 self-start text-xs text-site-text-dim hover:text-site-text transition-colors"
+        className="inline-flex items-center gap-2 self-start text-xs text-site-text-dim hover:text-site-text transition-colors"
       >
-        <MessageSquare className="w-3.5 h-3.5" aria-hidden />
+        <MessageSquare className="size-3.5" aria-hidden />
         {open
           ? t('hide', { defaultValue: 'Hide discussion' })
           : t('discuss', { defaultValue: 'Discuss' })}

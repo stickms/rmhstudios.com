@@ -5,8 +5,8 @@
 
 export function StatBlock({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rl-stat">
-      <p className="rl-eyebrow">{label}</p>
+    <div className="rl-stat glass-fill rounded-site px-4 py-3">
+      <p className="rl-label">{label}</p>
       <p className="rl-stat__value rl-display">{value}</p>
     </div>
   );

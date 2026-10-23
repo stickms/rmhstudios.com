@@ -79,7 +79,7 @@ export default function ReactionOverlay() {
           <button
             key={emoji}
             onClick={() => handleSendReaction(emoji)}
-            className="rounded-md p-1.5 text-lg transition-transform hover:scale-125 active:scale-90"
+            className="rounded-(--app-radius-sm) p-1.5 text-lg transition-transform hover:scale-125 active:scale-90"
           >
             {emoji}
           </button>

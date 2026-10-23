@@ -13,7 +13,7 @@ export default function RadioJoinCard() {
   const connected = useRmhMusicStore((s) => s.connectionStatus === 'connected');
   return (
     <div
-      className="mt-4 flex items-center justify-between gap-3 rounded-xl p-4"
+      className="mt-4 flex items-center justify-between gap-3 rounded-(--app-radius) p-4"
       style={{ background: 'color-mix(in srgb, var(--app-surface) 80%, transparent)' }}
     >
       <div>
@@ -34,7 +34,7 @@ export default function RadioJoinCard() {
         type="button"
         disabled={!connected}
         onClick={() => emit(C2S.ROOM_JOIN, { code: RADIO_CODE })}
-        className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40"
+        className="shrink-0 rounded-(--app-radius-sm) px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40"
         style={{ background: 'var(--app-accent)', color: 'var(--app-bg)' }}
       >
         {t('radio-tune-in', { defaultValue: 'Tune in' })}

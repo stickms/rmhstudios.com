@@ -80,5 +80,8 @@
   "write-comment": "एक टिप्पणी लिखें...",
   "write-reply": "जवाब लिखें...",
   "years-ago_one": "{{count}} वर्ष पहले",
-  "years-ago_other": "{{count}} वर्ष पहले"
+  "years-ago_other": "{{count}} वर्ष पहले",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

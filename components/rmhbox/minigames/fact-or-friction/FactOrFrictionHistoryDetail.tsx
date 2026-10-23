@@ -25,12 +25,12 @@ interface QuestionResult {
 
 const LABELS = ['A', 'B', 'C', 'D'];
 
-const DEFAULT_DIFFICULTY_STYLE = 'bg-yellow-500/20 text-yellow-400';
+const DEFAULT_DIFFICULTY_STYLE = 'bg-(--app-warning)/20 text-(--app-warning)';
 
 const DIFFICULTY_STYLES: Record<string, string> = {
-  easy: 'bg-green-500/20 text-green-400',
+  easy: 'bg-(--app-success)/20 text-(--app-success)',
   medium: DEFAULT_DIFFICULTY_STYLE,
-  hard: 'bg-red-500/20 text-red-400',
+  hard: 'bg-(--app-danger)/20 text-(--app-danger)',
 };
 
 export default function FactOrFrictionHistoryDetail({
@@ -46,7 +46,7 @@ export default function FactOrFrictionHistoryDetail({
     <div className="space-y-4" data-testid="fof-history-detail">
       {/* Game Settings */}
       {gameLog.initialState && (
-        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
           <h4 className="mb-1 text-xs font-semibold uppercase text-(--app-text-muted)">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--app-text-muted)">
             <span>{t("questions-count", { defaultValue: "Questions: {{count}}", count: (gameLog.initialState.totalQuestions as number) ?? questionStarts.length })}</span>
@@ -76,7 +76,7 @@ export default function FactOrFrictionHistoryDetail({
         return (
           <div
             key={questionNum}
-            className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4"
+            className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4"
           >
             {/* Question header */}
             <div className="mb-3 flex items-center justify-between">
@@ -108,9 +108,9 @@ export default function FactOrFrictionHistoryDetail({
                   return (
                     <div
                       key={i}
-                      className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${
+                      className={`flex items-center gap-1.5 rounded-(--app-radius-sm) border px-2 py-1 text-xs ${
                         isCorrect
-                          ? 'border-green-500/50 bg-green-500/10 text-green-400 font-semibold'
+                          ? 'border-(--app-success)/50 bg-(--app-success)/10 text-(--app-success) font-semibold'
                           : 'border-(--app-border) text-(--app-text-muted)'
                       }`}
                     >
@@ -140,17 +140,17 @@ export default function FactOrFrictionHistoryDetail({
                       >
                         <div className="flex items-center gap-1.5">
                           {pr.isCorrect ? (
-                            <Check className="h-3 w-3 text-green-400" />
+                            <Check className="h-3 w-3 text-(--app-success)" />
                           ) : pr.passed ? (
-                            <SkipForward className="h-3 w-3 text-yellow-400" />
+                            <SkipForward className="h-3 w-3 text-(--app-warning)" />
                           ) : pr.timedOut ? (
                             <Clock className="h-3 w-3" />
                           ) : (
-                            <X className="h-3 w-3 text-red-400" />
+                            <X className="h-3 w-3 text-(--app-danger)" />
                           )}
                           <span>{name}</span>
                           {pr.isFirst && (
-                            <span className="flex items-center gap-0.5 text-[10px] text-yellow-400">
+                            <span className="flex items-center gap-0.5 text-[10px] text-(--app-warning)">
                               <Zap className="h-2.5 w-2.5" /> {t("first", { defaultValue: "First" })}
                             </span>
                           )}
@@ -158,7 +158,7 @@ export default function FactOrFrictionHistoryDetail({
                             <span className="opacity-50">({LABELS[pr.selectedIndex]})</span>
                           )}
                         </div>
-                        <span className={pr.scoreChange > 0 ? 'text-green-400' : pr.scoreChange < 0 ? 'text-red-400' : ''}>
+                        <span className={pr.scoreChange > 0 ? 'text-(--app-success)' : pr.scoreChange < 0 ? 'text-(--app-danger)' : ''}>
                           {pr.scoreChange > 0 ? '+' : ''}{pr.scoreChange}
                         </span>
                       </div>
@@ -172,7 +172,7 @@ export default function FactOrFrictionHistoryDetail({
       })}
 
       {/* Final scores */}
-      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
         <h4 className="mb-2 text-sm font-semibold text-(--app-text-muted)">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players

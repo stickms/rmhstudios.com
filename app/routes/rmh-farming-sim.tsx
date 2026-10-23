@@ -7,7 +7,7 @@ import pressStart2pLatin from '@fontsource/press-start-2p/files/press-start-2p-l
 
 function RmhFarmingSimLayout() {
   return (
-    <div style={{ width: '100%', height: '100dvh' }}>
+    <div className="app-viewport w-full">
       <Outlet />
     </div>
   );

@@ -32,16 +32,16 @@ export function PuzzleShell({ mode, difficulty, resetsAt, children, attempts = 0
   return (
     <div className="min-h-dvh flex flex-col" style={{ background: 'var(--doctrine-bg-primary, #0A0A0B)' }}>
       {/* Minimal top bar */}
-      <div className="flex items-center justify-between px-3 md:px-4 py-2.5 md:py-2 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="flex items-center justify-between px-3 md:px-4 py-1 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-2 md:gap-3">
-          <Link to="/strategies/puzzles" className="text-white/30 hover:text-white/60 transition-colors p-1 -ml-1">
-            <ArrowLeft size={16} />
+          <Link to="/strategies/puzzles" aria-label={t("back-to-puzzles", { defaultValue: "Back to Puzzles" })} className="text-white/50 hover:text-white/80 transition-colors size-11 -ml-2 flex items-center justify-center">
+            <ArrowLeft size={16} aria-hidden />
           </Link>
           <span className="text-sm md:text-xs font-mono font-bold uppercase" style={{ color }}>
             {mode}
           </span>
           {isReplay && (
-            <span className="flex items-center gap-1 text-[10px] font-mono text-white/30 bg-white/5 px-1.5 py-0.5 rounded">
+            <span className="flex items-center gap-1 text-xs font-mono text-white/50 bg-white/5 px-1.5 py-0.5 rounded">
               <RotateCcw size={10} /> {t("replay", { defaultValue: "REPLAY" })}
             </span>
           )}
@@ -58,12 +58,12 @@ export function PuzzleShell({ mode, difficulty, resetsAt, children, attempts = 0
 
         <div className="flex items-center gap-2 md:gap-4">
           {sahurActive && (
-            <span className="flex items-center gap-1 text-xs md:text-[10px] font-bold text-amber-400 animate-pulse">
+            <span className="flex items-center gap-1 text-xs font-bold text-amber-400 animate-pulse">
               <Zap size={12} /> {t("sahur-xp-bonus", { defaultValue: "3x XP" })}
             </span>
           )}
           {attempts > 0 && (
-            <span className="text-xs md:text-[10px] text-white/30 font-mono">
+            <span className="text-xs text-white/50 font-mono">
               {t("attempt-count", { count: attempts, defaultValue: "{{count}} attempt" })}
             </span>
           )}

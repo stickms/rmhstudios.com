@@ -18,8 +18,8 @@ export function ChannelStrip({ track, isSelected, compact = false }: ChannelStri
 
   return (
     <div
-      className={`flex shrink-0 flex-col items-center gap-2 border-r border-[var(--site-border)] px-2 py-2 ${
-        isSelected ? 'bg-white/5' : 'bg-[var(--site-surface)]'
+      className={`flex shrink-0 flex-col items-center gap-2 border-r border-site-border px-2 py-2 ${
+        isSelected ? 'bg-site-surface-hover' : 'bg-site-surface'
       }`}
       style={{ width: compact ? 56 : 72 }}
       onClick={() => selectTrack(track.id)}
@@ -27,7 +27,7 @@ export function ChannelStrip({ track, isSelected, compact = false }: ChannelStri
       {/* Track color + name */}
       <div className="flex w-full items-center gap-1">
         <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: track.color }} />
-        <span className="truncate text-[9px] font-medium text-[var(--site-text)]">
+        <span className="truncate text-xs font-medium text-site-text">
           {track.name}
         </span>
       </div>
@@ -64,8 +64,8 @@ export function ChannelStrip({ track, isSelected, compact = false }: ChannelStri
       <div className="flex gap-1">
         <button
           onClick={(e) => { e.stopPropagation(); toggleTrackMute(track.id); }}
-          className={`rounded p-1 text-[10px] font-bold ${
-            track.muted ? 'bg-red-500/20 text-red-400' : 'text-[var(--site-muted)] hover:bg-white/10'
+          className={`rounded-site-sm p-1 text-xs font-bold ${
+            track.muted ? 'bg-site-danger/15 text-site-danger' : 'text-site-text-muted hover:bg-site-surface-hover'
           }`}
           title={t("mute", { defaultValue: "Mute" })}
         >
@@ -73,8 +73,8 @@ export function ChannelStrip({ track, isSelected, compact = false }: ChannelStri
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); toggleTrackSolo(track.id); }}
-          className={`rounded p-1 text-[10px] font-bold ${
-            track.soloed ? 'bg-yellow-500/20 text-yellow-400' : 'text-[var(--site-muted)] hover:bg-white/10'
+          className={`rounded-site-sm p-1 text-xs font-bold ${
+            track.soloed ? 'bg-site-warning/15 text-site-warning' : 'text-site-text-muted hover:bg-site-surface-hover'
           }`}
           title={t("solo", { defaultValue: "Solo" })}
         >

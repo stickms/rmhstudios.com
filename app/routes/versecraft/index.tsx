@@ -30,7 +30,7 @@ function VersecraftPage() {
   const { isLoggedIn } = Route.useLoaderData()
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#1a1520' }}>
+    <div className="app-ground" style={{ backgroundColor: '#1a1520' }}>
       <GameErrorBoundary gameName="Versecraft">
         <Suspense fallback={<GameLoadingFallback />}>
           <VersecraftClient isLoggedIn={isLoggedIn} />

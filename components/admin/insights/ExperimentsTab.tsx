@@ -69,7 +69,7 @@ export function ExperimentsTab() {
   };
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-[var(--site-section-gap)]">
       <p className="text-sm text-site-text-muted">
         {t('exp-intro', {
           defaultValue:
@@ -119,7 +119,7 @@ export function ExperimentsTab() {
       ) : (
         <ul className="space-y-3">
           {(data?.experiments ?? []).map((x) => (
-            <li key={x.id} className="glass-fill space-y-2 rounded-site p-4">
+            <li key={x.id} className="glass-fill space-y-2 rounded-site px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-site-text">{x.name}</span>
@@ -139,7 +139,7 @@ export function ExperimentsTab() {
               <dl className="grid grid-cols-2 gap-3 text-sm">
                 {(['control', 'test'] as const).map((arm) => (
                   <div key={arm}>
-                    <dt className="font-mono text-[0.68rem] uppercase tracking-widest text-site-text-dim">
+                    <dt className="text-xs text-site-text-dim">
                       {arm === 'control'
                         ? t('exp-control', { defaultValue: 'Control' })
                         : t('exp-test', { defaultValue: 'Test ({{pct}}%)', pct: x.testPct })}

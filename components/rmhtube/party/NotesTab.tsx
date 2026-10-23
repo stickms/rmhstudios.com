@@ -109,7 +109,7 @@ export default function NotesTab() {
             <span className="min-w-0 flex-1 truncate">{c.body}</span>
             <button
               type="button"
-              className="rounded p-1 text-(--app-text-muted) hover:text-(--app-danger)"
+              className="rounded-(--app-radius-sm) p-1 text-(--app-text-muted) hover:text-(--app-danger)"
               onClick={() => void remove(c.id)}
               title={t('remove', { defaultValue: 'Remove' })}
             >

@@ -7,12 +7,12 @@ import { GameBackLink } from '@/components/shared/GameBackLink'
 function ForestExplorerPage() {
   const { t } = useTranslation("r-forest-explorer")
   return (
-    <main className="fixed inset-0 bg-gradient-to-b from-[#0a1a0e] via-[#0d200f] to-[#071208] flex flex-col overflow-hidden">
+    <main className="relative bg-gradient-to-b from-[#0a1a0e] via-[#0d200f] to-[#071208]">
       <GameBackLink to="/games" />
 
-      <div className="grow flex flex-col items-center justify-center px-4">
-        <div className="text-center mb-10">
-          <div className="text-6xl mb-4">🌲</div>
+      <div className="app-screen">
+        <div className="text-center mb-8">
+          <div className="text-6xl mb-4" aria-hidden>🌲</div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-wide text-green-200 mb-2">
             {t("forest-explorer-title", { defaultValue: "Forest Explorer" })}
           </h1>
@@ -21,13 +21,13 @@ function ForestExplorerPage() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full max-w-xl">
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xl">
           {/* Explore Mode Card */}
-          <Link to="/forest-explorer/explore" className="flex-1 group">
-            <div className="relative p-6 rounded-2xl border border-green-700/30 bg-green-950/30 hover:bg-green-900/30 hover:border-green-600/50 transition-colors duration-300 cursor-pointer h-full">
+          <Link to="/forest-explorer/explore" className="flex-1 group rounded-2xl">
+            <div className="relative p-4 sm:p-6 rounded-2xl border border-green-700/30 bg-green-950/30 hover:bg-green-900/30 hover:border-green-600/50 transition-colors duration-300 cursor-pointer h-full">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-green-800/50 flex items-center justify-center group-hover:bg-green-700/50 transition-colors">
-                  <TreePine className="w-5 h-5 text-green-300" />
+                  <TreePine className="w-5 h-5 text-green-300" aria-hidden />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-green-100">{t("free-explore", { defaultValue: "Free Explore" })}</h2>
@@ -41,11 +41,11 @@ function ForestExplorerPage() {
           </Link>
 
           {/* Story Mode Card */}
-          <Link to="/forest-explorer/story" className="flex-1 group">
-            <div className="relative p-6 rounded-2xl border border-amber-700/30 bg-amber-950/20 hover:bg-amber-900/20 hover:border-amber-600/50 transition-colors duration-300 cursor-pointer h-full">
+          <Link to="/forest-explorer/story" className="flex-1 group rounded-2xl">
+            <div className="relative p-4 sm:p-6 rounded-2xl border border-amber-700/30 bg-amber-950/20 hover:bg-amber-900/20 hover:border-amber-600/50 transition-colors duration-300 cursor-pointer h-full">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-800/40 flex items-center justify-center group-hover:bg-amber-700/40 transition-colors">
-                  <BookOpen className="w-5 h-5 text-amber-300" />
+                  <BookOpen className="w-5 h-5 text-amber-300" aria-hidden />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-amber-100">{t("story-mode", { defaultValue: "Story Mode" })}</h2>

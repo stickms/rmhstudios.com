@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AppearancePanel } from '@/components/settings/AppearancePanel';
 import { AccessPrefsPanel } from '@/components/access/AccessPrefsPanel';
 import { GameAssistPanel } from '@/components/settings/GameAssistPanel';
 import { GlobeCursorPanel } from '@/components/settings/GlobeCursorPanel';
+import { SettingsPageBody } from '@/components/settings/SettingsSection';
 
 export const Route = createFileRoute('/_site/settings/appearance')({
   head: () => ({
@@ -13,16 +15,18 @@ export const Route = createFileRoute('/_site/settings/appearance')({
 });
 
 function AppearanceSettingsPage() {
+  const { t } = useTranslation('feed');
+  const settingsLabel = t('settings', { defaultValue: 'Settings' });
+  const title = t('settings-appearance', { defaultValue: 'Appearance' });
   return (
     <PageLayout
-      title="Appearance"
+      title={title}
+      wide
       backTo="/settings"
-      breadcrumbs={[
-        { label: 'Settings', to: '/settings' },
-        { label: 'Appearance' },
-      ]}
+      backLabel={settingsLabel}
+      breadcrumbs={[{ label: settingsLabel, to: '/settings' }, { label: title }]}
     >
-      <div className="space-y-4 px-4 pt-4 pb-12">
+      <SettingsPageBody>
         <AppearancePanel />
         <GlobeCursorPanel />
         {/* Game assists sit beside the site's own accessibility controls
@@ -31,7 +35,7 @@ function AppearanceSettingsPage() {
             the chrome and the games — belong together. */}
         <GameAssistPanel />
         <AccessPrefsPanel />
-      </div>
+      </SettingsPageBody>
     </PageLayout>
   );
 }

@@ -86,13 +86,13 @@ export function PhotoPage() {
           'Nominate one image a day, such as a photo-mode capture. Everyone gets one vote; the winner is featured tomorrow.',
       })}
     >
-      <div className="space-y-6 px-4 pt-2 pb-12">
+      <div className="max-w-3xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
         {yesterday && (
-          <section className="glass-pane space-y-2 rounded-site p-4" aria-labelledby="potd-winner">
-            <h2 id="potd-winner" className="text-sm font-semibold text-site-text">
+          <section className="glass-pane space-y-3 rounded-site px-4 py-3" aria-labelledby="potd-winner">
+            <h2 id="potd-winner" className="site-section-label">
               {t('potd-winner', { defaultValue: 'Yesterday’s winner' })}
             </h2>
-            <img src={yesterday.imageUrl} alt={yesterday.caption} className="w-full rounded-site" />
+            <img src={yesterday.imageUrl} alt={yesterday.caption} className="w-full rounded-site-sm" />
             <p className="text-sm text-site-text-muted">
               {t('potd-by', { defaultValue: 'By {{name}}', name: yesterday.by.name ?? '' })}
               {yesterday.caption && ` - ${yesterday.caption}`}
@@ -102,14 +102,14 @@ export function PhotoPage() {
 
         {session && d && !d.nominations.some((n) => n.mine) && (
           <form
-            className="glass-pane space-y-3 rounded-site p-4"
+            className="glass-pane space-y-3 rounded-site px-4 py-3"
             onSubmit={(e) => {
               e.preventDefault();
               upload();
             }}
           >
             <label className="block text-sm text-site-text-muted">
-              <span className="mb-1 block">
+              <span className="mb-2 block">
                 {t('potd-image', { defaultValue: 'Your image (up to 5 MB)' })}
               </span>
               <input
@@ -117,7 +117,7 @@ export function PhotoPage() {
                 type="file"
                 accept="image/*"
                 required
-                className="text-site-text"
+                className="w-full text-site-text"
               />
             </label>
             <Input
@@ -135,7 +135,7 @@ export function PhotoPage() {
         )}
 
         <section aria-labelledby="potd-today">
-          <h2 id="potd-today" className="mb-2 text-sm font-semibold text-site-text">
+          <h2 id="potd-today" className="site-section-label mb-3">
             {t('potd-today', { defaultValue: 'Today’s nominations' })}
           </h2>
           {q.isPending ? (
@@ -146,14 +146,14 @@ export function PhotoPage() {
               title={t('potd-none', { defaultValue: 'No nominations yet. Be the first!' })}
             />
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2">
+            <ul className="grid gap-3 sm:grid-cols-2">
               {d.nominations.map((n) => (
-                <li key={n.id} className="glass-fill space-y-2 rounded-site p-3">
+                <li key={n.id} className="glass-fill space-y-3 rounded-site p-3">
                   <img
                     src={n.imageUrl}
                     alt={n.caption}
                     loading="lazy"
-                    className="aspect-video w-full rounded-site object-cover"
+                    className="aspect-video w-full rounded-site-sm object-cover"
                   />
                   <p className="truncate text-sm text-site-text">
                     {n.caption || t('potd-untitled', { defaultValue: 'Untitled' })}
@@ -205,17 +205,17 @@ export function PhotoPage() {
 
         {older.length > 0 && (
           <section aria-labelledby="potd-past">
-            <h2 id="potd-past" className="mb-2 text-sm font-semibold text-site-text">
+            <h2 id="potd-past" className="site-section-label mb-3">
               {t('potd-past', { defaultValue: 'Recent winners' })}
             </h2>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {older.map((w) => (
-                <li key={w.id} className="glass-fill space-y-1 rounded-site p-2">
+                <li key={w.id} className="glass-fill space-y-2 rounded-site p-3">
                   <img
                     src={w.imageUrl}
                     alt={w.caption}
                     loading="lazy"
-                    className="aspect-video w-full rounded-site object-cover"
+                    className="aspect-video w-full rounded-site-sm object-cover"
                   />
                   <p className="truncate text-xs text-site-text-muted">{w.dayKey}</p>
                 </li>

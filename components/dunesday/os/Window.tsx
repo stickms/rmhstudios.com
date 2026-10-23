@@ -27,7 +27,6 @@ import { sfx } from '../sound';
 import { APPS } from './apps';
 import { Icon } from './icons';
 import { useOs, type Win } from './store';
-import { TASKBAR_H } from './actions';
 import { BusySpinner } from './BusySpinner';
 
 const SNAP_EDGE = 6;
@@ -310,7 +309,7 @@ export function WindowLayer({ compact }: { compact: boolean }) {
   return (
     <div
       className={cn('ds-os-windows', peek && 'ds-os-windows--peek')}
-      style={{ bottom: TASKBAR_H }}
+      style={{ bottom: 'var(--ds-tb)' }}
     >
       {snapPreview && (
         <div className={`ds-snap-preview ds-snap-preview--${snapPreview}`} aria-hidden="true" />

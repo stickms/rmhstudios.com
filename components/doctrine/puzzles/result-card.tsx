@@ -58,36 +58,36 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
           {mode}{isReplay ? ` — ${t("replay", { defaultValue: "REPLAY" })}` : ''}
         </p>
         {isReplay && (
-          <p className="text-[10px] text-white/30 mb-1">{t("replay-xp", { defaultValue: "+3 XP (replay)" })}</p>
+          <p className="text-xs text-white/50 mb-1">{t("replay-xp", { defaultValue: "+3 XP (replay)" })}</p>
         )}
         <p className="text-3xl font-black text-white">
           {correct ? score : t("failed", { defaultValue: "FAILED" })}
         </p>
         {correct && (
-          <p className="text-xs text-white/40 mt-1">{t("points", { defaultValue: "points" })}</p>
+          <p className="text-xs text-white/60 mt-1">{t("points", { defaultValue: "points" })}</p>
         )}
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         <div className="text-center">
-          <Clock size={14} className="mx-auto text-white/30 mb-1" />
+          <Clock size={14} className="mx-auto text-white/50 mb-1" />
           <p className="text-base md:text-sm font-mono text-white/80">{timeStr}s</p>
-          <p className="text-xs md:text-[10px] text-white/30">{t("time", { defaultValue: "time" })}</p>
+          <p className="text-xs md:text-xs text-white/50">{t("time", { defaultValue: "time" })}</p>
         </div>
         <div className="text-center">
-          <Target size={14} className="mx-auto text-white/30 mb-1" />
+          <Target size={14} className="mx-auto text-white/50 mb-1" />
           <p className="text-base md:text-sm font-mono text-white/80">{attempts}</p>
-          <p className="text-xs md:text-[10px] text-white/30">{t("attempts", { defaultValue: "attempts" })}</p>
+          <p className="text-xs md:text-xs text-white/50">{t("attempts", { defaultValue: "attempts" })}</p>
         </div>
         <div className="text-center">
-          <Trophy size={14} className="mx-auto text-white/30 mb-1" />
+          <Trophy size={14} className="mx-auto text-white/50 mb-1" />
           <div className="flex justify-center">
             {'★'.repeat(difficulty).split('').map((_, i) => (
               <span key={i} className="text-sm md:text-xs" style={{ color }}>★</span>
             ))}
           </div>
-          <p className="text-xs md:text-[10px] text-white/30">{t("difficulty", { defaultValue: "difficulty" })}</p>
+          <p className="text-xs md:text-xs text-white/50">{t("difficulty", { defaultValue: "difficulty" })}</p>
         </div>
       </div>
 
@@ -108,7 +108,7 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
         {t("share-result", { defaultValue: "Share Result" })}
       </button>
 
-      <p className="text-center text-[9px] text-white/20 font-mono">
+      <p className="text-center text-xs text-white/50 font-mono">
         RMH STRATEGIES — DOCTRINE ENGINE
       </p>
     </motion.div>

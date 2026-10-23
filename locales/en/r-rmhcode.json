@@ -69,6 +69,7 @@
   "init-item-dir-structure": "Directory structure with auto-detected purposes",
   "init-item-project-name": "Project name (from package.json, Cargo.toml, pyproject.toml, etc.)",
   "init-item-tech-stack": "Tech stack detection (frameworks, databases, testing tools, styling)",
+  "install-method": "Install method",
   "install-note-uninstall": "Note: may require an uninstall before reinstalling for updates.",
   "install-requires": "Requires",
   "install-requires-and": "and",

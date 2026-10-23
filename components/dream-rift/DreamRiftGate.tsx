@@ -207,11 +207,11 @@ function ScreenRouter() {
     const showExit = screen !== 'playing';
 
     return (
-        <div className="fixed inset-0 h-[100dvh] w-screen overflow-hidden bg-black text-white">
+        <div className="fixed inset-0 overflow-hidden bg-black text-white">
             <ChallengeNotice />
             <div className="h-full w-full overflow-auto">{body}</div>
             {showExit && (
-                <button type="button" onClick={fullExit} className="dr-serif absolute right-3 top-3 z-50 rounded-sm border border-[rgba(231,205,140,0.3)] bg-black/40 px-3 py-1.5 text-xs tracking-wider text-[color:var(--dr-cream-dim)] backdrop-blur transition hover:border-[rgba(231,205,140,0.6)] hover:text-[color:var(--dr-cream)]">
+                <button type="button" onClick={fullExit} className="dr-serif absolute right-[calc(0.75rem+var(--safe-right))] top-[calc(0.75rem+var(--safe-top))] z-50 rounded-sm pointer-coarse:min-h-11 border border-[rgba(231,205,140,0.3)] bg-black/40 px-3 py-1.5 text-xs tracking-wider text-[color:var(--dr-cream-dim)] backdrop-blur transition hover:border-[rgba(231,205,140,0.6)] hover:text-[color:var(--dr-cream)]">
                     ✕ Exit
                 </button>
             )}

@@ -51,7 +51,7 @@ interface Booked {
 }
 
 const FIELD =
-  'w-full border-0 border-b border-rebar-line bg-transparent px-0 py-2.5 font-mono text-sm text-rebar-ink outline-none transition-colors duration-[var(--rebar-dur-quick)] placeholder:text-rebar-ink-faint focus-visible:border-rebar-line-strong';
+  'w-full border-0 border-b border-rebar-line bg-transparent px-0 py-3 font-mono text-sm text-rebar-ink outline-none transition-colors duration-[var(--rebar-dur-quick)] placeholder:text-rebar-ink-faint focus-visible:border-rebar-line-strong';
 
 export function BookingForm() {
   const { t, i18n } = useTranslation('c-rebar-rutabaga');
@@ -164,7 +164,7 @@ export function BookingForm() {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="group inline-flex items-baseline gap-3 border-b border-rebar-line-strong pb-2 font-display text-xl font-light tracking-[-0.02em] text-rebar-ink transition-colors duration-[var(--rebar-dur-quick)] hover:text-rebar-ink-soft"
+            className="group inline-flex items-baseline gap-3 border-b border-rebar-line-strong pt-3 pb-2 font-display text-xl font-light tracking-[-0.02em] text-rebar-ink transition-colors duration-[var(--rebar-dur-quick)] hover:text-rebar-ink-soft"
           >
             {t('book.cta', { defaultValue: 'Request a table' })}
             <span
@@ -307,7 +307,7 @@ export function BookingForm() {
         <button
           type="submit"
           disabled={sending || !seating || !date}
-          className="mt-8 inline-flex items-baseline gap-3 border-b border-rebar-line-strong pb-2 font-display text-xl font-light tracking-[-0.02em] text-rebar-ink transition-colors duration-[var(--rebar-dur-quick)] hover:text-rebar-ink-soft disabled:cursor-not-allowed disabled:text-rebar-ink-faint"
+          className="mt-8 inline-flex items-baseline gap-3 border-b border-rebar-line-strong pt-3 pb-2 font-display text-xl font-light tracking-[-0.02em] text-rebar-ink transition-colors duration-[var(--rebar-dur-quick)] hover:text-rebar-ink-soft disabled:cursor-not-allowed disabled:text-rebar-ink-faint"
         >
           {sending
             ? t('book.formSending', { defaultValue: 'Writing you in…' })

@@ -34,5 +34,7 @@
   "settings": "सेटिंग्स",
   "visibility-label": "दृश्यता",
   "visibility-private": "निजी",
-  "visibility-public": "सार्वजनिक"
+  "visibility-public": "सार्वजनिक",
+  "loading": "Loading…",
+  "lobby-title": "Lobby {{lobbyId}}"
 }

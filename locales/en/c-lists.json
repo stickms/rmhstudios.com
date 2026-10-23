@@ -3,6 +3,7 @@
   "create": "Create",
   "created": "List created",
   "delete-desc": "This cannot be undone.",
+  "delete-list": "Delete list",
   "delete-title": "Delete this list?",
   "deleted": "List deleted",
   "empty-desc": "Group accounts and read them as their own feed.",

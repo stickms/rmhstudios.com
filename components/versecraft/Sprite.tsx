@@ -48,7 +48,7 @@ export function Sprite({ packId, emotion = 'neutral', position, isSpeaking, acce
         scale: { duration: 0.3 },
       }}
     >
-      <div className="relative w-[42vw] max-w-[16rem] h-[52vh] sm:w-56 sm:h-96 md:w-72 md:h-[34rem]">
+      <div className="relative w-[42vw] max-w-[16rem] h-[52svh] sm:w-56 sm:h-96 md:w-72 md:h-[34rem]">
         {/* Plain <img> with a stable element (no key) so changing the emotion
             just swaps the src of an already-preloaded image — instant, no
             flicker. The gentle bob/scale lives on the wrapper above. */}

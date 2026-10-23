@@ -81,7 +81,7 @@ export function WelcomeModal() {
  <p className="mx-auto mt-2 max-w-sm text-center text-sm text-site-text-muted">{current.body}</p>
 
  {/* Step dots */}
- <div className="mt-5 flex justify-center gap-1.5">
+ <div className="mt-6 flex justify-center gap-2">
  {STEPS.map((_, i) => (
  <span
  key={i}

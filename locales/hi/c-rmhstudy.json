@@ -95,5 +95,6 @@
   "tap-to-reveal": "दिखाने के लिए टैप करें",
   "unban": "प्रतिबंध हटाएं",
   "unban-user": "उपयोगकर्ता का प्रतिबंध हटाएं",
-  "work-duration": "कार्य अवधि: {{minutes}} मिनट"
+  "work-duration": "कार्य अवधि: {{minutes}} मिनट",
+  "apps": "Apps"
 }

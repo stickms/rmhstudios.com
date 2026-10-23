@@ -49,7 +49,7 @@ export function HowToPlay({ gameId }: { gameId: string }) {
         {t('howToPlay-title', { defaultValue: 'How do I play?' })}
       </button>
       {open && (
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-3">
           <form
             className="flex gap-2"
             onSubmit={(e) => {
@@ -74,7 +74,7 @@ export function HowToPlay({ gameId }: { gameId: string }) {
               {answer}
             </p>
           )}
-          <p className="text-[11px] text-site-text-dim">
+          <p className="text-xs text-site-text-dim">
             {t('howToPlay-note', {
               defaultValue: 'AI answers use only this game’s description and can be incomplete.',
             })}

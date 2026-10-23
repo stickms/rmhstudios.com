@@ -11,5 +11,6 @@
   "load-more": "Load more",
   "pause": "Pause history",
   "remove": "Remove",
-  "save-error": "Couldn't update the setting"
+  "save-error": "Couldn't update the setting",
+  "title": "History"
 }

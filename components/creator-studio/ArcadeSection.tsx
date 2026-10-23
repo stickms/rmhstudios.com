@@ -29,11 +29,11 @@ import { useTranslation } from 'react-i18next';
 import { Gamepad2, Trophy } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { ArcadeHub } from '@/components/arcade/ArcadeHub';
 import { LeaderboardColumn } from '@/components/feed/LeaderboardColumn';
-import '@/components/creator-studio/creator-studio.css';
 
 import type { ArcadeSubTab } from './arcade-tabs';
 
@@ -93,19 +93,22 @@ export function ArcadeSection({
   ];
 
   return (
-    <section className="cstudio-arcade" aria-labelledby="cstudio-arcade-title">
-      <div className="cstudio-arcade__head">
-        <span className="cstudio-arcade__icon" aria-hidden="true">
-          <Gamepad2 size={18} />
+    <section className="glass-pane rounded-site" aria-labelledby="cstudio-arcade-title">
+      <div className="flex items-center gap-3 px-4 py-3">
+        <span
+          className="glass-inset flex size-9 shrink-0 items-center justify-center rounded-site-sm text-site-accent"
+          aria-hidden="true"
+        >
+          <Gamepad2 className="size-4" />
         </span>
-        <div className="cstudio-arcade__titles">
+        <div className="min-w-0 flex-1">
           {/* The audit's AUD-326 complaint about the old /arcade page was that its
               only name lived in a tab strip's aria-label. Inside Create the
               section states its own name. */}
-          <h2 className="cstudio-arcade__title" id="cstudio-arcade-title">
+          <h2 className="font-semibold text-site-text" id="cstudio-arcade-title">
             {title}
           </h2>
-          <p className="cstudio-arcade__sub">
+          <p className="hidden truncate text-sm text-site-text-muted sm:block">
             {t('arcade-summary', {
               defaultValue: 'Daily game challenges, your streak, and the player leaderboard.',
             })}
@@ -113,7 +116,7 @@ export function ArcadeSection({
         </div>
       </div>
 
-      <div className="cstudio-arcade__tabs">
+      <div className="px-4 pb-3">
         <LiquidTabs
           size="sm"
           tabs={tabs}
@@ -126,7 +129,7 @@ export function ArcadeSection({
 
       {sub === 'challenges' && (
         <div
-          className="cstudio-arcade__body"
+          className="border-t border-site-border"
           role="tabpanel"
           id="cstudio-arcade-panel-challenges"
           aria-labelledby="cstudio-arcade-tab-challenges"
@@ -134,27 +137,30 @@ export function ArcadeSection({
           {signedIn ? (
             <ArcadeHub initialState={null} hideHeader />
           ) : isPending ? (
-            <div className="flex justify-center py-14">
+            <div className="flex justify-center py-16">
               <Spinner />
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-              <p className="font-medium text-site-text">
-                {t('arcade-sign-in', {
-                  defaultValue: 'Sign in to play the daily arcade challenges',
-                })}
-              </p>
-              <Link to="/login" search={{ callbackURL: '/create' }}>
-                <Button variant="accent">{t('sign-in', { defaultValue: 'Sign in' })}</Button>
-              </Link>
-            </div>
+            <EmptyState
+              icon={Gamepad2}
+              title={t('arcade-sign-in', {
+                defaultValue: 'Sign in to play the daily arcade challenges',
+              })}
+              action={
+                <Button asChild variant="accent">
+                  <Link to="/login" search={{ callbackURL: '/games' }}>
+                    {t('sign-in', { defaultValue: 'Sign in' })}
+                  </Link>
+                </Button>
+              }
+            />
           )}
         </div>
       )}
 
       {sub === 'leaderboard' && (
         <div
-          className="cstudio-arcade__body"
+          className="border-t border-site-border"
           role="tabpanel"
           id="cstudio-arcade-panel-leaderboard"
           aria-labelledby="cstudio-arcade-tab-leaderboard"
@@ -162,13 +168,14 @@ export function ArcadeSection({
           {board ? (
             <LeaderboardColumn initialData={board} signedIn={signedIn} hideHeader />
           ) : boardFailed ? (
-            <p className="px-6 py-14 text-center text-sm text-site-text-muted">
-              {t('leaderboard-failed', {
+            <EmptyState
+              icon={Trophy}
+              title={t('leaderboard-failed', {
                 defaultValue: 'Could not load the leaderboard just now.',
               })}
-            </p>
+            />
           ) : (
-            <div className="flex justify-center py-14">
+            <div className="flex justify-center py-16">
               <Spinner />
             </div>
           )}

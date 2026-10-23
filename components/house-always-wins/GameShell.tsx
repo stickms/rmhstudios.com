@@ -31,7 +31,7 @@ export function GameShell({ userName }: GameShellProps) {
             onClick={goBack}
             className="flex shrink-0 items-center gap-2 text-neutral-500 hover:text-neutral-300 transition-colors text-sm"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4" aria-hidden />
             <span className="font-mono tracking-widest text-xs">RMH STUDIOS</span>
           </Link>
 
@@ -50,7 +50,7 @@ export function GameShell({ userName }: GameShellProps) {
 
       {/* Game area. `app-stage-fit` is the size container the stage measures
           itself against, so the playfield letterboxes rather than stretches. */}
-      <div className="app-stage-fit flex-1 min-h-0 bg-black">
+      <div className="app-stage-fit app-safe-x flex-1 min-h-0 bg-black">
         <Suspense
           fallback={
             <div className="flex items-center justify-center w-full h-full">

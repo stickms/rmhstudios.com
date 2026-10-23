@@ -42,9 +42,9 @@ export function TestKeyCreator({ onCreated }: { onCreated: (plaintext: string) =
   }
 
   return (
-    <div className="glass-fill mb-4 space-y-2 rounded-site p-3">
+    <div className="glass-fill space-y-2 rounded-site px-4 py-3">
       <div className="flex items-center gap-2">
-        <FlaskConical className="h-4 w-4 text-site-accent" />
+        <FlaskConical className="size-4 text-site-accent" aria-hidden />
         <h3 className="text-sm font-bold text-site-text">
           {t('testKeys-title', { defaultValue: 'Test-mode key' })}
         </h3>

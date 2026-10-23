@@ -174,7 +174,7 @@ export function Hud({
           <button
             type="button"
             onClick={onInteract}
-            className="pointer-events-auto cursor-pointer border-[3px] px-4 py-1.5 text-sm font-black"
+            className="pointer-events-auto cursor-pointer border-[3px] px-4 py-1.5 pointer-coarse:min-h-11 text-sm font-black"
             style={{ background: BOARD, borderColor: INK, color: INK, borderRadius: 3 }}
           >
             {prompt.label}

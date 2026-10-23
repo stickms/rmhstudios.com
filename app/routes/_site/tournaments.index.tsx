@@ -4,6 +4,8 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trophy, Plus, Coins, Users } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
@@ -61,14 +63,14 @@ function TournamentsPage() {
       headerRight={
         viewerId ? (
           <Button size="sm" onClick={() => setCreating(true)}>
-            <Plus className="size-4" />
+            <Plus className="size-4" aria-hidden />
             {t('host-tournaments-index', { defaultValue: 'Host' })}
           </Button>
         ) : null
       }
     >
       {/* §15.1: unified sheet + flowing-capsule tab strip below the page title. */}
-      <div className="mx-3 mt-3 mb-3">
+      <div>
         <LiquidTabs
           aria-label={t('title', { defaultValue: 'Tournaments' })}
           value={status}
@@ -86,26 +88,26 @@ function TournamentsPage() {
       {loading ? (
         <div className="grid gap-3 sm:grid-cols-2">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-32 rounded-site glass-fill animate-pulse" />
+            <Skeleton key={i} className="h-32 rounded-site" />
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <Trophy className="size-10 text-site-text-dim" />
-          <p className="text-site-text-dim max-w-sm">
-            {t('empty', { defaultValue: 'No tournaments here yet. Host one and set the prize!' })}
-          </p>
-          {viewerId && (
-            <Button onClick={() => setCreating(true)}>
-              {t('host', { defaultValue: 'Host a tournament' })}
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          icon={Trophy}
+          title={t('empty', { defaultValue: 'No tournaments here yet. Host one and set the prize!' })}
+          action={
+            viewerId ? (
+              <Button onClick={() => setCreating(true)}>
+                {t('host', { defaultValue: 'Host a tournament' })}
+              </Button>
+            ) : null
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {items.map((tourney) => (
             <Link key={tourney.id} to="/tournaments/$id" params={{ id: tourney.id }}>
-              <Card className="p-4 space-y-3 h-full" interactive>
+              <Card className="h-full gap-3 px-4 py-4" interactive>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h2 className="font-semibold truncate">{tourney.name}</h2>
@@ -127,12 +129,12 @@ function TournamentsPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-site-text-dim">
-                  <span className="flex items-center gap-1.5">
-                    <Coins className="size-4 text-site-warning" />
+                  <span className="flex items-center gap-2">
+                    <Coins className="size-4 text-site-warning" aria-hidden />
                     {t('prize', { defaultValue: '{{n}} prize', n: tourney.prizePoolCoins })}
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <Users className="size-4" />
+                  <span className="flex items-center gap-2">
+                    <Users className="size-4" aria-hidden />
                     {tourney.playerCount}/{tourney.maxPlayers}
                   </span>
                 </div>

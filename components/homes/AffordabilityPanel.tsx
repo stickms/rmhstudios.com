@@ -162,9 +162,9 @@ export function AffordabilityPanel({
             placeholder="0"
             value={profile.annualIncome === 0 ? '' : String(profile.annualIncome)}
             onChange={(e) => update({ annualIncome: toNumber(e.target.value) })}
-            className="mt-1.5"
+            className="mt-2"
           />
-          <p className="mt-1.5 flex items-start gap-1.5 text-xs text-site-text-dim">
+          <p className="mt-2 flex items-start gap-2 text-xs text-site-text-dim">
             <Lock className="mt-px size-3 shrink-0" aria-hidden />
             <span>
               {t('homes.affordPrivacy', {
@@ -186,9 +186,9 @@ export function AffordabilityPanel({
             placeholder="0"
             value={profile.monthlyDebts === 0 ? '' : String(profile.monthlyDebts)}
             onChange={(e) => update({ monthlyDebts: toNumber(e.target.value) })}
-            className="mt-1.5"
+            className="mt-2"
           />
-          <p className="mt-1.5 text-xs text-site-text-dim">
+          <p className="mt-2 text-xs text-site-text-dim">
             {t('homes.affordDebtsHint', {
               defaultValue: 'Student loans, car payments, minimum card payments.',
             })}
@@ -198,7 +198,7 @@ export function AffordabilityPanel({
         <div className="sm:col-span-2">
           <span
             id="homes-afford-ratio-label"
-            className="mb-1.5 block text-sm font-medium text-site-text"
+            className="mb-2 block text-sm font-medium text-site-text"
           >
             {t('homes.affordRatio', {
               defaultValue: 'Share of income for housing: {{pct}}%',
@@ -213,7 +213,7 @@ export function AffordabilityPanel({
             onValueChange={([v]) => update({ housingRatio: v / 100 })}
             aria-labelledby="homes-afford-ratio-label"
           />
-          <p className="mt-1.5 text-xs text-site-text-dim">
+          <p className="mt-2 text-xs text-site-text-dim">
             {t('homes.affordRatioHint', {
               defaultValue: 'The classic rule is 30% of gross income.',
             })}
@@ -233,7 +233,7 @@ export function AffordabilityPanel({
                 placeholder="0"
                 value={profile.downPayment === 0 ? '' : String(profile.downPayment)}
                 onChange={(e) => update({ downPayment: toNumber(e.target.value) })}
-                className="mt-1.5"
+                className="mt-2"
               />
             </div>
             <div>
@@ -246,7 +246,7 @@ export function AffordabilityPanel({
                 autoComplete="off"
                 value={String(profile.interestRate)}
                 onChange={(e) => update({ interestRate: toNumber(e.target.value) })}
-                className="mt-1.5"
+                className="mt-2"
               />
             </div>
             <div>
@@ -259,7 +259,7 @@ export function AffordabilityPanel({
                 autoComplete="off"
                 value={String(profile.termYears)}
                 onChange={(e) => update({ termYears: toNumber(e.target.value) })}
-                className="mt-1.5"
+                className="mt-2"
               />
             </div>
             <div>
@@ -272,7 +272,7 @@ export function AffordabilityPanel({
                 autoComplete="off"
                 value={String(profile.propertyTaxRate)}
                 onChange={(e) => update({ propertyTaxRate: toNumber(e.target.value) })}
-                className="mt-1.5"
+                className="mt-2"
               />
             </div>
           </>
@@ -280,7 +280,7 @@ export function AffordabilityPanel({
       </div>
 
       {known && (
-        <div className="mt-5 border-t border-site-border pt-4">
+        <div className="mt-4 border-t border-site-border pt-4">
           <p className="text-sm text-site-text-muted">
             {mode === 'buy'
               ? t('homes.affordCeilingBuy', {
@@ -294,7 +294,7 @@ export function AffordabilityPanel({
           </p>
 
           {breakdown && (
-            <dl className="mt-3 grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-2">
+            <dl className="mt-3 grid gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
               {[
                 {
                   term: t('homes.affordPI', { defaultValue: 'Principal + interest' }),

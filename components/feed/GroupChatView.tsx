@@ -480,14 +480,14 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
 
  if (loading) {
  return (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  );
  }
  if (notFound || !group) {
  return (
- <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
+ <div className="flex flex-col items-center gap-3 px-4 pt-4 pb-12 text-center">
  <p className="font-medium text-site-text">
  {t('group-not-found', { defaultValue:'Group not found'})}
  </p>
@@ -503,14 +503,18 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  const canSend = (input.trim() || gifUrl || imageUrls.length > 0 || pollDraft) && !sending;
 
  return (
- <div className="flex h-screen flex-col"style={chatTheme.rootStyle}>
+ <div
+ className="flex h-[calc(100svh-var(--rad-topbar-h,3.5rem)-var(--rad-top,0px)-var(--rad-bottom,0px))] flex-col"
+ style={chatTheme.rootStyle}
+ >
  <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link
  to="/messages"
  search={{ tab:'groups'}}
- className="text-site-text-dim hover:text-site-text"
+ aria-label={t('back', { defaultValue:'Back'})}
+ className="-ml-2 rounded-site-sm p-2 text-site-text-dim hover:bg-site-surface-hover hover:text-site-text"
  >
- <ArrowLeft className="h-5 w-5"/>
+ <ArrowLeft className="h-5 w-5"aria-hidden />
  </Link>
  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-site-accent/12 text-site-accent">
  <Users className="h-4 w-4"/>
@@ -576,7 +580,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  <UserAvatar user={m.sender} />
  <div className="max-w-[78%]"{...reactionTriggerFor(m.id)}>
  {!mine && (
- <p className="mb-0.5 px-1 text-[11px] text-site-text-dim">
+ <p className="mb-0.5 px-1 text-xs text-site-text-dim">
  {m.sender.name ||
  m.sender.handle ||
  t('member-fallback', { defaultValue:'Member'})}
@@ -605,14 +609,14 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  {m.imageUrls && m.imageUrls.length > 0 && (
  <PostImageGrid
  urls={m.imageUrls}
- className="mt-1.5 overflow-hidden rounded-site-sm"
+ className="mt-2 overflow-hidden rounded-site-sm"
  />
  )}
  {m.gifUrl && (
  <img
  src={m.gifUrl}
  alt=""
- className="mt-1.5 max-h-60 w-auto rounded-site-sm"
+ className="mt-2 max-h-60 w-auto rounded-site-sm"
  loading="lazy"
  />
  )}
@@ -697,7 +701,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
  </div>
  )}
 
- <div className="border-t border-site-border p-3">
+ <div className="border-t border-site-border px-4 py-3">
  <div className="flex items-end gap-2">
  <input
  ref={imageInputRef}

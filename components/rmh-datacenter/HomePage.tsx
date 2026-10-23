@@ -88,11 +88,11 @@ export default function HomePage() {
     >
       <DatacenterTabs active="/rmh-datacenter" />
 
-      <div className="space-y-8 px-4 pb-12">
-        <section className="glass-pane rounded-site p-6 sm:p-8">
-          <div className="grid items-center gap-8 lg:grid-cols-[1.1fr_1fr]">
+      <div className="space-y-6 px-4 pt-4 pb-12">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
+          <div className="grid items-center gap-6 lg:grid-cols-[1.1fr_1fr]">
             <div className="min-w-0">
-              <h2 className="font-display text-3xl leading-tight font-semibold tracking-[-0.02em] text-site-text sm:text-4xl">
+              <h2 className="font-display text-3xl leading-tight font-semibold tracking-tight text-site-text sm:text-4xl">
                 {t('hero-heading', {
                   defaultValue: 'Floor space, power and a network that is already there.',
                 })}
@@ -103,7 +103,7 @@ export default function HomePage() {
                     'RMH Datacenter is the infrastructure arm of RMH Studios. We build and run the halls the rest of the group sits in — six owned campuses, a private backbone between all of them — and we sell the space, the power and the cooling we did not use.',
                 })}
               </p>
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-wrap gap-3">
                 <Button asChild variant="accent">
                   <Link to="/rmh-datacenter/platform">
                     {t('see-the-platform', { defaultValue: 'See the platform' })}
@@ -163,7 +163,7 @@ export default function HomePage() {
           />
         </div>
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('s01-kicker', { defaultValue: 'The floor' })}
             heading={t('s01-heading', {
@@ -176,7 +176,7 @@ export default function HomePage() {
                 'Most colocation is a landlord business: someone builds the shell, and the people running workloads inside it are somebody else. Every RMH hall was specified by the team that had to run a platform in it — which is why the power density, the cross-connect fees and the change-window policy all look like they were written by a tenant.',
             })}
           </p>
-          <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             {[
               ['s01-f1', 'Racks sold at the density they can actually draw'],
               ['s01-f2', 'Cross-connects are a one-time fee, never a monthly rent'],
@@ -184,7 +184,7 @@ export default function HomePage() {
               ['s01-f4', 'The same change calendar we schedule our own migrations against'],
             ].map(([key, dflt]) => (
               <li key={key} className="u-reveal-soft flex items-start gap-2 text-sm text-site-text">
-                <Check className="mt-0.5 size-4 shrink-0 text-site-accent" aria-hidden />
+                <Check className="mt-1 size-4 shrink-0 text-site-accent" aria-hidden />
                 <span>{t(key, { defaultValue: dflt })}</span>
               </li>
             ))}
@@ -198,15 +198,15 @@ export default function HomePage() {
               defaultValue: 'Five ways to take delivery of the same building',
             })}
           />
-          <div className="mt-5 grid gap-3">
+          <div className="mt-4 grid gap-3">
             {platform.map((p) => (
               <Card key={p.hash} interactive className="p-0">
                 <Link
                   to="/rmh-datacenter/platform"
                   hash={p.hash}
-                  className="flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:gap-6"
+                  className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:gap-6"
                 >
-                  <span className="w-20 shrink-0 text-xs font-medium tracking-wide text-site-accent uppercase">
+                  <span className="w-20 shrink-0 text-xs font-medium text-site-accent">
                     {p.code}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -229,18 +229,18 @@ export default function HomePage() {
               defaultValue: 'Six sites, and none of them a leased suite',
             })}
           />
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {CAMPUSES.slice(0, 3).map((c) => (
               <Card key={c.id} interactive className="p-0">
                 <Link
                   to="/rmh-datacenter/facilities"
                   hash={c.id}
-                  className="flex flex-col gap-3 p-5"
+                  className="flex flex-col gap-3 p-4"
                 >
                   <span className="text-site-accent">
                     <HallDiagram spec={c.hall} className="h-20 w-full" label="" />
                   </span>
-                  <span className="text-xs font-medium tracking-wide text-site-accent uppercase">
+                  <span className="text-xs font-medium text-site-accent">
                     {c.code} · {c.region}
                   </span>
                   <span className="font-display text-lg font-semibold text-site-text">
@@ -256,7 +256,7 @@ export default function HomePage() {
               </Card>
             ))}
           </div>
-          <div className="mt-5">
+          <div className="mt-4">
             <Button asChild variant="accent-outline">
               <Link to="/rmh-datacenter/facilities">
                 {t('all-six-campuses', { defaultValue: 'All six campuses' })}
@@ -266,7 +266,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('cta-kicker', { defaultValue: 'Next step' })}
             heading={t('cta-heading', { defaultValue: 'Tell us the load, not the product name' })}
@@ -277,7 +277,7 @@ export default function HomePage() {
                 'Kilowatts, cabinets, where your users are and what you have to be compliant with. We will come back with the halls that fit and the ones that do not.',
             })}
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap gap-3">
             <Button asChild variant="accent">
               <Link to="/rmh-datacenter/contact">
                 {t('request-capacity', { defaultValue: 'Request capacity' })}

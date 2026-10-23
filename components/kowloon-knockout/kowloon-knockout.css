@@ -417,7 +417,7 @@
   cursor: pointer;
   letter-spacing: 3px;
   position: relative;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
 .kowloon-knockout .neon-button-fight {
@@ -652,7 +652,7 @@
   font-size: 24px;
   padding: 12px 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, opacity 0.2s, transform 0.2s;
   flex-shrink: 0;
 }
 
@@ -1039,7 +1039,7 @@
   color: var(--text-dim);
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s, box-shadow 0.15s, opacity 0.15s, transform 0.15s;
   letter-spacing: 1px;
 }
 
@@ -1238,3 +1238,13 @@
 }
 .kk-train-row button:disabled { opacity: 0.35; cursor: default; }
 .kk-train-row button[aria-pressed='true'] { background: #33ccff33; box-shadow: 0 0 8px #33ccff; }
+
+/* Touch targets: setup chips and carousel arrows reach the 44px floor on coarse
+   pointers (desktop sizing is unchanged). */
+@media (pointer: coarse) {
+  .kowloon-knockout .option-chip,
+  .kowloon-knockout .carousel-arrow {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

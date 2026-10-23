@@ -81,7 +81,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   if (!session?.user) return null;
 
   const core = !party ? (
-    <Button size="sm" variant="accent" onClick={createParty} className="gap-1.5">
+    <Button size="sm" variant="accent" onClick={createParty}>
       <UserPlus className="h-4 w-4" aria-hidden />
       {t('party-start', { defaultValue: 'Start a party' })}
     </Button>
@@ -92,7 +92,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
           <MemberAvatar key={m.userId} member={m} />
         ))}
       </div>
-      <span className="px-1 text-xs text-site-text-muted">
+      <span className="px-2 text-xs text-site-text-muted">
         {party.members.length}/{party.maxSize}
       </span>
 
@@ -106,7 +106,6 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
           onClick={() => setMenuOpen((o) => !o)}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
-          className="gap-1.5"
         >
           <Gamepad2 className="h-4 w-4" aria-hidden />
           {t('party-choose-game', { defaultValue: 'Choose game' })}
@@ -123,18 +122,19 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
           side={inline ? 'bottom' : 'top'}
           className="w-52"
         >
-          <div className="flex items-center justify-between px-2 py-1">
-            <span className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+          <div className="flex items-center justify-between gap-2 px-3 py-2">
+            <span className="text-xs font-semibold text-site-text-muted">
               {t('party-games', { defaultValue: 'Party games' })}
             </span>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={() => setMenuOpen(false)}
-              className="rounded p-0.5 text-site-text-dim hover:text-site-text"
               aria-label={t('close', { defaultValue: 'Close' })}
             >
-              <X className="h-3.5 w-3.5" aria-hidden />
-            </button>
+              <X aria-hidden />
+            </Button>
           </div>
           {PARTY_GAMES.map((g) => (
             <MenuItem
@@ -169,12 +169,12 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
     // rather than in the JSX: a `{/* … */}` immediately before a `t()` call
     // makes i18next-parser skip that key.)
     return (
-      <section className="mb-4 rounded-site border border-site-border bg-site-surface p-4">
-        <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <section className="glass-fill rounded-site px-4 py-3">
+        <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-2">
           <Users className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
-          <h3 className="text-sm font-semibold text-site-text">
+          <h2 className="site-section-label">
             {t('party-heading', { defaultValue: 'Party up' })}
-          </h3>
+          </h2>
           <p className="basis-full text-xs text-site-text-dim sm:basis-auto">
             {t('party-subheading', {
               defaultValue: 'Start a party and pick a game to play with friends.',
@@ -188,7 +188,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
 
   return (
     <div className="pointer-events-none bottom-above-dock fixed inset-x-0 z-40 flex justify-center px-3 md:bottom-4">
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-site-border bg-site-surface/95 px-3 py-2 shadow-site backdrop-blur">
+      <div className="pointer-events-auto glass-chrome flex items-center gap-2 rounded-full px-3 py-2">
         {core}
       </div>
     </div>

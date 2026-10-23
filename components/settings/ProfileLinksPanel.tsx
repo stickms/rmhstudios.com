@@ -30,6 +30,7 @@ import {
   linkDisplayLabel,
   type ProfileLinkDTO,
 } from '@/lib/profile-links/shared';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 interface ProfileLinksPanelProps {
   /** The signed-in user's handle, used to show the exact back-link to copy. */
@@ -157,20 +158,15 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
   const atLimit = links.length >= MAX_PROFILE_LINKS;
 
   return (
-    <section className="glass-pane rounded-site p-4 sm:p-5">
-      <div className="mb-1 flex items-center gap-2">
-        <Link2 className="h-5 w-5 text-site-accent" aria-hidden />
-        <h2 className="text-base font-bold text-site-text">
-          {t('links-title', { defaultValue: 'Profile links' })}
-        </h2>
-      </div>
-      <p className="mb-4 text-sm text-site-text-muted">
-        {t('links-description', {
-          defaultValue:
-            'Up to five links on your profile. Add a rel="me" link back to your profile from a page you control and we will show a check beside it — it says you control that domain, nothing more.',
-        })}
-      </p>
-
+    <SettingsSection
+      icon={Link2}
+      title={t('links-title', { defaultValue: 'Profile links' })}
+      description={t('links-description', {
+        defaultValue:
+          'Up to five links on your profile. Add a rel="me" link back to your profile from a page you control and we will show a check beside it — it says you control that domain, nothing more.',
+      })}
+      bodyClassName="space-y-0"
+    >
       {backLink ? (
         <div className="glass-inset mb-4 rounded-site-sm p-3">
           <p className="text-xs text-site-text-muted">
@@ -288,6 +284,6 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
           {t('links-limit', { defaultValue: 'You have reached the five-link limit.' })}
         </p>
       ) : null}
-    </section>
+    </SettingsSection>
   );
 }

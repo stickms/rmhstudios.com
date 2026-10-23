@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { ChevronUp, Megaphone, GitMerge } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { isVotable } from '@/lib/requests/status';
 import type { FeatureRequestDTO } from '@/lib/requests/schema';
 import { RequestStatusBadge } from './RequestStatusBadge';
@@ -63,7 +62,7 @@ export function RequestCard({
   }
 
   return (
-    <article className="glass-fill rounded-site p-4">
+    <article className="glass-fill rounded-site px-4 py-3">
       <div className="flex items-start gap-3">
         <Button
           variant={request.hasVoted ? 'accent' : 'outline'}
@@ -96,8 +95,8 @@ export function RequestCard({
           </p>
 
           {request.mergedIntoTitle ? (
-            <p className="mt-2 flex items-center gap-1.5 text-xs text-site-text-dim">
-              <GitMerge className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <p className="mt-2 flex items-center gap-2 text-xs text-site-text-dim">
+              <GitMerge className="size-3.5 shrink-0" aria-hidden />
               {t('request-merged-into', {
                 defaultValue: 'Merged into “{{title}}” — your vote moved with it.',
                 title: request.mergedIntoTitle,
@@ -107,8 +106,8 @@ export function RequestCard({
 
           {request.officialNote ? (
             <div className="glass-inset mt-3 rounded-site p-3">
-              <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-site-accent">
-                <Megaphone className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <p className="mb-1 flex items-center gap-2 text-xs font-semibold text-site-accent">
+                <Megaphone className="size-3.5 shrink-0" aria-hidden />
                 {t('request-official-reply', { defaultValue: 'Official reply' })}
               </p>
               <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-site-text">
@@ -117,7 +116,7 @@ export function RequestCard({
             </div>
           ) : null}
 
-          <p className={cn('mt-2 text-xs text-site-text-dim')}>
+          <p className="mt-3 text-xs text-site-text-dim">
             {t('request-by', {
               defaultValue: 'Requested by {{name}}',
               name: request.author?.handle

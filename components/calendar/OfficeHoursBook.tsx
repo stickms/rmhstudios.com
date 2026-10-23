@@ -128,7 +128,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
   };
 
   return (
-    <div className="space-y-5 p-4">
+    <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
       <header className="flex items-start gap-3">
         <UserAvatar src={view.host.image} alt="" size={48} />
         <div className="min-w-0">
@@ -163,13 +163,13 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
       )}
 
       {view.bookings.length > 0 && (
-        <section className="space-y-2" aria-labelledby="oh-bookings">
-          <h3 id="oh-bookings" className="text-sm font-bold text-site-text">
+        <section className="space-y-3" aria-labelledby="oh-bookings">
+          <h3 id="oh-bookings" className="site-section-label">
             {view.isHost
               ? t('oh-upcoming-host', { defaultValue: 'Upcoming bookings' })
               : t('oh-upcoming-mine', { defaultValue: 'Your bookings' })}
           </h3>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {view.bookings.map((b) => (
               <BookingRow
                 key={b.id}
@@ -184,7 +184,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
 
       {!view.isHost && (
         <section className="space-y-4" aria-labelledby="oh-slots">
-          <h3 id="oh-slots" className="text-sm font-bold text-site-text">
+          <h3 id="oh-slots" className="site-section-label">
             {t('oh-open-slots', { defaultValue: 'Open times' })}
           </h3>
           {byDay.length === 0 ? (
@@ -194,9 +194,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
           ) : (
             byDay.map(([day, slots]) => (
               <div key={day} className="space-y-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-site-text-muted">
-                  {day}
-                </h4>
+                <h4 className="text-xs font-semibold text-site-text-muted">{day}</h4>
                 <ul className="flex flex-wrap gap-2">
                   {slots.map((s) => (
                     <li key={s.startsAt}>

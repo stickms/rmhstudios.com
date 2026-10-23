@@ -10,10 +10,10 @@ export default function MemberList() {
   if (!room) return null;
 
   return (
-    <div className="px-3 py-2 border-b" style={{ borderColor: 'color-mix(in srgb, var(--site-text) 10%, transparent)' }}>
+    <div className="px-3 py-2 border-b" style={{ borderColor: 'color-mix(in srgb, var(--app-text) 10%, transparent)' }}>
       <div className="flex items-center gap-1.5 mb-1.5">
-        <Users className="w-3.5 h-3.5" style={{ color: 'var(--site-text-muted)' }} />
-        <span className="text-xs" style={{ color: 'var(--site-text-muted)' }}>
+        <Users className="w-3.5 h-3.5" style={{ color: 'var(--app-text-muted)' }} />
+        <span className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
           {t("listener-count", { count: room.members.length, defaultValue: "{{count}} listener" })}
         </span>
       </div>
@@ -22,15 +22,15 @@ export default function MemberList() {
           <div
             key={m.userId}
             className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs"
-            style={{ background: 'var(--site-surface)', color: m.isConnected ? 'var(--site-text)' : 'var(--site-text-dim)' }}
+            style={{ background: 'var(--app-surface)', color: m.isConnected ? 'var(--app-text)' : 'var(--app-text-dim)' }}
           >
             <div
               className="w-1.5 h-1.5 rounded-full"
-              style={{ background: m.isConnected ? 'var(--site-success)' : 'var(--site-text-dim)' }}
+              style={{ background: m.isConnected ? 'var(--app-success)' : 'var(--app-text-dim)' }}
             />
             {m.userName}
             {m.isHost && (
-              <span className="text-[10px] font-semibold" style={{ color: 'var(--site-accent)' }}>{t("host-label", { defaultValue: "HOST" })}</span>
+              <span className="text-xs font-semibold" style={{ color: 'var(--app-accent)' }}>{t("host-label", { defaultValue: "HOST" })}</span>
             )}
           </div>
         ))}

@@ -11,11 +11,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Plus, Check, Loader2, Upload, Sparkles } from 'lucide-react';
+import { Plus, Check, Upload, Sparkles } from 'lucide-react';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import type { PackSummary, InstalledPack } from '@/lib/emoji/packs';
 import { MAX_ITEMS_PER_PACK, SHORTCODE_RE } from '@/lib/emoji/packs';
 import { upgradeHref } from '@/lib/entitlements/features';
@@ -46,7 +48,7 @@ function PackCard({
   const { t } = useTranslation('feed');
   return (
     // `.glass-fill` — repeated content. No blur on list items.
-    <article className="glass-fill flex flex-col gap-3 rounded-site p-4">
+    <article className="glass-fill flex flex-col gap-3 rounded-site px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-base font-semibold text-site-text">{pack.name}</h3>
@@ -64,7 +66,7 @@ function PackCard({
         >
           {pack.subscribed ? (
             <>
-              <Check className="h-4 w-4" aria-hidden />
+              <Check aria-hidden />
               {t('pack-installed', { defaultValue: 'Installed' })}
             </>
           ) : (
@@ -175,7 +177,7 @@ function EmojiPacksPage() {
 
   return (
     <PageLayout title={t('emoji-packs-title', { defaultValue: 'Emoji & sticker packs' })}>
-      <div className="mx-auto max-w-3xl px-4 pt-4 pb-16">
+      <div className="mx-auto max-w-3xl px-4 pt-4 pb-12">
         <p className="text-sm text-site-text-muted">
           {t('emoji-packs-intro', {
             defaultValue:
@@ -184,14 +186,14 @@ function EmojiPacksPage() {
         </p>
 
         {/* ── Your packs ───────────────────────────────────────────── */}
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold text-site-text">
+        <section className="mt-[var(--site-section-gap)]">
+          <h2 className="site-section-label">
             {t('your-packs', { defaultValue: 'Your packs' })}
           </h2>
 
           {/* `.glass-pane` — a singular panel, not a repeated card. */}
-          <div className="glass-pane mt-3 flex flex-col gap-3 rounded-site p-4 sm:flex-row sm:items-center">
-            <input
+          <div className="glass-pane mt-3 flex flex-col gap-3 rounded-site px-4 py-3 sm:flex-row sm:items-center">
+            <Input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
@@ -200,7 +202,7 @@ function EmojiPacksPage() {
               maxLength={60}
               placeholder={t('pack-name-placeholder', { defaultValue: 'New pack name' })}
               aria-label={t('pack-name-placeholder', { defaultValue: 'New pack name' })}
-              className="glass-inset h-11 min-w-0 flex-1 rounded-site-sm px-3 text-sm text-site-text outline-none placeholder:text-site-text-dim"
+              className="min-w-0 flex-1"
             />
             <Button
               type="button"
@@ -208,9 +210,9 @@ function EmojiPacksPage() {
               loading={creating}
               disabled={!newName.trim()}
               onClick={() => void createPack()}
-              className="h-11 shrink-0"
+              className="shrink-0"
             >
-              <Plus className="h-4 w-4" aria-hidden />
+              <Plus aria-hidden />
               {t('pack-create', { defaultValue: 'Create pack' })}
             </Button>
           </div>
@@ -218,9 +220,9 @@ function EmojiPacksPage() {
           {canCreate === false && (
             <a
               href={upgradeHref('sticker-packs')}
-              className="glass-fill mt-3 flex items-center gap-3 rounded-site p-4 text-sm text-site-text"
+              className="glass-fill mt-3 flex items-center gap-3 rounded-site px-4 py-3 text-sm text-site-text"
             >
-              <Sparkles className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
+              <Sparkles className="size-4 shrink-0 text-site-accent" aria-hidden />
               <span>
                 {t('pack-upsell', {
                   defaultValue:
@@ -240,14 +242,14 @@ function EmojiPacksPage() {
         </section>
 
         {/* ── Browse ───────────────────────────────────────────────── */}
-        <section className="mt-10">
-          <h2 className="text-lg font-semibold text-site-text">
+        <section className="mt-[var(--site-section-gap)]">
+          <h2 className="site-section-label">
             {t('browse-packs', { defaultValue: 'Browse packs' })}
           </h2>
 
           {loading ? (
             <div className="mt-4 flex justify-center py-10">
-              <Loader2 className="h-5 w-5 animate-spin text-site-text-dim" aria-hidden />
+              <Spinner />
             </div>
           ) : browse.length === 0 ? (
             <EmptyState
@@ -348,10 +350,10 @@ function OwnedPackCard({ pack, onChanged }: { pack: PackSummary; onChanged: () =
   const full = pack.itemCount >= MAX_ITEMS_PER_PACK;
 
   return (
-    <article className="glass-fill flex flex-col gap-3 rounded-site p-4">
+    <article className="glass-fill flex flex-col gap-3 rounded-site px-4 py-3">
       <div>
         <h3 className="truncate text-base font-semibold text-site-text">{pack.name}</h3>
-        <p className="text-xs text-site-text-muted">
+        <p className="mt-1 text-xs text-site-text-muted">
           {t('pack-item-count', {
             defaultValue: '{{count}} / {{max}} items',
             count: pack.itemCount,
@@ -361,13 +363,13 @@ function OwnedPackCard({ pack, onChanged }: { pack: PackSummary; onChanged: () =
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        <input
+        <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={32}
           placeholder={t('pack-shortcode-placeholder', { defaultValue: 'shortcode' })}
           aria-label={t('pack-shortcode-placeholder', { defaultValue: 'shortcode' })}
-          className="glass-inset h-11 min-w-0 flex-1 rounded-site-sm px-3 text-sm text-site-text outline-none placeholder:text-site-text-dim"
+          className="min-w-0 flex-1"
         />
         <label
           className={cn(
@@ -375,11 +377,7 @@ function OwnedPackCard({ pack, onChanged }: { pack: PackSummary; onChanged: () =
             (busy || full) && 'pointer-events-none opacity-50',
           )}
         >
-          {busy ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          ) : (
-            <Upload className="h-4 w-4" aria-hidden />
-          )}
+          {busy ? <Spinner size={16} /> : <Upload className="size-4" aria-hidden />}
           {t('pack-add-item', { defaultValue: 'Add image' })}
           <input
             type="file"

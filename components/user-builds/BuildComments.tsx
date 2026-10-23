@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send, Loader2, MessageCircle, ChevronDown } from 'lucide-react';
+import { Send, MessageCircle, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
@@ -40,7 +42,7 @@ function CommentItem({
   const [showReplies, setShowReplies] = useState(depth === 0);
 
   return (
-    <div className={depth > 0 ? 'ml-8 border-l border-site-border pl-4' : ''}>
+    <div className={depth > 0 ? 'ml-6 border-l border-site-border pl-4' : ''}>
       <div className="py-3">
         <div className="flex items-start gap-3">
           <UserAvatar
@@ -50,8 +52,8 @@ function CommentItem({
             fallbackName={comment.user.name ?? undefined}
           />
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium text-sm text-site-text">
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-sm font-medium text-site-text">
                 {comment.user.name || t('anonymous', { defaultValue: 'Anonymous' })}
               </span>
               <span className="text-xs text-site-text-dim">{timeAgo(comment.createdAt)}</span>
@@ -59,12 +61,14 @@ function CommentItem({
             <p className="text-sm text-site-text-muted whitespace-pre-wrap break-words">
               {comment.content}
             </p>
-            <button
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={() => onReply(comment.id)}
-              className="mt-1 text-xs text-site-text-dim hover:text-site-accent transition-colors"
+              className="-ml-2.5 mt-1 text-site-text-dim"
             >
               {t('reply', { defaultValue: 'Reply' })}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -72,12 +76,16 @@ function CommentItem({
         {comment.replies && comment.replies.length > 0 && (
           <div className="mt-2">
             {comment.replyCount && comment.replyCount > comment.replies.length && (
-              <button
+              <Button
+                variant="ghost"
+                size="xs"
                 onClick={() => setShowReplies(!showReplies)}
-                className="flex items-center gap-1 text-xs text-site-accent hover:text-site-accent mb-2"
+                aria-expanded={showReplies}
+                className="-ml-2.5 mb-2 text-site-accent"
               >
                 <ChevronDown
-                  className={`w-3 h-3 transition-transform ${showReplies ? 'rotate-180' : ''}`}
+                  className={`transition-transform ${showReplies ? 'rotate-180' : ''}`}
+                  aria-hidden
                 />
                 {showReplies
                   ? t('hide', { defaultValue: 'Hide' })
@@ -85,7 +93,7 @@ function CommentItem({
                       defaultValue: 'Show {{count}} replies',
                       count: comment.replyCount,
                     })}
-              </button>
+              </Button>
             )}
             {showReplies &&
               comment.replies.map((reply) => (
@@ -197,35 +205,32 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2">
-        <MessageCircle className="w-5 h-5 text-site-accent" />
+      <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-site-text">
+        <MessageCircle className="size-5 text-site-accent" aria-hidden />
         {t('comments', { defaultValue: 'Comments' })}
       </h2>
 
       {/* Comment Form */}
       {session ? (
-        <form onSubmit={handleSubmit} className="mb-6">
+        <form onSubmit={handleSubmit} className="mb-6 space-y-2">
           {replyTo && replyToComment && (
-            <div className="flex items-center gap-2 mb-2 text-sm text-site-text-muted">
+            <div className="flex items-center gap-2 text-sm text-site-text-muted">
               <span>
                 {t('replying-to', {
                   defaultValue: 'Replying to {{name}}',
                   name: replyToComment.user.name,
                 })}
               </span>
-              <button
-                type="button"
-                onClick={() => setReplyTo(null)}
-                className="text-site-accent hover:text-site-accent"
-              >
+              <Button type="button" variant="ghost" size="xs" onClick={() => setReplyTo(null)}>
                 {t('cancel', { defaultValue: 'Cancel' })}
-              </button>
+              </Button>
             </div>
           )}
-          <div className="flex gap-3">
-            <input
+          <div className="flex gap-2">
+            <Input
               id="comment-input"
               type="text"
+              aria-label={t('write-comment', { defaultValue: 'Write a comment...' })}
               placeholder={
                 replyTo
                   ? t('write-reply', { defaultValue: 'Write a reply...' })
@@ -233,25 +238,25 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
               }
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="flex-1 px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
+              className="flex-1"
               maxLength={2000}
             />
-            <button
+            <Button
               type="submit"
-              disabled={!content.trim() || submitting}
-              className="px-4 py-2 rounded-site-sm bg-site-accent hover:bg-site-accent text-site-accent-fg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              variant="accent"
+              size="icon"
+              loading={submitting}
+              loadingText={<></>}
+              disabled={!content.trim()}
+              aria-label={t('post-comment', { defaultValue: 'Post comment' })}
             >
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </button>
+              <Send aria-hidden />
+            </Button>
           </div>
         </form>
       ) : (
-        <p className="text-sm text-site-text-muted mb-6">
-          <a href="/login" className="text-site-accent hover:text-site-accent">
+        <p className="mb-6 text-sm text-site-text-muted">
+          <a href="/login" className="text-site-accent hover:underline">
             {t('sign-in', { defaultValue: 'Sign in' })}
           </a>{' '}
           {t('to-leave-a-comment', { defaultValue: 'to leave a comment.' })}
@@ -260,11 +265,11 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
 
       {/* Comments List */}
       {loading ? (
-        <div className="flex justify-center py-8">
+        <div className="flex justify-center py-12">
           <Spinner />
         </div>
       ) : comments.length === 0 ? (
-        <p className="text-center text-site-text-dim py-8">
+        <p className="py-12 text-center text-sm text-site-text-dim">
           {t('no-comments', { defaultValue: 'No comments yet. Be the first!' })}
         </p>
       ) : (
@@ -277,12 +282,13 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
 
       {/* Load More */}
       {hasMore && (
-        <button
+        <Button
+          variant="ghost"
           onClick={() => cursor && fetchComments(cursor)}
-          className="w-full mt-4 py-2 text-sm text-site-accent hover:text-site-accent transition-colors"
+          className="mt-4 w-full text-site-accent"
         >
           {t('load-more-comments', { defaultValue: 'Load more comments' })}
-        </button>
+        </Button>
       )}
     </div>
   );

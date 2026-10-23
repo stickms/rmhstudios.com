@@ -47,5 +47,10 @@
   "starting-game": "Iniciando juego...",
   "view-minigames": "Ver Minijuegos",
   "winner-label": "Ganador:",
-  "winner-none": "Ninguno"
+  "winner-none": "Ninguno",
+  "loading": "Loading…",
+  "room-code": "Room code",
+  "player-count-of-max_many": "{{count}}/{{max}} players",
+  "player-count-of-max_one": "{{count}}/{{max}} players",
+  "player-count-of-max_other": "{{count}}/{{max}} players"
 }

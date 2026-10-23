@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShoppingBag, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
@@ -19,6 +18,7 @@ import {
 import { getPremiumTheme } from '@/lib/shop/themes';
 import { PinnedHero } from './PinnedHero';
 import { ColumnHeader } from './ColumnHeader';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Reveal } from '@/components/motion';
 import { ShopWishButton } from '@/components/economy-plus/ShopWishButton';
 
@@ -263,7 +263,7 @@ export function ShopColumn({
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center px-4 pt-4 pb-12">
           <Spinner />
         </div>
       ) : (
@@ -294,7 +294,7 @@ export function ShopColumn({
                       "legendary" at a glance) and the word takes the surface's own
                       ink. Same fix as the achievement tier chips. */}
                   <span
-                    className="shrink-0 rounded border px-1 py-0.5 text-[11px] font-bold uppercase text-site-text"
+                    className="shrink-0 rounded-site-sm border px-2 py-0.5 text-xs font-bold uppercase text-site-text"
                     style={{
                       background: `${RARITY_COLORS[item.rarity]}2e`,
                       borderColor: `${RARITY_COLORS[item.rarity]}99`,
@@ -307,7 +307,7 @@ export function ShopColumn({
                   {item.description}
                 </p>
                 {item.requiresTier && (
-                  <p className="text-[11px] uppercase text-site-accent">
+                  <p className="text-xs uppercase text-site-accent">
                     {t('requires-tier-plan', {
                       tier: item.requiresTier,
                       defaultValue: '{{tier}} plan',

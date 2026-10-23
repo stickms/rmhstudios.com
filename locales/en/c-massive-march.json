@@ -142,6 +142,7 @@
   "tagline": "One handcrafted island, on your own or with up to eleven friends, and no way to solve anything without telling somebody what you can see.",
   "take-out": "Take",
   "talking": "How you will talk",
+  "talking-hud": "Talking",
   "text-only": "Text only — never open my microphone",
   "text-only-hint": "Typed messages travel exactly as far as speech does, fade the same way, and are blocked by the same walls. You can finish the whole campaign this way.",
   "text-only-restart": "Takes effect the next time you walk out from the landing.",
@@ -178,6 +179,5 @@
   "walk": "Walk out",
   "who": "Who is here",
   "world-volume": "The island",
-  "worn": "Worn",
-  "talking-hud": "Talking"
+  "worn": "Worn"
 }

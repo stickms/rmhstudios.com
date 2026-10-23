@@ -50,5 +50,13 @@
   "starting-game": "بدء اللعبة...",
   "view-minigames": "عرض الألعاب المصغرة",
   "winner-label": "الفائز:",
-  "winner-none": "None"
+  "winner-none": "None",
+  "loading": "Loading…",
+  "room-code": "Room code",
+  "player-count-of-max_few": "{{count}}/{{max}} players",
+  "player-count-of-max_many": "{{count}}/{{max}} players",
+  "player-count-of-max_one": "{{count}}/{{max}} players",
+  "player-count-of-max_two": "{{count}}/{{max}} players",
+  "player-count-of-max_zero": "{{count}}/{{max}} players",
+  "player-count-of-max_other": "{{count}}/{{max}} players"
 }

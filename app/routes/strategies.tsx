@@ -6,12 +6,13 @@
  * — renders full-screen with its own sidebar.
  */
 
-import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router';
+import { createFileRoute, Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { appRouteHead } from '@/lib/seo-catalog';
 import { Home, Puzzle, Shield, AlertTriangle, User } from 'lucide-react';
 import { DoctrineNav } from '@/components/doctrine/layout/nav';
 import { BetaBanner } from '@/components/doctrine/layout/beta-banner';
 import { SahurOverlay } from '@/components/doctrine/layout/sahur-overlay';
+import { useTranslation } from 'react-i18next';
 import { useDoctrineStore } from '@/stores/doctrineStore';
 
 export const Route = createFileRoute('/strategies')({
@@ -49,12 +50,12 @@ function StrategiesLayout() {
       <BetaBanner />
       <div className="flex flex-1 min-h-0">
         {/* Sidebar — hidden on mobile */}
-        <aside className="hidden md:block w-56 shrink-0 doctrine-sidebar sticky top-0 h-[calc(100dvh-28px)] overflow-y-auto">
+        <aside className="hidden md:block w-56 shrink-0 doctrine-sidebar sticky top-0 h-[calc(100dvh-1.75rem)] overflow-y-auto">
           <DoctrineNav />
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 overflow-y-auto">
+        <main className="flex-1 min-w-0">
           <Outlet />
         </main>
       </div>
@@ -66,33 +67,42 @@ function StrategiesLayout() {
   );
 }
 
-const mobileNavItems = [
-  { to: '/strategies', icon: Home },
-  { to: '/strategies/puzzles', icon: Puzzle },
-  { to: '/strategies/safehouse', icon: Shield },
-  { to: '/strategies/incidents', icon: AlertTriangle },
-  { to: '/strategies/profile', icon: User },
-] as const;
-
 function MobileDoctrineNav() {
+  const { t } = useTranslation('r-strategies');
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const mobileNavItems = [
+    { to: '/strategies', icon: Home, label: t('nav-dashboard', { defaultValue: 'Dashboard' }) },
+    { to: '/strategies/puzzles', icon: Puzzle, label: t('nav-puzzles', { defaultValue: 'Puzzles' }) },
+    { to: '/strategies/safehouse', icon: Shield, label: t('nav-safehouse', { defaultValue: 'Safehouse' }) },
+    { to: '/strategies/incidents', icon: AlertTriangle, label: t('nav-incidents', { defaultValue: 'Incidents' }) },
+    { to: '/strategies/profile', icon: User, label: t('nav-profile', { defaultValue: 'Profile' }) },
+  ] as const;
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-white/6"
+      aria-label={t('nav-mobile', { defaultValue: 'Strategies' })}
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-white/10 pt-2"
       style={{
         background: 'var(--doctrine-bg-secondary, #141416)',
         paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
-        paddingTop: '8px',
       }}
     >
-      {mobileNavItems.map((item) => (
-        <a
-          key={item.to}
-          href={item.to}
-          className="min-w-11 min-h-11 flex items-center justify-center text-white/60 hover:text-white/90 transition-colors"
-        >
-          <item.icon size={22} />
-        </a>
-      ))}
+      {mobileNavItems.map((item) => {
+        const active =
+          pathname === item.to || (item.to !== '/strategies' && pathname.startsWith(item.to));
+        return (
+          <Link
+            key={item.to}
+            to={item.to}
+            aria-label={item.label}
+            aria-current={active ? 'page' : undefined}
+            className={`min-w-11 min-h-11 flex items-center justify-center transition-colors ${
+              active ? 'text-white' : 'text-white/60 hover:text-white'
+            }`}
+          >
+            <item.icon size={22} aria-hidden />
+          </Link>
+        );
+      })}
     </nav>
   );
 }

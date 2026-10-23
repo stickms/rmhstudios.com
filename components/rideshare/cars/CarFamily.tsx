@@ -138,11 +138,8 @@ export function CarFamily() {
   });
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-site-text">
-          {t('cars-title', { defaultValue: 'The RMH family of cars' })}
-        </h2>
         <p className="max-w-prose text-site-text-muted">
           {t('cars-lede', {
             defaultValue:
@@ -177,7 +174,7 @@ export function CarFamily() {
           per option, it is one stage whose contents change — and a tab strip
           inside a tab panel reads as a page inside a page. */}
       <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-site-text-dim">
+        <h3 className="site-section-label">
           {fleetLabel}
         </h3>
         <div
@@ -200,7 +197,7 @@ export function CarFamily() {
                 // the chosen card also carries a visibly heavier outline, which
                 // is a change in WEIGHT rather than in hue. `aria-pressed`
                 // carries the same fact to assistive tech.
-                className={`glass-fill flex flex-col gap-1 rounded-site p-3 text-left transition-colors ${
+                className={`glass-fill flex flex-col gap-1 rounded-site px-4 py-3 text-left transition-colors ${
                   on
                     ? 'text-site-accent ring-2 ring-site-accent'
                     : 'text-site-text-muted hover:text-site-text'
@@ -220,7 +217,7 @@ export function CarFamily() {
       </section>
 
       {/* What is on the stage. */}
-      <section className="glass-pane rounded-site p-5 sm:p-6">
+      <section className="glass-pane rounded-site p-4 sm:p-5">
         <div className="flex items-start gap-4">
           <div className="glass-fill glass-bevel-sm flex size-12 shrink-0 items-center justify-center rounded-site text-site-accent">
             <ActiveIcon className="size-6" aria-hidden />
@@ -234,7 +231,7 @@ export function CarFamily() {
           </div>
         </div>
 
-        <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+        <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
           <Spec
             term={t('cars-spec-seats', { defaultValue: 'Seats' })}
             value={String(active.info.seats)}
@@ -266,7 +263,7 @@ export function CarFamily() {
 
         <p className="mt-4 text-sm text-site-text-muted">{copy[active.info.id].drivetrain}</p>
 
-        <div className="mt-5">
+        <div className="mt-4">
           <Button asChild variant="accent">
             <Link to="/rideshare">
               {t('cars-cta', { defaultValue: 'Request a ride' })}
@@ -278,7 +275,7 @@ export function CarFamily() {
 
       {/* The line-up. One viewBox for all seven, which is the whole point of it. */}
       <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-site-text-dim">
+        <h3 className="site-section-label">
           {t('cars-lineup-heading', { defaultValue: 'The family, to scale' })}
         </h3>
         <div className="glass-fill rounded-site p-4">
@@ -292,7 +289,7 @@ export function CarFamily() {
                     info.id === selected ? 'text-site-accent' : 'text-site-text-muted'
                   }`}
                 />
-                <span className="text-center text-[11px] text-site-text-dim">{info.name}</span>
+                <span className="text-center text-xs text-site-text-dim">{info.name}</span>
               </li>
             ))}
           </ul>
@@ -316,8 +313,8 @@ function fareIndex(multiplier: number): string {
 function Spec({ term, value, icon: Icon }: { term: string; value: string; icon?: LucideIcon }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-xs uppercase tracking-[0.06em] text-site-text-dim">{term}</dt>
-      <dd className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
+      <dt className="text-xs text-site-text-dim">{term}</dt>
+      <dd className="flex items-center gap-2 text-sm font-semibold text-site-text">
         {Icon && <Icon className="size-3.5 text-site-text-muted" aria-hidden />}
         {value}
       </dd>

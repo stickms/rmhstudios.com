@@ -66,5 +66,6 @@
   "view-arrangement": "Arrangement",
   "view-mixer": "Mixer",
   "view-pattern": "Pattern",
-  "view-piano-roll": "Klavierrolle"
+  "view-piano-roll": "Klavierrolle",
+  "sample-source": "Sample source"
 }

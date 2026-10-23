@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { send, useInsight } from './api';
 
@@ -31,7 +32,7 @@ export function CohortsTab() {
 
   if (loading) return <Spinner />;
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-site-text-muted">
           {t('cohorts-intro', {
@@ -53,18 +54,18 @@ export function CohortsTab() {
         </Button>
       </div>
       {!data || data.cohorts.length === 0 ? (
-        <p className="glass-fill rounded-site p-6 text-center text-sm text-site-text-muted">
-          {t('cohorts-empty', {
+        <EmptyState
+          description={t('cohorts-empty', {
             defaultValue:
               'No cohort data yet. Press "Recompute now" to build it from sessions and activity.',
           })}
-        </p>
+        />
       ) : (
         <div className="glass-pane overflow-x-auto rounded-site p-3">
           <table className="w-full min-w-[40rem] border-separate border-spacing-1 text-center text-xs">
             <thead>
               <tr className="text-site-text-dim">
-                <th scope="col" className="px-2 text-left font-mono uppercase tracking-widest">
+                <th scope="col" className="px-2 text-left font-mono">
                   {t('cohorts-col-cohort', { defaultValue: 'Cohort' })}
                 </th>
                 <th scope="col" className="font-mono">

@@ -344,9 +344,9 @@ export default function PatchnotesModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 altair-overlay" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--altair-hud-scrim)/60 altair-overlay" onClick={onClose}>
       <div
-        className="altair-parchment-surface bg-(--altair-surface) border border-(--altair-border) rounded-2xl w-full max-w-2xl mx-4 altair-modal overflow-hidden flex flex-col"
+        className="altair-parchment-surface bg-(--altair-surface) border border-(--altair-border) rounded-(--altair-radius-lg) w-full max-w-2xl mx-4 altair-modal overflow-hidden flex flex-col"
         style={{ maxHeight: 'min(85vh, 700px)' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -358,7 +358,7 @@ export default function PatchnotesModal({ onClose }: { onClose: () => void }) {
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-md text-(--altair-text-dim) hover:text-(--altair-text) hover:bg-(--altair-surface-hover) transition-colors"
+            className="p-1.5 rounded-(--altair-radius-sm) text-(--altair-text-dim) hover:text-(--altair-text) hover:bg-(--altair-surface-hover) transition-colors"
           >
             <X size={16} />
           </button>
@@ -402,7 +402,7 @@ export default function PatchnotesModal({ onClose }: { onClose: () => void }) {
                               <div key={key}>
                                 <button
                                   onClick={hasDetail ? () => toggleDetail(key) : undefined}
-                                  className={`w-full text-left flex items-start gap-2 px-2.5 py-1.5 rounded-md text-xs leading-relaxed transition-colors ${
+                                  className={`w-full text-left flex items-start gap-2 px-2.5 py-1.5 rounded-(--altair-radius-sm) text-xs leading-relaxed transition-colors ${
                                     hasDetail
                                       ? 'hover:bg-(--altair-bg) cursor-pointer'
                                       : 'cursor-default'
@@ -417,7 +417,7 @@ export default function PatchnotesModal({ onClose }: { onClose: () => void }) {
                                   </span>
                                 </button>
                                 {hasDetail && isExpanded && (
-                                  <div className="ml-6 px-2.5 pb-1.5 text-[11px] text-(--altair-text-muted) leading-relaxed">
+                                  <div className="ml-6 px-2.5 pb-1.5 text-xs text-(--altair-text-muted) leading-relaxed">
                                     {entry.detail}
                                   </div>
                                 )}

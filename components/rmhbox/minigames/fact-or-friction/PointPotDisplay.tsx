@@ -22,23 +22,23 @@ export default function PointPotDisplay({ potValue, maxValue }: PointPotDisplayP
   // Color gradient: green (high) → yellow (mid) → red (low)
   const color =
     ratio > 0.6
-      ? 'text-green-400'
+      ? 'text-(--app-success)'
       : ratio > 0.3
-        ? 'text-yellow-400'
-        : 'text-red-400';
+        ? 'text-(--app-warning)'
+        : 'text-(--app-danger)';
 
   const bgColor =
     ratio > 0.6
-      ? 'bg-green-500/10'
+      ? 'bg-(--app-success)/10'
       : ratio > 0.3
-        ? 'bg-yellow-500/10'
-        : 'bg-red-500/10';
+        ? 'bg-(--app-warning)/10'
+        : 'bg-(--app-danger)/10';
 
   const isMinimum = ratio <= 0.15;
 
   return (
     <motion.div
-      className={`flex items-center gap-2 rounded-lg px-4 py-2 ${bgColor}`}
+      className={`flex items-center gap-2 rounded-(--app-radius-sm) px-4 py-2 ${bgColor}`}
       animate={isMinimum ? { scale: [1, 1.05, 1] } : undefined}
       transition={isMinimum ? { repeat: Infinity, duration: 0.8 } : undefined}
     >

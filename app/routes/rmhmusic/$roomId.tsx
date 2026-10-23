@@ -5,6 +5,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { lazy, Suspense, useEffect, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
 import { connectToRmhMusic, emit } from '@/lib/rmhmusic/socket';
@@ -22,6 +23,7 @@ export const Route = createFileRoute('/rmhmusic/$roomId')({
 
 function RoomPage() {
   const { roomId } = Route.useParams();
+  const { t } = useTranslation('c-rmhmusic');
   const navigate = useNavigate();
   const { room } = useRmhMusicStore();
   const { play, pause, resume, seek } = usePreviewPlayer();
@@ -83,20 +85,20 @@ function RoomPage() {
   }, [room?.roomId, room?.hostUserId, room?.myUserId, play, pause, resume, seek]);
 
   return (
-    <div className="relative min-h-screen" style={{ background: 'var(--site-bg)' }}>
+    <div className="app-ground relative" style={{ background: 'var(--app-bg)' }}>
       <Suspense fallback={null}><Visualizer /></Suspense>
       {room && (
         <div className="fixed top-[calc(1rem+var(--safe-top))] left-1/2 -translate-x-1/2 z-20">
-          <div className="flex items-center gap-3 px-4 py-2 rounded-full backdrop-blur-xl" style={{ background: 'color-mix(in srgb, var(--site-bg) 70%, transparent)' }}>
-            <span className="text-sm font-medium" style={{ color: 'var(--site-text)' }}>{room.name}</span>
-            <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: 'var(--site-surface)', color: 'var(--site-accent)' }}>{room.code}</span>
-            <span className="text-xs" style={{ color: 'var(--site-text-muted)' }}>{room.members.length} listening</span>
+          <div className="flex items-center gap-3 px-4 py-2 rounded-full" style={{ background: "color-mix(in srgb, var(--app-bg) 85%, transparent)" }}>
+            <span className="text-sm font-medium" style={{ color: 'var(--app-text)' }}>{room.name}</span>
+            <span className="text-xs font-mono px-2 py-0.5 rounded-(--app-radius-sm)" style={{ background: 'var(--app-surface)', color: 'var(--app-accent)' }}>{room.code}</span>
+            <span className="text-xs" style={{ color: 'var(--app-text-muted)' }}>{t("listening-count", { defaultValue: "{{count}} listening", count: room.members.length })}</span>
           </div>
         </div>
       )}
       {room?.currentTrack?.albumArt && (
         <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
-          <img src={room.currentTrack.albumArt} alt="" className="w-48 h-48 md:w-64 md:h-64 rounded-2xl shadow-2xl opacity-30" />
+          <img src={room.currentTrack.albumArt} alt="" className="w-48 h-48 md:w-64 md:h-64 rounded-(--app-radius-lg) opacity-30" />
         </div>
       )}
       <SearchPanel onPlay={handlePlay} />

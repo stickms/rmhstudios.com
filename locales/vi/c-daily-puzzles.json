@@ -251,5 +251,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "Sai — nghi phạm đó đã bị loại. Bạn còn 1 lần đoán.",
   "wrong-outcast-was": "❌ Sai — kẻ bị loại là {{name}}",
-  "youre-the-first": "Bạn là người đầu tiên!"
+  "youre-the-first": "Bạn là người đầu tiên!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

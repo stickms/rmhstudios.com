@@ -174,7 +174,7 @@ export function OnboardingChecklist() {
  <button
  onClick={dismiss}
  aria-label={t('onboarding-dismiss', { defaultValue:'Dismiss checklist'})}
- className="rounded-site-sm p-1 text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-text"
+ className="rounded-site-sm p-2 text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-text"
  >
  <X className="h-4 w-4"aria-hidden />
  </button>
@@ -186,11 +186,11 @@ export function OnboardingChecklist() {
  })}
  </p>
 
- <ul className="mb-3 space-y-1.5">
+ <ul className="mb-3 space-y-2">
  {steps.map((step) => {
  const Icon = step.icon;
  const row = (
- <span className="flex items-center gap-2.5 text-sm">
+ <span className="flex items-center gap-3 text-sm">
  {step.done ? (
  <CheckCircle2 className="h-4.5 w-4.5 shrink-0 text-site-success"aria-hidden />
  ) : (

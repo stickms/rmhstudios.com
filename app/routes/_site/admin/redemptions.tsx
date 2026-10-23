@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -6,7 +7,6 @@ import { Coins, Gift, Package, Banknote } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -82,81 +82,81 @@ function AdminRedemptionsPage() {
       backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
       wide
     >
-      <div className="mx-auto w-full max-w-2xl p-4 md:p-8">
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <Spinner />
-        </div>
-      ) : rows.length === 0 ? (
-        <EmptyState
-          icon={Coins}
-          title={t('redemptions-empty', { defaultValue: 'No pending redemption requests.' })}
-        />
-      ) : (
-        <div className="space-y-3">
-          {rows.map((r) => {
-            const Icon = KIND_ICON[r.kind];
-            return (
-              <Card key={r.id} className="p-4 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Icon className="size-5 text-site-accent shrink-0" aria-hidden />
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">
-                        {r.kind === 'SUB_CREDIT'
-                          ? t('sub-summary', {
-                              defaultValue: '{{months}} months of {{tier}}',
-                              months: r.monthsGranted ?? 1,
-                              tier: r.tierGranted ?? '',
-                            })
-                          : r.kind === 'MERCH'
-                            ? t('merch', { defaultValue: 'Merch redemption' })
-                            : t('payout', { defaultValue: 'Cash payout' })}
-                      </div>
-                      <div className="text-sm text-site-text-dim">
-                        @{r.user.handle ?? r.user.name ?? r.user.id.slice(0, 6)}
-                        {' · '}
-                        {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
+      <AdminBody width="narrow">
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Spinner />
+          </div>
+        ) : rows.length === 0 ? (
+          <EmptyState
+            icon={Coins}
+            title={t('redemptions-empty', { defaultValue: 'No pending redemption requests.' })}
+          />
+        ) : (
+          <div className="space-y-3">
+            {rows.map((r) => {
+              const Icon = KIND_ICON[r.kind];
+              return (
+                <div key={r.id} className="glass-fill space-y-3 rounded-site p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Icon className="size-5 shrink-0 text-site-accent" aria-hidden />
+                      <div className="min-w-0">
+                        <div className="truncate text-base font-medium text-site-text">
+                          {r.kind === 'SUB_CREDIT'
+                            ? t('sub-summary', {
+                                defaultValue: '{{months}} months of {{tier}}',
+                                months: r.monthsGranted ?? 1,
+                                tier: r.tierGranted ?? '',
+                              })
+                            : r.kind === 'MERCH'
+                              ? t('merch', { defaultValue: 'Merch redemption' })
+                              : t('payout', { defaultValue: 'Cash payout' })}
+                        </div>
+                        <div className="text-sm text-site-text-dim">
+                          @{r.user.handle ?? r.user.name ?? r.user.id.slice(0, 6)}
+                          {' · '}
+                          {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <Badge variant="outline" className="shrink-0">
-                    <span className="flex items-center gap-1">
-                      <Coins className="size-3 text-site-warning" />
+                    <Badge
+                      variant="outline"
+                      icon={<Coins className="text-site-warning" aria-hidden />}
+                    >
                       {r.amountCoins}
-                    </span>
-                  </Badge>
+                    </Badge>
+                  </div>
+                  {r.note && (
+                    <p className="border-l-2 border-site-border pl-3 text-sm text-site-text-muted">
+                      {r.note}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => act(r.id, r.kind === 'SUB_CREDIT' ? 'approve' : 'fulfill')}
+                      loading={busyId === r.id}
+                    >
+                      {r.kind === 'SUB_CREDIT'
+                        ? t('grant', { defaultValue: 'Grant credit' })
+                        : t('fulfill', { defaultValue: 'Mark fulfilled' })}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => act(r.id, 'reject')}
+                      loading={busyId === r.id}
+                    >
+                      {t('decline', { defaultValue: 'Decline & refund' })}
+                    </Button>
+                  </div>
                 </div>
-                {r.note && (
-                  <p className="text-sm text-site-text-dim border-l-2 border-site-border pl-2">
-                    {r.note}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => act(r.id, r.kind === 'SUB_CREDIT' ? 'approve' : 'fulfill')}
-                    loading={busyId === r.id}
-                  >
-                    {r.kind === 'SUB_CREDIT'
-                      ? t('grant', { defaultValue: 'Grant credit' })
-                      : t('fulfill', { defaultValue: 'Mark fulfilled' })}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => act(r.id, 'reject')}
-                    loading={busyId === r.id}
-                  >
-                    {t('decline', { defaultValue: 'Decline & refund' })}
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-      </div>
+              );
+            })}
+          </div>
+        )}
+      </AdminBody>
     </PageLayout>
   );
 }

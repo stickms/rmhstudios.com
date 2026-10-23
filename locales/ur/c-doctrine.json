@@ -35,5 +35,10 @@
   "upgrade-operator": "کھولنے کے لیے Operator ($15/mo) میں اپ گریڈ کریں۔",
   "view-arrow": "دیکھیں →",
   "xp-progress": "{{current}} / {{max}} XP",
-  "xp-to-next-rank": "{{badge}} {{name}} کے لیے {{xp}} XP درکار"
+  "xp-to-next-rank": "{{badge}} {{name}} کے لیے {{xp}} XP درکار",
+  "back-to-puzzles": "Back to Puzzles",
+  "copy-link": "Copy link",
+  "link-copied": "Link copied",
+  "recruitment-message-label": "Recruitment message",
+  "target-skills-label": "Target skills"
 }

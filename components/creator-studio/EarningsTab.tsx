@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Coins, Gift, Package, Banknote } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -81,7 +82,9 @@ export function EarningsTab() {
         toast.error(data.error ?? t('redeem-failed', { defaultValue: 'Could not submit request' }));
         return;
       }
-      toast.success(t('redeem-submitted', { defaultValue: 'Redemption requested — an admin will review it' }));
+      toast.success(
+        t('redeem-submitted', { defaultValue: 'Redemption requested — an admin will review it' }),
+      );
       setNote('');
       await load();
     } finally {
@@ -90,18 +93,23 @@ export function EarningsTab() {
   };
 
   const statusBadge = (s: RedemptionRow['status']) => {
-    if (s === 'FULFILLED') return <Badge variant="success">{t('fulfilled', { defaultValue: 'Fulfilled' })}</Badge>;
-    if (s === 'APPROVED') return <Badge variant="accent">{t('approved', { defaultValue: 'Approved' })}</Badge>;
-    if (s === 'REJECTED') return <Badge variant="danger">{t('rejected', { defaultValue: 'Declined' })}</Badge>;
+    if (s === 'FULFILLED')
+      return <Badge variant="success">{t('fulfilled', { defaultValue: 'Fulfilled' })}</Badge>;
+    if (s === 'APPROVED')
+      return <Badge variant="accent">{t('approved', { defaultValue: 'Approved' })}</Badge>;
+    if (s === 'REJECTED')
+      return <Badge variant="danger">{t('rejected', { defaultValue: 'Declined' })}</Badge>;
     return <Badge variant="outline">{t('pending', { defaultValue: 'Pending' })}</Badge>;
   };
 
   const overMax = cost > (earnings?.redeemable ?? 0);
 
   return (
-    <div className="max-w-2xl mx-auto w-full space-y-5 py-2">
+    <div className="mx-auto w-full max-w-2xl space-y-[var(--site-section-gap)]">
       <div>
-        <h2 className="text-lg font-semibold">{t('earnings', { defaultValue: 'Creator earnings' })}</h2>
+        <h2 className="font-display text-lg font-medium text-site-text">
+          {t('earnings', { defaultValue: 'Creator earnings' })}
+        </h2>
         <p className="text-sm text-site-text-dim">
           {t('earnings-desc', {
             defaultValue:
@@ -116,9 +124,9 @@ export function EarningsTab() {
           <div className="text-xs uppercase tracking-wide text-site-text-dim">
             {t('redeemable', { defaultValue: 'Redeemable' })}
           </div>
-          <div className="text-2xl font-bold flex items-center gap-1.5 tabular-nums">
+          <div className="flex items-center gap-2 text-2xl font-bold tabular-nums">
             <Coins className="size-5 text-site-warning" />
-            {loading ? '—' : earnings?.redeemable ?? 0}
+            {loading ? '—' : (earnings?.redeemable ?? 0)}
           </div>
         </Card>
         <Card className="p-4">
@@ -126,7 +134,7 @@ export function EarningsTab() {
             {t('lifetime', { defaultValue: 'Lifetime earned' })}
           </div>
           <div className="text-2xl font-bold tabular-nums">
-            {loading ? '—' : earnings?.lifetimeEarned ?? 0}
+            {loading ? '—' : (earnings?.lifetimeEarned ?? 0)}
           </div>
         </Card>
         <Card className="p-4 col-span-2 sm:col-span-1">
@@ -134,100 +142,104 @@ export function EarningsTab() {
             {t('balance', { defaultValue: 'Coin balance' })}
           </div>
           <div className="text-2xl font-bold tabular-nums">
-            {loading ? '—' : earnings?.spendable ?? 0}
+            {loading ? '—' : (earnings?.spendable ?? 0)}
           </div>
         </Card>
       </div>
 
       {/* Redeem form */}
       <Card className="p-4 space-y-4" pane>
-        <h3 className="font-semibold">{t('redeem', { defaultValue: 'Redeem coins' })}</h3>
+        <h3 className="site-section-label">{t('redeem', { defaultValue: 'Redeem coins' })}</h3>
 
-        <div className="grid grid-cols-3 gap-2">
-          {(
-            [
-              { k: 'SUB_CREDIT', label: t('sub-credit', { defaultValue: 'Sub credit' }), icon: Gift },
-              { k: 'MERCH', label: t('merch', { defaultValue: 'Merch' }), icon: Package },
-              { k: 'PAYOUT', label: t('payout', { defaultValue: 'Payout' }), icon: Banknote },
-            ] as const
-          ).map(({ k, label, icon: Icon }) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => setKind(k)}
-              aria-pressed={kind === k}
-              className={`flex flex-col items-center gap-1 rounded-site px-2 py-3 text-sm font-medium transition-colors ${
-                kind === k
-                  ? 'bg-site-accent-dim text-site-accent'
-                  : ' text-site-text-dim hover:text-site-text'
-              }`}
-            >
-              <Icon className="size-5" aria-hidden />
-              {label}
-            </button>
-          ))}
+        <LiquidTabs
+          tabs={[
+            {
+              id: 'SUB_CREDIT',
+              label: t('sub-credit', { defaultValue: 'Sub credit' }),
+              icon: Gift,
+            },
+            { id: 'MERCH', label: t('merch', { defaultValue: 'Merch' }), icon: Package },
+            { id: 'PAYOUT', label: t('payout', { defaultValue: 'Payout' }), icon: Banknote },
+          ]}
+          value={kind}
+          onChange={(id) => setKind(id as typeof kind)}
+          idBase="redeem"
+          aria-label={t('redeem', { defaultValue: 'Redeem coins' })}
+        />
+
+        <div
+          role="tabpanel"
+          id={`redeem-panel-${kind}`}
+          aria-labelledby={`redeem-tab-${kind}`}
+          className="space-y-4"
+        >
+          {kind === 'SUB_CREDIT' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="r-tier">{t('tier', { defaultValue: 'Tier' })}</Label>
+                <Select
+                  id="r-tier"
+                  value={tier}
+                  onChange={(e) => setTier(e.target.value as 'starter' | 'pro')}
+                >
+                  <option value="starter">HARD-R</option>
+                  <option value="pro">Pro</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="r-months">{t('months', { defaultValue: 'Months' })}</Label>
+                <Input
+                  id="r-months"
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={months}
+                  onChange={(e) =>
+                    setMonths(Math.min(12, Math.max(1, Math.floor(Number(e.target.value) || 1))))
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          {kind !== 'SUB_CREDIT' && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="r-amount">{t('amount', { defaultValue: 'Amount (coins)' })}</Label>
+                <Input
+                  id="r-amount"
+                  type="number"
+                  min={kind === 'PAYOUT' ? MIN_PAYOUT_COINS : MIN_REDEMPTION_COINS}
+                  value={amount}
+                  onChange={(e) => setAmount(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="r-note">{t('note', { defaultValue: 'Details' })}</Label>
+                <Input
+                  id="r-note"
+                  value={note}
+                  maxLength={500}
+                  placeholder={
+                    kind === 'MERCH'
+                      ? t('merch-ph', { defaultValue: 'What you’d like + size' })
+                      : t('payout-ph', { defaultValue: 'Payout account reference' })
+                  }
+                  onChange={(e) => setNote(e.target.value)}
+                />
+              </div>
+              {kind === 'PAYOUT' && (
+                <p className="text-xs text-site-text-dim">
+                  {t('payout-note', {
+                    defaultValue:
+                      'Payouts require a verified creator account and admin review (min {{n}} coins).',
+                    n: MIN_PAYOUT_COINS,
+                  })}
+                </p>
+              )}
+            </div>
+          )}
         </div>
-
-        {kind === 'SUB_CREDIT' && (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="r-tier">{t('tier', { defaultValue: 'Tier' })}</Label>
-              <Select id="r-tier" value={tier} onChange={(e) => setTier(e.target.value as 'starter' | 'pro')}>
-                <option value="starter">HARD-R</option>
-                <option value="pro">Pro</option>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="r-months">{t('months', { defaultValue: 'Months' })}</Label>
-              <Input
-                id="r-months"
-                type="number"
-                min={1}
-                max={12}
-                value={months}
-                onChange={(e) => setMonths(Math.min(12, Math.max(1, Math.floor(Number(e.target.value) || 1))))}
-              />
-            </div>
-          </div>
-        )}
-
-        {kind !== 'SUB_CREDIT' && (
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="r-amount">{t('amount', { defaultValue: 'Amount (coins)' })}</Label>
-              <Input
-                id="r-amount"
-                type="number"
-                min={kind === 'PAYOUT' ? MIN_PAYOUT_COINS : MIN_REDEMPTION_COINS}
-                value={amount}
-                onChange={(e) => setAmount(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="r-note">{t('note', { defaultValue: 'Details' })}</Label>
-              <Input
-                id="r-note"
-                value={note}
-                maxLength={500}
-                placeholder={
-                  kind === 'MERCH'
-                    ? t('merch-ph', { defaultValue: 'What you’d like + size' })
-                    : t('payout-ph', { defaultValue: 'Payout account reference' })
-                }
-                onChange={(e) => setNote(e.target.value)}
-              />
-            </div>
-            {kind === 'PAYOUT' && (
-              <p className="text-xs text-site-text-dim">
-                {t('payout-note', {
-                  defaultValue:
-                    'Payouts require a verified creator account and admin review (min {{n}} coins).',
-                  n: MIN_PAYOUT_COINS,
-                })}
-              </p>
-            )}
-          </div>
-        )}
 
         <div className="flex items-center justify-between pt-1">
           <div className="text-sm text-site-text-dim">
@@ -239,7 +251,11 @@ export function EarningsTab() {
               <Coins className="size-3.5 text-site-warning" aria-hidden />
             </span>
           </div>
-          <Button onClick={submit} loading={submitting} disabled={overMax || cost < MIN_REDEMPTION_COINS}>
+          <Button
+            onClick={submit}
+            loading={submitting}
+            disabled={overMax || cost < MIN_REDEMPTION_COINS}
+          >
             {t('request', { defaultValue: 'Request redemption' })}
           </Button>
         </div>
@@ -253,12 +269,13 @@ export function EarningsTab() {
       {/* History */}
       {requests.length > 0 && (
         <div>
-          <h3 className="site-section-label mb-2">
-            {t('history', { defaultValue: 'Requests' })}
-          </h3>
-          <div className="space-y-2">
+          <h3 className="site-section-label mb-3">{t('history', { defaultValue: 'Requests' })}</h3>
+          <div className="space-y-3">
             {requests.map((r) => (
-              <div key={r.id} className="flex items-center justify-between glass-fill rounded-site px-3 py-2 text-sm">
+              <div
+                key={r.id}
+                className="flex items-center justify-between glass-fill rounded-site px-4 py-3 text-sm"
+              >
                 <span>
                   {r.kind === 'SUB_CREDIT'
                     ? t('sub-summary', {

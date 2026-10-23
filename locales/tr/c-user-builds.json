@@ -80,5 +80,8 @@
   "write-comment": "Bir yorum yazın...",
   "write-reply": "Bir yanıt yaz...",
   "years-ago_one": "{{count}} yıl önce",
-  "years-ago_other": "{{count}} yıl önce"
+  "years-ago_other": "{{count}} yıl önce",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

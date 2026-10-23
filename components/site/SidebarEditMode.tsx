@@ -9,6 +9,7 @@ import { SortableList } from '@/components/ui/sortable-list';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { SIDEBAR_HIDEABLE_IDS } from '@/lib/home-widgets';
 import { SIDEBAR_NAV, orderNavItems, type NavItem } from '@/lib/sidebar-nav';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * SidebarEditMode (§15) — reorder the top-level sidebar tabs (G2 SortableList,
@@ -99,7 +100,7 @@ export function SidebarEditMode() {
           }}
         />
       ) : (
-        <div className="h-48 animate-pulse rounded-site bg-site-surface" />
+        <Skeleton className="h-48 w-full" />
       )}
     </div>
   );

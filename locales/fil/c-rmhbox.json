@@ -480,5 +480,12 @@
   "your-prompts": "Your Prompts",
   "your-rank": "Your Rank:",
   "youre-the-producer": "You're the Producer!",
-  "yours-label": "(yours)"
+  "yours-label": "(yours)",
+  "close": "Close",
+  "guesses-remaining-guess-input_one": "{{count}} guess remaining",
+  "guesses-remaining-guess-input_other": "{{count}} guesses remaining",
+  "players-count-host-control-modal_one": "Players ({{count}})",
+  "players-count-host-control-modal_other": "Players ({{count}})",
+  "score-pts-rmhbox-discord-activity_one": "{{count}} pts",
+  "score-pts-rmhbox-discord-activity_other": "{{count}} pts"
 }

@@ -3,6 +3,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Grid2x2, StickyNote } from 'lucide-react';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,9 +25,10 @@ export function CanvasAdminPage() {
       description={t('admin-page-desc', {
         defaultValue: 'Schedule community canvas events and moderate context notes on posts.',
       })}
+      wide
       backTo="/admin"
     >
-      <div className="space-y-4 px-4 pt-4 pb-12">
+      <AdminBody>
         <LiquidTabs
           aria-label={t('admin-tabs', { defaultValue: 'Canvas admin sections' })}
           value={tab}
@@ -47,7 +49,7 @@ export function CanvasAdminPage() {
         <Suspense fallback={<Skeleton className="h-48 w-full" />}>
           <Panel />
         </Suspense>
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

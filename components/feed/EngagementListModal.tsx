@@ -45,7 +45,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
 
  return (
  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
- <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80dvh] overflow-hidden">
+ <DialogContent className="max-w-md p-0 gap-0 flex flex-col max-h-[80dvh] overflow-hidden">
  <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
  <DialogTitle className="font-display font-bold text-lg text-site-text">
  {title}
@@ -54,7 +54,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
 
  <div className="overflow-y-auto flex-1">
  {users.length === 0 && !loading && (
- <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+ <div className="flex flex-col items-center justify-center py-12 px-5 text-center">
  <p className="text-site-text font-medium mb-1">
  No {type ==='likes'?'likes':'reRMHarks'} yet
  </p>

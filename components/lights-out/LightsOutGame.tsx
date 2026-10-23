@@ -3,7 +3,6 @@
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
-import { Link } from '@tanstack/react-router';
 import {
     getDateSeed,
     formatDateKey,
@@ -32,8 +31,21 @@ import { useSession } from '@/components/Providers';
 import { fetchResultFromServer, saveResult as saveGenericResult } from '@/lib/daily-puzzles/persistence';
 import {
     Sparkles, RotateCcw, Trophy, Undo2, Lightbulb, Flag,
-    ArrowLeft, Share2, Calendar, ChevronDown, ChevronUp, Check, Play,
+    ArrowLeft, Calendar, ChevronDown, ChevronUp, Play,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import {
+    PuzzlePage,
+    PuzzleBackLink,
+    PuzzleHeader,
+    PuzzleNotice,
+    PuzzleSection,
+    PuzzleResultCard,
+    PuzzleResultStack,
+    PuzzleShareRow,
+    PuzzleFootnote,
+} from '@/components/daily-puzzles/PuzzleShell';
 
 export function LightsOutGame() {
     const { t } = useTranslation("c-lights-out");
@@ -61,7 +73,6 @@ export function LightsOutGame() {
     const [solved, setSolved] = useState(false);
     const [bestMoves, setBestMoves] = useState<number | null>(null);
     const [optimalMoves, setOptimalMoves] = useState<number | null>(null);
-    const [sharecopied, setShareCopied] = useState(false);
 
     // Past puzzles
     const [showHistory, setShowHistory] = useState(false);
@@ -229,55 +240,29 @@ export function LightsOutGame() {
         });
     };
 
-    const handleShare = async () => {
-        if (!solved || optimalMoves == null) return;
-        const text = generateShareText(
-            dateKey,
-            shape,
-            moves,
-            optimalMoves,
-            gaveUp,
-            hintsUsed > 0
-        );
-        try {
-            await navigator.clipboard.writeText(text);
-            setShareCopied(true);
-            setTimeout(() => setShareCopied(false), 2000);
-        } catch {
-            /* ignore */
-        }
-    };
-
     const handleSelectDate = (dk: string) => {
         if (dk === selectedDateKey) return;
         setSelectedDateKey(dk);
         setShowHistory(false);
     };
 
-    // The loading state wears the board's own frame — `.app-page`, the column and
-    // the back link — so the board arrives INTO it. It used to be a bare centred
+    // The loading state wears the board's own frame — the same `PuzzlePage` column
+    // and back link — so the board arrives INTO it. It used to be a bare centred
     // "Loading..." box; React reused that div as the board's column when the
     // effect above built the grid, so a 100x33 box became a 640x769 column and its
     // padding landed a frame later: 0.10 of layout shift under the 125% font
     // scale, measured by testing/e2e/fouc.mjs (docs/fouc-audit-2026-10-06.md §9).
     // The grid is built in an effect rather than server-rendered because today's
     // puzzle depends on the visitor's LOCAL date, which the server cannot know.
+    // (The `.app-page` document itself now lives in the /daily layout route.)
     if (!grid) {
         return (
-            <div className="app-page">
-            <div className="max-w-lg mx-auto w-full px-4 py-8">
-                <Link
-                    to="/daily"
-                    className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
-                </Link>
-                <div className="min-h-100 flex items-center justify-center">
-                    <div className="animate-pulse text-site-text-muted">{t("loading", { defaultValue: "Loading..." })}</div>
+            <PuzzlePage>
+                <PuzzleBackLink />
+                <div role="status" className="flex min-h-100 items-center justify-center">
+                    <Spinner size={24} label={t("loading", { defaultValue: "Loading..." })} />
                 </div>
-            </div>
-            </div>
+            </PuzzlePage>
         );
     }
 
@@ -290,223 +275,193 @@ export function LightsOutGame() {
         ? getPerformanceRating(moves, optimalMoves, gaveUp)
         : null;
 
+    const shareText =
+        solved && optimalMoves != null
+            ? generateShareText(dateKey, shape, moves, optimalMoves, gaveUp, hintsUsed > 0)
+            : '';
+
+    const cellBase =
+        'rounded-site-sm transition-colors duration-site-fast disabled:cursor-default';
+    const cellState = (on: boolean) =>
+        on ? 'bg-site-warning text-site-warning-fg' : 'border border-site-border bg-site-bg-subtle';
+    const hintRing = 'ring-2 ring-site-accent ring-offset-2 ring-offset-site-surface animate-pulse';
+
     return (
-        // `.app-page` is the contract for exactly what this is: a full-screen
-        // screen that is a DOCUMENT (app/globals.css §"Full-screen app/game
-        // layout helpers"). This was a bare `max-w-lg mx-auto` column, which cost
-        // 0.182 of layout shift after first contentful paint — measured by
-        // `testing/e2e/fouc.mjs` against a 0.1 budget — and the cause was not the
-        // column's height but the SCROLLBAR. `/daily` is in the games catalog, so
-        // `html.app-route` withholds `scrollbar-gutter: stable`; when the puzzle's
-        // content grew past the window the document gained a scrollbar, the
-        // viewport narrowed by its width, and `mx-auto` re-centred the whole
-        // column sideways in front of the reader. `.app-page` is the documented
-        // exception that takes the gutter back (`html.app-route:has(.app-page)`),
-        // and it brings the rest of the contract with it: `100svh` rather than
-        // `100vh` as the floor, so a short puzzle fills the window without
-        // inventing a scrollbar on a phone, plus the home-indicator inset on the
-        // last row. The column stays nested inside it so the flex direction
-        // applies to the page and not to the puzzle's own rows.
-        <div className="app-page">
-        <div className="max-w-lg mx-auto w-full px-4 py-8">
-            {/* Back to Daily Puzzles */}
-            <Link
-                to="/daily"
-                className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
-            >
-                <ArrowLeft className="w-4 h-4" />
-                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
-            </Link>
-
-            {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-site-text mb-1 flex items-center justify-center gap-2">
-                    <Sparkles className="w-8 h-8 text-amber-400" />
-                    Lights Out
-                </h1>
-                <p className="text-site-text-muted text-sm mb-2">
+        <PuzzlePage>
+            <PuzzleHeader
+                icon={<Sparkles />}
+                title={t("lights-out-title", { defaultValue: "Lights Out" })}
+                subtitle={<>
                     {isToday ? t("daily-puzzle", { defaultValue: "Daily puzzle" }) : t("past-puzzle", { defaultValue: "Past puzzle" })} · {dateKey} · {getShapeLabel(shape)}
-                </p>
+                </>}
+            >
                 {!isToday && (
-                    <button
-                        type="button"
-                        onClick={() => handleSelectDate(todayKey)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-colors text-xs font-medium"
-                    >
-                        <ArrowLeft className="w-3 h-3" />
+                    <Button type="button" variant="outline" size="sm" onClick={() => handleSelectDate(todayKey)}>
+                        <ArrowLeft aria-hidden />
                         {t("back-to-todays-puzzle", { defaultValue: "Back to today's puzzle" })}
-                    </button>
+                    </Button>
                 )}
-                <div className="inline-block px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                    <p className="text-amber-400 font-semibold text-sm">{t("goal-label", { defaultValue: "Goal: Turn off every light" })}</p>
-                    <p className="text-site-text-muted text-xs mt-0.5">
-                        {t("goal-description", { defaultValue: "Tap a light to toggle it and its neighbors. Fewer moves = better." })}
-                    </p>
-                </div>
-            </div>
+                <PuzzleNotice title={t("goal-label", { defaultValue: "Goal: Turn off every light" })}>
+                    {t("goal-description", { defaultValue: "Tap a light to toggle it and its neighbors. Fewer moves = better." })}
+                </PuzzleNotice>
+            </PuzzleHeader>
 
-            {/* Stats */}
-            <div className="flex justify-center items-center gap-6 mb-6 flex-wrap">
-                <div className="flex items-center gap-2">
-                    <span className="text-site-text-muted text-sm">{t("moves-label", { defaultValue: "Moves" })}</span>
-                    <span className="text-site-text font-mono font-semibold">{moves}</span>
-                </div>
-                {bestMoves != null && (
+            <div className="flex flex-col gap-4">
+                {/* Stats */}
+                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
                     <div className="flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-amber-400" />
-                        <span className="text-site-text-muted text-sm">{t("best-label", { defaultValue: "Best" })}</span>
-                        <span className="text-amber-400 font-mono font-semibold">{bestMoves}</span>
+                        <span className="text-sm text-site-text-muted">{t("moves-label", { defaultValue: "Moves" })}</span>
+                        <span className="font-mono font-semibold text-site-text">{moves}</span>
                     </div>
-                )}
-                <div className="flex items-center gap-2 text-site-text-muted text-sm">
-                    <Lightbulb className="w-4 h-4" />
-                    <span>{t("hints-used", { defaultValue: "{{hintsUsed}}/3 hints", hintsUsed })}</span>
+                    {bestMoves != null && (
+                        <div className="flex items-center gap-2">
+                            <Trophy className="size-4 text-site-warning" aria-hidden />
+                            <span className="text-sm text-site-text-muted">{t("best-label", { defaultValue: "Best" })}</span>
+                            <span className="font-mono font-semibold text-site-text">{bestMoves}</span>
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2 text-sm text-site-text-muted">
+                        <Lightbulb className="size-4" aria-hidden />
+                        <span>{t("hints-used", { defaultValue: "{{hintsUsed}}/3 hints", hintsUsed })}</span>
+                    </div>
                 </div>
-            </div>
 
-            {/* Grid */}
-            <div className="w-full max-w-[320px] mx-auto p-4 rounded-2xl bg-site-surface border border-site-border">
-                {isTriangle ? (
-                    <div className="flex flex-col items-center gap-1.5 py-2">
-                        {grid.map((row, r) => (
-                            <div key={r} className="flex justify-center gap-1.5">
-                                {row.map((on, c) => {
+                {/* Grid */}
+                <div className="glass-pane mx-auto w-full max-w-xs rounded-site p-4">
+                    {isTriangle ? (
+                        <div className="flex flex-col items-center gap-2 py-2">
+                            {grid.map((row, r) => (
+                                <div key={r} className="flex justify-center gap-2">
+                                    {row.map((on, c) => {
+                                        const isHinted = hintedCell?.[0] === r && hintedCell?.[1] === c;
+                                        return (
+                                            <button
+                                                key={`${r}-${c}`}
+                                                type="button"
+                                                onClick={() => handleCellClick(r, c)}
+                                                disabled={solved}
+                                                aria-label={t('cell-label', {
+                                                    defaultValue: 'Light row {{row}}, column {{col}}',
+                                                    row: r + 1,
+                                                    col: c + 1,
+                                                })}
+                                                aria-pressed={on}
+                                                aria-describedby={isHinted ? 'lights-out-hint' : undefined}
+                                                className={`size-10 ${cellBase} ${cellState(on)} ${isHinted ? hintRing : ''} ${solved ? '' : 'cursor-pointer hover:opacity-90 active:scale-95'}`}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div
+                            className="grid w-full gap-2"
+                            style={{
+                                gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+                                gridTemplateRows: `repeat(${gridRows}, 1fr)`,
+                                aspectRatio: `${gridCols} / ${gridRows}`,
+                            }}
+                        >
+                            {grid.map((row, r) =>
+                                row.map((on, c) => {
+                                    const active = isActiveCell(shape, r, c);
                                     const isHinted = hintedCell?.[0] === r && hintedCell?.[1] === c;
+
+                                    if (isCustom && !active) {
+                                        return <div key={`${r}-${c}`} />;
+                                    }
+
                                     return (
                                         <button
                                             key={`${r}-${c}`}
                                             type="button"
                                             onClick={() => handleCellClick(r, c)}
-                                            disabled={solved}
-                                            className={`
-                                                w-10 h-10 rounded-xl transition-colors duration-150
-                                                ${on
-                                                    ? 'bg-amber-400 text-amber-950 shadow-lg shadow-amber-400/30'
-                                                    : 'bg-site-bg-subtle border border-site-border'}
-                                                ${isHinted && 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-site-surface animate-pulse'}
-                                                ${!solved && 'hover:opacity-90 active:scale-95 cursor-pointer'}
-                                                ${solved && 'cursor-default'}
-                                            `}
-                                        />
+                                            disabled={solved || !active}
+                                            // The grid was 25 nameless buttons whose only
+                                            // state was a colour — unplayable without
+                                            // sight, and the hint was a ring with no
+                                            // non-colour equivalent. Each cell now names
+                                            // itself, reports its on/off state, and says
+                                            // when it is the hinted one.
+                                            aria-label={t('cell-label', {
+                                                defaultValue: 'Light row {{row}}, column {{col}}',
+                                                row: r + 1,
+                                                col: c + 1,
+                                            })}
+                                            aria-pressed={on}
+                                            aria-describedby={isHinted ? 'lights-out-hint' : undefined}
+                                            className={`relative min-h-0 ${cellBase} ${cellState(on)} ${isHinted ? hintRing : ''} ${!solved && active ? 'cursor-pointer hover:opacity-90 active:scale-95' : ''}`}
+                                        >
+                                            {/* A shape, not just a ring: the hint has to
+                                                survive both colour-blindness and a
+                                                greyscale display. */}
+                                            {isHinted ? (
+                                                <span
+                                                    aria-hidden
+                                                    className="pointer-events-none absolute inset-0 flex items-center justify-center text-site-accent"
+                                                >
+                                                    <Sparkles className="h-1/3 w-1/3" />
+                                                </span>
+                                            ) : null}
+                                        </button>
                                     );
-                                })}
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div
-                        className="grid gap-2 w-full"
-                        style={{
-                            gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
-                            gridTemplateRows: `repeat(${gridRows}, 1fr)`,
-                            aspectRatio: `${gridCols} / ${gridRows}`,
-                        }}
-                    >
-                        {grid.map((row, r) =>
-                            row.map((on, c) => {
-                                const active = isActiveCell(shape, r, c);
-                                const isHinted = hintedCell?.[0] === r && hintedCell?.[1] === c;
+                                })
+                            )}
+                        </div>
+                    )}
+                    {/* Referenced by the hinted cell's aria-describedby, so the hint
+                        is announced rather than existing only as a ring. */}
+                    <p id="lights-out-hint" className="sr-only">
+                        {t('hint-described', { defaultValue: 'Suggested next move.' })}
+                    </p>
+                </div>
 
-                                if (isCustom && !active) {
-                                    return <div key={`${r}-${c}`} />;
-                                }
-
-                                return (
-                                    <button
-                                        key={`${r}-${c}`}
-                                        type="button"
-                                        onClick={() => handleCellClick(r, c)}
-                                        disabled={solved || !active}
-                                        // The grid was 25 nameless buttons whose only
-                                        // state was a colour — unplayable without
-                                        // sight, and the hint was a cyan ring with no
-                                        // non-colour equivalent. Each cell now names
-                                        // itself, reports its on/off state, and says
-                                        // when it is the hinted one.
-                                        aria-label={t('cell-label', {
-                                            defaultValue: 'Light row {{row}}, column {{col}}',
-                                            row: r + 1,
-                                            col: c + 1,
-                                        })}
-                                        aria-pressed={on}
-                                        aria-describedby={isHinted ? 'lights-out-hint' : undefined}
-                                        className={`
-                                            relative rounded-xl transition-colors duration-150 min-h-0
-                                            ${on
-                                                ? 'bg-amber-400 text-amber-950 shadow-lg shadow-amber-400/30'
-                                                : 'bg-site-bg-subtle border border-site-border'}
-                                            ${isHinted && 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-site-surface animate-pulse'}
-                                            ${!solved && active && 'hover:opacity-90 active:scale-95 cursor-pointer'}
-                                            ${(solved || !active) && 'cursor-default'}
-                                        `}
-                                    >
-                                        {/* A shape, not just a ring: the hint has to
-                                            survive both colour-blindness and a
-                                            greyscale display. */}
-                                        {isHinted ? (
-                                            <span
-                                                aria-hidden
-                                                className="pointer-events-none absolute inset-0 flex items-center justify-center text-cyan-300"
-                                            >
-                                                <Sparkles className="h-1/3 w-1/3" />
-                                            </span>
-                                        ) : null}
-                                    </button>
-                                );
-                            })
-                        )}
-                    </div>
-                )}
-                {/* Referenced by the hinted cell's aria-describedby, so the hint
-                    is announced rather than existing only as a cyan ring. */}
-                <p id="lights-out-hint" className="sr-only">
-                    {t('hint-described', { defaultValue: 'Suggested next move.' })}
-                </p>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-center gap-3 mt-6 flex-wrap">
-                <motion.button
-                    type="button"
-                    onClick={handleHint}
-                    disabled={solved || hintsUsed >= 3}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-cyan-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={t("hint-title", { defaultValue: "Highlight next move (3 per day)" })}
-                >
-                    <Lightbulb className="w-4 h-4" />
-                    {t("hint-btn", { defaultValue: "Hint" })}
-                </motion.button>
-                {hintsUsed >= 3 && !solved && (
-                    <motion.button
+                {/* Actions */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                    <Button
                         type="button"
-                        onClick={handleGiveUp}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-danger/50 text-site-danger hover:bg-site-danger/10 transition-colors"
-                        title={t("give-up-title", { defaultValue: "End puzzle with DNF" })}
+                        variant="secondary"
+                        onClick={handleHint}
+                        disabled={solved || hintsUsed >= 3}
+                        title={t("hint-title", { defaultValue: "Highlight next move (3 per day)" })}
                     >
-                        <Flag className="w-4 h-4" />
-                        {t("give-up-btn", { defaultValue: "Give up?" })}
-                    </motion.button>
-                )}
-                <motion.button
-                    type="button"
-                    onClick={handleUndo}
-                    disabled={solved || moveHistory.length === 0}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={t("undo-title", { defaultValue: "Take back your last move" })}
-                >
-                    <Undo2 className="w-4 h-4" />
-                    {t("undo-btn", { defaultValue: "Undo" })}
-                </motion.button>
-                <motion.button
-                    type="button"
-                    onClick={initPuzzle}
-                    disabled={solved}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={t("restart-title", { defaultValue: "Restart this puzzle" })}
-                >
-                    <RotateCcw className="w-4 h-4" />
-                    {t("restart-btn", { defaultValue: "Restart" })}
-                </motion.button>
+                        <Lightbulb aria-hidden />
+                        {t("hint-btn", { defaultValue: "Hint" })}
+                    </Button>
+                    {hintsUsed >= 3 && !solved && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="border-site-danger/50 text-site-danger"
+                            onClick={handleGiveUp}
+                            title={t("give-up-title", { defaultValue: "End puzzle with DNF" })}
+                        >
+                            <Flag aria-hidden />
+                            {t("give-up-btn", { defaultValue: "Give up?" })}
+                        </Button>
+                    )}
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleUndo}
+                        disabled={solved || moveHistory.length === 0}
+                        title={t("undo-title", { defaultValue: "Take back your last move" })}
+                    >
+                        <Undo2 aria-hidden />
+                        {t("undo-btn", { defaultValue: "Undo" })}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={initPuzzle}
+                        disabled={solved}
+                        title={t("restart-title", { defaultValue: "Restart this puzzle" })}
+                    >
+                        <RotateCcw aria-hidden />
+                        {t("restart-btn", { defaultValue: "Restart" })}
+                    </Button>
+                </div>
             </div>
 
             {/* Win / DNF state + Share */}
@@ -516,36 +471,40 @@ export function LightsOutGame() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className={`mt-8 p-6 rounded-2xl bg-site-surface text-center ${
-                            gaveUp ? 'border border-site-danger/30' : 'border border-amber-500/30'
-                        }`}
                     >
-                        {gaveUp ? (
-                            <>
-                                <div className="text-2xl font-bold text-site-danger mb-1">{t("did-not-finish", { defaultValue: "Did Not Finish" })}</div>
-                                <p className="text-site-text-muted text-sm">{t("dnf-submitted", { defaultValue: "Submitted as DNF on the leaderboard." })}</p>
-                            </>
-                        ) : (
-                            <>
-                                {rating && (
-                                    <div className="text-3xl mb-2">{rating.emoji}</div>
-                                )}
-                                <div className="text-2xl font-bold text-amber-400 mb-1">
-                                    {rating ? rating.label : t("all-lights-out", { defaultValue: "All lights out!" })}
-                                </div>
-                                <p className="text-site-text-muted text-sm">
-                                    {t("solved-in-moves", { defaultValue: "Solved in {{moves}} move{{plural}}.", moves, plural: moves !== 1 ? 's' : '' })}
-                                    {bestMoves != null && moves === bestMoves && ` ${t("personal-best", { defaultValue: "Personal best!" })}`}
-                                </p>
-                                {optimalMoves != null && (
-                                    <p className="text-site-text-dim text-xs mt-1">
-                                        {t("optimal-moves", { defaultValue: "Optimal: {{optimalMoves}} move{{plural}}.", optimalMoves, plural: optimalMoves !== 1 ? 's' : '' })}
-                                    </p>
-                                )}
+                        <PuzzleResultStack>
+                            <PuzzleResultCard
+                                tone={gaveUp ? 'danger' : 'success'}
+                                emoji={!gaveUp && rating ? rating.emoji : undefined}
+                                title={
+                                    gaveUp
+                                        ? t("did-not-finish", { defaultValue: "Did Not Finish" })
+                                        : rating
+                                          ? rating.label
+                                          : t("all-lights-out", { defaultValue: "All lights out!" })
+                                }
+                                description={
+                                    gaveUp ? (
+                                        t("dnf-submitted", { defaultValue: "Submitted as DNF on the leaderboard." })
+                                    ) : (
+                                        <>
+                                            {t("solved-in-moves", { defaultValue: "Solved in {{moves}} move{{plural}}.", moves, plural: moves !== 1 ? 's' : '' })}
+                                            {bestMoves != null && moves === bestMoves && ` ${t("personal-best", { defaultValue: "Personal best!" })}`}
+                                            {optimalMoves != null && (
+                                                <>
+                                                    <br />
+                                                    {t("optimal-moves", { defaultValue: "Optimal: {{optimalMoves}} move{{plural}}.", optimalMoves, plural: optimalMoves !== 1 ? 's' : '' })}
+                                                </>
+                                            )}
+                                        </>
+                                    )
+                                }
+                            />
 
-                                {/* Rating breakdown */}
-                                {optimalMoves != null && (
-                                    <div className="mt-4 text-left max-w-[260px] mx-auto">
+                            {/* Rating breakdown */}
+                            {!gaveUp && optimalMoves != null && (
+                                <PuzzleSection title={t("rating-tiers", { defaultValue: "Rating tiers" })}>
+                                    <ul className="flex flex-col gap-1">
                                         {[
                                             { emoji: '\u{1F31F}', label: 'Perfect!', translatedLabel: t("tier-perfect", { defaultValue: "Perfect!" }), desc: t("tier-perfect-desc", { defaultValue: "Optimal moves" }) },
                                             { emoji: '\u2728', label: 'Excellent!', translatedLabel: t("tier-excellent", { defaultValue: "Excellent!" }), desc: t("tier-excellent-desc", { defaultValue: "+1 move" }) },
@@ -553,55 +512,30 @@ export function LightsOutGame() {
                                             { emoji: '\u{1F44D}', label: 'Good!', translatedLabel: t("tier-good", { defaultValue: "Good!" }), desc: t("tier-good-desc", { defaultValue: "+4\u20136 moves" }) },
                                             { emoji: '\u{1F4A1}', label: 'Solved!', translatedLabel: t("tier-solved", { defaultValue: "Solved!" }), desc: t("tier-solved-desc", { defaultValue: "+7 or more" }) },
                                         ].map((tier) => (
-                                            <div
+                                            <li
                                                 key={tier.label}
-                                                className={`flex items-center gap-2 py-1 px-2 rounded-md text-xs ${
+                                                className={`flex items-center gap-3 rounded-site-sm px-3 py-1 text-xs ${
                                                     rating?.label === tier.label
-                                                        ? 'bg-amber-500/15 text-amber-400 font-semibold'
-                                                        : 'text-site-text-dim'
+                                                        ? 'bg-site-accent-dim font-semibold text-site-text'
+                                                        : 'text-site-text-muted'
                                                 }`}
                                             >
-                                                <span className="w-5 text-center">{tier.emoji}</span>
+                                                <span aria-hidden className="w-5 text-center">{tier.emoji}</span>
                                                 <span className="w-20">{tier.translatedLabel}</span>
-                                                <span className="text-site-text-dim font-normal">{tier.desc}</span>
-                                            </div>
+                                                <span className="font-normal">{tier.desc}</span>
+                                            </li>
                                         ))}
-                                    </div>
-                                )}
-                            </>
-                        )}
+                                    </ul>
+                                </PuzzleSection>
+                            )}
 
-                        {/* Share button */}
-                        <div className="mt-4">
-                            <button
-                                type="button"
-                                onClick={handleShare}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-colors font-medium text-sm"
-                            >
-                                {sharecopied ? (
-                                    <>
-                                        <Check className="w-4 h-4" />
-                                        {t("copied", { defaultValue: "Copied!" })}
-                                    </>
-                                ) : (
-                                    <>
-                                        <Share2 className="w-4 h-4" />
-                                        {t("share-result", { defaultValue: "Share Result" })}
-                                    </>
-                                )}
-                            </button>
-                        </div>
-
-                        {!isToday && (
-                            <p className="text-site-text-dim text-xs mt-3">
-                                {t("past-puzzle-note", { defaultValue: "Past puzzle — scores are saved locally but not to the leaderboard." })}
-                            </p>
-                        )}
-                        {isToday && (
-                            <p className="text-site-text-dim text-xs mt-2">
-                                {t("new-puzzle-tomorrow", { defaultValue: "A new puzzle unlocks tomorrow — same for everyone worldwide." })}
-                            </p>
-                        )}
+                            <PuzzleShareRow shareText={shareText} disabled={!shareText} />
+                            <PuzzleFootnote>
+                                {isToday
+                                    ? t("new-puzzle-tomorrow", { defaultValue: "A new puzzle unlocks tomorrow — same for everyone worldwide." })
+                                    : t("past-puzzle-note", { defaultValue: "Past puzzle — scores are saved locally but not to the leaderboard." })}
+                            </PuzzleFootnote>
+                        </PuzzleResultStack>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -620,16 +554,18 @@ export function LightsOutGame() {
             )}
 
             {/* Past Puzzles */}
-            <div className="mt-8">
-                <button
+            <div className="mt-6 flex flex-col gap-3">
+                <Button
                     type="button"
+                    variant="secondary"
+                    className="w-full"
                     onClick={() => setShowHistory((prev) => !prev)}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors text-sm font-medium"
+                    aria-expanded={showHistory}
                 >
-                    <Calendar className="w-4 h-4" />
+                    <Calendar aria-hidden />
                     {t("past-puzzles-btn", { defaultValue: "Past Puzzles" })}
-                    {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
+                    {showHistory ? <ChevronUp aria-hidden /> : <ChevronDown aria-hidden />}
+                </Button>
 
                 <AnimatePresence>
                     {showHistory && (
@@ -639,61 +575,48 @@ export function LightsOutGame() {
                             exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                         >
-                            <div className="mt-3 p-4 rounded-xl bg-site-surface border border-site-border">
-                                <div className="space-y-2">
-                                    {pastPuzzles.map((p) => (
-                                        <div
-                                            key={p.dateKey}
-                                            className={`flex items-center justify-between py-2 px-3 rounded-lg transition-colors ${
-                                                p.dateKey === selectedDateKey
-                                                    ? 'bg-amber-500/15 border border-amber-500/30'
-                                                    : 'bg-site-bg-subtle hover:bg-site-bg-subtle/80'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-site-text-muted text-sm font-mono">
-                                                    {p.dateKey}
-                                                </span>
-                                                <span className="text-site-text-dim text-xs">
-                                                    {p.shapeLabel}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                {p.save?.solved ? (
-                                                    <>
-                                                        {p.save.optimalMoves != null && (
-                                                            <span className="text-xs" title={getPerformanceRating(p.save.moves, p.save.optimalMoves, p.save.dnf ?? false).label}>
-                                                                {getPerformanceRating(p.save.moves, p.save.optimalMoves, p.save.dnf ?? false).emoji}
-                                                            </span>
-                                                        )}
-                                                        <span
-                                                            className={`font-mono font-semibold text-sm ${
-                                                                p.save.dnf ? 'text-site-danger' : 'text-amber-400'
-                                                            }`}
-                                                        >
-                                                            {p.save.dnf ? 'DNF' : t("moves-count", { defaultValue_one: "{{count}} move", defaultValue: "{{count}} moves", count: p.save.moves })}
-                                                        </span>
-                                                    </>
-                                                ) : (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleSelectDate(p.dateKey)}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-site-surface border border-site-border text-site-text hover:border-amber-500/50 transition-colors text-xs font-medium"
-                                                    >
-                                                        <Play className="w-3 h-3" />
-                                                        {t("play-btn", { defaultValue: "Play" })}
-                                                    </button>
-                                                )}
-                                            </div>
+                            <ul className="glass-fill flex flex-col gap-2 rounded-site p-3">
+                                {pastPuzzles.map((p) => (
+                                    <li
+                                        key={p.dateKey}
+                                        className={`flex items-center justify-between gap-3 rounded-site-sm px-3 py-2 ${
+                                            p.dateKey === selectedDateKey ? 'bg-site-accent-dim' : 'bg-site-bg-subtle'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-mono text-sm text-site-text-muted">{p.dateKey}</span>
+                                            <span className="text-xs text-site-text-dim">{p.shapeLabel}</span>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
+                                        <div className="flex items-center gap-2">
+                                            {p.save?.solved ? (
+                                                <>
+                                                    {p.save.optimalMoves != null && (
+                                                        <span className="text-xs" title={getPerformanceRating(p.save.moves, p.save.optimalMoves, p.save.dnf ?? false).label}>
+                                                            {getPerformanceRating(p.save.moves, p.save.optimalMoves, p.save.dnf ?? false).emoji}
+                                                        </span>
+                                                    )}
+                                                    <span
+                                                        className={`font-mono text-sm font-semibold ${
+                                                            p.save.dnf ? 'text-site-danger' : 'text-site-text'
+                                                        }`}
+                                                    >
+                                                        {p.save.dnf ? 'DNF' : t("moves-count", { defaultValue_one: "{{count}} move", defaultValue: "{{count}} moves", count: p.save.moves })}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <Button type="button" variant="outline" size="sm" onClick={() => handleSelectDate(p.dateKey)}>
+                                                    <Play aria-hidden />
+                                                    {t("play-btn", { defaultValue: "Play" })}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
                         </motion.div>
                     )}
                 </AnimatePresence>
             </div>
-        </div>
-        </div>
+        </PuzzlePage>
     );
 }

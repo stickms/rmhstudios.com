@@ -24,14 +24,14 @@ function CursedLogicPage() {
 
   return (
     <main className="fixed inset-0 bg-[#0a0a0f] flex flex-col overflow-hidden">
-      <div className="absolute top-3 left-3 z-50">
-        <Link to="/secret">
+      <div className="absolute top-[calc(0.75rem+var(--safe-top,0px))] left-[calc(0.75rem+var(--safe-left,0px))] z-50">
+        <Link to="/secret" aria-label={t("back-to-vault", { defaultValue: "Back to the Vault" })}>
           <Button
             variant="ghost"
             size="sm"
-            className="text-zinc-500 hover:text-white flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-zinc-800 text-xs sm:text-sm"
+            className="text-zinc-400 hover:text-white flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-zinc-800 text-xs sm:text-sm min-h-11 min-w-11 justify-center"
           >
-            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+            <ArrowLeft className="w-4 h-4" aria-hidden />
             <span className="hidden sm:inline">RMH Studios</span>
           </Button>
         </Link>
@@ -48,7 +48,7 @@ function CursedLogicPage() {
         <CursedLogicGame />
       </div>
 
-      <div className="shrink-0 flex justify-center items-center gap-4 py-4 px-4 bg-[#0a0a0f]/95 border-t border-white/10">
+      <div className="shrink-0 flex flex-wrap justify-center items-center gap-2 sm:gap-4 pt-4 px-4 pb-[calc(1rem+var(--safe-bottom,0px))] bg-[#0a0a0f]/95 border-t border-white/10">
         <span className="font-mono text-amber-200 text-lg font-bold px-4 py-2.5 rounded-xl bg-amber-500/15 border-2 border-amber-500/50 shadow-lg">
           {t("fragments-count", { defaultValue: "{{count}} Fragments", count: fragments })}
         </span>
@@ -58,7 +58,7 @@ function CursedLogicPage() {
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/15 border-2 border-amber-500/50 text-amber-300 hover:bg-amber-500/25 hover:text-amber-200 transition-colors shadow-lg font-mono font-bold text-sm"
           aria-label={t("shop", { defaultValue: "Shop" })}
         >
-          <ShoppingBag className="w-6 h-6" />
+          <ShoppingBag className="w-6 h-6" aria-hidden />
           {t("shop", { defaultValue: "Shop" })}
         </button>
         <button
@@ -67,7 +67,7 @@ function CursedLogicPage() {
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-500/15 border-2 border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/25 hover:text-cyan-200 transition-colors shadow-lg font-mono font-bold text-sm"
           aria-label={t("how-to-play", { defaultValue: "How to play" })}
         >
-          <HelpCircle className="w-6 h-6" />
+          <HelpCircle className="w-6 h-6" aria-hidden />
           {t("how-to-play", { defaultValue: "How to play" })}
         </button>
       </div>

@@ -36,35 +36,35 @@ export default function RoomBrowser() {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--site-text-muted)' }}>
+      <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--app-text-muted)' }}>
         {t("public-rooms", { defaultValue: "Public Rooms" })}
       </h3>
-      {loading && <p className="text-sm" style={{ color: 'var(--site-text-dim)' }}>{t("loading-rooms", { defaultValue: "Loading rooms..." })}</p>}
+      {loading && <p className="text-sm" style={{ color: 'var(--app-text-dim)' }}>{t("loading-rooms", { defaultValue: "Loading rooms..." })}</p>}
       <div className="grid gap-2">
         {rooms.map((room) => (
           <button
             key={room.roomId}
             onClick={() => emit(C2S.ROOM_JOIN, { code: room.code })}
-            className="flex items-center gap-3 p-3 rounded-xl text-left transition-colors w-full"
-            style={{ background: 'var(--site-surface)' }}
+            className="flex items-center gap-3 p-3 rounded-(--app-radius) text-left transition-colors w-full"
+            style={{ background: 'var(--app-surface)' }}
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium truncate" style={{ color: 'var(--site-text)' }}>{room.name}</span>
-                {room.hasPassword && <Lock className="w-3 h-3 shrink-0" style={{ color: 'var(--site-text-dim)' }} />}
+                <span className="text-sm font-medium truncate" style={{ color: 'var(--app-text)' }}>{room.name}</span>
+                {room.hasPassword && <Lock className="w-3 h-3 shrink-0" style={{ color: 'var(--app-text-dim)' }} />}
               </div>
               <div className="flex items-center gap-3 mt-0.5">
-                <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--site-text-muted)' }}>
+                <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--app-text-muted)' }}>
                   <Users className="w-3 h-3" /> {room.memberCount}/{room.maxMembers}
                 </span>
                 {room.currentTrack && (
-                  <span className="flex items-center gap-1 text-xs truncate" style={{ color: 'var(--site-text-dim)' }}>
+                  <span className="flex items-center gap-1 text-xs truncate" style={{ color: 'var(--app-text-dim)' }}>
                     <Music className="w-3 h-3" /> {room.currentTrack}
                   </span>
                 )}
               </div>
             </div>
-            <span className="text-xs font-mono px-2 py-1 rounded" style={{ background: 'color-mix(in srgb, var(--site-accent) 15%, transparent)', color: 'var(--site-accent)' }}>
+            <span className="text-xs font-mono px-2 py-1 rounded-(--app-radius-sm)" style={{ background: 'color-mix(in srgb, var(--app-accent) 15%, transparent)', color: 'var(--app-accent)' }}>
               {room.code}
             </span>
           </button>

@@ -19,10 +19,11 @@
  * with no second navigation.
  */
 
+import { AdminBody } from '@/components/admin/AdminBody';
 import { useCallback, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Inbox, Loader2, RefreshCw, HardDrive } from 'lucide-react';
+import { Inbox, RefreshCw, HardDrive } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { type LiquidTab } from '@/components/ui/liquid-tabs';
@@ -81,9 +82,9 @@ function AdminLibraryPage() {
             size="sm"
             variant="outline"
             onClick={() => setReloadToken((n) => n + 1)}
-            disabled={storageLoading}
+            loading={storageLoading}
           >
-            {storageLoading ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+            <RefreshCw aria-hidden />
             {t('refresh', { defaultValue: 'Refresh' })}
           </Button>
         ) : undefined
@@ -97,7 +98,7 @@ function AdminLibraryPage() {
         aria-label={t('library-admin-title', { defaultValue: 'Library' })}
       />
 
-      <div className="mx-auto w-full max-w-4xl px-4 pt-2 pb-12 md:px-8">
+      <AdminBody>
         {tab === 'appeals' && (
           <div
             role="tabpanel"
@@ -119,7 +120,7 @@ function AdminLibraryPage() {
             />
           </div>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

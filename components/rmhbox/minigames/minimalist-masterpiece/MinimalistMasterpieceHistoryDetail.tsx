@@ -78,7 +78,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
         const drawings = (roundEnd?.payload.drawings as LoggedDrawing[]) ?? [];
 
         return (
-          <div key={roundNum} className="rounded-lg border border-(--app-border) p-4 space-y-3">
+          <div key={roundNum} className="rounded-(--app-radius-sm) border border-(--app-border) p-4 space-y-3">
             {/* Round header */}
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-(--app-text)">{t("round-number-minimalist-masterpiece-history-detail", { round: roundNum, defaultValue: "Round {{round}}" })}</span>
@@ -115,14 +115,14 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
                 {rankings.map((r, j) => {
                   const artist = players.find((p) => p.userId === r.artistUserId);
                   return (
-                    <div key={j} className="flex items-center justify-between rounded-md bg-(--app-surface) px-3 py-1.5 text-sm">
+                    <div key={j} className="flex items-center justify-between rounded-(--app-radius-sm) bg-(--app-surface) px-3 py-1.5 text-sm">
                       <div className="flex flex-col">
                         <span className="text-(--app-text)">#{r.rank} {artist?.userName ?? r.artistUserName ?? 'Unknown'}</span>
                         {r.winnerName && (
                           <span className="text-xs text-(--app-text-muted)">
                             {t("won-by-minimalist-masterpiece-history-detail", { name: r.winnerName, paid: r.winnerPaid, defaultValue: "Won by {{name}} for {{paid}} coins" })}
                             {(r.overbidPenalty ?? 0) > 0 && (
-                              <span className="text-red-500 ml-1">{t("overbid-penalty", { penalty: r.overbidPenalty, defaultValue: "(penalty: -{{penalty}})" })}</span>
+                              <span className="text-(--app-danger) ml-1">{t("overbid-penalty", { penalty: r.overbidPenalty, defaultValue: "(penalty: -{{penalty}})" })}</span>
                             )}
                           </span>
                         )}
@@ -141,13 +141,13 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
                 {scoreBreakdowns.map((sb, j) => {
                   const player = players.find((p) => p.userId === sb.userId);
                   return (
-                    <div key={j} className="flex items-center justify-between rounded-md bg-(--app-surface) px-3 py-1 text-xs">
+                    <div key={j} className="flex items-center justify-between rounded-(--app-radius-sm) bg-(--app-surface) px-3 py-1 text-xs">
                       <span className="text-(--app-text)">{player?.userName ?? sb.userName ?? 'Unknown'}</span>
                       <div className="flex gap-3 text-(--app-text-muted)">
                         <span>{t("painted-value", { value: sb.paintedValue, defaultValue: "Painted: {{value}}" })}</span>
                         <span>{t("owned-value", { value: sb.ownedValue, defaultValue: "Owned: {{value}}" })}</span>
                         {sb.overbidPenalty > 0 && (
-                          <span className="text-red-500">{t("score-penalty", { value: sb.overbidPenalty, defaultValue: "Penalty: -{{value}}" })}</span>
+                          <span className="text-(--app-danger)">{t("score-penalty", { value: sb.overbidPenalty, defaultValue: "Penalty: -{{value}}" })}</span>
                         )}
                         <span className="font-medium text-(--app-accent)">{t("total-score-minimalist-masterpiece-history-detail", { value: sb.totalScore, defaultValue: "Total: {{value}}" })}</span>
                       </div>
@@ -170,7 +170,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
               .map(([userId, score], i) => {
                 const player = players.find((p) => p.userId === userId);
                 return (
-                  <div key={userId} className="flex items-center justify-between rounded-md bg-(--app-surface) px-3 py-1.5 text-sm">
+                  <div key={userId} className="flex items-center justify-between rounded-(--app-radius-sm) bg-(--app-surface) px-3 py-1.5 text-sm">
                     <span className="text-(--app-text)">#{i + 1} {player?.userName ?? 'Unknown'}</span>
                     <span className="font-medium text-(--app-accent)">{t("score-pts", { score, defaultValue: "{{score}} pts" })}</span>
                   </div>

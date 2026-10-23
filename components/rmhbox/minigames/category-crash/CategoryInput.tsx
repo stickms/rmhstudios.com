@@ -124,7 +124,7 @@ export default function CategoryInput({
       {/* Header: letter + timer */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-(--app-accent) bg-(--app-accent)/10 text-2xl font-bold text-(--app-accent)">
+          <div className="flex h-12 w-12 items-center justify-center rounded-(--app-radius) border-2 border-(--app-accent) bg-(--app-accent)/10 text-2xl font-bold text-(--app-accent)">
             {letter}
           </div>
           <div className="text-sm text-(--app-text-muted)">
@@ -132,7 +132,7 @@ export default function CategoryInput({
           </div>
         </div>
         <div
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${
+          className={`flex items-center gap-1.5 rounded-(--app-radius-sm) px-3 py-1.5 text-sm font-medium ${
             isUrgent
               ? 'bg-(--app-danger-dim) text-(--app-danger) animate-pulse'
               : 'bg-(--app-surface) text-(--app-text-muted)'
@@ -189,7 +189,7 @@ export default function CategoryInput({
                   disabled={isLocked}
                   maxLength={50}
                   placeholder={`${letter.toUpperCase()}...`}
-                  className={`w-full rounded-lg border bg-(--app-surface) px-3 py-2 pl-9 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-(--app-accent)/50 disabled:opacity-50 ${
+                  className={`w-full rounded-(--app-radius-sm) border bg-(--app-surface) px-3 py-2 pl-9 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-(--app-accent)/50 disabled:opacity-50 ${
                     !startsCorrectly
                       ? 'border-(--app-danger)/50 ring-1 ring-(--app-danger)/30'
                       : 'border-(--app-border)'

@@ -136,7 +136,7 @@ export default function OfficeHoursManage() {
   const publicUrl = `${SITE_URL}/office-hours/${userId}`;
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
       <form onSubmit={save} className="glass-pane space-y-4 rounded-site p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-display text-lg font-medium text-site-text">
@@ -302,8 +302,8 @@ export default function OfficeHoursManage() {
         </div>
       </form>
 
-      <section className="space-y-2" aria-labelledby="oh-host-list">
-        <h2 id="oh-host-list" className="text-sm font-bold text-site-text">
+      <section className="space-y-3" aria-labelledby="oh-host-list">
+        <h2 id="oh-host-list" className="site-section-label">
           {t('oh-upcoming-host', { defaultValue: 'Upcoming bookings' })}
         </h2>
         {asHost.length === 0 ? (
@@ -311,7 +311,7 @@ export default function OfficeHoursManage() {
             {t('oh-none-host', { defaultValue: 'No one has booked you yet.' })}
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {asHost.map((b) => (
               <BookingRow
                 key={b.id}
@@ -324,8 +324,8 @@ export default function OfficeHoursManage() {
         )}
       </section>
 
-      <section className="space-y-2" aria-labelledby="oh-guest-list">
-        <h2 id="oh-guest-list" className="text-sm font-bold text-site-text">
+      <section className="space-y-3" aria-labelledby="oh-guest-list">
+        <h2 id="oh-guest-list" className="site-section-label">
           {t('oh-upcoming-mine', { defaultValue: 'Your bookings' })}
         </h2>
         {asGuest.length === 0 ? (
@@ -333,7 +333,7 @@ export default function OfficeHoursManage() {
             {t('oh-none-guest', { defaultValue: 'You have not booked anyone.' })}
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {asGuest.map((b) => (
               <BookingRow
                 key={b.id}

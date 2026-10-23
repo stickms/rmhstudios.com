@@ -34,7 +34,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function Code({ children }: { children: string }) {
   return (
-    <pre className="glass-inset overflow-x-auto rounded-site p-3 font-mono text-[13px] leading-relaxed text-site-text">
+    <pre className="glass-inset overflow-x-auto rounded-site p-3 font-mono text-sm leading-relaxed text-site-text">
       {children}
     </pre>
   );
@@ -61,7 +61,7 @@ function AiPracticesPage() {
   const { t } = useTranslation('f-dev-ai');
   return (
     <PageLayout title={t('title', { defaultValue: 'Coding with AI' })} backTo="/developer">
-      <article className="mx-auto max-w-[68ch] space-y-10 px-4 pb-[var(--site-page-bottom-space)]">
+      <article className="mx-auto max-w-[68ch] space-y-8 px-4 pt-4 pb-12">
         <p className="text-lg leading-relaxed text-site-text">
           {t('lede', {
             defaultValue:

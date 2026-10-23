@@ -84,16 +84,13 @@ export function TimeCapsuleList() {
     ].filter(Boolean);
 
   return (
-    <section className="px-4 pt-6 pb-8" aria-labelledby="capsules-heading">
-      <h2
-        id="capsules-heading"
-        className="mb-3 flex items-center gap-2 text-sm font-semibold text-site-text"
-      >
+    <section className="px-4 pt-6 pb-12" aria-labelledby="capsules-heading">
+      <h2 id="capsules-heading" className="site-section-label mb-3 flex items-center gap-2">
         <Package className="h-4 w-4 text-site-accent" aria-hidden />
         {t('capsules-title', { defaultValue: 'Time capsules' })}
       </h2>
 
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {data.sealed.map((c) => (
           <li key={c.id} className="glass-fill flex items-start gap-3 rounded-site px-4 py-3">
             <div className="min-w-0 flex-1">

@@ -89,5 +89,6 @@
   "tap-to-reveal": "Ketuk untuk menampilkan",
   "unban": "Buka larangan",
   "unban-user": "Buka larangan pengguna",
-  "work-duration": "Durasi Kerja: {{minutes}} menit"
+  "work-duration": "Durasi Kerja: {{minutes}} menit",
+  "apps": "Apps"
 }

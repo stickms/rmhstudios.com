@@ -107,5 +107,12 @@
   "wave-number": "Oleada {{wave}}",
   "weapon": "Weapon",
   "your-build": "Your Build",
-  "zone-advance": "AVANCE DE ZONA"
+  "zone-advance": "AVANCE DE ZONA",
+  "menu-mute": "Mute",
+  "menu-unmute": "Unmute",
+  "move-down": "Move down",
+  "move-left": "Move left",
+  "move-right": "Move right",
+  "move-up": "Move up",
+  "pause": "Pause"
 }

@@ -9,6 +9,8 @@ import { FeedItem } from'./FeedItem';
 import { useHideBots } from'@/lib/devplatform/hide-bots';
 import { ArrowUp } from'lucide-react';
 import { Spinner } from'@/components/ui/spinner';
+import { Button } from'@/components/ui/button';
+import { EmptyState } from'@/components/ui/empty-state';
 import { PostListSkeleton } from'@/components/ui/skeletons/PostCardSkeleton';
 import { prefersReducedMotion } from'@/hooks/useReducedMotion';
 import { useStableListMotion } from'@/hooks/useStableListMotion';
@@ -268,7 +270,7 @@ export function FeedList({
  <div className="site-sticky-secondary site-sticky-pinned mt-4 flex justify-center pointer-events-none">
  <button
  onClick={handleShowNew}
- className="pointer-events-auto flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-site-accent text-site-accent-fg text-sm font-bold shadow-site hover:bg-site-accent-hover transition-[scale,background-color] duration-site-fast active:scale-95"
+ className="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full bg-site-accent text-site-accent-fg text-sm font-bold shadow-site hover:bg-site-accent-hover transition-[scale,background-color] duration-site-fast active:scale-95"
  >
  <ArrowUp className="w-4 h-4"/>
  {t('new-posts', {
@@ -338,22 +340,17 @@ export function FeedList({
  {/* Load failure with nothing to show → offer a retry instead of leaving
  the reader stranded on skeletons or a misleading"empty"state. */}
  {error && items.length === 0 && (
- <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
- <p className="text-lg font-medium text-site-text mb-1">
- {t('load-error-title', { defaultValue:"Couldn't load your feed"})}
- </p>
- <p className="text-sm text-site-text-muted mb-6">
- {t('load-error-subtitle', {
+ <EmptyState
+ title={t('load-error-title', { defaultValue:"Couldn't load your feed"})}
+ description={t('load-error-subtitle', {
  defaultValue:'Something went wrong. Check your connection and try again.',
  })}
- </p>
- <button
- onClick={retry}
- className="px-5 py-2 rounded-site-sm bg-site-accent text-site-accent-fg text-sm font-bold hover:bg-site-accent-hover transition-colors"
- >
+ action={
+ <Button variant="accent" onClick={retry}>
  {t('retry', { defaultValue:'Try again'})}
- </button>
- </div>
+ </Button>
+ }
+ />
  )}
 
  {/* Empty state — only after the first fetch has actually completed */}
@@ -362,35 +359,26 @@ export function FeedList({
  !error &&
  items.length === 0 &&
  (following ? (
- <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
- <p className="text-lg font-medium text-site-text mb-1">
- {t('following-empty-title', { defaultValue:'Your Following feed is quiet'})}
- </p>
- <p className="text-sm text-site-text-muted mb-6">
- {t('following-empty-subtitle', {
+ <EmptyState
+ title={t('following-empty-title', { defaultValue:'Your Following feed is quiet'})}
+ description={t('following-empty-subtitle', {
  defaultValue:'Follow some people and their posts will show up here.',
  })}
- </p>
- {onSwitchToForYou && (
- <button
- onClick={onSwitchToForYou}
- className="px-5 py-2 rounded-site-sm bg-site-accent text-site-accent-fg text-sm font-bold hover:bg-site-accent-hover transition-colors"
- >
+ action={
+ onSwitchToForYou ? (
+ <Button variant="accent" onClick={onSwitchToForYou}>
  {t('browse-for-you', { defaultValue:'Browse For You'})}
- </button>
- )}
- </div>
+ </Button>
+ ) : undefined
+ }
+ />
  ) : (
- <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
- <p className="text-lg font-medium text-site-text mb-1">
- {t('for-you-empty-title', { defaultValue:'Nothing here yet'})}
- </p>
- <p className="text-sm text-site-text-muted">
- {t('for-you-empty-subtitle', {
+ <EmptyState
+ title={t('for-you-empty-title', { defaultValue:'Nothing here yet'})}
+ description={t('for-you-empty-subtitle', {
  defaultValue:'Be the first to post an RMHark, or check back later!',
  })}
- </p>
- </div>
+ />
  ))}
 
  {/* Pagination failed but we already have posts — let the reader pull the
@@ -400,12 +388,9 @@ export function FeedList({
  <p className="text-sm text-site-text-muted">
  {t('load-more-error', { defaultValue:"Couldn't load more posts."})}
  </p>
- <button
- onClick={retry}
- className="px-4 py-1.5 rounded-site-sm border border-site-border bg-site-surface text-site-text text-sm font-medium hover:bg-site-surface-hover transition-colors"
- >
+ <Button variant="outline" size="sm" onClick={retry}>
  {t('retry', { defaultValue:'Try again'})}
- </button>
+ </Button>
  </div>
  )}
 

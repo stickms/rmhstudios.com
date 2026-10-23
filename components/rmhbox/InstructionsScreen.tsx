@@ -94,7 +94,7 @@ export default function InstructionsScreen({
       {isHost && (
         <button
           onClick={onSkip}
-          className="mx-auto flex items-center gap-2 rounded-lg bg-(--app-surface) border border-(--app-border) px-4 py-2 text-sm font-medium text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
+          className="mx-auto flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-surface) border border-(--app-border) px-4 py-2 text-sm font-medium text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
         >
           <SkipForward className="h-4 w-4" /> {t("skip-instructions", { defaultValue: "Skip Instructions" })}
         </button>

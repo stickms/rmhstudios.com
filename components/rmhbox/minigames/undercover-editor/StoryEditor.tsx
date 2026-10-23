@@ -130,12 +130,12 @@ export default function StoryEditor({
   return (
     <div className="flex w-full max-w-2xl flex-col gap-4 text-(--app-text)">
       {/* Header with timer */}
-      <div className="flex items-center justify-between rounded-xl border border-(--app-rare)/30 bg-(--app-rare-dim) p-3">
+      <div className="flex items-center justify-between rounded-(--app-radius) border border-(--app-rare)/30 bg-(--app-rare-dim) p-3">
         <div className="flex items-center gap-2">
           <span className="text-xs uppercase tracking-wider text-(--app-rare)">
             ✏️ {t("secret-editor", { defaultValue: "Secret Editor" })}
           </span>
-          <span className="rounded-md bg-(--app-rare)/30 px-2 py-0.5 text-xs text-(--app-rare)">
+          <span className="rounded-(--app-radius-sm) bg-(--app-rare)/30 px-2 py-0.5 text-xs text-(--app-rare)">
             {t("edits-selected", { defaultValue: "{{count}}/{{max}} edits selected", count: pendingEdits.length, max: MAX_EDITS })}
           </span>
         </div>
@@ -154,14 +154,14 @@ export default function StoryEditor({
       </p>
 
       {/* Story prompt */}
-      <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-3">
+      <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-3">
         <p className="text-[10px] uppercase tracking-wider text-(--app-text-muted) mb-1">{t("prompt-label-story-editor", { defaultValue: "Prompt" })}</p>
         <p className="text-sm italic text-(--app-accent)">&ldquo;{editableStory.prompt}&rdquo;</p>
       </div>
 
       {/* Story context (previous sentences — read only) */}
       {editableStory.sentences.length > 1 && (
-        <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-3 opacity-60">
+        <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-3 opacity-60">
           <p className="mb-1 text-[10px] uppercase tracking-wider text-(--app-text-muted)">
             {t("previous-sentences", { defaultValue: "Previous sentences" })}
           </p>
@@ -174,7 +174,7 @@ export default function StoryEditor({
       )}
 
       {/* Editable sentence — word-level tokens */}
-      <div className="rounded-xl border border-(--app-rare)/30 bg-(--app-surface) p-4">
+      <div className="rounded-(--app-radius) border border-(--app-rare)/30 bg-(--app-surface) p-4">
         <p className="mb-2 text-[10px] text-(--app-text-muted)">
           {t("latest-sentence-by", { defaultValue: "Latest sentence — by {{author}}", author: editableSentence.authorName })}
         </p>
@@ -271,7 +271,7 @@ export default function StoryEditor({
         <button
           onClick={handleSubmitEdits}
           disabled={pendingEdits.length < MIN_EDITS || pendingEdits.length > MAX_EDITS || submitted}
-          className="flex items-center justify-center gap-2 rounded-lg bg-(--app-accent) px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="flex items-center justify-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2 text-sm font-medium text-(--app-accent-fg) transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           <Send className="h-4 w-4" />
           {submitted ? t("submitted", { defaultValue: "Submitted!" }) : t("submit-edits", { defaultValue: "Submit Edits" })}
@@ -280,7 +280,7 @@ export default function StoryEditor({
         <button
           onClick={onSkip}
           disabled={submitted}
-          className="flex items-center justify-center gap-2 rounded-lg border border-(--app-border) px-4 py-2 text-sm text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) disabled:opacity-40"
+          className="flex items-center justify-center gap-2 rounded-(--app-radius-sm) border border-(--app-border) px-4 py-2 text-sm text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) disabled:opacity-40"
         >
           <SkipForward className="h-4 w-4" />
           {t("skip", { defaultValue: "Skip" })}

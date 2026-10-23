@@ -56,6 +56,7 @@ function ThemeStudioPage() {
   return (
     <PageLayout
       title={title}
+      wide
       backTo="/settings"
       backLabel={settingsLabel}
       breadcrumbs={[{ label: settingsLabel, to: '/settings' }, { label: title }]}

@@ -75,19 +75,21 @@ export function LegalSummaryBox({ kind }: { kind: Kind }) {
 
   return (
     <aside
-      className="glass-fill not-prose mb-8 rounded-site p-4"
+      className="glass-fill not-prose rounded-site p-4"
       aria-label={t('sum-label', { defaultValue: 'Plain-language summary' })}
     >
-      <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-site-text">
+      <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-site-text">
         <FileText className="h-4 w-4" aria-hidden />
         {t('sum-title', { defaultValue: 'In plain language' })}
       </p>
-      <ul className="list-disc space-y-1.5 ps-5 text-sm text-site-text">
+      <ul className="mb-0 list-disc space-y-2 ps-5 text-sm text-site-text">
         {items[kind].map((line) => (
-          <li key={line}>{line}</li>
+          <li key={line} className="text-sm leading-normal">
+            {line}
+          </li>
         ))}
       </ul>
-      <p className="mt-3 text-xs text-site-text-muted">
+      <p className="mt-3 mb-0 text-xs text-site-text-muted">
         {t('sum-disclaimer', {
           defaultValue:
             'This is a summary, not the legal text. The full policy below is what applies.',

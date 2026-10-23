@@ -191,7 +191,7 @@ export function MemberFeatureGrid({ tier, highlight, signedOut }: Props) {
   }, [highlight]);
 
   return (
-    <div className="mt-16">
+    <div className="mt-12">
       <Reveal as="h3" className="text-center font-display text-2xl font-semibold text-site-text">
         {t('membership-features-title', { defaultValue: 'What a membership unlocks' })}
       </Reveal>

@@ -15,6 +15,7 @@ import {
   Crosshair,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { RideMap } from './RideMap';
 import { RideChat, type RideChatMessage } from './RideChat';
 import { FareBreakdown } from './FareBreakdown';
@@ -234,7 +235,7 @@ export function ActiveRidePanel({
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
       {/* Status timeline */}
-      <div className="glass-fill rounded-site p-5">
+      <div className="glass-fill rounded-site p-4">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-site-text">{rideClassName(ride.rideClass)}</h2>
           {status === 'CANCELLED' ? (
@@ -262,7 +263,7 @@ export function ActiveRidePanel({
                     >
                       <step.icon className="h-4 w-4" />
                     </div>
-                    <span className={`text-[11px] ${reached ? 'text-site-text' : 'text-site-text-dim'}`}>
+                    <span className={`text-xs ${reached ? 'text-site-text' : 'text-site-text-dim'}`}>
                       {step.key === 'REQUESTED' ? t("step-requested", { defaultValue: "Requested" })
                         : step.key === 'ACCEPTED' ? t("step-matched", { defaultValue: "Matched" })
                         : step.key === 'IN_PROGRESS' ? t("step-on-trip", { defaultValue: "On trip" })
@@ -354,7 +355,7 @@ export function ActiveRidePanel({
 
       {/* Completed → rate */}
       {status === 'COMPLETED' && (
-        <div className="glass-fill rounded-site p-5 text-center">
+        <div className="glass-fill rounded-site p-4 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-site-success" />
           <h3 className="mt-2 font-semibold text-site-text">
             {myRatingGiven ? t("thanks-for-riding", { defaultValue: "Thanks for riding with RMH!" }) : (isDriver ? t("rate-your-rider", { defaultValue: "Rate your rider" }) : t("rate-your-driver", { defaultValue: "Rate your driver" }))}
@@ -378,42 +379,27 @@ export function ActiveRidePanel({
 
       {/* Dismiss a finished trip */}
       {(status === 'COMPLETED' || status === 'CANCELLED') && onClose && (
-        <button
-          onClick={onClose}
-          className="w-full rounded-site border border-site-border bg-site-surface px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover"
-        >
+        <Button type="button" variant="outline" className="w-full" onClick={onClose}>
           {t("done", { defaultValue: "Done" })}
-        </button>
+        </Button>
       )}
 
       {/* Actions */}
       {status !== 'COMPLETED' && status !== 'CANCELLED' && (
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {isDriver && status === 'ACCEPTED' && (
-            <button
-              onClick={() => act('start')}
-              disabled={busy}
-              className="flex items-center justify-center gap-2 rounded-site bg-site-accent px-5 py-3 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:opacity-50 sm:flex-1 sm:py-2.5"
-            >
-              <Navigation className="h-4 w-4" /> {t("start-trip", { defaultValue: "Start trip" })}
-            </button>
+            <Button className="sm:flex-1" onClick={() => act('start')} disabled={busy}>
+              <Navigation aria-hidden /> {t("start-trip", { defaultValue: "Start trip" })}
+            </Button>
           )}
           {isDriver && status === 'IN_PROGRESS' && (
-            <button
-              onClick={() => act('complete')}
-              disabled={busy}
-              className="flex items-center justify-center gap-2 rounded-site bg-site-success px-5 py-3 text-sm font-semibold text-site-success-fg transition-colors hover:bg-site-success/90 disabled:opacity-50 sm:flex-1 sm:py-2.5"
-            >
-              <Flag className="h-4 w-4" /> {t("complete-trip", { defaultValue: "Complete trip" })}
-            </button>
+            <Button className="bg-site-success text-site-success-fg sm:flex-1" onClick={() => act('complete')} disabled={busy}>
+              <Flag aria-hidden /> {t("complete-trip", { defaultValue: "Complete trip" })}
+            </Button>
           )}
-          <button
-            onClick={() => act('cancel')}
-            disabled={busy}
-            className="flex items-center justify-center gap-2 rounded-site border border-site-border px-5 py-3 text-sm font-medium text-site-danger transition-colors hover:bg-red-500/10 disabled:opacity-50 sm:py-2.5"
-          >
-            <XCircle className="h-4 w-4" /> {t("cancel", { defaultValue: "Cancel" })}
-          </button>
+          <Button variant="outline" className="text-site-danger" onClick={() => act('cancel')} disabled={busy}>
+            <XCircle aria-hidden /> {t("cancel", { defaultValue: "Cancel" })}
+          </Button>
         </div>
       )}
     </motion.div>

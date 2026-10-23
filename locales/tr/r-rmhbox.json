@@ -46,5 +46,9 @@
   "starting-game": "Oyun başlatılıyor...",
   "view-minigames": "Mini Oyunları Görüntüle",
   "winner-label": "Kazanan:",
-  "winner-none": "Yok"
+  "winner-none": "Yok",
+  "loading": "Loading…",
+  "room-code": "Room code",
+  "player-count-of-max_one": "{{count}}/{{max}} players",
+  "player-count-of-max_other": "{{count}}/{{max}} players"
 }

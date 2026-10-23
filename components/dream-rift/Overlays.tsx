@@ -76,7 +76,7 @@ export function StageBanner() {
 export function PauseOverlay({ onResume, onQuit }: { onResume: () => void; onQuit: () => void }) {
     const { musicOn, sfxOn, setMusicOn, setSfxOn, musicVol, sfxVol, setMusicVol, setSfxVol, showHitbox, setShowHitbox } = useDreamRift();
     return (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        <div className="app-safe-pad absolute inset-0 z-40 flex items-center-safe justify-center-safe overflow-y-auto bg-black/70 backdrop-blur-sm">
             <div className="dr-frame w-72 rounded-sm p-6">
                 <h2 className="dr-serif mb-1 text-center text-xl font-semibold tracking-[0.22em] text-[color:var(--dr-gold)]">PAUSED</h2>
                 <div className="dr-rule mb-4 mt-2" />

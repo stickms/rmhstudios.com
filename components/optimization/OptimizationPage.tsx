@@ -21,6 +21,7 @@ import {
 // Reuse the security page's liquid-glass "store style" design system verbatim
 // so the two standalone pages are visually identical (same `sec-*` classes).
 import '@/components/security/security.css';
+import { Button } from '@/components/ui/button';
 import { PinnedHero } from '@/components/feed/PinnedHero';
 
 /**
@@ -365,7 +366,7 @@ export function OptimizationPage() {
       </a>
 
       <header>
-        <nav className="sec-nav" aria-label="Optimization">
+        <nav className="glass-chrome sec-nav" aria-label="Optimization">
           <div className="sec-nav__inner">
             <a className="sec-nav__back" href="/">
               <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />
@@ -396,13 +397,17 @@ export function OptimizationPage() {
           scrollCue="The runtime"
           actions={
             <>
-              <a className="sec-btn sec-btn--primary" href="#opt-runtime">
+              <Button asChild variant="accent" size="lg">
+                <a href="#opt-runtime">
                 How it stays fast
                 <ArrowRight aria-hidden="true" />
               </a>
-              <a className="sec-btn sec-btn--ghost" href="#opt-milestones">
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <a href="#opt-milestones">
                 The measured wins
               </a>
+              </Button>
             </>
           }
         />
@@ -412,7 +417,7 @@ export function OptimizationPage() {
           {STATS.map((s, i) => (
             <div
               key={s.label}
-              className="sec-stat sec-reveal"
+              className="glass-fill sec-stat sec-reveal"
               style={{ '--sec-delay': `${i * 70}ms` } as CSSProperties}
             >
               <p className="sec-stat__num">{s.num}</p>
@@ -455,7 +460,7 @@ export function OptimizationPage() {
                 return (
                   <article
                     key={p.title}
-                    className="sec-card sec-reveal"
+                    className="glass-fill sec-card sec-reveal"
                     style={{ '--sec-delay': `${(i % 3) * 80}ms` } as CSSProperties}
                   >
                     <span className="sec-card__icon">
@@ -484,7 +489,7 @@ export function OptimizationPage() {
                 is won or lost. Here’s how ours is wired.
               </p>
             </div>
-            <div className="sec-spec sec-reveal">
+            <div className="glass-fill sec-spec sec-reveal">
               {RENDER_SPECS.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -508,7 +513,7 @@ export function OptimizationPage() {
                 about what actually reaches your browser.
               </p>
             </div>
-            <div className="sec-spec sec-reveal">
+            <div className="glass-fill sec-spec sec-reveal">
               {BUNDLE_SPECS.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -572,7 +577,7 @@ export function OptimizationPage() {
                 profiled, and tuned.
               </p>
             </div>
-            <div className="sec-spec sec-reveal">
+            <div className="glass-fill sec-spec sec-reveal">
               {BUILD_SPECS.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -599,7 +604,7 @@ export function OptimizationPage() {
             <ol className="sec-steps">
               {DEPLOY_STEPS.map((s, i) => (
                 <li
-                  className="sec-step sec-reveal"
+                  className="glass-fill sec-step sec-reveal"
                   key={s.title}
                   style={{ '--sec-delay': `${(i % 2) * 80}ms` } as CSSProperties}
                 >
@@ -633,7 +638,7 @@ export function OptimizationPage() {
             </div>
 
             <div
-              className="sec-bounty-table-wrap sec-reveal"
+              className="glass-fill sec-bounty-table-wrap sec-reveal"
               role="region"
               aria-labelledby="opt-milestones-title"
               tabIndex={0}
@@ -742,7 +747,7 @@ export function OptimizationPage() {
             </div>
             <div className="sec-faq sec-reveal">
               {OPT_FAQ.map((f) => (
-                <details className="sec-faq__item" key={f.q}>
+                <details className="glass-fill sec-faq__item" key={f.q}>
                   <summary className="sec-faq__q">{f.q}</summary>
                   <p className="sec-faq__a">{f.a}</p>
                 </details>
@@ -754,7 +759,7 @@ export function OptimizationPage() {
         {/* ─── Closing ──────────────────────────────────────────────────── */}
         <section className="sec-section sec-section--hair" aria-labelledby="opt-closing-title">
           <div className="sec-shell">
-            <div className="sec-disclosure sec-reveal">
+            <div className="glass-pane sec-disclosure sec-reveal">
               <div className="sec-disclosure__glow" aria-hidden="true" />
               <div className="sec-disclosure__inner">
                 <p className="sec-eyebrow">Never finished</p>
@@ -766,10 +771,12 @@ export function OptimizationPage() {
                   profiling, keep trimming, and keep the numbers honest. The bar
                   only moves one way.
                 </p>
-                <a className="sec-btn sec-btn--primary" href="/security">
+                <Button asChild variant="accent" size="lg">
+                  <a href="/security">
                   How we keep you secure
                   <ArrowRight aria-hidden="true" />
                 </a>
+                </Button>
               </div>
             </div>
           </div>

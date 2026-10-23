@@ -98,5 +98,8 @@
   "years-ago_one": "{{count}} год назад",
   "years-ago_few": "{{count}}y ago",
   "years-ago_many": "{{count}}y ago",
-  "years-ago_other": "{{count}} лет назад"
+  "years-ago_other": "{{count}} лет назад",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

@@ -13,7 +13,7 @@ export function DivisivenessBadge({ reactions, showLabel = true }: DivisivenessB
 
   return (
     <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-mono"
       style={{ color, backgroundColor: `${color}15` }}
     >
       <span className="font-bold">{di}</span>

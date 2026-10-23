@@ -12,7 +12,7 @@ import { LightsOutGame } from '@/components/lights-out/LightsOutGame'
 function LightsOutPage() {
     return (
         <GameErrorBoundary gameName="Lights Out">
-            <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
+            <Suspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
                 <LightsOutGame />
             </Suspense>
         </GameErrorBoundary>

@@ -87,7 +87,7 @@ export default function WikiFrame({
   }, [currentTitle]);
 
   return (
-    <div className="relative rounded-xl border border-(--app-border) bg-white/5 overflow-hidden">
+    <div className="relative rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) overflow-hidden">
       {/* Title bar */}
       <div className="flex items-center justify-between border-b border-(--app-border) bg-(--app-surface) px-4 py-2">
         <h3 className="text-sm font-bold truncate">{currentTitle || t("loading", { defaultValue: "Loading…" })}</h3>

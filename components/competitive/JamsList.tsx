@@ -7,7 +7,10 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from '@/components/Providers';
+import { Hammer } from 'lucide-react';
 
 interface JamSummary {
   slug: string;
@@ -140,15 +143,16 @@ export function JamsList() {
         </div>
       )}
       {jams === null ? (
-        <div className="h-32 rounded-site glass-fill animate-pulse" />
+        <Skeleton className="h-32 rounded-site" />
       ) : jams.length === 0 ? (
-        <p className="text-site-text-dim py-8 text-center">
-          {t('jam-none', { defaultValue: 'No game jams yet. Check back soon.' })}
-        </p>
+        <EmptyState
+          icon={Hammer}
+          title={t('jam-none', { defaultValue: 'No game jams yet. Check back soon.' })}
+        />
       ) : (
         jams.map((j) => (
           <Link key={j.slug} to="/jams/$slug" params={{ slug: j.slug }}>
-            <Card className="p-4 space-y-1.5" interactive>
+            <Card className="gap-2 px-4 py-4" interactive>
               <div className="flex items-center justify-between gap-2">
                 <h2 className="font-semibold truncate">{j.title}</h2>
                 <PhaseBadge phase={j.phase} />

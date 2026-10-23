@@ -23,7 +23,7 @@ export function MarathonSchedule({ items, deadline }: { items: MarathonItem[]; d
       className="space-y-3"
       aria-label={t('marathon-schedule', { defaultValue: 'Schedule' })}
     >
-      <p role="status" className="glass-fill rounded-site p-3 text-sm">
+      <p role="status" className="glass-fill rounded-site px-4 py-3 text-sm">
         {plan.impossible
           ? t('marathon-impossible', {
               defaultValue: 'Even watching around the clock this does not fit before the deadline.',
@@ -39,8 +39,8 @@ export function MarathonSchedule({ items, deadline }: { items: MarathonItem[]; d
         {plan.days
           .filter((d) => d.entries.length > 0)
           .map((d) => (
-            <li key={d.date} className="glass-fill rounded-site p-3">
-              <h3 className="mb-1.5 flex justify-between text-sm font-semibold">
+            <li key={d.date} className="glass-fill rounded-site px-4 py-3">
+              <h3 className="mb-2 flex justify-between text-sm font-semibold">
                 <span>
                   {new Date(`${d.date}T00:00:00`).toLocaleDateString(undefined, {
                     weekday: 'short',
@@ -50,7 +50,7 @@ export function MarathonSchedule({ items, deadline }: { items: MarathonItem[]; d
                 </span>
                 <span className="font-normal text-site-text-muted">{formatMinutes(d.minutes)}</span>
               </h3>
-              <ul className="space-y-1 text-sm">
+              <ul className="space-y-2 text-sm">
                 {d.entries.map((e, i) => (
                   <li key={i} className="flex justify-between gap-2">
                     <span>{name(e.titleId)}</span>

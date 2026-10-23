@@ -289,14 +289,14 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
 
  return (
  <div className="py-3"{...(comment.deletedAt || comment.pending ? {} : reactionTrigger)}>
- <div className="flex gap-2.5">
+ <div className="flex gap-3">
  {/* Avatar */}
  <UserAvatar user={freshCommentUser} size="sm"/>
 
  <div className="flex-1 min-w-0">
  {/* Header */}
- <div className="flex items-center gap-1.5 text-sm">
- <Link to={`/u/${freshCommentUser.handle || freshCommentUser.id}`as string} className="flex items-center gap-1.5 min-w-0 hover:underline">
+ <div className="flex items-center gap-2 text-sm">
+ <Link to={`/u/${freshCommentUser.handle || freshCommentUser.id}`as string} className="flex items-center gap-2 min-w-0 hover:underline">
  <span className="font-bold text-site-text truncate">
  {freshCommentUser.name ||'Unknown'}
  </span>
@@ -328,7 +328,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  onClick={() => setMenuOpen((v) => !v)}
  aria-haspopup="menu"
  aria-expanded={menuOpen}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+ className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <MoreHorizontal className="w-3.5 h-3.5"/>
  </button>
@@ -389,13 +389,13 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  <ChatMediaEmbed content={comment.content} themePrefix="site"/>
  )}
  {showTranslated && translatedText && (
- <p className="mt-1 whitespace-pre-wrap break-words rounded-site-sm bg-site-surface/50 p-2 text-sm text-site-text">
+ <p className="mt-2 whitespace-pre-wrap break-words rounded-site glass-fill px-4 py-3 text-sm text-site-text">
  {translatedText}
  </p>
  )}
 
  {!comment.deletedAt && !comment.pending && (
- <ReactionChips reactions={reactions} onToggle={toggleReaction} className="mt-1.5"/>
+ <ReactionChips reactions={reactions} onToggle={toggleReaction} className="mt-2"/>
  )}
 
  {/* Actions row */}
@@ -471,7 +471,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  placeholder={t('reply-placeholder', { handle: freshCommentUser.handle || freshCommentUser.name ||'Unknown', defaultValue:'Post your reply...'})}
  rows={2}
  maxLength={MAX_COMMENT_LENGTH}
- className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-xs rounded-site-sm p-2 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
+ className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 resize-none outline-none focus:border-site-accent transition-colors"
  onKeyDown={(e) => {
  if (e.key ==='Enter'&& (e.metaKey || e.ctrlKey)) {
  handleSubmitReply();
@@ -483,14 +483,14 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  }
  }}
  />
- <div className="flex items-center justify-between mt-1">
+ <div className="flex items-center justify-between mt-2">
  <div className="flex items-center gap-2">
- <span className={`text-[10px] font-mono ${remaining <= 20 ?'text-site-warning':'text-site-text-dim'}`}>
+ <span className={`text-xs font-mono ${remaining <= 20 ?'text-site-warning':'text-site-text-dim'}`}>
  {remaining}
  </span>
  <button
  onClick={() => { setReplyOpen(false); setReplyContent(''); setShowGifPicker(false); }}
- className="text-[10px] text-site-text-dim hover:text-site-text transition-colors"
+ className="text-xs text-site-text-dim hover:text-site-text transition-colors"
  >
  {t('cancel', { defaultValue:'Cancel'})}
  </button>
@@ -506,7 +506,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  type="button"
  onClick={() => setShowGifPicker((v) => !v)}
  aria-label={t('add-gif-aria', { defaultValue:'Add a GIF'})}
- className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+ className="p-2 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
  >
  <ImageIcon className="w-4 h-4"/>
  </button>
@@ -516,7 +516,6 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  size="sm"
  disabled={!replyContent.trim() || remaining < 0 || submitting}
  onClick={handleSubmitReply}
- className="h-6 text-xs px-2.5"
  >
  {submitting ? t('posting', { defaultValue:'Posting…'}) : t('reply', { defaultValue:'Reply'})}
  </Button>
@@ -541,7 +540,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
  collapseThread ? (
  <button
  onClick={() => setThreadExpanded(true)}
- className="mt-2 ml-2 flex items-center gap-1.5 text-xs font-medium text-site-accent hover:underline"
+ className="mt-2 ml-2 flex items-center gap-2 text-xs font-medium text-site-accent hover:underline"
  >
  <MessageCircle className="w-3.5 h-3.5"/>
  {t('show-more-replies', { count: countDescendants(comment.replies), defaultValue_one:'Show {{count}} more reply', defaultValue:'Show {{count}} more replies'})}

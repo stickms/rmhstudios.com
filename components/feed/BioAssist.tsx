@@ -77,7 +77,7 @@ export function BioAssist({
 
   return (
     <div
-      className="mt-2 flex flex-wrap items-center gap-1.5"
+      className="mt-2 flex flex-wrap items-center gap-2"
       role="group"
       aria-label={t('bio-assist-label', { defaultValue: 'Write my bio with AI' })}
     >
@@ -91,7 +91,7 @@ export function BioAssist({
           type="button"
           disabled={busy !== null}
           onClick={() => run(tone)}
-          className="inline-flex items-center gap-1 rounded-full border border-site-border px-2.5 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text disabled:opacity-50"
+          className="inline-flex items-center gap-1 rounded-full border border-site-border px-3 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text disabled:opacity-50"
         >
           {busy === tone ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden /> : null}
           {TONE_LABELS[tone]}
@@ -104,7 +104,7 @@ export function BioAssist({
             onChange(previous);
             setPrevious(null);
           }}
-          className="rounded-full px-2.5 py-1 text-xs text-site-text-dim underline transition-colors hover:text-site-text"
+          className="rounded-full px-3 py-1 text-xs text-site-text-dim underline transition-colors hover:text-site-text"
         >
           {t('bio-undo', { defaultValue: 'Undo' })}
         </button>

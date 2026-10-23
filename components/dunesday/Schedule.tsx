@@ -182,7 +182,7 @@ export function Schedule({
       title={t('schedule-title', { defaultValue: 'Your schedule' })}
       icon={<CalendarDays size={16} aria-hidden="true" />}
     >
-      <div className="ds-toolbar ds-no-print" style={{ marginBottom: 14 }}>
+      <div className="ds-toolbar ds-no-print" style={{ marginBottom: 16 }}>
         <Segmented
           label={t('view-label', { defaultValue: 'Schedule view' })}
           value={view}

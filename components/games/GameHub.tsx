@@ -94,7 +94,7 @@ export function GameHub({ data }: { data: GameHubData }) {
   }
 
   return (
-    <div className="px-4 pt-4 pb-12 space-y-6">
+    <div className="space-y-6 px-4 pt-4 pb-12">
       {/* Header */}
       {/* Stacks below sm. As a single non-wrapping row — 80px thumb + a
           `min-w-0 flex-1` text column + the Play button — the text column was
@@ -108,9 +108,7 @@ export function GameHub({ data }: { data: GameHubData }) {
           <div className="min-w-0 flex-1">
             {/* h2: the route's PageLayout already renders the game's title as
                 the page h1, 130px above this one. */}
-            <h2 className="font-display text-lg font-bold text-site-text">
-              {data.title}
-            </h2>
+            <h2 className="font-display text-lg font-bold text-site-text">{data.title}</h2>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <StarRating value={Math.round(agg.average)} size={16} label={t('rating', { defaultValue: 'Rating' })} />
               <span className="whitespace-nowrap text-sm text-site-text-muted">
@@ -135,8 +133,8 @@ export function GameHub({ data }: { data: GameHubData }) {
 
       {/* Your review */}
       {data.signedIn ? (
-        <Card className="p-4">
-          <h2 className="mb-2 text-sm font-semibold text-site-text">
+        <Card className="gap-3 p-4">
+          <h2 className="site-section-label">
             {mine ? t('your-review', { defaultValue: 'Your review' }) : t('write-review', { defaultValue: 'Write a review' })}
           </h2>
           <StarRating value={stars} onRate={setStars} label={t('your-rating', { defaultValue: 'Your rating' })} />
@@ -144,10 +142,9 @@ export function GameHub({ data }: { data: GameHubData }) {
             value={body}
             onChange={(e) => setBody(e.target.value.slice(0, 2000))}
             placeholder={t('review-placeholder', { defaultValue: 'Share your thoughts (optional)' })}
-            className="mt-2"
             rows={3}
           />
-          <div className="mt-2 flex justify-end">
+          <div className="flex justify-end">
             <Button size="sm" variant="accent" onClick={submit} loading={saving}>
               {mine ? t('update', { defaultValue: 'Update' }) : t('post', { defaultValue: 'Post' })}
             </Button>
@@ -157,7 +154,7 @@ export function GameHub({ data }: { data: GameHubData }) {
 
       {/* Reviews */}
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-site-text">
+        <h2 className="site-section-label mb-3">
           {t('reviews', { defaultValue: 'Reviews' })}
         </h2>
         {reviews.length === 0 ? (
@@ -169,11 +166,11 @@ export function GameHub({ data }: { data: GameHubData }) {
             })}
           />
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {reviews.map((r) => (
               <li key={r.id}>
-                <Card className="p-3">
-                  <div className="mb-1 flex items-center gap-2">
+                <Card className="gap-2 px-4 py-3">
+                  <div className="flex items-center gap-2">
                     <UserAvatar src={r.author.image ?? undefined} alt={r.author.name ?? 'User'} size={24} fallbackName={r.author.name ?? undefined} />
                     <span className="truncate text-sm font-medium text-site-text">{r.author.name ?? r.author.handle}</span>
                     <StarRating value={r.stars} size={14} />
@@ -184,7 +181,7 @@ export function GameHub({ data }: { data: GameHubData }) {
                     onClick={() => vote(r)}
                     disabled={r.isMine}
                     className={cn(
-                      'mt-2 inline-flex items-center gap-1 text-xs',
+                      'inline-flex min-h-8 items-center gap-2 self-start text-xs',
                       r.myVote ? 'text-site-accent' : 'text-site-text-muted',
                       r.isMine ? 'cursor-default opacity-60' : 'hover:text-site-text',
                     )}
@@ -201,8 +198,8 @@ export function GameHub({ data }: { data: GameHubData }) {
 
       {/* Guides */}
       <section>
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-site-text">{t('guides', { defaultValue: 'Player guides' })}</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="site-section-label">{t('guides', { defaultValue: 'Player guides' })}</h2>
           {data.signedIn ? (
             <Button asChild variant="ghost" size="sm">
               <a href={`/games/${data.gameId}/guides/new`}>{t('write-guide', { defaultValue: 'Write a guide' })}</a>
@@ -218,7 +215,7 @@ export function GameHub({ data }: { data: GameHubData }) {
             })}
           />
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {data.guides.map((g) => (
               <li key={g.id}>
                 <Card interactive className="flex-row items-center gap-3 px-4 py-3">

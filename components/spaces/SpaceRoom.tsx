@@ -6,12 +6,13 @@ import { Radio, Send, Pin, PinOff, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { authClient } from '@/lib/auth-client';
 import { ensureTrailingSlash } from '@/lib/url';
-import { cn } from '@/lib/utils';
 import { SPACE_C2S, SPACE_S2C } from '@/lib/spaces/events';
 import type { SpacePinned, SpaceStatus, SpaceView } from '@/lib/spaces/types';
 import { SlowModeBar, useSlowModeBlock } from '@/components/safety/SlowModeBar';
@@ -91,9 +92,9 @@ function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
           ? t('space-pinned-music', { defaultValue: 'Listening room' })
           : t('space-pinned-tube', { defaultValue: 'Watch party' });
   return (
-    <div className="mx-4 mt-3 rounded-site border border-site-border bg-site-surface p-3">
-      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-accent">
-        <Pin className="h-3.5 w-3.5" aria-hidden />
+    <div className="glass-fill mx-4 mt-3 rounded-site px-4 py-3">
+      <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-site-accent">
+        <Pin className="size-3.5" aria-hidden />
         {label}
       </div>
       <a
@@ -281,23 +282,20 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   );
 
   const statusBadge = (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
-        status === 'LIVE' && 'bg-site-danger/15 text-site-danger',
-        status === 'SCHEDULED' && 'bg-site-surface-hover text-site-text-muted',
-        status === 'ENDED' && 'bg-site-surface-hover text-site-text-dim',
-      )}
+    <Badge
+      variant={status === 'LIVE' ? 'danger' : status === 'SCHEDULED' ? 'default' : 'outline'}
+      icon={false}
+      className="gap-2"
     >
       {status === 'LIVE' && (
-        <span className="h-2 w-2 animate-pulse-settle rounded-full bg-site-danger" aria-hidden />
+        <span className="size-2 animate-pulse-settle rounded-full bg-site-danger" aria-hidden />
       )}
       {status === 'LIVE'
         ? t('space-status-live', { defaultValue: 'Live' })
         : status === 'SCHEDULED'
           ? t('space-status-scheduled', { defaultValue: 'Scheduled' })
           : t('space-status-ended', { defaultValue: 'Ended' })}
-    </span>
+    </Badge>
   );
 
   const hostActions = isHost ? (
@@ -335,11 +333,12 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       {/* Host pin controls (live only) */}
       {isHost && status === 'LIVE' && (
         <div className="mx-4 mt-3 flex items-center gap-2">
-          <input
+          <Input
             value={pinDraft}
             onChange={(e) => setPinDraft(e.target.value)}
+            aria-label={t('space-pin-placeholder', { defaultValue: 'Pin a link (URL)…' })}
             placeholder={t('space-pin-placeholder', { defaultValue: 'Pin a link (URL)…' })}
-            className="min-w-0 flex-1 rounded-site border border-site-border bg-site-surface px-3 py-1.5 text-sm text-site-text placeholder:text-site-text-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+            className="min-w-0 flex-1"
           />
           <Button
             size="sm"
@@ -347,7 +346,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
             onClick={submitPin}
             aria-label={t('space-pin', { defaultValue: 'Pin' })}
           >
-            <Pin className="h-4 w-4" aria-hidden />
+            <Pin aria-hidden />
           </Button>
           {pinned && (
             <Button
@@ -356,7 +355,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
               onClick={unpin}
               aria-label={t('space-unpin', { defaultValue: 'Unpin' })}
             >
-              <PinOff className="h-4 w-4" aria-hidden />
+              <PinOff aria-hidden />
             </Button>
           )}
         </div>
@@ -364,7 +363,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
 
       {/* Audience strip */}
       <div className="flex items-center gap-2 px-4 py-3">
-        <Users className="h-4 w-4 text-site-text-muted" aria-hidden />
+        <Users className="size-4 text-site-text-muted" aria-hidden />
         <span className="text-sm text-site-text-muted">{audienceCount ?? audience.length}</span>
         <div className="flex -space-x-2">
           {audience.slice(0, 8).map((m) => (
@@ -378,7 +377,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 space-y-2 overflow-y-auto px-4 py-2"
+        className="flex-1 space-y-3 overflow-y-auto px-4 py-3"
         aria-live="polite"
       >
         {isEnded ? (
@@ -388,19 +387,19 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
                 <MessageRow key={m.id} name={m.name} image={m.image} body={m.body} />
               ))
             ) : (
-              <p className="py-10 text-center text-sm text-site-text-dim">
+              <p className="py-12 text-center text-sm text-site-text-dim">
                 {t('space-no-transcript', { defaultValue: 'No messages were recorded.' })}
               </p>
             )
           ) : (
-            <p className="py-10 text-center text-sm text-site-text-dim">
+            <p className="py-12 text-center text-sm text-site-text-dim">
               {t('space-chat-not-recorded', { defaultValue: "This Space's chat wasn't recorded." })}
             </p>
           )
         ) : messages.length > 0 ? (
           messages.map((m) => <MessageRow key={m.id} name={m.name} image={m.image} body={m.body} />)
         ) : (
-          <p className="py-10 text-center text-sm text-site-text-dim">
+          <p className="py-12 text-center text-sm text-site-text-dim">
             {status === 'SCHEDULED'
               ? t('space-not-started', { defaultValue: 'This Space has not started yet.' })
               : t('space-say-hi', { defaultValue: 'Be the first to say something.' })}
@@ -428,25 +427,30 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
 
       {/* Composer + reactions (live only) */}
       {status === 'LIVE' && (
-        <div className="border-t border-site-border bg-site-bg/80 px-4 py-3">
-          <div className="mb-2 flex flex-wrap gap-1.5">
+        <div className="glass-pane mx-4 mb-4 space-y-3 rounded-site px-4 py-3">
+          <div className="flex flex-wrap gap-2">
             {REACTIONS.map((emoji) => (
-              <button
+              <Button
                 key={emoji}
                 type="button"
+                variant="outline"
+                size="icon-sm"
                 onClick={() => react(emoji)}
-                className="rounded-full border border-site-border px-2 py-1 text-sm transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+                className="rounded-full text-base"
                 aria-label={t('space-react-with', { defaultValue: 'React' })}
               >
                 {emoji}
-              </button>
+              </Button>
             ))}
           </div>
           <SlowModeBar
             scope="space"
             isHost={isHost}
             onSet={(seconds) =>
-              socketRef.current?.emit(slowModeEvents('space').SET, { spaceId: initialSpace.id, seconds })
+              socketRef.current?.emit(slowModeEvents('space').SET, {
+                spaceId: initialSpace.id,
+                seconds,
+              })
             }
           />
           <form
@@ -456,17 +460,18 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
               sendMessage();
             }}
           >
-            <input
+            <Input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               maxLength={500}
               disabled={!connected}
+              aria-label={t('space-message-placeholder', { defaultValue: 'Say something…' })}
               placeholder={
                 viewerId
                   ? t('space-message-placeholder', { defaultValue: 'Say something…' })
                   : t('space-sign-in-to-chat', { defaultValue: 'Sign in to chat' })
               }
-              className="min-w-0 flex-1 rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+              className="min-w-0 flex-1"
             />
             <Button
               type="submit"
@@ -475,7 +480,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
               disabled={!draft.trim() || !viewerId || slowBlock.secondsLeft > 0}
               aria-label={t('space-send', { defaultValue: 'Send' })}
             >
-              <Send className="h-4 w-4" aria-hidden />
+              <Send aria-hidden />
             </Button>
           </form>
         </div>
@@ -505,11 +510,14 @@ function MessageRow({
   image: string | null;
   body: string;
 }) {
+  const { t } = useTranslation('site');
   return (
     <div className="flex items-start gap-2">
       <Avatar name={name} image={image} />
       <div className="min-w-0">
-        <span className="mr-1.5 text-sm font-semibold text-site-text">{name ?? 'Player'}</span>
+        <span className="mr-2 text-sm font-semibold text-site-text">
+          {name ?? t('space-player', { defaultValue: 'Player' })}
+        </span>
         <span className="break-words text-sm text-site-text-muted">{body}</span>
       </div>
     </div>

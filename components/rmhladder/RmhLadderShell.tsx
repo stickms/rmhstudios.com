@@ -61,6 +61,7 @@ export default function RmhLadderShell({
 }) {
   const { t } = useTranslation('site');
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isJobDetail = /^\/rmhladder\/jobs\/.+/.test(pathname);
   const navItems = [
     ...PUBLIC_NAV,
     ...(isAuthenticated ? PERSONAL_NAV : []),
@@ -85,11 +86,16 @@ export default function RmhLadderShell({
   const activeTo = navItems.find((i) => isActive(i.to))?.to ?? navItems[0]?.to ?? '';
 
   return (
-    <PageLayout title={pageTitle(pathname)} wide>
-      <div className="rmhladder min-w-0 px-3 pb-24 pt-3 sm:px-4 sm:pt-4 md:pb-12">
+    <PageLayout
+      title={pageTitle(pathname)}
+      wide
+      backTo={isJobDetail ? '/rmhladder/jobs' : undefined}
+      backLabel={isJobDetail ? t('ladder.backToJobs', { defaultValue: 'Back to jobs' }) : undefined}
+    >
+      <div className="rmhladder min-w-0 px-4 pt-4 pb-12">
         {/* §5.45: the sub-nav rides a standalone glass sheet (pill) below the page
             title; the sign-in CTA stays a sibling outside the sheet, pushed right. */}
-        <div className="mb-5 flex items-center gap-2">
+        <div className="mb-4 flex items-center gap-2">
           <LiquidTabs
             tabs={tabs}
             value={activeTo}

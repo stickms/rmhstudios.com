@@ -28,7 +28,7 @@ export const Route = createFileRoute('/_site/create/earnings')({
 
 function CreateEarningsTab() {
   return (
-    <div className="cstudio-body">
+    <div className="cstudio-body space-y-[var(--site-section-gap)]">
       <StudioDashboard />
       <EarningsTab />
     </div>

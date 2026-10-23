@@ -220,7 +220,7 @@ export function BulkCleanupPanel() {
 
   const heading = (
     <div>
-      <h2 id="bulk-heading" className="font-display text-lg font-semibold text-site-text">
+      <h2 id="bulk-heading" className="site-section-label">
         {t('bulk-heading', { defaultValue: 'Bulk cleanup' })}
       </h2>
       <p className="mt-1 text-sm text-site-text-muted">
@@ -475,11 +475,11 @@ export function BulkCleanupPanel() {
       ) : null}
 
       {history.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold text-site-text">
+        <div className="flex flex-col gap-3">
+          <h3 className="site-section-label">
             {t('bulk-history-heading', { defaultValue: 'Recent cleanups' })}
           </h3>
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-3">
             {history.map((op) => (
               <li
                 key={op.id}

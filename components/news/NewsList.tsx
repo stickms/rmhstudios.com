@@ -4,10 +4,11 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Newspaper, Search, X } from 'lucide-react';
+import { Newspaper, X } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { SearchField } from '@/components/ui/search-field';
 import { Select } from '@/components/ui/select';
 import { Reveal } from '@/components/motion';
 import { APPLE_SPRING } from '@/lib/motion';
@@ -158,10 +159,10 @@ export function NewsList({
   };
 
   return (
-    <div className="px-4 py-4">
+    <div className="px-4 pt-4 pb-12">
       {/* Featured Hero */}
       {!hasActiveFilters && featuredArticles.length > 0 && (
-        <Reveal className="mb-4">
+        <Reveal className="mb-[var(--site-section-gap)]">
           <NewsHero articles={featuredArticles} />
         </Reveal>
       )}
@@ -182,38 +183,16 @@ export function NewsList({
           />
 
           {/* Search + Sort Row */}
-          <div className="flex flex-col gap-3 bg-(--site-surface) p-3 rounded-site border border-(--site-border)">
-            <div className="relative w-full">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-(--site-text-dim)" />
-              </div>
-              <input
-                type="text"
-                placeholder={t('search-placeholder', { defaultValue: 'Search articles...' })}
-                className="w-full bg-(--site-bg) border border-(--site-border) rounded-site-sm py-2 pl-9 pr-9 text-sm text-(--site-text) placeholder-(--site-text-dim) focus:outline-none focus:border-(--site-accent) focus:ring-1 focus:ring-(--site-accent) transition"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-              {searchInput && (
-                <button
-                  onClick={() => setSearchInput('')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-(--site-text-muted) hover:text-(--site-text) transition-colors"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
+          <div className="glass-fill flex flex-col gap-3 rounded-site p-3">
+            <SearchField
+              value={searchInput}
+              onValueChange={setSearchInput}
+              placeholder={t('search-placeholder', { defaultValue: 'Search articles...' })}
+              aria-label={t('search-placeholder', { defaultValue: 'Search articles...' })}
+            />
 
-            <div className="flex items-center gap-3 whitespace-nowrap">
-              {hasActiveFilters && (
-                <button
-                  onClick={clearAllFilters}
-                  className="text-xs text-(--site-danger) hover:text-(--site-text) transition-colors font-mono flex items-center gap-1"
-                >
-                  <X className="w-3 h-3" /> {t('clear', { defaultValue: 'Clear' })}
-                </button>
-              )}
-              <label htmlFor="news-sort" className="text-sm text-(--site-text-dim)">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <label htmlFor="news-sort" className="text-sm text-site-text-dim">
                 {t('sort-label', { defaultValue: 'Sort:' })}
               </label>
               <Select
@@ -225,7 +204,12 @@ export function NewsList({
                 <option value="newest">{t('sort-newest', { defaultValue: 'Newest' })}</option>
                 <option value="oldest">{t('sort-oldest', { defaultValue: 'Oldest' })}</option>
               </Select>
-              <span className="text-sm text-(--site-text-dim) font-mono ml-auto">
+              {hasActiveFilters && (
+                <Button type="button" variant="ghost" size="sm" onClick={clearAllFilters}>
+                  <X aria-hidden /> {t('clear', { defaultValue: 'Clear' })}
+                </Button>
+              )}
+              <span className="ms-auto font-mono text-sm text-site-text-dim">
                 {t('article-count', {
                   count: filteredArticles.length,
                   defaultValue: '{{count}} article',
@@ -239,23 +223,23 @@ export function NewsList({
 
       {/* Active filter indicator when collapsed */}
       {!filtersOpen && hasActiveFilters && (
-        <div className="mb-3 flex items-center gap-2 text-xs text-(--site-text-muted)">
+        <div className="mb-3 flex items-center gap-3 text-sm text-site-text-muted">
           <span className="font-mono">
             {t('results-count', {
               count: filteredArticles.length,
               defaultValue: '{{count}} results',
             })}
           </span>
-          <button onClick={clearAllFilters} className="text-(--site-accent) hover:underline">
+          <Button type="button" variant="accent-ghost" size="sm" onClick={clearAllFilters}>
             {t('clear-filters', { defaultValue: 'Clear filters' })}
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Grid */}
       <div
         ref={gridRef}
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 scroll-mt-8"
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-[var(--site-section-gap)] scroll-mt-8"
       >
         <AnimatePresence mode="popLayout">
           {paginatedArticles.map((article, i) => (
@@ -312,7 +296,7 @@ export function NewsList({
       {/* Pagination */}
       {totalPages > 1 && (
         <motion.div
-          className="mt-8"
+          className="mt-[var(--site-section-gap)]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}

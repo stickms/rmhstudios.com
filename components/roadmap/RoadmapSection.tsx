@@ -845,8 +845,8 @@ const COMMITTED_YEARS = new Set(["Year 1", "Year 2", "Year 3"]);
  *  muted body, a subtle reduced-motion-safe lift on hover. */
 function MilestoneCard({ title, body }: { title: string; body: string }) {
   return (
-    <div data-slot="card" className="roadmap-card glass-pane p-5">
-      <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-site-accent">
+    <div data-slot="card" className="roadmap-card glass-pane rounded-site px-4 py-3">
+      <h3 className="site-section-label mb-2 text-site-accent!">
         {title}
       </h3>
       <p className="text-sm leading-relaxed text-site-text-muted">{body}</p>
@@ -873,7 +873,7 @@ function EraSection({ section }: { section: YearSection }) {
       <span aria-hidden className="roadmap-node" />
 
       {/* Era header — big display year + mono tagline eyebrow. */}
-      <header className="mb-5">
+      <header className="mb-4">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span
             className="roadmap-year text-3xl sm:text-4xl"
@@ -881,7 +881,7 @@ function EraSection({ section }: { section: YearSection }) {
           >
             {section.year}
           </span>
-          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-site-text-muted">
+          <span className="font-mono text-xs text-site-text-muted">
             {section.tagline}
           </span>
         </div>
@@ -931,8 +931,8 @@ export function RoadmapSection() {
           The years are a real chronology, so a vertical spine + per-era nodes
           is content-true. `content-visibility:auto` on each era keeps ~30
           sections cheap to render. */}
-      <div className="relative border-t border-site-border px-5 pb-16 pt-12 sm:px-8 sm:pt-16">
-        <div className="space-y-12">
+      <div className="relative border-t border-site-border px-4 pb-8 pt-10">
+        <div className="space-y-10">
           {roadmap.map((section) => (
             <EraSection key={section.year} section={section} />
           ))}
@@ -940,7 +940,7 @@ export function RoadmapSection() {
 
         <Reveal
           as="p"
-          className="mt-14 text-center font-mono text-xs text-site-text-muted"
+          className="mt-10 text-center font-mono text-xs text-site-text-muted"
         >
           {t("update-note", { defaultValue: "We'll update this as we ship." })}
         </Reveal>

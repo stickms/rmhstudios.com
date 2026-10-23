@@ -1,5 +1,6 @@
 import { Link } from'@tanstack/react-router';
 import { Compass, Home } from'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from'react-i18next';
 
 /**
@@ -15,8 +16,8 @@ export function NotFound() {
 
  return (
  <div className="error-page flex min-h-dvh w-full flex-col items-center justify-center bg-site-bg px-6 py-16 text-center">
- <div className="glass-fill flex w-full max-w-2xl flex-col items-center gap-9 p-8 sm:p-12">
- <div className="space-y-4">
+ <div className="glass-pane flex w-full max-w-2xl flex-col items-center gap-8 p-8 sm:p-12">
+ <div className="space-y-3">
  <p
  aria-hidden="true"
  className="bg-gradient-to-b from-site-text to-site-text-muted bg-clip-text text-8xl font-bold leading-none tracking-[-0.05em] text-transparent sm:text-9xl"
@@ -35,24 +36,21 @@ export function NotFound() {
  </div>
 
  <div className="flex w-full max-w-xs flex-col gap-3 sm:max-w-xl sm:flex-row sm:justify-center">
- <Link
- to="/"
- className="inline-flex items-center justify-center gap-2 rounded-full bg-site-text px-5 py-3 text-sm font-semibold text-site-bg transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
- >
- <Home className="size-4"aria-hidden="true"/>
+ <Button asChild variant="accent" size="lg">
+ <Link to="/">
+ <Home aria-hidden="true"/>
  {t('notFound.home', { defaultValue:'Go home'})}
  </Link>
+ </Button>
  {/* One link, because Explore and Search are one page now: this used to
  offer both, side by side, which was the clearest symptom of the split
  — two buttons, two icons, same destination's worth of content. */}
- <Link
- to="/explore"
- search={{ q:'', tab:'top'}}
- className="inline-flex items-center justify-center gap-2 rounded-full border border-site-border bg-transparent px-5 py-3 text-sm font-semibold text-site-text transition hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
- >
- <Compass className="size-4"aria-hidden="true"/>
+ <Button asChild variant="outline" size="lg">
+ <Link to="/explore" search={{ q:'', tab:'top'}}>
+ <Compass aria-hidden="true"/>
  {t('notFound.explore-search', { defaultValue:'Explore & search'})}
  </Link>
+ </Button>
  </div>
  </div>
  </div>

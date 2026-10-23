@@ -58,16 +58,19 @@ export function ReactionBar({ reactions, userReaction, targetType, targetId, onR
             whileTap={{ scale: 0.9 }}
             onClick={() => handleReact(r.key)}
             disabled={submitting}
-            className={`inline-flex items-center gap-1 px-2.5 py-2 md:px-2 md:py-1 rounded-full text-xs transition-colors min-h-[44px] md:min-h-0 ${
+            className={`inline-flex items-center gap-1 px-2.5 py-2 md:px-2 md:py-1 rounded-full text-xs transition-colors min-h-11 md:min-h-0 ${
               isSelected
                 ? 'ring-1 ring-white/30 bg-white/10'
                 : 'bg-white/5 hover:bg-white/10'
             }`}
             title={r.label}
+            type="button"
+            aria-label={r.label}
+            aria-pressed={isSelected}
           >
-            <span className="text-base md:text-sm">{r.emoji}</span>
+            <span aria-hidden className="text-base md:text-sm">{r.emoji}</span>
             {count > 0 && (
-              <span className="text-xs md:text-[11px] tabular-nums" style={{ color: r.color }}>
+              <span className="text-xs md:text-xs tabular-nums" style={{ color: r.color }}>
                 {count}
               </span>
             )}

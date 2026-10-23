@@ -90,13 +90,13 @@ export default function AdminGlossary() {
           save.mutate(draft);
         }}
       >
-        <h2 className="font-display text-lg font-semibold text-site-text">
+        <h2 className="site-section-label">
           {draft.id
             ? t('glossary-edit', { defaultValue: 'Edit term' })
             : t('glossary-add', { defaultValue: 'Add a term' })}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label htmlFor="gl-term" className="text-sm text-site-text-muted">
               {t('glossary-term-label', { defaultValue: 'Term' })}
             </label>
@@ -109,7 +109,7 @@ export default function AdminGlossary() {
               onChange={(e) => setDraft({ ...draft, term: e.target.value })}
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label htmlFor="gl-aliases" className="text-sm text-site-text-muted">
               {t('glossary-aliases-label', { defaultValue: 'Aliases (comma separated)' })}
             </label>
@@ -120,7 +120,7 @@ export default function AdminGlossary() {
             />
           </div>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label htmlFor="gl-def" className="text-sm text-site-text-muted">
             {t('glossary-definition-label', { defaultValue: 'Short definition' })}
           </label>
@@ -133,7 +133,7 @@ export default function AdminGlossary() {
             onChange={(e) => setDraft({ ...draft, definition: e.target.value })}
           />
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label htmlFor="gl-link" className="text-sm text-site-text-muted">
             {t('glossary-link-label', { defaultValue: 'Link (optional, https:// or a site path)' })}
           </label>
@@ -169,13 +169,13 @@ export default function AdminGlossary() {
       ) : (
         <ul className="glass-fill divide-y divide-site-border rounded-site">
           {terms.map((term) => (
-            <li key={term.id} className="flex items-start gap-3 p-3">
+            <li key={term.id} className="flex items-start gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-site-text">{term.term}</p>
                 {term.aliases.length > 0 ? (
                   <p className="text-xs text-site-text-dim">{term.aliases.join(', ')}</p>
                 ) : null}
-                <p className="mt-0.5 text-sm text-site-text-muted">{term.definition}</p>
+                <p className="mt-1 text-sm text-site-text-muted">{term.definition}</p>
               </div>
               <Button
                 type="button"

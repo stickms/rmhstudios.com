@@ -68,6 +68,11 @@
   color-scheme: light;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  /* The taskbar's content height (mirrors TASKBAR_H in actions.ts) and its full
+     footprint once the home-indicator inset is added. Everything that sits
+     above the taskbar offsets by --ds-tb, not by a bare 40px. */
+  --ds-tb-h: 40px;
+  --ds-tb: calc(var(--ds-tb-h) + env(safe-area-inset-bottom, 0px));
 }
 
 .ds-os :focus-visible {
@@ -276,7 +281,7 @@
 
 .ds-desk-surface {
   position: absolute;
-  inset: 0 0 40px 0;
+  inset: 0 0 var(--ds-tb) 0;
   z-index: 2;
   outline: none;
 }
@@ -363,7 +368,7 @@
 
 .ds-os-bubbles {
   position: absolute;
-  inset: 0 0 40px 0;
+  inset: 0 0 var(--ds-tb) 0;
   z-index: 3;
   pointer-events: none;
 }
@@ -405,8 +410,8 @@
 
 .ds-gadget-col {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  right: calc(14px + env(safe-area-inset-right, 0px));
   z-index: 4;
   display: flex;
   flex-direction: column;
@@ -620,7 +625,7 @@
 }
 
 .ds-os-win--compact .title-bar-controls button {
-  min-height: 30px;
+  min-height: 38px;
   min-width: 42px;
 }
 
@@ -1037,8 +1042,8 @@
   z-index: 20;
   display: flex;
   align-items: stretch;
-  height: 40px;
-  padding-bottom: env(safe-area-inset-bottom);
+  height: var(--ds-tb);
+  padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   background:
     linear-gradient(
       rgba(255, 255, 255, 0.24),
@@ -1386,12 +1391,12 @@
 .ds-sm {
   position: absolute;
   left: 0;
-  bottom: 40px;
+  bottom: var(--ds-tb);
   z-index: 30;
   display: grid;
   grid-template-columns: 256px 148px;
   width: 404px;
-  height: min(540px, calc(100% - 52px));
+  height: min(540px, calc(100% - var(--ds-tb) - 12px));
   padding: 8px 6px 8px 8px;
   border: 1px solid rgba(0, 0, 0, 0.7);
   border-radius: 8px 8px 0 0;
@@ -1628,7 +1633,7 @@
   left: 0;
   right: 0;
   width: auto;
-  height: calc(100% - 44px);
+  height: calc(100% - var(--ds-tb));
   grid-template-columns: 1fr minmax(124px, 38%);
   border-radius: 8px 8px 0 0;
 }

@@ -86,5 +86,7 @@
   "waiting-for-host": "मेज़बान द्वारा अगला दौर शुरू करने की प्रतीक्षा...",
   "waiting-for-players": "खिलाड़ियों की प्रतीक्षा",
   "welcome-user": "स्वागत है, {{name}}!",
-  "your-moves": "आपकी चालें"
+  "your-moves": "आपकी चालें",
+  "lights-out-title": "Lights Out",
+  "rating-tiers": "Rating tiers"
 }

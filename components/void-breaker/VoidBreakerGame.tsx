@@ -1243,7 +1243,7 @@ export function VoidBreakerGame() {
 
       {/* ── ESC Pause Menu ──────────────────────────────────────────────── */}
       {showGame && showPauseMenu && (
-        <div className="vb-anim absolute inset-0 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-black/85 backdrop-blur-md z-50 pointer-events-auto"
+        <div className="vb-anim app-safe-pad absolute inset-0 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-black/85 backdrop-blur-md z-50 pointer-events-auto"
           style={{ animation: 'vb-fade-in 0.22s ease-out both' }}>
           <div className="vb-anim text-center space-y-4 bg-black/40 border border-[#00f5ff]/20 rounded-xl p-8 max-w-xs w-full mx-4"
             style={{ boxShadow: '0 0 40px rgba(0,245,255,0.1)', animation: 'vb-scale-in 0.3s cubic-bezier(0.22,1.2,0.36,1) both' }}>

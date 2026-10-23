@@ -63,7 +63,7 @@ export default function RoundResults({
         {sorted.map((r) => (
           <div
             key={r.userId}
-            className="flex items-center justify-between px-3 py-2 rounded-lg bg-(--app-surface) text-sm"
+            className="flex items-center justify-between px-3 py-2 rounded-(--app-radius-sm) bg-(--app-surface) text-sm"
           >
             <div className="flex items-center gap-2">
               <span>{r.guessedCorrectly ? '✅' : '❌'}</span>

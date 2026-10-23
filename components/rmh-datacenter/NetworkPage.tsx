@@ -59,8 +59,8 @@ export default function NetworkPage() {
     >
       <DatacenterTabs active="/rmh-datacenter/network" />
 
-      <div className="space-y-8 px-4 pb-12">
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+      <div className="space-y-6 px-4 pt-4 pb-12">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <p className="max-w-prose text-site-text-muted">
             {t('net-lede', {
               defaultValue:
@@ -93,7 +93,7 @@ export default function NetworkPage() {
           />
         </div>
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('net-s1-kicker', { defaultValue: 'Latency' })}
             heading={t('net-s1-heading', {
@@ -106,9 +106,9 @@ export default function NetworkPage() {
                 'Median round trip between campuses over the backbone, sampled every minute for the last ninety days. These are the numbers a replication design should be built against — not great-circle distance divided by the speed of light in glass.',
             })}
           </p>
-          <div className="mt-5 overflow-x-auto rounded-site border border-site-border">
-            <table className="w-full min-w-[36rem] border-collapse text-sm">
-              <caption className="border-b border-site-border p-3 text-left text-xs tracking-wide text-site-text-dim uppercase">
+          <div className="mt-4 overflow-x-auto rounded-site border border-site-border">
+            <table className="w-full min-w-xl border-collapse text-sm">
+              <caption className="border-b border-site-border p-3 text-left text-xs text-site-text-dim">
                 {t('net-matrix-caption', {
                   defaultValue: 'Median round-trip time, milliseconds · 90-day sample',
                 })}
@@ -117,7 +117,7 @@ export default function NetworkPage() {
                 <tr>
                   <th
                     scope="col"
-                    className="border-b border-site-border p-3 text-left text-xs tracking-wide text-site-accent uppercase"
+                    className="border-b border-site-border p-3 text-left text-xs text-site-accent"
                   >
                     {t('net-matrix-from', { defaultValue: 'From' })}
                   </th>
@@ -125,7 +125,7 @@ export default function NetworkPage() {
                     <th
                       key={s}
                       scope="col"
-                      className="border-b border-site-border p-3 text-right text-xs tracking-wide text-site-accent uppercase"
+                      className="border-b border-site-border p-3 text-right text-xs text-site-accent"
                     >
                       {s}
                     </th>
@@ -170,7 +170,7 @@ export default function NetworkPage() {
               defaultValue: 'How traffic actually leaves the building',
             })}
           />
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {[
               [
                 'NT-01',
@@ -205,8 +205,8 @@ export default function NetworkPage() {
                 }),
               ],
             ].map(([code, name, desc]) => (
-              <Card key={code} className="flex flex-col gap-2 p-5">
-                <span className="text-xs font-medium tracking-wide text-site-accent uppercase">
+              <Card key={code} className="flex flex-col gap-2 p-4">
+                <span className="text-xs font-medium text-site-accent">
                   {code}
                 </span>
                 <h3 className="font-display text-lg font-semibold text-site-text">{name}</h3>
@@ -216,7 +216,7 @@ export default function NetworkPage() {
           </div>
         </section>
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('net-s3-kicker', { defaultValue: 'Under attack' })}
             heading={t('net-s3-heading', {
@@ -229,7 +229,7 @@ export default function NetworkPage() {
                 'Volumetric scrubbing is always in path rather than triggered by a support ticket, because a mitigation that starts after a human notices has already missed the first four minutes.',
             })}
           </p>
-          <dl className="mt-5">
+          <dl className="mt-4">
             <SpecRow term={t('net-ddos-capacity', { defaultValue: 'Capacity' })}>
               {t('net-ddos-capacity-desc', {
                 defaultValue:
@@ -257,7 +257,7 @@ export default function NetworkPage() {
           </dl>
         </section>
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('net-cta-kicker', { defaultValue: 'Peering' })}
             heading={t('net-cta-heading', { defaultValue: 'Open peering policy' })}
@@ -268,7 +268,7 @@ export default function NetworkPage() {
                 'We peer with anyone at any exchange we are on, with no ratio requirement and no minimum traffic. Send a note and a PeeringDB entry and it will be up within a week.',
             })}
           </p>
-          <div className="mt-6">
+          <div className="mt-4">
             <Button asChild variant="accent">
               <Link to="/rmh-datacenter/contact" search={{ intent: 'Peering' }}>
                 {t('net-cta-button', { defaultValue: 'Ask about peering' })}

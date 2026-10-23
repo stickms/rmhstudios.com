@@ -71,5 +71,8 @@
   "views-count_other": "{{count}}ビュー",
   "write-comment": "コメントを書く...",
   "write-reply": "返信を書く...",
-  "years-ago_other": "{{count}}年前"
+  "years-ago_other": "{{count}}年前",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

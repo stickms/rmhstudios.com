@@ -9,13 +9,13 @@ function Block({ title, items }: { title: string; items: DigestLink[] }) {
   if (!items.length) return null;
   return (
     <section>
-      <h2 className="site-section-label mb-2">{title}</h2>
-      <ul className="space-y-2">
+      <h2 className="site-section-label mb-3">{title}</h2>
+      <ul className="space-y-3">
         {items.map((it) => (
           <li key={it.href}>
             <Link
               to={it.href}
-              className="glass-fill block rounded-site p-3 hover:bg-site-surface-hover"
+              className="glass-fill block rounded-site px-4 py-3 hover:bg-site-surface-hover"
             >
               <p className="text-sm text-site-text">{it.title}</p>
               {it.meta && <p className="mt-0.5 text-xs text-site-text-muted">{it.meta}</p>}
@@ -43,7 +43,7 @@ export function TodayPage({ digest }: { digest: DigestPayload }) {
         defaultValue: 'The last 24 hours on RMH Studios, as of {{day}}.',
       })}
     >
-      <div className="space-y-5 px-4 pt-2 pb-12">
+      <div className="space-y-6 px-4 pt-4 pb-12">
         {empty && (
           <p className="text-sm text-site-text-muted">
             {t('today-empty', { defaultValue: 'A quiet day so far. Check back tomorrow.' })}

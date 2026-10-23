@@ -115,5 +115,6 @@
   "usage-heading": "사용법",
   "user": "사용자",
   "user-builds-link": "사용자 빌드",
-  "view-on-github": "GitHub에서 보기"
+  "view-on-github": "GitHub에서 보기",
+  "install-method": "Install method"
 }

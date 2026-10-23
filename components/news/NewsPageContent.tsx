@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { SlidersHorizontal } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { NewsList } from '@/components/news/NewsList';
 import type { NewsArticle } from '@/lib/news';
 
@@ -53,8 +54,8 @@ export function NewsPageContent({ articles, featured, rightSidebar }: NewsPageCo
     >
       <Suspense
         fallback={
-          <div className="px-4 py-8 text-center text-site-text-muted">
-            {t('loading', { defaultValue: 'Loading…' })}
+          <div className="flex justify-center px-4 py-12">
+            <Spinner label={t('loading', { defaultValue: 'Loading…' })} />
           </div>
         }
       >

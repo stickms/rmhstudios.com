@@ -45,7 +45,7 @@ export function RoommateMatch({
   });
 
   const heading = (
-    <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold text-site-text font-display">
+    <h2 className="mb-2 flex items-center gap-2 site-section-label">
       <Users className="size-5" aria-hidden />
       {t('rm-heading', { defaultValue: 'Roommate match' })}
     </h2>
@@ -53,7 +53,7 @@ export function RoommateMatch({
 
   if (!isSignedIn) {
     return (
-      <section className="glass-fill mt-5 rounded-site p-4">
+      <section className="glass-fill mt-4 rounded-site p-4">
         {heading}
         <p className="text-sm text-site-text-muted">
           {t('rm-signed-out', {
@@ -69,11 +69,11 @@ export function RoommateMatch({
       </section>
     );
   }
-  if (isLoading) return <Skeleton className="mt-5 h-24 w-full" />;
+  if (isLoading) return <Skeleton className="mt-4 h-24 w-full" />;
   if (!data || data.status === 'not-applicable') return null;
 
   return (
-    <section className="glass-fill mt-5 rounded-site p-4">
+    <section className="glass-fill mt-4 rounded-site p-4">
       {heading}
       {data.status === 'match' && (
         <p className="text-sm text-site-text">
@@ -202,7 +202,7 @@ function Quiz({ onSaved }: { onSaved: () => void }) {
       }}
     >
       {SCALE_KEYS.map((k) => (
-        <label key={k} className="block space-y-1 text-sm">
+        <label key={k} className="block space-y-2 text-sm">
           <span className="text-site-text-muted">{questions[k].label}</span>
           <Select
             value={String(answers[k])}
@@ -216,7 +216,7 @@ function Quiz({ onSaved }: { onSaved: () => void }) {
           </Select>
         </label>
       ))}
-      <label className="block space-y-1 text-sm">
+      <label className="block space-y-2 text-sm">
         <span className="text-site-text-muted">{t('rm-q-pets', { defaultValue: 'Pets?' })}</span>
         <Select
           value={answers.pets}

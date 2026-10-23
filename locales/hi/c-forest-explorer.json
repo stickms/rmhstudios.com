@@ -105,5 +105,8 @@
   "walk": "चलें",
   "ward-seal-instruction-v2": "Rotate each ring until its glowing ward glyph rests beneath the marker",
   "watch-the-pattern": "पैटर्न देखें...",
-  "wrong-watch-again": "गलत! फिर से देखें..."
+  "wrong-watch-again": "गलत! फिर से देखें...",
+  "close-overlay": "Close",
+  "mute": "Mute",
+  "unmute": "Unmute"
 }

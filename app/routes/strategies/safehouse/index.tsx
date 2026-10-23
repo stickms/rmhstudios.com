@@ -53,8 +53,8 @@ function SafehouseFeed() {
       {data?.items?.length === 0 && (
         <div className="text-center py-16">
           <Shield size={32} className="mx-auto mb-3 opacity-20" />
-          <p className="text-sm text-white/40">{t("no-intelligence", { defaultValue: "No intelligence available at your clearance level." })}</p>
-          <p className="text-xs text-white/20 mt-1">{t("upgrade-tier", { defaultValue: "Upgrade your tier to access classified content." })}</p>
+          <p className="text-sm text-white/60">{t("no-intelligence", { defaultValue: "No intelligence available at your clearance level." })}</p>
+          <p className="text-xs text-white/50 mt-1">{t("upgrade-tier", { defaultValue: "Upgrade your tier to access classified content." })}</p>
         </div>
       )}
 

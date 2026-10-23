@@ -3,7 +3,8 @@
  * for the signed-in user.
  */
 
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
+import { Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { DataExportPanel } from '@/components/site/DataExportPanel';
@@ -13,6 +14,8 @@ import { PresencePrivacyControls } from '@/components/settings/PresencePrivacyCo
 import { PlayLimitsPanel } from '@/components/settings/PlayLimitsPanel';
 import { CookieConsentControls } from '@/components/site/CookieConsentControls';
 import { useSession } from '@/components/Providers';
+import { SettingsPageBody } from '@/components/settings/SettingsSection';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 export const Route = createFileRoute('/_site/settings/privacy')({
   head: () => ({
@@ -30,32 +33,27 @@ function PrivacySettingsPage() {
   return (
     <PageLayout
       title={title}
+      description={t('privacy-subtitle', {
+        defaultValue: 'Export or delete the data tied to your account.',
+      })}
       wide
       backTo="/settings"
       backLabel={settingsLabel}
       breadcrumbs={[{ label: settingsLabel, to: '/settings' }, { label: title }]}
     >
-      <div className="space-y-4 p-4">
-        <p className="text-sm text-site-text-muted">
-          {t('privacy-subtitle', {
-            defaultValue: 'Export or delete the data tied to your account.',
-          })}
-        </p>
+      <SettingsPageBody>
         {/* Above the sign-in gate on purpose. The cookie choice belongs to the
             browser, not the account, and a signed-out visitor is exactly who
             needs to be able to withdraw it. */}
         <CookieConsentControls />
         {!isPending && !session?.user ? (
-          <p className="text-sm text-site-text-muted">
-            <Link
-              to="/login"
-              search={{ callbackURL: '/settings/privacy' }}
-              className="text-site-accent hover:underline"
-            >
-              {t('privacy-sign-in', { defaultValue: 'Sign in' })}
-            </Link>{' '}
-            {t('privacy-sign-in-rest', { defaultValue: 'to manage your privacy settings.' })}
-          </p>
+          <SignedOutPrompt
+            icon={Lock}
+            title={t('privacy-signed-out', {
+              defaultValue: 'Sign in to manage your privacy settings.',
+            })}
+            callbackURL="/settings/privacy"
+          />
         ) : (
           <>
             <PresencePrivacyControls />
@@ -65,7 +63,7 @@ function PrivacySettingsPage() {
             <DeleteAccountPanel />
           </>
         )}
-      </div>
+      </SettingsPageBody>
     </PageLayout>
   );
 }

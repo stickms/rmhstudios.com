@@ -201,7 +201,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  onMouseDown={(e) => e.preventDefault()}
  onClick={() => apply(u)}
  >
- <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xs font-bold text-site-text">
+ <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-site-surface-hover text-xs font-bold text-site-text">
  {u.image ? (
  <img
  src={u.image}

@@ -28,6 +28,8 @@ import {
 } from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 async function persist(body: Record<string, unknown>) {
   await fetch('/api/preferences/appearance', {
@@ -100,30 +102,18 @@ export function AppearancePanel() {
   const activeDensity = store.density ?? 'cozy';
 
   return (
-    <div className="space-y-8">
+    <>
       {/* Text size */}
       <Section
         title={t('text-size', { defaultValue: 'Text size' })}
         description={t('text-size-desc', { defaultValue: 'Scale the whole interface.' })}
       >
-        <div className="flex gap-2">
-          {FONT_SCALES.map((scale) => (
-            <button
-              key={scale}
-              type="button"
-              onClick={() => setFontScale(scale)}
-              aria-pressed={activeFontScale === scale}
-              className={cn(
-                'flex-1 rounded-site-sm py-2 text-center transition-colors',
-                activeFontScale === scale
-                  ? 'bg-site-accent text-site-accent-fg'
-                  : 'border border-site-border bg-site-surface text-site-text hover:border-site-text/40',
-              )}
-            >
-              {FONT_LABELS[scale]}
-            </button>
-          ))}
-        </div>
+        <LiquidTabs
+          aria-label={t('text-size', { defaultValue: 'Text size' })}
+          tabs={FONT_SCALES.map((scale) => ({ id: String(scale), label: FONT_LABELS[scale] }))}
+          value={String(activeFontScale)}
+          onChange={(id) => setFontScale(Number(id) as FontScale)}
+        />
       </Section>
 
       {/* Density */}
@@ -131,24 +121,15 @@ export function AppearancePanel() {
         title={t('density', { defaultValue: 'Density' })}
         description={t('density-desc', { defaultValue: 'Compact tightens spacing.' })}
       >
-        <div className="flex gap-2">
-          {(['cozy', 'compact'] as const).map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setDensity(d)}
-              aria-pressed={activeDensity === d}
-              className={cn(
-                'flex-1 rounded-site-sm py-2 text-center capitalize transition-colors',
-                activeDensity === d
-                  ? 'bg-site-accent text-site-accent-fg'
-                  : 'border border-site-border bg-site-surface text-site-text hover:border-site-text/40',
-              )}
-            >
-              {t(`density-${d}`, { defaultValue: d })}
-            </button>
-          ))}
-        </div>
+        <LiquidTabs
+          aria-label={t('density', { defaultValue: 'Density' })}
+          tabs={(['cozy', 'compact'] as const).map((d) => ({
+            id: d,
+            label: t(`density-${d}`, { defaultValue: d }),
+          }))}
+          value={activeDensity}
+          onChange={(id) => setDensity(id as 'cozy' | 'compact')}
+        />
       </Section>
 
       {/* Custom accent */}
@@ -186,7 +167,7 @@ export function AppearancePanel() {
             to #0b0b0b" — and on graphite everything on screen was rendering
             the theme's blue while this said near-black. Say which it is. */}
         {!store.customAccent ? (
-          <p className="mt-2 text-xs text-site-text-muted">
+          <p className="text-xs text-site-text-muted">
             {t('custom-accent-none', {
               defaultValue: 'No custom accent — using the theme’s own color.',
             })}
@@ -238,14 +219,14 @@ export function AppearancePanel() {
 
         {/* A live swatch row: the three semantic colours as they will actually
             render, so the choice can be judged instead of guessed. */}
-        <div className="mt-3 flex flex-wrap gap-2" aria-hidden>
-          <span className="rounded-site-sm border border-site-success/20 bg-site-success/10 px-2.5 py-1 text-xs font-semibold text-site-success">
+        <div className="flex flex-wrap gap-2" aria-hidden>
+          <span className="rounded-site-sm border border-site-success/20 bg-site-success/10 px-3 py-1 text-xs font-semibold text-site-success">
             ✓ {t('color-vision-sample-success', { defaultValue: 'Success' })}
           </span>
-          <span className="rounded-site-sm border border-site-warning/20 bg-site-warning/10 px-2.5 py-1 text-xs font-semibold text-site-warning">
+          <span className="rounded-site-sm border border-site-warning/20 bg-site-warning/10 px-3 py-1 text-xs font-semibold text-site-warning">
             ⚠ {t('color-vision-sample-warning', { defaultValue: 'Warning' })}
           </span>
-          <span className="rounded-site-sm border border-site-danger/20 bg-site-danger/10 px-2.5 py-1 text-xs font-semibold text-site-danger">
+          <span className="rounded-site-sm border border-site-danger/20 bg-site-danger/10 px-3 py-1 text-xs font-semibold text-site-danger">
             ✕ {t('color-vision-sample-danger', { defaultValue: 'Danger' })}
           </span>
         </div>
@@ -295,19 +276,13 @@ export function AppearancePanel() {
           </Link>
         </Button>
       </Section>
-    </div>
+    </>
   );
 }
 
 /**
- * One settings section.
- *
- * `glass-pane` because this page had dropped the settings hub's card system:
- * its sections sat bare on the aurora with no container edge, and `max-w-xl`
- * because without one the ToggleRows were `justify-between` across the full
- * column — at 1920px a switch ended up ~880px from the label it belongs to,
- * with nothing tying the two together. Same reason the segmented buttons were
- * stretching to ~445px each.
+ * One settings section — delegates to the shared settings grammar
+ * (`SettingsSection`) so Appearance matches every other settings page.
  */
 export function Section({
   title,
@@ -319,15 +294,9 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="glass-pane rounded-site p-5">
-      <h3 className="text-sm font-semibold text-site-text">{title}</h3>
-      {description ? (
-        <p className="mb-3 text-sm text-site-text-muted">{description}</p>
-      ) : (
-        <div className="mb-3" />
-      )}
-      <div className="max-w-xl">{children}</div>
-    </section>
+    <SettingsSection title={title} description={description}>
+      {children}
+    </SettingsSection>
   );
 }
 

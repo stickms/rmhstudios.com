@@ -185,7 +185,7 @@ export default function CapabilitiesPage() {
         <div className="container">
           <div className="cta-band reveal">
             <span className="desig center">{t("cta-desig-capabilities-page", { defaultValue: "One Command" })}</span>
-            <h2 style={{ marginTop: 18 }}>{t("cta-heading-capabilities-page", { defaultValue: "The advantage is in the chain of command." })}</h2>
+            <h2 style={{ marginTop: 16 }}>{t("cta-heading-capabilities-page", { defaultValue: "The advantage is in the chain of command." })}</h2>
             <p>
               {t("cta-body-capabilities-page", { defaultValue: "No single line works alone — protection draws on intelligence, logistics carries them all, and plans tie them together under one staff. Tell us the problem; we will bring the whole company to it." })}
             </p>

@@ -57,7 +57,7 @@ export function DailyMutatorPage() {
           'One game, one twist and one seed for everyone, once per UTC day. You get one counted attempt.',
       })}
     >
-      <div className="space-y-4 px-4 pb-12">
+      <div className="space-y-4 px-4 pt-4 pb-12">
         {failed ? (
           <EmptyState
             description={t('load-failed', { defaultValue: 'Could not load today’s challenge.' })}
@@ -68,9 +68,9 @@ export function DailyMutatorPage() {
           </div>
         ) : (
           <>
-            <Card pane className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center">
+            <Card pane className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1.5 text-xs font-semibold uppercase text-site-text-muted">
+                <p className="flex items-center gap-2 text-xs font-semibold text-site-text-muted">
                   <Flame className="h-4 w-4 text-site-accent" aria-hidden />
                   {data.mutator.day}
                 </p>
@@ -80,7 +80,7 @@ export function DailyMutatorPage() {
                   {t('resets-in', { defaultValue: 'Resets in {{time}}', time: untilReset() })}
                 </p>
               </div>
-              <div className="flex flex-col items-start gap-1 sm:items-end">
+              <div className="flex flex-col items-start gap-2 sm:items-end">
                 {signedIn ? (
                   <Button asChild variant="accent">
                     <a href={`${game.path}?daily=1`}>
@@ -111,7 +111,7 @@ export function DailyMutatorPage() {
             </Card>
 
             <section>
-              <h2 className="mb-2 text-sm font-semibold text-site-text">
+              <h2 className="site-section-label mb-3">
                 {t('board-title', { defaultValue: 'Today’s leaderboard' })}
               </h2>
               {data.board.length === 0 ? (
@@ -121,14 +121,14 @@ export function DailyMutatorPage() {
                   })}
                 />
               ) : (
-                <ol className="space-y-1.5">
+                <ol className="space-y-2">
                   {data.board.map((r) => (
                     <li key={r.rank}>
                       <Card
                         className={
                           r.isMe
-                            ? 'flex-row justify-between px-4 py-2.5 ring-1 ring-site-accent'
-                            : 'flex-row justify-between px-4 py-2.5'
+                            ? 'flex-row justify-between px-4 py-3 ring-1 ring-site-accent'
+                            : 'flex-row justify-between px-4 py-3'
                         }
                       >
                         <span className="text-sm text-site-text">

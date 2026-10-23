@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { useState } from 'react';
 import {
   Bug,
@@ -13,7 +14,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { usePerfOverview } from '@/components/admin/perf/api';
@@ -41,7 +43,29 @@ function PerformancePage() {
 
   return (
     <PageLayout title={t('page-title', { defaultValue: 'Performance' })} wide backTo="/admin">
-      <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
+      <PageTabs
+        aria-label={t('page-tabs', { defaultValue: 'Performance views' })}
+        value={tab}
+        onChange={(id) => setTab(id as TabId)}
+        tabs={[
+          { id: 'overview', label: t('tab-overview', { defaultValue: 'Overview' }), icon: Gauge },
+          { id: 'routes', label: t('tab-routes', { defaultValue: 'Routes' }), icon: RouteIcon },
+          {
+            id: 'database',
+            label: t('tab-database', { defaultValue: 'Database' }),
+            icon: Database,
+          },
+          {
+            id: 'processes',
+            label: t('tab-processes', { defaultValue: 'Processes' }),
+            icon: Server,
+          },
+          { id: 'errors', label: t('tab-errors', { defaultValue: 'Errors' }), icon: Bug },
+          { id: 'runtime', label: t('tab-runtime', { defaultValue: 'Runtime' }), icon: Cpu },
+          { id: 'profiler', label: t('tab-profiler', { defaultValue: 'Profiler' }), icon: Flame },
+        ]}
+      />
+      <AdminBody width="wide">
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-sm text-site-text-muted">
             <Switch
@@ -65,37 +89,16 @@ function PerformancePage() {
           )}
         </div>
 
-        <LiquidTabs
-          aria-label={t('page-tabs', { defaultValue: 'Performance views' })}
-          value={tab}
-          onChange={(id) => setTab(id as TabId)}
-          tabs={[
-            { id: 'overview', label: t('tab-overview', { defaultValue: 'Overview' }), icon: Gauge },
-            { id: 'routes', label: t('tab-routes', { defaultValue: 'Routes' }), icon: RouteIcon },
-            {
-              id: 'database',
-              label: t('tab-database', { defaultValue: 'Database' }),
-              icon: Database,
-            },
-            {
-              id: 'processes',
-              label: t('tab-processes', { defaultValue: 'Processes' }),
-              icon: Server,
-            },
-            { id: 'errors', label: t('tab-errors', { defaultValue: 'Errors' }), icon: Bug },
-            { id: 'runtime', label: t('tab-runtime', { defaultValue: 'Runtime' }), icon: Cpu },
-            { id: 'profiler', label: t('tab-profiler', { defaultValue: 'Profiler' }), icon: Flame },
-          ]}
-        />
-
         {tab === 'profiler' ? (
           <ProfilerTab />
         ) : loading && !data ? (
           <Spinner />
         ) : !data ? (
-          <p className="glass-fill rounded-site p-6 text-center text-sm text-site-text-muted">
-            {t('load-failed', { defaultValue: 'Could not load performance data.' })}
-          </p>
+          <div className="glass-fill rounded-site">
+            <EmptyState
+              title={t('load-failed', { defaultValue: 'Could not load performance data.' })}
+            />
+          </div>
         ) : (
           <>
             {tab === 'overview' && <OverviewTab overview={data} />}
@@ -106,7 +109,7 @@ function PerformancePage() {
             {tab === 'runtime' && <RuntimeTab overview={data} />}
           </>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

@@ -101,12 +101,10 @@ export function RecipesManager() {
 
   return (
     <section className="space-y-3" aria-labelledby="recipes-heading">
-      <div className="flex items-center gap-2">
-        <Workflow className="h-4 w-4 text-site-accent" aria-hidden />
-        <h2 id="recipes-heading" className="text-sm font-bold text-site-text">
-          {t('recipes-title', { defaultValue: 'Recipes' })}
-        </h2>
-      </div>
+      <h2 id="recipes-heading" className="site-section-label flex items-center gap-2">
+        <Workflow className="size-4 text-site-accent" aria-hidden />
+        {t('recipes-title', { defaultValue: 'Recipes' })}
+      </h2>
       <p className="text-xs text-site-text-muted">
         {t('recipes-blurb', {
           defaultValue:
@@ -115,7 +113,7 @@ export function RecipesManager() {
         })}
       </p>
 
-      <div className="glass-fill space-y-2 rounded-site p-3">
+      <div className="glass-fill space-y-3 rounded-site px-4 py-3">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -216,15 +214,15 @@ export function RecipesManager() {
       {recipes === null ? (
         <Spinner />
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {recipes.map((r) => (
-            <li key={r.id} className="glass-fill flex items-center gap-3 rounded-site p-3">
+            <li key={r.id} className="glass-fill flex items-center gap-3 rounded-site px-4 py-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-site-text">{r.name}</p>
                 <p className="text-xs text-site-text-muted">
                   {r.triggerLabel} → {r.actionLabel}
                 </p>
-                <p className="text-[11px] text-site-text-dim">
+                <p className="text-xs text-site-text-dim">
                   {t('recipes-fired', {
                     defaultValue: 'Fired {{count}} times',
                     count: r.fireCount,
@@ -242,7 +240,7 @@ export function RecipesManager() {
                     : t('recipes-resume', { defaultValue: 'Resume recipe' })
                 }
               >
-                {r.enabled ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                {r.enabled ? <Pause aria-hidden /> : <Play aria-hidden />}
               </Button>
               <Button
                 variant="ghost"
@@ -250,7 +248,7 @@ export function RecipesManager() {
                 onClick={() => remove(r)}
                 aria-label={t('recipes-delete', { defaultValue: 'Delete recipe' })}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 aria-hidden />
               </Button>
             </li>
           ))}

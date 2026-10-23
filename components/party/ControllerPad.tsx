@@ -42,7 +42,7 @@ export function ControllerPad({ code }: { code: string }) {
 
   if (status !== 'ready') {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-site-bg p-6 text-center text-site-text">
+      <main className="flex min-h-dvh items-center justify-center bg-site-bg pl-[calc(1.5rem+var(--safe-left))] pr-[calc(1.5rem+var(--safe-right))] py-6 text-center text-site-text">
         <p>
           {status === 'connecting'
             ? t('pad-connecting', { defaultValue: 'Connecting to the screen...' })
@@ -60,12 +60,12 @@ export function ControllerPad({ code }: { code: string }) {
 
   return (
     <main
-      className="relative flex min-h-dvh touch-none select-none items-center justify-between gap-6 bg-site-bg p-6 text-site-text"
+      className="relative flex min-h-dvh touch-none select-none items-center justify-between gap-6 bg-site-bg pt-[calc(1.5rem+var(--safe-top))] pr-[calc(1.5rem+var(--safe-right))] pb-[calc(1.5rem+var(--safe-bottom))] pl-[calc(1.5rem+var(--safe-left))] text-site-text"
     >
-      <p className="absolute left-3 top-2 text-xs text-site-text-muted">
+      <p className="absolute left-[calc(0.75rem+var(--safe-left))] top-[calc(0.5rem+var(--safe-top))] text-xs text-site-text-muted">
         {t('pad-player', { defaultValue: 'Player {{n}}', n: slot + 1 })}
       </p>
-      <div className="grid grid-cols-3 grid-rows-3 gap-1" style={{ touchAction: 'none' }}>
+      <div className="grid grid-cols-3 grid-rows-3 gap-2" style={{ touchAction: 'none' }}>
         <span />
         <button
           type="button"

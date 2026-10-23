@@ -48,10 +48,10 @@ export default function PlayerBar() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
       {/* Progress bar */}
-      <div className="h-1 w-full" style={{ background: 'var(--site-surface)' }}>
+      <div className="h-1 w-full" style={{ background: 'var(--app-surface)' }}>
         <motion.div
           className="h-full"
-          style={{ background: 'var(--site-accent)', width: `${progressPercent}%` }}
+          style={{ background: 'var(--app-accent)', width: `${progressPercent}%` }}
           transition={{ duration: 0.1 }}
         />
       </div>
@@ -61,22 +61,22 @@ export default function PlayerBar() {
         // stops short of the bottom looks like a mistake); its padding carries
         // the insets so the controls clear the home indicator.
         className="flex items-center gap-4 border-t px-4 py-3 pb-[calc(0.75rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))] backdrop-blur-xl"
-        style={{ background: 'color-mix(in srgb, var(--site-bg) 85%, transparent)', borderColor: 'color-mix(in srgb, var(--site-text) 10%, transparent)' }}
+        style={{ background: 'color-mix(in srgb, var(--app-bg) 85%, transparent)', borderColor: 'color-mix(in srgb, var(--app-text) 10%, transparent)' }}
       >
         {/* Track info */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
           {currentTrack?.albumArt ? (
-            <img src={currentTrack.albumArt} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+            <img src={currentTrack.albumArt} alt="" className="w-12 h-12 rounded-(--app-radius-sm) object-cover shrink-0" />
           ) : (
-            <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--site-surface)' }}>
-              <Music className="w-5 h-5" style={{ color: 'var(--site-text-muted)' }} />
+            <div className="w-12 h-12 rounded-(--app-radius-sm) flex items-center justify-center shrink-0" style={{ background: 'var(--app-surface)' }}>
+              <Music className="w-5 h-5" style={{ color: 'var(--app-text-muted)' }} />
             </div>
           )}
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: 'var(--site-text)' }}>
+            <p className="text-sm font-medium truncate" style={{ color: 'var(--app-text)' }}>
               {currentTrack?.title ?? t("no-track-playing", { defaultValue: "No track playing" })}
             </p>
-            <p className="text-xs truncate" style={{ color: 'var(--site-text-muted)' }}>
+            <p className="text-xs truncate" style={{ color: 'var(--app-text-muted)' }}>
               {currentTrack?.artist ?? t("search-for-a-song", { defaultValue: "Search for a song to start" })}
             </p>
           </div>
@@ -87,14 +87,14 @@ export default function PlayerBar() {
           <button
             onClick={handlePlayPause}
             className="p-2 rounded-full transition-colors hover:opacity-80"
-            style={{ color: 'var(--site-text)' }}
+            style={{ color: 'var(--app-text)' }}
             disabled={!currentTrack}
           >
             {playback.isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
           </button>
           <button
             className="p-2 rounded-full transition-colors hover:opacity-80"
-            style={{ color: 'var(--site-text-muted)' }}
+            style={{ color: 'var(--app-text-muted)' }}
             disabled={!currentTrack}
           >
             <SkipForward className="w-4 h-4" />
@@ -102,7 +102,7 @@ export default function PlayerBar() {
         </div>
 
         {/* Time */}
-        <span className="text-xs tabular-nums hidden sm:block" style={{ color: 'var(--site-text-muted)' }}>
+        <span className="text-xs tabular-nums hidden sm:block" style={{ color: 'var(--app-text-muted)' }}>
           {formatDuration(progress)} / {formatDuration(currentTrack?.durationMs ?? null)}
         </span>
 
@@ -111,7 +111,7 @@ export default function PlayerBar() {
           <button
             className="p-1"
             onClick={handleMuteToggle}
-            style={{ color: 'var(--site-text-muted)' }}
+            style={{ color: 'var(--app-text-muted)' }}
           >
             {settings.muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
@@ -130,22 +130,22 @@ export default function PlayerBar() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setSearchOpen(!isSearchOpen)}
-            className="p-2 rounded-lg transition-colors"
-            style={{ color: isSearchOpen ? 'var(--site-accent)' : 'var(--site-text-muted)', background: isSearchOpen ? 'color-mix(in srgb, var(--site-accent) 15%, transparent)' : 'transparent' }}
+            className="p-2 rounded-(--app-radius-sm) transition-colors"
+            style={{ color: isSearchOpen ? 'var(--app-accent)' : 'var(--app-text-muted)', background: isSearchOpen ? 'color-mix(in srgb, var(--app-accent) 15%, transparent)' : 'transparent' }}
           >
             <Search className="w-4 h-4" />
           </button>
           <button
             onClick={() => { setChatOpen(!isChatOpen); if (!isChatOpen) setGuessOpen(false); }}
-            className="p-2 rounded-lg transition-colors"
-            style={{ color: isChatOpen ? 'var(--site-accent)' : 'var(--site-text-muted)', background: isChatOpen ? 'color-mix(in srgb, var(--site-accent) 15%, transparent)' : 'transparent' }}
+            className="p-2 rounded-(--app-radius-sm) transition-colors"
+            style={{ color: isChatOpen ? 'var(--app-accent)' : 'var(--app-text-muted)', background: isChatOpen ? 'color-mix(in srgb, var(--app-accent) 15%, transparent)' : 'transparent' }}
           >
             <Users className="w-4 h-4" />
           </button>
           <button
             onClick={() => { setGuessOpen(!isGuessOpen); if (!isGuessOpen) setChatOpen(false); }}
-            className="p-2 rounded-lg transition-colors"
-            style={{ color: isGuessOpen ? 'var(--site-accent)' : 'var(--site-text-muted)', background: isGuessOpen ? 'color-mix(in srgb, var(--site-accent) 15%, transparent)' : 'transparent' }}
+            className="p-2 rounded-(--app-radius-sm) transition-colors"
+            style={{ color: isGuessOpen ? 'var(--app-accent)' : 'var(--app-text-muted)', background: isGuessOpen ? 'color-mix(in srgb, var(--app-accent) 15%, transparent)' : 'transparent' }}
             title={t("guess-the-song", { defaultValue: "Guess the Song" })}
           >
             <Music2 className="w-4 h-4" />

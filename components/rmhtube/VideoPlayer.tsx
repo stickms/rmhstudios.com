@@ -931,7 +931,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
 
   if (!url) {
     return (
-      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-(--app-surface) flex items-center justify-center">
+      <div className="relative w-full aspect-video rounded-(--app-radius) overflow-hidden bg-(--app-surface) flex items-center justify-center">
         <div className="text-center">
           <p className="text-lg font-medium text-(--app-text-muted)">
             {t('no-video-playing', { defaultValue: 'No video playing' })}
@@ -947,7 +947,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   }
 
   return (
-    <div ref={containerRef} className="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
+    <div ref={containerRef} className="relative w-full aspect-video rounded-(--app-radius) overflow-hidden bg-black">
       <Suspense fallback={null}>
         <ReactPlayer
           ref={playerRef}

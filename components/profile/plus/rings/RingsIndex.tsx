@@ -28,7 +28,7 @@ function RingCard({ ring }: { ring: RingSummary }) {
         to={`/rings/${ring.slug}` as string}
         className="glass-fill glass-interactive block rounded-site p-4"
       >
-        <p className="truncate font-display text-base font-bold text-site-text">{ring.name}</p>
+        <p className="truncate site-section-label">{ring.name}</p>
         {ring.description ? (
           <p className="mt-1 line-clamp-2 text-sm text-site-text-muted">{ring.description}</p>
         ) : null}
@@ -79,7 +79,7 @@ export default function RingsIndex() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 px-4 pb-12 pt-4">
+    <div className="mx-auto max-w-2xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
       <p className="text-sm text-site-text-muted">
         {t('rings-intro', {
           defaultValue:
@@ -126,7 +126,7 @@ export default function RingsIndex() {
       )}
 
       <section className="glass-pane space-y-3 rounded-site p-4" aria-labelledby="rings-start">
-        <h2 id="rings-start" className="font-display text-base font-bold text-site-text">
+        <h2 id="rings-start" className="site-section-label">
           {t('rings-start', { defaultValue: 'Start a ring' })}
         </h2>
         {signedIn ? (

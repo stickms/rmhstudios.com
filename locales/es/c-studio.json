@@ -68,5 +68,6 @@
   "view-arrangement": "Arreglo",
   "view-mixer": "Mezclador",
   "view-pattern": "Patrón",
-  "view-piano-roll": "Rollos de piano"
+  "view-piano-roll": "Rollos de piano",
+  "sample-source": "Sample source"
 }

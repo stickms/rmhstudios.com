@@ -131,14 +131,14 @@ export function ImageCropModal({
  className="glass-overlay relative flex h-dvh w-dvw max-w-none flex-col overflow-y-auto rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] sm:h-auto sm:max-h-[90dvh] sm:w-full sm:max-w-lg sm:rounded-site sm:p-0"
  >
  {/* Header */}
- <div className="flex items-center justify-between px-4 py-3 border-b border-site-border shrink-0">
+ <div className="flex items-center justify-between px-5 py-3 border-b border-site-border shrink-0">
  <h2 id="image-crop-title"className="font-bold text-site-text">
  {t('crop-image', { defaultValue:'Crop Image'})}
  </h2>
  <button
  type="button"
  onClick={onCancel}
- className="p-2.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
+ className="p-3 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
  aria-label={t('close-crop-modal', { defaultValue:'Close crop modal'})}
  >
  <X className="w-5 h-5"aria-hidden />
@@ -167,7 +167,7 @@ export function ImageCropModal({
  </div>
 
  {/* Controls */}
- <div className="px-4 py-3 space-y-3 border-t border-site-border shrink-0">
+ <div className="px-5 py-3 space-y-3 border-t border-site-border shrink-0">
  {/* Zoom slider */}
  <div className="flex items-center gap-3">
  <ZoomOut className="w-4 h-4 text-site-text-dim shrink-0"/>
@@ -225,7 +225,7 @@ export function ImageCropModal({
  </div>
 
  {/* Actions */}
- <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-site-border shrink-0">
+ <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-site-border shrink-0">
  <Button variant="ghost"onClick={onCancel}>
  {t('cancel', { defaultValue:'Cancel'})}
  </Button>

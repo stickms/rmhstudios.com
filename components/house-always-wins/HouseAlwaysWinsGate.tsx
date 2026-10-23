@@ -25,7 +25,7 @@ export function HouseAlwaysWinsGate() {
   // round-trip, and the shell below is the heavy part anyway.
   if (session.isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-950">
+      <div className="app-ground flex items-center justify-center bg-neutral-950">
         <div className="text-neutral-600 text-sm font-mono tracking-widest animate-pulse">
           {t('loading', { defaultValue: 'LOADING...' })}
         </div>

@@ -81,7 +81,7 @@ export default function RingPage({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 pb-12 pt-4">
+    <div className="mx-auto max-w-2xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
       <header className="space-y-2">
         <h2 className="font-display text-2xl font-bold text-site-text">{ring.name}</h2>
         {ring.description ? (
@@ -149,12 +149,12 @@ export default function RingPage({ slug }: { slug: string }) {
             {t('ring-no-members', { defaultValue: 'Nobody you can see is in this ring yet.' })}
           </p>
         ) : (
-          <ol className="space-y-2">
+          <ol className="space-y-3">
             {ring.members.map((m, i) => (
               <li key={m.id}>
                 <Link
                   to={`/u/${m.handle ?? m.id}` as string}
-                  className="glass-fill glass-interactive flex items-center gap-3 rounded-site-sm px-3 py-2"
+                  className="glass-fill glass-interactive flex items-center gap-3 rounded-site px-4 py-3"
                 >
                   <span className="w-6 text-sm tabular-nums text-site-text-dim">{i + 1}</span>
                   <UserAvatar src={m.image} alt="" size={32} fallbackName={m.name ?? undefined} />

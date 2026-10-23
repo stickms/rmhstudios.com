@@ -77,7 +77,7 @@ export function ProgressScreen() {
     .find(([id]) => CHARACTERS[id]);
 
   return (
-    <div className="min-h-screen p-4 md:p-8 overflow-y-auto">
+    <div className="app-ground p-4 md:p-8 overflow-y-auto">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <motion.div

@@ -112,7 +112,7 @@ export function LeaderboardColumn({
  </p>
 
  {loading ? (
- <div className="flex justify-center py-16">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  ) : entries.length === 0 ? (
@@ -145,7 +145,7 @@ export function LeaderboardColumn({
  e.user.handle ||
  t('player-fallback', { defaultValue:'Player'})}
  </p>
- <p className="flex items-center gap-2 text-[11px] text-site-text-dim">
+ <p className="flex items-center gap-2 text-xs text-site-text-dim">
  <span className="inline-flex items-center gap-1 rounded-full bg-site-bg px-1.5 py-0.5 font-bold text-site-accent">
  <Zap className="h-3 w-3"aria-hidden />{''}
  {t('leaderboard-level', { defaultValue:'Lv {{n}}', n: e.level })}

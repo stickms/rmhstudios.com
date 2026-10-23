@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 export function DataExportPanel() {
   const { t } = useTranslation('feed');
@@ -46,25 +47,20 @@ export function DataExportPanel() {
   };
 
   return (
-    <section className="rounded-site border border-site-border bg-site-surface/40 p-4">
-      <div className="mb-1 flex items-center gap-2">
-        <Download className="h-5 w-5 text-site-accent" aria-hidden />
-        <h2 className="text-base font-bold text-site-text">
-          {t('export-title', { defaultValue: 'Download your data' })}
-        </h2>
-      </div>
-      <p className="mb-4 text-sm text-site-text-muted">
-        {t('export-description', {
-          defaultValue:
-            'Get a copy of your account data — profile, posts, comments, follows, coins, and more — as a JSON file.',
-        })}
-      </p>
+    <SettingsSection
+      icon={Download}
+      title={t('export-title', { defaultValue: 'Download your data' })}
+      description={t('export-description', {
+        defaultValue:
+          'Get a copy of your account data — profile, posts, comments, follows, coins, and more — as a JSON file.',
+      })}
+    >
       <Button onClick={download} disabled={busy} className="gap-2">
         <Download className="h-4 w-4" aria-hidden />
         {busy
           ? t('export-preparing', { defaultValue: 'Preparing…' })
           : t('export-button', { defaultValue: 'Download my data' })}
       </Button>
-    </section>
+    </SettingsSection>
   );
 }

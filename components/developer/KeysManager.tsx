@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import {
   KeyRound,
   Plus,
@@ -14,6 +16,9 @@ import {
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { IconButton } from '@/components/ui/icon-button';
+import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -34,13 +39,14 @@ interface ApiKey {
 }
 
 const EXPIRY_OPTIONS = [
-  { label: 'Never', days: 0 },
-  { label: '30 days', days: 30 },
-  { label: '90 days', days: 90 },
-  { label: '1 year', days: 365 },
+  { key: 'keys-expiry-never', label: 'Never', days: 0 },
+  { key: 'keys-expiry-30', label: '30 days', days: 30 },
+  { key: 'keys-expiry-90', label: '90 days', days: 90 },
+  { key: 'keys-expiry-365', label: '1 year', days: 365 },
 ];
 
 export function KeysManager() {
+  const { t } = useTranslation('f-devplatform');
   const confirm = useConfirm();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [hasAccess, setHasAccess] = useState(false);
@@ -95,7 +101,10 @@ export function KeysManager() {
         setNewKey(data.key);
         setName('');
         await load();
-      } else alert(data.error || 'Could not create key');
+      } else
+        toast.error(
+          data.error || t('keys-create-failed', { defaultValue: 'Could not create key' }),
+        );
     } finally {
       setCreating(false);
     }
@@ -103,9 +112,11 @@ export function KeysManager() {
 
   async function rotate(id: string) {
     const confirmed = await confirm({
-      title: 'Rotate this key?',
-      description: 'The current secret stops working immediately and a new one is issued.',
-      confirmLabel: 'Rotate',
+      title: t('keys-rotate-title', { defaultValue: 'Rotate this key?' }),
+      description: t('keys-rotate-body', {
+        defaultValue: 'The current secret stops working immediately and a new one is issued.',
+      }),
+      confirmLabel: t('keys-rotate-confirm', { defaultValue: 'Rotate' }),
     });
     if (!confirmed) return;
     const res = await fetch(`/api/developer/keys/${id}`, {
@@ -123,9 +134,11 @@ export function KeysManager() {
 
   async function revoke(id: string) {
     const confirmed = await confirm({
-      title: 'Revoke this key?',
-      description: 'Apps using it will stop working immediately.',
-      confirmLabel: 'Revoke',
+      title: t('keys-revoke-title', { defaultValue: 'Revoke this key?' }),
+      description: t('keys-revoke-body', {
+        defaultValue: 'Apps using it will stop working immediately.',
+      }),
+      confirmLabel: t('keys-revoke-confirm', { defaultValue: 'Revoke' }),
       danger: true,
     });
     if (!confirmed) return;
@@ -145,16 +158,20 @@ export function KeysManager() {
 
   if (!hasAccess) {
     return (
-      <section className="rounded-site border border-site-border bg-site-surface p-5 text-center">
-        <ShieldCheck className="mx-auto mb-2 h-7 w-7 text-site-accent" />
-        <p className="font-semibold text-site-text">A subscription is required</p>
+      <section className="glass-pane rounded-site px-4 py-6 text-center">
+        <ShieldCheck className="mx-auto mb-2 size-7 text-site-accent" aria-hidden />
+        <p className="font-semibold text-site-text">
+          {t('keys-subscription-title', { defaultValue: 'A subscription is required' })}
+        </p>
         <p className="mx-auto mt-1 max-w-sm text-sm text-site-text-muted">
-          The developer API needs an active HARD-R plan or higher. Your access is checked on every
-          request, so it stays in sync with your subscription.
+          {t('keys-subscription-body', {
+            defaultValue:
+              'The developer API needs an active HARD-R plan or higher. Your access is checked on every request, so it stays in sync with your subscription.',
+          })}
         </p>
         <Button asChild variant="accent" size="sm" className="mt-3">
           <Link to="/store" search={{ tab: 'membership' }}>
-            View plans
+            {t('keys-view-plans', { defaultValue: 'View plans' })}
           </Link>
         </Button>
       </section>
@@ -162,57 +179,61 @@ export function KeysManager() {
   }
 
   return (
-    <section>
-      <div className="mb-2 flex items-center gap-2">
-        <KeyRound className="h-4 w-4 text-site-accent" />
-        <h2 className="text-sm font-bold text-site-text">Your API keys</h2>
-      </div>
+    <section className="space-y-3">
+      <h2 className="site-section-label flex items-center gap-2">
+        <KeyRound className="size-4 text-site-accent" aria-hidden />
+        {t('keys-title', { defaultValue: 'Your API keys' })}
+      </h2>
 
       {newKey && (
-        <div className="mb-3 rounded-site border border-site-accent/40 bg-site-accent/5 p-3">
-          <div className="mb-1 flex items-center justify-between">
+        <div className="space-y-2 rounded-site border border-site-accent/40 bg-site-accent/5 px-4 py-3">
+          <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-semibold text-site-accent">
-              Copy your key now — it won't be shown again.
+              {t('keys-copy-now', { defaultValue: "Copy your key now — it won't be shown again." })}
             </p>
-            <button
+            <IconButton
+              icon={X}
+              size="icon-xs"
+              label={t('keys-dismiss', { defaultValue: 'Dismiss' })}
               onClick={() => setNewKey(null)}
-              className="text-site-text-dim hover:text-site-text"
-              aria-label="Dismiss"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+            />
           </div>
           <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 truncate rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-xs text-site-text">
+            <code className="glass-inset min-w-0 flex-1 truncate rounded-site-sm px-3 py-2 text-xs text-site-text">
               {newKey}
             </code>
-            <CopyButton value={newKey} variant="accent" size="icon-sm" label="Copy API key" />
+            <CopyButton
+              value={newKey}
+              variant="accent"
+              size="icon-sm"
+              label={t('keys-copy-key', { defaultValue: 'Copy API key' })}
+            />
           </div>
         </div>
       )}
 
       {/* Create form */}
-      <div className="mb-4 space-y-3 rounded-site border border-site-border bg-site-surface p-3">
-        <input
+      <div className="glass-fill space-y-3 rounded-site px-4 py-3">
+        <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder='Key name (e.g. "My bot")'
+          aria-label={t('keys-name-label', { defaultValue: 'Key name' })}
+          placeholder={t('keys-name-placeholder', { defaultValue: 'Key name (e.g. "My bot")' })}
           maxLength={100}
-          className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
         />
 
-        <div>
-          <p className="mb-1 text-xs font-semibold text-site-text">Scopes</p>
-          <div className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-site-text">
+            {t('keys-scopes', { defaultValue: 'Scopes' })}
+          </p>
+          <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
             {scopesByGroup().map((g) => (
-              <div key={g.group} className="mb-1">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-site-text-dim">
-                  {g.group}
-                </p>
+              <div key={g.group}>
+                <p className="text-xs font-semibold text-site-text-dim">{g.group}</p>
                 {g.scopes.map((s) => (
                   <label
                     key={s.id}
-                    className="flex items-center gap-2 py-0.5 text-xs text-site-text-muted"
+                    className="flex min-h-8 items-center gap-2 text-xs text-site-text-muted"
                   >
                     <input
                       type="checkbox"
@@ -226,27 +247,35 @@ export function KeysManager() {
               </div>
             ))}
           </div>
-          <div className="mt-1 flex gap-2 text-[11px]">
+          <div className="flex gap-3 text-xs">
             <button
+              type="button"
               onClick={() => setScopes(SCOPES.map((s) => s.id))}
               className="text-site-accent hover:underline"
             >
-              Select all
+              {t('keys-select-all', { defaultValue: 'Select all' })}
             </button>
             <button
+              type="button"
               onClick={() => setScopes([...DEFAULT_SCOPES])}
               className="text-site-accent hover:underline"
             >
-              Read-only
+              {t('keys-read-only', { defaultValue: 'Read-only' })}
             </button>
-            <button onClick={() => setScopes([])} className="text-site-accent hover:underline">
-              Clear
+            <button
+              type="button"
+              onClick={() => setScopes([])}
+              className="text-site-accent hover:underline"
+            >
+              {t('keys-clear', { defaultValue: 'Clear' })}
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label htmlFor="api-key-expiry" className="text-xs text-site-text-muted">Expires</label>
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="api-key-expiry" className="text-xs text-site-text-muted">
+            {t('keys-expires', { defaultValue: 'Expires' })}
+          </label>
           <Select
             id="api-key-expiry"
             controlSize="sm"
@@ -255,7 +284,7 @@ export function KeysManager() {
           >
             {EXPIRY_OPTIONS.map((o) => (
               <option key={o.days} value={o.days}>
-                {o.label}
+                {t(o.key, { defaultValue: o.label })}
               </option>
             ))}
           </Select>
@@ -263,11 +292,11 @@ export function KeysManager() {
           <Button
             size="sm"
             variant="accent"
-            disabled={creating || !name.trim()}
+            loading={creating}
+            disabled={!name.trim()}
             onClick={create}
-            className="gap-1"
           >
-            <Plus className="h-3.5 w-3.5" /> Create key
+            <Plus aria-hidden /> {t('keys-create', { defaultValue: 'Create key' })}
           </Button>
         </div>
       </div>
@@ -280,74 +309,72 @@ export function KeysManager() {
       />
 
       {keys.length === 0 ? (
-        <p className="rounded-site-sm border border-dashed border-site-border py-6 text-center text-sm text-site-text-muted">
-          No keys yet. Create one to get started.
+        <p className="rounded-site border border-dashed border-site-border px-4 py-6 text-center text-sm text-site-text-muted">
+          {t('keys-empty', { defaultValue: 'No keys yet. Create one to get started.' })}
         </p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {keys.map((k) => {
             const expired = k.expiresAt && new Date(k.expiresAt).getTime() < Date.now();
             return (
-              <div
-                key={k.id}
-                className="rounded-site border border-site-border bg-site-surface p-3"
-              >
+              <div key={k.id} className="glass-fill rounded-site px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <KeyRound className="h-4 w-4 shrink-0 text-site-text-dim" />
+                  <KeyRound className="size-4 shrink-0 text-site-text-dim" aria-hidden />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-site-text">{k.name}</p>
-                    <p className="font-mono text-[11px] text-site-text-dim">
+                    <p className="font-mono text-xs text-site-text-dim">
                       {k.prefix}…{k.lastFour ?? ''} ·{' '}
                       {k.lastUsedAt
-                        ? `last used ${new Date(k.lastUsedAt).toLocaleDateString()}`
-                        : 'never used'}
+                        ? t('keys-last-used', {
+                            defaultValue: 'last used {{date}}',
+                            date: new Date(k.lastUsedAt).toLocaleDateString(),
+                          })
+                        : t('keys-never-used', { defaultValue: 'never used' })}
                       {k.expiresAt && (
                         <span className={expired ? 'text-site-danger' : ''}>
                           {' '}
                           ·{' '}
                           {expired
-                            ? 'expired'
-                            : `expires ${new Date(k.expiresAt).toLocaleDateString()}`}
+                            ? t('keys-expired', { defaultValue: 'expired' })
+                            : t('keys-expires-on', {
+                                defaultValue: 'expires {{date}}',
+                                date: new Date(k.expiresAt).toLocaleDateString(),
+                              })}
                         </span>
                       )}
                     </p>
                   </div>
-                  <button
-                    onClick={() => setUsageFor((cur) => (cur === k.id ? null : k.id))}
-                    className="text-site-text-dim hover:text-site-accent"
-                    aria-label={usageFor === k.id ? 'Hide usage' : 'Show usage'}
-                    aria-expanded={usageFor === k.id}
-                    title="Usage"
-                  >
-                    <Activity className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => rotate(k.id)}
-                    className="text-site-text-dim hover:text-site-accent"
-                    aria-label="Rotate key"
-                    title="Rotate"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => revoke(k.id)}
-                    className="text-site-text-dim hover:text-site-danger"
-                    aria-label="Revoke key"
-                    title="Revoke"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <IconButton
+                      icon={Activity}
+                      label={
+                        usageFor === k.id
+                          ? t('keys-hide-usage', { defaultValue: 'Hide usage' })
+                          : t('keys-show-usage', { defaultValue: 'Show usage' })
+                      }
+                      aria-expanded={usageFor === k.id}
+                      onClick={() => setUsageFor((cur) => (cur === k.id ? null : k.id))}
+                    />
+                    <IconButton
+                      icon={RefreshCw}
+                      label={t('keys-rotate', { defaultValue: 'Rotate key' })}
+                      onClick={() => rotate(k.id)}
+                    />
+                    <IconButton
+                      icon={Trash2}
+                      label={t('keys-revoke', { defaultValue: 'Revoke key' })}
+                      className="hover:text-site-danger"
+                      onClick={() => revoke(k.id)}
+                    />
+                  </div>
                 </div>
                 {usageFor === k.id && <KeyUsage keyId={k.id} />}
                 {k.scopes.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {k.scopes.map((s) => (
-                      <span
-                        key={s}
-                        className="rounded bg-site-bg px-1.5 py-0.5 text-[10px] text-site-text-dim"
-                      >
+                      <Badge key={s} variant="outline" size="sm" className="font-mono font-normal">
                         {s}
-                      </span>
+                      </Badge>
                     ))}
                   </div>
                 )}
@@ -357,18 +384,19 @@ export function KeysManager() {
         </div>
       )}
 
-      <p className="mt-4 flex items-center gap-1 text-xs text-site-text-dim">
-        <BookOpen className="h-3.5 w-3.5" />
-        New here? Read the{' '}
-        <a
-          href={DEVELOPER_DOCS_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="text-site-accent hover:underline"
-        >
-          API documentation
-        </a>
-        .
+      <p className="flex items-center gap-2 text-xs text-site-text-dim">
+        <BookOpen className="size-3.5" aria-hidden />
+        <span>
+          {t('keys-docs-lead', { defaultValue: 'New here?' })}{' '}
+          <a
+            href={DEVELOPER_DOCS_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="text-site-accent hover:underline"
+          >
+            {t('keys-docs-link', { defaultValue: 'Read the API documentation' })}
+          </a>
+        </span>
       </p>
     </section>
   );

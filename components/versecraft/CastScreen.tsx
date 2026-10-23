@@ -33,7 +33,7 @@ export function CastScreen() {
   }
 
   return (
-    <div className="min-h-[100dvh] overflow-y-auto px-4 py-6 md:py-10" style={{ background: 'radial-gradient(ellipse at top, #241c2e, #13101a 75%)' }}>
+    <div className="min-h-[100dvh] overflow-y-auto pl-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-6 md:py-10" style={{ background: 'radial-gradient(ellipse at top, #241c2e, #13101a 75%)' }}>
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
           <button onClick={goBack} className="text-sm px-3 py-2 rounded -ml-1" style={{ color: '#a89888' }}>← Back</button>

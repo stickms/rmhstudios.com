@@ -176,5 +176,7 @@
   "webgl-context-lost": "WebGL संदर्भ खो गया! कृपया पृष्ठ पुनः लोड करें।",
   "you": "(आप)",
   "your-class": "आपकी श्रेणी",
-  "zoom": "ज़ूम"
+  "zoom": "ज़ूम",
+  "keyboard-hint-level-up-screen_one": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
 }

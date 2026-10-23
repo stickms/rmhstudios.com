@@ -189,5 +189,8 @@
   "webgl-context-lost": "WebGL context lost! Please reload the page.",
   "you": "(you)",
   "your-class": "Your Class",
-  "zoom": "Zoom"
+  "zoom": "Zoom",
+  "keyboard-hint-level-up-screen_few": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_one": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
 }

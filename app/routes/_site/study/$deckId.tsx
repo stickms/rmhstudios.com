@@ -57,12 +57,10 @@ function DeckPage() {
   const { deckId } = Route.useParams();
   const { deck } = Route.useLoaderData();
   return (
-    <>
-      <PageFrame>
-        {/* `key` remounts the column on deck→deck navigation so it re-seeds
-            cleanly from the new loader data. */}
-        <DeckStudyColumn key={deckId} deckId={deckId} initialData={deck} />
-      </PageFrame>
-    </>
+    <PageFrame>
+      {/* `key` remounts the column on deck→deck navigation so it re-seeds
+          cleanly from the new loader data. */}
+      <DeckStudyColumn key={deckId} deckId={deckId} initialData={deck} />
+    </PageFrame>
   );
 }

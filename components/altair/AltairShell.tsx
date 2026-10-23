@@ -119,7 +119,7 @@ export default function AltairShell({ children }: { children: React.ReactNode })
   }, []);
 
   return (
-    <div className={`altair-theme ${theme === 'light' ? 'altair-light' : ''}`}>
+    <div className={`altair-theme app-page ${theme === 'light' ? 'altair-light' : ''}`}>
       <ToastContainer />
       {children}
     </div>

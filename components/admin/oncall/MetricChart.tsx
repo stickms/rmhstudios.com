@@ -55,7 +55,7 @@ export function MetricChart({
     return (
       <div className="glass-fill rounded-site p-4">
         <h3 className="text-sm font-semibold text-site-text">{title}</h3>
-        <p className="mt-6 mb-6 text-center text-sm text-site-text-muted">
+        <p className="my-6 text-center text-sm text-site-text-muted">
           {t('chart-empty-2', {
             defaultValue:
               'No data for this metric yet. It appears a few minutes after the metric first sees traffic.',

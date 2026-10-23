@@ -287,7 +287,7 @@ export function PlaylistsColumn({
  <span className="block truncate text-sm font-semibold text-site-text">
  {pl.name}
  </span>
- <span className="block text-[11px] text-site-text-dim">
+ <span className="block text-xs text-site-text-dim">
  {t('playlist-item-count', {
  defaultValue:'{{n}} items',
  n: pl.itemCount,
@@ -345,7 +345,7 @@ export function PlaylistsColumn({
  <div className="min-w-0 flex-1">
  <p className="truncate text-sm text-site-text">{it.title}</p>
  {it.subtitle && (
- <p className="truncate text-[11px] text-site-text-dim">
+ <p className="truncate text-xs text-site-text-dim">
  {it.subtitle}
  </p>
  )}

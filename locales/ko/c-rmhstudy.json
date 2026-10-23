@@ -89,5 +89,6 @@
   "tap-to-reveal": "탭하여 보기",
   "unban": "차단 해제",
   "unban-user": "사용자 차단 해제",
-  "work-duration": "작업 시간: {{minutes}}분"
+  "work-duration": "작업 시간: {{minutes}}분",
+  "apps": "Apps"
 }

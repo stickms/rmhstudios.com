@@ -50,5 +50,8 @@
   "sign-in-to-guess": "Inicia sesión para adivinar.",
   "solves-plays": "{{solves}} resuelto · {{plays}} reproducciones",
   "song-title-placeholder": "Título de la canción...",
-  "your-playlists": "Your playlists"
+  "your-playlists": "Your playlists",
+  "listening-count_many": "{{count}} listening",
+  "listening-count_one": "{{count}} listening",
+  "listening-count_other": "{{count}} listening"
 }

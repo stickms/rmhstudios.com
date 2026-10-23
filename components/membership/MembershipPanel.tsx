@@ -18,7 +18,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Loader2, ArrowUpRight, ArrowRight, X } from 'lucide-react';
+import { Check, ArrowUpRight, ArrowRight, X } from 'lucide-react';
 import type { Tier } from '@/lib/entitlements';
 import { authClient } from '@/lib/auth-client';
 import { PinnedHero } from '@/components/feed/PinnedHero';
@@ -218,29 +218,21 @@ export function MembershipPanel({
         actions={
           <>
             {!signedOut && tier !== 'free' && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={manageBilling}
-                disabled={busy === 'portal'}
-                className="inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover disabled:opacity-50"
+                loading={busy === 'portal'}
               >
-                {busy === 'portal' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ArrowUpRight className="h-4 w-4" />
-                )}
+                <ArrowUpRight aria-hidden />
                 {t('manage-billing', { defaultValue: 'Manage billing' })}
-              </button>
+              </Button>
             )}
             {onCoinShop && (
-              <button
-                type="button"
-                onClick={onCoinShop}
-                className="group inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface/40 px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover"
-              >
+              <Button type="button" variant="outline" onClick={onCoinShop}>
                 {t('coins-shop-jump', { defaultValue: 'RMH Coins shop' })}
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </button>
+                <ArrowRight aria-hidden />
+              </Button>
             )}
           </>
         }
@@ -254,11 +246,11 @@ export function MembershipPanel({
           the hero has painted. A feature deep link scrolls into this part, so
           that arrival renders it at once. */}
       <DeferOnNavigate enabled={!highlightFeature} minHeight="100vh">
-        <div className="relative px-5 pb-16 pt-12 sm:px-8 sm:pt-16">
+        <div className="relative px-4 pb-12 pt-8 sm:pt-12">
           {/* ── Status banner ──────────────────────────────────── */}
           {status && (
             <Reveal
-              className={`mb-10 flex items-center justify-between gap-3 rounded-site border px-5 py-3.5 text-sm ${
+              className={`mb-6 flex items-center justify-between gap-3 rounded-site border px-4 py-3 text-sm ${
                 status === 'success'
                   ? 'border-[color:var(--site-success)]/30 bg-[color:var(--site-success)]/10 text-[color:var(--site-success)]'
                   : 'border-site-border bg-site-surface text-site-text-muted'
@@ -276,9 +268,10 @@ export function MembershipPanel({
               <button
                 type="button"
                 onClick={() => setStatus(null)}
-                className="shrink-0 opacity-60 hover:opacity-100"
+                aria-label={t('status-dismiss', { defaultValue: 'Dismiss' })}
+                className="flex size-11 shrink-0 items-center justify-center opacity-60 hover:opacity-100"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4" aria-hidden />
               </button>
             </Reveal>
           )}
@@ -405,7 +398,7 @@ export function MembershipPanel({
                           heavy slab that still looks pressable, and it competed
                           with the one real call to action on the page. */}
                         {isCurrent || owned || (plan.cta === 'current' && !signedOut) ? (
-                          <p className="flex min-h-11 items-center justify-center rounded-[var(--site-control-radius)] border border-dashed border-site-border px-3 py-2.5 text-center text-sm font-medium text-site-text-muted">
+                          <p className="flex min-h-11 items-center justify-center rounded-[var(--site-control-radius)] border border-dashed border-site-border px-3 py-2 text-center text-sm font-medium text-site-text-muted">
                             {isCurrent
                               ? t('your-current-plan', { defaultValue: 'Your current plan' })
                               : owned
@@ -467,7 +460,7 @@ export function MembershipPanel({
           />
 
           {/* ── Footnote ───────────────────────────────────────── */}
-          <Reveal as="p" className="mt-12 text-center font-mono text-xs text-site-text-muted">
+          <Reveal as="p" className="mt-8 text-center font-mono text-xs text-site-text-muted">
             {t('billing-footnote', {
               defaultValue: 'Billed monthly · cancel anytime · secure checkout by Stripe',
             })}

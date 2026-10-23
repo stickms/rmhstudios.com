@@ -73,18 +73,18 @@ export default function ReadyButton({
         <button
           onClick={handleStartClick}
           disabled={!hasGamePicked}
-          className={`relative flex flex-col items-center rounded-xl px-8 py-3 font-bold transition duration-200 ${
+          className={`relative flex flex-col items-center rounded-(--app-radius) px-8 py-3 font-bold transition duration-200 ${
             !hasGamePicked
               ? 'bg-(--app-surface) text-(--app-text-muted) opacity-50 cursor-not-allowed'
               : canStart
-                ? 'bg-(--app-success) text-black hover:brightness-110'
+                ? 'bg-(--app-success) text-(--app-bg) hover:brightness-110'
                 : forceStartPrimed
-                  ? 'bg-(--app-warning) text-black hover:brightness-110'
-                  : 'bg-(--app-success) text-black opacity-40'
+                  ? 'bg-(--app-warning) text-(--app-bg) hover:brightness-110'
+                  : 'bg-(--app-success) text-(--app-bg) opacity-40'
           }`}
         >
           {canStart && (
-            <span className="pointer-events-none absolute inset-0 animate-ping rounded-xl bg-(--app-success) opacity-30" />
+            <span className="pointer-events-none absolute inset-0 animate-ping rounded-(--app-radius) bg-(--app-success) opacity-30" />
           )}
           <span className="relative z-10 flex items-center gap-2 text-lg">
             <Play className="h-5 w-5" />
@@ -117,17 +117,17 @@ export default function ReadyButton({
     <button
       onClick={disabled ? undefined : onToggle}
       disabled={disabled}
-      className={`relative flex flex-col items-center rounded-xl px-8 py-3 font-bold transition duration-200 ${
+      className={`relative flex flex-col items-center rounded-(--app-radius) px-8 py-3 font-bold transition duration-200 ${
         disabled
           ? 'bg-(--app-surface) text-(--app-text-muted) opacity-50 cursor-not-allowed'
           : isReady
-            ? 'bg-(--app-success) text-black hover:brightness-110'
+            ? 'bg-(--app-success) text-(--app-bg) hover:brightness-110'
             : 'bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)'
       }`}
     >
       {/* Pulse ring when not ready but game is picked */}
       {!isReady && !disabled && (
-        <span className="pointer-events-none absolute inset-0 animate-ping rounded-xl bg-(--app-accent) opacity-30" />
+        <span className="pointer-events-none absolute inset-0 animate-ping rounded-(--app-radius) bg-(--app-accent) opacity-30" />
       )}
       <span className="relative z-10 text-lg">{isReady ? t("ready", { defaultValue: "✓ Ready!" }) : t("ready-up", { defaultValue: "Ready Up" })}</span>
       {selectedGameName ? (

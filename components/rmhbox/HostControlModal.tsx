@@ -87,7 +87,7 @@ export default function HostControlModal() {
           className="flex h-10 w-10 items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95"
           style={{
             backgroundColor: 'var(--app-warning)',
-            color: '#000',
+            color: 'var(--app-bg)',
           }}
           aria-label={t('host-controls-host-control-modal', { defaultValue: 'Host controls' })}
           title={t('host-controls-host-control-modal', { defaultValue: 'Host controls' })}
@@ -101,13 +101,13 @@ export default function HostControlModal() {
         <>
           {/* Backdrop */}
           <div
-            className="app-overlay fixed inset-0 z-80 bg-black/50"
+            className="app-overlay fixed inset-0 z-80 bg-(--app-scrim)"
             onClick={() => setIsOpen(false)}
           />
 
           {/* Panel */}
           <div
-            className="app-modal fixed inset-x-4 top-1/2 z-90 mx-auto max-w-md -translate-y-1/2 rounded-xl border p-5 shadow-2xl"
+            className="app-modal fixed inset-x-4 top-1/2 z-90 mx-auto max-w-md -translate-y-1/2 max-h-[85dvh] overflow-y-auto rounded-(--app-radius) border p-5 shadow-(--app-shadow)"
             style={{
               backgroundColor: 'var(--app-surface)',
               borderColor: 'var(--app-border)',
@@ -120,7 +120,8 @@ export default function HostControlModal() {
               </h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="rounded p-1 text-(--app-text-muted) hover:text-(--app-text)"
+                aria-label={t("close", { defaultValue: "Close" })}
+                className="rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:text-(--app-text)"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -131,7 +132,7 @@ export default function HostControlModal() {
               <div className="mb-4">
                 <button
                   onClick={handleForceEnd}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:brightness-110"
+                  className="flex w-full items-center justify-center gap-2 rounded-(--app-radius-sm) px-4 py-2.5 text-sm font-semibold text-(--app-bg) transition-colors hover:brightness-110"
                   style={{ backgroundColor: 'var(--app-danger)' }}
                 >
                   <StopCircle className="h-4 w-4" />
@@ -150,7 +151,7 @@ export default function HostControlModal() {
                   {otherPlayers.map((player) => (
                     <div
                       key={player.userId}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2"
+                      className="flex items-center gap-2 rounded-(--app-radius-sm) px-3 py-2"
                       style={{
                         backgroundColor: 'var(--app-bg)',
                         border: '1px solid var(--app-border)',
@@ -172,7 +173,7 @@ export default function HostControlModal() {
                         />
                       ) : null}
                       <div
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-(--app-accent-fg)"
                         style={player.avatarUrl ? { display: 'none', backgroundColor: 'var(--app-accent)' } : { backgroundColor: 'var(--app-accent)' }}
                       >
                         {player.userName.charAt(0).toUpperCase()}
@@ -216,7 +217,7 @@ export default function HostControlModal() {
                   {lobby.spectators.map((spec) => (
                     <div
                       key={spec.userId}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2"
+                      className="flex items-center gap-2 rounded-(--app-radius-sm) px-3 py-2"
                       style={{
                         backgroundColor: 'var(--app-bg)',
                         border: '1px solid var(--app-border)',
@@ -237,7 +238,7 @@ export default function HostControlModal() {
                         />
                       ) : null}
                       <div
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-(--app-accent-fg)"
                         style={spec.avatarUrl ? { display: 'none', backgroundColor: 'var(--app-text-muted)' } : { backgroundColor: 'var(--app-text-muted)' }}
                       >
                         {spec.userName.charAt(0).toUpperCase()}

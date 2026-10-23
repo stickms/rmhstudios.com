@@ -153,7 +153,7 @@ function ServicesPage() {
         defaultValue: 'Housing, career, and transportation tools built around the community.',
       })}
     >
-      <ul className="space-y-3 px-3 pb-12">
+      <ul className="space-y-3 px-4 pt-4 pb-12">
         {SERVICES.map((service) => (
           <li key={service.id}>
             <ServiceRow service={service} />

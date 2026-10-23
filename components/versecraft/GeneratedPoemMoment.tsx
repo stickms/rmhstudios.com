@@ -24,7 +24,7 @@ export function GeneratedPoemMoment() {
 
   if (!poem) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center app-ground">
         <button className="px-5 py-2 rounded" style={{ color: '#c4a35a' }} onClick={() => void advanceGeneratedChapter()}>
           Continue →
         </button>

@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Star, Plus, Trash2, X, Loader2 } from 'lucide-react';
+import { Star, Plus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { LocationSearch, type SavedPlaceOption } from './LocationSearch';
 import type { RidePlace } from '@/lib/rideshare/geo';
 
@@ -56,18 +58,15 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
   }
 
   return (
-    <div className="glass-fill rounded-site p-5">
+    <div className="glass-fill rounded-site p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-bold text-site-text">
+        <h2 className="site-section-label flex items-center gap-2">
           <Star className="h-4 w-4 text-site-warning" /> {t("saved-places", { defaultValue: "Saved places" })}
         </h2>
         {!adding && (
-          <button
-            onClick={() => setAdding(true)}
-            className="flex items-center gap-1 text-xs font-medium text-site-accent hover:underline"
-          >
-            <Plus className="h-3.5 w-3.5" /> {t("add", { defaultValue: "Add" })}
-          </button>
+          <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={() => setAdding(true)}>
+            <Plus aria-hidden /> {t("add", { defaultValue: "Add" })}
+          </Button>
         )}
       </div>
 
@@ -80,55 +79,56 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
       {places.length > 0 && (
         <ul className="space-y-2">
           {places.map((p) => (
-            <li key={p.id} className="flex items-center gap-2 glass-inset rounded-site-sm px-3 py-2">
+            <li key={p.id} className="glass-inset flex items-center gap-2 rounded-site-sm px-3 py-2">
               <Star className="h-3.5 w-3.5 shrink-0 text-site-warning" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-site-text">{p.savedLabel}</div>
                 <div className="truncate text-xs text-site-text-muted" title={p.label}>{p.label}</div>
               </div>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0 text-site-text-muted hover:text-site-danger"
                 onClick={() => remove(p.id)}
-                className="shrink-0 rounded-site-sm p-1 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-red-400"
                 aria-label={t("remove-place", { defaultValue: "Remove {{name}}", name: p.savedLabel })}
               >
-                <Trash2 className="h-4 w-4" />
-              </button>
+                <Trash2 aria-hidden />
+              </Button>
             </li>
           ))}
         </ul>
       )}
 
       {adding && (
-        <div className="mt-3 space-y-3 glass-inset rounded-site-sm p-3">
+        <div className="glass-inset mt-3 space-y-3 rounded-site-sm p-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-site-text">{t("new-place", { defaultValue: "New place" })}</span>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => { setAdding(false); setPlace(null); setLabel(''); }}
-              className="rounded-site-sm p-1 text-site-text-muted hover:text-site-text"
               aria-label={t("cancel", { defaultValue: "Cancel" })}
             >
-              <X className="h-4 w-4" />
-            </button>
+              <X aria-hidden />
+            </Button>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t("name-label", { defaultValue: "Name" })}</label>
-            <input
+            <label htmlFor="saved-place-name" className="mb-2 block text-sm font-medium text-site-text">{t("name-label", { defaultValue: "Name" })}</label>
+            <Input
+              id="saved-place-name"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               maxLength={40}
               placeholder={t("name-placeholder", { defaultValue: "Home" })}
-              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
             />
           </div>
           <LocationSearch label={t("location-label", { defaultValue: "Location" })} value={place} onSelect={setPlace} placeholder={t("location-placeholder", { defaultValue: "Search for the address" })} allowCurrentLocation />
-          <button
-            onClick={save}
-            disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-site-sm bg-site-accent px-4 py-2 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          <Button type="button" className="w-full" onClick={save} loading={saving}>
+            {!saving && <Plus aria-hidden />}
             {t("save-place", { defaultValue: "Save place" })}
-          </button>
+          </Button>
         </div>
       )}
     </div>

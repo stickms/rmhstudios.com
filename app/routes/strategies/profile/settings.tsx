@@ -13,6 +13,7 @@ export const Route = createFileRoute('/strategies/profile/settings')({
 function SettingsPage() {
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const { t } = useTranslation('nav');
+  const { t: tr } = useTranslation('r-strategies');
   const locale = useLocaleStore((s) => s.locale);
   const setLocale = useLocaleStore((s) => s.setLocale);
 
@@ -21,7 +22,7 @@ function SettingsPage() {
       <div className="flex items-center gap-2">
         <Settings size={20} style={{ color: 'var(--doctrine-accent)' }} />
         <h1 className="text-xl font-bold" style={{ color: 'var(--doctrine-text-primary)' }}>
-          Settings
+          {tr('settings', { defaultValue: 'Settings' })}
         </h1>
       </div>
 
@@ -33,10 +34,11 @@ function SettingsPage() {
         }}
       >
         <div className="space-y-2">
-          <label className="text-xs font-mono uppercase tracking-wider text-white/40">
+          <label htmlFor="strategies-language" className="block text-xs font-mono uppercase tracking-wider text-white/60">
             {t('language', { defaultValue: 'Language' })}
           </label>
           <Select
+            id="strategies-language"
             aria-label={t('language', { defaultValue: 'Language' })}
             value={locale}
             onChange={(e) => setLocale(e.target.value as Locale)}
@@ -49,11 +51,11 @@ function SettingsPage() {
           </Select>
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-mono uppercase tracking-wider text-white/40">
-            Timezone (for Sahur Mode)
+          <label htmlFor="strategies-timezone" className="block text-xs font-mono uppercase tracking-wider text-white/60">
+            {tr('timezone-label', { defaultValue: 'Timezone (for Sahur Mode)' })}
           </label>
           <Select
-            aria-label="Timezone"
+            id="strategies-timezone"
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
           >
@@ -63,8 +65,8 @@ function SettingsPage() {
               </option>
             ))}
           </Select>
-          <p className="text-[10px] text-white/30">
-            Sahur Mode activates at 3:00 AM in your selected timezone.
+          <p className="text-xs text-white/50">
+            {tr('timezone-hint', { defaultValue: 'Sahur Mode activates at 3:00 AM in your selected timezone.' })}
           </p>
         </div>
       </div>
@@ -76,9 +78,9 @@ function SettingsPage() {
           border: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <h3 className="text-xs font-mono uppercase tracking-wider text-white/40">Account Tier</h3>
+        <h3 className="text-xs font-mono uppercase tracking-wider text-white/60">{tr('account-tier', { defaultValue: 'Account Tier' })}</h3>
         <p className="text-sm text-white/60">
-          Tier changes are managed by RMH administrators. Contact the team for upgrade requests.
+          {tr('account-tier-desc', { defaultValue: 'Tier changes are managed by RMH administrators. Contact the team for upgrade requests.' })}
         </p>
       </div>
     </div>

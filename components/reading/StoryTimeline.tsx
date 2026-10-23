@@ -3,6 +3,7 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { getCategoryColor } from '@/lib/news-categories';
 import type { StoryPageData } from '@/lib/reading/schema';
@@ -29,7 +30,7 @@ export function StoryTimeline({
           />
         ) : (
           <ol
-            className="relative space-y-6 border-s-2 border-site-border ps-6"
+            className="relative space-y-[var(--site-section-gap)] border-s-2 border-site-border ps-6"
             aria-label={t('story-timeline', { defaultValue: 'Story timeline' })}
           >
             {story.articles.map((a, i) => {
@@ -46,19 +47,17 @@ export function StoryTimeline({
                   <Link
                     to="/news/$slug"
                     params={{ slug: a.slug }}
-                    className="glass-fill glass-interactive mt-1 block rounded-site p-4"
+                    className="glass-fill glass-interactive mt-2 block rounded-site px-4 py-3"
                   >
-                    <span
-                      className={`mb-2 inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${color.bg} ${color.text} ${color.border}`}
-                    >
+                    <Badge size="sm" className={`mb-2 ${color.bg} ${color.text} ${color.border}`}>
                       {a.category}
-                    </span>
-                    <h2 className="text-lg font-bold text-site-text">{a.title}</h2>
-                    <p className="mt-1 line-clamp-3 text-sm text-site-text-muted">
+                    </Badge>
+                    <h2 className="text-lg font-semibold leading-snug text-site-text">{a.title}</h2>
+                    <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-site-text-muted">
                       {a.description}
                     </p>
                     {i === 0 ? (
-                      <span className="mt-2 block text-xs font-semibold text-site-text-dim">
+                      <span className="mt-3 block text-xs font-semibold text-site-text-dim">
                         {t('story-first', { defaultValue: 'Where the story starts' })}
                       </span>
                     ) : null}

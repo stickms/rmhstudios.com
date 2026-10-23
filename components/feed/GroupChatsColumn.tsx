@@ -124,7 +124,7 @@ export function GroupChatsColumn({
  return (
  <>
  {gateHeader}
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  </>
@@ -135,14 +135,14 @@ export function GroupChatsColumn({
  return (
  <>
  {gateHeader}
- <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
- <p className="font-medium text-site-text">
- {t('sign-in-to-use-group-chats', { defaultValue:'Sign in to use group chats'})}
- </p>
+ <EmptyState
+ title={t('sign-in-to-use-group-chats', { defaultValue:'Sign in to use group chats'})}
+ action={
  <Link to="/login"search={{ callbackURL:'/groups'}}>
  <Button variant="accent">{t('sign-in', { defaultValue:'Sign in'})}</Button>
  </Link>
- </div>
+ }
+ />
  </>
  );
  }

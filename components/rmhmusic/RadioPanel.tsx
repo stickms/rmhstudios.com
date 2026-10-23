@@ -27,11 +27,11 @@ export default function RadioPanel() {
     emit(C2S.RADIO_VOTE, { vote: v });
   };
   const btn =
-    'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40';
+    'inline-flex items-center gap-1.5 rounded-(--app-radius-sm) px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40';
 
   return (
     <div
-      className="fixed left-3 right-3 top-[calc(0.75rem+var(--safe-top))] z-30 mx-auto max-w-md rounded-xl p-3 md:left-auto md:right-4 md:mx-0"
+      className="fixed left-3 right-3 top-[calc(0.75rem+var(--safe-top))] z-30 mx-auto max-w-md rounded-(--app-radius) p-3 md:left-auto md:right-4 md:mx-0"
       style={{
         background: 'color-mix(in srgb, var(--app-surface) 90%, transparent)',
         color: 'var(--app-text)',

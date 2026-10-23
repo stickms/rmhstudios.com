@@ -13,7 +13,7 @@ import { SpectrumGame } from '@/components/daily-puzzles/SpectrumGame';
 function SpectrumPage() {
   return (
     <GameErrorBoundary gameName="Spectrum">
-      <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
+      <Suspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
         <SpectrumGame />
       </Suspense>
     </GameErrorBoundary>

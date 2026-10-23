@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { DiscoverySettings } from '@/components/discovery/DiscoverySettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
+import { SettingsPageBody } from '@/components/settings/SettingsSection';
 
 export const Route = createFileRoute('/_site/settings/notifications')({
   head: () => ({
@@ -11,16 +13,21 @@ export const Route = createFileRoute('/_site/settings/notifications')({
 });
 
 function NotificationSettingsPage() {
+  const { t } = useTranslation('feed');
+  const settingsLabel = t('settings', { defaultValue: 'Settings' });
+  const title = t('settings-notifications', { defaultValue: 'Notifications' });
   return (
     <PageLayout
-      title="Notifications"
+      title={title}
+      wide
       backTo="/settings"
-      breadcrumbs={[{ label: 'Settings', to: '/settings' }, { label: 'Notifications' }]}
+      backLabel={settingsLabel}
+      breadcrumbs={[{ label: settingsLabel, to: '/settings' }, { label: title }]}
     >
-      <div className="px-4 pt-4 pb-12">
+      <SettingsPageBody>
         <NotificationSettings />
         <DiscoverySettings />
-      </div>
+      </SettingsPageBody>
     </PageLayout>
   );
 }

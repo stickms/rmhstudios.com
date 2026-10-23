@@ -5,6 +5,7 @@ import { useTranslation } from'react-i18next';
 import { Link } from'@tanstack/react-router';
 import { Loader2, Bot, Send, ArrowLeft, Trash2 } from'lucide-react';
 import { Button } from'@/components/ui/button';
+import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { liquidVTName } from'@/lib/view-transition';
@@ -132,23 +133,23 @@ export function PersonaChatColumn({
 
  if (loading) {
  return (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  );
  }
  if (notFound || !persona) {
  return (
- <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
- <p className="font-medium text-site-text">
- {t('persona-not-found', { defaultValue:'Persona not found'})}
- </p>
+ <EmptyState
+ title={t('persona-not-found', { defaultValue:'Persona not found'})}
+ action={
  <Link to="/personas">
  <Button variant="outline">
  {t('browse-personas', { defaultValue:'Browse personas'})}
  </Button>
  </Link>
- </div>
+ }
+ />
  );
  }
 

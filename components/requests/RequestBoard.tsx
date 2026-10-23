@@ -12,10 +12,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Inbox, Plus, Search } from 'lucide-react';
+import { Inbox, Plus } from 'lucide-react';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchField } from '@/components/ui/search-field';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -101,7 +101,7 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
   ];
 
   return (
-    <section className="glass-pane mt-8 rounded-site p-4 sm:p-6" aria-labelledby="request-board">
+    <section className="glass-pane rounded-site p-4 sm:p-6" aria-labelledby="request-board">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id="request-board" className="font-display text-xl font-bold text-site-text">
@@ -127,22 +127,16 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
         aria-label={t('request-filter-label', { defaultValue: 'Filter requests by status' })}
       />
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-0 flex-1">
-          <Search
-            className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-site-text-dim"
-            aria-hidden
-          />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-9"
-            placeholder={t('request-search-placeholder', {
-              defaultValue: 'Search before you file…',
-            })}
-            aria-label={t('request-search-label', { defaultValue: 'Search requests' })}
-          />
-        </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <SearchField
+          containerClassName="min-w-48 flex-1"
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t('request-search-placeholder', {
+            defaultValue: 'Search before you file…',
+          })}
+          aria-label={t('request-search-label', { defaultValue: 'Search requests' })}
+        />
         <Select
           value={sort}
           onChange={(e) => setSort(e.target.value as RequestSort)}

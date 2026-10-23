@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Activity, AlertTriangle } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -36,6 +37,7 @@ interface UsageResponse {
 const nf = new Intl.NumberFormat('en-US');
 
 export function KeyUsage({ keyId }: { keyId: string }) {
+  const { t } = useTranslation('f-devplatform');
   const [data, setData] = useState<UsageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -71,13 +73,20 @@ export function KeyUsage({ keyId }: { keyId: string }) {
   }
 
   if (failed || !data) {
-    return <p className="py-3 text-xs text-site-text-dim">Could not load usage for this key.</p>;
+    return (
+      <p className="py-3 text-xs text-site-text-dim">
+        {t('usage-failed', { defaultValue: 'Could not load usage for this key.' })}
+      </p>
+    );
   }
 
   if (data.totals.requests === 0) {
     return (
       <p className="py-3 text-xs text-site-text-dim">
-        No requests in the last {data.days} days.
+        {t('usage-none', {
+          defaultValue: 'No requests in the last {{count}} days.',
+          count: data.days,
+        })}
       </p>
     );
   }
@@ -90,16 +99,19 @@ export function KeyUsage({ keyId }: { keyId: string }) {
       : 0;
 
   return (
-    <div className="mt-3 rounded-site border border-site-border bg-site-bg/40 p-3">
+    <div className="glass-inset mt-3 rounded-site px-3 py-3">
       <div className="mb-2 flex items-center gap-2">
-        <Activity className="h-3.5 w-3.5 text-site-accent" aria-hidden />
+        <Activity className="size-3.5 text-site-accent" aria-hidden />
         <span className="text-xs font-semibold text-site-text">
-          Last {data.days} days
+          {t('usage-last-days', { defaultValue: 'Last {{count}} days', count: data.days })}
         </span>
         {errorRate > 0.05 && (
-          <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-site-warning">
-            <AlertTriangle className="h-3 w-3" aria-hidden />
-            {Math.round(errorRate * 100)}% errors
+          <span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-site-warning">
+            <AlertTriangle className="size-3" aria-hidden />
+            {t('usage-errors', {
+              defaultValue: '{{percent}}% errors',
+              percent: Math.round(errorRate * 100),
+            })}
           </span>
         )}
       </div>
@@ -111,22 +123,28 @@ export function KeyUsage({ keyId }: { keyId: string }) {
         {data.usage.map((d) => (
           <div
             key={d.date}
-            className="flex-1 rounded-t-[2px] bg-site-accent/70"
+            className="flex-1 bg-site-accent/70"
             style={{ height: `${Math.max(2, (d.requests / peak) * 100)}%` }}
-            title={`${d.date}: ${nf.format(d.requests)} requests`}
+            title={t('usage-day-title', {
+              defaultValue: '{{date}}: {{count}} requests',
+              date: d.date,
+              count: nf.format(d.requests),
+            })}
           />
         ))}
       </div>
 
       <dl className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
         <div>
-          <dt className="text-site-text-dim">Requests</dt>
+          <dt className="text-site-text-dim">
+            {t('usage-requests', { defaultValue: 'Requests' })}
+          </dt>
           <dd className="font-semibold tabular-nums text-site-text">
             {nf.format(data.totals.requests)}
           </dd>
         </div>
         <div>
-          <dt className="text-site-text-dim">Units</dt>
+          <dt className="text-site-text-dim">{t('usage-units', { defaultValue: 'Units' })}</dt>
           <dd className="font-semibold tabular-nums text-site-text">
             {nf.format(data.totals.units)}
           </dd>
@@ -145,9 +163,11 @@ export function KeyUsage({ keyId }: { keyId: string }) {
         </div>
       </dl>
 
-      <p className="mt-2 text-[11px] leading-relaxed text-site-text-dim">
-        Units are cost-weighted: heavier endpoints draw down your daily quota faster than a
-        simple read. Counts settle within a few seconds of a request.
+      <p className="mt-2 text-xs leading-relaxed text-site-text-dim">
+        {t('usage-note', {
+          defaultValue:
+            'Units are cost-weighted: heavier endpoints draw down your daily quota faster than a simple read. Counts settle within a few seconds of a request.',
+        })}
       </p>
     </div>
   );

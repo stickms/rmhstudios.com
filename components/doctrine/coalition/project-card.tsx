@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { ExternalLink } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 
@@ -28,24 +29,24 @@ export function ProjectCard({ name, description, status, userActive, url }: Proj
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-white/90">{name}</h3>
         <span
-          className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded"
+          className="text-xs font-mono uppercase px-1.5 py-0.5 rounded"
           style={{ color: STATUS_COLORS[status], backgroundColor: `${STATUS_COLORS[status]}15` }}
         >
           {status}
         </span>
       </div>
-      <p className="text-xs text-white/40">{description}</p>
+      <p className="text-xs text-white/60">{description}</p>
       <div className="flex items-center justify-between">
         {userActive && (
-          <span className="text-[10px] text-green-400/80 flex items-center gap-1">
+          <span className="text-xs text-green-400/80 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
             {t("active", { defaultValue: "Active" })}
           </span>
         )}
         {url && (
-          <a href={url} className="text-[10px] text-white/30 hover:text-white/50 flex items-center gap-1">
-            {t("open", { defaultValue: "Open" })} <ExternalLink size={10} />
-          </a>
+          <Link to={url} className="text-xs text-white/50 hover:text-white/80 flex items-center gap-1 min-h-11 md:min-h-0">
+            {t("open", { defaultValue: "Open" })} <ExternalLink size={12} aria-hidden />
+          </Link>
         )}
       </div>
     </div>

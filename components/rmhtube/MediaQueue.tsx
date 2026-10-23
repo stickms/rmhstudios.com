@@ -89,7 +89,7 @@ export default function MediaQueue() {
           {isHost && (
             <button
               onClick={handleLoopToggle}
-              className={`p-1 rounded-md transition-colors ${
+              className={`p-1 rounded-(--app-radius-sm) transition-colors ${
                 room.settings.loopQueue
                   ? 'text-(--app-accent) bg-(--app-accent-dim)'
                   : 'text-(--app-text-dim) hover:text-(--app-text-muted) hover:bg-(--app-surface-hover)'
@@ -104,7 +104,7 @@ export default function MediaQueue() {
           {isLeader && (
             <button
               onClick={handleShuffle}
-              className="p-1 rounded-md transition-colors text-(--app-text-dim) hover:text-(--app-text-muted) hover:bg-(--app-surface-hover)"
+              className="p-1 rounded-(--app-radius-sm) transition-colors text-(--app-text-dim) hover:text-(--app-text-muted) hover:bg-(--app-surface-hover)"
               title={t("shuffle-queue", { defaultValue: "Shuffle queue" })}
             >
               <Shuffle className="h-3.5 w-3.5" />
@@ -115,7 +115,7 @@ export default function MediaQueue() {
           {canAdd && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-(--app-radius-sm) transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
             >
               <Plus className="h-3 w-3" />
               {t("add", { defaultValue: "Add" })}
@@ -185,7 +185,7 @@ export default function MediaQueue() {
                 <button
                   key={item.id}
                   onClick={() => handleReAddFromHistory(item.url, item.title)}
-                  className="flex items-start gap-2 w-full p-2 rounded-lg text-left transition-colors bg-(--app-bg) hover:bg-(--app-surface-hover) group"
+                  className="flex items-start gap-2 w-full p-2 rounded-(--app-radius-sm) text-left transition-colors bg-(--app-bg) hover:bg-(--app-surface-hover) group"
                   title={t("re-add-to-queue", { defaultValue: "Click to re-add to queue" })}
                 >
                   <div className="flex-1 min-w-0">

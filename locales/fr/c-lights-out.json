@@ -88,5 +88,7 @@
   "waiting-for-host": "En attente que l'hôte démarre le prochain tour...",
   "waiting-for-players": "En attente des joueurs",
   "welcome-user": "Bienvenue, {{name}} !",
-  "your-moves": "Vos coups"
+  "your-moves": "Vos coups",
+  "lights-out-title": "Lights Out",
+  "rating-tiers": "Rating tiers"
 }

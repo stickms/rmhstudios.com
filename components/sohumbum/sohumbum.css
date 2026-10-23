@@ -67,6 +67,9 @@
 }
 
 .sohumbum-nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-size: 18px;
   font-weight: bold;
   letter-spacing: 1px;
@@ -84,8 +87,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   margin-inline-start: auto;
   border: 1px solid var(--sb-hairline);
   border-radius: 6px;
@@ -307,6 +310,7 @@
   display: block;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   pointer-events: none;
 }
 
@@ -374,6 +378,11 @@
 @media screen and (max-width: 600px) {
   .sohumbum-countdown {
     gap: 5px;
+  }
+
+  .sohumbum-nav__inner {
+    flex-wrap: wrap;
+    gap: 4px 20px;
   }
 
   .sohumbum-pledge__item {

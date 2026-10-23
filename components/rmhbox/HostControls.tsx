@@ -86,7 +86,7 @@ export default function HostControls({
         <button
           onClick={() => setShowGamePicker(true)}
           disabled={!isWaiting}
-          className="flex items-center gap-2 rounded-lg bg-(--app-accent) px-4 py-2 text-sm font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover) disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2 text-sm font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover) disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Gamepad2 className="h-4 w-4" /> {t('pick-game', { defaultValue: 'Pick Game' })}
         </button>
@@ -95,7 +95,7 @@ export default function HostControls({
         {gameSettingsState && gameSettingsState.mode === 'lobby' && (
           <button
             onClick={() => setShowGameSettings(true)}
-            className="flex items-center gap-2 rounded-lg bg-(--app-surface-hover) px-4 py-2 text-sm font-semibold text-(--app-text) transition-colors hover:brightness-110"
+            className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-surface-hover) px-4 py-2 text-sm font-semibold text-(--app-text) transition-colors hover:brightness-110"
           >
             <SlidersHorizontal className="h-4 w-4" />{' '}
             {t('game-settings', { defaultValue: 'Game Settings' })}
@@ -104,7 +104,7 @@ export default function HostControls({
 
         <button
           onClick={() => setShowSettings(!showSettings)}
-          className="flex items-center gap-2 rounded-lg bg-(--app-surface-hover) px-4 py-2 text-sm font-semibold text-(--app-text) transition-colors hover:brightness-110"
+          className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-surface-hover) px-4 py-2 text-sm font-semibold text-(--app-text) transition-colors hover:brightness-110"
         >
           <Settings className="h-4 w-4" /> {t('lobby-settings', { defaultValue: 'Lobby Settings' })}
         </button>
@@ -135,7 +135,7 @@ export default function HostControls({
 
       {/* Settings panel */}
       {showSettings && settings && (
-        <div className="mt-2 rounded-lg border border-(--app-border) bg-(--app-bg) p-3 space-y-3">
+        <div className="mt-2 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3 space-y-3">
           <label className="flex items-center justify-between text-sm cursor-pointer">
             <span className="text-(--app-text)">
               {t('public-lobby', { defaultValue: 'Public lobby' })}
@@ -148,7 +148,7 @@ export default function HostControls({
               className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.isPublic ? 'bg-(--app-accent)' : 'bg-(--app-border)'}`}
             >
               <span
-                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.isPublic ? 'translate-x-4.5' : 'translate-x-0.5'}`}
+                className={`inline-block h-3.5 w-3.5 rounded-full bg-(--app-text) transition-transform ${settings.isPublic ? 'translate-x-4.5' : 'translate-x-0.5'}`}
               />
             </button>
           </label>
@@ -183,7 +183,7 @@ export default function HostControls({
               className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.allowMidGameJoin ? 'bg-(--app-accent)' : 'bg-(--app-border)'}`}
             >
               <span
-                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.allowMidGameJoin ? 'translate-x-4.5' : 'translate-x-0.5'}`}
+                className={`inline-block h-3.5 w-3.5 rounded-full bg-(--app-text) transition-transform ${settings.allowMidGameJoin ? 'translate-x-4.5' : 'translate-x-0.5'}`}
               />
             </button>
           </label>
@@ -201,7 +201,7 @@ export default function HostControls({
               className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.allowSpectatorPromotion ? 'bg-(--app-accent)' : 'bg-(--app-border)'}`}
             >
               <span
-                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${settings.allowSpectatorPromotion ? 'translate-x-4.5' : 'translate-x-0.5'}`}
+                className={`inline-block h-3.5 w-3.5 rounded-full bg-(--app-text) transition-transform ${settings.allowSpectatorPromotion ? 'translate-x-4.5' : 'translate-x-0.5'}`}
               />
             </button>
           </label>

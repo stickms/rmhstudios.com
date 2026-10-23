@@ -42,17 +42,17 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-          className="flex items-center justify-center gap-2 rounded-xl bg-yellow-500/20 border border-yellow-500/40 py-3 px-4"
+          className="flex items-center justify-center gap-2 rounded-(--app-radius) bg-(--app-warning)/20 border border-(--app-warning)/40 py-3 px-4"
         >
-          <Zap className="h-6 w-6 text-yellow-400" />
-          <span className="text-lg font-black text-yellow-400 tracking-wide">
+          <Zap className="h-6 w-6 text-(--app-warning)" />
+          <span className="text-lg font-black text-(--app-warning) tracking-wide">
             WIT-WHAM!
           </span>
-          <Zap className="h-6 w-6 text-yellow-400" />
+          <Zap className="h-6 w-6 text-(--app-warning)" />
         </motion.div>
       )}
 
-      <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-4 text-center">
+      <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4 text-center">
         <div className="text-xs font-medium text-(--app-text-muted) mb-1">{t("the-prompt", { defaultValue: "The prompt:" })}</div>
         <div className="text-lg font-bold text-(--app-text)">{promptText}</div>
       </div>
@@ -63,14 +63,14 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className={`rounded-xl border-2 p-4 ${
+          className={`rounded-(--app-radius) border-2 p-4 ${
             winnerIsA && !isDraw
-              ? 'border-green-500/60 bg-green-500/10'
+              ? 'border-(--app-success)/60 bg-(--app-success)/10'
               : 'border-(--app-border) bg-(--app-surface)'
           }`}
         >
           {winnerIsA && !isDraw && (
-            <Trophy className="h-4 w-4 text-green-400 mb-1" />
+            <Trophy className="h-4 w-4 text-(--app-success) mb-1" />
           )}
           <div className="text-sm font-medium text-(--app-text) mb-2">
             {answerA}
@@ -85,14 +85,14 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className={`rounded-xl border-2 p-4 ${
+          className={`rounded-(--app-radius) border-2 p-4 ${
             !winnerIsA && !isDraw
-              ? 'border-green-500/60 bg-green-500/10'
+              ? 'border-(--app-success)/60 bg-(--app-success)/10'
               : 'border-(--app-border) bg-(--app-surface)'
           }`}
         >
           {!winnerIsA && !isDraw && (
-            <Trophy className="h-4 w-4 text-green-400 mb-1" />
+            <Trophy className="h-4 w-4 text-(--app-success) mb-1" />
           )}
           <div className="text-sm font-medium text-(--app-text) mb-2">
             {answerB}
@@ -111,10 +111,10 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
         className="w-full"
       >
         <div className="flex justify-between text-sm font-bold mb-1">
-          <span className={winnerIsA ? 'text-green-400' : 'text-(--app-text-muted)'}>
+          <span className={winnerIsA ? 'text-(--app-success)' : 'text-(--app-text-muted)'}>
             {votePercentA}%
           </span>
-          <span className={!winnerIsA && !isDraw ? 'text-green-400' : 'text-(--app-text-muted)'}>
+          <span className={!winnerIsA && !isDraw ? 'text-(--app-success)' : 'text-(--app-text-muted)'}>
             {votePercentB}%
           </span>
         </div>
@@ -123,13 +123,13 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
             initial={{ width: '50%' }}
             animate={{ width: `${votePercentA}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className={`h-full ${winnerIsA ? 'bg-green-500' : 'bg-(--app-text-muted)/30'}`}
+            className={`h-full ${winnerIsA ? 'bg-(--app-success)' : 'bg-(--app-text-muted)/30'}`}
           />
           <motion.div
             initial={{ width: '50%' }}
             animate={{ width: `${votePercentB}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className={`h-full ${!winnerIsA && !isDraw ? 'bg-green-500' : 'bg-(--app-text-muted)/30'}`}
+            className={`h-full ${!winnerIsA && !isDraw ? 'bg-(--app-success)' : 'bg-(--app-text-muted)/30'}`}
           />
         </div>
       </motion.div>

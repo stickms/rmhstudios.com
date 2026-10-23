@@ -24,6 +24,7 @@
  * rest of the site in.
  */
 
+import { AdminBody } from '@/components/admin/AdminBody';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -40,7 +41,8 @@ import {
   X,
 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
@@ -188,17 +190,16 @@ function AdminSliceItRankingPage() {
       backLabel={t('admin-rank-back', { defaultValue: 'Back to admin' })}
       wide
     >
-      <div className="space-y-6 p-4 md:p-6">
-        <LiquidTabs
-          tabs={tabs}
-          value={status}
-          onChange={(id) => setStatus(id as RankStatus)}
-          aria-label={t('admin-rank-filter', { defaultValue: 'Filter charts by pool state' })}
-        />
-
+      <PageTabs
+        tabs={tabs}
+        value={status}
+        onChange={(id) => setStatus(id as RankStatus)}
+        aria-label={t('admin-rank-filter', { defaultValue: 'Filter charts by pool state' })}
+      />
+      <AdminBody width="wide">
         {loading ? (
           <div className="flex flex-col items-center gap-3 py-16 text-site-text-muted">
-            <Spinner size={32} />
+            <Spinner />
             <span>{t('admin-rank-loading', { defaultValue: 'Reading the pool…' })}</span>
           </div>
         ) : rows.length === 0 ? (
@@ -207,7 +208,7 @@ function AdminSliceItRankingPage() {
             title={t('admin-rank-empty', { defaultValue: 'No charts in this state.' })}
           />
         ) : (
-          <ul className="space-y-4">
+          <ul className="space-y-3">
             {rows.map((row) => (
               <ChartRow
                 key={row.id}
@@ -218,7 +219,7 @@ function AdminSliceItRankingPage() {
             ))}
           </ul>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }
@@ -241,14 +242,14 @@ function ChartRow({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate text-lg font-semibold text-site-text">{row.songTitle}</span>
+            <span className="truncate text-base font-semibold text-site-text">{row.songTitle}</span>
             <span className="text-sm text-site-text-dim">{row.songArtist}</span>
             <StateBadge state={row.rankStatus} />
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-site-text-muted">
             <span className="font-medium text-site-text-muted">{row.name}</span>
             <span aria-hidden="true">&bull;</span>
-            <span className="uppercase tracking-wide">{row.difficulty}</span>
+            <span className="capitalize">{row.difficulty}</span>
             <span aria-hidden="true">&bull;</span>
             <span>
               {row.authorHandle
@@ -289,7 +290,7 @@ function ChartRow({
         </div>
       </div>
 
-      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+      <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
         <Gate
           icon={Eye}
           label={t('admin-rank-gate-visibility', { defaultValue: 'Visibility' })}
@@ -350,7 +351,7 @@ function ChartRow({
       )}
 
       {row.rankStatus === 'ranked' && !evidence.eligible && (
-        <p className="mt-2 text-sm text-site-warning">
+        <p className="mt-3 text-sm text-site-warning">
           {t('admin-rank-slipped', {
             defaultValue:
               'This chart no longer meets the automatic gate. Nothing demotes it on its own — a rating built on it stays until a human decides.',
@@ -376,7 +377,7 @@ function Gate({
 }) {
   return (
     <div className="glass-inset rounded-site-sm p-3">
-      <dt className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-site-text-dim">
+      <dt className="flex items-center gap-2 text-xs text-site-text-muted">
         <Icon className="size-3.5" aria-hidden="true" />
         {label}
       </dt>
@@ -403,25 +404,14 @@ function Gate({
 
 function StateBadge({ state }: { state: string }) {
   const { t } = useTranslation('r-slice-it');
-  const tone =
-    state === 'ranked'
-      ? 'bg-site-success/10 text-site-success'
-      : state === 'qualified'
-        ? 'bg-site-accent/10 text-site-accent'
-        : 'bg-site-bg text-site-text-dim';
+  const variant = state === 'ranked' ? 'success' : state === 'qualified' ? 'accent' : 'default';
   const label =
     state === 'ranked'
       ? t('admin-rank-state-ranked', { defaultValue: 'Ranked' })
       : state === 'qualified'
         ? t('admin-rank-state-qualified', { defaultValue: 'Qualified' })
         : t('admin-rank-state-unranked', { defaultValue: 'Unranked' });
-  return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tone}`}
-    >
-      {label}
-    </span>
-  );
+  return <Badge variant={variant}>{label}</Badge>;
 }
 
 /** `QualifyBlocker` codes, spelled out. */

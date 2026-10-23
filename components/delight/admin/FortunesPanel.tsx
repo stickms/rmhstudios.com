@@ -35,7 +35,7 @@ export default function FortunesPanel() {
     );
   }
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-3">
       {q.data?.pending.map((f) => (
         <li key={f.id} className="glass-fill flex items-center gap-3 rounded-site px-4 py-3">
           <span className="min-w-0 flex-1 text-sm text-site-text">{f.text}</span>

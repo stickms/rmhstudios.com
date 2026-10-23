@@ -111,7 +111,7 @@ export default function InsightsPage() {
         <div className="container">
           <div className="cta-band reveal">
             <span className="eyebrow center">{t("cta-eyebrow", { defaultValue: "Stay Informed" })}</span>
-            <h2 style={{ marginTop: 18 }}>{t("cta-heading", { defaultValue: "Get our perspectives in your inbox." })}</h2>
+            <h2 style={{ marginTop: 20 }}>{t("cta-heading", { defaultValue: "Get our perspectives in your inbox." })}</h2>
             <p>{t("cta-body", { defaultValue: "Subscribe for research and commentary from across the platform. We send what's worth reading, and nothing else." })}</p>
             <Link className="btn btn-gold" to="/rmh-capital/contact" search={{ type: 'General Inquiry' }}>
               {t("cta-subscribe", { defaultValue: "Subscribe" })} <span className="arw">&rarr;</span>

@@ -90,7 +90,7 @@ export function GameBackLink({
           variant="ghost"
           size="sm"
           className={cn(
-            'flex items-center gap-1.5 border text-xs backdrop-blur-sm sm:text-sm',
+            'flex items-center gap-1.5 border text-xs sm:text-sm pointer-coarse:min-h-11 pointer-coarse:min-w-11',
             TONES[tone],
           )}
         >

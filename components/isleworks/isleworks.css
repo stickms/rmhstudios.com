@@ -309,6 +309,7 @@
 .isw-drawer {
   width: min(100%, 720px);
   max-height: min(46vh, 320px);
+  max-height: min(46dvh, 320px);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 10px;
@@ -779,5 +780,14 @@
   .isw *::after {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+/* Touch targets: the 30–34px HUD buttons are fine for a mouse, but a thumb needs
+   the 44px floor. Declared after the narrow-screen rule so it wins at any width. */
+@media (pointer: coarse) {
+  .isw-btn {
+    height: 44px;
+    min-width: 44px;
   }
 }

@@ -118,7 +118,7 @@ export default function RmhStudyLanding() {
 
   return (
     <div className="app-page">
-      <RmhStudyHeader backLabel="Apps" backHref="/apps" />
+      <RmhStudyHeader backLabel={t("apps", { defaultValue: "Apps" })} backHref="/apps" />
 
       <div className="flex-1 p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-8">
@@ -139,9 +139,9 @@ export default function RmhStudyLanding() {
           {/* Flashcards — solo study with decks + AI tutor */}
           <button
             onClick={() => router.navigate({ to: '/study' })}
-            className="group w-full flex items-center gap-4 rounded-xl border border-(--app-border) bg-(--app-surface) p-5 text-left transition-colors hover:border-(--app-accent)"
+            className="group w-full flex items-center gap-4 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-5 text-left transition-colors hover:border-(--app-accent)"
           >
-            <div className="rounded-lg p-3 bg-(--app-bg)">
+            <div className="rounded-(--app-radius-sm) p-3 bg-(--app-bg)">
               <Layers className="h-6 w-6 text-(--app-accent)" />
             </div>
             <div className="flex-1 min-w-0">
@@ -168,7 +168,7 @@ export default function RmhStudyLanding() {
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Create Room */}
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-(--app-accent)" />
                 {t('create-study-room', { defaultValue: 'Create Study Room' })}
@@ -266,14 +266,14 @@ export default function RmhStudyLanding() {
               <button
                 onClick={handleCreateRoom}
                 disabled={connectionStatus !== 'connected'}
-                className="w-full py-3 rounded-lg font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                className="w-full py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
               >
                 {t('create-room', { defaultValue: 'Create Room' })}
               </button>
             </div>
 
             {/* Join Room */}
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <Users className="h-5 w-5 text-(--app-accent)" />
                 {t('join-study-room', { defaultValue: 'Join Study Room' })}
@@ -296,18 +296,18 @@ export default function RmhStudyLanding() {
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   placeholder="ABCDEF"
-                  className="w-10 min-w-0 flex-1 px-4 py-3 rounded-lg font-mono text-lg uppercase tracking-widest text-center border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+                  className="w-10 min-w-0 flex-1 px-4 py-3 rounded-(--app-radius-sm) font-mono text-lg uppercase tracking-widest text-center border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
                 />
                 <button
                   type="submit"
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                  className="px-6 py-3 rounded-lg font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                  className="px-6 py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
                 >
                   {t('join', { defaultValue: 'Join' })}
                 </button>
               </form>
 
-              <div className="mt-6 p-4 rounded-lg bg-(--app-bg) border border-(--app-border)">
+              <div className="mt-6 p-4 rounded-(--app-radius-sm) bg-(--app-bg) border border-(--app-border)">
                 <h3 className="text-sm font-semibold mb-2">
                   {t('how-it-works', { defaultValue: 'How it works' })}
                 </h3>
@@ -329,7 +329,7 @@ export default function RmhStudyLanding() {
           </div>
 
           {/* Public Rooms */}
-          <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+          <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Globe className="h-5 w-5 text-(--app-accent)" />
@@ -337,7 +337,7 @@ export default function RmhStudyLanding() {
               </h2>
               <button
                 onClick={() => emit(C2S.ROOM_BROWSE, {})}
-                className="p-1.5 rounded-lg text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover) transition-colors"
+                className="p-1.5 rounded-(--app-radius-sm) text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover) transition-colors"
                 title={t('refresh', { defaultValue: 'Refresh' })}
               >
                 <RefreshCw className="h-4 w-4" />
@@ -353,7 +353,7 @@ export default function RmhStudyLanding() {
                   <button
                     key={r.roomCode}
                     onClick={() => emit(C2S.ROOM_JOIN, { roomCode: r.roomCode })}
-                    className="w-full flex items-center justify-between p-3 rounded-lg bg-(--app-bg) border border-(--app-border) hover:border-(--app-accent) transition-colors text-left"
+                    className="w-full flex items-center justify-between p-3 rounded-(--app-radius-sm) bg-(--app-bg) border border-(--app-border) hover:border-(--app-accent) transition-colors text-left"
                   >
                     <div>
                       <div className="font-medium text-sm">

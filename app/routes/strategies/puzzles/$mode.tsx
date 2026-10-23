@@ -10,7 +10,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
-import { ArrowLeft, RotateCcw, ArrowUpDown, GripVertical } from 'lucide-react';
+import { ArrowLeft, RotateCcw, ArrowUpDown, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PuzzleShell } from '@/components/doctrine/puzzles/puzzle-shell';
 import { ResultCard } from '@/components/doctrine/puzzles/result-card';
@@ -64,7 +64,7 @@ function PuzzleModePage() {
   if (!activePuzzle) {
     return (
       <div className="min-h-dvh flex items-center justify-center" style={{ background: 'var(--doctrine-bg-primary)' }}>
-        <p className="text-sm text-white/40">{t("loading-puzzle", { defaultValue: "Loading puzzle..." })}</p>
+        <p className="text-sm text-white/60">{t("loading-puzzle", { defaultValue: "Loading puzzle..." })}</p>
       </div>
     );
   }
@@ -134,6 +134,7 @@ function PuzzlePlayer({
         {/* Submit button */}
         {phase === 'playing' && selectedAnswer !== null && (
           <button
+            type="button"
             onClick={handleSubmit}
             className="w-full py-3 rounded-lg text-base md:text-sm font-bold transition hover:brightness-110 active:scale-[0.98] min-h-11"
             style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
@@ -143,7 +144,7 @@ function PuzzlePlayer({
         )}
 
         {phase === 'submitting' && (
-          <div className="text-center text-sm text-white/40">{t("submitting", { defaultValue: "Submitting..." })}</div>
+          <div className="text-center text-sm text-white/60">{t("submitting", { defaultValue: "Submitting..." })}</div>
         )}
 
         {/* Result card */}
@@ -188,7 +189,7 @@ function PuzzlePlayer({
         {phase === 'expired' && (
           <div className="text-center py-8 space-y-4">
             <p className="text-lg font-bold text-white/60">{t("times-up", { defaultValue: "Time's Up" })}</p>
-            <p className="text-sm text-white/30 mt-1">{t("puzzle-expired", { defaultValue: "This puzzle has expired." })}</p>
+            <p className="text-sm text-white/50 mt-1">{t("puzzle-expired", { defaultValue: "This puzzle has expired." })}</p>
             <button
               onClick={handlePlayAgain}
               className="px-6 py-3 rounded-lg text-base md:text-sm font-medium min-h-11 transition hover:brightness-110"
@@ -236,6 +237,8 @@ function AlibiPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAnsw
         {suspects?.map(s => (
           <button
             key={s.name}
+            type="button"
+            aria-pressed={selected === s.name}
             onClick={() => { setSelected(s.name); onAnswer(s.name); }}
             className={`w-full text-left p-4 md:p-3 rounded-lg transition-colors min-h-11 ${
               selected === s.name ? 'ring-2' : 'hover:bg-white/5'
@@ -269,6 +272,8 @@ function OutcastPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAn
         {words?.map(w => (
           <button
             key={w}
+            type="button"
+            aria-pressed={selected === w}
             onClick={() => { setSelected(w); onAnswer(w); }}
             className={`px-4 py-3 md:py-2 rounded-lg text-base md:text-sm font-medium transition-colors min-h-11 ${
               selected === w ? 'ring-2' : 'hover:bg-white/10'
@@ -300,6 +305,8 @@ function ImpostorPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
         {pairs?.map(p => (
           <button
             key={p.word}
+            type="button"
+            aria-pressed={selected === p.word}
             onClick={() => { setSelected(p.word); onAnswer(p.word); }}
             className={`w-full text-left p-4 md:p-3 rounded-lg transition-colors min-h-11 ${
               selected === p.word ? 'ring-2' : 'hover:bg-white/5'
@@ -344,7 +351,7 @@ function SpectrumPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
       </p>
 
       {/* Spectrum endpoints */}
-      <div className="flex justify-between text-xs font-mono text-white/30 px-2">
+      <div className="flex justify-between text-xs font-mono text-white/50 px-2">
         <span>{low}</span>
         <span>{high}</span>
       </div>
@@ -359,7 +366,7 @@ function SpectrumPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); }}
             onDragEnd={() => setDragIndex(null)}
-            className={`flex items-center gap-3 p-3 md:p-2.5 rounded-lg cursor-grab active:cursor-grabbing select-none transition min-h-11 ${
+            className={`flex items-center gap-2 py-1 pl-3 pr-1 rounded-lg cursor-grab active:cursor-grabbing select-none transition min-h-11 ${
               dragIndex === i ? 'opacity-50 scale-95' : ''
             }`}
             style={{
@@ -367,15 +374,35 @@ function SpectrumPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
               border: '1px solid rgba(255,255,255,0.06)',
             }}
           >
-            <GripVertical size={16} className="text-white/20 shrink-0" />
+            <GripVertical size={16} className="text-white/50 shrink-0" aria-hidden />
             <span className="text-base md:text-sm font-medium text-white/90 flex-1">{word}</span>
-            <span className="text-xs font-mono text-white/20 shrink-0">{i + 1}</span>
+            <span className="text-xs font-mono text-white/50 shrink-0">{i + 1}</span>
+            <span className="flex shrink-0 items-center">
+              <button
+                type="button"
+                disabled={i === 0}
+                onClick={() => moveItem(i, i - 1)}
+                aria-label={t("move-up", { defaultValue: "Move {{item}} up", item: word })}
+                className="size-11 flex items-center justify-center rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              >
+                <ChevronUp size={16} aria-hidden />
+              </button>
+              <button
+                type="button"
+                disabled={i === items.length - 1}
+                onClick={() => moveItem(i, i + 1)}
+                aria-label={t("move-down", { defaultValue: "Move {{item}} down", item: word })}
+                className="size-11 flex items-center justify-center rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              >
+                <ChevronDown size={16} aria-hidden />
+              </button>
+            </span>
           </div>
         ))}
       </div>
 
       {/* Tap-to-swap for mobile: select two items to swap */}
-      <p className="text-xs text-white/20 text-center md:hidden">{t("drag-to-reorder", { defaultValue: "Drag items to reorder, or tap two items to swap" })}</p>
+      <p className="text-xs text-white/50 text-center">{t("reorder-hint", { defaultValue: "Drag items to reorder, or use the arrows" })}</p>
     </div>
   );
 }
@@ -413,7 +440,7 @@ function ChainlinkPuzzle({ data, onAnswer }: { data: Record<string, unknown>; on
         style={{ background: 'var(--doctrine-accent-muted)', border: '1px solid var(--doctrine-accent, #F97316)' }}
       >
         <span className="text-base md:text-sm font-bold" style={{ color: 'var(--doctrine-accent)' }}>{start}</span>
-        <span className="text-xs font-mono text-white/30 ml-auto">{t("chain-start", { defaultValue: "START" })}</span>
+        <span className="text-xs font-mono text-white/50 ml-auto">{t("chain-start", { defaultValue: "START" })}</span>
       </div>
 
       {/* Draggable middle */}
@@ -426,7 +453,7 @@ function ChainlinkPuzzle({ data, onAnswer }: { data: Record<string, unknown>; on
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveItem(dragIndex, i); setDragIndex(null); }}
             onDragEnd={() => setDragIndex(null)}
-            className={`flex items-center gap-3 p-3 md:p-2.5 rounded-lg cursor-grab active:cursor-grabbing select-none transition min-h-11 ${
+            className={`flex items-center gap-2 py-1 pl-3 pr-1 rounded-lg cursor-grab active:cursor-grabbing select-none transition min-h-11 ${
               dragIndex === i ? 'opacity-50 scale-95' : ''
             }`}
             style={{
@@ -434,8 +461,28 @@ function ChainlinkPuzzle({ data, onAnswer }: { data: Record<string, unknown>; on
               border: '1px solid rgba(255,255,255,0.06)',
             }}
           >
-            <GripVertical size={16} className="text-white/20 shrink-0" />
+            <GripVertical size={16} className="text-white/50 shrink-0" aria-hidden />
             <span className="text-base md:text-sm font-medium text-white/90 flex-1">{word}</span>
+            <span className="flex shrink-0 items-center">
+              <button
+                type="button"
+                disabled={i === 0}
+                onClick={() => moveItem(i, i - 1)}
+                aria-label={t("move-up", { defaultValue: "Move {{item}} up", item: word })}
+                className="size-11 flex items-center justify-center rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              >
+                <ChevronUp size={16} aria-hidden />
+              </button>
+              <button
+                type="button"
+                disabled={i === middle.length - 1}
+                onClick={() => moveItem(i, i + 1)}
+                aria-label={t("move-down", { defaultValue: "Move {{item}} down", item: word })}
+                className="size-11 flex items-center justify-center rounded text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              >
+                <ChevronDown size={16} aria-hidden />
+              </button>
+            </span>
           </div>
         ))}
       </div>
@@ -446,7 +493,7 @@ function ChainlinkPuzzle({ data, onAnswer }: { data: Record<string, unknown>; on
         style={{ background: 'var(--doctrine-accent-muted)', border: '1px solid var(--doctrine-accent, #F97316)' }}
       >
         <span className="text-base md:text-sm font-bold" style={{ color: 'var(--doctrine-accent)' }}>{end}</span>
-        <span className="text-xs font-mono text-white/30 ml-auto">{t("chain-end", { defaultValue: "END" })}</span>
+        <span className="text-xs font-mono text-white/50 ml-auto">{t("chain-end", { defaultValue: "END" })}</span>
       </div>
     </div>
   );
@@ -458,8 +505,8 @@ function GenericPuzzle() {
   const { t } = useTranslation("r-strategies");
   return (
     <div className="text-center py-8">
-      <p className="text-sm text-white/40">{t("generic-not-implemented", { defaultValue: "Puzzle mode not yet implemented." })}</p>
-      <p className="text-xs text-white/20 mt-1">{t("check-back-soon", { defaultValue: "Check back soon." })}</p>
+      <p className="text-sm text-white/60">{t("generic-not-implemented", { defaultValue: "Puzzle mode not yet implemented." })}</p>
+      <p className="text-xs text-white/50 mt-1">{t("check-back-soon", { defaultValue: "Check back soon." })}</p>
     </div>
   );
 }

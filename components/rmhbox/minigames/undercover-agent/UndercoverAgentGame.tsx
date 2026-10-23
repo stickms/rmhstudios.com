@@ -494,7 +494,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="rounded-lg bg-red-500/20 border border-red-500/40 px-4 py-2 text-center text-sm text-red-300"
+            className="rounded-(--app-radius-sm) bg-(--app-danger)/20 border border-(--app-danger)/40 px-4 py-2 text-center text-sm text-(--app-danger)"
           >
             {errorMsg === 'invalid_team_composition'
               ? t("ua-err-invalid-team", { defaultValue: "Each team needs at least 1 spymaster and 1 operative" })
@@ -550,7 +550,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
               <button
                 type="button"
                 onClick={handleShuffleTeams}
-                className="rounded-lg border border-(--app-border) bg-(--app-surface) px-4 py-2 text-sm font-medium text-(--app-text) transition-colors hover:bg-(--app-accent)/10"
+                className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) px-4 py-2 text-sm font-medium text-(--app-text) transition-colors hover:bg-(--app-accent)/10"
               >
                 <Shuffle className="h-4 w-4 inline-block mr-1" />{t("ua-shuffle", { defaultValue: "Shuffle" })}
               </button>
@@ -558,9 +558,9 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                 type="button"
                 onClick={handleStartGame}
                 disabled={!isTeamValid}
-                className={`rounded-lg px-6 py-2 text-sm font-bold transition-colors ${
+                className={`rounded-(--app-radius-sm) px-6 py-2 text-sm font-bold transition-colors ${
                   isTeamValid
-                    ? 'bg-(--app-accent) text-white hover:brightness-110'
+                    ? 'bg-(--app-accent) text-(--app-accent-fg) hover:brightness-110'
                     : 'cursor-not-allowed bg-(--app-surface) text-(--app-text-muted) opacity-50'
                 }`}
               >
@@ -570,7 +570,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
           )}
 
           {!isTeamValid && (
-            <p className="text-xs text-yellow-400/80">
+            <p className="text-xs text-(--app-warning)/80">
               {t("ua-team-requirement", { defaultValue: "Each team needs at least 1 spymaster + 1 operative (min 4 players)" })}
             </p>
           )}
@@ -617,7 +617,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                     {t("ua-your-role", { defaultValue: "Your role:" })} <span className="font-semibold capitalize text-(--app-accent)">{myRole}</span>
                     {myTeam && (
                       <>
-                        {' '}{t("ua-on-team", { defaultValue: "on" })} <span className={`font-semibold ${myTeam === 'red' ? 'text-red-400' : 'text-blue-400'}`}>{myTeam}</span> {t("ua-team-label", { defaultValue: "team" })}
+                        {' '}{t("ua-on-team", { defaultValue: "on" })} <span className={`font-semibold ${myTeam === 'red' ? 'text-(--app-danger)' : 'text-(--app-info)'}`}>{myTeam}</span> {t("ua-team-label", { defaultValue: "team" })}
                       </>
                     )}
                   </p>
@@ -707,11 +707,11 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                 >
                   <h2 className="text-2xl font-bold">{t("ua-board-reveal", { defaultValue: "Board Reveal" })}</h2>
                   {winner && winner !== 'draw' && (
-                    <p className={`text-lg font-semibold ${winner === 'red' ? 'text-red-400' : 'text-blue-400'}`}>
+                    <p className={`text-lg font-semibold ${winner === 'red' ? 'text-(--app-danger)' : 'text-(--app-info)'}`}>
                       {t("ua-team-wins", { defaultValue: "{{team}} Team Wins!", team: winner.charAt(0).toUpperCase() + winner.slice(1) })}
                     </p>
                   )}
-                  {winner === 'draw' && <p className="text-lg font-semibold text-yellow-400">{t("ua-draw", { defaultValue: "It's a Draw!" })}</p>}
+                  {winner === 'draw' && <p className="text-lg font-semibold text-(--app-warning)">{t("ua-draw", { defaultValue: "It's a Draw!" })}</p>}
                   {winReason && (
                     <p className="text-sm text-(--app-text-muted) capitalize">
                       {winReason.replace(/_/g, ' ')}
@@ -721,7 +721,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                     <button
                       type="button"
                       onClick={handleContinueBoardReveal}
-                      className="mt-2 rounded-lg bg-(--app-accent) px-6 py-2 text-sm font-bold text-white transition-colors hover:brightness-110"
+                      className="mt-2 rounded-(--app-radius-sm) bg-(--app-accent) px-6 py-2 text-sm font-bold text-(--app-accent-fg) transition-colors hover:brightness-110"
                     >
                       {t("ua-continue-results", { defaultValue: "Continue to Results" })}
                     </button>
@@ -743,11 +743,11 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
                 >
                   <h2 className="text-2xl font-bold">{t("ua-game-over", { defaultValue: "Game Over!" })}</h2>
                   {winner && winner !== 'draw' && (
-                    <p className={`text-lg font-semibold ${winner === 'red' ? 'text-red-400' : 'text-blue-400'}`}>
+                    <p className={`text-lg font-semibold ${winner === 'red' ? 'text-(--app-danger)' : 'text-(--app-info)'}`}>
                       {t("ua-team-wins", { defaultValue: "{{team}} Team Wins!", team: winner.charAt(0).toUpperCase() + winner.slice(1) })}
                     </p>
                   )}
-                  {winner === 'draw' && <p className="text-lg font-semibold text-yellow-400">{t("ua-draw", { defaultValue: "It's a Draw!" })}</p>}
+                  {winner === 'draw' && <p className="text-lg font-semibold text-(--app-warning)">{t("ua-draw", { defaultValue: "It's a Draw!" })}</p>}
                   {winReason && (
                     <p className="text-sm text-(--app-text-muted) capitalize">
                       {winReason.replace(/_/g, ' ')}
@@ -808,8 +808,8 @@ function TeamSetupColumn({
 }: TeamSetupColumnProps) {
   const { t } = useTranslation("c-rmhbox");
   const isRed = teamId === 'red';
-  const teamColor = isRed ? 'text-red-400' : 'text-blue-400';
-  const borderColor = isRed ? 'border-red-500/40' : 'border-blue-500/40';
+  const teamColor = isRed ? 'text-(--app-danger)' : 'text-(--app-info)';
+  const borderColor = isRed ? 'border-(--app-danger)/40' : 'border-(--app-info)/40';
   const otherTeam: Team = isRed ? 'blue' : 'red';
 
   // Filter out empty member slots (e.g. spymasterId can be '' when all leave)
@@ -819,7 +819,7 @@ function TeamSetupColumn({
   ];
 
   return (
-    <div className={`rounded-xl border ${borderColor} bg-(--app-surface) p-3`}>
+    <div className={`rounded-(--app-radius) border ${borderColor} bg-(--app-surface) p-3`}>
       <h3 className={`mb-3 text-center text-sm font-bold uppercase tracking-wider ${teamColor}`}>
         {teamId} team
       </h3>
@@ -835,7 +835,7 @@ function TeamSetupColumn({
           return (
             <div
               key={userId}
-              className={`flex items-center justify-between rounded-lg px-2 py-1.5 text-xs transition-colors ${
+              className={`flex items-center justify-between rounded-(--app-radius-sm) px-2 py-1.5 text-xs transition-colors ${
                 isSelf ? 'bg-(--app-accent)/10 font-bold' : ''
               }`}
             >
@@ -863,7 +863,7 @@ function TeamSetupColumn({
                     onClick={() => onSwap(userId, otherTeam)}
                     title={t("ua-move-to-team", { defaultValue: "Move to {{team}} team", team: otherTeam })}
                     className={`rounded px-1.5 py-0.5 text-[10px] border border-(--app-border)/50 hover:bg-(--app-accent)/10 transition-colors ${
-                      isRed ? 'text-blue-400' : 'text-red-400'
+                      isRed ? 'text-(--app-info)' : 'text-(--app-danger)'
                     }`}
                   >
                     {isRed ? '→' : '←'} {otherTeam.charAt(0).toUpperCase() + otherTeam.slice(1)}

@@ -3,17 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
-import { Link } from '@tanstack/react-router';
-import {
-    ArrowLeft,
-    Trophy,
-    Copy,
-    Check,
-    Plus,
-    X,
-    Send,
-    Link2,
-} from 'lucide-react';
+import { Trophy, Plus, X, Send, Link2 } from 'lucide-react';
 import {
     generateChainlinkPuzzle,
     isValidAssociation,
@@ -34,6 +24,18 @@ import {
 } from '@/lib/daily-puzzles/persistence';
 import { generateChainlinkShare } from '@/lib/daily-puzzles/share';
 import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    PuzzlePage,
+    PuzzleHeader,
+    PuzzleNotice,
+    PuzzleSection,
+    PuzzleResultCard,
+    PuzzleResultStack,
+    PuzzleShareRow,
+    PuzzleFootnote,
+} from '@/components/daily-puzzles/PuzzleShell';
 import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
@@ -72,7 +74,6 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
     const [completed, setCompleted] = useState(false);
     const [gaveUp, setGaveUp] = useState(false);
     const [score, setScore] = useState(0);
-    const [copied, setCopied] = useState(false);
 
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -207,23 +208,14 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
         }, !!session.data);
     };
 
-    const handleShare = async () => {
-        const shareText = generateChainlinkShare(
-            puzzleNumber,
-            puzzle.startWord,
-            puzzle.endWord,
-            gaveUp ? 0 : fullChain.length,
-            score,
-            puzzle.parLinks,
-        );
-        try {
-            await navigator.clipboard.writeText(shareText);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            /* clipboard not available */
-        }
-    };
+    const shareText = generateChainlinkShare(
+        puzzleNumber,
+        puzzle.startWord,
+        puzzle.endWord,
+        gaveUp ? 0 : fullChain.length,
+        score,
+        puzzle.parLinks,
+    );
 
     const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
         if (e.key === 'Enter') {
@@ -245,50 +237,37 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
 
     const isGameOver = completed;
 
+    const endpoint = (n: number, word: string, label: string) => (
+        <div className="flex items-center gap-3">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-xs font-bold text-site-accent">
+                {n}
+            </span>
+            <div className="glass-fill flex flex-1 items-baseline gap-2 rounded-site-sm border border-site-accent/40 px-4 py-3">
+                <span className="text-lg font-bold tracking-wide text-site-text">{word}</span>
+                <span className="text-xs text-site-text-muted">{label}</span>
+            </div>
+        </div>
+    );
+
     return (
         <>
-            {/* Back link */}
-            <Link
-                to="/daily"
-                className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
+            <PuzzleHeader
+                icon={<Link2 />}
+                title={t("chainlink-title", { defaultValue: "Chainlink" })}
+                subtitle={<>{t("daily-puzzle", { defaultValue: "Daily puzzle" })} &middot; {dateKey} &middot; #{puzzleNumber}</>}
             >
-                <ArrowLeft className="w-4 h-4" />
-                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
-            </Link>
-
-            {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-site-text mb-1 flex items-center justify-center gap-2">
-                    <Link2 className="w-8 h-8 text-blue-400" />
-                    Chainlink
-                </h1>
-                <p className="text-site-text-muted text-sm mb-2">
-                    Daily puzzle &middot; {dateKey} &middot; #{puzzleNumber}
-                </p>
-                <div className="inline-block px-4 py-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
-                    <p className="text-blue-400 font-semibold text-sm">{t("connect-words-instruction", { defaultValue: "Connect the words through association" })}</p>
-                    <p className="text-site-text-muted text-xs mt-0.5">
-                        {t("build-chain-instruction", { defaultValue: "Build a chain from start to end. Each adjacent pair must be associated." })}
-                    </p>
-                </div>
-            </div>
+                <PuzzleNotice title={t("connect-words-instruction", { defaultValue: "Connect the words through association" })}>
+                    {t("build-chain-instruction", { defaultValue: "Build a chain from start to end. Each adjacent pair must be associated." })}
+                </PuzzleNotice>
+            </PuzzleHeader>
 
             {/* Chain builder */}
             <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-3 mb-6"
+                className="flex flex-col gap-3"
             >
-                {/* Start word (fixed) */}
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center shrink-0">
-                        <span className="text-blue-400 text-xs font-bold">1</span>
-                    </div>
-                    <div className="flex-1 px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/30">
-                        <span className="text-blue-400 font-bold text-lg tracking-wide">{puzzle.startWord}</span>
-                        <span className="text-site-text-muted text-xs ml-2">{t("start-label", { defaultValue: "start" })}</span>
-                    </div>
-                </div>
+                {endpoint(1, puzzle.startWord, t("start-label", { defaultValue: "start" }))}
 
                 {/* Middle links (editable) */}
                 <AnimatePresence mode="popLayout">
@@ -299,121 +278,85 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -8, scale: 0.95 }}
                             transition={{ duration: 0.2 }}
-                            className="flex items-center gap-3"
+                            className="flex items-start gap-3"
                         >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                                validationErrors[i]
-                                    ? 'bg-red-500/20 border border-red-500/40'
-                                    : 'bg-site-surface border border-site-border'
-                            }`}>
-                                <span className={`text-xs font-bold ${
-                                    validationErrors[i] ? 'text-red-400' : 'text-site-text-muted'
-                                }`}>{i + 2}</span>
-                            </div>
-                            <div className="flex-1 relative">
-                                <input
-                                    ref={el => { inputRefs.current[i] = el; }}
-                                    type="text"
-                                    value={word}
-                                    onChange={e => handleInputChange(i, e.target.value)}
-                                    onKeyDown={e => handleKeyDown(e, i)}
-                                    disabled={isGameOver}
-                                    placeholder={t("type-linking-word", { defaultValue: "Type a linking word..." })}
-                                    className={`w-full px-4 py-3 rounded-xl bg-site-surface border text-site-text placeholder:text-site-text-muted/50 focus:outline-none focus:ring-2 transition ${
-                                        validationErrors[i]
-                                            ? 'border-red-500/50 focus:ring-red-500/30'
-                                            : 'border-site-border focus:ring-blue-500/30 focus:border-blue-500/50'
-                                    } ${isGameOver ? 'opacity-70 cursor-default' : ''}`}
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                />
-                                {!isGameOver && chain.length > 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveLink(i)}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-site-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                                        title={t("remove-link", { defaultValue: "Remove link" })}
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
+                            <span
+                                className={`mt-1.5 flex size-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
+                                    validationErrors[i]
+                                        ? 'border-site-danger/50 bg-site-danger/10 text-site-danger'
+                                        : 'border-site-border bg-site-surface text-site-text-muted'
+                                }`}
+                            >
+                                {i + 2}
+                            </span>
+                            <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                <div className="relative">
+                                    <Input
+                                        ref={(el) => {
+                                            inputRefs.current[i] = el;
+                                        }}
+                                        type="text"
+                                        value={word}
+                                        onChange={(e) => handleInputChange(i, e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(e, i)}
+                                        disabled={isGameOver}
+                                        placeholder={t("type-linking-word", { defaultValue: "Type a linking word..." })}
+                                        aria-label={t("link-word-label", { defaultValue: "Link {{n}}", n: i + 2 })}
+                                        aria-invalid={validationErrors[i] ? true : undefined}
+                                        aria-describedby={validationErrors[i] ? `chainlink-err-${i}` : undefined}
+                                        className={!isGameOver && chain.length > 1 ? 'pr-12' : undefined}
+                                        autoComplete="off"
+                                        spellCheck={false}
+                                    />
+                                    {!isGameOver && chain.length > 1 && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            onClick={() => handleRemoveLink(i)}
+                                            className="absolute right-1 top-1/2 -translate-y-1/2 text-site-text-muted"
+                                            aria-label={t("remove-link", { defaultValue: "Remove link" })}
+                                        >
+                                            <X aria-hidden />
+                                        </Button>
+                                    )}
+                                </div>
+                                {validationErrors[i] && (
+                                    <p id={`chainlink-err-${i}`} role="alert" className="text-xs text-site-danger">
+                                        {validationErrors[i]}
+                                    </p>
                                 )}
                             </div>
                         </motion.div>
                     ))}
                 </AnimatePresence>
 
-                {/* Validation error messages */}
-                <AnimatePresence>
-                    {validationErrors.map((err, i) =>
-                        err ? (
-                            <motion.p
-                                key={`err-${i}`}
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="text-red-400 text-xs pl-11"
-                            >
-                                {err}
-                            </motion.p>
-                        ) : null,
-                    )}
-                </AnimatePresence>
-
-                {/* End word (fixed) */}
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center shrink-0">
-                        <span className="text-blue-400 text-xs font-bold">{chain.length + 2}</span>
-                    </div>
-                    <div className="flex-1 px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/30">
-                        <span className="text-blue-400 font-bold text-lg tracking-wide">{puzzle.endWord}</span>
-                        <span className="text-site-text-muted text-xs ml-2">{t("end-label", { defaultValue: "end" })}</span>
-                    </div>
-                </div>
+                {endpoint(chain.length + 2, puzzle.endWord, t("end-label", { defaultValue: "end" }))}
             </motion.div>
 
             {/* Action buttons (while playing) */}
             {!isGameOver && (
-                <div className="flex justify-center gap-3 flex-wrap mb-6">
-                    {chain.length < MAX_MIDDLE_LINKS && (
-                        <motion.button
-                            type="button"
-                            onClick={handleAddLink}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text-muted hover:text-site-text hover:border-blue-500/40 transition-colors text-sm"
-                        >
-                            <Plus className="w-4 h-4" />
-                            {t("add-link", { defaultValue: "Add Link" })}
-                        </motion.button>
-                    )}
-                    <motion.button
-                        type="button"
-                        onClick={handleSubmit}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-400 font-semibold hover:bg-blue-500/30 transition-colors text-sm"
-                    >
-                        <Send className="w-4 h-4" />
-                        {t("submit-chain", { defaultValue: "Submit Chain" })}
-                    </motion.button>
-                    <motion.button
-                        type="button"
-                        onClick={handleGiveUp}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors text-sm"
-                    >
-                        <X className="w-4 h-4" />
-                        {t("give-up", { defaultValue: "Give Up" })}
-                    </motion.button>
+                <div className="mt-6 flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                        {chain.length < MAX_MIDDLE_LINKS && (
+                            <Button type="button" variant="secondary" onClick={handleAddLink}>
+                                <Plus aria-hidden />
+                                {t("add-link", { defaultValue: "Add Link" })}
+                            </Button>
+                        )}
+                        <Button type="button" variant="accent" onClick={handleSubmit}>
+                            <Send aria-hidden />
+                            {t("submit-chain", { defaultValue: "Submit Chain" })}
+                        </Button>
+                        <Button type="button" variant="outline" onClick={handleGiveUp}>
+                            <X aria-hidden />
+                            {t("give-up", { defaultValue: "Give Up" })}
+                        </Button>
+                    </div>
+                    <p className="text-center text-xs text-site-text-muted">
+                        {t("chain-length-info", { defaultValue: "Chain length: {{length}} words · Par: {{par}} · Score if submitted: {{score}} pts", length: chainLength, par: puzzle.parLinks, score: computeChainlinkScore(chainLength) })}
+                    </p>
                 </div>
-            )}
-
-            {/* Chain length indicator */}
-            {!isGameOver && (
-                <p className="text-center text-site-text-muted text-xs mb-4">
-                    {t("chain-length-info", { defaultValue: "Chain length: {{length}} words · Par: {{par}} · Score if submitted: {{score}} pts", length: chainLength, par: puzzle.parLinks, score: computeChainlinkScore(chainLength) })}
-                </p>
             )}
 
             {/* Result screen */}
@@ -423,135 +366,67 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="mt-6 space-y-4"
                     >
-                        {/* Outcome banner */}
-                        <div
-                            className={`p-6 rounded-2xl text-center ${
-                                gaveUp
-                                    ? 'bg-site-surface border border-red-500/30'
-                                    : 'bg-site-surface border border-emerald-500/30'
-                            }`}
-                        >
-                            {gaveUp ? (
-                                <>
-                                    <div className="text-2xl font-bold text-red-400 mb-1">{t("chain-broken", { defaultValue: "Chain Broken" })}</div>
-                                    <p className="text-site-text-muted text-sm">
-                                        {t("gave-up-message", { defaultValue: "You gave up on today's puzzle." })}
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="text-2xl font-bold text-emerald-400 mb-1">{t("chain-complete", { defaultValue: "Chain Complete!" })}</div>
-                                    <p className="text-site-text-muted text-sm">
-                                        {t("chain-complete-message-pre", { defaultValue: "You connected" })}{' '}
-                                        <span className="text-site-text font-medium">{puzzle.startWord}</span>{' '}
-                                        {t("chain-complete-message-to", { defaultValue: "to" })}{' '}
-                                        <span className="text-site-text font-medium">{puzzle.endWord}</span>{' '}
-                                        {t("chain-complete-message-in", { defaultValue: "in" })}{' '}
-                                        {chainLength} {t("links-label", { defaultValue: "links." })}
-                                    </p>
-                                </>
-                            )}
-                        </div>
+                        <PuzzleResultStack>
+                            <PuzzleResultCard
+                                tone={gaveUp ? 'danger' : 'success'}
+                                title={gaveUp ? t("chain-broken", { defaultValue: "Chain Broken" }) : t("chain-complete", { defaultValue: "Chain Complete!" })}
+                                description={
+                                    gaveUp ? (
+                                        t("gave-up-message", { defaultValue: "You gave up on today's puzzle." })
+                                    ) : (
+                                        <>
+                                            {t("chain-complete-message-pre", { defaultValue: "You connected" })}{' '}
+                                            <span className="font-medium text-site-text">{puzzle.startWord}</span>{' '}
+                                            {t("chain-complete-message-to", { defaultValue: "to" })}{' '}
+                                            <span className="font-medium text-site-text">{puzzle.endWord}</span>{' '}
+                                            {t("chain-complete-message-in", { defaultValue: "in" })}{' '}
+                                            {chainLength} {t("links-label", { defaultValue: "links." })}
+                                        </>
+                                    )
+                                }
+                                stats={[
+                                    { key: 'points', icon: <Trophy />, value: score, label: t("points-label", { defaultValue: "points" }), tone: 'warning' },
+                                    { key: 'length', icon: <Link2 />, value: gaveUp ? '--' : chainLength, label: t("chain-length-label", { defaultValue: "chain length" }) },
+                                    {
+                                        key: 'par',
+                                        icon: !gaveUp && chainLength <= puzzle.parLinks ? '🟢' : '🔴',
+                                        value: puzzle.parLinks,
+                                        label: t("par-label", { defaultValue: "par" }),
+                                    },
+                                ]}
+                            />
 
-                        {/* Score display */}
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.15 }}
-                            className="p-5 rounded-2xl bg-site-surface border border-site-border text-center"
-                        >
-                            <div className="flex items-center justify-center gap-6 flex-wrap">
-                                <div className="flex flex-col items-center">
-                                    <Trophy className="w-6 h-6 text-amber-400 mb-1" />
-                                    <span className="text-2xl font-bold text-amber-400">{score}</span>
-                                    <span className="text-site-text-muted text-xs">{t("points-label", { defaultValue: "points" })}</span>
-                                </div>
-                                <div className="flex flex-col items-center">
-                                    <Link2 className="w-6 h-6 text-blue-400 mb-1" />
-                                    <span className="text-2xl font-bold text-site-text">{gaveUp ? '--' : chainLength}</span>
-                                    <span className="text-site-text-muted text-xs">{t("chain-length-label", { defaultValue: "chain length" })}</span>
-                                </div>
-                                <div className="flex flex-col items-center">
-                                    <span className="text-xl mb-1">
-                                        {!gaveUp && chainLength <= puzzle.parLinks ? '🟢' : '🔴'}
-                                    </span>
-                                    <span className="text-2xl font-bold text-site-text">{puzzle.parLinks}</span>
-                                    <span className="text-site-text-muted text-xs">{t("par-label", { defaultValue: "par" })}</span>
-                                </div>
-                            </div>
-                        </motion.div>
-
-                        {/* Example chain comparison */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="p-5 rounded-2xl bg-site-surface border border-site-border"
-                        >
-                            <h3 className="text-sm font-semibold text-site-text uppercase tracking-wide mb-3 flex items-center gap-2">
-                                <Link2 className="w-4 h-4 text-blue-400" />
-                                {t("example-chain", { defaultValue: "Example Chain" })}
-                            </h3>
-                            <div className="space-y-2">
-                                {puzzle._exampleChain.map((word, i) => (
-                                    <div key={i}>
-                                        <div className="flex items-center gap-2">
+                            {/* Example chain comparison */}
+                            <PuzzleSection icon={<Link2 />} title={t("example-chain", { defaultValue: "Example Chain" })}>
+                                <ol className="flex flex-col gap-2">
+                                    {puzzle._exampleChain.map((word, i) => (
+                                        <li key={i} className="flex flex-col gap-1">
                                             <span
-                                                className={`px-2.5 py-1 rounded-lg text-sm font-medium ${
+                                                className={`self-start rounded-site-sm border px-3 py-1 text-sm font-medium text-site-text ${
                                                     i === 0 || i === puzzle._exampleChain.length - 1
-                                                        ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
-                                                        : 'bg-site-bg text-site-text border border-site-border'
+                                                        ? 'border-site-accent/40 bg-site-accent-dim'
+                                                        : 'border-site-border bg-site-bg-subtle'
                                                 }`}
                                             >
                                                 {word}
                                             </span>
-                                        </div>
-                                        {i < puzzle._exampleChain.length - 1 && puzzle._connectionExplanations?.[i] && (
-                                            <div className="ml-3 mt-1 mb-1 flex items-center gap-1.5">
-                                                <span className="text-site-text-muted text-xs">↓</span>
-                                                <span className="text-site-text-muted text-xs italic">
+                                            {i < puzzle._exampleChain.length - 1 && puzzle._connectionExplanations?.[i] && (
+                                                <span className="pl-3 text-xs italic text-site-text-muted">
+                                                    <span aria-hidden>↓ </span>
                                                     {puzzle._connectionExplanations[i]}
                                                 </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ol>
+                            </PuzzleSection>
 
-                        {/* Actions */}
-                        <div className="flex justify-center gap-3 flex-wrap">
-                            <motion.button
-                                type="button"
-                                onClick={handleShare}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.45 }}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors"
-                            >
-                                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                {copied ? t("copied", { defaultValue: "Copied!" }) : t("share-result", { defaultValue: "Share Result" })}
-                            </motion.button>
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.5 }}
-                            >
-                                <Link
-                                    to="/daily"
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors"
-                                >
-                                    <ArrowLeft className="w-4 h-4" />
-                                    {t("all-puzzles", { defaultValue: "All Puzzles" })}
-                                </Link>
-                            </motion.div>
-                        </div>
-
-                        <p className="text-site-text-muted text-xs text-center">
-                            {t("new-chain-tomorrow", { defaultValue: "A new chain unlocks tomorrow — same for everyone worldwide." })}
-                        </p>
+                            <PuzzleShareRow shareText={shareText} />
+                            <PuzzleFootnote>
+                                {t("new-chain-tomorrow", { defaultValue: "A new chain unlocks tomorrow — same for everyone worldwide." })}
+                            </PuzzleFootnote>
+                        </PuzzleResultStack>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -574,13 +449,13 @@ export function ChainlinkGame() {
     const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
 
     return (
-        <div className="max-w-2xl mx-auto px-4 py-8">
+        <PuzzlePage>
             <ChainlinkGameLoader key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
             <PastPuzzlesSection
                 gameMode="chainlink"
                 selectedDateKey={selectedDateKey}
                 onSelectDate={setSelectedDateKey}
             />
-        </div>
+        </PuzzlePage>
     );
 }

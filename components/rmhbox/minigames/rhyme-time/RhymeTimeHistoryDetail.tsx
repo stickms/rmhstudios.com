@@ -89,7 +89,7 @@ export default function RhymeTimeHistoryDetail({
     <div className="space-y-4" data-testid="rhyme-time-history-detail">
       {/* Game Settings */}
       {gameLog.initialState && (
-        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
           <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-1">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--app-text-muted)">
             <span>{t("rounds-count", { defaultValue: "Rounds: {{count}}", count: (gameLog.initialState.rounds as number) ?? roundStarts.length })}</span>
@@ -154,7 +154,7 @@ export default function RhymeTimeHistoryDetail({
         return (
           <div
             key={roundNum}
-            className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4"
+            className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4"
           >
             {/* Round header */}
             <div className="flex items-center justify-between mb-3">
@@ -167,9 +167,9 @@ export default function RhymeTimeHistoryDetail({
                 </span>
                 {difficulty != null && (
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    difficulty === 'hard' ? 'bg-red-500/20 text-red-400' :
-                    difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-green-500/20 text-green-400'
+                    difficulty === 'hard' ? 'bg-(--app-danger)/20 text-(--app-danger)' :
+                    difficulty === 'medium' ? 'bg-(--app-warning)/20 text-(--app-warning)' :
+                    'bg-(--app-success)/20 text-(--app-success)'
                   }`}>
                     {difficulty}
                   </span>
@@ -182,10 +182,10 @@ export default function RhymeTimeHistoryDetail({
               const tierWords = byRarity[tier] ?? [];
               if (tierWords.length === 0) return null;
               const tierColors: Record<string, string> = {
-                rare: 'text-yellow-500',
-                uncommon: 'text-blue-400',
+                rare: 'text-(--app-warning)',
+                uncommon: 'text-(--app-info)',
                 common: 'text-(--app-text)',
-                invalid: 'text-red-400',
+                invalid: 'text-(--app-danger)',
               };
               const tierLabels: Record<string, string> = {
                 rare: t("tier-rare", { defaultValue: "★ Rare" }),
@@ -215,7 +215,7 @@ export default function RhymeTimeHistoryDetail({
                           } ${tier === 'invalid' ? 'line-through' : ''}`}
                         >
                           {dw.word}
-                          {dw.isMultiSyllable && <span className="ml-0.5 text-yellow-400">✦</span>}
+                          {dw.isMultiSyllable && <span className="ml-0.5 text-(--app-warning)">✦</span>}
                           <span className="ml-1 opacity-60">
                             {dw.score > 0 ? '+' : ''}{dw.score}
                           </span>
@@ -223,7 +223,7 @@ export default function RhymeTimeHistoryDetail({
                             ({submitterNames.map((s, i) => (
                               <span key={i}>
                                 {i > 0 && ', '}{s.name}
-                                {s.isSpeedBonus && <Zap className="inline h-2.5 w-2.5 text-yellow-400 ml-0.5" />}
+                                {s.isSpeedBonus && <Zap className="inline h-2.5 w-2.5 text-(--app-warning) ml-0.5" />}
                               </span>
                             ))})
                           </span>
@@ -272,7 +272,7 @@ export default function RhymeTimeHistoryDetail({
       })}
 
       {/* Final scores */}
-      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
         <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players

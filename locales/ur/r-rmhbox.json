@@ -46,5 +46,9 @@
   "starting-game": "گیم شروع ہو رہی ہے...",
   "view-minigames": "منی گیمز دیکھیں",
   "winner-label": "فاتح:",
-  "winner-none": "کوئی نہیں"
+  "winner-none": "کوئی نہیں",
+  "loading": "Loading…",
+  "room-code": "Room code",
+  "player-count-of-max_one": "{{count}}/{{max}} players",
+  "player-count-of-max_other": "{{count}}/{{max}} players"
 }

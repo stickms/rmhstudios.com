@@ -84,6 +84,8 @@
   "potd-untitled": "Untitled",
   "potd-vote": "Vote",
   "potd-votes": "{{count}} votes",
+  "potd-votes_one": "{{count}} votes",
+  "potd-votes_other": "{{count}} votes",
   "potd-winner": "Yesterday’s winner",
   "tr-accept": "Accept",
   "tr-admin-empty": "No open suggestions",

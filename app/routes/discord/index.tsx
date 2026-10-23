@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Users } from 'lucide-react';
+import { TriangleAlert, Users } from 'lucide-react';
 import { useDiscordSdk, type DiscordContext } from '@/lib/discord-sdk';
 import rmhboxCss from '@/components/rmhbox/rmhbox.css?url';
 
@@ -120,15 +120,15 @@ function ActivityPicker({
   const { t } = useTranslation('r-discord');
 
   return (
-    <div className="min-h-dvh bg-[#1a1a2e] flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-[#1a1a2e] flex items-center justify-center p-4 pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))]">
       <div className="w-full max-w-md">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-white mb-1">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-white mb-2">
             {t('gateway-title', { defaultValue: 'What are we playing?' })}
           </h1>
           {participantCount > 1 && (
-            <p className="text-[#949ba4] text-xs flex items-center justify-center gap-1.5">
-              <Users className="w-3.5 h-3.5" aria-hidden />
+            <p className="text-[#949ba4] text-xs flex items-center justify-center gap-2">
+              <Users className="w-4 h-4" aria-hidden />
               {t('gateway-participant-count', {
                 defaultValue: '{{count}} people in this Activity',
                 count: participantCount,
@@ -154,7 +154,7 @@ function ActivityPicker({
           </div>
         )}
 
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {ACTIVITY_GAMES.map((game) => (
             <button
               key={game.id}
@@ -196,7 +196,7 @@ function DiscordGatewayPage() {
     return (
       <div className="min-h-dvh bg-[#1a1a2e] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-[#5865f2] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <div aria-hidden="true" className="w-8 h-8 border-2 border-[#5865f2] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-[#b5bac1] text-sm">
             {t('connecting-to-discord', { defaultValue: 'Connecting to Discord...' })}
           </p>
@@ -209,7 +209,7 @@ function DiscordGatewayPage() {
     return (
       <div className="min-h-dvh bg-[#1a1a2e] flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
-          <div className="text-4xl mb-3">😵</div>
+          <TriangleAlert className="mx-auto mb-3 h-10 w-10 text-[#f23f43]" aria-hidden="true" />
           <h2 className="text-white text-lg font-semibold mb-2">
             {t('connection-failed', { defaultValue: 'Connection Failed' })}
           </h2>

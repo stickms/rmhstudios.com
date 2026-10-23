@@ -35,5 +35,10 @@
   "upgrade-operator": "Upgrade auf Operator (15 $/Monat) zum Freischalten.",
   "view-arrow": "Anzeigen →",
   "xp-progress": "{{current}} / {{max}} XP",
-  "xp-to-next-rank": "{{xp}} XP bis {{badge}} {{name}}"
+  "xp-to-next-rank": "{{xp}} XP bis {{badge}} {{name}}",
+  "back-to-puzzles": "Back to Puzzles",
+  "copy-link": "Copy link",
+  "link-copied": "Link copied",
+  "recruitment-message-label": "Recruitment message",
+  "target-skills-label": "Target skills"
 }

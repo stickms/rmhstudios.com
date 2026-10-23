@@ -7,6 +7,7 @@ import { VirtualPostList } from'./VirtualPostList';
 import { ColumnHeader } from'./ColumnHeader';
 import { AsyncReveal } from'@/components/motion';
 import { Button } from'@/components/ui/button';
+import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
 import type { FeedItem } from'@/lib/feed-types';
 
@@ -57,25 +58,19 @@ export function BookmarksColumn({
  <ColumnHeader icon={Bookmark} title={t('bookmarks-title', { defaultValue:'Bookmarks'})} />
 
  {loading && (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  )}
  <AsyncReveal show={!loading}>
  {items.length === 0 ? (
- <div className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
- <div className="rounded-site glass-fill p-4">
- <Bookmark className="h-8 w-8 text-site-text-muted"/>
- </div>
- <p className="font-medium text-site-text">
- {t('no-bookmarks-yet', { defaultValue:'No bookmarks yet'})}
- </p>
- <p className="max-w-xs text-sm text-site-text-muted">
- {t('no-bookmarks-hint', {
+ <EmptyState
+ icon={Bookmark}
+ title={t('no-bookmarks-yet', { defaultValue:'No bookmarks yet'})}
+ description={t('no-bookmarks-hint', {
  defaultValue:'Save posts from the “…” menu and they’ll show up here.',
  })}
- </p>
- </div>
+ />
  ) : (
  <VirtualPostList items={items} />
  )}

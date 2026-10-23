@@ -84,5 +84,7 @@
   "waiting-for-host": "Đang chờ chủ phòng bắt đầu vòng tiếp theo...",
   "waiting-for-players": "Đang chờ người chơi",
   "welcome-user": "Chào mừng, {{name}}!",
-  "your-moves": "Nước đi của bạn"
+  "your-moves": "Nước đi của bạn",
+  "lights-out-title": "Lights Out",
+  "rating-tiers": "Rating tiers"
 }

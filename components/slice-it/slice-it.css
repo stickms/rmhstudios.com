@@ -155,6 +155,14 @@
   border-radius: 15px;
 }
 
+/* A circle is a shape, not a corner radius: the unlayered radii above would
+   otherwise beat Tailwind's `rounded-full` utility (which lives in a layer). */
+.neumorphic.rounded-full,
+.neumorphic-inset.rounded-full,
+.neumorphic-sm.rounded-full {
+  border-radius: 9999px;
+}
+
 .soft-glow-text {
   text-shadow: 0 0 10px currentColor;
 }

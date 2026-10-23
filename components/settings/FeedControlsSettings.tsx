@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { normalizeTag, type FeedSignalKind, type FeedSignalsView } from '@/lib/feed/signals';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 async function mutate(method: 'POST' | 'DELETE', kind: FeedSignalKind, targetId: string) {
   await fetch('/api/feed/signal', {
@@ -79,7 +80,7 @@ export function FeedControlsSettings() {
   }
 
   return (
-    <div className="space-y-8">
+    <>
       <TagSection
         title={t('muted-tags', { defaultValue: 'Muted hashtags' })}
         description={t('muted-tags-desc', {
@@ -96,13 +97,10 @@ export function FeedControlsSettings() {
         onAdd={(v) => addTag('follow_tag', v)}
         onRemove={(v) => removeSignal('follow_tag', v)}
       />
-      <section>
-        <h3 className="text-sm font-semibold text-site-text">
-          {t('demoted', { defaultValue: 'Demoted accounts' })}
-        </h3>
-        <p className="mb-3 text-sm text-site-text-muted">
-          {t('demoted-desc', { defaultValue: 'Accounts you asked to see less of.' })}
-        </p>
+      <SettingsSection
+        title={t('demoted', { defaultValue: 'Demoted accounts' })}
+        description={t('demoted-desc', { defaultValue: 'Accounts you asked to see less of.' })}
+      >
         {signals.lessAuthors.length === 0 ? (
           <p className="text-sm text-site-text-dim">{t('none', { defaultValue: 'None' })}</p>
         ) : (
@@ -116,8 +114,8 @@ export function FeedControlsSettings() {
             ))}
           </div>
         )}
-      </section>
-    </div>
+      </SettingsSection>
+    </>
   );
 }
 
@@ -137,10 +135,8 @@ function TagSection({
   const { t } = useTranslation('settings-content');
   const [draft, setDraft] = useState('');
   return (
-    <section>
-      <h3 className="text-sm font-semibold text-site-text">{title}</h3>
-      <p className="mb-3 text-sm text-site-text-muted">{description}</p>
-      <div className="mb-3 flex gap-2">
+    <SettingsSection title={title} description={description}>
+      <div className="flex gap-2">
         <Input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -155,6 +151,7 @@ function TagSection({
         />
         <Button
           variant="outline"
+          aria-label={t('add-tag', { defaultValue: 'Add a hashtag' })}
           onClick={() => {
             onAdd(draft);
             setDraft('');
@@ -172,21 +169,22 @@ function TagSection({
           ))}
         </div>
       )}
-    </section>
+    </SettingsSection>
   );
 }
 
 function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  const { t } = useTranslation('settings-content');
   return (
-    <span className="glass-fill inline-flex items-center gap-1 rounded-full py-1 ps-3 pe-1 text-sm text-site-text">
+    <span className="glass-fill inline-flex items-center gap-2 rounded-full py-1 ps-3 pe-1 text-sm text-site-text">
       {label}
       <button
         type="button"
         onClick={onRemove}
-        className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-site-surface-hover"
-        aria-label="Remove"
+        className="flex size-6 items-center justify-center rounded-full hover:bg-site-surface-hover"
+        aria-label={t('remove-tag', { defaultValue: 'Remove' })}
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-3.5 w-3.5" aria-hidden />
       </button>
     </span>
   );

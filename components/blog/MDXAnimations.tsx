@@ -60,49 +60,49 @@ function animated<T extends keyof React.JSX.IntrinsicElements>(tag: T, base: str
 
 export const AnimatedH1 = animated(
   'h1',
-  'mt-12 mb-6 font-display text-3xl font-black tracking-tight text-site-text',
+  'mt-12 mb-6 font-display text-3xl font-bold tracking-tight text-site-text first:mt-0',
 );
 
 export const AnimatedH2 = animated(
   'h2',
-  'mt-10 mb-5 font-display text-2xl font-bold tracking-tight text-site-text',
+  'mt-10 mb-4 font-display text-2xl font-bold tracking-tight text-site-text first:mt-0',
 );
 
-export const AnimatedH3 = animated('h3', 'mt-8 mb-4 text-xl font-bold text-site-text');
+export const AnimatedH3 = animated('h3', 'mt-8 mb-3 text-xl font-bold text-site-text first:mt-0');
 
-export const AnimatedH4 = animated('h4', 'mt-6 mb-3 text-lg font-semibold text-site-text');
+export const AnimatedH4 = animated('h4', 'mt-6 mb-3 text-lg font-semibold text-site-text first:mt-0');
 
-export const AnimatedP = animated('p', 'mb-6 text-lg leading-relaxed text-site-text-muted');
+export const AnimatedP = animated('p', 'mb-6 text-lg leading-relaxed text-site-text');
 
 export const AnimatedUl = animated(
   'ul',
-  'mb-6 ml-6 list-outside list-disc space-y-2 text-site-text-muted',
+  'mb-6 ms-6 list-outside list-disc space-y-2 text-lg leading-relaxed text-site-text',
 );
 
 export const AnimatedOl = animated(
   'ol',
-  'mb-6 ml-6 list-outside list-decimal space-y-2 text-site-text-muted',
+  'mb-6 ms-6 list-outside list-decimal space-y-2 text-lg leading-relaxed text-site-text',
 );
 
-export const AnimatedLi = animated('li', 'pl-2');
+export const AnimatedLi = animated('li', 'ps-2');
 
 export const AnimatedBlockquote = animated(
   'blockquote',
-  'my-8 rounded-r-site-sm border-l-4 border-site-accent bg-site-surface py-3 pr-4 pl-6 text-xl leading-relaxed font-light text-site-text italic',
+  'my-8 border-s-4 border-site-accent py-1 pe-4 ps-6 text-xl leading-relaxed font-light text-site-text italic',
 );
 
 export const AnimatedHr = animated('hr', 'my-12 border-site-border');
 
 export const AnimatedPre = animated(
   'pre',
-  'mb-6 overflow-x-auto rounded-site-sm border border-site-border bg-site-surface p-4 text-sm text-site-text',
+  'glass-fill mb-6 overflow-x-auto rounded-site-sm p-4 text-sm text-site-text',
 );
 
 /** A figure: the image plus its alt text as a visible caption. */
 export const AnimatedImg = ({ className, alt, ...props }: El<'img'>) => (
   <m.figure
     {...animationProps}
-    className="my-8 overflow-hidden rounded-site border border-site-border bg-site-surface shadow-site"
+    className="glass-fill my-8 overflow-hidden rounded-site"
   >
     <img className={cn('h-auto w-full', className)} alt={alt} loading="lazy" {...props} />
     {alt && (
@@ -123,7 +123,7 @@ export const MarkdownCode = ({ className, ...props }: El<'code'>) => {
   return (
     <code
       className={cn(
-        'rounded-site-sm border border-site-border bg-site-surface px-1.5 py-0.5 font-mono text-[0.9em] text-site-text',
+        'rounded-site-sm bg-site-text/10 px-1.5 py-0.5 font-mono text-[0.9em] text-site-text',
         className,
       )}
       {...props}

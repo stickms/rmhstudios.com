@@ -253,5 +253,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "غلط — وہ مشتبہ صاف ہو گیا ہے۔ آپ کے پاس 1 اندازہ باقی ہے۔",
   "wrong-outcast-was": "❌ غلط — باہر والا {{name}} تھا",
-  "youre-the-first": "آپ پہلے ہیں!"
+  "youre-the-first": "آپ پہلے ہیں!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

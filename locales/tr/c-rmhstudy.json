@@ -95,5 +95,6 @@
   "tap-to-reveal": "Göstermek için dokun",
   "unban": "Yasağı kaldır",
   "unban-user": "Kullanıcının yasağını kaldır",
-  "work-duration": "Çalışma Süresi: {{minutes}} dk"
+  "work-duration": "Çalışma Süresi: {{minutes}} dk",
+  "apps": "Apps"
 }

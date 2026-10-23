@@ -92,5 +92,7 @@
   "vehicle-details": "차량 정보",
   "where-to-heading": "어디로 가시나요?",
   "which-class-drive": "어떤 등급으로 운전하시겠습니까?",
-  "your-active-trip": "진행 중인 이동"
+  "your-active-trip": "진행 중인 이동",
+  "drive-page-title": "Drive with RMH",
+  "ride-class": "Ride class"
 }

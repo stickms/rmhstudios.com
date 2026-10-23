@@ -44,8 +44,8 @@ export default function GuessLog({ entries }: GuessLogProps) {
         {entries.map((entry, i) => (
           <div
             key={i}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg bg-(--app-surface) text-sm ${
-              entry.isCorrect ? 'text-green-400' : 'text-(--app-text-muted)'
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-(--app-radius-sm) bg-(--app-surface) text-sm ${
+              entry.isCorrect ? 'text-(--app-success)' : 'text-(--app-text-muted)'
             }`}
           >
             <span>{entry.isCorrect ? '🎉' : '💬'}</span>

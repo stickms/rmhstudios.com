@@ -60,7 +60,7 @@ export default function StatementPanel() {
   const n = (v: number) => v.toLocaleString(i18n.language);
 
   return (
-    <div className="space-y-3 px-3 pb-8">
+    <div className="space-y-3 px-3 pb-12">
       <div className="glass-pane flex flex-wrap items-end justify-between gap-3 p-4">
         <div className="min-w-0 space-y-1">
           <label htmlFor="stmt-month" className="site-section-label block">
@@ -99,7 +99,7 @@ export default function StatementPanel() {
               <dt className="text-xs text-site-text-muted">
                 {t('stmt-opening', { defaultValue: 'Opening balance' })}
               </dt>
-              <dd className="mt-1 flex items-center gap-1.5 text-lg font-semibold tabular-nums text-site-text">
+              <dd className="mt-1 flex items-center gap-2 text-lg font-semibold tabular-nums text-site-text">
                 <CoinIcon className="size-4" /> {n(data.openingBalance)}
               </dd>
             </div>
@@ -107,7 +107,7 @@ export default function StatementPanel() {
               <dt className="text-xs text-site-text-muted">
                 {t('stmt-closing', { defaultValue: 'Closing balance' })}
               </dt>
-              <dd className="mt-1 flex items-center gap-1.5 text-lg font-semibold tabular-nums text-site-text">
+              <dd className="mt-1 flex items-center gap-2 text-lg font-semibold tabular-nums text-site-text">
                 <CoinIcon className="size-4" /> {n(data.closingBalance)}
               </dd>
             </div>

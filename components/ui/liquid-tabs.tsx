@@ -251,7 +251,9 @@ export function LiquidTabs({
       // strip's `--tab-thumb-ink` only once the thumb is actually painted (see
       // globals.css) — on high contrast the thumb is the accent, and a label in
       // accent-fg with no thumb behind it measured 1.0:1.
-      active ? 'text-site-text' : 'text-site-text-muted hover:text-site-text',
+      active
+        ? 'text-[color:var(--app-text,var(--site-text))]'
+        : 'text-[color:var(--app-text-muted,var(--site-text-muted))] hover:text-[color:var(--app-text,var(--site-text))]',
     );
 
   // The active thumb — identical material in both modes. Outer element owns the
@@ -269,10 +271,7 @@ export function LiquidTabs({
         className="absolute inset-0"
         transition={reduced ? { duration: 0 } : SPRING.snappy}
       >
-        <span
-          data-tab-thumb=""
-          className="absolute inset-0 rounded-[var(--site-control-radius)]"
-        />
+        <span data-tab-thumb="" className="absolute inset-0 rounded-[var(--site-control-radius)]" />
       </motion.span>
     ) : null;
 

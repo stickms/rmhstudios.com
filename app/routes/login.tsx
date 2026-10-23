@@ -16,6 +16,7 @@ import { Link } from '@tanstack/react-router';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import { CookieConsent } from '@/components/site/CookieConsent';
 import { cn } from '@/lib/utils';
 
@@ -267,10 +268,7 @@ function LoginPage() {
   if (isPending || session?.user) {
     return (
       <div className="min-h-dvh flex items-center justify-center">
-        <Loader2
-          className="size-6 animate-spin text-site-accent"
-          aria-label={t('loading', { defaultValue: 'Loading…' })}
-        />
+        <Spinner label={t('loading', { defaultValue: 'Loading…' })} />
       </div>
     );
   }
@@ -423,7 +421,7 @@ function LoginPage() {
           <p className="font-mono text-[0.6875rem] uppercase tracking-[0.2em] text-site-text-muted">
             RMH Studios
           </p>
-          <h1 className="mt-1.5 font-display text-2xl font-bold tracking-tight text-site-text">
+          <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-site-text">
             {isSignUp
               ? t('create-account-heading', { defaultValue: 'Create your account' })
               : t('welcome-back', { defaultValue: 'Welcome back' })}

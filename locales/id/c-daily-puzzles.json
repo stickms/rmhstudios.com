@@ -251,5 +251,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "Salah — tersangka itu telah dibersihkan. Anda memiliki 1 tebakan tersisa.",
   "wrong-outcast-was": "❌ Salah — yang terbuang adalah {{name}}",
-  "youre-the-first": "Kamu yang pertama!"
+  "youre-the-first": "Kamu yang pertama!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

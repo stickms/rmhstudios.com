@@ -98,7 +98,7 @@ export function FlashcardsColumn({
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
+      <div className="flex justify-center px-4 pt-4 pb-12">
         <Spinner />
       </div>
     );
@@ -116,7 +116,7 @@ export function FlashcardsColumn({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-site-text">{d.title}</p>
         {d.description && <p className="truncate text-xs text-site-text-muted">{d.description}</p>}
-        <p className="mt-0.5 text-[11px] text-site-text-dim">
+        <p className="mt-0.5 text-xs text-site-text-dim">
           {t('card-count', {
             count: d.cardCount,
             defaultValue: '{{count}} card',
@@ -191,7 +191,7 @@ export function FlashcardsColumn({
               className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <div className="rounded-site-sm border border-site-accent/30 bg-site-accent/5 p-2">
-              <label className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-site-accent">
+              <label className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-site-accent">
                 <Sparkles className="h-3 w-3" />
                 {''}
                 {t('ai-tutor-label', { defaultValue: 'AI tutor — auto-generate cards' })}

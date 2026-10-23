@@ -77,7 +77,7 @@ export const SearchField = React.forwardRef<HTMLInputElement, SearchFieldProps>(
             <button
               type="button"
               onClick={() => onValueChange('')}
-              className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-1 text-site-text-dim hover:text-site-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+              className="absolute right-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full text-site-text-dim hover:text-site-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
               aria-label={t('clear-search', { defaultValue: 'Clear search' })}
             >
               <X className="h-3.5 w-3.5" aria-hidden />

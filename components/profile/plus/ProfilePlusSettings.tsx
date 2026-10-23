@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from '@/components/Providers';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 // Each section is its own chunk, fetched when its tab is first opened.
 const IdentitySettings = lazy(() => import('./settings/IdentitySettings'));
@@ -28,19 +29,13 @@ export default function ProfilePlusSettings() {
   if (!user) return null;
 
   return (
-    <section className="space-y-4" aria-labelledby="profile-plus-title">
-      <div>
-        <h2 id="profile-plus-title" className="font-display text-lg font-bold text-site-text">
-          {t('plus-title', { defaultValue: 'More about you' })}
-        </h2>
-        <p className="mt-1 text-sm text-site-text-muted">
-          {t('plus-subtitle', {
-            defaultValue:
-              'Everything here is optional, and each piece appears on your profile only once you set it.',
-          })}
-        </p>
-      </div>
-
+    <SettingsSection
+      title={t('plus-title', { defaultValue: 'More about you' })}
+      description={t('plus-subtitle', {
+        defaultValue:
+          'Everything here is optional, and each piece appears on your profile only once you set it.',
+      })}
+    >
       <LiquidTabs
         aria-label={t('plus-sections', { defaultValue: 'Profile sections' })}
         tabs={[
@@ -53,7 +48,7 @@ export default function ProfilePlusSettings() {
         onChange={(id) => setSection(id as Section)}
       />
 
-      <div className="glass-pane rounded-site p-4 sm:p-5">
+      <div>
         <Suspense fallback={<Skeleton className="h-48 w-full" />}>
           {section === 'about' ? <IdentitySettings userId={user.id} /> : null}
           {section === 'top-four' ? <TopFourSettings /> : null}
@@ -61,6 +56,6 @@ export default function ProfilePlusSettings() {
           {section === 'share' ? <ShareSettings handleOrId={user.handle || user.id} /> : null}
         </Suspense>
       </div>
-    </section>
+    </SettingsSection>
   );
 }

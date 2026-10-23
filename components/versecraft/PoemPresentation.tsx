@@ -167,7 +167,7 @@ export function PoemPresentation() {
 
   if (!currentPoemScore || !latestPoem) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center app-ground">
         <p style={{ color: '#a89888' }}>{t('no-poem', { defaultValue: 'No poem to display.' })}</p>
       </div>
     );
@@ -176,7 +176,7 @@ export function PoemPresentation() {
   const gs = GRADE_STYLES[currentPoemScore.grade];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 md:p-6">
+    <div className="flex flex-col items-center justify-center app-ground p-4 md:p-6">
       {/* Poem display */}
       <motion.div
         className="max-w-xl w-full rounded-lg p-6 md:p-8 mb-6"

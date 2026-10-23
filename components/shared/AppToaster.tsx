@@ -72,7 +72,7 @@ export default function AppToaster() {
           <button
             type="button"
             onClick={() => dismissToast(toast.id)}
-            className="-me-1 shrink-0 rounded-full p-1.5 text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
+            className="-me-2 grid size-9 shrink-0 place-items-center rounded-full text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
             aria-label={t('dismiss', { defaultValue: 'Dismiss' })}
           >
             <X className="h-3.5 w-3.5" aria-hidden />

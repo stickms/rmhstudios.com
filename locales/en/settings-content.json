@@ -43,6 +43,8 @@
   "muted-tags": "Muted hashtags",
   "muted-tags-desc": "Posts with these tags are hidden from your feed.",
   "none": "None",
+  "remove-tag": "Remove",
+  "trash-crumb-settings": "Settings",
   "trash-days-left_one": "{{count}} days left",
   "trash-days-left_other": "{{count}} days left",
   "trash-deleted-on": "Deleted {{date}}",

@@ -44,7 +44,7 @@ export default function CategoryCrashHistoryDetail({
     <div className="space-y-4" data-testid="category-crash-history-detail">
       {/* Game Settings */}
       {gameLog.initialState && (
-        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
           <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-1">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--app-text-muted)">
             <span>{t("rounds-count", { defaultValue: "Rounds: {{count}}", count: (gameLog.initialState.rounds as number) ?? roundStarts.length })}</span>
@@ -116,7 +116,7 @@ export default function CategoryCrashHistoryDetail({
         return (
           <div
             key={roundNum}
-            className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4"
+            className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4"
           >
             {/* Round header */}
             <div className="flex items-center gap-3 mb-3">
@@ -235,7 +235,7 @@ export default function CategoryCrashHistoryDetail({
       })}
 
       {/* Final scores */}
-      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
         <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players

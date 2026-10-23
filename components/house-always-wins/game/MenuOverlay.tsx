@@ -87,7 +87,7 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
   };
 
   return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/85 backdrop-blur-sm">
+    <div className="app-safe-pad absolute inset-0 z-30 flex items-center-safe justify-center-safe overflow-y-auto bg-black/85 backdrop-blur-sm">
       <div className="w-[26rem] max-w-[92vw] rounded-xl border border-[#2a2520] bg-[#0d0a10] p-6 shadow-2xl">
         <h2 className="mb-1 text-center text-lg font-bold tracking-wide text-[#f0c674]">
           The House Always Wins
@@ -136,7 +136,7 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
             <button
               onClick={toggleMusicMute}
               title={musicMuted ? "Unmute music" : "Mute music"}
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded ${
+              className={`flex h-7 w-7 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 items-center justify-center rounded ${
                 musicMuted ? "text-[#6b6155]" : "text-[#d4a054]"
               } hover:bg-white/5`}
             >
@@ -162,7 +162,7 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
             <button
               onClick={toggleSfxMute}
               title={sfxMuted ? "Unmute sound effects" : "Mute sound effects"}
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded ${
+              className={`flex h-7 w-7 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 items-center justify-center rounded ${
                 sfxMuted ? "text-[#6b6155]" : "text-[#5fd2a0]"
               } hover:bg-white/5`}
             >
@@ -199,13 +199,13 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
         <div className="flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 rounded-lg border border-[#d4a054]/30 bg-[#d4a054]/10 py-2 font-mono text-sm text-[#f0c674] transition-colors hover:bg-[#d4a054]/20"
+            className="flex-1 rounded-lg border border-[#d4a054]/30 bg-[#d4a054]/10 py-2 pointer-coarse:min-h-11 font-mono text-sm text-[#f0c674] transition-colors hover:bg-[#d4a054]/20"
           >
             Resume [M]
           </button>
           <button
             onClick={confirmReset}
-            className="rounded-lg border border-[#c0392b]/30 bg-[#c0392b]/10 px-3 py-2 font-mono text-xs text-[#c0392b]/80 transition-colors hover:bg-[#c0392b]/20"
+            className="rounded-lg border border-[#c0392b]/30 bg-[#c0392b]/10 px-3 py-2 pointer-coarse:min-h-11 font-mono text-xs text-[#c0392b]/80 transition-colors hover:bg-[#c0392b]/20"
           >
             Abandon Run
           </button>

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearch } from '@tanstack/react-router';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { SignedOutLobby } from './SignedOutLobby';
 
 /**
@@ -41,7 +42,7 @@ const RouletteGame = lazy(() =>
 function TablePending() {
   const { t } = useTranslation('c-rmhcoins');
   return (
-    <div className="px-3 pt-4 sm:px-4" role="status" aria-live="polite">
+    <div className="px-4" role="status" aria-live="polite">
       <Skeleton shimmer className="h-[28rem] w-full rounded-site" />
       {/* The namespace's existing `loading` key rather than a table-specific one:
           it is already translated into all 16 shipped locales, and a new string
@@ -89,29 +90,22 @@ export function PlayTab({ coins, setCoins, signedIn }: Props) {
   ];
 
   return (
-    <div className="flex flex-col">
-      {/* Game selector */}
-      <div className="flex gap-2 px-3 sm:px-4 pt-4">
-        {games.map((g) => (
-          <button
-            key={g.value}
-            onClick={() => setSelected(g.value)}
-            className={`flex-1 py-2.5 px-3 rounded-site-sm text-left transition-colors border ${
-              selected === g.value
-                ? 'border-site-accent/50 bg-site-accent-dim'
-                : 'border-site-border bg-site-surface hover:bg-site-surface-hover'
-            }`}
-          >
-            <span
-              className={`text-sm font-bold block ${
-                selected === g.value ? 'text-site-accent' : 'text-site-text'
-              }`}
-            >
-              {g.label}
-            </span>
-            <span className="text-xs text-site-text-dim">{g.description}</span>
-          </button>
-        ))}
+    <div className="flex flex-col gap-4">
+      {/* Game selector — the shared strip (it was a hand-rolled row of tinted
+          buttons with no tab semantics). The selected game's one-line
+          description sits under it, where each button used to carry its own. */}
+      <div className="flex flex-col gap-2 px-4">
+        <LiquidTabs
+          tabs={games.map((g) => ({ id: g.value, label: g.label }))}
+          value={selected}
+          onChange={(id) => setSelected(id as GameChoice)}
+          idBase="rmhcoins-play"
+          scroll
+          aria-label={t('play-games-aria', { defaultValue: 'Casino games' })}
+        />
+        <p className="text-xs text-site-text-dim">
+          {games.find((g) => g.value === selected)?.description}
+        </p>
       </div>
 
       {/* Game content */}

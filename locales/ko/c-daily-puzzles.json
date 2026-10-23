@@ -251,5 +251,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "틀렸습니다 — 해당 용의자는 제거되었습니다. 추측 기회가 1번 남았습니다.",
   "wrong-outcast-was": "❌ 틀렸습니다 — 아웃사이더는 {{name}}였습니다",
-  "youre-the-first": "당신이 처음이에요!"
+  "youre-the-first": "당신이 처음이에요!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

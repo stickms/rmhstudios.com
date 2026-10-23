@@ -51,17 +51,17 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  a short phone, and the utility overrode the primitive's `overflow-y-auto`,
  so the code and the URL preview under it were unreachable. A scroll
  container clips to the rounded corners just the same. */}
- <DialogContent className="max-w-sm p-0 gap-0 bg-site-bg">
+ <DialogContent className="max-w-sm p-0 gap-0">
  {/* Header */}
- <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
+ <div className="flex items-center justify-between px-5 py-4 border-b border-site-border">
  <DialogTitle className="font-bold text-site-text">{t('share-title', { defaultValue:'Share'})}</DialogTitle>
  </div>
 
  {/* Share options */}
- <div className="p-3 space-y-1">
+ <div className="px-2 py-3 space-y-1">
  <button
  onClick={handleCopy}
- className="flex items-center gap-3 w-full px-3 py-2.5 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
+ className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  {copied ? (
  <Check className="w-5 h-5 text-site-success"/>
@@ -73,7 +73,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
 
  <button
  onClick={shareToX}
- className="flex items-center gap-3 w-full px-3 py-2.5 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
+ className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <svg className="w-5 h-5 text-site-text-dim"viewBox="0 0 24 24"fill="currentColor">
  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -83,7 +83,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
 
  <button
  onClick={shareToFacebook}
- className="flex items-center gap-3 w-full px-3 py-2.5 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
+ className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <svg className="w-5 h-5 text-site-text-dim"viewBox="0 0 24 24"fill="currentColor">
  <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 1.09.044 1.613.115V7.78c-.344-.036-.94-.054-1.684-.054-2.39 0-3.316.905-3.316 3.26v1.058h4.612l-.683 3.667h-3.929v8.08c5.013-.838 8.828-5.12 8.828-10.311C20.4 7.216 16.472 3 12 3S3.6 7.216 3.6 13.48c0 4.785 3.274 8.778 7.694 9.954z"/>
@@ -93,7 +93,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
 
  <button
  onClick={shareToEmail}
- className="flex items-center gap-3 w-full px-3 py-2.5 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
+ className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <svg className="w-5 h-5 text-site-text-dim"viewBox="0 0 24 24"fill="none"stroke="currentColor"strokeWidth="2"strokeLinecap="round"strokeLinejoin="round">
  <rect width="20"height="16"x="2"y="4"rx="2"/>
@@ -109,7 +109,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  download={`rmh-story-${embedId}.png`}
  target="_blank"
  rel="noopener noreferrer"
- className="flex items-center gap-3 w-full px-3 py-2.5 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
+ className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <ImageDown className="w-5 h-5 text-site-text-dim"/>
  {t('share-to-stories', { defaultValue:'Download story image'})}
@@ -120,7 +120,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  <button
  onClick={() => setShowQr((v) => !v)}
  aria-expanded={showQr}
- className="flex items-center gap-3 w-full px-3 py-2.5 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
+ className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <QrIcon className="w-5 h-5 text-site-text-dim"/>
  {showQr ? t('hide-qr-code', { defaultValue:'Hide QR code'}) : t('show-qr-code', { defaultValue:'Show QR code'})}
@@ -135,10 +135,10 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  </div>
 
  {embedCode && (
- <div className="px-3 pb-1">
+ <div className="px-2 pb-1">
  <button
  onClick={() => copyEmbed(embedCode)}
- className="flex items-center gap-3 w-full px-3 py-2.5 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
+ className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
  {embedCopied ? (
  <Check className="w-5 h-5 text-site-success"/>
@@ -151,8 +151,8 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  )}
 
  {/* URL preview */}
- <div className="px-4 pb-4">
- <div className="flex items-center gap-2 bg-site-surface rounded-site-sm px-3 py-2 text-xs text-site-text-dim font-mono truncate">
+ <div className="px-5 pb-5">
+ <div className="flex items-center gap-2 glass-inset rounded-site-sm px-3 py-2 text-xs text-site-text-dim font-mono truncate">
  <Link2 className="w-3.5 h-3.5 shrink-0"/>
  <span className="truncate">{url}</span>
  </div>

@@ -39,5 +39,10 @@
   "upgrade-operator": "الترقية إلى Operator (15 دولارًا شهريًا) لفتح الميزة.",
   "view-arrow": "عرض ←",
   "xp-progress": "{{current}} / {{max}} XP",
-  "xp-to-next-rank": "{{xp}} XP إلى {{badge}} {{name}}"
+  "xp-to-next-rank": "{{xp}} XP إلى {{badge}} {{name}}",
+  "back-to-puzzles": "Back to Puzzles",
+  "copy-link": "Copy link",
+  "link-copied": "Link copied",
+  "recruitment-message-label": "Recruitment message",
+  "target-skills-label": "Target skills"
 }

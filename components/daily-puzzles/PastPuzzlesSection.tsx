@@ -7,6 +7,7 @@ import { Calendar, ChevronDown, ChevronUp, Play, CheckCircle2, ArrowLeft } from 
 import { formatDateKey, getTodayEST } from '@/lib/daily-puzzles/seed';
 import { getCompletedDates, syncFromServer, type PuzzleResult } from '@/lib/daily-puzzles/persistence';
 import { useSession } from '@/components/Providers';
+import { Button } from '@/components/ui/button';
 
 interface PastPuzzlesSectionProps {
     gameMode: string;
@@ -55,92 +56,74 @@ export function PastPuzzlesSection({
     }, []);
 
     return (
-        <>
+        <div className="mt-6 flex flex-col gap-3">
             {/* Back to today button when viewing past puzzle */}
             {!isToday && (
-                <div className="mt-4 text-center">
-                    <button
-                        type="button"
-                        onClick={() => onSelectDate(todayKey)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-colors text-xs font-medium"
-                    >
-                        <ArrowLeft className="w-3 h-3" />
+                <div className="text-center">
+                    <Button type="button" variant="outline" size="sm" onClick={() => onSelectDate(todayKey)}>
+                        <ArrowLeft aria-hidden />
                         {t("back-to-todays-puzzle", { defaultValue: "Back to today's puzzle" })}
-                    </button>
+                    </Button>
                 </div>
             )}
 
-            <div className="mt-8">
-                <button
-                    type="button"
-                    onClick={() => setShowHistory((prev) => !prev)}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors text-sm font-medium"
-                >
-                    <Calendar className="w-4 h-4" />
-                    {t("past-puzzles", { defaultValue: "Past Puzzles" })}
-                    {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
+            <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={() => setShowHistory((prev) => !prev)}
+                aria-expanded={showHistory}
+            >
+                <Calendar aria-hidden />
+                {t("past-puzzles", { defaultValue: "Past Puzzles" })}
+                {showHistory ? <ChevronUp aria-hidden /> : <ChevronDown aria-hidden />}
+            </Button>
 
-                <AnimatePresence>
-                    {showHistory && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="mt-3 p-4 rounded-xl bg-site-surface border border-site-border">
-                                <div className="space-y-2">
-                                    {pastDates.map((p) => {
-                                        const result = completedMap[p.dateKey];
-                                        const isSelected = p.dateKey === selectedDateKey;
+            <AnimatePresence>
+                {showHistory && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <ul className="glass-fill flex flex-col gap-2 rounded-site p-3">
+                            {pastDates.map((p) => {
+                                const result = completedMap[p.dateKey];
+                                const isSelected = p.dateKey === selectedDateKey;
 
-                                        return (
-                                            <div
-                                                key={p.dateKey}
-                                                className={`flex items-center justify-between py-2 px-3 rounded-lg transition-colors ${
-                                                    isSelected
-                                                        ? 'bg-amber-500/15 border border-amber-500/30'
-                                                        : 'bg-site-bg-subtle hover:bg-site-bg-subtle/80'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-site-text-muted text-sm font-mono">
-                                                        {p.dateKey}
-                                                    </span>
-                                                    {result && (
-                                                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    {result ? (
-                                                        renderScore ? (
-                                                            renderScore(result)
-                                                        ) : (
-                                                            <span className="font-mono font-semibold text-sm text-amber-400">
-                                                                {t("score-pts", { defaultValue: "{{score}} pts", score: result.score })}
-                                                            </span>
-                                                        )
-                                                    ) : (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => onSelectDate(p.dateKey)}
-                                                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-site-surface border border-site-border text-site-text hover:border-amber-500/50 transition-colors text-xs font-medium"
-                                                        >
-                                                            <Play className="w-3 h-3" />
-                                                            {t("play", { defaultValue: "Play" })}
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-        </>
+                                return (
+                                    <li
+                                        key={p.dateKey}
+                                        className={`flex items-center justify-between gap-3 rounded-site-sm px-3 py-2 ${
+                                            isSelected ? 'bg-site-accent-dim' : 'bg-site-bg-subtle'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-mono text-sm text-site-text-muted">{p.dateKey}</span>
+                                            {result && <CheckCircle2 className="size-4 shrink-0 text-site-success" aria-hidden />}
+                                        </div>
+                                        {result ? (
+                                            renderScore ? (
+                                                renderScore(result)
+                                            ) : (
+                                                <span className="font-mono text-sm font-semibold text-site-text">
+                                                    {t("score-pts", { defaultValue: "{{score}} pts", score: result.score })}
+                                                </span>
+                                            )
+                                        ) : (
+                                            <Button type="button" variant="outline" size="sm" onClick={() => onSelectDate(p.dateKey)}>
+                                                <Play aria-hidden />
+                                                {t("play", { defaultValue: "Play" })}
+                                            </Button>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 }

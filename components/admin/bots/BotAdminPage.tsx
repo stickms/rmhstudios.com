@@ -1,9 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type ComponentType } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bot, FileText, MessageCircle, Mail, Users, Gauge, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { AdminBody } from '@/components/admin/AdminBody';
+import { StatTile } from '@/components/admin/StatTile';
+import { EmptyState } from '@/components/ui/empty-state';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +48,13 @@ interface Stats {
 type Field = keyof BotWorkerSettingsInput;
 type Draft = Record<Field, string>;
 
-const FIELDS: Field[] = ['targetBotCount', 'createBatch', 'createIntervalMin', 'postRateMultiplier', 'maxPostsPerTick'];
+const FIELDS: Field[] = [
+  'targetBotCount',
+  'createBatch',
+  'createIntervalMin',
+  'postRateMultiplier',
+  'maxPostsPerTick',
+];
 const HABITS = ['lurker', 'steady', 'bursty', 'chatty'] as const;
 
 function toDraft(s: BotWorkerSettingsInput): Draft {
@@ -67,29 +76,6 @@ function parseDraft(d: Draft): BotWorkerSettingsInput | null {
 
 const fmt = (n: number) => Math.round(n).toLocaleString();
 
-function Stat({
-  icon: Icon,
-  label,
-  value,
-  sub,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  sub?: string;
-}) {
-  return (
-    <div className="glass-fill rounded-site p-4">
-      <div className="flex items-center gap-2 text-site-text-muted">
-        <Icon className="h-4 w-4 text-site-accent" aria-hidden />
-        <span className="font-mono text-[0.68rem] uppercase tracking-widest text-site-text-dim">{label}</span>
-      </div>
-      <p className="mt-1 font-display text-2xl font-bold tracking-tight text-site-text">{value}</p>
-      {sub && <p className="text-xs text-site-text-dim">{sub}</p>}
-    </div>
-  );
-}
-
 /**
  * /admin/bots — tune the Go bot-worker's pool size, mint rate and posting
  * rate, and watch what the bots are actually producing. Saves land in the
@@ -105,7 +91,8 @@ export function BotAdminPage() {
   const [saving, setSaving] = useState(false);
 
   const ago = useCallback(
-    (ts: number, now: number) => t('bots-ago', { defaultValue: '{{time}} ago', time: relativeTimeShort(ts, now) }),
+    (ts: number, now: number) =>
+      t('bots-ago', { defaultValue: '{{time}} ago', time: relativeTimeShort(ts, now) }),
     [t],
   );
 
@@ -154,7 +141,9 @@ export function BotAdminPage() {
       });
       if (!res.ok) throw new Error(String(res.status));
       apply(await res.json());
-      toast.success(t('bots-saved', { defaultValue: 'Saved — the bot worker applies it within a minute.' }));
+      toast.success(
+        t('bots-saved', { defaultValue: 'Saved — the bot worker applies it within a minute.' }),
+      );
     } catch {
       toast.error(t('bots-save-error', { defaultValue: 'Could not save bot settings.' }));
     } finally {
@@ -166,31 +155,38 @@ export function BotAdminPage() {
     targetBotCount: {
       label: t('bots-target-count', { defaultValue: 'Target bot count' }),
       hint: t('bots-target-count-hint', {
-        defaultValue: 'The pool size the worker tops up to. Lowering it stops minting; it never deletes bots.',
+        defaultValue:
+          'The pool size the worker tops up to. Lowering it stops minting; it never deletes bots.',
       }),
       step: '1',
     },
     createBatch: {
       label: t('bots-create-batch', { defaultValue: 'Bots per batch' }),
-      hint: t('bots-create-batch-hint', { defaultValue: 'New bots minted each time the pool is topped up.' }),
+      hint: t('bots-create-batch-hint', {
+        defaultValue: 'New bots minted each time the pool is topped up.',
+      }),
       step: '1',
     },
     createIntervalMin: {
       label: t('bots-create-interval', { defaultValue: 'Minutes between batches' }),
-      hint: t('bots-create-interval-hint', { defaultValue: 'How often the worker checks the pool and mints a batch.' }),
+      hint: t('bots-create-interval-hint', {
+        defaultValue: 'How often the worker checks the pool and mints a batch.',
+      }),
       step: '1',
     },
     postRateMultiplier: {
       label: t('bots-rate-multiplier', { defaultValue: 'Posting rate multiplier' }),
       hint: t('bots-rate-multiplier-hint', {
-        defaultValue: "Scales every bot's posts per day (and bot chatter with it). 0 pauses posting.",
+        defaultValue:
+          "Scales every bot's posts per day (and bot chatter with it). 0 pauses posting.",
       }),
       step: '0.1',
     },
     maxPostsPerTick: {
       label: t('bots-max-per-tick', { defaultValue: 'Max posts per tick' }),
       hint: t('bots-max-per-tick-hint', {
-        defaultValue: 'Hard cap on posts in one 5-minute tick. Raise it if the estimate says posting is capped.',
+        defaultValue:
+          'Hard cap on posts in one 5-minute tick. Raise it if the estimate says posting is capped.',
       }),
       step: '1',
     },
@@ -205,112 +201,112 @@ export function BotAdminPage() {
 
   return (
     <PageLayout title={t('bots-title', { defaultValue: 'AI Bots' })} wide backTo="/admin">
-      <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
+      <AdminBody>
         {loading ? (
           <div className="flex justify-center py-20">
             <Spinner />
           </div>
         ) : failed || !stats || !settings || !draft ? (
-          <p className="text-center text-sm text-site-text-muted">
-            {t('bots-load-error', { defaultValue: 'Could not load bot settings.' })}
-          </p>
+          <EmptyState
+            icon={Bot}
+            title={t('bots-load-error', { defaultValue: 'Could not load bot settings.' })}
+          />
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <Stat
+              <StatTile
                 icon={Users}
                 label={t('bots-stat-bots', { defaultValue: 'Bots' })}
                 value={fmt(stats.totalBots)}
-                sub={t('bots-stat-bots-sub', {
+                hint={t('bots-stat-bots-sub', {
                   defaultValue: '+{{added}} in 24h · target {{target}}',
                   added: stats.botsCreated24h,
                   target: settings.targetBotCount,
                 })}
               />
-              <Stat
+              <StatTile
                 icon={FileText}
                 label={t('bots-stat-posts-24h', { defaultValue: 'Bot posts · 24h' })}
                 value={fmt(stats.botPosts24h)}
-                sub={t('bots-stat-posts-share', {
+                hint={t('bots-stat-posts-share', {
                   defaultValue: '{{pct}}% of all posts',
                   pct: Math.round(
-                    (100 * stats.botPosts24h) / Math.max(1, stats.botPosts24h + stats.humanPosts24h),
+                    (100 * stats.botPosts24h) /
+                      Math.max(1, stats.botPosts24h + stats.humanPosts24h),
                   ),
                 })}
               />
-              <Stat
+              <StatTile
                 icon={FileText}
                 label={t('bots-stat-posts-7d', { defaultValue: 'Bot posts · 7d' })}
                 value={fmt(stats.botPosts7d)}
-                sub={t('bots-stat-posts-total', {
+                hint={t('bots-stat-posts-total', {
                   defaultValue: '{{total}} all time',
                   total: stats.botPostsTotal.toLocaleString(),
                 })}
               />
-              <Stat
+              <StatTile
                 icon={FileText}
                 label={t('bots-stat-human-24h', { defaultValue: 'Human posts · 24h' })}
                 value={fmt(stats.humanPosts24h)}
               />
-              <Stat
+              <StatTile
                 icon={MessageCircle}
                 label={t('bots-stat-comments-24h', { defaultValue: 'Bot replies · 24h' })}
                 value={fmt(stats.botComments24h)}
               />
-              <Stat
+              <StatTile
                 icon={Mail}
                 label={t('bots-stat-dms-24h', { defaultValue: 'Bot DMs · 24h' })}
                 value={fmt(stats.botDms24h)}
               />
-              <Stat
+              <StatTile
                 icon={Gauge}
                 label={t('bots-stat-expected', { defaultValue: 'Expected posts/day' })}
                 value={fmt(stats.estimate.expectedPerDay)}
-                sub={t('bots-stat-capacity', {
+                hint={t('bots-stat-capacity', {
                   defaultValue: 'cap {{cap}}/day',
                   cap: fmt(stats.estimate.capacityPerDay),
                 })}
               />
-              <div className="glass-fill rounded-site p-4">
-                <div className="flex items-center gap-2 text-site-text-muted">
-                  <Bot className="h-4 w-4 text-site-accent" aria-hidden />
-                  <span className="font-mono text-[0.68rem] uppercase tracking-widest text-site-text-dim">
-                    {t('bots-stat-last-post', { defaultValue: 'Last bot post' })}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm font-semibold text-site-text">
-                  {stats.lastBotPostAt ? (
+              <StatTile
+                icon={Bot}
+                label={t('bots-stat-last-post', { defaultValue: 'Last bot post' })}
+                value={
+                  stats.lastBotPostAt ? (
                     <RelativeTime date={stats.lastBotPostAt} format={ago} />
                   ) : (
                     t('bots-never', { defaultValue: 'Never' })
-                  )}
-                </p>
-              </div>
+                  )
+                }
+              />
             </div>
 
             <section className="glass-pane rounded-site p-4">
-              <h2 className="mb-3 text-sm font-semibold text-site-text">
+              <h2 className="site-section-label mb-3">
                 {t('bots-habit-mix', { defaultValue: 'Pool by posting habit' })}
               </h2>
               <ul className="grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
                 {HABITS.map((h) => (
                   <li key={h} className="flex items-baseline justify-between gap-2">
                     <span className="text-site-text-muted">{habitLabel[h]}</span>
-                    <span className="font-semibold tabular-nums text-site-text">{stats.habitMix[h] ?? 0}</span>
+                    <span className="font-semibold tabular-nums text-site-text">
+                      {stats.habitMix[h] ?? 0}
+                    </span>
                   </li>
                 ))}
               </ul>
             </section>
 
             <form
-              className="glass-pane space-y-5 rounded-site p-4 md:p-6"
+              className="glass-pane space-y-4 rounded-site p-4"
               onSubmit={(e) => {
                 e.preventDefault();
                 void save();
               }}
             >
               <div>
-                <h2 className="text-base font-semibold text-site-text">
+                <h2 className="site-section-label">
                   {t('bots-settings', { defaultValue: 'Worker settings' })}
                 </h2>
                 <p className="mt-1 text-xs text-site-text-dim">
@@ -333,7 +329,7 @@ export function BotAdminPage() {
                   const { min, max } = BOT_SETTINGS_BOUNDS[f];
                   const id = `bot-setting-${f}`;
                   return (
-                    <div key={f} className="space-y-1.5">
+                    <div key={f} className="space-y-2">
                       <Label htmlFor={id}>{fieldMeta[f].label}</Label>
                       <Input
                         id={id}
@@ -356,7 +352,7 @@ export function BotAdminPage() {
               </div>
 
               {preview ? (
-                <div className="glass-inset space-y-1 rounded-site p-3 text-sm text-site-text-muted">
+                <div className="glass-inset space-y-2 rounded-site px-4 py-3 text-sm text-site-text-muted">
                   <p>
                     {t('bots-preview-now', {
                       defaultValue: 'With the current {{bots}} bots: ≈ {{posts}} posts/day.',
@@ -374,17 +370,19 @@ export function BotAdminPage() {
                   <p>
                     {preview.extraBots > 0
                       ? t('bots-preview-mint', {
-                          defaultValue: 'Minting ≈ {{perHour}} bots/hour — target reached in about {{hours}} h.',
+                          defaultValue:
+                            'Minting ≈ {{perHour}} bots/hour — target reached in about {{hours}} h.',
                           perHour: preview.perHour.toFixed(1),
                           hours: Math.ceil(preview.hoursToTarget),
                         })
                       : t('bots-preview-mint-idle', {
-                          defaultValue: 'The pool is at or above target, so no bots will be minted.',
+                          defaultValue:
+                            'The pool is at or above target, so no bots will be minted.',
                         })}
                   </p>
                   {preview.atTarget.capped ? (
-                    <p className="flex items-start gap-1.5 text-site-warning">
-                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                    <p className="flex items-start gap-2 text-site-warning">
+                      <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
                       {t('bots-preview-capped', {
                         defaultValue:
                           'Posting will hit the per-tick cap ({{cap}}/day). Raise “Max posts per tick” to let the full rate through.',
@@ -402,7 +400,8 @@ export function BotAdminPage() {
               ) : (
                 <p className="text-sm text-site-danger">
                   {t('bots-invalid', {
-                    defaultValue: 'Every field needs a value in its range (whole numbers, except the multiplier).',
+                    defaultValue:
+                      'Every field needs a value in its range (whole numbers, except the multiplier).',
                   })}
                 </p>
               )}
@@ -416,15 +415,18 @@ export function BotAdminPage() {
                 >
                   {t('bots-reset', { defaultValue: 'Reset' })}
                 </Button>
-                <Button type="submit" disabled={!parsed || (!dirty && settings.saved) || saving}>
-                  {saving ? <Spinner size={16} /> : null}
+                <Button
+                  type="submit"
+                  loading={saving}
+                  disabled={!parsed || (!dirty && settings.saved)}
+                >
                   {t('bots-save', { defaultValue: 'Save settings' })}
                 </Button>
               </div>
             </form>
           </>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

@@ -44,11 +44,9 @@ interface ArtistResponse {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="neumorphic-inset rounded-xl px-4 py-3 min-w-24">
+    <div className="neumorphic-inset min-w-24 px-4 py-3">
       <div className="text-lg font-black text-slice-text tabular-nums">{value}</div>
-      <div className="text-[0.65rem] font-bold uppercase tracking-widest text-slice-text-light">
-        {label}
-      </div>
+      <div className="text-xs font-bold text-slice-text-light">{label}</div>
     </div>
   );
 }
@@ -83,32 +81,35 @@ function ArtistPage() {
 
   return (
     <DarkModeWrapper>
-      <main className="fixed inset-0 slice-theme overflow-y-auto bg-slice-bg transition-colors duration-300">
-        <div className="p-3 flex items-center gap-3 shadow-sm bg-slice-bg border-b border-slice-shadow-dark/30 sticky top-0 z-10">
-          <Link to="/slice-it" search={{ q: '', sort: 'recent', view: 'grid' }}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20 rounded-lg text-xs"
-            >
-              <ArrowLeft className="w-3 h-3 mr-1" aria-hidden />
+      {/* A page you read top to bottom is a DOCUMENT (§12.1 rule 6): the window
+          scrolls, not a `fixed inset-0` box inside it. */}
+      <main className="slice-theme min-h-svh bg-slice-bg transition-colors duration-site">
+        <div className="flex items-center gap-3 border-b border-slice-shadow-dark/30 bg-slice-bg pt-[calc(0.75rem+var(--safe-top))] pr-[calc(0.75rem+var(--safe-right))] pb-3 pl-[calc(0.75rem+var(--safe-left))]">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="text-slice-text-muted hover:bg-slice-shadow-dark/20 hover:text-slice-text"
+          >
+            <Link to="/slice-it" search={{ q: '', sort: 'recent', view: 'grid' }}>
+              <ArrowLeft aria-hidden />
               <span className="font-bold">
                 {t('back-to-library', { defaultValue: 'Back to library' })}
               </span>
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
 
-        <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+        <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 pt-4 pb-12 sm:gap-6 sm:px-6">
           {state === 'loading' && (
             <div className="flex items-center justify-center py-24 text-slice-text-light">
-              <Loader2 className="w-6 h-6 animate-spin" aria-hidden />
+              <Loader2 className="size-6 animate-spin" aria-hidden />
             </div>
           )}
 
           {state === 'missing' && (
-            <div className="neumorphic rounded-2xl p-10 text-center">
-              <Music className="w-10 h-10 mx-auto mb-3 text-slice-text-light" aria-hidden />
+            <div className="neumorphic p-8 text-center">
+              <Music className="mx-auto mb-3 size-10 text-slice-text-light" aria-hidden />
               <p className="font-bold text-slice-text">
                 {t('artist-missing', { defaultValue: 'No tracks by that artist yet.' })}
               </p>
@@ -117,9 +118,9 @@ function ArtistPage() {
 
           {state === 'ready' && data && (
             <>
-              <header className="neumorphic rounded-2xl p-5 sm:p-6 space-y-4">
+              <header className="neumorphic flex flex-col items-start gap-4 p-4 sm:p-6">
                 <div>
-                  <p className="text-[0.65rem] font-bold uppercase tracking-widest text-slice-text-light">
+                  <p className="text-xs font-bold text-slice-text-light">
                     {t('artist-label', { defaultValue: 'Artist' })}
                   </p>
                   <h1 className="text-2xl sm:text-3xl font-black text-slice-text soft-glow-text break-words">
@@ -154,16 +155,16 @@ function ArtistPage() {
                   to="/slice-it"
                   search={{ q: '', sort: 'recent', view: 'grid', artist: data.artist.key }}
                 >
-                  <Button className="rounded-xl bg-blue-500 text-white hover:bg-blue-600 font-bold">
-                    <Play className="w-4 h-4 mr-1.5" aria-hidden />
+                  <Button className="bg-(--slice-primary) font-bold text-slice-bg hover:brightness-110">
+                    <Play aria-hidden />
                     {t('artist-browse', { defaultValue: 'Browse in library' })}
                   </Button>
                 </Link>
               </header>
 
               {data.albums.length > 0 && (
-                <section className="space-y-2">
-                  <h2 className="text-xs font-black uppercase tracking-widest text-slice-text-light">
+                <section className="flex flex-col gap-2">
+                  <h2 className="text-sm font-bold text-slice-text">
                     {t('artist-albums', { defaultValue: 'Albums' })}
                   </h2>
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -171,9 +172,9 @@ function ArtistPage() {
                       <a
                         key={album.id}
                         href={packLibraryPath(album.id)}
-                        className="neumorphic rounded-xl p-3 flex items-center gap-3 hover:bg-slice-shadow-dark/10 transition-colors"
+                        className="neumorphic flex items-center gap-3 p-3 transition-colors hover:bg-slice-shadow-dark/10"
                       >
-                        <Disc3 className="w-5 h-5 shrink-0 text-slice-text-light" aria-hidden />
+                        <Disc3 className="size-5 shrink-0 text-slice-text-light" aria-hidden />
                         <span className="min-w-0">
                           <span className="block truncate font-bold text-slice-text">
                             {album.title}
@@ -191,11 +192,11 @@ function ArtistPage() {
                 </section>
               )}
 
-              <section className="space-y-2">
-                <h2 className="text-xs font-black uppercase tracking-widest text-slice-text-light">
+              <section className="flex flex-col gap-2">
+                <h2 className="text-sm font-bold text-slice-text">
                   {t('artist-track-list', { defaultValue: 'Tracks' })}
                 </h2>
-                <ul className="neumorphic rounded-2xl divide-y divide-slice-shadow-dark/30 overflow-hidden">
+                <ul className="neumorphic divide-y divide-slice-shadow-dark/30 overflow-hidden">
                   {data.songs.map((song) => (
                     <li key={song.id} className="flex items-center gap-3 px-4 py-3">
                       <span className="min-w-0 flex-1">

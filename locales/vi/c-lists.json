@@ -18,5 +18,6 @@
   "new-list": "New list",
   "no-lists": "Create a list first from the Lists page.",
   "pin": "Pin",
-  "pinned": "Pinned"
+  "pinned": "Pinned",
+  "delete-list": "Delete list"
 }

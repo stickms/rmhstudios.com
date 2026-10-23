@@ -55,18 +55,21 @@
 .sec-nav {
   position: fixed;
   inset: 0 0 auto;
-  z-index: 100;
-  height: 52px;
-  background: color-mix(in srgb, var(--site-bg) 32%, transparent);
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(170%);
-  backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(170%);
-  border-bottom: 1px solid var(--site-border);
+  z-index: var(--z-topbar);
+  height: 56px;
   animation: sec-fade-down 700ms var(--sec-ease) both;
+}
+/* Material comes from the `.glass-chrome` class on the element (L3, no
+   backdrop-filter of our own). This bar is full-bleed, so square it off and keep
+   only the bottom hairline; the extra type selector outranks the role class. */
+nav.glass-chrome.sec-nav {
+  border-radius: 0;
+  border-width: 0 0 1px;
 }
 .sec-nav__inner {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   height: 100%;
   max-width: 1120px;
   margin: 0 auto;
@@ -153,19 +156,12 @@
 .sec-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  gap: 12px;
   margin: 0 auto;
 }
 .sec-stat {
   padding: clamp(26px, 4vw, 40px) clamp(18px, 3vw, 28px);
   text-align: center;
-  background-color: var(--site-glass-tint);
-  background-image: var(--site-glass-noise);
-  box-shadow: var(--site-shadow-sm);
-  border: var(--site-border-width) solid var(--site-border);
-  border-radius: var(--site-radius);
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
-  backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
 }
 .sec-stat__num {
   margin: 0 0 8px;
@@ -227,7 +223,7 @@
 .sec-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  gap: 16px;
 }
 @media (max-width: 900px) { .sec-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .sec-grid { grid-template-columns: 1fr; } }
@@ -236,18 +232,10 @@
 .sec-card {
   position: relative;
   padding: clamp(24px, 3vw, 34px);
-  border-radius: var(--site-radius);
-  background-color: var(--site-glass-tint);
-  background-image: var(--site-glass-noise);
-  box-shadow: var(--site-shadow-sm);
-  border: var(--site-border-width) solid var(--site-border);
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
-  backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
   overflow: hidden;
-  transition: transform 220ms var(--sec-ease), border-color 220ms var(--sec-ease);
+  transition: border-color 220ms var(--sec-ease);
 }
-.sec-card:hover {
-  transform: translateY(-4px);
+a.sec-card:hover {
   border-color: var(--site-border-bright);
 }
 /* Link cards (e.g. the /black-lives-matter resource list): an <a> is blockified
@@ -336,13 +324,6 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
 .sec-disclosure {
   position: relative;
   padding: clamp(40px, 6vw, 72px);
-  border-radius: var(--site-radius);
-  background-color: var(--site-glass-tint);
-  background-image: var(--site-glass-noise);
-  box-shadow: var(--site-shadow);
-  border: var(--site-border-width) solid var(--site-border);
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
-  backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
   text-align: center;
   overflow: hidden;
 }
@@ -491,20 +472,10 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
 .sec-tier {
   position: relative;
   padding: clamp(22px, 3vw, 30px);
-  border-radius: var(--site-radius);
-  background-color: var(--site-glass-tint);
-  background-image: var(--site-glass-noise);
-  box-shadow: var(--site-shadow-sm);
-  border: var(--site-border-width) solid var(--site-border);
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
-  backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
 }
 /* The "critical" tier is featured with the store's gold (--site-warning) rim. */
-.sec-tier[data-sev="critical"] {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--site-warning) 45%, transparent),
-    var(--site-glass-depth-sm);
-  border-color: transparent;
+.glass-fill.sec-tier[data-sev="critical"] {
+  border-color: color-mix(in srgb, var(--site-warning) 60%, transparent);
 }
 .sec-tier__head {
   display: flex;
@@ -537,14 +508,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
 /* ─── Bounty category table / milestone table ────────────────────────────────  */
 .sec-bounty-table-wrap {
   margin-bottom: clamp(30px, 5vw, 52px);
-  border: var(--site-border-width) solid var(--site-border);
-  border-radius: var(--site-radius);
   overflow-x: auto;
-  background-color: var(--site-glass-tint);
-  background-image: var(--site-glass-noise);
-  box-shadow: var(--site-shadow-sm);
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
-  backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
 }
 .sec-bounty-table-wrap:focus-visible { outline: 2px solid var(--site-accent); outline-offset: 2px; }
 .sec-bounty-table-title {
@@ -587,13 +551,6 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
 @media (max-width: 820px) { .sec-rules { grid-template-columns: 1fr; } }
 .sec-rule {
   padding: clamp(22px, 3vw, 28px);
-  border-radius: var(--site-radius);
-  background-color: var(--site-glass-tint);
-  background-image: var(--site-glass-noise);
-  box-shadow: var(--site-shadow-sm);
-  border: var(--site-border-width) solid var(--site-border);
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
-  backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
 }
 .sec-rule__title {
   display: flex;
@@ -624,34 +581,9 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
 .sec-form__intro svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--site-accent); }
 .sec-form__row--split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 560px) { .sec-form__row--split { grid-template-columns: 1fr; } }
-.sec-field { display: flex; flex-direction: column; gap: 7px; }
+.sec-field { display: flex; flex-direction: column; gap: 8px; }
 .sec-field__label { font-size: 0.8rem; font-weight: 550; color: var(--site-text-muted); }
 .sec-field__opt { color: var(--site-text-dim); font-weight: 400; }
-.sec-field__input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 12px 14px;
-  border-radius: var(--site-radius-sm);
-  background: color-mix(in srgb, var(--site-text) 5%, var(--site-glass-tint-strong)); /* the field fill — see .glass-inset */
-  border: 1px solid var(--site-border);
-  color: var(--site-text);
-  font: inherit;
-  font-size: 0.92rem;
-  -webkit-appearance: none;
-  appearance: none;
-  transition: border-color 160ms var(--sec-ease), background 160ms var(--sec-ease);
-}
-.sec-field__input::placeholder { color: var(--site-text-dim); }
-.sec-field__input:focus {
-  outline: none;
-  border-color: var(--site-accent);
-  background: color-mix(in srgb, var(--site-bg) 55%, transparent);
-}
-.sec-field__textarea { resize: vertical; min-height: 132px; line-height: 1.5; }
-select.sec-field__input {
-  padding-right: 38px;
-}
-.sec-field__input option { color: var(--site-text); background: var(--site-surface-opaque); }
 .sec-form__hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .sec-form__error {
   display: flex;
@@ -670,9 +602,6 @@ select.sec-field__input {
 .sec-form__actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
 .sec-form__note { font-size: 0.82rem; color: var(--site-text-dim); }
 .sec-form__note a { color: var(--site-accent); text-underline-offset: 3px; }
-.sec-form .sec-btn[disabled] { opacity: 0.6; cursor: default; }
-.sec-spin { animation: sec-rotate 0.8s linear infinite; }
-@keyframes sec-rotate { to { transform: rotate(360deg); } }
 .sec-form__done { text-align: center; padding: 24px 0 8px; }
 .sec-form__done-icon {
   display: inline-grid;
@@ -699,14 +628,7 @@ select.sec-field__input {
 
 /* Spec list — a term/description grid inside a glass card */
 .sec-spec {
-  border: var(--site-border-width) solid var(--site-border);
-  border-radius: var(--site-radius);
   overflow: hidden;
-  background-color: var(--site-glass-tint);
-  background-image: var(--site-glass-noise);
-  box-shadow: var(--site-shadow-sm);
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
-  backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
 }
 .sec-spec__row {
   display: grid;
@@ -739,13 +661,6 @@ select.sec-field__input {
   grid-template-columns: 40px 1fr;
   gap: 16px;
   padding: clamp(18px, 2.4vw, 24px);
-  border-radius: var(--site-radius);
-  background-color: var(--site-glass-tint);
-  background-image: var(--site-glass-noise);
-  box-shadow: var(--site-shadow-sm);
-  border: var(--site-border-width) solid var(--site-border);
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
-  backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
 }
 .sec-step__num {
   display: inline-grid;
@@ -771,15 +686,9 @@ select.sec-field__input {
 .sec-list strong { color: var(--site-text); font-weight: 600; }
 
 /* FAQ — native <details>, no JS required */
-.sec-faq { display: flex; flex-direction: column; gap: 10px; }
+.sec-faq { display: flex; flex-direction: column; gap: 12px; }
 .sec-faq__item {
-  border: var(--site-border-width) solid var(--site-border);
   border-radius: var(--site-radius-sm);
-  background-color: var(--site-glass-tint);
-  background-image: var(--site-glass-noise);
-  box-shadow: var(--site-shadow-sm);
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
-  backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
   overflow: hidden;
 }
 .sec-faq__q {
@@ -810,4 +719,32 @@ select.sec-field__input {
 
 @media (prefers-reduced-motion: reduce) {
   .sec-faq__q::after { transition: none; }
+}
+
+/* ─── /security inside the shared legal frame ────────────────────────────────
+   /security renders in LegalLayout's reading column (max-w-3xl, 720px of
+   content) rather than the full-bleed 1120px marketing shell, so the grids that
+   were sized for 1120 step down. Scoped to `.legal-content__body` so /optimization,
+   /breaches and /black-lives-matter keep their own proportions. */
+.legal-content__body .sec-stats { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.legal-content__body .sec-stat { padding: 1.5rem 1rem; }
+.legal-content__body .sec-stat__num { font-size: 2rem; }
+.legal-content__body .sec-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.legal-content__body .sec-card { padding: 1.5rem; }
+.legal-content__body .sec-features { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+.legal-content__body .sec-rules { grid-template-columns: 1fr; gap: 12px; }
+.legal-content__body .sec-tiers { gap: 12px; margin-bottom: 1rem; }
+.legal-content__body .sec-bounty-table-wrap { margin-bottom: 1rem; }
+.legal-content__body .sec-disclosure {
+  padding: 1.5rem;
+  text-align: left;
+}
+.legal-content__body .sec-disclosure .sec-form { margin: 1.5rem 0 0.5rem; }
+.legal-content__body .sec-disclosure__meta { margin: 1.5rem 0 0; max-width: none; }
+@media (max-width: 600px) {
+  .legal-content__body .sec-grid,
+  .legal-content__body .sec-features { grid-template-columns: 1fr; }
+}
+@media (min-width: 640px) {
+  .legal-content__body .sec-disclosure { padding: 2rem; }
 }

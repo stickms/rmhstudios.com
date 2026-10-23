@@ -80,7 +80,7 @@ export default function ShelvesPanel() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[var(--site-section-gap)]">
       {SHELVES.map((shelf) => {
         const items = entries.filter((e) => e.shelf === shelf);
         const isPublic = data?.prefs[PREF_KEY[shelf]] ?? false;

@@ -98,7 +98,7 @@ export function CanvasPage() {
           'One shared canvas. Everyone places one pixel at a time, and the picture only exists because of all of us.',
       })}
     >
-      <div className="space-y-4 px-4 pt-2 pb-12">
+      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
         {q.isPending ? (
           <Skeleton className="h-[60vh] w-full" />
         ) : !event ? (
@@ -138,11 +138,11 @@ export function CanvasPage() {
               </Suspense>
             )}
             {live && (
-              <section className="glass-pane space-y-3 rounded-site p-4">
+              <section className="glass-pane space-y-3 rounded-site px-4 py-3">
                 <div
                   role="radiogroup"
                   aria-label={t('palette', { defaultValue: 'Colour' })}
-                  className="flex flex-wrap gap-1.5"
+                  className="flex flex-wrap gap-2"
                 >
                   {CANVAS_PALETTE.map((hex, i) => (
                     <button
@@ -152,7 +152,7 @@ export function CanvasPage() {
                       aria-checked={color === i}
                       aria-label={t('colour-n', { defaultValue: 'Colour {{n}}', n: i + 1 })}
                       onClick={() => setColor(i)}
-                      className="size-8 rounded-site border border-site-border outline-offset-2 aria-checked:outline-2 aria-checked:outline-site-accent"
+                      className="size-8 pointer-coarse:size-11 rounded-site-sm border border-site-border outline-offset-2 aria-checked:outline-2 aria-checked:outline-site-accent"
                       style={{ backgroundColor: hex }}
                     />
                   ))}
@@ -215,9 +215,9 @@ export function CanvasPage() {
         {!!q.data?.past.length && (
           <nav
             aria-label={t('earlier', { defaultValue: 'Earlier canvases' })}
-            className="space-y-2"
+            className="space-y-3"
           >
-            <h2 className="text-sm font-semibold text-site-text">
+            <h2 className="site-section-label">
               {t('earlier', { defaultValue: 'Earlier canvases' })}
             </h2>
             <ul className="flex flex-wrap gap-2">

@@ -83,7 +83,7 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="t-name">{t('name', { defaultValue: 'Name' })}</Label>
             <Input

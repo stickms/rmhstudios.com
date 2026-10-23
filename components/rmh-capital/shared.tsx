@@ -218,8 +218,8 @@ export function SiteFooter() {
             {t('copyright', { defaultValue: '© 2026 RMH Capital LLC. All rights reserved.' })}
           </span>
           <div className="footer-legal">
-            <a href="#">{t('privacy', { defaultValue: 'Privacy' })}</a>
-            <a href="#">{t('terms', { defaultValue: 'Terms' })}</a>
+            <a href="/privacy">{t('privacy', { defaultValue: 'Privacy' })}</a>
+            <a href="/terms">{t('terms', { defaultValue: 'Terms' })}</a>
             <a href="#">{t('disclosures', { defaultValue: 'Disclosures' })}</a>
             <a href="#">{t('accessibility', { defaultValue: 'Accessibility' })}</a>
           </div>

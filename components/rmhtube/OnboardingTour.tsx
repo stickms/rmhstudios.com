@@ -67,12 +67,12 @@ export default function OnboardingTour() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70" onClick={handleClose} />
-      <div className="relative w-full max-w-sm rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl">
+      <div className="absolute inset-0 app-scrim" onClick={handleClose} />
+      <div className="relative w-full max-w-sm rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
         {/* Close */}
         <button
           onClick={handleClose}
-          className="absolute top-3 right-3 rounded p-1 text-(--app-text-dim) hover:text-(--app-text)"
+          className="absolute top-3 right-3 rounded-(--app-radius-sm) p-1 text-(--app-text-dim) hover:text-(--app-text)"
         >
           <X className="h-4 w-4" />
         </button>
@@ -101,7 +101,7 @@ export default function OnboardingTour() {
           <button
             onClick={handlePrev}
             disabled={step === 0}
-            className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-colors disabled:opacity-30 text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+            className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-(--app-radius-sm) transition-colors disabled:opacity-30 text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             {t("back", { defaultValue: "Back" })}
@@ -113,7 +113,7 @@ export default function OnboardingTour() {
 
           <button
             onClick={handleNext}
-            className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+            className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-(--app-radius-sm) transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
           >
             {step < TOUR_STEPS.length - 1 ? (
               <>

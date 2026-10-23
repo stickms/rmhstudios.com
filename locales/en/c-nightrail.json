@@ -32,6 +32,8 @@
   "par-time": "Par {{time}}",
   "paused": "PAUSED",
   "paused-hint": "Tap the screen or press Esc to resume",
+  "photo-mode": "Photo mode",
+  "photo-mode-key": "Photo mode (P)",
   "play": "Play",
   "points": "Points",
   "rail-left": "Switch to the left rail",
@@ -53,7 +55,5 @@
   "tricks-landed": "Tricks landed",
   "tricktionary": "Tricktionary",
   "tricktionary-hint": "Flick a direction in the air. Each new trick in a combo raises the multiplier — repeat one and it pays half.",
-  "unlock-hint": "Finish a line with cargo aboard to open the next one",
-  "photo-mode": "Photo mode",
-  "photo-mode-key": "Photo mode (P)"
+  "unlock-hint": "Finish a line with cargo aboard to open the next one"
 }

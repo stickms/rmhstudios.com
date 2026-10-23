@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { HistoryList } from '@/components/history/HistoryList';
 import { getRequestSession } from '@/lib/auth-session.server';
@@ -34,9 +35,10 @@ export const Route = createFileRoute('/_site/history')({
 });
 
 function HistoryPage() {
+  const { t } = useTranslation('c-history');
   const data = Route.useLoaderData();
   return (
-    <PageLayout title="History">
+    <PageLayout title={t('title', { defaultValue: 'History' })}>
       <HistoryList initial={data} />
     </PageLayout>
   );

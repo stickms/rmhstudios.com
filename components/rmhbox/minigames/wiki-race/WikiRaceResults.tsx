@@ -60,11 +60,11 @@ export default function WikiRaceResults({
         <h3 className="text-xl font-bold flex items-center justify-center gap-1.5"><Flag className="h-5 w-5" /> {t("race-results", { defaultValue: "Race Results" })}</h3>
         <div className="mt-2 flex items-center justify-center gap-3 text-sm text-(--app-text-muted)">
           <span className="flex items-center gap-1">
-            <MapPin size={12} className="text-green-400" /> {startTitle}
+            <MapPin size={12} className="text-(--app-success)" /> {startTitle}
           </span>
           <span>→</span>
           <span className="flex items-center gap-1">
-            <Target size={12} className="text-yellow-400" /> {targetTitle}
+            <Target size={12} className="text-(--app-warning)" /> {targetTitle}
           </span>
         </div>
       </div>
@@ -81,7 +81,7 @@ export default function WikiRaceResults({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.12 }}
-              className={`rounded-xl border p-4 ${
+              className={`rounded-(--app-radius) border p-4 ${
                 isMe
                   ? 'border-(--app-accent)/50 bg-(--app-accent)/5'
                   : 'border-(--app-border) bg-(--app-surface)'
@@ -93,7 +93,7 @@ export default function WikiRaceResults({
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-(--app-surface) text-xs font-bold">
                     {idx + 1}
                   </span>
-                  {isWinner && <Trophy size={14} className="text-yellow-400" />}
+                  {isWinner && <Trophy size={14} className="text-(--app-warning)" />}
                   <span className="font-semibold">
                     {player.userName}
                     {isMe && (
@@ -115,11 +115,11 @@ export default function WikiRaceResults({
                   {t("articles-visited", { count: player.path.length, defaultValue_one: "{{count}} article visited", defaultValue: "{{count}} articles visited" })}
                 </span>
                 {player.hasFinished ? (
-                  <span className="text-green-400 font-medium">
+                  <span className="text-(--app-success) font-medium">
                     {t("finished-rank-wiki-race-results", { rank: player.finishRank, defaultValue: "Finished #{{rank}}" })}
                   </span>
                 ) : (
-                  <span className="text-red-400 font-medium">{t("dnf", { defaultValue: "DNF" })}</span>
+                  <span className="text-(--app-danger) font-medium">{t("dnf", { defaultValue: "DNF" })}</span>
                 )}
               </div>
 
@@ -138,11 +138,11 @@ export default function WikiRaceResults({
                       <span
                         className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
                           isTargetArticle
-                            ? 'bg-green-500/20 text-green-400'
+                            ? 'bg-(--app-success)/20 text-(--app-success)'
                             : isStart
-                              ? 'bg-blue-500/20 text-blue-400'
+                              ? 'bg-(--app-info)/20 text-(--app-info)'
                               : isLast && !isTargetArticle
-                                ? 'bg-red-500/20 text-red-400'
+                                ? 'bg-(--app-danger)/20 text-(--app-danger)'
                                 : 'bg-(--app-surface) text-(--app-text-muted)'
                         }`}
                       >

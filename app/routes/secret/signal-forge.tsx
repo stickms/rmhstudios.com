@@ -4,6 +4,7 @@
 
 import { Suspense } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
@@ -23,23 +24,24 @@ export const Route = createFileRoute('/secret/signal-forge')({
 });
 
 function SignalForgePage() {
+  const { t } = useTranslation('r-secret');
   return (
     <main className="fixed inset-0 bg-black flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-3 pt-3 pb-1 shrink-0 relative z-60">
-        <Link to="/secret">
+      <div className="flex items-center justify-between px-3 pt-[calc(0.75rem+var(--safe-top,0px))] pb-1 shrink-0 relative z-60">
+        <Link to="/secret" aria-label={t("back-to-vault", { defaultValue: "Back to the Vault" })}>
           <Button
             variant="ghost"
             size="sm"
-            className="text-zinc-500 hover:text-white flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-zinc-800 text-xs sm:text-sm"
+            className="text-zinc-400 hover:text-white flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-zinc-800 text-xs sm:text-sm min-h-11 min-w-11 justify-center"
           >
-            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+            <ArrowLeft className="w-4 h-4" aria-hidden />
             <span className="hidden sm:inline">RMH Studios</span>
           </Button>
         </Link>
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-black rainbow-text tracking-tighter italic glitch-text leading-none absolute left-1/2 -translate-x-1/2">
           SIGNAL FORGE
         </h1>
-        <div className="w-20" />
+        <div aria-hidden className="w-20" />
       </div>
 
       <div className="grow relative min-h-0 overflow-hidden">

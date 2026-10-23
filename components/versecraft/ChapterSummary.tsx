@@ -38,7 +38,7 @@ export function ChapterSummary() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 md:p-6">
+    <div className="flex flex-col items-center justify-center app-ground p-4 md:p-6">
       <motion.div
         className="max-w-md w-full rounded-lg p-6 md:p-8"
         style={{

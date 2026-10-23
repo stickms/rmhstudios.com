@@ -107,5 +107,6 @@
   "tap-to-reveal": "Нажмите, чтобы открыть",
   "unban": "Разблокировать",
   "unban-user": "Разблокировать пользователя",
-  "work-duration": "Рабочее время: {{minutes}} мин"
+  "work-duration": "Рабочее время: {{minutes}} мин",
+  "apps": "Apps"
 }

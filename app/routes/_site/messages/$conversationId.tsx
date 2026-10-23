@@ -14,11 +14,13 @@ import { getConversationOtherUser, type ConversationOtherUser } from '@/lib/conv
 // paints immediately — the old client path fetched the entire inbox to find it.
 const fetchConversation = createServerFn({ method: 'GET' })
   .validator((conversationId: string) => conversationId)
-  .handler(async ({ data: conversationId }): Promise<{ otherUser: ConversationOtherUser | null }> => {
-    const session = await getRequestSession();
-    if (!session) return { otherUser: null };
-    return { otherUser: await getConversationOtherUser(conversationId, session.user.id) };
-  });
+  .handler(
+    async ({ data: conversationId }): Promise<{ otherUser: ConversationOtherUser | null }> => {
+      const session = await getRequestSession();
+      if (!session) return { otherUser: null };
+      return { otherUser: await getConversationOtherUser(conversationId, session.user.id) };
+    },
+  );
 
 export const Route = createFileRoute('/_site/messages/$conversationId')({
   // `noindex`: one private conversation. Titled all the same — without a
@@ -36,7 +38,7 @@ function ConversationPage() {
 
   return (
     <PageFrame rightSidebar={<MessagesRightSidebar />}>
-        <ConversationView conversationId={conversationId} initialOtherUser={otherUser} />
+      <ConversationView conversationId={conversationId} initialOtherUser={otherUser} />
     </PageFrame>
   );
 }

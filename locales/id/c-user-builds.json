@@ -71,5 +71,8 @@
   "views-count_other": "{{count}} tampilan",
   "write-comment": "Tulis komentar...",
   "write-reply": "Tulis balasan...",
-  "years-ago_other": "{{count}}t yang lalu"
+  "years-ago_other": "{{count}}t yang lalu",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

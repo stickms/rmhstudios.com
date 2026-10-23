@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, X, Star, LocateFixed } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import type { RidePlace } from '@/lib/rideshare/geo';
 
@@ -122,7 +124,7 @@ export function LocationSearch({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query, value]);
+  }, [query, value, t]);
 
   // Close dropdown on outside click.
   useEffect(() => {
@@ -148,34 +150,37 @@ export function LocationSearch({
 
   return (
     <div className="relative" ref={boxRef}>
-      <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{label}</label>
+      <span className="mb-2 block text-sm font-medium text-site-text">{label}</span>
 
       {value ? (
-        <div className="flex items-center gap-2 glass-inset rounded-site-sm px-3 py-2.5 sm:py-2">
+        <div className="glass-inset flex min-h-11 items-center gap-2 rounded-site-sm px-3 py-2">
           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotClassName}`} />
           <span className="min-w-0 flex-1 truncate text-sm text-site-text" title={value.label}>
             {value.label}
           </span>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={clear}
-            className="shrink-0 rounded-site-sm p-1.5 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
+            className="shrink-0 text-site-text-muted"
             aria-label={t('clear-label', { defaultValue: 'Clear {{label}}', label })}
           >
-            <X className="h-4 w-4" />
-          </button>
+            <X aria-hidden />
+          </Button>
         </div>
       ) : (
         <>
           <div className="relative">
             <span className={`absolute left-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full ${dotClassName}`} />
-            <input
+            <Input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => results.length && setOpen(true)}
+              aria-label={label}
               placeholder={placeholder ?? t('search-placeholder', { defaultValue: 'Search for an address or place' })}
-              className="w-full glass-inset rounded-site-sm py-2.5 pl-8 pr-9 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
+              className="pl-8 pr-9"
               autoComplete="off"
             />
             {loading && (
@@ -185,27 +190,31 @@ export function LocationSearch({
 
           {/* Current-location + saved-place quick picks (before typing) */}
           {(allowCurrentLocation || (savedPlaces && savedPlaces.length > 0)) && query.trim().length < 3 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-2 flex flex-wrap gap-2">
               {allowCurrentLocation && (
-                <button
+                <Button
                   type="button"
+                  variant="accent-outline"
+                  size="sm"
+                  className="min-h-11 rounded-full"
                   onClick={useCurrentLocation}
                   disabled={locating}
-                  className="inline-flex items-center gap-1 rounded-full border border-site-accent/40 bg-site-accent/10 px-3 py-1.5 text-xs font-medium text-site-accent transition-colors hover:bg-site-accent/20 disabled:opacity-60"
                 >
-                  {locating ? <Loader2 className="h-3 w-3 animate-spin" /> : <LocateFixed className="h-3 w-3" />}
+                  {locating ? <Loader2 className="animate-spin" aria-hidden /> : <LocateFixed aria-hidden />}
                   {t('current-location', { defaultValue: 'Current location' })}
-                </button>
+                </Button>
               )}
               {savedPlaces?.map((p) => (
-                <button
+                <Button
                   key={p.id}
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-11 rounded-full"
                   onClick={() => choose(p)}
-                  className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1.5 text-xs text-site-text transition-colors hover:border-site-accent/50 hover:text-site-accent"
                 >
-                  <Star className="h-3 w-3 text-site-warning" /> {p.savedLabel}
-                </button>
+                  <Star className="text-site-warning" aria-hidden /> {p.savedLabel}
+                </Button>
               ))}
             </div>
           )}
@@ -241,7 +250,7 @@ export function LocationSearch({
             role="option"
             aria-selected={false}
             onClick={() => choose(r)}
-            className="flex w-full min-h-9 pointer-coarse:min-h-11 items-start gap-2.5 rounded-site-sm px-3 py-2 text-left text-sm text-site-text transition-colors duration-site hover:bg-site-surface-hover focus-visible:bg-site-surface-hover"
+            className="flex w-full min-h-9 pointer-coarse:min-h-11 items-start gap-2 rounded-site-sm px-3 py-2 text-left text-sm text-site-text transition-colors duration-site hover:bg-site-surface-hover focus-visible:bg-site-surface-hover"
           >
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
             <span className="min-w-0 flex-1">{r.label}</span>

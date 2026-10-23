@@ -45,5 +45,8 @@
   "starting-game": "ゲームを開始中...",
   "view-minigames": "ミニゲームを見る",
   "winner-label": "勝者:",
-  "winner-none": "なし"
+  "winner-none": "なし",
+  "loading": "Loading…",
+  "room-code": "Room code",
+  "player-count-of-max_other": "{{count}}/{{max}} players"
 }

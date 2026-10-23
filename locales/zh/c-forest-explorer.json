@@ -102,5 +102,8 @@
   "walk": "走路",
   "ward-seal-instruction-v2": "Rotate each ring until its glowing ward glyph rests beneath the marker",
   "watch-the-pattern": "观察这个模式……",
-  "wrong-watch-again": "错误！再看一遍……"
+  "wrong-watch-again": "错误！再看一遍……",
+  "close-overlay": "Close",
+  "mute": "Mute",
+  "unmute": "Unmute"
 }

@@ -38,6 +38,7 @@
   "record-arm": "Record Arm",
   "reset-all": "Reset All",
   "sample-browser": "Sample Browser",
+  "sample-source": "Sample source",
   "samples-count_one": "{{count}} samples",
   "samples-count_other": "{{count}} samples",
   "samples-heading": "Samples",

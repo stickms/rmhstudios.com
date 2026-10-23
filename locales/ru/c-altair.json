@@ -202,5 +202,9 @@
   "webgl-context-lost": "Контекст WebGL потерян! Пожалуйста, перезагрузите страницу.",
   "you": "(вы)",
   "your-class": "Ваш класс",
-  "zoom": "Масштаб"
+  "zoom": "Масштаб",
+  "keyboard-hint-level-up-screen_few": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_many": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_one": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
 }

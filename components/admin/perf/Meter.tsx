@@ -32,14 +32,14 @@ export function Meter({ label, value, max, text, tone = 'none' }: MeterProps) {
         >
           <div
             className={cn(
-              'h-full rounded-full',
+              'h-full origin-left',
               tone === 'danger'
                 ? 'bg-site-danger'
                 : tone === 'warn'
                   ? 'bg-site-warning'
                   : 'bg-site-accent',
             )}
-            style={{ width: `${pct}%` }}
+            style={{ transform: `scaleX(${pct / 100})` }}
           />
         </div>
       ) : null}

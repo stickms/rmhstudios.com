@@ -67,8 +67,8 @@ export function ExploreGame() {
             </Canvas>
 
             {!locked && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/55 backdrop-blur-sm">
-                    <div className="text-center text-white px-8 py-9 rounded-2xl bg-black/30 border border-white/10 max-w-xs w-full space-y-3">
+                <div className="app-safe-pad absolute inset-0 flex items-center-safe justify-center-safe overflow-y-auto bg-black/55 backdrop-blur-sm">
+                    <div className="text-center text-white mx-4 px-8 py-8 rounded-2xl bg-black/30 border border-white/10 max-w-xs w-full space-y-3">
                         <div className="text-5xl">🌲</div>
                         <h1 className="text-3xl font-bold tracking-wide text-green-200">
                             {t("forest-explorer-title", { defaultValue: "Forest Explorer" })}
@@ -197,10 +197,12 @@ export function ExploreGame() {
                         {night ? t("day", { defaultValue: "☀ Day" }) : t("night", { defaultValue: "☾ Night" })}
                     </button>
                     <button
-                        className="px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white text-xs font-medium transition-colors cursor-pointer"
+                        type="button"
+                        aria-label={muted ? t("unmute", { defaultValue: "Unmute" }) : t("mute", { defaultValue: "Mute" })}
+                        className="px-3 py-1.5 pointer-coarse:min-h-11 pointer-coarse:min-w-11 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white text-xs font-medium transition-colors cursor-pointer"
                         onClick={toggleMute}
                     >
-                        {muted ? '🔇' : '🔊'}
+                        <span aria-hidden="true">{muted ? '🔇' : '🔊'}</span>
                     </button>
                 </div>
             )}

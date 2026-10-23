@@ -89,5 +89,6 @@
   "tap-to-reveal": "Chạm để hiện",
   "unban": "Bỏ cấm",
   "unban-user": "Bỏ cấm người dùng",
-  "work-duration": "Thời gian làm việc: {{minutes}} phút"
+  "work-duration": "Thời gian làm việc: {{minutes}} phút",
+  "apps": "Apps"
 }

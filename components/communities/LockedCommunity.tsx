@@ -108,7 +108,7 @@ export function LockedCommunityPreview({
 }) {
   const { t } = useTranslation('f-communities-plus');
   return (
-    <div className="glass-pane mx-auto flex max-w-xl flex-col gap-5 p-5">
+    <div className="glass-pane mx-auto flex max-w-xl flex-col gap-4 p-4 sm:p-5">
       <LockedCommunityHeader community={community} as="h1" />
       <p className="text-sm text-site-text-muted">
         {t('locked-explainer', {

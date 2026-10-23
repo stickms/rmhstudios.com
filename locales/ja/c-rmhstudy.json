@@ -89,5 +89,6 @@
   "tap-to-reveal": "タップして表示",
   "unban": "解除",
   "unban-user": "ユーザーのBANを解除",
-  "work-duration": "作業時間: {{minutes}} 分"
+  "work-duration": "作業時間: {{minutes}} 分",
+  "apps": "Apps"
 }

@@ -220,7 +220,7 @@ export function NeonDriftwayUI({
   // ── Main Menu ──
   if (uiState === 'menu') {
     return (
-      <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/70 backdrop-blur-sm overflow-y-auto">
+      <div className="app-safe-pad absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/70 backdrop-blur-sm overflow-y-auto">
         <div className="text-center space-y-4 sm:space-y-6 max-w-md px-4 py-6">
           <h1 className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-cyan-400 via-white to-red-500 tracking-tighter">
             NEON DRIFTWAY
@@ -291,11 +291,11 @@ export function NeonDriftwayUI({
   if (uiState === 'levelSelect') {
     const levelIds: LevelId[] = [1, 2, 3];
     return (
-      <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/70 backdrop-blur-sm overflow-y-auto">
+      <div className="app-safe-pad absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/70 backdrop-blur-sm overflow-y-auto">
         <div className="max-w-lg w-full px-4 space-y-3 sm:space-y-4 py-6">
           <button
             onClick={onGoToMenu}
-            className="flex items-center gap-1 text-zinc-400 hover:text-white text-xs sm:text-sm transition-colors"
+            className="flex items-center gap-1 pointer-coarse:min-h-11 text-zinc-400 hover:text-white text-xs sm:text-sm transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {t("back", { defaultValue: "Back" })}
           </button>
@@ -305,7 +305,7 @@ export function NeonDriftwayUI({
           <button
             type="button"
             onClick={() => onGhostModeChange(GHOST_MODES[(GHOST_MODES.indexOf(ghostMode) + 1) % GHOST_MODES.length])}
-            className="mx-auto flex items-center gap-2 rounded-full border border-zinc-600 bg-zinc-900/80 px-3 py-1.5 text-xs text-zinc-300 transition-colors hover:border-cyan-500 hover:text-white"
+            className="mx-auto flex items-center gap-2 rounded-full border border-zinc-600 bg-zinc-900/80 px-3 py-1.5 pointer-coarse:min-h-11 text-xs text-zinc-300 transition-colors hover:border-cyan-500 hover:text-white"
             aria-label={t("ghost-toggle-aria", { defaultValue: "Change race ghost" })}
           >
             <Ghost className="h-3.5 w-3.5" aria-hidden />
@@ -366,7 +366,7 @@ export function NeonDriftwayUI({
     const timeStr = `${Math.floor(timeSec / 60)}:${(timeSec % 60).toString().padStart(2, '0')}`;
 
     return (
-      <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="app-safe-pad absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
         <ResultMomentSlot moment={scoreMoment} gameName="Neon Driftway" onDismiss={clearScoreMoment} />
         <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
           <h2 className="text-3xl sm:text-4xl font-black text-red-500 text-center tracking-tight">{t("crashed", { defaultValue: "CRASHED" })}</h2>
@@ -460,7 +460,7 @@ export function NeonDriftwayUI({
     const timeStr = `${Math.floor(timeSec / 60)}:${(timeSec % 60).toString().padStart(2, '0')}`;
 
     return (
-      <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="app-safe-pad absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
         <ResultMomentSlot moment={scoreMoment} gameName="Neon Driftway" onDismiss={clearScoreMoment} />
         <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
           <h2 className="text-3xl sm:text-4xl font-black text-green-400 text-center tracking-tight">{t("level-complete", { defaultValue: "LEVEL COMPLETE!" })}</h2>

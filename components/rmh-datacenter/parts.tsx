@@ -33,13 +33,13 @@ export function Stat({
   tone?: 'health' | 'load';
 }) {
   return (
-    <Card className="flex flex-col gap-2 p-5">
-      <span className="text-xs font-medium tracking-wide text-site-accent uppercase">{label}</span>
+    <Card className="flex flex-col gap-2 p-4">
+      <span className="text-xs font-medium text-site-accent">{label}</span>
       <span
         className={
           tone === 'load'
-            ? 'font-display text-3xl font-semibold tracking-[-0.02em] text-site-warning'
-            : 'font-display text-3xl font-semibold tracking-[-0.02em] text-site-text'
+            ? 'font-display text-3xl font-semibold tracking-tight text-site-warning'
+            : 'font-display text-3xl font-semibold tracking-tight text-site-text'
         }
       >
         {value}
@@ -61,8 +61,8 @@ export function SectionHeading({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium tracking-wide text-site-accent uppercase">{kicker}</span>
-      <h2 id={id} className="font-display text-2xl font-semibold tracking-[-0.02em] text-site-text">
+      <span className="text-xs font-medium text-site-accent">{kicker}</span>
+      <h2 id={id} className="font-display text-2xl font-semibold tracking-tight text-site-text">
         {heading}
       </h2>
     </div>
@@ -73,7 +73,7 @@ export function SectionHeading({
 export function SpecRow({ term, children }: { term: string; children: ReactNode }) {
   return (
     <div className="grid gap-1 border-b border-site-border py-3 last:border-b-0 sm:grid-cols-[minmax(0,11rem)_1fr] sm:gap-6">
-      <dt className="text-xs font-medium tracking-wide text-site-accent uppercase">{term}</dt>
+      <dt className="text-xs font-medium text-site-accent">{term}</dt>
       <dd className="text-sm text-site-text-muted">{children}</dd>
     </div>
   );
