@@ -1,5 +1,12 @@
 # Liquid glass: implementation contract
 
+> **Superseded by [`plasmatic-jelly-system.md`](plasmatic-jelly-system.md) (2026-10-23).**
+> The site's material is now Plasmatic Jelly: the refracting rim below is retained, but
+> surfaces now carry always-moving haze, bounded soft-body motion and electric arcs, so
+> the "no continuous resting loop", "taps never emit waves" and "clicks never push
+> neighbours" rules in this file no longer hold. Retained for the optics, snapshot
+> lifecycle and globe history; where the two disagree, the jelly contract wins.
+
 Current as of 2026-10-22. This contract supersedes the earlier blur, accent-tinted coat,
 control eversion and tap-wave implementations.
 

@@ -93,7 +93,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
       <div className="absolute inset-0 app-scrim" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
+      <div className="relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-(--app-radius) app-glass p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">{t("add-video", { defaultValue: "Add Video" })}</h3>
           <button

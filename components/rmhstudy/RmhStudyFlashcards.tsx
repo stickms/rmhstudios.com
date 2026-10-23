@@ -159,7 +159,7 @@ export default function RmhStudyFlashcards() {
         </div>
 
         {done ? (
-          <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-8 text-center space-y-4">
+          <div className="rounded-(--app-radius) app-glass p-8 text-center space-y-4">
             <Layers className="h-8 w-8 mx-auto text-(--app-accent)" />
             <p className="font-semibold">{t("session-complete", { defaultValue: "Session complete!" })}</p>
             <p className="text-sm text-(--app-text-muted)">{t("session-reviewed", { defaultValue: "You reviewed {{count}} card.", count: cards.length })}</p>
@@ -197,7 +197,7 @@ export default function RmhStudyFlashcards() {
             </button>
 
             {revealed && (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2" data-jelly-group>
                 {GRADES.map((g) => (
                   <button
                     key={g.grade}

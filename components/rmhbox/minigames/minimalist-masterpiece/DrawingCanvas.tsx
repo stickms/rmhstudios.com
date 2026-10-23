@@ -175,6 +175,7 @@ export default function DrawingCanvas({
     <div className="relative" tabIndex={0} onKeyDown={handleKeyDown} role="application" aria-label={t("drawing-canvas-label", { defaultValue: "Drawing canvas — place straight lines" })}>
       <svg
         ref={svgRef}
+        data-jelly-zone="playfield"
         viewBox="0 0 300 300"
         className={`w-72 h-72 rounded-(--app-radius-sm) border-2 touch-none outline-none ${
           canDraw

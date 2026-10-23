@@ -43,7 +43,7 @@ function LeaderboardTable({ entries, loading }: { entries: LeaderboardEntry[]; l
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm" data-jelly-group="off">
         <thead>
           <tr className="text-(--app-text-muted) border-b border-(--app-border)">
             <th className="text-left py-2 pr-3 font-medium">{t("col-rank", { defaultValue: "#" })}</th>
@@ -172,7 +172,7 @@ export default function RmhTypeLanding() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-6" data-jelly-group>
             <Link to="/rmhtype/solo"
               className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 text-left transition-colors hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
             >

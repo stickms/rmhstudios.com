@@ -790,6 +790,7 @@ export function NeonDriftwayGame() {
       {cloud.conflictDialog}
 
       <canvas
+        data-jelly-zone="playfield"
         ref={canvasRef}
         className="absolute inset-0 block h-full w-full"
         onPointerUp={handleCanvasPointerUp}

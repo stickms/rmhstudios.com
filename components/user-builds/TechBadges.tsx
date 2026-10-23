@@ -48,11 +48,7 @@ export function TechBadges({ technologies, size = 'md', limit }: TechBadgesProps
         </span>
       ))}
       {remaining > 0 && (
-        <span
-          className={`${sizeClasses} rounded-[var(--site-control-radius)] border bg-site-surface text-site-text-dim border-site-border`}
-        >
-          +{remaining}
-        </span>
+        <span className={`${sizeClasses} glass-inset text-site-text-dim`}>+{remaining}</span>
       )}
     </div>
   );

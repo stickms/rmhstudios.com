@@ -190,10 +190,10 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  return (
  <div
  key={m.day}
- className={`flex items-center gap-3 rounded-site border p-3 transition-[border-color] duration-site ${
+ className={`glass-fill flex items-center gap-3 p-3 transition-[border-color] duration-site ${
  reached
- ?'border-site-border bg-site-surface'
- :'border-site-border/60 bg-site-bg opacity-70'
+ ?''
+ :'border-site-border/60 opacity-70'
  }`}
  >
  <div

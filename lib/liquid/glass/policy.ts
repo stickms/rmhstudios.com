@@ -1,7 +1,12 @@
 /**
  * Pure decisions for the glass engine: no DOM, no GL. Everything the runtime must choose per surface or per frame that
  * can be wrong in a way a user sees lives here, so it can be tested without a browser.
+ *
+ * The Plasmatic Jelly half (below the rim decisions) answers: which admitted slabs get a moving haze canvas, at what
+ * resolution, how often the ambient clock ticks and when it stops (master plan R6/R7, 01 §2.2–2.3, 04 §3), how many
+ * haze draws one frame may issue, how far a squished rim may overdraw its host, and how a charge pulse decays.
  */
+import { AMBIENT_BOUNDS, CHARGE, IDLE_AFTER_MS, PLASMA } from '@/lib/jelly/tiers';
 
 export const GLASS_BUDGET = {
   /**
@@ -71,12 +76,20 @@ export interface Candidate {
   height: number;
 }
 
-/** The surfaces to draw this pass: visible, sized, in role then registration order, up to the budget. */
-export function admit<T extends Candidate>(candidates: readonly T[]): T[] {
+/**
+ * The surfaces to draw this pass: visible, sized, in role then registration order, up to the budget. `max` is the
+ * jelly tier's rim budget (`jellyBudget().rims`: 24 / 16 / 10, 2 while a game plays); it can lower the ceiling, never
+ * raise it past {@link GLASS_BUDGET.maxSurfaces}.
+ */
+export function admit<T extends Candidate>(
+  candidates: readonly T[],
+  max: number = GLASS_BUDGET.maxSurfaces,
+): T[] {
+  const cap = Math.max(0, Math.min(GLASS_BUDGET.maxSurfaces, Math.floor(max)));
   return candidates
     .filter((c) => c.visible && sizeEligible(c.width, c.height))
     .sort((a, b) => rolePriority(a.role) - rolePriority(b.role) || a.order - b.order)
-    .slice(0, GLASS_BUDGET.maxSurfaces);
+    .slice(0, cap);
 }
 
 /**
@@ -137,4 +150,258 @@ export function innerRadius(
   if (!Number.isFinite(v)) return 0;
   const px = cssRadius.includes('%') ? (v / 100) * Math.min(width, height) : v;
   return Math.max(0, Math.min(px - borderWidth, Math.min(width, height) / 2));
+}
+
+// ── Plasmatic Jelly: haze, ambient clock, lattice overdraw, charge pulse ─────────────────────────────────────────────
+
+/**
+ * The haze canvases' fixed limits. Slot COUNTS come from `jellyBudget().hazeSlots` (8 / 6 / 4, R6) through the
+ * registry; these bound what one slot and one frame may cost.
+ */
+export const HAZE = {
+  /** Haze draws issued in any one frame; the rest wait for the next tick, oldest first (01 §2.2). */
+  maxDrawsPerFrame: 6,
+  /** CSS → backing-store scale ceiling; the field is low-frequency, so a bilinear upscale is invisible. */
+  baseScale: 0.25,
+  /** Long-side cap, px, for overlay / chrome / pane (tier A) and for fills (tier B, half rate). */
+  maxSide: 256,
+  fillMaxSide: 128,
+  /** Fills tick on every other clock tick. */
+  fillRateDivisor: 2,
+} as const;
+
+/** Roles that may hold a haze canvas. Controls never do: a button keeps its own fill and a field keeps a still caret. */
+export function hazeEligible(role: GlassRole): boolean {
+  return role !== 'control';
+}
+
+/**
+ * Keep only haze-eligible slots. The registry ranks role-first (controls last), so dropping controls AFTER its cap
+ * loses no non-control: a control is only ever in the ranked list once every eligible role already is.
+ */
+export function hazeSlots<T extends { role: GlassRole }>(ranked: readonly T[]): T[] {
+  return ranked.filter((e) => hazeEligible(e.role));
+}
+
+/**
+ * Backing-store scale for a haze canvas: at most {@link HAZE.baseScale} (or the governor's lower scale), and never
+ * more than {@link HAZE.maxSide} px (128 for fills) on the long side.
+ */
+export function hazeScaleFor(width: number, height: number, role: GlassRole, governed = 1): number {
+  const long = Math.max(1, width, height);
+  const side = role === 'fill' ? HAZE.fillMaxSide : HAZE.maxSide;
+  const base = Math.min(HAZE.baseScale, governed);
+  return Math.max(0, Math.min(base, side / long));
+}
+
+/** Haze canvas backing size for a surface, px. */
+export function hazeSize(
+  width: number,
+  height: number,
+  role: GlassRole,
+  governed = 1,
+): [number, number] {
+  const k = hazeScaleFor(width, height, role, governed);
+  return [Math.max(1, Math.round(width * k)), Math.max(1, Math.round(height * k))];
+}
+
+export interface ClockState {
+  /** `document.hidden`. */
+  hidden: boolean;
+  /** `document.hasFocus()`: a second-monitor tab costs nothing. */
+  focused: boolean;
+  /** A scroll is in flight: canvases scroll with their hosts, so a frozen field is correct. */
+  scrolling: boolean;
+  /** Haze canvases currently on screen. */
+  hazeSurfaces: number;
+  /** `jellyMode().ambient` (false under `still`, a playing game, a degraded root, a hidden tab). */
+  ambient: boolean;
+  /** Time since the last pointer, key, wheel, scroll or focus. */
+  msSinceInput: number;
+  /** The governed budget's clock and idle floor (`governBudget(jellyBudget(), step)`; calm already capped). */
+  clockHz: number;
+  idleClockHz: number;
+}
+
+/**
+ * The ambient clock (R7). 0 — and so no loop — when the tab is hidden, the window is unfocused, a scroll is in flight,
+ * no haze canvas is on screen, or ambient motion is off (degraded tier, `still`, a game playing). Otherwise the tier's
+ * clock while someone is there and its idle floor after {@link IDLE_AFTER_MS}: never 0 while visible, by decision.
+ */
+export function ambientHz(s: ClockState): number {
+  if (s.hidden || !s.focused || s.scrolling || !s.ambient || s.hazeSurfaces <= 0) return 0;
+  const hz = s.msSinceInput > IDLE_AFTER_MS ? s.idleClockHz : s.clockHz;
+  return Math.max(0, Math.min(hz, s.clockHz));
+}
+
+export interface HazeTicket {
+  /** `performance.now()` this surface is next due. */
+  due: number;
+}
+
+/**
+ * The haze surfaces to draw this tick: those due (within `slackMs`), oldest due first, at most
+ * {@link HAZE.maxDrawsPerFrame}. Whatever is left stays due and goes first next tick, so a full page is a round robin
+ * rather than one expensive frame.
+ */
+export function dueHaze<T extends HazeTicket>(
+  items: readonly T[],
+  now: number,
+  max: number = HAZE.maxDrawsPerFrame,
+  slackMs = 2,
+): T[] {
+  const cap = Math.max(0, Math.min(HAZE.maxDrawsPerFrame, Math.floor(max)));
+  return items
+    .filter((i) => i.due <= now + slackMs)
+    .sort((a, b) => a.due - b.due)
+    .slice(0, cap);
+}
+
+/** When a surface drawn now is next due: one clock period, two for fills (tier B, half rate). */
+export function nextDue(now: number, hz: number, role: GlassRole): number {
+  if (!(hz > 0)) return Infinity;
+  return now + (1000 / hz) * (role === 'fill' ? HAZE.fillRateDivisor : 1);
+}
+
+/** A stable per-surface seed in [0, 1): spreads phases and noise origins so neighbours never move in sync. */
+export function seedFor(order: number): number {
+  const x = Math.sin((order + 1) * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+/**
+ * How far a rim canvas may overdraw its host so an outward lattice bulge is not clipped: {@link
+ * AMBIENT_BOUNDS.maxOverdrawPx} (2px, the focus ring's offset) for cards and controls, 0 for panes, chrome and
+ * overlays — those are often flush with the viewport, where 2px of overflow would be a horizontal page scroll, and
+ * their squish reads through the dent, which needs no margin. 0 everywhere when no lattice may run.
+ */
+export function overdrawMargin(role: GlassRole, latticesAllowed: boolean): number {
+  if (!latticesAllowed) return 0;
+  return role === 'fill' || role === 'control' ? AMBIENT_BOUNDS.maxOverdrawPx : 0;
+}
+
+/** Lattice amplitude: half on large surfaces (04 §4.3), full otherwise. */
+export function latticeAmplitude(width: number, height: number): number {
+  return width * height > AMBIENT_BOUNDS.largeSurfaceAreaPx2 ? AMBIENT_BOUNDS.largeLatticeScale : 1;
+}
+
+// ── #989: dormant plasma level, charge rings, gel tokens ─────────────────────────────────────────────────────────────
+
+/**
+ * Ease a surface's plasma wake level toward its target (`plasma:level` from physics: 0 rest, `PLASMA.wake` hover, 1
+ * press/focus/click) with time constant {@link PLASMA.easeMs}, frame-rate independent. Snaps within 0.002 so a settled
+ * surface stops asking for frames; non-finite input settles to the (clamped) target.
+ */
+export function easePlasma(
+  current: number,
+  target: number,
+  dtMs: number,
+  easeMs: number = PLASMA.easeMs,
+): number {
+  const goal = Math.max(0, Math.min(1, Number.isFinite(target) ? target : 0));
+  if (!Number.isFinite(current) || !(dtMs > 0)) return Number.isFinite(current) ? current : goal;
+  const next = current + (goal - current) * (1 - Math.exp(-dtMs / Math.max(1, easeMs)));
+  return Math.abs(next - goal) < 0.002 ? goal : next;
+}
+
+/**
+ * The look of the dormant plasma and its charge rings. Peak alpha is what the plasma reaches at level 1 at its core
+ * (lower on a light ground, where an accent wash costs dark ink more contrast); the legibility budget is the reason it
+ * is this low. Rings travel at `CHARGE.pulseSpeedPxS` and decay with `CHARGE.pulseTauMs`.
+ */
+export const PLASMA_LOOK = {
+  peakDark: 0.14,
+  peakLight: 0.1,
+  /** Calm halves the plasma's own motion (the haze has its own `CALM.amplitude`). */
+  calmMotion: 0.5,
+  /** Rings per surface (the shader's `uRings[4]` has one spare). Older rings are replaced. */
+  ringsPerSurface: 3,
+  /** A ring whose strength falls below this is gone. */
+  ringFloor: 0.02,
+  /** Gaussian half-width of the ring front, CSS px. */
+  ringWidthPx: 10,
+  /** Two rings on one surface within this time and distance are one charge (an arc strike and its `charge:pulse`). */
+  mergeMs: 60,
+  mergePx: 32,
+} as const;
+
+export interface PulseRing {
+  /** Origin, host-local CSS px. */
+  x: number;
+  y: number;
+  /** Charge 0..1. */
+  q: number;
+  /** `performance.now()` it started. */
+  at: number;
+}
+
+/** A ring's front radius (px) and strength `ageMs` after it started. Strength is 0 before it starts. */
+export function ringState(q: number, ageMs: number): { radius: number; amp: number } {
+  if (!(ageMs >= 0)) return { radius: 0, amp: 0 };
+  const strength = Math.max(0, Math.min(1, q));
+  return {
+    radius: (CHARGE.pulseSpeedPxS * ageMs) / 1000,
+    amp: strength * Math.exp(-ageMs / CHARGE.pulseTauMs),
+  };
+}
+
+/** The longest a ring of charge `q` can live: until its strength falls below {@link PLASMA_LOOK.ringFloor}. */
+export function ringLifetimeMs(q: number): number {
+  const strength = Math.max(0, Math.min(1, q));
+  if (strength <= PLASMA_LOOK.ringFloor) return 0;
+  return CHARGE.pulseTauMs * Math.log(strength / PLASMA_LOOK.ringFloor);
+}
+
+/** Alive: still above the floor, and its front has not yet left a surface whose farthest point is `reachPx` away. */
+export function ringAlive(ring: PulseRing, now: number, reachPx: number): boolean {
+  const { radius, amp } = ringState(ring.q, now - ring.at);
+  return amp > PLASMA_LOOK.ringFloor && radius < reachPx + PLASMA_LOOK.ringWidthPx * 2;
+}
+
+/**
+ * Add a ring to a surface's list: a ring started within {@link PLASMA_LOOK.mergeMs} and {@link PLASMA_LOOK.mergePx}
+ * of an existing one is the same charge (keeps the stronger); otherwise it is appended and the oldest beyond
+ * {@link PLASMA_LOOK.ringsPerSurface} are dropped. Returns a new array.
+ */
+export function addRing(rings: readonly PulseRing[], ring: PulseRing): PulseRing[] {
+  if (!(ring.q > 0)) return [...rings];
+  const q = Math.min(1, ring.q);
+  const twin = rings.findIndex(
+    (r) =>
+      Math.abs(r.at - ring.at) <= PLASMA_LOOK.mergeMs &&
+      Math.hypot(r.x - ring.x, r.y - ring.y) <= PLASMA_LOOK.mergePx,
+  );
+  if (twin >= 0) {
+    const out = [...rings];
+    out[twin] = { ...out[twin]!, q: Math.max(out[twin]!.q, q) };
+    return out;
+  }
+  const out = [...rings, { ...ring, q }];
+  return out.slice(Math.max(0, out.length - PLASMA_LOOK.ringsPerSurface));
+}
+
+/**
+ * Pack the live rings into the shader's `uRings[4]` (x, y, radius, strength; unused slots zero). Returns the number
+ * packed.
+ */
+export function packRings(rings: readonly PulseRing[], now: number, out: Float32Array): number {
+  out.fill(0);
+  let n = 0;
+  for (const r of rings) {
+    if (n >= 4) break;
+    const { radius, amp } = ringState(r.q, now - r.at);
+    if (amp <= PLASMA_LOOK.ringFloor) continue;
+    out[n * 4] = r.x;
+    out[n * 4 + 1] = r.y;
+    out[n * 4 + 2] = radius;
+    out[n * 4 + 3] = amp;
+    n++;
+  }
+  return n;
+}
+
+/** Parse a CSS length/number token (`"1.5px"`, `"2"`) to px, or `fallback`. */
+export function cssPx(value: string, fallback: number): number {
+  const v = parseFloat(value);
+  return Number.isFinite(v) ? v : fallback;
 }

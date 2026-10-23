@@ -373,7 +373,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           placeholder="https://..."
         />
         {thumbnailUrl && (
-          <div className="max-w-xs overflow-hidden rounded-site-sm border border-site-border">
+          <div className="glass-fill max-w-xs overflow-hidden rounded-site-sm">
             <img
               src={thumbnailUrl}
               alt={t('thumbnail-preview', { defaultValue: 'Thumbnail preview' })}

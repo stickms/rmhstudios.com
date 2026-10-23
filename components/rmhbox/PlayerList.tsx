@@ -29,7 +29,7 @@ interface PlayerListProps {
 export default function PlayerList({ players, hostUserId, isHost, myUserId, onKick, onTransferHost }: PlayerListProps) {
   const { t } = useTranslation("c-rmhbox");
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-2" data-jelly-group>
       {players.map((player) => {
         const isSelf = player.userId === myUserId;
         const isPlayerHost = player.userId === hostUserId;

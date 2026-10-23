@@ -107,7 +107,7 @@ export default function SyncStatus() {
           aria-label={t('sync-status-title', { defaultValue: 'Sync status' })}
           data-motion="pop"
           data-state={panel.state}
-          className="absolute bottom-full right-0 z-50 mb-1 w-60 origin-bottom-right rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) p-3 shadow-(--app-shadow)"
+          className="absolute bottom-full right-0 z-50 mb-1 w-60 origin-bottom-right rounded-(--app-radius-sm) app-glass p-3"
         >
           <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-(--app-text)">
             <span className={`inline-block h-2 w-2 rounded-full ${DOT[health]}`} aria-hidden />

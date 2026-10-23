@@ -68,7 +68,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
         className="absolute inset-0 app-scrim app-overlay"
         onClick={onClose}
       />
-      <div className="app-modal relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
+      <div className="app-modal relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-(--app-radius) app-glass p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 id={titleId} className="text-lg font-semibold text-(--app-text)">
             {t('settings', { defaultValue: 'Settings' })}
@@ -403,6 +403,7 @@ function ToggleOption({
         <button
           type="button"
           role="switch"
+          data-jelly="control"
           aria-checked={value}
           aria-label={label}
           onClick={() => onChange(!value)}

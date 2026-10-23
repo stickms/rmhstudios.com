@@ -295,8 +295,8 @@ export function BaccaratTable() {
               return (
                 <div
                   key={p.userId}
-                  className={`flex flex-col gap-1 p-2 rounded-site-sm border ${
-                    isMe ? 'bg-site-accent-dim border-site-accent/30' : 'bg-site-surface/50 border-site-border/50'
+                  className={`glass-fill flex flex-col gap-1 p-2 rounded-site-sm ${
+                    isMe ? 'bg-site-accent-dim border-site-accent/30' : ''
                   }`}
                 >
                   <div className="flex items-center gap-1.5">

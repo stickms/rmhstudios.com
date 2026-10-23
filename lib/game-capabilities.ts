@@ -473,3 +473,41 @@ export function playabilityFor(
   if (device.perfLite && caps.demanding) return { playable: false, reason: 'too-demanding' };
   return { playable: true };
 }
+
+// ── Game state on `<html>` (Plasmatic Jelly R16) ─────────────────────────────
+
+/**
+ * Per-document count of live runs. A count rather than a flag because two
+ * sessions can overlap for a frame (a route swap mounts the next game before
+ * the last one's cleanup runs), and the attribute must not be cleared by the
+ * one that is leaving while the other is still playing.
+ */
+const playingRuns = new WeakMap<Document, number>();
+
+/**
+ * Stamp `html[data-game-state="playing"]` for the duration of a run and return
+ * the release. While it is set the jelly material stops everything that moves
+ * on its own — haze, flow carriers, ambient and click arcs, soft bodies — so
+ * nothing competes with the play-field for the frame or the eye
+ * (`lib/jelly/tiers.ts` `gamePlaying()` / `GAME_PLAYING_BUDGET`,
+ * `app/jelly-material.css` §6, `app/jelly-arcs.css`). Menus, pause screens and
+ * results are not a run, so they keep their jelly.
+ *
+ * `hooks/useGameSession.ts` calls this whenever `active` is true, which is how
+ * every catalog game reaches it; a game that cannot mount that hook may call it
+ * from its own effect. The release is idempotent. No document (SSR) → no-op.
+ */
+export function markGamePlaying(doc: Document | undefined = globalThis.document): () => void {
+  if (!doc) return () => {};
+  const root = doc.documentElement;
+  playingRuns.set(doc, (playingRuns.get(doc) ?? 0) + 1);
+  root.setAttribute('data-game-state', 'playing');
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    const left = Math.max(0, (playingRuns.get(doc) ?? 1) - 1);
+    playingRuns.set(doc, left);
+    if (left === 0) root.removeAttribute('data-game-state');
+  };
+}

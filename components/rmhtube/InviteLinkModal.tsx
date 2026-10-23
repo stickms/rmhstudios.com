@@ -62,7 +62,7 @@ export default function InviteLinkModal({ roomId, onClose }: InviteLinkModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 app-scrim" onClick={onClose} />
-      <div className="relative w-full max-w-sm max-h-[85dvh] overflow-y-auto rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
+      <div className="relative w-full max-w-sm max-h-[85dvh] overflow-y-auto rounded-(--app-radius) app-glass p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Link2 className="h-5 w-5 text-(--app-accent)" />

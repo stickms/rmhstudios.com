@@ -59,7 +59,7 @@ export default function HUD() {
     const activeKey = selKey(selection);
 
     return (
-        <div className="rfs-hud">
+        <div className="rfs-hud" data-jelly-zone="hud">
             {/* top status bar */}
             <div className="rfs-topbar">
                 <div className="rfs-farminfo">

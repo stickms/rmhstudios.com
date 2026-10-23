@@ -894,7 +894,7 @@ function PollComposer({
  onChange={(e) => onChange({ ...draft, question: e.target.value })}
  maxLength={300}
  placeholder={t('poll-question-placeholder', { defaultValue:'Ask a question…'})}
- className="mb-2 w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+ className="glass-inset border mb-2 w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
  />
  <div className="flex flex-col gap-1.5">
  {draft.options.map((o, i) => (
@@ -907,7 +907,7 @@ function PollComposer({
  index: i + 1,
  defaultValue:'Option {{index}}',
  })}
- className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-1.5 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+ className="glass-inset border w-full rounded-site-sm px-3 py-1.5 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
  />
  ))}
  </div>

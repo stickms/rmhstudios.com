@@ -1,6 +1,6 @@
 # components/radial — the RMH Radial UI
 
-The from-scratch radial front end and home of the **Radial Avant-Garde Glass**
+The from-scratch radial front end and home of the **Radial Plasmatic Jelly**
 design language (see [`docs/design-language.md`](../../docs/design-language.md)):
 an Apple-Liquid-Glass-inspired, strict black-&-white, mobile-first system built
 around a central **RMH** mark that elements animate radially out of — and, since
@@ -21,14 +21,21 @@ the timeline's continuous re-planning path. OS and account reduced motion both
 apply. These rules supersede historical notes below about eversion on every
 navigation or on individual controls.
 
-The October 21 liquid-glass replacement is documented in
-[`docs/liquid-glass-system.md`](../../docs/liquid-glass-system.md). It supersedes
-historical lens/sheen and blanket cursor-retirement notes below. The scene
-backdrop stays still; bounded surface-local lighting uses one document runtime,
-and taps on glass panels emit no waves (only the globe ripples, below). The navigator now has an independent dielectric coat and
-a shared local contact indentation for cage/pins, with CSS and preference
-fallbacks. Historical compositor measurements still explain the blur budgets;
-they do not validate the replacement on native hardware.
+The site material is **Plasmatic Jelly** (2026-10-23), documented in
+[`docs/plasmatic-jelly-system.md`](../../docs/plasmatic-jelly-system.md); it
+supersedes the October 21 liquid-glass contract
+([`docs/liquid-glass-system.md`](../../docs/liquid-glass-system.md), kept for its
+optics and snapshot history) and the historical lens/sheen, tap-wave and blanket
+cursor-retirement notes below. The scene backdrop stays still — jelly moves, the
+room does not. The globe is not a `lib/jelly/` surface: it keeps its dough
+simulation (`lib/dough.ts`) and its own coat, `jelly-glass.ts` — "the globe's
+jelly coat", the same material family but unrelated to `lib/jelly/` — sharing the
+plasma palette only through tokens. Arcs pause while the globe is
+open or an eversion runs. The navigator keeps an independent dielectric coat and a shared
+local contact indentation for cage and pins (with CSS and preference fallbacks); a press ripples
+the globe's jelly where it lands, and the docked globe's self-eversion turns its glass body
+inside out with the cage (`self-evert-skin.ts`). Historical compositor measurements still explain the
+blur budgets; they do not validate the replacement on native hardware.
 
 ## WebAssembly numerical kernels
 

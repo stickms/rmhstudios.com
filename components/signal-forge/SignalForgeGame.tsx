@@ -366,6 +366,7 @@ export function SignalForgeGame() {
     <div ref={containerRef} className="w-full h-full relative bg-black overflow-hidden">
       <canvas
         ref={canvasRef}
+        data-jelly-zone="playfield"
         className="border-2 border-cyan-500 cursor-pointer rounded-lg w-full h-full"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => { mousePos.current = null; setTooltipTick(t => t + 1); }}

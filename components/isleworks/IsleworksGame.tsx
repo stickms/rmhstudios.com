@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { markGamePlaying } from '@/lib/game-capabilities';
 import { useIsleworks } from '@/lib/isleworks/store';
 import { codeFromLocation } from '@/lib/worlds/schema';
 
@@ -36,6 +37,7 @@ export default function IsleworksGame() {
   const { t } = useTranslation('c-isleworks');
   const started = useIsleworks((s) => s.started);
   const visiting = useIsleworks((s) => s.visiting);
+  const running = useIsleworks((s) => s.started && s.speed !== 0);
   // `undefined` until the URL has been read, so the title screen never flashes before a visit.
   const [visitCode, setVisitCode] = useState<string | null | undefined>(undefined);
   useEffect(() => setVisitCode(codeFromLocation('isleworks')), []);
@@ -80,6 +82,10 @@ export default function IsleworksGame() {
     return () => window.removeEventListener('keydown', onKey);
   }, [started]);
 
+  /* While the city's clock runs, quiet the jelly material's ambient motion and
+     arcs (R16); pausing the clock (Space) hands them back to the HUD. */
+  useEffect(() => (running ? markGamePlaying() : undefined), [running]);
+
   /* Autosave, plus one final save when the tab goes away. */
   useEffect(() => {
     if (!started) return;
@@ -117,7 +123,7 @@ export default function IsleworksGame() {
 
       {visitCode && <IsleVisit code={visitCode} />}
       {started ? (
-        <div className="isw-hud">
+        <div className="isw-hud" data-jelly-zone="hud">
           <TopBar rigRef={rigRef} />
           {!visiting && <Rail />}
           {!visiting && <BuildPalette />}

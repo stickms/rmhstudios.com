@@ -225,7 +225,7 @@ export function ListingDetailView({ id }: { id: string }) {
         {/* Gallery */}
         {images.length > 0 && (
           <div className="mb-4">
-            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-site border border-site-border bg-site-bg">
+            <div className="glass-pane relative aspect-[16/9] w-full overflow-hidden">
               <img
                 src={images[activeImage]}
                 alt={listing.title}

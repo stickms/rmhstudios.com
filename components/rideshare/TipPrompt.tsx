@@ -79,10 +79,10 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
                 setSelected(cents);
                 setCustom('');
               }}
-              className={`min-h-11 rounded-site-sm border px-2 py-2 text-center transition-colors ${
+              className={`glass-fill glass-interactive min-h-11 rounded-site-sm px-2 py-2 text-center transition-colors ${
                 active
                   ? 'border-site-accent bg-site-accent/10 text-site-accent'
-                  : 'border-site-border bg-site-surface text-site-text hover:border-site-border-bright'
+                  : 'text-site-text hover:border-site-border-bright'
               }`}
             >
               <div className="text-sm font-semibold">{pct === 0 ? t("no-tip", { defaultValue: "No tip" }) : `${Math.round(pct * 100)}%`}</div>

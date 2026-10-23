@@ -265,45 +265,76 @@ describe('§5.6 — a big z-index inside the frame is a claim nobody can hear (R
   });
 });
 
-describe('§4 — nothing `fixed` inside a blurred glass root (R3)', () => {
-  it('a component whose own root is blurred glass portals its fixed descendants', () => {
-    // `backdrop-filter` is BOTH a stacking context and a containing block for
-    // `position: fixed` descendants — so `inset: 0` inside one resolves to that
-    // element's border box, not the viewport. This is file-scoped and crude on
-    // purpose: it is exactly the ComposeBox shape (a `.glass-pane` root wrapping
-    // six "full-screen" modals) and has near-zero prevalence otherwise.
-    //
-    // `.glass-fill` is deliberately absent: L1 has no blur, which is what makes
-    // it safe to build repeated content from — asserted just below.
-    const BLURRED_ROOTS = /className="[^"]*\b(glass-pane|glass-chrome|glass-overlay|glass-scrim)\b/;
-    const offenders: string[] = [];
-    for (const file of TSX) {
-      if (allowedFiles.has(file)) continue;
-      const src = stripComments(readFileSync(join(ROOT, file), 'utf8'));
-      if (!BLURRED_ROOTS.test(src)) continue;
-      // `fixed` AND `inset-0`: a full-viewport overlay declared inside a glass
-      // component. Without the `inset-0` this also catches a component that IS
-      // fixed glass chrome (CookieConsent, ThemePreviewBar) — those are
-      // `fixed inset-x-*`, they contain nothing, and there is nothing to trap.
-      if (!/className=[^\n]*\bfixed\b[^\n]*\binset-0\b/.test(src)) continue;
-      if (!escapesTheFrame(src)) offenders.push(file);
-    }
+/**
+ * R3 under Plasmatic Jelly (gate N4, 05 §1.1). Liquid Glass exempted `.glass-fill` because "L1 has no blur", and blur
+ * was the only thing that made a glass root a containing block. Jelly changes the reason, not the rule: EVERY role can
+ * now carry a transform — hover plump, press squash, release wobble, drag stretch, a ≤ 1.5 px neighbour nudge
+ * (lib/jelly/physics.ts) — and a transformed element is a containing block for `position: fixed` descendants exactly
+ * like a blurred one. So the scan covers every `glass-*` role and every `data-jelly` host. The files that already had
+ * the shape when the rule widened are frozen in {@link DEFORMABLE_HOST_BASELINE} and drain one-directionally.
+ */
+const DEFORMABLE_HOST_BASELINE = new Set<string>([]);
+
+describe('§4 — nothing `fixed` inside a deformable jelly host (R3, N4)', () => {
+  const JELLY_HOSTS =
+    /className=["'{`][^\n]*\bglass-(?:fill|pane|chrome|overlay|inset|scrim)\b|\bdata-jelly(?:=|\s|>)/;
+  const trapped = (src: string) =>
+    JELLY_HOSTS.test(src) &&
+    // `fixed` AND `inset-0`: a full-viewport overlay declared inside a jelly component. Without the `inset-0` this
+    // also catches a component that IS fixed chrome (CookieConsent, ThemePreviewBar) — those are `fixed inset-x-*`,
+    // they contain nothing, and there is nothing to trap.
+    /className=[^\n]*\bfixed\b[^\n]*\binset-0\b/.test(src) &&
+    !escapesTheFrame(src);
+  const found = TSX.filter((file) => !allowedFiles.has(file)).filter((file) =>
+    trapped(stripComments(readFileSync(join(ROOT, file), 'utf8'))),
+  );
+
+  it('a component whose own root is a jelly host portals its fixed descendants', () => {
     expect(
-      offenders,
-      'A `position: fixed` element inside an ancestor carrying `backdrop-filter` is fixed to THAT ANCESTOR. Portal it. Note this renders correctly under reduce-transparency / high-contrast / perf-lite, which force `backdrop-filter: none` — so check the DEFAULT theme.',
+      found.filter((f) => !DEFORMABLE_HOST_BASELINE.has(f)).sort(),
+      'A `position: fixed` element inside an ancestor carrying a transform (every jelly host while it is hovered, ' +
+        'pressed, dragged or nudged) or a filter is fixed to THAT ANCESTOR, and `inset: 0` covers the card, not the ' +
+        'viewport. Portal it (createPortal to <body>, or a components/ui primitive that does). It looks right at rest ' +
+        'and breaks on the first hover — check it while pressing the host.',
     ).toEqual([]);
   });
 
-  it('L1 still has no blur, which is what R3 above depends on', () => {
-    const css = readFileSync(join(ROOT, 'app', 'liquid-glass.css'), 'utf8');
-    const blocks = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((match) =>
-      match[1].includes('.glass-fill'),
-    );
-    expect(blocks.length, 'L1 material rules must exist').toBeGreaterThan(0);
+  it('the baseline only shrinks', () => {
     expect(
-      blocks.some((block) => /backdrop-filter\s*:\s*(?!none)[^;]+;/.test(block[2])),
-      '.glass-fill gained a backdrop-filter. That breaks the blur budget (zero blurred surfaces on repeated list items) AND makes every feed card a containing block for fixed descendants.',
-    ).toBe(false);
+      [...DEFORMABLE_HOST_BASELINE].filter((f) => !found.includes(f)).sort(),
+      'These no longer trap a fixed descendant — remove them from DEFORMABLE_HOST_BASELINE.',
+    ).toEqual([]);
+  });
+
+  /**
+   * N6 (05 D5): "hazy" is the most likely road back to frosted blur. No role carries a backdrop-filter other than
+   * `none` — in the role sheet, the jelly material, or the app tier's adapter. (This is also what keeps L1 safe to
+   * build repeated content from, which the previous version of this test asserted for `.glass-fill` alone.)
+   */
+  it.each([
+    'app/liquid-glass.css',
+    'app/jelly-material.css',
+    'app/jelly-coverage.css',
+    'components/shared/app-theme.css',
+  ])('no role has blur: %s', (sheet) => {
+    const css = readFileSync(join(ROOT, sheet), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const ROLE = /\.glass-[\w-]+|\[data-jelly[\]=\w-]*|\.app-glass\b/;
+    const blurred = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter((m) => ROLE.test(m[1]))
+      .filter((m) => /(?:^|;|\s)(?:-webkit-)?backdrop-filter\s*:(?!\s*none\b)[^;]+/.test(m[2]))
+      .map((m) => m[1].trim());
+    expect(
+      blurred,
+      'A role gained a backdrop-filter. Jelly haze is shader-drawn (lib/liquid/glass) with a static CSS floor ' +
+        '(app/jelly-material.css); a blur costs a backdrop sample per surface per frame and makes every card a ' +
+        'containing block for fixed descendants (docs/plasmatic-jelly-system.md).',
+    ).toEqual([]);
+  });
+
+  it('the role sheets exist and define the roles (the scan above is not vacuous)', () => {
+    const css = readFileSync(join(ROOT, 'app', 'liquid-glass.css'), 'utf8');
+    expect(css).toMatch(/\.glass-fill/);
+    expect(readFileSync(join(ROOT, 'app', 'jelly-material.css'), 'utf8')).toMatch(/\.glass-pane/);
   });
 });
 

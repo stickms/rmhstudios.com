@@ -168,10 +168,10 @@ export default function TokenGenerator() {
             {tokens.map((token) => (
               <div
                 key={token.id}
-                className={`flex items-center justify-between p-3 rounded-site-sm border ${
+                className={`glass-fill flex items-center justify-between p-3 rounded-site-sm ${
                   isExpired(token.expiresAt)
                     ? 'bg-site-danger/10 border-site-danger/30'
-                    : 'bg-site-surface border-site-border'
+                    : ''
                 }`}
               >
                 <div className="min-w-0">

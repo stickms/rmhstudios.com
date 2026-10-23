@@ -31,7 +31,7 @@ export default function BanListModal({ onClose }: BanListModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 app-scrim" onClick={onClose} />
-      <div className="relative w-full max-w-sm rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
+      <div className="relative w-full max-w-sm rounded-(--app-radius) app-glass p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <UserX className="h-5 w-5 text-(--app-danger)" />

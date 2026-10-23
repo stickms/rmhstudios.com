@@ -94,7 +94,7 @@ describe('no backdrop layer animates', () => {
   });
 });
 
-describe('the liquid sheen is a single pass', () => {
+describe('the material sheen is a single pass (jelly moves inside surfaces; the room does not)', () => {
   it('.glass-liquid::after never loops', () => {
     const sheen = rules(GLOBALS).filter(({ selector }) => /\.glass-liquid::after/.test(selector));
     expect(sheen.length).toBeGreaterThan(0);

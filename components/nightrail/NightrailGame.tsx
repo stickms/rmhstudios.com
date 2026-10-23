@@ -525,6 +525,7 @@ export function NightrailGame() {
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
       <canvas
+        data-jelly-zone="playfield"
         ref={canvasRef}
         className="absolute inset-0 block h-full w-full"
         onPointerUp={resume}

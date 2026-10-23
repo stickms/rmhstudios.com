@@ -332,7 +332,7 @@ export function UploadModal({
       onClose={() => !publishing && onClose()}
       label={t('dialog-label', { defaultValue: 'Upload a book' })}
     >
-      <div className={`lib-upload ${hasItems && isAdmin ? 'lib-upload--multi' : ''}`} onMouseDown={(e) => e.stopPropagation()}>
+      <div className={`glass-overlay lib-upload ${hasItems && isAdmin ? 'lib-upload--multi' : ''}`} onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
           <h2 className="lib-upload__title">
             {isAdmin
@@ -511,7 +511,7 @@ function QuotaGate({
           <label className="lib-upload__label">
             {t('quota-requested-label', { defaultValue: 'Requested total upload limit' })}
             <input
-              className="lib-upload__input"
+              className="glass-inset lib-upload__input"
               type="number"
               min={quota.quota + 1}
               value={requested}
@@ -521,7 +521,7 @@ function QuotaGate({
           <label className="lib-upload__label">
             {t('quota-reason-label', { defaultValue: 'Reason (optional)' })}
             <textarea
-              className="lib-upload__input lib-upload__textarea"
+              className="glass-inset lib-upload__input lib-upload__textarea"
               value={reason}
               maxLength={1000}
               onChange={(e) => setReason(e.target.value)}
@@ -585,7 +585,7 @@ function UploadRow({
         ) : (
           <>
             <input
-              className="lib-upload__input"
+              className="glass-inset lib-upload__input"
               value={it.title}
               onChange={(e) => onPatch(it.id, { title: e.target.value })}
               maxLength={200}
@@ -594,7 +594,7 @@ function UploadRow({
               aria-label={t('label-title', { defaultValue: 'Title' })}
             />
             <textarea
-              className="lib-upload__input lib-upload__textarea"
+              className="glass-inset lib-upload__input lib-upload__textarea"
               value={it.description}
               onChange={(e) => onPatch(it.id, { description: e.target.value })}
               maxLength={1000}

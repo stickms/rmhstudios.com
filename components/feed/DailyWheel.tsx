@@ -92,7 +92,7 @@ export function DailyWheel() {
  </div>
 
  <div className="flex flex-col items-center gap-4">
- <div className="relative h-56 w-56">
+ <div className="relative h-56 w-56" data-jelly-zone="playfield">
  {/* Pointer */}
  <div className="absolute left-1/2 top-0 z-10 h-0 w-0 -translate-x-1/2 -translate-y-1 border-x-8 border-t-[14px] border-x-transparent border-t-site-accent"/>
  {/* Wheel face */}

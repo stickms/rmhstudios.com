@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { toast } from 'sonner';
 import { TIP_MIN, TIP_NOTE_MAX, tipSchema, type TipEntityType } from '@/lib/economy/tip-schema';
@@ -79,6 +81,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
               key={a}
               onClick={() => setAmount(a)}
               aria-pressed={amount === a}
+              data-jelly
               className={`rounded-site-sm border px-3 py-1.5 text-sm font-semibold transition-colors ${
                 amount === a ? 'border-site-accent bg-site-accent-dim text-site-text' : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
               }`}
@@ -90,22 +93,22 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
 
         <label className="block text-xs text-site-text-muted">
           {t("custom-amount", { defaultValue: "Custom amount" })}
-          <input
+          <Input
             type="number"
             min={1}
             value={amount}
             onChange={(e) => setAmount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-            className="mt-1 w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text focus:border-site-accent focus:outline-none"
+            className="mt-1 h-auto px-3 py-2"
           />
         </label>
 
-        <textarea
+        <Textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={TIP_NOTE_MAX}
           rows={2}
           placeholder={t("note-placeholder", { defaultValue: "Add a note (optional)" })}
-          className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+          className="min-h-0 resize-none px-3 py-2"
         />
 
         <DialogFooter>

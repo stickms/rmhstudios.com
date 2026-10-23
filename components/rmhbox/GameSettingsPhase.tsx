@@ -97,7 +97,7 @@ export default function GameSettingsPhase() {
       )}
 
       {/* Settings card */}
-      <div className="w-full rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4">
+      <div className="w-full rounded-(--app-radius) app-glass p-4">
         <GameSettingsForm
           schema={settingsState.schema}
           values={settingsState.currentValues}

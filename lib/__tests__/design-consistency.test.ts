@@ -435,7 +435,7 @@ function scanAll(): {
         floatingTier.push({
           file,
           line,
-          detail: 'floating surface below L4 (no backdrop blur → text ghosts through)',
+          detail: 'floating surface below L4 (no legibility floor → text ghosts through)',
         });
       }
     }
@@ -638,11 +638,11 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
       report('Floating surface below L4', floatingTier).replace(
         POINTER,
         'A dropdown / popover / menu / autocomplete is `.glass-overlay` ' +
-          '(design-language.md §5.1). L1 `.glass-fill` has NO backdrop blur and a ' +
-          'lighter tint by design — it is the tier for repeated CARDS — so a menu ' +
-          'built on it sits transparent over whatever it opened on top of and the ' +
-          'labels ghost. `.glass-overlay` carries the blur plus the ≥78% legibility ' +
-          'floor shared by every user.',
+          '(design-language.md §5.1). L1 `.glass-fill` is the tier for repeated ' +
+          'CARDS: a lighter tint and a moving jelly haze, so a menu built on it ' +
+          'sits translucent over whatever it opened on top of and the labels ghost. ' +
+          '`.glass-overlay` carries the ≥78% opaque legibility floor shared by every ' +
+          'user, and is first in line for the calm haze (docs/plasmatic-jelly-system.md).',
       ),
     ).toEqual([]);
   });
@@ -902,14 +902,14 @@ describe('site pages take the shared frame', () => {
 /**
  * Brand and editorial surfaces whose small caps are their own typographic voice,
  * not a site section heading: a restaurant's menu, a car family's spec sheet, a
- * fashion lookbook, the long-form roadmap, and the /liquid-glass material demo.
+ * fashion lookbook, the long-form roadmap. (The /liquid-glass demo's entry came out
+ * when it became a redirect to the /jelly lab, which has no eyebrow headings.)
  * One-directional, like every allowlist in this file — entries come out, they do
  * not go in.
  */
 const SECTION_LABEL_ALLOW = new Set([
   join('components', 'rebar-rutabaga', 'Reservations.tsx'),
   join('components', 'rebar-rutabaga', 'TastingMenu.tsx'),
-  join('app', 'routes', 'liquid-glass.tsx'),
 ]);
 
 describe('design consistency — section headings (minimalism audit 2026-10-09)', () => {
@@ -984,5 +984,67 @@ describe('design consistency — no debossed surfaces (audit 2026-10-09)', () =>
         offenders,
       ),
     ).toEqual([]);
+  });
+});
+
+/**
+ * ────────────── one writer on `scale` / `translate` (Plasmatic Jelly N11) ──────────────
+ *
+ * Every jelly host is now a soft body: `lib/jelly/physics.ts` writes the individual `scale` / `translate`
+ * properties on hover, press, release and drag (02 §1.2), composing with any base value it finds (02 §3.4). A
+ * framer-motion `whileHover` / `whileTap` that animates `scale`, `x` or `y` on the same element is a second writer
+ * on the same property: the two fight, and the element snaps between them. It is the same reasoning as
+ * `lib/liquid/hover-css.ts`, which strips hand-written CSS hover lifts.
+ *
+ * Site tier only (games and the `--app-*` apps own their own motion). The per-file counts below are frozen on
+ * 2026-10-23 and only go down; new code gets zero. Hover and press feedback on a site surface comes from its role
+ * class or a `data-jelly="card|control"` mark — nothing else.
+ */
+const FRAMER_GESTURE_DEBT: Record<string, number> = {
+  'components/arcade/ArcadeHub.tsx': 2,
+};
+
+/** The `{…}` expression that starts at `open` (balanced braces), or '' if it never closes within 400 chars. */
+function braced(src: string, open: number): string {
+  let depth = 0;
+  for (let i = open; i < Math.min(src.length, open + 400); i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return src.slice(open, i + 1);
+  }
+  return '';
+}
+
+describe('design consistency — no framer gesture transform on a jelly surface (N11)', () => {
+  const gesture = /\bwhile(?:Hover|Tap)\s*=\s*\{/g;
+  const transformKey = /(?:^|[{,\s])(?:scale|scaleX|scaleY|x|y)\s*:/;
+  const measured = new Map<string, number>();
+  for (const file of SITE_FILES) {
+    const src = readFileSync(join(ROOT, file), 'utf8');
+    gesture.lastIndex = 0;
+    let n = 0;
+    for (let m = gesture.exec(src); m; m = gesture.exec(src)) {
+      if (transformKey.test(braced(src, m.index + m[0].length - 1))) n++;
+    }
+    if (n > 0) measured.set(file.split(/[\\/]/).join('/'), n);
+  }
+
+  it('adds no framer whileHover/whileTap scale or x/y to a site-tier file', () => {
+    const offenders = [...measured]
+      .filter(([file, n]) => n > (FRAMER_GESTURE_DEBT[file] ?? 0))
+      .map(([file, n]) => `${file} — ${n} (frozen: ${FRAMER_GESTURE_DEBT[file] ?? 0})`);
+    expect(
+      offenders,
+      'framer-motion `whileHover`/`whileTap` animating scale / x / y is a second writer on the property the jelly ' +
+        'soft body owns (lib/jelly/physics.ts, 02 §3.3). Drop the gesture prop: the role class (or ' +
+        '`data-jelly="card|control"`) already gives the surface hover plump, press squash and release wobble. ' +
+        'Opacity/colour gestures are fine.',
+    ).toEqual([]);
+  });
+
+  it('drains the framer gesture debt as files are cleaned', () => {
+    const stale = Object.entries(FRAMER_GESTURE_DEBT)
+      .filter(([file, n]) => (measured.get(file) ?? 0) < n)
+      .map(([file, n]) => `${file} — now ${measured.get(file) ?? 0}, frozen ${n}: lower or remove it`);
+    expect(stale, 'FRAMER_GESTURE_DEBT is one-directional; lower the number when you clean a file.').toEqual([]);
   });
 });

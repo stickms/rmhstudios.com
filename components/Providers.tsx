@@ -44,9 +44,16 @@ import {
   isNavTransition,
   isColorVisionMode,
   applyColorVision,
+  JELLY_MOTION_KEY,
+  DEFAULT_JELLY_MOTION,
+  isJellyMotion,
+  applyJellyMotion,
+  ELECTRIC_ARCS_KEY,
+  DEFAULT_ELECTRIC_ARCS,
+  isElectricArcs,
+  applyElectricArcs,
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
-import { useFluidPressLayer } from '@/hooks/useFluidPress';
 import { useLiquidInteractions } from '@/hooks/useLiquidInteractions';
 import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
@@ -319,6 +326,8 @@ export function Providers({
   const navTransition = useThemeStore((s) => s.navTransition);
   const alwaysEvertGlobe = useThemeStore((s) => s.alwaysEvertGlobe);
   const eversionLevel = useThemeStore((s) => s.eversionLevel);
+  const jellyMotion = useThemeStore((s) => s.jellyMotion);
+  const electricArcs = useThemeStore((s) => s.electricArcs);
   const userTheme = useThemeStore((s) => s.userTheme);
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
@@ -342,13 +351,9 @@ export function Providers({
 
   // The backdrop stays still; bounded material responses live on surfaces.
   useLiquidBackground();
+  // Also mounts the jelly soft-body physics (press/hover/release on every jelly host, `data-fluid-press` included),
+  // the registry, the CSS flow carriers, the arcs and the glass engine — see hooks/useLiquidInteractions.ts.
   useLiquidInteractions();
-
-  // The fluid-interfaces press layer (WWDC 2018 §803 principle 1: instantaneous,
-  // interruptible response to touch). One delegated pointerdown listener springs
-  // any element carrying `data-fluid-press`; it is idle at rest, self-gates on
-  // reduced motion, and releases the press if the gesture turns into a scroll.
-  useFluidPressLayer();
 
   // The eversion state layer's input (globals.css §7.3): where each `data-evert` control turns inside out from
   // (the pointer's entry, the finger, the exit) and when a press is down. Delegated, passive, no frame loop.
@@ -587,6 +592,10 @@ export function Providers({
     if (localStorage.getItem(ALWAYS_EVERT_GLOBE_KEY) === '1') st.setAlwaysEvertGlobe(true);
     const el = localStorage.getItem(EVERSION_LEVEL_KEY);
     if (isEversionLevel(el)) st.setEversionLevel(el);
+    const jm = localStorage.getItem(JELLY_MOTION_KEY);
+    if (isJellyMotion(jm)) st.setJellyMotion(jm);
+    const ea = localStorage.getItem(ELECTRIC_ARCS_KEY);
+    if (isElectricArcs(ea)) st.setElectricArcs(ea);
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
     try {
@@ -702,6 +711,15 @@ export function Providers({
     if (eversionLevel !== DEFAULT_EVERSION_LEVEL)
       localStorage.setItem(EVERSION_LEVEL_KEY, eversionLevel);
     else localStorage.removeItem(EVERSION_LEVEL_KEY);
+    // Plasmatic Jelly (R8/R9): stamped on <html> for the jelly/arc runtimes and
+    // cached for the pre-paint script; both express the default by absence.
+    applyJellyMotion(html, jellyMotion);
+    if (jellyMotion !== DEFAULT_JELLY_MOTION) localStorage.setItem(JELLY_MOTION_KEY, jellyMotion);
+    else localStorage.removeItem(JELLY_MOTION_KEY);
+    applyElectricArcs(html, electricArcs);
+    if (electricArcs !== DEFAULT_ELECTRIC_ARCS)
+      localStorage.setItem(ELECTRIC_ARCS_KEY, electricArcs);
+    else localStorage.removeItem(ELECTRIC_ARCS_KEY);
     // Custom accent (raw hex) overrides the preset accent applied just above.
     if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
       const { hex, fg } = ensureReadableAccent(customAccent);
@@ -754,6 +772,8 @@ export function Providers({
     navTransition,
     alwaysEvertGlobe,
     eversionLevel,
+    jellyMotion,
+    electricArcs,
     userTheme,
     userThemePreview,
   ]);
@@ -848,6 +868,8 @@ export function Providers({
             navTransition?: string | null;
             alwaysEvertGlobe?: boolean | null;
             eversionLevel?: string | null;
+            jellyMotion?: string | null;
+            electricArcs?: string | null;
           };
           if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
             store.setFontScale(Number(r.fontScale));
@@ -860,6 +882,8 @@ export function Providers({
           if (typeof r.alwaysEvertGlobe === 'boolean')
             store.setAlwaysEvertGlobe(r.alwaysEvertGlobe);
           if (isEversionLevel(r.eversionLevel)) store.setEversionLevel(r.eversionLevel);
+          if (isJellyMotion(r.jellyMotion)) store.setJellyMotion(r.jellyMotion);
+          if (isElectricArcs(r.electricArcs)) store.setElectricArcs(r.electricArcs);
           appearanceSyncedRef.current = true;
         },
       )
@@ -943,30 +967,19 @@ export function Providers({
                   right: '0.75rem',
                 }}
                 toastOptions={{
-                  // Toasts are L4 floating UI and get the matching material
-                  // inline. It is written out here rather than by adding
-                  // `.glass-overlay` because that class also sets position,
-                  // max sizes and overflow — all of which sonner owns for its
-                  // own stacking. A plain translucent --site-surface with no
-                  // blur would let the page ghost through the message.
+                  // Toasts are L4 floating UI and get the matching fill inline. It is written out here rather than by
+                  // adding `.glass-overlay` because that class also sets position, max sizes and overflow — all of
+                  // which sonner owns for its own stacking. The jelly material (haze floor, CSS rim, carrier) comes
+                  // from `[data-sonner-toast]` in app/jelly-coverage.css, so only longhands are set here: a
+                  // `background` / `box-shadow` inline would erase the floor and the rim. No backdrop-filter — no
+                  // glass role has one (docs/liquid-glass-system.md); the overlay fill is the legibility floor.
                   style: {
-                    // The SAME expression `.glass-overlay` uses (globals.css
-                    // §L4), not a third answer. This was a flat 82% of
-                    // `--site-surface-opaque`, which meant a toast was thinner
-                    // than every other floating surface, had no legibility
-                    // floor. A toast is the one L4 surface that
-                    // appears unbidden and is gone in four seconds, so it is the
-                    // last one that can afford to ghost.
-                    background: 'var(--site-glass-overlay-fill)',
-                    backdropFilter:
-                      'blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate))',
-                    WebkitBackdropFilter:
-                      'blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate))',
+                    // The SAME expression `.glass-overlay` uses (globals.css §L4), not a third answer.
+                    backgroundColor: 'var(--site-glass-overlay-fill)',
                     border: '1px solid var(--site-border)',
                     // A toast is a panel, not a control: `--site-radius`, the
                     // same curve every other floating panel takes.
                     borderRadius: 'var(--site-radius)',
-                    boxShadow: 'var(--site-shadow)',
                     color: 'var(--site-text)',
                   },
                 }}

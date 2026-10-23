@@ -73,6 +73,7 @@ export default function BingoTab() {
       {card && (
         <div
           className="grid grid-cols-5 gap-1"
+          data-jelly-group
           role="grid"
           aria-label={t('bingo-card', { defaultValue: 'Your bingo card' })}
         >

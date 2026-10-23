@@ -1,4 +1,4 @@
-# Design Language — Radial Avant-Garde Glass
+# Design Language — Radial Plasmatic Jelly
 
 > Audience: humans **and** coding agents. This is the reference for how the site
 > looks and feels, and how to build UI that is visually native to it. For the
@@ -10,9 +10,10 @@
 > [`design.md`](../design.md) at the repo root. **This file is the authority**
 > whenever the two disagree.
 
-The design language is **Radial Avant-Garde Glass** — a bold, experimental take
-on **Apple's Liquid Glass** material, draped over a **radial** information
-architecture. Two ideas, one language:
+The design language is **Radial Plasmatic Jelly** — hazy, translucent,
+always-gently-moving slabs that keep the refracting rim of **Apple's Liquid
+Glass**, draped over a **radial** information architecture. Two ideas, one
+language:
 
 - **Radial.** The site orbits a central **RMH** mark; content radiates from the
   centre. The home feed is a vertically-scrolling **wheel** of cards (on the
@@ -23,15 +24,31 @@ architecture. Two ideas, one language:
   turn, hold and let go of to travel — with no tap waves. A
   fixed **ring backdrop**, a soft blob field and the aurora keep the whole
   surface feeling continuous — and **still**: nothing in the backdrop animates,
-  on any tier, so a page at rest goes idle (§5.5 Living backdrop;
-  `lib/__tests__/static-backdrop.test.ts`). Mobile-first, with a
+  on any tier (§5.5 Living backdrop; `lib/__tests__/static-backdrop.test.ts`).
+  Jelly moves; the room does not. Mobile-first, with a
   strict **high-contrast monochrome** palette.
-- **Avant-garde glass.** A shared material language of translucent tint,
-  directional rim and clear coat. Singular panes/chrome/overlays use native
-  backdrop frost; repeated cards use a cheaper tint/rim tier. The public role
-  classes are `.glass-fill`, `.glass-pane`, `.glass-chrome`, `.glass-overlay`
-  and `.glass-inset`. Cursor lighting is owned by one
-  bounded document runtime; the globe adds a dielectric coat and contact dent.
+- **Plasmatic jelly.** Every surface is a slab of slightly hazy, translucent
+  plasma-jelly: a low-contrast haze always drifts inside it, the 3D refracting,
+  lit rim of liquid glass stays at its edge, it squashes and wobbles under the
+  pointer within tight bounds, and nearby surfaces throw small electric arcs
+  (and every click discharges a few). The public role classes keep their names —
+  `.glass-fill`, `.glass-pane`, `.glass-chrome`, `.glass-overlay` and
+  `.glass-inset` — because "glass" names the elevation role and "jelly" the
+  material. Haze, soft body and arcs are each owned by one document service in
+  `lib/jelly/` + `lib/liquid/glass/`; the globe keeps its own dielectric coat and
+  dough body. On top sit the owner's #989 layers: a gel body that darkens toward
+  its base, **dormant plasma** inside it that hover wakes and press brightens, an
+  **RGB-led edge** with a 1px Fresnel line and no gloss band across the face, a
+  press **lens dent** with a light dot that slides with a drag (and rubber-bands
+  off the edge), and **charge** — click charge that hops to a neighbour, small
+  gaps that break down, Coulomb attraction within the nudge bound.
+
+**Identity: silent, sleek, frontier AI.** Calm, never busy: a near-black void,
+graphite surfaces, white ink and **one** electric accent (`--site-accent`), which
+is also the plasma colour — the default theme is the same rule in daylight. No
+gradients on the ground, no neon or glowing type, no sci-fi illustration. Copy is
+short and literal. Text is Geist, eyebrows and data Geist Mono (§3). **One signal
+action per view** — `<Button variant="signal">`, ink gel (§5.2).
 
 **Everything rests on one contract:** a single set of CSS custom properties
 (`--site-*`) that every theme re-defines. Components never hardcode colors,
@@ -39,31 +56,33 @@ radii, fonts, or shadows — they consume the contract through Tailwind utilitie
 so any theme (and any accent preset layered on top) restyles the entire site
 without a single component change.
 
-> **Superseded in part (2026-10-22).** Glass is no longer frosted blur. Singular
-> glass is a clear, shader-drawn slab with a refracting, lit rim and a cursor that
-> is a light, and **no glass role uses `backdrop-filter`** (see
-> [`liquid-glass-system.md`](liquid-glass-system.md)). Everywhere below that speaks
-> of a tier's "backdrop blur", its "≤8 backdrop-filters" budget, or an
-> `@supports not (backdrop-filter)` fallback, read it as: the budget is **≤24 shader
-> slabs per viewport** shared by every glass role, fields and solid controls, surfaces past it use the CSS reflection material, there are **no box-shadows** on UI surfaces (the shadow tokens are zero), and the CSS material is the
-> fallback in every engine. The role-by-purpose rules are unchanged.
+> **Current: Plasmatic Jelly (2026-10-23).** The material contract is
+> [`plasmatic-jelly-system.md`](plasmatic-jelly-system.md); it supersedes
+> [`liquid-glass-system.md`](liquid-glass-system.md), §5.1.1 below and the
+> "idle at rest" wording of §7 for the jelly services. In short: **no glass role
+> uses `backdrop-filter`**; the budget is per tier (≤24 rim slabs, ≤8 animated haze
+> canvases and ≤24 CSS flow carriers on a desktop, fewer on phones; surfaces past it
+> keep the static haze floor); there are **no box-shadows** on UI surfaces (the
+> shadow tokens are zero); hosts may squash and wobble within 4 px / 3 % and nudge
+> neighbours ≤ 1.5 px, and **layout never changes**; arcs pass one site-wide flash
+> ledger (≤ 3 per second). Every jelly service runs on **one** frame driver
+> (`lib/jelly/frame.ts`) and **one** pointer hub (`lib/jelly/pointer.ts`); bodies sit
+> ≥ 16 px apart with a 16 px unclipped margin; nothing fakes a law (no transform
+> transitions, no keyframes but the `.jelly-flow` drift, no `filter:` in jelly CSS —
+> the press lens is applied from `lib/jelly/lens.ts` only). Everywhere below that speaks of a tier's "backdrop blur",
+> a "≤8 backdrop-filters" budget, an `@supports not (backdrop-filter)` fallback,
+> "taps never emit ripples" or "nothing reacts to the pointer", read it through
+> that contract. The role-by-purpose rules are unchanged.
 >
-> **Current implementation (2026-10-21).** The radial shell and navigator live
-> in [`components/radial/`](../components/radial/README.md). Material rendering is
-> `app/liquid-glass.css`, with an app-token adapter in `app-theme.css` and shared
-> input in `lib/liquid/runtime.ts`.
->
-> [`liquid-glass-system.md`](liquid-glass-system.md) supersedes the historical
-> lens, sheen and blanket cursor-retirement implementation notes below. The old
-> SVG lens filters and `lib/glass-lens.ts` were removed. Historical modifier names
-> are compatibility aliases; they do not restore the old optics. Ordinary HTML
-> uses a clear CSS reflection coat. The independent globe coat
-> models dielectric lighting; eversion refracts existing captured page textures.
-> The contract documents optical limits, preference fallbacks and finite motion.
->
-> The older unused `lib/liquid-gl/` tier also remains deleted; `liquid-morph`
-> is the SVG-metaball path. Historical performance findings below still explain
-> why viewport blur, root writes and blanket capture loops must not return.
+> Material CSS is `app/liquid-glass.css` (role base) + `app/jelly-material.css`
+> (haze, carriers, CSS rim, degradation) + `app/jelly-arcs.css` (the arc layer),
+> with an app-token adapter in `components/shared/app-theme.css`. The radial
+> shell and navigator live in [`components/radial/`](../components/radial/README.md).
+> The old SVG lens filters, `lib/glass-lens.ts` and the unused `lib/liquid-gl/`
+> tier remain deleted; historical modifier names are compatibility aliases;
+> `liquid-morph` is the SVG-metaball path. Historical performance findings below
+> still explain why viewport blur, root writes and blanket capture loops must not
+> return.
 
 **Current companions:** [radial UI + the globe](../components/radial/README.md) ·
 [the per-page checklist](./page-consistency.md) ·
@@ -94,14 +113,17 @@ Page titles wrap by default, and search/filter rows must fit a 320px viewport.
 Search and filters sit directly below their tab group, before summaries or cards.
 Controls use `--site-control-radius` (the small radius), panels use `--site-radius`;
 avatars, circular icon controls, badges and the globe keep their explicit shape.
-Taps never emit ripples, except on the navigator globe, whose jelly ripples where it is pressed. Loading buttons reserve both label states before interaction.
+Clicks squash the jelly and discharge arcs through the shared services; they never
+change layout, and neighbours move at most the bounded nudge. The navigator globe is the one
+surface whose (dough) jelly ripples where it is pressed.
+Loading buttons reserve both label states before interaction.
 The navigator and its flattening/eversion share the liquid-glass studio material
 in `lib/liquid/globe-material.ts`; captured pages transmit through the surface
 instead of becoming a matte, diffuse globe.
 
 Read this before touching pixels; it is the short version of everything below,
 and the thing to re-read at the end of the change. A UI commit is done when all
-nine hold. (`docs/page-consistency.md` §3 is the same contract expanded into a
+ten hold. (`docs/page-consistency.md` §3 is the same contract expanded into a
 per-page checklist with code.)
 
 1. **Nothing is hardcoded.** Every color, radius, shadow, font and duration
@@ -124,9 +146,11 @@ per-page checklist with code.)
    `SPRING`, `APPLE_SPRING`, `transition`, and the named variants) rather than
    ad-hoc numbers, so a global re-tune stays a one-line change. (§7)
 6. **It degrades centrally, not per component.** High-contrast, reduced
-   transparency, reduced motion, `perf-lite` and `forced-colors` are handled by
-   the token layer and the glass classes. A component that branches on them by
-   hand is a bug. Legibility must never depend on an optic: text has to hold on
+   transparency, `perf-lite`, `forced-colors` and the jelly switches
+   (`jellyMotion`, `electricArcs`) are handled by the token layer, the glass
+   classes and `lib/jelly/tiers.ts`. A component that branches on them by hand
+   is a bug, and so is a component with its own pointer loop, deformation or
+   arc code. Legibility must never depend on an optic: text has to hold on
    `--site-surface-opaque`. (§5.1, §7, §9)
 7. **Every string is translated** through `t("key", { defaultValue })`, with
    `pnpm i18n:extract` run and the namespace registered in
@@ -136,10 +160,16 @@ per-page checklist with code.)
    §9)
 9. **It was actually looked at** in the three shipped themes — `default`
    (Daylight), `.style-graphite` (Midnight) and `.style-high-contrast` — at a
-   phone width and a desktop width, and once with reduced motion on. Three
+   phone width and a desktop width, and once with jelly motion set to Still
+   (ambient haze and arcs gone, press still works). Three
    themes × two widths is the floor; the audit matrix in
    `docs/ui-audit-2026-07-28.md` §1 is the extended version, and
    `docs/ui-audit-2026-10-09.md` is the most recent pass over the site tier.
+10. **One signal, room for the jelly.** At most one `<Button variant="signal">`
+    per view; bodies sit ≥ `--space-4` (16px) apart with `--jelly-margin` (16px)
+    unclipped round them — no `overflow: hidden` directly around a body. Cards
+    `--site-radius`, controls `--site-radius-sm`.
+    (`docs/plasmatic-jelly-system.md` §10)
 
 **When the system does not have what you need**, extend the system — add the
 token, add the variant, add the primitive — and say so in the commit message.
@@ -157,13 +187,13 @@ live in **[`lib/fluid.ts`](../lib/fluid.ts)**, unit-tested in
 `lib/__tests__/fluid.test.ts`, shared by every gesture surface. Do not re-derive
 them locally.
 
-| Principle                              | What it means here                                                                                                                                                                          | API                                                 |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| **Instantaneous response**             | A surface reacts on `pointerdown`, never on `click` and never after a recognition delay. Site-wide via one delegated listener: add `data-fluid-press` to any element.                       | `hooks/useFluidPress`                               |
-| **Interruptible & redirectable**       | Motion is a spring carrying position _and velocity_, so grabbing something mid-flight retargets it from where it is and how fast it is going. A duration tween structurally cannot do this. | `springStep`                                        |
-| **Momentum crosses the lift**          | The velocity the finger left with is handed to the animation, not discarded.                                                                                                                | `VelocityTracker` → `springStep`                    |
-| **Intent is read from the projection** | "Where would this throw come to rest?", not "is it past the line right now?" — which is why a fast flick dismisses a sheet that has barely moved.                                           | `projectDistance`, `resolveDetent`, `shouldDismiss` |
-| **Limits push back**                   | Past an edge, travel is damped asymptotically instead of stopping dead.                                                                                                                     | `rubberBand`, `rubberBandClamp`                     |
+| Principle                              | What it means here                                                                                                                                                                           | API                                                 |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| **Instantaneous response**             | A surface reacts on `pointerdown`, never on `click` and never after a recognition delay. Site-wide via one delegated listener: every jelly host is a soft body; `data-fluid-press` tunes it. | `lib/jelly/physics.ts`                              |
+| **Interruptible & redirectable**       | Motion is a spring carrying position _and velocity_, so grabbing something mid-flight retargets it from where it is and how fast it is going. A duration tween structurally cannot do this.  | `springStep`                                        |
+| **Momentum crosses the lift**          | The velocity the finger left with is handed to the animation, not discarded.                                                                                                                 | `VelocityTracker` → `springStep`                    |
+| **Intent is read from the projection** | "Where would this throw come to rest?", not "is it past the line right now?" — which is why a fast flick dismisses a sheet that has barely moved.                                            | `projectDistance`, `resolveDetent`, `shouldDismiss` |
+| **Limits push back**                   | Past an edge, travel is damped asymptotically instead of stopping dead.                                                                                                                      | `rubberBand`, `rubberBandClamp`                     |
 
 **Springs are described by perceptual duration + bounce**, never by hand-tuned
 stiffness, so the same spring settles in the same _perceived_ time whether it
@@ -171,8 +201,9 @@ moves 4px or 400px. The two animation tiers share one vocabulary — `SPRINGS` i
 `lib/fluid.ts` (imperative/rAF) and `APPLE_SPRING` in `lib/motion.ts`
 (framer-motion) — and a test asserts they cannot drift apart.
 
-Where it ships today: every `Button` and interactive `Card`, the radial chrome
-and the globe's pins (press layer); phone-width sheet dialogs (drag-to-dismiss
+Where it ships today: every jelly host — buttons, cards, fields, panes — through
+the soft-body service (`lib/jelly/physics.ts`, which absorbed the old
+`useFluidPress` press layer); phone-width sheet dialogs (drag-to-dismiss
 with rubber-banding and flick projection); and the navigation globe (throw,
 magnetism and keyboard glide all on one interruptible spring). Touch-friendly by
 construction: `touch-action: manipulation` removes the ~300ms tap delay on
@@ -224,20 +255,21 @@ worth copying) — that takes the noise and leaves the selection. `useFluidDrag`
 `handleProps` carries the same guarantees inline, so every sheet and drawer gets
 them without asking.
 
-**In the full-screen tier**, where controls do not come from `ui/button.tsx`, a
-container claims its subtree instead: `data-fluid-press-scope` makes every
-`button` / `[role=button]` / `summary` inside press, so an app opts in once
-rather than tagging thirty bespoke buttons and forgetting the thirty-first.
-`AppShell` carries it, which reaches RMHbox, RMHType, RMHStudy and RMHTube in
-one line; game shells add it themselves. Opt individual elements back out with
-`data-fluid-press="none"` — and **do** opt out gestures: a joystick, a drag
-handle or a fire button held for thirty seconds is not a tap, and springing it
-reads as lag while promoting a compositor layer during exactly the frames a game
-can least afford one.
+**In the full-screen tier** the soft-body service already finds every
+`button` / `[role=button]` / `summary`, so `data-fluid-press-scope` is now a
+no-op kept for compatibility. Opt individual elements out with
+`data-jelly="off"` (or the accepted alias `data-fluid-press="none"`), and whole
+subtrees with `data-jelly-scope="off"`; game play-fields carry
+`data-jelly-zone="playfield"`. **Do** opt out gestures: a joystick, a drag handle
+or a fire button held for thirty seconds is not a tap, and springing it reads as
+lag while promoting a compositor layer during exactly the frames a game can least
+afford one.
 
-Reduced motion stands the whole layer down — the press spring does not run, the
-sheet gesture is not offered, and settles snap. Direct manipulation that remains
-useful (turning the globe) keeps working.
+The degraded tiers (`perf-lite`, reduced transparency, high contrast) and
+`jellyMotion = still` keep only the press — no hover body, nudge or wobble —
+and forced colours, print and a playing game stand the soft body down entirely
+(`jellyMode()` in `lib/jelly/tiers.ts`). Direct manipulation that remains useful
+(turning the globe, a sheet gesture) keeps working.
 
 ---
 
@@ -371,8 +403,8 @@ id) self-heal to `default` during hydration.
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
 `GlassFilter` — the tab-capsule merge host, with no optical lenses) with a
-design-lab reference at `/liquid-glass`. Everyone uses the shared default glass
-material. The Glass clarity slider is retired: saved device and account values
+material lab at `/jelly` (`/liquid-glass` redirects there). Everyone uses the
+shared default jelly material. The Glass clarity slider is retired: saved device and account values
 cannot make the site opaque or change its tint. Old device keys are cleared
 before first paint and during hydration. OS reduced-transparency preferences,
 forced colours, high contrast and renderer capability fallbacks still apply.
@@ -432,7 +464,8 @@ account-synced. The shared constants, zod schema and storage keys are
 | **Text size**     | Four scales (87.5 / 100 / 112.5 / 125%) — a root font-size multiplier, so every `rem` follows                                                                                                             | `rmh-font-scale`    |
 | **Density**       | `cozy` \| `compact` → `html[data-density]`; compact tightens `[data-slot="card"]` padding and gap. Font sizes and touch targets deliberately unchanged                                                    | `rmh-density`       |
 | **Readable font** | `html.readable-font` swaps the **body** face to a high-legibility stack (Atkinson Hyperlegible → Verdana → system) with loosened tracking, word spacing and leading. Headings keep the theme display face | `rmh-readable-font` |
-| **Reduce motion** | In-account switch that sets `html.reduce-motion`, on equal footing with the OS preference                                                                                                                 | `rmh-reduce-motion` |
+| **Jelly motion**  | `lively` \| `calm` \| `still` → `html[data-jelly-motion]` (absent = lively). How much the material moves on its own (WCAG 2.2.2); `still` also turns arcs off. One-tap pause in the quick panel           | `rmh-jelly-motion`  |
+| **Electric arcs** | `full` \| `clicks` \| `off` → `html[data-electric-arcs]`. Ambient and click arcs, behind the site-wide flash ledger (WCAG 2.3.1)                                                                          | `rmh-electric-arcs` |
 | **Colour vision** | `html[data-color-vision=…]` retint of the semantic tokens, below                                                                                                                                          | `rmh-color-vision`  |
 | **Tilt effects**  | The one surviving motion input: `deviceorientation` drives the aurora on touch. iOS needs an explicit `requestPermission()` gesture, which this row performs — we never prompt on load                    | `rmh-motion-ok`     |
 
@@ -459,6 +492,14 @@ mode list, the CSS blocks, the pre-paint script) is CI-enforced — §13.
 ---
 
 ## 3. Typography & fonts
+
+- **Identity faces: Geist for text, Geist Mono for eyebrows and data** (counts,
+  latencies, IDs, section labels), always through `--site-font-body` /
+  `--site-font-display` / `--site-font-mono` (`font-body`, `font-display`,
+  `font-mono`) — never a literal family in a component. A theme may swap the
+  faces through the same tokens. _Status (2026-10-23):_ the default stacks still
+  lead with the system face / Inter and JetBrains Mono; moving them to Geist is a
+  token change in `app/globals.css` (plus a font load), never a per-component one.
 
 - Body default is `font-body antialiased` (set on `<body>` in `__root.tsx`), which
   resolves to `--site-font-body`. `font-sans` is its alias; `font-nunito` still
@@ -492,31 +533,35 @@ mode list, the CSS blocks, the pre-paint script) is CI-enforced — §13.
 
 ### 5.1 The glass elevation classes (use these for surfaces)
 
-Glass is opt-in per element via these classes (in `app/globals.css`). Pick by
-role, not by looks — the tier decides cost (budget: ≤24 visible shader slabs per
-viewport; roles first, then cards, then controls).
+Glass is opt-in per element via these role classes (base in
+`app/liquid-glass.css`, the jelly material in `app/jelly-material.css`). Pick by
+role, not by looks — the tier decides cost (budget: ≤24 visible rim slabs per
+viewport on a desktop, fewer on phones; admission order overlay → chrome → pane →
+fill → control; `JELLY_BUDGETS` in `lib/jelly/tiers.ts` is the authority).
 
-| Class                               | Tier            | Use for                                                                                             |
-| ----------------------------------- | --------------- | --------------------------------------------------------------------------------------------------- |
-| `.glass-fill`                       | L1 (no blur)    | Repeated content: cards, list rows, table rows, grid tiles. Cheap, unlimited. Ambient rim glint.    |
-| `.glass-pane`                       | L2 (blur+noise) | Singular panels: heroes, composers, settings sections, tier cards. Budgeted.                        |
-| `.glass-chrome` (`--aside` variant) | L3              | Persistent chrome: sidebar, sticky headers, mobile dock. Condenses on scroll via `[data-scrolled]`. |
-| `.glass-overlay`                    | L4              | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips.                           |
-| `.glass-inset`                      | —               | Fields: inputs, search fields, tab tracks. A flush fill of the glass — never a recessed well.       |
-| `.glass-scrim`                      | —               | Dialog/drawer backdrops.                                                                            |
+| Class                               | Tier | Use for                                                                                             |
+| ----------------------------------- | ---- | --------------------------------------------------------------------------------------------------- |
+| `.glass-fill`                       | L1   | Repeated content: cards, list rows, table rows, grid tiles. Cheap, unlimited. Ambient rim glint.    |
+| `.glass-pane`                       | L2   | Singular panels: heroes, composers, settings sections, tier cards. Budgeted.                        |
+| `.glass-chrome` (`--aside` variant) | L3   | Persistent chrome: sidebar, sticky headers, mobile dock. Condenses on scroll via `[data-scrolled]`. |
+| `.glass-overlay`                    | L4   | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips.                           |
+| `.glass-inset`                      | —    | Fields: inputs, search fields, tab tracks. A flush fill of the glass — never a recessed well.       |
+| `.glass-scrim`                      | —    | Dialog/drawer backdrops.                                                                            |
 
-Modifiers layer **on top of** a tier class. Each carries a per-page budget —
-they are signature moments, not defaults:
+Modifiers layer **on top of** a tier class. The three retired optics
+modifiers below are kept only as compatibility aliases under jelly (05 §3.1);
+the live ones are `.glass-interactive`, `.glass-sheen-hover`, `.glass-bevel-sm`
+and `.glass-opaque`:
 
-| Modifier                                  | Budget      | What it adds                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ----------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.glass-interactive`                      | unlimited   | Hover tint-raise, springy press flex (`--ease-glass`), and — **paired with `.glass-fill`** — the specular rim glint raised from ambient to full on hover. The glint selector is `.glass-fill.glass-interactive`: on its own, `.glass-interactive` still gives the press, but there is no rim to light. It used to add a **pointer-tracked** diffuse hotspot on `::after`; that is retired (§5.1.1) and `::after` now carries the travelling sheen (§5.1.2). |
-| `.glass-refract` + `data-glass-lens`      | **≤2/page** | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`; Chromium bends the backdrop, Gecko/WebKit displace a mirrored aurora copy — §3.6). Pressing deepens the bend (`:active`, ×1.6, §3.7). Not compatible with `.glass-chrome--aside` (see below).                           |
-| `.glass-refract--prism`                   | **≤1/page** | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. Sanctioned users: login card, command palette, `/store` featured tier, design lab.                                                                                                                                                                                                                                                                                            |
-| `.glass-liquid` (or `<GlassPane liquid>`) | **≤3/page** | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, never on list items.                                                                                                                                                                                                                                                 |
-| `.glass-sheen-hover`                      | unlimited   | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in).                                                                                                                                                                                                                                                                                                                                                                |
-| `.glass-bevel-sm`                         | unlimited   | Narrow 6px optics ring for small capsules — the `LiquidTabs` sheet pill (§5.45), plus discs like BackToTop.                                                                                                                                                                                                                                                                                                                                                 |
-| `.glass-opaque`                           | —           | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                                                                                                                                                                                                                                                                                                       |
+| Modifier                                  | Budget    | What it adds                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.glass-interactive`                      | unlimited | Hover tint-raise, springy press flex (`--ease-glass`), and — **paired with `.glass-fill`** — the specular rim glint raised from ambient to full on hover. The glint selector is `.glass-fill.glass-interactive`: on its own, `.glass-interactive` still gives the press, but there is no rim to light. It used to add a **pointer-tracked** diffuse hotspot on `::after`; that is retired (§5.1.1) and `::after` now carries the travelling sheen (§5.1.2). |
+| `.glass-refract` (+ `data-glass-lens`)    | —         | **Retired — compatibility alias, no-op.** The SVG lens it drove (and `lib/glass-lens.ts`) is deleted; refraction is the jelly rim slab for every role (`plasmatic-jelly-system.md` §1). Do not add it to new code.                                                                                                                                                                                                                                          |
+| `.glass-refract--prism`                   | —         | **Retired — compatibility alias, no-op.** Dispersion is part of every rim slab now.                                                                                                                                                                                                                                                                                                                                                                         |
+| `.glass-liquid` (or `<GlassPane liquid>`) | —         | **Retired — compatibility alias, no-op** (`app/liquid-glass.css` sets its `::after` to `content: none`). The jelly haze is the ambient motion on every role.                                                                                                                                                                                                                                                                                                |
+| `.glass-sheen-hover`                      | unlimited | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in).                                                                                                                                                                                                                                                                                                                                                                |
+| `.glass-bevel-sm`                         | unlimited | Narrow 6px optics ring for small capsules — the `LiquidTabs` sheet pill (§5.45), plus discs like BackToTop.                                                                                                                                                                                                                                                                                                                                                 |
+| `.glass-opaque`                           | —         | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                                                                                                                                                                                                                                                                                                       |
 
 Sticky glass uses the shared layout contract rather than local `top-*` values:
 
@@ -533,6 +578,11 @@ Related controls should still be merged into a single sticky surface. Use the
 secondary level only when the two surfaces mount independently.
 
 ### 5.1.1 Cursor reactivity is retired (2026-08-01)
+
+> **Superseded (2026-10-23)** by [`plasmatic-jelly-system.md`](plasmatic-jelly-system.md):
+> the jelly's soft body and the engine's cursor light do respond to the pointer —
+> through one document service each, never per component. The table below stays
+> as the record of _why_ per-component cursor tracking must not come back.
 
 Nothing on the site follows the pointer any more. The glass answers a **static
 sun**; hover is a state change, not a position. What was removed, and why:
@@ -622,8 +672,8 @@ for something static. Never add a third owner.
 **L4 keeps a fixed legible tint.** A popover must be readable over arbitrary
 content. `.glass-overlay` uses an 86% tint; tooltip arrows and toast fills use
 the named `--site-glass-overlay-fill` token. These fills are shared by every
-user and cannot be changed by a clarity preference. See
-[`liquid-glass-system.md`](./liquid-glass-system.md) for the shader and CSS tiers.
+user and cannot be changed by any preference. See
+[`plasmatic-jelly-system.md`](./plasmatic-jelly-system.md) for the shader and CSS tiers.
 **Floating UI must be `.glass-overlay`.** L1 `.glass-fill` has no backdrop blur
 by design (it is the repeated-card tier); a menu built on it sits transparent
 over whatever it opened on top of. This is CI-enforced — see §13.
@@ -666,7 +716,7 @@ Always reach for these before writing new markup. Helper: `cn()` from
 
 | Component                                                                   | File                                                     | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | --------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Button` / `buttonVariants`                                                 | `components/ui/button.tsx`                               | CVA. Variants: `default`, `destructive`, `danger`, `outline`, `secondary`, `ghost`, `link`, `accent`, `accent-outline`, `accent-ghost`. Sizes: `xs`, `sm`, `default`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. `asChild` supported. **`loading` prop** (+ optional `loadingText`) shows an inline spinner, sets `aria-busy`, and disables the button — reach for this instead of hand-rolling `disabled={x}` + a separate `<Loader2>`.                                                                                           |
+| `Button` / `buttonVariants`                                                 | `components/ui/button.tsx`                               | CVA. Variants: `signal` (ink gel — the **one** primary action per view, `--gel-ink` / `--on-ink`), `default`, `destructive`, `danger`, `outline`, `secondary`, `ghost`, `link`, `accent`, `accent-outline`, `accent-ghost`. Sizes: `xs`, `sm`, `default`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. `asChild` supported. **`loading` prop** (+ optional `loadingText`) shows an inline spinner, sets `aria-busy`, and disables the button — reach for this instead of hand-rolling `disabled={x}` + a separate `<Loader2>`.       |
 | `Badge` / `badgeVariants`                                                   | `components/ui/badge.tsx`                                | CVA pill. Variants: `default`, `accent`, `solid`, `success`, `warning`, `danger`, `outline`.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `Card` + Header/Title/Description/Action/Content/Footer                     | `components/ui/card.tsx`                                 | The shared content surface, in the glass material. **L1 `.glass-fill`** by default (cards are the most repeated surface on the site, and L1 is the tier with no backdrop blur); `pane` promotes it to L2 `.glass-pane`; `interactive` adds the hover tint-raise, the hover-raised rim glint and the press flex. It also carries `data-fluid-press="firm"` when interactive — a card is column-wide, and the 4% squash that reads as crisp on a button reads as a wobble at that size.                                                  |
 | `Dialog` (Radix wrapper)                                                    | `components/ui/dialog.tsx`                               | Centered, viewport-clamped glass content with safe internal spacing and a translated close control. Pass `mobileFullscreen` for complex/wide editors; they consume the phone visual viewport with safe-area padding, then return to a centered dialog from `sm`.                                                                                                                                                                                                                                                                       |
@@ -836,8 +886,19 @@ gated off there too, via `html.app-route`).
   and page headers/heroes rise in on mount (`radial-page-rise`). The **ring
   backdrop** and its blob field are static — no pointer parallax (§5.1.1) and no
   ambient keyframes (§5.5 Living backdrop). All of it is `transform`/`opacity`
-  only and gated off under reduced motion; optional scroll **haptics**
-  (`navigator.vibrate`) tick as cards cross the focus line.
+  only; optional scroll **haptics** (`navigator.vibrate`) tick as cards cross
+  the focus line.
+- **Jelly motion states (the material layer).** The material is the one thing
+  on a page that moves on its own, and only through its owners
+  ([`plasmatic-jelly-system.md`](plasmatic-jelly-system.md) §2–§4). _Engaged_
+  (input in the last 20 s): the engine's haze clock ticks at 30 Hz (15 Hz
+  handheld). _Idle_: it drops to a 12 Hz floor and **does not freeze** — this
+  deliberately reverses the 2026-10-08 audit's 2 fps rest limit (the rest limit is
+  now 13 fps; CPU at rest stays ≤ 250 ms/s on `/`). _Unseen or degraded_ (hidden
+  tab, unfocused window, scroll in flight, nothing hazy on screen, a degraded tier,
+  `jellyMotion = still`, a game playing): 0 Hz, no loop. The soft body and the
+  arcs run frames only while a body or an arc is moving. Never add a CSS
+  `infinite` animation or a rAF of your own for ambient motion.
 - **framer-motion** is the animation library. Reach for the shared motion
   system in **`lib/motion.ts`** rather than hand-typing durations/easings:
   it exports the timing tokens (`DURATION`, `EASE`, `SPRING`, `APPLE_SPRING`,
@@ -1299,7 +1360,9 @@ gated off there too, via `html.app-route`).
 
 Global (in `globals.css`):
 
-- Keyboard focus: `:focus-visible { outline: 2px solid var(--site-accent); outline-offset: 2px }`
+- Keyboard focus is the `--focus-ring` token: solid, 2px, never the plasma glow (a
+  focused body's plasma brightens, but that is decoration, not the indicator).
+  Today it is drawn as `:focus-visible { outline: 2px solid var(--site-accent); outline-offset: 2px }`
   covers every interactive element (links, buttons, `[role]`, `[tabindex]`).
   Text inputs opt out (border + caret instead). `Button` takes the global ring
   too (since 2026-10-20; it drew its own softer box-shadow ring, which could not
@@ -1371,10 +1434,14 @@ Global (in `globals.css`):
   that feature (mode list, CSS blocks, pre-paint script) are CI-checked because
   a mode with no CSS block is a setting that appears to work and changes
   nothing.
-- **Respect the in-account switches, not just the OS ones.** `html.reduce-motion`
-  and `html.reduce-transparency` are set by Settings → Appearance and sit on
-  equal footing with `prefers-reduced-motion` / `prefers-reduced-transparency`.
-  Code that checks only the media query misses half the people who asked.
+- **Respect the in-account switches, not just the OS ones.**
+  `html.reduce-transparency` is set by Settings → Appearance and sits on equal
+  footing with `prefers-reduced-transparency`; code that checks only the media
+  query misses half the people who asked. The retired reduced-motion setting
+  does not come back. Ambient motion and arcs are paused by the **jelly**
+  switches (`html[data-jelly-motion]`, `html[data-electric-arcs]`), which
+  `lib/jelly/tiers.ts` reads for every jelly service — never read them in a
+  component.
 
 ---
 
@@ -1419,7 +1486,7 @@ lazy locale chunks).
 - Add `data-slot="..."` to new shared primitives so themes can restyle them.
 - Wire every string through `t(..., { defaultValue })`.
 - Test in the three shipped themes — `default` (Daylight), `graphite`
-  (Midnight) and `high-contrast` — and under reduced motion.
+  (Midnight) and `high-contrast` — and with jelly motion set to Still.
 
 **Don't**
 
@@ -1427,9 +1494,12 @@ lazy locale chunks).
   custom shadows, bare `duration-200`, or font families in site UI. The first
   three are CI-enforced (§13).
 - Build a dropdown / popover / menu / tooltip on anything but `.glass-overlay`
-  — L1 has no blur and the labels ghost (§5.1). Also CI-enforced.
-- Track the cursor. Nothing on the site reacts to pointer position any more
-  (§5.1.1); hover is a state, not a coordinate.
+  — only L4 carries the opaque legibility floor, and it is kept out of
+  neighbour nudges and arcs across its text (§5.1). Also CI-enforced.
+- Track the cursor, deform a surface or draw an arc yourself. The soft body,
+  cursor light and arcs are one service each (`plasmatic-jelly-system.md`);
+  a per-component pointer loop, a CSS hover lift or an `infinite` keyframe is
+  the drift they exist to prevent.
 - Re-add navigation/sidebars inside a page (the `_site` shell owns them).
 - Use `react-icons`, an ad-hoc **standalone** `Loader2` where `<Spinner>`
   belongs (inline `Loader2` inheriting a button's colour is fine), or
@@ -1601,7 +1671,7 @@ remain the authority:
   (`rounded-lg`/`-xl`/`-2xl`) — `rounded-full` and `rounded-none` are shapes,
   not radii, and stay allowed; **(7)** no floating surface below L4 — an element
   that is positioned + stacked + edge-anchored and carries `.glass-fill` /
-  `.glass-pane` / `bg-site-surface` is a dropdown with no backdrop blur;
+  `.glass-pane` / `bg-site-surface` is a dropdown without L4's legibility floor;
   Plus two that run over the **whole tree**, because neither is a palette
   question — a game has no more claim to an exemption than a settings page:
   **(8)** no `transition-all` anywhere — name the properties;
@@ -1648,11 +1718,26 @@ remain the authority:
   and namespace-registry integrity for §10.
 - **`lib/__tests__/raf-loop-allowlist.test.ts`** — keeps rAF loops (the §7
   radial motion layer) to the sanctioned owners instead of one per feature.
-  `useGlassLight.ts`, `useCardSheen.ts` and `useParallax.ts` were removed from
-  the allowlist with the hooks themselves (§5.1.1).
+  Everything is held to "idle at rest" except one: the glass engine's ambient
+  haze clock is "idle when unseen" (it stops for a hidden tab, nothing hazy on
+  screen, a degraded tier or `still`). Since #989 the whole jelly has ONE rAF,
+  `lib/jelly/frame.ts`: the engine, `lib/jelly/physics.ts`, the arc renderer and
+  the fallback light are drivers on it, awake only while something moves, and
+  `jelly-ownership.test.ts` (N2 b) pins that single owner plus the single pointer
+  hub `lib/jelly/pointer.ts`. `useGlassLight.ts`, `useCardSheen.ts` and
+  `useParallax.ts` were removed with the hooks themselves (§5.1.1).
 - **`lib/__tests__/fluid.test.ts`** — the shared gesture maths of §0.5: the
   spring, the rubber band, projection/detents, and `rippleWave` (the globe's
-  wave shape). Retune the feel there rather than locally, and it stays tested.
+  wave shape). The jelly envelope steps the same `springStep`; retune the feel
+  there rather than locally, and it stays tested.
+- **The jelly contract** — `lib/jelly/__tests__/` and `lib/jelly/arcs/__tests__/`
+  pin the budgets, `jellyMode()`, the motion bounds and the flash ledger;
+  `lib/__tests__/jelly-legibility.test.ts` holds text contrast over the haze;
+  `appearance-jelly-motion.test.ts` / `appearance-electric-arcs.test.ts` keep the
+  two preference pipelines in agreement. The jelly gates in
+  `scripts/check-consistency.sh` (ownership, no site `infinite` animation outside
+  `.jelly-flow`, negative-z paint layers, no blur in any role) are listed in
+  [`plasmatic-jelly-system.md`](plasmatic-jelly-system.md) §9.
 - **`pnpm lint`** — `eslint-plugin-jsx-a11y` at "warn"; the bar is no _new_
   warnings versus the base branch.
 

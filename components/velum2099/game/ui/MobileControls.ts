@@ -66,6 +66,10 @@ export class MobileControls {
 
         const root = document.createElement('div');
         root.className = 'nd-mc';
+        // Held stick + gas/drift buttons: HUD chrome, but the soft body must
+        // not squash a control under a thumb that is holding it (jelly WP5).
+        root.dataset.jellyZone = 'hud';
+        root.dataset.jellyScope = 'off';
         root.innerHTML = `
           <div class="zone"></div>
           <div class="base"><div class="knob"></div></div>

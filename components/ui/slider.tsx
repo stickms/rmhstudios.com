@@ -49,8 +49,12 @@ function Slider({
  {Array.from({ length: _values.length }, (_, index) => (
  <SliderPrimitive.Thumb
  data-slot="slider-thumb"
+ // A drag-mode jelly body (02 §3.2): the thumb stretches along its travel and the press
+ // slop starts the drag instead of cancelling it. Jelly owns its hover and press scale,
+ // so there is no CSS hover scale to fight it; the droplet look is jelly-coverage.css §4.
+ data-jelly="drag"
  key={index}
- className="relative block size-4 shrink-0 rounded-full border border-site-border bg-site-surface-opaque shadow-site-sm transition-[box-shadow,scale] after:absolute after:-inset-3.5 after:content-[''] hover:scale-110 disabled:pointer-events-none disabled:opacity-50"
+ className="relative block size-4 shrink-0 rounded-full border border-site-border bg-site-surface-opaque after:absolute after:-inset-3.5 after:content-[''] disabled:pointer-events-none disabled:opacity-50"
  />
  ))}
  </SliderPrimitive.Root>

@@ -50,8 +50,8 @@ export function TiltEffectsRow() {
   // identifier jsx-a11y reads as the label's accessible text) rather than a raw
   // t() call it can't statically resolve — mirrors AppearancePanel's ToggleRow.
   const label = t('tilt-effects', { defaultValue: 'Tilt effects' });
-  const desc = t('tilt-effects-desc', {
-    defaultValue: 'Let the glass catch light as you tilt your device.',
+  const desc = t('tilt-effects-desc-jelly', {
+    defaultValue: 'Let the jelly catch light as you tilt your device.',
   });
 
   async function onChange(next: boolean) {

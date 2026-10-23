@@ -40,7 +40,8 @@ if [ "$status" -ne 0 ]; then
     printf '%s\n\n' "$output"
     printf 'Fix the ✗ items, then commit again. The rules and their rationale are in\n'
     printf 'docs/design-language.md (§0 definition of done, §13 what is enforced) and\n'
-    printf 'docs/page-consistency.md §3. If a rule is genuinely wrong for this change,\n'
+    printf 'docs/page-consistency.md §3; the jelly material, motion and arc rules are in\n'
+    printf 'docs/plasmatic-jelly-system.md. If a rule is genuinely wrong for this change,\n'
     printf 'change the rule in the same commit and say so in the message — do not reach\n'
     printf 'for --no-verify or RMH_SKIP_COMMIT_GATE.\n'
   } >&2

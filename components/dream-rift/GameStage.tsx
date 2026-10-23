@@ -107,6 +107,7 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
     return (
         <div ref={wrapRef} className="relative h-full w-full overflow-hidden bg-black">
             <canvas
+                data-jelly-zone="playfield"
                 ref={canvasRef}
                 className="absolute inset-0 h-full w-full"
                 // `translateZ(0)` + `will-change` promote the canvas to its own GPU

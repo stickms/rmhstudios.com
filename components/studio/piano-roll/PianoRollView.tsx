@@ -199,7 +199,7 @@ export function PianoRollView() {
   }
 
   return (
-    <div ref={containerRef} className="flex h-full flex-col overflow-hidden">
+    <div ref={containerRef} className="flex h-full flex-col overflow-hidden" data-jelly-group="off">
       {/* Header */}
       <div className="flex h-6 shrink-0 items-center gap-2 border-b border-site-border bg-site-surface px-3">
         <span className="text-xs font-medium text-site-text">{clip.name}</span>

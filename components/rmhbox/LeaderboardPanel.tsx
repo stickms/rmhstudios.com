@@ -58,7 +58,7 @@ export default function LeaderboardPanel() {
   }, []);
 
   return (
-    <section className="flex flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) px-4 py-4 md:px-6 md:py-5">
+    <section className="flex flex-col gap-3 rounded-(--app-radius) app-glass px-4 py-4 md:px-6 md:py-5">
       <h2 className="flex items-center gap-2 text-xl font-semibold">
         <Trophy className="h-5 w-5 text-(--app-accent)" aria-hidden /> {t("leaderboard", { defaultValue: "Leaderboard" })}
       </h2>

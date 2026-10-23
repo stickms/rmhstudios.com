@@ -30,7 +30,7 @@ export function ModelToggle({
       role="radiogroup"
       aria-label={t('model-label', { defaultValue: 'Calculation model' })}
       className={cn(
-        'inline-flex items-center gap-1 rounded-site border border-site-border bg-site-surface p-1',
+        'glass-inset inline-flex items-center gap-1 rounded-site p-1',
         className,
       )}
     >

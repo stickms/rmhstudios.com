@@ -43,7 +43,7 @@ export function TempleHud() {
   );
 
   return (
-    <header className="toj-hud">
+    <header className="toj-hud" data-jelly-zone="hud">
       <div className="toj-hud-main">
         <LiveValue className="toj-joy" read={(s) => fmt(s.joy, s.numberFormat)} />
         <LiveValue

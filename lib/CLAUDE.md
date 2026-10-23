@@ -83,14 +83,39 @@ bundle only**. SSR/server builds get the real module.
   everywhere (Web Audio — **always** go through `getAudioContext()`, never
   `new AudioContext()` — plus haptics, idle callbacks, wake lock, fullscreen,
   WebGL detection). `app-toast.ts` is the toast store for the full-screen apps.
-- **Liquid glass:** `liquid/glass/` — `engine.ts` (the document service: discovery,
-  cursor light and the one on-demand frame), `shader.ts` + `renderer.ts`
-  (the slab optics; one shared WebGL 2 context), `policy.ts` and `color.ts` (pure,
-  unit-tested decisions), `scene.ts` + `scene-store.ts` (the page snapshot the rim
-  refracts, built on `eversion/capture`). `liquid/runtime.ts` is the
-  fallback cursor light; clicks never push or bounce neighbouring surfaces. `dough.ts` is the globe's soft-body field
-  (pure, unit-tested). Contract:
-  [`docs/liquid-glass-system.md`](../docs/liquid-glass-system.md).
+- **Plasmatic Jelly (the site material):** `jelly/` — `tiers.ts` is the single
+  shared policy (tiers, `JELLY_BUDGETS`, `jellyMode()`, `jellyOff()`, opt-out and
+  host selectors, `MOTION_BOUNDS`, `FLASH_LEDGER`; every jelly service reads it,
+  nothing restates it), `bus.ts` (typed event bus), `registry.ts` (one set of
+  observers over every jelly host, cached rects, no rAF), `governor.ts`
+  (downscale-only frame-cost governor), `flow-carriers.ts` (which hosts carry a CSS
+  `.jelly-flow`), `frame.ts` (the ONE jelly `requestAnimationFrame`: every service
+  registers a driver with `drive(fn, { order })` — physics 10, engine 20, arcs 30 — and no
+  frame runs while no driver is awake), `pointer.ts` (the ONE set of window pointer
+  listeners, `onJellyPointer(type, fn)`), `lens.ts` (the press dent's SVG lens, the only
+  code that filters a body, only while it is dented), the soft body (`physics.ts` — the
+  press/hover/drag/dent/plasma-level service, a frame driver, which absorbed `hooks/useFluidPress`;
+  `envelope.ts`, `lattice.ts`, `lattice-inputs.ts`, `compose.ts`, `soft-policy.ts`
+  are pure) and `arcs/` (pure `geometry/bolt/rng/rate/ledger/pairs/timeline` and
+  `charge.ts` — the #989 laws: decay, breakdown gap, hop carry, Coulomb — plus
+  `scheduler`, `clicks`, `field.ts` (timer-driven click charge hops, breakdown after the
+  formative lag, Coulomb attraction), `runtime` and `renderer.ts` (a frame driver at order 30);
+  `@/lib/jelly/arcs` exports `dischargeAt`/`strike`). Components never import the
+  physics or arc services; they take jelly through role classes and `data-jelly*`
+  attributes. All of it mounts from `hooks/useLiquidInteractions.ts`.
+- **Liquid glass (rims and haze):** `liquid/glass/` — `engine.ts` (the document
+  service and a frame driver: slab admission, cursor light, RGB-led edge, plasma, dent
+  glow and light dot, charge pulse rings, haze canvases, the ambient clock — timer-woken,
+  idle floor 12 Hz, 0 when unseen — and lattice stepping),
+  `shader.ts`, `jelly-glsl.ts`, `haze-shader.ts` and `renderer.ts` (one shared
+  WebGL 2 context),
+  `policy.ts` and `color.ts` (pure, unit-tested decisions), `scene.ts` +
+  `scene-store.ts` (the page snapshot the rim refracts, built on
+  `eversion/capture`). `liquid/runtime.ts` is the fallback cursor light;
+  `liquid/hover-css.ts` is the PostCSS plugin that strips hand-written hover lifts
+  (deformation comes from `jelly/physics.ts` only). `dough.ts` is the globe's
+  soft-body field (pure, unit-tested; unrelated to `jelly/`). Contract:
+  [`docs/plasmatic-jelly-system.md`](../docs/plasmatic-jelly-system.md).
 - **Frontend WebAssembly:** `wasm/` at the repo root contains AssemblyScript
   dough and Peirce kernels; `lib/wasm/` owns loading, fixed memory and JavaScript
   fallbacks. `DoughBody.enableWasm()` migrates the current state after loading;

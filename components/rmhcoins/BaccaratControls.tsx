@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
 import { useBettingCountdown, BettingCountdown } from './BettingCountdown';
 import { CoinIcon } from './CoinIcon';
 import { useBaccaratStore } from '@/lib/baccarat/store';
@@ -131,15 +132,16 @@ export function BaccaratControls({ coins }: Props) {
         {/* Side bet buttons — 2x2 on mobile, 4 across on larger */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {SIDE_BET_OPTIONS.map((opt) => (
-            <button
+            <Button
               key={opt.type}
+              variant="secondary"
               onClick={() => handlePlaceBet(opt.type)}
               disabled={coins - totalBet < chipAmount}
-              className="flex flex-col items-center justify-center gap-0.5 min-h-11 p-2.5 rounded-site-sm bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover active:scale-95 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-auto min-h-11 flex-col gap-0.5 p-2.5 has-[>svg]:px-2.5"
             >
               <span className="text-xs font-bold leading-tight">{opt.label}</span>
               <span className="text-[10px] text-site-text-dim leading-tight">{opt.payout}</span>
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -148,24 +150,24 @@ export function BaccaratControls({ coins }: Props) {
           <span className="text-xs text-site-text-dim shrink-0">{t("chip-label", { defaultValue: "Chip:" })}</span>
           <div className="flex gap-1.5 flex-1">
             {[5, 25, 100, 500].map((amt) => (
-              <button
+              <Button
                 key={amt}
+                variant={chipAmount === amt ? 'default' : 'secondary'}
+                aria-pressed={chipAmount === amt}
                 onClick={() => setChipAmount(amt)}
-                className={`flex-1 min-h-10 text-xs font-bold rounded-site-sm border transition-colors active:scale-95 ${
-                  chipAmount === amt
-                    ? 'bg-site-accent border-site-accent text-site-accent-fg'
-                    : 'bg-site-surface border-site-border text-site-text-dim hover:text-site-text hover:bg-site-surface-hover'
+                className={`h-auto min-h-10 flex-1 px-0 text-xs font-bold ${
+                  chipAmount === amt ? '' : 'text-site-text-dim hover:text-site-text'
                 }`}
               >
                 {amt}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
 
         {/* Current bets summary + clear button */}
         {totalBet > 0 && (
-          <div className="flex flex-col gap-2 p-3 rounded-site-sm bg-site-surface border border-site-border">
+          <div className="glass-fill flex flex-col gap-2 p-3 rounded-site-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs text-site-text-dim">{t("your-bets-this-round", { defaultValue: "Your bets this round:" })}</span>
               <div className="flex items-center gap-1">

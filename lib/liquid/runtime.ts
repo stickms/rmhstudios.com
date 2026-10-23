@@ -1,12 +1,21 @@
 /**
  * Shared cursor lighting for surfaces outside the shader budget. Only a
- * decorative leaf moves; clicks never translate or animate surface hosts.
- * Shader-backed surfaces own their lighting. Clicks and taps never emit waves.
+ * decorative leaf moves; this module never translates or animates surface hosts
+ * (the bounded soft-body motion is `lib/jelly/physics.ts`'s job). Shader-backed
+ * surfaces own their lighting. Clicks and taps never emit waves.
+ *
+ * Frames come from the one jelly frame driver (`lib/jelly/frame.ts`) and pointer input from the one jelly pointer hub
+ * (`lib/jelly/pointer.ts`): this module owns no animation-frame loop and no pointer listeners of its own. The light is
+ * an input-driven one-shot: each pointer move wakes the driver for a single paint.
  */
+import { drive } from '@/lib/jelly/frame';
+import { onJellyPointer } from '@/lib/jelly/pointer';
+import { DEGRADED_ROOT_SELECTOR, OPT_OUT_SELECTOR } from '@/lib/jelly/tiers';
+
 const SURFACES =
   '.glass-fill,.glass-pane,.glass-chrome,.glass-overlay,.glass-interactive,.app-glass,[data-evert],[data-liquid-surface],.app-theme [class~="bg-(--app-surface)"]';
-const EXCLUDE =
-  '[data-liquid-motion="off"],[data-fluid-press="none"],[data-fluid-press="off"],.eversion-overlay,.evert-ghost,.radial-globe__stage,canvas,input,textarea,select,[contenteditable="true"],[disabled],[aria-disabled="true"]';
+/** The shared jelly opt-outs (`lib/jelly/tiers.ts`) plus what never takes a light: layers, fields, disabled controls. */
+const EXCLUDE = `${OPT_OUT_SELECTOR},.eversion-overlay,.evert-ghost,.radial-globe__stage,canvas,input,textarea,select,[contenteditable="true"],[disabled],[aria-disabled="true"]`;
 export function installLiquidInteractions(doc: Document = document): () => void {
   const win = doc.defaultView;
   if (!win) return () => {};
@@ -17,7 +26,8 @@ export function installLiquidInteractions(doc: Document = document): () => void 
   ];
   const fine = win.matchMedia('(hover: hover) and (pointer: fine)');
   let appContrast = !!doc.querySelector('.app-high-contrast');
-  let lightRaf = 0;
+  /** A paint is pending on the next driver frame. */
+  let lightPending = false;
   let lightHost: HTMLElement | null = null;
   let light: HTMLSpanElement | null = null;
   let beam: HTMLSpanElement | null = null;
@@ -29,12 +39,11 @@ export function installLiquidInteractions(doc: Document = document): () => void 
   const disabled = () =>
     doc.hidden ||
     queries.some((q) => q.matches) ||
-    root.matches('.reduce-transparency,.style-high-contrast,.perf-lite') ||
+    root.matches(DEGRADED_ROOT_SELECTOR) ||
     appContrast;
 
   const clearLight = (smooth = false) => {
-    win.cancelAnimationFrame(lightRaf);
-    lightRaf = 0;
+    lightPending = false;
     if (smooth && !light && !disabled()) return;
     for (const retiring of fadingLights) {
       retiring.getAnimations().forEach((a) => a.cancel());
@@ -65,7 +74,8 @@ export function installLiquidInteractions(doc: Document = document): () => void 
     event.target instanceof win.Element ? event.target : null;
 
   const paintLight = () => {
-    lightRaf = 0;
+    if (!lightPending) return;
+    lightPending = false;
     if (disabled() || !fine.matches || !lightHost?.isConnected) {
       clearLight(true);
       return;
@@ -108,7 +118,10 @@ export function installLiquidInteractions(doc: Document = document): () => void 
       host.append(light);
       light.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 100, easing: 'ease-out' });
     }
-    if (!lightRaf) lightRaf = win.requestAnimationFrame(paintLight);
+    if (!lightPending) {
+      lightPending = true;
+      lightDriver.wake();
+    }
   };
   const invalidate = () => {
     lightBounds = null;
@@ -142,9 +155,20 @@ export function installLiquidInteractions(doc: Document = document): () => void 
   queries.forEach((q) => q.addEventListener('change', preferenceChange));
   const fineChange = () => clearLight();
   fine.addEventListener('change', fineChange);
-  doc.addEventListener('pointermove', onMove, { passive: true });
-  doc.addEventListener('pointercancel', clear, { passive: true });
-  doc.addEventListener('pointerout', onOut, { passive: true });
+  // One paint per wake; never stays awake on its own. Order 25: after the engine (20), before arcs (30).
+  const lightDriver = drive(
+    () => {
+      paintLight();
+      return false;
+    },
+    { order: 25 },
+    win as Window & typeof globalThis,
+  );
+  const unPointer = [
+    onJellyPointer('pointermove', onMove, win),
+    onJellyPointer('pointercancel', clear, win),
+    onJellyPointer('pointerout', onOut, win),
+  ];
   function onOut(event: PointerEvent) {
     if (!event.relatedTarget) clearLight(true);
   }
@@ -154,12 +178,11 @@ export function installLiquidInteractions(doc: Document = document): () => void 
   win.addEventListener('blur', clear);
   return () => {
     clear();
+    lightDriver.stop();
+    for (const u of unPointer) u();
     observer.disconnect();
     queries.forEach((q) => q.removeEventListener('change', preferenceChange));
     fine.removeEventListener('change', fineChange);
-    doc.removeEventListener('pointermove', onMove);
-    doc.removeEventListener('pointercancel', clear);
-    doc.removeEventListener('pointerout', onOut);
     doc.removeEventListener('visibilitychange', clear);
     doc.removeEventListener('scroll', invalidate, true);
     win.removeEventListener('resize', invalidate);

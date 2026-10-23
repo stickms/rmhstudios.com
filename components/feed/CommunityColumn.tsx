@@ -387,7 +387,7 @@ function AnnounceDialog({
  placeholder={t('announcement-placeholder', {
  defaultValue:'Share an update with the community…',
  })}
- className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+ className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
  />
  <div className="flex justify-end gap-2">
  <Button variant="ghost"onClick={onClose} disabled={submitting}>

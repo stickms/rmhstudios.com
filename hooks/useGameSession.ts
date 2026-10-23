@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { markGamePlaying } from '@/lib/game-capabilities';
 import { requestScreenWakeLock } from '@/lib/shared/platform';
 import { useShortcuts } from '@/lib/shortcuts/useShortcuts';
 
@@ -16,6 +17,11 @@ import { useShortcuts } from '@/lib/shortcuts/useShortcuts';
  *    `active` goes false, re-acquired after the tab returns).
  *  - **One restart binding.** `R` (outside text fields) calls `onRestart`, and
  *    it is published to the shortcut registry so the help sheet lists it.
+ *
+ *  - **Quiet chrome during play.** While `active`, `<html>` carries
+ *    `data-game-state="playing"` (`markGamePlaying` in
+ *    `lib/game-capabilities.ts`), which stops the jelly material's ambient
+ *    motion and arcs; pausing or leaving the run clears it.
  *
  * Cost: two document listeners and a wake-lock sentinel while mounted. No
  * state, no renders, nothing per frame. Callbacks are read through refs, so an
@@ -74,6 +80,13 @@ export function useGameSession({
     if (!active || !wakeLock) return;
     return requestScreenWakeLock();
   }, [active, wakeLock]);
+
+  // `html[data-game-state="playing"]` while the run is live: the jelly
+  // material's ambient motion and arcs stop until it ends or pauses (R16).
+  useEffect(() => {
+    if (!active) return;
+    return markGamePlaying();
+  }, [active]);
 
   useShortcuts(
     onRestart

@@ -91,7 +91,7 @@ export function RouletteControls({ coins }: Props) {
         {/* Chip selector — circular chips, scrollable on tiny screens */}
         <div className="flex flex-col gap-1">
           <span className="text-xs text-site-text-dim text-center">{t("select-chip-value", { defaultValue: "Select chip value" })}</span>
-          <div className="flex justify-center gap-2 py-1 overflow-x-auto">
+          <div className="flex justify-center gap-2 py-1 overflow-x-auto" data-jelly-zone="playfield">
             {CHIP_VALUES.map((val) => (
               <button
                 key={val}
@@ -129,7 +129,7 @@ export function RouletteControls({ coins }: Props) {
 
         {/* Current bets summary */}
         {stagedBets.length > 0 && (
-          <div className="flex flex-col gap-1.5 p-2.5 rounded-site-sm bg-site-surface border border-site-border">
+          <div className="glass-fill flex flex-col gap-1.5 p-2.5 rounded-site-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs text-site-text-dim">{t("your-bets", { defaultValue: "Your bets" })}</span>
               <div className="flex items-center gap-1">

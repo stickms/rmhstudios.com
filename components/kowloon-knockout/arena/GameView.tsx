@@ -92,6 +92,7 @@ export default function GameView() {
     return (
         <div className="kk-arena" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
             <Canvas
+                data-jelly-zone="playfield"
                 shadows
                 dpr={[1, 2]}
                 gl={createKowloonRenderer}

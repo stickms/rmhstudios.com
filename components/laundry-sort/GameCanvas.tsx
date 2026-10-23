@@ -119,6 +119,7 @@ export function GameCanvas({
 
   return (
     <Canvas
+      data-jelly-zone="playfield"
       dpr={dpr}
       shadows={quality.shadows}
       // Idle screens (menu, lobby, results) draw once instead of burning a

@@ -31,17 +31,17 @@ const js = await bundle({
     resolveDir: root,
     loader: 'tsx',
     contents: `
-      import React, {useState} from 'react';
+      import React, {useEffect, useState} from 'react';
       import {createRoot} from 'react-dom/client';
       import {LazyMotion, MotionConfig, domMax} from 'framer-motion';
       import {LiquidTabs} from './components/ui/liquid-tabs';
       import {Button} from './components/ui/button';
       import {Card} from './components/ui/card';
-      import {useFluidPressLayer} from './hooks/useFluidPress';
+      import {installJellyPhysics} from './lib/jelly/physics';
       const tabs = [{id:'latest',label:'Latest'}, {id:'following',label:'Following'},
         {id:'saved',label:'Saved'}, {id:'disabled',label:'Unavailable',disabled:true}];
       function Fixture() {
-        useFluidPressLayer();
+        useEffect(() => installJellyPhysics(document), []);
         const [value,setValue] = useState('latest');
         return <LazyMotion features={domMax}><MotionConfig reducedMotion="never">
           <main className="vibe-app" data-fluid-press-scope>
@@ -51,7 +51,9 @@ const js = await bundle({
               <Card id="post" interactive className="social-post">
                 <h2>A place to share what you make</h2>
                 <p>Glass stays visible while words remain easy to read and select.</p>
-                <a href="#author" id="author">Visit the author</a>
+                {/* A link in running text is prose, never a soft body (lib/jelly/physics.ts PROSE_SELECTOR).
+                    A BARE link in a card is a card body under the jelly soft-policy, so it would press. */}
+                <p>Written by our community. <a href="#author" id="author">Visit the author</a></p>
                 <div className="actions">
                   <Button id="primary">New post</Button>
                   <Button id="secondary" variant="secondary">Reply</Button>
@@ -205,14 +207,26 @@ try {
     await page.waitForTimeout(140);
     const scale = await el.evaluate((el) => el.style.scale);
     check(
-      `${selector}: ${shouldMove ? 'press spring' : 'no press motion'}`,
-      shouldMove ? Boolean(scale) && Number(scale) < 1 : scale === '',
+      `${selector}: ${shouldMove ? 'press spring' : 'no press motion'} (scale ${scale || 'none'})`,
+      // Jelly press squash is volume-preserving and may be anisotropic (`scale: sx sy`, 02 §1.2): every axis sinks.
+      shouldMove
+        ? Boolean(scale) && scale.split(/\s+/).every((v) => Number(v) < 1)
+        : scale === '',
     );
     await page.mouse.up();
-    await page.waitForTimeout(650);
+    // Jelly: a control still under the pointer keeps its hover body (the dent), so "idle" is measured after the
+    // pointer leaves and the release wobble has settled (02 §1.2; settles well inside 1.5 s).
+    await page.mouse.move(1, 1);
+    await page.waitForTimeout(1500);
     check(
       `${selector}: releases to idle`,
-      await el.evaluate((el) => el.style.scale === '' && el.style.willChange === ''),
+      await el.evaluate(
+        (el) =>
+          el.style.scale === '' &&
+          el.style.translate === '' &&
+          el.style.willChange === '' &&
+          !el.hasAttribute('data-jelly-body'),
+      ),
     );
   }
   for (const selector of ['#primary', '#legacy', '[role="tab"]', 'nav[aria-label="Sections"] a'])
@@ -227,7 +241,7 @@ try {
   await page.mouse.down();
   await page.waitForTimeout(70);
   await page.mouse.move(1, 1);
-  await page.waitForTimeout(650);
+  await page.waitForTimeout(1500);
   check(
     'scroll intent cancels press',
     await page.locator('#legacy').evaluate((el) => el.style.scale === ''),

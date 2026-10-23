@@ -4,14 +4,16 @@
 > to [`docs/design-language.md`](./design-language.md) (tokens, themes,
 > primitives) and [`app/CLAUDE.md`](../app/CLAUDE.md) (routing mechanics).
 
-The site's design language is **Radial Avant-Garde Glass** (see
-[`design-language.md`](./design-language.md)): a radial shell — fixed ring
-backdrop, drifting aurora, slim top bar, and a central **RMH hub** that blooms
-into the **liquid globe** you turn to navigate — wrapping content rendered in
-the **Liquid Glass material**, in a strict high-contrast **monochrome** palette.
-The glass is shipped, not aspirational: surfaces are translucent tints over the
-shared aurora, every tier carries a rim glint, and the tier class is what the
-degradation switches (high contrast, reduced transparency, `perf-lite`) act on.
+The site's design language is **Radial Plasmatic Jelly** (see
+[`design-language.md`](./design-language.md)): a radial shell — fixed, still ring
+backdrop and aurora, slim top bar, and a central **RMH hub** that blooms into the
+**liquid globe** you turn to navigate — wrapping content rendered in the
+**Plasmatic Jelly material**, in a strict high-contrast **monochrome** palette.
+Surfaces are hazy, translucent slabs with a refracting rim, a gently drifting
+interior, a soft body under the pointer and electric arcs between neighbours
+([the contract](./plasmatic-jelly-system.md)). The role class (`.glass-*`) is
+what carries all of that, and what the degradation switches (high contrast,
+reduced transparency, `perf-lite`, the jelly motion and arcs settings) act on.
 Pages look consistent because they share four things: the `_site` **radial
 shell**, the `PageLayout` column system, the `--site-*` token contract, and the
 same route-level conventions (head/SEO, i18n, auth, loading and error states).
@@ -148,9 +150,10 @@ Work through this for every new or edited page:
 - [ ] Surfaces via `Card` (L1 `.glass-fill` by default; `pane` for L2,
       `interactive` for the hover tint-raise + hover-raised rim glint + press
       flex) or the glass elevation classes
-      (design-language.md §5.1) — repeated rows/tiles use `.glass-fill` (no
-      blur), singular panels `.glass-pane`, floating UI `.glass-overlay`. Raw
-      `bg-site-surface` still works (degrades to a translucent L1 tint).
+      (design-language.md §5.1) — repeated rows/tiles use `.glass-fill`,
+      singular panels `.glass-pane`, floating UI `.glass-overlay`. Raw
+      `bg-site-surface` paints a box with none of the jelly (no haze, rim or
+      soft body) — reach for the role.
 - [ ] Buttons via `<Button variant size>`; pills via `<Badge>`; icons from
       `lucide-react`.
 - [ ] Tab strips via `<LiquidTabs>` (`components/ui/liquid-tabs.tsx`), placed
@@ -186,18 +189,22 @@ Work through this for every new or edited page:
       `.site-sticky-contained`. Never pin two stickies to the same `top` — they
       overlap and hide each other while scrolled.
 - [ ] Use the shared material roles throughout the radial shell. The chosen
-      tier supplies tint, clear coat/rim and native blur where appropriate;
-      repeated fills have no blur. Preference fallbacks are central. Never rely on an optic for
-      **legibility** — text has to hold on `--site-surface-opaque` too, because
-      high-contrast, reduced transparency and perf-lite all collapse to it. Opt
-      into material through the role class. Historical `refract`/`liquid` flags
-      are compatibility aliases; the former SVG lenses and sheen renderer were
-      replaced. See [the liquid glass contract](liquid-glass-system.md).
-- [ ] **Decorative pointer and tap responses use the shared liquid runtime.**
-      No per-card pointer listeners, gradient-position animation or tilt hook.
-      The runtime bounds discovery, nearby waves and one active cursor-light
-      carrier, follows preferences and releases effects at rest. Game/gesture
-      subtrees can use `data-liquid-motion="off"`. Hover remains a CSS state.
+      tier supplies the haze, the refracting rim and the soft body; there is no
+      `backdrop-filter` in any role. Preference fallbacks are central. Never
+      rely on an optic for **legibility** — text has to hold on
+      `--site-surface-opaque` too, because high-contrast, reduced transparency
+      and perf-lite all collapse to it. Opt into material through the role
+      class. Historical `refract`/`liquid` flags are compatibility aliases. See
+      [the plasmatic jelly contract](plasmatic-jelly-system.md).
+- [ ] **Decorative responses come from the jelly services.** Squash, wobble,
+      hover lean, neighbour nudges, cursor light and arcs are drawn by
+      `lib/jelly` and the glass engine — no per-card pointer listeners, CSS
+      hover lifts, framer `whileHover`/`whileTap` scale, gradient-position
+      animation, `infinite` keyframes or arc code in a component. Gesture
+      subtrees (joysticks, drag handles, game play-fields) opt out with
+      `data-jelly-scope="off"` / `data-jelly-zone="playfield"`; a single element
+      with `data-jelly="off"`. Nothing `position: fixed` inside a jelly host — a
+      host that can carry a transform is its containing block; portal it.
 - [ ] **Nothing writes a custom property to `<html>` per frame.** Root custom
       properties are inherited by the entire document and have no invalidation
       set, so one such write per frame is a whole-document restyle per frame —
@@ -335,9 +342,9 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    (§13 rule 6). `rounded-full` and `rounded-none` are shapes, not radii, and
    stay fine.
    2b. A dropdown / popover / menu / tooltip on `.glass-fill` instead of
-   `.glass-overlay`. L1 has **no backdrop blur** — it is the tier for repeated
-   cards — so a menu built on it is transparent over whatever it opened on top
-   of. CI-enforced (§13 rule 7).
+   `.glass-overlay`. L1 is the tier for repeated cards and has no opaque
+   legibility floor, so a menu built on it is transparent over whatever it
+   opened on top of. CI-enforced (§13 rule 7).
    2b2. `transition-all`. It makes the engine watch every animatable property
    including the layout ones, so a state change that touches `width` or `gap`
    animates a reflow. Name what moves (`transition-colors`,
@@ -363,13 +370,15 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    behind the floating mobile dock. `.pb-dock` clears the dock, the home
    indicator, and iOS Safari's floating tab bar (via `--safe-bottom`) on mobile
    and collapses to 0 at md+.
-   Also: putting a backdrop tier (`.glass-pane/chrome/overlay`) on repeated list
-   items (blur cost) or on an ancestor of a `position:fixed` element (containing
-   block) — see design-language.md §5.1.
+   Also: putting a singular tier (`.glass-pane/chrome/overlay`) on repeated list
+   items (it spends the rim and haze budget), or any jelly host on an ancestor
+   of a `position:fixed` element (a transformable host is its containing block)
+   — see design-language.md §5.1.
 8. Adding `react-icons`, new font imports, or one-off animation systems.
-   8b. Adding decorative pointer tracking outside `lib/liquid/runtime.ts`, or
-   moving a gradient centre/root custom property at pointer rate. Extend the
-   bounded shared field instead (see `docs/liquid-glass-system.md`). Also avoid
+   8b. Adding decorative pointer tracking, deformation or arcs outside the
+   jelly services, or moving a gradient centre/root custom property at pointer
+   rate. Extend the shared service instead (see
+   `docs/plasmatic-jelly-system.md`). Also avoid
    reveal-on-scroll that defaults to `opacity: 0`: use `useReveal`, whose hidden
    state is opt-in and cannot strand content when JS does not arrive.
 9. Re-adding app-frame edges: `border-r border-site-border` on page columns,
@@ -386,4 +395,4 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
 Search/filter controls immediately follow the relevant tabs, before promotional or summary content.
 Loading states reserve space, use the shell column measure, and do not insert a second rail gutter.
 Controls share `--site-control-radius` / `--site-radius-sm`; cards and dialogs use `--site-radius`.
-Click/tap feedback never emits a ripple or changes a control's layout dimensions.
+Click/tap feedback comes from the jelly service (squash, wobble, arcs); it never changes a control's layout dimensions, and neighbours move at most the bounded nudge.

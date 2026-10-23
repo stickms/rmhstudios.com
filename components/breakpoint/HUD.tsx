@@ -28,7 +28,7 @@ export function HUD({ snap }: { snap: MatchSnapshot }) {
   const timeLeft = snap.phaseEndsAt - snap.now;
 
   return (
-    <div className="bp-hud">
+    <div className="bp-hud" data-jelly-zone="hud">
       {/* ── Top bar: score + timer ── */}
       {snap.mode === 'zombies' ? (
         <div className="bp-topbar">

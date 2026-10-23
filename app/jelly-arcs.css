@@ -1,0 +1,38 @@
+/* Plasmatic Jelly — the electric-arc layer (docs/plans/plasmatic-jelly/03-arcs.md §4.1; master plan R13).
+
+   One Canvas2D overlay, created by the arc runtime (`lib/jelly/arcs/renderer.ts`, W2-C) and appended to <body>,
+   never React-rendered:
+
+     <canvas class="jelly-arc-layer" aria-hidden="true" data-liquid-glass="off" data-jelly-arcs="off"></canvas>
+
+   - Full viewport, fixed, click-through, `contain: strict` (strokes never invalidate layout outside the layer).
+   - Stacks at `--z-arcs` (45): above the quick panels / menus (40) so a bolt can reach a top-bar button, below the
+     z-50 dialogs and sheets so a modal covers it. A click arc INSIDE an open modal sets `data-layer="modal"` on the
+     canvas for its lifetime → `--z-arcs-modal` (55). Tooltips, the toaster and the cursor stay above both.
+   - Decoration, not floating UI: no role class, no Tailwind classes, no L4 exemption needed.
+   - Off wherever jelly is off: high contrast (site + app), reduced transparency, forced colours, `perf-lite`, print.
+     The runtime does not start there either; this is the second line. Colours come from `--site-arc-core` /
+     `--site-arc-glow` (globals.css, per theme), read by the renderer, never from this sheet. */
+.jelly-arc-layer {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  z-index: var(--z-arcs);
+  pointer-events: none;
+  user-select: none;
+  contain: strict;
+}
+.jelly-arc-layer[data-layer='modal'] {
+  z-index: var(--z-arcs-modal);
+}
+:is(.reduce-transparency, .style-high-contrast, .perf-lite, .app-high-contrast) .jelly-arc-layer,
+html:is([data-electric-arcs='off'], [data-jelly-motion='still'], [data-game-state='playing'])
+  .jelly-arc-layer {
+  display: none !important;
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active), print {
+  .jelly-arc-layer {
+    display: none !important;
+  }
+}

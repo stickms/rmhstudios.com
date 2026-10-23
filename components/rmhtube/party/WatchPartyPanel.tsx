@@ -26,7 +26,7 @@ export default function WatchPartyPanel({ onClose }: { onClose: () => void }) {
     <div
       role="dialog"
       aria-label={t('party-title', { defaultValue: 'Watch party games' })}
-      className="fixed right-3 top-16 z-50 flex max-h-[min(36rem,calc(100dvh-5rem))] w-[min(26rem,calc(100vw-1.5rem))] flex-col rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) shadow-(--app-shadow)"
+      className="fixed right-3 top-16 z-50 flex max-h-[min(36rem,calc(100dvh-5rem))] w-[min(26rem,calc(100vw-1.5rem))] flex-col rounded-(--app-radius) app-glass"
     >
       <div className="flex items-center justify-between gap-2 border-b border-(--app-border) p-2">
         <LiquidTabs

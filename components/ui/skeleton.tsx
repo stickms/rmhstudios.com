@@ -21,6 +21,11 @@ function Skeleton({ className, shimmer = false, ...props }: SkeletonProps) {
  return (
  <div
  data-slot="skeleton"
+ // Tier L jelly (04 §1): the static haze and rim of a card at rest
+ // (app/jelly-coverage.css §7), never a carrier — the drift above is
+ // the only motion a placeholder may have.
+ data-jelly="lite"
+ data-jelly-flow="off"
  className={cn(
  // Glass tint fill — reads as light moving through frosted glass; the
  // shimmer highlight (globals.css) rides on top.

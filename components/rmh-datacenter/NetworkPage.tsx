@@ -106,7 +106,7 @@ export default function NetworkPage() {
                 'Median round trip between campuses over the backbone, sampled every minute for the last ninety days. These are the numbers a replication design should be built against — not great-circle distance divided by the speed of light in glass.',
             })}
           </p>
-          <div className="mt-4 overflow-x-auto rounded-site border border-site-border">
+          <div className="glass-fill mt-4 overflow-x-auto">
             <table className="w-full min-w-xl border-collapse text-sm">
               <caption className="border-b border-site-border p-3 text-left text-xs text-site-text-dim">
                 {t('net-matrix-caption', {

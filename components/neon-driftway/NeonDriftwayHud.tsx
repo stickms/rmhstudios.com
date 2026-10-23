@@ -364,6 +364,7 @@ export const NeonDriftwayHud = forwardRef<HudHandle, Props>(function NeonDriftwa
     <div
       ref={rootRef}
       aria-hidden="true"
+      data-jelly-zone="hud"
       className="pointer-events-none absolute inset-0 z-30 select-none"
       style={{ display: visible ? undefined : 'none' }}
     >

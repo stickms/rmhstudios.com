@@ -81,7 +81,7 @@ export function Dice({
   const shown = faces ?? Array.from({ length: DICE_COUNT }, () => null);
 
   return (
-    <div className={cn('gh-orb', className)}>
+    <div className={cn('gh-orb', className)} data-jelly-zone="playfield">
       <div
         className="flex items-center justify-center gap-2.5"
         role="group"

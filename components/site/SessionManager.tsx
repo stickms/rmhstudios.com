@@ -160,46 +160,48 @@ export function SessionManager() {
           {t('sessions-empty', { defaultValue: 'No active sessions found.' })}
         </p>
       ) : (
-        <ul className="divide-y divide-site-border rounded-site-sm border border-site-border">
-          {sessions.map((s) => {
-            const { label, kind } = describeDevice(s.userAgent);
-            const Icon = kind === 'mobile' ? Smartphone : kind === 'tablet' ? Tablet : Laptop;
-            const isCurrent = s.token === currentToken;
-            return (
-              <li key={s.id} className="flex items-center gap-3 px-3 py-2">
-                <Icon className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-site-text">
-                    {label}
-                    {isCurrent && (
-                      <span className="ms-2 rounded-full bg-site-accent/15 px-2 py-0.5 text-xs font-medium text-site-accent">
-                        {t('session-current', { defaultValue: 'This device' })}
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-xs text-site-text-dim">
-                    {s.ipAddress ? `${s.ipAddress} · ` : ''}
-                    {s.updatedAt
-                      ? t('session-active', {
-                          defaultValue: 'Active {{when}}',
-                          when: formatDistanceToNow(new Date(s.updatedAt), { addSuffix: true }),
-                        })
-                      : null}
-                  </p>
-                </div>
-                {!isCurrent && (
-                  <IconButton
-                    icon={LogOut}
-                    label={t('session-revoke', { defaultValue: 'Sign out device' })}
-                    onClick={() => revokeOne(s)}
-                    disabled={busy}
-                    className="hover:text-site-danger"
-                  />
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        <div className="glass-fill rounded-site-sm">
+          <ul className="divide-y divide-site-border">
+            {sessions.map((s) => {
+              const { label, kind } = describeDevice(s.userAgent);
+              const Icon = kind === 'mobile' ? Smartphone : kind === 'tablet' ? Tablet : Laptop;
+              const isCurrent = s.token === currentToken;
+              return (
+                <li key={s.id} className="flex items-center gap-3 px-3 py-2">
+                  <Icon className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-site-text">
+                      {label}
+                      {isCurrent && (
+                        <span className="ms-2 rounded-full bg-site-accent/15 px-2 py-0.5 text-xs font-medium text-site-accent">
+                          {t('session-current', { defaultValue: 'This device' })}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-site-text-dim">
+                      {s.ipAddress ? `${s.ipAddress} · ` : ''}
+                      {s.updatedAt
+                        ? t('session-active', {
+                            defaultValue: 'Active {{when}}',
+                            when: formatDistanceToNow(new Date(s.updatedAt), { addSuffix: true }),
+                          })
+                        : null}
+                    </p>
+                  </div>
+                  {!isCurrent && (
+                    <IconButton
+                      icon={LogOut}
+                      label={t('session-revoke', { defaultValue: 'Sign out device' })}
+                      onClick={() => revokeOne(s)}
+                      disabled={busy}
+                      className="hover:text-site-danger"
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
 
       {otherCount > 0 && (

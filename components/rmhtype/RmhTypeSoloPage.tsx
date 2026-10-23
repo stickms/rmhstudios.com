@@ -171,7 +171,7 @@ export default function RmhTypeSolo() {
 
         <div className="flex-1 p-4 md:p-8">
           <div className="max-w-lg mx-auto">
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) app-glass p-6">
               <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                 <User className="h-5 w-5 text-(--app-accent)" />
                 {t("solo-practice", { defaultValue: "Solo Practice" })}
@@ -285,7 +285,7 @@ export default function RmhTypeSolo() {
         <RmhTypeHeader backLabel={t("back", { defaultValue: "Back" })} onBack={handleBackToSettings} />
         <div className="flex-1 p-4 md:p-8">
           <div className="max-w-lg mx-auto">
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-8 text-center">
+            <div className="rounded-(--app-radius) app-glass p-8 text-center">
               <Trophy className="h-12 w-12 mx-auto mb-4 text-(--app-accent)" />
               <h2 className="text-2xl font-bold mb-6">{t("results", { defaultValue: "Results" })}</h2>
 
@@ -377,7 +377,7 @@ export default function RmhTypeSolo() {
               )}
 
               {/* Passage — fills remaining space, scrolls internally */}
-              <div ref={passageRef} className="flex-1 min-h-0 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 rmhtype-passage-scroll">
+              <div ref={passageRef} data-jelly-group="off" data-jelly="lite" className="flex-1 min-h-0 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 rmhtype-passage-scroll">
                 <div className={`rmhtype-passage select-none${source === 'code' ? ' font-mono whitespace-pre-wrap' : ''}`}>
                   {[...soloPassage].map((char, i) => {
                     let className = 'rmhtype-char-untyped';

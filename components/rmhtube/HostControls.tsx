@@ -364,7 +364,7 @@ export default function HostControls({
             <div
               data-motion="pop"
               data-state={speedMenu.state}
-              className="absolute bottom-full mb-1 right-0 origin-bottom-right z-50 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) shadow-(--app-shadow) py-1 min-w-25"
+              className="absolute bottom-full mb-1 right-0 origin-bottom-right z-50 rounded-(--app-radius-sm) app-glass py-1 min-w-25"
             >
               {PLAYBACK_SPEEDS.map((speed) => (
                 <button

@@ -205,7 +205,7 @@ export function ConciergePanel({ className }: { className?: string }) {
                 type="button"
                 disabled={loading}
                 onClick={() => void ask(t(s.key, { defaultValue: s.text }))}
-                className="inline-flex min-h-11 items-center rounded-full border border-site-border bg-site-surface px-4 py-2 text-xs text-site-text-muted transition-colors hover:border-site-accent/50 hover:text-site-text disabled:opacity-50"
+                className="glass-fill glass-interactive inline-flex min-h-11 items-center rounded-full px-4 py-2 text-xs text-site-text-muted transition-colors hover:border-site-accent/50 hover:text-site-text disabled:opacity-50"
               >
                 {t(s.key, { defaultValue: s.text })}
               </button>

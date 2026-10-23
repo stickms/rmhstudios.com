@@ -43,6 +43,9 @@ export function IconButton({
  size={size}
  aria-label={label}
  title={showTooltip ? undefined : label}
+ // Tier L jelly (04 §1): the button's rim and press droplet, but no ambient carrier —
+ // a toolbar of moving glyph discs is motion nobody asked for. Callers may override.
+ data-jelly-flow="off"
  {...props}
  >
  {Icon ? <Icon aria-hidden /> : children}

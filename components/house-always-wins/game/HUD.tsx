@@ -30,7 +30,7 @@ export function HUD({ areaLabel, prompt }: HUDProps) {
   return (
     <>
       {/* Top bar */}
-      <div className="pointer-events-none absolute top-0 right-0 left-0 z-10 flex items-start justify-between px-4 py-3">
+      <div className="pointer-events-none absolute top-0 right-0 left-0 z-10 flex items-start justify-between px-4 py-3" data-jelly-zone="hud">
         <div>
           <div className="font-mono text-[11px] tracking-[0.25em] text-[#c8b89a] uppercase opacity-70">
             {areaLabel}

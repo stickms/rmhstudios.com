@@ -50,6 +50,7 @@ function BooleanSetting({
     <button
       type="button"
       role="switch"
+      data-jelly="control"
       aria-checked={value}
       disabled={!editable}
       onClick={() => onChange(!value)}

@@ -11,23 +11,18 @@
 @layer components {
   :root {
     --liquid-rim: color-mix(in srgb, white 62%, transparent);
+    /* The gel coat (#989 layer 1): a hazy body that darkens slightly toward its base — VERTICAL, from the theme's
+       `--gel-body` to `--gel-depth`. It replaced a 155deg/145deg diagonal clear-coat whose white band swept across
+       every face: #989 forbids a gloss band or glint across a surface (shine lives only at the edges, drawn by the
+       rim below and in jelly-material.css §4, and in the dent). Restated per host in jelly-material.css §2 so the
+       gradient resolves against the host's own theme tokens (scoped theme previews). */
     --liquid-coat: linear-gradient(
-      155deg,
-      rgb(255 255 255 / 0.16),
-      transparent 38%,
-      rgb(255 255 255 / 0.025) 76%,
-      rgb(255 255 255 / 0.08)
+      180deg,
+      var(--gel-body, transparent),
+      var(--gel-depth, transparent)
     );
-    /* A repeated card's CSS face: what it shows before the engine admits it, past the
-       shader budget, and on every fallback tier. Visible in light and dark, no blur. */
-    --liquid-fill-coat:
-      linear-gradient(
-        145deg,
-        color-mix(in srgb, var(--site-surface-opaque) 58%, transparent),
-        transparent 48%,
-        color-mix(in srgb, var(--site-text) 5%, transparent)
-      ),
-      var(--liquid-coat);
+    /* A repeated card's CSS face: the same gel coat, one layer (it was a second diagonal highlight). */
+    --liquid-fill-coat: var(--liquid-coat);
     /* No shadows, no inset highlights: glass is not lifted off the page by a drop shadow, it is SEEN by what its edge
        does to the light, and the shader draws that (refracted rim, lit edge) on every surface the engine admits.
        `--liquid-edge` is kept as a name (a zero shadow, valid inside any box-shadow list) so no consumer breaks. The CSS
@@ -144,12 +139,17 @@
     width: 100%;
     height: 100%;
     /* -2, not -1: the eversion hover layer (`::before`, z-index -1) must paint OVER the slab. At -1 the canvas, being the
-       last child, painted over it and the opaque bevel band hid the outer ring of every hover: it looked cut off. */
+       last child, painted over it and the opaque bevel band hid the outer ring of every hover: it looked cut off.
+       Plasmatic Jelly adds one layer UNDER this: the haze (`.jelly-haze-canvas` or the CSS `.jelly-flow` carrier) paints
+       at z-index -3 (app/jelly-material.css). Order inside an isolated host: host tint → haze -3 → rim slab -2 →
+       evert hover -1 → live content. Nothing jelly paints at z ≥ 0 inside a host. */
     z-index: -2;
     pointer-events: none;
     user-select: none;
   }
-  [data-liquid-canvas='on'] {
+  /* A CSS jelly carrier (`.jelly-flow`, z -3) or a haze canvas needs the same isolated stacking context the rim slab
+     does, or its negative z-index resolves against the nearest ancestor context and paints under the host's tint. */
+  :is([data-liquid-canvas='on'], [data-jelly-flow='on'], [data-jelly-haze='on']) {
     isolation: isolate;
   }
   [data-liquid-canvas='on'][data-liquid-static] {
@@ -158,8 +158,12 @@
   :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay)[data-liquid-canvas='on']:not(
       [data-liquid-material='off']
     ) {
-    /* The slab draws the bevel and the lit edge, so the static coat steps aside. */
-    background-image: none;
+    /* The slab draws the bevel and the lit edge, so the static coat steps aside. The static jelly haze floor
+       (`--jelly-floor`, app/jelly-material.css) does NOT: a rim slab is not a haze canvas, and if the haze canvas never
+       arrives (budget, context loss) the floor is all the haze the surface has. It goes only under
+       `[data-jelly-haze='on']`, which jelly-material.css handles. */
+    background-image: var(--jelly-floor, none);
+    background-size: var(--jelly-floor-size, auto);
     box-shadow: none;
   }
 
@@ -168,18 +172,23 @@
     background: none;
   }
 
-  /* Controls (buttons, fields) the engine draws: the slab replaces the static coat. Their border and fill stay theirs. */
-  :is(
-      [data-slot='button'],
-      [data-slot='input'],
-      [data-slot='textarea'],
-      .glass-inset
-    )[data-liquid-canvas='on']:not([data-liquid-material='off']) {
+  /* Controls (buttons, fields) the engine draws: the slab replaces the static coat. Their border and fill stay theirs.
+     Fields keep the static jelly haze floor for the same reason the roles above do. */
+  [data-slot='button'][data-liquid-canvas='on']:not([data-liquid-material='off']) {
     background-image: none;
+  }
+  :is([data-slot='input'], [data-slot='textarea'], .glass-inset)[data-liquid-canvas='on']:not(
+      [data-liquid-material='off']
+    ) {
+    background-image: var(--jelly-floor, none);
+    background-size: var(--jelly-floor-size, auto);
   }
 
   /* A separate clipped carrier owns the moving light. No pseudo collisions,
-     gradient-position animation, backdrop filters or inherited CSS writes. */
+     gradient-position animation, backdrop filters or inherited CSS writes.
+     #989: no glint across a face — the pointer's light shows only in the gel's edge band (`--gel-bevel` wide, the
+     same content-box mask as a field's rim-only carrier), so it reads as the rim catching the light near the pointer,
+     never a hotspot sliding over the text. */
   .liquid-light {
     position: absolute;
     inset: 0;
@@ -188,6 +197,14 @@
     pointer-events: none;
     contain: strict;
     z-index: -1;
+    padding: var(--gel-bevel, 6px);
+    -webkit-mask:
+      linear-gradient(var(--site-surface-opaque) 0 0) content-box,
+      linear-gradient(var(--site-surface-opaque) 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(var(--site-surface-opaque) 0 0) content-box exclude,
+      linear-gradient(var(--site-surface-opaque) 0 0);
   }
   .liquid-light > span {
     position: absolute;

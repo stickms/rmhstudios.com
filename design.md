@@ -1,10 +1,19 @@
 # The RMH Studios Design Language
 
-**Radial Avant-Garde Glass.**
+**Radial Plasmatic Jelly.**
 
-Current motion contract (2026-10-22): every account and device uses the shared
-animation scheme. The website reduced-motion setting and browser/OS motion
-overrides are retired; older reduced-motion guidance below is superseded.
+Current material (2026-10-23): **Plasmatic Jelly** — hazy, translucent slabs with
+always-on internal motion, a soft body under the pointer, the retained 3D refracting
+rim of liquid glass, and electric arcs between nearby surfaces — with the owner's #989
+layers on top: dormant plasma that wakes under the hand, an RGB-led edge, a
+liquid-glass lens dent, and charge that hops and attracts. The implementation
+contract is [`docs/plasmatic-jelly-system.md`](docs/plasmatic-jelly-system.md); the
+binding summary is the "Design system: Plasmatic Jelly" section of
+[`CLAUDE.md`](CLAUDE.md).
+
+Current motion contract: every account and device uses the shared animation scheme.
+The website reduced-motion setting and browser/OS motion overrides are retired; the
+jelly's own ambient motion and arcs have their own material switches (§4, §7).
 
 This document is the _statement of the language_ — what the design is, why it is
 that way, and the laws that hold it together. It is written to be read start to
@@ -53,24 +62,46 @@ The consequence worth internalising: **navigating is a physical act here.** That
 raises the bar on the physics (§4) and it means chrome is never allowed to be
 inert.
 
-### Avant-garde glass — surfaces are a material, not a colour
+### Plasmatic jelly — surfaces are a material, not a colour
 
-The material uses translucent tint, a directional rim and a clear coat.
-Singular panes, chrome and overlays sample live content with native backdrop
-frost. Repeated cards use tint and reflection without adding blur samplers.
-A bounded shared runtime supplies surface-local cursor lighting. Tap waves bend
-the glass's optical normal while cards and text stay fixed; clicks never push or
-bounce neighbouring surfaces. The globe has a dielectric coat that refracts the page behind it and a dough body that dents, kneads and eases back.
+Every surface is a slab of slightly hazy, translucent plasma-jelly. Read it from
+the inside out: a **gel** body that darkens slightly toward its base; a low-contrast
+**haze** always drifting inside it — currents, eddies and faint plasma colour at the
+crests — calm behind text and livelier at the rim; a **plasma** core that sleeps
+invisibly until the hand wakes it (hover wakes it, press and focus brighten it, a
+click's charge rings through it); and the 3D refracting, lit **edge** of liquid glass,
+its light split into red, green and blue, with a one-pixel Fresnel line. There is no
+gloss band across the face — shine lives at the edges and in the dent.
 
-These are different optical capabilities behind one material language. Native
-HTML panels preserve live content and accessibility with an approximate clear
-coat; the globe models dielectric reflection/transmission, and eversion can
-refract its captured page textures. The [implementation contract](docs/liquid-glass-system.md)
-records those limits, ownership, fallbacks and budgets. Themes change the
+The jelly is soft: hover plumps and leans it toward the cursor, and press sinks a
+smooth **lens dent** under the pointer — content beneath refracts through it, split
+into colour, with a small light dot on its far slope. Drag and the dent slides with
+you; drag off the element and the gel stretches like a rubber band. Release eases it
+all back, wobbling to rest, and a strong release nudges near neighbours by a pixel or
+two. And it is charged: nearby surfaces occasionally throw an electric arc across the
+gap; a click deposits charge that hops to a neighbour with half of it; small gaps
+break down; charged neighbours lean toward each other by Coulomb's law, never past the
+nudge bound. Text, hit areas and layout never move beyond the bounded squash. The haze is drawn by a shader or
+by transform-only CSS layers — never by native backdrop frost. The globe has a
+dielectric coat that refracts the page behind it and a dough body that dents,
+kneads and eases back.
+
+These are different capabilities behind one material language. Native HTML panels
+preserve live content and accessibility, with the haze and the rim painted behind
+it; the globe models dielectric reflection/transmission, and eversion can refract
+its captured page textures. The [implementation contract](docs/plasmatic-jelly-system.md)
+records ownership, budgets, the idle policy, fallbacks and the photosensitivity
+limits. Themes change the
 material's palette through the same tokens throughout the site.
 
-The default palette is strict **high-contrast monochrome** — white canvas, ink
-text, ink accent, hairline black borders — rendered as glass. Restraint in the
+The identity is **silent, sleek, frontier AI** — calm, never busy. Its reference
+form is a near-black void, graphite surfaces, white ink and **one** electric accent,
+which is also the plasma colour; the default theme is the same rule in daylight
+(white canvas, ink text, ink accent). No gradients on the ground, no neon or glowing
+type, no sci-fi illustration (robots, brains, circuits, sparkles). Copy is short and
+literal ("Deploy model", "Latency 42 ms"). Text is **Geist**; eyebrows and data are
+**Geist Mono**. Each view has **one signal action** — the ink-gel
+`<Button variant="signal">` — and everything else on it is quieter. Restraint in the
 palette is what lets the optics be loud.
 
 ---
@@ -97,7 +128,7 @@ violation of one of them:
    zero-specificity rules, and a custom accent is contrast-checked at runtime —
    but hardcoding `text-white` on a themed surface defeats both.
 3. **Degradation is central, not per-component.** High contrast, reduced
-   transparency, reduced motion, `perf-lite` and forced colors are handled once,
+   transparency, `perf-lite`, forced colors and the jelly switches are handled once,
    in the token layer and the glass classes. A component that branches on them by
    hand is a bug. **Legibility must never depend on an optic** — text has to hold
    on `--site-surface-opaque`.
@@ -110,21 +141,24 @@ with a magic number is how five apps ended up with five focus rings.
 
 ## 3. The material: an elevation system
 
-Glass is **opt-in per element, by role**, through explicit classes. Pick by what
-the surface _is_, not by how you want it to look — the tier decides the cost.
+The material is **opt-in per element, by role**, through explicit classes. Pick by
+what the surface _is_, not by how you want it to look — the tier decides the cost.
+The classes keep the `glass-*` names: "glass" names the elevation role, "jelly"
+names the material that renders every role.
 
-| Tier   | Class            | For                                                   | Cost                                   |
-| ------ | ---------------- | ----------------------------------------------------- | -------------------------------------- |
-| **L1** | `.glass-fill`    | Repeated content: cards, rows, tiles                  | No blur. Unlimited.                    |
-| **L2** | `.glass-pane`    | Singular panels: heroes, composers, settings sections | Blur. Budgeted.                        |
-| **L3** | `.glass-chrome`  | Persistent chrome: sticky headers, rails, docks       | Blur; condenses on scroll.             |
-| **L4** | `.glass-overlay` | Floating UI: dialogs, popovers, menus, toasts         | Blur; more opaque so text can't ghost. |
-| —      | `.glass-inset`   | Fields: inputs, search fields, tab tracks             | A flush pool of the glass. No shadow.  |
-| —      | `.glass-scrim`   | Dialog and drawer backdrops                           | —                                      |
+| Tier   | Class            | For                                                   | Cost                               |
+| ------ | ---------------- | ----------------------------------------------------- | ---------------------------------- |
+| **L1** | `.glass-fill`    | Repeated content: cards, rows, tiles                  | Slab within budget; soft body.     |
+| **L2** | `.glass-pane`    | Singular panels: heroes, composers, settings sections | Slab + haze; budgeted.             |
+| **L3** | `.glass-chrome`  | Persistent chrome: sticky headers, rails, docks       | Slab + haze; condenses on scroll.  |
+| **L4** | `.glass-overlay` | Floating UI: dialogs, popovers, menus, toasts         | Slab; quietest, densest interior.  |
+| —      | `.glass-inset`   | Fields: inputs, search fields, tab tracks             | A flush pool of jelly. Never arcs. |
+| —      | `.glass-scrim`   | Dialog and drawer backdrops                           | —                                  |
 
-Modifiers (`.glass-interactive`, `.glass-refract`, `.glass-liquid`,
-`.glass-sheen-hover`, …) layer on top and each carries a per-page budget. They
-are **signature moments, not defaults**.
+Modifiers (`.glass-interactive`, `.glass-sheen-hover`, …) layer on top and each
+carries a per-page budget. They are **signature moments, not defaults**. The old
+optical modifiers (`.glass-refract`, `.glass-liquid`) are compatibility aliases
+with no effect of their own.
 
 Three properties of this system are load-bearing:
 
@@ -134,17 +168,22 @@ in its own border ring. This includes L1: the tier the site is mostly _made_ of
 rests at an ambient glint strength that hover raises to full. Glass that does not
 answer the light is just tinted paper.
 
-**Light and pressure belong to the material.** The shared runtime carries a
-small cursor light on a transform-only leaf; the shader carries neutral reflections. Clicks and taps never emit waves on UI surfaces; only the navigator globe's jelly ripples where it is pressed.
-Neither moves neighbouring cards or their text. It never paints a replacement cursor, moves a
-gradient centre, or animates a root variable. The background remains still.
-Reduced motion, reduced transparency and high contrast remove decorative
-responses live. See [the implementation contract](docs/liquid-glass-system.md).
+**Light, pressure and charge belong to the material.** One soft-body service
+squashes, dents and wobbles what you touch; one arc service draws the sparks and
+carries the charge; one engine clock moves the haze and wakes the plasma; and all of
+them share one frame and one pointer listener. A click discharges arcs and pulses the rim — it never changes
+layout, and neighbours move at most a bounded nudge that returns to rest. Nothing
+paints a replacement cursor, moves a gradient centre, or animates a root variable,
+and no component adds its own pointer loop, deformation or arc code. **The
+background remains still**: jelly moves, the room does not. Reduced transparency,
+high contrast, forced colours and `perf-lite` remove the ambient motion and arcs
+live. The navigator globe keeps its own dough jelly, which ripples where it is pressed. See [the implementation contract](docs/plasmatic-jelly-system.md).
 
 **A tier class is not decoration you can inline.** `bg-site-surface border
 border-site-border rounded-site shadow-site-sm` renders the same _box_ as
-`.glass-fill` and none of its _material_ — no noise, no glint, and nothing for
-the degradation tiers to switch off. Reach for the tier.
+`.glass-fill` and none of its _material_ — no haze, no rim, no soft body, and
+nothing for the degradation tiers to switch off. Under jelly that box is visibly
+dead next to its neighbours. Reach for the tier.
 
 **Nothing is debossed.** Glass sits _on_ the page and is lit from above — the
 globe is the reference object: a specular bloom, a bright rim, depth that rises
@@ -156,9 +195,10 @@ _highlight_ (a light top rim) is the glint and is fine; an inset _shadow_ is not
 `design-consistency.test.ts` fails a site-tier `shadow-inner` or dark
 `shadow-[inset_…]` (audit: `docs/ui-perf-audit-2026-10-09.md`).
 
-**Budgets are real.** Backdrop blur is per-element GPU work: at most ~8 blurred
-surfaces per viewport, and **zero on repeated list items**. This is why L1 exists
-and why the feed is built from it.
+**Budgets are real.** A rim slab, a haze canvas and a moving carrier are each
+per-element GPU work, so each has a per-tier cap (at most 24 rims, 8 animated haze
+canvases and 24 carriers on a desktop, fewer on phones); past it a surface keeps the
+static haze floor. There is no backdrop blur at all.
 
 ### The one rule with teeth
 
@@ -231,12 +271,28 @@ it is written — none of which looked like a performance bug in the source:
 5. **A gradient's position is paint, not composite.** Nothing slides a gradient;
    moving one re-rasterises the whole box. Travelling light is a fixed layer
    moved by `transform`.
+6. **Ambient motion is one capped loop that stops when nobody can see it** —
+   never a CSS `infinite` keyframe of your own. The jelly's haze ticks on the
+   engine's clock (30 Hz engaged, a 12 Hz floor when idle, 0 when the tab is
+   hidden, nothing hazy is on screen, or the tier is degraded), behind a governor
+   that only ever turns it down. A backdrop that never rests was the
+   [2026-10-08](docs/performance-audit-2026-10-08.md) failure; the jelly's floor is
+   a deliberate, budgeted reversal of that audit's "rest" limit, not a licence for
+   another perpetual layer.
 
-**Reduced motion stands the whole layer down** — presses don't spring, settles
-snap, ambient drift stops, the globe doesn't ripple. Direct manipulation that
-remains _useful_ (turning the globe) keeps working. This is the rule, not a
-courtesy: an unrequested full-surface animation is exactly what the preference is
-asking not to be shown.
+**Never fake a law.** Wobble, glow, ripple and flicker are forces in the
+services, never a keyframe, a `transition: transform` on a body or a second spring
+formula. The only sanctioned jelly keyframes are the haze drift, and the only
+filter on a body is the press lens, applied only while it is pressed. A new
+behaviour is a new force with a named constant for every number.
+
+**Ambient motion has a switch.** Surfaces that move on their own for more than a
+few seconds need a way to pause them (WCAG 2.2.2), and arcs are flashes (WCAG
+2.3.1). So the material carries two settings: **Jelly motion** (Lively · Calm ·
+Still, plus a one-tap "Pause ambient motion" in the quick panel) and **Electric
+arcs** (Full · Clicks only · Off), and a site-wide ledger caps arc flashes at three
+per second. These are material controls, not the retired reduced-motion setting:
+they read no OS motion preference and leave navigation transitions alone.
 
 ---
 
@@ -268,6 +324,10 @@ Three habits follow:
 - **Rhythm comes from tokens.** Gutters, section gaps, panel padding and sticky
   offsets are named; repeated content floats as spaced cards, and hairline
   dividers live _inside_ container cards, never between page-level sections.
+- **Jelly needs room.** Bodies sit at least 16px apart (`--space-4`) and keep a
+  16px unclipped margin (`--jelly-margin`) round them — no `overflow: hidden`
+  directly around a body — so the squash, the bulge opposite a dent and the rubber
+  band never get cut off.
 
 Full-screen experiences — games, login, legal pages — live outside the shell
 deliberately and own their own look.
@@ -280,13 +340,14 @@ A theme is a `.style-<id>` class on `<html>` and a block of `--site-*` values.
 That is the entire mechanism. Adding one is a CSS block plus a catalog entry;
 nothing else changes.
 
-- The **default** is strict monochrome glass. Others are the same material in
+- The **default** is strict monochrome jelly. Others are the same material in
   their own palette over their own aurora.
 - **High contrast is not a theme variant — it is the absence of the material**:
-  opaque surfaces, no blur, 2px borders, no optics. Everything must survive it.
+  opaque surfaces, 2px borders, no optics, no haze, no arcs. Everything must
+  survive it.
 - On top of any theme, an **accent preset** overrides only the accent tokens.
-- A **glass clarity** setting scales how much scene shows through, from opaque
-  (the manual equivalent of the OS reduced-transparency preference) to clear.
+- A **reduce transparency** switch (beside the OS preference) makes every
+  surface opaque; the old glass-clarity slider is retired.
 - **User themes** are the same idea taken to a marketplace: a theme is colours
   plus a few scalar knobs, from which the full contract is _derived_ — so every
   user theme is a correct glass tint and inherits future optics upgrades for
@@ -305,20 +366,25 @@ makes the accessible variants work.
 
 - **Focus is global and undoubled.** One `:focus-visible` treatment covers every
   interactive element; controls that draw their own opt out explicitly. Don't add
-  a second ring on top of the one you already have.
+  a second ring on top of the one you already have. The ring is `--focus-ring`,
+  solid and 2px — never the plasma glow, which is decoration.
+- **The material is never the message.** Plasma, haze, arcs and the lens are
+  `aria-hidden` decoration and never the only signal of state; text holds 4.5:1 on
+  gel, over haze and over woken plasma in every theme.
 - **Reach for the native element or the Radix-based primitive** before
   hand-rolling a widget. Icon-only controls are named; decorative icons are
   hidden.
 - **Every string goes through i18n** with an English default. 16 locales ship,
   and RTL (`ar`, `ur`) is first-class — logical spacing, mirrored directional
   icons, `dir` set before paint.
-- **Three preference switches and a device tier degrade the material centrally**:
-  reduced motion, reduced transparency, high contrast, forced colors, plus a
+- **Preference switches and a device tier degrade the material centrally**:
+  jelly motion, electric arcs, reduced transparency, high contrast, forced
+  colors, plus a
   `perf-lite` tier derived from conservative device facts (not a measured-fps
   probe, which would restyle the page under the user for reasons they can't see).
 - **Comfort is a settings suite, not a theme.** On top of whichever theme is
-  active, a visitor sets text size, density, a dyslexia-friendly face, an
-  in-account reduced-motion switch, glass clarity, tilt effects, and a
+  active, a visitor sets text size, density, a dyslexia-friendly face, a
+  jelly-motion and electric-arc switch, reduced transparency, tilt effects, and a
   **colour-vision mode**. Each is one more layer of the same token contract, so
   no component knows it happened.
 - **Colour is never the only carrier of meaning.** Roughly 8% of men have some
@@ -327,8 +393,8 @@ makes the accessible variants work.
   three semantic tokens to a palette that stays separable under each deficiency,
   and status badges pair every variant with a distinct glyph. The retint alone
   would not be enough.
-- **Test in at least three themes at two widths, once with reduced motion on.**
-  That is the floor.
+- **Test in at least three themes at two widths, once with jelly motion set to
+  Still.** That is the floor.
 
 ---
 
@@ -363,7 +429,7 @@ Most of this language is convention. A slice of it executes in CI:
   domain-fixed palette — a playing card, a roulette pocket — gets its own scoped
   variable group instead. Games and the `--app-*` apps are exempt by design.
 - **Floating UI is L4.** A positioned, stacked, edge-anchored element carrying a
-  tier below `.glass-overlay` is a dropdown with no backdrop blur, and fails.
+  tier below `.glass-overlay` lacks the opaque legibility floor, and fails.
 - **Motion that exists.** No `transition-all` anywhere (it animates layout
   properties nobody asked for), and no `tailwindcss-animate` class — that plugin
   is not installed, so `animate-in`/`fade-in-0`/`zoom-in-95` compile to zero
@@ -393,13 +459,15 @@ If you remember six things:
    falls short, and say so.
 2. **Reach for the primitive and the tier class.** A second copy of something
    shared is the most common defect in this repo's history.
-3. **Glass is a material with a budget.** Pick the tier by role. Nothing
-   continuously animating may sit above a full-viewport blur.
+3. **Jelly is a material with a budget.** Pick the tier by role. The haze,
+   soft body and arcs come from one service each, on one frame and one pointer
+   listener — never a per-component loop, never a faked law, and layout never
+   moves. One accent, one signal action per view.
 4. **Motion is shared physics, and it composites.** Springs with velocity,
    intent read from projection, response on pointer-down; the formulas live in
-   one file. `transform`/`opacity` and independent transforms only; the shared light
-   carrier may track input, but nothing writes root variables per frame.
-5. **Degrade centrally.** High contrast, reduced motion, reduced transparency and
-   `perf-lite` are the token layer's job — and legibility may never depend on an
-   optic.
-6. **Look at it.** Three themes, two widths, reduced motion once.
+   one file. `transform`/`opacity` and independent transforms only, and nothing
+   writes root variables per frame.
+5. **Degrade centrally.** High contrast, reduced transparency, `perf-lite` and
+   the jelly switches are the token layer's and the jelly policy's job — and
+   legibility may never depend on an optic.
+6. **Look at it.** Three themes, two widths, jelly motion Still once.

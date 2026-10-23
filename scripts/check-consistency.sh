@@ -269,11 +269,52 @@ review_site "Hex colour literal" \
   '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]([^0-9a-fA-F]|$)' \
   'Site UI reads colour from --site-* tokens; a fixed-palette domain gets its own scoped variable group.'
 
-# Site tier: decorative effects belong to the shared bounded material runtime;
-# games and gesture hooks retain their own input semantics.
-review_site "Pointer-position effect — verify shared liquid runtime ownership" \
+# Site tier: decorative effects belong to the jelly services; games and gesture
+# hooks retain their own input semantics.
+review_site "Pointer-position effect — verify jelly service ownership" \
   "(pointermove|mousemove)" \
-  'Decorative light/waves belong to lib/liquid/runtime.ts (docs/liquid-glass-system.md). No per-card listeners, animated gradient centres or inherited root writes. Gesture/gameplay input remains local.'
+  'Decorative light, haze, squash, wobble and arcs belong to the jelly service (lib/jelly, lib/liquid/glass; docs/plasmatic-jelly-system.md). No per-card listeners, animated gradient centres or inherited root writes. Gesture/gameplay input remains local.'
+
+# Plasmatic Jelly (lib/__tests__/jelly-ownership.test.ts N2, site-infinite-animation N3,
+# design-consistency N11). Previews of the vitest gates, scoped to added lines.
+# The /jelly lab (app/routes/jelly.tsx) is the one sanctioned importer — it demonstrates strike() on
+# demand — matching jelly-ownership.test.ts N2(a). POSIX ERE has no lookahead, so it is filtered out after the scan.
+n2_hits=$(scan '^(components|app/routes)/.*\.tsx?$' "from ['\"]@/lib/jelly/(physics|compose|bridge|arcs)" |
+  grep -v '^  app/routes/jelly\.tsx:' || true)
+if [ -n "$n2_hits" ]; then
+  fail "Component imports the jelly physics/arc service (N2)"
+  printf '%s\n' "$n2_hits"
+  printf '%s    → %s%s\n' "$dim" 'Components take jelly through role classes and data-jelly* attributes; the services mount once from hooks/useLiquidInteractions.ts (docs/plasmatic-jelly-system.md).' "$off"
+fi
+
+blocking "Perpetual CSS animation (N3)" \
+  '^(app/[^/]*|components/(ui|radial|feed|site)/.*)\.css$' \
+  '(animation[^:;]*:[^;]*infinite|animation-iteration-count:[[:space:]]*infinite)' \
+  'A free-standing infinite keyframe never stops (hidden tab, offscreen, jellyMotion=still, degraded tiers). Ambient motion goes through the jelly services — lib/__tests__/site-infinite-animation.test.ts.'
+
+review_site "Framer gesture transform on a site surface (N11)" \
+  'while(Hover|Tap)[[:space:]]*=[[:space:]]*\{[^}]*(scale|[^a-z]x|[^a-z]y)[[:space:]]*:' \
+  'A second writer on scale/translate fights the jelly soft body (lib/jelly/physics.ts). The role class or data-jelly="card|control" gives hover/press/release already.'
+
+# jelly-coverage ratchet preview: bg + border + rounded with no role class.
+HANDROLLED=$(scan_site 'class.*(bg-site-(surface|surface-opaque|bg|elevated).*(border.*rounded|rounded.*border)|border.*(bg-site-(surface|surface-opaque|bg|elevated).*rounded|rounded.*bg-site-(surface|surface-opaque|bg|elevated))|rounded.*(bg-site-(surface|surface-opaque|bg|elevated).*border|border.*bg-site-(surface|surface-opaque|bg|elevated)))' | grep -vE 'glass-|app-glass|data-liquid' || true)
+if [ -n "$HANDROLLED" ]; then
+  warn "Hand-rolled surface — no jelly role (jelly-coverage ratchet)"
+  printf '%s\n' "$HANDROLLED"
+  printf '%s    → A bg-site-surface + border + rounded box gets no jelly at all. Use the role: glass-fill (repeated), glass-pane (singular), glass-overlay (floating), glass-inset (fields) — scripts/codemods/jelly-roles.mjs; gate: lib/__tests__/jelly-coverage.test.ts.%s\n' "$dim" "$off"
+fi
+
+# N9 (review until the data-liquid-* codemod lands, then blocking): the
+# Liquid Glass vocabulary stops growing. New code speaks jelly.
+review "Old Liquid Glass vocabulary (N9)" \
+  '^(components|app|hooks|lib)/.*\.(tsx?|css)$' \
+  '(data-liquid-[a-z]+|@/lib/liquid/(runtime|glass/engine))' \
+  'New opt-outs are data-jelly="off" / data-jelly-scope="off" (lib/jelly/tiers.ts OPT_OUT_SELECTOR); the engine mounts from hooks/useLiquidInteractions.ts only. The old spelling is still read, never newly written.'
+if git "${DIFF[@]}" --name-only --diff-filter=A 2>/dev/null | grep -qE '(^|/)(liquid-[^/]*|useLiquid[^/]*)$'; then
+  warn "New file named liquid-* / useLiquid* (N9)"
+  git "${DIFF[@]}" --name-only --diff-filter=A 2>/dev/null | grep -E '(^|/)(liquid-[^/]*|useLiquid[^/]*)$' | sed 's/^/  /'
+  printf '%s    → New jelly code is named jelly-* / useJelly* (docs/plans/plasmatic-jelly/05-gates-docs-naming.md §3). Existing names stay.%s\n' "$dim" "$off"
+fi
 
 review "Per-frame write to a root custom property" \
   '^(components|app|hooks|lib)/.*\.tsx?$' \
@@ -379,6 +420,32 @@ else
     lib/__tests__/server-bundle-copies.test.ts
     lib/__tests__/test-discovery.test.ts
     lib/__tests__/fouc-contract.test.ts
+    lib/__tests__/handheld-tier.test.ts
+    lib/__tests__/jelly-contract.test.ts
+    lib/__tests__/jelly-ownership.test.ts
+    lib/__tests__/jelly-coverage.test.ts
+    lib/__tests__/jelly-legibility.test.ts
+    lib/__tests__/site-infinite-animation.test.ts
+    lib/__tests__/doc-pointers.test.ts
+    lib/__tests__/appearance-jelly-motion.test.ts
+    lib/__tests__/appearance-electric-arcs.test.ts
+    # #989: every CSS token that mirrors a lib/jelly/tiers.ts constant equals it.
+    lib/__tests__/jelly-tokens.test.ts
+    # The arc renderer (the arcs' only rAF owner) and runtime are named on
+    # their own as well as through lib/jelly/, so moving the directory can
+    # never silently drop the flash-ledger / live-arc-only contract.
+    lib/jelly/arcs/__tests__/renderer.test.ts
+    lib/jelly/arcs/__tests__/runtime.test.ts
+    # The one jelly frame driver and the one pointer hub (#989) — named for the
+    # same reason: they are the settle proof the rAF allowlist and N2(b) cite.
+    lib/jelly/__tests__/frame.test.ts
+    lib/jelly/__tests__/pointer.test.ts
+    # The press lens (the only filter on a body) and the engine/runtime frame
+    # and pointer ownership (#989).
+    lib/jelly/__tests__/lens.test.ts
+    lib/liquid/__tests__/frame-owners.test.ts
+    lib/jelly/
+    lib/liquid/
   )
   if [ "$FULL" = 1 ]; then
     if pnpm test; then pass "full vitest suite"; else fail "vitest suite"; fi
@@ -475,8 +542,16 @@ step "5. Look at it (nothing below is automatable)"
 if has '\.(tsx|css)$'; then
   cat <<'EOF'
   ● Three shipped themes × two widths: default (Daylight), .style-graphite
-    (Midnight), .style-high-contrast — at a phone width and a desktop width,
-    once with reduced motion on.  (design-language.md §0.9)
+    (Midnight), .style-high-contrast — at a phone width and a desktop width.
+    (design-language.md §0.9)
+  ● Jelly motion three ways (Settings → Appearance, html[data-jelly-motion]):
+    lively — haze drifts, hover plumps, press squashes and wobbles back, arcs
+    fire; calm — slower haze, no ambient arcs, no neighbour nudge; still —
+    nothing moves on its own, press only. In .style-high-contrast every haze,
+    carrier and arc must be gone.  (docs/plasmatic-jelly-system.md)
+  ● Did anything change LAYOUT, or move further than the bounded squash
+    (≤ 4px edge travel) or the ≤ 1.5px neighbour nudge? Text, hit areas and
+    document flow never move.
   ● A role-less switcher that marks its active slot some other way (an accent
     pill, a segmented control, a flex-1 button row with an active tint) is
     still a tab strip and still belongs on <LiquidTabs>. The gate cannot see

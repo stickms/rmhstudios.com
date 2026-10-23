@@ -1,6 +1,13 @@
 /** Compile-time hover policy for site and app CSS, including nested Tailwind variants.
- * Quiet colour feedback complements the glass. Keep controls stationary and prevent
- * expensive hover shadows/filters; content reveals and focus states remain intact.
+ * Quiet colour feedback complements the material, and expensive hover shadows/filters
+ * are stripped; content reveals and focus states remain intact.
+ *
+ * A host's own `:hover` transform (`transform`, `translate`, `rotate`, `scale`) is still
+ * stripped, but no longer because hosts never move: under Plasmatic Jelly the soft-body
+ * service (`lib/jelly/physics.ts`) OWNS hover motion — it plumps, leans and dents hosts
+ * through the inline `translate`/`scale` properties. A CSS hover `scale` would be a second
+ * writer on the same property, fighting the spring and snapping when the inline value is
+ * cleared at sleep. One writer per property is the invariant this plugin enforces.
  */
 import type { Declaration, Plugin, Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';

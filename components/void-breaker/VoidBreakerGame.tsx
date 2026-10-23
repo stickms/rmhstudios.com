@@ -777,7 +777,7 @@ export function VoidBreakerGame() {
           phone `maxHeight` cropped the height while the width stayed at 100% and
           the arena rendered visibly squashed. `.app-stage` states both axes in
           container units, so there is nothing left for a clamp to skew. */}
-      <div className="app-stage-fit absolute inset-0">
+      <div className="app-stage-fit absolute inset-0" data-jelly-zone="playfield">
         <div className="app-stage" style={{ '--app-stage-ar': `${CANVAS_WIDTH} / ${CANVAS_HEIGHT}` } as CSSProperties}>
           <canvas
             ref={canvasRef}
@@ -795,7 +795,7 @@ export function VoidBreakerGame() {
           on a phone held sideways the score sits under the sensor housing and
           the wave counter under the home indicator. */}
       {showGame && (
-        <div className="app-hud pointer-events-none flex flex-col justify-between p-2 sm:p-3">
+        <div className="app-hud pointer-events-none flex flex-col justify-between p-2 sm:p-3" data-jelly-zone="hud">
           {/* Top bar */}
           <div className="flex justify-between items-start">
             {/* Score + multiplier */}

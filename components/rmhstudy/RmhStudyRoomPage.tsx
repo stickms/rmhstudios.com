@@ -198,7 +198,7 @@ export default function RmhStudyRoom() {
   const timerAndTasks = (
     <div className="space-y-6">
       {/* Timer */}
-      <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-8 text-center">
+      <div className="rounded-(--app-radius) app-glass p-8 text-center">
         <div className={`text-sm font-medium uppercase tracking-wider mb-2 ${phaseColor(timer.phase)}`}>
           {phaseLabel(timer.phase, t)}
         </div>
@@ -281,7 +281,7 @@ export default function RmhStudyRoom() {
       </div>
 
       {/* Tasks */}
-      <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4">
+      <div className="rounded-(--app-radius) app-glass p-4">
         <h3 className="text-sm font-semibold mb-3">{t('my-tasks', { defaultValue: 'My Tasks' })}</h3>
         <form onSubmit={handleAddTask} className="flex gap-2 mb-3">
           <input
@@ -547,7 +547,7 @@ export default function RmhStudyRoom() {
       {showSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 app-scrim" onClick={() => setShowSettings(false)} />
-          <div className="relative w-full max-w-md rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow) max-h-[80dvh] overflow-y-auto">
+          <div className="relative w-full max-w-md rounded-(--app-radius) app-glass p-6 max-h-[80dvh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 {isHost ? <Settings className="h-5 w-5 text-(--app-accent)" /> : <Info className="h-5 w-5 text-(--app-accent)" />}
@@ -723,7 +723,7 @@ export default function RmhStudyRoom() {
       {banTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 app-scrim" onClick={() => { setBanTarget(null); setBanReason(''); }} />
-          <div className="relative w-full max-w-sm rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
+          <div className="relative w-full max-w-sm rounded-(--app-radius) app-glass p-6">
             <h3 className="text-lg font-semibold mb-2">{t('ban-confirm-title', { defaultValue: 'Ban {{userName}}?', userName: banTarget.userName })}</h3>
             <p className="text-sm text-(--app-text-muted) mb-4">
               {t('ban-confirm-desc', { defaultValue: 'This member will be removed and cannot rejoin this room.' })}

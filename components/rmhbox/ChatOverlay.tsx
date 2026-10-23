@@ -45,7 +45,7 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
   );
 
   return (
-    <div className="flex flex-col rounded-(--app-radius) bg-(--app-surface) border border-(--app-border) lg:min-h-0 lg:flex-1">
+    <div className="flex flex-col rounded-(--app-radius) app-glass lg:min-h-0 lg:flex-1">
       {/* Mobile toggle header */}
       <button
         onClick={() => setMinimized(!minimized)}

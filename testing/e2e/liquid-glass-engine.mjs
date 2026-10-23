@@ -8,8 +8,17 @@
  * It asserts what the design promises: which surfaces become glass (and which never do), that the canvas sits BEHIND the
  * content and takes no input, that the interior stays transparent (the live DOM shows through), that floating glass
  * refracts the page once a snapshot lands, that cursor light settles and taps never emit waves, that
- * nothing draws at rest, that preferences remove every canvas live, that dynamic content joins and leaves cleanly, that
- * no surface uses `backdrop-filter` (the one thing that differs per engine), and that teardown leaves no trace.
+ * the rim draws nothing at rest, that preferences remove every canvas live, that dynamic content joins and leaves
+ * cleanly, that no surface uses `backdrop-filter` (the one thing that differs per engine), and that teardown leaves no
+ * trace.
+ *
+ * Plasmatic Jelly changed two assumptions here (05-gates-docs-naming.md §1.2, master plan R7):
+ * - The engine is mounted WITH the jelly registry, as hooks/useLiquidInteractions.ts does, so the ambient slots get a
+ *   `.jelly-haze-canvas` and the engine runs its ambient clock. "Nothing draws at rest" is now "the RIM draws nothing
+ *   at rest"; the haze is the one standing loop, and its draw rate is bounded by the (governed) tier clock instead.
+ * - Every "removes every canvas" check covers the haze canvases too.
+ * Hover deformation is not mounted here (lib/jelly/physics.ts is not installed), so "optical tilt leaves the live DOM
+ * geometry unchanged" still holds exactly; bounded host/neighbour motion is testing/e2e/jelly-interaction.mjs's job.
  */
 import assert from 'node:assert/strict';
 import { readFileSync, mkdirSync } from 'node:fs';
@@ -23,7 +32,10 @@ const out = process.env.LIQUID_GLASS_OUT ?? join(tmpdir(), 'rmh-liquid-glass-eng
 mkdirSync(out, { recursive: true });
 const bundle = await build({
   stdin: {
-    contents: `import { installLiquidGlass } from './lib/liquid/glass/engine';
+    contents: `import { installLiquidGlass, jellyGovernorStep } from './lib/liquid/glass/engine';
+      import { installJellyRegistry } from './lib/jelly/registry';
+      import { governBudget } from './lib/jelly/governor';
+      import { jellyBudget } from './lib/jelly/tiers';
       import { GlassRenderer } from './lib/liquid/glass/renderer';
       window.glassPoses = {};
       const draw = GlassRenderer.prototype.draw;
@@ -31,7 +43,10 @@ const bundle = await build({
         window.glassPoses[canvas.parentElement.id] = o.tilt;
         return draw.call(this, o, canvas);
       };
-      window.stopGlass = installLiquidGlass();`,
+      const stopRegistry = installJellyRegistry(document);
+      const stopEngine = installLiquidGlass();
+      window.governed = () => governBudget(jellyBudget(), jellyGovernorStep());
+      window.stopGlass = () => { stopEngine(); stopRegistry(); };`,
     resolveDir: root,
     loader: 'ts',
   },
@@ -78,7 +93,9 @@ try {
       `<p style="margin:0 0 14px;font:600 20px system-ui">Row ${i} — liquid glass bends what scrolls under it.</p>`,
   ).join('');
   const markup = `<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>
-    @layer components; :root{--site-bg:#f1f4fa;--site-text:#10151f;--site-accent:#4a82d8;--site-surface:#f7f9fd;--site-border:#9aa6bb;--site-radius:22px;--site-radius-sm:10px;--site-shadow:0 15px 40px #15203020;--site-shadow-sm:0 3px 10px #15203012;--site-glass-light:white;--glass-blur-factor:1}
+    @layer components; :root{--site-bg:#f1f4fa;--site-text:#10151f;--site-accent:#4a82d8;--site-surface:#f7f9fd;--site-border:#9aa6bb;--site-radius:22px;--site-radius-sm:10px;--site-shadow:0 15px 40px #15203020;--site-shadow-sm:0 3px 10px #15203012;--site-glass-light:white;--glass-blur-factor:1;
+      /* The haze knob (normally set per role by app/jelly-material.css): without it no surface is a haze slot. */
+      --site-jelly-haze:#e9ecf4;--jelly-haze-a:0.14;--jelly-plasma-k:0.05}
     *{box-sizing:border-box} body{margin:0;min-height:2400px;color:var(--site-text);font:16px system-ui;
       background:repeating-linear-gradient(90deg,#d8e1f5 0 16px,#f1f4fa 16px 32px)}
     header{position:sticky;top:0;height:56px;padding:12px 24px;z-index:10}
@@ -105,9 +122,11 @@ try {
   );
   await page.addInitScript(() => {
     window.__draws = 0;
+    window.__hazeDraws = 0;
     const d = CanvasRenderingContext2D.prototype.drawImage;
     CanvasRenderingContext2D.prototype.drawImage = function (...a) {
       if (this.canvas?.hasAttribute?.('data-liquid-glass')) window.__draws++;
+      else if (this.canvas?.classList?.contains('jelly-haze-canvas')) window.__hazeDraws++;
       return d.apply(this, a);
     };
   });
@@ -288,12 +307,23 @@ try {
   );
   await page.emulateMedia({ reducedMotion: 'no-preference' });
 
-  // ── Nothing runs at rest ──
+  // ── At rest the rim draws nothing; the haze clock is the one standing loop (R7) ──
   await page.mouse.move(5, 5);
   await settle(1800);
-  const before = await page.evaluate(() => window.__draws);
+  const before = await page.evaluate(() => [window.__draws, window.__hazeDraws]);
   await settle(2200);
-  check('at rest the engine draws nothing', (await page.evaluate(() => window.__draws)) === before);
+  const after = await page.evaluate(() => [window.__draws, window.__hazeDraws]);
+  check('at rest the rim draws nothing', after[0] === before[0]);
+  const hazeCanvases = await page.$$eval('.jelly-haze-canvas', (n) => n.length);
+  const governed = await page.evaluate(() => window.governed());
+  const hazeRate = hazeCanvases ? (after[1] - before[1]) / 2.2 / hazeCanvases : 0;
+  console.log(
+    `haze: ${hazeCanvases} canvas(es), ${hazeRate.toFixed(1)} draws/s each; governed clock ${governed.clockHz} Hz (idle ${governed.idleClockHz} Hz)`,
+  );
+  check(
+    `the haze clock never outruns the governed tier clock (${hazeRate.toFixed(1)} ≤ ${governed.clockHz} + 1 draws/s per canvas)`,
+    hazeRate <= governed.clockHz + 1,
+  );
 
   // ── Scroll: invalidate stale refraction once, then let the DOM own motion ──
   const draws0 = await page.evaluate(() => window.__draws);
@@ -328,9 +358,13 @@ try {
   // ── Preferences remove every canvas, live ──
   await page.evaluate(() => document.documentElement.classList.add('perf-lite'));
   await settle(250);
+  const hazeBefore = await page.evaluate(() => window.__hazeDraws);
+  await settle(600);
   check(
-    'perf-lite removes every canvas',
-    (await page.$$('canvas[data-liquid-glass]')).length === 0 && !(await has('#pane')),
+    'perf-lite removes every canvas, haze included, and the haze clock stops',
+    (await page.$$('canvas[data-liquid-glass], .jelly-haze-canvas')).length === 0 &&
+      !(await has('#pane')) &&
+      (await page.evaluate(() => window.__hazeDraws)) === hazeBefore,
   );
   await page.evaluate(() => document.documentElement.classList.remove('perf-lite'));
   await settle(400);
@@ -341,8 +375,8 @@ try {
   await page.emulateMedia({ forcedColors: 'active' });
   await settle(300);
   check(
-    'forced colours removes every canvas',
-    (await page.$$('canvas[data-liquid-glass]')).length === 0,
+    'forced colours removes every canvas, haze included',
+    (await page.$$('canvas[data-liquid-glass], .jelly-haze-canvas')).length === 0,
   );
   await page.emulateMedia({ forcedColors: 'none' });
   await settle(400);
@@ -371,8 +405,8 @@ try {
   await settle(200);
   check(
     'teardown removes every canvas, attribute and the snapshot flag',
-    (await page.$$('canvas[data-liquid-glass]')).length === 0 &&
-      (await page.$$('[data-liquid-canvas]')).length === 0 &&
+    (await page.$$('canvas[data-liquid-glass], .jelly-haze-canvas')).length === 0 &&
+      (await page.$$('[data-liquid-canvas], [data-jelly-haze]')).length === 0 &&
       (await page.evaluate(() => !document.documentElement.hasAttribute('data-liquid-scene'))),
   );
   if (errors.length) console.log(errors.slice(0, 4));

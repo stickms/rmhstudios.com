@@ -245,22 +245,37 @@ Full detail, including why each detector asks its question when it does:
 ### 6. Frame-budget audit (not in CI)
 
 `testing/e2e/frame-budget.mjs` drives the **built** app and asks the question a
-high-refresh display asks of a page: does it go **idle** at rest, and how much
-headroom does it have while scrolling? Per route it counts compositor frames
-produced with nobody touching the page, browser-wide CPU at rest (every
-Chromium process, so compositor/GPU cost is visible — main-thread metrics never
-see it), perpetual animations by selector, and rAF cadence idle and scrolling.
+high-refresh display asks of a page: does it drop to its **resting cadence** at
+rest, and how much headroom does it have while scrolling? Per route it counts
+compositor frames produced with nobody touching the page, browser-wide CPU at
+rest (every Chromium process, so compositor/GPU cost is visible — main-thread
+metrics never see it), perpetual animations by selector, and rAF cadence idle
+and scrolling.
+
+"At rest" means the Plasmatic Jelly idle floor, not zero: once the page has gone
+`IDLE_AFTER_MS` (20 s) without input, the material's ambient clock keeps ticking
+at `idleClockHz` (12 Hz desktop) and never freezes while someone could be
+looking (master plan R7). The `--gate` limit is that floor + 1 (13 fps) — a
+deliberate reversal of the 2026-10-08 audit's 2 fps rest limit, recorded in
+[`plasmatic-jelly-system.md`](./plasmatic-jelly-system.md) §2. `--engaged` sweeps
+a pointer for the whole window and holds pages to the engaged clock (30 Hz) + 5.
+Both limits are read from `JELLY_BUDGETS` in `lib/jelly/tiers.ts`, never
+restated in the script. CPU at rest on `/` is reported against the ≤ 250 ms/s
+target but not gated.
 
 ```bash
 pnpm build && PORT=7005 node .output/server/index.mjs &
-BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs              # default route set
-BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs --all --gate # every page; fail if a site page never idles
+BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs                   # default route set
+BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs --all --gate      # every page; fail above the idle floor
+BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs --gate --engaged  # fail above the engaged clock
 ```
 
 Absolute fps here is SwiftShader's, so compare builds and routes, not devices.
 Its commit-time half is `lib/__tests__/static-backdrop.test.ts` (in
-`GATE_TESTS`). Findings and the measured before/after:
-[`performance-audit-2026-10-08.md`](./performance-audit-2026-10-08.md).
+`GATE_TESTS`: the backdrop stays completely still — jelly moves, the room does
+not). Findings and the measured before/after:
+[`performance-audit-2026-10-08.md`](./performance-audit-2026-10-08.md) (its 2 fps
+rest limit is superseded as above).
 
 **Page switches.** Its sibling `testing/e2e/page-switch.mjs` times the other
 half of "does it feel fast": a click in the shell's nav rail, from a settled

@@ -31,6 +31,7 @@ import { Route as GabrielsHornRouteImport } from './routes/gabriels-horn'
 import { Route as HandleRouteImport } from './routes/handle'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as IsleworksRouteImport } from './routes/isleworks'
+import { Route as JellyRouteImport } from './routes/jelly'
 import { Route as KaikaidebtcounterRouteImport } from './routes/kaikaidebtcounter'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
 import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
@@ -1387,6 +1388,11 @@ const HouseAlwaysWinsRoute = HouseAlwaysWinsRouteImport.update({
 const IsleworksRoute = IsleworksRouteImport.update({
   id: '/isleworks',
   path: '/isleworks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JellyRoute = JellyRouteImport.update({
+  id: '/jelly',
+  path: '/jelly',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KaikaidebtcounterRoute = KaikaidebtcounterRouteImport.update({
@@ -7886,6 +7892,7 @@ export interface FileRoutesByFullPath {
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
+  '/jelly': typeof JellyRoute
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
@@ -9153,6 +9160,7 @@ export interface FileRoutesByTo {
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
+  '/jelly': typeof JellyRoute
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
@@ -10403,6 +10411,7 @@ export interface FileRoutesById {
   '/handle': typeof HandleRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/isleworks': typeof IsleworksRoute
+  '/jelly': typeof JellyRoute
   '/kaikaidebtcounter': typeof KaikaidebtcounterRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
@@ -11677,6 +11686,7 @@ export interface FileRouteTypes {
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
+    | '/jelly'
     | '/kaikaidebtcounter'
     | '/kowloon-knockout'
     | '/laundry-sort'
@@ -12944,6 +12954,7 @@ export interface FileRouteTypes {
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
+    | '/jelly'
     | '/kaikaidebtcounter'
     | '/laundry-sort'
     | '/lights-out'
@@ -14193,6 +14204,7 @@ export interface FileRouteTypes {
     | '/handle'
     | '/house-always-wins'
     | '/isleworks'
+    | '/jelly'
     | '/kaikaidebtcounter'
     | '/kowloon-knockout'
     | '/laundry-sort'
@@ -15466,6 +15478,7 @@ export interface RootRouteChildren {
   HandleRoute: typeof HandleRoute
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
   IsleworksRoute: typeof IsleworksRoute
+  JellyRoute: typeof JellyRoute
   KaikaidebtcounterRoute: typeof KaikaidebtcounterRoute
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
   LaundrySortRoute: typeof LaundrySortRoute
@@ -16384,6 +16397,13 @@ declare module '@tanstack/react-router' {
       path: '/isleworks'
       fullPath: '/isleworks'
       preLoaderRoute: typeof IsleworksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jelly': {
+      id: '/jelly'
+      path: '/jelly'
+      fullPath: '/jelly'
+      preLoaderRoute: typeof JellyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kaikaidebtcounter': {
@@ -27299,6 +27319,7 @@ const rootRouteChildren: RootRouteChildren = {
   HandleRoute: HandleRoute,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
   IsleworksRoute: IsleworksRoute,
+  JellyRoute: JellyRoute,
   KaikaidebtcounterRoute: KaikaidebtcounterRoute,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
   LaundrySortRoute: LaundrySortRoute,

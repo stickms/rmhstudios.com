@@ -54,9 +54,9 @@ export function Velum2099Game() {
     return (
         <div ref={containerRef} className="velum2099-root fixed inset-0">
             <div id="terminal-screen" />
-            <canvas id="game-canvas" style={{ display: 'none' }} />
+            <canvas id="game-canvas" data-jelly-zone="playfield" style={{ display: 'none' }} />
             <div id="vhs-timestamp" style={{ display: 'none' }} />
-            <div id="hex-hud" style={{ display: 'none' }}>
+            <div id="hex-hud" data-jelly-zone="hud" style={{ display: 'none' }}>
                 <canvas id="hex-tl" className="hex-corner" style={{ top: 0, left: 0 }} />
                 <canvas id="hex-tr" className="hex-corner" style={{ top: 0, right: 0 }} />
                 <canvas id="hex-bl" className="hex-corner" style={{ bottom: 0, left: 0 }} />

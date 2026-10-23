@@ -253,7 +253,7 @@ export function MembershipPanel({
               className={`mb-6 flex items-center justify-between gap-3 rounded-site border px-4 py-3 text-sm ${
                 status === 'success'
                   ? 'border-[color:var(--site-success)]/30 bg-[color:var(--site-success)]/10 text-[color:var(--site-success)]'
-                  : 'border-site-border bg-site-surface text-site-text-muted'
+                  : 'glass-pane text-site-text-muted'
               }`}
             >
               <span>

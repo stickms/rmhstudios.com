@@ -91,7 +91,7 @@ export const Hud = forwardRef<LiveHandle, HudProps>(function Hud(
   const primarySeat = localSeats[0] ?? 0;
 
   return (
-    <div className="app-hud pointer-events-none z-20">
+    <div className="app-hud pointer-events-none z-20" data-jelly-zone="hud">
       {/* Top centre column: clock, then who is playing. Clear of the back link
           in the top-left and of the thumb zones at the bottom. */}
       <div

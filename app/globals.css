@@ -15,6 +15,14 @@
    only its text; a file downloads only when a page actually uses the face. */
 @import './fonts/site-display.css';
 @import './liquid-glass.css';
+/* Plasmatic Jelly (docs/plans/plasmatic-jelly/00-master-plan.md): the material
+   (role knobs, CSS flow carriers, static haze floor, CSS rim, degradation), the
+   electric-arc layer, and the coverage adapters. After liquid-glass.css on
+   purpose — jelly-material.css restates some of its role rules at the same
+   specificity and must win on source order. */
+@import './jelly-material.css';
+@import './jelly-arcs.css';
+@import './jelly-coverage.css';
 
 /* Scope Tailwind's content scanning to code that actually renders in the browser.
    Without this, auto-detection also scans build/test/infra/docs directories and
@@ -266,6 +274,79 @@
   --site-glass-light: rgba(255, 255, 255, 0.7);
   --site-glass-depth: 0 0 0 0 transparent;
   --site-glass-depth-sm: 0 0 0 0 transparent;
+  /* ── Plasmatic Jelly material, the Daylight values (docs/plans/plasmatic-jelly/01-material.md §4) ──
+     Daylight: white haze is invisible on white, so the veil is a cool milky grey.
+     Haze is the milky veil inside every jelly role; its ALPHA comes from the role
+     (`--site-jelly-haze-<role>`), its colour from here. The plasma pair is the
+     light inside — rim, subsurface and current crests only, never the ink.
+     `--site-jelly-plasma` is the theme gain on every role's plasma strength.
+     `-haze-strong` is the denser veil the rim band and chrome use;
+     `-flow-speed` multiplies every role's flow speed; `-quiet` damps flow in the
+     interior where text sits; `-on` (1/0) is the cheap kill switch the engine
+     and services read. High contrast zeroes all of it.
+     On a LIGHT ground a saturated plasma darkens the composite fast (luminance
+     is steepest near white), so light themes take a pale plasma pair at half
+     gain; dark themes carry the saturated pair, where it reads as glow.
+     Values are bounded by lib/__tests__/jelly-legibility.test.ts. */
+  --site-jelly-haze: #e9ecf4;
+  --site-jelly-haze-strong: #dce1ec;
+  --site-jelly-haze-fill: 0.1;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.14;
+  --site-jelly-haze-chrome: 0.18;
+  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-plasma-a: #b4a9ff;
+  --site-jelly-plasma-b: #8fe0ee;
+  --site-jelly-plasma: 0.5;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, #5b3fd6 85%, var(--site-accent));
+  --site-arc-glow: color-mix(in oklch, #7c6cff 60%, transparent);
+
+  /* ── #989 layers on top of the jelly (docs/plasmatic-jelly-system.md §1.1) ──
+     Gel: a hazy translucent body that darkens slightly toward its base — a vertical
+     `--gel-body` → `--gel-depth` coat, low alpha so the role tint carries legibility
+     (bounded by lib/__tests__/jelly-legibility.test.ts at both ends). `--gel-ink` /
+     `--on-ink` are the ink-gel primary action (`<Button variant="signal">`).
+     Edge: a soft band `--gel-bevel` wide just inside the rim carries an R/G/B split,
+     offset by `--gel-disperse-r/-g/-b` (negative = toward the top-left light, so red
+     leans to the light and blue away), tinted `--gel-edge-r/-g/-b`; plus a 1px Fresnel
+     edge (`--gel-fresnel`). `--gel-specular` is the light dot on the dent's far slope.
+     There is no gloss band or glint across a face: shine lives at edges and in the dent.
+     Every theme restates the colours; high contrast turns them opaque or off. */
+  --gel-body: rgba(255, 255, 255, 0.1);
+  --gel-depth: rgba(16, 20, 36, 0.035);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(255, 255, 255, 0.55);
+  --gel-specular: rgba(255, 255, 255, 0.95);
+  --gel-edge-r: rgba(255, 84, 104, 0.16);
+  --gel-edge-g: rgba(64, 200, 140, 0.08);
+  --gel-edge-b: rgba(72, 120, 255, 0.16);
+  --gel-bevel: 6px;
+  --gel-disperse-r: -1.5px;
+  --gel-disperse-g: 0px;
+  --gel-disperse-b: 1.5px;
+  /* The keyboard focus ring: a SOLID 2px outline in this colour, never the plasma glow. */
+  --focus-ring: var(--site-accent);
+  /* Mirrors of lib/jelly/tiers.ts — the TS constant is the source of truth and
+     lib/__tests__/jelly-tokens.test.ts fails if these drift. Never retune one here. */
+  --plasma-wake: 0.35; /* PLASMA.wake */
+  --jelly-dent-depth: 6px; /* DENT.depthPx */
+  --jelly-dent-damping: 0.9; /* DENT.damping */
+  --jelly-lens-strength: 0.6; /* DENT.lensStrength */
+  --jelly-lens-dispersion: 1.5px; /* DENT.lensDispersionPx */
+  --jelly-content-strain: 0.04; /* DENT.contentStrain */
+  --jelly-margin: 16px; /* JELLY_LAYOUT.marginPx */
+  --jelly-body-budget: 24; /* JELLY_LAYOUT.bodyBudget */
+  --sim-hz: 120; /* JELLY_LAYOUT.simHz */
+  --arc-breakdown-gap: 12px; /* CHARGE.breakdownGapPx */
+  --arc-formative-lag: 120ms; /* CHARGE.formativeLagMs */
+  --pulse-speed: 900; /* CHARGE.pulseSpeedPxS, px/s (no CSS unit exists) */
+  --pulse-tau: 260ms; /* CHARGE.pulseTauMs */
+  --space-4: 16px; /* JELLY_LAYOUT.minGapPx: bodies sit at least this far apart */
 
   --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
   --glass-bevel: 12px;
@@ -453,6 +534,13 @@
      orb and the compose FAB (80) all paint over it. Same band as the quick
      panels: above the shell, below the z-50 dialogs. */
   --z-menu: 40;
+  /* Electric arcs (Plasmatic Jelly, 03-arcs.md §4.1): the body-level Canvas2D
+     `.jelly-arc-layer`. Above the quick panels / menus (40), so a bolt can land on
+     a top-bar button; below the z-50 dialogs and sheets, so a modal covers it.
+     A click arc INSIDE an open modal lifts the layer to `--z-arcs-modal` for its
+     lifetime (above the dialog band, still below tooltips and the toaster). */
+  --z-arcs: 45;
+  --z-arcs-modal: 55;
   --z-skip: 200;
   /* Tooltips portal to <body> and must clear the z-50 dialogs/sheets they can
      be triggered from inside, so they sit above the whole stack. */
@@ -815,6 +903,36 @@
     linear-gradient(180deg, #fbfcff 0%, #f6f7fc 55%, #fcfbff 100%);
   --site-aurora-far-1: rgba(0, 0, 0, 0.02);
   --site-aurora-far-2: rgba(0, 0, 0, 0.03);
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block).
+     Daylight: white haze is invisible on white, so the veil is a cool milky grey. */
+  --site-jelly-haze: #e9ecf4;
+  --site-jelly-haze-strong: #dce1ec;
+  --site-jelly-haze-fill: 0.1;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.14;
+  --site-jelly-haze-chrome: 0.18;
+  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-plasma-a: #b4a9ff;
+  --site-jelly-plasma-b: #8fe0ee;
+  --site-jelly-plasma: 0.5;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, #5b3fd6 85%, var(--site-accent));
+  --site-arc-glow: color-mix(in oklch, #7c6cff 60%, transparent);
+  /* #989 gel layers (meanings: the :root block). Daylight. */
+  --gel-body: rgba(255, 255, 255, 0.1);
+  --gel-depth: rgba(16, 20, 36, 0.035);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(255, 255, 255, 0.55);
+  --gel-specular: rgba(255, 255, 255, 0.95);
+  --gel-edge-r: rgba(255, 84, 104, 0.16);
+  --gel-edge-g: rgba(64, 200, 140, 0.08);
+  --gel-edge-b: rgba(72, 120, 255, 0.16);
+  --focus-ring: var(--site-accent);
 }
 
 /* Glass Light — daylight canvas: near-white base with soft pastel sky radials;
@@ -868,6 +986,35 @@
   --site-map-filter: none;
   --background: #e9edf6;
   --foreground: #17203a;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
+  --site-jelly-haze: #f4f7fd;
+  --site-jelly-haze-strong: #ffffff;
+  --site-jelly-haze-fill: 0.1;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.14;
+  --site-jelly-haze-chrome: 0.18;
+  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-plasma-a: color-mix(in srgb, var(--site-accent) 45%, white);
+  --site-jelly-plasma-b: #9fdcf4;
+  --site-jelly-plasma: 0.5;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, var(--site-accent) 80%, #1b1240);
+  --site-arc-glow: color-mix(in oklch, var(--site-accent) 45%, transparent);
+  /* #989 gel layers (meanings: the :root block). Daylight. */
+  --gel-body: rgba(255, 255, 255, 0.12);
+  --gel-depth: rgba(18, 30, 66, 0.04);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(255, 255, 255, 0.6);
+  --gel-specular: rgba(255, 255, 255, 0.95);
+  --gel-edge-r: rgba(255, 92, 120, 0.16);
+  --gel-edge-g: rgba(64, 200, 150, 0.08);
+  --gel-edge-b: rgba(80, 110, 255, 0.16);
+  --focus-ring: var(--site-accent);
 }
 
 /* High Contrast — maximal legibility (WCAG AAA): pure black, pure white text,
@@ -915,6 +1062,42 @@
   --site-control-radius: 8px;
   --background: #000000;
   --foreground: #ffffff;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block).
+     High contrast: no jelly at all. Every knob is zero; the CSS and the engine both
+     read `--site-jelly-on: 0` as the kill switch. */
+  --site-jelly-haze: transparent;
+  --site-jelly-haze-strong: transparent;
+  --site-jelly-haze-fill: 0;
+  --site-jelly-haze-inset: 0;
+  --site-jelly-haze-pane: 0;
+  --site-jelly-haze-chrome: 0;
+  --site-jelly-haze-overlay: 0;
+  --site-jelly-plasma-a: transparent;
+  --site-jelly-plasma-b: transparent;
+  --site-jelly-plasma: 0;
+  --site-jelly-flow-speed: 0;
+  --site-jelly-quiet: 0;
+  --site-jelly-on: 0;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: transparent;
+  --site-arc-glow: transparent;
+  /* #989 gel layers (meanings: the :root block). High contrast: the gel is the opaque
+     surface, and the dispersion, Fresnel edge, specular dot and plasma are off. */
+  --gel-body: var(--site-surface-opaque);
+  --gel-depth: var(--site-surface-opaque);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: transparent;
+  --gel-specular: transparent;
+  --gel-edge-r: transparent;
+  --gel-edge-g: transparent;
+  --gel-edge-b: transparent;
+  --gel-disperse-r: 0px;
+  --gel-disperse-g: 0px;
+  --gel-disperse-b: 0px;
+  --plasma-wake: 0;
+  --focus-ring: var(--site-accent);
 }
 
 /* ── Curated themes (Apple-consistent) ──────────────────────────────────────
@@ -988,6 +1171,35 @@
   --site-map-filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.92);
   --background: #000000;
   --foreground: #f5f5f7;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
+  --site-jelly-haze: #c9d2e3;
+  --site-jelly-haze-strong: #dfe6f2;
+  --site-jelly-haze-fill: 0.07;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.1;
+  --site-jelly-haze-chrome: 0.14;
+  --site-jelly-haze-overlay: 0.05;
+  --site-jelly-plasma-a: var(--site-accent);
+  --site-jelly-plasma-b: #9b6bff;
+  --site-jelly-plasma: 0.8;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, white 70%, var(--site-accent));
+  --site-arc-glow: color-mix(in oklch, var(--site-accent) 55%, transparent);
+  /* #989 gel layers (meanings: the :root block). Dark: the base sinks toward the void. */
+  --gel-body: rgba(255, 255, 255, 0.025);
+  --gel-depth: rgba(0, 0, 0, 0.16);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(255, 255, 255, 0.14);
+  --gel-specular: rgba(255, 255, 255, 0.85);
+  --gel-edge-r: rgba(255, 96, 112, 0.22);
+  --gel-edge-g: rgba(80, 220, 150, 0.1);
+  --gel-edge-b: rgba(90, 140, 255, 0.24);
+  --focus-ring: var(--site-accent);
 }
 
 /* Sepia Glass — warm parchment gradients, warm-white frost, amber accent,
@@ -1039,6 +1251,35 @@
   --site-map-filter: none;
   --background: #efe4cf;
   --foreground: #3a2e1e;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
+  --site-jelly-haze: #fff6e6;
+  --site-jelly-haze-strong: #fffaf0;
+  --site-jelly-haze-fill: 0.1;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.14;
+  --site-jelly-haze-chrome: 0.18;
+  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-plasma-a: #f0c48c;
+  --site-jelly-plasma-b: #eaa79e;
+  --site-jelly-plasma: 0.5;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, var(--site-accent) 70%, #3a1d6e);
+  --site-arc-glow: color-mix(in oklch, var(--site-accent) 40%, transparent);
+  /* #989 gel layers (meanings: the :root block). Warm daylight. */
+  --gel-body: rgba(255, 250, 238, 0.05);
+  --gel-depth: rgba(90, 62, 32, 0.045);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(255, 248, 230, 0.6);
+  --gel-specular: rgba(255, 250, 236, 0.95);
+  --gel-edge-r: rgba(230, 90, 70, 0.16);
+  --gel-edge-g: rgba(120, 170, 90, 0.08);
+  --gel-edge-b: rgba(90, 110, 210, 0.14);
+  --focus-ring: var(--site-accent);
 }
 
 /* Nocturne Glass — deep-navy nightscape with a sky-blue aurora; cool
@@ -1092,6 +1333,35 @@
   --site-aurora-far-2: rgba(90, 150, 255, 0.1);
   --background: #0a1424;
   --foreground: #eaeef7;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
+  --site-jelly-haze: #b4c8ff;
+  --site-jelly-haze-strong: #cbd9ff;
+  --site-jelly-haze-fill: 0.07;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.1;
+  --site-jelly-haze-chrome: 0.14;
+  --site-jelly-haze-overlay: 0.05;
+  --site-jelly-plasma-a: #6f9bff;
+  --site-jelly-plasma-b: #47d1c4;
+  --site-jelly-plasma: 0.8;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, white 70%, var(--site-accent));
+  --site-arc-glow: color-mix(in oklch, var(--site-accent) 55%, transparent);
+  /* #989 gel layers (meanings: the :root block). Dark: the base sinks toward the void. */
+  --gel-body: rgba(200, 220, 255, 0.025);
+  --gel-depth: rgba(2, 6, 16, 0.16);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(200, 220, 255, 0.18);
+  --gel-specular: rgba(225, 236, 255, 0.85);
+  --gel-edge-r: rgba(255, 110, 140, 0.2);
+  --gel-edge-g: rgba(80, 220, 190, 0.1);
+  --gel-edge-b: rgba(94, 157, 255, 0.26);
+  --focus-ring: var(--site-accent);
 }
 
 /* Ultra — the precision interface. Near-black spectral depth, ice-cyan signal
@@ -1186,6 +1456,35 @@
   --site-map-filter: invert(1) hue-rotate(165deg) brightness(0.78) contrast(1.08) saturate(0.8);
   --background: #07090f;
   --foreground: #f5f9ff;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
+  --site-jelly-haze: #bff4ff;
+  --site-jelly-haze-strong: #d6f9ff;
+  --site-jelly-haze-fill: 0.06;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.09;
+  --site-jelly-haze-chrome: 0.13;
+  --site-jelly-haze-overlay: 0.05;
+  --site-jelly-plasma-a: #76f7ff;
+  --site-jelly-plasma-b: #c86bff;
+  --site-jelly-plasma: 0.9;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, white 60%, var(--site-accent));
+  --site-arc-glow: color-mix(in oklch, var(--site-accent) 50%, #b46cff 20%);
+  /* #989 gel layers (meanings: the :root block). Dark: the base sinks toward the void. */
+  --gel-body: rgba(191, 244, 255, 0.025);
+  --gel-depth: rgba(0, 2, 8, 0.16);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(191, 244, 255, 0.22);
+  --gel-specular: rgba(214, 250, 255, 0.9);
+  --gel-edge-r: rgba(255, 90, 160, 0.22);
+  --gel-edge-g: rgba(0, 255, 198, 0.1);
+  --gel-edge-b: rgba(118, 160, 255, 0.26);
+  --focus-ring: var(--site-accent);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1932,6 +2231,10 @@ html.readable-font body {
   --color-site-accent-fg: var(--site-accent-fg, #fff);
   --color-site-accent-hover: var(--site-accent-hover);
   --color-site-accent-dim: var(--site-accent-dim);
+  /* The ink-gel primary action (#989) → bg-gel-ink / text-on-ink. */
+  --color-gel-ink: var(--gel-ink);
+  --color-on-ink: var(--on-ink);
+  --color-focus-ring: var(--focus-ring);
   --color-site-success: var(--site-success);
   --color-site-success-fg: var(--site-success-fg, #fff);
   --color-site-media-scrim: var(--site-media-scrim);
@@ -3193,7 +3496,9 @@ summary:focus-visible,
 [role='link']:focus-visible,
 [role='menuitem']:focus-visible,
 [tabindex]:not([tabindex='-1']):focus-visible {
-  outline: 2px solid var(--site-accent);
+  /* `--focus-ring` (#989): solid 2px, never the plasma glow — plasma brightens on focus
+     inside the gel, but it is decoration and never the only signal of focus. */
+  outline: 2px solid var(--focus-ring, var(--site-accent));
   outline-offset: 2px;
 }
 
@@ -3249,15 +3554,16 @@ textarea,
    shift, and it reads on both touch and mouse. Disabled controls stay inert.
    Material-press elements opt OUT (§5.3): the springy scale on Button
    ([data-slot='button']) and .glass-interactive is the press cue there — an
-   opacity flicker fights the squish. Links and legacy buttons keep the cue. */
-a:not(.glass-interactive):active,
+   opacity flicker fights the squish. Links and legacy buttons keep the cue — except while the jelly soft body
+   (lib/jelly/physics.ts) holds them: it stamps `data-jelly-active` for the press, and its squish is the cue. */
+a:not(.glass-interactive):not([data-jelly-active]):active,
 button:not(:disabled):not([aria-disabled='true']):not([data-slot='button']):not(
     .glass-interactive
-  ):active,
-[role='button']:not([aria-disabled='true']):not(.glass-interactive):active,
-[role='tab']:not(.glass-interactive):active,
-[role='menuitem']:not(.glass-interactive):active,
-summary:active {
+  ):not([data-jelly-active]):active,
+[role='button']:not([aria-disabled='true']):not(.glass-interactive):not([data-jelly-active]):active,
+[role='tab']:not(.glass-interactive):not([data-jelly-active]):active,
+[role='menuitem']:not(.glass-interactive):not([data-jelly-active]):active,
+summary:not([data-jelly-active]):active {
   opacity: 0.6;
   transition: opacity 60ms ease;
 }
@@ -4525,7 +4831,11 @@ html.nav-pop .page-root > * {
 /* Legacy variant tint tokens remain for selected/pressed consumers. Hover uses
    the shared coat/optical tilt; the CSS build policy removes hover colour swaps. */
 @layer components {
-  [data-slot='button']:is([data-variant='default'], [data-variant='accent']) {
+  [data-slot='button']:is(
+    [data-variant='default'],
+    [data-variant='accent'],
+    [data-variant='signal']
+  ) {
     --evert-tint: var(--site-accent-hover);
     --evert-rest-opacity: 1;
   }

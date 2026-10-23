@@ -29,7 +29,7 @@ Stripe), Socket.io Node hubs, Go microservices built with Bazel, i18next
   layout, conventions, and where to look first.
 - {doc}`architecture` — runtime topology and the deploy pipeline: what runs
   where in production, images, CI, ports, auth across tiers.
-- {doc}`design-language` — the visual system (**Radial Avant-Garde Glass**):
+- {doc}`design-language` — the visual system (**Radial Plasmatic Jelly**):
   the `--site-*` token contract, themes, primitives, motion, accessibility.
 - {doc}`testing` — the test suites (Vitest main + epic, Go Bazel) and which
   CI workflows gate them.
@@ -61,6 +61,7 @@ frontend-webassembly
 performance-slo
 status-page
 design-language
+plasmatic-jelly-system
 page-consistency
 people
 adsense

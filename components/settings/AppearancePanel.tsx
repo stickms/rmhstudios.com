@@ -24,6 +24,12 @@ import {
   type NavTransition,
   NAV_TRANSITIONS,
   isNavTransition,
+  JELLY_MOTION_LEVELS,
+  ELECTRIC_ARC_MODES,
+  isJellyMotion,
+  isElectricArcs,
+  type JellyMotion,
+  type ElectricArcs,
 } from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
@@ -77,6 +83,25 @@ export function AppearancePanel() {
     store.setNavTransition(value);
     void persist({ navTransition: value });
   }
+  function setJellyMotion(value: JellyMotion) {
+    store.setJellyMotion(value);
+    void persist({ jellyMotion: value });
+  }
+  function setElectricArcs(value: ElectricArcs) {
+    store.setElectricArcs(value);
+    void persist({ electricArcs: value });
+  }
+
+  const jellyMotionLabels: Record<JellyMotion, string> = {
+    lively: t('jelly-motion-lively', { defaultValue: 'Lively' }),
+    calm: t('jelly-motion-calm', { defaultValue: 'Calm' }),
+    still: t('jelly-motion-still', { defaultValue: 'Still' }),
+  };
+  const electricArcLabels: Record<ElectricArcs, string> = {
+    full: t('electric-arcs-full', { defaultValue: 'Full' }),
+    clicks: t('electric-arcs-clicks', { defaultValue: 'Clicks only' }),
+    off: t('electric-arcs-off', { defaultValue: 'Off' }),
+  };
 
   function applyCustomAccent(hex: string) {
     if (!HEX_RE.test(hex)) return;
@@ -191,10 +216,10 @@ export function AppearancePanel() {
               aria-checked={store.colorVision === mode}
               onClick={() => setColorVision(mode)}
               className={cn(
-                'rounded-site-sm px-3 py-2 text-left transition-colors',
+                'glass-fill glass-interactive rounded-site-sm px-3 py-2 text-left transition-colors',
                 store.colorVision === mode
-                  ? 'bg-site-accent text-site-accent-fg'
-                  : 'border border-site-border bg-site-surface text-site-text hover:border-site-text/40',
+                  ? 'border-site-accent bg-site-accent text-site-accent-fg'
+                  : 'text-site-text hover:border-site-text/40',
               )}
             >
               <span className="block text-sm font-medium">
@@ -247,6 +272,47 @@ export function AppearancePanel() {
         {/* Tilt effects (§5.5x C.3): only renders on platforms that gate device
             orientation behind a permission prompt (iOS). Self-contained consent. */}
         <TiltEffectsRow />
+      </Section>
+
+      <Section
+        title={t('jelly-motion', { defaultValue: 'Jelly motion' })}
+        description={t('jelly-motion-desc', {
+          defaultValue:
+            'How much the jelly surfaces move on their own. Still pauses all ambient motion and turns electric arcs off.',
+        })}
+      >
+        <LiquidTabs
+          aria-label={t('jelly-motion', { defaultValue: 'Jelly motion' })}
+          tabs={JELLY_MOTION_LEVELS.map((id) => ({ id, label: jellyMotionLabels[id] }))}
+          value={store.jellyMotion}
+          onChange={(id) => {
+            if (isJellyMotion(id)) setJellyMotion(id);
+          }}
+        />
+      </Section>
+
+      <Section
+        title={t('electric-arcs', { defaultValue: 'Electric arcs' })}
+        description={t('electric-arcs-desc', {
+          defaultValue:
+            'Small sparks between surfaces and where you click. Turn them off if flicker bothers you.',
+        })}
+      >
+        <LiquidTabs
+          aria-label={t('electric-arcs', { defaultValue: 'Electric arcs' })}
+          tabs={ELECTRIC_ARC_MODES.map((id) => ({ id, label: electricArcLabels[id] }))}
+          value={store.electricArcs}
+          onChange={(id) => {
+            if (isElectricArcs(id)) setElectricArcs(id);
+          }}
+        />
+        {store.jellyMotion === 'still' && store.electricArcs !== 'off' ? (
+          <p className="text-xs text-site-text-muted">
+            {t('electric-arcs-still-note', {
+              defaultValue: 'Jelly motion is set to Still, so arcs stay off for now.',
+            })}
+          </p>
+        ) : null}
       </Section>
 
       {/* The theme gallery lives on the settings index, so the page named

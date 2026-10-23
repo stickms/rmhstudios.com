@@ -20,6 +20,12 @@ app/
     <game>.tsx       full-screen games/apps (top level, no shell)
     sitemap[.]xml.ts /sitemap.xml ([.]= escaped literal dot)
   globals.css        theme tokens: base + curated themes as .style-* classes (see design-language.md)
+  liquid-glass.css   the glass role base (.glass-*) the jelly material builds on
+  jelly-material.css Plasmatic Jelly CSS tier: role knobs, static haze floor, .jelly-flow carriers, degradation
+  jelly-arcs.css     the electric-arc overlay layer (.jelly-arc-layer)
+  jelly-coverage.css selector-level adapters that bring Radix/sonner/[data-slot] surfaces onto the material
+                     (contract for all four: docs/plasmatic-jelly-system.md — no backdrop-filter, no
+                     `infinite` animation outside .jelly-flow, jelly paint layers at negative z-index)
   site-tier.css      entry sheet for _site pages: Tailwind + globals.css, minus game/app-only sources
   app-tier.css       entry sheet for full-screen routes: the superset (lib/style-tier.ts picks)
   router.tsx         router config: intent preloading, pending component timings

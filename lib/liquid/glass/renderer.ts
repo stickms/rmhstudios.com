@@ -1,10 +1,29 @@
 /**
- * The page's one glass renderer: a single WebGL 2 context, one program, one scene texture. Each glass surface owns
- * a plain 2D canvas (behind its content); `draw` renders that surface into the shared offscreen canvas and copies it
- * across in the same task, so no frame is ever shown half-drawn and the browser never holds more than one GL context
- * for all of it (they are capped at ~16 per page, and the globe uses one too).
+ * The page's one glass renderer: a single WebGL 2 context, two programs (the rim slab and the jelly haze), one scene
+ * texture. Each glass surface owns a plain 2D canvas (behind its content); `draw` renders that surface into the shared
+ * offscreen canvas and copies it across in the same task, so no frame is ever shown half-drawn and the browser never
+ * holds more than one GL context for all of it (they are capped at ~16 per page, and the globe uses one too).
+ * `drawHaze` does the same for a surface's low-res haze canvas with the haze program; the engine batches every haze
+ * draw of a frame before its rim draws, so a frame switches program at most twice.
  */
+import { HAZE_FRAG } from './haze-shader';
 import { FRAG, VERT } from './shader';
+
+type RGB = [number, number, number];
+type RGBA4 = [number, number, number, number];
+
+/** The jelly terms shared by both programs (01 §2.4). */
+export interface JellyLook {
+  /** Per-surface 0..1. */
+  seed: number;
+  /** Haze colour (rgb 0..1) and the role's haze alpha. */
+  haze: RGB;
+  hazeA: number;
+  plasmaA: RGB;
+  plasmaB: RGB;
+  /** Role plasma strength × theme gain. */
+  plasma: number;
+}
 
 export interface GlassDraw {
   /** Surface size in CSS px, and the backing-store scale it is drawn at. */
@@ -32,6 +51,77 @@ export interface GlassDraw {
   lightOn: number;
   /** Optical tilt on a unit disc. Only the glass normal changes; content stays in normal flow. */
   tilt?: [number, number];
+  /** Jelly look; omitted = clear glass (no veil, no plasma, full dispersion). */
+  jelly?: JellyLook;
+  /** Dispersion relative to crown glass (0.8 for jelly). Default 1. */
+  dispersion?: number;
+  /** Canvas overdraw past the host on each side, CSS px (≤ 2). The target canvas covers `width + 2·margin`. */
+  margin?: number;
+  /** `latticeUniform()` output (16 floats) while a Tier L lattice is awake; omitted or null = no squish. */
+  lattice?: Float32Array | null;
+  /** #989 gel tokens; omitted = no RGB band, no Fresnel edge, no depth, no plasma colour. */
+  gel?: GelLook;
+  /** Dormant plasma drawn by THIS program (slabs without a haze canvas); omitted = none. */
+  plasma?: PlasmaDraw | null;
+  /** The press dent while `dentOf(el)` is non-null; omitted or null = none (`uDentOn` 0). */
+  dent?: DentDraw | null;
+}
+
+/** The #989 gel tokens a surface carries, read on admission and theme change (`--gel-*`, `--site-accent`). */
+export interface GelLook {
+  /** R/G/B band displacement, px, signed: negative = toward the top-left light (`--gel-disperse-r/-g/-b`). */
+  disperse: RGB;
+  /** RGB band depth inside the edge, px (`--gel-bevel`), and its gain. */
+  band: number;
+  bandA: number;
+  /** The band's channel tints + alpha (`--gel-edge-r/-g/-b`). */
+  edge: [RGBA4, RGBA4, RGBA4];
+  /** 1px Fresnel edge colour + alpha (`--gel-fresnel`). */
+  fresnel: RGBA4;
+  /** Dent light dot colour + alpha (`--gel-specular`). */
+  specular: [number, number, number, number];
+  /** Plasma colour (`--site-accent`). */
+  accent: RGB;
+  /** Plasma alpha at level 1. */
+  plasmaPeak: number;
+}
+
+/** The dormant plasma's per-draw state. */
+export interface PlasmaDraw {
+  /** Eased wake level 0..1. */
+  level: number;
+  /** `packRings()` output: 4 × (x, y, radius, strength), host px. */
+  rings: Float32Array;
+}
+
+/** The press dent (`dentOf`), host px; `depth` normalised to 0..1. */
+export interface DentDraw {
+  x: number;
+  y: number;
+  depth: number;
+  radius: number;
+  stretchX: number;
+  stretchY: number;
+}
+
+/** One haze draw (01 §2.6). The target canvas is `round(width·scale) × round(height·scale)`. */
+export interface HazeDraw {
+  width: number;
+  height: number;
+  scale: number;
+  radius: number;
+  bezel: number;
+  look: JellyLook;
+  /** Flow speed, eddy amount, current axis (radians). */
+  flow: [number, number, number];
+  quiet: number;
+  /** Motion amplitude (1 lively, `CALM.amplitude` under calm). */
+  amp: number;
+  /** #989 dormant plasma; omitted = level 0, no rings. */
+  plasma?: PlasmaDraw | null;
+  gel?: GelLook;
+  /** Plasma motion (1 lively, `PLASMA_LOOK.calmMotion` under calm, 0 still). */
+  plasmaMotion?: number;
 }
 
 type GL = WebGL2RenderingContext;
@@ -47,6 +137,32 @@ function compile(gl: GL, type: number, src: string): WebGLShader | null {
   }
   return s;
 }
+
+const HAZE_NAMES = [
+  'uSize',
+  'uScale',
+  'uRadius',
+  'uBezel',
+  'uTime',
+  'uSeed',
+  'uHaze',
+  'uPlasmaA',
+  'uPlasmaB',
+  'uPlasma',
+  'uFlow',
+  'uQuiet',
+  'uAmp',
+  'uPlasmaMotion',
+  'uLevel',
+  'uAccent',
+  'uPlasmaPeak',
+  'uRings',
+] as const;
+type HName = (typeof HAZE_NAMES)[number];
+
+const NO_LATTICE = new Float32Array(16);
+const NO_RINGS = new Float32Array(16);
+const NO_EDGE: RGBA4 = [0, 0, 0, 0];
 
 const NAMES = [
   'uSize',
@@ -64,13 +180,52 @@ const NAMES = [
   'uLight',
   'uLightOn',
   'uTilt',
+  'uMargin',
+  'uSeed',
+  'uHaze',
+  'uDispersion',
+  'uJelly',
+  'uJellyOn',
+  'uDisperse',
+  'uBand',
+  'uEdgeR',
+  'uEdgeG',
+  'uEdgeB',
+  'uFresnel',
+  'uPlasmaInRim',
+  'uDent',
+  'uDentStretch',
+  'uDentOn',
+  'uSpecular',
+  'uLevel',
+  'uAccent',
+  'uPlasmaPeak',
+  'uRings',
 ] as const;
 type UName = (typeof NAMES)[number];
+
+function link(gl: GL, vs: WebGLShader, fsSrc: string): WebGLProgram | null {
+  const fs = compile(gl, gl.FRAGMENT_SHADER, fsSrc);
+  if (!fs) return null;
+  const prog = gl.createProgram();
+  if (!prog) return null;
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.bindAttribLocation(prog, 0, 'aPos');
+  gl.linkProgram(prog);
+  return gl.getProgramParameter(prog, gl.LINK_STATUS) ? prog : null;
+}
 
 export class GlassRenderer {
   readonly canvas: HTMLCanvasElement;
   private gl: GL | null = null;
   private u = {} as Record<UName, WebGLUniformLocation | null>;
+  private h = {} as Record<HName, WebGLUniformLocation | null>;
+  private rimProg: WebGLProgram | null = null;
+  /** Null when the haze program failed to compile: rims still draw, the CSS carrier keeps the motion. */
+  private hazeProg: WebGLProgram | null = null;
+  private current: WebGLProgram | null = null;
+  private hazeTime = NaN;
   private tex: WebGLTexture | null = null;
   private lost = false;
   private cw = 0;
@@ -85,6 +240,7 @@ export class GlassRenderer {
       this.lost = true;
       this.gl = null;
       this.tex = null;
+      this.rimProg = this.hazeProg = this.current = null;
       this.onChange?.();
     });
     canvas.addEventListener('webglcontextrestored', () => {
@@ -116,16 +272,16 @@ export class GlassRenderer {
     }) as GL | null;
     if (!gl) return false;
     const vs = compile(gl, gl.VERTEX_SHADER, VERT);
-    const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
-    if (!vs || !fs) return false;
-    const prog = gl.createProgram();
+    if (!vs) return false;
+    const prog = link(gl, vs, FRAG);
     if (!prog) return false;
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.bindAttribLocation(prog, 0, 'aPos');
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
+    const haze = link(gl, vs, HAZE_FRAG);
+    if (haze) for (const n of HAZE_NAMES) this.h[n] = gl.getUniformLocation(haze, n);
+    this.hazeProg = haze;
+    this.hazeTime = NaN;
     gl.useProgram(prog);
+    this.rimProg = prog;
+    this.current = prog;
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
@@ -170,12 +326,19 @@ export class GlassRenderer {
     return gl.getError() === gl.NO_ERROR;
   }
 
-  /** Render one surface and copy it into `target`. Returns false if nothing could be drawn. */
-  draw(o: GlassDraw, target: HTMLCanvasElement): boolean {
-    const gl = this.gl;
-    if (!gl || this.lost) return false;
-    const pw = Math.max(1, Math.round(o.width * o.dpr));
-    const ph = Math.max(1, Math.round(o.height * o.dpr));
+  /** True when the haze program compiled; without it the engine leaves haze to the CSS carriers. */
+  get hazeReady(): boolean {
+    return this.ready && this.hazeProg !== null;
+  }
+
+  private use(prog: WebGLProgram): void {
+    if (this.current === prog) return;
+    this.gl!.useProgram(prog);
+    this.current = prog;
+  }
+
+  /** Grow the shared backing store (high-water) and size the target. */
+  private prepare(pw: number, ph: number, target: HTMLCanvasElement): void {
     // Retain a high-water backing store. Resizing this shared canvas to EVERY
     // surface reallocated the GPU buffer repeatedly within a single frame.
     if (pw > this.cw || ph > this.ch) {
@@ -186,11 +349,78 @@ export class GlassRenderer {
       target.width = pw;
       target.height = ph;
     }
+  }
+
+  /** Draw the bound program's full-screen triangle and copy the bottom-left `pw × ph` into `target`. */
+  private blit(pw: number, ph: number, target: HTMLCanvasElement): boolean {
+    const gl = this.gl!;
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    const ctx = target.getContext('2d');
+    if (!ctx) return false;
+    ctx.clearRect(0, 0, pw, ph);
+    // The GL viewport starts at the bottom-left; Canvas2D's source rect starts
+    // at the top-left. Copy just the current surface from the retained buffer.
+    ctx.drawImage(this.canvas, 0, this.ch - ph, pw, ph, 0, 0, pw, ph);
+    return true;
+  }
+
+  /**
+   * Render one surface's haze into `target` (its `.jelly-haze-canvas`). `time` is the ambient clock in seconds: the
+   * same value for every surface in a frame, so it is uploaded once per frame, not per surface.
+   */
+  drawHaze(o: HazeDraw, time: number, target: HTMLCanvasElement): boolean {
+    const gl = this.gl;
+    const prog = this.hazeProg;
+    if (!gl || this.lost || !prog) return false;
+    const pw = Math.max(1, Math.round(o.width * o.scale));
+    const ph = Math.max(1, Math.round(o.height * o.scale));
+    this.prepare(pw, ph, target);
+    this.use(prog);
+    const h = this.h;
+    if (time !== this.hazeTime) {
+      gl.uniform1f(h.uTime, time);
+      this.hazeTime = time;
+    }
+    gl.viewport(0, 0, pw, ph);
+    gl.uniform2f(h.uSize, o.width, o.height);
+    gl.uniform2f(h.uScale, pw / o.width, ph / o.height);
+    gl.uniform1f(h.uRadius, o.radius);
+    gl.uniform1f(h.uBezel, o.bezel);
+    gl.uniform1f(h.uSeed, o.look.seed);
+    gl.uniform4f(h.uHaze, o.look.haze[0], o.look.haze[1], o.look.haze[2], o.look.hazeA);
+    gl.uniform3f(h.uPlasmaA, o.look.plasmaA[0], o.look.plasmaA[1], o.look.plasmaA[2]);
+    gl.uniform3f(h.uPlasmaB, o.look.plasmaB[0], o.look.plasmaB[1], o.look.plasmaB[2]);
+    gl.uniform1f(h.uPlasma, o.look.plasma);
+    gl.uniform3f(h.uFlow, o.flow[0], o.flow[1], o.flow[2]);
+    gl.uniform1f(h.uQuiet, o.quiet);
+    gl.uniform1f(h.uAmp, o.amp);
+    gl.uniform1f(h.uPlasmaMotion, o.plasmaMotion ?? 1);
+    gl.uniform1f(h.uLevel, o.plasma?.level ?? 0);
+    gl.uniform4fv(h.uRings, o.plasma?.rings ?? NO_RINGS);
+    const acc = o.gel?.accent;
+    gl.uniform3f(h.uAccent, acc?.[0] ?? 0, acc?.[1] ?? 0, acc?.[2] ?? 0);
+    gl.uniform1f(h.uPlasmaPeak, o.gel?.plasmaPeak ?? 0);
+    return this.blit(pw, ph, target);
+  }
+
+  /** Render one surface and copy it into `target`. Returns false if nothing could be drawn. */
+  draw(o: GlassDraw, target: HTMLCanvasElement): boolean {
+    const gl = this.gl;
+    if (!gl || this.lost || !this.rimProg) return false;
+    const margin = Math.max(0, o.margin ?? 0);
+    const cssW = o.width + 2 * margin;
+    const cssH = o.height + 2 * margin;
+    const pw = Math.max(1, Math.round(cssW * o.dpr));
+    const ph = Math.max(1, Math.round(cssH * o.dpr));
+    this.prepare(pw, ph, target);
+    this.use(this.rimProg);
     const u = this.u;
     gl.viewport(0, 0, pw, ph);
     // gl_FragCoord is in device px; `uPx` converts it, and the surface size is the CSS size.
     gl.uniform2f(u.uSize, o.width, o.height);
-    gl.uniform1f(u.uPx, o.width / pw);
+    gl.uniform1f(u.uPx, cssW / pw);
+    gl.uniform1f(u.uMargin, margin);
     gl.uniform1f(u.uRadius, o.radius);
     gl.uniform1f(u.uBezel, o.bezel);
     gl.uniform1f(u.uThickness, o.thickness);
@@ -209,15 +439,34 @@ export class GlassRenderer {
     gl.uniform3f(u.uLight, o.lightX, o.lightY, o.lightZ);
     gl.uniform1f(u.uLightOn, o.lightOn);
     gl.uniform2f(u.uTilt, o.tilt?.[0] ?? 0, o.tilt?.[1] ?? 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    const ctx = target.getContext('2d');
-    if (!ctx) return false;
-    ctx.clearRect(0, 0, pw, ph);
-    // The GL viewport starts at the bottom-left; Canvas2D's source rect starts
-    // at the top-left. Copy just the current surface from the retained buffer.
-    ctx.drawImage(this.canvas, 0, this.ch - ph, pw, ph, 0, 0, pw, ph);
-    return true;
+    const j = o.jelly;
+    gl.uniform1f(u.uSeed, j?.seed ?? 0);
+    gl.uniform4f(u.uHaze, j?.haze[0] ?? 0, j?.haze[1] ?? 0, j?.haze[2] ?? 0, j?.hazeA ?? 0);
+    gl.uniform1f(u.uDispersion, o.dispersion ?? 1);
+    gl.uniform2fv(u.uJelly, o.lattice ?? NO_LATTICE);
+    gl.uniform1f(u.uJellyOn, o.lattice ? 1 : 0);
+    const gel = o.gel;
+    gl.uniform3f(u.uDisperse, gel?.disperse[0] ?? 0, gel?.disperse[1] ?? 0, gel?.disperse[2] ?? 0);
+    gl.uniform2f(u.uBand, gel?.band ?? 0, gel?.bandA ?? 0);
+    const f = gel?.fresnel;
+    gl.uniform4f(u.uFresnel, f?.[0] ?? 0, f?.[1] ?? 0, f?.[2] ?? 0, f?.[3] ?? 0);
+    const [eR, eG, eB] = gel?.edge ?? [NO_EDGE, NO_EDGE, NO_EDGE];
+    gl.uniform4f(u.uEdgeR, eR[0], eR[1], eR[2], eR[3]);
+    gl.uniform4f(u.uEdgeG, eG[0], eG[1], eG[2], eG[3]);
+    gl.uniform4f(u.uEdgeB, eB[0], eB[1], eB[2], eB[3]);
+    const sp = gel?.specular;
+    gl.uniform4f(u.uSpecular, sp?.[0] ?? 0, sp?.[1] ?? 0, sp?.[2] ?? 0, sp?.[3] ?? 0);
+    gl.uniform3f(u.uAccent, gel?.accent[0] ?? 0, gel?.accent[1] ?? 0, gel?.accent[2] ?? 0);
+    gl.uniform1f(u.uPlasmaPeak, gel?.plasmaPeak ?? 0);
+    const p = o.plasma;
+    gl.uniform1f(u.uPlasmaInRim, p ? 1 : 0);
+    gl.uniform1f(u.uLevel, p?.level ?? 0);
+    gl.uniform4fv(u.uRings, p?.rings ?? NO_RINGS);
+    const dent = o.dent;
+    gl.uniform1f(u.uDentOn, dent ? 1 : 0);
+    gl.uniform4f(u.uDent, dent?.x ?? 0, dent?.y ?? 0, dent?.depth ?? 0, dent?.radius ?? 1);
+    gl.uniform2f(u.uDentStretch, dent?.stretchX ?? 0, dent?.stretchY ?? 0);
+    return this.blit(pw, ph, target);
   }
 
   dispose(): void {
@@ -225,6 +474,7 @@ export class GlassRenderer {
     if (gl && this.tex) gl.deleteTexture(this.tex);
     this.gl = null;
     this.tex = null;
+    this.rimProg = this.hazeProg = this.current = null;
     this.canvas.width = this.canvas.height = 1;
   }
 }

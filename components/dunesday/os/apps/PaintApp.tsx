@@ -960,7 +960,7 @@ export default function PaintApp({ win }: AppProps) {
       </div>
 
       <div className="ds-paint-scroll">
-        <div className="ds-paint-sheet" style={{ width: dims.w * zoom, height: dims.h * zoom }}>
+        <div className="ds-paint-sheet" data-jelly-zone="playfield" style={{ width: dims.w * zoom, height: dims.h * zoom }}>
           <canvas
             ref={canvasRef}
             className="ds-paint-canvas"

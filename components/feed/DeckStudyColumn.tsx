@@ -299,7 +299,7 @@ export function DeckStudyColumn({
  onChange={(e) => setFront(e.target.value)}
  placeholder={t('front-placeholder', { defaultValue:'Front (question)'})}
  maxLength={500}
- className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <textarea
  value={back}
@@ -307,7 +307,7 @@ export function DeckStudyColumn({
  placeholder={t('back-placeholder', { defaultValue:'Back (answer)'})}
  maxLength={500}
  rows={2}
- className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="glass-inset border w-full resize-none rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <div className="flex justify-end">
  <Button

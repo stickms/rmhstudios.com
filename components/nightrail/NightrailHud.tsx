@@ -209,6 +209,7 @@ export const NightrailHud = forwardRef<HudHandle, Props>(function NightrailHud({
       ref={rootRef}
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-30 select-none"
+      data-jelly-zone="hud"
       style={{ display: visible ? undefined : 'none' }}
     >
       <div

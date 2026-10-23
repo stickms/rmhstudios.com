@@ -235,6 +235,7 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
 
       <div className="glass-fill hidden overflow-x-auto rounded-site md:block">
         <table
+          data-jelly-group="off"
           className="w-full border-collapse text-left text-sm"
           aria-label={t('ladder.jobPostings', { defaultValue: 'Job postings' })}
         >

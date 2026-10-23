@@ -377,7 +377,7 @@ function ViewModal({
 
   return (
     <LibraryDialogShell onClose={onClose}>
-      <div className="lib-upload lib-coll-modal" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="glass-overlay lib-upload lib-coll-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
           <div className="lib-collections__group-titles">
             <h2 className="lib-upload__title">{c.title}</h2>
@@ -472,7 +472,7 @@ function CreateModal({
   return (
     <LibraryDialogShell onClose={onClose}>
       <div
-        className="lib-upload"
+        className="glass-overlay lib-upload"
         onMouseDown={(e) => e.stopPropagation()}
         style={{ maxWidth: 440 }}
       >
@@ -493,7 +493,7 @@ function CreateModal({
           <label className="lib-upload__label">
             {t('label-title', { defaultValue: 'Title' })}
             <input
-              className="lib-upload__input"
+              className="glass-inset lib-upload__input"
               value={title}
               maxLength={120}
               autoFocus
@@ -506,7 +506,7 @@ function CreateModal({
           <label className="lib-upload__label">
             {t('label-description', { defaultValue: 'Description' })}
             <textarea
-              className="lib-upload__input lib-upload__textarea"
+              className="glass-inset lib-upload__input lib-upload__textarea"
               value={description}
               maxLength={500}
               onChange={(e) => setDescription(e.target.value)}
@@ -572,7 +572,7 @@ function AddBooksModal({
 
   return (
     <LibraryDialogShell onClose={onClose}>
-      <div className="lib-upload" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="glass-overlay lib-upload" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
           <h2 className="lib-upload__title">
             {t('add-to-collection', { name: collection.title, defaultValue: 'Add to “{{name}}”' })}
@@ -587,7 +587,7 @@ function AddBooksModal({
           </button>
         </div>
         <input
-          className="lib-upload__input"
+          className="glass-inset lib-upload__input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('search-your-books', { defaultValue: 'Search your books…' })}

@@ -13,6 +13,7 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from "react-i18next";
 import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store';
+import { markGamePlaying } from '@/lib/game-capabilities';
 
 interface MultiplayerGameScreenProps {
   lobbyId: string;
@@ -25,9 +26,14 @@ export default function MultiplayerGameScreen({ lobbyId }: MultiplayerGameScreen
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { t } = useTranslation("c-altair");
 
+  // The match is live for as long as this screen is mounted: quiet the jelly
+  // material's ambient motion and arcs (R16).
+  useEffect(() => markGamePlaying(), []);
+
   return (
     <div className="fixed inset-0 bg-(--altair-bg)">
       <canvas
+        data-jelly-zone="playfield"
         ref={canvasRef}
         className="w-full h-full"
       />

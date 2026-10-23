@@ -13,6 +13,7 @@ import { HUD } from './HUD';
 import { BuyMenu } from './BuyMenu';
 import { Scoreboard } from './Scoreboard';
 import { MobileControls } from './MobileControls';
+import { markGamePlaying } from '@/lib/game-capabilities';
 
 const LOOK_SENS = 0.0024;
 const nowMs = () => performance.now();
@@ -187,13 +188,19 @@ export function GameView() {
 
   const requestLock = useCallback(() => { if (!isMobile) canvasWrap.current?.requestPointerLock?.(); }, [isMobile]);
 
+  // Online-first, so this match cannot mount `useGameSession` (see
+  // game-session.test.ts) — but it is a live run all the same: quiet the jelly
+  // material's ambient motion and arcs while the match view is up (R16).
+  const inMatch = !!matchConfig;
+  useEffect(() => (inMatch ? markGamePlaying() : undefined), [inMatch]);
+
   if (!matchConfig || !worldRef.current) return null;
   const world = worldRef.current;
   const dpr = isMobile ? PIXEL_SCALE_MOBILE : PIXEL_SCALE_DESKTOP;
 
   return (
     <div className="bp-match" style={{ position: 'absolute', inset: 0, background: PALETTE.bg, overflow: 'hidden' }}>
-      <div ref={canvasWrap} onClick={requestLock} style={{ position: 'absolute', inset: 0, cursor: locked ? 'none' : 'pointer' }}>
+      <div ref={canvasWrap} data-jelly-zone="playfield" onClick={requestLock} style={{ position: 'absolute', inset: 0, cursor: locked ? 'none' : 'pointer' }}>
         <Canvas
           shadows dpr={dpr}
           gl={{ antialias: false, powerPreference: 'high-performance' }}

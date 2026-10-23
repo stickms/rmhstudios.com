@@ -68,7 +68,7 @@ export function PatternView() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden" data-jelly-group="off">
       {/* Pattern header */}
       <div className="flex shrink-0 items-center gap-2 border-b border-site-border bg-site-surface px-3 py-1.5">
         {/* Pattern selector */}

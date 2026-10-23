@@ -40,6 +40,13 @@ export function useCelebration() {
       const confetti = (await import('canvas-confetti')).default;
       const colors = options.colors ?? themeColors();
       const origin = { x: options.origin?.x ?? 0.5, y: options.origin?.y ?? 0.6 };
+      // The jelly discharges at the burst's origin. `dischargeAt` applies every arc gate and the flash ledger, and
+      // is a no-op while arcs are off or not installed.
+      void import('@/lib/jelly/arcs')
+        .then(({ dischargeAt }) =>
+          dischargeAt(origin.x * window.innerWidth, origin.y * window.innerHeight),
+        )
+        .catch(() => {});
 
       if (options.kind === 'fireworks') {
         const end = Date.now() + 800;

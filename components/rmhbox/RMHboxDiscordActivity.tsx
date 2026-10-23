@@ -71,7 +71,7 @@ function LobbyBrowser({ connectionStatus, onCreateLobby, onJoinLobby }: LobbyBro
             </div>
 
             {/* Create Lobby */}
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
+            <div className="rounded-xl app-glass p-4">
                 <h2 className="text-base font-semibold mb-2">{t("create-lobby", { defaultValue: "Create Lobby" })}</h2>
                 <p className="text-xs mb-3 text-(--app-text-muted)">{t("create-lobby-desc", { defaultValue: "Start a new session and invite friends." })}</p>
                 <button
@@ -84,7 +84,7 @@ function LobbyBrowser({ connectionStatus, onCreateLobby, onJoinLobby }: LobbyBro
             </div>
 
             {/* Join Lobby */}
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
+            <div className="rounded-xl app-glass p-4">
                 <h2 className="text-base font-semibold mb-2">{t("join-lobby", { defaultValue: "Join Lobby" })}</h2>
                 <p className="text-xs mb-3 text-(--app-text-muted)">{t("join-lobby-desc", { defaultValue: "Enter a 6-character room code." })}</p>
                 <form
@@ -463,7 +463,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                                 </h1>
 
                                 {sessionResults?.standings && sessionResults.standings.length > 0 && (
-                                    <div className="w-full rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
+                                    <div className="w-full rounded-xl app-glass p-4">
                                         <h2 className="mb-3 text-lg font-semibold text-(--app-accent)">{t("final-standings", { defaultValue: "Final Standings" })}</h2>
                                         <div className="space-y-2">
                                             {sessionResults.standings.map((s) => (
@@ -485,7 +485,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                                 )}
 
                                 {sessionResults?.matchHistory && sessionResults.matchHistory.length > 0 && (
-                                    <div className="w-full rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
+                                    <div className="w-full rounded-xl app-glass p-4">
                                         <h2 className="mb-3 text-lg font-semibold text-(--app-accent)">{t("match-history", { defaultValue: "Match History" })}</h2>
                                         <div className="space-y-2">
                                             {sessionResults.matchHistory.map((m) => (

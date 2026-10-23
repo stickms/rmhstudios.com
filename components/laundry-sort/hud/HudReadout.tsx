@@ -98,7 +98,7 @@ export function HudReadout({ matchRef, running }: Props) {
 
   return (
     <>
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-2 p-2 sm:p-4">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-2 p-2 sm:p-4" data-jelly-zone="hud">
         <div className="ls-panel px-3 py-2 sm:px-4">
           <div className="ls-muted flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest sm:text-xs">
             <Trophy className="size-3 sm:size-3.5" aria-hidden="true" />

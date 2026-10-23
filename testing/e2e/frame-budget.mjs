@@ -15,7 +15,8 @@
 //   … frame-budget.mjs --route / --route /games # specific routes
 //   … frame-budget.mjs --profile mobile         # desktop | mobile | both
 //   … frame-budget.mjs --json out.json          # machine-readable report
-//   … frame-budget.mjs --gate                   # exit 1 if a site-shell page is not idle at rest
+//   … frame-budget.mjs --gate                   # exit 1 if a site-shell page is not at its resting cadence
+//   … frame-budget.mjs --gate --engaged         # same, but with a pointer moving: the engaged ceiling
 //   … frame-budget.mjs --settle 15000           # wait this long after load before measuring
 //   FRAME_GPU=1 … frame-budget.mjs              # real GPU, not SwiftShader (3D routes need it)
 //
@@ -55,6 +56,7 @@
 import { chromium } from 'playwright';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { collectRoutes } from './fouc-routes.mjs';
+import { IDLE_AFTER_MS, JELLY_BUDGETS } from '../../lib/jelly/tiers.ts';
 
 const BASE_URL = (process.env.BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 /** Same resolution as fouc.mjs — see the note on CHROMIUM_PATH there. */
@@ -62,8 +64,30 @@ const CHROMIUM_PATH =
   process.env.FRAME_CHROMIUM ??
   (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
 
-/** A site-shell page producing more frames than this per second at rest fails `--gate`. */
-const REST_FRAME_LIMIT = 2;
+/**
+ * A site-shell page producing more frames than this per second at rest fails `--gate`.
+ *
+ * Plasmatic Jelly R7 (docs/plans/plasmatic-jelly/00-master-plan.md, owner decision 2026-10-23): the material
+ * ALWAYS has underlying motion, so a visible page never reaches 0 frames. After `IDLE_AFTER_MS` without input the
+ * ambient clock drops to the tier's idle floor (`JELLY_BUDGETS[tier].idleClockHz`, 12 Hz on desktop) and stays
+ * there; it is 0 only when the tab is hidden, the window unfocused, nothing jelly is on screen, the tier is degraded
+ * or `jellyMotion = still`. The rest limit is therefore that floor + 1 frame of slack (13 fps) — a DELIBERATE
+ * reversal of the 2026-10-08 audit's 2 fps rest limit (docs/performance-audit-2026-10-08.md), recorded in the
+ * jelly contract (docs/plasmatic-jelly-system.md). Both numbers come from `lib/jelly/tiers.ts`; never restate them
+ * here. The CPU target at rest on `/` stays ≤ 250 ms/s (04 §3.5, advisory — reported, not gated).
+ */
+const IDLE_FLOOR_HZ = Math.max(...Object.values(JELLY_BUDGETS).map((b) => b.idleClockHz));
+const REST_FRAME_LIMIT = IDLE_FLOOR_HZ + 1;
+/** `--engaged`: someone is moving the pointer, so the clock runs at the tier's engaged rate (30 Hz) + 5 of slack. */
+const ENGAGED_FRAME_LIMIT = Math.max(...Object.values(JELLY_BUDGETS).map((b) => b.clockHz)) + 5;
+/** Advisory browser-CPU budget at rest on `/` (04 §3.5); printed next to the cadence, never gated. */
+const REST_CPU_TARGET_MS = 250;
+/**
+ * The only perpetual animations a site page may hold: the CSS flow carriers' two keyframes, and only on spans inside
+ * `.jelly-flow` (site-infinite-animation.test.ts N3 sanctions exactly these). They are owned by
+ * `lib/jelly/flow-carriers.ts`, which removes them under every non-ambient state.
+ */
+const SANCTIONED_INFINITE = new Set(['jelly-drift', 'jelly-current']);
 
 /**
  * How long a page sits after `load` before anything is measured. `--gate` waits
@@ -74,7 +98,8 @@ const REST_FRAME_LIMIT = 2;
  * seconds. `--settle <ms>` overrides either.
  */
 const DEFAULT_SETTLE_MS = 2000;
-const GATE_SETTLE_MS = 12000;
+// Past the bounded animations AND past the jelly idle threshold, so `rest` means "on the idle floor" (R7).
+const GATE_SETTLE_MS = Math.max(12000, IDLE_AFTER_MS + 3000);
 const REST_MS = 3000;
 const TRACE_MS = 2000;
 const IDLE_MS = 2000;
@@ -116,7 +141,11 @@ const profileArg = values('--profile')[0] ?? 'desktop';
 const profiles = profileArg === 'both' ? ['desktop', 'mobile'] : [profileArg];
 const jsonOut = values('--json')[0];
 const gate = flag('--gate');
-const SETTLE_MS = Number(values('--settle')[0] ?? (gate ? GATE_SETTLE_MS : DEFAULT_SETTLE_MS));
+const engaged = flag('--engaged');
+const FRAME_LIMIT = engaged ? ENGAGED_FRAME_LIMIT : REST_FRAME_LIMIT;
+const SETTLE_MS = Number(
+  values('--settle')[0] ?? (gate && !engaged ? GATE_SETTLE_MS : DEFAULT_SETTLE_MS),
+);
 let routes = values('--route');
 if (flag('--all')) routes = collectRoutes().audited.map((r) => r.url);
 if (routes.length === 0) routes = DEFAULT_ROUTES;
@@ -173,24 +202,46 @@ async function measure(browser, cdp, binary, route, profile) {
     result.status = response?.status();
     await page.waitForTimeout(SETTLE_MS);
 
-    const dom = await page.evaluate(() => {
+    const dom = await page.evaluate((sanctionedNames) => {
       const describe = (a) => {
         const t = a.effect?.target;
         const name = a.animationName ?? a.constructor.name;
         const where = t?.nodeType === 1 ? `${t.tagName.toLowerCase()}.${String(t.className).split(' ')[0]}` : '?';
         return `${name} on ${where}${a.effect?.pseudoElement ?? ''}`;
       };
+      const running = document
+        .getAnimations()
+        .filter((a) => a.playState === 'running' && a.effect?.getTiming().iterations === Infinity);
+      const sanctioned = (a) =>
+        sanctionedNames.includes(a.animationName) && !!a.effect?.target?.closest?.('.jelly-flow');
       return {
         siteShell: !!document.querySelector('.radial-shell'),
         nodes: document.getElementsByTagName('*').length,
-        infinite: document
-          .getAnimations()
-          .filter((a) => a.playState === 'running' && a.effect?.getTiming().iterations === Infinity)
-          .map(describe),
+        infinite: running.filter((a) => !sanctioned(a)).map(describe),
+        jellyCarriers: running.filter(sanctioned).length,
+        hazeCanvases: document.querySelectorAll('.jelly-haze-canvas').length,
       };
-    });
+    }, [...SANCTIONED_INFINITE]);
     Object.assign(result, dom);
 
+    // `--engaged`: a pointer sweeping the viewport for the whole measured window (input keeps the clock engaged).
+    let sweeping = engaged;
+    const sweep = (async () => {
+      const { width, height } = page.viewportSize() ?? PROFILES[profile].viewport;
+      for (let i = 0; sweeping; i++) {
+        const t = i / 40;
+        const x = width * (0.2 + 0.6 * ((Math.sin(t) + 1) / 2));
+        const y = height * (0.3 + 0.4 * ((Math.cos(t * 0.7) + 1) / 2));
+        await page.mouse.move(x, y);
+        await page.waitForTimeout(50);
+      }
+    })().catch(() => {
+      sweeping = false; // the page closed under us; the error is reported by the outer catch
+    });
+    const stopSweep = async () => {
+      sweeping = false;
+      await sweep;
+    };
     const cpu0 = chromiumCpuMs(binary) ?? (await cdpCpuMs(cdp));
     await page.waitForTimeout(REST_MS);
     const cpu1 = chromiumCpuMs(binary) ?? (await cdpCpuMs(cdp));
@@ -201,6 +252,7 @@ async function measure(browser, cdp, binary, route, profile) {
     const trace = JSON.parse((await browser.stopTracing()).toString());
     const events = trace.traceEvents ?? trace;
     result.restFramesPerSec = events.filter((e) => e.name === 'DrawFrame').length / (TRACE_MS / 1000);
+    await stopSweep();
 
     const probe = await page.evaluate(
       ({ IDLE_MS, SCROLL_MS }) =>
@@ -264,12 +316,14 @@ for (const profile of profiles) {
     const r = await measure(browser, cdp, binary, route, profile);
     results.push(r);
     const idleFail =
-      r.siteShell && (r.restFramesPerSec > REST_FRAME_LIMIT || (r.infinite?.length ?? 0) > 0);
+      r.siteShell && (r.restFramesPerSec > FRAME_LIMIT || (r.infinite?.length ?? 0) > 0);
     if (idleFail) failures.push(r);
     console.log(
       `${idleFail ? '✗' : ' '} ${profile.padEnd(7)} ${route.padEnd(28)} ` +
         `rest ${String(r.restFramesPerSec ?? '—').padStart(5)} frames/s ${String(r.restCpuMsPerSec ?? '—').padStart(5)} cpu-ms/s · ` +
         `idle ${r.idle?.fps ?? '—'}fps · scroll ${r.scroll?.fps ?? '—'}fps p95 ${r.scroll?.p95 ?? '—'}ms` +
+        (r.jellyCarriers || r.hazeCanvases ? ` · jelly ${r.jellyCarriers ?? 0} carrier anims, ${r.hazeCanvases ?? 0} haze` : '') +
+        (route === '/' && !engaged && (r.restCpuMsPerSec ?? 0) > REST_CPU_TARGET_MS ? ` · cpu > ${REST_CPU_TARGET_MS} target` : '') +
         (r.infinite?.length ? ` · ∞ ${r.infinite.slice(0, 3).join(', ')}${r.infinite.length > 3 ? ', …' : ''}` : '') +
         (r.error ? ` · ERROR ${r.error}` : ''),
     );
@@ -280,8 +334,9 @@ await browser.close();
 if (jsonOut) writeFileSync(jsonOut, JSON.stringify(results, null, 2));
 if (gate && failures.length > 0) {
   console.error(
-    `\n${failures.length} site-shell page(s) are not idle at rest (> ${REST_FRAME_LIMIT} frames/s or a perpetual animation).` +
-      `\nA page that never goes idle re-renders on every vsync — see docs/performance-audit-2026-10-08.md.`,
+    `\n${failures.length} site-shell page(s) exceed the ${engaged ? 'engaged' : 'resting'} cadence (> ${FRAME_LIMIT} frames/s) or hold an unsanctioned perpetual animation.` +
+      `\nAt rest the jelly runs on its ${IDLE_FLOOR_HZ} Hz idle floor (R7) and nothing else may tick; anything faster re-renders on every vsync —` +
+      `\nsee docs/plasmatic-jelly-system.md and docs/performance-audit-2026-10-08.md.`,
   );
   process.exit(1);
 }

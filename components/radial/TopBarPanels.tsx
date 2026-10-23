@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Search,
   Settings,
+  SlidersHorizontal,
   User as UserIcon,
   Wallet,
 } from 'lucide-react';
@@ -25,7 +26,13 @@ import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { QuickPanel, QuickPanelMoreIcon, QuickPanelNote, QuickPanelSkeleton } from './QuickPanel';
+import {
+  QuickPanel,
+  QuickPanelMoreIcon,
+  QuickPanelMotionToggle,
+  QuickPanelNote,
+  QuickPanelSkeleton,
+} from './QuickPanel';
 import { useReservedRows } from '@/hooks/useReservedRows';
 import { AVATAR_KINDS, KIND_ICON, useKindLabel } from '@/components/search/SearchHitRow';
 import type { SearchHit, SearchResponse } from '@/lib/search/types';
@@ -413,6 +420,47 @@ export function MessagesPanel({ open, onClose, anchorRef }: PanelProps) {
   );
 }
 
+/* ── Display (signed out) ────────────────────────────────────────────────── */
+
+/**
+ * The signed-out visitor's one panel: the "Pause ambient motion" control that
+ * {@link ProfilePanel} carries for an account. WCAG 2.2.2 asks for a pause
+ * mechanism for automatic motion, and that has to reach everyone the motion
+ * reaches — a visitor with no account has no profile panel and no Settings
+ * page. The choice lives on the device (QuickPanelMotionToggle's store writes
+ * `html[data-jelly-motion]` and localStorage); the footer offers the account
+ * route to the rest of the appearance settings.
+ */
+export function DisplayPanel({ open, onClose, anchorRef }: PanelProps) {
+  const { t } = useTranslation('feed');
+  return (
+    <QuickPanel
+      open={open}
+      onClose={onClose}
+      title={t('display', { defaultValue: 'Display' })}
+      icon={SlidersHorizontal}
+      anchorRef={anchorRef}
+      more={
+        <Link
+          to="/login"
+          search={{ callbackURL: undefined }}
+          className="rad-panel__more"
+          onClick={onClose}
+        >
+          <span>
+            {t('sign-in-for-more-settings', { defaultValue: 'Sign in for more settings' })}
+          </span>
+          <QuickPanelMoreIcon />
+        </Link>
+      }
+    >
+      <div className="rad-panel__links">
+        <QuickPanelMotionToggle />
+      </div>
+    </QuickPanel>
+  );
+}
+
 /* ── You ─────────────────────────────────────────────────────────────────── */
 
 export function ProfilePanel({ open, onClose, anchorRef }: PanelProps) {
@@ -487,6 +535,8 @@ export function ProfilePanel({ open, onClose, anchorRef }: PanelProps) {
             <strong>{t('settings', { defaultValue: 'Settings' })}</strong>
           </span>
         </Link>
+        {/* WCAG 2.2.2: one tap pauses ambient jelly motion (master plan R8). */}
+        <QuickPanelMotionToggle />
         <button type="button" className="rad-panel__row" onClick={signOut}>
           <LogOut aria-hidden />
           <span className="rad-panel__row-main">

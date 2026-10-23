@@ -119,7 +119,7 @@ export default function ReadabilityPanel({
             {excerpts.map((e) => (
               <li
                 key={e.key}
-                className="rounded-site-sm border border-site-border px-2.5 py-1.5 text-site-text-muted"
+                className="glass-fill rounded-site-sm px-2.5 py-1.5 text-site-text-muted"
               >
                 <span className="me-2 font-mono text-xs font-semibold text-site-warning">
                   {t('n-words', { n: e.words, defaultValue: '{{n}} words' })}

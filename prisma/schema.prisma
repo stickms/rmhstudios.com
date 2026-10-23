@@ -673,6 +673,14 @@ model AppearancePreference {
   /// EVERSION_LEVELS in lib/appearance/prefs.ts); null -> 'all'. Nullable with
   /// no backfill so the old image never names it.
   eversionLevel      String? @db.VarChar(8)
+  /// Jelly motion (Plasmatic Jelly R8): 'lively' | 'calm' | 'still' (see
+  /// JELLY_MOTION_LEVELS in lib/appearance/prefs.ts); null -> 'lively'. A new
+  /// column on purpose: the retired `reduceMotion` holds stale values with
+  /// different semantics. Nullable with no backfill.
+  jellyMotion        String? @db.VarChar(8)
+  /// Electric arcs (Plasmatic Jelly R9): 'full' | 'clicks' | 'off' (see
+  /// ELECTRIC_ARC_MODES); null -> 'full'. Nullable with no backfill.
+  electricArcs       String? @db.VarChar(8)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

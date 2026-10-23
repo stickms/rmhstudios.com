@@ -106,6 +106,16 @@ export const APPLE_SPRING = {
   sheet: { type: 'spring', duration: 0.55, bounce: 0.06 },
   /** Press-down. Deliberately quicker than the release, as UIKit does it. */
   press: { type: 'spring', duration: 0.22, bounce: 0 },
+  /** Plasmatic Jelly hover plump/lean — twin of `SPRINGS.jellyHover` (ζ 0.78). */
+  jellyHover: { type: 'spring', duration: 0.34, bounce: 0.22 },
+  /** Jelly press squash — twin of `SPRINGS.jellyPress`. Critically damped. */
+  jellyPress: { type: 'spring', duration: 0.18, bounce: 0 },
+  /** Jelly release wobble — twin of `SPRINGS.jellyRelease` (ζ 0.42). */
+  jellyRelease: { type: 'spring', duration: 0.44, bounce: 0.58 },
+  /** Jelly drag stretch — twin of `SPRINGS.jellyDrag` (ζ 0.55). */
+  jellyDrag: { type: 'spring', duration: 0.28, bounce: 0.45 },
+  /** Jelly neighbour nudge — twin of `SPRINGS.jellyNudge` (ζ 0.5). */
+  jellyNudge: { type: 'spring', duration: 0.4, bounce: 0.5 },
 } as const satisfies Record<string, Transition>;
 
 /**

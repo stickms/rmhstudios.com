@@ -85,6 +85,7 @@ export function DeskScene({ children }: { children?: React.ReactNode }) {
   const [dpr, setDpr] = useState(1.5);
   return (
     <Canvas
+      data-jelly-zone="playfield"
       shadows={false}
       dpr={dpr}
       gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }}

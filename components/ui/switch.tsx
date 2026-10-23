@@ -22,11 +22,14 @@ export function Switch({ checked, onCheckedChange, disabled, className, ...rest 
  aria-checked={checked}
  disabled={disabled}
  data-slot="switch"
+ // Plasmatic Jelly (04 §1, tier C): a control-mode soft body and a registered jelly host — the track takes the
+ // field material and the knob is a droplet (app/jelly-coverage.css §3).
+ data-jelly="control"
  onClick={() => onCheckedChange(!checked)}
  className={cn(
  // Compact visual track with a larger invisible hit area. This keeps dense
  // settings rows easy to scan without shrinking the touch target.
- "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border border-site-border bg-site-surface-active shadow-site-sm after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-['']",
+ "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border border-site-border bg-site-surface-active after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-['']",
  // The track is always the off surface (never the same colour as the knob, so
  // the knob stays visible even in high-contrast, where --site-border ==
  // --site-text). The accent of the "on" state is a layer that everts out of
@@ -43,7 +46,7 @@ export function Switch({ checked, onCheckedChange, disabled, className, ...rest 
  className={cn(
  // Knob colour is chosen to contrast its track in BOTH states: accent-fg is
  // guaranteed legible on the accent fill (on), text on the surface (off).
- 'block h-4 w-4 rounded-full shadow-site-sm',
+ 'block h-4 w-4 rounded-full',
  checked ? 'translate-x-[21px] bg-site-accent-fg' : 'translate-x-[3px] bg-site-text',
  )}
  />

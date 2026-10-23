@@ -221,7 +221,7 @@ export default function RmhTypeRoom() {
           {/* WAITING — Lobby */}
           {room.status === 'WAITING' && (
             <>
-              <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+              <div className="rounded-(--app-radius) app-glass p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold">{t("players-count", { defaultValue: "Players ({{count}}/8)", count: room.players.length })}</h2>
                   <div className="flex items-center gap-2">
@@ -384,7 +384,7 @@ export default function RmhTypeRoom() {
               </div>
 
               {/* Chat */}
-              <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) overflow-hidden" style={{ height: '16rem' }}>
+              <div className="rounded-(--app-radius) app-glass overflow-hidden" style={{ height: '16rem' }}>
                 <ChatPanel
                   messages={room.chat as ChatPanelMessage[]}
                   onSendMessage={handleSendChat}
@@ -422,7 +422,7 @@ export default function RmhTypeRoom() {
               </div>
 
               {/* Passage display — fills remaining space, scrolls internally */}
-              <div ref={passageRef} className="flex-1 min-h-0 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 rmhtype-passage-scroll">
+              <div ref={passageRef} data-jelly-group="off" data-jelly="lite" className="flex-1 min-h-0 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 rmhtype-passage-scroll">
                 <div className="rmhtype-passage select-none">
                   {[...room.passage].map((char, i) => {
                     let className = 'rmhtype-char-untyped';
@@ -477,7 +477,7 @@ export default function RmhTypeRoom() {
 
           {/* ROUND_RESULTS */}
           {room.status === 'ROUND_RESULTS' && room.roundResults && (
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) app-glass p-6">
               <h2 className="text-xl font-semibold mb-4 text-center">
                 {t("round-results", { defaultValue: "Round {{round}} Results", round: room.roundResults.round })}
               </h2>
@@ -508,7 +508,7 @@ export default function RmhTypeRoom() {
 
           {/* FINAL_RESULTS */}
           {room.status === 'FINAL_RESULTS' && room.finalResults && (
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) app-glass p-6">
               <h2 className="text-2xl font-bold mb-6 text-center">{t("final-results", { defaultValue: "Final Results" })}</h2>
               <div className="space-y-2">
                 {room.finalResults.rankings.map((r, i) => (
@@ -544,7 +544,7 @@ export default function RmhTypeRoom() {
       {banTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 app-scrim" onClick={() => { setBanTarget(null); setBanReason(''); }} />
-          <div className="relative w-full max-w-sm rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
+          <div className="relative w-full max-w-sm rounded-(--app-radius) app-glass p-6">
             <h3 className="text-lg font-semibold mb-2">{t("ban-confirm-title", { defaultValue: "Ban {{name}}?", name: banTarget.userName })}</h3>
             <p className="text-sm text-(--app-text-muted) mb-4">
               {t("ban-confirm-body", { defaultValue: "This player will be removed and cannot rejoin this room." })}

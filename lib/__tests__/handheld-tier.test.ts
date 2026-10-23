@@ -52,6 +52,13 @@ const HANDHELD_QUERY = '(pointer: coarse) and (max-width: 1024px)';
 const GLOBALS = read('app/globals.css');
 const RADIAL = read('components/radial/radial.css');
 const HOOK = read('hooks/useLiquidBackground.ts');
+/** Plasmatic Jelly's shared policy: its `handheld` tier is this same device class, so it carries this same query. */
+const JELLY_TIERS = read('lib/jelly/tiers.ts');
+/**
+ * The jelly stylesheets: the material's one-span-per-carrier handheld rule lives in jelly-material.css, and the
+ * coverage adapters may add more. Any width-bounded coarse query in them must be THIS query, not a near-miss.
+ */
+const JELLY_SHEETS = ['app/jelly-material.css', 'app/jelly-arcs.css', 'app/jelly-coverage.css'].map(read);
 
 describe('the handheld query is identical everywhere it appears', () => {
   // radial.css used to carry it too, for a block that stopped the ring/blob
@@ -61,6 +68,7 @@ describe('the handheld query is identical everywhere it appears', () => {
   it.each([
     ['app/globals.css', GLOBALS],
     ['hooks/useLiquidBackground.ts', HOOK],
+    ['lib/jelly/tiers.ts', JELLY_TIERS],
   ])('%s carries the exact query', (_file, source) => {
     expect(source).toContain(HANDHELD_QUERY);
   });
@@ -72,7 +80,7 @@ describe('the handheld query is identical everywhere it appears', () => {
     // Scoped to real `@media` preludes (`@media … {`) rather than scanning the
     // raw text: both stylesheets discuss `(pointer: coarse)` in prose, and a
     // comment is not a rule.
-    for (const source of [GLOBALS, RADIAL]) {
+    for (const source of [GLOBALS, RADIAL, ...JELLY_SHEETS]) {
       for (const [, prelude] of source.matchAll(/@media([^{]+)\{/g)) {
         // A prelude can be a comma-separated LIST (`(max-width: 640px),
         // (hover: none) and (pointer: coarse)` — a real rule in globals.css).
@@ -91,6 +99,14 @@ describe('the handheld query is identical everywhere it appears', () => {
     // Same rule for the hook, where the query lives inside `matchMedia(...)`.
     for (const [, query] of HOOK.matchAll(/matchMedia\(\s*['"]([^'"]+)['"]\s*\)/g)) {
       if (!/pointer:\s*coarse/.test(query) || !/max-width/.test(query)) continue;
+      expect(query.replace(/\s+/g, ' ').trim()).toBe(HANDHELD_QUERY);
+    }
+    // tiers.ts holds the query as a string constant handed to `matchMedia` later, so every string literal that looks
+    // like a width-bounded coarse query is judged, not only `matchMedia(...)` arguments.
+    for (const [, query] of JELLY_TIERS.matchAll(
+      /['"`]([^'"`\n]*pointer:\s*coarse[^'"`\n]*)['"`]/g,
+    )) {
+      if (!/max-width/.test(query)) continue;
       expect(query.replace(/\s+/g, ' ').trim()).toBe(HANDHELD_QUERY);
     }
   });
