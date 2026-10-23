@@ -11,6 +11,7 @@ import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { RadialHub } from './RadialHub';
 import { RadialNavRail } from './RadialNavRail';
+import { RadialGlobeDock } from './RadialGlobeDock';
 import { RadialQuickNav } from './RadialQuickNav';
 import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
@@ -392,6 +393,9 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
 
       <RailSlotContext.Provider value={railSlot}>
         <div className="radial-frame">
+          {/* One of these two takes the left track on a wide screen, by the
+              desktop-navigation setting (radial.css, `data-desktop-nav`). */}
+          <RadialGlobeDock />
           <RadialNavRail />
 
           <main id="main-content" tabIndex={-1} className="radial-shell__main page-root">

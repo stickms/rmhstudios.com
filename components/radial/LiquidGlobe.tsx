@@ -26,7 +26,6 @@ import {
   projectDistance,
   rippleFront,
   rippleWave,
-  rubberBandClamp,
   smoothstep,
   spring,
   springStep,
@@ -83,15 +82,12 @@ const DEG = Math.PI / 180;
 
 /** Degrees of rotation per pixel dragged. A full turn is ~800px of travel. */
 const ROT_PER_PX = 0.45;
-/** How far the globe may be tilted, so the poles never come to the reticle. */
-const PITCH_LIMIT = 62;
-/**
- * Rubber-band scale for tilt past `PITCH_LIMIT`, in degrees. Pulling past the
- * limit keeps moving the globe, asymptotically — it resists instead of hitting a
- * wall, which is what tells you there is nothing further up there without the
- * surface going dead under your finger (`lib/fluid` §rubberBand).
+/*
+ * Tilt is unlimited: the globe turns over the poles and keeps going, in either
+ * direction, as far as the pointer takes it. Past ±90° the globe is upside down,
+ * so a horizontal drag turns the yaw the other way (see the drag handler) — the
+ * surface under the pointer still follows it.
  */
-const PITCH_RUBBER = 24;
 /**
  * The spring that carries every settle: the release throw, the magnet, and the
  * keyboard glide. Duration + bounce rather than stiffness, so it reads the same
@@ -100,6 +96,12 @@ const PITCH_RUBBER = 24;
 const SETTLE_SPRING = spring(0.62, 0.1);
 /** Idle drift (deg/s) — only until the visitor first takes hold. */
 const IDLE_SPIN = 5.5;
+/**
+ * An `ambient` globe (docked in the desktop shell, always on screen) goes back to
+ * drifting this long after the last hand on it — a pause long enough that it
+ * never turns away from a destination someone is still reading or aiming at.
+ */
+const AMBIENT_RESUME_MS = 4000;
 /* ── Dwell: how long you have to hold ───────────────────────────────────────
    Not a constant. The gesture that chose a destination is itself evidence about
    how sure you were, and the site already measures it — so somebody who flicks
@@ -205,12 +207,6 @@ const SNAP_R = 0.55;
 /** The reticle's on-screen diameter, in % of the stage — derived, never re-typed. */
 const RETICLE_PCT = RETICLE * kAt(1) * 100;
 
-/**
- * Latitude band the pins are distributed over, as `sin(lat)`. Capping it at 0.72
- * (±46°) keeps every destination clear of the poles: a pin at a pole can only be
- * centred by tilting the globe past `PITCH_LIMIT`, i.e. it could never be chosen.
- */
-const LAT_SPAN = 0.72;
 /** Golden angle — the classic even-ish spherical distribution. */
 const GOLDEN_DEG = 180 * (3 - Math.sqrt(5));
 
@@ -219,6 +215,24 @@ const clamp01 = (v: number) => clamp(v, 0, 1);
 /** The nearest angle equivalent to `to`, measured from `from` — no long way round. */
 const shortestAngle = (from: number, to: number) =>
   from + ((((to - from) % 360) + 540) % 360) - 180;
+/** `deg` wrapped into (−180°, 180°]. */
+const wrap180 = (deg: number) => shortestAngle(0, deg);
+
+/**
+ * The pose, nearest to (`yaw`, `pitch`), that puts a pin at dead centre.
+ *
+ * With tilt unlimited there are two families of them: upright (yaw −lon, pitch
+ * −lat) and turned over the pole (yaw −lon+180°, pitch lat+180°), which shows
+ * the same pin at the front with the globe upside down. Taking whichever is
+ * nearer means a settle never flips the globe back over just to stand it upright.
+ */
+function frontPose(n: { lat: number; lon: number }, yaw: number, pitch: number) {
+  const upright = { yaw: shortestAngle(yaw, -n.lon), pitch: shortestAngle(pitch, -n.lat) };
+  const over = { yaw: shortestAngle(yaw, 180 - n.lon), pitch: shortestAngle(pitch, 180 + n.lat) };
+  const du = Math.hypot(upright.yaw - yaw, upright.pitch - pitch);
+  const dov = Math.hypot(over.yaw - yaw, over.pitch - pitch);
+  return du <= dov ? upright : over;
+}
 
 interface GlobeNode extends NavLeaf {
   /** Where the pin is fixed on the sphere. */
@@ -238,7 +252,9 @@ interface GlobeNode extends NavLeaf {
 function place(items: NavLeaf[]): GlobeNode[] {
   const n = items.length;
   return items.map((item, i) => {
-    const sinLat = n <= 1 ? 0 : (1 - (2 * (i + 0.5)) / n) * LAT_SPAN;
+    // A Fibonacci sphere over the WHOLE globe, poles included: equal-area
+    // latitude steps and golden-angle longitudes, so every cap carries its share.
+    const sinLat = n <= 1 ? 0 : 1 - (2 * (i + 0.5)) / n;
     const lat = Math.asin(sinLat) / DEG;
     const lon = ((i * GOLDEN_DEG) % 360) - 180;
     const cl = Math.cos(lat * DEG);
@@ -482,6 +498,14 @@ interface LiquidGlobeProps {
    */
   rehearsal?: boolean;
   /**
+   * Docked in the desktop shell instead of opened from the orb: it lives for the
+   * whole visit, so the idle drift resumes after {@link AMBIENT_RESUME_MS} with
+   * no hand on it (rather than stopping for good at the first touch), and the
+   * page it refracts is re-placed as the document scrolls under it. Fixed for
+   * the life of the mount.
+   */
+  ambient?: boolean;
+  /**
    * Globe Eversion hand-off (docs/plans/2026-10-17-globe-eversion.md §9.1).
    *
    * When present, confirming a destination calls this INSTEAD of
@@ -514,6 +538,7 @@ export function LiquidGlobe({
   rootRef,
   surfaceRef,
   rehearsal = false,
+  ambient = false,
   onNavigate,
 }: LiquidGlobeProps) {
   const { t } = useTranslation('feed');
@@ -665,6 +690,8 @@ export function LiquidGlobe({
    * first pin it passed, then parked there for good.
    */
   const touched = useRef(false);
+  /** Ambient only: the pointer is over the sphere, so the drift holds still under it. */
+  const hovering = useRef(false);
   /** Set when a release has already been spent (on a drag, or on a dwell jump). */
   const swallowClick = useRef(false);
   /**
@@ -723,7 +750,7 @@ export function LiquidGlobe({
     const here = nodes.findIndex((n) => isNavLeafActive(pathname, n));
     const n = here >= 0 ? nodes[here] : null;
     rot.current.yaw = n ? -n.lon + 42 : 12;
-    rot.current.pitch = n ? clamp(-n.lat + 9, -PITCH_LIMIT, PITCH_LIMIT) : -8;
+    rot.current.pitch = n ? -n.lat + 9 : -8;
     rot.current.vYaw = 0;
     rot.current.vPitch = 0;
     // A rehearsal turns the globe half a revolution on the settle spring, so the
@@ -875,6 +902,17 @@ export function LiquidGlobe({
     };
     globeRoot?.addEventListener('animationend', onBloomEnd);
     window.addEventListener('resize', refreshScene);
+    // A docked globe stays put while the page moves under it, so the picture it
+    // refracts has to be re-placed with the scroll — once per frame at most.
+    let scrollRaf = 0;
+    const onScroll = () => {
+      if (scrollRaf) return;
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = 0;
+        refreshScene();
+      });
+    };
+    if (ambient) window.addEventListener('scroll', onScroll, { passive: true });
     const stopScene = onSceneChange(refreshScene);
     const sync = () => {
       if (cancelled || !host || !stage) return;
@@ -941,6 +979,8 @@ export function LiquidGlobe({
       stopScene();
       globeRoot?.removeEventListener('animationend', onBloomEnd);
       window.removeEventListener('resize', refreshScene);
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(scrollRaf);
       observer.disconnect();
       preferences.forEach((q) => q.removeEventListener('change', sync));
       // The single cached canvas may already belong to a newer mount.
@@ -949,7 +989,7 @@ export function LiquidGlobe({
       jellyGlass.current = null;
       if (stage) delete stage.dataset.jelly;
     };
-  }, [jelly, jellyFrame, reduced]);
+  }, [jelly, jellyFrame, reduced, ambient]);
 
   /* ── Where the globe is on screen, for the eversion hand-off ──────────────
      The WebGL sphere has to start on top of this one, so the hand-off needs the
@@ -1029,7 +1069,9 @@ export function LiquidGlobe({
     const c = cached && cached.settled ? cached : measureCentre();
     return {
       yaw: r.yaw + (wob ? wob.yaw : 0),
-      pitch: r.pitch + (wob ? wob.pitch : 0),
+      // Wrapped: tilt is unlimited here, but the effect unwinds whatever tilt it
+      // is handed, and 540° is the same pose as 180° with three extra half-turns.
+      pitch: wrap180(r.pitch + (wob ? wob.pitch : 0)),
       yawVel: clamp(yawVel, -MAX_SPIN, MAX_SPIN),
       pitchVel: clamp(pitchVel, -MAX_SPIN, MAX_SPIN),
       centre: [c ? c.x : 0, c ? c.y : 0],
@@ -1821,14 +1863,25 @@ export function LiquidGlobe({
       //    to dead centre — including while you hold still with the pointer down,
       //    which is what makes "hold to fill" land reliably on a phone.
       let moved = false;
+      // Ambient: let go of the globe once nobody has held, turned or focused it
+      // for a while, so a docked globe never ends up parked for the rest of the visit.
+      if (
+        ambient &&
+        touched.current &&
+        !drag.current.active &&
+        !settle.current &&
+        fill.current === 0 &&
+        now - lastMoveAt.current > AMBIENT_RESUME_MS &&
+        !stageRef.current?.contains(document.activeElement)
+      ) {
+        touched.current = false;
+      }
       if (touched.current && !settle.current && stationary && drag.current.held && snapIdx >= 0) {
         // Magnetism, but only while the finger is DOWN and still: it is what makes
         // "press, hold, let go" land on a phone. Once the finger is up the release
         // throw has already chosen a target, and pulling on the globe afterwards
         // would be the interface moving without being asked.
-        const n = nodes[snapIdx];
-        const ty = shortestAngle(r.yaw, -n.lon);
-        const tp = clamp(-n.lat, -PITCH_LIMIT, PITCH_LIMIT);
+        const { yaw: ty, pitch: tp } = frontPose(nodes[snapIdx], r.yaw, r.pitch);
         if (Math.abs(ty - r.yaw) > 0.05 || Math.abs(tp - r.pitch) > 0.05) {
           const k = reduced ? 1 : 1 - Math.exp(-9 * dt);
           r.yaw += (ty - r.yaw) * k;
@@ -1836,9 +1889,10 @@ export function LiquidGlobe({
           rawPitch.current = r.pitch;
           moved = true;
         }
-      } else if (!touched.current && !reduced) {
+      } else if (!touched.current && !reduced && !hovering.current) {
         // Untouched: drift, so a globe left alone still reads as a globe rather
-        // than a picture of one. It stops for good the moment anyone takes hold.
+        // than a picture of one. It stops the moment anyone takes hold (for good,
+        // unless the globe is `ambient`).
         r.yaw += IDLE_SPIN * dt;
         moved = true;
       }
@@ -1923,7 +1977,26 @@ export function LiquidGlobe({
 
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [nodes, reduced, jelly, jellyFrame]);
+  }, [nodes, reduced, jelly, jellyFrame, ambient]);
+
+  // An ambient globe holds its drift while the pointer is over it: a pin you are
+  // reading or about to click should not slide out from under the cursor.
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!ambient || !stage) return;
+    const enter = () => {
+      hovering.current = true;
+    };
+    const leave = () => {
+      hovering.current = false;
+    };
+    stage.addEventListener('pointerenter', enter);
+    stage.addEventListener('pointerleave', leave);
+    return () => {
+      stage.removeEventListener('pointerenter', enter);
+      stage.removeEventListener('pointerleave', leave);
+    };
+  }, [ambient]);
 
   /* ── Pointer ──────────────────────────────────────────────────────────────
      `pointerdown` is taken on the stage (so a press that lands on a pin still
@@ -2127,12 +2200,12 @@ export function LiquidGlobe({
       at.y = (e.clientY - at.top - at.r) / at.r;
 
       const r = rot.current;
-      r.yaw += dx * ROT_PER_PX;
-      // Tilt tracks the finger 1:1 inside the limit and resists asymptotically
-      // past it, so the globe never goes rigid under a drag that has run out of
-      // room — it just stops keeping up.
+      // Upside down (past a pole), the yaw axis points the other way on screen,
+      // so the same drag has to turn it the other way for the surface to follow.
+      r.yaw += dx * ROT_PER_PX * (Math.cos(r.pitch * DEG) < 0 ? -1 : 1);
+      // Tilt tracks the finger 1:1, without limit — over the pole and on round.
       rawPitch.current -= dy * ROT_PER_PX;
-      r.pitch = rubberBandClamp(rawPitch.current, -PITCH_LIMIT, PITCH_LIMIT, PITCH_RUBBER);
+      r.pitch = rawPitch.current;
       yawV.current.add(r.yaw, now);
       pitchV.current.add(r.pitch, now);
       // Peak speed while the finger is still down — this is the half of the
@@ -2173,21 +2246,16 @@ export function LiquidGlobe({
       r.vYaw = clamp(yawV.current.get(), -MAX_SPIN, MAX_SPIN);
       r.vPitch = clamp(pitchV.current.get(), -MAX_SPIN, MAX_SPIN);
       const projectedYaw = r.yaw + projectDistance(r.vYaw, DECELERATION.normal);
-      const projectedPitch = clamp(
-        r.pitch + projectDistance(r.vPitch, DECELERATION.normal),
-        -PITCH_LIMIT,
-        PITCH_LIMIT,
-      );
+      const projectedPitch = r.pitch + projectDistance(r.vPitch, DECELERATION.normal);
 
       let best: { yaw: number; pitch: number } | null = null;
       let bestDistance = Infinity;
       for (const n of nodes) {
-        const targetYaw = shortestAngle(projectedYaw, -n.lon);
-        const targetPitch = clamp(-n.lat, -PITCH_LIMIT, PITCH_LIMIT);
-        const distance = Math.hypot(targetYaw - projectedYaw, targetPitch - projectedPitch);
+        const target = frontPose(n, projectedYaw, projectedPitch);
+        const distance = Math.hypot(target.yaw - projectedYaw, target.pitch - projectedPitch);
         if (distance < bestDistance) {
           bestDistance = distance;
-          best = { yaw: targetYaw, pitch: targetPitch };
+          best = target;
         }
       }
       settle.current = best;
@@ -2273,10 +2341,7 @@ export function LiquidGlobe({
    * focus ring is sitting on back off the front of the sphere.
    */
   const faceNode = useCallback((n: GlobeNode) => {
-    settle.current = {
-      yaw: shortestAngle(rot.current.yaw, -n.lon),
-      pitch: clamp(-n.lat, -PITCH_LIMIT, PITCH_LIMIT),
-    };
+    settle.current = frontPose(n, rot.current.yaw, rot.current.pitch);
     rot.current.vYaw = 0;
     rot.current.vPitch = 0;
     touched.current = true;

@@ -1,10 +1,15 @@
 {
   "add-widgets": "Add widgets",
   "collapse-widget": "Collapse {{name}}",
+  "desktop-nav": "Desktop navigation",
+  "desktop-nav-desc": "Choose what fills the left column on a wide screen.",
+  "desktop-nav-panel": "Show the navigation panel",
+  "desktop-nav-panel-desc": "Off: the liquid globe stays docked in the left column, always ready to spin. On: a list of links takes its place, and the globe opens from the button at the bottom of the screen. Wide screens only; saved on this device.",
   "edit-layout": "Edit layout",
   "edit-layout-desc": "Reorder, add, or remove the widgets on your home page.",
   "expand-widget": "Expand {{name}}",
   "for-you": "For you",
+  "hide": "Hide {{name}}",
   "home-widgets": "Home widgets",
   "home-widgets-desc": "Choose which widgets appear on your home page and in what order.",
   "layout": "Layout",
@@ -15,5 +20,7 @@
   "reset": "Reset to default",
   "sidebar": "Sidebar",
   "sidebar-desc": "Drag the tabs into the order you want, or hide the ones you don’t use. Hidden tabs stay reachable from search and their link.",
+  "sidebar-reorder-hint": "Drag to reorder. Hide a tab with the eye — hidden tabs stay in search.",
+  "unhide": "Show {{name}}",
   "your-widgets": "Your widgets"
 }

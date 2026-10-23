@@ -1,6 +1,10 @@
 {
   "add-widgets": "Add widgets",
   "collapse-widget": "Collapse {{name}}",
+  "desktop-nav": "Desktop navigation",
+  "desktop-nav-desc": "Choose what fills the left column on a wide screen.",
+  "desktop-nav-panel": "Show the navigation panel",
+  "desktop-nav-panel-desc": "Off: the liquid globe stays docked in the left column, always ready to spin. On: a list of links takes its place, and the globe opens from the button at the bottom of the screen. Wide screens only; saved on this device.",
   "edit-layout": "Edit layout",
   "edit-layout-desc": "Reorder, add, or remove the widgets on your home page.",
   "expand-widget": "Expand {{name}}",
