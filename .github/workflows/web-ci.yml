@@ -322,7 +322,8 @@ jobs:
       - name: Integration tests
         run: pnpm test:integration
       - name: Server log (on failure)
-        if: failure()
+        # failure() alone never sees the frame-budget step: continue-on-error turns its failure into success.
+        if: ${{ failure() || steps.frame-budget.outcome == 'failure' }}
         run: tail -200 "$RUNNER_TEMP/server.log" || true
       - name: Stop the server
         if: always()
@@ -628,10 +629,12 @@ jobs:
   # SwiftShader (green on 5 consecutive runs pinned to 2 cores, one of them
   # under heavy CPU contention; ~75 s).
   # NON-BLOCKING for now: frame-budget.mjs --gate (`continue-on-error` on its
-  # step; still a red row + ::error:: annotation). It drives ~50 routes of the
-  # built app and is RED today for real reasons (CSS carriers keep the
-  # compositor at vsync rate; the dock globe's infinite keyframes) — make it
-  # blocking once those are fixed and a few nightlies are green.
+  # step; still a red row + ::error:: annotation, never a red job). It drives
+  # ~50 routes of the built app. Its red runs so far (e.g. run 39954731013,
+  # 8 routes at 14-21 frames/s) were ambient arcs counted against the clock's
+  # 13 fps rest limit; it now judges the clock with ambient arcs isolated and
+  # prints both (docs/testing.md §6) — make it blocking once a few nightlies
+  # are green.
   jelly-e2e:
     if: ${{ !inputs.update-baselines }}
     runs-on: ubuntu-latest
@@ -725,7 +728,12 @@ jobs:
             sleep 1
           done
           echo "server did not come up"; tail -50 "$RUNNER_TEMP/jelly-server.log"; exit 1
+      # `continue-on-error` on the STEP is what keeps this non-blocking: its `exit "$status"` still marks the step
+      # failed (the "Process completed with exit code 1" line and the ::error:: below are the visible signal), but
+      # the job's conclusion ignores it. A red jelly-e2e job therefore always means the blocking
+      # jelly-interaction step failed — read its FAIL lines first (run 39954731013 was that, not this step).
       - name: Frame budget (built app, non-blocking)
+        id: frame-budget
         if: ${{ !cancelled() && steps.filter.outputs.run == 'true' }}
         continue-on-error: true
         run: |
@@ -741,7 +749,8 @@ jobs:
           fi
           exit "$status"
       - name: Server log (on failure)
-        if: failure()
+        # failure() alone never sees the frame-budget step: continue-on-error turns its failure into success.
+        if: ${{ failure() || steps.frame-budget.outcome == 'failure' }}
         run: tail -100 "$RUNNER_TEMP/jelly-server.log" 2>/dev/null || true
       - name: Stop the server
         if: always()
