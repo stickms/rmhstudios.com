@@ -16,7 +16,9 @@
  *      driver is awake, proven in `lib/jelly/__tests__/frame.test.ts`); this holds the NUMBER of jelly loops at one.
  *      Likewise exactly ONE file, the pointer hub `lib/jelly/pointer.ts`, adds `pointer*` listeners: every service
  *      subscribes with `onJellyPointer(type, fn)` (one capture+passive listener per type, refcounted, proven in
- *      `lib/jelly/__tests__/pointer.test.ts`).
+ *      `lib/jelly/__tests__/pointer.test.ts`). Hooks that moved onto both services (`SHARED_FRAME_CLIENTS`, today
+ *      `hooks/useFluidDrag.ts` with its settle spring `hooks/fluid-drag-settle.ts`) are held to the same two rules;
+ *      that list only grows.
  *  (c) The degraded-root predicate (`.reduce-transparency,.style-high-contrast,.perf-lite`) is declared once, as
  *      `DEGRADED_ROOT_SELECTOR` in `lib/jelly/tiers.ts`. It used to be hand-copied into the engine and the runtime,
  *      and a theme added to one copy left the other drawing.
@@ -135,11 +137,47 @@ describe('N2 — the jelly services have one owner each', () => {
     }
   });
 
+  /**
+   * (b) Files outside lib/jelly and lib/liquid that have moved onto the shared frame driver and pointer hub, and are
+   * therefore held to the same rule. One-directional the OTHER way: files come IN (the scope only grows), never out.
+   */
+  const SHARED_FRAME_CLIENTS = new Set([
+    // #989 follow-up F2: the drag's settle spring is a driver (order 5) and its move/up/cancel come from the hub.
+    // The hook subscribes to the hub; its settle spring (`createSettle`) lives beside it and registers the driver.
+    'hooks/useFluidDrag.ts',
+    'hooks/fluid-drag-settle.ts',
+  ]);
+  /** A client split over several files: the frame import and the hub import may sit in different files of it. */
+  const SHARED_FRAME_CLIENT_GROUPS: string[][] = [['hooks/useFluidDrag.ts', 'hooks/fluid-drag-settle.ts']];
+  const inJellyScope = (f: string) =>
+    f.startsWith('lib/jelly/') || f.startsWith('lib/liquid/') || SHARED_FRAME_CLIENTS.has(f);
+
+  it('(b) the shared-frame clients exist and use drive() + onJellyPointer', () => {
+    for (const f of SHARED_FRAME_CLIENTS) {
+      expect(SOURCES, `${f} moved — update SHARED_FRAME_CLIENTS`).toContain(f);
+    }
+    const groups = [
+      ...SHARED_FRAME_CLIENT_GROUPS,
+      ...[...SHARED_FRAME_CLIENTS]
+        .filter((f) => !SHARED_FRAME_CLIENT_GROUPS.some((g) => g.includes(f)))
+        .map((f) => [f]),
+    ];
+    for (const group of groups) {
+      const all = group.map((f) => code(f)).join('\n');
+      expect(all, `${group.join(' + ')} registers a driver on lib/jelly/frame.ts`).toMatch(
+        /from\s+['"]@\/lib\/jelly\/frame['"]/,
+      );
+      expect(all, `${group.join(' + ')} subscribes through lib/jelly/pointer.ts`).toMatch(
+        /from\s+['"]@\/lib\/jelly\/pointer['"]/,
+      );
+    }
+  });
+
   /** (b) The one jelly frame owner (#989): every other service is a driver on it. */
   const JELLY_RAF_OWNERS = new Set(['lib/jelly/frame.ts']);
 
-  it('(b) only the sanctioned owners run frames under lib/jelly and lib/liquid', () => {
-    const jelly = SOURCES.filter((f) => f.startsWith('lib/jelly/') || f.startsWith('lib/liquid/'));
+  it('(b) only the sanctioned owners run frames under lib/jelly, lib/liquid and the shared-frame clients', () => {
+    const jelly = SOURCES.filter(inJellyScope);
     expect(jelly.length).toBeGreaterThan(20);
     const loops = jelly.filter((f) => code(f).includes('requestAnimationFrame'));
     expect(
@@ -159,8 +197,8 @@ describe('N2 — the jelly services have one owner each', () => {
   const POINTER_LISTENER =
     /addEventListener\(\s*['"`]pointer[a-z]*['"`]|\.onpointer[a-z]+\s*=(?!=)/;
 
-  it('(b) only lib/jelly/pointer.ts adds pointer listeners under lib/jelly and lib/liquid', () => {
-    const jelly = SOURCES.filter((f) => f.startsWith('lib/jelly/') || f.startsWith('lib/liquid/'));
+  it('(b) only lib/jelly/pointer.ts adds pointer listeners under lib/jelly, lib/liquid and the shared-frame clients', () => {
+    const jelly = SOURCES.filter(inJellyScope);
     const listeners = jelly.filter((f) => POINTER_LISTENER.test(code(f)));
     expect(
       listeners.filter((f) => !JELLY_POINTER_OWNERS.has(f)).sort(),

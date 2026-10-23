@@ -25,7 +25,7 @@ import { Button } from'@/components/ui/button';
 import { useSession } from'@/components/Providers';
 import { useCelebration } from'@/hooks/useCelebration';
 import { useIdleReady } from'@/hooks/useIdleReady';
-import { useThemeStore } from'@/stores/themeStore';
+import { DEFAULT_STYLE, useThemeStore } from'@/stores/themeStore';
 import { AsyncReveal } from'@/components/motion';
 
 const DISMISS_KEY ='rmh-onboarding-dismissed';
@@ -91,7 +91,7 @@ export function OnboardingChecklist() {
  return <AsyncReveal show={false} />;
  }
 
- const themeCustomized = themeStyle !=='default';
+ const themeCustomized = themeStyle !== DEFAULT_STYLE;
  const steps = [
  {
  key:'post',

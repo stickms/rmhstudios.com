@@ -188,6 +188,15 @@ const DENT_GONE_PX = 0.02;
 const PLASMA_STEP = 0.02;
 /** Plasma: within this of the target, snap to it. */
 const PLASMA_SNAP = 0.005;
+
+/**
+ * The fraction of the remaining distance a plasma level covers in `elapsedMs` of REAL time: first-order, time
+ * constant `PLASMA.easeMs`, frame-rate independent (n steps of dt compose to one step of n·dt) and stable for any step.
+ */
+export function plasmaEaseFactor(elapsedMs: number, easeMs: number = PLASMA.easeMs): number {
+  if (!(elapsedMs > 0)) return 0;
+  return 1 - Math.exp(-elapsedMs / Math.max(1, easeMs));
+}
 /** The driver order of the soft body: before the engine (20) that draws its dent and lattice, and the arcs (30). */
 const PHYSICS_ORDER = 10;
 
@@ -541,8 +550,18 @@ export function installJellyPhysics(
 
   const driver: FrameDriver = drive((ts, dtMs) => frame(ts, dtMs), { order: PHYSICS_ORDER }, win);
 
+  /**
+   * `now()` the plasma levels last advanced from (0 = none easing). Plasma eases by REAL elapsed time from here, not by
+   * the frame's `dt`: that is capped at 250 ms (frame.ts and the springs below) and reads 1/60 s on the first frame
+   * after a wake, so on slow frames (software GL) the ease stalled several-fold behind `PLASMA.easeMs`. A wake from an
+   * input starts the clock at the input, so the rAF latency counts too.
+   */
+  let plasmaAt = 0;
+  let inFrame = false;
+
   const requestFrame = () => {
     if (bodies.size === 0 && plasma.size === 0) return;
+    if (!inFrame && plasmaAt === 0 && plasma.size > 0) plasmaAt = now();
     driver.wake();
   };
 
@@ -587,9 +606,10 @@ export function installJellyPhysics(
    * most once per frame per element, and only when it moved ≥ 0.02 since the last announcement or arrived at its
    * target. Returns whether any level still needs frames.
    */
-  const stepPlasma = (dtS: number, t: number): boolean => {
+  const stepPlasma = (frameDtMs: number, t: number): boolean => {
     let busy = false;
-    const k = 1 - Math.exp(-(dtS * 1000) / PLASMA.easeMs);
+    const elapsed = plasmaAt > 0 ? Math.max(0, t - plasmaAt) : Math.max(0, frameDtMs);
+    const k = plasmaEaseFactor(elapsed);
     for (const [el, p] of [...plasma]) {
       const target = plasmaTarget(el, p, t);
       p.level += (target - p.level) * k;
@@ -607,6 +627,7 @@ export function installJellyPhysics(
       }
       if (p.level !== target || p.flashUntil > t) busy = true;
     }
+    plasmaAt = busy ? t : 0;
     return busy;
   };
 
@@ -1074,7 +1095,15 @@ export function installJellyPhysics(
   function frame(_ts: number, dtMs: number): boolean {
     const dt = Math.min(0.25, Math.max(0, dtMs / 1000));
     const t = now();
+    inFrame = true;
+    try {
+      return step(dt, dtMs, t);
+    } finally {
+      inFrame = false;
+    }
+  }
 
+  function step(dt: number, dtMs: number, t: number): boolean {
     // ── 1. READ ──
     for (const b of [...bodies.values()]) {
       if (!b.ready) {
@@ -1166,6 +1195,15 @@ export function installJellyPhysics(
         stepEnvelope(b.env, target, phaseSprings(phase, features.wobble), dt);
         b.settled = dentSettledNow && envelopeSettled(b.env, target) && !(dv && (dv.vx || dv.vy));
         pose = renderEnvelope(b.env, size, b.policy.base, { scale: b.policy.scale });
+        // A neighbour that nobody is touching only ever moves by the nudge bound. Each impulse is capped on its own,
+        // but a release nudge, a Coulomb tug and an arc strike landing together add their velocities.
+        if (b.phase === 'nudge') {
+          const travel = Math.hypot(pose.tx, pose.ty);
+          if (travel > MOTION_BOUNDS.nudgePx) {
+            const k = MOTION_BOUNDS.nudgePx / travel;
+            pose = { ...pose, tx: pose.tx * k, ty: pose.ty * k };
+          }
+        }
 
         if (b.policy.cornerFlex && b.radius > 0 && !b.framerOwned) {
           const span = Math.abs(b.policy.base - 1);
@@ -1248,7 +1286,7 @@ export function installJellyPhysics(
       // it on (a pointermove, the release) asks for the next one.
       if (!busy || !b.settled) again = true;
     }
-    const plasmaBusy = stepPlasma(dt, t);
+    const plasmaBusy = stepPlasma(dtMs, t);
     return (again && bodies.size > 0) || plasmaBusy;
   }
 

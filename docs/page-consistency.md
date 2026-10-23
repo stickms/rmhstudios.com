@@ -265,9 +265,9 @@ Work through this for every new or edited page:
       `--site-accent` approaches its `--site-surface` must be checked. Tab to the
       skip link (`_site.tsx`, the first focus stop) under `.style-high-contrast`
       specifically: the ring vs. surface must clear WCAG 1.4.11 (≥3:1).
-- [ ] Check the two other **shipped** themes — `.style-graphite` (Midnight, the
-      dark twin) and `.style-high-contrast` (glass off entirely) — plus
-      reduced-transparency, not just the Daylight default.
+- [ ] Check the two other **shipped** themes — Daylight (`default`, no class,
+      the light twin) and `.style-high-contrast` (glass off entirely) — plus
+      reduced-transparency, not just the Midnight default.
 - [ ] **Colour is not the only carrier of meaning.** Status must survive the
       colour-vision modes (design-language.md §2.1), which retint
       `--site-success`/`--site-danger`/`--site-warning` — so pair the colour with

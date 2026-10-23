@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-29 21:28+0000\n"
+"POT-Creation-Date: 2026-10-23 06:17+0000\n"
 "PO-Revision-Date: 2026-07-29 00:00+0000\n"
 "Last-Translator: RMH Studios docs pipeline\n"
 "Language: hi\n"
@@ -19,31 +19,31 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: ../../index.md:47
+#: ../../index.md:49
 msgid "Reference"
 msgstr "संदर्भ"
 
-#: ../../index.md:65
+#: ../../index.md:73
 msgid "Operations"
 msgstr "संचालन"
 
-#: ../../index.md:78
+#: ../../index.md:86
 msgid "Audits"
 msgstr "ऑडिट"
 
-#: ../../index.md:92
+#: ../../index.md:129
 msgid "Plans & design snapshots"
 msgstr "योजनाएँ और डिज़ाइन स्नैपशॉट"
 
-#: ../../index.md:105
+#: ../../index.md:143
 msgid "Apps & games"
 msgstr "ऐप्स और गेम्स"
 
-#: ../../index.md:1 c4fa284a68854784b06c751bb936ca1d
+#: ../../index.md:1 47ee159bcb934dbda58ad92b5e6fd66f
 msgid "rmhstudios.com"
 msgstr "rmhstudios.com"
 
-#: ../../index.md:3 2d5bdbfa4f6f42268542de887f4f85a2
+#: ../../index.md:3 35e83c28e134413e83d177ae7847e24c
 msgid ""
 "A single web platform: a social feed (RMHarks), ~20 browser games "
 "(several multiplayer/3D), full apps (RMHTube, RMHMusic, RMHType, "
@@ -53,25 +53,25 @@ msgid ""
 msgstr ""
 "एक एकल वेब प्लेटफ़ॉर्म: एक सोशल फ़ीड (RMHarks), लगभग 20 ब्राउज़र गेम्स "
 "(कई मल्टीप्लेयर/3D), पूर्ण ऐप्स (RMHTube, RMHMusic, RMHType, RMHStudy, "
-"RMHCode, RMHLadder), एक ब्लॉग/न्यूज़/लाइब्रेरी सिस्टम, Stripe मेंबरशिप के "
-"साथ एक कॉइन इकॉनमी, और एक स्कोप्ड डेवलपर API — जो React SSR टियर द्वारा "
+"RMHCode, RMHLadder), एक ब्लॉग/न्यूज़/लाइब्रेरी सिस्टम, Stripe मेंबरशिप के"
+" साथ एक कॉइन इकॉनमी, और एक स्कोप्ड डेवलपर API — जो React SSR टियर द्वारा "
 "Node रीयलटाइम हब्स और एक Go वर्कर फ़्लीट के साथ सर्व किया जाता है।"
 
-#: ../../index.md:9 30addd9572e643458b57e1f9cf5df03c
+#: ../../index.md:9 3a77957d047b4422913ae2f6438682af
 msgid ""
 "This site is the rendered form of the repository's `docs/` tree. The "
 "Markdown files are the source of truth and are written for both humans "
 "and coding agents; nothing here is generated from code."
 msgstr ""
 "यह साइट रिपॉज़िटरी के `docs/` ट्री का रेंडर किया गया रूप है। Markdown "
-"फ़ाइलें ही सत्य का स्रोत हैं और इन्हें मनुष्यों और कोडिंग एजेंट्स दोनों के"
-" लिए लिखा गया है; यहाँ कुछ भी कोड से जनरेट नहीं किया गया है।"
+"फ़ाइलें ही सत्य का स्रोत हैं और इन्हें मनुष्यों और कोडिंग एजेंट्स दोनों "
+"के लिए लिखा गया है; यहाँ कुछ भी कोड से जनरेट नहीं किया गया है।"
 
-#: ../../index.md:13 c21f80ba4a6b43f1a69e0fd4f6ac3c83
+#: ../../index.md:13 c09e25985da44e38931719c51fe25530
 msgid "Stack of record"
 msgstr "आधिकारिक स्टैक"
 
-#: ../../index.md:15 3d1d083e7f084320ab149d9b5adc914b
+#: ../../index.md:15 2e69fd56167e47dfac788dd8d6147f5a
 msgid ""
 "**TanStack Start + Vite 8 + React 19 + Nitro SSR.** This is **not** "
 "Next.js — some older design docs say otherwise and are flagged as stale "
@@ -87,11 +87,11 @@ msgstr ""
 "(Discord/Google/GitHub + passkeys + Stripe), Socket.io Node हब्स, Bazel "
 "से बने Go माइक्रोसर्विसेज़, i18next (16 लोकेल, `ar`/`ur` के लिए RTL)।"
 
-#: ../../index.md:22 d89ddf195e2b4e349579dee35f88223a
+#: ../../index.md:22 a5692fc54e004a92bcddd58a2f78e7e0
 msgid "Start here"
 msgstr "यहाँ से शुरू करें"
 
-#: ../../index.md:24 4b0c87d0aa3f46b090d14298e40bb99f
+#: ../../index.md:24 5da696c5afe04f0eb84a1f9a2662c9ea
 #, python-brace-format
 msgid ""
 "{doc}`site-reference/index` — what the platform consists of, area by "
@@ -101,7 +101,7 @@ msgstr ""
 "है, क्षेत्र दर क्षेत्र, साथ ही हर रूट, गेम और ऐप की एक जनरेट की गई "
 "इन्वेंटरी।"
 
-#: ../../index.md:26 bfcf4e6e39b249368063d755651dd805
+#: ../../index.md:26 183eb670e87a42f9a6d764fe0e9eb489
 #, python-brace-format
 msgid ""
 "{doc}`developer-api/index` — the public REST API: guides and a generated "
@@ -110,7 +110,7 @@ msgstr ""
 "{doc}`developer-api/index` — सार्वजनिक REST API: गाइड्स और एक जनरेट किया "
 "गया एंडपॉइंट रेफरेंस।"
 
-#: ../../index.md:28 443b6aa82673403e90e7f484159c2cc3
+#: ../../index.md:28 ba9862a10ec84be8a086514e391fc8f9
 #, python-brace-format
 msgid ""
 "{doc}`codebase-overview` — canonical code-layout overview: stack, repo "
@@ -119,7 +119,7 @@ msgstr ""
 "{doc}`codebase-overview` — कोड-लेआउट का आधिकारिक अवलोकन: स्टैक, "
 "रिपॉज़िटरी लेआउट, कन्वेंशन, और सबसे पहले कहाँ देखें।"
 
-#: ../../index.md:30 02760732a983427ba5c7c830715293aa
+#: ../../index.md:30 593c04bd54294be69c090ad17f45886b
 #, python-brace-format
 msgid ""
 "{doc}`architecture` — runtime topology and the deploy pipeline: what runs"
@@ -128,17 +128,16 @@ msgstr ""
 "{doc}`architecture` — रनटाइम टोपोलॉजी और डिप्लॉय पाइपलाइन: प्रोडक्शन में "
 "क्या कहाँ चलता है, इमेजेस, CI, पोर्ट्स, टियर्स के बीच ऑथ।"
 
-#: ../../index.md:32 dc750e01738c4729b28ba6e7f77e5604
+#: ../../index.md:32 30251bb37e5349b4a06b78ff38ce8316
 #, python-brace-format
 msgid ""
-"{doc}`design-language` — the visual system (**Radial Avant-Garde "
-"Glass**): the `--site-*` token contract, themes, primitives, motion, "
-"accessibility."
+"{doc}`design-language` — the visual system (**Radial Plasmatic Jelly**): "
+"the `--site-*` token contract, themes, primitives, motion, accessibility."
 msgstr ""
-"{doc}`design-language` — विज़ुअल सिस्टम (**Radial Avant-Garde Glass**): "
+"{doc}`design-language` — विज़ुअल सिस्टम (**Radial Plasmatic Jelly**): "
 "`--site-*` टोकन कॉन्ट्रैक्ट, थीम्स, प्रिमिटिव्स, मोशन, एक्सेसिबिलिटी।"
 
-#: ../../index.md:34 5a975a7d5c2d4e219782a07426192ce9
+#: ../../index.md:34 603880f7e4da46879ca01315c5ed0bea
 #, python-brace-format
 msgid ""
 "{doc}`testing` — the test suites (Vitest main + epic, Go Bazel) and which"
@@ -147,7 +146,18 @@ msgstr ""
 "{doc}`testing` — टेस्ट सुइट्स (Vitest main + epic, Go Bazel) और उन्हें "
 "कौन-से CI वर्कफ़्लो गेट करते हैं।"
 
-#: ../../index.md:36 a746af2827ff44d19ffc73b066853bb8
+#: ../../index.md:36 f65b46bf20f3430da84e7a00cc40957b
+#, python-brace-format
+msgid ""
+"{doc}`frontend-webassembly` — globe numerical kernels, build and "
+"benchmark commands, JavaScript fallbacks, and the Apache policy required "
+"for deployment."
+msgstr ""
+"{doc}`frontend-webassembly` — ग्लोब के संख्यात्मक कर्नेल, बिल्ड और "
+"बेंचमार्क कमांड, JavaScript फ़ॉलबैक, और डिप्लॉयमेंट के लिए आवश्यक Apache "
+"नीति।"
+
+#: ../../index.md:38 2b74717d60c64c79bbbcec04c2d2d85d
 #, python-brace-format
 msgid ""
 "{doc}`README` — the full annotated map of `docs/`, including freshness "
@@ -156,11 +166,11 @@ msgstr ""
 "{doc}`README` — `docs/` का पूरा एनोटेटेड मैप, जिसमें हर डायरेक्टरी के लिए"
 " फ्रेशनेस फ़्लैग शामिल हैं।"
 
-#: ../../index.md:39 a8d93fb8f6be4d0d8bb0a60c61154e5e
+#: ../../index.md:41 38367f518bcb4a4fa7e3c289ba9402d9
 msgid "Trust order for conflicting information"
 msgstr "परस्पर विरोधी जानकारी के लिए भरोसे का क्रम"
 
-#: ../../index.md:41 cff4b228f55148298403b9ffc2a3c086
+#: ../../index.md:43 f07046e2ec2e43f79e8ab246c754509e
 msgid ""
 "Code > `docker-compose.yml` + `deploy.sh` (runtime truth) > root "
 "`CLAUDE.md` and the per-directory `CLAUDE.md` files > the reference docs "
@@ -169,8 +179,9 @@ msgid ""
 "the current code. Anything claiming Next.js or PM2 is out of date."
 msgstr ""
 "कोड > `docker-compose.yml` + `deploy.sh` (रनटाइम सत्य) > रूट `CLAUDE.md` "
-"और प्रति-डायरेक्टरी `CLAUDE.md` फ़ाइलें > नीचे दिए गए रेफरेंस दस्तावेज़ > "
-"तारीख़ वाले डिज़ाइन दस्तावेज़ और योजनाएँ। ये तारीख़ वाले दस्तावेज़ "
-"ऐतिहासिक स्नैपशॉट हैं: ये लिखे जाने के समय की मंशा बताते हैं, ज़रूरी नहीं "
-"कि वर्तमान कोड को। Next.js या PM2 का दावा करने वाली कोई भी चीज़ पुरानी "
+"और प्रति-डायरेक्टरी `CLAUDE.md` फ़ाइलें > नीचे दिए गए रेफरेंस दस्तावेज़ >"
+" तारीख़ वाले डिज़ाइन दस्तावेज़ और योजनाएँ। ये तारीख़ वाले दस्तावेज़ "
+"ऐतिहासिक स्नैपशॉट हैं: ये लिखे जाने के समय की मंशा बताते हैं, ज़रूरी नहीं"
+" कि वर्तमान कोड को। Next.js या PM2 का दावा करने वाली कोई भी चीज़ पुरानी "
 "है।"
+

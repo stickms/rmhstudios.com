@@ -63,7 +63,7 @@ vi.mock('../scene-store', () => ({
 import { jellyBus } from '@/lib/jelly/bus';
 import { setDent } from '@/lib/jelly/lattice-inputs';
 import { installJellyRegistry } from '@/lib/jelly/registry';
-import { CHARGE } from '@/lib/jelly/tiers';
+import { CHARGE, PLASMA } from '@/lib/jelly/tiers';
 import { ringLifetimeMs } from '../policy';
 import { installLiquidGlass, pulse } from '../engine';
 
@@ -305,12 +305,12 @@ async function flush() {
   }
 }
 
-/** Run queued animation frames. */
-async function frames(n = 3) {
+/** Run queued animation frames, `ms` apart. */
+async function frames(n = 3, ms = 33) {
   for (let i = 0; i < n; i++) {
     const q = rafQueue;
     rafQueue = [];
-    clock += 33;
+    clock += ms;
     for (const cb of q) cb(clock);
     await flush();
   }
@@ -582,6 +582,28 @@ describe('#989 dormant plasma', () => {
     await settle();
     expect(lastDrawOf(btn)!.plasma).toBeNull();
     expect(rafQueue).toHaveLength(0);
+  });
+
+  /**
+   * Frame-rate independence (F2): the engine caps its frame `dt` at 50 ms, and on software GL frames take far longer,
+   * so easing by `dt` stalled the plasma several-fold. It eases by real elapsed time since the level last advanced
+   * (or since the bus level arrived), so it crosses 0.95 of the target by 3·easeMs of wall time at any frame rate.
+   */
+  it.each([3, 10, 30, 60, 144])('reaches 0.95 of a bus level by ~3·easeMs at %i Hz', async (hz) => {
+    const btn = await button();
+    const ms = 1000 / hz;
+    const t0 = clock;
+    jellyBus.emit('plasma:level', { el: btn as unknown as Element, level: 1 });
+    let at = Infinity;
+    for (let i = 0; i < 400 && rafQueue.length; i++) {
+      await frames(1, ms);
+      if ((lastDrawOf(btn)?.plasma?.level ?? 0) >= 0.95) {
+        at = clock - t0;
+        break;
+      }
+    }
+    expect(at).toBeLessThanOrEqual(3 * PLASMA.easeMs + ms);
+    expect(at).toBeGreaterThanOrEqual(3 * PLASMA.easeMs - ms);
   });
 
   it('a haze slot draws its plasma in the haze program, not the rim', async () => {

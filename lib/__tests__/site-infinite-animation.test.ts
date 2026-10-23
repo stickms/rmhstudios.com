@@ -10,8 +10,8 @@
  * and it is exactly what `testing/e2e/frame-budget.mjs --gate` exists to catch, one release too late. So:
  *
  *  - every `infinite` animation in the site-tier stylesheets (`app/*.css`, `components/{ui,radial,feed,site}/**`)
- *    is either on the frozen, justified {@link BASELINE} (loaders, skeletons, live dots, the dock globe's shimmer —
- *    all on transient or tiny elements), or
+ *    is either on the frozen, justified {@link BASELINE} (loaders, skeletons, live dots — all on transient or tiny
+ *    elements), or
  *  - it is one of the two SANCTIONED carrier keyframes, `jelly-drift` / `jelly-current`, declared only on selectors
  *    under `.jelly-flow` — the carrier `lib/jelly/flow-carriers.ts` attaches only to visible hosts within budget and
  *    removes under every non-ambient state;
@@ -108,9 +108,14 @@ function perpetual(file: string): Perpetual[] {
 
 /**
  * The frozen debt, 2026-10-23: `file :: keyframe` → why it may loop. Each is a transient or tiny element (a loader
- * that exists only while something loads, a skeleton that exists only until content lands, a live dot, the dock's
- * globe glint) — none is a surface or a backdrop. Remove an entry when its loop goes; never add one. New ambient
- * motion goes through the jelly services (docs/plasmatic-jelly-system.md).
+ * that exists only while something loads, a skeleton that exists only until content lands, a live dot) — none is a
+ * surface or a backdrop. Remove an entry when its loop goes; never add one. New ambient motion goes through the jelly
+ * services (docs/plasmatic-jelly-system.md).
+ *
+ * Removed 2026-10-23 (H1): `dock-globe-shimmer` and `dock-globe-glint` (now one sweep per hover) and
+ * `globe-current-halo` (now three breaths when a pin becomes current). The entries had called them "icon-sized" and
+ * "open hub only", but all three ran on the DOCKED globe — every desktop page, at rest, under `still` too — and held
+ * the page at ≈58 frames/s (`testing/e2e/frame-budget.mjs --gate`).
  */
 const BASELINE = new Map<string, string>([
   ['app/globals.css :: pulse', 'Tailwind `animate-pulse-slow` theme token: loading placeholders only'],
@@ -125,10 +130,10 @@ const BASELINE = new Map<string, string>([
   ['app/globals.css :: rad-loader-orbit', 'route loader — exists only while a route loads'],
   ['app/globals.css :: delight-ribbon', 'celebration ribbon, mounted only for the celebration'],
   ['components/radial/radial.css :: radial-pulse-soft', 'unread / live dots, a few px'],
-  ['components/radial/radial.css :: dock-globe-shimmer', 'the dock globe glint, icon-sized'],
-  ['components/radial/radial.css :: dock-globe-glint', 'the dock globe glint, icon-sized'],
-  ['components/radial/radial.css :: globe-current-halo', 'the current-section halo on the hub globe (open hub only)'],
-  ['components/radial/radial.css :: globe-armed', 'the hub globe while a drag is armed (open hub only)'],
+  [
+    'components/radial/radial.css :: globe-armed',
+    'the reticle while a hold is armed (hub or docked globe) — only while the pointer is down on a full ring',
+  ],
   ['components/radial/eversion/eversion.css :: evert-popup-turn', 'eversion popup spinner, while a navigation runs'],
   ['components/feed/feed.css :: feed-live-pulse', 'the live indicator dot on a live item'],
 ]);

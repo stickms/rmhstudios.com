@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   GOVERNOR_MAX_STEP,
+  GOVERNED_FLOOR_HZ,
   GOVERNOR_WARMUP_TICKS,
   GOVERNOR_WINDOW_MS,
   JellyGovernor,
@@ -48,7 +49,7 @@ describe('ladder', () => {
     expect(knobsAt(3)).toMatchObject({ carrierScale: 0.5, ambientArcs: true });
     expect(knobsAt(4)).toMatchObject({ ambientArcs: false, hazeScale: 1 });
     expect(knobsAt(5)).toMatchObject({ hazeScale: 0.125, maxClockHz: 20 });
-    expect(knobsAt(6)).toMatchObject({ maxClockHz: 0 });
+    expect(knobsAt(6)).toMatchObject({ maxClockHz: GOVERNED_FLOOR_HZ });
     expect(knobsAt(99).step).toBe(GOVERNOR_MAX_STEP);
   });
 
@@ -72,7 +73,7 @@ describe('ladder', () => {
     expect(governBudget(full, 3).carriers).toBe(12);
     expect(governBudget(full, 4).ambientArcMinIntervalMs).toBe(Infinity);
     const last = governBudget(full, 6);
-    expect([last.clockHz, last.idleClockHz]).toEqual([0, 0]);
+    expect([last.clockHz, last.idleClockHz]).toEqual([GOVERNED_FLOOR_HZ, GOVERNED_FLOOR_HZ]);
   });
 });
 
@@ -101,7 +102,7 @@ describe('JellyGovernor', () => {
   it('steps once per 2 s window on cost, never faster', () => {
     const g = new JellyGovernor('full', 30);
     warm(g);
-    const steps = feed(g, GOVERNOR_WINDOW_MS * 3 + 200, 5);
+    const steps = feed(g, GOVERNOR_WINDOW_MS * 3 + 200, 9);
     expect(steps).toEqual([1, 2, 3]);
     expect(g.clockHz).toBe(20);
   });
@@ -111,8 +112,8 @@ describe('JellyGovernor', () => {
     const hand = new JellyGovernor('handheld', 15);
     warm(desk);
     warm(hand);
-    expect(feed(desk, GOVERNOR_WINDOW_MS + 100, 2.5)).toEqual([1]);
-    expect(feed(hand, GOVERNOR_WINDOW_MS + 100, 2.5)).toEqual([]);
+    expect(feed(desk, GOVERNOR_WINDOW_MS + 100, 7)).toEqual([1]);
+    expect(feed(hand, GOVERNOR_WINDOW_MS + 100, 7)).toEqual([]);
   });
 
   it('steps on late ticks (p90 interval > 1.5 × the clock period)', () => {
@@ -124,6 +125,45 @@ describe('JellyGovernor', () => {
     expect(feed(g, GOVERNOR_WINDOW_MS * 3, 0.5, 55)).toEqual([]);
   });
 
+  // Regression (G1, "the eddies and currents are not present"): the engine's clock drops to the 12 Hz idle floor after
+  // IDLE_AFTER_MS without input. Those ticks are 83 ms apart by design; judging them against the 30 Hz period stepped
+  // every window and froze the haze (step 6, clock 0) ~12 s into reading a page without touching the mouse.
+  it('judges idle-floor ticks against the idle clock, not the engaged one', () => {
+    const g = new JellyGovernor('full', 30);
+    warm(g);
+    const steps: number[] = [];
+    for (let t = 0; t < GOVERNOR_WINDOW_MS * 20; t += 1000 / 12) {
+      const s = g.record(0.5, 1000 / 12, 12);
+      if (s !== null) steps.push(s);
+    }
+    expect(steps).toEqual([]);
+    expect(g.step).toBe(0);
+    expect(g.clockHz).toBe(30);
+  });
+
+  it('does not count the engaged/idle transition as a late tick', () => {
+    const g = new JellyGovernor('full', 30);
+    warm(g);
+    for (let round = 0; round < 10; round++) {
+      // Engaged for ~1 s, idle for ~1 s: the first engaged tick after idle is still up to an idle period late.
+      for (let i = 0; i < 30; i++) expect(g.record(0.5, i === 0 ? 83 : 33.3, 30)).toBeNull();
+      for (let i = 0; i < 12; i++) expect(g.record(0.5, 83.3, 12)).toBeNull();
+    }
+    expect(g.step).toBe(0);
+  });
+
+  it('still steps when the idle clock itself is late', () => {
+    const g = new JellyGovernor('full', 30);
+    warm(g);
+    const steps: number[] = [];
+    // 12 Hz asked, 6 Hz delivered: 166 ms > 1.5 × 83 ms.
+    for (let t = 0; t < GOVERNOR_WINDOW_MS * 1.6; t += 166) {
+      const s = g.record(0.5, 166, 12);
+      if (s !== null) steps.push(s);
+    }
+    expect(steps).toEqual([1]);
+  });
+
   it('treats a long gap (hidden tab, scroll pause) as a discontinuity, not load', () => {
     const g = new JellyGovernor('full', 30);
     warm(g);
@@ -131,12 +171,13 @@ describe('JellyGovernor', () => {
     expect(g.step).toBe(0);
   });
 
-  it('stops at clock 0 and never steps back up', () => {
+  it('bottoms out at the floor clock (never freezes the haze) and never steps back up', () => {
     const g = new JellyGovernor('full', 30);
     warm(g);
     feed(g, GOVERNOR_WINDOW_MS * 20, 10);
     expect(g.step).toBe(GOVERNOR_MAX_STEP);
-    expect(g.clockHz).toBe(0);
+    expect(g.clockHz).toBe(GOVERNED_FLOOR_HZ);
+    expect(g.clockHz).toBeGreaterThan(0);
     expect(g.record(0, 33)).toBeNull();
     expect(g.step).toBe(GOVERNOR_MAX_STEP);
   });
