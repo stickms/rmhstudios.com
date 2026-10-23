@@ -21,9 +21,12 @@
   class by role** (`.glass-fill` / `.glass-pane` / `.glass-chrome` /
   `.glass-overlay` / `.glass-inset`) rather than a hand-rolled equivalent box;
   use `components/ui/` primitives and `components/feed/PageLayout.tsx`.
-  **Liquid interaction:** use the bounded shared runtime in `lib/liquid/runtime.ts`
-  for cursor lighting and nearby tap waves; no component-level pointer loops
-  or animated custom properties on `<html>`. See `docs/liquid-glass-system.md`. Full-screen apps use the parallel
+  **The material is now Plasmatic Jelly** (supersedes liquid glass,
+  2026-10-23): still, clear gel with dormant plasma, a smooth RGB-refracting
+  edge, and a liquid-glass lens dent with a light dot that follows the pointer
+  on press. Its full rules are the "Design system: Plasmatic Jelly" section of
+  `CLAUDE.md`, which wins where older design docs disagree. No component-level
+  pointer loops or animated custom properties on `<html>`. Full-screen apps use the parallel
   `--app-*` contract (`components/shared/app-theme.css` + `AppShell`). The
   statement of the language is `design.md` at the root; read
   `docs/design-language.md` §0 before a UI commit; checklist in

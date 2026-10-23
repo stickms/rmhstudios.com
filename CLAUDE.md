@@ -152,12 +152,16 @@ _why_.
    `.glass-pane` singular panels · `.glass-chrome` sticky chrome ·
    `.glass-overlay` floating UI · `.glass-inset` fields), not a hand-rolled
    `bg-site-surface border rounded-site` box — the class is what carries the
-   material and what the degradation tiers switch off. **Liquid glass** is shader-drawn: `lib/liquid/glass/engine.ts` paints
-   `glass-pane/chrome/overlay` (and `app-glass`) as clear slabs with a refracting,
-   lit rim and a cursor that is a light; `lib/liquid/runtime.ts` provides fallback
-   cursor lighting. Clicks never push or bounce neighbouring surfaces; the globe is a dough simulation (`lib/dough.ts`).
-   **No `backdrop-filter` in any glass role.** Never add per-component pointer
-   loops or animated root custom properties. See `docs/liquid-glass-system.md`. The statement of the language is
+   material and what the degradation tiers switch off. **The material is now
+   Plasmatic Jelly** (it supersedes liquid glass, 2026-10-23): every surface is
+   a still, clear gel with sleeping plasma, an RGB-refracting edge and a
+   liquid-glass lens dent on press. Its rules are in
+   [Design system: Plasmatic Jelly](#design-system-plasmatic-jelly) below and
+   **win wherever `design.md`, `docs/design-language.md` or
+   `docs/liquid-glass-system.md` disagree** (those docs are stale on material
+   and interaction until rewritten). The globe is still a dough simulation
+   (`lib/dough.ts`). **No `backdrop-filter` in any surface role.** Never add
+   per-component pointer loops or animated root custom properties. The statement of the language is
    [`design.md`](design.md) at the root; **before any UI commit** read
    [`docs/design-language.md`](docs/design-language.md) §0 (the definition of
    done) and the checklist in
@@ -200,6 +204,89 @@ _why_.
 10. **Quality bar (from CONTRIBUTING.md):** don't add new type/lint warnings
     relative to the base branch; keep commits focused; never commit secrets.
     Every commit passes `pnpm check:consistency` — see the commit gate above.
+
+## Design system: Plasmatic Jelly
+
+Every UI change must comply with this. The reference implementation (tokens,
+engine, primitives, previews) is the **RMHStudios Plasmatic Jelly** design
+system artifact (https://claude.ai/artifact/CJHUUF89x3H8wur6dBHMz3, v13):
+`tokens.json` is the value source, `components/bundle.js` the engine,
+`physics.md` the equations. When it is ported into this repo, the engine lives
+in `lib/jelly/` (reusing `lib/fluid.ts` springs and rubber band), its tokens in
+`app/globals.css`, and its primitives in `components/ui/`. Until then, do not
+hand-roll any of it in a component.
+
+**Identity: silent, sleek, frontier AI.** Quiet by default: a resting page
+shows no plasma, no glow and no motion at all. Near-black void (`--site-bg`),
+graphite (`--site-surface-opaque`), white ink, and ONE electric accent
+(`--site-accent`, also the plasma colour). No second accent, no gradients on
+the ground, no neon or glowing type, no sci-fi illustration (robots, brains,
+circuits, sparkles). Copy is short and literal ("Deploy model", "Latency 42
+ms"); eyebrows and data are Geist Mono, everything else Geist. One ink-gel
+primary action (`JellyButton variant="signal"`) per view.
+
+**The material, in physical layers (all drawn by the shared engine):**
+
+1. **Gel:** clear, darkening slightly toward its base (`--gel-body` →
+   `--gel-depth`); the primary action is ink gel (`--gel-ink`, `--on-ink`).
+2. **Plasma, inside and dormant:** a core and filaments clipped inside the
+   gel, invisible at rest. Hover wakes it to `--plasma-wake` without charging
+   the body; press, focus and clicks brighten it. Plasma never draws an outline.
+3. **Edge refraction, smooth and RGB-led:** a soft refraction band just inside
+   the rim (`--gel-bevel`, blurred before the clip so it blends into the gel)
+   carrying a distinct red/green/blue split (`--gel-disperse-r/-g/-b`, red
+   offset toward the top-left light, blue away). The RGB split leads; white is
+   secondary. Plus a 1px Fresnel edge (`--gel-fresnel`).
+4. **No broad gloss band or glint across the face.** Shine lives at the edges
+   and in the dent.
+
+**Physics, strictly (constants are tokens; never re-derive them in a component):**
+
+- Each surface is a soft body: point masses on Hooke springs with shape memory,
+  ideal-gas pressure conserving area, viscous damping (`--jelly-*`), fixed
+  timestep (`--sim-hz`).
+- **Still until clicked.** A resting surface is held by its layout: no heat,
+  hover or neighbour moves its edges. Only a pointerdown on it does; it then
+  settles to exact rest in about 1.3s and sleeps.
+- **Press = liquid-glass dent.** A smooth, creaseless Gaussian bowl sinks under
+  the pointer (`--jelly-dent-depth`, well damped by `--jelly-dent-damping`),
+  the outline indents ~5px and the far side bulges. The dent is a lens: the
+  content beneath refracts through it (`--jelly-lens-strength`), split into
+  R/G/B (`--jelly-lens-dispersion`), with a soft rim glow and a specular
+  **light dot** (`--gel-specular`) on its far slope. **Drag and the dent slides
+  with the pointer**; dragging off the element stretches the gel instead
+  (rubber band from `lib/fluid.ts`). Release eases everything back.
+- **Electricity:** neighbours attract by Coulomb's law (equal and opposite;
+  resting bodies pass it to their support); an arc jumps a gap below
+  `--arc-breakdown-gap` × (1 + 1.5q) after `--arc-formative-lag`; every click
+  deposits charge that rings through the gel (`--pulse-speed`, `--pulse-tau`)
+  and jumps to a neighbour in reach with half the charge.
+- **Never fake a law:** no keyframe wobble, `@keyframes` glow, `transition:
+  transform` on a body, untriggered flicker, ripple, or a second spring formula.
+  A new behaviour is a new force in the engine with a token for every constant.
+
+**Layout:** bodies sit at least `--space-4` (16px) apart (quiet at rest;
+closer than the breakdown gap they arc forever). Leave `--jelly-margin` (16px)
+unclipped round every body; no `overflow: hidden` directly around one. Cards
+`--site-radius`, controls `--site-radius-sm`. Hit areas never move; content
+follows the gel by at most `--jelly-content-strain` (4%).
+
+**Accessibility and degradation stay central:** high contrast, forced colors,
+reduced transparency and `perf-lite` switch the engine off and render opaque
+`--site-surface-opaque` with a solid edge; components never branch on them.
+Text holds 4.5:1 on gel and over plasma in both themes (Plasma dark is
+primary, Daylight light); the focus ring is `--focus-ring`, solid 2px, never
+the plasma glow. Plasma, arcs and lens are `aria-hidden` decoration, never the
+only signal of state. Where a browser will not apply SVG filters to HTML (some
+Safari), the lens simply does not refract; rim and indent remain.
+
+**Performance:** one engine = one `requestAnimationFrame`, one window pointer
+listener, one overlay canvas (arcs only); per-frame component work goes through
+`engine.drive(fn)`. At most `--jelly-body-budget` (24) bodies simulate, only in
+the viewport. Rects are read in scroll/resize events, never in the frame;
+nothing writes custom properties to `<html>` per frame. The only filters are
+the small refraction blurs and the lens inside each body's own SVG, active only
+while it moves; never a filter or `backdrop-filter` on a full-viewport layer.
 
 ## Runtime & deploy reality (summary — details in docs/architecture.md)
 
