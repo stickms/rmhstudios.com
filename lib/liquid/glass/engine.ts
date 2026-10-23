@@ -39,8 +39,13 @@ import { GlassRenderer, type GlassDraw } from './renderer';
 import { createSceneProvider, type SceneProvider, type SceneShot } from './scene';
 import { clearScene, publishScene } from './scene-store';
 
-/** Prominent panes and floating UI share a bounded renderer. Repeated fills and controls use the CSS material. */
-const SELECTOR = '.glass-pane,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass]';
+/**
+ * What becomes a slab. The five glass roles, plus the CONTROLS that carry the material without a role class: solid
+ * buttons (ghost and link buttons have no body to give an edge to) and fields. Controls are admitted last, so a screen
+ * full of them never starves a card or a menu.
+ */
+const SELECTOR =
+  '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass],.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"]';
 const EXCLUDE =
   '[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,.radial-globe__stage,.radial-hub__orb,.eversion-overlay,canvas,input,textarea,select';
 const LIGHT_HEIGHT = 96;
@@ -86,7 +91,7 @@ const roleOf = (el: Element): GlassRole =>
         : el.classList.contains('glass-fill')
           ? 'fill'
           : el.matches(
-                '.glass-inset,[data-slot="button"],[data-slot="input"],[data-slot="textarea"]',
+                '.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"]',
               )
             ? 'control'
             : 'other';

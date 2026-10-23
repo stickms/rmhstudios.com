@@ -18,8 +18,8 @@
       rgb(255 255 255 / 0.025) 76%,
       rgb(255 255 255 / 0.08)
     );
-    /* Repeated cards have no shader bevel. Give their CSS material a visible
-       face in both light and dark themes, without blur or another canvas. */
+    /* A repeated card's CSS face: what it shows before the engine admits it, past the
+       shader budget, and on every fallback tier. Visible in light and dark, no blur. */
     --liquid-fill-coat:
       linear-gradient(
         145deg,
@@ -198,7 +198,7 @@
     border-radius: 50%;
     background: radial-gradient(
       closest-side,
-      color-mix(in srgb, var(--site-glass-light, white) 18%, transparent),
+      color-mix(in srgb, var(--site-glass-light, white) 36%, transparent),
       transparent
     );
     opacity: 0.55;

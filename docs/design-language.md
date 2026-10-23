@@ -44,8 +44,8 @@ without a single component change.
 > is a light, and **no glass role uses `backdrop-filter`** (see
 > [`liquid-glass-system.md`](liquid-glass-system.md)). Everywhere below that speaks
 > of a tier's "backdrop blur", its "≤8 backdrop-filters" budget, or an
-> `@supports not (backdrop-filter)` fallback, read it as: the budget is **≤8 shader
-> slabs per viewport**, `glass-fill`, fields and small controls use the CSS reflection material, there are **no box-shadows** on UI surfaces (the shadow tokens are zero), and the CSS material is the
+> `@supports not (backdrop-filter)` fallback, read it as: the budget is **≤24 shader
+> slabs per viewport** shared by every glass role, fields and solid controls, surfaces past it use the CSS reflection material, there are **no box-shadows** on UI surfaces (the shadow tokens are zero), and the CSS material is the
 > fallback in every engine. The role-by-purpose rules are unchanged.
 >
 > **Current implementation (2026-10-21).** The radial shell and navigator live
