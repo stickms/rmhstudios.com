@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
+import { THEME_BG, DEFAULT_STYLE } from '@/stores/themeStore';
 import { collectRoutes, parseRouteTree } from '../../testing/e2e/fouc-routes.mjs';
 
 /**
@@ -79,6 +80,65 @@ describe('retired glass preferences before first paint', () => {
     expect(properties.has('--glass-user-tint')).toBe(false);
     expect(stored.has('rmh-glass-level')).toBe(false);
     expect(stored.has('rmh-reduce-transparency')).toBe(false);
+  });
+});
+
+describe('default theme before first paint', () => {
+  /** Runs the real inline theme script against the real THEME_BG / DEFAULT_STYLE. */
+  function runThemeScript(initial: Record<string, string>) {
+    const source = read('app/routes/__root.tsx');
+    const body = source.match(
+      /function buildThemeScript\(siteTier: boolean\): string \{([\s\S]*?)\n\}/,
+    )![1];
+    const script = runInNewContext(`(function(siteTier) {${body}})(false)`, {
+      THEME_BG,
+      APP_THEME_BG: '#000000',
+      APP_ROUTE_THEME_BG: {},
+      DEFAULT_STYLE,
+      THEME_EXCLUDED_ROUTES: [],
+      THEME_EXCLUDED_EXCEPTIONS: [],
+      ACCENT_MAP: {},
+    });
+    const stored = new Map(Object.entries(initial));
+    const setItemCalls: Array<[string, string]> = [];
+    const classes = new Set<string>();
+    const html = {
+      classList: { add: (v: string) => classes.add(v), contains: (v: string) => classes.has(v) },
+      style: { backgroundColor: '', setProperty: () => {} },
+    };
+    runInNewContext(script, {
+      localStorage: {
+        getItem: (key: string) => stored.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          setItemCalls.push([key, value]);
+          stored.set(key, value);
+        },
+        removeItem: (key: string) => stored.delete(key),
+      },
+      document: { documentElement: html, querySelector: () => ({ content: '' }) },
+      location: { pathname: '/' },
+      window: {},
+    });
+    return { classes, html, stored, setItemCalls };
+  }
+
+  it('new visitor lands on Midnight with no flash', () => {
+    const { classes, html, setItemCalls } = runThemeScript({});
+    expect(classes.has('style-graphite')).toBe(true);
+    expect(html.style.backgroundColor).toBe('#000000');
+    expect(setItemCalls).toHaveLength(0);
+  });
+
+  it('a stored Daylight choice survives', () => {
+    const { classes, html } = runThemeScript({ 'rmh-style': 'default' });
+    expect([...classes].filter((c) => c.startsWith('style-'))).toEqual([]);
+    expect(html.style.backgroundColor).toBe('#ffffff');
+  });
+
+  it('an invalid stored style heals to Midnight', () => {
+    const { classes, stored } = runThemeScript({ 'rmh-style': 'sepia' });
+    expect(stored.get('rmh-style')).toBe('graphite');
+    expect(classes.has('style-graphite')).toBe(true);
   });
 });
 
