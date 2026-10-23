@@ -29,7 +29,7 @@ const STYLE_ID = 'rmh-globe-cursor-style';
 const HTML_CLASS = 'rmh-globe-cursor';
 
 const INTERACTIVE =
-  'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="slider"], label, summary, select, input[type="checkbox"], input[type="radio"], input[type="range"], input[type="color"], input[type="button"], input[type="submit"], [data-cursor="pointer"]';
+  'a[href], button, [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"], [role=switch], [role="checkbox"], [role="radio"], [role="slider"], label, summary, select, input[type="checkbox"], input[type="radio"], input[type="range"], input[type="color"], input[type="button"], input[type="submit"], [data-cursor="pointer"]';
 const TEXT_FIELD =
   'textarea, [contenteditable]:not([contenteditable="false"]), input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="url"], input[type="password"], input[type="tel"], input[type="number"]';
 const NATIVE_ZONE = '[data-globe-cursor="off"]';

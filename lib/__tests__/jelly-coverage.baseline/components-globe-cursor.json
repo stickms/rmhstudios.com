@@ -1,7 +1,0 @@
-{
-  "surfaces": {},
-  "dialogs": {},
-  "switches": {
-    "components/globe-cursor/GlobeCursor.tsx": 1
-  }
-}
