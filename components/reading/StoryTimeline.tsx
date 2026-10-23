@@ -39,7 +39,7 @@ export function StoryTimeline({
                 <li key={a.slug} className="relative">
                   <span
                     aria-hidden
-                    className="absolute -start-[1.95rem] top-2 size-3 rounded-full border-2 border-site-accent bg-site-bg"
+                    className="absolute -start-[1.95rem] top-2 size-3 rounded-full glass-inset border-2 border-site-accent bg-site-bg"
                   />
                   <time dateTime={a.date} className="font-mono text-sm text-site-accent">
                     {a.date}
