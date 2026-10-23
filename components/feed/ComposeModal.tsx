@@ -1,14 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from'react';
-// `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
-// is the component that honours it — `motion` bundles its own full feature
-// implementation, which lands in the SHARED ENTRY CHUNK when the module is
-// reachable from a route's top level. Nine modules did this, together putting
-// ~36 KB of framer-motion on the critical path of every page.
-import { m as motion } from 'framer-motion';
-import { modalContent } from '@/lib/motion';
-import { createPortal } from'react-dom';
 import { useTranslation } from'react-i18next';
 import { X, Plus, BarChart3, ImagePlus } from'lucide-react';
 import { GifEmbed } from'./GifEmbed';
@@ -20,6 +12,7 @@ import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';
 import { useResolvedUser, useSession } from'@/components/Providers';
 import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
 import { Button } from'@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { MenuItem } from '@/components/ui/menu';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { useFeedStore } from'@/stores/feedStore';
@@ -98,25 +91,10 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  useEffect(() => setMounted(true), []);
 
- // Escape closes the composer — the one dismissal every modal on the site owes a
- // keyboard user, and the only one this hand-rolled dialog never had. The nested
- // alt-text editor takes it first while it is up, so Escape backs out one layer
- // at a time instead of throwing away a half-written post.
- useEffect(() => {
- if (!open) return;
- const onKey = (e: KeyboardEvent) => {
- if (e.key !=='Escape') return;
- if (menuOpen) {
- setMenuOpen(false);
- } else if (altEditIndex !== null) {
- setAltEditIndex(null);
- } else {
- onClose();
- }
- };
- window.addEventListener('keydown', onKey);
- return () => window.removeEventListener('keydown', onKey);
- }, [open, menuOpen, altEditIndex, onClose]);
+ // Escape: Radix owns it (top layer only). The menu is not a layer, so it is
+ // backed out first via onEscapeKeyDown below; the alt-text editor is its own
+ // Dialog and takes Escape before the composer does.
+
 
  // Close menu on outside click
  useEffect(() => {
@@ -218,53 +196,35 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  if (!open || !session || !mounted) return null;
 
- return createPortal(
- // PORTALLED TO <body>, and it has to be. Rendered in place, the composer sits
- // inside `.radial-frame`, which is `position: relative; z-index: var(--z-content)`
- // — a stacking context pinned at 1. Every z-index below is then measured
- // INSIDE it, so the old `z-[100]` bought nothing against the shell's own fixed
- // chrome: the top bar (60), the hub orb and its aura (79/80), back-to-top and
- // the compose FAB itself (80) all painted straight over the dialog. On a phone,
- // where the sheet goes full-screen, that is the whole bug — a dark wash over
- // the page with the site's chrome floating on top of it and the composer buried
- // underneath. globals.css §5.6 states the contract this restores: the shell's
- // stacking scale is capped by `.radial-shell`'s `isolation: isolate`, and a
- // modal clears it by leaving the shell for <body> at z-50, exactly as the
- // Dialog/Sheet primitives do.
- <div className="fixed inset-0 z-50">
- {/* Backdrop — the site's shared dialog scrim: a blur over the page, not a
- flat black wash. `touch-none` keeps the page behind from panning while
- the composer is up, which is how the radial hub blocks it too (a document
- scroll-lock clips to the visual viewport and leaves a stray band under
- iOS Safari's bottom bar — see the note in RadialHub). */}
- <button
- type="button"
- tabIndex={-1}
- data-motion="fade"
- className="glass-scrim absolute inset-0 touch-none"
- onClick={onClose}
- aria-label={t('close', { defaultValue:'Close'})}
- />
-
- {/* Modal */}
- <div
- data-mobile-fullscreen="true"
- role="dialog"
- aria-modal="true"
- aria-label={t('palette-new-post', { defaultValue:'New post'})}
+ return (
+ <>
+ <Dialog
+ open
+ onOpenChange={(o) => {
+ if (!o) onClose();
+ }}
+ >
+ <DialogContent
+ mobileFullscreen
+ aria-describedby={undefined}
  data-motion="rise"
- className="glass-overlay absolute inset-0 h-dvh max-h-none overflow-y-auto overscroll-contain rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] text-site-text sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
+ onInteractOutside={(e) => {
+ // Menus and pickers portal to <body> outside this Radix layer; a press on one is not "outside".
+ if ((e.target as HTMLElement | null)?.closest?.('[data-slot="anchored-menu"]')) e.preventDefault();
+ }}
+ onEscapeKeyDown={(e) => {
+ if (menuOpen) {
+ e.preventDefault();
+ setMenuOpen(false);
+ }
+ }}
+ className="gap-0 overflow-y-auto overscroll-contain p-0 text-site-text sm:top-[10vh] sm:max-h-[80dvh] sm:translate-y-0 sm:p-0"
  >
  {/* Header */}
- <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
- <button
- type="button"
- onClick={onClose}
- aria-label={t('close', { defaultValue:'Close'})}
- className="p-1.5 -ml-1.5 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
- >
- <X className="w-5 h-5"aria-hidden />
- </button>
+ <div className="flex items-center justify-between border-b border-site-border py-3 pl-4 pr-14">
+ <DialogTitle className="text-sm font-semibold">
+ {t('palette-new-post', { defaultValue:'New post'})}
+ </DialogTitle>
  <div className="flex items-center gap-2">
  {/* AI draft button */}
  <AIGenerateButton
@@ -324,12 +284,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* The ROW is the shared `MenuItem` primitive; the PANEL deliberately
  stays in place rather than moving onto AnchoredMenu. AnchoredMenu
- portals to <body> and paints at `--z-menu` (40), which is the band
- that clears the SHELL — and this composer is itself a body-level
- modal at z-50, so a portalled panel would land under its own dialog
- and under the scrim. `.anchored-menu` sets that z-index from an
- UNLAYERED rule, so a Tailwind `z-*` on the panel cannot lift it out
- either (`Select` clears a dialog with its own `z-[60]` instead).
+ portals to <body> to clear the SHELL chrome (inside a dialog it lifts
+ to `--z-menu-in-dialog`, see components/ui/anchored-menu.css).
  In here there is no shell chrome to clear and nothing clips the
  panel, so the reason to portal does not apply. Outside-click,
  Escape and the close animation therefore stay local, above. */}
@@ -627,41 +583,17 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  {remaining}
  </span>
  </div>
- </div>
+  </DialogContent>
+ </Dialog>
 
  {/* Image alt-text editor — opened from the ALT pill on a preview image */}
+ <Dialog open={altEditIndex !== null && !!imageUrls[altEditIndex]} onOpenChange={(o) => !o && setAltEditIndex(null)}>
  {altEditIndex !== null && imageUrls[altEditIndex] && (
- <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
- <button
- type="button"
- tabIndex={-1}
- className="glass-scrim absolute inset-0"
- onClick={() => setAltEditIndex(null)}
- aria-label={t('close', { defaultValue:'Close'})}
- />
- <motion.div
- role="dialog"
- aria-modal="true"
- aria-labelledby="compose-alt-title"
- variants={modalContent}
- initial="initial"
- animate="animate"
- className="relative w-full max-w-md p-4 glass-overlay"
- >
- <div className="mb-2 flex items-center justify-between">
- <h3 id="compose-alt-title"className="text-sm font-semibold text-site-text">
+ <DialogContent aria-describedby="compose-alt-help" className="max-w-md gap-0 p-4 sm:p-4">
+ <DialogTitle className="mb-2 pr-11 font-sans text-sm font-semibold text-site-text">
  {t('alt-text-heading', { defaultValue:'Describe this image'})}
- </h3>
- <button
- type="button"
- onClick={() => setAltEditIndex(null)}
- aria-label={t('close', { defaultValue:'Close'})}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
- >
- <X className="h-4 w-4"/>
- </button>
- </div>
- <p className="mb-3 text-xs text-site-text-muted">
+ </DialogTitle>
+ <p id="compose-alt-help" className="mb-3 text-xs text-site-text-muted">
  {t('alt-text-help', {
  defaultValue:
 "Alt text lets people who use screen readers understand your image. Describe what's in it.",
@@ -703,10 +635,9 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  {t('done', { defaultValue:'Done'})}
  </Button>
  </div>
- </motion.div>
- </div>
+ </DialogContent>
  )}
- </div>,
- document.body,
+ </Dialog>
+ </>
  );
 }

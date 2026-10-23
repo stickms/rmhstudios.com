@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from'react';
-import { Wand2, Loader2, Sparkles, X, Lock } from'lucide-react';
+import { Wand2, Loader2, Sparkles, Lock } from'lucide-react';
 import { useTranslation } from'react-i18next';
 import { Link } from'@tanstack/react-router';
 import { Button } from'@/components/ui/button';
-import { OverlayPanel } from'@/components/ui/overlay-panel';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from'@/components/ui/dialog';
 
 interface AIImageButtonProps {
  /** Current composer text — used to theme the generated image. */
@@ -102,58 +102,27 @@ export function AIImageButton({
  )}
  </button>
 
- {/* `OverlayPanel` portals this to <body>. It opens from inside `ComposeBox`,
- whose root is `.glass-pane` — a live `backdrop-filter`, which is BOTH a
- containing block for `position: fixed` descendants AND a stacking context. So
- `fixed inset-0` resolved to the composer's own ~600x160 box rather than the
- viewport, and the bespoke `z-88` (picked to sit just under `--z-hub-overlay:
- 90`) was a number that could never be reached from inside the frame anyway. */}
  {locked && showUpgrade && (
- <OverlayPanel
- open
- onClose={() => setShowUpgrade(false)}
- closeLabel={t('close', { defaultValue:'Close'})}
- >
- {/* `.glass-overlay` rather than a hand-rolled surface+border+shadow box: it
- is the tier this belongs to (floating UI), and the tier is also what
- carries the viewport clamp and `overflow-y: auto`. The box it replaced
- was `overflow-hidden` with no height cap, so on a short screen the
- upgrade copy and its buttons were clipped away with nothing to scroll. */}
- <div
- role="dialog"
- aria-modal="true"
- aria-labelledby="ai-image-upgrade-title"
- className="glass-overlay relative w-full max-w-sm text-center"
- onClick={(e) => e.stopPropagation()}
- >
- {/* Decorative gradient header */}
+ <Dialog open onOpenChange={(o) => !o && setShowUpgrade(false)}>
+ <DialogContent className="w-full max-w-sm gap-0 p-0 text-center sm:p-0">
+{/* Decorative gradient header */}
  <div className="relative bg-linear-to-br from-site-accent/30 via-site-accent/10 to-transparent px-6 pb-6 pt-8">
- <button
- onClick={() => setShowUpgrade(false)}
- aria-label={t('close', { defaultValue:'Close'})}
- className="absolute right-3 top-3 rounded-site-sm p-2 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
- >
- <X className="h-4 w-4"/>
- </button>
- <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-site border border-site-accent/30 bg-site-accent-dim">
+  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-site border border-site-accent/30 bg-site-accent-dim">
  <Wand2 className="h-7 w-7 text-site-accent"/>
  </div>
  </div>
 
  <div className="px-6 pb-6">
- <h2
- id="ai-image-upgrade-title"
- className="inline-flex items-center gap-2 text-xl font-bold text-site-text"
- >
+ <DialogTitle className="inline-flex items-center gap-2 text-xl font-bold text-site-text">
  <Sparkles className="h-5 w-5 text-site-accent"/>
  {t('ai-image-upgrade-title', { defaultValue:'Unlock AI image generation'})}
- </h2>
- <p className="mx-auto mt-2 max-w-xs text-sm text-site-text-muted">
+ </DialogTitle>
+ <DialogDescription className="mx-auto mt-2 max-w-xs">
  {t('ai-image-upgrade-body', {
  defaultValue:
 'Turn your posts into eye-catching art. Generate custom AI images straight from the composer — available on HARD-R and above.',
  })}
- </p>
+ </DialogDescription>
  <div className="mt-6 flex flex-col gap-2">
  <Link
               to="/store"
@@ -175,8 +144,8 @@ export function AIImageButton({
  </Button>
  </div>
  </div>
- </div>
- </OverlayPanel>
+ </DialogContent>
+ </Dialog>
  )}
  </>
  );

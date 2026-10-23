@@ -64,10 +64,10 @@ export default function WitWarResults({
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.08 }}
-            className={`flex items-center justify-between rounded-(--app-radius) border p-3 ${
+            className={`glass-fill flex items-center justify-between rounded-(--app-radius) border p-3 ${
               idx === 0
                 ? 'border-(--app-warning)/40 bg-(--app-warning)/10'
-                : 'border-(--app-border) bg-(--app-surface)'
+                : 'border-(--app-border)'
             }`}
           >
             <div className="flex items-center gap-3">
@@ -101,7 +101,7 @@ export default function WitWarResults({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 + idx * 0.05 }}
-              className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) p-3"
+              className="glass-fill rounded-(--app-radius-sm) p-3"
             >
               <div className="text-xs text-(--app-text-muted) mb-1">{m.promptText}</div>
               <div className="flex items-center justify-between gap-2 text-sm">

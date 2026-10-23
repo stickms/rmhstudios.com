@@ -52,7 +52,7 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-5">
+    <div className="app-glass mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-(--app-radius) p-5">
       {/* Timer */}
       {timeRemaining > 0 && (
         <div className="flex items-center gap-2 text-sm text-(--app-text-muted)">
@@ -95,11 +95,11 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
             <button
               key={String(n)}
               onClick={() => setClueNumber(val as number | 'unlimited')}
-              className={`rounded-(--app-radius-sm) border px-3 py-1.5 text-sm font-medium transition-colors
+              className={`glass-fill rounded-(--app-radius-sm) border px-3 py-1.5 text-sm font-medium transition-colors
                 ${
                   isSelected
                     ? 'border-(--app-accent) bg-(--app-accent)/20 text-(--app-accent)'
-                    : 'border-(--app-border) bg-(--app-surface) text-(--app-text-muted) hover:bg-(--app-accent)/10'
+                    : 'border-(--app-border) text-(--app-text-muted) hover:bg-(--app-accent)/10'
                 }`}
             >
               {n}

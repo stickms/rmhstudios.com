@@ -96,7 +96,7 @@ export default function MarketResultsScreen({
               .map((sb) => (
                 <div
                   key={sb.userId}
-                  className="flex justify-between items-center text-sm px-3 py-2 rounded-(--app-radius-sm) bg-(--app-surface) border border-(--app-border)"
+                  className="glass-fill flex justify-between items-center text-sm px-3 py-2 rounded-(--app-radius-sm)"
                 >
                   <span className="font-medium text-(--app-text)">{sb.userName}</span>
                   <div className="flex items-center gap-3 text-xs">

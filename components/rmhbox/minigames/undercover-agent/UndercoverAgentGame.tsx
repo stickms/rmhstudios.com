@@ -550,7 +550,7 @@ export default function UndercoverAgentGame({ playerId, playerName: _playerName 
               <button
                 type="button"
                 onClick={handleShuffleTeams}
-                className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) px-4 py-2 text-sm font-medium text-(--app-text) transition-colors hover:bg-(--app-accent)/10"
+                className="glass-fill rounded-(--app-radius-sm) px-4 py-2 text-sm font-medium text-(--app-text) transition-colors hover:bg-(--app-accent)/10"
               >
                 <Shuffle className="h-4 w-4 inline-block mr-1" />{t("ua-shuffle", { defaultValue: "Shuffle" })}
               </button>

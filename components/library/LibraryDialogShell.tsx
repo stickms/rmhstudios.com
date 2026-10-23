@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * The scrim the library's five modals share, portalled to `<body>`.
+ * The Radix dialog the library's five modals share, portalled to `<body>`.
  *
  * All five (`UploadModal`, `LibraryEditControls`, and three inside
  * `LibraryCollections`) rendered `<div className="lib-upload__overlay">` in
@@ -24,16 +24,17 @@
  * `LibraryContextMenu` in this same directory already portals for exactly this
  * reason; this is that precedent applied to the modals.
  *
- * NOTE: this is a scrim, not a `Dialog`. It carries no focus trap and no scroll
- * lock — the callers never had either, and this change is deliberately limited
- * to the layering bug. `components/ui/dialog.tsx` is where these should land.
+ * It is now a Radix dialog (focus trap, scroll lock, Escape) around the same
+ * `.lib-upload__overlay` layer, so each panel keeps its own markup and styling.
  */
 
 import type { ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { useTranslation } from 'react-i18next';
+import { DialogPortal } from '@/components/ui/dialog';
 
 export interface LibraryDialogShellProps {
-  /** Fires on a press on the scrim itself; panels stop propagation. */
+  /** Fires on a press on the scrim itself, and on Escape; panels stop propagation. */
   onClose: () => void;
   /** Accessible name, for the dialogs that do not label themselves internally. */
   label?: string;
@@ -41,17 +42,28 @@ export interface LibraryDialogShellProps {
 }
 
 export function LibraryDialogShell({ onClose, label, children }: LibraryDialogShellProps) {
-  if (typeof document === 'undefined') return null;
-  return createPortal(
-    <div
-      className="lib-upload__overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label={label}
-      onMouseDown={onClose}
-    >
-      {children}
-    </div>,
-    document.body,
+  const { t } = useTranslation('library');
+  return (
+    <DialogPrimitive.Root open onOpenChange={(o) => !o && onClose()}>
+      <DialogPortal>
+        {/* The content IS the scrim (`.lib-upload__overlay` is the viewport-covering layer the
+            panels centre inside), so a press on it is an outside press; Radix adds Escape, the
+            focus trap and focus return. */}
+        <DialogPrimitive.Content
+          className="lib-upload__overlay outline-none"
+          aria-describedby={undefined}
+          onInteractOutside={(e) => {
+            if ((e.target as HTMLElement | null)?.closest?.('[data-slot="anchored-menu"]'))
+              e.preventDefault();
+          }}
+          onMouseDown={onClose}
+        >
+          <DialogPrimitive.Title className="sr-only">
+            {label ?? t('library-heading', { defaultValue: 'Library' })}
+          </DialogPrimitive.Title>
+          {children}
+        </DialogPrimitive.Content>
+      </DialogPortal>
+    </DialogPrimitive.Root>
   );
 }

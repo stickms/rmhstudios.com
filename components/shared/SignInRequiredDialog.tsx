@@ -18,9 +18,11 @@
  */
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LogIn } from 'lucide-react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
 
 export interface SignInRequiredDialogProps {
@@ -39,23 +41,9 @@ export function SignInRequiredDialog({
   callbackURL,
 }: SignInRequiredDialogProps) {
   const { t } = useTranslation('shared');
+  // Radix owns Escape, the focus trap, scroll lock and focus return. Focus lands on the first
+  // action (the sign-in link or "Keep playing"), as it did before.
   const ref = useRef<HTMLDivElement>(null);
-  const returnTo = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    returnTo.current = document.activeElement as HTMLElement | null;
-    ref.current?.querySelector<HTMLElement>('a, button')?.focus();
-
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      returnTo.current?.focus?.();
-    };
-  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -68,19 +56,20 @@ export function SignInRequiredDialog({
   };
 
   return (
-    <div
-      className="app-overlay fixed inset-0 z-50 flex items-center-safe justify-center-safe overflow-y-auto p-4"
-      style={{ background: 'var(--app-scrim, rgb(0 0 0 / 0.72))' }}
-      onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div
+    <DialogPrimitive.Root open onOpenChange={(o) => !o && onClose()}>
+      <DialogPortal>
+        <DialogOverlay
+          className="app-overlay"
+          style={{ background: 'var(--app-scrim, rgb(0 0 0 / 0.72))' }}
+        />
+      <DialogPrimitive.Content
         ref={ref}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="sign-in-required-title"
-        className="app-modal w-full max-w-sm p-5"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          ref.current?.querySelector<HTMLElement>('a, button')?.focus();
+        }}
+        aria-describedby={undefined}
+        className="app-modal fixed left-1/2 top-1/2 z-50 w-[calc(100dvw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 p-5 outline-none"
         style={{
           background: 'var(--app-surface, #27282c)',
           color: 'var(--app-text, #e8e8ec)',
@@ -92,13 +81,12 @@ export function SignInRequiredDialog({
       >
         <div className="flex items-center gap-2">
           <LogIn className="size-4 shrink-0" aria-hidden style={{ color: 'var(--app-accent, #6ea8d9)' }} />
-          <h2
-            id="sign-in-required-title"
+          <DialogPrimitive.Title
             className="text-base font-semibold"
             style={{ fontFamily: 'var(--app-font-display, inherit)' }}
           >
             {t('sign-in-required-title', { defaultValue: 'This part needs an account' })}
-          </h2>
+          </DialogPrimitive.Title>
         </div>
 
         <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--app-text-muted, #9a9ba4)' }}>
@@ -142,8 +130,9 @@ export function SignInRequiredDialog({
             {t('sign-in-required-go', { defaultValue: 'Sign in' })}
           </a>
         </div>
-      </div>
-    </div>
+      </DialogPrimitive.Content>
+      </DialogPortal>
+    </DialogPrimitive.Root>
   );
 }
 

@@ -85,7 +85,7 @@ export default function RhymeTimeScoreboard({
       </motion.div>
 
       {/* Standings list */}
-      <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4">
+      <div className="app-glass rounded-(--app-radius) p-4">
         <ul className="space-y-2">
           {sorted.map((player, idx) => {
             const isMvp = player.userId === mvpId;
@@ -150,7 +150,7 @@ export default function RhymeTimeScoreboard({
       {isGameOver && awards.length > 0 && (
         <motion.div
           variants={rowVariants}
-          className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4"
+          className="app-glass rounded-(--app-radius) p-4"
         >
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
             <AwardIcon className="h-4 w-4" /> {t("awards", { defaultValue: "Awards" })}
