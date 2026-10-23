@@ -201,7 +201,7 @@ export function Toggle({
       className="flex w-full cursor-pointer items-start gap-3 border-[3px] px-3 py-2 text-left transition-colors duration-150"
       style={{ background: '#fffdf6', borderColor: INK, color: INK, borderRadius: 3 }}
     >
-      <Switch id={id} checked={checked} onCheckedChange={onChange} className="mt-0.5" />
+      <Switch id={id} checked={checked} onCheckedChange={onChange} aria-label={label} className="mt-0.5" />
       <span>
         <span className="block text-sm font-bold">{label}</span>
         {hint ? <span className="block text-xs leading-snug opacity-70">{hint}</span> : null}
