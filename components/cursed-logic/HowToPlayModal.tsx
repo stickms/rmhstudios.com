@@ -3,6 +3,7 @@
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { useFocusReturn } from "@/components/shared/useFocusReturn";
 
 interface HowToPlayModalProps {
   open: boolean;
@@ -11,10 +12,11 @@ interface HowToPlayModalProps {
 
 export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
   const { t } = useTranslation("c-cursed-logic");
+  const returnFocus = useFocusReturn(open);
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent data-jelly="off" data-liquid-material="off" data-dialog-shell="bare" className="max-w-md gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
+      <DialogContent onCloseAutoFocus={returnFocus} overlayClassName="bg-black/80" data-jelly="off" data-liquid-material="off" data-dialog-shell="bare" className="max-w-md gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
        <div className="space-y-4 rounded-xl border border-cyan-500/30 bg-[#0f0f14] p-4 text-white">
         <div className="flex items-center justify-between">
           <DialogTitle className="font-mono text-lg font-bold text-cyan-400">{t("how-to-play-title", { defaultValue: "How to Play" })}</DialogTitle>

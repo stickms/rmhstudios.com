@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useDialogHost } from '@/components/shared/useDialogHost';
+import { useFocusReturn } from '@/components/shared/useFocusReturn';
 import {
   COLORS,
   MAX_PLAYERS,
@@ -51,6 +52,7 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
   // click does not close it, as before. The shell is invisible: the game's own `.gh-overlay` panel
   // inside it is the surface, so the text stays on the game's palette in every site theme.
   const { host, sentinel } = useDialogHost('.gabriels-horn-theme');
+  const returnFocus = useFocusReturn();
 
   return (
     <>
@@ -63,6 +65,8 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
         data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
         className="max-w-xl gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
         onInteractOutside={(event) => event.preventDefault()}
+        onCloseAutoFocus={returnFocus}
+        overlayClassName="bg-(--app-scrim)"
       >
       <div className="gh-overlay w-full p-5 text-(--app-text)">
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -270,7 +274,7 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
           </Section>
         </div>
 
-        <div className="flex justify-end">
+        <div className="mt-5 flex justify-end">
           <DialogClose asChild>
             <HornButton variant="primary">{t('rules-got-it', { defaultValue: 'Got it' })}</HornButton>
           </DialogClose>

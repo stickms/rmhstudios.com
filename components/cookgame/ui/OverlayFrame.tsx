@@ -14,6 +14,7 @@ export function OverlayFrame({ title, children }: { title: string; children: Rea
     <Dialog open onOpenChange={(next) => { if (!next) close(); }}>
       <DialogContent
         aria-describedby={undefined}
+        overlayClassName="bg-black/60"
         data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
         className="max-w-[640px] gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
       >
