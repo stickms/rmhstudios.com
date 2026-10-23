@@ -279,7 +279,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  >
  {/* Optimistic post — awaiting the server round-trip. */}
  {item.pending && (
- <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 text-xs text-site-text-dim">
+ <div className="absolute top-3 right-3 z-10 flex items-center gap-2 text-xs text-site-text-dim">
  <Spinner size={12} />
  {t('posting', { defaultValue:'Posting…'})}
  </div>
@@ -306,7 +306,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
  {/* Pinned label */}
  {item.pinned && (
- <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
+ <div className="flex items-center gap-2 text-xs text-site-text-dim mb-2 ml-13">
  <Pin className="w-3.5 h-3.5 fill-site-accent text-site-accent"/>
  <span>{t('pinned', { defaultValue:'Pinned'})}</span>
  </div>
@@ -314,7 +314,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
  {/* reRMHark'd label */}
  {freshRepostedBy && (
- <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
+ <div className="flex items-center gap-2 text-xs text-site-text-dim mb-2 ml-13">
  <Repeat2 className="w-3.5 h-3.5"/>
  <Link to={userProfileHref(freshRepostedBy)} className="hover:underline">
  {freshRepostedBy.name ||
@@ -338,12 +338,12 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
  <div className="flex-1 min-w-0">
  {/* Header */}
- <div className="flex items-center gap-1.5 text-sm pr-6">
+ <div className="flex items-center gap-2 text-sm pr-6">
  {item.user ? (
  <ProfileHoverCard userId={item.user.handle || item.user.id}>
  <Link
  to={userProfileHref(item.user)}
- className="flex items-center gap-1.5 min-w-0 hover:underline"
+ className="flex items-center gap-2 min-w-0 hover:underline"
  >
  <span
  className="font-bold text-site-text truncate"
@@ -404,7 +404,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  />
  ) : (
  <>
- {item.communityFlair && <FlairChip flair={item.communityFlair} className="mt-1.5"/>}
+ {item.communityFlair && <FlairChip flair={item.communityFlair} className="mt-2"/>}
  {/* Content */}
  {item.content && (
  <RMHarkContent
@@ -414,7 +414,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  )}
  {/* AI translation (toggled from the ⋯ menu) */}
  {showTranslated && translatedText && (
- <p className="mt-1 whitespace-pre-wrap break-words rounded-site-sm bg-site-surface/50 p-2 text-[15px] text-site-text">
+ <p className="mt-2 whitespace-pre-wrap break-words rounded-site glass-fill px-4 py-3 text-[15px] text-site-text">
  {translatedText}
  </p>
  )}
@@ -466,7 +466,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  {/* Image / GIF — hidden behind a content warning when marked sensitive */}
  {(item.gifUrl || (item.imageUrls && item.imageUrls.length > 0)) && (
  <SensitiveMedia sensitive={item.isSensitive} className="mt-3">
- {item.gifUrl && <GifEmbed url={item.gifUrl} className="mt-1"/>}
+ {item.gifUrl && <GifEmbed url={item.gifUrl} />}
  {item.imageUrls && item.imageUrls.length > 0 && (
  <PostImageGrid
  urls={item.imageUrls}
@@ -508,13 +508,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  });
  }
  }}
- className="glass-fill mt-3 rounded-site p-3 cursor-pointer transition-colors hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+ className="glass-fill mt-3 rounded-site px-4 py-3 cursor-pointer transition-colors hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
  >
- <div className="flex items-center gap-1.5 text-sm mb-1">
+ <div className="flex items-center gap-2 text-sm mb-2">
  {freshOriginalUser ? (
  <Link
  to={userProfileHref(freshOriginalUser)}
- className="flex items-center gap-1.5 min-w-0 hover:underline"
+ className="flex items-center gap-2 min-w-0 hover:underline"
  >
  <span className="font-bold text-site-text truncate">
  {freshOriginalUser.name || t('unknown-user', { defaultValue:'Unknown'})}

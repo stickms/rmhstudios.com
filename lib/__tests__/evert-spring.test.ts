@@ -167,7 +167,8 @@ describe('§7.3 — the shared controls carry the layer', () => {
     ['components/radial/RadialFeed.tsx', 'data-evert'],
     ['components/radial/WheelCard.tsx', 'data-evert'],
     ['components/creator-studio/storefront.tsx', "'data-evert': 'over'"],
-    ['components/creator-studio/RankedSummary.tsx', 'data-evert'],
+    // RankedSummary's toggle and link are `<Button>`s now (2026-10-22 audit), so they
+    // carry the layer through button.tsx above rather than a hand-set attribute.
   ])('%s', (file, hook) => {
     expect(read(file)).toContain(hook);
   });

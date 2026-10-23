@@ -156,7 +156,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
 
  if (loading) {
  return (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  );
@@ -182,7 +182,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  <ColumnHeader icon={Zap} title={t('progress-heading', { defaultValue:'Progress'})} />
  )}
 
- <div className="space-y-8 p-4">
+ <div className="space-y-6 px-4 pt-4 pb-12">
  {/* Level card */}
  <section className="rounded-site glass-fill p-4">
  <div className="flex items-center justify-between gap-3">
@@ -199,7 +199,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  </p>
  </div>
  </div>
- <div className="inline-flex items-center gap-1.5 rounded-site-sm bg-site-bg px-2.5 py-1.5 text-sm font-semibold text-site-text">
+ <div className="inline-flex items-center gap-2 rounded-site-sm bg-site-bg px-3 py-1.5 text-sm font-semibold text-site-text">
  <CoinIcon className="h-4 w-4"/>
  {data.coins.toLocaleString()}
  </div>
@@ -211,7 +211,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  style={{ transform: `scaleX(${lvlPct / 100})`}}
  />
  </div>
- <p className="mt-1 text-[11px] text-site-text-dim">
+ <p className="mt-2 text-xs text-site-text-dim">
  {t('xp-to-next-level', {
  xpIntoLevel: lvl.xpIntoLevel.toLocaleString(),
  xpForNextLevel: lvl.xpForNextLevel.toLocaleString(),
@@ -253,7 +253,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  <h2 className="text-sm font-bold text-site-text">{pass.season.name}</h2>
  </div>
  {pass.premium ? (
- <span className="inline-flex items-center gap-1 rounded-full bg-site-warning/15 px-2.5 py-1 text-[11px] font-semibold text-site-warning">
+ <span className="inline-flex items-center gap-1 rounded-full bg-site-warning/15 px-3 py-1 text-xs font-semibold text-site-warning">
  <Crown className="h-3.5 w-3.5"/>{''}
  {t('premium-unlocked', { defaultValue:'Premium unlocked'})}
  </span>
@@ -263,7 +263,6 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  variant="accent"
  disabled={busy ==='unlock'}
  onClick={unlockPremium}
- className="gap-1.5"
  >
  {busy ==='unlock'? (
  <Loader2 className="h-3.5 w-3.5 animate-spin"/>
@@ -271,7 +270,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  <Crown className="h-3.5 w-3.5"/>
  )}
  {t('unlock-premium', { defaultValue:'Unlock premium'})}
- <span className="inline-flex items-center gap-0.5">
+ <span className="inline-flex items-center gap-1">
  <CoinIcon className="h-3.5 w-3.5"/>
  {pass.season.premiumPrice.toLocaleString()}
  </span>
@@ -287,7 +286,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  })}
  </p>
 
- <div className="space-y-2">
+ <div className="space-y-3">
  {pass.tiers.map((t) => (
  <TierRow
  key={t.tier}
@@ -325,39 +324,39 @@ function QuestSection({
  if (quests.length === 0) return null;
  return (
  <section>
- <h2 className="site-section-label mb-2 flex items-center gap-1.5">
+ <h2 className="site-section-label mb-3 flex items-center gap-2">
  <Icon className="h-3.5 w-3.5"/> {title}
  </h2>
- <div className="space-y-2">
+ <div className="space-y-3">
  {quests.map((q) => {
  const pct = Math.min(100, Math.round((q.progress / q.target) * 100));
  return (
  <div
  key={q.id}
- className="flex items-start gap-3 rounded-site glass-fill p-3"
+ className="flex items-start gap-3 rounded-site glass-fill px-4 py-3"
  >
  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm bg-site-accent/12 text-site-accent">
  <Target className="h-4 w-4"/>
  </div>
  <div className="min-w-0 flex-1">
  <p className="text-sm font-semibold text-site-text">{q.name}</p>
- <p className="mt-0.5 text-xs text-site-text-muted">{q.description}</p>
- <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-site-bg">
+ <p className="mt-1 text-xs text-site-text-muted">{q.description}</p>
+ <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-site-bg">
  <div
  className="h-full rounded-full bg-site-accent"
  style={{ width: `${pct}%`}}
  />
  </div>
- <div className="mt-1 flex items-center gap-2 text-[11px] text-site-text-dim">
+ <div className="mt-2 flex items-center gap-2 text-xs text-site-text-dim">
  <span>
  {Math.min(q.progress, q.target)} / {q.target}
  </span>
  <span aria-hidden>·</span>
- <span className="inline-flex items-center gap-0.5">
+ <span className="inline-flex items-center gap-1">
  <Zap className="h-3 w-3 text-site-accent"/> {q.xp}
  </span>
  {q.coins > 0 && (
- <span className="inline-flex items-center gap-0.5">
+ <span className="inline-flex items-center gap-1">
  <CoinIcon className="h-3 w-3"/> {q.coins}
  </span>
  )}
@@ -365,7 +364,7 @@ function QuestSection({
  </div>
  <div className="shrink-0 self-center">
  {q.claimed ? (
- <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-site-text-dim">
+ <span className="inline-flex items-center gap-1 text-xs font-semibold text-site-text-dim">
  <Check className="h-3.5 w-3.5"/> {t('claimed', { defaultValue:'Claimed'})}
  </span>
  ) : (
@@ -374,7 +373,6 @@ function QuestSection({
  variant={q.completed ?'accent':'outline'}
  disabled={!q.completed || busy === `q:${q.id}`}
  onClick={() => onClaim(q.id)}
- className="gap-1"
  >
  {busy === `q:${q.id}`? (
  <Loader2 className="h-3.5 w-3.5 animate-spin"/>
@@ -426,10 +424,8 @@ function TierRow({
  const { t } = useTranslation('feed');
  return (
  <div
- className={`grid grid-cols-[auto_1fr_1fr] items-center gap-3 rounded-site border p-3 ${
- reached
- ?'border-site-border bg-site-surface'
- :'border-site-border/60 bg-site-bg opacity-70'
+ className={`grid grid-cols-[auto_1fr_1fr] items-center gap-3 rounded-site glass-fill px-4 py-3 ${
+ reached ?'':'opacity-70'
  }`}
  >
  <div
@@ -494,7 +490,7 @@ function TierCell({
  return (
  <div className="min-w-0">
  <p
- className={`mb-1 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide ${
+ className={`mb-1 inline-flex items-center gap-1 text-xs font-semibold ${
  premium ?'text-site-warning':'text-site-text-dim'
  }`}
  >

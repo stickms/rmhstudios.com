@@ -80,11 +80,11 @@ export default function TakeMeter({ postId }: { postId: string }) {
   return (
     <div
       ref={ref}
-      className="glass-fill mt-2 min-h-28 rounded-site p-3"
+      className="glass-fill mt-2 min-h-28 rounded-site px-4 py-3"
       role="group"
       aria-label={t('take-label', { defaultValue: 'Take meter' })}
     >
-      <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
         <Scale className="h-3.5 w-3.5" aria-hidden />
         {t('take-heading', { defaultValue: 'Take' })}
       </div>
@@ -103,7 +103,7 @@ export default function TakeMeter({ postId }: { postId: string }) {
             <div className="h-full bg-site-success" style={{ width: `${split.agree}%` }} />
             <div className="h-full bg-site-danger" style={{ width: `${split.disagree}%` }} />
           </div>
-          <div className="mt-1.5 flex items-center justify-between text-xs">
+          <div className="mt-2 flex items-center justify-between text-xs">
             <span className="font-semibold text-site-success">
               {t('take-agree-pct', { pct: split.agree, defaultValue: 'Agree {{pct}}%' })}
             </span>
@@ -118,7 +118,7 @@ export default function TakeMeter({ postId }: { postId: string }) {
               {t('take-disagree-pct', { pct: split.disagree, defaultValue: 'Disagree {{pct}}%' })}
             </span>
           </div>
-          <p className="mt-1.5 text-xs text-site-text-muted">
+          <p className="mt-2 text-xs text-site-text-muted">
             {state?.isAuthor
               ? t('take-author-note', {
                   defaultValue: 'You always see the split. Members see it after they vote.',
@@ -148,7 +148,7 @@ export default function TakeMeter({ postId }: { postId: string }) {
               {t('take-disagree', { defaultValue: 'Disagree' })}
             </button>
           </div>
-          <p className="mt-1.5 text-xs text-site-text-muted">
+          <p className="mt-2 text-xs text-site-text-muted">
             {t('take-hidden-hint', { defaultValue: 'Vote to see how everyone else voted.' })}
           </p>
         </div>

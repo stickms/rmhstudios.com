@@ -172,7 +172,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  )}
  <div className="flex-1 min-w-0">
  <p className="text-xs text-site-text font-medium truncate">{track.title}</p>
- <p className="text-[11px] text-site-text-dim truncate">{track.artist}</p>
+ <p className="text-xs text-site-text-dim truncate">{track.artist}</p>
  </div>
  {isSelected && <Check className="w-3.5 h-3.5 text-site-accent shrink-0"/>}
  </button>

@@ -19,7 +19,7 @@ function UserRow({ user }: { user: SidebarUser }) {
  return (
  <Link
  to={`/u/${(user as any).handle || user.id}`as string}
- className="flex items-center gap-2.5 px-2 py-1.5 rounded-site-sm hover:bg-site-surface-hover active:scale-[0.99] transition-[background-color,scale] duration-site-fast group"
+ className="flex items-center gap-3 px-3 py-2 rounded-site-sm hover:bg-site-surface-hover active:scale-[0.99] transition-[background-color,scale] duration-site-fast group"
  >
  <UserAvatar src={user.image ?? undefined} alt={user.name || t("user-alt", { defaultValue:"User"})} size={32} fallbackName={user.name ?? undefined} />
  <div className="min-w-0">
@@ -59,7 +59,7 @@ export function MessagesRightSidebar() {
  <div className="p-4 space-y-6">
  {/* Previously Messaged */}
  {loaded && recent.length > 0 && (
- <section className="bg-site-surface rounded-site p-4 border border-site-border">
+ <section className="glass-fill rounded-site p-4">
  <h2 className="font-display font-bold text-lg text-site-text flex items-center gap-2 mb-3">
  <MessageCircle className="w-5 h-5 text-site-accent"/>
  {t("recently-messaged", { defaultValue:"Recently Messaged"})}
@@ -74,7 +74,7 @@ export function MessagesRightSidebar() {
 
  {/* Suggested Users */}
  {loaded && suggested.length > 0 && (
- <section className="bg-site-surface rounded-site p-4 border border-site-border">
+ <section className="glass-fill rounded-site p-4">
  <h2 className="font-display font-bold text-lg text-site-text flex items-center gap-2 mb-3">
  <UserPlus className="w-5 h-5 text-site-accent"/>
  {t("start-a-conversation", { defaultValue:"Start a Conversation"})}
@@ -90,7 +90,7 @@ export function MessagesRightSidebar() {
 
  {/* Empty state */}
  {loaded && recent.length === 0 && suggested.length === 0 && (
- <section className="bg-site-surface rounded-site p-4 border border-site-border">
+ <section className="glass-fill rounded-site p-4">
  <p className="text-sm text-site-text-muted text-center py-4">
  {t("visit-profile-to-start", { defaultValue:"Visit someone's profile to start a conversation."})}
  </p>
@@ -98,7 +98,7 @@ export function MessagesRightSidebar() {
  )}
 
  {/* Footer */}
- <div className="text-xs text-site-text-dim px-2 space-y-1">
+ <div className="text-xs text-site-text-dim space-y-2">
  <p>RMH | The Everything Platform</p>
  <div className="flex flex-wrap gap-x-2 gap-y-0.5">
  <Link to="/library" className="hover:text-site-text transition-colors">{t("nav-blog", { defaultValue:"Blog"})}</Link>

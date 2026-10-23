@@ -2,7 +2,7 @@
 
 import { useTranslation } from'react-i18next';
 import { Link } from'@tanstack/react-router';
-import { ArrowLeft, MessagesSquare } from'lucide-react';
+import { ArrowLeft } from'lucide-react';
 import { m as motion } from'framer-motion';
 import { RMHarkCard } from'./RMHarkCard';
 import { staggerContainer, staggerItem } from'@/lib/motion';
@@ -13,21 +13,23 @@ export function ThreadView({ items }: { items: FeedItem[] }) {
  const { t } = useTranslation('feed');
  return (
  <div>
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
- <Link
- to="/"
- className="rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
- aria-label={t('back', { defaultValue:'Back'})}
- >
- <ArrowLeft className="h-5 w-5"/>
+ <header data-slot="page-header" className="page-heading">
+ <div className="page-heading__meta">
+ <Link to="/" className="page-heading__back" aria-label={t('back', { defaultValue:'Back'})}>
+ <ArrowLeft aria-hidden />
+ <span>{t('back', { defaultValue:'Back'})}</span>
  </Link>
- <MessagesSquare className="h-5 w-5 text-site-accent"/>
- <h1 className="text-lg font-bold text-site-text">
- {t('thread-title', { defaultValue:'Thread'})}
+ </div>
+ <div className="page-heading__content">
+ <div className="min-w-0">
+ <h1 className="site-display-3">
+ <span className="min-w-0 truncate">{t('thread-title', { defaultValue:'Thread'})}</span>
  </h1>
- <span className="ml-auto text-xs text-site-text-dim">
+ </div>
+ <div data-slot="page-header-action" className="text-xs text-site-text-dim">
  {t('thread-count', { defaultValue:'{{n}} posts', n: items.length })}
- </span>
+ </div>
+ </div>
  </header>
 
  {/* §5.48 staggered content entrance: the first ~8 posts fade-rise at 30ms

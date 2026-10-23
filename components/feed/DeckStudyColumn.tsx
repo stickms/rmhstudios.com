@@ -5,6 +5,7 @@ import { Link, useNavigate } from'@tanstack/react-router';
 import { Loader2, ArrowLeft, Plus, Trash2, RotateCcw, GraduationCap, Check } from'lucide-react';
 import { Spinner } from'@/components/ui/spinner';
 import { Button } from'@/components/ui/button';
+import { EmptyState } from'@/components/ui/empty-state';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { useTranslation } from'react-i18next';
 import { Reveal } from'@/components/motion';
@@ -172,21 +173,21 @@ export function DeckStudyColumn({
 
  if (loading) {
  return (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  );
  }
  if (notFound || !deck) {
  return (
- <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
- <p className="font-medium text-site-text">
- {t('deck-not-found', { defaultValue:'Deck not found'})}
- </p>
+ <EmptyState
+ title={t('deck-not-found', { defaultValue:'Deck not found'})}
+ action={
  <Link to="/study">
  <Button variant="outline">{t('back-to-decks', { defaultValue:'Back to decks'})}</Button>
  </Link>
- </div>
+ }
+ />
  );
  }
 

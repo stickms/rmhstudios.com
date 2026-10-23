@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from'react';
 import { Link, useRouter } from'@tanstack/react-router';
 import { AlertTriangle, Home, RotateCw } from'lucide-react';
+import { Button } from '@/components/ui/button';
 import { reportClientError } from'@/lib/client-errors';
 import { isStaleBuildError, reloadForStaleBuild } from'@/lib/stale-build';
 import { isTransientError } from'@/lib/transient-error';
@@ -76,8 +77,8 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
  role="alert"
  className="error-page flex min-h-dvh w-full flex-col items-center justify-center bg-site-bg px-6 py-16 text-center"
  >
- <div className="glass-fill flex w-full max-w-lg flex-col items-center gap-7 p-8 sm:p-10">
- <div className="glass-fill flex h-16 w-16 items-center justify-center rounded-full text-site-text">
+ <div className="glass-pane flex w-full max-w-lg flex-col items-center gap-8 p-8 sm:p-10">
+ <div className="glass-inset flex size-16 items-center justify-center rounded-full text-site-text">
  <AlertTriangle className="size-8"aria-hidden="true"/>
  </div>
 
@@ -95,22 +96,17 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
 
  <div className="flex w-full max-w-xs flex-col gap-3 sm:max-w-md sm:flex-row sm:justify-center">
  {reset ? (
- <button
- type="button"
- onClick={retry}
- className="inline-flex items-center justify-center gap-2 rounded-full bg-site-text px-5 py-3 text-sm font-semibold text-site-bg transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
- >
- <RotateCw className="size-4"aria-hidden="true"/>
+ <Button type="button" variant="accent" size="lg" onClick={retry}>
+ <RotateCw aria-hidden="true"/>
  Try again
- </button>
+ </Button>
  ) : null}
- <Link
- to="/"
- className="inline-flex items-center justify-center gap-2 rounded-full border border-site-border bg-transparent px-5 py-3 text-sm font-semibold text-site-text transition hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
- >
- <Home className="size-4"aria-hidden="true"/>
+ <Button asChild variant="outline" size="lg">
+ <Link to="/">
+ <Home aria-hidden="true"/>
  Go home
  </Link>
+ </Button>
  </div>
  </div>
  </div>

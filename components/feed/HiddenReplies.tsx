@@ -76,7 +76,7 @@ export function HiddenRepliesGroup({ count, children }: { count: number; childre
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="flex min-h-9 pointer-coarse:min-h-11 w-full items-center gap-1.5 rounded-site-sm px-2 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
+        className="flex min-h-9 pointer-coarse:min-h-11 w-full items-center gap-2 rounded-site-sm px-2 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
       >
         <EyeOff className="h-4 w-4 shrink-0" aria-hidden />
         <span className="flex-1 text-left">

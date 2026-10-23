@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
-import { Loader2, Music, Plus, X, Check, Lightbulb, Trophy } from'lucide-react';
+import { Music, Plus, X, Check, Lightbulb, Trophy } from'lucide-react';
 import { Button } from'@/components/ui/button';
+import { Input } from'@/components/ui/input';
+import { Textarea } from'@/components/ui/textarea';
 import { OverlayPanel } from'@/components/ui/overlay-panel';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { Spinner } from'@/components/ui/spinner';
@@ -92,7 +94,7 @@ export function MusicGuessColumn({
 
  if (loading) {
  return (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  );
@@ -114,45 +116,43 @@ export function MusicGuessColumn({
  <Button
  size="sm"
  variant="accent"
- className="gap-1"
  onClick={() => setShowForm((v) => !v)}
  >
- <Plus className="h-3.5 w-3.5"/> {t('new-puzzle', { defaultValue:'New puzzle'})}
+ <Plus className="h-3.5 w-3.5"aria-hidden /> {t('new-puzzle', { defaultValue:'New puzzle'})}
  </Button>
  )
  }
  />
 
  {showForm && (
- <div className="border-b border-site-border bg-site-surface/30 p-4">
- <div className="flex items-center justify-between">
- <h2 className="text-sm font-semibold text-site-text">
+ <div className="glass-pane mx-4 mt-4 rounded-site p-4">
+ <div className="flex items-center justify-between gap-2">
+ <h2 className="site-section-label">
  {t('new-puzzle', { defaultValue:'New puzzle'})}
  </h2>
- <button
+ <Button
+ variant="ghost"
+ size="icon-sm"
  onClick={() => setShowForm(false)}
- className="text-site-text-dim hover:text-site-text"
  aria-label={t('close', { defaultValue:'Close'})}
  >
- <X className="h-4 w-4"/>
- </button>
+ <X className="h-4 w-4"aria-hidden />
+ </Button>
  </div>
- <div className="mt-3 space-y-2">
- <input
+ <div className="mt-3 space-y-3">
+ <Input
  value={form.title}
  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
  placeholder={t('song-title-placeholder', { defaultValue:'Song title (the answer)'})}
  maxLength={160}
- className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
- <input
+ <Input
  value={form.artist}
  onChange={(e) => setForm((f) => ({ ...f, artist: e.target.value }))}
  placeholder={t('artist-placeholder', { defaultValue:'Artist (shown to players)'})}
  maxLength={160}
- className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
- <textarea
+ <Textarea
  value={form.hints}
  onChange={(e) => setForm((f) => ({ ...f, hints: e.target.value }))}
  placeholder={t('hints-placeholder', {
@@ -160,16 +160,11 @@ export function MusicGuessColumn({
 'Hints, one per line (revealed progressively). e.g. a lyric, the year, the genre…',
  })}
  rows={4}
- className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  {error && <p className="text-xs text-site-danger">{error}</p>}
  <div className="flex justify-end">
- <Button size="sm"variant="accent"disabled={busy || !validForm} onClick={create}>
- {busy ? (
- <Loader2 className="h-3.5 w-3.5 animate-spin"/>
- ) : (
- t('create-puzzle', { defaultValue:'Create puzzle'})
- )}
+ <Button size="sm"variant="accent"loading={busy} disabled={!validForm} onClick={create}>
+ {t('create-puzzle', { defaultValue:'Create puzzle'})}
  </Button>
  </div>
  </div>
@@ -181,21 +176,21 @@ export function MusicGuessColumn({
  description={t('no-puzzles-yet', { defaultValue:'No puzzles yet — create the first!'})}
  />
  ) : (
- <div className="space-y-2 p-4">
+ <div className="space-y-3 p-4">
  {puzzles.map((p) => (
  <button
  key={p.id}
  onClick={() => setPlayId(p.id)}
- className="flex w-full items-center gap-3 rounded-site border border-site-border bg-site-surface p-3 text-left transition-colors hover:border-site-accent/60"
+ className="glass-fill glass-interactive flex w-full items-center gap-3 rounded-site px-4 py-3 text-left"
  >
- <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-site bg-site-accent/12 text-site-accent">
- <Music className="h-5 w-5"/>
+ <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
+ <Music className="h-5 w-5"aria-hidden />
  </div>
  <div className="min-w-0 flex-1">
  <p className="truncate text-sm font-semibold text-site-text">
  {t('artist-label', { defaultValue:'Artist'})}: {p.artist}
  </p>
- <div className="mt-0.5 flex items-center gap-2 text-[11px] text-site-text-dim">
+ <div className="mt-1 flex items-center gap-2 text-xs text-site-text-dim">
  <UserAvatar user={p.author} />
  <span className="truncate">
  {p.author.name || p.author.handle || t('someone', { defaultValue:'Someone'})}
@@ -207,8 +202,8 @@ export function MusicGuessColumn({
  </div>
  </div>
  {p.solved && (
- <span className="inline-flex items-center gap-1 text-xs font-semibold text-site-success">
- <Check className="h-4 w-4"/> {t('solved', { defaultValue:'Solved'})}
+ <span className="inline-flex items-center gap-2 text-xs font-semibold text-site-success">
+ <Check className="h-4 w-4"aria-hidden /> {t('solved', { defaultValue:'Solved'})}
  </span>
  )}
  </button>
@@ -306,18 +301,19 @@ function PlayModal({
  className="relative z-10 w-full max-w-md p-5 glass-overlay"
  onMouseDown={(e) => e.stopPropagation()}
  >
- <div className="mb-3 flex items-center justify-between">
- <h2 className="flex items-center gap-2 text-lg font-bold text-site-text">
- <Music className="h-5 w-5 text-site-accent"/>{''}
+ <div className="mb-4 flex items-center justify-between gap-2">
+ <h2 className="flex items-center gap-2 font-display text-lg font-bold text-site-text">
+ <Music className="h-5 w-5 text-site-accent"aria-hidden />{''}
  {t('guess-the-song', { defaultValue:'Guess the Song'})}
  </h2>
- <button
+ <Button
+ variant="ghost"
+ size="icon-sm"
  onClick={onClose}
- className="text-site-text-dim hover:text-site-text"
  aria-label={t('close', { defaultValue:'Close'})}
  >
- <X className="h-5 w-5"/>
- </button>
+ <X className="h-5 w-5"aria-hidden />
+ </Button>
  </div>
 
  {!puzzle ? (
@@ -331,28 +327,28 @@ function PlayModal({
  <span className="font-semibold text-site-text">{puzzle.artist}</span>
  </p>
 
- <div className="mt-3 space-y-2">
+ <div className="mt-4 space-y-2">
  {puzzle.hints.slice(0, revealed).map((h, i) => (
  <div
  key={i}
- className="flex items-start gap-2 rounded-site-sm bg-site-surface p-2.5 text-sm text-site-text"
+ className="glass-fill flex items-start gap-2 rounded-site-sm px-3 py-2 text-sm text-site-text"
  >
- <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-site-warning"/> {h}
+ <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-site-warning"aria-hidden /> {h}
  </div>
  ))}
  </div>
 
  {result?.correct ? (
- <div className="mt-4 rounded-site border border-site-success/30 bg-site-success/10 p-3 text-center">
- <p className="inline-flex items-center gap-1.5 font-semibold text-site-success">
- <Trophy className="h-4 w-4"/>{''}
+ <div className="mt-4 rounded-site border border-site-success/30 bg-site-success/10 px-4 py-3 text-center">
+ <p className="inline-flex items-center gap-2 font-semibold text-site-success">
+ <Trophy className="h-4 w-4"aria-hidden />{''}
  {t('correct-answer', {
  title: result.title,
  defaultValue:'Correct! It\'s"{{title}}"',
  })}
  </p>
  {result.reward != null && (
- <p className="mt-1 inline-flex items-center gap-1 text-sm text-site-text-muted">
+ <p className="mt-2 inline-flex items-center gap-2 text-sm text-site-text-muted">
  +<CoinIcon className="h-3.5 w-3.5"/> {result.reward}
  </p>
  )}
@@ -362,9 +358,9 @@ function PlayModal({
  {revealed < puzzle.hints.length && (
  <button
  onClick={() => setRevealed((r) => r + 1)}
- className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-site-accent hover:underline"
+ className="mt-4 inline-flex min-h-8 items-center gap-2 text-xs font-semibold text-site-accent hover:underline"
  >
- <Lightbulb className="h-3.5 w-3.5"/>{''}
+ <Lightbulb className="h-3.5 w-3.5"aria-hidden />{''}
  {t('reveal-another-hint', {
  revealed,
  total: puzzle.hints.length,
@@ -372,29 +368,27 @@ function PlayModal({
  })}
  </button>
  )}
- <div className="mt-3 flex items-center gap-2">
- <input
+ <div className="mt-4 flex items-center gap-2">
+ <Input
  value={guess}
  onChange={(e) => setGuess(e.target.value)}
  onKeyDown={(e) => e.key ==='Enter'&& submit()}
  placeholder={t('your-guess-placeholder', { defaultValue:'Your guess…'})}
- className="flex-1 rounded-site-sm glass-inset px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ aria-label={t('your-guess-placeholder', { defaultValue:'Your guess…'})}
+ className="flex-1"
  />
  <Button
  variant="accent"
  size="sm"
- disabled={!guess.trim() || busy}
+ loading={busy}
+ disabled={!guess.trim()}
  onClick={submit}
  >
- {busy ? (
- <Loader2 className="h-4 w-4 animate-spin"/>
- ) : (
- t('guess-button', { defaultValue:'Guess'})
- )}
+ {t('guess-button', { defaultValue:'Guess'})}
  </Button>
  </div>
  {result && !result.correct && (
- <p className="mt-2 text-sm text-site-danger">
+ <p className="mt-3 text-sm text-site-danger">
  {t('not-quite', { defaultValue:'Not quite — try another hint or guess.'})}
  </p>
  )}

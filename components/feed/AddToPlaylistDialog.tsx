@@ -168,7 +168,7 @@ export function AddToPlaylistDialog({
  <ListMusic className="h-4 w-4 shrink-0 text-site-text-dim"aria-hidden />
  <span className="min-w-0 flex-1">
  <span className="block truncate text-sm text-site-text">{pl.name}</span>
- <span className="block text-[11px] text-site-text-dim">
+ <span className="block text-xs text-site-text-dim">
  {t('playlist-item-count', { defaultValue:'{{n}} items', n: pl.itemCount })}
  </span>
  </span>

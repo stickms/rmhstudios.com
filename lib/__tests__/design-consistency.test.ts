@@ -55,10 +55,6 @@ const RENDERER = join('components', 'ui', 'liquid-tabs.tsx');
  *  - AlbumViewer's thumbnail filmstrip: a media carousel that navigates SLIDES
  *    via the WAI-ARIA tabs pattern (thumbnails, not label pills) — LiquidTabs
  *    renders text tabs, so it does not model an image filmstrip.
- *  - RMHLadder's admin review filter: the RMHLadder tooling uses its own
- *    deliberately-separate blueprint/industrial design system (monospace, brass
- *    hairlines — see rmhladder.css), not the liquid-glass site grammar; forcing
- *    it onto glass pills would make it INCONSISTENT with the rest of that app.
  *  - Temple of Joy's codex rail: the temple is a full-screen game outside the
  *    site shell with its own candlelit palette (temple-of-joy.css) and a
  *    glyph-over-label rail, not text pills. A glass capsule in the middle of it
@@ -68,7 +64,6 @@ const RENDERER = join('components', 'ui', 'liquid-tabs.tsx');
 const TABLIST_ALLOW = new Set([
   RENDERER,
   join('components', 'library', 'AlbumViewer.tsx'),
-  join('app', 'routes', '_site', 'rmhladder', 'review.tsx'),
   join('components', 'temple-of-joy', 'TempleTabs.tsx'),
 ]);
 
@@ -723,17 +718,15 @@ function cssViolations(src: string): { hex: number; radius: number } {
  * the entry when it reaches zero. Never raise one — that is the whole point.
  *
  * Suggested order to burn it down: `library.css` first (the Library is a
- * flagship consumer surface and the worst offender), then
- * `creator-studio.css`, then the rest.
+ * flagship consumer surface and the worst offender), then the rest.
+ * (`creator-studio.css`, `rmhladder.css` and `album-admin.css` were drained in
+ * the 2026-10-22 route audit.)
  */
 const CSS_DEBT: Record<string, { hex: number; radius: number }> = {
   'components/library/library.css': { hex: 31, radius: 33 },
-  'components/creator-studio/creator-studio.css': { hex: 25, radius: 5 },
   'components/rmhtech/rmhtech.css': { hex: 16, radius: 5 },
-  'components/library/album-admin.css': { hex: 6, radius: 4 },
   'components/library/album-viewer.css': { hex: 7, radius: 3 },
   'components/creator-studio/storefront.css': { hex: 5, radius: 3 },
-  'components/rmhladder/rmhladder.css': { hex: 0, radius: 6 },
   'components/feed/feed.css': { hex: 0, radius: 2 },
   'components/security/security.css': { hex: 0, radius: 4 },
   'components/rmhcalculator/rmhcalculator.css': { hex: 0, radius: 3 },
@@ -916,9 +909,6 @@ describe('site pages take the shared frame', () => {
 const SECTION_LABEL_ALLOW = new Set([
   join('components', 'rebar-rutabaga', 'Reservations.tsx'),
   join('components', 'rebar-rutabaga', 'TastingMenu.tsx'),
-  join('components', 'rideshare', 'cars', 'CarFamily.tsx'),
-  join('components', 'rmhfashion', 'FashionStudio.tsx'),
-  join('components', 'roadmap', 'RoadmapSection.tsx'),
   join('app', 'routes', 'liquid-glass.tsx'),
 ]);
 

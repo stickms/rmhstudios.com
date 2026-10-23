@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { VolumeX, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 const MAX_WORDS = 100;
 const MAX_WORD_LEN = 50;
@@ -93,19 +94,14 @@ export function MutedWordsPanel() {
   };
 
   return (
-    <section className="rounded-site border border-site-border bg-site-surface/40 p-4">
-      <div className="mb-1 flex items-center gap-2">
-        <VolumeX className="h-5 w-5 text-site-accent" aria-hidden />
-        <h2 className="text-base font-bold text-site-text">
-          {t('muted-title', { defaultValue: 'Muted words' })}
-        </h2>
-      </div>
-      <p className="mb-4 text-sm text-site-text-muted">
-        {t('muted-description', {
-          defaultValue:
-            'Hide posts from your feed when they contain any of these words (case-insensitive). Only you can see this list.',
-        })}
-      </p>
+    <SettingsSection
+      icon={VolumeX}
+      title={t('muted-title', { defaultValue: 'Muted words' })}
+      description={t('muted-description', {
+        defaultValue:
+          'Hide posts from your feed when they contain any of these words (case-insensitive). Only you can see this list.',
+      })}
+    >
 
       <div className="flex items-center gap-2">
         <Input
@@ -122,21 +118,21 @@ export function MutedWordsPanel() {
           aria-label={t('muted-input-label', { defaultValue: 'Add a muted word' })}
           className="flex-1"
         />
-        <Button onClick={addWord} disabled={saving || !input.trim()} className="gap-1.5">
+        <Button onClick={addWord} disabled={saving || !input.trim()} className="gap-2">
           <Plus className="h-4 w-4" aria-hidden />
           {t('muted-add', { defaultValue: 'Add' })}
         </Button>
       </div>
 
       {!loading && words.length === 0 ? (
-        <p className="mt-4 text-sm text-site-text-dim">
+        <p className="text-sm text-site-text-dim">
           {t('muted-empty', { defaultValue: 'No muted words yet.' })}
         </p>
       ) : (
-        <ul className="mt-4 flex flex-wrap gap-2">
+        <ul className="flex flex-wrap gap-2">
           {words.map((w) => (
             <li key={w}>
-              <span className="inline-flex items-center gap-1.5 rounded-full glass-fill px-3 py-1 text-sm text-site-text">
+              <span className="inline-flex items-center gap-2 rounded-full glass-fill px-3 py-1 text-sm text-site-text">
                 {w}
                 <button
                   type="button"
@@ -152,6 +148,6 @@ export function MutedWordsPanel() {
           ))}
         </ul>
       )}
-    </section>
+    </SettingsSection>
   );
 }

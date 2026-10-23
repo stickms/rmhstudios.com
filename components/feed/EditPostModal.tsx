@@ -11,6 +11,7 @@ import {
  DialogFooter,
 } from'@/components/ui/dialog';
 import { Button } from'@/components/ui/button';
+import { Textarea } from'@/components/ui/textarea';
 import { toast } from'sonner';
 import { MAX_RMHARK_LENGTH } from'@/lib/rmhark-limits';
 import { GifPicker } from'./GifPicker';
@@ -77,19 +78,19 @@ export function EditPostModal({
  <DialogHeader>
  <DialogTitle>{t('edit-post-title', { defaultValue:'Edit post'})}</DialogTitle>
  </DialogHeader>
- <textarea
+ <Textarea
  ref={textareaRef}
  autoFocus
  aria-label={t('edit-post-content-label', { defaultValue:'Edit post content'})}
  value={content}
  onChange={(e) => setContent(e.target.value)}
  rows={5}
- className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text focus:border-site-accent focus:outline-none"
+ className="resize-none"
  />
  {/* GIF section */}
- <div className="mt-2 border border-site-border rounded-site p-3 bg-site-surface/20">
+ <div className="mt-3 glass-fill rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
- <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">
+ <span className="text-xs font-semibold text-site-text-dim">
  {t('gif-heading', { defaultValue:'GIF'})}
  </span>
  {gifUrl.trim() && (
@@ -99,7 +100,7 @@ export function EditPostModal({
  setGifUrl('');
  setShowGifPicker(false);
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+ className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
  aria-label={t('remove-gif-aria', { defaultValue:'Remove GIF'})}
  >
  <X className="w-3.5 h-3.5"/>
@@ -117,7 +118,7 @@ export function EditPostModal({
  setShowGifPicker(true);
  }}
  aria-label={t('swap-gif-aria', { defaultValue:'Swap GIF'})}
- className="absolute top-1 right-1 p-1 rounded-full bg-site-media-scrim-strong text-site-media-ink hover:bg-site-media-scrim-hover transition-colors text-xs px-2"
+ className="absolute top-2 right-2 rounded-full bg-site-media-scrim-strong px-3 py-1 text-xs text-site-media-ink hover:bg-site-media-scrim-hover transition-colors"
  >
  {t('swap', { defaultValue:'Swap'})}
  </button>

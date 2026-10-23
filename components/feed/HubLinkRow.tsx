@@ -30,7 +30,7 @@ export function HubLinkRow({
   description: string;
 }) {
   const className =
-    'glass-fill glass-interactive group flex items-start gap-4 rounded-site p-4 sm:p-5';
+    'glass-fill glass-interactive group flex items-start gap-4 rounded-site p-4';
   const body = (
     <>
       <span className="glass-fill flex size-11 shrink-0 items-center justify-center rounded-site-sm text-site-accent">

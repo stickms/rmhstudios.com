@@ -320,7 +320,7 @@ body:has(.radial-shell) .call-banner {
 .radial-topbar__brand {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.4rem;
+  gap: var(--rad-2);
   color: var(--site-text);
   text-decoration: none;
 }
@@ -345,7 +345,7 @@ body:has(.radial-shell) .call-banner {
 .radial-topbar__actions {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--rad-2);
 }
 .radial-topbar__btn {
   position: relative;
@@ -417,8 +417,8 @@ body:has(.radial-shell) .call-banner {
 .radial-topbar__signin {
   border-radius: 999px;
   border: 1px solid var(--site-border-bright);
-  padding: 0.45rem 0.95rem;
-  font-size: 0.8rem;
+  padding: var(--rad-2) var(--rad-4);
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--site-text);
   transition:
@@ -689,11 +689,10 @@ body:has(.radial-shell) .call-banner {
   margin-top: var(--rad-2);
 }
 .rad-rail__group-title {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  padding: var(--rad-1) var(--rad-3);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.006em;
   color: var(--site-text-muted);
 }
 
@@ -701,12 +700,12 @@ body:has(.radial-shell) .call-banner {
 .rad-live__pulse {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.55rem 0.85rem;
+  gap: var(--rad-2);
+  padding: var(--rad-2) var(--rad-3);
   border-radius: 999px;
   border: var(--site-border-width, 1px) solid var(--site-border);
   background: var(--site-glass-tint, var(--site-surface));
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   color: var(--site-text-muted);
 }
 /* The live rail's ambient column, revealed in one piece (see `useRailReveal` in
@@ -743,10 +742,10 @@ body:has(.radial-shell) .call-banner {
   }
 }
 /* The reserved slot while the count loads: same box, no ink. `min-block-size`
-   is the populated pill's own height (0.82rem text at its line height plus the
-   0.55rem padding top and bottom), so the swap moves nothing below it. */
+   is the populated pill's own height (0.875rem text at its line height plus the
+   0.5rem padding top and bottom), so the swap moves nothing below it. */
 .rad-live__pulse--pending {
-  min-block-size: calc(0.82rem * 1.5 + 1.1rem + 2 * var(--site-border-width, 1px));
+  min-block-size: calc(0.875rem * 1.5 + 1rem + 2 * var(--site-border-width, 1px));
 }
 .rad-live__dot {
   position: relative;
@@ -789,7 +788,7 @@ body:has(.radial-shell) .call-banner {
 .rad-live__card ul {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--rad-1);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -797,10 +796,10 @@ body:has(.radial-shell) .call-banner {
 .rad-live__row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--rad-3);
   min-width: 0;
-  margin-inline: -0.4rem;
-  padding: 0.4rem;
+  margin-inline: calc(var(--rad-2) * -1);
+  padding: var(--rad-2);
   border-radius: var(--site-radius-sm, 12px);
   color: var(--site-text);
   text-decoration: none;
@@ -814,7 +813,7 @@ body:has(.radial-shell) .call-banner {
   flex-direction: column;
   min-width: 0;
   flex: 1;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 .rad-live__row-main strong,
@@ -831,7 +830,7 @@ body:has(.radial-shell) .call-banner {
 }
 .rad-live__row > small {
   flex: none;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: var(--site-text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -839,13 +838,13 @@ body:has(.radial-shell) .call-banner {
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  gap: 0.35rem;
+  gap: var(--rad-2);
   min-height: var(--site-touch-target);
-  padding-inline: 0.75rem;
+  padding-inline: var(--rad-3);
   border-radius: var(--site-radius-sm);
   color: var(--site-text-muted);
   text-decoration: none;
-  font-size: 0.84rem;
+  font-size: 0.875rem;
   font-weight: 600;
   transition:
     background-color var(--site-transition-speed) ease,
@@ -2202,13 +2201,13 @@ html.reduce-transparency .radial-globe__contact,
   z-index: var(--z-floating);
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.7rem 0.95rem;
+  gap: var(--rad-2);
+  padding: var(--rad-3) var(--rad-4);
   border: none;
   border-radius: 999px;
   background: var(--site-accent);
   color: var(--site-accent-fg);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow: none;
@@ -2236,12 +2235,12 @@ html.reduce-transparency .radial-globe__contact,
   }
 }
 .radial-feed__compose-btn {
-  padding: 0.5rem 1.1rem;
+  padding: var(--rad-2) var(--rad-4);
   border: none;
   border-radius: 999px;
   background: var(--site-accent);
   color: var(--site-accent-fg);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -2354,9 +2353,9 @@ html.reduce-transparency .radial-globe__contact,
 .rmhark__name {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--rad-1);
   font-weight: 700;
-  font-size: 0.92rem;
+  font-size: 0.9375rem;
   color: var(--site-text);
   white-space: nowrap;
   overflow: hidden;
@@ -2375,7 +2374,7 @@ html.reduce-transparency .radial-globe__contact,
   text-overflow: ellipsis;
 }
 .rmhark__content {
-  font-size: 0.98rem;
+  font-size: 1rem;
   line-height: 1.5;
   color: var(--site-text);
   display: -webkit-box;
@@ -2475,10 +2474,10 @@ html.reduce-transparency .radial-globe__contact,
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
+  gap: var(--rad-2);
   background: color-mix(in srgb, var(--site-bg) 55%, transparent);
   color: var(--site-text);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 .rmhark__media-cover svg {
@@ -2643,7 +2642,7 @@ html.reduce-transparency .radial-globe__contact,
 .rad-deck__list {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--rad-1);
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -2654,7 +2653,7 @@ html.reduce-transparency .radial-globe__contact,
      the scrolling list, and without it a full list would squeeze it away. */
   flex: none;
   padding: var(--rad-4) 0;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   color: var(--site-text-muted);
   text-align: center;
 }
@@ -2668,10 +2667,10 @@ html.reduce-transparency .radial-globe__contact,
 .rad-deck__row {
   display: flex;
   align-items: flex-start;
-  gap: 0.6rem;
+  gap: var(--rad-3);
   min-width: 0;
-  margin-inline: -0.4rem;
-  padding: 0.5rem 0.4rem;
+  margin-inline: calc(var(--rad-2) * -1);
+  padding: var(--rad-2);
   border-radius: var(--site-radius-sm, 12px);
   color: var(--site-text);
   text-decoration: none;
@@ -2696,19 +2695,19 @@ html.reduce-transparency .radial-globe__contact,
 .rad-deck__row-main {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0.125rem;
   min-width: 0;
   flex: 1;
 }
 .rad-deck__row-main strong {
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .rad-deck__row-main small {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   line-height: 1.35;
   color: var(--site-text-muted);
   /* Bounded: a long post can never stretch the row past two lines. */
@@ -2785,7 +2784,7 @@ html.reduce-transparency .radial-globe__contact,
   display: flex;
   flex: none;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   padding: 0.25rem var(--panel-inset) 0.5rem;
   color: var(--site-text-muted);
 }
@@ -2793,7 +2792,7 @@ html.reduce-transparency .radial-globe__contact,
   margin: 0;
   color: var(--site-text);
   font-family: var(--site-font-display, inherit);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: -0.01em;
 }
@@ -2818,7 +2817,7 @@ html.reduce-transparency .radial-globe__contact,
   align-items: center;
   gap: 0.5rem;
   margin-bottom: var(--panel-gap);
-  padding: 0.55rem 0.7rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 999px;
   border: 1px solid var(--site-border);
   background: var(--site-surface);
@@ -2841,7 +2840,7 @@ html.reduce-transparency .radial-globe__contact,
      site-wide guard never reached it: tapping the top bar's search box zoomed
      and re-laid-out the entire page. It is the site's most-tapped field on a
      phone, so it was also the most visible way to hit this. */
-  font-size: max(0.9rem, var(--site-field-font-floor));
+  font-size: max(0.875rem, var(--site-field-font-floor));
   outline: none;
 }
 .rad-panel__group {
@@ -2849,11 +2848,10 @@ html.reduce-transparency .radial-globe__contact,
   flex-direction: column;
 }
 .rad-panel__group h3 {
-  padding: 0.35rem var(--panel-inset) 0.15rem;
-  font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  padding: 0.25rem var(--panel-inset);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.006em;
   color: var(--site-text-muted);
 }
 .rad-panel__links {
@@ -2867,7 +2865,7 @@ html.reduce-transparency .radial-globe__contact,
 .rad-panel__identity {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.75rem;
   width: 100%;
   min-width: 0;
   padding: 0.5rem var(--panel-inset);
@@ -2896,19 +2894,19 @@ html.reduce-transparency .radial-globe__contact,
 .rad-panel__row-main {
   display: flex;
   flex-direction: column;
-  gap: 0.05rem;
+  gap: 0.125rem;
   min-width: 0;
   flex: 1;
 }
 .rad-panel__row-main strong {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .rad-panel__row-main small {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: var(--site-text-muted);
   /* Two lines, hard stop — a long message can never grow the panel. */
   display: -webkit-box;
@@ -2920,7 +2918,7 @@ html.reduce-transparency .radial-globe__contact,
 }
 .rad-panel__row time {
   flex: none;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--site-text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -2939,7 +2937,7 @@ html.reduce-transparency .radial-globe__contact,
   min-height: 5.5rem;
   margin: 0;
   padding: 0.75rem var(--panel-inset);
-  font-size: 0.84rem;
+  font-size: 0.875rem;
   color: var(--site-text-muted);
   text-align: center;
   text-wrap: balance;
@@ -2954,12 +2952,12 @@ html.reduce-transparency .radial-globe__contact,
   gap: 0.5rem;
   flex: none;
   margin-top: var(--panel-inset);
-  padding: 0.55rem 0.7rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius-sm, 12px);
   background: var(--site-surface);
   color: var(--site-text);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   text-decoration: none;
   transition:

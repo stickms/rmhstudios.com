@@ -319,7 +319,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
               // difference when the three sit on one line: the baselines stop
               // agreeing and the row reads as assembled from two kits. 44px is
               // also the touch floor, which `h-10` was under.
-              controlSize === 'sm' ? 'h-9 px-3.5 py-1 pr-8' : 'h-11 px-4 py-2 pr-10',
+              controlSize === 'sm' ? 'h-9 px-4 py-1 pr-8' : 'h-11 px-4 py-2 pr-10',
               'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
               // The value can be longer than the control: clip it rather than let
               // it push the chevron out of the box.

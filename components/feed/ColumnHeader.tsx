@@ -103,7 +103,7 @@ export function ColumnHeader({
         </Heading>
       )}
       {children && <div className="min-w-0 flex-1">{children}</div>}
-      {actions && <div className="ml-auto flex shrink-0 items-center gap-1.5">{actions}</div>}
+      {actions && <div className="ml-auto flex shrink-0 items-center gap-2">{actions}</div>}
     </header>
   );
 }

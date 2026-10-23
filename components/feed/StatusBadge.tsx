@@ -19,7 +19,7 @@ export function StatusBadge({
  <span
  data-slot="status-badge"
  className={cn(
-'bg-site-surface-hover border border-site-border rounded-site shadow-site-sm inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-sm text-site-text-muted',
+'glass-fill inline-flex max-w-full items-center gap-2 rounded-full px-3 py-1 text-sm text-site-text-muted',
  className,
  )}
  >

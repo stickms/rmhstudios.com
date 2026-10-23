@@ -2,8 +2,11 @@
 
 import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
-import { Loader2, Store, Plus, Trash2, Check, ShoppingBag, X, EyeOff, Eye } from'lucide-react';
+import { Loader2, Plus, Trash2, Check, ShoppingBag, X, EyeOff, Eye } from'lucide-react';
 import { Button } from'@/components/ui/button';
+import { IconButton } from'@/components/ui/icon-button';
+import { Input } from'@/components/ui/input';
+import { Textarea } from'@/components/ui/textarea';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -171,7 +174,7 @@ export function StorefrontColumn({
 
  if (loading) {
  return (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  );
@@ -202,29 +205,24 @@ export function StorefrontColumn({
  scrollCue={t('storefront-scroll-cue', { defaultValue:'View products'})}
  />
  <ColumnHeader
- icon={Store}
+ title={t('creators-store', {
+ name: creator.name || creator.handle ||'Creator',
+ defaultValue:"{{name}}'s store",
+ })}
  actions={
  isOwner && (
  <Button
  size="sm"
  variant="accent"
- className="gap-1"
  onClick={() => setShowForm((v) => !v)}
  >
  <Plus className="h-3.5 w-3.5"/> {t('new-product', { defaultValue:'New product'})}
  </Button>
  )
  }
- >
- <h1 className="truncate text-lg font-bold text-site-text">
- {t('creators-store', {
- name: creator.name || creator.handle ||'Creator',
- defaultValue:"{{name}}'s store",
- })}
- </h1>
- </ColumnHeader>
+ />
 
- <div className="flex items-center gap-3 border-b border-site-border px-4 py-3">
+ <div className="mx-4 mt-4 flex items-center gap-3 rounded-site glass-fill px-4 py-3">
  <UserAvatar user={creator} />
  <div className="min-w-0">
  <p className="truncate text-sm font-semibold text-site-text">
@@ -237,28 +235,26 @@ export function StorefrontColumn({
  </div>
 
  {showForm && (
- <div className="border-b border-site-border bg-site-surface/30 p-4">
+ <div className="mx-4 mt-4 rounded-site glass-pane p-4">
  <div className="flex items-center justify-between">
  <h2 className="text-sm font-semibold text-site-text">
  {t('new-product', { defaultValue:'New product'})}
  </h2>
- <button
+ <IconButton
+ icon={X}
+ label={t('close', { defaultValue:'Close'})}
  onClick={() => setShowForm(false)}
- className="text-site-text-dim hover:text-site-text"
- aria-label={t('close', { defaultValue:'Close'})}
- >
- <X className="h-4 w-4"/>
- </button>
+ />
  </div>
- <div className="mt-3 space-y-2">
- <input
+ <div className="mt-3 space-y-3">
+ <Input
  value={form.title}
  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
  placeholder={t('title-placeholder', { defaultValue:'Title'})}
  maxLength={80}
- className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+
  />
- <textarea
+ <Textarea
  value={form.description}
  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
  placeholder={t('description-optional-placeholder', {
@@ -266,17 +262,17 @@ export function StorefrontColumn({
  })}
  maxLength={500}
  rows={2}
- className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="resize-none"
  />
- <input
+ <Input
  type="number"
  min={1}
  value={form.price}
  onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
  placeholder={t('price-coins-placeholder', { defaultValue:'Price (coins)'})}
- className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+
  />
- <textarea
+ <Textarea
  value={form.deliverable}
  onChange={(e) => setForm((f) => ({ ...f, deliverable: e.target.value }))}
  placeholder={t('deliverable-placeholder', {
@@ -284,7 +280,7 @@ export function StorefrontColumn({
  })}
  maxLength={2000}
  rows={2}
- className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="resize-none"
  />
  {error && <p className="text-xs text-site-danger">{error}</p>}
  <div className="flex justify-end">
@@ -305,7 +301,7 @@ export function StorefrontColumn({
  </div>
  )}
 
- <Reveal className="space-y-2 p-4">
+ <Reveal className="space-y-3 px-4 pt-4 pb-12">
  {products.length === 0 ? (
  <EmptyState
  description={
@@ -318,7 +314,7 @@ export function StorefrontColumn({
  products.map((p) => (
  <div
  key={p.id}
- className={`rounded-site border p-4 ${p.active ?'border-site-border bg-site-surface':'border-site-border/60 bg-site-bg opacity-70'}`}
+ className={`rounded-site glass-fill p-4 ${p.active ?'':'opacity-70'}`}
  >
  <div className="flex items-start justify-between gap-3">
  <div className="min-w-0">
@@ -326,7 +322,7 @@ export function StorefrontColumn({
  {p.description && (
  <p className="mt-0.5 text-sm text-site-text-muted">{p.description}</p>
  )}
- <p className="mt-1 text-[11px] text-site-text-dim">
+ <p className="mt-1 text-xs text-site-text-dim">
  {t('sold-count', {
  count: p.salesCount,
  formattedCount: fmt(p.salesCount),
@@ -341,8 +337,8 @@ export function StorefrontColumn({
  </div>
 
  {p.deliverable && (
- <div className="mt-2 rounded-site-sm border border-site-accent/30 bg-site-accent/5 p-2 text-sm text-site-text">
- <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-site-accent">
+ <div className="mt-3 rounded-site-sm border border-site-accent/30 bg-site-accent/5 px-3 py-2 text-sm text-site-text">
+ <p className="mb-1 text-xs font-semibold text-site-accent">
  {t('deliverable-label', { defaultValue:'Deliverable'})}
  </p>
  <p className="whitespace-pre-wrap break-words">{p.deliverable}</p>
@@ -357,7 +353,6 @@ export function StorefrontColumn({
  variant="outline"
  disabled={busy === `tog:${p.id}`}
  onClick={() => toggleActive(p)}
- className="gap-1"
  >
  {p.active ? (
  <EyeOff className="h-3.5 w-3.5"/>
@@ -388,7 +383,6 @@ export function StorefrontColumn({
  variant="accent"
  disabled={!signedIn || busy === `buy:${p.id}`}
  onClick={() => buy(p.id)}
- className="gap-1"
  >
  {busy === `buy:${p.id}`? (
  <Loader2 className="h-3.5 w-3.5 animate-spin"/>

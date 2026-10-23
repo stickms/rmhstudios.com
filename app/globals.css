@@ -3669,7 +3669,7 @@ img.emoji {
   --doctrine-bg-secondary: #141416;
   --doctrine-bg-tertiary: #1c1c20;
   --doctrine-text-primary: #f5f5f5;
-  --doctrine-text-muted: #52525b;
+  --doctrine-text-muted: #8a8a94; /* ≥4.5:1 on every doctrine ground (was #52525b, ~2.6:1) */
   --doctrine-accent: #f97316;
   --doctrine-accent-muted: rgba(249, 115, 22, 0.2);
   --doctrine-error: #ef4444;
@@ -4838,11 +4838,7 @@ html.nav-restoring .feed-card-cv {
  *     estimate instead of its height, which corrupts every offset below it. Same
  *     objection to the radial wheel: `.radial-wheel__slot` rakes cards from cached
  *     document offsets, and skipped cards change those offsets.
- *
- * The remaining candidate, `.aa__tile` (album-admin photo grid), is fixed-aspect
- * and already clipping, but every tile carries a focusable remove button — the
- * one case the technique is documented not to help, since focus force-renders the
- * subtree anyway. */
+ */
 
 /* Posts flushed in from the "N new posts" pill ease down into place instead of
  * popping. `backwards` applies the start frame immediately so there's no flash

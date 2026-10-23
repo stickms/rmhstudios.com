@@ -28,6 +28,7 @@ import {
   type CookieConsentChoice,
 } from '@/components/site/CookieConsent';
 import { ADSENSE_CLIENT_ID } from '@/lib/ads/adsense';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 export function CookieConsentControls() {
   const { t } = useTranslation('site');
@@ -68,28 +69,21 @@ export function CookieConsentControls() {
         : t('cookie-controls-status-none', { defaultValue: 'Not chosen yet' });
 
   return (
-    <section className="glass-fill rounded-site p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Cookie className="h-4.5 w-4.5 text-site-accent" aria-hidden />
-        <div>
-          <h2 className="text-base font-bold text-site-text">
-            {t('cookie-controls-title', { defaultValue: 'Cookies & advertising' })}
-          </h2>
-          <p className="text-xs text-site-text-muted">
-            {ADSENSE_CLIENT_ID
-              ? t('cookie-controls-subtitle-ads', {
-                  defaultValue:
-                    'Ads pay for the free tier. “Essential only” keeps them but asks Google not to personalise them; a paid membership removes them entirely.',
-                })
-              : t('cookie-controls-subtitle', {
-                  defaultValue:
-                    'Choose what this browser stores beyond what the site needs to run.',
-                })}
-          </p>
-        </div>
-      </div>
-
-      <p className="mb-3 text-sm text-site-text-muted">
+    <SettingsSection
+      icon={Cookie}
+      title={t('cookie-controls-title', { defaultValue: 'Cookies & advertising' })}
+      description={
+        ADSENSE_CLIENT_ID
+          ? t('cookie-controls-subtitle-ads', {
+              defaultValue:
+                'Ads pay for the free tier. “Essential only” keeps them but asks Google not to personalise them; a paid membership removes them entirely.',
+            })
+          : t('cookie-controls-subtitle', {
+              defaultValue: 'Choose what this browser stores beyond what the site needs to run.',
+            })
+      }
+    >
+      <p className="text-sm text-site-text-muted">
         {t('cookie-controls-current', { defaultValue: 'Current choice:' })}{' '}
         <strong className="text-site-text">
           {choice === undefined
@@ -117,6 +111,6 @@ export function CookieConsentControls() {
           {t('cookie-controls-reset', { defaultValue: 'Ask me again' })}
         </Button>
       </div>
-    </section>
+    </SettingsSection>
   );
 }

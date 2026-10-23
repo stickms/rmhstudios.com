@@ -49,7 +49,7 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
  return (
  <article className="glass-fill social-post social-announcement px-4 py-3">
  {/* System badge */}
- <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 pl-[52px]">
+ <div className="flex items-center gap-2 text-xs text-site-text-dim mb-2 pl-13">
  <TypeIcon type={item.type} className="w-3.5 h-3.5"/>
  <span className="font-medium">RMH {typeLabel}</span>
  </div>
@@ -94,7 +94,7 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
 
  {/* Tags */}
  {item.tags && item.tags.length > 0 && (
- <div className="flex flex-wrap gap-1.5 mt-2">
+ <div className="flex flex-wrap gap-2 mt-2">
  {item.tags.map((tag) => (
  <span
  key={tag}

@@ -17,6 +17,8 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { IconButton } from '@/components/ui/icon-button';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 interface SessionRow {
   id: string;
@@ -28,22 +30,35 @@ interface SessionRow {
 }
 
 /** Best-effort friendly device label from a User-Agent string. */
-function describeDevice(ua?: string | null): { label: string; kind: 'mobile' | 'tablet' | 'desktop' } {
+function describeDevice(ua?: string | null): {
+  label: string;
+  kind: 'mobile' | 'tablet' | 'desktop';
+} {
   if (!ua) return { label: 'Unknown device', kind: 'desktop' };
   const isTablet = /iPad|Tablet/i.test(ua);
   const isMobile = !isTablet && /Mobi|Android|iPhone/i.test(ua);
-  const os =
-    /Windows/i.test(ua) ? 'Windows' :
-    /Mac OS X|Macintosh/i.test(ua) ? 'macOS' :
-    /Android/i.test(ua) ? 'Android' :
-    /iPhone|iPad|iOS/i.test(ua) ? 'iOS' :
-    /Linux/i.test(ua) ? 'Linux' : '';
-  const browser =
-    /Edg\//i.test(ua) ? 'Edge' :
-    /OPR\/|Opera/i.test(ua) ? 'Opera' :
-    /Chrome\//i.test(ua) ? 'Chrome' :
-    /Firefox\//i.test(ua) ? 'Firefox' :
-    /Safari\//i.test(ua) ? 'Safari' : 'Browser';
+  const os = /Windows/i.test(ua)
+    ? 'Windows'
+    : /Mac OS X|Macintosh/i.test(ua)
+      ? 'macOS'
+      : /Android/i.test(ua)
+        ? 'Android'
+        : /iPhone|iPad|iOS/i.test(ua)
+          ? 'iOS'
+          : /Linux/i.test(ua)
+            ? 'Linux'
+            : '';
+  const browser = /Edg\//i.test(ua)
+    ? 'Edge'
+    : /OPR\/|Opera/i.test(ua)
+      ? 'Opera'
+      : /Chrome\//i.test(ua)
+        ? 'Chrome'
+        : /Firefox\//i.test(ua)
+          ? 'Firefox'
+          : /Safari\//i.test(ua)
+            ? 'Safari'
+            : 'Browser';
   const label = [browser, os].filter(Boolean).join(' · ') || 'Unknown device';
   return { label, kind: isTablet ? 'tablet' : isMobile ? 'mobile' : 'desktop' };
 }
@@ -111,7 +126,9 @@ export function SessionManager() {
       toast.success(t('session-revoked-others', { defaultValue: 'All other devices signed out.' }));
       await load();
     } catch {
-      toast.error(t('session-revoke-others-failed', { defaultValue: 'Could not sign out other devices.' }));
+      toast.error(
+        t('session-revoke-others-failed', { defaultValue: 'Could not sign out other devices.' }),
+      );
     } finally {
       setBusy(false);
     }
@@ -126,42 +143,36 @@ export function SessionManager() {
   // modifier MULTIPLIES, so the panel rendered at 0.026 — five panels in one
   // column, two materials, and two of them nearly invisible.
   return (
-    <section className="glass-pane rounded-site p-4">
-      <div className="mb-1 flex items-center gap-2">
-        <Monitor className="h-5 w-5 text-site-accent" aria-hidden />
-        <h2 className="text-base font-bold text-site-text">
-          {t('sessions-title', { defaultValue: 'Active sessions' })}
-        </h2>
-      </div>
-      <p className="mb-4 text-sm text-site-text-muted">
-        {t('sessions-description', {
-          defaultValue:
-            'Devices currently signed in to your account. Revoke any you don’t recognize.',
-        })}
-      </p>
-
+    <SettingsSection
+      icon={Monitor}
+      title={t('sessions-title', { defaultValue: 'Active sessions' })}
+      description={t('sessions-description', {
+        defaultValue:
+          'Devices currently signed in to your account. Revoke any you don’t recognize.',
+      })}
+    >
       {loading ? (
         <div className="flex justify-center py-6">
           <Spinner />
         </div>
       ) : sessions.length === 0 ? (
-        <p className="mb-3 text-sm text-site-text-dim">
+        <p className="text-sm text-site-text-dim">
           {t('sessions-empty', { defaultValue: 'No active sessions found.' })}
         </p>
       ) : (
-        <ul className="mb-3 divide-y divide-site-border rounded-site-sm border border-site-border">
+        <ul className="divide-y divide-site-border rounded-site-sm border border-site-border">
           {sessions.map((s) => {
             const { label, kind } = describeDevice(s.userAgent);
             const Icon = kind === 'mobile' ? Smartphone : kind === 'tablet' ? Tablet : Laptop;
             const isCurrent = s.token === currentToken;
             return (
-              <li key={s.id} className="flex items-center gap-3 px-3 py-2.5">
+              <li key={s.id} className="flex items-center gap-3 px-3 py-2">
                 <Icon className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-site-text">
                     {label}
                     {isCurrent && (
-                      <span className="ml-2 rounded-full bg-site-accent/15 px-2 py-0.5 text-xs font-medium text-site-accent">
+                      <span className="ms-2 rounded-full bg-site-accent/15 px-2 py-0.5 text-xs font-medium text-site-accent">
                         {t('session-current', { defaultValue: 'This device' })}
                       </span>
                     )}
@@ -177,14 +188,13 @@ export function SessionManager() {
                   </p>
                 </div>
                 {!isCurrent && (
-                  <button
+                  <IconButton
+                    icon={LogOut}
+                    label={t('session-revoke', { defaultValue: 'Sign out device' })}
                     onClick={() => revokeOne(s)}
                     disabled={busy}
-                    aria-label={t('session-revoke', { defaultValue: 'Sign out device' })}
-                    className="rounded-site-sm p-1.5 text-site-text-dim transition-colors hover:bg-site-danger/10 hover:text-site-danger"
-                  >
-                    <LogOut className="h-4 w-4" aria-hidden />
-                  </button>
+                    className="hover:text-site-danger"
+                  />
                 )}
               </li>
             );
@@ -198,6 +208,6 @@ export function SessionManager() {
           {t('sessions-revoke-others', { defaultValue: 'Log out of all other devices' })}
         </Button>
       )}
-    </section>
+    </SettingsSection>
   );
 }

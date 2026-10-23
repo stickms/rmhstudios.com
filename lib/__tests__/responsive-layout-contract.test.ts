@@ -155,13 +155,9 @@ describe('spatial redesign — responsive layout contract', () => {
      */
     const ALLOWED: ReadonlyArray<{ file: string; reason: string }> = [
       {
-        file: 'components/feed/GroupChatView.tsx',
-        reason:
-          'Chat transcript: a fixed-height flex column with its own scroll region, not a document you read top to bottom. Tracked for the dvh fix alongside PersonaChatColumn.',
-      },
-      {
         file: 'components/feed/PersonaChatColumn.tsx',
-        reason: 'Same shape and the same pending dvh fix as GroupChatView.',
+        reason:
+          'Chat transcript: a fixed-height flex column with its own scroll region, not a document you read top to bottom. Pending the topbar-aware height GroupChatView now uses.',
       },
       {
         file: 'components/errors/NotFound.tsx',
@@ -171,15 +167,6 @@ describe('spatial redesign — responsive layout contract', () => {
       {
         file: 'components/errors/RouteErrorFallback.tsx',
         reason: 'Same dual mount and the same `.error-page` cancellation as NotFound.',
-      },
-      {
-        file: 'app/routes/_site/library/index.tsx',
-        reason:
-          'The `.vibe-screen` library shell paints its own full-bleed ground; it is not a column.',
-      },
-      {
-        file: 'app/routes/_site/create/route.tsx',
-        reason: 'The `.cstudio-screen` creator-studio shell, same full-bleed case as the library.',
       },
       {
         file: 'app/routes/_site/roadmap.tsx',

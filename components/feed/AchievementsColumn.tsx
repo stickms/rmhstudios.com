@@ -81,7 +81,7 @@ export function AchievementsColumn({
 
  if (loading) {
  return (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  );
@@ -132,36 +132,32 @@ export function AchievementsColumn({
  {hideHeader ? (
  <div className="px-4 pt-4">{Stats}</div>
  ) : (
- <div className="glass-chrome site-sticky-chrome">
+ <>
  <ColumnHeader
- sticky={false}
- className="border-b-0 pb-0"
  icon={Trophy}
  title={t('achievements-header', { defaultValue:'Achievements'})}
  />
- <div className="px-4 pb-3 pt-2">{Stats}</div>
- </div>
+ <div className="px-4 pt-4">{Stats}</div>
+ </>
  )}
 
- <div className="space-y-6 p-4">
+ <div className="space-y-6 px-4 pt-4 pb-12">
  {CATEGORY_ORDER.map((cat) => {
  const list = data.achievements.filter((a) => a.category === cat);
  if (list.length === 0) return null;
  return (
  <section key={cat}>
- <h2 className="site-section-label mb-2">
+ <h2 className="site-section-label mb-3">
  {CATEGORY_LABELS[cat]}
  </h2>
- <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+ <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
  {list.map((a) => {
  const incremental = a.target > 1 && !a.unlocked;
  return (
  <div
  key={a.id}
- className={`flex items-start gap-3 rounded-site border p-3 transition-colors ${
- a.unlocked
- ?'border-site-border bg-site-surface'
- :'border-site-border/60 bg-site-bg opacity-70'
+ className={`glass-fill flex items-start gap-3 rounded-site px-4 py-3 transition-colors ${
+ a.unlocked ?'':'opacity-70'
  }`}
  >
  {(() => {
@@ -193,7 +189,7 @@ export function AchievementsColumn({
  fill and border, where it carries the tier perfectly well; the word
  takes the surface's own ink so it is actually readable. */}
  <span
- className="rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase text-site-text"
+ className="rounded-site-sm border px-2 py-0.5 text-xs font-bold uppercase text-site-text"
  style={{
  background: `${TIER_COLORS[a.tier]}2e`,
  borderColor: `${TIER_COLORS[a.tier]}99`,
@@ -202,9 +198,9 @@ export function AchievementsColumn({
  {a.tier}
  </span>
  </div>
- <p className="mt-0.5 text-xs text-site-text-muted">{a.description}</p>
+ <p className="mt-1 text-xs text-site-text-muted">{a.description}</p>
  {incremental && (
- <div className="mt-1.5">
+ <div className="mt-2">
  <div className="h-1.5 w-full overflow-hidden rounded-full bg-site-surface">
  <div
  className="h-full rounded-full bg-site-accent"
@@ -213,14 +209,14 @@ export function AchievementsColumn({
  }}
  />
  </div>
- <p className="mt-0.5 text-[10px] text-site-text-dim">
+ <p className="mt-1 text-xs text-site-text-dim">
  {a.progress} / {a.target}
  </p>
  </div>
  )}
  {!(a.secret && !a.unlocked) && <AchievementTips achievementId={a.id} name={a.name} />}
  {a.unlocked && a.coinReward > 0 && (
- <p className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] text-site-text-dim">
+ <p className="mt-1 inline-flex items-center gap-1 text-xs text-site-text-dim">
  <Coins className="h-3 w-3 text-site-warning"/> +{a.coinReward}
  </p>
  )}

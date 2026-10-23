@@ -14,6 +14,7 @@ import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 export function DeleteAccountPanel() {
   const { t } = useTranslation('feed');
@@ -57,19 +58,15 @@ export function DeleteAccountPanel() {
   };
 
   return (
-    <section className="rounded-site border border-site-danger/40 bg-site-danger/5 p-4">
-      <div className="mb-1 flex items-center gap-2">
-        <TriangleAlert className="h-5 w-5 text-site-danger" aria-hidden />
-        <h2 className="text-base font-bold text-site-text">
-          {t('delete-title', { defaultValue: 'Delete account' })}
-        </h2>
-      </div>
-      <p className="mb-4 text-sm text-site-text-muted">
-        {t('delete-description', {
-          defaultValue:
-            'Permanently remove your personal data and sign you out of every device. Your posts are kept but anonymized (shown as “Deleted user”). This cannot be undone.',
-        })}
-      </p>
+    <SettingsSection
+      tone="danger"
+      icon={TriangleAlert}
+      title={t('delete-title', { defaultValue: 'Delete account' })}
+      description={t('delete-description', {
+        defaultValue:
+          'Permanently remove your personal data and sign you out of every device. Your posts are kept but anonymized (shown as “Deleted user”). This cannot be undone.',
+      })}
+    >
 
       {!open ? (
         <Button variant="destructive" onClick={() => setOpen(true)}>
@@ -112,6 +109,6 @@ export function DeleteAccountPanel() {
           </div>
         </div>
       )}
-    </section>
+    </SettingsSection>
   );
 }

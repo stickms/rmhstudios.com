@@ -61,7 +61,7 @@ export function WrappedColumn({
 
  if (loading) {
  return (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  );
@@ -103,10 +103,10 @@ export function WrappedColumn({
  screens={2.6}
  />
 
- <div className="space-y-6 p-4">
+ <div className="space-y-6 px-4 pt-4 pb-12">
  {/* Level badge — leads the below-fold content. */}
  <Reveal>
- <div className="flex items-center gap-2 rounded-site glass-fill px-4 py-3">
+ <div className="flex items-center gap-3 rounded-site glass-fill px-4 py-3">
  <Star className="h-5 w-5 text-site-accent"/>
  <span className="text-sm font-semibold text-site-text">
  {t('level-value', { level: data.level, defaultValue:'Level {{level}}'})}
@@ -119,7 +119,7 @@ export function WrappedColumn({
  <h2 className="site-section-label mb-3">
  {t('wrapped-stats-heading', { defaultValue:'Your year in numbers'})}
  </h2>
- <RevealGroup as="div"className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+ <RevealGroup as="div"className="grid grid-cols-2 gap-3 sm:grid-cols-3">
  {tiles.map((tile) => (
  <RevealItem key={tile.label}>
  <div className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}>
@@ -151,7 +151,7 @@ export function WrappedColumn({
  {/* Top post */}
  {data.topPost && (
  <Reveal>
- <h2 className="site-section-label mb-2">
+ <h2 className="site-section-label mb-3">
  {t('your-top-post', { defaultValue:'Your top post'})}
  </h2>
  <Link

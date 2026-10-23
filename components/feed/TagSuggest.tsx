@@ -77,7 +77,7 @@ export function TagSuggest({
 
   return (
     <div
-      className="mt-2 flex flex-wrap items-center gap-1.5"
+      className="mt-2 flex flex-wrap items-center gap-2"
       role="group"
       aria-label={t('tag-suggest-label', { defaultValue: 'Suggested tags' })}
       aria-busy={loading}
@@ -95,7 +95,7 @@ export function TagSuggest({
           key={tag}
           type="button"
           onClick={() => append(tag)}
-          className="rounded-full border border-site-border px-2.5 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
+          className="rounded-full border border-site-border px-3 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
         >
           #{tag}
         </button>

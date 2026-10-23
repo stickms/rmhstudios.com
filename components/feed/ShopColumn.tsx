@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShoppingBag, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
@@ -19,6 +18,7 @@ import {
 import { getPremiumTheme } from '@/lib/shop/themes';
 import { PinnedHero } from './PinnedHero';
 import { ColumnHeader } from './ColumnHeader';
+import { PageTabs } from './PageTabs';
 import { Reveal } from '@/components/motion';
 import { ShopWishButton } from '@/components/economy-plus/ShopWishButton';
 
@@ -251,29 +251,25 @@ export function ShopColumn({
       {/* Category tabs → standalone glass sheet below the hero (§5.45). The pill
  scrolls horizontally in the shared tab-sheet track (overflow + edge fade,
  §5.5x A.4); ARIA/state are unchanged. */}
-      <div className="my-3 px-3">
-        <LiquidTabs
-          size="sm"
-          aria-label={t('shop-categories-label', { defaultValue: 'Shop categories' })}
-          value={tab}
-          onChange={(id) => setTab(id as ShopItemKind)}
-          tabs={KIND_ORDER.map((k) => ({ id: k, label: KIND_LABELS[k] }))}
-          scroll
-        />
-      </div>
+      <PageTabs
+        aria-label={t('shop-categories-label', { defaultValue: 'Shop categories' })}
+        value={tab}
+        onChange={(id) => setTab(id as ShopItemKind)}
+        tabs={KIND_ORDER.map((k) => ({ id: k, label: KIND_LABELS[k] }))}
+      />
 
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center px-4 pt-4 pb-12">
           <Spinner />
         </div>
       ) : (
-        <Reveal className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2">
+        <Reveal className="grid grid-cols-1 gap-3 px-4 pt-4 pb-12 sm:grid-cols-2">
           {visible.map((item) => (
             <div
               key={item.id}
               // L1 .glass-fill + .glass-interactive together light the hover glint
               // ring (the ring selector needs BOTH classes) and the pointer light.
-              className="glass-fill glass-interactive flex items-center gap-3 rounded-site p-3"
+              className="glass-fill glass-interactive flex items-center gap-3 rounded-site px-4 py-3"
               // Rarity communicates value through the rim colour (§9.4): a tinted
               // border + a matching inner specular hairline over the base rim.
               style={{
@@ -292,7 +288,7 @@ export function ShopColumn({
                       "legendary" at a glance) and the word takes the surface's own
                       ink. Same fix as the achievement tier chips. */}
                   <span
-                    className="shrink-0 rounded border px-1 py-0.5 text-[11px] font-bold uppercase text-site-text"
+                    className="shrink-0 rounded-site-sm border px-2 py-0.5 text-xs font-bold uppercase text-site-text"
                     style={{
                       background: `${RARITY_COLORS[item.rarity]}2e`,
                       borderColor: `${RARITY_COLORS[item.rarity]}99`,
@@ -303,7 +299,7 @@ export function ShopColumn({
                 </div>
                 <p className="truncate text-xs text-site-text-muted">{item.description}</p>
                 {item.requiresTier && (
-                  <p className="text-[11px] uppercase text-site-accent">
+                  <p className="text-xs uppercase text-site-accent">
                     {t('requires-tier-plan', {
                       tier: item.requiresTier,
                       defaultValue: '{{tier}} plan',

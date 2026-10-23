@@ -48,7 +48,7 @@ export function ComposeAssist({ value, onChange }: { value: string; onChange: (v
  };
 
  return (
- <div className="mt-2 flex flex-wrap items-center gap-1.5"role="group"aria-label={t('ai-writing-assist', { defaultValue:'AI writing assist'})}>
+ <div className="mt-2 flex flex-wrap items-center gap-2"role="group"aria-label={t('ai-writing-assist', { defaultValue:'AI writing assist'})}>
  <span className="flex items-center gap-1 text-xs text-site-text-dim">
  <Sparkles className="h-3.5 w-3.5 text-site-accent"/> AI
  </span>
@@ -58,7 +58,7 @@ export function ComposeAssist({ value, onChange }: { value: string; onChange: (v
  type="button"
  disabled={busy !== null}
  onClick={() => run(id)}
- className="inline-flex items-center gap-1 rounded-full border border-site-border px-2.5 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text disabled:opacity-50"
+ className="inline-flex items-center gap-1 rounded-full border border-site-border px-3 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text disabled:opacity-50"
  >
  {busy === id ? <Loader2 className="h-3 w-3 animate-spin"/> : null}
  {ACTION_LABELS[id]}

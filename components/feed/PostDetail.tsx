@@ -289,7 +289,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
  if (loading) {
  return (
- <div className="flex items-center justify-center py-20">
+ <div className="flex items-center justify-center px-4 pt-4 pb-12">
  <Spinner size={32} />
  </div>
  );
@@ -297,8 +297,8 @@ export function PostDetail({ postId }: PostDetailProps) {
 
  if (notFound || !post) {
  return (
- <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
- <p className="text-lg font-medium text-site-text mb-1">
+ <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
+ <p className="text-lg font-medium text-site-text mb-2">
  {t('post-not-found', { defaultValue:'Post not found'})}
  </p>
  <p className="text-sm text-site-text-muted mb-4">
@@ -315,28 +315,29 @@ export function PostDetail({ postId }: PostDetailProps) {
 
  return (
  <div className="flex flex-col">
- {/* Header bar — §17.6: reserve the sticky-shift with a bottom margin so the
- hero's mt-3 gutter below is honoured (same fix as PageLayout). */}
- <div className="glass-chrome site-sticky-chrome">
- <div className="flex items-center gap-3 px-4 py-3">
- <button
- onClick={() => window.history.back()}
- className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface-hover transition-colors"
- >
- <ArrowLeft className="w-5 h-5 text-site-text"/>
+ {/* Header: the same flat big-type page-heading PageLayout renders, with
+ a history-back control in the meta row. */}
+ <header data-slot="page-header" className="page-heading">
+ <div className="page-heading__meta">
+ <button type="button" onClick={() => window.history.back()} className="page-heading__back">
+ <ArrowLeft aria-hidden />
+ <span>{t('back', { defaultValue:'Back'})}</span>
  </button>
- <h1 className="font-display font-bold text-lg text-site-text">
- {t('post-header', { defaultValue:'Post'})}
+ </div>
+ <div className="page-heading__content">
+ <div className="min-w-0">
+ <h1 className="site-display-3">
+ <span className="min-w-0 truncate">{t('post-header', { defaultValue:'Post'})}</span>
  </h1>
  </div>
  </div>
+ </header>
 
  {/* Post content (expanded) — the liquid-open hero the feed card morphs into
  (§5.48). The name is static here (one post per detail page → unique).
- §16.3.4: `mt-3`gives the standard capsule-to-first-content gutter below
- the"← Post"header capsule (§15.4 rhythm — it was flush before). */}
+ The page-heading above owns the gap to this block. */}
  <div
- className="relative mt-3 px-4 pt-4 pb-3 border-b border-site-border"
+ className="relative px-4 pt-4 pb-3 border-b border-site-border"
  style={{ viewTransitionName: liquidVTName('post', postId) }}
  >
  {/* More menu — top right (shared with the feed card so features match) */}
@@ -388,7 +389,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
  {/* Translation (toggled from the overflow menu) */}
  {showTranslated && translatedText && (
- <div className="mb-3 rounded-site border border-site-border bg-site-surface/40 p-3 text-[15px] leading-relaxed text-site-text whitespace-pre-wrap break-words">
+ <div className="mb-3 rounded-site glass-fill px-4 py-3 text-[15px] leading-relaxed text-site-text whitespace-pre-wrap break-words">
  {translatedText}
  </div>
  )}
@@ -459,12 +460,12 @@ export function PostDetail({ postId }: PostDetailProps) {
 
  {/* Quoted original */}
  {post.original && (
- <div className="glass-fill mb-3 rounded-site p-3">
- <div className="flex items-center gap-1.5 text-sm mb-1">
+ <div className="glass-fill mb-3 rounded-site px-4 py-3">
+ <div className="flex items-center gap-2 text-sm mb-1">
  {freshOriginalUser ? (
  <Link
  to={`/u/${freshOriginalUser.handle || freshOriginalUser.id}`as string}
- className="flex items-center gap-1.5 min-w-0 hover:underline"
+ className="flex items-center gap-2 min-w-0 hover:underline"
  >
  <span className="font-bold text-site-text truncate">
  {freshOriginalUser.name || t('unknown-user', { defaultValue:'Unknown'})}
@@ -515,7 +516,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
  {/* Deleted notice */}
  {post.deletedAt && (
- <div className="px-4 py-4 border-b border-site-border">
+ <div className="px-4 py-3 border-b border-site-border">
  <p className="text-sm text-site-text-dim text-center">
  {post.deletedByAdmin
  ? t('deleted-by-admin', { defaultValue:'This RMHark was deleted by an admin.'})
@@ -528,7 +529,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  {!post.deletedAt && session ? (
  <div className="px-4 py-3 border-b border-site-border">
  {post.replyControl && post.replyControl !=='EVERYONE'&& (
- <p className="mb-2 flex items-center gap-1.5 text-xs text-site-text-muted">
+ <p className="mb-2 flex items-center gap-2 text-xs text-site-text-muted">
  <MessageCircle className="h-3.5 w-3.5 shrink-0"aria-hidden="true"/>
  {post.replyControl ==='FOLLOWING'
  ? t('reply-limited-following', {
@@ -558,7 +559,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  placeholder={t('reply-placeholder', { defaultValue:'Post your reply...'})}
  rows={2}
  maxLength={MAX_COMMENT_LENGTH}
- className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
+ className="glass-inset w-full text-site-text placeholder:text-site-text-dim text-sm rounded-site px-3 py-2 resize-none outline-none focus:border-site-accent transition-colors"
  onKeyDown={(e) => {
  if (e.key ==='Enter'&& (e.metaKey || e.ctrlKey)) {
  handleSubmit();
@@ -571,7 +572,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  >
  {remaining}
  </span>
- <div className="flex items-center gap-1.5">
+ <div className="flex items-center gap-2">
  <AIGenerateButton
  request={{ mode:'reply', rmharkId: postId, draft: commentContent }}
  onGenerated={(text) => setCommentContent(text)}
@@ -606,11 +607,11 @@ export function PostDetail({ postId }: PostDetailProps) {
  <ThreadSummary postId={postId} commentCount={comments.length} />
  )}
  {loadingComments ? (
- <div className="flex justify-center py-8">
+ <div className="flex justify-center py-12">
  <Spinner />
  </div>
  ) : comments.length === 0 ? (
- <p className="text-center text-sm text-site-text-dim py-8">
+ <p className="text-center text-sm text-site-text-dim py-12">
  {t('no-replies', { defaultValue:'No replies yet. Be the first!'})}
  </p>
  ) : (

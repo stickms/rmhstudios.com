@@ -137,8 +137,12 @@ const DialogContent = React.forwardRef<
         <DialogPrimitive.Close
           ref={closeRef}
           className={cn(
-            'absolute right-3 inline-flex size-11 items-center justify-center rounded-[var(--site-control-radius)] text-site-text-muted opacity-80 transition-opacity hover:opacity-100 hover:bg-site-surface-hover outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50 disabled:pointer-events-none sm:right-4 sm:top-4',
-            mobileFullscreen ? 'top-[max(1rem,env(safe-area-inset-top))]' : 'top-4',
+            // 44px target centred on the title's first line: p-5 (sm:p-6) + half an 18px
+            // line = 29px (33px), so top-2.5 (sm:top-3) puts the centre at 32px (34px).
+            'absolute right-3 inline-flex size-11 items-center justify-center rounded-[var(--site-control-radius)] text-site-text-muted opacity-80 transition-opacity hover:opacity-100 hover:bg-site-surface-hover outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50 disabled:pointer-events-none',
+            mobileFullscreen
+              ? 'top-[max(0.5rem,env(safe-area-inset-top))] sm:top-3'
+              : 'top-2.5 sm:top-3',
           )}
           data-fluid-press=""
         >
@@ -153,7 +157,7 @@ DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn('flex flex-col gap-1.5 pr-10 text-center sm:pr-8 sm:text-left', className)}
+    className={cn('flex flex-col gap-1.5 pr-11 text-center sm:text-left', className)}
     {...props}
   />
 );

@@ -87,7 +87,7 @@ export function ResumeRail({ initial }: ResumeRailProps) {
       show
       as="section"
       aria-label={t('resume-title', { defaultValue: 'Pick up where you left off' })}
-      className="glass-fill mx-3 mt-3 p-3"
+      className="glass-fill mx-3 mt-3 px-4 py-3"
     >
       <div className="mb-2 flex items-center gap-2">
         <History className="size-4 text-site-accent" aria-hidden />
@@ -116,9 +116,9 @@ export function ResumeRail({ initial }: ResumeRailProps) {
               search={link.search}
               hash={link.hash}
               title={card.title}
-              className="glass-fill glass-interactive flex w-48 shrink-0 flex-col gap-1.5 p-3 sm:w-56"
+              className="glass-fill glass-interactive flex w-48 shrink-0 flex-col gap-2 px-4 py-3 sm:w-56"
             >
-              <span className="flex min-w-0 items-center gap-1.5">
+              <span className="flex min-w-0 items-center gap-2">
                 <Icon className="size-3.5 shrink-0 text-site-accent" aria-hidden />
                 <span className="truncate text-sm font-semibold text-site-text">{card.title}</span>
               </span>

@@ -137,7 +137,7 @@ function HeroFrame({
           className="absolute inset-x-0 flex flex-col items-center gap-1.5 text-site-text-muted"
           style={{ ...styles.cue, bottom: 'var(--site-floating-reserve)' }}
         >
-          <span className="font-mono text-[11px] uppercase tracking-[0.24em]">{scrollCue}</span>
+          <span className="font-mono text-xs uppercase tracking-[0.24em]">{scrollCue}</span>
           <motion.span
             animate={{ y: [0, 5, 0] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}

@@ -472,7 +472,7 @@ export function EversionLab() {
 
       <section
         aria-label="Eversion lab controls"
-        className="glass-overlay rounded-site absolute bottom-3 left-3 flex max-h-[calc(100dvh-1.5rem)] w-[min(26rem,calc(100vw-1.5rem))] flex-col gap-3 overflow-y-auto p-3 text-sm"
+        className="glass-overlay rounded-site absolute bottom-[calc(0.75rem+var(--safe-bottom))] left-[calc(0.75rem+var(--safe-left))] flex max-h-[calc(100dvh-1.5rem-var(--safe-top)-var(--safe-bottom))] w-[min(26rem,calc(100vw-1.5rem-var(--safe-left)-var(--safe-right)))] flex-col gap-3 overflow-y-auto p-4 text-sm"
         data-eversion-lab-panel
       >
         <header className="flex items-baseline justify-between gap-2">
@@ -522,7 +522,7 @@ export function EversionLab() {
           aria-label="Theme"
         />
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between text-xs">
             <label htmlFor="lab-scrub" className="text-site-text-muted">
               Scrub
@@ -544,7 +544,7 @@ export function EversionLab() {
           />
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {STAGE_BUTTONS.map((b) => (
             <Button
               key={b.label}
@@ -558,7 +558,7 @@ export function EversionLab() {
           ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" onClick={() => void play()} disabled={!ready || status.running}>
             <Play aria-hidden /> Play
           </Button>

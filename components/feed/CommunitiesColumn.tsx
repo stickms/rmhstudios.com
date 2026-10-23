@@ -131,7 +131,7 @@ export function CommunitiesColumn({
   };
 
   const inputCls =
-    'w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none';
+    'glass-inset w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
 
   return (
     <div>
@@ -141,7 +141,7 @@ export function CommunitiesColumn({
         // row, the same shape the Inbox uses. It used to be a title-less header
         // holding only the button, a hairline, the search, and another
         // hairline: two dividers and a whole row spent on one button.
-        <div className="flex items-center gap-2 px-3 pb-3">
+        <div className="flex items-center gap-2 px-4 pb-3">
           <SearchField
             containerClassName="flex-1"
             value={query}
@@ -168,7 +168,7 @@ export function CommunitiesColumn({
               )
             }
           />
-          <div className="border-b border-site-border p-3">
+          <div className="px-4 pb-3">
             <SearchField
               value={query}
               onValueChange={setQuery}
@@ -212,7 +212,7 @@ export function CommunitiesColumn({
           }
         />
       ) : (
-        <RevealGroup as="ul" className="flex flex-col gap-3 p-3">
+        <RevealGroup as="ul" className="flex flex-col gap-3 px-4 pb-12">
           {items.map((c) => {
             if (c.locked) {
               // Listed + locked: metadata and the way in, nothing of the content.

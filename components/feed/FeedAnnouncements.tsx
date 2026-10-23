@@ -84,7 +84,7 @@ export function FeedAnnouncements() {
  );
 
  return (
- <AsyncReveal show={visible.length > 0} className="flex flex-col gap-2 px-3 pt-3 pb-4">
+ <AsyncReveal show={visible.length > 0} className="flex flex-col gap-3 px-3 pt-3 pb-3">
  {visible.map((a) => (
  <div
  key={a.id}
@@ -92,12 +92,12 @@ export function FeedAnnouncements() {
  // the noise and the ring glint; the variant utilities then tint it and set
  // the accent rim over the top (Tailwind's layer wins over the tier's).
  // At most a couple are ever on screen, so the L2 blur budget holds.
- className={`glass-pane relative border-site-border p-3 pr-9 ${VARIANT_STYLES[a.variant] ?? VARIANT_STYLES.info} ${enteringItems.has(a.id) ?'content-item-enter':''}`}
+ className={`glass-pane relative border-site-border px-4 py-3 pr-12 ${VARIANT_STYLES[a.variant] ?? VARIANT_STYLES.info} ${enteringItems.has(a.id) ?'content-item-enter':''}`}
  >
  <button
  onClick={() => dismiss(a.id)}
  aria-label={t('dismiss-announcement', { defaultValue:'Dismiss announcement'})}
- className="absolute right-2 top-2 rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
+ className="absolute right-2 top-2 rounded-site-sm p-2 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
  >
  <X className="h-4 w-4"/>
  </button>

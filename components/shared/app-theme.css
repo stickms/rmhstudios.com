@@ -680,3 +680,25 @@ html:is(.reduce-transparency, .style-high-contrast)
     backdrop-filter: none;
   }
 }
+
+/* ── LiquidTabs inside the app tier ───────────────────────────────────────
+   The strip's paint is three custom properties (globals.css,
+   `[data-slot='liquid-tabs']`) defaulting to `--site-*`, which the full-screen
+   apps do not theme — so a difficulty or length switcher in RMHType / RMHStudy /
+   RMHTube rendered a site-coloured thumb on an app ground. Re-point the same
+   three properties (and the track) at the `--app-*` contract; specificity 0,2,0
+   beats the unlayered base rule. Label ink follows in `liquid-tabs.tsx` via an
+   `--app-text` → `--site-text` fallback. */
+.app-theme [data-slot='liquid-tabs'] {
+  --tab-thumb-bg: var(--app-surface-hover);
+  --tab-thumb-ink: var(--app-text);
+  --tab-thumb-border: var(--app-border);
+}
+.app-theme [data-slot='liquid-tabs-sheet'] {
+  background: color-mix(in srgb, var(--app-text) 7%, var(--app-surface));
+}
+.app-theme.app-high-contrast [data-slot='liquid-tabs'] {
+  --tab-thumb-bg: var(--app-accent);
+  --tab-thumb-ink: var(--app-accent-fg);
+  --tab-thumb-border: var(--app-accent);
+}
