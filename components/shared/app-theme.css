@@ -898,3 +898,23 @@ html:is(.reduce-transparency, .style-high-contrast)
   --tab-thumb-ink: var(--app-accent-fg);
   --tab-thumb-border: var(--app-accent);
 }
+
+/* ── The shared Dialog inside the app tier ────────────────────────────────
+   A `DialogContent` given the app root as its `container` lands inside
+   `.app-theme`. Its surface is a `.glass-overlay`, so the site-roles adapter
+   above already gives it (and its close button) the app's ink, accent and
+   hover. Two pieces stay outside that adapter:
+   - the scrim is `.glass-scrim`, not a role, so it kept the Daylight
+     `--site-bg` wash: a white 60% veil over a dark app;
+   - the radius: the primitive's `rounded-site` (and the close button's
+     `--site-control-radius`) read site tokens, and a caller's
+     `rounded-(--app-radius)` cannot replace them (tailwind-merge keeps both
+     and the site utility wins on source order).
+   Unlayered, specificity 0,2,0: beats the layered `.glass-scrim`. */
+.app-theme [data-slot='dialog-overlay'] {
+  background: var(--app-scrim);
+}
+.app-theme [data-slot='dialog-content'] {
+  --site-radius: var(--app-radius);
+  --site-control-radius: var(--app-radius-sm);
+}

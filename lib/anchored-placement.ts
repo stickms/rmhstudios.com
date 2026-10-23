@@ -37,6 +37,13 @@ export interface PlacementInput {
   align: PlacementAlign;
   /** Gap between the trigger and the panel. */
   gap: number;
+  /**
+   * The panel's width. When given, the inset is pulled in so the panel's FAR
+   * edge stays inside `bounds` too. An end-aligned 300px emoji picker hanging
+   * off a trigger in the middle of a 390px phone otherwise ran ~90px off the
+   * left edge, search field and first column included.
+   */
+  panelWidth?: number;
 }
 
 export interface Placement {
@@ -66,6 +73,7 @@ export function resolveAnchoredPlacement({
   side,
   align,
   gap,
+  panelWidth,
 }: PlacementInput): Placement {
   const roomAbove = anchor.top - gap - bounds.top;
   const roomBelow = bounds.bottom - anchor.bottom - gap;
@@ -74,13 +82,26 @@ export function resolveAnchoredPlacement({
     preferredRoom >= panelHeight ? side : roomAbove > roomBelow ? 'top' : 'bottom';
   const room = resolved === 'top' ? roomAbove : roomBelow;
 
+  // The near edge first (never past the bound on the aligned side), then the far
+  // edge: pull the panel back toward the aligned side until it fits, but never
+  // past that near bound — a panel wider than the bounds keeps its near edge in.
+  const nearMin = align === 'end' ? viewport.width - bounds.right : bounds.left;
+  const preferredInset =
+    align === 'end'
+      ? Math.max(nearMin, viewport.width - anchor.right)
+      : Math.max(nearMin, anchor.left);
+  const farLimit =
+    panelWidth === undefined
+      ? Infinity
+      : align === 'end'
+        ? viewport.width - bounds.left - panelWidth
+        : bounds.right - panelWidth;
+  const inset = Math.max(nearMin, Math.min(preferredInset, farLimit));
+
   return {
     side: resolved,
     offset: resolved === 'top' ? viewport.height - anchor.top + gap : anchor.bottom + gap,
-    inset:
-      align === 'end'
-        ? Math.max(viewport.width - bounds.right, viewport.width - anchor.right)
-        : Math.max(bounds.left, anchor.left),
+    inset,
     maxHeight: Math.max(0, Math.min(panelHeight, room)),
   };
 }

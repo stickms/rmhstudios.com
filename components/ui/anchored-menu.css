@@ -40,11 +40,15 @@
   --motion-origin-inline: right;
 }
 
-/* Opened from inside a modal Radix dialog (the composer, edit-post, library modals). The menu
-   portals to <body>, OUTSIDE the dialog's layer, so two things change while a dialog is open:
-   it stacks above the z-50 dialog and its scrim, or it would paint behind them; and it takes
-   pointer events back, because Radix sets `pointer-events: none` on <body>. */
-body:has([data-slot='dialog-content']) .anchored-menu {
+/* Opened from inside a dialog (the composer, edit-post): `data-in-dialog`, which the component
+   sets from where its trigger sits. The menu portals to <body>, OUTSIDE the dialog's layer, so
+   two things change: it stacks above the z-50 dialog and its scrim, or it would paint behind
+   them; and it takes pointer events back, because a modal Radix dialog sets
+   `pointer-events: none` on <body>. (Focus and scroll are the focus-scope branch the component
+   registers.) Keyed to the menu rather than `body:has(dialog)`, so a menu that is not in the
+   open dialog keeps `--z-menu`, and the selector also covers dialogs built on the bare Radix
+   primitive, which carry no `data-slot`. */
+.anchored-menu[data-in-dialog] {
   z-index: var(--z-menu-in-dialog);
   pointer-events: auto;
 }
