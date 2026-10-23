@@ -12,8 +12,7 @@
  * Two rules these share, because getting either wrong is what makes hand-rolled
  * controls worse than a library's:
  *
- * - **Semantics before looks.** The switch is a `<button role="switch">` with
- *   `aria-checked`, the segmented control is a group of `aria-pressed` buttons,
+ * - **Semantics before looks.** The switch is the shared `ui/switch` primitive (`aria-checked`), the segmented control is a group of `aria-pressed` buttons,
  *   and every row that does something is a real `<button>`. Nothing here is a
  *   styled `<div>` with an onClick.
  * - **44px minimum** on anything a thumb has to hit. `.pf2e-row` and
@@ -26,6 +25,7 @@
  */
 
 import type { ReactNode } from 'react';
+import { Switch as UiSwitch } from '@/components/ui/switch';
 
 /* -------------------------------------------------------------------------- */
 /* Grouped list                                                               */
@@ -96,12 +96,9 @@ export function Row({
 /* -------------------------------------------------------------------------- */
 
 /**
- * The iOS toggle.
- *
- * `role="switch"` + `aria-checked` rather than a styled checkbox: a screen
- * reader announces "on/off" instead of "checked", which is what the control
- * actually means, and it removes the appearance-none fight with the native
- * checkbox entirely.
+ * The on/off toggle: the shared `components/ui/switch` primitive (a switch-role button with
+ * `aria-checked`), so a screen reader announces "on/off" rather than "checked" and the control
+ * carries the jelly material like every other switch on the site.
  */
 export function Switch({
   checked,
@@ -116,16 +113,7 @@ export function Switch({
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      data-jelly="control"
-      className="pf2e-switch"
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-    />
+    <UiSwitch checked={checked} onCheckedChange={onChange} aria-label={label} disabled={disabled} />
   );
 }
 
