@@ -15,8 +15,19 @@
  *
  * Mutations are batched: the MutationObserver only queues roots, and one timer pass resolves them, so a route render
  * that adds a thousand nodes costs one `querySelectorAll` per added subtree root, once.
+ *
+ * ## Lost layers
+ *
+ * The services inject nodes React does not know about (`JELLY_LAYER_SELECTOR`: the `.jelly-flow` carrier, the rim
+ * canvas, the `.jelly-haze-canvas`). React never removes them on its own paths — except `setTextContent`, which wipes
+ * every child of a host whose children become a lone string (a `<Button>` going "Save" → "Saved" or icon → text). The
+ * host keeps its membership, so nothing else would tell the services their node is gone and their `data-jelly-flow` /
+ * `data-liquid-canvas` attribute is now a lie. A removed node that matches the layer selector, from a host that is
+ * still connected, therefore counts as a change: consumers are notified in the same batched mutation pass, and
+ * re-check their own nodes there (a `parentNode` comparison — no layout read). A service removing its own node costs
+ * one extra no-op pass.
  */
-import { JELLY_SELECTOR, jellyOptedOut, type JellyBudget } from './tiers';
+import { JELLY_LAYER_SELECTOR, JELLY_SELECTOR, jellyOptedOut, type JellyBudget } from './tiers';
 
 /** Elements that match a role but are never jelly hosts (they draw themselves, or are the globe / eversion layers). */
 export const REGISTRY_EXCLUDE =
@@ -109,7 +120,10 @@ const roleOf = (el: Element): JellyRole =>
       ? 'chrome'
       : el.matches('.glass-pane,.app-glass')
         ? 'pane'
-        : el.matches('.glass-fill,.glass-interactive,[data-jelly="card"]')
+        : el.matches(
+              // The app tier's adapter surfaces (components/shared/app-theme.css) are cards.
+              '.glass-fill,.glass-interactive,[data-jelly="card"],[data-liquid-surface],.app-theme [class~="bg-(--app-surface)"]',
+            )
           ? 'fill'
           : el.matches(
                 '.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"],[data-jelly="control"]',
@@ -182,6 +196,8 @@ export function createJellyRegistry(doc: Document = document): JellyRegistry {
   let mutationTimer: ReturnType<typeof setTimeout> | undefined;
   const pendingRoots = new Set<Element>();
   let pendingRemoval = false;
+  /** A service layer was taken out of a still-connected host since the last pass (see "Lost layers"). */
+  let pendingLayerLoss = false;
 
   const notify = () => {
     visibleCache = null;
@@ -234,7 +250,8 @@ export function createJellyRegistry(doc: Document = document): JellyRegistry {
   const flushMutations = () => {
     mutationTimer = undefined;
     if (disposed) return;
-    let changed = false;
+    let changed = pendingLayerLoss;
+    pendingLayerLoss = false;
     if (pendingRemoval) {
       pendingRemoval = false;
       for (const el of [...entries.keys()]) if (!el.isConnected && untrack(el)) changed = true;
@@ -254,9 +271,18 @@ export function createJellyRegistry(doc: Document = document): JellyRegistry {
             if (isElement(r.target)) pendingRoots.add(r.target);
             continue;
           }
-          if (r.removedNodes.length) pendingRemoval = true;
+          if (r.removedNodes.length) {
+            pendingRemoval = true;
+            // `matches` on the removed nodes only: no layout, no subtree walk.
+            if (!pendingLayerLoss && isElement(r.target) && r.target.isConnected) {
+              r.removedNodes.forEach((n) => {
+                if (isElement(n) && n.matches(JELLY_LAYER_SELECTOR)) pendingLayerLoss = true;
+              });
+            }
+          }
           r.addedNodes.forEach((n) => {
-            if (isElement(n)) pendingRoots.add(n);
+            // A service layer being (re)inserted is not content: never a host, never a subtree to walk.
+            if (isElement(n) && !n.matches(JELLY_LAYER_SELECTOR)) pendingRoots.add(n);
           });
         }
         if (pendingRoots.size || pendingRemoval) scheduleMutations();

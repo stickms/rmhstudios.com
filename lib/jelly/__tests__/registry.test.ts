@@ -218,6 +218,54 @@ describe('discovery', () => {
     reg.dispose();
   });
 
+  it('notifies when a service layer is wiped out of a still-connected host (React setTextContent)', () => {
+    // Regression (testing/e2e/jelly-interaction.mjs): membership does not change when React replaces a <Button>'s
+    // text, so the registry used to stay silent and the carrier service kept `data-jelly-flow="on"` on a host whose
+    // carrier was gone. A removed layer node must reach every consumer in the next batched pass.
+    const btn = new El(['[data-slot="button"]']);
+    root.append(btn);
+    const reg = createJellyRegistry(doc);
+    const changed = vi.fn();
+    reg.onChange(changed);
+    const carrier = new El(['.jelly-flow']);
+    const rim = new El(['canvas[data-liquid-glass]', 'canvas']);
+    btn.append(carrier, rim);
+    // Adding our own layers is not content: never a host walk, never a notification.
+    mo[0]!.cb([{ type: 'childList', target: btn, addedNodes: [carrier, rim], removedNodes: [] }]);
+    vi.runOnlyPendingTimers();
+    expect(changed).not.toHaveBeenCalled();
+    // setTextContent: every child goes, the host stays.
+    carrier.remove();
+    rim.remove();
+    const text = { nodeType: 3 };
+    mo[0]!.cb([
+      { type: 'childList', target: btn, addedNodes: [text], removedNodes: [carrier, rim] },
+    ]);
+    mo[0]!.cb([{ type: 'childList', target: btn, addedNodes: [], removedNodes: [text] }]);
+    expect(changed).not.toHaveBeenCalled(); // batched, not per mutation
+    vi.runOnlyPendingTimers();
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(reg.entryFor(btn as unknown as Element)).toBeDefined();
+    // A plain content removal (no layer) changes nothing.
+    changed.mockClear();
+    mo[0]!.cb([
+      { type: 'childList', target: btn, addedNodes: [], removedNodes: [new El(['span'])] },
+    ]);
+    vi.runOnlyPendingTimers();
+    expect(changed).not.toHaveBeenCalled();
+    reg.dispose();
+  });
+
+  it('maps the app tier adapter surfaces to cards (fill)', () => {
+    const surface = new El(['[data-liquid-surface]']);
+    const adapter = new El(['.app-theme [class~="bg-(--app-surface)"]']);
+    root.append(surface, adapter);
+    const reg = createJellyRegistry(doc);
+    expect(reg.entryFor(surface as unknown as Element)?.role).toBe('fill');
+    expect(reg.entryFor(adapter as unknown as Element)?.role).toBe('fill');
+    reg.dispose();
+  });
+
   it('re-evaluates a host whose opt-out attribute changes', () => {
     const card = new El(['.glass-fill']);
     root.append(card);

@@ -384,6 +384,107 @@ describe('installJellyPhysics', () => {
     expect(inlineClean(btn)).toBe(true);
   });
 
+  it('a held press leaves plastic memory; the loop runs until it has decayed and the body is cleared', () => {
+    // Regression (testing/e2e/liquid-glass.mjs, 2026-10-23): a press held past plasticHoldMs leaves plastic memory in
+    // the rest target. The springs settled ON that (still decaying) target, `settled` stopped the frames, plastic only
+    // ages inside a step so it never reached 0, the body was never asleep, never cleared — `data-jelly-body` and a
+    // `scale: 1.0004 1.0003` stayed on the card until some unrelated pointer frame stepped it again.
+    install();
+    const card = make('div', {
+      cls: ['glass-fill'],
+      box: { left: 0, top: 0, width: 260, height: 190 },
+    });
+    const elsewhere = make('div');
+    body.append(card, elsewhere);
+    fire('pointerover', card, 84, 49);
+    step(10);
+    fire('pointerdown', card, 84, 49);
+    step(30);
+    clock += 480; // the press is HELD (the pressed body idles at its pose without frames meanwhile)
+    fire('pointerup', card, 84, 49);
+    step(40);
+    fire('pointermove', elsewhere, 2, 700); // hover leave: rest target = plastic memory
+    let n = 0;
+    while (frames.length && n < 2000) {
+      step(1);
+      n++;
+      // A body nobody holds is never left written without a queued frame.
+      if (card.hasAttribute('data-jelly-body')) expect(frames.length).toBeGreaterThan(0);
+    }
+    expect(n).toBeLessThan(2000);
+    // Asleep means cleared with its inline values restored exactly, never "stopped but still written".
+    expect(inlineClean(card)).toBe(true);
+    // No stale body survives for an unrelated later frame to write.
+    const before = rafCalls;
+    fire('pointermove', elsewhere, 600, 400);
+    fire('pointerdown', elsewhere, 600, 400);
+    fire('pointerup', elsewhere, 600, 400);
+    expect(rafCalls).toBe(before);
+    expect(inlineClean(card)).toBe(true);
+  });
+
+  it('under jittery frames no released body stalls before it sleeps (seeded sweep)', () => {
+    let r = 7919;
+    const rnd = () => (r = (r * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const jitter = () => 16 + Math.floor(rnd() * 64);
+    for (let run = 0; run < 40; run++) {
+      teardown();
+      setup();
+      install();
+      const card = make('div', {
+        cls: ['glass-fill'],
+        box: { left: 0, top: 0, width: 260, height: 190 },
+      });
+      body.append(card);
+      const x = 20 + Math.floor(rnd() * 220);
+      const y = 20 + Math.floor(rnd() * 160);
+      fire('pointerover', card, x, y);
+      step(10);
+      fire('pointerdown', card, x, y);
+      step(20);
+      clock += 300 + Math.floor(rnd() * 900);
+      fire('pointerup', card, x, y);
+      for (let i = 0; i < 40 && frames.length; i++) step(1, jitter());
+      fire('pointermove', body, 2, 700);
+      for (let i = 0; i < 2000 && frames.length; i++) step(1, jitter());
+      expect(frames).toHaveLength(0);
+      expect(inlineClean(card)).toBe(true);
+    }
+  });
+
+  it("a card's delegate link is never a body of its own: the card is (testing/e2e/ui-stability.mjs)", () => {
+    install();
+    const card = make('article', {
+      cls: ['rmhark', 'glass-fill'],
+      attrs: { 'data-evert': '' },
+      box: { left: 0, top: 0, width: 400, height: 200 },
+    });
+    const link = make('a', {
+      attrs: { href: '#post-0', 'data-evert-delegate': '' },
+      box: { left: 0, top: 0, width: 400, height: 160 },
+    });
+    const text = make('strong');
+    const action = make('button', { box: { left: 10, top: 165, width: 60, height: 30 } });
+    link.append(text);
+    card.append(link, action);
+    body.append(card);
+    fire('pointerover', text, 3, 40);
+    step(20);
+    expect(card.hasAttribute('data-jelly-body')).toBe(true);
+    expect(link.hasAttribute('data-jelly-body')).toBe(false);
+    expect(link.style.scale).toBe('');
+    expect(link.style.translate).toBe('');
+    // A sibling action keeps its own body.
+    fire('pointerdown', action, 30, 180);
+    step(5);
+    expect(action.hasAttribute('data-jelly-active')).toBe(true);
+    fire('pointerup', action, 30, 180);
+    fire('pointermove', body, 900, 900);
+    settle();
+    expect(inlineClean(card)).toBe(true);
+    expect(inlineClean(action)).toBe(true);
+  });
+
   it('reads geometry once per activation and never per pointer move', () => {
     install();
     const card = make('a', { cls: ['glass-fill'], attrs: { href: '/x' } });

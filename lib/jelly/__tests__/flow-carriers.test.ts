@@ -88,8 +88,11 @@ class FakeEl {
   get firstChild() {
     return this.childNodes[0] ?? null;
   }
+  get children() {
+    return this.childNodes.filter((c) => !c.isText);
+  }
   get childElementCount() {
-    return this.childNodes.filter((c) => !c.isText).length;
+    return this.children.length;
   }
   get hidden() {
     return this.attrs.has('hidden');
@@ -329,6 +332,48 @@ describe('React safety', () => {
     const { el } = host({ textOnly: true });
     install();
     expect(carrierOf(el)).toBeNull();
+  });
+
+  it('a <Button> going element → text → element: the wipe clears data-jelly-flow, the return re-attaches', () => {
+    // Regression (testing/e2e/jelly-interaction.mjs): React's setTextContent deleted the carrier and the host kept
+    // `data-jelly-flow="on"` (the floor stayed hidden behind a carrier that no longer existed). The registry now
+    // notifies on a removed layer (registry.test.ts); the next pass must clear the attribute and forget the carrier.
+    const { el } = host({ attrs: { 'data-slot': 'button' }, role: 'control' });
+    install();
+    expect(carrierOf(el)).not.toBeNull();
+    expect(el.getAttribute('data-jelly-flow')).toBe('on');
+    el.textContent = 'Saved'; // React: children became a lone string
+    registry.change(); // the registry's lost-layer notification
+    settle();
+    expect(carrierOf(el)).toBeNull();
+    expect(el.hasAttribute('data-jelly-flow')).toBe(false);
+    expect(el.style.getPropertyValue('--jelly-flow-speed')).toBe('');
+    // Text → element children (resetTextContent, then append): eligible again, one carrier, first child.
+    el.textContent = '';
+    for (const c of [...el.childNodes]) c.remove();
+    el.append(new FakeEl('SPAN'));
+    registry.change();
+    settle();
+    expect(el.childNodes.filter((c) => c.classes.has('jelly-flow'))).toHaveLength(1);
+    expect(el.childNodes[0]!.classes.has('jelly-flow')).toBe(true);
+    expect(el.getAttribute('data-jelly-flow')).toBe('on');
+  });
+
+  it("a text-only host holding only the engine's rim canvas is still text-only (no carrier)", () => {
+    // Regression (testing/e2e/jelly-interaction.mjs): once the engine re-attaches its rim canvas after a React text
+    // wipe, the canvas made `childElementCount` 1 and the next pass injected a carrier React would wipe again.
+    const { el } = host({ attrs: { 'data-slot': 'button' }, role: 'control', textOnly: true });
+    const rim = new FakeEl('CANVAS', ['liquid-glass-canvas'], { 'data-liquid-glass': '' });
+    const haze = new FakeEl('CANVAS', ['jelly-haze-canvas']);
+    el.append(haze, rim);
+    install();
+    expect(carrierOf(el)).toBeNull();
+    expect(el.hasAttribute('data-jelly-flow')).toBe(false);
+    // Real content arrives: now it carries one.
+    el.insertBefore(new FakeEl('SPAN'), rim);
+    registry.change();
+    settle();
+    expect(carrierOf(el)).not.toBeNull();
   });
 
   it('re-inserts a carrier removed from under it on the next pass', () => {

@@ -195,11 +195,21 @@ export const OPT_OUT_SCOPE_SELECTOR =
 
 /**
  * Every jelly host: the glass role classes, the app tier's `.app-glass`, the engine's explicit opt-in, eversion
- * hosts, solid controls and fields, toasts and anything tagged `data-jelly`. A superset of the engine's slab selector,
+ * hosts, solid controls and fields, toasts, anything tagged `data-jelly`, and the app tier's adapter surfaces
+ * (`[data-liquid-surface]`, `.app-theme` boxes on `bg-(--app-surface)`; components/shared/app-theme.css keys their
+ * carrier on `data-jelly-flow`, and the registry ranks them as cards). A superset of the engine's slab selector,
  * so arcs and physics land on exactly the surfaces that can be drawn as slabs, and more.
  */
 export const JELLY_SELECTOR =
-  '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.glass-inset,.glass-interactive,.app-glass,[data-liquid-glass],[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"],[data-sonner-toast],[data-jelly]';
+  '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.glass-inset,.glass-interactive,.app-glass,[data-liquid-glass],[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"],[data-sonner-toast],[data-jelly],[data-liquid-surface],.app-theme [class~="bg-(--app-surface)"]';
+
+/**
+ * The nodes the jelly services inject into hosts (or `<body>`) that React never knows about: the rim canvas, the haze
+ * canvas, the CSS carrier and the arc layer. Never hosts, never "content changed"; the registry notifies when one is
+ * removed from a host (React's `setTextContent` wipe), so its owner can re-attach or clear its host attribute.
+ */
+export const JELLY_LAYER_SELECTOR =
+  'canvas[data-liquid-glass],.jelly-haze-canvas,.jelly-flow,.jelly-arc-layer';
 
 /** The handheld tier's query, copied exactly from `handheld-tier.test.ts` (which pins it here). */
 export const HANDHELD_QUERY = '(pointer: coarse) and (max-width: 1024px)';

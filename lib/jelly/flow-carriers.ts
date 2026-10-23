@@ -47,9 +47,12 @@
  * React never knows about, added to a host React owns. React only ever inserts relative to its own nodes and removes
  * its own nodes, so a foreign first child survives keyed moves, inserts and removals. The one React path that would
  * wipe it is `setTextContent`: a host whose ONLY child is a string has its text replaced via `textContent`, which
- * deletes every child. Hosts with no element child (text-only or empty) are therefore never given a carrier, and as a
- * second line every pass re-inserts a carrier that was removed from under it. The service mounts from an idle
- * callback after hydration (`hooks/useLiquidInteractions.ts`), so it never adds nodes React is about to hydrate.
+ * deletes every child. Hosts with no element child (text-only or empty) are therefore never given a carrier — the
+ * services' own layers (`JELLY_LAYER_SELECTOR`: the engine re-attaches its rim canvas after such a wipe) do not count
+ * as children — and as a second line every pass re-inserts a carrier that was removed from under it, or, when its host
+ * has become text-only, detaches it and clears `data-jelly-flow`. The registry notifies on such a removal. The service
+ * mounts from an idle callback after hydration (`hooks/useLiquidInteractions.ts`), so it never adds nodes React is
+ * about to hydrate.
  *
  * ## `html[data-scrolling]`
  *
@@ -71,6 +74,7 @@ import {
 } from './registry';
 import {
   AMBIENT_BOUNDS,
+  JELLY_LAYER_SELECTOR,
   jellyBudget,
   jellyMode,
   onJellyEnvChange,
@@ -316,12 +320,13 @@ export function installJellyFlow(doc: Document, options: JellyFlowOptions = {}):
   const structurallyEligible = (el: Element): boolean => {
     if (VOID_TAGS.has(el.tagName.toLowerCase())) return false;
     if (el.matches(CARRIER_EXCLUDE)) return false;
-    // React replaces a lone string child via `textContent`, which would delete the carrier. Our own node does not
-    // count: it is the first child once attached.
-    const own = carriers.get(el)?.node ?? null;
-    let elements = el.childElementCount;
-    if (own && own.parentNode === el) elements--;
-    return elements > 0;
+    // React replaces a lone string child via `textContent`, which would delete the carrier. Only CONTENT counts: our
+    // own carrier and the engine's rim / haze canvases (`JELLY_LAYER_SELECTOR`) are not React's children, and a
+    // text-only `<Button>` holding just its rim canvas is still text-only to React.
+    if (el.childElementCount === 0) return false;
+    for (const child of Array.from(el.children))
+      if (!child.matches(JELLY_LAYER_SELECTOR)) return true;
+    return false;
   };
 
   const pass = () => {

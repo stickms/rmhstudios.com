@@ -60,6 +60,7 @@ import {
   APP_HIGH_CONTRAST_SELECTOR,
   CALM,
   DEGRADED_ROOT_SELECTOR,
+  JELLY_LAYER_SELECTOR,
   jellyBudget,
   jellyMode,
   jellyMotionLevel,
@@ -107,7 +108,7 @@ const SELECTOR =
 const EXCLUDE =
   '[data-jelly="off"],[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,.radial-globe__stage,.radial-hub__orb,.eversion-overlay,canvas,input,textarea,select';
 /** Nodes this engine and the other jelly services insert: never surfaces, never "content changed". */
-const OWN_LAYERS = 'canvas[data-liquid-glass],.jelly-haze-canvas,.jelly-flow,.jelly-arc-layer';
+const OWN_LAYERS = JELLY_LAYER_SELECTOR;
 /** Rim dispersion relative to crown glass (01 §2.7). */
 const JELLY_DISPERSION = 0.8;
 /** Release energy → pulse strength. Strikes pulse at their full energy. */
@@ -648,6 +649,37 @@ export function installLiquidGlass(doc: Document = document): () => void {
       reconcile();
     });
   };
+  /**
+   * Put back a rim or haze canvas that was taken out of its host from under us. React's `setTextContent` (a `<Button>`
+   * whose children become a lone string: "Save" → "Saved", icon + text → text) wipes every child of the host, ours
+   * included, while the host stays tracked and admitted — without this the host kept `data-liquid-canvas="on"` and
+   * the engine kept drawing into a detached canvas, so the button lost its rim for good. The SAME canvas is
+   * re-attached, so its last drawn frame survives and the rim never blinks; the next React text update may wipe it
+   * again and this puts it back again (one microtask, no layout read). Text-only hosts keep their rim on purpose:
+   * most buttons are text-only, and unlike the carrier (a first child, skipped on text-only hosts) the rim is the
+   * material itself. Runs on every reconcile; the mutation observer schedules one for each such removal.
+   */
+  const repairLayers = () => {
+    for (const s of surfaces.values()) {
+      if (!s.canvas || s.canvas.parentNode === s.el) {
+        if (s.haze && s.haze.parentNode !== s.el && s.canvas) {
+          s.el.insertBefore(s.haze, s.canvas);
+          s.hazeFresh = true;
+        }
+        continue;
+      }
+      if (!s.el.isConnected) {
+        deactivate(s);
+        continue;
+      }
+      if (s.haze) s.el.append(s.haze);
+      s.el.append(s.canvas);
+      if (s.el.getAttribute('data-liquid-canvas') !== 'on')
+        s.el.setAttribute('data-liquid-canvas', 'on');
+      s.dirty = true;
+      if (s.haze) s.hazeFresh = true;
+    }
+  };
   const reconcile = () => {
     if (disposed) return;
     if (off()) {
@@ -655,6 +687,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       stopFrames();
       return;
     }
+    repairLayers();
     const want = new Set(
       admit(
         [...surfaces.values()].map((s) => ({
@@ -681,6 +714,11 @@ export function installLiquidGlass(doc: Document = document): () => void {
   const drawSurface = (s: Surface, rect: DOMRect): boolean => {
     const r = renderer;
     if (!r?.ready || !s.canvas || !s.el.isConnected) return false;
+    // Never draw into a canvas that is no longer in its host: put it back first (see `repairLayers`).
+    if (s.canvas.parentNode !== s.el) {
+      scheduleReconcile();
+      return false;
+    }
     const padLeft = s.el.clientLeft;
     const padTop = s.el.clientTop;
     const w = s.width;
@@ -750,6 +788,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
   const drawHaze = (s: Surface, time: number): boolean => {
     const r = renderer;
     if (!r?.hazeReady || !s.haze || !s.el.isConnected) return false;
+    if (s.haze.parentNode !== s.el) {
+      scheduleReconcile();
+      return false;
+    }
     const w = s.width;
     const h = s.height;
     if (w < 1 || h < 1) return false;

@@ -20,9 +20,10 @@
  *
  * ## Cost rules (02 §4)
  *
- * - **Idle at rest.** A frame is scheduled only by input (or an arc strike / drag report) and re-scheduled only while
- *   a body is still heading for its target. A page with no pointer activity runs no loop; a hovered body that has
- *   arrived at its hover pose runs none either until the pointer moves again.
+ * - **Idle at rest.** A frame is scheduled only by input (or an arc strike / drag report) and re-scheduled while any
+ *   body is awake. A page with no pointer activity runs no loop; a HELD body (hovered, pressed, dragged) that has
+ *   arrived at its pose runs none either until the pointer moves again. A body nobody holds has exactly one exit —
+ *   `envelopeAsleep` (springs at rest AND plastic memory gone), where it is cleared — and keeps its frames until then.
  * - **Read → step → write.** Every frame reads first (activation rects, the one `getComputedStyle` per activation,
  *   rect refreshes after a scroll/resize, the inline `transform` string for framer ownership), then steps with no
  *   DOM access, then writes `translate` / `scale` / `will-change` (+ corner-flex `border-radius` on small controls)
@@ -122,6 +123,8 @@ const EXCLUDED_ANCESTOR =
   '[data-gesture]:not([data-gesture="hold"]),.radial-globe__stage,.eversion-overlay,.evert-ghost';
 /** Running text: an untagged link inside one of these is a prose link and never a body. */
 const PROSE_SELECTOR = 'p,blockquote,figcaption,dd,.prose';
+/** A link that fills its `[data-evert]` card and stands for it (components/radial/WheelCard.tsx). */
+const DELEGATE_ATTR = 'data-evert-delegate';
 /** The engine marks an admitted shader slab with this attribute (`lib/liquid/glass/engine.ts`). */
 const ADMITTED_ATTR = 'data-liquid-canvas';
 /** Attributes `resolveSoftPolicy` reads. */
@@ -458,7 +461,15 @@ export function installJellyPhysics(doc: Document = document): () => void {
   const bodyElFrom = (target: EventTarget | null): HTMLElement | null => {
     const t = target as Element | null;
     if (!t || typeof t.closest !== 'function') return null;
-    return t.closest<HTMLElement>(SOFT_BODY_SELECTOR);
+    const el = t.closest<HTMLElement>(SOFT_BODY_SELECTOR);
+    // A card's body link (`data-evert-delegate`) fills the card and stands for it, as it does for the eversion layer
+    // (`controlAt` in lib/evert-auto.ts): the CARD is the soft body, so host, glass and text move together. The link
+    // as a body of its own slid the text and hit area off a still card's glass. Sibling actions keep their own body.
+    if (el?.hasAttribute(DELEGATE_ATTR)) {
+      const host = el.parentElement?.closest<HTMLElement>('[data-evert]');
+      if (host?.matches(SOFT_BODY_SELECTOR)) return host;
+    }
+    return el;
   };
 
   const impulse = (b: Body, dx: number, dy: number, peak: number) => {
@@ -914,9 +925,13 @@ export function installJellyPhysics(doc: Document = document): () => void {
         setLatticeDrive(el, drive);
         b.latticeDrive = drive;
       }
+      // The ONE sleep decision. A body nobody holds either sleeps now (cleared: inline values restored exactly) or
+      // keeps its frames until it does — `b.settled` (springs on THIS frame's target) never stops an idle body,
+      // because a released target still carries plastic memory that only ages inside `stepEnvelope`. Before this,
+      // a body settled on its plastic target asked for no frame, never aged, never slept, and the next unrelated
+      // pointer frame wrote its stale pose (`scale: 1.0004 1.0003`) long after the gesture ended.
       const busy = !!(b.press || b.drag || b.hovering);
-      const asleep = !busy && (!b.policy.envelope || envelopeAsleep(b.env));
-      if (asleep) {
+      if (!busy && (!b.policy.envelope || envelopeAsleep(b.env))) {
         clear(b);
         continue;
       }
@@ -932,7 +947,9 @@ export function installJellyPhysics(doc: Document = document): () => void {
         b.cornerWritten = false;
         b.lastRadii = '';
       }
-      if (!b.settled) again = true;
+      // Only a held body (hovered, pressed, dragged) that has arrived may idle without frames: the input that moves
+      // it on (a pointermove, the release) asks for the next one.
+      if (!busy || !b.settled) again = true;
     }
     if (again && bodies.size > 0) requestFrame();
     if (!raf) lastFrame = 0;
