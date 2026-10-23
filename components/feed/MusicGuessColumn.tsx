@@ -6,7 +6,7 @@ import { Music, Plus, X, Check, Lightbulb, Trophy } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { Input } from'@/components/ui/input';
 import { Textarea } from'@/components/ui/textarea';
-import { OverlayPanel } from'@/components/ui/overlay-panel';
+import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -294,26 +294,13 @@ function PlayModal({
  // it lets the page ghost through its own text. Floating UI is L4, and that is
  // CI-enforced (design-consistency.test.ts).
  return (
- <OverlayPanel open onClose={onClose} closeLabel={t('close', { defaultValue:'Close'})}>
- <div
- role="dialog"
- aria-modal="true"
- className="relative z-10 w-full max-w-md p-5 glass-overlay"
- onMouseDown={(e) => e.stopPropagation()}
- >
- <div className="mb-4 flex items-center justify-between gap-2">
- <h2 className="flex items-center gap-2 font-display text-lg font-bold text-site-text">
+ <Dialog open onOpenChange={(o) => !o && onClose()}>
+ <DialogContent aria-describedby={undefined} className="max-w-md p-5 sm:p-5">
+ <div className="mb-4 flex items-center justify-between gap-2 pr-11">
+ <DialogTitle className="flex items-center gap-2 font-display text-lg font-bold text-site-text">
  <Music className="h-5 w-5 text-site-accent"aria-hidden />{''}
  {t('guess-the-song', { defaultValue:'Guess the Song'})}
- </h2>
- <Button
- variant="ghost"
- size="icon-sm"
- onClick={onClose}
- aria-label={t('close', { defaultValue:'Close'})}
- >
- <X className="h-5 w-5"aria-hidden />
- </Button>
+ </DialogTitle>
  </div>
 
  {!puzzle ? (
@@ -400,7 +387,7 @@ function PlayModal({
  )}
  </>
  )}
- </div>
- </OverlayPanel>
+ </DialogContent>
+ </Dialog>
  );
 }
