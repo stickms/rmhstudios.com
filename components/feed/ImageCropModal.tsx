@@ -14,7 +14,6 @@ import {
 } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Slider } from '@/components/ui/slider';
 
 interface ImageCropModalProps {
  imageSrc: string;
@@ -158,14 +157,15 @@ export function ImageCropModal({
  {/* Zoom slider */}
  <div className="flex items-center gap-3">
  <ZoomOut className="w-4 h-4 text-site-text-dim shrink-0"/>
- <Slider
+ <input
+ type="range"
  min={minZoom}
  max={3}
  step={0.05}
- value={[zoom]}
- onValueChange={([v]) => setZoom(v)}
- aria-label={t('crop-zoom', { defaultValue:'Zoom'})}
- className="flex-1"
+ value={zoom}
+ onChange={(e) => setZoom(Number(e.target.value))}
+ aria-label={t('crop-image', { defaultValue:'Crop Image'})}
+ className="flex-1 accent-site-accent"
  />
  <ZoomIn className="w-4 h-4 text-site-text-dim shrink-0"/>
  </div>

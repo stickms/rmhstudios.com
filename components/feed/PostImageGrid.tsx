@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useId, useRef } from'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { DialogPortal, DialogTitle } from '@/components/ui/dialog';
+import { DialogTitle } from '@/components/ui/dialog';
 import { X, ChevronLeft, ChevronRight } from'lucide-react';
 import { useTranslation } from'react-i18next';
 import { BlurImage } from'@/components/ui/BlurImage';
@@ -288,7 +288,7 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
 
  return (
  <DialogPrimitive.Root open modal={false} onOpenChange={(o) => !o && onClose()}>
- <DialogPortal>
+ <DialogPrimitive.Portal>
  <DialogPrimitive.Content
  ref={overlayRef}
  aria-labelledby={labelId}
@@ -367,7 +367,7 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  </div>
  )}
  </DialogPrimitive.Content>
- </DialogPortal>
+ </DialogPrimitive.Portal>
  </DialogPrimitive.Root>
  );
 }
