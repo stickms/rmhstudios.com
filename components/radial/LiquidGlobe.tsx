@@ -941,8 +941,11 @@ export function LiquidGlobe({
      page's one GL context and program are built there, off the open.
 
      The CSS glass stays underneath as the fallback, and the stage only drops it
-     (`data-jelly="on"`) once the material has drawn its first frame, so the swap
-     happens inside one frame and there is never a frame with neither. */
+     (`data-globe-material="shader"`) once the material has drawn its first
+     frame, so the swap happens inside one frame and there is never a frame with
+     neither. Never `data-jelly`: that is the Plasmatic Jelly system's host
+     marker, and on the stage it painted a square haze slab and rim behind the
+     round glass. */
   useEffect(() => {
     let cancelled = false;
     let loading = false;
@@ -1001,7 +1004,7 @@ export function LiquidGlobe({
       if (reduced || !jellyEligible() || preferences.some((q) => q.matches)) {
         if (glass?.canvas.parentElement === host) glass.canvas.remove();
         jellyGlass.current = null;
-        delete stage.dataset.jelly;
+        delete stage.dataset.globeMaterial;
         return;
       }
       if (!factory) {
@@ -1025,7 +1028,7 @@ export function LiquidGlobe({
       g.onChange = sync;
       if (!g.ready) {
         jellyGlass.current = null;
-        delete stage.dataset.jelly;
+        delete stage.dataset.globeMaterial;
         return;
       }
       const probe = document.createElement('span');
@@ -1050,7 +1053,7 @@ export function LiquidGlobe({
       jellyGlass.current = g;
       jellyDirty.current = true;
       dirty.current = true;
-      stage.dataset.jelly = 'on';
+      stage.dataset.globeMaterial = 'shader';
     };
     const observer = new MutationObserver(sync);
     observer.observe(root, { attributes: true, attributeFilter: ['class', 'style'] });
@@ -1069,7 +1072,7 @@ export function LiquidGlobe({
       if (glass?.onChange === sync) glass.onChange = null;
       if (glass?.canvas.parentElement === host) glass.canvas.remove();
       jellyGlass.current = null;
-      if (stage) delete stage.dataset.jelly;
+      if (stage) delete stage.dataset.globeMaterial;
     };
   }, [jelly, jellyFrame, reduced, ambient]);
 
@@ -1449,6 +1452,108 @@ export function LiquidGlobe({
     const selfRun = { e: -1, fit: 1 };
 
     /**
+     * The glass body during a self-eversion.
+     *
+     * The body is a round disc (the CSS glass and the jelly coat inside it), so
+     * by itself it could only sit still while the wires everted in front of it.
+     * The everting surface is not round, but its silhouette has a size, a
+     * stretch, a tilt and an offset, and those are what the eye follows. So every
+     * frame the cage's own samples, through exactly the cage's projection (drawn
+     * rotation, bulge fit, perspective, lens), are reduced to their second
+     * moments twice: once for the surface as it is now and once for the resting
+     * sphere at the same rotation. The affine map that carries the one onto the
+     * other is `T = √Σₑ · √Σ₀⁻¹` with the difference of the means as its
+     * translation, and that is the disc's transform. At `e = 0` it is exactly the
+     * identity, and at `e = 1` too: the end surface is the antipode, and this
+     * cage is its own antipode, so the run starts and lands on the untouched
+     * disc. Where the skin draws the surface (`data-skin="on"`) the disc fades
+     * out under it on the same path; everywhere else (high contrast, reduced
+     * transparency, `perf-lite`, no WebGL2) this IS the body turning inside out.
+     */
+    const momNow = new Float64Array(6);
+    const momRest = new Float64Array(6);
+    const cageMoments = (m: Float64Array, e: number, fit: number, out: Float64Array) => {
+      out.fill(0);
+      const ring = (ux: number, uy: number, uz: number, vx: number, vy: number, vz: number, oy: number) => {
+        // Every other sample: the moments do not need the cage's full resolution.
+        for (let s = 0; s < RING_SAMPLES; s += 2) {
+          const ct = RING_COS[s]!;
+          const st = RING_SIN[s]!;
+          let bx = ux * ct + vx * st;
+          let by = uy * ct + vy * st + oy;
+          let bz = uz * ct + vz * st;
+          if (e > 0) {
+            evert(Math.atan2(bx, bz), Math.asin(by < -1 ? 1 : by > 1 ? -1 : -by), e, EVERT_OUT, 0);
+            bx = EVERT_OUT[0]! * fit;
+            by = EVERT_OUT[1]! * fit;
+            bz = EVERT_OUT[2]! * fit;
+          }
+          const x1 = m[0]! * bx + m[1]! * by + m[2]! * bz;
+          const y2 = m[3]! * bx + m[4]! * by + m[5]! * bz;
+          const z2 = m[6]! * bx + m[7]! * by + m[8]! * bz;
+          const k = kAt(z2);
+          let sx = x1 * k;
+          let sy = y2 * k;
+          if (z2 < 0) {
+            const l = lensScale(sx, sy, z2);
+            sx *= l;
+            sy *= l;
+          }
+          out[0] = out[0]! + 1;
+          out[1] = out[1]! + sx;
+          out[2] = out[2]! + sy;
+          out[3] = out[3]! + sx * sx;
+          out[4] = out[4]! + sy * sy;
+          out[5] = out[5]! + sx * sy;
+        }
+      };
+      for (const a of MERIDIANS) {
+        const ca = Math.cos(a * DEG);
+        const sa = Math.sin(a * DEG);
+        ring(ca, 0, -sa, 0, 1, 0, 0);
+      }
+      for (const latitude of PARALLELS) {
+        const cl = Math.cos(latitude * DEG);
+        ring(cl, 0, 0, 0, 0, cl, -Math.sin(latitude * DEG));
+      }
+    };
+    /** The disc's transform for this frame of a self-eversion, as a CSS `matrix()`; '' when there is no change to make. */
+    const bodyTransform = (m: Float64Array, R: number): string => {
+      cageMoments(m, selfRun.e, selfRun.fit, momNow);
+      cageMoments(m, 0, 1, momRest);
+      const stats = (o: Float64Array) => {
+        const n = o[0]! || 1;
+        const mx = o[1]! / n;
+        const my = o[2]! / n;
+        return { mx, my, a: o[3]! / n - mx * mx, d: o[4]! / n - my * my, b: o[5]! / n - mx * my };
+      };
+      const now = stats(momNow);
+      const rest = stats(momRest);
+      // Symmetric square root of a 2×2 SPD matrix [[a, b], [b, d]].
+      const sqrtm = (q: { a: number; b: number; d: number }) => {
+        const det = Math.max(0, q.a * q.d - q.b * q.b);
+        const sd = Math.sqrt(det);
+        const t = Math.sqrt(Math.max(1e-12, q.a + q.d + 2 * sd));
+        return { a: (q.a + sd) / t, b: q.b / t, d: (q.d + sd) / t };
+      };
+      const sn = sqrtm(now);
+      const sr = sqrtm(rest);
+      const det = sr.a * sr.d - sr.b * sr.b;
+      if (!(det > 1e-9)) return '';
+      // T = √Σₑ · (√Σ₀)⁻¹
+      const ia = sr.d / det;
+      const ib = -sr.b / det;
+      const id = sr.a / det;
+      const t00 = sn.a * ia + sn.b * ib;
+      const t01 = sn.a * ib + sn.b * id;
+      const t10 = sn.b * ia + sn.d * ib;
+      const t11 = sn.b * ib + sn.d * id;
+      const tx = (now.mx - rest.mx) * R;
+      const ty = (now.my - rest.my) * R;
+      return `matrix(${t00.toFixed(4)},${t10.toFixed(4)},${t01.toFixed(4)},${t11.toFixed(4)},${tx.toFixed(2)},${ty.toFixed(2)})`;
+    };
+
+    /**
      * Screen-space position + depth of every pin, and what the reticle holds.
      *
      * The rotation is passed in rather than read from `rot.current` because
@@ -1752,11 +1857,14 @@ export function LiquidGlobe({
       primeWaves(now);
       const soft = jelly.active();
 
-      // The glass disc stays put: the coat shader draws the deformed silhouette itself, from the same field the cage
-      // and pins are displaced by, so there is no whole-disc transform to disagree with the local dough.
-      if (paintedGlass.current !== 'none' && glassRef.current) {
-        paintedGlass.current = 'none';
-        glassRef.current.style.transform = '';
+      // The glass disc stays put for the dough: the coat shader draws the deformed silhouette itself, from the same
+      // field the cage and pins are displaced by, so there is no whole-disc transform to disagree with the local
+      // dough. The one exception is a self-eversion, when the disc follows the everting surface (`bodyTransform`).
+      const body = selfRun.e >= 0 ? bodyTransform(DM, R) : '';
+      const bodyKey = body || 'none';
+      if (paintedGlass.current !== bodyKey && glassRef.current) {
+        paintedGlass.current = bodyKey;
+        glassRef.current.style.transform = body;
       }
       // A small shaded contact footprint explains the depth change even at the
       // centre of the disc, where a symmetric indentation has no 2D translation.

@@ -796,7 +796,10 @@ body:has(.radial-shell) .call-banner {
   transition: opacity 0.28s ease;
 }
 .radial-globe__stage[data-skin='on'] .radial-globe__glass,
-.rad-globe-dock:has(.radial-globe__stage[data-skin='on']) .rad-globe-dock__shimmer {
+/* The shimmer ring sits outside the globe and cannot follow the surface the way
+   the glass body does (LiquidGlobe, `bodyTransform`), so it steps out for every
+   self-eversion, skin or not. */
+.rad-globe-dock:has(.radial-globe[data-self-evert]) .rad-globe-dock__shimmer {
   opacity: 0;
   transition-duration: 0.16s;
 }
@@ -1821,7 +1824,8 @@ html.reduce-transparency .radial-globe__contact,
    specular, transmission, caustic and the accent's subsurface tint, drawn over
    the cage inside the glass disc — so it takes the soft body's affine transform
    with the disc, and its own shader follows the local lobe. LiquidGlobe sets
-   `data-jelly="on"` on the stage once the material has drawn its first frame;
+   `data-globe-material="shader"` on the stage once the material has drawn its first frame
+   (not `data-jelly`, which would make the stage a Plasmatic Jelly host);
    until then (and wherever it is not eligible — high contrast, reduced
    transparency, `perf-lite`, no WebGL) the CSS glass above is the material.
 
@@ -1843,23 +1847,23 @@ html.reduce-transparency .radial-globe__contact,
 }
 /* The shader owns the body, rim hairline and silhouette now, so the CSS disc stops clipping and stops drawing them.
    Only the drop shadow stays CSS (a static ellipse on the surface below: it does not need to deform). */
-.radial-globe__stage[data-jelly='on'] .radial-globe__glass {
+.radial-globe__stage[data-globe-material='shader'] .radial-globe__glass {
   background: none;
   overflow: visible;
   border-radius: 0;
   box-shadow: none;
 }
-.radial-globe__stage[data-jelly='on'] .radial-globe__glass::before {
+.radial-globe__stage[data-globe-material='shader'] .radial-globe__glass::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 50%;
   box-shadow: 0 30px 70px -34px rgba(0, 0, 0, 0.5);
 }
-.radial-globe__stage[data-jelly='on'] .radial-globe__contact {
+.radial-globe__stage[data-globe-material='shader'] .radial-globe__contact {
   display: none;
 }
-.radial-globe__stage[data-jelly='on'] .radial-globe__glass::after {
+.radial-globe__stage[data-globe-material='shader'] .radial-globe__glass::after {
   content: none;
   animation: none;
 }

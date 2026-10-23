@@ -400,7 +400,7 @@ cheapest at:
   sheen's infinite animation is retired while the material is up.
 - **One GL context per page**, shared by every mount; the idle rehearsal builds
   it, so the real open never compiles a shader. The stage only drops the CSS
-  glass (`data-jelly="on"`) after the first frame is drawn, and a lost context
+  glass (`data-globe-material="shader"`) after the first frame is drawn, and a lost context
   hands back to it.
 - **Not everywhere.** High contrast, reduced transparency (setting or media
   query), `prefers-contrast: more`, `perf-lite` and no-WebGL keep the CSS glass;
