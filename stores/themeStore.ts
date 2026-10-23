@@ -24,7 +24,8 @@ import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 // hand-copied color map in two other files.
 //
 // The shared site ships one new social-first system in three accessibility
-// modes. Retired decorative themes self-heal to Daylight during hydration.
+// modes. Retired decorative themes self-heal to the default (Midnight) during
+// hydration; a stored `default` is a deliberate Daylight choice and is kept.
 export const SITE_STYLES = [
   { id: 'default', label: 'Daylight', icon: '☀', group: 'RMH', bg: '#ffffff' },
   { id: 'graphite', label: 'Midnight', icon: '◐', group: 'RMH', bg: '#000000' },
@@ -34,10 +35,11 @@ export const SITE_STYLES = [
 /**
  * Theme applied when the visitor has no stored/saved preference. Must stay in
  * sync with the fallback in app/routes/__root.tsx's inline themeScript and the
- * self-heal rewrite in components/Providers.tsx. Daylight (`default`, the bare
- * :root) is the site default.
+ * self-heal rewrite in components/Providers.tsx. Midnight (`graphite`) is the
+ * default for new visitors. Daylight (`default`, the bare :root) is still a
+ * valid stored choice and the pre-paint script must keep honouring it.
  */
-export const DEFAULT_STYLE: SiteStyle = 'default';
+export const DEFAULT_STYLE: SiteStyle = 'graphite';
 
 export type SiteStyle = (typeof SITE_STYLES)[number]['id'];
 

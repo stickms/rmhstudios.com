@@ -388,8 +388,8 @@ modes rather than a gallery of moods — light, dark, and the no-glass fallback:
 
 | Shipped in `SITE_STYLES` | Label               | What it is                                                                                                                                                      |
 | ------------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `default` (no class)     | **Daylight** ☀      | The site default. Strict black-&-white, ink accent, translucent white frost over a white aurora. `color-scheme: light`, document bg `#ffffff`.                  |
-| `graphite`               | **Midnight** ◐      | The dark twin: OLED-black ground, near-white ink, graphite elevated surfaces, hairline light borders, one calm blue signal. `color-scheme: dark`, bg `#000000`. |
+| `default` (no class)     | **Daylight** ☀      | Daylight stays the default for anyone who chose it. Strict black-&-white, ink accent, translucent white frost over a white aurora. `color-scheme: light`, document bg `#ffffff`. |
+| `graphite`               | **Midnight** ◐      | The site default for new visitors. The dark twin: OLED-black ground, near-white ink, graphite elevated surfaces, hairline light borders, one calm blue signal. `color-scheme: dark`, bg `#000000`. |
 | `high-contrast`          | **High contrast** ◑ | WCAG AAA, and **the absence of the material**: opaque surfaces, no blur, no glint, no aurora, 2px borders, yellow accent. Everything must survive it.           |
 
 Four more palettes stay in `globals.css` as complete, ready token sets — they
