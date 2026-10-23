@@ -1,0 +1,14 @@
+/* Plasmatic Jelly — coverage adapters (docs/plans/plasmatic-jelly/04-coverage-a11y-perf.md §2.1; master plan §5,
+   wave 3 lane W3-A owns this file).
+
+   Reserved for the central, selector-level adapters that bring surfaces the role classes do not reach onto the jelly
+   material without per-file edits: Radix popper content, sonner toasts, `[data-slot]` primitives, `[data-jelly]`
+   mode overrides (`off` | `lite` | `card` | `control`) and `[data-jelly-zone='playfield']` exclusions.
+
+   Rules for whoever fills it (same as app/jelly-material.css):
+   - tokens only (`--site-jelly-*`, `--site-glass-*`), no raw colours or radii;
+   - no backdrop-filter, no `url()` filters, no animated custom properties, no `infinite` animations;
+   - any handheld rule uses the exact query `(pointer: coarse) and (max-width: 1024px)` (handheld-tier.test.ts);
+   - jelly paint layers stay at a negative z-index inside an isolated host.
+
+   Intentionally empty in wave 1: imported by globals.css so the import graph is final before W3 lands. */

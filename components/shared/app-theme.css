@@ -144,6 +144,25 @@
   }
 }
 
+/* ── Plasmatic Jelly palette (docs/plans/plasmatic-jelly/01-material.md §4.3) ──
+   The app tier's mirror of the site's `--site-jelly-*` tokens, derived from the
+   one accent an app declares. `.app-glass` (§7) maps these onto the host knobs
+   the shader engine and the CSS carrier read (`--jelly-*`), so one material
+   contract serves both tiers. Dark default here; `.app-light` and
+   `.app-high-contrast` below. Consumed only inside color-mix(), so an engine
+   without it simply shows no haze. */
+.app-theme {
+  --app-jelly-haze: color-mix(in srgb, var(--app-text) 18%, white);
+  --app-jelly-haze-strong: color-mix(in srgb, var(--app-text) 8%, white);
+  --app-jelly-haze-pane: 0.09;
+  --app-jelly-plasma-a: var(--app-accent);
+  --app-jelly-plasma-b: color-mix(in oklch, var(--app-accent), #9b6bff 45%);
+  --app-jelly-plasma: 0.8;
+  --app-jelly-flow-speed: 1;
+  --app-jelly-quiet: 0.35;
+  --app-jelly-on: 1;
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    2. Appearance modifiers
    ══════════════════════════════════════════════════════════════════════════ */
@@ -166,6 +185,15 @@
   --app-toast-bg: #ffffff;
   --app-glass-bg: rgb(255 255 255 / 0.85);
   --app-scrim: rgb(0 0 0 / 0.4);
+  /* Jelly on a light ground: a cool milky grey (white haze vanishes on white). */
+  --app-jelly-haze: color-mix(in srgb, var(--app-text) 10%, #eef0f6);
+  --app-jelly-haze-strong: color-mix(in srgb, var(--app-text) 14%, #e4e8f0);
+  --app-jelly-haze-pane: 0.12;
+  /* A pale plasma at half gain: a saturated accent darkens a near-white ground
+     past the flicker bound (lib/__tests__/jelly-legibility.test.ts). */
+  --app-jelly-plasma-a: color-mix(in srgb, var(--app-accent) 60%, white);
+  --app-jelly-plasma-b: color-mix(in oklch, var(--app-jelly-plasma-a), #c9b5ff 45%);
+  --app-jelly-plasma: 0.5;
 }
 
 @supports (color: color-mix(in srgb, red 50%, blue)) {
@@ -204,6 +232,16 @@
   --app-glass-bg: #1a1a1a;
   --app-scrim: rgb(0 0 0 / 0.86);
   --app-focus-width: 3px;
+  /* No jelly in high contrast: every knob zero, `-on: 0` is the kill switch. */
+  --app-jelly-haze: transparent;
+  --app-jelly-haze-strong: transparent;
+  --app-jelly-haze-pane: 0;
+  --app-jelly-plasma-a: transparent;
+  --app-jelly-plasma-b: transparent;
+  --app-jelly-plasma: 0;
+  --app-jelly-flow-speed: 0;
+  --app-jelly-quiet: 0;
+  --app-jelly-on: 0;
 }
 
 @supports (color: color-mix(in srgb, red 50%, blue)) {
@@ -481,19 +519,47 @@
    its own (`--app-glass-bg` is ~85% opaque), and `lib/liquid/glass/engine.ts` draws the clear, refracting, lit slab on
    it as a canvas behind the content, the same as the site's panels. */
 .app-glass {
-  background-color: var(--app-glass-bg);
-  background-image: linear-gradient(
-    150deg,
-    color-mix(in srgb, var(--app-text) 7%, transparent),
-    transparent 45%,
-    color-mix(in srgb, var(--app-text) 3%, transparent)
+  /* Jelly host knobs (app/jelly-material.css §1): the pane role, in the app palette. The palette knobs redirect
+     every jelly consumer (engine uniforms, carrier, floor, CSS rim) from `--site-jelly-*` to `--app-jelly-*`. */
+  --jelly-haze-a: var(--app-jelly-haze-pane);
+  --jelly-plasma-k: 0.06;
+  --jelly-flow-speed: 1;
+  --jelly-flow-axis-deg: 100deg;
+  --jelly-haze-color: var(--app-jelly-haze);
+  --jelly-plasma-a: var(--app-jelly-plasma-a);
+  --jelly-plasma-b: var(--app-jelly-plasma-b);
+  --jelly-plasma-gain: var(--app-jelly-plasma);
+  --jelly-flow-gain: var(--app-jelly-flow-speed);
+  --jelly-static-haze: radial-gradient(
+    120% 90% at 25% 15%,
+    color-mix(in srgb, var(--app-jelly-haze) calc(var(--app-jelly-haze-pane) * 100%), transparent),
+    color-mix(in srgb, var(--app-jelly-haze) calc(var(--app-jelly-haze-pane) * 50%), transparent)
+      70%
   );
+  --jelly-floor: var(--jelly-static-haze), var(--jelly-tile, none);
+  --jelly-floor-size: auto, var(--jelly-tile-size, auto);
+  background-color: var(--app-glass-bg);
+  background-image:
+    linear-gradient(
+      150deg,
+      color-mix(in srgb, var(--app-text) 7%, transparent),
+      transparent 45%,
+      color-mix(in srgb, var(--app-text) 3%, transparent)
+    ),
+    var(--jelly-floor);
+  background-size: auto, var(--jelly-floor-size);
   border: 1px solid var(--app-border-bright);
   box-shadow: none;
 }
-/* With the slab drawn, the shader owns the edge light and the coat. */
+/* A haze canvas or a CSS carrier draws the haze: the static floor steps aside (perf-lite keeps it). */
+html:not(.perf-lite) .app-glass:is([data-jelly-haze='on'], [data-jelly-flow='on']) {
+  --jelly-floor: none, none;
+}
+/* With the slab drawn, the shader owns the edge light and the coat — but not the haze floor (the rim slab is not
+   a haze canvas; see app/liquid-glass.css). */
 .app-glass[data-liquid-canvas='on'] {
-  background-image: none;
+  background-image: var(--jelly-floor, none);
+  background-size: var(--jelly-floor-size, auto);
   box-shadow: none;
 }
 
@@ -609,6 +675,7 @@ html:is(.reduce-transparency, .style-high-contrast)
 }
 
 .app-theme.app-high-contrast .app-glass {
+  --jelly-floor: none, none;
   background: var(--app-surface);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;

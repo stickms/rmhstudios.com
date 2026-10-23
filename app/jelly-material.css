@@ -1,0 +1,417 @@
+/* Plasmatic Jelly — the CSS material tier.
+   Spec: docs/plans/plasmatic-jelly/01-material.md §3 (CSS tier), §4 (tokens), §5 (legibility);
+   00-master-plan.md R5 (no flag: jelly applies unconditionally), R6 (budgets), §4.4–4.5 (attributes, tokens).
+   Imported by globals.css right AFTER liquid-glass.css: some role rules below restate liquid-glass.css rules at the
+   same specificity and win on source order.
+
+   What lives here
+   1. Role knobs — `--jelly-haze-a`, `--jelly-plasma-k`, `--jelly-flow-speed`, `--jelly-flow-axis-deg`, set on the
+      HOST per role. Both tiers read them: the shader engine (haze canvas, rim) and the CSS carrier below. The engine
+      therefore holds no per-role table. Palette knobs — `--jelly-haze-color`, `--jelly-plasma-a`, `--jelly-plasma-b`,
+      `--jelly-plasma-gain`, `--jelly-flow-gain` — are UNSET on the site tier (every consumer falls back to the
+      `--site-jelly-*` theme token) and set by `.app-glass` (components/shared/app-theme.css) to the `--app-jelly-*`
+      palette, so one contract serves both tiers.
+   2. The static haze floor — a soft milky gradient plus a 192 px neutral grain tile
+      (`public/jelly/haze-tile.webp`, scripts/generate-jelly-haze-tile.mjs) in every role's background stack, so a
+      surface reads as jelly before, and without, any JavaScript or WebGL. It steps aside when something better
+      draws the haze: a haze canvas (`[data-jelly-haze='on']`) or a CSS carrier (`[data-jelly-flow='on']`).
+   3. The CSS flow carrier `.jelly-flow` — injected by `lib/jelly/flow-carriers.ts` (W2-D) as the host's FIRST
+      child; 1–2 spans whose only animated property is `transform` (compositor-only). Per-element phase via
+      `--jelly-phase` (a negative delay) so neighbours never pulse in sync.
+   4. The static CSS rim — one inset light line + a faint plasma subsurface glow on every surface the shader does
+      not draw (`:not([data-liquid-canvas='on'])`).
+   5. The degradation block — high contrast, reduced transparency, forced colours and print hide every jelly layer;
+      `perf-lite` keeps the static haze and the CSS rim but nothing moves.
+
+   Hard rules (gates: filter-cost-budget, site-infinite-animation N3/N12, stacking N6):
+   - No backdrop-filter, no SVG/`url()` filters, no animated custom properties (`@property`), no animated
+     gradient positions. The keyframes animate `transform` only.
+   - Every jelly paint layer sits at a NEGATIVE z-index inside an isolated host (isolation is set in
+     liquid-glass.css for `[data-jelly-flow='on']` / `[data-jelly-haze='on']`). Nothing jelly paints at z ≥ 0.
+   - Colours come only from tokens (`--site-jelly-*`, `--site-glass-*`); raw values live in globals.css theme blocks.
+   - The only `infinite` animations are `jelly-drift` / `jelly-current`, and only on spans inside `.jelly-flow`. */
+
+@layer components {
+  /* ── 0. Motion level (html[data-jelly-motion], stamped pre-paint by W1-B) ───────────────────────────────────────
+     Static values, never animated. `calm` slows every carrier and lowers its visible amplitude (opacity: the haze's
+     luminance swing shrinks with it); `still` pauses (see §6). These are read only by `.jelly-flow`, which is a
+     direct child of its host, so the inherited value is never re-resolved per frame. */
+  :root {
+    --jelly-tempo: 1;
+    --jelly-amp: 1;
+    --jelly-tile: url('/jelly/haze-tile.webp');
+    --jelly-tile-size: 192px 192px;
+  }
+  html[data-jelly-motion='calm'] {
+    --jelly-tempo: 0.4;
+    --jelly-amp: 0.55;
+  }
+
+  /* ── 1. Role knobs (01 §1 table, §3.3) ──────────────────────────────────────────────────────────────────────────
+     Set on every role explicitly (never left to inheritance) so a control nested in a pane never shows the pane's
+     haze. `--jelly-flow-axis-deg` is the current's gradient angle: 90deg = a band sliding along a horizontal axis. */
+  .glass-fill {
+    --jelly-haze-a: var(--site-jelly-haze-fill);
+    --jelly-plasma-k: 0.05;
+    --jelly-flow-speed: 1;
+    --jelly-flow-axis-deg: 100deg;
+  }
+  .glass-pane {
+    --jelly-haze-a: var(--site-jelly-haze-pane);
+    --jelly-plasma-k: 0.06;
+    --jelly-flow-speed: 1;
+    --jelly-flow-axis-deg: 100deg;
+  }
+  .glass-chrome {
+    --jelly-haze-a: var(--site-jelly-haze-chrome);
+    --jelly-plasma-k: 0.05;
+    --jelly-flow-speed: 0.7;
+    --jelly-flow-axis-deg: 90deg;
+  }
+  .glass-overlay {
+    --jelly-haze-a: var(--site-jelly-haze-overlay);
+    --jelly-plasma-k: 0.07;
+    --jelly-flow-speed: 0.6;
+    --jelly-flow-axis-deg: 100deg;
+  }
+  :is(.glass-inset, [data-slot='input'], [data-slot='textarea']) {
+    --jelly-haze-a: var(--site-jelly-haze-inset);
+    --jelly-plasma-k: 0.04;
+    --jelly-flow-speed: 0.6;
+    --jelly-flow-axis-deg: 90deg;
+  }
+  /* Fields raise their plasma on keyboard focus (01 §1). The focus ring itself is unchanged. */
+  :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):is(:focus-visible, :focus-within) {
+    --jelly-plasma-k: 0.08;
+  }
+  /* Buttons: no haze (a solid fill keeps its colour); the current is a ±4% luminance band of the button's own ink
+     on filled variants, a faint plasma drift on the clear ones. */
+  [data-slot='button'] {
+    --jelly-haze-a: 0;
+    --jelly-plasma-k: 0.04;
+    --jelly-flow-speed: 1.2;
+    --jelly-flow-axis-deg: 100deg;
+    --jelly-floor: none, none;
+  }
+  [data-slot='button']:is(
+    [data-variant='default'],
+    [data-variant='accent'],
+    [data-variant='destructive']
+  ) {
+    --jelly-current-color: currentColor;
+    --jelly-current-mix: 4%;
+  }
+
+  /* ── 2. Static haze floor (01 §3.6) ─────────────────────────────────────────────────────────────────────────────
+     Declared per role so `--jelly-haze-a` resolves on the role itself. The gradient never falls below half density,
+     matching the legibility test's min/max composites (α × 0.5 … α × 1.0). Two layers, always: `--jelly-floor-size`
+     must stay in step with them. */
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    [data-slot='input'],
+    [data-slot='textarea']
+  ) {
+    --jelly-static-haze: radial-gradient(
+      120% 90% at 25% 15%,
+      color-mix(
+        in srgb,
+        var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 100%),
+        transparent
+      ),
+      color-mix(
+          in srgb,
+          var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
+          transparent
+        )
+        70%
+    );
+    --jelly-floor: var(--jelly-static-haze), var(--jelly-tile);
+    --jelly-floor-size: auto, var(--jelly-tile-size);
+  }
+  /* Something better draws the haze: a haze canvas (engine) or a CSS carrier. Under perf-lite neither may run, so
+     the floor stays whatever the attributes say. */
+  html:not(.perf-lite) :is([data-jelly-haze='on'], [data-jelly-flow='on']) {
+    --jelly-floor: none, none;
+  }
+
+  /* The floor joins each role's background stack, under the clear coat. Same selectors (and specificity) as the
+     liquid-glass.css rules they extend, so these win on source order; Tailwind utilities still win on layer, and the
+     unlayered degradation rules (globals.css, liquid-glass.css) still strip everything. */
+  :is(.glass-pane, .glass-chrome, .glass-overlay):not([data-liquid-material='off']) {
+    background-image: var(--liquid-coat), var(--jelly-floor);
+    background-size: auto, var(--jelly-floor-size);
+  }
+  .glass-fill:not([data-liquid-material='off']) {
+    /* `--liquid-fill-coat` is two layers. The tint stays on background-color (§5.1.2), so re-tints keep the floor. */
+    background-image: var(--liquid-fill-coat), var(--jelly-floor);
+    background-size: auto, auto, var(--jelly-floor-size);
+  }
+  :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):not([data-liquid-material='off']) {
+    background-image: var(--jelly-floor);
+    background-size: var(--jelly-floor-size);
+  }
+
+  /* ── 3. The CSS flow carrier (01 §3.2) ──────────────────────────────────────────────────────────────────────────
+     DOM contract (emitted by lib/jelly/flow-carriers.ts; the host gets data-jelly-flow="on" while attached):
+       <span class="jelly-flow" aria-hidden="true" style="--jelly-phase:-13.7s">
+         <span class="jelly-flow__drift"></span>
+         <span class="jelly-flow__current"></span>   (omitted on handheld; fields add .jelly-flow--rim-only)
+       </span>
+     `contain: strict` + overflow clip bound the raster to the host box; the spans are 140% of it for travel room.
+     Opacity is the hover boost (compositor-only); speed is never changed on a running animation (it would jump). */
+  .jelly-flow {
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+    overflow: hidden;
+    border-radius: inherit;
+    contain: strict;
+    pointer-events: none;
+    user-select: none;
+    opacity: calc(0.75 * var(--jelly-amp, 1));
+    transition: opacity calc(var(--site-transition-speed, 200ms) * 1.5) var(--ease-out);
+  }
+  .jelly-flow > span {
+    position: absolute;
+    inset: -20%;
+    will-change: transform;
+    animation-delay: var(--jelly-phase, 0s);
+    animation-play-state: running;
+  }
+  .jelly-flow > .jelly-flow__drift {
+    background-image:
+      radial-gradient(
+        40% 55% at 30% 35%,
+        color-mix(
+          in srgb,
+          var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 100%),
+          transparent
+        ),
+        color-mix(
+            in srgb,
+            var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
+            transparent
+          )
+          70%
+      ),
+      radial-gradient(
+        35% 45% at 72% 68%,
+        color-mix(
+          in srgb,
+          var(--jelly-plasma-a, var(--site-jelly-plasma-a))
+            calc(
+              var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) *
+                100%
+            ),
+          transparent
+        ),
+        transparent 70%
+      ),
+      var(--jelly-tile);
+    background-size: auto, auto, var(--jelly-tile-size);
+    /* Feature size ≥ 35% of the host, 29 s period, ≤ ~4 px/s of travel on a 600 px card (01 §5.3). */
+    animation: jelly-drift
+      calc(
+        29s /
+          max(
+            0.05,
+            var(--jelly-flow-speed, 1) * var(--jelly-flow-gain, var(--site-jelly-flow-speed, 1)) *
+              var(--jelly-tempo, 1)
+          )
+      )
+      var(--ease-in-out, ease-in-out) infinite alternate;
+  }
+  .jelly-flow > .jelly-flow__current {
+    /* Soft-edged band (no hard crest: 20% ramps either side), plasma B, or the button's own ink on filled buttons. */
+    background-image: linear-gradient(
+      var(--jelly-flow-axis-deg, 100deg),
+      transparent 30%,
+      color-mix(
+          in srgb,
+          var(--jelly-current-color, var(--jelly-plasma-b, var(--site-jelly-plasma-b)))
+            var(
+              --jelly-current-mix,
+              calc(
+                var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) *
+                  80%
+              )
+            ),
+          transparent
+        )
+        50%,
+      transparent 70%
+    );
+    /* ±18% of a 140% span over 36 s, linear: ~8 px/s on a 600 px card, slower on chrome (speed 0.7). */
+    animation: jelly-current
+      calc(
+        36s /
+          max(
+            0.05,
+            var(--jelly-flow-speed, 1) * var(--jelly-flow-gain, var(--site-jelly-flow-speed, 1)) *
+              var(--jelly-tempo, 1)
+          )
+      )
+      linear infinite alternate;
+    animation-delay: calc(var(--jelly-phase, 0s) * 0.6);
+  }
+  /* Fields: flow only in an 8 px edge band; the interior where the caret lives stays still (01 §5.5). */
+  .jelly-flow.jelly-flow--rim-only {
+    padding: 8px;
+    -webkit-mask:
+      linear-gradient(var(--site-surface-opaque) 0 0) content-box,
+      linear-gradient(var(--site-surface-opaque) 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(var(--site-surface-opaque) 0 0) content-box exclude,
+      linear-gradient(var(--site-surface-opaque) 0 0);
+  }
+  /* Hover boost: a little more of the same material, never a colour change. */
+  :is(.glass-interactive, [data-slot='button'], [data-evert]):hover > .jelly-flow {
+    opacity: var(--jelly-amp, 1);
+  }
+  /* Ghost / link buttons carry no material at rest; the carrier (if any) shows only under the hover layer. */
+  [data-slot='button']:is([data-variant='ghost'], [data-variant='link']) > .jelly-flow {
+    opacity: 0;
+  }
+  [data-slot='button']:is([data-variant='ghost'], [data-variant='link']):hover > .jelly-flow {
+    opacity: var(--jelly-amp, 1);
+  }
+  /* A haze canvas owns this host's interior: the carrier steps aside (01 §2.8, 04 §3.1 — keyed on
+     data-jelly-haze, NOT data-liquid-canvas, so rim-only slabs keep moving). */
+  [data-jelly-haze='on'] > .jelly-flow {
+    display: none;
+  }
+
+  /* ── 4. Static CSS rim (01 §3.4) ────────────────────────────────────────────────────────────────────────────────
+     Every surface the shader does NOT draw gets one lit top line and a faint plasma subsurface glow. Static: never in
+     a transition list (hover-css.ts forbids shadow transitions), so it costs nothing at rest. */
+  :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not([data-liquid-canvas='on']):not([data-liquid-material='off']) {
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 60%, transparent),
+      inset 0 0 14px -4px
+        color-mix(
+          in srgb,
+          var(--jelly-plasma-a, var(--site-jelly-plasma-a))
+            calc(
+              var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) *
+                220%
+            ),
+          transparent
+        );
+  }
+
+  /* ── 5. Haze canvas (drawn by lib/liquid/glass/engine.ts, W2-A) ─────────────────────────────────────────────────
+     Same slot as the carrier (-3), under the rim slab (-2) and the evert hover (-1). Low-res, CSS-stretched. */
+  .jelly-haze-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -3;
+    border-radius: inherit;
+    pointer-events: none;
+    user-select: none;
+    image-rendering: auto;
+  }
+}
+
+/* ── 6. Paused states ───────────────────────────────────────────────────────────────────────────────────────────────
+   Unlayered so no utility can restart them. Scrolling (04 §3.3), `still` (WCAG 2.2.2: a pause mechanism; the carrier
+   service also detaches carriers), a game in play (R16), and a focused host (04 §4.5: a ring over a moving ground is
+   harder to track; fields never animate their rim band while focused). The paused frame is the static haze. */
+html[data-scrolling] .jelly-flow > span,
+html[data-jelly-motion='still'] .jelly-flow > span,
+html[data-game-state='playing'] .jelly-flow > span,
+:focus-visible > .jelly-flow > span,
+:is(.glass-inset, [data-slot='textarea'], [data-slot='input']):focus-within > .jelly-flow > span {
+  animation-play-state: paused;
+}
+
+/* Handheld (the exact query from handheld-tier.test.ts): one span per carrier (01 §3.2) — the drift alone. */
+@media (pointer: coarse) and (max-width: 1024px) {
+  .jelly-flow > .jelly-flow__current {
+    display: none;
+  }
+}
+
+/* ── 7. Degradation (01 D8, 04 §4.7) ──────────────────────────────────────────────────────────────────────────────
+   High contrast (site + app), reduced transparency (OS + setting), forced colours and print: no jelly at all — no
+   carrier, no haze canvas, no floor, no rim glow, no soft-body transform. `perf-lite` keeps the static floor and the
+   CSS rim; only the moving layers go (no carriers, no haze canvases). `!important` because these are accessibility
+   contracts, not looks: they outrank theme, material and utility layers alike. */
+:is(.reduce-transparency, .style-high-contrast, .perf-lite, .app-high-contrast)
+  :is(.jelly-flow, .jelly-haze-canvas) {
+  display: none !important;
+}
+:is(.reduce-transparency, .style-high-contrast, .app-high-contrast)
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    [data-slot='input'],
+    [data-slot='textarea'],
+    [data-slot='button']
+  ) {
+  --jelly-floor: none, none !important;
+  box-shadow: none !important;
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active), print {
+  .jelly-flow,
+  .jelly-haze-canvas {
+    display: none !important;
+  }
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    [data-slot='input'],
+    [data-slot='textarea'],
+    [data-slot='button']
+  ) {
+    --jelly-floor: none, none !important;
+    box-shadow: none !important;
+  }
+}
+@media (forced-colors: active), print {
+  /* Soft-body transforms (02, `lib/jelly/physics.ts`) never apply where the OS owns the colours or on paper. */
+  [data-jelly-body] {
+    translate: none !important;
+    scale: none !important;
+  }
+}
+
+@keyframes jelly-drift {
+  0% {
+    transform: translate3d(-4%, -3%, 0) rotate(-3deg) scale(1.02);
+  }
+  50% {
+    transform: translate3d(3%, 2%, 0) rotate(2deg) scale(0.99);
+  }
+  100% {
+    transform: translate3d(-1%, 4%, 0) rotate(3deg) scale(1.03);
+  }
+}
+@keyframes jelly-current {
+  from {
+    transform: translate3d(-18%, 0, 0);
+  }
+  to {
+    transform: translate3d(18%, 0, 0);
+  }
+}

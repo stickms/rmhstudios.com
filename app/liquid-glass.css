@@ -144,12 +144,17 @@
     width: 100%;
     height: 100%;
     /* -2, not -1: the eversion hover layer (`::before`, z-index -1) must paint OVER the slab. At -1 the canvas, being the
-       last child, painted over it and the opaque bevel band hid the outer ring of every hover: it looked cut off. */
+       last child, painted over it and the opaque bevel band hid the outer ring of every hover: it looked cut off.
+       Plasmatic Jelly adds one layer UNDER this: the haze (`.jelly-haze-canvas` or the CSS `.jelly-flow` carrier) paints
+       at z-index -3 (app/jelly-material.css). Order inside an isolated host: host tint → haze -3 → rim slab -2 →
+       evert hover -1 → live content. Nothing jelly paints at z ≥ 0 inside a host. */
     z-index: -2;
     pointer-events: none;
     user-select: none;
   }
-  [data-liquid-canvas='on'] {
+  /* A CSS jelly carrier (`.jelly-flow`, z -3) or a haze canvas needs the same isolated stacking context the rim slab
+     does, or its negative z-index resolves against the nearest ancestor context and paints under the host's tint. */
+  :is([data-liquid-canvas='on'], [data-jelly-flow='on'], [data-jelly-haze='on']) {
     isolation: isolate;
   }
   [data-liquid-canvas='on'][data-liquid-static] {
@@ -158,8 +163,12 @@
   :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay)[data-liquid-canvas='on']:not(
       [data-liquid-material='off']
     ) {
-    /* The slab draws the bevel and the lit edge, so the static coat steps aside. */
-    background-image: none;
+    /* The slab draws the bevel and the lit edge, so the static coat steps aside. The static jelly haze floor
+       (`--jelly-floor`, app/jelly-material.css) does NOT: a rim slab is not a haze canvas, and if the haze canvas never
+       arrives (budget, context loss) the floor is all the haze the surface has. It goes only under
+       `[data-jelly-haze='on']`, which jelly-material.css handles. */
+    background-image: var(--jelly-floor, none);
+    background-size: var(--jelly-floor-size, auto);
     box-shadow: none;
   }
 
@@ -168,14 +177,16 @@
     background: none;
   }
 
-  /* Controls (buttons, fields) the engine draws: the slab replaces the static coat. Their border and fill stay theirs. */
-  :is(
-      [data-slot='button'],
-      [data-slot='input'],
-      [data-slot='textarea'],
-      .glass-inset
-    )[data-liquid-canvas='on']:not([data-liquid-material='off']) {
+  /* Controls (buttons, fields) the engine draws: the slab replaces the static coat. Their border and fill stay theirs.
+     Fields keep the static jelly haze floor for the same reason the roles above do. */
+  [data-slot='button'][data-liquid-canvas='on']:not([data-liquid-material='off']) {
     background-image: none;
+  }
+  :is([data-slot='input'], [data-slot='textarea'], .glass-inset)[data-liquid-canvas='on']:not(
+      [data-liquid-material='off']
+    ) {
+    background-image: var(--jelly-floor, none);
+    background-size: var(--jelly-floor-size, auto);
   }
 
   /* A separate clipped carrier owns the moving light. No pseudo collisions,

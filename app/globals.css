@@ -15,6 +15,14 @@
    only its text; a file downloads only when a page actually uses the face. */
 @import './fonts/site-display.css';
 @import './liquid-glass.css';
+/* Plasmatic Jelly (docs/plans/plasmatic-jelly/00-master-plan.md): the material
+   (role knobs, CSS flow carriers, static haze floor, CSS rim, degradation), the
+   electric-arc layer, and the coverage adapters. After liquid-glass.css on
+   purpose — jelly-material.css restates some of its role rules at the same
+   specificity and must win on source order. */
+@import './jelly-material.css';
+@import './jelly-arcs.css';
+@import './jelly-coverage.css';
 
 /* Scope Tailwind's content scanning to code that actually renders in the browser.
    Without this, auto-detection also scans build/test/infra/docs directories and
@@ -266,6 +274,36 @@
   --site-glass-light: rgba(255, 255, 255, 0.7);
   --site-glass-depth: 0 0 0 0 transparent;
   --site-glass-depth-sm: 0 0 0 0 transparent;
+  /* ── Plasmatic Jelly material, the Daylight values (docs/plans/plasmatic-jelly/01-material.md §4) ──
+     Daylight: white haze is invisible on white, so the veil is a cool milky grey.
+     Haze is the milky veil inside every jelly role; its ALPHA comes from the role
+     (`--site-jelly-haze-<role>`), its colour from here. The plasma pair is the
+     light inside — rim, subsurface and current crests only, never the ink.
+     `--site-jelly-plasma` is the theme gain on every role's plasma strength.
+     `-haze-strong` is the denser veil the rim band and chrome use;
+     `-flow-speed` multiplies every role's flow speed; `-quiet` damps flow in the
+     interior where text sits; `-on` (1/0) is the cheap kill switch the engine
+     and services read. High contrast zeroes all of it.
+     On a LIGHT ground a saturated plasma darkens the composite fast (luminance
+     is steepest near white), so light themes take a pale plasma pair at half
+     gain; dark themes carry the saturated pair, where it reads as glow.
+     Values are bounded by lib/__tests__/jelly-legibility.test.ts. */
+  --site-jelly-haze: #e9ecf4;
+  --site-jelly-haze-strong: #dce1ec;
+  --site-jelly-haze-fill: 0.1;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.14;
+  --site-jelly-haze-chrome: 0.18;
+  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-plasma-a: #b4a9ff;
+  --site-jelly-plasma-b: #8fe0ee;
+  --site-jelly-plasma: 0.5;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, #5b3fd6 85%, var(--site-accent));
+  --site-arc-glow: color-mix(in oklch, #7c6cff 60%, transparent);
 
   --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
   --glass-bevel: 12px;
@@ -453,6 +491,13 @@
      orb and the compose FAB (80) all paint over it. Same band as the quick
      panels: above the shell, below the z-50 dialogs. */
   --z-menu: 40;
+  /* Electric arcs (Plasmatic Jelly, 03-arcs.md §4.1): the body-level Canvas2D
+     `.jelly-arc-layer`. Above the quick panels / menus (40), so a bolt can land on
+     a top-bar button; below the z-50 dialogs and sheets, so a modal covers it.
+     A click arc INSIDE an open modal lifts the layer to `--z-arcs-modal` for its
+     lifetime (above the dialog band, still below tooltips and the toaster). */
+  --z-arcs: 45;
+  --z-arcs-modal: 55;
   --z-skip: 200;
   /* Tooltips portal to <body> and must clear the z-50 dialogs/sheets they can
      be triggered from inside, so they sit above the whole stack. */
@@ -815,6 +860,25 @@
     linear-gradient(180deg, #fbfcff 0%, #f6f7fc 55%, #fcfbff 100%);
   --site-aurora-far-1: rgba(0, 0, 0, 0.02);
   --site-aurora-far-2: rgba(0, 0, 0, 0.03);
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block).
+     Daylight: white haze is invisible on white, so the veil is a cool milky grey. */
+  --site-jelly-haze: #e9ecf4;
+  --site-jelly-haze-strong: #dce1ec;
+  --site-jelly-haze-fill: 0.1;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.14;
+  --site-jelly-haze-chrome: 0.18;
+  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-plasma-a: #b4a9ff;
+  --site-jelly-plasma-b: #8fe0ee;
+  --site-jelly-plasma: 0.5;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, #5b3fd6 85%, var(--site-accent));
+  --site-arc-glow: color-mix(in oklch, #7c6cff 60%, transparent);
 }
 
 /* Glass Light — daylight canvas: near-white base with soft pastel sky radials;
@@ -868,6 +932,24 @@
   --site-map-filter: none;
   --background: #e9edf6;
   --foreground: #17203a;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
+  --site-jelly-haze: #f4f7fd;
+  --site-jelly-haze-strong: #ffffff;
+  --site-jelly-haze-fill: 0.1;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.14;
+  --site-jelly-haze-chrome: 0.18;
+  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-plasma-a: color-mix(in srgb, var(--site-accent) 45%, white);
+  --site-jelly-plasma-b: #9fdcf4;
+  --site-jelly-plasma: 0.5;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, var(--site-accent) 80%, #1b1240);
+  --site-arc-glow: color-mix(in oklch, var(--site-accent) 45%, transparent);
 }
 
 /* High Contrast — maximal legibility (WCAG AAA): pure black, pure white text,
@@ -915,6 +997,26 @@
   --site-control-radius: 8px;
   --background: #000000;
   --foreground: #ffffff;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block).
+     High contrast: no jelly at all. Every knob is zero; the CSS and the engine both
+     read `--site-jelly-on: 0` as the kill switch. */
+  --site-jelly-haze: transparent;
+  --site-jelly-haze-strong: transparent;
+  --site-jelly-haze-fill: 0;
+  --site-jelly-haze-inset: 0;
+  --site-jelly-haze-pane: 0;
+  --site-jelly-haze-chrome: 0;
+  --site-jelly-haze-overlay: 0;
+  --site-jelly-plasma-a: transparent;
+  --site-jelly-plasma-b: transparent;
+  --site-jelly-plasma: 0;
+  --site-jelly-flow-speed: 0;
+  --site-jelly-quiet: 0;
+  --site-jelly-on: 0;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: transparent;
+  --site-arc-glow: transparent;
 }
 
 /* ── Curated themes (Apple-consistent) ──────────────────────────────────────
@@ -988,6 +1090,24 @@
   --site-map-filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.92);
   --background: #000000;
   --foreground: #f5f5f7;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
+  --site-jelly-haze: #c9d2e3;
+  --site-jelly-haze-strong: #dfe6f2;
+  --site-jelly-haze-fill: 0.07;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.1;
+  --site-jelly-haze-chrome: 0.14;
+  --site-jelly-haze-overlay: 0.05;
+  --site-jelly-plasma-a: var(--site-accent);
+  --site-jelly-plasma-b: #9b6bff;
+  --site-jelly-plasma: 0.8;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, white 70%, var(--site-accent));
+  --site-arc-glow: color-mix(in oklch, var(--site-accent) 55%, transparent);
 }
 
 /* Sepia Glass — warm parchment gradients, warm-white frost, amber accent,
@@ -1039,6 +1159,24 @@
   --site-map-filter: none;
   --background: #efe4cf;
   --foreground: #3a2e1e;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
+  --site-jelly-haze: #fff6e6;
+  --site-jelly-haze-strong: #fffaf0;
+  --site-jelly-haze-fill: 0.1;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.14;
+  --site-jelly-haze-chrome: 0.18;
+  --site-jelly-haze-overlay: 0.06;
+  --site-jelly-plasma-a: #f0c48c;
+  --site-jelly-plasma-b: #eaa79e;
+  --site-jelly-plasma: 0.5;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, var(--site-accent) 70%, #3a1d6e);
+  --site-arc-glow: color-mix(in oklch, var(--site-accent) 40%, transparent);
 }
 
 /* Nocturne Glass — deep-navy nightscape with a sky-blue aurora; cool
@@ -1092,6 +1230,24 @@
   --site-aurora-far-2: rgba(90, 150, 255, 0.1);
   --background: #0a1424;
   --foreground: #eaeef7;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
+  --site-jelly-haze: #b4c8ff;
+  --site-jelly-haze-strong: #cbd9ff;
+  --site-jelly-haze-fill: 0.07;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.1;
+  --site-jelly-haze-chrome: 0.14;
+  --site-jelly-haze-overlay: 0.05;
+  --site-jelly-plasma-a: #6f9bff;
+  --site-jelly-plasma-b: #47d1c4;
+  --site-jelly-plasma: 0.8;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, white 70%, var(--site-accent));
+  --site-arc-glow: color-mix(in oklch, var(--site-accent) 55%, transparent);
 }
 
 /* Ultra — the precision interface. Near-black spectral depth, ice-cyan signal
@@ -1186,6 +1342,24 @@
   --site-map-filter: invert(1) hue-rotate(165deg) brightness(0.78) contrast(1.08) saturate(0.8);
   --background: #07090f;
   --foreground: #f5f9ff;
+
+  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
+  --site-jelly-haze: #bff4ff;
+  --site-jelly-haze-strong: #d6f9ff;
+  --site-jelly-haze-fill: 0.06;
+  --site-jelly-haze-inset: 0.04;
+  --site-jelly-haze-pane: 0.09;
+  --site-jelly-haze-chrome: 0.13;
+  --site-jelly-haze-overlay: 0.05;
+  --site-jelly-plasma-a: #76f7ff;
+  --site-jelly-plasma-b: #c86bff;
+  --site-jelly-plasma: 0.9;
+  --site-jelly-flow-speed: 1;
+  --site-jelly-quiet: 0.35;
+  --site-jelly-on: 1;
+  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
+  --site-arc-core: color-mix(in oklch, white 60%, var(--site-accent));
+  --site-arc-glow: color-mix(in oklch, var(--site-accent) 50%, #b46cff 20%);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
