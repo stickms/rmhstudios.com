@@ -11,9 +11,8 @@
  * and a player who has not been told it plays the first game blind.
  */
 
-import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
   COLORS,
   MAX_PLAYERS,
@@ -43,44 +42,21 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export function RulesSheet({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation('c-gabriels-horn');
-  const closeRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    closeRef.current?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // Mounted inside the game root so the `--app-*` / `--gh-*` tokens (scoped on the theme class) still
+  // apply. Radix owns Escape, the focus trap and focus return to the "Rules" control; the game's
+  // own state (`rulesOpen`) stays the only source of truth, set back to false by `onClose`.
+  const host =
+    typeof document === 'undefined'
+      ? undefined
+      : (document.querySelector<HTMLElement>('.gabriels-horn-theme') ?? undefined);
 
-  // The only fixed-position surface in the game, and it is a full-screen
-  // scroller rather than a centred box: the rules are long, and on a phone held
-  // sideways a vertically-centred panel taller than the window puts its first
-  // paragraph above a scroll origin that cannot go negative. Column flex plus
-  // the `-safe` centring keeps every line reachable.
   return (
-    <div className="app-scroll-y fixed inset-0 z-50 flex flex-col items-center-safe justify-center-safe bg-(--app-scrim) p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="gh-rules-title"
-        className="gh-overlay w-full max-w-xl p-5"
-      >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 id="gh-rules-title" className="text-lg font-bold text-(--app-text)">
-            {t('rules-title', { defaultValue: 'How Gabriel’s Horn works' })}
-          </h2>
-          <HornButton
-            ref={closeRef}
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            aria-label={t('rules-close', { defaultValue: 'Close the rules' })}
-          >
-            <X className="size-4" aria-hidden="true" />
-          </HornButton>
-        </div>
+    <Dialog open onOpenChange={(next) => { if (!next) onClose(); }}>
+      <DialogContent container={host} aria-describedby={undefined} className="max-w-xl text-(--app-text)">
+        <DialogTitle className="text-lg font-bold text-(--app-text)">
+          {t('rules-title', { defaultValue: 'How Gabriel’s Horn works' })}
+        </DialogTitle>
 
         <div className="space-y-4">
           <Section title={t('rules-turn-title', { defaultValue: 'Your turn' })}>
@@ -276,12 +252,12 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
           </Section>
         </div>
 
-        <div className="mt-5 flex justify-end">
-          <HornButton variant="primary" onClick={onClose}>
-            {t('rules-got-it', { defaultValue: 'Got it' })}
-          </HornButton>
+        <div className="flex justify-end">
+          <DialogClose asChild>
+            <HornButton variant="primary">{t('rules-got-it', { defaultValue: 'Got it' })}</HornButton>
+          </DialogClose>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
