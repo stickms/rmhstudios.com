@@ -1,0 +1,9 @@
+# One-off backfills read local media; normal web uploads keep their writable bind.
+# Merge by mount target so /app/db has one effective, read-only volume.
+services:
+  web:
+    volumes:
+      - type: bind
+        source: ${STORAGE_PATH:-./db}
+        target: /app/db
+        read_only: true
