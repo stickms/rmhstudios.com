@@ -16,7 +16,9 @@
 
 import { useState, useCallback, useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore, type RmhTubeUserSettings } from '@/lib/rmhtube/store';
@@ -26,6 +28,8 @@ import type { RoomSettings } from '@/lib/rmhtube/types';
 export default function SettingsPanel() {
   const { t } = useTranslation('c-rmhtube');
   const [isOpen, setIsOpen] = useState(false);
+  // The dialog portals into the app root (not <body>) so it keeps the `--app-*` palette.
+  const [container, setContainer] = useState<HTMLElement | null>(null);
   const hasRoom = useRmhTubeStore((s) => !!s.room);
 
   if (!hasRoom) return null;
@@ -33,7 +37,10 @@ export default function SettingsPanel() {
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={(e) => {
+          setContainer(e.currentTarget.closest<HTMLElement>('.app-theme'));
+          setIsOpen(true);
+        }}
         className="rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
         title={t('settings', { defaultValue: 'Settings' })}
         aria-label={t('settings', { defaultValue: 'Settings' })}
@@ -41,46 +48,36 @@ export default function SettingsPanel() {
         <Settings className="h-5 w-5" aria-hidden />
       </button>
 
-      {isOpen && <SettingsDialog onClose={() => setIsOpen(false)} />}
+      {isOpen && <SettingsDialog container={container} onClose={() => setIsOpen(false)} />}
     </>
   );
 }
 
-function SettingsDialog({ onClose }: { onClose: () => void }) {
+function SettingsDialog({
+  container,
+  onClose,
+}: {
+  container: HTMLElement | null;
+  onClose: () => void;
+}) {
   const { t } = useTranslation('c-rmhtube');
-  const titleId = useId();
   const settings = useRmhTubeStore((s) => s.settings);
   const updateSettings = useRmhTubeStore((s) => s.updateSettings);
   const roomSettings = useRmhTubeStore((s) => s.room?.settings);
   const isHost = useRmhTubeStore((s) => !!s.room && s.room.myUserId === s.room.hostUserId);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-    >
-      {/* A real button, so dismissing works from the keyboard too. */}
-      <button
-        type="button"
-        aria-label={t('close', { defaultValue: 'Close' })}
-        className="absolute inset-0 app-scrim app-overlay"
-        onClick={onClose}
-      />
-      <div className="app-modal relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-(--app-radius) app-glass p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 id={titleId} className="text-lg font-semibold text-(--app-text)">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        container={container}
+        className="app-modal max-h-[85dvh] max-w-md gap-0 p-6 text-(--app-text)"
+        aria-describedby={undefined}
+      >
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-lg font-semibold text-(--app-text)">
             {t('settings', { defaultValue: 'Settings' })}
-          </h3>
-          <button
-            onClick={onClose}
-            className="rounded-(--app-radius-sm) p-1 text-(--app-text-muted) hover:text-(--app-text) transition-colors"
-            aria-label={t('close', { defaultValue: 'Close' })}
-          >
-            <X className="h-5 w-5" aria-hidden />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
         <YourSettings settings={settings} onChange={updateSettings} />
 
@@ -93,8 +90,8 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             })}
           </p>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -400,25 +397,7 @@ function ToggleOption({
       label={label}
       description={description}
       control={
-        <button
-          type="button"
-          role="switch"
-          data-jelly="control"
-          aria-checked={value}
-          aria-label={label}
-          onClick={() => onChange(!value)}
-          className={`relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors ${
-            value ? 'bg-(--app-accent)' : 'bg-(--app-border)'
-          }`}
-        >
-          {/* Ink tracks its surface: the knob sits on the accent when on and on
-              the hairline when off, so it stays visible in every appearance. */}
-          <span
-            className={`inline-block h-4 w-4 rounded-full shadow transition-transform ${
-              value ? 'translate-x-5 bg-(--app-accent-fg)' : 'translate-x-1 bg-(--app-text)'
-            }`}
-          />
-        </button>
+        <Switch checked={value} onCheckedChange={onChange} aria-label={label} />
       }
     />
   );

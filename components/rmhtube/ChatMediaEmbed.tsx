@@ -243,7 +243,7 @@ function EmbedItem({ embed }: { embed: MediaEmbedInfo }) {
 
   return (
     <div
-      className="mt-1 overflow-hidden rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface)"
+      className="mt-1 overflow-hidden rounded-(--app-radius-sm) app-glass"
       style={box}
     >
       {src ? (
