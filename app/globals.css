@@ -577,9 +577,10 @@
   --z-menu: 40;
   /* The same menu opened from INSIDE a modal (the composer's emoji picker and @mention list):
      it portals to <body>, outside the dialog's z-50 layer, so at 40 it would paint behind the
-     dialog and its scrim. Above the dialog band and the in-modal arc layer (55), level with
-     `Select`'s z-[60], below tooltips. Applied in components/ui/anchored-menu.css. */
-  --z-menu-in-dialog: 60;
+     dialog and its scrim. Above the dialog band, the in-modal arc layer (55), the top bar and
+     `Select`'s z-[60] (all 60), below the floating hub (80) and tooltips. Its own value: tokens
+     never tie (lib/__tests__/stacking-consistency.test.ts). Applied in components/ui/anchored-menu.css. */
+  --z-menu-in-dialog: 65;
   /* Electric arcs (Plasmatic Jelly, 03-arcs.md §4.1): the body-level Canvas2D
      `.jelly-arc-layer`. Above the quick panels / menus (40), so a bolt can land on
      a top-bar button; below the z-50 dialogs and sheets, so a modal covers it.
