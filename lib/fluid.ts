@@ -185,6 +185,22 @@ export const SPRINGS = {
   press: spring(0.22, 0),
   /** Press-RELEASE. Slower, with a whisper of bounce, so the surface "lets go". */
   release: spring(0.42, 0.18),
+  /*
+   * Plasmatic Jelly soft-body springs (docs/plans/plasmatic-jelly/02-soft-body.md §1.2).
+   * Each is a perceptual period T and a damping ratio ζ, written as `spring(T, 1 − ζ)`.
+   * They drive `lib/jelly/envelope.ts`; the matching `APPLE_SPRING.jelly*` entries keep
+   * the declarative tier in step (the "two vocabularies agree" test).
+   */
+  /** Hover plump/lean toward the cursor. T 0.34s, ζ 0.78. */
+  jellyHover: spring(0.34, 0.22),
+  /** Press-down squash. Critically damped, and quicker than the release. T 0.18s, ζ 1. */
+  jellyPress: spring(0.18, 0),
+  /** Let-go wobble: overshoots ~23% of the squash, 2–3 visible cycles. T 0.44s, ζ 0.42. */
+  jellyRelease: spring(0.44, 0.58),
+  /** Stretch along the drag velocity. T 0.28s, ζ 0.55. */
+  jellyDrag: spring(0.28, 0.45),
+  /** A neighbour's bounded nudge (and an arc strike's impulse). T 0.40s, ζ 0.5. */
+  jellyNudge: spring(0.4, 0.5),
 } as const satisfies Record<string, Spring>;
 
 /**

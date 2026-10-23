@@ -224,12 +224,59 @@ describe('the two spring vocabularies agree', () => {
         bounce: 1 - s.damping / (2 * Math.sqrt(s.stiffness * s.mass)),
       };
     };
-    for (const name of ['smooth', 'snappy', 'bouncy', 'sheet', 'press'] as const) {
+    for (const name of [
+      'smooth',
+      'snappy',
+      'bouncy',
+      'sheet',
+      'press',
+      'jellyHover',
+      'jellyPress',
+      'jellyRelease',
+      'jellyDrag',
+      'jellyNudge',
+    ] as const) {
       const declarative = APPLE_SPRING[name] as { duration: number; bounce: number };
       const imperative = invert(SPRINGS[name]);
       expect(imperative.duration, `${name}.duration`).toBeCloseTo(declarative.duration, 6);
       expect(imperative.bounce, `${name}.bounce`).toBeCloseTo(declarative.bounce ?? 0, 6);
     }
+  });
+});
+
+describe('the Plasmatic Jelly springs', () => {
+  const zeta = (s: { stiffness: number; damping: number; mass: number }) =>
+    s.damping / (2 * Math.sqrt(s.stiffness * s.mass));
+
+  it('match the tuning table in 02-soft-body §1.2 (k, c at unit mass)', () => {
+    const table = {
+      jellyHover: [341.6, 28.8],
+      jellyPress: [1218.5, 69.8],
+      jellyRelease: [203.9, 12.0],
+      jellyDrag: [503.5, 24.7],
+      jellyNudge: [246.7, 15.7],
+    } as const;
+    for (const [name, [k, c]] of Object.entries(table)) {
+      const s = SPRINGS[name as keyof typeof table];
+      expect(s.stiffness, `${name}.k`).toBeCloseTo(k, 0);
+      expect(s.damping, `${name}.c`).toBeCloseTo(c, 0);
+    }
+  });
+
+  it('jellyPress is quicker than jellyRelease', () => {
+    expect(simulate(1, 0.975, SPRINGS.jellyPress).seconds).toBeLessThan(
+      simulate(0.975, 1, SPRINGS.jellyRelease).seconds,
+    );
+  });
+
+  it('jellyRelease under-damps (it wobbles) and jellyPress does not', () => {
+    expect(zeta(SPRINGS.jellyRelease)).toBeLessThan(0.6);
+    // Unit travel so the overshoot is not hidden under springSettled's epsilon.
+    const { overshoot } = simulate(0, 1, SPRINGS.jellyRelease);
+    expect(overshoot).toBeGreaterThan(0.15);
+    expect(overshoot).toBeLessThan(0.3);
+    expect(zeta(SPRINGS.jellyPress)).toBeCloseTo(1, 10);
+    expect(simulate(1, 0, SPRINGS.jellyPress).overshoot).toBeLessThanOrEqual(1e-9);
   });
 });
 
