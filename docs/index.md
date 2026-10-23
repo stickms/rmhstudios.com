@@ -33,6 +33,8 @@ Stripe), Socket.io Node hubs, Go microservices built with Bazel, i18next
   the `--site-*` token contract, themes, primitives, motion, accessibility.
 - {doc}`testing` — the test suites (Vitest main + epic, Go Bazel) and which
   CI workflows gate them.
+- {doc}`frontend-webassembly` — globe numerical kernels, build and benchmark
+  commands, JavaScript fallbacks, and the Apache policy required for deployment.
 - {doc}`README` — the full annotated map of `docs/`, including freshness
   flags for every directory.
 
@@ -55,6 +57,7 @@ developer-api/index
 codebase-overview
 architecture
 testing
+frontend-webassembly
 performance-slo
 status-page
 design-language

@@ -86,6 +86,8 @@ export function pressTarget(dx: number, dy: number, out: { x: number; y: number 
   out.y = (dy / r) * f * PRESS_PUSH;
 }
 
+import type { DoughKernel } from './wasm/dough';
+
 export class DoughBody {
   readonly n = DOUGH_N;
   readonly extent = DOUGH_EXTENT;
@@ -100,21 +102,26 @@ export class DoughBody {
    * RGBA32F-ready snapshot of the field for the shader: R,G = total in-plane displacement, B = height, A = 0.
    * Row 0 is y = -EXTENT (top). Rewritten by every `step` that changes anything; `version` increments with it.
    */
-  readonly field = new Float32Array(DOUGH_N * DOUGH_N * 4);
+  private _field = new Float32Array(DOUGH_N * DOUGH_N * 4);
+  get field(): Float32Array {
+    return this._field;
+  }
   version = 0;
 
-  private readonly ex = new Float32Array(DOUGH_N * DOUGH_N);
-  private readonly ey = new Float32Array(DOUGH_N * DOUGH_N);
-  private readonly evx = new Float32Array(DOUGH_N * DOUGH_N);
-  private readonly evy = new Float32Array(DOUGH_N * DOUGH_N);
-  private readonly px = new Float32Array(DOUGH_N * DOUGH_N);
-  private readonly py = new Float32Array(DOUGH_N * DOUGH_N);
-  private readonly ux = new Float32Array(DOUGH_N * DOUGH_N);
-  private readonly uy = new Float32Array(DOUGH_N * DOUGH_N);
-  private readonly hh = new Float32Array(DOUGH_N * DOUGH_N);
-  private readonly lapX = new Float32Array(DOUGH_N * DOUGH_N);
-  private readonly lapY = new Float32Array(DOUGH_N * DOUGH_N);
-  private readonly mask = new Float32Array(DOUGH_N * DOUGH_N);
+  private ex = new Float32Array(DOUGH_N * DOUGH_N);
+  private ey = new Float32Array(DOUGH_N * DOUGH_N);
+  private evx = new Float32Array(DOUGH_N * DOUGH_N);
+  private evy = new Float32Array(DOUGH_N * DOUGH_N);
+  private px = new Float32Array(DOUGH_N * DOUGH_N);
+  private py = new Float32Array(DOUGH_N * DOUGH_N);
+  private ux = new Float32Array(DOUGH_N * DOUGH_N);
+  private uy = new Float32Array(DOUGH_N * DOUGH_N);
+  private hh = new Float32Array(DOUGH_N * DOUGH_N);
+  private lapX = new Float32Array(DOUGH_N * DOUGH_N);
+  private lapY = new Float32Array(DOUGH_N * DOUGH_N);
+  private mask = new Float32Array(DOUGH_N * DOUGH_N);
+  private wasm: DoughKernel | null = null;
+  private wasmLoading: Promise<boolean> | undefined;
   private held = false;
   private vx = 0;
   private vy = 0;
@@ -131,6 +138,57 @@ export class DoughBody {
         this.mask[j * DOUGH_N + i] = 1 - smooth(1.02, 1.27, Math.hypot(x, y));
       }
     }
+  }
+
+  /** Warm off the critical path; migrate current state atomically without losing a drag. */
+  enableWasm(): Promise<boolean> {
+    this.wasmLoading ??= import('./wasm/dough')
+      .then(async ({ createDoughKernel }) => {
+        const kernel = await createDoughKernel();
+        if (!kernel) return false;
+        const arrays = [
+          this.ex,
+          this.ey,
+          this.evx,
+          this.evy,
+          this.px,
+          this.py,
+          this.ux,
+          this.uy,
+          this.hh,
+          this.lapX,
+          this.lapY,
+          this.mask,
+          this.field,
+        ];
+        let offset = kernel.pointer();
+        const views = arrays.map((array) => {
+          const view = new Float32Array(kernel.memory.buffer, offset, array.length);
+          view.set(array);
+          offset += array.byteLength;
+          return view;
+        });
+        [
+          this.ex,
+          this.ey,
+          this.evx,
+          this.evy,
+          this.px,
+          this.py,
+          this.ux,
+          this.uy,
+          this.hh,
+          this.lapX,
+          this.lapY,
+          this.mask,
+          this._field,
+        ] = views;
+        this.wasm = kernel;
+        this.version++;
+        return true;
+      })
+      .catch(() => false);
+    return this.wasmLoading;
   }
 
   /** Take hold at (x, y). */
@@ -268,6 +326,18 @@ export class DoughBody {
   }
 
   private substep(dt: number): void {
+    if (this.wasm) {
+      this.pinch = this.wasm.substep(
+        dt,
+        this.held ? 1 : 0,
+        this.gx,
+        this.gy,
+        this.vx,
+        this.vy,
+        this.pinch,
+      );
+      return;
+    }
     const N = DOUGH_N;
     const { ex, ey, evx, evy, px, py, lapX, lapY, mask } = this;
     const held = this.held;
@@ -363,6 +433,10 @@ export class DoughBody {
 
   /** Total displacement, derived height, and the shader's snapshot. */
   private derive(): void {
+    if (this.wasm) {
+      this.wasm.derive();
+      return;
+    }
     const N = DOUGH_N;
     const { ex, ey, px, py, ux, uy, hh, field } = this;
     for (let c = 0; c < N * N; c++) {

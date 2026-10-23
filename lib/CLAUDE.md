@@ -91,6 +91,14 @@ bundle only**. SSR/server builds get the real module.
   fallback cursor light; clicks never push or bounce neighbouring surfaces. `dough.ts` is the globe's soft-body field
   (pure, unit-tested). Contract:
   [`docs/liquid-glass-system.md`](../docs/liquid-glass-system.md).
+- **Frontend WebAssembly:** `wasm/` at the repo root contains AssemblyScript
+  dough and Peirce kernels; `lib/wasm/` owns loading, fixed memory and JavaScript
+  fallbacks. `DoughBody.enableWasm()` migrates the current state after loading;
+  eversion's `gl/core.ts` warms the projection module in its render realm.
+  `lib/wasm/generated/` and `wasm/.generated/` are build outputs. Vite and
+  `pnpm test` compile automatically; direct Vitest runs require `pnpm wasm:build`.
+  Source map, parity tests, benchmarks and deployment prerequisites:
+  [`docs/frontend-webassembly.md`](../docs/frontend-webassembly.md).
 - **Moderation/admin:** `moderation.server.ts`, `admin-audit.server.ts`,
   `admin-review.server.ts`, `security-reports.ts`.
 - **Webhooks (outbound developer API):** `webhooks/` (emit, events,

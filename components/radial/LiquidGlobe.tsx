@@ -682,6 +682,7 @@ export function LiquidGlobe({
   const wobble = useRef<{ yaw: number; vYaw: number; pitch: number; vPitch: number } | null>(null);
   /** The dough body (see the note above `DEFORM_OUT`), and where the finger holding it is, in radii. */
   const [jelly] = useState(() => new DoughBody());
+  useEffect(() => { void jelly.enableWasm(); }, [jelly]);
   const grabAt = useRef({ x: 0, y: 0, left: 0, top: 0, r: 1 });
   const everting = useRef(false);
   const nextEvertPulse = useRef(0);

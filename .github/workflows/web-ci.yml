@@ -229,6 +229,8 @@ jobs:
       # single build otherwise; the maps are never uploaded or deployed.
       - name: Build with Vite 8
         run: pnpm run build:frontend:sourcemap
+      - name: Validate WebAssembly assets
+        run: node scripts/check-wasm-output.mjs
       # OPT-01 — the critical path (transitive STATIC closure of the client
       # entry) must stay inside its budget. Sourcemap comments are stripped
       # before measuring, so these numbers match a production build.

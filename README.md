@@ -37,6 +37,7 @@ presets, 32 locales) alongside real-time multiplayer.
 -   **Database**: PostgreSQL, [Prisma Client](https://www.prisma.io/)
 -   **Authentication**: [Better Auth](https://better-auth.com/)
 -   **WebGL / Audio**: React Three Fiber, Rapier Physics, Pixi.js, Howler.js
+-   **WebAssembly**: AssemblyScript kernels for liquid-globe physics and Peirce projection baking, with JavaScript fallbacks. See [frontend WebAssembly](docs/frontend-webassembly.md).
 -   **State**: Zustand, TanStack React Query
 -   **Backend services**: Go (`go-services/`) — built with [Bazel](https://bazel.build/) (+ gazelle)
 
@@ -175,7 +176,9 @@ port flip (`deploy/hotswap-web.sh`). Full pipeline details:
     ```bash
     pnpm build
     ```
-    This compiles the Vite/Nitro app and bundles the WebSocket servers via esbuild.
+    This compiles the Vite/Nitro app, builds the globe's WebAssembly assets through
+    the Vite plugin, and bundles the WebSocket servers via esbuild. The pinned npm
+    compiler also works on the ARM64 deployment runner; no native SDK is needed.
 
 2.  **Deployment:**
     Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds
@@ -185,6 +188,11 @@ port flip (`deploy/hotswap-web.sh`). Full pipeline details:
     prisma migrate → compose up → blue/green web hotswap. `deploy.sh` can
     also be run manually on the VPS. See
     [`deploy/README.md`](deploy/README.md) for setup.
+
+    WebAssembly activation requires the updated Apache CSP to be installed and
+    reloaded once on the host. `deploy.sh` warns if the permission is missing;
+    the globe uses JavaScript until it is applied. Follow the
+    [WebAssembly deployment instructions](docs/frontend-webassembly.md#apache-policy-one-time-host-configuration).
 
 ## Documentation
 

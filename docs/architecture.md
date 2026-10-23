@@ -195,6 +195,22 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
 
 ## 3. Deploy pipeline (push → production)
 
+**Browser WebAssembly assets.** The Vite plugin runs
+`scripts/build-wasm.mjs` during dev/build, including Docker's direct Vite build.
+The pinned AssemblyScript npm compiler builds the dough and Peirce kernels on
+either the local platform or the ARM64 CI runner. Vite emits hashed `.wasm`
+assets into `.output/public/assets/`; Nitro serves them as `application/wasm`
+under the existing immutable cache policy. Docker and frontend CI run
+`scripts/check-wasm-output.mjs` to reject missing or invalid modules. Keep these
+assets with their matching JavaScript release when deploying or rolling back.
+
+The installed Apache policy must allow `'wasm-unsafe-eval'` in `script-src`.
+Updating the app image does not update the host vhost: an operator must sync
+the canonical config, validate it and reload Apache once. `deploy.sh` warns
+when the live origin policy lacks permission; JavaScript remains the fallback.
+See [frontend WebAssembly](./frontend-webassembly.md) for exact commands and
+runtime behavior.
+
 1. **Trigger:** push to `main` → `.github/workflows/deploy.yml` builds the two
    images on a native ARM64 runner, pushes them to GHCR tagged with the commit
    SHA, then POSTs an HMAC-signed request to the VPS webhook receiver

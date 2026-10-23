@@ -35,6 +35,22 @@ make test                     # Go (Bazel) + the frontend vitest suite
 used to be a hand-written list of globs and a path outside it answered _"No test
 files found."_ See [Discovery](#discovery) — that is now a gate.
 
+**Frontend numerical kernels.** `pnpm test`, `pnpm test:watch` and
+`pnpm test:coverage` compile the AssemblyScript modules before starting Vitest.
+The real-binary tests in `lib/wasm/__tests__/` check JavaScript/Wasm numerical
+parity, live-state migration, memory isolation and loading failures without a
+running server. Direct `pnpm exec vitest` runs need an explicit `pnpm wasm:build`
+first when they import these modules.
+
+```bash
+pnpm test lib/wasm/__tests__ lib/__tests__/dough.test.ts lib/eversion/__tests__/projection-lut.test.ts
+pnpm wasm:bench               # warm CPU comparison, including the LUT output copy
+```
+
+The frontend CI build also validates both emitted Wasm assets. See
+[frontend WebAssembly](./frontend-webassembly.md) for production asset checks,
+browser/CSP verification and benchmark limits.
+
 **Per-commit:** `pnpm check:consistency` (`scripts/check-consistency.sh`) runs
 the subset of the suite that encodes the site's conventions — the design/tab
 gate, the game-viewport contract, the filter-cost budget, the theme-token and

@@ -395,9 +395,11 @@ else
   list '\.(ts|tsx|js|jsx|mjs)$' | grep -vE '^(app/routeTree\.gen\.ts|lib/i18n/resources\.)' > "$LINTABLE" || true
   if [ -s "$LINTABLE" ]; then
     mkdir -p .cache/eslint
-    # shellcheck disable=SC2046
-    if pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache \
-        --cache-strategy content $(tr '\n' ' ' < "$LINTABLE"); then
+    # Bound each invocation so a large merge also works within Windows' command
+    # line limit. NUL-delimited paths retain spaces; every batch must pass.
+    if tr '\n' '\0' < "$LINTABLE" | xargs -0 -n 40 \
+        pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache \
+        --cache-strategy content; then
       pass "eslint (changed files)"
     else
       fail "eslint — the bar is no NEW errors or warnings versus the base branch"

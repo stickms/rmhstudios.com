@@ -1368,6 +1368,20 @@ fi
     fi
 } 2>/dev/null || true
 
+# The webhook cannot edit the host vhost. Keep the Wasm policy prerequisite
+# visible after deploy; JS remains functional until an operator applies it.
+if [ "$ENVIRONMENT" = "production" ]; then
+    {
+        _wasm_csp=$(curl -fsSI --max-time 5 -H 'Host: rmhstudios.com' http://127.0.0.1/ \
+            | tr -d '\r' | grep -i '^content-security-policy:' || true)
+        if [ -n "$_wasm_csp" ] && ! printf '%s\n' "$_wasm_csp" \
+            | grep -Eiq "script-src[^;]*'wasm-unsafe-eval'"; then
+            log "WARNING: the live Apache CSP does not allow WebAssembly; the globe is using its JavaScript fallback."
+            log "Sync deploy/apache/rmhstudios.conf to the host vhost and validate/reload Apache (docs/frontend-webassembly.md)."
+        fi
+    } 2>/dev/null || true
+fi
+
 # ── Host perf-tuning preflight (non-fatal, perf audit §1.3/§1.4) ──────────────
 # The Postgres + Apache tuning (deploy/postgres/postgresql.tuning.conf,
 # deploy/apache/mpm_event.conf) is a HOST action this deploy CANNOT perform: the

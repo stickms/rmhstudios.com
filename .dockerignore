@@ -144,3 +144,7 @@ vitest.config.ts
 **/*.spec.tsx
 **/__tests__
 **/__mocks__
+
+# Rebuilt with the pinned compiler inside the image.
+lib/wasm/generated
+wasm/.generated

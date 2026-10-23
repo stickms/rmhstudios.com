@@ -299,7 +299,9 @@ export function variantUrl(src: string, width: number, format: 'webp' | 'avif' =
 `;
 
   if (check) {
-    const current = existsSync(MANIFEST) ? readFileSync(MANIFEST, 'utf8') : '';
+    const current = existsSync(MANIFEST)
+      ? readFileSync(MANIFEST, 'utf8').replaceAll('\r\n', '\n')
+      : '';
     if (current !== contents) {
       console.error(
         '[images] lib/images/variants.gen.ts is out of date.\n' +
