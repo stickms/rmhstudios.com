@@ -163,6 +163,31 @@
   --app-jelly-flow-speed: 1;
   --app-jelly-quiet: 0.35;
   --app-jelly-on: 1;
+  /* #989 gel colours, mirroring the site's `--gel-*` (app/globals.css :root explains each): a translucent body that
+     darkens toward its base, the ink-gel primary action, the RGB-led edge tints and the 1px Fresnel line. The px
+     geometry (`--gel-bevel`, `--gel-disperse-*`) is theme-independent and read from the site tokens. */
+  --app-gel-body: rgb(255 255 255 / 0.012);
+  --app-gel-depth: rgb(0 0 0 / 0.16);
+  --app-gel-ink: var(--app-accent);
+  --app-on-ink: var(--app-accent-fg);
+  --app-gel-fresnel: color-mix(in srgb, var(--app-text) 14%, transparent);
+  --app-gel-specular: rgb(255 255 255 / 0.85);
+  --app-gel-edge-r: rgb(255 96 112 / 0.22);
+  --app-gel-edge-g: rgb(80 220 150 / 0.1);
+  --app-gel-edge-b: rgb(90 140 255 / 0.24);
+  --app-focus-ring: var(--app-accent);
+  /* Point the site's gel contract at the app palette, so a shared primitive inside an app (the jelly roles,
+     `<Button variant="signal">`, the global focus ring) wears the app's gel, not the site theme's. */
+  --gel-body: var(--app-gel-body);
+  --gel-depth: var(--app-gel-depth);
+  --gel-ink: var(--app-gel-ink);
+  --on-ink: var(--app-on-ink);
+  --gel-fresnel: var(--app-gel-fresnel);
+  --gel-specular: var(--app-gel-specular);
+  --gel-edge-r: var(--app-gel-edge-r);
+  --gel-edge-g: var(--app-gel-edge-g);
+  --gel-edge-b: var(--app-gel-edge-b);
+  --focus-ring: var(--app-focus-ring);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -197,6 +222,14 @@
   --app-jelly-plasma-a: color-mix(in srgb, var(--app-accent) 60%, white);
   --app-jelly-plasma-b: color-mix(in oklch, var(--app-jelly-plasma-a), #c9b5ff 45%);
   --app-jelly-plasma: 0.5;
+  /* Gel on a light ground: a whisper of white at the top, a cool shade at the base. */
+  --app-gel-body: rgb(255 255 255 / 0.12);
+  --app-gel-depth: rgb(16 20 36 / 0.035);
+  --app-gel-fresnel: rgb(255 255 255 / 0.6);
+  --app-gel-specular: rgb(255 255 255 / 0.95);
+  --app-gel-edge-r: rgb(255 84 104 / 0.16);
+  --app-gel-edge-g: rgb(64 200 140 / 0.08);
+  --app-gel-edge-b: rgb(72 120 255 / 0.16);
 }
 
 @supports (color: color-mix(in srgb, red 50%, blue)) {
@@ -246,6 +279,21 @@
   --app-jelly-flow-speed: 0;
   --app-jelly-quiet: 0;
   --app-jelly-on: 0;
+  /* Gel: the opaque surface; dispersion, Fresnel and specular off. */
+  --app-gel-body: var(--app-surface);
+  --app-gel-depth: var(--app-surface);
+  --app-gel-ink: var(--app-accent);
+  --app-on-ink: var(--app-accent-fg);
+  --app-gel-fresnel: transparent;
+  --app-gel-specular: transparent;
+  --app-gel-edge-r: transparent;
+  --app-gel-edge-g: transparent;
+  --app-gel-edge-b: transparent;
+  --app-focus-ring: var(--app-accent);
+  --gel-disperse-r: 0px;
+  --gel-disperse-g: 0px;
+  --gel-disperse-b: 0px;
+  --plasma-wake: 0;
 }
 
 @supports (color: color-mix(in srgb, red 50%, blue)) {
@@ -366,7 +414,8 @@
 }
 
 .app-theme :focus-visible {
-  outline: var(--app-focus-width, 2px) solid var(--app-accent);
+  /* Solid, never the plasma glow (#989). */
+  outline: var(--app-focus-width, 2px) solid var(--app-focus-ring, var(--app-accent));
   outline-offset: 2px;
 }
 
@@ -543,14 +592,9 @@
   --jelly-floor: var(--jelly-static-haze), var(--jelly-tile, none);
   --jelly-floor-size: auto, var(--jelly-tile-size, auto);
   background-color: var(--app-glass-bg);
+  /* The gel coat (#989): body → depth, vertical. It replaced a 150deg diagonal highlight across the face. */
   background-image:
-    linear-gradient(
-      150deg,
-      color-mix(in srgb, var(--app-text) 7%, transparent),
-      transparent 45%,
-      color-mix(in srgb, var(--app-text) 3%, transparent)
-    ),
-    var(--jelly-floor);
+    linear-gradient(180deg, var(--app-gel-body), var(--app-gel-depth)), var(--jelly-floor);
   background-size: auto, var(--jelly-floor-size);
   border: 1px solid var(--app-border-bright);
   box-shadow: none;
@@ -607,12 +651,13 @@ html:not(.perf-lite) .app-glass:is([data-jelly-haze='on'], [data-jelly-flow='on'
   --jelly-floor: var(--jelly-static-haze), var(--jelly-tile, none);
   --jelly-floor-size: auto, var(--jelly-tile-size, auto);
   background-color: var(--app-glass-bg);
+  /* The gel coat (#989): body → depth, vertical (it was a 155deg highlight across the face). */
   background-image:
-    linear-gradient(155deg, color-mix(in srgb, var(--app-text) 6%, transparent), transparent 50%),
-    var(--jelly-floor);
+    linear-gradient(180deg, var(--app-gel-body), var(--app-gel-depth)), var(--jelly-floor);
   background-size: auto, var(--jelly-floor-size);
-  /* The static rim (jelly-material.css §4) in the app palette: one lit top line
-     and a faint plasma subsurface glow. Static — never transitioned. */
+  /* The static rim (jelly-material.css §4) in the app palette: one lit top line,
+     a faint plasma subsurface glow, and the gel edge (RGB-led band + 1px Fresnel,
+     jelly-material.css §2b). Static — never transitioned. */
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--app-text) 9%, transparent),
     inset 0 0 14px -4px
@@ -620,7 +665,14 @@ html:not(.perf-lite) .app-glass:is([data-jelly-haze='on'], [data-jelly-flow='on'
         in srgb,
         var(--app-jelly-plasma-a) calc(0.05 * var(--app-jelly-plasma) * 220%),
         transparent
-      );
+      ),
+    inset calc(-1 * var(--gel-disperse-r, 0px)) calc(-1 * var(--gel-disperse-r, 0px))
+      var(--gel-bevel, 6px) 0 var(--app-gel-edge-r),
+    inset calc(-1 * var(--gel-disperse-g, 0px)) calc(-1 * var(--gel-disperse-g, 0px))
+      var(--gel-bevel, 6px) 0 var(--app-gel-edge-g),
+    inset calc(-1 * var(--gel-disperse-b, 0px)) calc(-1 * var(--gel-disperse-b, 0px))
+      var(--gel-bevel, 6px) 0 var(--app-gel-edge-b),
+    inset 0 0 0 1px var(--app-gel-fresnel);
 }
 /* A carrier or a haze canvas draws the haze: the static floor steps aside
    (perf-lite keeps it, as on the site tier). */

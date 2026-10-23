@@ -10,10 +10,15 @@
  * - **Quiet interior.** Full contrast in the rim band, damped toward the mean by `uQuiet` further in, so the motion
  *   behind text is a low-contrast drift (01 §5).
  *
+ * - **Dormant plasma (#989).** `jPlasma` (`jelly-glsl.ts`): a core and filaments clipped inside the gel, invisible at
+ *   `uLevel` 0, woken by hover, bright on press, rung by charge pulses (`uRings`), in the accent colour. Its own motion
+ *   runs at `uPlasmaMotion` (1 lively, 0.5 calm); it is drawn here for haze slots only (the rim draws it otherwise).
+ *   No broad gloss: the only light is the subsurface glow entering at the lit EDGE.
+ *
  * Feature size ≈ 140 CSS px, so the field is low-frequency and the CSS upscale is invisible. Alpha is capped at 0.6
  * here and the legibility gate caps the token values far below that. Output is premultiplied.
  */
-import { NOISE_GLSL, SDF_GLSL } from './jelly-glsl';
+import { NOISE_GLSL, PLASMA_GLSL, SDF_GLSL } from './jelly-glsl';
 
 export const HAZE_FRAG = `#version 300 es
 precision highp float;
@@ -32,9 +37,11 @@ uniform float uPlasma;   // role plasma strength x theme gain
 uniform vec3 uFlow;      // x = speed, y = eddy amount, z = current axis (radians)
 uniform float uQuiet;    // interior damping (--site-jelly-quiet)
 uniform float uAmp;      // motion amplitude: 1 lively, CALM.amplitude under calm
+uniform float uPlasmaMotion; // dormant plasma motion: 1 lively, PLASMA_LOOK.calmMotion under calm
 
 ${SDF_GLSL}
 ${NOISE_GLSL}
+${PLASMA_GLSL}
 
 void main() {
   vec2 P = vec2(gl_FragCoord.x, uSize.y * uScale.y - gl_FragCoord.y) / uScale;  // CSS px, y down
@@ -72,5 +79,9 @@ void main() {
 
   vec3 col = uHaze.rgb * hazeA + plasma * (plasmaA + sss);
   float a = clamp(hazeA + plasmaA + sss, 0.0, 0.6);
+  // Dormant plasma behind the haze crests: 0 at rest, so a resting surface is exactly the haze above.
+  float pa = jPlasma(P, uSize, d, uSeed, uTime * uPlasmaMotion);
+  col = col * (1.0 - pa) + uAccent * pa;
+  a = clamp(a + pa * (1.0 - a), 0.0, 0.6);
   outColor = vec4(min(col, vec3(a)) * cover, a * cover);
 }`;

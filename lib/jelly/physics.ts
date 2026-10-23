@@ -2,8 +2,9 @@
  * The soft-body document service: every eligible element is jelly under the pointer
  * (docs/plans/plasmatic-jelly/02-soft-body.md, master plan R11/R12).
  *
- * One delegated, capture-phase, passive listener set for the whole document and one `requestAnimationFrame` loop
- * that exists only while a body is moving. It absorbs the old press layer (`hooks/useFluidPress.ts`, deleted): the
+ * Pointer input arrives through the ONE window listener set (`pointer.ts`, `onJellyPointer`) and frames through the
+ * ONE jelly frame driver (`frame.ts`, `drive(fn, { order: 10 })` — before the engine draws what it produces); the
+ * driver is awake only while a body, dent or plasma level is moving. It absorbs the old press layer (`hooks/useFluidPress.ts`, deleted): the
  * `data-fluid-press*` attributes stay accepted aliases (`soft-policy.ts`), and a centre press still lands exactly on
  * the legacy `0.96 / 0.985 / 1.028` scales.
  *
@@ -36,7 +37,24 @@
  * - **Cleared at sleep.** A body at rest with no plastic memory gets its inline values restored, `will-change` and
  *   `data-jelly-body` removed, and leaves the active set.
  *
+ * ## Press = liquid-glass dent (#989)
+ *
+ * A press sinks a Gaussian bowl under the contact (host-local px, σ = clamp(`DENT.radiusFrac` · short side)), its
+ * depth easing to `DENT.depthPx` on the dent spring (`envelope.ts` `DENT_SPRING`, ζ = `DENT.damping`), published each
+ * frame it changes through `setDent` for the engine's rim indent, glow and light dot. A mouse or pen press stays down
+ * past the slop and the dent slides with the pointer; off the element the overshoot becomes a rubber-band stretch
+ * (`rubberBand`, ≤ `DENT.rubberMaxPx`) published as `stretchX/Y`, and the envelope stretches toward it inside
+ * `MOTION_BOUNDS`. Admitted slabs get the lattice press drive at the dent centre (outline indent ≈ `DENT.indentPx`,
+ * far side bulging). The content under the dent refracts through `lens.ts` — one host at a time, material fully on
+ * only, style restored exactly when the dent has eased out (then `setDent(el, null)`).
+ *
  * ## Events
+ *
+ * Emits `plasma:level` `{el, level}` (#989): `PLASMA.wake` while hovered (fine pointer, full mode), `PLASMA.press`
+ * while pressed or dragged, on keyboard focus-visible and briefly on click, eased back with `PLASMA.easeMs`, at most
+ * once per frame per element and only when it moved ≥ 0.02 (or arrived). Listens for `charge:attract` (Coulomb, #989)
+ * and turns it into one bounded tug (≤ `MOTION_BOUNDS.nudgePx`, per nudge period) on a body whose envelope is awake;
+ * a resting body passes it to its support and does not move.
  *
  * Emits `body:release` `{el, x, y, energy ∈ [0,1]}` (arcs charge + material pulse) and `drag:start` / `drag:end` on the
  * shared `jellyBus`. Listens for `arc:strike` and gives the struck element a ≤ 1.5px impulse (R12). A strong release
@@ -56,6 +74,9 @@
 import { VelocityTracker } from '@/lib/fluid';
 
 import { jellyBus } from './bus';
+import { drive, type FrameDriver } from './frame';
+import { createJellyLens, type JellyLens } from './lens';
+import { onJellyPointer } from './pointer';
 import {
   FramerWatch,
   IDENTITY_BASE,
@@ -68,7 +89,11 @@ import {
 import {
   beginPlastic,
   cornerFlexRadii,
+  createDentSprings,
   createEnvelope,
+  dentContact,
+  dentRadius,
+  dentSettled,
   dragTarget,
   envelopeAsleep,
   envelopeSettled,
@@ -79,13 +104,16 @@ import {
   pressTarget,
   renderEnvelope,
   restTarget,
+  stepDent,
   stepEnvelope,
+  stretchTarget,
+  type DentSprings,
   type EnvelopeBody,
   type EnvelopePose,
   type EnvelopeSize,
   type UnitOffset,
 } from './envelope';
-import { latticeImpulse, setLatticeDrive } from './lattice-inputs';
+import { latticeImpulse, setDent, setLatticeDrive, type JellyDent } from './lattice-inputs';
 import type { LatticeInput } from './lattice';
 import {
   SOFT_BODY,
@@ -103,8 +131,11 @@ import {
   type SoftPolicy,
 } from './soft-policy';
 import {
+  DENT,
   FINE_POINTER_QUERY,
+  JELLY_LAYOUT,
   MOTION_BOUNDS,
+  PLASMA,
   OPT_OUT_SCOPE_SELECTOR,
   OPT_OUT_SELECTOR,
   jellyBudget,
@@ -147,6 +178,18 @@ const DRAG_IDLE_MS = 60;
 const LATTICE_RELEASE_PX = 3;
 /** Arc strike / nudge impulse ceiling (R12). */
 const STRIKE_PX = MOTION_BOUNDS.nudgePx;
+/** A Coulomb pull lands on a body at most once per nudge period (`jellyNudge`, 0.4s): one bounded tug at a time. */
+const ATTRACT_INTERVAL_MS = 400;
+/** Dent publish threshold (px): smaller changes are not re-published. */
+const DENT_EPSILON = 0.01;
+/** Below this depth with no stretch, a released dent is gone. */
+const DENT_GONE_PX = 0.02;
+/** Plasma: emit when the level moved at least this far since the last emission (or arrived at its target). */
+const PLASMA_STEP = 0.02;
+/** Plasma: within this of the target, snap to it. */
+const PLASMA_SNAP = 0.005;
+/** The driver order of the soft body: before the engine (20) that draws its dent and lattice, and the arcs (30). */
+const PHYSICS_ORDER = 10;
 
 /* ── Types ───────────────────────────────────────────────────────────────── */
 
@@ -157,7 +200,28 @@ interface Press {
   /** Contact point (client px). */
   ox: number;
   oy: number;
+  /** Current pointer (client px): the dent slides with it. */
+  cx: number;
+  cy: number;
   at: number;
+}
+
+/** The #989 press dent of one body (host-local px; see `JellyDent`). */
+interface Dent {
+  springs: DentSprings;
+  x: number;
+  y: number;
+  radius: number;
+  /** What was last handed to `setDent` (null = nothing published yet). */
+  published: JellyDent | null;
+}
+
+/** Dormant plasma of one host (#989): eased toward its target and announced on `plasma:level`. */
+interface Plasma {
+  level: number;
+  emitted: number;
+  /** A click holds the level at `PLASMA.press` until this time (ms). */
+  flashUntil: number;
 }
 
 interface Drag {
@@ -211,6 +275,12 @@ interface Body {
   latticeDrive: LatticeInput | null;
   /** The target the springs head for this frame (kept for the settle test). */
   settled: boolean;
+  /** The press dent while pressed or easing out; `null` once it has gone. */
+  dent: Dent | null;
+  /** The lens may refract this host (no stylesheet filter of its own); decided at activation. */
+  lensOk: boolean;
+  /** Last accepted `charge:attract` (ms). */
+  attractAt: number;
 }
 
 /* ── Module-level handle (for drag owners) ───────────────────────────────── */
@@ -252,16 +322,22 @@ export function reportJellyDrag(
  * Install the soft-body service on `doc`. Returns the teardown, which removes every listener, cancels the frame and
  * restores every inline style it wrote. Installing twice on the same document returns a no-op for the second call.
  */
-export function installJellyPhysics(doc: Document = document): () => void {
-  const win = doc.defaultView;
+export function installJellyPhysics(
+  doc: Document = document,
+  opts: { lens?: JellyLens } = {},
+): () => void {
+  const win = doc.defaultView as (Window & typeof globalThis) | null;
   if (!win || (service && service.doc === doc)) return () => {};
 
   const bodies = new Map<HTMLElement, Body>();
   const traitCache = new WeakMap<Element, { gen: number; traits: ElementTraits }>();
   let traitGen = 0;
-  let raf = 0;
-  let lastFrame = 0;
   let epoch = 0;
+  const plasma = new Map<HTMLElement, Plasma>();
+  /** The host with keyboard focus-visible (plasma at press level), and the last input's modality. */
+  let focusHost: HTMLElement | null = null;
+  let keyboardModality = false;
+  const lens = opts.lens ?? createJellyLens(doc);
   let lastScroll = -Infinity;
 
   const pointer = { x: 0, y: 0, t: 0, fine: false, inDoc: false };
@@ -284,21 +360,28 @@ export function installJellyPhysics(doc: Document = document): () => void {
   let cap = 0;
   let latticeCap = 0;
   let deformOff = true;
+  /** `jellyMode().deform === 'full'`: the material is on, so the lens may refract (press mode keeps rim + indent). */
+  let deformFull = false;
 
   const evaluate = () => {
     const mode = jellyMode({ doc, win });
     deformOff = mode.deform === 'off';
+    deformFull = mode.deform === 'full';
     const tier = jellyTier({ doc, win });
     const motion = jellyMotionLevel(doc);
     // `press` mode is perf-lite / material-off / `still`, which `softFeatures` already degrades to press-only.
     features = softFeatures(tier, motion);
     const budget = jellyBudget({ doc, win });
     const coarse = !(fineMq?.matches ?? false);
-    cap = deformOff ? 0 : Math.min(bodyCap(features, coarse), budget.bodies);
+    cap = deformOff
+      ? 0
+      : Math.min(bodyCap(features, coarse), budget.bodies, JELLY_LAYOUT.bodyBudget);
     latticeCap = deformOff || !features.lattice ? 0 : Math.min(features.lattices, budget.lattices);
     traitGen++;
-    if (deformOff) clearAll();
-    else enforceCap();
+    if (deformOff) {
+      clearAll();
+      clearPlasma();
+    } else enforceCap();
   };
 
   // ── Traits and policy ────────────────────────────────────────────────────
@@ -398,6 +481,9 @@ export function installJellyPhysics(doc: Document = document): () => void {
       lastRadii: '',
       latticeDrive: null,
       settled: false,
+      dent: null,
+      lensOk: false,
+      attractAt: -Infinity,
     };
     bodies.set(el, body);
     return body;
@@ -417,6 +503,11 @@ export function installJellyPhysics(doc: Document = document): () => void {
     if (b.cornerWritten) s.borderRadius = b.inlineRadius;
     if (b.press) b.el.removeAttribute('data-jelly-active');
     if (b.latticeDrive) setLatticeDrive(b.el, null);
+    if (b.dent) {
+      if (b.dent.published) setDent(b.el, null);
+      lens.release(b.el);
+      b.dent = null;
+    }
     bodies.delete(b.el);
   };
 
@@ -446,11 +537,77 @@ export function installJellyPhysics(doc: Document = document): () => void {
     for (const b of evict) clear(b);
   }
 
-  // ── Frame scheduling ────────────────────────────────────────────────────
+  // ── Frame scheduling: one driver on the shared jelly frame (`frame.ts`) ─
+
+  const driver: FrameDriver = drive((ts, dtMs) => frame(ts, dtMs), { order: PHYSICS_ORDER }, win);
 
   const requestFrame = () => {
-    if (raf || bodies.size === 0) return;
-    raf = win.requestAnimationFrame(frame);
+    if (bodies.size === 0 && plasma.size === 0) return;
+    driver.wake();
+  };
+
+  // ── Plasma (#989): dormant, woken by hover, brightened by press / focus-visible / click ──
+
+  const emitPlasma = (el: HTMLElement, level: number) => {
+    if (jellyBus.listenerCount('plasma:level') > 0) jellyBus.emit('plasma:level', { el, level });
+  };
+
+  const plasmaFor = (el: HTMLElement): Plasma => {
+    let p = plasma.get(el);
+    if (!p) plasma.set(el, (p = { level: PLASMA.rest, emitted: PLASMA.rest, flashUntil: 0 }));
+    return p;
+  };
+
+  function clearPlasma() {
+    for (const [el, p] of plasma) if (p.emitted !== PLASMA.rest) emitPlasma(el, PLASMA.rest);
+    plasma.clear();
+    focusHost = null;
+  }
+
+  /** The host whose plasma an event on `target` wakes: a soft body that is not off, disabled or opted out. */
+  const plasmaHost = (target: EventTarget | null): HTMLElement | null => {
+    if (deformOff) return null;
+    const el = bodyElFrom(target);
+    if (!el) return null;
+    const traits = traitsFor(el);
+    if (traits.disabled || traits.scopeOff) return null;
+    return policyFor(traits).mode === 'off' ? null : el;
+  };
+
+  const plasmaTarget = (el: HTMLElement, p: Plasma, t: number): number => {
+    if (deformOff) return PLASMA.rest;
+    const b = bodies.get(el);
+    if (b?.press || b?.drag || el === focusHost || p.flashUntil > t) return PLASMA.press;
+    if (b?.hovering && features.hover && pointer.fine) return PLASMA.wake;
+    return PLASMA.rest;
+  };
+
+  /**
+   * Ease every plasma level toward its target (time constant `PLASMA.easeMs`) and announce it on `plasma:level` — at
+   * most once per frame per element, and only when it moved ≥ 0.02 since the last announcement or arrived at its
+   * target. Returns whether any level still needs frames.
+   */
+  const stepPlasma = (dtS: number, t: number): boolean => {
+    let busy = false;
+    const k = 1 - Math.exp(-(dtS * 1000) / PLASMA.easeMs);
+    for (const [el, p] of [...plasma]) {
+      const target = plasmaTarget(el, p, t);
+      p.level += (target - p.level) * k;
+      if (Math.abs(target - p.level) < PLASMA_SNAP) p.level = target;
+      if (
+        Math.abs(p.level - p.emitted) >= PLASMA_STEP ||
+        (p.level === target && p.emitted !== target)
+      ) {
+        p.emitted = p.level;
+        emitPlasma(el, p.level);
+      }
+      if (p.level === PLASMA.rest && target === PLASMA.rest && p.emitted === PLASMA.rest) {
+        plasma.delete(el);
+        continue;
+      }
+      if (p.level !== target || p.flashUntil > t) busy = true;
+    }
+    return busy;
   };
 
   // ── Activation entry points ─────────────────────────────────────────────
@@ -516,6 +673,7 @@ export function installJellyPhysics(doc: Document = document): () => void {
     b.hovering = true;
     if (!b.press && !b.drag) b.phase = 'hover';
     b.kick = { vx: pvx.get(), vy: pvy.get() };
+    plasmaFor(el);
     enforceCap();
     requestFrame();
   };
@@ -545,6 +703,7 @@ export function installJellyPhysics(doc: Document = document): () => void {
   };
 
   const onDown = (e: PointerEvent) => {
+    keyboardModality = false;
     if (e.button > 0) return;
     trackPointer(e);
     const el = bodyElFrom(e.target);
@@ -553,11 +712,20 @@ export function installJellyPhysics(doc: Document = document): () => void {
     if (field && field !== el && el.contains(field)) return;
     const b = bodyFor(el);
     if (!b) return;
-    b.press = { pointerId: e.pointerId, ox: e.clientX, oy: e.clientY, at: now() };
+    b.press = {
+      pointerId: e.pointerId,
+      ox: e.clientX,
+      oy: e.clientY,
+      cx: e.clientX,
+      cy: e.clientY,
+      at: now(),
+    };
     b.phase = 'pressed';
     b.pendingRelease = null;
     b.wantCandidates = features.nudge && b.policy.envelope;
     el.setAttribute('data-jelly-active', '');
+    plasmaFor(el);
+    if (deformFull) lens.prepare();
     enforceCap();
     requestFrame();
   };
@@ -572,6 +740,11 @@ export function installJellyPhysics(doc: Document = document): () => void {
     if (bodies.size === 0) return;
     for (const b of bodies.values()) {
       const press = b.press;
+      if (press && press.pointerId === e.pointerId) {
+        // The dent slides with the pointer (#989).
+        press.cx = e.clientX;
+        press.cy = e.clientY;
+      }
       if (press && press.pointerId === e.pointerId && !b.drag) {
         const dx = e.clientX - press.ox;
         const dy = e.clientY - press.oy;
@@ -579,7 +752,9 @@ export function installJellyPhysics(doc: Document = document): () => void {
           if (b.policy.drag) {
             startDrag(b, e.pointerId);
             jellyBus.emit('drag:start', { el: b.el });
-          } else release(b, e.clientX, e.clientY, true);
+          } else if (e.pointerType === 'touch') release(b, e.clientX, e.clientY, true);
+          // A mouse or pen press stays down past the slop (it cannot be a scroll): the dent slides with it and a
+          // drag off the element stretches the gel. Touch past the slop is a scroll, released silently.
         }
       }
       const d = b.drag;
@@ -675,11 +850,52 @@ export function installJellyPhysics(doc: Document = document): () => void {
 
   const onVisibility = () => {
     if (doc.hidden) {
-      if (raf) win.cancelAnimationFrame(raf);
-      raf = 0;
-      lastFrame = 0;
       clearAll();
+      clearPlasma();
     }
+  };
+
+  // ── Focus, keyboard and click: plasma only ───────────────────────────────
+
+  const onKeyDown = () => {
+    keyboardModality = true;
+  };
+
+  const onFocusIn = (e: FocusEvent) => {
+    if (!keyboardModality) return;
+    const host = plasmaHost(e.target);
+    if (!host) return;
+    focusHost = host;
+    plasmaFor(host);
+    requestFrame();
+  };
+
+  const onFocusOut = (e: FocusEvent) => {
+    if (!focusHost) return;
+    const next = e.relatedTarget as Node | null;
+    if (next && focusHost.contains(next)) return;
+    focusHost = null;
+    requestFrame();
+  };
+
+  const onClick = (e: MouseEvent) => {
+    const host = plasmaHost(e.target);
+    if (!host) return;
+    plasmaFor(host).flashUntil = now() + PLASMA.easeMs;
+    requestFrame();
+  };
+
+  // ── Coulomb attraction (#989): a bounded tug on a body that is already awake ──
+
+  const attract = (el: HTMLElement, nx: number, ny: number, force: number) => {
+    const b = bodies.get(el);
+    // Resting bodies (no envelope awake) pass the pull to their support: nothing moves.
+    if (!b || !b.ready || !b.policy.envelope || deformOff || !features.wobble) return;
+    const f = Math.max(0, Math.min(1, Number.isFinite(force) ? force : 0));
+    const t = now();
+    if (!(f > 0) || t - b.attractAt < ATTRACT_INTERVAL_MS) return;
+    b.attractAt = t;
+    strike(el, nx, ny, STRIKE_PX * f);
   };
 
   // ── External drag owners ─────────────────────────────────────────────────
@@ -746,8 +962,12 @@ export function installJellyPhysics(doc: Document = document): () => void {
     b.epoch = epoch;
     b.policy = resolveSoftPolicy({ ...b.traits, width: rect.w, height: rect.h }, { features });
     if (b.policy.mode === 'off' || !moves(b.policy)) return false;
+    b.lensOk = !el.style.filter;
     if (b.policy.envelope) {
       const computed = win.getComputedStyle(el);
+      // A host with a stylesheet filter of its own keeps it: the lens never replaces (or chains after) one.
+      const own = (computed as { filter?: string }).filter;
+      if (own && own !== 'none') b.lensOk = false;
       b.base = readBase(el.style, computed);
       b.inlineWillChange = el.style.willChange ?? '';
       b.framer = new FramerWatch(el.style.transform);
@@ -793,10 +1013,66 @@ export function installJellyPhysics(doc: Document = document): () => void {
     return { vx: d.tx.get(), vy: d.ty.get() };
   };
 
-  function frame(ts: number) {
-    raf = 0;
-    const dt = lastFrame ? Math.min(0.25, Math.max(0, (ts - lastFrame) / 1000)) : 1 / 60;
-    lastFrame = ts;
+  /** The lens may refract `b` now: material fully on, no own filter, framer not animating it. */
+  const lensAllowed = (b: Body) => deformFull && b.lensOk && !b.framerOwned;
+
+  /**
+   * Step the press dent of `b` (#989): depth eases to `DENT.depthPx` while pressed and back to 0 after; the centre
+   * follows the pointer, clamped to the host, and the overshoot past an edge becomes a capped rubber-band stretch.
+   * Returns what to publish: a dent, `null` (it has gone) or `undefined` (nothing changed enough to re-publish).
+   */
+  const stepBodyDent = (b: Body, rect: Rect, dt: number): JellyDent | null | undefined => {
+    if (!b.press && !b.dent) return undefined;
+    if (!b.dent) {
+      b.dent = {
+        springs: createDentSprings(),
+        x: 0,
+        y: 0,
+        radius: dentRadius(rect.w, rect.h),
+        published: null,
+      };
+    }
+    const d = b.dent;
+    let target = { depth: 0, stretchX: 0, stretchY: 0 };
+    if (b.press) {
+      const c = dentContact(b.press.cx - rect.x, b.press.cy - rect.y, rect.w, rect.h);
+      d.x = c.x;
+      d.y = c.y;
+      // The stretch is deformation: `press` mode (degraded, `still`) keeps only the dent itself.
+      const stretch = features.wobble && !b.externalDrag;
+      target = {
+        depth: DENT.depthPx,
+        stretchX: stretch ? c.stretchX : 0,
+        stretchY: stretch ? c.stretchY : 0,
+      };
+    }
+    stepDent(d.springs, target, dt);
+    const arrived = dentSettled(d.springs, target);
+    if (!arrived) b.settled = false;
+    const depth = Math.max(0, Math.min(DENT.depthPx * 1.5, d.springs.depth.value));
+    const sx = d.springs.stretchX.value;
+    const sy = d.springs.stretchY.value;
+    if (!b.press && depth < DENT_GONE_PX && Math.hypot(sx, sy) < DENT_GONE_PX) {
+      if (d.published) return null;
+      b.dent = null;
+      return undefined;
+    }
+    const next: JellyDent = { x: d.x, y: d.y, depth, radius: d.radius, stretchX: sx, stretchY: sy };
+    const prev = d.published;
+    if (
+      prev &&
+      Math.abs(prev.x - next.x) < DENT_EPSILON &&
+      Math.abs(prev.y - next.y) < DENT_EPSILON &&
+      Math.abs(prev.depth - next.depth) < DENT_EPSILON &&
+      Math.abs(prev.stretchX - next.stretchX) < DENT_EPSILON &&
+      Math.abs(prev.stretchY - next.stretchY) < DENT_EPSILON
+    )
+      return undefined;
+    return next;
+  };
+
+  function frame(_ts: number, dtMs: number): boolean {
+    const dt = Math.min(0.25, Math.max(0, dtMs / 1000));
     const t = now();
 
     // ── 1. READ ──
@@ -829,6 +1105,7 @@ export function installJellyPhysics(doc: Document = document): () => void {
       pose: EnvelopePose | null;
       drive: LatticeInput | null;
       radii: string | null;
+      dent: JellyDent | null | undefined;
     }[] = [];
     let again = false;
     for (const b of bodies.values()) {
@@ -848,6 +1125,9 @@ export function installJellyPhysics(doc: Document = document): () => void {
       const dv = b.drag ? dragVelocity(b.drag, t) : null;
       let pose: EnvelopePose | null = null;
       let radii: string | null = null;
+      b.settled = true;
+      const dent = stepBodyDent(b, rect, dt);
+      const dentSettledNow = b.settled;
 
       if (b.policy.envelope) {
         const size: EnvelopeSize = { w: rect.w, h: rect.h };
@@ -860,8 +1140,17 @@ export function installJellyPhysics(doc: Document = document): () => void {
           target = dragTarget(dv.vx, dv.vy);
           phase = 'drag';
         } else if (b.press) {
-          target = pressTarget(unit(rect, b.press.ox, b.press.oy), b.policy.base, size);
+          target = pressTarget(unit(rect, b.press.cx, b.press.cy), b.policy.base, size);
           b.pressPose = target;
+          // Dragged off the element: the gel stretches toward the pointer (rubber band, inside MOTION_BOUNDS).
+          if (b.dent) {
+            target = stretchTarget(
+              target,
+              b.dent.springs.stretchX.value,
+              b.dent.springs.stretchY.value,
+              size,
+            );
+          }
           phase = 'press';
         } else if (b.hovering && b.policy.hover !== 'none') {
           target = hoverTarget(unit(rect, pointer.x, pointer.y), size, b.policy.hover);
@@ -875,7 +1164,7 @@ export function installJellyPhysics(doc: Document = document): () => void {
           b.kick = null;
         }
         stepEnvelope(b.env, target, phaseSprings(phase, features.wobble), dt);
-        b.settled = envelopeSettled(b.env, target) && !(dv && (dv.vx || dv.vy));
+        b.settled = dentSettledNow && envelopeSettled(b.env, target) && !(dv && (dv.vx || dv.vy));
         pose = renderEnvelope(b.env, size, b.policy.base, { scale: b.policy.scale });
 
         if (b.policy.cornerFlex && b.radius > 0 && !b.framerOwned) {
@@ -884,7 +1173,7 @@ export function installJellyPhysics(doc: Document = document): () => void {
           const amount = span > 0 ? Math.min(1, Math.abs(iso - 1) / span) : 0;
           if (amount > 0.01 && (b.cornerWritten || corners < SOFT_BODY.cornerFlexMax)) {
             const contact = b.press
-              ? unit(rect, b.press.ox, b.press.oy)
+              ? unit(rect, b.press.cx, b.press.cy)
               : unit(rect, pointer.x, pointer.y);
             radii = cornerFlexRadii(b.radius, contact, amount)
               .map((r) => `${r.toFixed(1)}px`)
@@ -892,8 +1181,6 @@ export function installJellyPhysics(doc: Document = document): () => void {
             if (!b.cornerWritten) corners++;
           }
         }
-      } else {
-        b.settled = true;
       }
 
       let drive: LatticeInput | null = null;
@@ -906,7 +1193,10 @@ export function installJellyPhysics(doc: Document = document): () => void {
           drive = { kind: 'drag', ax, ay };
           if (dv.vx || dv.vy) b.settled = false;
         } else if (b.press) {
-          drive = { kind: 'press', x: b.press.ox - rect.x, y: b.press.oy - rect.y };
+          // The outline indents under the dent (≈ DENT.indentPx, lattice.ts) and the far side bulges.
+          drive = b.dent
+            ? { kind: 'press', x: b.dent.x, y: b.dent.y }
+            : { kind: 'press', x: b.press.cx - rect.x, y: b.press.cy - rect.y };
         } else if (b.hovering && features.hover && pointer.fine) {
           drive = { kind: 'hover', x: pointer.x - rect.x, y: pointer.y - rect.y };
         }
@@ -915,23 +1205,30 @@ export function installJellyPhysics(doc: Document = document): () => void {
           else drives++;
         }
       }
-      plan.push({ b, pose, drive, radii });
+      plan.push({ b, pose, drive, radii, dent });
     }
 
     // ── 3. WRITE ──
-    for (const { b, pose, drive, radii } of plan) {
+    for (const { b, pose, drive, radii, dent } of plan) {
       const el = b.el;
       if (drive || b.latticeDrive) {
         setLatticeDrive(el, drive);
         b.latticeDrive = drive;
       }
+      if (dent !== undefined && b.dent) {
+        setDent(el, dent);
+        b.dent.published = dent;
+        if (dent === null) b.dent = null;
+      }
+      if (b.dent?.published && lensAllowed(b)) lens.update(el, b.dent.published);
+      else lens.release(el);
       // The ONE sleep decision. A body nobody holds either sleeps now (cleared: inline values restored exactly) or
       // keeps its frames until it does — `b.settled` (springs on THIS frame's target) never stops an idle body,
       // because a released target still carries plastic memory that only ages inside `stepEnvelope`. Before this,
       // a body settled on its plastic target asked for no frame, never aged, never slept, and the next unrelated
       // pointer frame wrote its stale pose (`scale: 1.0004 1.0003`) long after the gesture ended.
       const busy = !!(b.press || b.drag || b.hovering);
-      if (!busy && (!b.policy.envelope || envelopeAsleep(b.env))) {
+      if (!busy && !b.dent && (!b.policy.envelope || envelopeAsleep(b.env))) {
         clear(b);
         continue;
       }
@@ -951,8 +1248,8 @@ export function installJellyPhysics(doc: Document = document): () => void {
       // it on (a pointermove, the release) asks for the next one.
       if (!busy || !b.settled) again = true;
     }
-    if (again && bodies.size > 0) requestFrame();
-    if (!raf) lastFrame = 0;
+    const plasmaBusy = stepPlasma(dt, t);
+    return (again && bodies.size > 0) || plasmaBusy;
   }
 
   const writePose = (b: Body, pose: EnvelopePose) => {
@@ -994,14 +1291,21 @@ export function installJellyPhysics(doc: Document = document): () => void {
 
   // ── Wiring ──────────────────────────────────────────────────────────────
 
-  const opts = { capture: true, passive: true } as const;
-  doc.addEventListener('pointerover', onOver, opts);
-  doc.addEventListener('pointerout', onOut, opts);
-  doc.addEventListener('pointerdown', onDown, opts);
-  doc.addEventListener('pointermove', onMove, opts);
-  doc.addEventListener('pointerup', onUp, opts);
-  doc.addEventListener('pointercancel', onUp, opts);
-  doc.addEventListener('scroll', onScroll, opts);
+  const listenOpts = { capture: true, passive: true } as const;
+  // Pointer input arrives through the ONE window listener set (`pointer.ts`), shared with arcs and the engine.
+  const offPointer = [
+    onJellyPointer('pointerover', onOver, win),
+    onJellyPointer('pointerout', onOut, win),
+    onJellyPointer('pointerdown', onDown, win),
+    onJellyPointer('pointermove', onMove, win),
+    onJellyPointer('pointerup', onUp, win),
+    onJellyPointer('pointercancel', onUp, win),
+  ];
+  doc.addEventListener('scroll', onScroll, listenOpts);
+  doc.addEventListener('keydown', onKeyDown, listenOpts);
+  doc.addEventListener('focusin', onFocusIn as EventListener, listenOpts);
+  doc.addEventListener('focusout', onFocusOut as EventListener, listenOpts);
+  doc.addEventListener('click', onClick as EventListener, listenOpts);
   doc.addEventListener('visibilitychange', onVisibility);
   win.addEventListener('resize', onResize, { passive: true });
   win.addEventListener('blur', releaseAll);
@@ -1010,28 +1314,46 @@ export function installJellyPhysics(doc: Document = document): () => void {
   const offStrike = jellyBus.on('arc:strike', ({ el, nx, ny, energy }) => {
     strike(el as HTMLElement, nx, ny, STRIKE_PX * Math.max(0, Math.min(1, energy)));
   });
+  // `(nx, ny)` points toward the charged neighbour; arcs emit the equal and opposite pull on the other body.
+  const offAttract = jellyBus.on('charge:attract', ({ el, nx, ny, force }) => {
+    attract(el as HTMLElement, nx, ny, force);
+  });
 
   evaluate();
+
+  // Build the lens filter at idle, so no frame ever pays for it (a no-op where the lens is unsupported).
+  const idle = (win as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+  let idleHandle: ReturnType<typeof setTimeout> | number | null = idle
+    ? idle.call(win, () => {
+        idleHandle = null;
+        if (deformFull) lens.prepare();
+      })
+    : null;
 
   const self: Service = { doc, drag };
   service = self;
 
   return () => {
-    doc.removeEventListener('pointerover', onOver, opts);
-    doc.removeEventListener('pointerout', onOut, opts);
-    doc.removeEventListener('pointerdown', onDown, opts);
-    doc.removeEventListener('pointermove', onMove, opts);
-    doc.removeEventListener('pointerup', onUp, opts);
-    doc.removeEventListener('pointercancel', onUp, opts);
-    doc.removeEventListener('scroll', onScroll, opts);
+    for (const off of offPointer) off();
+    doc.removeEventListener('scroll', onScroll, listenOpts);
+    doc.removeEventListener('keydown', onKeyDown, listenOpts);
+    doc.removeEventListener('focusin', onFocusIn as EventListener, listenOpts);
+    doc.removeEventListener('focusout', onFocusOut as EventListener, listenOpts);
+    doc.removeEventListener('click', onClick as EventListener, listenOpts);
     doc.removeEventListener('visibilitychange', onVisibility);
     win.removeEventListener('resize', onResize);
     win.removeEventListener('blur', releaseAll);
     offEnv();
     offStrike();
-    if (raf) win.cancelAnimationFrame(raf);
-    raf = 0;
+    offAttract();
+    if (idleHandle !== null)
+      (win as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback?.(
+        idleHandle as number,
+      );
+    driver.stop();
     clearAll();
+    clearPlasma();
+    if (!opts.lens) lens.destroy();
     if (service === self) service = null;
   };
 }

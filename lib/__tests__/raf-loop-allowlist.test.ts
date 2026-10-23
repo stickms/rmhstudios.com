@@ -12,12 +12,14 @@ import { join } from 'node:path';
  * games/apps (their loops run only while the game is mounted/active).
  *
  * Two standards since Plasmatic Jelly (master plan R7, 2026-10-23):
- *   - IDLE-AT-REST — everything, including the jelly physics and the arc renderer.
- *   - IDLE-WHEN-UNSEEN — exactly ONE exception, the engine's ambient haze clock in
- *     `lib/liquid/glass/engine.ts`: it keeps ticking (12 Hz idle floor) while a haze
- *     surface is visible and stops (0 Hz, no frame scheduled) when nobody can see it.
- *     `jelly-ownership.test.ts` (N2b) pins the jelly frame owners; `jelly-contract.test.ts`
- *     (N1) pins the clock's stop conditions. This test
+ *   - IDLE-AT-REST — everything, including every jelly driver.
+ *   - IDLE-WHEN-UNSEEN — exactly ONE exception, the engine's ambient haze clock: it keeps
+ *     waking its driver (12 Hz idle floor) while a haze surface is visible and stops
+ *     (0 Hz, no wake) when nobody can see it.
+ *   Since #989 the jelly has ONE rAF, `lib/jelly/frame.ts`; the engine, physics, arc
+ *   renderer and fallback light are drivers on it and call no rAF of their own.
+ *   `jelly-ownership.test.ts` (N2b) pins that single owner; `jelly-contract.test.ts`
+ *   (N1) pins the clock's stop conditions. This test
  * enumerates every source that calls `requestAnimationFrame` and asserts the set
  * exactly matches {@link ALLOW}. When it fails:
  *   - a NEW file appears → prove it has a settle/stop condition (idle-at-rest for
@@ -60,26 +62,20 @@ import { join } from 'node:path';
  *                                       cleanup, and both effects only run while
  *                                       the menu is open — a page at rest has
  *                                       neither.
- *   - lib/liquid/glass/engine.ts    — the jelly engine's ONE frame (Plasmatic Jelly
- *                                       R7, 2026-10-23: deliberately reverses the
- *                                       "no loop at rest" rule for the ambient haze).
- *                                       Rim work stays event-driven (cursor light,
- *                                       tilt, refraction fade, a woken Tier L lattice
- *                                       until it sleeps or parks, a ~300ms charge
- *                                       pulse). The ambient clock ticks only while a
- *                                       haze canvas is on screen: 30 Hz engaged, the
- *                                       tier's idle floor (12 Hz) after 20 s without
- *                                       input, never faster under `calm` or a governor
- *                                       step — and it is 0, with NO frame scheduled,
- *                                       while the tab is hidden, the window unfocused,
- *                                       a scroll is in flight, no haze surface is
- *                                       visible, the tier is degraded or jellyMotion is
- *                                       `still` (`policy.ts` `ambientHz`, unit-tested in
- *                                       `jelly-policy.test.ts`). Between ticks it sleeps
- *                                       on a timer, not a spinning rAF; ≤ 6 haze draws
- *                                       per tick. Reads rects, writes canvases and
- *                                       attributes only; rAF and timer cancelled on
- *                                       teardown.
+ *   - lib/jelly/frame.ts            — the jelly frame driver (#989): the ONE rAF behind
+ *                                       the engine's ambient clock and rim draws, the
+ *                                       soft body, the arc renderer and the fallback
+ *                                       light. Settle proof: a frame is requested only
+ *                                       while at least one registered driver is awake;
+ *                                       a driver stays awake only by returning `true`
+ *                                       from its frame, so when every driver has settled
+ *                                       NO frame is requested; `stop()` cancels a pending
+ *                                       frame nobody else needs. The ambient clock wakes
+ *                                       its driver from a timer (30 Hz engaged, 12 Hz
+ *                                       idle floor, 0 when unseen — `policy.ts`
+ *                                       `ambientHz`), never by spinning; physics and arcs
+ *                                       wake only on input, a strike or a live arc.
+ *                                       Proven in lib/jelly/__tests__/frame.test.ts.
  *   - components/radial/LiquidGlobe.tsx — the navigation globe's spin/dwell loop.
  *                                       Bounded by MOUNT, like a game's: RadialHub
  *                                       renders it only while the hub is open, and
@@ -159,15 +155,6 @@ import { join } from 'node:path';
  *                                       stops the frame it arrives; the effect
  *                                       cancels it when motion is switched off,
  *                                       when the sensor is absent, and on unmount.
- *   - lib/jelly/physics.ts            — the jelly soft-body service (absorbed the
- *                                       old hooks/useFluidPress.ts press layer).
- *                                       Idle-at-rest: frames only while a body is
- *                                       awake — scheduled by input, an arc strike
- *                                       or a drag report, re-scheduled only while a
- *                                       body is short of its target, and the body
- *                                       is cleared the frame it sleeps; hidden tab
- *                                       and teardown cancel it. Settle proven in
- *                                       lib/jelly/__tests__/physics.test.ts.
  *   - hooks/useFluidDrag.ts           — one settle-spring loop per mounted drag
  *                                       surface. Runs only between a release and
  *                                       the spring arriving; stops itself on
@@ -185,19 +172,11 @@ const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores'];
 
 /** Files permitted to call requestAnimationFrame (see the doc block above). */
 const ALLOW = new Set<string>([
-  // Cursor light is an input-throttled one-shot. Neighbouring waves use finite
-  // native animations, without a JS loop. Preferences, visibility and unmount
-  // cancel effects and restore the affected inline properties.
-  'lib/liquid/runtime.ts',
-  'lib/liquid/glass/engine.ts',
-  // Jelly soft bodies: idle at rest, settle proven in lib/jelly/__tests__/physics.test.ts.
-  'lib/jelly/physics.ts',
-  // Arc overlay frame (03-arcs.md §4.3). Requested only while an arc or its
-  // afterglow is alive (≤ ~410ms per request), reschedules only while live arcs
-  // remain, cancelled on hidden/off/teardown. The ambient scheduler uses
-  // setTimeout, never rAF, so a page at rest has no loop. Settle proven in
-  // lib/jelly/arcs/__tests__/renderer.test.ts. No other arc file may call rAF.
-  'lib/jelly/arcs/renderer.ts',
+  // The ONE jelly frame (#989). The engine, the soft body, the arc renderer and
+  // the fallback cursor light are drivers on it (`drive(fn, { order })`) and call
+  // no rAF themselves. No frame is requested while no driver is awake; `stop()`
+  // cancels. Settle proven in lib/jelly/__tests__/frame.test.ts.
+  'lib/jelly/frame.ts',
   // The globe cursor (owner, 2026-10-22: "a constantly everting globe"). The one
   // standing loop on a site page, and it is standing only while it IS the pointer:
   // a frame is scheduled while the mouse is over the document or a fade, sparkle,
@@ -347,6 +326,9 @@ const ALLOW = new Set<string>([
   'components/void-breaker/VoidBreakerGame.tsx',
   'hooks/useCelebration.ts',
   'hooks/useDeviceAttitude.ts',
+  // Known #989 follow-up: still owns its rAF (and window pointer listeners) rather
+  // than driving lib/jelly/frame.ts. Idle at rest: one settle spring per mounted drag
+  // surface, between a release and arrival only; cancels on settle and unmount.
   'hooks/useFluidDrag.ts',
   'hooks/useLiquidBackground.ts',
   'hooks/useScrollRestoration.ts',

@@ -28,6 +28,7 @@
  */
 
 import { latticeCaps, plasticDecay, plasticFraction, SOFT_BODY } from './soft-policy';
+import { DENT } from './tiers';
 
 export const LATTICE_NODES = 8;
 
@@ -259,8 +260,10 @@ function inputForce(l: Lattice, i: number): [number, number] {
     const g = LATTICE.hoverPx * strength * weight(l, i, s0, LATTICE.hoverSigma * l.perimeter);
     return [ka * g * l.nx[i], ka * g * l.ny[i]];
   }
+  // The press is the #989 dent's outline: it indents ~DENT.indentPx under the contact (never past the bevel's cap),
+  // and the area term bulges the far side.
   const g =
-    -l.caps.inward *
+    -Math.min(l.caps.inward, DENT.indentPx) *
     strength *
     LATTICE.pressDrive *
     weight(l, i, s0, LATTICE.pressSigma * l.perimeter);

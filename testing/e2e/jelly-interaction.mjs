@@ -1,4 +1,4 @@
-/* global React, ReactDOM -- the page-side globals this script's bundle exposes; referenced only in page callbacks. */
+/* global React, ReactDOM, CSS, performance -- the page-side globals this script's bundle exposes; referenced only in page callbacks. */
 /** Plasmatic Jelly as a whole, in a real browser: every document service mounted the way
  * `hooks/useLiquidInteractions.ts` mounts them, on the real stylesheets, with a real React <Button>.
  * No app server, no database (05-gates-docs-naming.md §1.2 / N10; master plan R7, R9, R12).
@@ -19,6 +19,12 @@
  * - **Frames (R7):** 2 s after the last input the only frames are the ambient clock's (≤ tier clock + slack); after
  *   `IDLE_AFTER_MS` the clock sits on its idle floor (≤ idleClockHz + 1 = the frame-budget rest limit) and is never 0
  *   while haze is visible; under `still` there are ZERO frames 2 s after input.
+ * - **Dent and lens (#989):** a press on a card sinks a dent under the pointer (`dentOf(el)`, `data-jelly-active`) and
+ *   puts the lens filter (`url(#jelly-lens-…)`, from `lib/jelly/lens.ts`) on that card only while it is pressed; a drag
+ *   slides the dent; release eases it out and restores the inline filter exactly.
+ * - **Plasma level (#989):** hover emits `plasma:level` at `PLASMA.wake`, press at 1, leaving back to 0.
+ * - **Click charge (#989):** a click deposits charge (`charge:pulse`); hop and click arcs never outnumber what the flash
+ *   ledger admits — no 1 s window holds more than `FLASH_LEDGER.maxOnsets` strikes, even under a click storm.
  * - **Degraded tier:** `.style-high-contrast` removes haze, carriers and the arc layer.
  * - **Teardown** leaves no jelly node or attribute behind.
  *
@@ -47,7 +53,10 @@ const js = await bundle({
       import { installElectricArcs } from './lib/jelly/arcs';
       import { installLiquidGlass, jellyGovernorStep } from './lib/liquid/glass/engine';
       import { governBudget } from './lib/jelly/governor';
-      import { jellyBudget, IDLE_AFTER_MS, MOTION_BOUNDS } from './lib/jelly/tiers';
+      import { jellyBudget, IDLE_AFTER_MS, MOTION_BOUNDS, FLASH_LEDGER, PLASMA, DENT, CHARGE } from './lib/jelly/tiers';
+      import { jellyBus } from './lib/jelly/bus';
+      import { dentOf } from './lib/jelly/lattice-inputs';
+      import { arcFlashLedger } from './lib/jelly/arcs';
 
       window.React = React;
       window.ReactDOM = ReactDOM;
@@ -60,9 +69,36 @@ const js = await bundle({
       stops.push(installJellyFlow(document, { budget: () => governBudget(jellyBudget(), jellyGovernorStep()) }));
       stops.push(installElectricArcs(document));
       stops.push(installLiquidGlass());
+      // #989: every plasma level, charge pulse and arc strike, timestamped, from before the services start.
+      const events = { plasma: [], pulse: [], strike: [], press: [], admit: [] };
+      // Every flash onset the ONE site-wide ledger admits — the ceiling for every arc drawn.
+      const tryOnset = arcFlashLedger.tryOnset.bind(arcFlashLedger);
+      arcFlashLedger.tryOnset = (now) => {
+        const ok = tryOnset(now);
+        if (ok) events.admit.push({ t: performance.now() });
+        return ok;
+      };
+      const idOf = (el) => (el && el.id) || (el && el.tagName) || '?';
+      jellyBus.on('plasma:level', (p) => events.plasma.push({ t: performance.now(), id: idOf(p.el), level: p.level }));
+      jellyBus.on('charge:pulse', (p) => events.pulse.push({ t: performance.now(), id: idOf(p.el), q: p.q }));
+      jellyBus.on('arc:strike', (p) => events.strike.push({ t: performance.now(), id: idOf(p.el), kind: p.kind }));
+      document.addEventListener('pointerdown', (e) => {
+        const host = e.target.closest && e.target.closest('[id]');
+        events.press.push({ t: performance.now(), id: idOf(host) });
+      }, { capture: true });
       window.__jelly = {
         IDLE_AFTER_MS,
         MOTION_BOUNDS,
+        FLASH_LEDGER,
+        PLASMA,
+        DENT,
+        CHARGE,
+        events,
+        dent: (id) => {
+          const d = dentOf(document.getElementById(id));
+          return d && { x: d.x, y: d.y, depth: d.depth, radius: d.radius };
+        },
+        ledgerCount: () => arcFlashLedger.count(performance.now()),
         budget: () => jellyBudget(),
         governed: () => ({ step: jellyGovernorStep(), ...governBudget(jellyBudget(), jellyGovernorStep()) }),
         stop: () => { for (const s of stops.reverse()) s(); },
@@ -96,7 +132,12 @@ const sheets = ['liquid-glass', 'jelly-material', 'jelly-arcs', 'jelly-coverage'
 const probe = `
   window.__raf = { calls: 0 };
   window.__origRaf = window.requestAnimationFrame.bind(window);
-  window.requestAnimationFrame = (cb) => { window.__raf.calls++; return window.__origRaf(cb); };
+  window.requestAnimationFrame = (cb) => {
+    window.__raf.calls++;
+    // Who asked for the frame, while a check is tracing (printed on a failure so it names the driver).
+    if (window.__raf.trace) window.__raf.trace.push(String(new Error().stack).split('\\n').slice(2, 6).join(' | '));
+    return window.__origRaf(cb);
+  };
 `;
 
 const markup = `<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>
@@ -349,6 +390,16 @@ try {
         }),
       ids,
     );
+  /** Poll until every id is at rest or `ms` pass (software GL frames are slow); returns what is still left. */
+  const settledWithin = async (ids, ms) => {
+    const end = Date.now() + ms;
+    let left = await notAtRest(ids);
+    while (left.length && Date.now() < end) {
+      await settle(200);
+      left = await notAtRest(ids);
+    }
+    return left;
+  };
   const awake = () =>
     page.$$eval('[data-jelly-body]', (n) =>
       n.map(
@@ -390,7 +441,7 @@ try {
     moved.length <= MOTION_BOUNDS.nudgeMax,
   );
   {
-    const left = await notAtRest([...neighbourIds, 'hit']);
+    const left = await settledWithin([...neighbourIds, 'hit'], 4000);
     check(
       `every neighbour and the pressed host return to identity${left.length ? ` — ${left.join('; ')}` : ''}`,
       left.length === 0,
@@ -423,7 +474,7 @@ try {
     arcPeak <= MOTION_BOUNDS.nudgePx + 0.05,
   );
   {
-    const left = await notAtRest(neighbourIds);
+    const left = await settledWithin(neighbourIds, 4000);
     check(
       `…and every struck surface returns to identity${left.length ? ` — ${left.join('; ')}` : ''}`,
       left.length === 0,
@@ -436,6 +487,188 @@ try {
     check(
       `the carrier invariant still holds after interaction${rest.length ? ` — ${rest.join('; ')}` : ''}`,
       rest.length === 0,
+    );
+  }
+
+  // ── #989: the press dent and its lens ──
+  {
+    const ev = () => page.evaluate(() => window.__jelly.events);
+    const plasmaBefore = (await ev()).plasma.length;
+    const card = await page.locator('#c2').boundingBox();
+    const cx = card.x + card.width * 0.4;
+    const cy = card.y + card.height * 0.5;
+    await page.mouse.move(cx - 30, cy);
+    await page.mouse.move(cx, cy, { steps: 4 });
+    await settle(350);
+    const hoverLevels = (await ev()).plasma.slice(plasmaBefore).filter((p) => p.id === 'c2');
+    const wake = await page.evaluate(() => window.__jelly.PLASMA.wake);
+    check(
+      `hover wakes the plasma: plasma:level ≈ PLASMA.wake on #c2 (${hoverLevels.map((p) => p.level.toFixed(2)).join(',') || 'none'})`,
+      hoverLevels.some((p) => Math.abs(p.level - wake) < 0.051),
+    );
+    const lensOf = (id) => page.$eval(`#${id}`, (e) => e.style.filter);
+    const lensed = () =>
+      page.$$eval('*', (n) =>
+        n
+          .filter((e) => /url\(["']?#jelly-lens/.test(e.style?.filter ?? ''))
+          .map((e) => e.id || e.tagName),
+      );
+    check('no lens filter before the press', (await lensed()).length === 0);
+    await page.mouse.down();
+    // PLASMA.easeMs eases the level toward the press target; wait for it to arrive (frames are slow on software GL).
+    await page
+      .waitForFunction(
+        () => window.__jelly.events.plasma.some((p) => p.id === 'c2' && p.level >= 0.95),
+        null,
+        { timeout: 4000 },
+      )
+      .catch(() => {});
+    const pressed = await page.evaluate(() => ({
+      dent: window.__jelly.dent('c2'),
+      active: document.getElementById('c2').hasAttribute('data-jelly-active'),
+    }));
+    const pressLevels = (await ev()).plasma.slice(plasmaBefore).filter((p) => p.id === 'c2');
+    console.log(
+      `plasma:level on #c2 (ms: level): ${pressLevels.map((p) => `${(p.t - pressLevels[0].t).toFixed(0)}:${p.level.toFixed(2)}`).join(' ')}`,
+    );
+    check(
+      `press dents the card under the pointer (dentOf: ${pressed.dent ? `depth ${pressed.dent.depth.toFixed(2)} at ${pressed.dent.x.toFixed(0)},${pressed.dent.y.toFixed(0)}` : 'null'})`,
+      !!pressed.dent && pressed.dent.depth > 0 && Math.abs(pressed.dent.x - (cx - card.x)) < 6,
+    );
+    check('a dented card carries data-jelly-active', pressed.active);
+    check(
+      `press brightens the plasma to 1 (${pressLevels.map((p) => p.level.toFixed(2)).join(',')})`,
+      pressLevels.some((p) => p.level >= 0.95),
+    );
+    const lensWhilePressed = await lensed();
+    const lensSupported = await page.evaluate(() => CSS.supports('filter', 'url(#jelly-lens)'));
+    check(
+      `the lens filter is on the pressed card only (${lensWhilePressed.join(',') || 'none'})`,
+      lensSupported
+        ? lensWhilePressed.length === 1 && lensWhilePressed[0] === 'c2'
+        : lensWhilePressed.length === 0,
+    );
+    // Drag inside the card: the dent slides with the pointer.
+    await page.mouse.move(cx + 40, cy, { steps: 6 });
+    await settle(200);
+    const slid = await page.evaluate(() => window.__jelly.dent('c2'));
+    check(
+      `drag slides the dent with the pointer (${pressed.dent?.x.toFixed(0)} → ${slid?.x.toFixed(0)})`,
+      !!slid && !!pressed.dent && slid.x - pressed.dent.x > 20,
+    );
+    await page.mouse.up();
+    await page.mouse.move(5, 790, { steps: 3 });
+    await settle(1800);
+    const after = await page.evaluate(() => ({
+      dent: window.__jelly.dent('c2'),
+      active: document.getElementById('c2').hasAttribute('data-jelly-active'),
+    }));
+    check('release eases the dent out (dentOf → null)', after.dent === null);
+    check('…removes data-jelly-active', !after.active);
+    check(
+      `…and removes the lens filter, restoring the inline filter exactly ("${await lensOf('c2')}")`,
+      (await lensed()).length === 0 && (await lensOf('c2')) === '',
+    );
+    const leaveLevels = (await ev()).plasma.slice(plasmaBefore).filter((p) => p.id === 'c2');
+    check(
+      `leaving lets the plasma sleep (last plasma:level ${leaveLevels.at(-1)?.level ?? 'none'})`,
+      leaveLevels.length > 0 && leaveLevels.at(-1).level === 0,
+    );
+  }
+
+  // ── #989: click charge, hops and the flash ledger ──
+  {
+    const ev = () => page.evaluate(() => window.__jelly.events);
+    const { maxOnsets, windowMs } = await page.evaluate(() => window.__jelly.FLASH_LEDGER);
+    await page.evaluate(() =>
+      document.documentElement.setAttribute('data-electric-arcs', 'clicks'),
+    );
+    await settle(1200); // let the ledger window empty
+    const before = await ev();
+    const p0 = before.pulse.length;
+    const s0 = before.strike.length;
+    const t0 = await page.evaluate(() => performance.now());
+    // A click storm across the card row: far more clicks than the ledger can admit as flashes.
+    const ids = ['c1', 'c2', 'c3', 'n1', 'n2', 'n3'];
+    for (let i = 0; i < 12; i++) {
+      const b = await page.locator(`#${ids[i % ids.length]}`).boundingBox();
+      await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+      await settle(60);
+    }
+    await page.mouse.move(5, 790);
+    await settle(1500);
+    const after = await ev();
+    const pulses = after.pulse.slice(p0);
+    const admitted = after.admit.filter((a) => a.t >= t0);
+    const strikes = after.strike.slice(s0).filter((s) => s.t >= t0);
+    check(`a click storm deposits charge (${pulses.length} charge:pulse)`, pulses.length > 0);
+    console.log(
+      `storm: ${pulses.length} pulses; strikes: ${strikes.map((s) => `${s.kind}→${s.id}`).join(', ') || 'none'}`,
+    );
+    // \`arc:strike\` fires once per CONTACT (both ends of a bolt, synchronously), so one flash onset is one distinct
+    // timestamp. Every hop and click arc is a flash, so onsets must never outnumber what the ledger admits.
+    // Contacts of one bolt (and the bolts of one click) land within a couple of ms of each other: group them.
+    const group = (ts) =>
+      ts.sort((a, b) => a - b).reduce((g, t) => (g.length && t - g.at(-1) < 3 ? g : [...g, t]), []);
+    const onsets = group(strikes.map((s) => s.t));
+    const admitGroups = group(admitted.map((a) => a.t));
+    let peakWindow = 0;
+    for (const t of onsets) {
+      peakWindow = Math.max(peakWindow, onsets.filter((o) => o >= t && o - t < windowMs).length);
+    }
+    let peakAdmit = 0;
+    for (const a of admitted) {
+      peakAdmit = Math.max(
+        peakAdmit,
+        admitted.filter((o) => o.t >= a.t && o.t - a.t < windowMs).length,
+      );
+    }
+    console.log(
+      `ledger: ${admitted.length} admitted (peak ${peakAdmit}/${windowMs} ms); strike onsets at ${onsets.map((t) => (t - t0).toFixed(0)).join(',')}; admits at ${admitted.map((a) => (a.t - t0).toFixed(0)).join(',')}`,
+    );
+    check(
+      `the ledger itself never admits more than ${maxOnsets} onsets in any ${windowMs} ms (peak ${peakAdmit})`,
+      peakAdmit <= maxOnsets,
+    );
+    check(
+      `hop and click arcs never outnumber the ledger: ${onsets.length} strike onsets ≤ ${admitGroups.length} admitted (${strikes.length} contacts ≤ 2 × ${admitted.length} bolts), ≤ ${maxOnsets} in any ${windowMs} ms (peak ${peakWindow}; ${strikes.length} contacts over 12 clicks)`,
+      onsets.length > 0 &&
+        onsets.length <= admitGroups.length &&
+        strikes.length <= 2 * admitted.length &&
+        peakWindow <= maxOnsets,
+    );
+    check(
+      'every strike lands on a jelly surface, never a field or the page',
+      strikes.every((s) => s.id !== 'BODY' && s.id !== 'HTML'),
+    );
+  }
+
+  // ── #989: one isolated click — its charge lands on the body and hops on with half ──
+  {
+    await settle(6000); // the storm's charge decays (CHARGE.decayMs) and the ledger empties
+    const p0 = await page.evaluate(() => window.__jelly.events.pulse.length);
+    const b = await page.locator('#c2').boundingBox();
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.move(5, 790);
+    await settle(2000);
+    const pulses = (await page.evaluate(() => window.__jelly.events.pulse)).slice(p0);
+    const own = pulses.filter((p) => p.id === 'c2');
+    const hops = pulses.filter((p) => p.id !== 'c2');
+    const { hopFraction, minHopCharge } = await page.evaluate(() => ({
+      hopFraction: window.__jelly.CHARGE.hopFraction,
+      minHopCharge: window.__jelly.CHARGE.minHopCharge,
+    }));
+    console.log(
+      `isolated click: ${own.map((p) => `c2 q${p.q.toFixed(2)}`).join(', ') || 'no own pulse'}; hops ${hops.map((p) => `${p.id} q${p.q.toFixed(2)}`).join(', ') || 'none'}`,
+    );
+    check(`a click deposits charge on the clicked body (${own.length} pulse)`, own.length >= 1);
+    const first = own[0]?.q ?? 1;
+    check(
+      `its charge hops to a neighbour with ≤ ${hopFraction} of it, and stops below ${minHopCharge} (${hops.length} hop(s))`,
+      hops.length >= 1 &&
+        // A little residual charge on the neighbour may ride along; the carry itself is q · hopFraction.
+        hops[0].q <= first * hopFraction + 0.05 &&
+        hops.every((h) => h.q >= minHopCharge - 0.01 && h.q <= hopFraction + 0.05),
     );
   }
 
@@ -513,8 +746,16 @@ try {
   await page.mouse.move(5, 790);
   await settle(2000);
   f0 = await frames();
+  await page.evaluate(() => (window.__raf.trace = []));
   await settle(2000);
   const stillFrames = (await frames()) - f0;
+  const stillTrace = await page.evaluate(() => {
+    const t = window.__raf.trace;
+    window.__raf.trace = null;
+    return t;
+  });
+  if (stillFrames)
+    console.log(`frames under still requested by:\n  ${[...new Set(stillTrace)].join('\n  ')}`);
   check(`under still there are zero frames 2 s after input (${stillFrames})`, stillFrames === 0);
   await page.evaluate(() => document.documentElement.removeAttribute('data-jelly-motion'));
   await settle(1500);

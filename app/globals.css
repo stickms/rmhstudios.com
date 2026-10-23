@@ -305,6 +305,49 @@
   --site-arc-core: color-mix(in oklch, #5b3fd6 85%, var(--site-accent));
   --site-arc-glow: color-mix(in oklch, #7c6cff 60%, transparent);
 
+  /* ── #989 layers on top of the jelly (docs/plasmatic-jelly-system.md §1.1) ──
+     Gel: a hazy translucent body that darkens slightly toward its base — a vertical
+     `--gel-body` → `--gel-depth` coat, low alpha so the role tint carries legibility
+     (bounded by lib/__tests__/jelly-legibility.test.ts at both ends). `--gel-ink` /
+     `--on-ink` are the ink-gel primary action (`<Button variant="signal">`).
+     Edge: a soft band `--gel-bevel` wide just inside the rim carries an R/G/B split,
+     offset by `--gel-disperse-r/-g/-b` (negative = toward the top-left light, so red
+     leans to the light and blue away), tinted `--gel-edge-r/-g/-b`; plus a 1px Fresnel
+     edge (`--gel-fresnel`). `--gel-specular` is the light dot on the dent's far slope.
+     There is no gloss band or glint across a face: shine lives at edges and in the dent.
+     Every theme restates the colours; high contrast turns them opaque or off. */
+  --gel-body: rgba(255, 255, 255, 0.1);
+  --gel-depth: rgba(16, 20, 36, 0.035);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(255, 255, 255, 0.55);
+  --gel-specular: rgba(255, 255, 255, 0.95);
+  --gel-edge-r: rgba(255, 84, 104, 0.16);
+  --gel-edge-g: rgba(64, 200, 140, 0.08);
+  --gel-edge-b: rgba(72, 120, 255, 0.16);
+  --gel-bevel: 6px;
+  --gel-disperse-r: -1.5px;
+  --gel-disperse-g: 0px;
+  --gel-disperse-b: 1.5px;
+  /* The keyboard focus ring: a SOLID 2px outline in this colour, never the plasma glow. */
+  --focus-ring: var(--site-accent);
+  /* Mirrors of lib/jelly/tiers.ts — the TS constant is the source of truth and
+     lib/__tests__/jelly-tokens.test.ts fails if these drift. Never retune one here. */
+  --plasma-wake: 0.35; /* PLASMA.wake */
+  --jelly-dent-depth: 6px; /* DENT.depthPx */
+  --jelly-dent-damping: 0.9; /* DENT.damping */
+  --jelly-lens-strength: 0.6; /* DENT.lensStrength */
+  --jelly-lens-dispersion: 1.5px; /* DENT.lensDispersionPx */
+  --jelly-content-strain: 0.04; /* DENT.contentStrain */
+  --jelly-margin: 16px; /* JELLY_LAYOUT.marginPx */
+  --jelly-body-budget: 24; /* JELLY_LAYOUT.bodyBudget */
+  --sim-hz: 120; /* JELLY_LAYOUT.simHz */
+  --arc-breakdown-gap: 12px; /* CHARGE.breakdownGapPx */
+  --arc-formative-lag: 120ms; /* CHARGE.formativeLagMs */
+  --pulse-speed: 900; /* CHARGE.pulseSpeedPxS, px/s (no CSS unit exists) */
+  --pulse-tau: 260ms; /* CHARGE.pulseTauMs */
+  --space-4: 16px; /* JELLY_LAYOUT.minGapPx: bodies sit at least this far apart */
+
   --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
   --glass-bevel: 12px;
   --glass-glint-size: 320px;
@@ -879,6 +922,17 @@
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, #5b3fd6 85%, var(--site-accent));
   --site-arc-glow: color-mix(in oklch, #7c6cff 60%, transparent);
+  /* #989 gel layers (meanings: the :root block). Daylight. */
+  --gel-body: rgba(255, 255, 255, 0.1);
+  --gel-depth: rgba(16, 20, 36, 0.035);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(255, 255, 255, 0.55);
+  --gel-specular: rgba(255, 255, 255, 0.95);
+  --gel-edge-r: rgba(255, 84, 104, 0.16);
+  --gel-edge-g: rgba(64, 200, 140, 0.08);
+  --gel-edge-b: rgba(72, 120, 255, 0.16);
+  --focus-ring: var(--site-accent);
 }
 
 /* Glass Light — daylight canvas: near-white base with soft pastel sky radials;
@@ -950,6 +1004,17 @@
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, var(--site-accent) 80%, #1b1240);
   --site-arc-glow: color-mix(in oklch, var(--site-accent) 45%, transparent);
+  /* #989 gel layers (meanings: the :root block). Daylight. */
+  --gel-body: rgba(255, 255, 255, 0.12);
+  --gel-depth: rgba(18, 30, 66, 0.04);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(255, 255, 255, 0.6);
+  --gel-specular: rgba(255, 255, 255, 0.95);
+  --gel-edge-r: rgba(255, 92, 120, 0.16);
+  --gel-edge-g: rgba(64, 200, 150, 0.08);
+  --gel-edge-b: rgba(80, 110, 255, 0.16);
+  --focus-ring: var(--site-accent);
 }
 
 /* High Contrast — maximal legibility (WCAG AAA): pure black, pure white text,
@@ -1017,6 +1082,22 @@
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: transparent;
   --site-arc-glow: transparent;
+  /* #989 gel layers (meanings: the :root block). High contrast: the gel is the opaque
+     surface, and the dispersion, Fresnel edge, specular dot and plasma are off. */
+  --gel-body: var(--site-surface-opaque);
+  --gel-depth: var(--site-surface-opaque);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: transparent;
+  --gel-specular: transparent;
+  --gel-edge-r: transparent;
+  --gel-edge-g: transparent;
+  --gel-edge-b: transparent;
+  --gel-disperse-r: 0px;
+  --gel-disperse-g: 0px;
+  --gel-disperse-b: 0px;
+  --plasma-wake: 0;
+  --focus-ring: var(--site-accent);
 }
 
 /* ── Curated themes (Apple-consistent) ──────────────────────────────────────
@@ -1108,6 +1189,17 @@
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, white 70%, var(--site-accent));
   --site-arc-glow: color-mix(in oklch, var(--site-accent) 55%, transparent);
+  /* #989 gel layers (meanings: the :root block). Dark: the base sinks toward the void. */
+  --gel-body: rgba(255, 255, 255, 0.025);
+  --gel-depth: rgba(0, 0, 0, 0.16);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(255, 255, 255, 0.14);
+  --gel-specular: rgba(255, 255, 255, 0.85);
+  --gel-edge-r: rgba(255, 96, 112, 0.22);
+  --gel-edge-g: rgba(80, 220, 150, 0.1);
+  --gel-edge-b: rgba(90, 140, 255, 0.24);
+  --focus-ring: var(--site-accent);
 }
 
 /* Sepia Glass — warm parchment gradients, warm-white frost, amber accent,
@@ -1177,6 +1269,17 @@
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, var(--site-accent) 70%, #3a1d6e);
   --site-arc-glow: color-mix(in oklch, var(--site-accent) 40%, transparent);
+  /* #989 gel layers (meanings: the :root block). Warm daylight. */
+  --gel-body: rgba(255, 250, 238, 0.05);
+  --gel-depth: rgba(90, 62, 32, 0.045);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(255, 248, 230, 0.6);
+  --gel-specular: rgba(255, 250, 236, 0.95);
+  --gel-edge-r: rgba(230, 90, 70, 0.16);
+  --gel-edge-g: rgba(120, 170, 90, 0.08);
+  --gel-edge-b: rgba(90, 110, 210, 0.14);
+  --focus-ring: var(--site-accent);
 }
 
 /* Nocturne Glass — deep-navy nightscape with a sky-blue aurora; cool
@@ -1248,6 +1351,17 @@
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, white 70%, var(--site-accent));
   --site-arc-glow: color-mix(in oklch, var(--site-accent) 55%, transparent);
+  /* #989 gel layers (meanings: the :root block). Dark: the base sinks toward the void. */
+  --gel-body: rgba(200, 220, 255, 0.025);
+  --gel-depth: rgba(2, 6, 16, 0.16);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(200, 220, 255, 0.18);
+  --gel-specular: rgba(225, 236, 255, 0.85);
+  --gel-edge-r: rgba(255, 110, 140, 0.2);
+  --gel-edge-g: rgba(80, 220, 190, 0.1);
+  --gel-edge-b: rgba(94, 157, 255, 0.26);
+  --focus-ring: var(--site-accent);
 }
 
 /* Ultra — the precision interface. Near-black spectral depth, ice-cyan signal
@@ -1360,6 +1474,17 @@
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, white 60%, var(--site-accent));
   --site-arc-glow: color-mix(in oklch, var(--site-accent) 50%, #b46cff 20%);
+  /* #989 gel layers (meanings: the :root block). Dark: the base sinks toward the void. */
+  --gel-body: rgba(191, 244, 255, 0.025);
+  --gel-depth: rgba(0, 2, 8, 0.16);
+  --gel-ink: var(--site-accent);
+  --on-ink: var(--site-accent-fg);
+  --gel-fresnel: rgba(191, 244, 255, 0.22);
+  --gel-specular: rgba(214, 250, 255, 0.9);
+  --gel-edge-r: rgba(255, 90, 160, 0.22);
+  --gel-edge-g: rgba(0, 255, 198, 0.1);
+  --gel-edge-b: rgba(118, 160, 255, 0.26);
+  --focus-ring: var(--site-accent);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -2106,6 +2231,10 @@ html.readable-font body {
   --color-site-accent-fg: var(--site-accent-fg, #fff);
   --color-site-accent-hover: var(--site-accent-hover);
   --color-site-accent-dim: var(--site-accent-dim);
+  /* The ink-gel primary action (#989) → bg-gel-ink / text-on-ink. */
+  --color-gel-ink: var(--gel-ink);
+  --color-on-ink: var(--on-ink);
+  --color-focus-ring: var(--focus-ring);
   --color-site-success: var(--site-success);
   --color-site-success-fg: var(--site-success-fg, #fff);
   --color-site-media-scrim: var(--site-media-scrim);
@@ -3367,7 +3496,9 @@ summary:focus-visible,
 [role='link']:focus-visible,
 [role='menuitem']:focus-visible,
 [tabindex]:not([tabindex='-1']):focus-visible {
-  outline: 2px solid var(--site-accent);
+  /* `--focus-ring` (#989): solid 2px, never the plasma glow — plasma brightens on focus
+     inside the gel, but it is decoration and never the only signal of focus. */
+  outline: 2px solid var(--focus-ring, var(--site-accent));
   outline-offset: 2px;
 }
 
@@ -4700,7 +4831,11 @@ html.nav-pop .page-root > * {
 /* Legacy variant tint tokens remain for selected/pressed consumers. Hover uses
    the shared coat/optical tilt; the CSS build policy removes hover colour swaps. */
 @layer components {
-  [data-slot='button']:is([data-variant='default'], [data-variant='accent']) {
+  [data-slot='button']:is(
+    [data-variant='default'],
+    [data-variant='accent'],
+    [data-variant='signal']
+  ) {
     --evert-tint: var(--site-accent-hover);
     --evert-rest-opacity: 1;
   }

@@ -429,11 +429,21 @@ else
     lib/__tests__/doc-pointers.test.ts
     lib/__tests__/appearance-jelly-motion.test.ts
     lib/__tests__/appearance-electric-arcs.test.ts
+    # #989: every CSS token that mirrors a lib/jelly/tiers.ts constant equals it.
+    lib/__tests__/jelly-tokens.test.ts
     # The arc renderer (the arcs' only rAF owner) and runtime are named on
     # their own as well as through lib/jelly/, so moving the directory can
     # never silently drop the flash-ledger / live-arc-only contract.
     lib/jelly/arcs/__tests__/renderer.test.ts
     lib/jelly/arcs/__tests__/runtime.test.ts
+    # The one jelly frame driver and the one pointer hub (#989) — named for the
+    # same reason: they are the settle proof the rAF allowlist and N2(b) cite.
+    lib/jelly/__tests__/frame.test.ts
+    lib/jelly/__tests__/pointer.test.ts
+    # The press lens (the only filter on a body) and the engine/runtime frame
+    # and pointer ownership (#989).
+    lib/jelly/__tests__/lens.test.ts
+    lib/liquid/__tests__/frame-owners.test.ts
     lib/jelly/
     lib/liquid/
   )

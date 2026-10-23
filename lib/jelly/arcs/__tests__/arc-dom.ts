@@ -2,6 +2,10 @@
  * A minimal fake DOM for the arc renderer/runtime tests (the suite runs in `node`; there is no jsdom). It implements
  * exactly what the arc modules touch: a canvas with a recording 2D context, a manual rAF queue, attribute/class reads
  * on `<html>`, listener maps, MutationObserver instances the test can fire, and `matchMedia`.
+ *
+ * An event dispatched on the document reaches the window's capture listeners first (`docListeners.parent`), as a
+ * real capture-phase event does — the jelly pointer hub (`lib/jelly/pointer.ts`) listens on the window — and carries
+ * its `type`, which the hub dispatches on.
  */
 import { FINE_POINTER_QUERY, JELLY_SELECTOR } from '../../tiers';
 import { HUB_OR_EVERSION_SELECTOR } from '../runtime';
@@ -10,6 +14,8 @@ type Fn = (...args: never[]) => unknown;
 
 export class Listeners {
   map = new Map<string, Set<Fn>>();
+  /** Listeners that see the event before these (the window, for the document). */
+  parent: Listeners | null = null;
   addEventListener = (type: string, fn: Fn) => {
     let set = this.map.get(type);
     if (!set) this.map.set(type, (set = new Set()));
@@ -19,7 +25,12 @@ export class Listeners {
     this.map.get(type)?.delete(fn);
   };
   dispatch(type: string, event: object = {}) {
-    for (const fn of [...(this.map.get(type) ?? [])]) (fn as (e: object) => void)(event);
+    const e = { type, ...event };
+    this.parent?.dispatchOwn(type, e);
+    this.dispatchOwn(type, e);
+  }
+  dispatchOwn(type: string, e: object) {
+    for (const fn of [...(this.map.get(type) ?? [])]) (fn as (ev: object) => void)(e);
   }
   count(type: string) {
     return this.map.get(type)?.size ?? 0;
@@ -113,6 +124,8 @@ export interface FakeEnv {
   body: FakeEl;
   root: FakeEl & { classes: Set<string> };
   docListeners: Listeners;
+  /** The window's listeners (the jelly pointer hub, resize). */
+  winListeners: Listeners;
   state: { hub: boolean; hidden: boolean; hit: FakeEl | null; dark: boolean; fine: boolean };
   observers: { cb: () => void; on: boolean }[];
   /** Pending rAF callbacks. */
@@ -129,6 +142,7 @@ export function fakeEnv(opts: { cores?: number } = {}): FakeEnv {
   const state = { hub: false, hidden: false, hit: null as FakeEl | null, dark: false, fine: true };
   const docListeners = new Listeners();
   const winListeners = new Listeners();
+  docListeners.parent = winListeners;
   const body = new FakeEl('body');
   const root = Object.assign(new FakeEl('html'), { classes: new Set<string>() });
   root.matches = ((sel: string) =>
@@ -159,6 +173,7 @@ export function fakeEnv(opts: { cores?: number } = {}): FakeEnv {
     body,
     root,
     docListeners,
+    winListeners,
     state,
     observers,
     rafQueue,

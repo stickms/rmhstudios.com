@@ -128,7 +128,8 @@
                 220%
             ),
           transparent
-        );
+        ),
+      var(--gel-edge, 0 0 0 0 transparent);
     background-image: var(--jelly-floor);
     background-size: var(--jelly-floor-size);
   }
@@ -173,8 +174,9 @@
 
   /* ── 3. Switch (04 §1: C — the track is an inset, the knob a droplet) ───────────────────────────────────────────────
      The track takes the field knobs; the accent `::before` that everts out of the knob (globals.css §7.3) paints over
-     the floor when on, so the haze shows only on the off surface. The knob is a lit drop: a specular cap high on the
-     left plus a lit rim, over whichever ink the state gives it (accent-fg on, text off). */
+     the floor when on, so the haze shows only on the off surface. The knob is a gel drop: the gel coat (body → depth,
+     jelly-material.css §2b) plus a lit rim and the RGB-led gel edge, over whichever ink the state gives it (accent-fg
+     on, text off). Its old specular cap is gone: #989 allows no glint across a face, shine lives at the edge. */
   [data-slot='switch'] {
     --jelly-haze-a: var(--site-jelly-haze-inset);
     --jelly-plasma-k: 0.04;
@@ -182,11 +184,7 @@
     --jelly-flow-axis-deg: 90deg;
   }
   [data-slot='switch'] > [data-switch-knob] {
-    background-image: radial-gradient(
-      70% 60% at 35% 28%,
-      color-mix(in srgb, var(--site-glass-light) 70%, transparent),
-      transparent 72%
-    );
+    background-image: var(--liquid-coat);
     --jelly-rim:
       inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 75%, transparent),
       inset 0 -1px 2px
@@ -194,13 +192,15 @@
           in srgb,
           var(--site-jelly-plasma-a) calc(var(--site-jelly-plasma, 1) * 18%),
           transparent
-        );
+        ),
+      var(--gel-edge, 0 0 0 0 transparent);
     box-shadow: var(--jelly-rim, var(--site-shadow-sm));
   }
 
   /* ── 4. Slider primitive (04 §1: C — inset track, liquid range, droplet thumb) ───────────────────────────────────
      The track stays a flush fill (slider.tsx: the field tier is never a deboss): only the faint plasma subsurface
-     glow. The range gets the liquid's top light; the thumb is the same droplet as the switch knob. */
+     glow. The range takes the gel coat (its old top-light band crossed the face, which #989 forbids); the thumb is the
+     same gel drop as the switch knob. */
   [data-slot='slider-track'] {
     --jelly-rim: inset 0 0 6px -2px
       color-mix(
@@ -211,18 +211,10 @@
     box-shadow: var(--jelly-rim, none);
   }
   [data-slot='slider-range'] {
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--site-glass-light) 45%, transparent),
-      transparent 65%
-    );
+    background-image: var(--liquid-coat);
   }
   [data-slot='slider-thumb'] {
-    background-image: radial-gradient(
-      70% 60% at 35% 28%,
-      color-mix(in srgb, var(--site-glass-light) 70%, transparent),
-      transparent 72%
-    );
+    background-image: var(--liquid-coat);
     --jelly-rim:
       inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 75%, transparent),
       inset 0 0 6px -2px
@@ -230,7 +222,8 @@
           in srgb,
           var(--site-jelly-plasma-a) calc(var(--site-jelly-plasma, 1) * 30%),
           transparent
-        );
+        ),
+      var(--gel-edge, 0 0 0 0 transparent);
     box-shadow: var(--jelly-rim, var(--site-shadow-sm));
   }
 
@@ -322,7 +315,8 @@ html [data-sonner-toaster] [data-sonner-toast] {
             var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) * 220%
           ),
         transparent
-      );
+      ),
+    var(--gel-edge, 0 0 0 0 transparent);
   background-image: var(--jelly-floor);
   background-size: var(--jelly-floor-size);
   box-shadow: var(--jelly-rim, var(--site-shadow-sm));
@@ -334,13 +328,9 @@ html:not(.perf-lite) [data-sonner-toaster] [data-sonner-toast][data-jelly-flow='
 /* ── 6. LiquidTabs selection thumb (04 §1: C — a droplet; the strip's track is `.glass-inset`) ─────────────────────
    Unlayered and one `[data-slot]` deeper than globals.css's `[data-tab-thumb]`, whose `background` shorthand would
    otherwise reset the image. The thumb's colour stays `--tab-thumb-bg` (themes and games re-skin it); the droplet is
-   a specular cap and a lit rim over it. */
+   the gel coat, a lit rim and the gel edge over it (no specular cap across the face, #989). */
 :is([data-slot='liquid-tabs'], [data-slot='liquid-tabs-sheet']) [data-tab-thumb] {
-  background-image: radial-gradient(
-    90% 70% at 30% 20%,
-    color-mix(in srgb, var(--site-glass-light) 45%, transparent),
-    transparent 70%
-  );
+  background-image: var(--liquid-coat);
   --jelly-rim:
     inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 65%, transparent),
     inset 0 0 10px -4px
@@ -348,7 +338,8 @@ html:not(.perf-lite) [data-sonner-toaster] [data-sonner-toast][data-jelly-flow='
         in srgb,
         var(--jelly-plasma-a, var(--site-jelly-plasma-a)) calc(var(--site-jelly-plasma, 1) * 14%),
         transparent
-      );
+      ),
+    var(--gel-edge, 0 0 0 0 transparent);
   box-shadow: var(--jelly-rim, none);
 }
 

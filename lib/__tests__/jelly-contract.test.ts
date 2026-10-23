@@ -30,6 +30,8 @@
  *
  * Suite runs in `node` (no jsdom), so the documents here are the smallest objects `tiers.ts` reads.
  */
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -524,5 +526,121 @@ describe('N7 — arcs reach only admitted surfaces, never past their range', () 
     } finally {
       h.stop();
     }
+  });
+});
+
+/**
+ * N13 — never fake a law (CLAUDE.md "Design system: Plasmatic Jelly" → "Never fake a law";
+ * docs/plasmatic-jelly-system.md §10).
+ *
+ * Wobble, glow, ripple, flicker and the press lens are forces in the services, never stylesheet animation. So in the
+ * jelly sheets (`app/jelly*.css` and the role base `app/liquid-glass.css`):
+ *  - no transition of `transform` / `translate` / `scale` / `rotate` / `all` — a body's motion is the soft body's
+ *    spring, and a CSS transition on top of it is a second, unphysical spring that also fights the envelope writes;
+ *  - no `@keyframes` except the sanctioned `.jelly-flow` haze drift (`jelly-drift`, `jelly-current`; N3 in
+ *    `site-infinite-animation.test.ts` pins where they may be used);
+ *  - no `filter` (or `backdrop-filter`) declaration other than `none` — the only filter on a body is the press lens,
+ *    set from `lib/jelly/lens.ts` while the dent exists. Likewise, under `lib/jelly` and `lib/liquid` only `lens.ts`
+ *    writes an element's `style.filter`.
+ */
+describe('N13 — never fake a law', () => {
+  const ROOT = process.cwd();
+  const SANCTIONED_KEYFRAMES = new Set(['jelly-drift', 'jelly-current']);
+  const SHEETS = [
+    ...fs
+      .readdirSync(path.join(ROOT, 'app'))
+      .filter((f) => /^jelly[\w-]*\.css$/.test(f))
+      .map((f) => `app/${f}`),
+    'app/liquid-glass.css',
+  ].sort();
+  const css = (f: string) =>
+    fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  /** Every `prop: value` declaration (values may span lines), with its line number. */
+  const decls = (f: string) => {
+    const src = css(f);
+    const out: { prop: string; value: string; line: number }[] = [];
+    for (const m of src.matchAll(/(?<=[{;\s])(-?[a-z-]+)\s*:\s*([^;{}]+)(?=[;}])/g)) {
+      out.push({
+        prop: m[1].toLowerCase(),
+        value: m[2].replace(/\s+/g, ' ').trim(),
+        line: src.slice(0, m.index).split('\n').length,
+      });
+    }
+    return out;
+  };
+
+  it('scans the jelly sheets', () => {
+    expect(SHEETS).toContain('app/jelly-material.css');
+    expect(SHEETS).toContain('app/jelly-arcs.css');
+    expect(SHEETS.every((f) => fs.existsSync(path.join(ROOT, f)))).toBe(true);
+  });
+
+  it('no transform transition on a jelly body (the spring is the soft body’s, not CSS’s)', () => {
+    const MOVING = /(^|[\s,])(transform|translate|scale|rotate|all)(?=[\s,]|$)/;
+    const offenders = SHEETS.flatMap((f) =>
+      decls(f)
+        .filter(
+          (d) =>
+            (d.prop === 'transition' || d.prop === 'transition-property') && MOVING.test(d.value),
+        )
+        .map((d) => `${f}:${d.line} ${d.prop}: ${d.value}`),
+    );
+    expect(
+      offenders,
+      'A transition on transform/translate/scale/rotate is a fake spring. Hover lean, press squash, the dent and ' +
+        'release wobble come from lib/jelly/physics.ts (docs/plasmatic-jelly-system.md §10).',
+    ).toEqual([]);
+  });
+
+  it('no @keyframes but the sanctioned .jelly-flow haze drift', () => {
+    const offenders = SHEETS.flatMap((f) =>
+      [...css(f).matchAll(/@(?:-webkit-)?keyframes\s+([\w-]+)/g)]
+        .map((m) => m[1])
+        .filter((name) => !SANCTIONED_KEYFRAMES.has(name))
+        .map((name) => `${f}: @keyframes ${name}`),
+    );
+    expect(
+      offenders,
+      'A keyframe wobble, glow, ripple or flicker fakes a law. Add a force (with a constant in lib/jelly/tiers.ts) ' +
+        'to the services instead (docs/plasmatic-jelly-system.md §10).',
+    ).toEqual([]);
+  });
+
+  it('no filter in jelly CSS: the lens is applied from lib/jelly/lens.ts only', () => {
+    const offenders = SHEETS.flatMap((f) =>
+      decls(f)
+        .filter((d) => /^(-webkit-)?(backdrop-)?filter$/.test(d.prop) && d.value !== 'none')
+        .map((d) => `${f}:${d.line} ${d.prop}: ${d.value}`),
+    );
+    expect(
+      offenders,
+      'No stylesheet filters a jelly body. The press lens is set (and removed) by lib/jelly/lens.ts while the ' +
+        'dent exists (docs/plasmatic-jelly-system.md §3.1).',
+    ).toEqual([]);
+  });
+
+  it('under lib/jelly and lib/liquid, only lib/jelly/lens.ts writes an element filter', () => {
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+        const rel = `${dir}/${e.name}`;
+        if (e.isDirectory()) {
+          if (e.name !== '__tests__') walk(rel);
+        } else if (/\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name)) files.push(rel);
+      }
+    };
+    walk('lib/jelly');
+    walk('lib/liquid');
+    const WRITE =
+      /\.style\.(?:webkitF|f)ilter\s*=(?!=)|setProperty\(\s*['"](?:-webkit-)?filter['"]/;
+    const offenders = files.filter((f) => {
+      if (f === 'lib/jelly/lens.ts') return false;
+      const src = fs
+        .readFileSync(path.join(ROOT, f), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+      return WRITE.test(src);
+    });
+    expect(offenders, 'The press lens has one owner, lib/jelly/lens.ts.').toEqual([]);
   });
 });

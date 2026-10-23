@@ -7,10 +7,12 @@
  *
  * ## Idle at rest
  *
- * `requestAnimationFrame` is requested by {@link ArcRenderer.add} and rescheduled only while an arc, its afterglow or
- * a contact flare is alive (≤ ~410ms after the last request). Teardown, {@link ArcRenderer.clear} (hidden tab, global
- * off) and a resize all cancel the frame. A page with no arcs runs no loop — this is the allowlisted rAF in
- * `lib/__tests__/raf-loop-allowlist.test.ts`; no other arc file calls rAF.
+ * Frames come from the jelly frame driver (`lib/jelly/frame.ts`, the ONE `requestAnimationFrame` behind every jelly
+ * service) at `order: 30`, after physics (10) and the engine (20). {@link ArcRenderer.add} wakes the driver and it stays
+ * awake only while an arc, its afterglow or a contact flare is alive (≤ ~410ms after the last add); the frame that
+ * finds nothing left clears what it drew and lets the driver sleep. Teardown, {@link ArcRenderer.clear} (hidden tab,
+ * global off) and a resize unregister the driver, which cancels a pending frame no other service wants. A page with
+ * no arcs asks for no frame. No arc file calls `requestAnimationFrame`.
  *
  * ## Cost rules
  *
@@ -32,6 +34,7 @@
  */
 
 import { luminance, resolveColor, type RGBA } from '../../liquid/glass/color';
+import { drive, type FrameDriver } from '../frame';
 import { FINE_POINTER_QUERY } from '../tiers';
 import { generateBolt, generateFizz, restrikeBolt, type BoltPath } from './bolt';
 import type { FlashLedger } from './ledger';
@@ -97,6 +100,8 @@ export interface LiveArc {
 export const SCROLL_FADE_MS = 60;
 /** The click flare: a 14px contact glow over 90ms (§3). */
 export const FLARE = { radius: 14, lifeMs: 90, riseMs: 20, peak: 0.8 } as const;
+/** The arcs' place in the shared frame: after physics (10) and the engine (20), so a bolt draws over this frame's gel. */
+export const ARC_FRAME_ORDER = 30;
 /** Resize debounce (§4.3). */
 export const RESIZE_DEBOUNCE_MS = 150;
 /** Contact-glow radius by kind (§1.1). */
@@ -432,7 +437,7 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
   let ctx: CanvasRenderingContext2D | null = null;
   let scale = 1;
   let sized = false;
-  let raf = 0;
+  let driver: FrameDriver | null = null;
   let resizeTimer: ReturnType<typeof setTimeout> | undefined;
   let prev: Bounds | null = null;
   let disposed = false;
@@ -488,8 +493,8 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
   };
 
   const cancel = () => {
-    if (raf) win.cancelAnimationFrame(raf);
-    raf = 0;
+    driver?.stop();
+    driver = null;
   };
 
   const wipe = () => {
@@ -619,9 +624,9 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
     }
   };
 
-  const frame = () => {
-    raf = 0;
-    if (disposed) return;
+  /** One frame. True keeps the driver awake (arcs remain). */
+  const frame = (): boolean => {
+    if (disposed) return false;
     const t = now();
     const c = ctx;
     const drawable: { arc: LiveArc; s: ArcSample; fade: number }[] = [];
@@ -655,17 +660,20 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
       c.globalCompositeOperation = 'source-over';
     }
     prev = cur;
-    if (arcs.length > 0) raf = win.requestAnimationFrame(frame);
-    else if (prev && c) {
-      // Nothing left: clear what the last frame drew and stop.
+    if (arcs.length > 0) return true;
+    if (prev && c) {
+      // Nothing left: clear what the last frame drew and sleep.
       c.setTransform(scale, 0, 0, scale, 0, 0);
       c.clearRect(prev.x0, prev.y0, prev.x1 - prev.x0, prev.y1 - prev.y0);
       prev = null;
     }
+    return false;
   };
 
   const request = () => {
-    if (!raf && !disposed && arcs.length > 0) raf = win.requestAnimationFrame(frame);
+    if (disposed || arcs.length === 0) return;
+    driver ??= drive(frame, { order: ARC_FRAME_ORDER }, win as Window & typeof globalThis);
+    driver.wake();
   };
 
   return {

@@ -19,12 +19,13 @@ import {
   restTarget,
   saturate,
   stepEnvelope,
+  stretchTarget,
   type EnvelopeBody,
   type EnvelopePose,
   type EnvelopeSize,
 } from '../envelope';
 import { PRESS_BASE, SOFT_BODY } from '../soft-policy';
-import { MOTION_BOUNDS } from '../tiers';
+import { DENT, MOTION_BOUNDS } from '../tiers';
 
 /**
  * Tier E is the only jelly that moves a host — and with it text and hit areas — so these pin the bounds that make
@@ -91,11 +92,20 @@ describe('caps (02 D3: ≤3% and ≤4px at any edge)', () => {
             run(body, pressTarget(u, s0, size), phaseSprings('press'), 0.3, 1 / 60, check);
             run(body, restTarget(body), phaseSprings('release'), 1.2, 1 / 60, check);
             run(body, dragTarget(9000, 4000), phaseSprings('drag'), 0.4, 1 / 60, check);
+            // #989: a press dragged off the element, at the full rubber-band stretch.
+            const off = stretchTarget(
+              pressTarget(u, s0, size),
+              DENT.rubberMaxPx,
+              -DENT.rubberMaxPx,
+              size,
+            );
+            run(body, off, phaseSprings('press'), 0.3, 1 / 60, check);
           }
         }
       }
     }
-  });
+    // An exhaustive sweep (thousands of stepped poses): generous under a loaded machine, ~1.5s alone.
+  }, 30_000);
 
   it('caps total scale deviation from 1 at 3% when the base is rest', () => {
     const body = createEnvelope();

@@ -96,7 +96,8 @@
   [data-slot='button']:is(
     [data-variant='default'],
     [data-variant='accent'],
-    [data-variant='destructive']
+    [data-variant='destructive'],
+    [data-variant='signal']
   ) {
     --jelly-current-color: currentColor;
     --jelly-current-mix: 4%;
@@ -132,6 +133,49 @@
     --jelly-floor: var(--jelly-static-haze), var(--jelly-tile);
     --jelly-floor-size: auto, var(--jelly-tile-size);
   }
+
+  /* ── 2b. Gel layers (#989 layers 1 and 4, the non-shader tier; docs/plasmatic-jelly-system.md §1.1) ─────────────
+     `--liquid-coat` is the gel body → depth gradient: vertical and subtle, darker toward the base, from the theme's
+     `--gel-body` / `--gel-depth`. Restated on the host (liquid-glass.css declares it on :root) so it resolves against
+     the host's own theme block, as `--jelly-static-haze` does above.
+     `--gel-edge` is the CSS fallback for the shader's RGB-led rim: three thin, low-alpha inset shadows `--gel-bevel`
+     soft, each offset by its `--gel-disperse-*` token (negated, because an inset shadow shows on the side OPPOSITE its
+     offset: red's negative token lands it on the top-left, toward the light; blue's lands bottom-right, away), then the
+     1px Fresnel edge. Static: never transitioned. Shine stays at the edges; nothing here crosses a face. */
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    [data-slot='input'],
+    [data-slot='textarea'],
+    [data-slot='button'],
+    [data-jelly],
+    [data-slot='switch'],
+    [data-switch-knob],
+    [data-slot='slider-track'],
+    [data-slot='slider-range'],
+    [data-slot='slider-thumb'],
+    [data-slot='skeleton'],
+    [data-tab-thumb],
+    [data-sonner-toast]
+  ) {
+    --liquid-coat: linear-gradient(
+      180deg,
+      var(--gel-body, transparent),
+      var(--gel-depth, transparent)
+    );
+    --liquid-fill-coat: var(--liquid-coat);
+    --gel-edge:
+      inset calc(-1 * var(--gel-disperse-r, 0px)) calc(-1 * var(--gel-disperse-r, 0px))
+        var(--gel-bevel, 6px) 0 var(--gel-edge-r, transparent),
+      inset calc(-1 * var(--gel-disperse-g, 0px)) calc(-1 * var(--gel-disperse-g, 0px))
+        var(--gel-bevel, 6px) 0 var(--gel-edge-g, transparent),
+      inset calc(-1 * var(--gel-disperse-b, 0px)) calc(-1 * var(--gel-disperse-b, 0px))
+        var(--gel-bevel, 6px) 0 var(--gel-edge-b, transparent),
+      inset 0 0 0 1px var(--gel-fresnel, transparent);
+  }
   /* Something better draws the haze: a haze canvas (engine) or a CSS carrier. Under perf-lite neither may run, so
      the floor stays whatever the attributes say. */
   html:not(.perf-lite) :is([data-jelly-haze='on'], [data-jelly-flow='on']) {
@@ -146,9 +190,10 @@
     background-size: auto, var(--jelly-floor-size);
   }
   .glass-fill:not([data-liquid-material='off']) {
-    /* `--liquid-fill-coat` is two layers. The tint stays on background-color (§5.1.2), so re-tints keep the floor. */
+    /* `--liquid-fill-coat` is one layer (the gel coat, §2b). The tint stays on background-color (§5.1.2), so re-tints
+       keep the floor. */
     background-image: var(--liquid-fill-coat), var(--jelly-floor);
-    background-size: auto, auto, var(--jelly-floor-size);
+    background-size: auto, var(--jelly-floor-size);
   }
   :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):not([data-liquid-material='off']) {
     background-image: var(--jelly-floor);
@@ -287,8 +332,9 @@
   }
 
   /* ── 4. Static CSS rim (01 §3.4) ────────────────────────────────────────────────────────────────────────────────
-     Every surface the shader does NOT draw gets one lit top line and a faint plasma subsurface glow. Static: never in
-     a transition list (hover-css.ts forbids shadow transitions), so it costs nothing at rest. */
+     Every surface the shader does NOT draw gets one lit top line, a faint plasma subsurface glow, and the gel edge
+     (§2b: the RGB-led band and the 1px Fresnel line). Static: never in a transition list (hover-css.ts forbids shadow
+     transitions), so it costs nothing at rest. */
   :is(
       .glass-fill,
       .glass-pane,
@@ -308,7 +354,8 @@
                 220%
             ),
           transparent
-        );
+        ),
+      var(--gel-edge, 0 0 0 0 transparent);
   }
 
   /* ── 5. Haze canvas (drawn by lib/liquid/glass/engine.ts, W2-A) ─────────────────────────────────────────────────

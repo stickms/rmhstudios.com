@@ -84,7 +84,7 @@ describe('electric arcs runtime', () => {
     expect(rt.active).toBe(true);
     expect(env.canvas()).toBeDefined();
     expect(rt.ambient).toBe(false);
-    expect(env.docListeners.count('pointerdown')).toBe(1);
+    expect(env.winListeners.count('pointerdown')).toBe(1);
     expect(dischargeAt(140, 116)).toBe(true);
     expect(env.rafQueue.size).toBe(1);
     vi.advanceTimersByTime(3000);
@@ -119,7 +119,7 @@ describe('electric arcs runtime', () => {
     const rt = install();
     expect(rt.active).toBe(false);
     expect(env.canvas()).toBeUndefined();
-    expect(env.docListeners.count('pointerdown')).toBe(0);
+    expect(env.winListeners.count('pointerdown')).toBe(0);
     expect(dischargeAt(140, 116)).toBe(false);
     expect(strike(els[0] as unknown as Element, els[1] as unknown as Element)).toBe(false);
     env.root.removeAttribute('data-electric-arcs');
@@ -240,6 +240,66 @@ describe('electric arcs runtime', () => {
     expect(a.kind).toBe('click');
   });
 
+  it('electricArcs = clicks: a press deposits charge that hops on; too-close bodies never break down', () => {
+    env.root.setAttribute('data-electric-arcs', 'clicks');
+    const bus = createJellyBus();
+    const pulses: Element[] = [];
+    const strikes: string[] = [];
+    bus.on('charge:pulse', (p) => pulses.push(p.el));
+    bus.on('arc:strike', (p) => strikes.push(p.kind));
+    const rt = install({ bus });
+    // The buttons are 10px apart — inside the uncharged breakdown gap — yet nothing strikes on its own.
+    vi.advanceTimersByTime(5000);
+    expect(strikes).toHaveLength(0);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(rt.ambient).toBe(false);
+    expect(dischargeAt(140, 116)).toBe(true);
+    expect(pulses[0]).toBe(els[0] as unknown as Element);
+    for (let i = 0; i < 120; i++) {
+      vi.advanceTimersByTime(16);
+      env.frame();
+    }
+    // The click's charge jumped on: a pulse on a neighbour, never back onto the sender as its next hop.
+    expect(pulses.length).toBeGreaterThanOrEqual(2);
+    expect(pulses[1]).toBe(els[1] as unknown as Element);
+    expect(strikes.every((k) => k === 'click')).toBe(true);
+  });
+
+  it('electricArcs = full: a too-close pair breaks down on its own after the warm-up, inside the ledger', () => {
+    const bus = createJellyBus();
+    const ledger = createFlashLedger();
+    const onsets: number[] = [];
+    const orig = ledger.tryOnset;
+    ledger.tryOnset = (t: number) => {
+      const ok = orig(t);
+      if (ok) onsets.push(t);
+      return ok;
+    };
+    install({ bus, ledger });
+    vi.advanceTimersByTime(2900);
+    expect(onsets).toHaveLength(0);
+    for (let i = 0; i < 70; i++) {
+      vi.advanceTimersByTime(16);
+      env.frame();
+    }
+    // The ambient scheduler alone allows ≤ 1 arc per 1.2s; breakdown adds deterministic strikes.
+    expect(onsets.length).toBeGreaterThanOrEqual(2);
+    for (const start of onsets) {
+      expect(onsets.filter((t) => t >= start && t < start + 1000).length).toBeLessThanOrEqual(3);
+    }
+  });
+
+  it('electricArcs = off: no charge, no pulse', () => {
+    env.root.setAttribute('data-electric-arcs', 'off');
+    const bus = createJellyBus();
+    const pulses: unknown[] = [];
+    bus.on('charge:pulse', (p) => pulses.push(p));
+    install({ bus });
+    expect(dischargeAt(140, 116)).toBe(false);
+    vi.advanceTimersByTime(5000);
+    expect(pulses).toHaveLength(0);
+  });
+
   it('a soft-body release adds charge (body:release is consumed)', () => {
     const bus = createJellyBus();
     install({ bus });
@@ -252,7 +312,7 @@ describe('electric arcs runtime', () => {
     teardown!();
     teardown = null;
     expect(env.canvas()).toBeUndefined();
-    expect(env.docListeners.count('pointerdown')).toBe(0);
+    expect(env.winListeners.count('pointerdown')).toBe(0);
     expect(env.docListeners.count('click')).toBe(0);
     expect(env.docListeners.count('scroll')).toBe(0);
     expect(bus.listenerCount('body:release')).toBe(0);

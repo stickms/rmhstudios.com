@@ -20,10 +20,18 @@
  * the area exactly `iso²` however hard the cap bites.
  */
 
-import { SPRINGS, springStep, type Spring, type SpringState } from '@/lib/fluid';
+import {
+  SPRINGS,
+  rubberBand,
+  spring,
+  springSettled,
+  springStep,
+  type Spring,
+  type SpringState,
+} from '@/lib/fluid';
 
 import { SOFT_BODY, plasticDecay, plasticFraction } from './soft-policy';
-import { MOTION_BOUNDS } from './tiers';
+import { DENT, MOTION_BOUNDS } from './tiers';
 
 /* ── Types ───────────────────────────────────────────────────────────────── */
 
@@ -416,4 +424,108 @@ export function cornerFlexRadii(
   ];
   const out = corners.map(([cx, cy]) => r * (1 - a * ((p.x * cx + p.y * cy) / 2)));
   return [out[0], out[1], out[2], out[3]];
+}
+
+/* ── The press dent (#989) ───────────────────────────────────────────────── */
+
+/**
+ * The dent's depth and stretch spring: `jellyPress`'s quick period at `ζ = DENT.damping` (well damped, no ring), built
+ * with the same `spring()` as every other spring on the site — there is no second spring formula.
+ */
+export const DENT_SPRING: Spring = spring(0.22, 1 - DENT.damping);
+
+/** Dent σ for a host of rest size `w × h`: `clamp(DENT.radiusFrac · short side, min, max)` px. */
+export function dentRadius(w: number, h: number): number {
+  const short = Math.max(0, Math.min(w, h));
+  return Math.max(DENT.minRadiusPx, Math.min(DENT.maxRadiusPx, DENT.radiusFrac * short));
+}
+
+/**
+ * Where the dent sits for a pointer at host-local `(x, y)` on a `w × h` host: inside, under the pointer; outside, on
+ * the nearest edge point, with the overshoot turned into a rubber-band stretch (`rubberBand` from `lib/fluid.ts`,
+ * asymptotic to — and clamped at — `DENT.rubberMaxPx`) along the overshoot direction.
+ */
+export function dentContact(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): { x: number; y: number; stretchX: number; stretchY: number } {
+  const fx = Number.isFinite(x) ? x : 0;
+  const fy = Number.isFinite(y) ? y : 0;
+  const cx = Math.max(0, Math.min(Math.max(0, w), fx));
+  const cy = Math.max(0, Math.min(Math.max(0, h), fy));
+  const ox = fx - cx;
+  const oy = fy - cy;
+  const over = Math.hypot(ox, oy);
+  if (!(over > 0)) return { x: cx, y: cy, stretchX: 0, stretchY: 0 };
+  const amount = Math.min(DENT.rubberMaxPx, rubberBand(over, DENT.rubberMaxPx));
+  return { x: cx, y: cy, stretchX: (amount * ox) / over, stretchY: (amount * oy) / over };
+}
+
+/**
+ * The envelope pose for a press dragged off the host: `base` elongated along the rubber-band stretch (`stretch / size`
+ * per axis) and shifted half the stretch toward it. `renderEnvelope` then saturates the result inside
+ * `MOTION_BOUNDS`, so the host never travels more than 4px / 3% however far the pointer goes.
+ */
+export function stretchTarget(
+  base: EnvelopePose,
+  stretchX: number,
+  stretchY: number,
+  size: EnvelopeSize,
+): EnvelopePose {
+  if (!stretchX && !stretchY) return base;
+  const ex = size.w > 0 ? Math.abs(stretchX) / size.w : 0;
+  const ey = size.h > 0 ? Math.abs(stretchY) / size.h : 0;
+  return {
+    sx: base.sx * (1 + ex),
+    sy: base.sy * (1 + ey),
+    tx: base.tx + stretchX / 2,
+    ty: base.ty + stretchY / 2,
+  };
+}
+
+/** The dent's springs: depth (px) and stretch (px). */
+export interface DentSprings {
+  depth: SpringState;
+  stretchX: SpringState;
+  stretchY: SpringState;
+}
+
+export function createDentSprings(): DentSprings {
+  return {
+    depth: { value: 0, velocity: 0 },
+    stretchX: { value: 0, velocity: 0 },
+    stretchY: { value: 0, velocity: 0 },
+  };
+}
+
+/** Advance the dent toward `(depth, stretchX, stretchY)` by `dt` s (≤ 1/30s analytic substeps). Mutates `d`. */
+export function stepDent(
+  d: DentSprings,
+  target: { depth: number; stretchX: number; stretchY: number },
+  dt: number,
+): DentSprings {
+  if (!(dt > 0)) return d;
+  let left = Math.min(dt, ENVELOPE_MAX_DT);
+  while (left > 1e-9) {
+    const h = Math.min(left, SUBSTEP);
+    d.depth = springStep(d.depth, target.depth, DENT_SPRING, h);
+    d.stretchX = springStep(d.stretchX, target.stretchX, DENT_SPRING, h);
+    d.stretchY = springStep(d.stretchY, target.stretchY, DENT_SPRING, h);
+    left -= h;
+  }
+  return d;
+}
+
+/** The dent has arrived at its target (sub-0.01px, slow). */
+export function dentSettled(
+  d: DentSprings,
+  target: { depth: number; stretchX: number; stretchY: number },
+): boolean {
+  return (
+    springSettled(d.depth, target.depth, 0.01, 0.2) &&
+    springSettled(d.stretchX, target.stretchX, 0.01, 0.2) &&
+    springSettled(d.stretchY, target.stretchY, 0.01, 0.2)
+  );
 }

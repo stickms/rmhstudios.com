@@ -9,14 +9,20 @@
  *   the only place an arc between elements is assembled, so the ambient scheduler, clicks and the public API
  *   (`strike`, `dischargeAt`) all pass through the same fresh-rect read, the same flash ledger and the same charge
  *   bookkeeping. Nothing here bypasses the ledger: callers degrade by dropping bolts, never by forcing one.
- * - {@link installClickArcs} is the delegated input: ONE capture `pointerdown` and ONE capture `click` on the
- *   document, no per-component listener. Disabled, `aria-disabled`, editable and opted-out targets arc nothing, and
+ * - {@link installClickArcs} is the delegated input: the shared jelly pointer hub's `pointerdown`
+ *   (`lib/jelly/pointer.ts`, one capture listener per window for every jelly service) and ONE capture `click` on the
+ *   document for keyboard activation, no per-component listener. Disabled, `aria-disabled`, editable and opted-out targets arc nothing, and
  *   Tab focus moves never arc (focus is not an action).
+ *
+ * Every press (and keyboard activation) also deposits `CHARGE.clickCharge` on its body through
+ * {@link ArcContext.deposit}; the electric field (`field.ts`) rings it through the gel and hops it on. When a hop is
+ * planned the press keeps one flash-ledger onset free for it (at most `maxOnsets − 1` bolts), so the first jump is seen.
  *
  * Rects: neighbours come from the registry's cache (no layout per press), and exactly the elements a bolt joins are
  * re-read at strike time, so a stale cache never puts a bolt in the wrong place.
  */
 
+import { onJellyPointer } from '../pointer';
 import { JELLY_SELECTOR, jellyOptedOut } from '../tiers';
 import { closestRimPoints, pointToRoundedRect, type RoundedRect } from './geometry';
 import type { FlashLedger } from './ledger';
@@ -30,6 +36,7 @@ import {
   type ArcEmitKind,
   type ArcEnd,
   type ArcRenderer,
+  type LiveArc,
 } from './renderer';
 import { mixSeed, type Rand } from './rng';
 import { isEditable, type ArcCandidate, type ChargeBook } from './scheduler';
@@ -86,6 +93,11 @@ export interface ArcContext {
   measure(el: Element): RoundedRect | null;
   /** The tier's bolts per click (0 = click arcs off). */
   clickBolts(): number;
+  /**
+   * Deposit a click's charge on `el` at viewport (x, y) (#989). Returns true when a charge hop is planned, so the
+   * press leaves a ledger onset for it. Absent: no charge model.
+   */
+  deposit?(el: Element, x: number, y: number): boolean;
 }
 
 export interface StrikeOptions {
@@ -105,6 +117,8 @@ export interface DischargeOptions {
 export interface ArcActions {
   /** One bolt between two elements; false when they overlap, nest, have no box or the ledger refuses. */
   strike(a: Element, b: Element, opts?: StrikeOptions): boolean;
+  /** {@link ArcActions.strike}, returning the admitted arc (its `contacts` are the two rim points) or null. */
+  strikeArc(a: Element, b: Element, opts?: StrikeOptions): LiveArc | null;
   /** A press on jelly element `el` at viewport (x, y). */
   press(el: Element, x: number, y: number, fine: boolean): boolean;
   /** A press outside every jelly element: discharge to the cursor from a rim within 90px. */
@@ -130,13 +144,13 @@ export function createArcActions(ctx: ArcContext): ArcActions {
   const modalRoot = (el: Element) => el.closest(MODAL_ROOT_SELECTOR);
   const nestedEl = (a: Element, b: Element) => a.contains(b) || b.contains(a);
 
-  const strike = (a: Element, b: Element, opts: StrikeOptions = {}): boolean => {
-    if (a === b || nestedEl(a, b)) return false;
+  const strikeArc = (a: Element, b: Element, opts: StrikeOptions = {}): LiveArc | null => {
+    if (a === b || nestedEl(a, b)) return null;
     const ra = ctx.measure(a);
     const rb = ctx.measure(b);
-    if (!ra || !rb) return false;
+    if (!ra || !rb) return null;
     const contact = closestRimPoints(ra, rb, ctx.rand);
-    if (!contact) return false;
+    if (!contact) return null;
     const kind = opts.kind ?? 'click';
     const arc = boltArc({
       kind,
@@ -148,10 +162,12 @@ export function createArcActions(ctx: ArcContext): ArcActions {
       energy: opts.energy,
       modal: opts.modal ?? !!modalRoot(a),
     });
-    if (!admitArc(arc, ctx.ledger)) return false;
+    if (!admitArc(arc, ctx.ledger)) return null;
     ctx.renderer.add(arc);
-    return true;
+    return arc;
   };
+  const strike = (a: Element, b: Element, opts?: StrikeOptions): boolean =>
+    strikeArc(a, b, opts) !== null;
 
   const fizz = (
     el: Element,
@@ -190,6 +206,7 @@ export function createArcActions(ctx: ArcContext): ArcActions {
 
   return {
     strike,
+    strikeArc,
     press(el, x, y, fine) {
       const tierMax = ctx.clickBolts();
       if (tierMax <= 0) return false;
@@ -200,11 +217,13 @@ export function createArcActions(ctx: ArcContext): ArcActions {
       const src = ctx.measure(el);
       if (!src) return false;
       ctx.charge.set(el, 0, now);
+      const hop = ctx.deposit?.(el, x, y) ?? false;
       const { cands, targets } = neighbours(el, src, modal);
+      const boltCap = hop ? Math.max(1, ctx.ledger.maxOnsets - 1) : tierMax;
       const n = clickBoltCount(
         targets.map((t) => t.gap),
         fine,
-        tierMax,
+        Math.min(tierMax, boltCap),
       );
       if (n === 0) return fizz(el, src, { x, y }, 'click', undefined, !!modal);
       let any = false;
@@ -253,8 +272,9 @@ export function createArcActions(ctx: ArcContext): ArcActions {
       if (!src) return false;
       const modal = modalRoot(el);
       ctx.charge.set(el, 0, ctx.renderer.now());
-      const { cands, targets } = neighbours(el, src, modal);
       const centre = { x: src.x + src.w / 2, y: src.y + src.h / 2 };
+      ctx.deposit?.(el, centre.x, centre.y);
+      const { cands, targets } = neighbours(el, src, modal);
       if (targets.length === 0) return fizz(el, src, centre, 'key', 2, !!modal);
       return strike(el, cands[targets[0].index].el, { kind: 'key', modal: !!modal });
     },
@@ -277,7 +297,10 @@ const focusVisible = (el: Element): boolean => {
   }
 };
 
-/** One capture `pointerdown` + one capture `click` on the document. Returns the teardown. */
+/**
+ * The pointer hub's `pointerdown` (on the document's window) + one capture `click` on the document. Returns the
+ * teardown.
+ */
 export function installClickArcs(doc: Document, opts: ClickInputOptions): () => void {
   const onPointerDown = (e: PointerEvent) => {
     if (e.isPrimary === false) return;
@@ -311,10 +334,11 @@ export function installClickArcs(doc: Document, opts: ClickInputOptions): () => 
     opts.actions.key(host);
   };
   const capture = { capture: true, passive: true } as const;
-  doc.addEventListener('pointerdown', onPointerDown, capture);
+  const win = doc.defaultView;
+  const offPointer = win ? onJellyPointer('pointerdown', onPointerDown, win) : () => {};
   doc.addEventListener('click', onClick, capture);
   return () => {
-    doc.removeEventListener('pointerdown', onPointerDown, capture);
+    offPointer();
     doc.removeEventListener('click', onClick, capture);
   };
 }

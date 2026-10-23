@@ -97,3 +97,34 @@ export function resetLatticeInputsForTests(): void {
   impulses = new WeakMap();
   wakeListeners.clear();
 }
+
+/**
+ * The press dent (#989): a Gaussian bowl under the pointer, in the host's own CSS px. Physics writes it while a press
+ * is down or easing back (the dent slides with a drag; `depth` eases to 0 on release); the engine reads it every frame
+ * it draws the host — rim indent, rim glow and the specular light dot on the far slope — and the lens follows it.
+ * `null` once the dent has fully eased out.
+ */
+export interface JellyDent {
+  /** Centre, host-local CSS px. */
+  x: number;
+  y: number;
+  /** Current depth, CSS px (0..DENT.depthPx). */
+  depth: number;
+  /** Gaussian σ, CSS px. */
+  radius: number;
+  /** Rubber-band stretch when dragged off the element: unit direction × amount px (0 when inside). */
+  stretchX: number;
+  stretchY: number;
+}
+
+const dents = new WeakMap<Element, JellyDent>();
+
+export function setDent(el: Element, dent: JellyDent | null): void {
+  if (dent) dents.set(el, dent);
+  else dents.delete(el);
+  wake(el);
+}
+
+export function dentOf(el: Element): JellyDent | null {
+  return dents.get(el) ?? null;
+}

@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { governBudget, GOVERNED_HAZE_SCALE, knobsAt } from '@/lib/jelly/governor';
-import { AMBIENT_BOUNDS, IDLE_AFTER_MS, JELLY_BUDGETS } from '@/lib/jelly/tiers';
+import { AMBIENT_BOUNDS, CHARGE, IDLE_AFTER_MS, JELLY_BUDGETS, PLASMA } from '@/lib/jelly/tiers';
 import { HAZE_FRAG } from '../haze-shader';
 import {
   GLASS_BUDGET,
   HAZE,
-  PULSE,
+  PLASMA_LOOK,
+  addRing,
   admit,
   ambientHz,
   dueHaze,
+  easePlasma,
   hazeEligible,
   hazeScaleFor,
   hazeSize,
@@ -16,7 +18,10 @@ import {
   latticeAmplitude,
   nextDue,
   overdrawMargin,
-  pulseLevel,
+  packRings,
+  ringAlive,
+  ringLifetimeMs,
+  ringState,
   seedFor,
   type Candidate,
   type ClockState,
@@ -204,14 +209,73 @@ describe('lattice overdraw and charge pulse', () => {
     expect(latticeAmplitude(300, 120)).toBe(1);
     expect(latticeAmplitude(1000, 400)).toBe(AMBIENT_BOUNDS.largeLatticeScale);
   });
+});
 
-  it('a pulse peaks at its strength, decays to 0 within ~300ms, and is bounded', () => {
-    expect(pulseLevel(1, 0)).toBe(PULSE.maxBoost);
-    expect(pulseLevel(0.5, 0)).toBeCloseTo(PULSE.maxBoost / 2);
-    expect(pulseLevel(1, 150)).toBeLessThan(pulseLevel(1, 50));
-    expect(pulseLevel(1, PULSE.durationMs)).toBe(0);
-    expect(pulseLevel(1, -5)).toBe(0);
-    expect(pulseLevel(9, 0)).toBe(PULSE.maxBoost);
+describe('#989 plasma level and charge rings', () => {
+  it('the plasma level eases (never steps), settles exactly, and is clamped to 0..1', () => {
+    const a = easePlasma(0, 1, 16);
+    expect(a).toBeGreaterThan(0);
+    expect(a).toBeLessThan(0.2);
+    let v = 0;
+    for (let i = 0; i < 200; i++) v = easePlasma(v, PLASMA.wake, 16);
+    expect(v).toBe(PLASMA.wake);
+    expect(easePlasma(0.5, 7, 1e6)).toBe(1);
+    expect(easePlasma(0.5, -3, 1e6)).toBe(0);
+    expect(easePlasma(0, 0, 16)).toBe(0); // at rest it stays exactly 0
+    expect(easePlasma(0.3, 1, 0)).toBe(0.3);
+  });
+
+  it('a ring travels at the pulse speed and decays with the pulse tau', () => {
+    expect(ringState(1, 0)).toEqual({ radius: 0, amp: 1 });
+    const r = ringState(1, CHARGE.pulseTauMs);
+    expect(r.radius).toBeCloseTo((CHARGE.pulseSpeedPxS * CHARGE.pulseTauMs) / 1000);
+    expect(r.amp).toBeCloseTo(Math.exp(-1));
+    expect(ringState(1, -1).amp).toBe(0);
+    expect(ringState(5, 0).amp).toBe(1);
+  });
+
+  it('a ring has a bounded lifetime, and dies sooner when its front leaves the surface', () => {
+    const life = ringLifetimeMs(1);
+    expect(life).toBeLessThan(CHARGE.pulseTauMs * 5);
+    expect(ringLifetimeMs(0)).toBe(0);
+    const ring = { x: 0, y: 0, q: 1, at: 0 };
+    expect(ringAlive(ring, 10, 10_000)).toBe(true);
+    expect(ringAlive(ring, life + 1, 10_000)).toBe(false);
+    const crossed = ((40 + PLASMA_LOOK.ringWidthPx * 2) / CHARGE.pulseSpeedPxS) * 1000 + 1;
+    expect(ringAlive(ring, crossed, 40)).toBe(false);
+  });
+
+  it('rings per surface are bounded, oldest dropped; same-instant twins merge', () => {
+    let rings: ReturnType<typeof addRing> = [];
+    for (let i = 0; i < 9; i++) rings = addRing(rings, { x: i * 100, y: 0, q: 0.5, at: i * 100 });
+    expect(rings).toHaveLength(PLASMA_LOOK.ringsPerSurface);
+    expect(rings[0]!.at).toBe(600);
+    const merged = addRing([{ x: 10, y: 10, q: 0.4, at: 1000 }], {
+      x: 14,
+      y: 12,
+      q: 0.9,
+      at: 1020,
+    });
+    expect(merged).toHaveLength(1);
+    expect(merged[0]!.q).toBe(0.9);
+    expect(addRing([], { x: 0, y: 0, q: 0, at: 0 })).toHaveLength(0);
+  });
+
+  it('packs at most four live rings into the shader array and zeroes the rest', () => {
+    const out = new Float32Array(16).fill(9);
+    const n = packRings(
+      [
+        { x: 1, y: 2, q: 1, at: 0 },
+        { x: 3, y: 4, q: 1, at: -1e6 }, // spent
+      ],
+      100,
+      out,
+    );
+    expect(n).toBe(1);
+    expect(out[0]).toBe(1);
+    expect(out[1]).toBe(2);
+    expect(out[3]).toBeGreaterThan(0);
+    expect([...out.slice(4)].every((v) => v === 0)).toBe(true);
   });
 });
 
@@ -224,5 +288,50 @@ describe('shader contract', () => {
     expect(HAZE_FRAG).toContain('uniform float uTime');
     // Alpha is capped in the shader, far above what the legibility tokens allow.
     expect(HAZE_FRAG).toContain('clamp(hazeA + plasmaA + sss, 0.0, 0.6)');
+  });
+
+  it('#989: no broad gloss band or face glint — specular lives at the edges and in the dent', () => {
+    // The old diagonal sheen across the face and the cursor bloom on the face are gone.
+    for (const src of [FRAG, HAZE_FRAG]) {
+      expect(src).not.toMatch(/\bsheen\b/);
+      expect(src).not.toMatch(/\bcurGlow\b/);
+      expect(src).not.toMatch(/\bbloom\b/);
+      expect(src).not.toMatch(/\bgloss\b/);
+    }
+    // Every specular term is masked to the bevel band.
+    expect(FRAG).toContain('float edgeOnly = 1.0 - smoothstep(0.6, 1.0, t);');
+    for (const term of ['keySpec', 'fillSpec', 'curSpec', 'counter']) {
+      const line = FRAG.split('\n').find((l) => l.trim().startsWith(`float ${term} =`));
+      expect(line, term).toBeDefined();
+      expect(line!.trim().endsWith('* edgeOnly;'), term).toBe(true);
+    }
+  });
+
+  it('#989: RGB-led edge, Fresnel line, gel depth, plasma clipped inside, dent glow and light dot', () => {
+    for (const decl of [
+      'vec3 uDisperse',
+      'vec2 uBand',
+      'vec4 uFresnel',
+      'vec4 uEdgeR',
+      'vec4 uEdgeB',
+      'vec4 uDent',
+      'vec2 uDentStretch',
+      'vec4 uSpecular',
+    ])
+      expect(FRAG).toContain(`uniform ${decl};`);
+    // Signed split (negative = toward the light): each channel's band, tinted by its --gel-edge-* token.
+    expect(FRAG).toContain('jBand(d - sh * uDisperse.r - d0, bw) * uEdgeR.a');
+    expect(FRAG).toContain('jBand(d - sh * uDisperse.b - d0, bw) * uEdgeB.a');
+    // The body → depth coat is CSS; the shader must not draw it a second time.
+    expect(FRAG).not.toContain('uDepth');
+    // Plasma: both programs, clipped inside the gel (never an outline), in the accent colour.
+    for (const src of [FRAG, HAZE_FRAG]) {
+      expect(src).toContain('float clip = smoothstep(3.0, 14.0, d);');
+      expect(src).toContain('uniform vec3 uAccent;');
+      expect(src).toContain('uniform float uLevel;');
+    }
+    // Static in the rim (no clock), moving in the haze.
+    expect(FRAG).toContain('jPlasma(P, uSize, d, uSeed, 0.0)');
+    expect(HAZE_FRAG).toContain('jPlasma(P, uSize, d, uSeed, uTime * uPlasmaMotion)');
   });
 });

@@ -32,6 +32,7 @@
 import type { JellyBus } from '../bus';
 import type { RoundedRect } from './geometry';
 import { buildPairs, type ArcPair } from './pairs';
+import { decayCharge } from './charge';
 import { ARC_BUDGET, chargeAt, chargeEligible, pickWeighted, totalRate } from './rate';
 import { randExp, type Rand } from './rng';
 
@@ -43,18 +44,43 @@ export interface ArcCandidate {
 
 // ── Charge ───────────────────────────────────────────────────────────────────
 
+/**
+ * Two quantities per element, kept in one book:
+ *
+ * - **readiness** (`get`/`set`/`drain`/`add`) — the ambient scheduler's recharge model above: full (1) for an element
+ *   never seen, drained by an arc, recharging over `ARC_BUDGET.chargeTauMs`.
+ * - **electric charge** `q ∈ [0, 1]` (`electric`/`deposit`/`setElectric`/`charged`) — the #989 static charge a click
+ *   deposits: 0 for an element never charged, decaying as `q·e^{−dt/CHARGE.decayMs}`. It drives the charge hops, the
+ *   breakdown gap and the Coulomb attraction (`field.ts`).
+ *
+ * Both are evaluated lazily from timestamps (no timer per element). Electric entries are held in a `Map` so the field
+ * can enumerate them; {@link ChargeBook.charged} prunes every entry that has decayed below its floor, so a page keeps
+ * strong references only for the few seconds a body stays charged.
+ */
 export interface ChargeBook {
-  /** Current charge (full = 1 for an element never seen). */
+  /** Current readiness (full = 1 for an element never seen). */
   get(el: Element, now: number): number;
   set(el: Element, q: number, now: number): void;
   /** Subtract `amount` (clamped at 0). */
   drain(el: Element, amount: number, now: number): void;
   /** Add `amount` (clamped at 1). */
   add(el: Element, amount: number, now: number): void;
+  /** Current electric charge (0 for an element never charged). */
+  electric(el: Element, now: number): number;
+  /** Add `amount` of electric charge (clamped to [0, 1]); returns the new charge. */
+  deposit(el: Element, amount: number, now: number): number;
+  /** Set the electric charge (clamped to [0, 1]). */
+  setElectric(el: Element, q: number, now: number): void;
+  /** Elements whose electric charge is at least `min` now (default {@link CHARGE_FLOOR}); prunes the rest. */
+  charged(now: number, min?: number): Element[];
 }
+
+/** Below this an electric charge is gone: its entry is pruned. */
+export const CHARGE_FLOOR = 0.01;
 
 export function createChargeBook(): ChargeBook {
   const book = new WeakMap<Element, { q: number; t: number }>();
+  const field = new Map<Element, { q: number; t: number }>();
   const get = (el: Element, now: number) => {
     const s = book.get(el);
     return s ? chargeAt(s.q, now - s.t) : 1;
@@ -62,11 +88,35 @@ export function createChargeBook(): ChargeBook {
   const set = (el: Element, q: number, now: number) => {
     book.set(el, { q: Math.max(0, Math.min(1, q)), t: now });
   };
+  const electric = (el: Element, now: number) => {
+    const s = field.get(el);
+    return s ? decayCharge(s.q, now - s.t) : 0;
+  };
+  const setElectric = (el: Element, q: number, now: number) => {
+    const v = Math.max(0, Math.min(1, q));
+    if (v < CHARGE_FLOOR) field.delete(el);
+    else field.set(el, { q: v, t: now });
+  };
   return {
     get,
     set,
     drain: (el, amount, now) => set(el, get(el, now) - amount, now),
     add: (el, amount, now) => set(el, get(el, now) + amount, now),
+    electric,
+    setElectric,
+    deposit(el, amount, now) {
+      setElectric(el, electric(el, now) + amount, now);
+      return electric(el, now);
+    },
+    charged(now, min = CHARGE_FLOOR) {
+      const out: Element[] = [];
+      for (const [el, s] of field) {
+        const q = decayCharge(s.q, now - s.t);
+        if (q < CHARGE_FLOOR) field.delete(el);
+        else if (q >= min) out.push(el);
+      }
+      return out;
+    },
   };
 }
 

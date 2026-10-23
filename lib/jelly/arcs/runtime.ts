@@ -18,6 +18,11 @@
  *
  * **Click arcs** use `jellyBudget().clickBolts` (handheld 1, coarse 2, full 3) and ignore quiet states.
  *
+ * **Electricity (#989, `field.ts`)** — every press deposits charge that rings through the gel and hops on; that needs
+ * only arcs on (`full` or `clicks`) and holds while rects are stale mid-scroll. Breakdown-gap strikes are ambient: they
+ * need everything ambient arcs need (`full`, warm, not low-end, a finite tier interval) and no quiet state. Coulomb
+ * attraction needs arcs on and no quiet state.
+ *
  * One flash ledger ({@link arcFlashLedger}) is shared by ambient, click, fizz, discharge and API arcs, and is the one
  * other site-wide flash sources (a rim pulse) should ask too.
  *
@@ -53,6 +58,7 @@ import type { RoundedRect } from './geometry';
 import { createFlashLedger, type FlashLedger } from './ledger';
 import { selectCandidates } from './pairs';
 import { ARC_BUDGET } from './rate';
+import { createElectricField, type ElectricField } from './field';
 import { createArcRenderer, type ArcRenderer, type LiveArc } from './renderer';
 import { mulberry32 } from './rng';
 import {
@@ -132,6 +138,7 @@ interface Live {
   actions: ArcActions;
   quiet: QuietTracker;
   scheduler: AmbientScheduler;
+  field: ElectricField;
   teardown: (() => void)[];
 }
 
@@ -242,6 +249,7 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
   // ── On / off ───────────────────────────────────────────────────────────────
   const enable = (): Live => {
     const renderer = createArcRenderer(doc, { ledger, onStrike, now: clock });
+    let field: ElectricField | null = null;
     const actions = createArcActions({
       renderer,
       ledger,
@@ -250,13 +258,17 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
       candidates,
       measure,
       clickBolts: () => budget.clickBolts,
+      deposit: (el, x, y) => field?.deposit(el, x, y) ?? false,
     });
     const teardown: (() => void)[] = [];
     let scheduler: AmbientScheduler | null = null;
     const quiet = createQuietTracker(doc, {
       bus,
       scrolling: () => reg?.scrolling ?? false,
-      onChange: () => scheduler?.poke(),
+      onChange: () => {
+        scheduler?.poke();
+        field?.poke();
+      },
       onScroll: () => renderer.fade(),
       now: clock,
     });
@@ -271,6 +283,22 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
       charge,
     });
     const sched = scheduler;
+    const arcsOn = () => !!live && budget.clickBolts > 0 && !hubOrEversion();
+    field = createElectricField({
+      actions,
+      charge,
+      ledger,
+      bus,
+      candidates,
+      pairs: () => sched.pairs(),
+      measure,
+      now: clock,
+      hops: arcsOn,
+      breakdown: () => ambientOk && arcsOn() && !quiet.quiet(),
+      attract: () => arcsOn() && !quiet.quiet(),
+      scrolling: () => reg?.scrolling ?? false,
+    });
+    const fld = field;
     teardown.push(
       installClickArcs(doc, {
         allowed: () => !!live && budget.clickBolts > 0 && !hubOrEversion(),
@@ -282,10 +310,11 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
         reg.onChange(() => {
           candVersion++;
           sched.invalidate();
+          fld.poke();
         }),
       );
     }
-    return { renderer, actions, quiet, scheduler: sched, teardown };
+    return { renderer, actions, quiet, scheduler: sched, field: fld, teardown };
   };
 
   const disable = () => {
@@ -293,6 +322,7 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
     const l = live;
     live = null;
     l.scheduler.stop();
+    l.field.stop();
     l.quiet.dispose();
     for (const fn of l.teardown) fn();
     l.renderer.dispose();
@@ -312,6 +342,7 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
       warm && !lowEnd && mode.arcs === 'full' && Number.isFinite(budget.ambientArcMinIntervalMs);
     live ??= enable();
     live.scheduler.poke();
+    live.field.poke();
   };
 
   // ── Watchers (survive global off) ──────────────────────────────────────────

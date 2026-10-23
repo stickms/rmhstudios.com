@@ -9,11 +9,14 @@
  *
  *  (a) Only the jelly modules, the mount hook and the `/jelly` lab import the soft-body / arc SERVICES
  *      (`physics`, `compose`, `arcs`). A component that imports `physics` grows a second soft body.
- *  (b) Inside `lib/jelly/` and `lib/liquid/`, only the sanctioned frame owners call `requestAnimationFrame`: the
- *      engine's ambient clock (`lib/liquid/glass/engine.ts`), the soft-body physics (`lib/jelly/physics.ts`), the
- *      arc renderer (`lib/jelly/arcs/renderer.ts`) and, until it is folded in, the fallback cursor light
- *      (`lib/liquid/runtime.ts`). `raf-loop-allowlist.test.ts` holds each one to its settle condition; this holds
- *      the NUMBER of jelly loops at those owners.
+ *  (b) Inside `lib/jelly/` and `lib/liquid/`, exactly ONE file calls `requestAnimationFrame`: the frame driver
+ *      `lib/jelly/frame.ts` (#989, CLAUDE.md "Design system: Plasmatic Jelly" → Performance). The engine's ambient
+ *      clock and rim draws, the soft body, the arc renderer and the fallback light register drivers on it with
+ *      `drive(fn, { order })`. `raf-loop-allowlist.test.ts` holds it to its settle condition (no frame while no
+ *      driver is awake, proven in `lib/jelly/__tests__/frame.test.ts`); this holds the NUMBER of jelly loops at one.
+ *      Likewise exactly ONE file, the pointer hub `lib/jelly/pointer.ts`, adds `pointer*` listeners: every service
+ *      subscribes with `onJellyPointer(type, fn)` (one capture+passive listener per type, refcounted, proven in
+ *      `lib/jelly/__tests__/pointer.test.ts`).
  *  (c) The degraded-root predicate (`.reduce-transparency,.style-high-contrast,.perf-lite`) is declared once, as
  *      `DEGRADED_ROOT_SELECTOR` in `lib/jelly/tiers.ts`. It used to be hand-copied into the engine and the runtime,
  *      and a theme added to one copy left the other drawing.
@@ -101,7 +104,8 @@ describe('N2 — the jelly services have one owner each', () => {
       'lazy `dischargeAt` hook-in for celebrations, through the arc runtime and its flash ledger (master plan W2-C)',
     ],
   ]);
-  const SERVICE = /(?:from\s+|import\(\s*)['"]@\/lib\/jelly\/(?:physics|compose|bridge|arcs)(?:\/[^'"]*)?['"]/;
+  const SERVICE =
+    /(?:from\s+|import\(\s*)['"]@\/lib\/jelly\/(?:physics|compose|bridge|arcs)(?:\/[^'"]*)?['"]/;
   const OWNS = (f: string) =>
     f.startsWith('lib/jelly/') ||
     f.startsWith('lib/liquid/') ||
@@ -123,18 +127,16 @@ describe('N2 — the jelly services have one owner each', () => {
 
   it('(a) the service-import allowlist stays honest', () => {
     for (const [file, reason] of SERVICE_IMPORT_ALLOW) {
-      expect(SERVICE.test(code(file)), `${file} no longer imports a jelly service — remove its entry`).toBe(true);
+      expect(
+        SERVICE.test(code(file)),
+        `${file} no longer imports a jelly service — remove its entry`,
+      ).toBe(true);
       expect(reason.length, `${file} needs a real reason`).toBeGreaterThan(40);
     }
   });
 
-  /** (b) The jelly frame owners (05 D3), plus the fallback cursor light until it is subsumed. */
-  const JELLY_RAF_OWNERS = new Set([
-    'lib/liquid/glass/engine.ts',
-    'lib/jelly/physics.ts',
-    'lib/jelly/arcs/renderer.ts',
-    'lib/liquid/runtime.ts',
-  ]);
+  /** (b) The one jelly frame owner (#989): every other service is a driver on it. */
+  const JELLY_RAF_OWNERS = new Set(['lib/jelly/frame.ts']);
 
   it('(b) only the sanctioned owners run frames under lib/jelly and lib/liquid', () => {
     const jelly = SOURCES.filter((f) => f.startsWith('lib/jelly/') || f.startsWith('lib/liquid/'));
@@ -142,14 +144,35 @@ describe('N2 — the jelly services have one owner each', () => {
     const loops = jelly.filter((f) => code(f).includes('requestAnimationFrame'));
     expect(
       loops.filter((f) => !JELLY_RAF_OWNERS.has(f)).sort(),
-      'A new requestAnimationFrame under lib/jelly or lib/liquid is a fourth jelly loop. Drive it from the frame the ' +
-        "engine, physics or arc renderer already runs (every service reads the registry's cached rects), or prove " +
-        'it is needed in docs/plasmatic-jelly-system.md §7 first.',
+      'A requestAnimationFrame under lib/jelly or lib/liquid outside lib/jelly/frame.ts is a second jelly loop. ' +
+        'Register a driver with `drive(fn, { order })` from lib/jelly/frame.ts and `wake()` it when something starts ' +
+        'to move (docs/plasmatic-jelly-system.md §8.1).',
     ).toEqual([]);
     expect(
       [...JELLY_RAF_OWNERS].filter((f) => !loops.includes(f)).sort(),
-      'A sanctioned owner no longer calls rAF (or moved) — remove it from JELLY_RAF_OWNERS and raf-loop-allowlist.',
+      'The frame driver no longer calls rAF (or moved) — update JELLY_RAF_OWNERS and raf-loop-allowlist.',
     ).toEqual([]);
+  });
+
+  /** (b) The one pointer hub (#989). One-directional: entries come out, they do not go in. */
+  const JELLY_POINTER_OWNERS = new Set(['lib/jelly/pointer.ts']);
+  const POINTER_LISTENER =
+    /addEventListener\(\s*['"`]pointer[a-z]*['"`]|\.onpointer[a-z]+\s*=(?!=)/;
+
+  it('(b) only lib/jelly/pointer.ts adds pointer listeners under lib/jelly and lib/liquid', () => {
+    const jelly = SOURCES.filter((f) => f.startsWith('lib/jelly/') || f.startsWith('lib/liquid/'));
+    const listeners = jelly.filter((f) => POINTER_LISTENER.test(code(f)));
+    expect(
+      listeners.filter((f) => !JELLY_POINTER_OWNERS.has(f)).sort(),
+      'A pointer listener under lib/jelly or lib/liquid outside the hub is a second fan-out. Subscribe with ' +
+        '`onJellyPointer(type, fn)` from lib/jelly/pointer.ts (docs/plasmatic-jelly-system.md §8.1).',
+    ).toEqual([]);
+    const hub = code('lib/jelly/pointer.ts');
+    expect(hub, 'the hub installs capture + passive listeners').toMatch(/capture:\s*true/);
+    expect(hub).toMatch(/passive:\s*true/);
+    expect(hub, 'the hub removes its listeners with the last subscriber').toMatch(
+      /removeEventListener/,
+    );
   });
 
   it('(c) the degraded-root predicate is declared once, in lib/jelly/tiers.ts', () => {

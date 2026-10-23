@@ -16,6 +16,7 @@ import {
   type Lattice,
 } from '../lattice';
 import { latticeCaps } from '../soft-policy';
+import { DENT } from '../tiers';
 
 /**
  * Tier L runs inside the glass engine's frame, so its contract is the engine's: it must settle and stop on its own,
@@ -119,14 +120,21 @@ describe('area preservation', () => {
     for (const side of [R, B, L]) expect(n[side]).toBeGreaterThan(0.5);
   });
 
-  it('a 6px dent bulges the far sides by about 1.5px', () => {
-    const l = createLattice({ w: 200, h: 120, bevel: 10 }); // dent cap 0.6·10 = 6px
+  it('the #989 press dent indents ≈ DENT.indentPx under the contact and bulges the far sides', () => {
+    const l = createLattice({ w: 200, h: 120, bevel: 10 }); // bevel cap 0.6·10 = 6px, dent indent 5px
     setLatticeInput(l, { kind: 'press', x: 100, y: 0 });
     steps(l, 0.3);
     const n = normals(l);
-    expect(n[T]).toBeCloseTo(-6, 0);
-    expect(n[B]).toBeGreaterThan(1);
+    expect(n[T]).toBeCloseTo(-DENT.indentPx, 0);
+    expect(n[B]).toBeGreaterThan(0.8);
     expect(n[B]).toBeLessThan(2.2);
+  });
+
+  it('a thin bevel still caps the indent below DENT.indentPx', () => {
+    const l = createLattice({ w: 200, h: 120, bevel: 4 }); // bevel cap 0.6·4 = 2.4px
+    setLatticeInput(l, { kind: 'press', x: 100, y: 0 });
+    steps(l, 0.3);
+    expect(normals(l)[T]).toBeCloseTo(-2.4, 0); // the solver's raw state; the drawn rim is saturated at the cap
   });
 });
 

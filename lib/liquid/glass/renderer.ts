@@ -10,6 +10,7 @@ import { HAZE_FRAG } from './haze-shader';
 import { FRAG, VERT } from './shader';
 
 type RGB = [number, number, number];
+type RGBA4 = [number, number, number, number];
 
 /** The jelly terms shared by both programs (01 §2.4). */
 export interface JellyLook {
@@ -58,6 +59,49 @@ export interface GlassDraw {
   margin?: number;
   /** `latticeUniform()` output (16 floats) while a Tier L lattice is awake; omitted or null = no squish. */
   lattice?: Float32Array | null;
+  /** #989 gel tokens; omitted = no RGB band, no Fresnel edge, no depth, no plasma colour. */
+  gel?: GelLook;
+  /** Dormant plasma drawn by THIS program (slabs without a haze canvas); omitted = none. */
+  plasma?: PlasmaDraw | null;
+  /** The press dent while `dentOf(el)` is non-null; omitted or null = none (`uDentOn` 0). */
+  dent?: DentDraw | null;
+}
+
+/** The #989 gel tokens a surface carries, read on admission and theme change (`--gel-*`, `--site-accent`). */
+export interface GelLook {
+  /** R/G/B band displacement, px, signed: negative = toward the top-left light (`--gel-disperse-r/-g/-b`). */
+  disperse: RGB;
+  /** RGB band depth inside the edge, px (`--gel-bevel`), and its gain. */
+  band: number;
+  bandA: number;
+  /** The band's channel tints + alpha (`--gel-edge-r/-g/-b`). */
+  edge: [RGBA4, RGBA4, RGBA4];
+  /** 1px Fresnel edge colour + alpha (`--gel-fresnel`). */
+  fresnel: RGBA4;
+  /** Dent light dot colour + alpha (`--gel-specular`). */
+  specular: [number, number, number, number];
+  /** Plasma colour (`--site-accent`). */
+  accent: RGB;
+  /** Plasma alpha at level 1. */
+  plasmaPeak: number;
+}
+
+/** The dormant plasma's per-draw state. */
+export interface PlasmaDraw {
+  /** Eased wake level 0..1. */
+  level: number;
+  /** `packRings()` output: 4 × (x, y, radius, strength), host px. */
+  rings: Float32Array;
+}
+
+/** The press dent (`dentOf`), host px; `depth` normalised to 0..1. */
+export interface DentDraw {
+  x: number;
+  y: number;
+  depth: number;
+  radius: number;
+  stretchX: number;
+  stretchY: number;
 }
 
 /** One haze draw (01 §2.6). The target canvas is `round(width·scale) × round(height·scale)`. */
@@ -73,6 +117,11 @@ export interface HazeDraw {
   quiet: number;
   /** Motion amplitude (1 lively, `CALM.amplitude` under calm). */
   amp: number;
+  /** #989 dormant plasma; omitted = level 0, no rings. */
+  plasma?: PlasmaDraw | null;
+  gel?: GelLook;
+  /** Plasma motion (1 lively, `PLASMA_LOOK.calmMotion` under calm, 0 still). */
+  plasmaMotion?: number;
 }
 
 type GL = WebGL2RenderingContext;
@@ -103,10 +152,17 @@ const HAZE_NAMES = [
   'uFlow',
   'uQuiet',
   'uAmp',
+  'uPlasmaMotion',
+  'uLevel',
+  'uAccent',
+  'uPlasmaPeak',
+  'uRings',
 ] as const;
 type HName = (typeof HAZE_NAMES)[number];
 
 const NO_LATTICE = new Float32Array(16);
+const NO_RINGS = new Float32Array(16);
+const NO_EDGE: RGBA4 = [0, 0, 0, 0];
 
 const NAMES = [
   'uSize',
@@ -127,12 +183,24 @@ const NAMES = [
   'uMargin',
   'uSeed',
   'uHaze',
-  'uPlasmaA',
-  'uPlasmaB',
-  'uPlasma',
   'uDispersion',
   'uJelly',
   'uJellyOn',
+  'uDisperse',
+  'uBand',
+  'uEdgeR',
+  'uEdgeG',
+  'uEdgeB',
+  'uFresnel',
+  'uPlasmaInRim',
+  'uDent',
+  'uDentStretch',
+  'uDentOn',
+  'uSpecular',
+  'uLevel',
+  'uAccent',
+  'uPlasmaPeak',
+  'uRings',
 ] as const;
 type UName = (typeof NAMES)[number];
 
@@ -327,6 +395,12 @@ export class GlassRenderer {
     gl.uniform3f(h.uFlow, o.flow[0], o.flow[1], o.flow[2]);
     gl.uniform1f(h.uQuiet, o.quiet);
     gl.uniform1f(h.uAmp, o.amp);
+    gl.uniform1f(h.uPlasmaMotion, o.plasmaMotion ?? 1);
+    gl.uniform1f(h.uLevel, o.plasma?.level ?? 0);
+    gl.uniform4fv(h.uRings, o.plasma?.rings ?? NO_RINGS);
+    const acc = o.gel?.accent;
+    gl.uniform3f(h.uAccent, acc?.[0] ?? 0, acc?.[1] ?? 0, acc?.[2] ?? 0);
+    gl.uniform1f(h.uPlasmaPeak, o.gel?.plasmaPeak ?? 0);
     return this.blit(pw, ph, target);
   }
 
@@ -368,12 +442,30 @@ export class GlassRenderer {
     const j = o.jelly;
     gl.uniform1f(u.uSeed, j?.seed ?? 0);
     gl.uniform4f(u.uHaze, j?.haze[0] ?? 0, j?.haze[1] ?? 0, j?.haze[2] ?? 0, j?.hazeA ?? 0);
-    gl.uniform3f(u.uPlasmaA, j?.plasmaA[0] ?? 0, j?.plasmaA[1] ?? 0, j?.plasmaA[2] ?? 0);
-    gl.uniform3f(u.uPlasmaB, j?.plasmaB[0] ?? 0, j?.plasmaB[1] ?? 0, j?.plasmaB[2] ?? 0);
-    gl.uniform1f(u.uPlasma, j?.plasma ?? 0);
     gl.uniform1f(u.uDispersion, o.dispersion ?? 1);
     gl.uniform2fv(u.uJelly, o.lattice ?? NO_LATTICE);
     gl.uniform1f(u.uJellyOn, o.lattice ? 1 : 0);
+    const gel = o.gel;
+    gl.uniform3f(u.uDisperse, gel?.disperse[0] ?? 0, gel?.disperse[1] ?? 0, gel?.disperse[2] ?? 0);
+    gl.uniform2f(u.uBand, gel?.band ?? 0, gel?.bandA ?? 0);
+    const f = gel?.fresnel;
+    gl.uniform4f(u.uFresnel, f?.[0] ?? 0, f?.[1] ?? 0, f?.[2] ?? 0, f?.[3] ?? 0);
+    const [eR, eG, eB] = gel?.edge ?? [NO_EDGE, NO_EDGE, NO_EDGE];
+    gl.uniform4f(u.uEdgeR, eR[0], eR[1], eR[2], eR[3]);
+    gl.uniform4f(u.uEdgeG, eG[0], eG[1], eG[2], eG[3]);
+    gl.uniform4f(u.uEdgeB, eB[0], eB[1], eB[2], eB[3]);
+    const sp = gel?.specular;
+    gl.uniform4f(u.uSpecular, sp?.[0] ?? 0, sp?.[1] ?? 0, sp?.[2] ?? 0, sp?.[3] ?? 0);
+    gl.uniform3f(u.uAccent, gel?.accent[0] ?? 0, gel?.accent[1] ?? 0, gel?.accent[2] ?? 0);
+    gl.uniform1f(u.uPlasmaPeak, gel?.plasmaPeak ?? 0);
+    const p = o.plasma;
+    gl.uniform1f(u.uPlasmaInRim, p ? 1 : 0);
+    gl.uniform1f(u.uLevel, p?.level ?? 0);
+    gl.uniform4fv(u.uRings, p?.rings ?? NO_RINGS);
+    const dent = o.dent;
+    gl.uniform1f(u.uDentOn, dent ? 1 : 0);
+    gl.uniform4f(u.uDent, dent?.x ?? 0, dent?.y ?? 0, dent?.depth ?? 0, dent?.radius ?? 1);
+    gl.uniform2f(u.uDentStretch, dent?.stretchX ?? 0, dent?.stretchY ?? 0);
     return this.blit(pw, ph, target);
   }
 

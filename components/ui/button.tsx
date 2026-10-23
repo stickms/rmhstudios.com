@@ -30,6 +30,13 @@ const buttonVariants = cva(
         accent: 'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover',
         'accent-outline': 'border border-site-accent text-site-accent hover:bg-site-accent-dim',
         'accent-ghost': 'text-site-accent hover:bg-site-accent-dim',
+        // The ink-gel primary action (#989): ONE per view. A dense gel of the
+        // theme's ink (`--gel-ink`, `--on-ink`), which darkens toward its base
+        // through the shared gel coat and wakes its plasma on hover
+        // (app/jelly-material.css). Focus is the solid 2px `--focus-ring`,
+        // stated here as well so no tier's ring rule can swap in a glow.
+        signal:
+          'bg-gel-ink text-on-ink font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-focus-ring',
       },
       size: {
         default: 'h-11 px-5 py-2.5 has-[>svg]:px-4',

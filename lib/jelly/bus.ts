@@ -26,6 +26,18 @@ export type JellyEvents = {
   'drag:end': { el: Element };
   /** engine → carriers (`data-jelly-haze`). */
   'haze:change': { el: Element; on: boolean };
+  /**
+   * arcs → engine: charge `q` (0..1) deposited at viewport point (x, y) on `el` — rendered as a ring travelling
+   * through the gel at `CHARGE.pulseSpeedPxS`, decaying with `CHARGE.pulseTauMs` (#989).
+   */
+  'charge:pulse': { el: Element; x: number; y: number; q: number };
+  /**
+   * arcs → physics: Coulomb attraction on `el` toward a charged neighbour, unit direction (nx, ny) and force in
+   * [0, 1]; physics turns it into a bounded translate (≤ MOTION_BOUNDS.nudgePx), equal and opposite on the pair.
+   */
+  'charge:attract': { el: Element; nx: number; ny: number; force: number };
+  /** physics → engine + arcs: plasma wake level of `el` (0 rest, `PLASMA.wake` hover, 1 press/focus/click). */
+  'plasma:level': { el: Element; level: number };
 };
 
 export type JellyEventName = keyof JellyEvents;

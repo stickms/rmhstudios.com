@@ -14,14 +14,17 @@ import { contrastRatio, relativeLuminance, toHex } from '@/lib/appearance/contra
  * app tier's dark and light ramps in `components/shared/app-theme.css`) and every
  * jelly role it composites the worst cases:
  *
- *   ground (`--site-bg`) → role tint (the liquid-glass.css mixes) → haze at min
+ *   ground (`--site-bg`) → role tint (the liquid-glass.css mixes) → the gel coat at either end of its
+ *   vertical gradient (`--gel-body` at the top, `--gel-depth` at the base, #989) → haze at min
  *   (α × 0.5) and max (α × 1.0) density → the grain tile (0 or its 0.06 cap) →
  *   plasma at the role's peak (`k × gain`, colour A or B, or none)
  *
  * and asserts, against every composite:
  *   - `--site-text` ≥ 4.5:1 and `--site-text-muted` ≥ 3:1;
  *   - the composite's relative-luminance spread across the flow is ≤ 0.04
- *     (≤ 0.05 for chrome) — the bound on visible flicker behind glyphs.
+ *     (≤ 0.05 for chrome) — the bound on visible flicker behind glyphs. The spread is
+ *     measured per gel end: the body → depth gradient is static, not flicker.
+ * and that `--on-ink` holds 4.5:1 on the ink-gel primary action (`--gel-ink`) at both ends of its coat.
  *
  * High contrast must zero the material outright. Retune a token in globals.css
  * and this test tells you whether the new value still reads; do not loosen the
@@ -236,6 +239,8 @@ const TOKENS = [
 interface Case {
   ground: RGBA;
   tint: RGBA;
+  /** The gel coat's two ends (`--gel-body`, `--gel-depth`), each composited over the tint. */
+  gel: RGBA[];
   haze: RGBA;
   hazeA: number;
   plasma: RGBA[];
@@ -244,8 +249,8 @@ interface Case {
   muted: RGBA;
 }
 
-function composites(c: Case): RGBA[] {
-  const base = over(c.ground, c.tint);
+function composites(c: Case, gelEnd: RGBA): RGBA[] {
+  const base = over(over(c.ground, c.tint), gelEnd);
   const out: RGBA[] = [];
   for (const density of [0.5, 1]) {
     for (const tile of [0, TILE_MAX]) {
@@ -261,7 +266,12 @@ function composites(c: Case): RGBA[] {
 }
 
 function check(label: string, c: Case, spreadMax: number) {
-  const comps = composites(c);
+  for (const [i, end] of c.gel.entries())
+    checkEnd(`${label} (gel ${i ? 'depth' : 'body'})`, c, end, spreadMax);
+}
+
+function checkEnd(label: string, c: Case, gelEnd: RGBA, spreadMax: number) {
+  const comps = composites(c, gelEnd);
   const lums = comps.map((x) => relativeLuminance(hexOf(x)));
   const spread = Math.max(...lums) - Math.min(...lums);
   const worstText = Math.min(...comps.map((g) => contrastRatio(hexOf(over(g, c.text)), hexOf(g))));
@@ -339,6 +349,7 @@ describe('Plasmatic Jelly legibility — site themes (01 §5.2)', () => {
           {
             ground,
             tint: resolve(ROLE_TINT[role], t),
+            gel: [resolve('var(--gel-body)', t), resolve('var(--gel-depth)', t)],
             haze: resolve('var(--site-jelly-haze)', t),
             hazeA: num(`var(--site-jelly-haze-${role})`, t),
             plasma: [
@@ -354,6 +365,24 @@ describe('Plasmatic Jelly legibility — site themes (01 §5.2)', () => {
       });
     }
   }
+});
+
+describe('Ink gel — the signal action holds 4.5:1 at both ends of its coat (#989)', () => {
+  it.each(THEMES)('.style-%s', (theme) => {
+    const t = siteTheme(theme);
+    const ink = over(resolve(t['--site-bg'], t), resolve('var(--gel-ink)', t));
+    const onInk = resolve('var(--on-ink)', t);
+    // High contrast strips every coat from buttons (liquid-glass.css degradation): the ink is flat there.
+    const ends =
+      theme === 'high-contrast' ? ['transparent'] : ['var(--gel-body)', 'var(--gel-depth)'];
+    for (const end of ends) {
+      const g = over(ink, resolve(end, t));
+      expect(
+        contrastRatio(hexOf(over(g, onInk)), hexOf(g)),
+        `.style-${theme}: --on-ink over --gel-ink + ${end}`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+  });
 });
 
 describe('Plasmatic Jelly legibility — app tier (01 §4.3)', () => {
@@ -374,6 +403,7 @@ describe('Plasmatic Jelly legibility — app tier (01 §4.3)', () => {
       {
         ground: resolve(t['--app-bg'], t),
         tint: resolve(t['--app-glass-bg'], t),
+        gel: [resolve('var(--app-gel-body)', t), resolve('var(--app-gel-depth)', t)],
         haze: resolve('var(--app-jelly-haze)', t),
         hazeA: num('var(--app-jelly-haze-pane)', t),
         plasma: [resolve('var(--app-jelly-plasma-a)', t), resolve('var(--app-jelly-plasma-b)', t)],

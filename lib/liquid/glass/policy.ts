@@ -6,7 +6,7 @@
  * resolution, how often the ambient clock ticks and when it stops (master plan R6/R7, 01 §2.2–2.3, 04 §3), how many
  * haze draws one frame may issue, how far a squished rim may overdraw its host, and how a charge pulse decays.
  */
-import { AMBIENT_BOUNDS, IDLE_AFTER_MS } from '@/lib/jelly/tiers';
+import { AMBIENT_BOUNDS, CHARGE, IDLE_AFTER_MS, PLASMA } from '@/lib/jelly/tiers';
 
 export const GLASS_BUDGET = {
   /**
@@ -285,13 +285,123 @@ export function latticeAmplitude(width: number, height: number): number {
   return width * height > AMBIENT_BOUNDS.largeSurfaceAreaPx2 ? AMBIENT_BOUNDS.largeLatticeScale : 1;
 }
 
-/** A charge pulse (`pulse(el, k)`): how long it lasts, and its ceiling on the rim's plasma strength. */
-export const PULSE = { durationMs: 300, maxBoost: 0.35 } as const;
+// ── #989: dormant plasma level, charge rings, gel tokens ─────────────────────────────────────────────────────────────
 
-/** The pulse's added plasma strength `ageMs` after it fired with strength `k` (0..1): a quadratic fall to 0. */
-export function pulseLevel(k: number, ageMs: number): number {
-  if (!(ageMs >= 0) || ageMs >= PULSE.durationMs) return 0;
-  const strength = Math.max(0, Math.min(1, k));
-  const t = 1 - ageMs / PULSE.durationMs;
-  return PULSE.maxBoost * strength * t * t;
+/**
+ * Ease a surface's plasma wake level toward its target (`plasma:level` from physics: 0 rest, `PLASMA.wake` hover, 1
+ * press/focus/click) with time constant {@link PLASMA.easeMs}, frame-rate independent. Snaps within 0.002 so a settled
+ * surface stops asking for frames; non-finite input settles to the (clamped) target.
+ */
+export function easePlasma(
+  current: number,
+  target: number,
+  dtMs: number,
+  easeMs: number = PLASMA.easeMs,
+): number {
+  const goal = Math.max(0, Math.min(1, Number.isFinite(target) ? target : 0));
+  if (!Number.isFinite(current) || !(dtMs > 0)) return Number.isFinite(current) ? current : goal;
+  const next = current + (goal - current) * (1 - Math.exp(-dtMs / Math.max(1, easeMs)));
+  return Math.abs(next - goal) < 0.002 ? goal : next;
+}
+
+/**
+ * The look of the dormant plasma and its charge rings. Peak alpha is what the plasma reaches at level 1 at its core
+ * (lower on a light ground, where an accent wash costs dark ink more contrast); the legibility budget is the reason it
+ * is this low. Rings travel at `CHARGE.pulseSpeedPxS` and decay with `CHARGE.pulseTauMs`.
+ */
+export const PLASMA_LOOK = {
+  peakDark: 0.14,
+  peakLight: 0.1,
+  /** Calm halves the plasma's own motion (the haze has its own `CALM.amplitude`). */
+  calmMotion: 0.5,
+  /** Rings per surface (the shader's `uRings[4]` has one spare). Older rings are replaced. */
+  ringsPerSurface: 3,
+  /** A ring whose strength falls below this is gone. */
+  ringFloor: 0.02,
+  /** Gaussian half-width of the ring front, CSS px. */
+  ringWidthPx: 10,
+  /** Two rings on one surface within this time and distance are one charge (an arc strike and its `charge:pulse`). */
+  mergeMs: 60,
+  mergePx: 32,
+} as const;
+
+export interface PulseRing {
+  /** Origin, host-local CSS px. */
+  x: number;
+  y: number;
+  /** Charge 0..1. */
+  q: number;
+  /** `performance.now()` it started. */
+  at: number;
+}
+
+/** A ring's front radius (px) and strength `ageMs` after it started. Strength is 0 before it starts. */
+export function ringState(q: number, ageMs: number): { radius: number; amp: number } {
+  if (!(ageMs >= 0)) return { radius: 0, amp: 0 };
+  const strength = Math.max(0, Math.min(1, q));
+  return {
+    radius: (CHARGE.pulseSpeedPxS * ageMs) / 1000,
+    amp: strength * Math.exp(-ageMs / CHARGE.pulseTauMs),
+  };
+}
+
+/** The longest a ring of charge `q` can live: until its strength falls below {@link PLASMA_LOOK.ringFloor}. */
+export function ringLifetimeMs(q: number): number {
+  const strength = Math.max(0, Math.min(1, q));
+  if (strength <= PLASMA_LOOK.ringFloor) return 0;
+  return CHARGE.pulseTauMs * Math.log(strength / PLASMA_LOOK.ringFloor);
+}
+
+/** Alive: still above the floor, and its front has not yet left a surface whose farthest point is `reachPx` away. */
+export function ringAlive(ring: PulseRing, now: number, reachPx: number): boolean {
+  const { radius, amp } = ringState(ring.q, now - ring.at);
+  return amp > PLASMA_LOOK.ringFloor && radius < reachPx + PLASMA_LOOK.ringWidthPx * 2;
+}
+
+/**
+ * Add a ring to a surface's list: a ring started within {@link PLASMA_LOOK.mergeMs} and {@link PLASMA_LOOK.mergePx}
+ * of an existing one is the same charge (keeps the stronger); otherwise it is appended and the oldest beyond
+ * {@link PLASMA_LOOK.ringsPerSurface} are dropped. Returns a new array.
+ */
+export function addRing(rings: readonly PulseRing[], ring: PulseRing): PulseRing[] {
+  if (!(ring.q > 0)) return [...rings];
+  const q = Math.min(1, ring.q);
+  const twin = rings.findIndex(
+    (r) =>
+      Math.abs(r.at - ring.at) <= PLASMA_LOOK.mergeMs &&
+      Math.hypot(r.x - ring.x, r.y - ring.y) <= PLASMA_LOOK.mergePx,
+  );
+  if (twin >= 0) {
+    const out = [...rings];
+    out[twin] = { ...out[twin]!, q: Math.max(out[twin]!.q, q) };
+    return out;
+  }
+  const out = [...rings, { ...ring, q }];
+  return out.slice(Math.max(0, out.length - PLASMA_LOOK.ringsPerSurface));
+}
+
+/**
+ * Pack the live rings into the shader's `uRings[4]` (x, y, radius, strength; unused slots zero). Returns the number
+ * packed.
+ */
+export function packRings(rings: readonly PulseRing[], now: number, out: Float32Array): number {
+  out.fill(0);
+  let n = 0;
+  for (const r of rings) {
+    if (n >= 4) break;
+    const { radius, amp } = ringState(r.q, now - r.at);
+    if (amp <= PLASMA_LOOK.ringFloor) continue;
+    out[n * 4] = r.x;
+    out[n * 4 + 1] = r.y;
+    out[n * 4 + 2] = radius;
+    out[n * 4 + 3] = amp;
+    n++;
+  }
+  return n;
+}
+
+/** Parse a CSS length/number token (`"1.5px"`, `"2"`) to px, or `fallback`. */
+export function cssPx(value: string, fallback: number): number {
+  const v = parseFloat(value);
+  return Number.isFinite(v) ? v : fallback;
 }

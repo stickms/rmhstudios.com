@@ -89,17 +89,24 @@ bundle only**. SSR/server builds get the real module.
   nothing restates it), `bus.ts` (typed event bus), `registry.ts` (one set of
   observers over every jelly host, cached rects, no rAF), `governor.ts`
   (downscale-only frame-cost governor), `flow-carriers.ts` (which hosts carry a CSS
-  `.jelly-flow`), the soft body (`physics.ts` — the delegated press/hover/drag
-  service and one of three jelly rAF owners, which absorbed `hooks/useFluidPress`;
+  `.jelly-flow`), `frame.ts` (the ONE jelly `requestAnimationFrame`: every service
+  registers a driver with `drive(fn, { order })` — physics 10, engine 20, arcs 30 — and no
+  frame runs while no driver is awake), `pointer.ts` (the ONE set of window pointer
+  listeners, `onJellyPointer(type, fn)`), `lens.ts` (the press dent's SVG lens, the only
+  code that filters a body, only while it is dented), the soft body (`physics.ts` — the
+  press/hover/drag/dent/plasma-level service, a frame driver, which absorbed `hooks/useFluidPress`;
   `envelope.ts`, `lattice.ts`, `lattice-inputs.ts`, `compose.ts`, `soft-policy.ts`
-  are pure) and `arcs/` (pure `geometry/bolt/rng/rate/ledger/pairs/timeline`, plus
-  `scheduler`, `clicks`, `runtime` and `renderer.ts`, the arcs' only rAF owner;
+  are pure) and `arcs/` (pure `geometry/bolt/rng/rate/ledger/pairs/timeline` and
+  `charge.ts` — the #989 laws: decay, breakdown gap, hop carry, Coulomb — plus
+  `scheduler`, `clicks`, `field.ts` (timer-driven click charge hops, breakdown after the
+  formative lag, Coulomb attraction), `runtime` and `renderer.ts` (a frame driver at order 30);
   `@/lib/jelly/arcs` exports `dischargeAt`/`strike`). Components never import the
   physics or arc services; they take jelly through role classes and `data-jelly*`
   attributes. All of it mounts from `hooks/useLiquidInteractions.ts`.
 - **Liquid glass (rims and haze):** `liquid/glass/` — `engine.ts` (the document
-  service: slab admission, cursor light, haze canvases, the ambient clock — the one
-  standing loop, idle floor 12 Hz, 0 when unseen — and lattice stepping),
+  service and a frame driver: slab admission, cursor light, RGB-led edge, plasma, dent
+  glow and light dot, charge pulse rings, haze canvases, the ambient clock — timer-woken,
+  idle floor 12 Hz, 0 when unseen — and lattice stepping),
   `shader.ts`, `jelly-glsl.ts`, `haze-shader.ts` and `renderer.ts` (one shared
   WebGL 2 context),
   `policy.ts` and `color.ts` (pure, unit-tested decisions), `scene.ts` +

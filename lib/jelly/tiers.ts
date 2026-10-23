@@ -177,6 +177,77 @@ export const AMBIENT_BOUNDS = {
 } as const;
 
 /**
+ * The #989 layers on top of the overhaul (CLAUDE.md "Design system: Plasmatic Jelly"). Each number is mirrored by a
+ * CSS token in `app/globals.css` (named in the trailing comment) for the code that draws in CSS; a parity test keeps
+ * the two equal. Services import these; components never restate them.
+ */
+export const DENT = {
+  /** Gaussian bowl depth at full press, CSS px (`--jelly-dent-depth`). */
+  depthPx: 6,
+  /** Damping ratio of the dent's depth spring — well damped, no ring (`--jelly-dent-damping`). */
+  damping: 0.9,
+  /** σ of the bowl as a fraction of the host's short side, clamped to [12, 48] px. */
+  radiusFrac: 0.22,
+  minRadiusPx: 12,
+  maxRadiusPx: 48,
+  /** Outline indent under the dent, CSS px; the far side bulges to conserve area. */
+  indentPx: 5,
+  /** Lens refraction of the content under the dent, 0..1 (`--jelly-lens-strength`). */
+  lensStrength: 0.6,
+  /** R/G/B split of the lens, px at full depth (`--jelly-lens-dispersion`). */
+  lensDispersionPx: 1.5,
+  /** Content follows the gel by at most this strain (`--jelly-content-strain`). */
+  contentStrain: 0.04,
+  /** Max rubber-band stretch when a drag leaves the element, CSS px. */
+  rubberMaxPx: 10,
+} as const;
+
+/** Dormant plasma (#989): invisible at rest, woken by hover, brightened by press/focus/click. */
+export const PLASMA = {
+  rest: 0,
+  /** Hover level (`--plasma-wake`). */
+  wake: 0.35,
+  press: 1,
+  /** Level easing time constant, ms. */
+  easeMs: 180,
+} as const;
+
+/** Charge, breakdown and pulses (#989). */
+export const CHARGE = {
+  /** A gap below breakdownGapPx × (1 + 1.5q) breaks down (`--arc-breakdown-gap`). */
+  breakdownGapPx: 12,
+  breakdownChargeGain: 1.5,
+  /** Delay between breakdown conditions and the strike (`--arc-formative-lag`). */
+  formativeLagMs: 120,
+  /** Charge a click deposits on its body, 0..1. */
+  clickCharge: 1,
+  /** Fraction handed to a neighbour in reach when it jumps. */
+  hopFraction: 0.5,
+  /** Charge below this stops hopping. */
+  minHopCharge: 0.2,
+  /** Charge decay time constant, ms. */
+  decayMs: 1500,
+  /** The pulse ring through the gel (`--pulse-speed`, px/s; `--pulse-tau`, ms). */
+  pulseSpeedPxS: 900,
+  pulseTauMs: 260,
+  /** Coulomb attraction: force scale and max reach, CSS px. Displacement stays ≤ MOTION_BOUNDS.nudgePx. */
+  attractReachPx: 96,
+  attractGain: 0.6,
+} as const;
+
+/** Layout and engine limits (#989): spacing between bodies, unclipped margin, absolute body cap, sim rate. */
+export const JELLY_LAYOUT = {
+  /** `--space-4`: bodies sit at least this far apart. */
+  minGapPx: 16,
+  /** `--jelly-margin`: unclipped space around every body. */
+  marginPx: 16,
+  /** `--jelly-body-budget`: no tier simulates more bodies than this. */
+  bodyBudget: 24,
+  /** `--sim-hz`: fixed physics timestep rate. */
+  simHz: 120,
+} as const;
+
+/**
  * The root classes that degrade the material, exactly as the site stamps them on `<html>` today (the engine's `off()`
  * and `runtime.ts`'s `disabled()`). Forced colours, reduced transparency and print are media queries, read separately.
  */

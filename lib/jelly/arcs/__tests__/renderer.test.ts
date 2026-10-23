@@ -3,12 +3,14 @@
  * and then idle, teardown cancels and removes, composite mode follows the theme's background, and no blur/shadow is
  * ever assigned.
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { drive } from '../../frame';
 import { createFlashLedger } from '../ledger';
 import {
+  ARC_FRAME_ORDER,
   admitArc,
   boltArc,
   clampRed,
@@ -145,6 +147,52 @@ describe('arc renderer', () => {
     runFrames(env);
     expect(env.canvas()!.getAttribute('data-layer')).toBeNull();
     r.dispose();
+  });
+
+  it('draws on the shared jelly frame (order 30, after the engine) and lets it sleep when the arcs are done', () => {
+    const order: string[] = [];
+    // A stand-in for the engine (order 20), registered on the same window's loop.
+    let engineFrames = 3;
+    const engine = drive(
+      () => {
+        order.push('engine');
+        return --engineFrames > 0;
+      },
+      { order: 20 },
+      env.win as Window & typeof globalThis,
+    );
+    const r = createArcRenderer(env.doc);
+    expect(ARC_FRAME_ORDER).toBe(30);
+    r.add(flareArc(50, 50, r.now()));
+    engine.wake();
+    // One frame request for both drivers: the loop is shared.
+    expect(env.rafCalls).toBe(1);
+    const drawn = env.canvas()!.ctx.calls;
+    const before = drawn.length;
+    vi.advanceTimersByTime(16);
+    env.frame();
+    expect(order).toEqual(['engine']);
+    expect(drawn.length).toBeGreaterThan(before); // the arcs drew after the engine, in the same frame
+    runFrames(env);
+    expect(r.live()).toBe(0);
+    expect(env.rafQueue.size).toBe(0);
+    const calls = env.rafCalls;
+    vi.advanceTimersByTime(5000);
+    expect(env.rafCalls).toBe(calls);
+    engine.stop();
+    r.dispose();
+  });
+
+  it('no arc source file calls requestAnimationFrame (the frame driver owns the one loop)', () => {
+    const dir = join(process.cwd(), 'lib/jelly/arcs');
+    const files = readdirSync(dir).filter((f) => f.endsWith('.ts'));
+    expect(files).toContain('renderer.ts');
+    for (const f of files) {
+      const src = readFileSync(join(dir, f), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+      expect(src, f).not.toMatch(/requestAnimationFrame|cancelAnimationFrame/);
+    }
   });
 
   it('never assigns shadowBlur or a canvas filter (the arc cost model)', () => {

@@ -77,3 +77,50 @@ vec2 jellyOffset(vec2 p, vec2 size) {
   return 0.5 * (2.0 * p1 + (p2 - p0) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2 + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t3);
 }
 `;
+
+/**
+ * The dormant plasma (#989), shared by the haze program (haze slots: it moves) and the rim program (every other slab:
+ * static, no clock). Needs {@link NOISE_GLSL}. Declares its own uniforms:
+ *
+ * - `uLevel` — the surface's eased wake level (0 rest → invisible, `PLASMA.wake` hover, 1 press/focus/click).
+ * - `uAccent` — the plasma colour, `--site-accent`.
+ * - `uPlasmaPeak` — alpha at level 1 at the core (low: text sits over it).
+ * - `uRings[4]` — charge rings: x, y (host px), front radius px, strength (0 = unused).
+ *
+ * `jPlasma(P, size, d, seed, time)` returns the plasma's alpha at `P` (host px, y down), `d` px inside the edge. It is
+ * a soft core and ridged filaments reaching out of it, CLIPPED inside the gel (0 within 3px of the edge, full by 14px):
+ * plasma never draws an outline. A ring brightens the plasma (filaments first) as its front passes. With the level at
+ * 0 and no ring it returns exactly 0, so a surface at rest shows no plasma at all. `time` is 0 in the rim program.
+ */
+export const PLASMA_GLSL = /* glsl */ `
+uniform float uLevel;
+uniform vec3 uAccent;
+uniform float uPlasmaPeak;
+uniform vec4 uRings[4];
+const float J_RING_W = 10.0;
+float jRings(vec2 P) {
+  float s = 0.0;
+  for (int i = 0; i < 4; i++) {
+    vec4 r = uRings[i];
+    if (r.w <= 0.0) continue;
+    float x = (length(P - r.xy) - r.z) / J_RING_W;
+    s += r.w * exp(-x * x);
+  }
+  return min(s, 1.0);
+}
+float jPlasma(vec2 P, vec2 size, float d, float seed, float time) {
+  float ring = jRings(P);
+  if (uLevel <= 0.001 && ring <= 0.001) return 0.0;
+  float clip = smoothstep(3.0, 14.0, d);
+  if (clip <= 0.0) return 0.0;
+  float m = max(min(size.x, size.y), 1.0);
+  vec2 p = (P - size * 0.5) / m;
+  vec2 drift = vec2(jNoise(vec2(seed * 9.0, time * 0.15)), jNoise(vec2(time * 0.13, seed * 5.0))) - 0.5;
+  vec2 pc = p - drift * 0.2;
+  float core = exp(-dot(pc, pc) / 0.045);
+  float n = jFbm(P / 90.0 + seed * 13.0 + vec2(time * 0.05, -time * 0.04));
+  float fil = pow(1.0 - abs(2.0 * n - 1.0), 6.0) * exp(-dot(pc, pc) / 0.4);
+  float body = core * 0.65 + fil * 0.55;
+  return clamp(clip * (uLevel * body + ring * (0.6 + 0.4 * fil + 0.3 * core)), 0.0, 1.0) * uPlasmaPeak;
+}
+`;

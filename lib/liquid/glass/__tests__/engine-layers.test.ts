@@ -12,8 +12,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mocks: everything that would touch WebGL or capture the page ─────────────
 
-const draws: { target: FakeEl; attached: boolean }[] = [];
-const hazeDraws: { target: FakeEl; attached: boolean }[] = [];
+interface DrawRec {
+  target: FakeEl;
+  attached: boolean;
+  /** #989: what the draw carried (rings copied — the engine reuses its buffer). */
+  plasma: { level: number; rings: number[] } | null;
+  dent: unknown;
+}
+const draws: DrawRec[] = [];
+const hazeDraws: Omit<DrawRec, 'dent'>[] = [];
+type PlasmaArg = { level: number; rings: Float32Array } | null | undefined;
+const plasmaRec = (p: PlasmaArg) => (p ? { level: p.level, rings: [...p.rings] } : null);
 
 vi.mock('../renderer', () => ({
   GlassRenderer: {
@@ -21,12 +30,21 @@ vi.mock('../renderer', () => ({
       ready: true,
       hazeReady: true,
       onChange: null,
-      draw: (_o: unknown, target: FakeEl) => {
-        draws.push({ target, attached: target.parentNode !== null });
+      draw: (o: { plasma?: PlasmaArg; dent?: unknown }, target: FakeEl) => {
+        draws.push({
+          target,
+          attached: target.parentNode !== null,
+          plasma: plasmaRec(o.plasma),
+          dent: o.dent ?? null,
+        });
         return true;
       },
-      drawHaze: (_o: unknown, _t: number, target: FakeEl) => {
-        hazeDraws.push({ target, attached: target.parentNode !== null });
+      drawHaze: (o: { plasma?: PlasmaArg }, _t: number, target: FakeEl) => {
+        hazeDraws.push({
+          target,
+          attached: target.parentNode !== null,
+          plasma: plasmaRec(o.plasma),
+        });
         return true;
       },
       setScene: () => true,
@@ -42,7 +60,11 @@ vi.mock('../scene-store', () => ({
   publishScene: () => Promise.resolve(),
 }));
 
+import { jellyBus } from '@/lib/jelly/bus';
+import { setDent } from '@/lib/jelly/lattice-inputs';
 import { installJellyRegistry } from '@/lib/jelly/registry';
+import { CHARGE } from '@/lib/jelly/tiers';
+import { ringLifetimeMs } from '../policy';
 import { installLiquidGlass, pulse } from '../engine';
 
 // ── A tiny fake DOM ───────────────────────────────────────────────────────────
@@ -516,5 +538,119 @@ describe('engine layers vs React setTextContent', () => {
     await flush();
     expect(rimOf(btn)).toBeUndefined();
     expect(btn.hasAttribute('data-liquid-canvas')).toBe(false);
+  });
+});
+
+// ── #989 layers: dormant plasma, charge rings, the dent ──────────────────────
+
+const lastDrawOf = (el: FakeEl) => {
+  const rim = rimOf(el);
+  return [...draws].reverse().find((d) => d.target === rim);
+};
+const lastHazeOf = (el: FakeEl) => {
+  const haze = hazeOf(el);
+  return [...hazeDraws].reverse().find((d) => d.target === haze);
+};
+async function button() {
+  const btn = new FakeEl('button');
+  btn.setAttribute('data-slot', 'button');
+  body.append(btn);
+  btn.append(new FakeEl('span'));
+  await install();
+  return btn;
+}
+/** Run frames until the driver stops asking (or `max` frames). */
+async function settle(max = 80) {
+  for (let i = 0; i < max && rafQueue.length; i++) await frames(1);
+}
+
+describe('#989 dormant plasma', () => {
+  it('is 0 (nothing uploaded) at rest, eases up on a level, and back to nothing at rest', async () => {
+    const btn = await button();
+    expect(draws.filter((d) => d.target === rimOf(btn)).every((d) => d.plasma === null)).toBe(true);
+    jellyBus.emit('plasma:level', { el: btn as unknown as Element, level: 1 });
+    await frames(1);
+    const first = lastDrawOf(btn)!.plasma!.level;
+    expect(first).toBeGreaterThan(0);
+    expect(first).toBeLessThan(0.5); // eased, not stepped
+    await frames(1);
+    expect(lastDrawOf(btn)!.plasma!.level).toBeGreaterThan(first);
+    await settle();
+    expect(lastDrawOf(btn)!.plasma!.level).toBe(1);
+    expect(rafQueue).toHaveLength(0); // settled: no frames at a steady level
+    jellyBus.emit('plasma:level', { el: btn as unknown as Element, level: 0 });
+    await settle();
+    expect(lastDrawOf(btn)!.plasma).toBeNull();
+    expect(rafQueue).toHaveLength(0);
+  });
+
+  it('a haze slot draws its plasma in the haze program, not the rim', async () => {
+    const pane = new FakeEl('section');
+    pane.className = 'glass-pane';
+    pane.vars = { '--jelly-haze-a': '0.2', '--jelly-plasma-k': '0.3' };
+    body.append(pane);
+    pane.append(new FakeEl('p'));
+    await install();
+    expect(hazeOf(pane)).toBeDefined();
+    expect(lastHazeOf(pane)!.plasma).toBeNull();
+    jellyBus.emit('plasma:level', { el: pane as unknown as Element, level: 0.35 });
+    await frames(3);
+    expect(lastHazeOf(pane)!.plasma!.level).toBeGreaterThan(0);
+    expect(draws.filter((d) => d.target === rimOf(pane)).every((d) => d.plasma === null)).toBe(
+      true,
+    );
+  });
+});
+
+describe('#989 charge rings', () => {
+  it('a charge:pulse rings through the slab, then is gone within its bounded lifetime', async () => {
+    const btn = await button();
+    // Viewport (70, 32) is the centre of the fake host (rect 10,10 → 130,54).
+    jellyBus.emit('charge:pulse', { el: btn as unknown as Element, x: 70, y: 32, q: 1 });
+    await frames(1);
+    const rings = lastDrawOf(btn)!.plasma!.rings;
+    expect(rings[0]).toBeCloseTo(60);
+    expect(rings[1]).toBeCloseTo(22);
+    expect(rings[3]).toBeGreaterThan(0);
+    expect(rings[3]).toBeLessThanOrEqual(1);
+    await frames(1);
+    const later = lastDrawOf(btn)!.plasma!.rings;
+    expect(later[2]).toBeGreaterThan(rings[2]!); // the front travels outward
+    expect(later[3]).toBeLessThan(rings[3]!); // and decays
+    const t0 = clock;
+    await settle(120);
+    expect(rafQueue).toHaveLength(0);
+    expect(clock - t0).toBeLessThanOrEqual(ringLifetimeMs(1) + 100);
+    expect(lastDrawOf(btn)!.plasma).toBeNull();
+  });
+
+  it('keeps at most three rings per surface however fast charges land', async () => {
+    const btn = await button();
+    for (let i = 0; i < 10; i++) {
+      jellyBus.emit('charge:pulse', { el: btn as unknown as Element, x: 15 + i * 10, y: 20, q: 1 });
+      clock += 70; // not twins
+    }
+    await frames(1);
+    const r = lastDrawOf(btn)!.plasma!.rings;
+    const live = [0, 1, 2, 3].filter((i) => r[i * 4 + 3]! > 0).length;
+    expect(live).toBeLessThanOrEqual(3);
+    expect(CHARGE.pulseTauMs).toBeGreaterThan(0);
+  });
+});
+
+describe('#989 dent', () => {
+  it('dent uniforms are set only while dentOf is non-null', async () => {
+    const btn = await button();
+    expect(draws.filter((d) => d.target === rimOf(btn)).every((d) => d.dent === null)).toBe(true);
+    const dent = { x: 40, y: 20, depth: 3, radius: 14, stretchX: 0, stretchY: 0 };
+    setDent(btn as unknown as Element, dent);
+    await frames(1);
+    expect(lastDrawOf(btn)!.dent).toMatchObject({ x: 40, y: 20, radius: 14, depth: 0.5 });
+    setDent(btn as unknown as Element, null);
+    await frames(1);
+    expect(lastDrawOf(btn)!.dent).toBeNull();
+    const n = draws.length;
+    await settle();
+    expect(draws.slice(n).every((d) => d.dent === null)).toBe(true);
   });
 });

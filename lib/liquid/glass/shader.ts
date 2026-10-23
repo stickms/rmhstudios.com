@@ -29,17 +29,33 @@
  *
  * - **Haze veil.** The refracted band is veiled with the surface's haze colour (`uHaze`), and the dispersion spread
  *   is softened to `uDispersion` (0.8) of crown glass's.
- * - **Plasma inner edge.** The thin lit line takes a static per-surface hue between plasma A and B (`uSeed`), varying
- *   along the perimeter, at `uPlasma` strength. `pulse(el, k)` raises `uPlasma` for ~300ms (a strike, a release).
- * - **Plasma cursor bloom.** The soft light under the cursor is wider and takes the edge hue, added as colour rather
- *   than as more white.
+ * - **No plasma outline.** The inner edge line is light only; plasma lives inside the gel (#989, below).
  * - **Squish.** A woken Tier L lattice (`uJelly[8]`, `uJellyOn`) moves the edge along its normal, full at the rim and
  *   zero `min(2·bevel, bevel + 8)` px inside, so the lit edge squishes and the interior — where text sits — does not.
  *   The canvas may overdraw its host by `uMargin` (≤ 2px) so an outward bulge is not clipped; bulges never exceed it.
+ *
+ * ## #989 material layers (on top of the above)
+ *
+ * - **Edge refraction, RGB-led.** A soft band `uBand.x` px inside the edge (`--gel-bevel`) carries a distinct R/G/B
+ *   split: each channel's band is displaced in screen space by `uDisperse` px (`--gel-disperse-r/-g/-b`, signed:
+ *   negative = toward the top-left key light, so red leans to the light and blue away) and tinted `uEdgeR/G/B`
+ *   (`--gel-edge-r/-g/-b`), so the fringes separate along the lit and the shaded edges and merge along the others.
+ *   White is secondary (a weak core where all three overlap). Refracting slabs also split their snapshot samples the
+ *   same way. Plus a 1 CSS px Fresnel edge (`uFresnel`, `--gel-fresnel`).
+ * - **Gel depth** (`--gel-body` → `--gel-depth`) is the host's CSS coat (`--liquid-coat`); the shader does not draw it
+ *   again.
+ * - **No gloss across the face.** Every specular term is masked to the bevel band (`edgeOnly`); there is no sheen
+ *   band, no face bloom and no cursor hotspot on the flat face. Shine lives at the edges and in the dent.
+ * - **Dormant plasma** (`jPlasma`, `jelly-glsl.ts`) in the interior for slabs WITHOUT a haze canvas (`uPlasmaInRim`;
+ *   a haze slot draws its own, moving). Static here: the rim still never reads a clock.
+ * - **The dent** (`uDentOn`, `uDent` = x, y, depth 0..1, σ px; `lib/jelly/lattice-inputs.ts` `dentOf`): a soft rim glow
+ *   around the bowl and a specular light dot (`uSpecular`, `--gel-specular`) on its far slope, away from the light.
+ *   `uDentStretch` stretches the slab's distance field toward a drag that left the element (rubber band), never past
+ *   `uMargin`. The outline indent itself is the lattice's (`uJelly`), not drawn twice.
  */
 
 import { GLASS_OPTICS_GLSL } from '../optics';
-import { LATTICE_GLSL, SDF_GLSL } from './jelly-glsl';
+import { LATTICE_GLSL, NOISE_GLSL, PLASMA_GLSL, SDF_GLSL } from './jelly-glsl';
 
 export const VERT = `#version 300 es
 in vec2 aPos;
@@ -70,16 +86,30 @@ uniform float uLightOn;    // 0..1
 uniform vec2 uTilt;        // smoothed unit-disc cursor pose; optical tilt only, no text transform
 
 uniform float uMargin;     // canvas overdraw past the host on every side, CSS px (0..2)
-uniform float uSeed;       // per-surface 0..1: the static plasma hue phase
+uniform float uSeed;       // per-surface 0..1
 uniform vec4 uHaze;        // haze colour rgb + the role's haze alpha
-uniform vec3 uPlasmaA;
-uniform vec3 uPlasmaB;
-uniform float uPlasma;     // role plasma strength x theme gain (+ a charge pulse)
 uniform float uDispersion; // 1.0 = crown glass, 0.8 = jelly
+
+// #989 material layers
+uniform vec3 uDisperse;    // R/G/B band displacement, px (--gel-disperse-r/-g/-b); negative = toward the light
+uniform vec2 uBand;        // x = RGB band depth inside the edge, px (--gel-bevel); y = band gain
+uniform vec4 uEdgeR;       // the band's channel tints + alpha (--gel-edge-r/-g/-b)
+uniform vec4 uEdgeG;
+uniform vec4 uEdgeB;
+uniform vec4 uFresnel;     // 1px Fresnel edge colour + alpha (--gel-fresnel)
+uniform float uPlasmaInRim; // 1 when this slab has no haze canvas: the dormant plasma is drawn here
+uniform vec4 uDent;        // dent x, y (host px), depth 0..1, sigma px
+uniform vec2 uDentStretch; // rubber-band stretch, px
+uniform float uDentOn;
+uniform vec4 uSpecular;    // dent light dot colour + alpha (--gel-specular)
 
 ${GLASS_OPTICS_GLSL}
 ${SDF_GLSL}
+${NOISE_GLSL}
 ${LATTICE_GLSL}
+${PLASMA_GLSL}
+
+float jBand(float x, float w) { return exp(-(x * x) / (w * w)); }
 
 void main() {
   // CSS px, y down, origin at the HOST's top-left (the canvas starts uMargin px outside it).
@@ -87,7 +117,17 @@ void main() {
   vec2 hs = uSize * 0.5;
   vec2 q = P - hs;
   float r = min(uRadius, min(hs.x, hs.y));
-  float sd = sdRoundRect(q, hs, r);
+  float sd0 = sdRoundRect(q, hs, r);
+  float sd = sd0;
+  // Rubber band: a drag that left the element stretches the slab toward it, more on the leading side.
+  if (uDentOn > 0.5) {
+    float sl = length(uDentStretch);
+    if (sl > 0.01) {
+      vec2 sdir = uDentStretch / sl;
+      float lead = clamp(dot(q, sdir) / max(dot(abs(sdir), hs), 1.0), 0.0, 1.0);
+      sd = max(sdRoundRect(q - uDentStretch * lead, hs, r), sd0 - uMargin);
+    }
+  }
   // Tier L squish: move the edge along its normal by the lattice offset there, only within the rim band.
   if (uJellyOn > 0.5) {
     float bz0 = max(uBezel, 2.0);
@@ -116,6 +156,12 @@ void main() {
   // A gentle ~2.6 degree optical rock toward the cursor. It changes the rim's
   // refraction and reflections without shifting pixels of live text or the hit area.
   vec3 n = normalize(vec3(g * slope + uTilt * 0.045, 1.0));
+  // Shine lives at the edges: every specular term below is confined to the bevel band.
+  float edgeOnly = 1.0 - smoothstep(0.6, 1.0, t);
+
+  vec3 key = normalize(vec3(-0.46, -0.62, 0.64));
+  vec2 Ld = normalize(key.xy);                    // toward the top-left key light, screen space
+  float sh = dot(g, Ld);                          // +1 on edges that face the light
 
   // ── Refraction of the page, in the bevel band only ──
   vec4 rim = vec4(0.0);
@@ -124,9 +170,11 @@ void main() {
     vec2 base = P + uSceneMap.xy;
     // Jelly disperses a little less than crown glass: the spread around green is scaled by uDispersion.
     vec3 ior = GLASS_IOR_RGB.g + (GLASS_IOR_RGB - GLASS_IOR_RGB.g) * uDispersion;
-    vec2 uvR = (base + glassSlabOffset(n, ior.r, uThickness)) * uSceneMap.zw;
-    vec2 uvG = (base + glassSlabOffset(n, ior.g, uThickness)) * uSceneMap.zw;
-    vec2 uvB = (base + glassSlabOffset(n, ior.b, uThickness)) * uSceneMap.zw;
+    // RGB-led: the channels are also split along the light direction (negative disperse = toward it).
+    float fall = 1.0 - t;
+    vec2 uvR = (base + glassSlabOffset(n, ior.r, uThickness) - Ld * uDisperse.r * fall) * uSceneMap.zw;
+    vec2 uvG = (base + glassSlabOffset(n, ior.g, uThickness) - Ld * uDisperse.g * fall) * uSceneMap.zw;
+    vec2 uvB = (base + glassSlabOffset(n, ior.b, uThickness) - Ld * uDisperse.b * fall) * uSceneMap.zw;
     vec4 sR = texture(uScene, uvR);
     vec4 sG = texture(uScene, uvG);
     vec4 sB = texture(uScene, uvB);
@@ -142,57 +190,89 @@ void main() {
     rim = vec4(c, sa) * band;
   }
 
-  // ── Light ──
+  // ── Light (edges only) ──
   vec3 V = vec3(0.0, 0.0, 1.0);
-  vec3 key = normalize(vec3(-0.46, -0.62, 0.64));
   vec3 fillL = normalize(vec3(0.55, 0.5, 0.67));
   float fres = glassFresnel(n.z).g;
-  float keySpec = pow(max(dot(n, normalize(key + V)), 0.0), 120.0) * 0.8;
-  float fillSpec = pow(max(dot(n, normalize(fillL + V)), 0.0), 70.0) * 0.26;
+  float keySpec = pow(max(dot(n, normalize(key + V)), 0.0), 120.0) * 0.8 * edgeOnly;
+  float fillSpec = pow(max(dot(n, normalize(fillL + V)), 0.0), 70.0) * 0.26 * edgeOnly;
 
-  // The cursor is a point light hovering above the glass.
+  // The cursor is a point light hovering above the glass; it glints on the bevel, never as a hotspot on the face.
   vec3 toL = vec3(uLight.xy - P, uLight.z);
   float distL = length(toL);
   vec3 Lc = toL / max(distL, 1e-3);
   float reach = uLight.z * 2.4;
-  float fall = uLightOn / (1.0 + (distL * distL) / (reach * reach));
-  float curSpec = pow(max(dot(n, normalize(Lc + V)), 0.0), 80.0) * 1.3 * fall;
-  // The light also falls on the FACE, not only the rim: a soft bloom under the cursor across the whole surface, so a
-  // hover lights the element it is over rather than just the thin bevel band at its edge.
-  float glowR = reach * 0.55;
-  float curGlow = exp(-dot(uLight.xy - P, uLight.xy - P) / (2.0 * glowR * glowR)) * 0.055 * uLightOn;
+  float fallL = uLightOn / (1.0 + (distL * distL) / (reach * reach));
+  float curSpec = pow(max(dot(n, normalize(Lc + V)), 0.0), 80.0) * 1.3 * fallL * edgeOnly;
 
   // The inner edge: a thin bright line, strongest on the edges that face a light.
   float stroke = (1.0 - smoothstep(0.0, uPx * 1.8, d - uPx * 0.5)) * smoothstep(-uPx, 0.0, d);
-  float facing = 0.5 + 0.5 * dot(g, normalize(key.xy));
+  float facing = 0.5 + 0.5 * sh;
   float facingC = 0.5 + 0.5 * dot(g, normalize(uLight.xy - P + 1e-3)) * uLightOn;
   float lineK = stroke * (0.18 + 0.55 * facing + 0.5 * facingC * uLightOn);
 
-  // A dimmer glint on the far edge: light bouncing inside the slab, plus a soft sheen across the face.
-  float counter = pow(max(dot(n, normalize(vec3(-key.xy, 0.55) + V)), 0.0), 70.0) * 0.24;
-  float sheen = 0.045 * smoothstep(0.0, 1.0, 1.0 - dot(P / uSize, vec2(0.62, 0.78)));
+  // A dimmer glint on the far edge: light bouncing inside the slab.
+  float counter = pow(max(dot(n, normalize(vec3(-key.xy, 0.55) + V)), 0.0), 70.0) * 0.24 * edgeOnly;
   float body = (1.0 - t) * 0.035 * max(dot(n, key), 0.0);
 
   // The shaded half. Glass on a pale ground reads through its DARK edge — refraction throws a thin shadow right at the
   // rim, and the side turned away from the light is denser — not through white highlights, which vanish on white.
   // Drawn with the theme's ink so it works in monochrome and on every other ground.
   float bevelW = 1.0 - smoothstep(0.0, 1.0, t);
-  float away = 0.5 - 0.5 * dot(g, normalize(key.xy));
+  float away = 0.5 - 0.5 * sh;
   float shade = bevelW * (0.01 + 0.055 * away * away) + (1.0 - smoothstep(0.0, uPx * 2.6, d)) * 0.045;
   float shadeA = clamp(shade * mix(1.0, 0.5, uDark), 0.0, 0.5);
 
   float k = mix(1.0, 0.82, uDark);
-  float lit = (keySpec + fillSpec + curSpec + counter + lineK + sheen + body + fres * 0.07) * k;
+  // White is secondary: the lit terms are kept under the RGB band below.
+  float lit = (keySpec + fillSpec + curSpec + counter + lineK + body + fres * 0.07 * edgeOnly) * k * 0.8;
   float litA = clamp(lit, 0.0, 1.0);
-  // Plasma in the inner edge line: a STATIC per-surface hue, varying along the perimeter. No clock here.
-  vec3 edgeHue = mix(uPlasmaA, uPlasmaB, 0.5 + 0.5 * sin(uSeed * 6.28 + (P.x + P.y) * 0.004));
-  vec3 glint = mix(mix(vec3(1.0), uRim, 0.35), edgeHue, clamp(uPlasma * 3.0, 0.0, 0.35) * stroke);
-  // Subsurface under the cursor: the bloom takes the plasma colour and is added as colour, not as more white.
-  float bloom = clamp(curGlow * 1.3 * k, 0.0, 1.0);
-  vec3 curCol = mix(glint, edgeHue, 0.5) * bloom;
+  vec3 glint = mix(vec3(1.0), uRim, 0.35);
 
-  // Composite, premultiplied: the refracted rim first, the light over it.
-  vec3 col = rim.rgb * (1.0 - shadeA) + uInk * shadeA * (0.5 + 0.5 * rim.a) + glint * litA * (1.0 - 0.15 * rim.a) + curCol;
-  float a = clamp(rim.a + shadeA * (1.0 - rim.a) + (litA + bloom) * 0.9, 0.0, 1.0);
+  // ── The RGB-led refraction band (--gel-bevel, --gel-disperse-*) ──
+  float bw = max(1.2, uBand.x * 0.45);
+  float d0 = min(uBand.x, bz);
+  // A channel displaced by v = -Ld·disperse sits where d(P - v) = d - sh·disperse reaches the band depth.
+  float fR = jBand(d - sh * uDisperse.r - d0, bw) * uEdgeR.a;
+  float fG = jBand(d - sh * uDisperse.g - d0, bw) * uEdgeG.a;
+  float fB = jBand(d - sh * uDisperse.b - d0, bw) * uEdgeB.a;
+  float bandK = uBand.y * (0.55 + 0.45 * abs(sh)) * smoothstep(-uPx, uPx, d);
+  // White is secondary: a weak core only where all three channels overlap.
+  vec3 rgbBand = (uEdgeR.rgb * fR + uEdgeG.rgb * fG + uEdgeB.rgb * fB + vec3(0.25 * min(fR, min(fG, fB)))) * bandK;
+  float rgbA = clamp((fR + fG + fB) * bandK, 0.0, 1.0);
+
+  // ── The 1px Fresnel edge (--gel-fresnel) ──
+  float fresEdge = (1.0 - smoothstep(uPx * 0.5, 1.0 + uPx * 0.5, d)) * smoothstep(-uPx, 0.0, d);
+  float fresA = fresEdge * uFresnel.a * (0.75 + 0.25 * facing);
+
+  // Composite, premultiplied: plasma at the back, then the refracted rim, shade, band, light and edge.
+  vec3 col = vec3(0.0);
+  float a = 0.0;
+  if (uPlasmaInRim > 0.5) {
+    float pa = jPlasma(P, uSize, d, uSeed, 0.0);
+    col = col * (1.0 - pa) + uAccent * pa;
+    a = a + pa * (1.0 - a);
+  }
+  col = col * (1.0 - rim.a) + rim.rgb;
+  a = a + rim.a * (1.0 - a);
+  col = col * (1.0 - shadeA) + uInk * shadeA * (0.5 + 0.5 * rim.a);
+  a = a + shadeA * (1.0 - a);
+  col += rgbBand + glint * litA * (1.0 - 0.15 * rim.a) + uFresnel.rgb * fresA;
+  a = a + (rgbA + litA * 0.9 + fresA) * (1.0 - a);
+
+  // ── The dent: a soft rim glow round the bowl and a light dot on its far slope ──
+  if (uDentOn > 0.5 && uDent.z > 0.001) {
+    float R = max(uDent.w, 1.0);
+    float x = (length(P - uDent.xy) - R * 1.15) / (R * 0.35);
+    float inside = smoothstep(2.0, 8.0, d);
+    float glowA = exp(-x * x) * uDent.z * 0.2 * inside;
+    vec2 spot = uDent.xy - Ld * R * 0.6;
+    float sx = length(P - spot) / max(R * 0.16, 1.5);
+    float dotA = exp(-sx * sx * 2.0) * uDent.z * uSpecular.a * inside;
+    col += mix(uRim, uAccent, 0.35) * glowA + uSpecular.rgb * dotA;
+    a = a + (glowA + dotA) * (1.0 - a);
+  }
+
+  a = clamp(a, 0.0, 1.0);
   outColor = vec4(min(col, vec3(a)) * cover, a * cover);
 }`;

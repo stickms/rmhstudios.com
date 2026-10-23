@@ -19,9 +19,12 @@ import {
   readBase,
 } from '../compose';
 import { jellyBus } from '../bus';
-import { latticeDrive, resetLatticeInputsForTests } from '../lattice-inputs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { dentOf, latticeDrive, resetLatticeInputsForTests } from '../lattice-inputs';
+import { createJellyLens, type JellyLens } from '../lens';
 import { installJellyPhysics, reportJellyDrag } from '../physics';
-import { FINE_POINTER_QUERY } from '../tiers';
+import { DENT, FINE_POINTER_QUERY, MOTION_BOUNDS, PLASMA } from '../tiers';
 
 // ── Fake DOM ──────────────────────────────────────────────────────────────
 
@@ -73,6 +76,7 @@ class FakeStyle {
   transform = '';
   willChange = '';
   borderRadius = '';
+  filter = '';
 }
 
 let rectReads = 0;
@@ -83,7 +87,8 @@ class FakeEl {
   children: FakeEl[] = [];
   parentElement: FakeEl | null = null;
   style = new FakeStyle();
-  computed: { translate?: string; scale?: string; borderTopLeftRadius?: string } = {};
+  computed: { translate?: string; scale?: string; borderTopLeftRadius?: string; filter?: string } =
+    {};
   constructor(
     public tag: string,
     public box = { left: 0, top: 0, width: 100, height: 40 },
@@ -210,6 +215,7 @@ function setup() {
     translate: el.computed.translate ?? 'none',
     scale: el.computed.scale ?? 'none',
     borderTopLeftRadius: el.computed.borderTopLeftRadius ?? '8px',
+    filter: el.computed.filter ?? 'none',
   }));
   win = {
     requestAnimationFrame: (cb: (t: number) => void) => {
@@ -244,8 +250,42 @@ function setup() {
   };
 }
 
-function install() {
-  teardown = installJellyPhysics(doc as unknown as Document);
+function install(opts: { lens?: JellyLens } = {}) {
+  teardown = installJellyPhysics(doc as unknown as Document, opts);
+}
+
+/** A minimal SVG-capable document for the lens: nodes keep attributes and children, nothing renders. */
+class FakeSvgNode {
+  attrs = new Map<string, string>();
+  children: FakeSvgNode[] = [];
+  parent: FakeSvgNode | null = null;
+  constructor(public tag: string) {}
+  setAttribute(n: string, v: string) {
+    this.attrs.set(n, v);
+  }
+  setAttributeNS(_ns: string, n: string, v: string) {
+    this.attrs.set(n, v);
+  }
+  appendChild(c: FakeSvgNode) {
+    c.parent = this;
+    this.children.push(c);
+    return c;
+  }
+  remove() {
+    if (!this.parent) return;
+    this.parent.children = this.parent.children.filter((c) => c !== this);
+    this.parent = null;
+  }
+}
+
+function svgLens(): { lens: JellyLens; svgBody: FakeSvgNode } {
+  const svgBody = new FakeSvgNode('body');
+  const svgDoc = {
+    defaultView: null,
+    body: svgBody,
+    createElementNS: (_ns: string, tag: string) => new FakeSvgNode(tag),
+  };
+  return { lens: createJellyLens(svgDoc as unknown as Document, { supported: true }), svgBody };
 }
 
 /** Run the frames queued so far, `ms` apart. Returns how many ran. */
@@ -297,6 +337,8 @@ function fire(
     ...extra,
   };
   for (const fn of [...(docListeners.get(type) ?? [])]) fn(e);
+  // Pointer input reaches physics through the ONE window listener set (`pointer.ts`).
+  for (const fn of [...(winListeners.get(type) ?? [])]) fn(e);
 }
 
 const inlineClean = (el: FakeEl) =>
@@ -785,5 +827,362 @@ describe('installJellyPhysics', () => {
     expect(inlineClean(b)).toBe(true);
     for (const type of ['pointerdown', 'pointermove', 'pointerover', 'pointerup', 'scroll'])
       expect(docListeners.get(type)?.size ?? 0).toBe(0);
+    for (const type of ['pointerdown', 'pointermove', 'pointerover', 'pointerup'])
+      expect(winListeners.get(type)?.size ?? 0).toBe(0);
+  });
+});
+
+// ── #989: dent, lens, plasma, Coulomb, the shared frame and pointer seams ──
+
+describe('the press dent (#989)', () => {
+  const card = () => {
+    const el = make('div', {
+      cls: ['glass-fill'],
+      box: { left: 0, top: 0, width: 200, height: 100 },
+    });
+    body.append(el);
+    return el;
+  };
+  const dent = (el: FakeEl) => dentOf(el as unknown as Element);
+
+  it('sinks a Gaussian bowl at the contact point, host-local, easing to DENT.depthPx', () => {
+    install();
+    const el = card();
+    fire('pointerdown', el, 60, 40);
+    step(1);
+    const first = dent(el)!;
+    expect(first).not.toBeNull();
+    expect(first.x).toBe(60);
+    expect(first.y).toBe(40);
+    expect(first.depth).toBeGreaterThan(0);
+    expect(first.depth).toBeLessThan(DENT.depthPx);
+    expect(first.radius).toBeCloseTo(
+      Math.min(DENT.maxRadiusPx, Math.max(DENT.minRadiusPx, DENT.radiusFrac * 100)),
+    );
+    // Held and arrived (dent, squash and plasma): the driver sleeps until the pointer moves again.
+    expect(settle()).toBeLessThan(200);
+    const held = dent(el)!;
+    expect(held.depth).toBeCloseTo(DENT.depthPx, 1);
+    expect(held.stretchX).toBe(0);
+    expect(el.hasAttribute('data-jelly-active')).toBe(true);
+    fire('pointerup', el, 60, 40);
+    settle();
+  });
+
+  it('slides with a mouse drag (a mouse press is not cancelled by the scroll slop)', () => {
+    install();
+    const el = card();
+    fire('pointerdown', el, 60, 40);
+    step(10);
+    fire('pointermove', el, 150, 70);
+    step(1);
+    expect(el.hasAttribute('data-jelly-active')).toBe(true);
+    expect(dent(el)).toMatchObject({ x: 150, y: 70 });
+    fire('pointerup', el, 150, 70);
+    settle();
+    expect(dent(el)).toBeNull();
+  });
+
+  it('dragged off the element: rubber-band stretch capped at DENT.rubberMaxPx, host inside MOTION_BOUNDS', () => {
+    install();
+    const el = card();
+    fire('pointerdown', el, 150, 50);
+    step(10);
+    let maxStretch = 0;
+    for (const x of [230, 300, 600, 5000]) {
+      fire('pointermove', el, x, 50);
+      for (let i = 0; i < 30; i++) {
+        step(1);
+        const d = dent(el)!;
+        expect(d.x).toBe(200);
+        maxStretch = Math.max(maxStretch, Math.hypot(d.stretchX, d.stretchY));
+        // The jelly part is capped at 3% around the legacy press anchor (0.96…1.028, envelope.ts §Caps).
+        for (const v of el.style.scale.split(' ').map(Number)) {
+          expect(v).toBeLessThanOrEqual(1.028 * (1 + MOTION_BOUNDS.maxScaleDelta) + 1e-9);
+          expect(v).toBeGreaterThanOrEqual(0.96 * (1 - MOTION_BOUNDS.maxScaleDelta) - 1e-9);
+        }
+        const tx = Number(/^(-?[\d.]+)px/.exec(el.style.translate)?.[1] ?? 0);
+        expect(Math.abs(tx)).toBeLessThanOrEqual(MOTION_BOUNDS.maxEdgeTravelPx / 2 + 1e-9);
+      }
+    }
+    const d = dent(el)!;
+    expect(d.stretchX).toBeGreaterThan(DENT.rubberMaxPx * 0.9);
+    expect(maxStretch).toBeLessThanOrEqual(DENT.rubberMaxPx + 1e-6);
+    expect(d.stretchY).toBeCloseTo(0, 6);
+    // The envelope leans toward the stretch.
+    expect(Number(/^(-?[\d.]+)px/.exec(el.style.translate)?.[1])).toBeGreaterThan(0.5);
+    fire('pointerup', el, 5000, 50);
+    settle();
+    expect(dent(el)).toBeNull();
+    expect(inlineClean(el)).toBe(true);
+  });
+
+  it('eases out on release, then setDent(el, null), and the lens is removed with the style restored', () => {
+    const { lens, svgBody } = svgLens();
+    install({ lens });
+    const el = card();
+    fire('pointerdown', el, 60, 40);
+    step(20);
+    expect(lens.host).toBe(el);
+    expect(el.style.filter).toMatch(/^url\(#jelly-lens-\d+\)$/);
+    expect(svgBody.children).toHaveLength(1);
+    fire('pointerup', el, 60, 40);
+    let prev = Infinity;
+    while (frames.length) {
+      step(1);
+      const d = dent(el);
+      if (!d) break;
+      expect(d.depth).toBeLessThanOrEqual(prev + 1e-9);
+      prev = d.depth;
+    }
+    settle();
+    expect(dent(el)).toBeNull();
+    expect(lens.host).toBeNull();
+    expect(el.style.filter).toBe('');
+    expect(inlineClean(el)).toBe(true);
+  });
+
+  it('the lens holds at most ONE host; a host with a filter of its own is never refracted', () => {
+    const { lens } = svgLens();
+    install({ lens });
+    const a = card();
+    const b = make('div', {
+      cls: ['glass-fill'],
+      box: { left: 0, top: 200, width: 200, height: 100 },
+    });
+    const c = make('div', {
+      cls: ['glass-fill'],
+      box: { left: 0, top: 400, width: 200, height: 100 },
+    });
+    c.computed.filter = 'drop-shadow(0 0 1px red)';
+    body.append(b, c);
+    fire('pointerdown', a, 60, 40, { pointerId: 1 });
+    step(10);
+    expect(lens.host).toBe(a);
+    fire('pointerdown', b, 60, 240, { pointerId: 2 });
+    step(10);
+    expect(lens.host).toBe(b);
+    expect(a.style.filter).toBe('');
+    fire('pointerup', b, 60, 240, { pointerId: 2 });
+    fire('pointerup', a, 60, 40, { pointerId: 1 });
+    settle();
+    fire('pointerdown', c, 60, 440, { pointerId: 3 });
+    step(10);
+    expect(dentOf(c as unknown as Element)).not.toBeNull();
+    expect(lens.host).toBeNull();
+    expect(c.style.filter).toBe('');
+    fire('pointerup', c, 60, 440, { pointerId: 3 });
+    settle();
+    expect([a, b, c].every((e) => e.style.filter === '' && inlineClean(e))).toBe(true);
+  });
+
+  it('degrades: `still` keeps the dent (press feedback) without lens or stretch; a playing game has no dent', () => {
+    const { lens } = svgLens();
+    root.setAttribute('data-jelly-motion', 'still');
+    install({ lens });
+    const el = card();
+    fire('pointerdown', el, 150, 50);
+    step(10);
+    fire('pointermove', el, 900, 50);
+    step(20);
+    expect(dent(el)!.depth).toBeGreaterThan(1);
+    expect(dent(el)!.stretchX).toBe(0);
+    expect(lens.host).toBeNull();
+    fire('pointerup', el, 900, 50);
+    settle();
+    teardown();
+    setup();
+    root.setAttribute('data-game-state', 'playing');
+    install();
+    const g = card();
+    fire('pointerdown', g, 60, 40);
+    step(5);
+    expect(dent(g)).toBeNull();
+    expect(rafCalls).toBe(0);
+  });
+
+  it('drives the lattice of an admitted slab at the dent centre', () => {
+    install();
+    const pane = make('section', {
+      cls: ['glass-pane'],
+      attrs: { 'data-liquid-canvas': 'on' },
+      box: { left: 100, top: 50, width: 400, height: 300 },
+    });
+    body.append(pane);
+    fire('pointerdown', pane, 150, 60);
+    step(2);
+    fire('pointermove', pane, 300, 200);
+    step(1);
+    expect(latticeDrive(pane as unknown as Element)).toEqual({ kind: 'press', x: 200, y: 150 });
+    expect(dentOf(pane as unknown as Element)).toMatchObject({ x: 200, y: 150 });
+    fire('pointerup', pane, 300, 200);
+    settle();
+    expect(dentOf(pane as unknown as Element)).toBeNull();
+    expect(latticeDrive(pane as unknown as Element)).toBeNull();
+  });
+});
+
+describe('plasma:level (#989)', () => {
+  const record = () => {
+    const log: { el: unknown; level: number; frame: number }[] = [];
+    let frame = 0;
+    const off = jellyBus.on('plasma:level', ({ el, level }) => log.push({ el, level, frame }));
+    return {
+      log,
+      off,
+      step(n = 1) {
+        for (let i = 0; i < n; i++) {
+          frame++;
+          step(1);
+        }
+      },
+    };
+  };
+
+  it('wakes on hover, brightens on press, eases back, rests — stepped ≥ 0.02, once per frame', () => {
+    install();
+    const el = make('div', {
+      cls: ['glass-fill'],
+      box: { left: 0, top: 0, width: 200, height: 100 },
+    });
+    body.append(el);
+    const r = record();
+    fire('pointerover', el, 100, 50);
+    r.step(60);
+    expect(r.log.at(-1)!.level).toBe(PLASMA.wake);
+    expect(Math.max(...r.log.map((e) => e.level))).toBe(PLASMA.wake);
+    fire('pointerdown', el, 100, 50);
+    r.step(60);
+    expect(r.log.at(-1)!.level).toBe(PLASMA.press);
+    fire('pointerup', el, 100, 50);
+    r.step(60);
+    expect(r.log.at(-1)!.level).toBe(PLASMA.wake);
+    fire('pointermove', body, 900, 900);
+    while (frames.length) r.step(1);
+    r.off();
+    expect(r.log.at(-1)!.level).toBe(PLASMA.rest);
+    // Once per frame per element, and every step is ≥ 0.02 unless it is the arrival at a target.
+    const frames_ = r.log.map((e) => e.frame);
+    expect(new Set(frames_).size).toBe(frames_.length);
+    const targets = new Set<number>([PLASMA.rest, PLASMA.wake, PLASMA.press]);
+    for (let i = 1; i < r.log.length; i++) {
+      const d = Math.abs(r.log[i].level - r.log[i - 1].level);
+      if (!targets.has(r.log[i].level)) expect(d).toBeGreaterThanOrEqual(0.02);
+    }
+    expect(r.log.every((e) => e.el === el)).toBe(true);
+  });
+
+  it('keyboard focus-visible and click brighten to PLASMA.press, then rest; a pointer focus does not', () => {
+    install();
+    const btn = make('button');
+    body.append(btn);
+    const r = record();
+    fire('keydown', null);
+    fire('focusin', btn);
+    r.step(60);
+    expect(r.log.at(-1)!.level).toBe(PLASMA.press);
+    fire('focusout', btn);
+    while (frames.length) r.step(1);
+    expect(r.log.at(-1)!.level).toBe(PLASMA.rest);
+    r.log.length = 0;
+    fire('click', btn);
+    while (frames.length) r.step(1);
+    expect(Math.max(...r.log.map((e) => e.level))).toBeGreaterThan(0.5);
+    expect(r.log.at(-1)!.level).toBe(PLASMA.rest);
+    r.log.length = 0;
+    fire('pointerdown', body, 900, 900, { pointerType: 'touch' }); // pointer modality
+    fire('focusin', btn);
+    r.step(5);
+    r.off();
+    expect(r.log).toHaveLength(0);
+  });
+
+  it('no hover wake on a coarse pointer; disabled and opted-out hosts never wake', () => {
+    fine = false;
+    install();
+    const card = make('div', { cls: ['glass-fill'] });
+    const off = make('button', { attrs: { 'data-jelly': 'off' } });
+    const dis = make('button', { attrs: { disabled: '' } });
+    body.append(card, off, dis);
+    const r = record();
+    fire('pointerover', card);
+    fire('click', off);
+    fire('click', dis);
+    r.step(10);
+    r.off();
+    expect(r.log).toHaveLength(0);
+    expect(rafCalls).toBe(0);
+  });
+});
+
+describe('charge:attract (#989 Coulomb)', () => {
+  const pull = (el: FakeEl, force = 1) =>
+    jellyBus.emit('charge:attract', { el: el as unknown as Element, nx: 1, ny: 0, force });
+
+  it('a resting body passes it to its support: nothing moves, no frame', () => {
+    install();
+    const el = make('div', { cls: ['glass-fill'] });
+    body.append(el);
+    pull(el);
+    expect(rafCalls).toBe(0);
+    expect(inlineClean(el)).toBe(true);
+  });
+
+  it('an awake body gets a bounded translate toward the neighbour (≤ nudgePx), however often it is pulled', () => {
+    install();
+    const el = make('div', {
+      cls: ['glass-fill'],
+      box: { left: 0, top: 0, width: 200, height: 100 },
+    });
+    body.append(el);
+    fire('pointerover', el, 100, 50); // centre: no lean
+    settle();
+    let peak = 0;
+    for (let i = 0; i < 120; i++) {
+      pull(el, 1);
+      pull(el, 1);
+      step(1);
+      const tx = Number(/^(-?[\d.]+)px/.exec(el.style.translate)?.[1] ?? 0);
+      peak = Math.max(peak, tx);
+      expect(Math.abs(tx)).toBeLessThanOrEqual(MOTION_BOUNDS.nudgePx + 1e-6);
+    }
+    expect(peak).toBeGreaterThan(0.3);
+    // Layout never changes: only `translate` moved, the scale stayed at the hover plump.
+    fire('pointermove', body, 900, 900);
+    settle();
+    expect(inlineClean(el)).toBe(true);
+  });
+});
+
+describe('one frame, one pointer listener set', () => {
+  it('physics.ts never calls requestAnimationFrame itself', () => {
+    const src = readFileSync(join(process.cwd(), 'lib/jelly/physics.ts'), 'utf8');
+    expect(src).not.toMatch(/requestAnimationFrame/);
+    expect(src).toMatch(/drive\(/);
+    expect(src).toMatch(/onJellyPointer\(/);
+    expect(src).not.toMatch(/addEventListener\('pointer/);
+  });
+
+  it('the frame driver sleeps at rest: no frame is pending once everything has settled', () => {
+    install();
+    const el = make('div', {
+      cls: ['glass-fill'],
+      box: { left: 0, top: 0, width: 200, height: 100 },
+    });
+    body.append(el);
+    fire('pointerover', el, 100, 50);
+    fire('pointerdown', el, 100, 50);
+    step(30);
+    fire('pointerup', el, 100, 50);
+    fire('click', el);
+    fire('pointermove', body, 900, 900);
+    expect(settle()).toBeLessThan(600);
+    expect(frames).toHaveLength(0);
+    const before = rafCalls;
+    fire('pointermove', body, 950, 950);
+    fire('scroll', null);
+    expect(rafCalls).toBe(before);
+    expect(dentOf(el as unknown as Element)).toBeNull();
+    expect(inlineClean(el)).toBe(true);
   });
 });

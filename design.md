@@ -4,8 +4,12 @@
 
 Current material (2026-10-23): **Plasmatic Jelly** — hazy, translucent slabs with
 always-on internal motion, a soft body under the pointer, the retained 3D refracting
-rim of liquid glass, and electric arcs between nearby surfaces. The implementation
-contract is [`docs/plasmatic-jelly-system.md`](docs/plasmatic-jelly-system.md).
+rim of liquid glass, and electric arcs between nearby surfaces — with the owner's #989
+layers on top: dormant plasma that wakes under the hand, an RGB-led edge, a
+liquid-glass lens dent, and charge that hops and attracts. The implementation
+contract is [`docs/plasmatic-jelly-system.md`](docs/plasmatic-jelly-system.md); the
+binding summary is the "Design system: Plasmatic Jelly" section of
+[`CLAUDE.md`](CLAUDE.md).
 
 Current motion contract: every account and device uses the shared animation scheme.
 The website reduced-motion setting and browser/OS motion overrides are retired; the
@@ -60,15 +64,24 @@ inert.
 
 ### Plasmatic jelly — surfaces are a material, not a colour
 
-Every surface is a slab of slightly hazy, translucent plasma-jelly. The 3D
-refracting, lit, rounded rim of liquid glass stays. Inside, a low-contrast haze is
-always drifting — currents, eddies and faint plasma colour at the crests — calm
-behind text and livelier at the rim. The jelly is soft: hover plumps and leans it
-toward the cursor, press squashes it toward the contact, release wobbles it back,
-drag stretches it, and a strong release nudges near neighbours by a pixel or two.
-And it is charged: nearby surfaces occasionally throw an electric arc across the
-gap, and a click discharges a few arcs to its nearest neighbours. Text, hit areas
-and layout never move beyond the bounded squash. The haze is drawn by a shader or
+Every surface is a slab of slightly hazy, translucent plasma-jelly. Read it from
+the inside out: a **gel** body that darkens slightly toward its base; a low-contrast
+**haze** always drifting inside it — currents, eddies and faint plasma colour at the
+crests — calm behind text and livelier at the rim; a **plasma** core that sleeps
+invisibly until the hand wakes it (hover wakes it, press and focus brighten it, a
+click's charge rings through it); and the 3D refracting, lit **edge** of liquid glass,
+its light split into red, green and blue, with a one-pixel Fresnel line. There is no
+gloss band across the face — shine lives at the edges and in the dent.
+
+The jelly is soft: hover plumps and leans it toward the cursor, and press sinks a
+smooth **lens dent** under the pointer — content beneath refracts through it, split
+into colour, with a small light dot on its far slope. Drag and the dent slides with
+you; drag off the element and the gel stretches like a rubber band. Release eases it
+all back, wobbling to rest, and a strong release nudges near neighbours by a pixel or
+two. And it is charged: nearby surfaces occasionally throw an electric arc across the
+gap; a click deposits charge that hops to a neighbour with half of it; small gaps
+break down; charged neighbours lean toward each other by Coulomb's law, never past the
+nudge bound. Text, hit areas and layout never move beyond the bounded squash. The haze is drawn by a shader or
 by transform-only CSS layers — never by native backdrop frost. The globe has a
 dielectric coat that refracts the page behind it and a dough body that dents,
 kneads and eases back.
@@ -81,8 +94,14 @@ records ownership, budgets, the idle policy, fallbacks and the photosensitivity
 limits. Themes change the
 material's palette through the same tokens throughout the site.
 
-The default palette is strict **high-contrast monochrome** — white canvas, ink
-text, ink accent, hairline black borders — rendered as jelly. Restraint in the
+The identity is **silent, sleek, frontier AI** — calm, never busy. Its reference
+form is a near-black void, graphite surfaces, white ink and **one** electric accent,
+which is also the plasma colour; the default theme is the same rule in daylight
+(white canvas, ink text, ink accent). No gradients on the ground, no neon or glowing
+type, no sci-fi illustration (robots, brains, circuits, sparkles). Copy is short and
+literal ("Deploy model", "Latency 42 ms"). Text is **Geist**; eyebrows and data are
+**Geist Mono**. Each view has **one signal action** — the ink-gel
+`<Button variant="signal">` — and everything else on it is quieter. Restraint in the
 palette is what lets the optics be loud.
 
 ---
@@ -127,14 +146,14 @@ what the surface _is_, not by how you want it to look — the tier decides the c
 The classes keep the `glass-*` names: "glass" names the elevation role, "jelly"
 names the material that renders every role.
 
-| Tier   | Class            | For                                                   | Cost                                   |
-| ------ | ---------------- | ----------------------------------------------------- | -------------------------------------- |
-| **L1** | `.glass-fill`    | Repeated content: cards, rows, tiles                  | Slab within budget; soft body.         |
-| **L2** | `.glass-pane`    | Singular panels: heroes, composers, settings sections | Slab + haze; budgeted.                 |
-| **L3** | `.glass-chrome`  | Persistent chrome: sticky headers, rails, docks       | Slab + haze; condenses on scroll.      |
-| **L4** | `.glass-overlay` | Floating UI: dialogs, popovers, menus, toasts         | Slab; quietest, densest interior.      |
-| —      | `.glass-inset`   | Fields: inputs, search fields, tab tracks             | A flush pool of jelly. Never arcs.     |
-| —      | `.glass-scrim`   | Dialog and drawer backdrops                           | —                                      |
+| Tier   | Class            | For                                                   | Cost                               |
+| ------ | ---------------- | ----------------------------------------------------- | ---------------------------------- |
+| **L1** | `.glass-fill`    | Repeated content: cards, rows, tiles                  | Slab within budget; soft body.     |
+| **L2** | `.glass-pane`    | Singular panels: heroes, composers, settings sections | Slab + haze; budgeted.             |
+| **L3** | `.glass-chrome`  | Persistent chrome: sticky headers, rails, docks       | Slab + haze; condenses on scroll.  |
+| **L4** | `.glass-overlay` | Floating UI: dialogs, popovers, menus, toasts         | Slab; quietest, densest interior.  |
+| —      | `.glass-inset`   | Fields: inputs, search fields, tab tracks             | A flush pool of jelly. Never arcs. |
+| —      | `.glass-scrim`   | Dialog and drawer backdrops                           | —                                  |
 
 Modifiers (`.glass-interactive`, `.glass-sheen-hover`, …) layer on top and each
 carries a per-page budget. They are **signature moments, not defaults**. The old
@@ -150,8 +169,9 @@ rests at an ambient glint strength that hover raises to full. Glass that does no
 answer the light is just tinted paper.
 
 **Light, pressure and charge belong to the material.** One soft-body service
-squashes and wobbles what you touch; one arc service draws the sparks; one engine
-clock moves the haze. A click discharges arcs and pulses the rim — it never changes
+squashes, dents and wobbles what you touch; one arc service draws the sparks and
+carries the charge; one engine clock moves the haze and wakes the plasma; and all of
+them share one frame and one pointer listener. A click discharges arcs and pulses the rim — it never changes
 layout, and neighbours move at most a bounded nudge that returns to rest. Nothing
 paints a replacement cursor, moves a gradient centre, or animates a root variable,
 and no component adds its own pointer loop, deformation or arc code. **The
@@ -260,6 +280,12 @@ it is written — none of which looked like a performance bug in the source:
    a deliberate, budgeted reversal of that audit's "rest" limit, not a licence for
    another perpetual layer.
 
+**Never fake a law.** Wobble, glow, ripple and flicker are forces in the
+services, never a keyframe, a `transition: transform` on a body or a second spring
+formula. The only sanctioned jelly keyframes are the haze drift, and the only
+filter on a body is the press lens, applied only while it is pressed. A new
+behaviour is a new force with a named constant for every number.
+
 **Ambient motion has a switch.** Surfaces that move on their own for more than a
 few seconds need a way to pause them (WCAG 2.2.2), and arcs are flashes (WCAG
 2.3.1). So the material carries two settings: **Jelly motion** (Lively · Calm ·
@@ -298,6 +324,10 @@ Three habits follow:
 - **Rhythm comes from tokens.** Gutters, section gaps, panel padding and sticky
   offsets are named; repeated content floats as spaced cards, and hairline
   dividers live _inside_ container cards, never between page-level sections.
+- **Jelly needs room.** Bodies sit at least 16px apart (`--space-4`) and keep a
+  16px unclipped margin (`--jelly-margin`) round them — no `overflow: hidden`
+  directly around a body — so the squash, the bulge opposite a dent and the rubber
+  band never get cut off.
 
 Full-screen experiences — games, login, legal pages — live outside the shell
 deliberately and own their own look.
@@ -336,7 +366,11 @@ makes the accessible variants work.
 
 - **Focus is global and undoubled.** One `:focus-visible` treatment covers every
   interactive element; controls that draw their own opt out explicitly. Don't add
-  a second ring on top of the one you already have.
+  a second ring on top of the one you already have. The ring is `--focus-ring`,
+  solid and 2px — never the plasma glow, which is decoration.
+- **The material is never the message.** Plasma, haze, arcs and the lens are
+  `aria-hidden` decoration and never the only signal of state; text holds 4.5:1 on
+  gel, over haze and over woken plasma in every theme.
 - **Reach for the native element or the Radix-based primitive** before
   hand-rolling a widget. Icon-only controls are named; decorative icons are
   hidden.
@@ -426,8 +460,9 @@ If you remember six things:
 2. **Reach for the primitive and the tier class.** A second copy of something
    shared is the most common defect in this repo's history.
 3. **Jelly is a material with a budget.** Pick the tier by role. The haze,
-   soft body and arcs come from one service each — never a per-component loop,
-   and layout never moves.
+   soft body and arcs come from one service each, on one frame and one pointer
+   listener — never a per-component loop, never a faked law, and layout never
+   moves. One accent, one signal action per view.
 4. **Motion is shared physics, and it composites.** Springs with velocity,
    intent read from projection, response on pointer-down; the formulas live in
    one file. `transform`/`opacity` and independent transforms only, and nothing

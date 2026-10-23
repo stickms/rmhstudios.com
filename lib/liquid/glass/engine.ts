@@ -12,7 +12,9 @@
  * Nothing runs at rest. There is no permanent frame loop: a frame is requested only while something is moving — the
  * cursor light easing toward a surface or away from it, the refracted rim fading in after
  * a new snapshot — or once, for a surface whose size, theme, tint, snapshot or (if it is anchored to the viewport) scroll
- * position changed. The loop is the one `requestAnimationFrame` here, allow-listed in `raf-loop-allowlist.test.ts`.
+ * position changed. Frames come from the ONE jelly frame driver (`lib/jelly/frame.ts`, `drive(fn, { order: 20 })`:
+ * after physics, before arcs); this file owns no animation-frame loop of its own. Pointer input arrives through the
+ * one jelly pointer hub (`lib/jelly/pointer.ts`).
  *
  * ## What it never does
  *
@@ -39,8 +41,23 @@
  *   down and is reset on route change.
  * - **Squish and charge.** A Tier L lattice (`lib/jelly/lattice.ts`) is created for an admitted slab when the physics
  *   service drives it or queues an impulse (`lib/jelly/lattice-inputs.ts`), stepped here, uploaded as `uJelly[8]`, and
- *   dropped when it sleeps or the slab leaves the budget (at most `jellyBudget().lattices` at once). `pulse(el, k)`
- *   raises a rim's plasma for ~300ms; arc strikes and strong releases on the bus pulse automatically.
+ *   dropped when it sleeps or the slab leaves the budget (at most `jellyBudget().lattices` at once).
+ *
+ * ## #989 layers (on top of the above)
+ *
+ * - **Gel tokens** (`--gel-disperse-r/-g/-b`, `--gel-edge-r/-g/-b`, `--gel-bevel`, `--gel-fresnel`, `--gel-specular`,
+ *   `--site-accent`; the `--gel-body` → `--gel-depth` coat is CSS) are read per surface with the jelly knobs — on admission and on a theme change, never per frame —
+ *   with fallbacks while a theme does not define them.
+ * - **Dormant plasma.** `plasma:level` on the bus sets a surface's target; the engine eases it (`easePlasma`,
+ *   `PLASMA.easeMs`) and uploads it as `uLevel`. A haze slot draws it in the haze program (moving; half speed under
+ *   calm); every other slab draws a static variant in the rim program. 0 at rest → no plasma at all.
+ * - **Charge rings.** `charge:pulse` (and arc strikes, strong releases and `pulse(el, k, x?, y?)`) start a ring at
+ *   the charge point that travels at `CHARGE.pulseSpeedPxS` and decays with `CHARGE.pulseTauMs`; at most
+ *   `PLASMA_LOOK.ringsPerSurface` per surface, each bounded by `ringLifetimeMs`. Same-instant twins merge.
+ * - **The dent.** While `dentOf(el)` is non-null an admitted slab draws the dent's rim glow, its specular light dot
+ *   and the rubber-band stretch; the outline indent is the lattice's. Physics' `setDent` wakes the driver.
+ * - Still: no haze, so the rim draws the plasma — static, but it still answers press and click. Off tiers draw
+ *   nothing at all.
  */
 import { jellyBus } from '@/lib/jelly/bus';
 import { JellyGovernor, governBudget, knobsAt } from '@/lib/jelly/governor';
@@ -54,12 +71,21 @@ import {
   type Lattice,
   type LatticeInput,
 } from '@/lib/jelly/lattice';
-import { drainLatticeImpulses, latticeDrive, onLatticeWake } from '@/lib/jelly/lattice-inputs';
+import { drive, type FrameDriver } from '@/lib/jelly/frame';
+import {
+  dentOf,
+  drainLatticeImpulses,
+  latticeDrive,
+  onLatticeWake,
+  type JellyDent,
+} from '@/lib/jelly/lattice-inputs';
+import { onJellyPointer } from '@/lib/jelly/pointer';
 import { jellyRegistry, type JellyRegistry } from '@/lib/jelly/registry';
 import {
   APP_HIGH_CONTRAST_SELECTOR,
   CALM,
   DEGRADED_ROOT_SELECTOR,
+  DENT,
   JELLY_LAYER_SELECTOR,
   jellyBudget,
   jellyMode,
@@ -75,11 +101,14 @@ import { luminance, resolveColor, type RGBA } from './color';
 import {
   admit,
   ambientHz,
+  addRing,
   approach,
   bevelFor,
+  cssPx,
   cursorTilt,
   dprFor,
   dueHaze,
+  easePlasma,
   hazeEligible,
   hazeScaleFor,
   hazeSlots,
@@ -88,13 +117,16 @@ import {
   lightTarget,
   nextDue,
   overdrawMargin,
-  pulseLevel,
+  packRings,
+  PLASMA_LOOK,
+  ringAlive,
   sceneCoverage,
   seedFor,
   thicknessFor,
   type GlassRole,
+  type PulseRing,
 } from './policy';
-import { GlassRenderer, type GlassDraw, type JellyLook } from './renderer';
+import { GlassRenderer, type GelLook, type GlassDraw, type JellyLook } from './renderer';
 import { createSceneProvider, type SceneProvider, type SceneShot } from './scene';
 import { clearScene, publishScene } from './scene-store';
 
@@ -111,8 +143,26 @@ const EXCLUDE =
 const OWN_LAYERS = JELLY_LAYER_SELECTOR;
 /** Rim dispersion relative to crown glass (01 §2.7). */
 const JELLY_DISPERSION = 0.8;
-/** Release energy → pulse strength. Strikes pulse at their full energy. */
+/** Release energy → ring charge. Strikes ring at their full energy. */
 const RELEASE_PULSE = 0.6;
+/**
+ * Fallbacks for the #989 gel tokens (`app/globals.css` `--gel-*`) while a theme does not define one: the default
+ * theme's values. The band gain multiplies the `--gel-edge-*` alphas (tuned for the CSS fallback's soft 6px inset
+ * shadows) for the shader's narrower band; a light ground takes less.
+ */
+const GEL_FALLBACK = {
+  disperse: [-1.5, 0, 1.5] as [number, number, number],
+  bandPx: 6,
+  bandGain: { dark: 1.5, light: 1.25 },
+  edge: [
+    [1, 84 / 255, 104 / 255, 0.16],
+    [64 / 255, 200 / 255, 140 / 255, 0.08],
+    [72 / 255, 120 / 255, 1, 0.16],
+  ] as RGBA[],
+  fresnel: [1, 1, 1, 0.55] as RGBA,
+  specular: [1, 1, 1, 0.95] as RGBA,
+  accent: [0.42, 0.31, 0.82, 1] as RGBA,
+} as const;
 const LIGHT_HEIGHT = 96;
 /**
  * How far past a surface's own edge the rim may read the snapshot, px. Refraction samples INWARD from the edge, so the
@@ -161,12 +211,21 @@ interface Surface {
   /** Driven and settled: hold the pose until the drive changes. */
   latticeParked: boolean;
   latticeBuf: Float32Array;
-  pulseK: number;
-  pulseAt: number;
-  pulse: number;
+  // ── #989 ──
+  /** Gel tokens, read with the look. */
+  gel: GelLook;
+  /** Target and eased plasma wake level (bus `plasma:level`). */
+  plasmaTarget: number;
+  plasmaLevel: number;
+  /** Charge rings; `pending` ones still carry viewport coords until the next rim pass converts them. */
+  rings: PulseRing[];
+  pendingRings: PulseRing[];
+  ringBuf: Float32Array;
+  /** The dent last drawn (a copy of `dentOf(el)`), or null. */
+  dent: JellyDent | null;
 }
 
-const pulseSinks = new Set<(el: Element, k: number) => void>();
+const pulseSinks = new Set<(el: Element, k: number, x?: number, y?: number) => void>();
 let liveGovernorStep = 0;
 
 /**
@@ -179,13 +238,37 @@ export function jellyGovernorStep(): number {
 }
 
 /**
- * Charge a slab: raise its rim's plasma by `k` (0..1) for ~300ms (`policy.ts` `PULSE`). Arcs and physics normally reach
- * this through the bus (`arc:strike`, `body:release`); it is exported for anything else that discharges into a
- * surface. A no-op for an element that is not a drawn slab, or before the engine is installed.
+ * Charge a slab: start a charge ring of strength `k` (0..1) at viewport point (`x`, `y`) — the slab's centre when
+ * omitted — that travels through the gel at `CHARGE.pulseSpeedPxS` and decays with `CHARGE.pulseTauMs`, brightening
+ * the plasma as it passes. Arcs and physics normally reach this through the bus (`charge:pulse`, `arc:strike`,
+ * `body:release`); it is exported for anything else that discharges into a surface. A no-op for an element that is not
+ * a drawn slab, or before the engine is installed.
  */
-export function pulse(el: Element, k: number): void {
-  for (const fn of pulseSinks) fn(el, k);
+export function pulse(el: Element, k: number, x?: number, y?: number): void {
+  for (const fn of pulseSinks) fn(el, k, x, y);
 }
+
+const sameDent = (a: JellyDent | null, b: JellyDent | null): boolean =>
+  a === b ||
+  (!!a &&
+    !!b &&
+    a.x === b.x &&
+    a.y === b.y &&
+    a.depth === b.depth &&
+    a.radius === b.radius &&
+    a.stretchX === b.stretchX &&
+    a.stretchY === b.stretchY);
+
+const defaultGel = (): GelLook => ({
+  disperse: [...GEL_FALLBACK.disperse],
+  band: GEL_FALLBACK.bandPx,
+  bandA: GEL_FALLBACK.bandGain.dark,
+  edge: [[...GEL_FALLBACK.edge[0]!], [...GEL_FALLBACK.edge[1]!], [...GEL_FALLBACK.edge[2]!]],
+  fresnel: [...GEL_FALLBACK.fresnel],
+  specular: [...GEL_FALLBACK.specular],
+  accent: [GEL_FALLBACK.accent[0], GEL_FALLBACK.accent[1], GEL_FALLBACK.accent[2]],
+  plasmaPeak: PLASMA_LOOK.peakDark,
+});
 
 const NO_LOOK: JellyLook = {
   seed: 0,
@@ -261,8 +344,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
   let pointerY = 0;
   let pointerLive = false;
 
-  // The frame loop.
-  let raf = 0;
+  // The frame driver (`lib/jelly/frame.ts`): created on first need, stopped when the material goes off.
+  let driver: FrameDriver | null = null;
   let lastFrame = 0;
   let scrolling = false;
   let scrollTimer = 0;
@@ -457,9 +540,13 @@ export function installLiquidGlass(doc: Document = document): () => void {
       latticeInput: null,
       latticeParked: false,
       latticeBuf: new Float32Array(16),
-      pulseK: 0,
-      pulseAt: 0,
-      pulse: 0,
+      gel: defaultGel(),
+      plasmaTarget: 0,
+      plasmaLevel: 0,
+      rings: [],
+      pendingRings: [],
+      ringBuf: new Float32Array(16),
+      dent: null,
     });
     visibility.observe(el);
     sizes.observe(el);
@@ -516,6 +603,32 @@ export function installLiquidGlass(doc: Document = document): () => void {
       axis,
     ];
     s.quiet = Math.max(0, Math.min(1, num('--site-jelly-quiet', 0.35)));
+    // #989 gel tokens (U4's `--gel-*`), with fallbacks while a theme has none.
+    const rgba = (name: string, fallback: RGBA): [number, number, number, number] => {
+      const css = raw(name);
+      const c = css ? resolveColor(css, fallback, doc) : fallback;
+      return [c[0], c[1], c[2], c[3]];
+    };
+    const split = (name: string, fallback: number) =>
+      Math.max(-4, Math.min(4, cssPx(raw(name), fallback)));
+    s.gel = {
+      disperse: [
+        split('--gel-disperse-r', GEL_FALLBACK.disperse[0]),
+        split('--gel-disperse-g', GEL_FALLBACK.disperse[1]),
+        split('--gel-disperse-b', GEL_FALLBACK.disperse[2]),
+      ],
+      band: Math.max(1, Math.min(16, cssPx(raw('--gel-bevel'), GEL_FALLBACK.bandPx))),
+      bandA: dark ? GEL_FALLBACK.bandGain.dark : GEL_FALLBACK.bandGain.light,
+      edge: [
+        rgba('--gel-edge-r', GEL_FALLBACK.edge[0]!),
+        rgba('--gel-edge-g', GEL_FALLBACK.edge[1]!),
+        rgba('--gel-edge-b', GEL_FALLBACK.edge[2]!),
+      ],
+      fresnel: rgba('--gel-fresnel', GEL_FALLBACK.fresnel),
+      specular: rgba('--gel-specular', GEL_FALLBACK.specular),
+      accent: rgb('--site-accent', '--site-accent', GEL_FALLBACK.accent),
+      plasmaPeak: dark ? PLASMA_LOOK.peakDark : PLASMA_LOOK.peakLight,
+    };
     s.jellyOn = num('--site-jelly-on', 1) > 0;
     s.still = jellyOptedOut(s.el);
     s.hazeFresh = true;
@@ -563,7 +676,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.el.removeAttribute('data-liquid-static');
     s.light = 0;
     s.tiltX = s.tiltY = 0;
-    s.pulseK = s.pulse = 0;
+    s.plasmaLevel = 0;
+    s.rings = [];
+    s.pendingRings = [];
+    s.dent = null;
   };
 
   // ── Haze canvases ─────────────────────────────────────────────────────────
@@ -579,6 +695,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.hazeFresh = true;
     s.due = 0;
     hazeSet.add(s);
+    // The plasma moves to the haze program: the rim stops drawing it.
+    s.dirty = true;
   };
   function removeHaze(s: Surface) {
     hazeSet.delete(s);
@@ -586,6 +704,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.haze.remove();
     s.haze = null;
     s.hazeFresh = false;
+    // The rim takes the plasma back.
+    s.dirty = true;
     if (s.hazeOn) {
       s.hazeOn = false;
       s.el.removeAttribute('data-jelly-haze');
@@ -711,7 +831,14 @@ export function installLiquidGlass(doc: Document = document): () => void {
   };
 
   // ── Drawing ───────────────────────────────────────────────────────────────
-  const drawSurface = (s: Surface, rect: DOMRect): boolean => {
+  /** The plasma state to upload, or null when there is nothing to draw (level 0, no live ring). */
+  const plasmaFor = (s: Surface, now: number) => {
+    const rings = packRings(s.rings, now, s.ringBuf);
+    if (s.plasmaLevel <= 0 && rings === 0) return null;
+    return { level: s.plasmaLevel, rings: s.ringBuf };
+  };
+
+  const drawSurface = (s: Surface, rect: DOMRect, now: number = win.performance.now()): boolean => {
     const r = renderer;
     if (!r?.ready || !s.canvas || !s.el.isConnected) return false;
     // Never draw into a canvas that is no longer in its host: put it back first (see `repairLayers`).
@@ -764,10 +891,23 @@ export function installLiquidGlass(doc: Document = document): () => void {
       lightZ: LIGHT_HEIGHT,
       lightOn: s.light,
       tilt: [s.tiltX, s.tiltY],
-      jelly: s.pulse > 0 ? { ...s.look, plasma: Math.min(1, s.look.plasma + s.pulse) } : s.look,
+      jelly: s.look,
       dispersion: JELLY_DISPERSION,
       margin: s.margin,
       lattice: s.lattice && !s.lattice.asleep ? latticeUniform(s.lattice, s.latticeBuf) : null,
+      gel: s.gel,
+      // A haze slot draws its own (moving) plasma; every other slab draws the static variant here.
+      plasma: s.haze ? null : plasmaFor(s, now),
+      dent: s.dent
+        ? {
+            x: s.dent.x,
+            y: s.dent.y,
+            depth: Math.max(0, Math.min(1, s.dent.depth / DENT.depthPx)),
+            radius: s.dent.radius,
+            stretchX: s.dent.stretchX,
+            stretchY: s.dent.stretchY,
+          }
+        : null,
     };
     return r.draw(o, s.canvas);
   };
@@ -806,6 +946,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
         flow: s.flow,
         quiet: s.quiet,
         amp,
+        gel: s.gel,
+        plasma: plasmaFor(s, win.performance.now()),
+        plasmaMotion: amp < 1 ? PLASMA_LOOK.calmMotion : 1,
       },
       time,
       s.haze,
@@ -860,19 +1003,20 @@ export function installLiquidGlass(doc: Document = document): () => void {
     }
   };
 
-  /** Sleep until the next tick is due: a timer, then one rAF, so the 12 Hz idle clock really is 12 callbacks a second. */
-  const scheduleAmbient = (now: number, hz: number) => {
-    if (hz <= 0 || hazeSet.size === 0 || raf || disposed) return;
+  /**
+   * Sleep until the next tick is due: a timer, then one driver frame, so the 12 Hz idle clock really is 12 callbacks a
+   * second. Returns true when the next tick is due within a frame (the driver should simply stay awake).
+   */
+  const scheduleAmbient = (now: number, hz: number): boolean => {
+    if (hz <= 0 || hazeSet.size === 0 || disposed) return false;
     const wait = lastTick + 1000 / hz - now;
-    if (wait <= 12) {
-      raf = win.requestAnimationFrame(frame);
-      return;
-    }
+    if (wait <= 12) return true;
     win.clearTimeout(ambientTimer);
     ambientTimer = win.setTimeout(() => {
       ambientTimer = 0;
-      if (!raf && !disposed && renderer?.ready) raf = win.requestAnimationFrame(frame);
+      if (!disposed && renderer?.ready) wakeDriver();
     }, wait - 8);
+    return false;
   };
 
   // ── Lattices and pulses ───────────────────────────────────────────────────
@@ -935,21 +1079,35 @@ export function installLiquidGlass(doc: Document = document): () => void {
     return [true, true];
   };
 
-  const onPulse = (el: Element, k: number) => {
+  /**
+   * A charge lands on a slab: queue a ring at viewport (x, y) — the slab's centre when omitted. It is converted to host
+   * px in the next rim pass, where the rect is read anyway (a bus handler never reads layout).
+   */
+  const onPulse = (el: Element, k: number, x?: number, y?: number) => {
     const s = surfaces.get(el as HTMLElement);
     if (!s?.canvas || s.still || !(k > 0)) return;
-    s.pulseK = Math.min(1, k);
-    s.pulseAt = win.performance.now();
+    const at = win.performance.now();
+    const centre = !Number.isFinite(x) || !Number.isFinite(y);
+    s.pendingRings.push({ x: centre ? NaN : x!, y: centre ? NaN : y!, q: Math.min(1, k), at });
+    if (s.pendingRings.length > PLASMA_LOOK.ringsPerSurface)
+      s.pendingRings.splice(0, s.pendingRings.length - PLASMA_LOOK.ringsPerSurface);
     requestFrame();
   };
+  const onPlasmaLevel = (el: Element, level: number) => {
+    const s = surfaces.get(el as HTMLElement);
+    if (!s) return;
+    const target = s.still ? 0 : Math.max(0, Math.min(1, Number.isFinite(level) ? level : 0));
+    if (target === s.plasmaTarget) return;
+    s.plasmaTarget = target;
+    if (s.canvas) requestFrame();
+  };
 
-  const frame = () => {
-    raf = 0;
+  const frame = (): boolean => {
     if (ambientTimer) {
       win.clearTimeout(ambientTimer);
       ambientTimer = 0;
     }
-    if (disposed || !renderer?.ready) return;
+    if (disposed || !renderer?.ready) return false;
     const now = win.performance.now();
     const dt = Math.min(0.05, Math.max(0.001, (now - lastFrame) / 1000 || 0.016));
     lastFrame = now;
@@ -964,8 +1122,11 @@ export function installLiquidGlass(doc: Document = document): () => void {
       rimWanted = again;
     }
     pointerMoved = false;
-    if (again) requestFrame();
-    else scheduleAmbient(now, hz);
+    if (again) {
+      rimWanted = true;
+      return true;
+    }
+    return scheduleAmbient(now, hz);
   };
 
   /** The event-driven rim: light, tilt, refraction fade, lattices, pulses. Returns whether it is still moving. */
@@ -1022,19 +1183,45 @@ export function installLiquidGlass(doc: Document = document): () => void {
       if (squished) render = true;
       if (squishing) again = true;
 
-      // Charge pulse.
-      if (s.pulseK > 0) {
-        const level = pulseLevel(s.pulseK, now - s.pulseAt);
-        if (level !== s.pulse) {
-          s.pulse = level;
-          render = true;
+      // Dormant plasma: ease toward the bus level (0 at rest).
+      let plasmaMoved = false;
+      if (s.plasmaLevel !== s.plasmaTarget) {
+        s.plasmaLevel = easePlasma(s.plasmaLevel, s.plasmaTarget, dt * 1000);
+        plasmaMoved = true;
+        if (s.plasmaLevel !== s.plasmaTarget) again = true;
+      }
+
+      // Charge rings: place the queued ones (viewport → host px), drop the spent ones.
+      if (s.pendingRings.length) {
+        for (const p of s.pendingRings) {
+          const x = Number.isNaN(p.x) ? s.width / 2 : p.x - rect.left - s.el.clientLeft;
+          const y = Number.isNaN(p.y) ? s.height / 2 : p.y - rect.top - s.el.clientTop;
+          s.rings = addRing(s.rings, { x, y, q: p.q, at: p.at });
         }
-        if (level > 0) again = true;
-        else s.pulseK = 0;
+        s.pendingRings = [];
+      }
+      if (s.rings.length) {
+        const reach = Math.hypot(s.width, s.height);
+        s.rings = s.rings.filter((r) => ringAlive(r, now, reach));
+        plasmaMoved = true;
+        if (s.rings.length) again = true;
+      }
+      if (plasmaMoved) {
+        if (s.haze) {
+          s.hazeFresh = true;
+          again = true;
+        } else render = true;
+      }
+
+      // The dent: drawn only while physics holds one (`dentOf` non-null).
+      const dent = dentOf(s.el);
+      if (!sameDent(dent, s.dent)) {
+        s.dent = dent ? { ...dent } : null;
+        render = true;
       }
 
       if (render) {
-        drawSurface(s, rect);
+        drawSurface(s, rect, now);
         s.dirty = false;
       }
     }
@@ -1043,20 +1230,26 @@ export function installLiquidGlass(doc: Document = document): () => void {
     return again;
   };
 
-  /** A rim frame (pointer, size, theme, scroll, snapshot, lattice, pulse): reads rects and redraws what changed. */
+  /** Wake the engine's driver on the one jelly frame loop (order 20: after physics, before arcs). */
+  const wakeDriver = () => {
+    if (disposed) return;
+    driver ??= drive(frame, { order: 20 }, win as Window & typeof globalThis);
+    driver.wake();
+  };
+  /** A rim frame (pointer, size, theme, scroll, snapshot, lattice, plasma, ring, dent): reads rects, redraws changes. */
   const requestFrame = () => {
     rimWanted = true;
-    if (raf || disposed || !renderer?.ready) return;
-    raf = win.requestAnimationFrame(frame);
+    if (driver?.awake || disposed || !renderer?.ready) return;
+    wakeDriver();
   };
   /** A frame for the ambient clock only (no rect reads unless the rim also wants one). */
   const wakeAmbient = () => {
-    if (raf || disposed || !renderer?.ready) return;
-    raf = win.requestAnimationFrame(frame);
+    if (driver?.awake || disposed || !renderer?.ready) return;
+    wakeDriver();
   };
   const stopFrames = () => {
-    if (raf) win.cancelAnimationFrame(raf);
-    raf = 0;
+    driver?.stop();
+    driver = null;
     win.clearTimeout(ambientTimer);
     ambientTimer = 0;
   };
@@ -1204,8 +1397,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
     attributeFilter: ['class', 'style', 'data-theme'],
   });
   Object.values(queries).forEach((q) => q.addEventListener('change', onPreference));
-  doc.addEventListener('pointermove', onMove, { passive: true });
-  doc.addEventListener('pointerout', onLeave, { passive: true });
   doc.addEventListener('scroll', onScroll, { passive: true, capture: true });
   doc.addEventListener('visibilitychange', onVisibility);
   win.addEventListener('resize', onResize, { passive: true });
@@ -1213,16 +1404,24 @@ export function installLiquidGlass(doc: Document = document): () => void {
   win.addEventListener('blur', onBlur);
   win.addEventListener('focus', onFocus);
   doc.addEventListener('keydown', onInput, { passive: true, capture: true });
-  doc.addEventListener('pointerdown', onInput, { passive: true, capture: true });
   doc.addEventListener('wheel', onInput, { passive: true, capture: true });
   const unsubscribe = [
+    // Pointer input through the one jelly pointer hub (capture, passive, on the window).
+    onJellyPointer('pointermove', onMove, win),
+    onJellyPointer('pointerout', onLeave, win),
+    onJellyPointer('pointerdown', onInput, win),
     onJellyEnvChange(onEnv, doc),
+    // Lattice drives, impulses and the dent (`setDent`) all wake through here.
     onLatticeWake((el) => {
       wakeQueue.add(el);
       requestFrame();
     }),
-    jellyBus.on('arc:strike', (p) => onPulse(p.el, Math.min(1, p.energy))),
-    jellyBus.on('body:release', (p) => onPulse(p.el, Math.min(1, p.energy * RELEASE_PULSE))),
+    jellyBus.on('plasma:level', (p) => onPlasmaLevel(p.el, p.level)),
+    jellyBus.on('charge:pulse', (p) => onPulse(p.el, p.q, p.x, p.y)),
+    jellyBus.on('arc:strike', (p) => onPulse(p.el, Math.min(1, p.energy), p.x, p.y)),
+    jellyBus.on('body:release', (p) =>
+      onPulse(p.el, Math.min(1, p.energy * RELEASE_PULSE), p.x, p.y),
+    ),
   ];
   pulseSinks.add(onPulse);
   scheduleReconcile();
@@ -1237,7 +1436,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
     wakeQueue.clear();
     win.removeEventListener('focus', onFocus);
     doc.removeEventListener('keydown', onInput, true);
-    doc.removeEventListener('pointerdown', onInput, true);
     doc.removeEventListener('wheel', onInput, true);
     win.clearTimeout(mutationTimer);
     win.clearTimeout(scrollTimer);
@@ -1246,8 +1444,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
     visibility.disconnect();
     sizes.disconnect();
     Object.values(queries).forEach((q) => q.removeEventListener('change', onPreference));
-    doc.removeEventListener('pointermove', onMove);
-    doc.removeEventListener('pointerout', onLeave);
     doc.removeEventListener('scroll', onScroll, true);
     doc.removeEventListener('visibilitychange', onVisibility);
     win.removeEventListener('resize', onResize);
