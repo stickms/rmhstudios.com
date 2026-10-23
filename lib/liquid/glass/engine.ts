@@ -195,6 +195,8 @@ interface Surface {
   look: JellyLook;
   flow: [number, number, number];
   quiet: number;
+  /** Extra haze swing in the bevel (`--site-jelly-haze-edge`), absolute alpha. */
+  edge: number;
   /** `--site-jelly-on` > 0. */
   jellyOn: boolean;
   /** Rim canvas overdraw past the host, px (fixed at activation). */
@@ -535,7 +537,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       still: false,
       look: { ...NO_LOOK, seed: seedFor(nextId) },
       flow: [1, 1, 0],
-      quiet: 0.35,
+      quiet: 0.75,
+      edge: 0,
       jellyOn: true,
       margin: 0,
       haze: null,
@@ -609,7 +612,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       Math.max(0, num('--jelly-flow-eddy', s.role === 'chrome' ? 0 : 1)),
       axis,
     ];
-    s.quiet = Math.max(0, Math.min(1, num('--site-jelly-quiet', 0.35)));
+    s.quiet = Math.max(0, Math.min(1, num('--site-jelly-quiet', 0.75)));
+    s.edge = Math.max(0, Math.min(0.3, num('--jelly-haze-edge', num('--site-jelly-haze-edge', 0))));
     // #989 gel tokens (U4's `--gel-*`), with fallbacks while a theme has none.
     const rgba = (name: string, fallback: RGBA): [number, number, number, number] => {
       const css = raw(name);
@@ -953,6 +957,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
         look: s.look,
         flow: s.flow,
         quiet: s.quiet,
+        edge: s.edge,
         amp,
         gel: s.gel,
         plasma: plasmaFor(s, win.performance.now()),
@@ -998,6 +1003,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       s.due = hz > 0 ? nextDue(now, hz, s.role) : now;
     }
     if (!ticking) return;
+    // Idle CSS carriers step on this frame too (lib/jelly/flow-carriers.ts), so rest stays one frame per tick.
+    jellyBus.emit('ambient:tick', {});
     const interval = lastTick ? now - lastTick : 0;
     lastTick = now;
     if (interval > 0) {

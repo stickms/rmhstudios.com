@@ -11,12 +11,15 @@ import { createJellyBus, type JellyBus } from '../bus';
 import {
   OFFSCREEN_DETACH_MS,
   cappedFlowSpeed,
+  CARRIER_IDLE_ATTR,
+  CARRIER_MAX_SPEED,
+  CARRIER_MIN_DRIFT_PX_S,
   driftPerSpeed,
   installJellyFlow,
   phaseFor,
 } from '../flow-carriers';
 import type { JellyEntry, JellyRegistry, JellyRole } from '../registry';
-import { AMBIENT_BOUNDS, JELLY_BUDGETS, type JellyBudget } from '../tiers';
+import { AMBIENT_BOUNDS, IDLE_AFTER_MS, JELLY_BUDGETS, type JellyBudget } from '../tiers';
 
 // ── A tiny fake DOM ─────────────────────────────────────────────────────────
 
@@ -294,7 +297,7 @@ describe('carrier DOM contract (W1-D)', () => {
     for (let i = 0; i < 50; i++) {
       const s = parseFloat(phaseFor(i));
       expect(s).toBeLessThanOrEqual(0);
-      expect(s).toBeGreaterThan(-29);
+      expect(s).toBeGreaterThan(-22);
     }
   });
 
@@ -492,13 +495,13 @@ describe('ambient off', () => {
 });
 
 describe('wide-host speed cap', () => {
-  it('matches the CSS keyframes: ~8.4 px/s at 600 px, ~16.8 px/s at 1200 px', () => {
-    expect(driftPerSpeed(600, 200)).toBeCloseTo(8.4, 1);
-    expect(driftPerSpeed(1200, 200)).toBeCloseTo(16.8, 1);
+  it('matches the CSS keyframes: ~10.5 px/s at 300 × 150, ~20.2 px/s at 600 × 200', () => {
+    expect(driftPerSpeed(300, 150)).toBeCloseTo(10.5, 1);
+    expect(driftPerSpeed(600, 200)).toBeCloseTo(20.2, 1);
   });
 
   it('leaves narrow hosts alone and caps wide ones to ≤ 12 px/s', () => {
-    expect(cappedFlowSpeed(600, 300, 1)).toBeNull();
+    expect(cappedFlowSpeed(300, 150, 1)).toBeNull();
     const s = cappedFlowSpeed(1200, 300, 1)!;
     expect(s).toBeLessThan(1);
     expect(driftPerSpeed(1200, 300) * s).toBeLessThanOrEqual(AMBIENT_BOUNDS.maxDriftPxPerSecond);
@@ -506,7 +509,18 @@ describe('wide-host speed cap', () => {
     expect(driftPerSpeed(800, 4000) * tall).toBeLessThanOrEqual(AMBIENT_BOUNDS.maxDriftPxPerSecond);
   });
 
-  it('writes --jelly-flow-speed only on wide hosts and removes it on detach', () => {
+  it('speeds small hosts up to the drift floor, within the cap and the bound', () => {
+    // A 110 × 40 button at its role speed (1.2) drifts ~4.4 px/s: lifted to the floor.
+    const btn = cappedFlowSpeed(110, 40, 1.2)!;
+    expect(btn).toBeGreaterThan(1.2);
+    expect(driftPerSpeed(110, 40) * btn).toBeGreaterThanOrEqual(CARRIER_MIN_DRIFT_PX_S);
+    expect(driftPerSpeed(110, 40) * btn).toBeLessThanOrEqual(AMBIENT_BOUNDS.maxDriftPxPerSecond);
+    // A 24 px chip would need more than the cap: it stops at the cap (periods stay ≥ 6 s).
+    expect(cappedFlowSpeed(24, 24, 1)).toBe(CARRIER_MAX_SPEED);
+    expect(22 / CARRIER_MAX_SPEED).toBeGreaterThanOrEqual(AMBIENT_BOUNDS.minLuminancePeriodSeconds);
+  });
+
+  it('leaves mid-size hosts alone, writes --jelly-flow-speed on wide ones, removes it on detach', () => {
     const wide = host({
       cls: ['glass-pane'],
       role: 'pane',
@@ -519,6 +533,96 @@ describe('wide-host speed cap', () => {
     stop();
     stop = () => {};
     expect(wide.el.style.getPropertyValue('--jelly-flow-speed')).toBe('');
+  });
+});
+
+describe('idle cadence (R7: ≤ the idle clock at rest, never vsync)', () => {
+  const withAnimation = (el: FakeEl, currentTime = 1000) => {
+    const anim = { currentTime: currentTime as number | null };
+    (carrierOf(el) as unknown as { getAnimations: () => unknown[] }).getAnimations = () => [anim];
+    return anim;
+  };
+
+  it('stamps html[data-jelly-idle] after IDLE_AFTER_MS and steps the paused carriers at the idle clock', () => {
+    const a = host();
+    install();
+    const anim = withAnimation(a.el);
+    vi.advanceTimersByTime(IDLE_AFTER_MS - 10);
+    expect(docRoot.hasAttribute(CARRIER_IDLE_ATTR)).toBe(false);
+    vi.advanceTimersByTime(20);
+    expect(docRoot.hasAttribute(CARRIER_IDLE_ATTR)).toBe(true);
+    // One second idle: the carriers keep moving at their real speed (each step adds the elapsed time) ...
+    vi.advanceTimersByTime(1000);
+    expect(anim.currentTime).toBeGreaterThan(1000 + 900);
+    expect(anim.currentTime).toBeLessThanOrEqual(1000 + 1000 + 1);
+  });
+
+  it('steps at most idleClockHz times a second', () => {
+    const a = host();
+    install();
+    const writes: number[] = [];
+    const anim = {
+      get currentTime() {
+        return 0;
+      },
+      set currentTime(v: number) {
+        writes.push(v);
+      },
+    };
+    (carrierOf(a.el) as unknown as { getAnimations: () => unknown[] }).getAnimations = () => [anim];
+    vi.advanceTimersByTime(IDLE_AFTER_MS + 10);
+    writes.length = 0;
+    vi.advanceTimersByTime(1000);
+    expect(writes.length).toBeGreaterThan(0);
+    expect(writes.length).toBeLessThanOrEqual(JELLY_BUDGETS.full.idleClockHz);
+  });
+
+  it("rides the engine's ambient tick instead of a second clock", () => {
+    const a = host();
+    install();
+    const anim = withAnimation(a.el, 0);
+    vi.advanceTimersByTime(IDLE_AFTER_MS + 10);
+    let writes = 0;
+    let t = anim.currentTime as number;
+    Object.defineProperty(anim, 'currentTime', {
+      get: () => t,
+      set: (v: number) => {
+        writes++;
+        t = v;
+      },
+    });
+    // The engine ticks at the same rate; the carriers step on its frames and their own timer stands down.
+    for (let i = 0; i < 12; i++) {
+      vi.advanceTimersByTime(1000 / 12);
+      bus.emit('ambient:tick', {});
+    }
+    expect(writes).toBeGreaterThanOrEqual(12);
+    expect(writes).toBeLessThanOrEqual(13);
+  });
+
+  it('any input clears the stamp and stops the steps; teardown removes it', () => {
+    const a = host();
+    install();
+    const anim = withAnimation(a.el);
+    vi.advanceTimersByTime(IDLE_AFTER_MS + 10);
+    expect(docRoot.hasAttribute(CARRIER_IDLE_ATTR)).toBe(true);
+    fireDoc('keydown', body);
+    expect(docRoot.hasAttribute(CARRIER_IDLE_ATTR)).toBe(false);
+    const at = anim.currentTime;
+    vi.advanceTimersByTime(500);
+    expect(anim.currentTime).toBe(at);
+    vi.advanceTimersByTime(IDLE_AFTER_MS);
+    expect(docRoot.hasAttribute(CARRIER_IDLE_ATTR)).toBe(true);
+    stop();
+    stop = () => {};
+    expect(docRoot.hasAttribute(CARRIER_IDLE_ATTR)).toBe(false);
+  });
+
+  it('the CSS pauses carriers under the stamp (the steps are what moves them)', () => {
+    const css = readFileSync(join(process.cwd(), 'app', 'jelly-material.css'), 'utf8');
+    expect(css).toMatch(
+      /html\[data-jelly-idle\] \.jelly-flow > span,[\s\S]*?animation-play-state: paused;/,
+    );
   });
 });
 

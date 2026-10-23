@@ -35,8 +35,9 @@
  * - **Haze canvas:** a host with `data-jelly-haze="on"` gets no carrier; the engine's haze owns its interior.
  * - **Ambient off** (`jellyMode().ambient === false`: still, degraded, game playing, hidden tab): every carrier is
  *   removed, not just paused.
- * - **Wide hosts:** the current band's travel scales with the host's width (~17 px/s at 1200 px). A per-host
- *   `--jelly-flow-speed` caps every carrier's surface drift at `AMBIENT_BOUNDS.maxDriftPxPerSecond` (12 px/s).
+ * - **Host size:** the carrier's travel scales with the host's size (~20 px/s at 600 px, ~4 px/s on a button). A
+ *   per-host `--jelly-flow-speed` caps every carrier's surface drift at `AMBIENT_BOUNDS.maxDriftPxPerSecond` (12 px/s)
+ *   and lifts a small host's to {@link CARRIER_MIN_DRIFT_PX_S} (6 px/s), so a button's current is seen to move.
  * - **Scrolling:** nothing is attached while a scroll is in flight (the registry's rects are stale, and attaching
  *   during a fling is main-thread work at the worst moment); the registry refreshes at scroll end and the live set is
  *   re-ranked then. Carriers already running are paused through `html[data-scrolling]` (see below).
@@ -54,6 +55,18 @@
  * mounts from an idle callback after hydration (`hooks/useLiquidInteractions.ts`), so it never adds nodes React is
  * about to hydrate.
  *
+ * ## Idle cadence (R7)
+ *
+ * A running CSS animation keeps the compositor producing a frame on every vsync for as long as it runs: with carriers
+ * on screen a page at rest drew 60 frames/s (more on a high-refresh panel), against the idle floor of
+ * `jellyBudget().idleClockHz` (12 Hz). After `IDLE_AFTER_MS` without input (pointer, key, wheel, scroll) this service
+ * stamps `html[data-jelly-idle]`; the CSS pauses every carrier under it, and the service advances their animations'
+ * `currentTime` in steps instead — on the engine's ambient haze tick (`ambient:tick` on the bus) when there is one,
+ * so haze and carriers share a frame, else on its own timer at the idle clock's rate. No `requestAnimationFrame`, no
+ * per-frame work: one write per carrier animation per step, and Chrome draws nothing between steps. The carriers
+ * keep moving at the same speed (each step adds the real elapsed time), only at 12 steps a second. Any input clears
+ * the stamp and the compositor takes the animations back from where the steps left them, with no jump.
+ *
  * ## `html[data-scrolling]`
  *
  * jelly-material.css pauses carriers under `html[data-scrolling]` (04 §3.3). `lib/scrollbar-reveal.ts` already stamps
@@ -64,6 +77,7 @@
  * a stamp it did not set, so the scrollbar's 900 ms reveal is never cut short.
  */
 import { jellyBus as defaultBus, type JellyBus } from './bus';
+import { onJellyPointer } from './pointer';
 import {
   SCROLL_END_MS,
   jellyRegistry,
@@ -74,6 +88,7 @@ import {
 } from './registry';
 import {
   AMBIENT_BOUNDS,
+  IDLE_AFTER_MS,
   JELLY_LAYER_SELECTOR,
   jellyBudget,
   jellyMode,
@@ -81,11 +96,17 @@ import {
   type JellyBudget,
 } from './tiers';
 
+/**
+ * Stamped on `<html>` while the page is idle (no input for `IDLE_AFTER_MS`). jelly-material.css pauses every carrier
+ * under it and this service steps them instead, so the page at rest costs the idle clock's frames, not vsync's.
+ */
+export const CARRIER_IDLE_ATTR = 'data-jelly-idle';
+
 /** How long a carrier survives offscreen (hidden) before it is removed (04 §3.3). */
 export const OFFSCREEN_DETACH_MS = 2000;
 
 /** Seconds of `jelly-drift`'s period: the phase offset is spread over one period. */
-const DRIFT_PERIOD_S = 29;
+const DRIFT_PERIOD_S = 22;
 
 /** Never given a carrier: void / replaced elements and form controls cannot (or must not) hold a child. */
 const VOID_TAGS = new Set([
@@ -132,12 +153,12 @@ const ROLE_SPEEDS: readonly (readonly [string, number])[] = [
 
 /**
  * Surface speed of the carrier's paint, in px/s per unit of `--jelly-flow-speed`, derived from the keyframes in
- * jelly-material.css (spans are 140% of the host):
+ * jelly-material.css (spans are 160% of the host):
  *
- * - `jelly-current`: ±18% of the span over 36 s, linear → 0.36 × 1.4 × W / 36 = 0.014 W.
- * - `jelly-drift`: the largest segment is 7% of 1.4 W across and 5% of 1.4 H down in 14.5 s (half of 29 s), plus a
- *   5° turn about the span centre seen at the haze features (~0.3 × the span diagonal) →
- *   hypot(0.00676 W, 0.00483 H) + 0.00253 × hypot(W, H).
+ * - `jelly-current`: ±24% of the span over 26 s, linear → 0.48 × 1.6 × W / 26 = 0.02954 W.
+ * - `jelly-drift`: the largest leg is 15% of 1.6 W across and 10% of 1.6 H down in 11 s (half of 22 s), plus a 14°
+ *   turn about the span centre seen at the haze features (~0.3 × the span diagonal) →
+ *   hypot(0.02182 W, 0.01455 H) + 0.01066 × hypot(W, H).
  *
  * The bound is the larger of the two. The theme gain (`--site-jelly-flow-speed`) is ≤ 1 in every theme and `calm`'s
  * tempo only slows things further, so the role speed is the worst case.
@@ -145,22 +166,43 @@ const ROLE_SPEEDS: readonly (readonly [string, number])[] = [
 export function driftPerSpeed(width: number, height: number): number {
   const w = Math.max(0, width);
   const h = Math.max(0, height);
-  const current = 0.014 * w;
-  const drift = Math.hypot(0.00676 * w, 0.00483 * h) + 0.00253 * Math.hypot(w, h);
+  const current = 0.02954 * w;
+  const drift = Math.hypot(0.02182 * w, 0.01455 * h) + 0.01066 * Math.hypot(w, h);
   return Math.max(current, drift);
 }
 
 /**
- * The `--jelly-flow-speed` a host may run at so its drift stays ≤ `AMBIENT_BOUNDS.maxDriftPxPerSecond`, or `null`
- * when the role speed is already within the bound (no inline override needed). Pure.
+ * The slowest surface drift a carrier is left at, px/s (V1). The keyframes move in percent of the host, so a 110 × 40
+ * button at role speed travelled ~4 px/s and a 44 px icon button ~2 px/s: nobody saw them move. Small hosts are sped
+ * up to this, never past `AMBIENT_BOUNDS.maxDriftPxPerSecond`.
+ */
+export const CARRIER_MIN_DRIFT_PX_S = 6;
+/**
+ * The fastest `--jelly-flow-speed` a small host is sped up to: 22 s / 3 ≈ 7.3 s per drift leg and 26 s / 3 ≈ 8.7 s per
+ * current sweep, both above `AMBIENT_BOUNDS.minLuminancePeriodSeconds` (6 s).
+ */
+export const CARRIER_MAX_SPEED = 3;
+
+/**
+ * The `--jelly-flow-speed` a host should run at so its drift stays within [{@link CARRIER_MIN_DRIFT_PX_S},
+ * `AMBIENT_BOUNDS.maxDriftPxPerSecond`] px/s, or `null` when the role speed already does (no inline override needed).
+ * Wide hosts are slowed to the bound; small ones are sped up to the floor, at most to {@link CARRIER_MAX_SPEED}. Pure.
  */
 export function cappedFlowSpeed(width: number, height: number, roleSpeed: number): number | null {
   const per = driftPerSpeed(width, height);
   if (per <= 0) return null;
   const max = AMBIENT_BOUNDS.maxDriftPxPerSecond / per;
-  if (roleSpeed <= max) return null;
-  // Floor to 2 dp so the rounded value can never exceed the bound.
-  return Math.max(0.01, Math.floor(max * 100) / 100);
+  if (roleSpeed > max) {
+    // Floor to 2 dp so the rounded value can never exceed the bound.
+    return Math.max(0.01, Math.floor(max * 100) / 100);
+  }
+  const min = Math.min(CARRIER_MIN_DRIFT_PX_S / per, CARRIER_MAX_SPEED, max);
+  if (roleSpeed >= min) return null;
+  // Ceil to 2 dp toward the floor, but never past the bound or the cap.
+  return Math.min(
+    Math.ceil(min * 100) / 100,
+    Math.floor(Math.min(max, CARRIER_MAX_SPEED) * 100) / 100,
+  );
 }
 
 /**
@@ -396,6 +438,100 @@ export function installJellyFlow(doc: Document, options: JellyFlowOptions = {}):
     passTimer = setTimeout(pass, 0);
   };
 
+  // ── Idle cadence (R7) ───────────────────────────────────────────────────────
+
+  const clock = () => win.performance?.now?.() ?? Date.now();
+  let idle = false;
+  // Measured from navigation, not from this install: the service mounts in an idle callback after hydration, which
+  // on a slow phone is seconds after load, and the page has been at rest since load all the same.
+  let lastInput = typeof win.performance?.now === 'function' ? 0 : clock();
+  let lastStep = 0;
+  let lastAmbient = Number.NEGATIVE_INFINITY;
+  let idleTimer: ReturnType<typeof setTimeout> | undefined;
+  let stepTimer: ReturnType<typeof setTimeout> | undefined;
+  const idleHz = () => Math.max(0, budgetOf().idleClockHz);
+
+  /** A host whose carrier the CSS pauses for its own reason (focus): the steps leave it paused too. */
+  const heldStill = (host: Element): boolean => {
+    try {
+      return (
+        host.matches(':focus-visible') ||
+        (host.matches(FIELD_SELECTOR) && host.matches(':focus-within'))
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  /** Advance every shown carrier's animations by the real time since the last step. */
+  const step = (t: number) => {
+    const dt = t - lastStep;
+    lastStep = t;
+    if (!(dt > 0)) return;
+    for (const [host, c] of carriers) {
+      if (!c.shown || heldStill(host)) continue;
+      for (const a of c.node.getAnimations?.({ subtree: true }) ?? []) {
+        const ct = a.currentTime;
+        if (typeof ct === 'number') a.currentTime = ct + dt;
+      }
+    }
+  };
+
+  const scheduleStep = () => {
+    if (stepTimer !== undefined) clearTimeout(stepTimer);
+    stepTimer = undefined;
+    const hz = idleHz();
+    if (!idle || disposed || hz <= 0) return;
+    stepTimer = setTimeout(() => {
+      stepTimer = undefined;
+      if (!idle || disposed) return;
+      const t = clock();
+      // The engine's haze tick already stepped the carriers on its frame: do not make a second one.
+      if (t - lastAmbient > 1500 / Math.max(1, idleHz())) step(t);
+      scheduleStep();
+    }, 1000 / hz);
+  };
+
+  const enterIdle = () => {
+    idleTimer = undefined;
+    if (disposed) return;
+    const left = lastInput + IDLE_AFTER_MS - clock();
+    if (left > 0) {
+      idleTimer = setTimeout(enterIdle, left);
+      return;
+    }
+    if (idle) return;
+    idle = true;
+    lastStep = clock();
+    root.setAttribute(CARRIER_IDLE_ATTR, '');
+    scheduleStep();
+  };
+
+  const onInput = () => {
+    lastInput = clock();
+    if (idle) {
+      idle = false;
+      if (stepTimer !== undefined) clearTimeout(stepTimer);
+      stepTimer = undefined;
+      root.removeAttribute(CARRIER_IDLE_ATTR);
+    }
+    if (idleTimer === undefined && !disposed) idleTimer = setTimeout(enterIdle, IDLE_AFTER_MS);
+  };
+
+  const offAmbient = bus.on('ambient:tick', () => {
+    lastAmbient = clock();
+    if (idle) step(lastAmbient);
+  });
+  const pointerTarget =
+    typeof (win as Partial<Window>).addEventListener === 'function' ? win : undefined;
+  const offPointer = [
+    onJellyPointer('pointermove', onInput, pointerTarget),
+    onJellyPointer('pointerdown', onInput, pointerTarget),
+  ];
+  doc.addEventListener('keydown', onInput, { capture: true, passive: true });
+  doc.addEventListener('wheel', onInput, { capture: true, passive: true });
+  idleTimer = setTimeout(enterIdle, Math.max(0, lastInput + IDLE_AFTER_MS - clock()));
+
   // ── html[data-scrolling] ────────────────────────────────────────────────────
 
   let ownStamp = false;
@@ -411,6 +547,7 @@ export function installJellyFlow(doc: Document, options: JellyFlowOptions = {}):
     }
   };
   const onScroll = (event: Event) => {
+    onInput();
     const target = event.target as Node | null;
     const documentScroll = target === doc || target === root || target === doc.body;
     if (documentScroll) {
@@ -461,6 +598,13 @@ export function installJellyFlow(doc: Document, options: JellyFlowOptions = {}):
     doc.removeEventListener('scroll', onScroll, { capture: true });
     doc.removeEventListener('scrollend', onScrollEnd, { capture: true });
     endScroll();
+    offAmbient();
+    for (const off of offPointer) off();
+    doc.removeEventListener('keydown', onInput, { capture: true });
+    doc.removeEventListener('wheel', onInput, { capture: true });
+    if (idleTimer !== undefined) clearTimeout(idleTimer);
+    if (stepTimer !== undefined) clearTimeout(stepTimer);
+    if (idle) root.removeAttribute(CARRIER_IDLE_ATTR);
     detachAll();
   };
 }
