@@ -92,7 +92,6 @@ export default function SyncStatus() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        aria-haspopup="dialog"
         className="flex items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1.5 text-xs font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
         title={t('sync-status-title', { defaultValue: 'Sync status' })}
       >
@@ -103,7 +102,7 @@ export default function SyncStatus() {
 
       {panel.present && (
         <div
-          role="dialog"
+          role="group"
           aria-label={t('sync-status-title', { defaultValue: 'Sync status' })}
           data-motion="pop"
           data-state={panel.state}

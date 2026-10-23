@@ -13,6 +13,7 @@ import {
   numberLabel,
 } from '@/lib/roulette/logic';
 import type { BetType } from '@/lib/roulette/logic';
+import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
 
 // ── Board Layout ─────────────────────────────────────────────────
@@ -308,9 +309,11 @@ export function RouletteTable({ coins }: Props) {
 
           {/* Top line bet (0, 00, 1, 2, 3) */}
           {isBetting && (
-            <button
+            <Button
+              type="button"
+              variant="secondary"
               onClick={() => handlePlaceBet('topline', [0, DOUBLE_ZERO, 1, 2, 3])}
-              className="w-full min-h-7 bg-site-surface border border-site-border text-site-text text-[10px] font-bold rounded transition-colors hover:bg-site-surface-hover active:scale-[0.98] relative"
+              className="h-auto w-full min-h-7 whitespace-normal px-2 text-[10px] font-bold rounded"
             >
               {t('top-line-bet', { defaultValue: 'Top Line (0, 00, 1-3) 6:1' })}
               <ChipOverlay
@@ -318,7 +321,7 @@ export function RouletteTable({ coins }: Props) {
                 numbers={[0, DOUBLE_ZERO, 1, 2, 3]}
                 getChipAmount={getChipAmount}
               />
-            </button>
+            </Button>
           )}
 
           {/* Number grid: 12 rows x 3 columns with interactive edge/corner bet dots */}
@@ -457,11 +460,13 @@ export function RouletteTable({ coins }: Props) {
           {/* Column bets */}
           <div className="grid grid-cols-3 gap-0.5">
             {(['column1', 'column2', 'column3'] as BetType[]).map((type, i) => (
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
                 disabled={!isBetting}
-                className={`relative min-h-9 bg-site-surface border border-site-border text-site-text text-[10px] sm:text-[11px] font-bold rounded transition-colors hover:bg-site-surface-hover active:scale-95 ${
+                className={`h-auto min-h-9 whitespace-normal px-2 text-[10px] sm:text-[11px] font-bold rounded ${
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 }`}
               >
@@ -471,18 +476,20 @@ export function RouletteTable({ coins }: Props) {
                   numbers={getOutsideBetNumbers(type)}
                   getChipAmount={getChipAmount}
                 />
-              </button>
+              </Button>
             ))}
           </div>
 
           {/* Dozen bets */}
           <div className="grid grid-cols-3 gap-0.5">
             {(['dozen1', 'dozen2', 'dozen3'] as BetType[]).map((type, i) => (
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
                 disabled={!isBetting}
-                className={`relative min-h-9 bg-site-surface border border-site-border text-site-text text-[10px] sm:text-[11px] font-bold rounded transition-colors hover:bg-site-surface-hover active:scale-95 ${
+                className={`h-auto min-h-9 whitespace-normal px-2 text-[10px] sm:text-[11px] font-bold rounded ${
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 }`}
               >
@@ -496,7 +503,7 @@ export function RouletteTable({ coins }: Props) {
                   numbers={getOutsideBetNumbers(type)}
                   getChipAmount={getChipAmount}
                 />
-              </button>
+              </Button>
             ))}
           </div>
 

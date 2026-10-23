@@ -24,7 +24,7 @@ export default function WatchPartyPanel({ onClose }: { onClose: () => void }) {
   ];
   return (
     <div
-      role="dialog"
+      role="group"
       aria-label={t('party-title', { defaultValue: 'Watch party games' })}
       className="fixed right-3 top-16 z-50 flex max-h-[min(36rem,calc(100dvh-5rem))] w-[min(26rem,calc(100vw-1.5rem))] flex-col rounded-(--app-radius) app-glass"
     >

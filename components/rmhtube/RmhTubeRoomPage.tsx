@@ -441,7 +441,7 @@ export default function RmhTubeRoomPage() {
               <>
                 <button
                   onClick={() => setSidebarOpen((s) => !s)}
-                  className="fixed right-4 top-20 z-40 rounded-(--app-radius-sm) px-3 py-1.5 text-xs font-medium transition-colors bg-(--app-surface) text-(--app-text-muted) hover:text-(--app-text) border border-(--app-border)"
+                  className="fixed right-4 top-20 z-40 rounded-(--app-radius-sm) app-glass px-3 py-1.5 text-xs font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
                 >
                   {sidebarOpen ? t("hide-chat", { defaultValue: "Hide Chat" }) : t("show-chat", { defaultValue: "Show Chat" })}
                 </button>
