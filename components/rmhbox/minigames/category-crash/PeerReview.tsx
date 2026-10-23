@@ -195,14 +195,14 @@ export default function PeerReview({
             return (
               <div
                 key={answerSet.anonymousLabel}
-                className={`flex items-center justify-between rounded-(--app-radius-sm) border px-3 py-2 text-sm transition-colors ${
+                className={`glass-fill flex items-center justify-between rounded-(--app-radius-sm) border px-3 py-2 text-sm transition-colors ${
                   isOwn
                     ? 'border-(--app-accent)/40 bg-(--app-accent-dim)'
                     : isEmpty
-                      ? 'border-(--app-border)/30 bg-(--app-surface)/50 opacity-40'
+                      ? 'border-(--app-border)/30 opacity-40'
                       : isDuplicate
                         ? 'border-(--app-warning)/40 bg-(--app-warning-dim) text-(--app-warning)'
-                        : 'border-(--app-border) bg-(--app-surface)'
+                        : 'border-(--app-border) '
                 }`}
               >
                 <span className="flex items-center gap-2 min-w-0 flex-1">
@@ -243,10 +243,10 @@ export default function PeerReview({
                         <button
                           type="button"
                           onClick={() => onVote(answerSet.anonymousLabel, activeCatIndex, 'crash')}
-                          className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                          className={`glass-fill flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
                             myVote === 'crash'
                               ? 'bg-(--app-danger)/30 text-(--app-danger) border border-(--app-danger)/40'
-                              : 'bg-(--app-surface) text-(--app-text-muted) border border-(--app-border) hover:bg-(--app-danger-dim) hover:text-(--app-danger)'
+                              : 'text-(--app-text-muted) border border-(--app-border) hover:bg-(--app-danger-dim) hover:text-(--app-danger)'
                           }`}
                         >
                           <Flame className="h-3 w-3" />
@@ -255,10 +255,10 @@ export default function PeerReview({
                         <button
                           type="button"
                           onClick={() => onVote(answerSet.anonymousLabel, activeCatIndex, 'safe')}
-                          className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                          className={`glass-fill flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
                             myVote === 'safe'
                               ? 'bg-(--app-success)/30 text-(--app-success) border border-(--app-success)/40'
-                              : 'bg-(--app-surface) text-(--app-text-muted) border border-(--app-border) hover:bg-(--app-success-dim) hover:text-(--app-success)'
+                              : 'text-(--app-text-muted) border border-(--app-border) hover:bg-(--app-success-dim) hover:text-(--app-success)'
                           }`}
                         >
                           <Shield className="h-3 w-3" />

@@ -549,7 +549,7 @@ export default function UndercoverEditorGame({
                     </p>
                     <button
                       onClick={handleUnsubmitSentence}
-                      className="rounded-(--app-radius-sm) bg-(--app-surface) border border-(--app-border) px-3 py-2 text-xs text-(--app-text-muted) hover:bg-(--app-border) transition-colors"
+                      className="glass-fill rounded-(--app-radius-sm) px-3 py-2 text-xs text-(--app-text-muted) hover:bg-(--app-border) transition-colors"
                     >
                       {t("edit", { defaultValue: "Edit" })}
                     </button>
@@ -638,7 +638,7 @@ export default function UndercoverEditorGame({
             {currentReadingStory && (
               <div className="w-full max-w-lg flex flex-col gap-3">
                 {/* Slim "Story so far" panel — shows story number, prompt as sentence, revealed sentences */}
-                <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) p-3">
+                <div className="glass-fill rounded-(--app-radius-sm) p-3">
                   <p className="mb-2 text-[10px] uppercase tracking-wider text-(--app-text-muted)">
                     {t("ue-story-number", { defaultValue: "Story {{number}}", number: readingStoryIndex + 1 })}
                   </p>
@@ -754,7 +754,7 @@ export default function UndercoverEditorGame({
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: revealIdx * 0.08, duration: 0.35 }}
-                    className="flex flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4"
+                    className="glass-fill flex flex-col gap-3 rounded-(--app-radius) p-4"
                   >
                     {/* Story header with match result badge */}
                     <div className="flex items-center justify-between">

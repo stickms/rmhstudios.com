@@ -109,7 +109,7 @@ export default function WritingPhase({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4"
+              className="app-glass rounded-(--app-radius) p-4"
             >
               <div className="text-sm font-medium text-(--app-text-muted) mb-2">
                 {t("prompt-number", { defaultValue: "Prompt {{number}}", number: idx + 1 })}

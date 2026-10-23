@@ -121,7 +121,7 @@ export default function RhymeTimeResults({
           <motion.div
             key={tier}
             variants={itemVariants}
-            className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-3"
+            className="glass-fill rounded-(--app-radius) p-3"
           >
             <h3 className={`mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${config.color}`}>
               {tier === 'rare' && <Sparkles className="h-4 w-4" />}
@@ -179,7 +179,7 @@ export default function RhymeTimeResults({
       {/* Per-player breakdown */}
       <motion.div
         variants={itemVariants}
-        className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-3"
+        className="glass-fill rounded-(--app-radius) p-3"
       >
         <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
           <Star className="h-4 w-4" /> {t("player-breakdown", { defaultValue: "Player Breakdown" })}

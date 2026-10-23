@@ -15,6 +15,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { Switch } from '@/components/ui/switch';
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/components/ui/select';
 import { Gamepad2, Settings, SlidersHorizontal } from 'lucide-react';
@@ -140,18 +141,7 @@ export default function HostControls({
             <span className="text-(--app-text)">
               {t('public-lobby', { defaultValue: 'Public lobby' })}
             </span>
-            <button
-              type="button"
-              role="switch"
-              data-jelly="control"
-              aria-checked={settings.isPublic}
-              onClick={() => handleUpdateSettings({ isPublic: !settings.isPublic })}
-              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.isPublic ? 'bg-(--app-accent)' : 'bg-(--app-border)'}`}
-            >
-              <span
-                className={`inline-block h-3.5 w-3.5 rounded-full bg-(--app-text) transition-transform ${settings.isPublic ? 'translate-x-4.5' : 'translate-x-0.5'}`}
-              />
-            </button>
+            <Switch checked={settings.isPublic} onCheckedChange={(v) => handleUpdateSettings({ isPublic: v })} />
           </label>
           <label className="flex items-center justify-between text-sm">
             <span className="text-(--app-text)">
@@ -176,37 +166,13 @@ export default function HostControls({
             <span className="text-(--app-text)">
               {t('allow-mid-game-join', { defaultValue: 'Allow mid-game join' })}
             </span>
-            <button
-              type="button"
-              role="switch"
-              data-jelly="control"
-              aria-checked={settings.allowMidGameJoin}
-              onClick={() => handleUpdateSettings({ allowMidGameJoin: !settings.allowMidGameJoin })}
-              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.allowMidGameJoin ? 'bg-(--app-accent)' : 'bg-(--app-border)'}`}
-            >
-              <span
-                className={`inline-block h-3.5 w-3.5 rounded-full bg-(--app-text) transition-transform ${settings.allowMidGameJoin ? 'translate-x-4.5' : 'translate-x-0.5'}`}
-              />
-            </button>
+            <Switch checked={settings.allowMidGameJoin} onCheckedChange={(v) => handleUpdateSettings({ allowMidGameJoin: v })} />
           </label>
           <label className="flex items-center justify-between text-sm cursor-pointer">
             <span className="text-(--app-text)">
               {t('allow-spectator-promotion', { defaultValue: 'Allow spectator promotion' })}
             </span>
-            <button
-              type="button"
-              role="switch"
-              data-jelly="control"
-              aria-checked={settings.allowSpectatorPromotion}
-              onClick={() =>
-                handleUpdateSettings({ allowSpectatorPromotion: !settings.allowSpectatorPromotion })
-              }
-              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.allowSpectatorPromotion ? 'bg-(--app-accent)' : 'bg-(--app-border)'}`}
-            >
-              <span
-                className={`inline-block h-3.5 w-3.5 rounded-full bg-(--app-text) transition-transform ${settings.allowSpectatorPromotion ? 'translate-x-4.5' : 'translate-x-0.5'}`}
-              />
-            </button>
+            <Switch checked={settings.allowSpectatorPromotion} onCheckedChange={(v) => handleUpdateSettings({ allowSpectatorPromotion: v })} />
           </label>
         </div>
       )}

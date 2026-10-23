@@ -16,6 +16,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { Switch } from '@/components/ui/switch';
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/components/ui/select';
 import { RotateCcw, Minus, Plus } from 'lucide-react';
@@ -47,23 +48,7 @@ function BooleanSetting({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      data-jelly="control"
-      aria-checked={value}
-      disabled={!editable}
-      onClick={() => onChange(!value)}
-      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-        value ? 'bg-(--app-accent)' : 'bg-(--app-border)'
-      } ${!editable ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-    >
-      <span
-        className={`inline-block h-3.5 w-3.5 rounded-full bg-(--app-text) transition-transform ${
-          value ? 'translate-x-4.5' : 'translate-x-0.5'
-        }`}
-      />
-    </button>
+    <Switch checked={value} onCheckedChange={onChange} disabled={!editable} />
   );
 }
 
