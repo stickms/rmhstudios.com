@@ -368,7 +368,7 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target?.isContentEditable || target?.closest('input, textarea, select, [role="menu"], [role="listbox"], [role="dialog"]')) return;
+      if (target?.isContentEditable || target?.closest('input, textarea, select, [role=menu], [role=listbox], [role=dialog]')) return;
       const turned = e.key === 'ArrowRight'
         ? beginTurn('next', false)
         : e.key === 'ArrowLeft'

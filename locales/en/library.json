@@ -57,6 +57,7 @@
   "generate-cover": "Generate cover",
   "label-description": "Description",
   "label-title": "Title",
+  "library-dialog": "Dialog",
   "library-heading": "Library",
   "manage": "Manage",
   "manage-albums": "Create or manage albums",

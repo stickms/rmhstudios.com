@@ -28,7 +28,8 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { DialogPortal, DialogTitle } from '@/components/ui/dialog';
 import { Link } from '@tanstack/react-router';
 import { BookOpen, Crosshair, Rotate3d, Smartphone, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -139,15 +140,10 @@ export function Book3DViewer({ book, onClose }: { book: LibraryBook; onClose: ()
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     closeRef.current?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
     return () => {
-      window.removeEventListener('keydown', onKey);
       previous?.focus?.();
     };
-  }, [onClose]);
+  }, []);
 
   // The stage fills the screen and is dragged on, so the page behind it must not
   // scroll underneath.
@@ -230,15 +226,20 @@ export function Book3DViewer({ book, onClose }: { book: LibraryBook; onClose: ()
   // `LibraryContextMenu` in this same directory already portals for this reason.
   if (typeof document === 'undefined') return null;
 
-  return createPortal(
-    <div
+  return (
+    <DialogPrimitive.Root open modal={false} onOpenChange={(o) => !o && onClose()}>
+    <DialogPortal>
+    <DialogPrimitive.Content
       // `.glass-scrim` is the shared dialog-backdrop material (§5.1) — the
       // library stays visible and frosted behind the book rather than being
       // painted over, which is what makes it read as lifted off the shelf.
-      className="b3d glass-scrim"
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('book3d-open', { title: book.title, defaultValue: 'View {{title}} in 3D' })}
+      className="b3d glass-scrim outline-none"
+      aria-describedby={undefined}
+      // Focus, scroll lock and Escape stay the effects above (Escape is Radix's, below):
+      // the viewer is non-modal to Radix so its own close-button focus and body lock win.
+      onOpenAutoFocus={(e) => e.preventDefault()}
+      onCloseAutoFocus={(e) => e.preventDefault()}
+      onInteractOutside={(e) => e.preventDefault()}
       // Press the scrim to leave. Independent of the portal fix: Escape was the
       // only exit this dialog had, and a phone has no Escape. `currentTarget`
       // so a press that lands on the book, the bar or the footer does not
@@ -247,6 +248,9 @@ export function Book3DViewer({ book, onClose }: { book: LibraryBook; onClose: ()
         if (e.target === e.currentTarget) onClose();
       }}
     >
+      <DialogTitle className="sr-only">
+        {t('book3d-open', { title: book.title, defaultValue: 'View {{title}} in 3D' })}
+      </DialogTitle>
       <header className="b3d__bar">
         <div className="b3d__heading">
           <Rotate3d size={16} aria-hidden="true" />
@@ -343,7 +347,8 @@ export function Book3DViewer({ book, onClose }: { book: LibraryBook; onClose: ()
           </Link>
         </div>
       </footer>
-    </div>,
-    document.body,
+    </DialogPrimitive.Content>
+    </DialogPortal>
+    </DialogPrimitive.Root>
   );
 }
