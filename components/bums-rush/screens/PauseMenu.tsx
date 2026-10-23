@@ -20,7 +20,9 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LogOut, Play, RotateCcw, Sliders } from 'lucide-react';
 import { PaperCard } from '../paper/PaperSurface';
+import { useDialogHost } from '@/components/shared/useDialogHost';
 import { InkButton } from '../paper/InkControls';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 interface PauseMenuProps {
   onResume: () => void;
@@ -41,34 +43,57 @@ export function PauseMenu({
   levelName,
 }: PauseMenuProps) {
   const { t } = useTranslation('c-bums-rush');
-  const cardRef = useRef<HTMLDivElement | null>(null);
 
+  // The dialog mounts inside the game root (nearest `.bums-theme` to this component, which
+  // carries `data-world` and the world paper overrides), so the paper tokens still apply. Focus
+  // lands on Resume (the first control) on open. The shell is invisible and its built-in close
+  // button hidden: the PaperCard is the only thing drawn.
+  const { host, sentinel } = useDialogHost('.bums-theme');
+
+  // Escape resumes, but on its KEYUP, never on Radix's keydown dismissal. The game's input poll
+  // (useLevelSession) is skipped while paused and pauses on the `pause` binding's rising edge
+  // against the last tick it saw; resuming on keydown would hand that poll a still-held Escape —
+  // after a pause from the HUD button its last tick says "not held", so it would re-pause on the
+  // very next frame. Released first, the poll sees nothing and the menu closes exactly once.
+  // Armed only by a fresh (non-repeat) keydown while the menu is open, so the release of the
+  // Escape that opened it — or a held Escape's auto-repeat — never resumes.
+  const escapeArmed = useRef(false);
   useEffect(() => {
-    // Focus lands on the first control — Resume — so the menu is operable from
-    // the keyboard the instant it opens, and because Resume is what nine
-    // pauses in ten want. Done by query rather than by a ref on the button, so
-    // the paper primitives stay plain function components.
-    cardRef.current?.querySelector('button')?.focus();
-  }, []);
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || !escapeArmed.current) return;
+      escapeArmed.current = false;
+      onResume();
+    };
+    window.addEventListener('keyup', onKeyUp);
+    return () => window.removeEventListener('keyup', onKeyUp);
+  }, [onResume]);
 
   return (
-    <div
-      className="app-screen fixed inset-0 z-40"
-      style={{ backgroundColor: 'color-mix(in srgb, var(--bum-paper) 78%, transparent)' }}
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('pause.title', { defaultValue: 'Paused' })}
-    >
+    <>
+    {sentinel}
+    {host ? (
+    <Dialog open onOpenChange={(next) => { if (!next) onResume(); }}>
+      <DialogContent
+        container={host}
+        overlayClassName="bg-bum-paper/78"
+        data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
+        className="w-auto max-w-sm gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
+        onEscapeKeyDown={(event) => {
+          event.preventDefault();
+          if (!event.repeat) escapeArmed.current = true;
+        }}
+        onInteractOutside={(event) => event.preventDefault()}
+      >
       <PaperCard
         tilt={-1}
         taped
         className="w-full max-w-sm px-[clamp(1rem,4vmin,2rem)] py-[clamp(1rem,4vmin,2rem)]"
       >
-      <div ref={cardRef}>
-        <h2 className="text-2xl font-bold text-bum-ink">
+      <div>
+        <DialogTitle className="text-2xl font-bold text-bum-ink">
           {t('pause.title', { defaultValue: 'Paused' })}
-        </h2>
-        <p className="mt-1 text-sm text-bum-graphite">{levelName}</p>
+        </DialogTitle>
+        <DialogDescription className="mt-1 text-sm text-bum-graphite">{levelName}</DialogDescription>
         {roomWide ? (
           <p className="mt-2 text-xs text-bum-graphite">
             {t('pause.room-wide', { defaultValue: 'Everyone in the room is paused.' })}
@@ -99,6 +124,9 @@ export function PauseMenu({
         </div>
       </div>
       </PaperCard>
-    </div>
+      </DialogContent>
+    </Dialog>
+    ) : null}
+    </>
   );
 }

@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { BIND_ACTIONS, BIND_LABELS, DEFAULT_BINDINGS, keyLabel, normalizeKey, rebind, type BindAction } from '@/lib/dream-rift/keybinds';
 import { useRuntime } from './runtime';
+import { Switch } from '@/components/ui/switch';
 
 export function SettingsScreen({ onBack }: { onBack: () => void }) {
     const { music, sfx, input } = useRuntime();
@@ -134,20 +135,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
     return (
         <label className="flex cursor-pointer items-center justify-between py-1 text-sm text-[color:var(--dr-cream)]">
             {label}
-            <button
-                type="button"
-                role="switch"
-                data-jelly="control"
-                aria-checked={checked}
-                onClick={() => onChange(!checked)}
-                className="relative h-6 w-11 rounded-full transition"
-                style={{ background: checked ? 'var(--dr-crimson)' : 'rgba(231,205,140,0.18)' }}
-            >
-                <span
-                    className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform"
-                    style={{ transform: `translateX(${checked ? 20 : 0}px)` }}
-                />
-            </button>
+            <Switch checked={checked} onCheckedChange={onChange} aria-label={label} />
         </label>
     );
 }

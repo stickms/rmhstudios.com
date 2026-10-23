@@ -1,7 +1,9 @@
 'use client';
 
-import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { X } from 'lucide-react';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { useFocusReturn } from '@/components/shared/useFocusReturn';
 import {
   useShopStore,
   RUN_MODIFIERS,
@@ -17,49 +19,30 @@ interface ShopModalProps {
 
 export function ShopModal({ open, onClose }: ShopModalProps) {
   const { t } = useTranslation("c-cursed-logic");
+  const returnFocus = useFocusReturn(open);
   const {
     fragments,
     pendingRunModifier,
     unlockedVariants,
     purchaseRunModifier,
     purchaseVariantUnlock,
-    getRunModifiers,
   } = useShopStore();
 
-  if (!open) return null;
-
-  const mods = getRunModifiers();
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={t("shop", { defaultValue: "Shop" })}
-    >
-      <div
-        className="bg-[#0f0f14] border border-amber-500/30 rounded-xl max-w-sm w-full max-h-[85vh] overflow-y-auto shadow-2xl shadow-amber-500/10"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="sticky top-0 flex justify-between items-center p-4 border-b border-white/10 bg-[#0f0f14]/95">
+    <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <DialogContent onCloseAutoFocus={returnFocus} overlayClassName="bg-black/80" data-jelly="off" data-liquid-material="off" data-dialog-shell="bare" className="max-w-sm gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
+       <div className="space-y-4 rounded-xl border border-amber-500/30 bg-[#0f0f14] p-4 text-white">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-amber-400 font-mono">{t("shop", { defaultValue: "Shop" })}</h2>
+            <DialogTitle className="font-mono text-lg font-bold text-amber-400">{t("shop", { defaultValue: "Shop" })}</DialogTitle>
             <span className="text-amber-200/90 font-mono text-sm">({fragments} F)</span>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10"
-            aria-label={t("close", { defaultValue: "Close" })}
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <DialogClose className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white" aria-label={t("close", { defaultValue: "Close" })}>
+            <X className="h-5 w-5" aria-hidden />
+          </DialogClose>
         </div>
-        <div className="p-4 space-y-4">
-          <p className="text-white/60 text-xs">
-            {t("shop-description", { defaultValue: "Run modifiers apply to your next run only. Unlocks add Protocol types to the random pool." })}
-          </p>
+        <DialogDescription className="text-xs text-white/60">{t("shop-description", { defaultValue: "Run modifiers apply to your next run only. Unlocks add Protocol types to the random pool." })}</DialogDescription>
+        <div className="space-y-4">
           {pendingRunModifier && (
             <p className="text-cyan-400/90 text-xs font-mono">
               {t("next-run", { defaultValue: "Next run:" })} {RUN_MODIFIERS[pendingRunModifier as RunModifierId]?.label ?? pendingRunModifier}
@@ -125,7 +108,8 @@ export function ShopModal({ open, onClose }: ShopModalProps) {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+       </div>
+      </DialogContent>
+    </Dialog>
   );
 }

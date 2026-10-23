@@ -65,8 +65,14 @@ const DialogContent = React.forwardRef<
     mobileFullscreen?: boolean;
     /** Override the scrim's stacking position for dialogs above site chrome. */
     overlayClassName?: string;
+    /**
+     * Portal target; defaults to <body>. A full-screen app or game scopes its palette tokens
+     * (`--app-*`, or a game's own) on its root element, so it passes that root here: a dialog
+     * portaled to the body would lose them.
+     */
+    container?: HTMLElement | null;
   }
->(({ className, children, mobileFullscreen = false, overlayClassName, ...props }, ref) => {
+>(({ className, children, mobileFullscreen = false, overlayClassName, container, ...props }, ref) => {
   const { t } = useTranslation('c-ui');
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const overlayRef = React.useRef<HTMLDivElement | null>(null);
@@ -109,7 +115,7 @@ const DialogContent = React.forwardRef<
   });
 
   return (
-    <DialogPortal>
+    <DialogPortal container={container ?? undefined}>
       <DialogOverlay ref={overlayRef} className={overlayClassName} />
       <DialogPrimitive.Content
         ref={mergeRefs(ref, contentRef)}

@@ -1,7 +1,9 @@
 'use client';
 
-import { X } from 'lucide-react';
 import { useTranslation } from "react-i18next";
+import { X } from "lucide-react";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { useFocusReturn } from "@/components/shared/useFocusReturn";
 
 interface HowToPlayModalProps {
   open: boolean;
@@ -10,33 +12,20 @@ interface HowToPlayModalProps {
 
 export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
   const { t } = useTranslation("c-cursed-logic");
-
-  if (!open) return null;
+  const returnFocus = useFocusReturn(open);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={t("how-to-play-aria", { defaultValue: "How to play" })}
-    >
-      <div
-        className="bg-[#0f0f14] border border-cyan-500/30 rounded-xl max-w-md w-full max-h-[85vh] overflow-y-auto shadow-2xl shadow-cyan-500/10"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="sticky top-0 flex justify-between items-center p-4 border-b border-white/10 bg-[#0f0f14]/95">
-          <h2 className="text-lg font-bold text-cyan-400 font-mono">{t("how-to-play-title", { defaultValue: "How to Play" })}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10"
-            aria-label={t("close", { defaultValue: "Close" })}
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <DialogContent onCloseAutoFocus={returnFocus} overlayClassName="bg-black/80" data-jelly="off" data-liquid-material="off" data-dialog-shell="bare" className="max-w-md gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
+       <div className="space-y-4 rounded-xl border border-cyan-500/30 bg-[#0f0f14] p-4 text-white">
+        <div className="flex items-center justify-between">
+          <DialogTitle className="font-mono text-lg font-bold text-cyan-400">{t("how-to-play-title", { defaultValue: "How to Play" })}</DialogTitle>
+          <DialogClose className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white" aria-label={t("close", { defaultValue: "Close" })}>
+            <X className="h-5 w-5" aria-hidden />
+          </DialogClose>
         </div>
-        <div className="p-4 space-y-4 text-sm text-white/90">
+        <DialogDescription className="sr-only">{t("how-to-play-aria", { defaultValue: "How to play" })}</DialogDescription>
+        <div className="space-y-4 text-sm text-white/90">
           <p className="text-white/70">
             {t("intro", { defaultValue: "You duel the" })} <strong className="text-amber-400">{t("protocol-name", { defaultValue: "Protocol" })}</strong> {t("intro-rest", { defaultValue: "in simultaneous turns. Each round: choose a" })} <strong>{t("stance", { defaultValue: "stance" })}</strong>{t("intro-then-modifier", { defaultValue: ", then see the modifier, then" })} <strong>{t("commit", { defaultValue: "commit" })}</strong> {t("intro-commit-rest", { defaultValue: "an action (and optionally reinforce). Protocol and your move are revealed in sequence, then resolved." })}
           </p>
@@ -119,7 +108,8 @@ export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
             </p>
           </div>
         </div>
-      </div>
-    </div>
+       </div>
+      </DialogContent>
+    </Dialog>
   );
 }

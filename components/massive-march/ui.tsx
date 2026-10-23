@@ -16,7 +16,9 @@
 
 'use client';
 
+import { useId } from 'react';
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { LAND, TOY } from '@/lib/massive-march/palette';
 
@@ -192,28 +194,19 @@ export function Toggle({
   label: string;
   hint?: string;
 }) {
+  const id = useId();
   return (
-    <button
-      type="button"
-      role="switch"
-      data-jelly="control"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
+    <label
+      htmlFor={id}
       className="flex w-full cursor-pointer items-start gap-3 border-[3px] px-3 py-2 text-left transition-colors duration-150"
       style={{ background: '#fffdf6', borderColor: INK, color: INK, borderRadius: 3 }}
     >
-      <span
-        aria-hidden
-        className="mt-0.5 grid size-5 shrink-0 place-items-center border-[3px]"
-        style={{ borderColor: INK, background: checked ? TOY.green : 'transparent', borderRadius: 2 }}
-      >
-        {checked ? <span className="block size-1.5" style={{ background: BOARD }} /> : null}
-      </span>
+      <Switch id={id} checked={checked} onCheckedChange={onChange} aria-label={label} className="mt-0.5" />
       <span>
         <span className="block text-sm font-bold">{label}</span>
         {hint ? <span className="block text-xs leading-snug opacity-70">{hint}</span> : null}
       </span>
-    </button>
+    </label>
   );
 }
 

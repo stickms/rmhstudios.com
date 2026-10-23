@@ -3,7 +3,5 @@
   "dialogs": {
     "components/temple-of-joy/bowl/BowlOverlay.tsx": 1
   },
-  "switches": {
-    "components/temple-of-joy/ui.tsx": 1
-  }
+  "switches": {}
 }

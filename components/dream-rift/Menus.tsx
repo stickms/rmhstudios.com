@@ -26,6 +26,8 @@ import {
     setLobbySettings,
     startLobby,
 } from '@/lib/dream-rift/net/connection';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { useFocusReturn } from '@/components/shared/useFocusReturn';
 import { SheetPortrait } from './SheetPortrait';
 import { MenuBackdrop } from './MenuBackdrop';
 import { useRuntime } from './runtime';
@@ -158,11 +160,14 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings, extr
 }
 
 function HelpModal({ onClose }: { onClose: () => void }) {
+    const returnFocus = useFocusReturn();
     return (
-        <div className="app-safe-x absolute inset-0 z-50 flex items-center-safe justify-center-safe overflow-y-auto bg-black/80 p-6" onClick={onClose}>
-            <div role="dialog" aria-modal="true" aria-labelledby="dr-help-title" className="dr-frame max-w-md rounded-sm p-6 text-left text-sm text-[color:var(--dr-cream)]" onClick={(e) => e.stopPropagation()}>
-                <h3 id="dr-help-title" className="dr-serif mb-1 text-lg font-semibold tracking-[0.12em] text-[color:var(--dr-gold)]">How to Play</h3>
-                <div className="dr-rule mb-4 mt-2" />
+        <Dialog open onOpenChange={(next) => { if (!next) onClose(); }}>
+            <DialogContent onCloseAutoFocus={returnFocus} overlayClassName="bg-black/80" data-jelly="off" data-liquid-material="off" data-dialog-shell="bare" className="max-w-md gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
+              <div className="dr-frame grid gap-4 rounded-sm p-6 text-left text-sm text-[color:var(--dr-cream)]">
+                <DialogTitle className="dr-serif text-lg font-semibold tracking-[0.12em] text-[color:var(--dr-gold)]">How to Play</DialogTitle>
+                <DialogDescription className="sr-only">Controls and rules for Dream Rift.</DialogDescription>
+                <div className="dr-rule" />
                 <ul className="space-y-2 text-[color:var(--dr-cream-dim)]">
                     <li>• Your true hitbox is the tiny dot at your center — hold <b className="text-[color:var(--dr-cream)]">Focus</b> (Shift) to see it and move slowly for precise dodging.</li>
                     <li>• <b className="text-[color:var(--dr-cream)]">Graze</b> bullets (pass close without dying) for score.</li>
@@ -171,11 +176,12 @@ function HelpModal({ onClose }: { onClose: () => void }) {
                     <li>• Capture a boss's <b className="text-[color:var(--dr-cream)]">spell card</b> by defeating it before the timer runs out.</li>
                     <li>• In co-op you only die from hits on <b className="text-[color:var(--dr-cream)]">your</b> screen — lag never kills you. The boss fight stays in sync for everyone.</li>
                 </ul>
-                <button type="button" onClick={onClose} className="dr-plaque dr-plaque-primary mt-5 w-full rounded-sm py-2 text-sm font-semibold pointer-coarse:min-h-11">
+                <DialogClose className="dr-plaque dr-plaque-primary mt-1 w-full rounded-sm py-2 text-sm font-semibold pointer-coarse:min-h-11">
                     Got it
-                </button>
-            </div>
-        </div>
+                </DialogClose>
+              </div>
+            </DialogContent>
+        </Dialog>
     );
 }
 

@@ -11,9 +11,11 @@
  * and a player who has not been told it plays the first game blind.
  */
 
-import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useDialogHost } from '@/components/shared/useDialogHost';
+import { useFocusReturn } from '@/components/shared/useFocusReturn';
 import {
   COLORS,
   MAX_PLAYERS,
@@ -43,43 +45,39 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export function RulesSheet({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation('c-gabriels-horn');
-  const closeRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    closeRef.current?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // Mounted inside the game root (nearest theme element to this component) so the `--app-*` /
+  // `--gh-*` tokens still apply. Radix owns Escape, the focus trap and focus return; the game's own
+  // state (`rulesOpen`) stays the only source of truth, set back to false by `onClose`. A scrim
+  // click does not close it, as before. The shell is invisible: the game's own `.gh-overlay` panel
+  // inside it is the surface, so the text stays on the game's palette in every site theme.
+  const { host, sentinel } = useDialogHost('.gabriels-horn-theme');
+  const returnFocus = useFocusReturn();
 
-  // The only fixed-position surface in the game, and it is a full-screen
-  // scroller rather than a centred box: the rules are long, and on a phone held
-  // sideways a vertically-centred panel taller than the window puts its first
-  // paragraph above a scroll origin that cannot go negative. Column flex plus
-  // the `-safe` centring keeps every line reachable.
   return (
-    <div className="app-scroll-y fixed inset-0 z-50 flex flex-col items-center-safe justify-center-safe bg-(--app-scrim) p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="gh-rules-title"
-        className="gh-overlay w-full max-w-xl p-5"
+    <>
+    {sentinel}
+    {host ? (
+    <Dialog open onOpenChange={(next) => { if (!next) onClose(); }}>
+      <DialogContent
+        container={host}
+        aria-describedby={undefined}
+        data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
+        className="max-w-xl gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
+        onInteractOutside={(event) => event.preventDefault()}
+        onCloseAutoFocus={returnFocus}
+        overlayClassName="bg-(--app-scrim)"
       >
+      <div className="gh-overlay w-full p-5 text-(--app-text)">
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 id="gh-rules-title" className="text-lg font-bold text-(--app-text)">
-            {t('rules-title', { defaultValue: 'How Gabriel’s Horn works' })}
-          </h2>
-          <HornButton
-            ref={closeRef}
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            aria-label={t('rules-close', { defaultValue: 'Close the rules' })}
-          >
+        <DialogTitle className="text-lg font-bold text-(--app-text)">
+          {t('rules-title', { defaultValue: 'How Gabriel’s Horn works' })}
+        </DialogTitle>
+        <DialogClose asChild>
+          <HornButton variant="ghost" size="sm" aria-label={t('rules-close', { defaultValue: 'Close the rules' })}>
             <X className="size-4" aria-hidden="true" />
           </HornButton>
+        </DialogClose>
         </div>
 
         <div className="space-y-4">
@@ -277,11 +275,14 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="mt-5 flex justify-end">
-          <HornButton variant="primary" onClick={onClose}>
-            {t('rules-got-it', { defaultValue: 'Got it' })}
-          </HornButton>
+          <DialogClose asChild>
+            <HornButton variant="primary">{t('rules-got-it', { defaultValue: 'Got it' })}</HornButton>
+          </DialogClose>
         </div>
       </div>
-    </div>
+      </DialogContent>
+    </Dialog>
+    ) : null}
+    </>
   );
 }
