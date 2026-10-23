@@ -139,7 +139,7 @@ export default function RmhStudyLanding() {
           {/* Flashcards — solo study with decks + AI tutor */}
           <button
             onClick={() => router.navigate({ to: '/study' })}
-            className="group w-full flex items-center gap-4 rounded-(--app-radius) app-glass p-5 text-left transition-colors"
+            className="group w-full flex items-center gap-4 rounded-(--app-radius) glass-fill p-5 text-left transition-colors hover:border-(--app-accent)"
           >
             <div className="rounded-(--app-radius-sm) p-3 bg-(--app-bg)">
               <Layers className="h-6 w-6 text-(--app-accent)" />

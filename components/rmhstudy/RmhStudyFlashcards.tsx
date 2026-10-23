@@ -183,7 +183,7 @@ export default function RmhStudyFlashcards() {
             <button
               type="button"
               onClick={() => setRevealed(true)}
-              className="w-full min-h-44 rounded-(--app-radius) app-glass p-6 flex flex-col items-center justify-center gap-3 text-center transition-colors"
+              className="w-full min-h-44 rounded-(--app-radius) glass-fill p-6 flex flex-col items-center justify-center gap-3 text-center transition-colors hover:border-(--app-accent)"
             >
               <span className="text-lg font-medium whitespace-pre-wrap">{card?.front}</span>
               {revealed ? (
@@ -220,7 +220,7 @@ export default function RmhStudyFlashcards() {
   const DeckButton = ({ deck, subtitle }: { deck: DeckRow; subtitle?: string }) => (
     <button
       onClick={() => startReview(deck)}
-      className="w-full flex items-center gap-3 rounded-(--app-radius-sm) app-glass p-3 text-left transition-colors"
+      className="w-full flex items-center gap-3 rounded-(--app-radius-sm) glass-fill p-3 text-left transition-colors hover:border-(--app-accent)"
     >
       <Layers className="h-4 w-4 shrink-0 text-(--app-accent)" />
       <div className="min-w-0 flex-1">

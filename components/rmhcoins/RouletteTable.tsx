@@ -313,7 +313,7 @@ export function RouletteTable({ coins }: Props) {
               type="button"
               variant="secondary"
               onClick={() => handlePlaceBet('topline', [0, DOUBLE_ZERO, 1, 2, 3])}
-              className="h-auto w-full min-h-7 px-2 text-[10px] font-bold rounded"
+              className="h-auto w-full min-h-7 whitespace-normal px-2 text-[10px] font-bold rounded"
             >
               {t('top-line-bet', { defaultValue: 'Top Line (0, 00, 1-3) 6:1' })}
               <ChipOverlay
@@ -466,7 +466,7 @@ export function RouletteTable({ coins }: Props) {
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
                 disabled={!isBetting}
-                className={`h-auto min-h-9 px-2 text-[10px] sm:text-[11px] font-bold rounded ${
+                className={`h-auto min-h-9 whitespace-normal px-2 text-[10px] sm:text-[11px] font-bold rounded ${
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 }`}
               >
@@ -489,7 +489,7 @@ export function RouletteTable({ coins }: Props) {
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
                 disabled={!isBetting}
-                className={`h-auto min-h-9 px-2 text-[10px] sm:text-[11px] font-bold rounded ${
+                className={`h-auto min-h-9 whitespace-normal px-2 text-[10px] sm:text-[11px] font-bold rounded ${
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 }`}
               >

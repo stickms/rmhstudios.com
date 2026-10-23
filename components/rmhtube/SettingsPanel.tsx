@@ -70,7 +70,7 @@ function SettingsDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         container={container}
-        className="app-modal max-h-[85dvh] max-w-md gap-0 p-6 text-(--app-text)"
+        className="app-glass max-h-[85dvh] max-w-md gap-0 p-6 text-(--app-text)"
         aria-describedby={undefined}
       >
         <DialogHeader className="mb-4">
@@ -397,7 +397,13 @@ function ToggleOption({
       label={label}
       description={description}
       control={
-        <Switch checked={value} onCheckedChange={onChange} aria-label={label} />
+        <Switch
+          checked={value}
+          onCheckedChange={onChange}
+          aria-label={label}
+          // Track and knob in the app palette (the primitive paints with --site-*).
+          className="border-(--app-border) bg-(--app-border) aria-checked:bg-(--app-accent) [&>span]:bg-(--app-text) aria-checked:[&>span]:bg-(--app-accent-fg)"
+        />
       }
     />
   );

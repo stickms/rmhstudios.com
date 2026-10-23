@@ -8,7 +8,7 @@ export default function PlannerLink() {
   return (
     <Link
       to="/rmhstudy/planner"
-      className="group flex w-full items-center gap-4 rounded-(--app-radius) app-glass p-5 text-left transition-colors"
+      className="group flex w-full items-center gap-4 rounded-(--app-radius) glass-fill p-5 text-left transition-colors hover:border-(--app-accent)"
     >
       <div className="rounded-(--app-radius-sm) bg-(--app-bg) p-3">
         <CalendarCheck className="h-6 w-6 text-(--app-accent)" />

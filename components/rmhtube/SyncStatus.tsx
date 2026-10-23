@@ -92,7 +92,6 @@ export default function SyncStatus() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        aria-haspopup="true"
         className="flex items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1.5 text-xs font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
         title={t('sync-status-title', { defaultValue: 'Sync status' })}
       >
