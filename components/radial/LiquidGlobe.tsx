@@ -38,6 +38,21 @@ import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
 import type { JellyFrame, JellyGlass } from './jelly-glass';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
+import {
+  copyQuat,
+  dragRotvec,
+  eulerOf,
+  eulerRatesOf,
+  matrixOf,
+  mulQuat,
+  normalizeQuat,
+  quat,
+  quatFromRotvec,
+  quatFromYawPitch,
+  quatToFront,
+  rotvecOf,
+  type Quat,
+} from '@/lib/trackball';
 
 /**
  * The **liquid globe** navigator — the site's navigation as a glass sphere you
@@ -80,13 +95,12 @@ import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
 
 const DEG = Math.PI / 180;
 
-/** Degrees of rotation per pixel dragged. A full turn is ~800px of travel. */
-const ROT_PER_PX = 0.45;
 /*
- * Tilt is unlimited: the globe turns over the poles and keeps going, in either
- * direction, as far as the pointer takes it. Past ±90° the globe is upside down,
- * so a horizontal drag turns the yaw the other way (see the drag handler) — the
- * surface under the pointer still follows it.
+ * The globe is a FREE TRACKBALL (`lib/trackball.ts`): its orientation is a
+ * quaternion, and a drag turns it about whatever axis the pointer's motion
+ * implies — over the poles, around the rim, any way at all. There is no tilt
+ * limit and no preferred axis. Rotation vectors (axis × angle) are in degrees
+ * and angular velocities in deg/s, in VIEW space (x right, y down, z toward you).
  */
 /**
  * The spring that carries every settle: the release throw, the magnet, and the
@@ -212,26 +226,38 @@ const GOLDEN_DEG = 180 * (3 - Math.sqrt(5));
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 const clamp01 = (v: number) => clamp(v, 0, 1);
-/** The nearest angle equivalent to `to`, measured from `from` — no long way round. */
-const shortestAngle = (from: number, to: number) =>
-  from + ((((to - from) % 360) + 540) % 360) - 180;
-/** `deg` wrapped into (−180°, 180°]. */
-const wrap180 = (deg: number) => shortestAngle(0, deg);
+
+/* Trackball scratch. Every globe's work on these is synchronous and never spans
+   a frame, so two mounted globes (the dock and the hub) can share them. */
+const SQ = quat();
+const SQ2 = quat();
+const SV = new Float64Array(3);
+const SM = new Float64Array(9);
+
+/** `q ← exp(v)·q`: turn `q` by the view-space rotation vector `v` (degrees). */
+function turn(q: Quat, vx: number, vy: number, vz: number): void {
+  if (vx === 0 && vy === 0 && vz === 0) return;
+  mulQuat(quatFromRotvec(vx, vy, vz, SQ), q, q);
+  normalizeQuat(q);
+}
+
+/** `M·b` for a body point, into `out` (row-major `M`). */
+function rotate(m: Float64Array, bx: number, by: number, bz: number, out: Float64Array): void {
+  out[0] = m[0]! * bx + m[1]! * by + m[2]! * bz;
+  out[1] = m[3]! * bx + m[4]! * by + m[5]! * bz;
+  out[2] = m[6]! * bx + m[7]! * by + m[8]! * bz;
+}
 
 /**
- * The pose, nearest to (`yaw`, `pitch`), that puts a pin at dead centre.
- *
- * With tilt unlimited there are two families of them: upright (yaw −lon, pitch
- * −lat) and turned over the pole (yaw −lon+180°, pitch lat+180°), which shows
- * the same pin at the front with the globe upside down. Taking whichever is
- * nearer means a settle never flips the globe back over just to stand it upright.
+ * The orientation that brings body point `b` to dead centre from `q`, by the
+ * shortest turn — no twist about the viewing axis on the way, so a settle never
+ * spins the globe round just to stand it upright. Written into `out`.
  */
-function frontPose(n: { lat: number; lon: number }, yaw: number, pitch: number) {
-  const upright = { yaw: shortestAngle(yaw, -n.lon), pitch: shortestAngle(pitch, -n.lat) };
-  const over = { yaw: shortestAngle(yaw, 180 - n.lon), pitch: shortestAngle(pitch, 180 + n.lat) };
-  const du = Math.hypot(upright.yaw - yaw, upright.pitch - pitch);
-  const dov = Math.hypot(over.yaw - yaw, over.pitch - pitch);
-  return du <= dov ? upright : over;
+function facing(q: Quat, bx: number, by: number, bz: number, out: Quat): Quat {
+  matrixOf(q, SM);
+  rotate(SM, bx, by, bz, SV);
+  quatToFront(SV[0]!, SV[1]!, SV[2]!, SQ2);
+  return normalizeQuat(mulQuat(SQ2, q, out));
 }
 
 interface GlobeNode extends NavLeaf {
@@ -628,7 +654,8 @@ export function LiquidGlobe({
 
   // Everything the frame loop touches lives in refs: a 60Hz React render for a
   // rotation nobody reads in JSX would be the whole cost of this component.
-  const rot = useRef({ yaw: 0, pitch: 0, vYaw: 0, vPitch: 0 });
+  /** The orientation (body → view) and its view-space angular velocity, deg/s. */
+  const rot = useRef({ q: quat(), w: new Float64Array(3) });
   const drag = useRef({ active: false, id: -1, x: 0, y: 0, moved: 0, held: false });
   const lastMoveAt = useRef(0);
   /**
@@ -636,20 +663,17 @@ export function LiquidGlobe({
    * One mechanism serves the release throw, the magnet and the keyboard glide, so
    * all three are interruptible by the next touch in exactly the same way.
    */
-  const settle = useRef<{ yaw: number; pitch: number } | null>(null);
-  /**
-   * Un-rubber-banded tilt. The globe DRAWS a damped version of this past the
-   * limit, but the gesture has to keep accumulating the real value or dragging
-   * back from an over-tilt would feel dead until it caught up.
-   */
-  const rawPitch = useRef(0);
+  const settle = useRef<Quat | null>(null);
   /**
    * Windowed velocity, not last-frame delta. A finger that pauses for 80ms before
    * lifting has a last-frame velocity of zero, and every deliberate re-aim would
    * otherwise land as a dead release (`lib/fluid` §VelocityTracker).
+   *
+   * One tracker per view axis, fed the drag's ACCUMULATED rotation vector
+   * (`turned`): its windowed slope is the angular velocity the throw leaves with.
    */
-  const yawV = useRef(new VelocityTracker());
-  const pitchV = useRef(new VelocityTracker());
+  const spinV = useRef([new VelocityTracker(), new VelocityTracker(), new VelocityTracker()]);
+  const turned = useRef(new Float64Array(3));
   /**
    * Fastest the globe has been moving since the last lock was established — the
    * evidence the dwell length is read from. Peak rather than instantaneous,
@@ -749,15 +773,16 @@ export function LiquidGlobe({
   useEffect(() => {
     const here = nodes.findIndex((n) => isNavLeafActive(pathname, n));
     const n = here >= 0 ? nodes[here] : null;
-    rot.current.yaw = n ? -n.lon + 42 : 12;
-    rot.current.pitch = n ? -n.lat + 9 : -8;
-    rot.current.vYaw = 0;
-    rot.current.vPitch = 0;
+    quatFromYawPitch(n ? -n.lon + 42 : 12, n ? -n.lat + 9 : -8, rot.current.q);
+    rot.current.w.fill(0);
     // A rehearsal turns the globe half a revolution on the settle spring, so the
     // frame loop's projection, magnet and paint run hot for every frame of the
     // warm-up. A globe that sits still paints once and goes idle — which left the
     // first REAL open running that code cold.
-    if (quiet.current) settle.current = { yaw: rot.current.yaw + 180, pitch: rot.current.pitch };
+    if (quiet.current) {
+      // Half a turn about the globe's own polar axis (a body-space rotation, on the right).
+      settle.current = normalizeQuat(mulQuat(rot.current.q, quatFromYawPitch(180, 0, quat()), quat()));
+    }
     dirty.current = true;
     // Orientation is chosen once per mount (the hub mounts this on open), not on
     // every route change behind an open menu.
@@ -1063,17 +1088,24 @@ export function LiquidGlobe({
     const r = rot.current;
     const wob = wobble.current;
     const fresh = performance.now() - lastMoveAt.current <= VELOCITY_WINDOW_MS;
-    const yawVel = (fresh ? yawV.current.get() : r.vYaw) + (wob ? wob.vYaw : 0);
-    const pitchVel = (fresh ? pitchV.current.get() : r.vPitch) + (wob ? wob.vPitch : 0);
+    const sv = spinV.current;
+    const wx = (fresh ? sv[0]!.get() : r.w[0]!) + (wob ? wob.vPitch : 0);
+    const wy = (fresh ? sv[1]!.get() : r.w[1]!) + (wob ? wob.vYaw : 0);
+    const wz = fresh ? sv[2]!.get() : r.w[2]!;
+    // The DRAWN pose (the rock included), as the eversion's `Rz·Rx·Ry`.
+    const q = copyQuat(r.q, quat());
+    if (wob) turn(q, wob.pitch, wob.yaw, 0);
+    const pose = eulerOf(matrixOf(q, new Float64Array(9)), { yaw: 0, pitch: 0, roll: 0 });
+    const rates = eulerRatesOf(pose, wx, wy, wz, { yaw: 0, pitch: 0, roll: 0 });
     const cached = centreCache.current;
     const c = cached && cached.settled ? cached : measureCentre();
     return {
-      yaw: r.yaw + (wob ? wob.yaw : 0),
-      // Wrapped: tilt is unlimited here, but the effect unwinds whatever tilt it
-      // is handed, and 540° is the same pose as 180° with three extra half-turns.
-      pitch: wrap180(r.pitch + (wob ? wob.pitch : 0)),
-      yawVel: clamp(yawVel, -MAX_SPIN, MAX_SPIN),
-      pitchVel: clamp(pitchVel, -MAX_SPIN, MAX_SPIN),
+      yaw: pose.yaw,
+      pitch: pose.pitch,
+      roll: pose.roll,
+      yawVel: clamp(rates.yaw, -MAX_SPIN, MAX_SPIN),
+      pitchVel: clamp(rates.pitch, -MAX_SPIN, MAX_SPIN),
+      rollVel: clamp(rates.roll, -MAX_SPIN, MAX_SPIN),
       centre: [c ? c.x : 0, c ? c.y : 0],
       radius: sizeRef.current / 2,
     };
@@ -1260,36 +1292,33 @@ export function LiquidGlobe({
      * — so the rock cannot move a destination in or out of the reticle. Written
      * once per frame by `step`, and read by the display projection and the cage.
      */
-    const draw = { yaw: 0, pitch: 0 };
+    const drawQ = quat();
+    /** The DRAWN rotation as a matrix (`drawQ`), and the TRUE one (`rot.current.q`) the lock reads. */
+    const DM = new Float64Array(9);
+    const TM = new Float64Array(9);
 
     /**
      * Screen-space position + depth of every pin, and what the reticle holds.
      *
-     * `yaw`/`pitch` are passed in rather than read from `rot.current` because
+     * The rotation is passed in rather than read from `rot.current` because
      * this runs twice on a wobbling frame: once at the true rotation, which is
      * what `lockIdx`/`snapIdx` are measured from, and once at the drawn rotation,
      * which is what the paint uses. On every other frame the two are identical
      * and it runs once, exactly as before.
      */
-    const project = (yaw: number, pitch: number) => {
-      // Yaw about Y, then pitch about X — the same order as the sphere's
-      // `rotateX(pitch) rotateY(yaw)`, which is what keeps the projected pins
-      // glued to the drawn wireframe.
-      const cy = Math.cos(yaw * DEG);
-      const sy = Math.sin(yaw * DEG);
-      const cp = Math.cos(pitch * DEG);
-      const sp = Math.sin(pitch * DEG);
+    const project = (m: Float64Array) => {
+      // The same matrix the cage is stroked through, which is what keeps the
+      // projected pins glued to the drawn wireframe.
       let lockD = Infinity;
       let snapD = Infinity;
       lockIdx = -1;
       snapIdx = -1;
       for (let i = 0; i < count; i++) {
         const n = nodes[i];
-        const x1 = n.bx * cy + n.bz * sy;
-        const z1 = -n.bx * sy + n.bz * cy;
+        const x1 = m[0]! * n.bx + m[1]! * n.by + m[2]! * n.bz;
         px[i] = x1;
-        py[i] = n.by * cp - z1 * sp;
-        pz[i] = n.by * sp + z1 * cp;
+        py[i] = m[3]! * n.bx + m[4]! * n.by + m[5]! * n.bz;
+        pz[i] = m[6]! * n.bx + m[7]! * n.by + m[8]! * n.bz;
         if (pz[i] <= 0) continue;
         const d = Math.hypot(x1, py[i]);
         if (d < RETICLE && d < lockD) {
@@ -1317,7 +1346,7 @@ export function LiquidGlobe({
          • a parallel was that circle scaled by cos(lat), laid flat by
            `rotateX(90deg)` and lifted by −sin(lat) → (cos(lat)·cosθ, −sin(lat),
            cos(lat)·sinθ), which is just the latitude circle
-       then rotated by the globe's yaw and pitch and divided by the same
+       then rotated by the globe's orientation and divided by the same
        perspective. Both faces of every ring are drawn, as before — the
        see-through cage IS the globe. */
     const drawCage = (now: number) => {
@@ -1325,10 +1354,7 @@ export function LiquidGlobe({
       const canvas = cageRef.current;
       if (!ctx || !canvas) return;
       const R = sizeRef.current / 2;
-      const cy = Math.cos(draw.yaw * DEG);
-      const sy = Math.sin(draw.yaw * DEG);
-      const cp = Math.cos(draw.pitch * DEG);
-      const sp = Math.sin(draw.pitch * DEG);
+      const m = DM;
       const paint = cagePaint.current;
       const soft = jelly.active();
 
@@ -1354,8 +1380,7 @@ export function LiquidGlobe({
       const widthFor = (nx: number, ny: number, nz: number) => {
         // Only the depth component of the rotated normal is needed, so the two
         // screen components are never computed.
-        const z1 = -nx * sy + nz * cy;
-        const face = Math.abs(ny * sp + z1 * cp);
+        const face = Math.abs(m[6]! * nx + m[7]! * ny + m[8]! * nz);
         return paint.width * Math.max(0.42, (1 + face) / 2);
       };
 
@@ -1402,11 +1427,9 @@ export function LiquidGlobe({
           const by = uy * ct + vy * st + oy;
           const bz = uz * ct + vz * st;
           const swell = 1 + waveAt(bx, by, bz);
-          const x1 = (bx * cy + bz * sy) * swell;
-          const z1 = (-bx * sy + bz * cy) * swell;
-          const by2 = by * swell;
-          const y2 = by2 * cp - z1 * sp;
-          const z2 = by2 * sp + z1 * cp;
+          const x1 = (m[0]! * bx + m[1]! * by + m[2]! * bz) * swell;
+          const y2 = (m[3]! * bx + m[4]! * by + m[5]! * bz) * swell;
+          const z2 = (m[6]! * bx + m[7]! * by + m[8]! * bz) * swell;
           const k = kAt(z2);
           let sx = x1 * k;
           let sy2 = y2 * k;
@@ -1504,10 +1527,9 @@ export function LiquidGlobe({
             const bx = (ax * cf + (e1x * ct + e2x * st) * sf) * swell;
             const by = (ay * cf + (e1y * ct + e2y * st) * sf) * swell;
             const bz = (az * cf + (e1z * ct + e2z * st) * sf) * swell;
-            const x1 = bx * cy + bz * sy;
-            const z1 = -bx * sy + bz * cy;
-            const y2 = by * cp - z1 * sp;
-            const z2 = by * sp + z1 * cp;
+            const x1 = m[0]! * bx + m[1]! * by + m[2]! * bz;
+            const y2 = m[3]! * bx + m[4]! * by + m[5]! * bz;
+            const z2 = m[6]! * bx + m[7]! * by + m[8]! * bz;
             // Each pass draws only its own face, lifting the pen across the
             // stretches that belong to the other one.
             if (face === 0 ? z2 > 0 : z2 <= 0) {
@@ -1601,10 +1623,7 @@ export function LiquidGlobe({
         if ((live || jellyLive.current || jellyDirty.current) && !everting.current) {
           // The ripples' impact points, turned by the DRAWN rotation into the
           // material's screen space — the same rotation the cage is drawn at.
-          const cy = Math.cos(draw.yaw * DEG);
-          const sy = Math.sin(draw.yaw * DEG);
-          const cp = Math.cos(draw.pitch * DEG);
-          const sp = Math.sin(draw.pitch * DEG);
+          const m = DM;
           const f = jellyFrame;
           for (let i = 0; i < 3; i++) {
             const o = i * 4;
@@ -1613,11 +1632,9 @@ export function LiquidGlobe({
               continue;
             }
             const w = waveWin[i];
-            const x1 = w.bx * cy + w.bz * sy;
-            const z1 = -w.bx * sy + w.bz * cy;
-            f.ripples[o] = x1;
-            f.ripples[o + 1] = w.by * cp - z1 * sp;
-            f.ripples[o + 2] = w.by * sp + z1 * cp;
+            f.ripples[o] = m[0]! * w.bx + m[1]! * w.by + m[2]! * w.bz;
+            f.ripples[o + 1] = m[3]! * w.bx + m[4]! * w.by + m[5]! * w.bz;
+            f.ripples[o + 2] = m[6]! * w.bx + m[7]! * w.by + m[8]! * w.bz;
             f.ripples[o + 3] = waveAge[i]!;
           }
           f.gx = soft ? jelly.gx : 0;
@@ -1784,10 +1801,10 @@ export function LiquidGlobe({
       //     after, every mode springs back. Repaints only while something is deformed.
       if (!reduced) {
         if (drag.current.active) {
-          const R = Math.max(1, sizeRef.current / 2);
           const at = grabAt.current;
-          const vx = stationary ? 0 : yawV.current.get() / ROT_PER_PX / R;
-          const vy = stationary ? 0 : -pitchV.current.get() / ROT_PER_PX / R;
+          // The surface's velocity at the front, in radii/s: ω × ẑ for ω in rad/s.
+          const vx = stationary ? 0 : spinV.current[1]!.get() * DEG;
+          const vy = stationary ? 0 : -spinV.current[0]!.get() * DEG;
           jelly.drag(at.x, at.y, vx, vy);
         }
         if (everting.current && now >= nextEvertPulse.current) {
@@ -1812,52 +1829,49 @@ export function LiquidGlobe({
       //    can be grabbed mid-flight and retargeted from wherever the globe is
       //    and however fast it is going. That is the whole of "interruptible and
       //    redirectable" (`lib/fluid` §springStep).
+      //
+      //    On the trackball the spring runs on the ROTATION VECTOR from the target
+      //    to where the globe is (`x`, degrees, view space), one component per
+      //    axis with the angular velocity as its velocity: `q = exp(x)·target`,
+      //    and x springs to zero. Whatever axis the throw left on, the globe
+      //    carries on round it and curves into the target.
       if (!drag.current.active && settle.current) {
+        const target = settle.current;
         if (reduced) {
-          r.yaw = settle.current.yaw;
-          r.pitch = settle.current.pitch;
-          r.vYaw = 0;
-          r.vPitch = 0;
+          copyQuat(target, r.q);
+          r.w.fill(0);
           settle.current = null;
         } else {
-          const y = springStep(
-            { value: r.yaw, velocity: r.vYaw },
-            settle.current.yaw,
-            SETTLE_SPRING,
-            dt,
-          );
-          const p = springStep(
-            { value: r.pitch, velocity: r.vPitch },
-            settle.current.pitch,
-            SETTLE_SPRING,
-            dt,
-          );
-          r.yaw = y.value;
-          r.vYaw = y.velocity;
-          r.pitch = p.value;
-          r.vPitch = p.velocity;
-          // Arrived when BOTH axes have: a spring passing through its target at
-          // speed is at zero displacement but is not finished.
-          if (
-            Math.abs(y.value - settle.current.yaw) < 0.05 &&
-            Math.abs(p.value - settle.current.pitch) < 0.05 &&
-            Math.abs(y.velocity) < 2 &&
-            Math.abs(p.velocity) < 2
-          ) {
-            r.yaw = settle.current.yaw;
-            r.pitch = settle.current.pitch;
-            r.vYaw = 0;
-            r.vPitch = 0;
+          // x = log(q · target⁻¹)
+          SQ2[0] = target[0]!;
+          SQ2[1] = -target[1]!;
+          SQ2[2] = -target[2]!;
+          SQ2[3] = -target[3]!;
+          rotvecOf(mulQuat(r.q, SQ2, SQ2), SV);
+          let rest = true;
+          for (let a = 0; a < 3; a++) {
+            const st = springStep({ value: SV[a]!, velocity: r.w[a]! }, 0, SETTLE_SPRING, dt);
+            SV[a] = st.value;
+            r.w[a] = st.velocity;
+            // Arrived when EVERY axis has: a spring passing through its target at
+            // speed is at zero displacement but is not finished.
+            if (Math.abs(st.value) >= 0.05 || Math.abs(st.velocity) >= 2) rest = false;
+          }
+          if (rest) {
+            copyQuat(target, r.q);
+            r.w.fill(0);
             settle.current = null;
+          } else {
+            normalizeQuat(mulQuat(quatFromRotvec(SV[0]!, SV[1]!, SV[2]!, SQ), target, r.q));
           }
         }
-        rawPitch.current = r.pitch;
         dirty.current = true;
       }
 
       // 2. Where everything is now, and what the reticle is holding. Always at
       //    the TRUE rotation — this is the pass the lock and the magnetism read.
-      project(r.yaw, r.pitch);
+      matrixOf(r.q, TM);
+      project(TM);
 
       // 3. Magnetism. Once the coast is over, a pin inside the snap cone is eased
       //    to dead centre — including while you hold still with the pointer down,
@@ -1881,33 +1895,36 @@ export function LiquidGlobe({
         // "press, hold, let go" land on a phone. Once the finger is up the release
         // throw has already chosen a target, and pulling on the globe afterwards
         // would be the interface moving without being asked.
-        const { yaw: ty, pitch: tp } = frontPose(nodes[snapIdx], r.yaw, r.pitch);
-        if (Math.abs(ty - r.yaw) > 0.05 || Math.abs(tp - r.pitch) > 0.05) {
+        // The shortest turn that centres it, eased: no twist on the way.
+        rotvecOf(quatToFront(px[snapIdx]!, py[snapIdx]!, pz[snapIdx]!, SQ2), SV);
+        if (Math.hypot(SV[0]!, SV[1]!, SV[2]!) > 0.05) {
           const k = reduced ? 1 : 1 - Math.exp(-9 * dt);
-          r.yaw += (ty - r.yaw) * k;
-          r.pitch += (tp - r.pitch) * k;
-          rawPitch.current = r.pitch;
+          turn(r.q, SV[0]! * k, SV[1]! * k, SV[2]! * k);
           moved = true;
         }
       } else if (!touched.current && !reduced && !hovering.current) {
         // Untouched: drift, so a globe left alone still reads as a globe rather
         // than a picture of one. It stops the moment anyone takes hold (for good,
-        // unless the globe is `ambient`).
-        r.yaw += IDLE_SPIN * dt;
+        // unless the globe is `ambient`). About the screen's vertical, so it
+        // reads as turning whatever way up the globe was left.
+        turn(r.q, 0, IDLE_SPIN * dt, 0);
         moved = true;
       }
       if (moved) {
         dirty.current = true;
-        project(r.yaw, r.pitch);
+        matrixOf(r.q, TM);
+        project(TM);
       }
 
       // 4. One paint. `lockIdx`/`snapIdx` are settled by now, so the display pass
       //    is free to run at the wobbled rotation without touching either — the
       //    globe rocks, the aim does not.
       if (dirty.current) {
-        draw.yaw = r.yaw + (wob ? wob.yaw : 0);
-        draw.pitch = r.pitch + (wob ? wob.pitch : 0);
-        if (wob) project(draw.yaw, draw.pitch);
+        // The rock is a small view-space turn on top: pitch about x, yaw about y.
+        copyQuat(r.q, drawQ);
+        if (wob) turn(drawQ, wob.pitch, wob.yaw, 0);
+        matrixOf(drawQ, DM);
+        if (wob) project(DM);
         paint(now);
         dirty.current = false;
       }
@@ -1918,7 +1935,7 @@ export function LiquidGlobe({
       // Peak speed over the approach. The settle spring carries the throw's
       // velocity, so sampling here covers a released flick; the pointer handler
       // covers the finger still being down.
-      const speed = Math.hypot(r.vYaw, r.vPitch);
+      const speed = Math.hypot(r.w[0]!, r.w[1]!, r.w[2]!);
       if (speed > peakSpeed.current) peakSpeed.current = speed;
 
       if (lockIdx !== lockRef.current) {
@@ -2053,10 +2070,10 @@ export function LiquidGlobe({
            • pushing the right side away brings the left side forward, so the
              near face travels LEFT — yaw decreases. Pushing below centre brings
              the top forward and the near face travels UP — pitch increases.
-             (`rawPitch -= dy` in the drag handler is the same convention seen
-             from the other end: drag down, surface down, pitch down.)
+             (A drag down turns the globe about −x in the trackball — the same
+             convention seen from the other end: drag down, surface down.)
            • no roll, because a force parallel to the viewing axis can generate
-             none — which is just as well, since the globe has no roll axis.
+             none. (The trackball can twist; a poke just never does.)
 
          The lever arm is read off `hit`, the point on the UNIT SPHERE, not off
          the (sx, sy) the pointer landed on. Those differ by the perspective
@@ -2085,8 +2102,10 @@ export function LiquidGlobe({
       strike(e.clientX, e.clientY);
       // Where the finger took hold, for the soft body: the stage's box once per press (never in the frame loop),
       // and the finger in radii of the sphere from then on.
+      // The same box is the trackball's: every move is measured in radii of the
+      // sphere from its centre.
       const stage = stageRef.current;
-      if (stage && !reduced) {
+      if (stage) {
         const rect = stage.getBoundingClientRect();
         const r = Math.max(1, rect.width / 2);
         const at = grabAt.current;
@@ -2095,7 +2114,7 @@ export function LiquidGlobe({
         at.r = r;
         at.x = (e.clientX - rect.left - r) / r;
         at.y = (e.clientY - rect.top - r) / r;
-        jelly.grab(at.x, at.y);
+        if (!reduced) jelly.grab(at.x, at.y);
       }
       drag.current = {
         active: true,
@@ -2111,18 +2130,17 @@ export function LiquidGlobe({
       // previous gesture's speed stops counting. A press that interrupts a settle
       // is a continuation of the throw already in flight, and keeps it.
       if (!settle.current) peakSpeed.current = 0;
-      rot.current.vYaw = 0;
-      rot.current.vPitch = 0;
+      rot.current.w.fill(0);
       settle.current = null;
-      rawPitch.current = rot.current.pitch;
       touched.current = true;
       swallowClick.current = false;
       const now = performance.now();
       lastMoveAt.current = now;
-      yawV.current.reset();
-      pitchV.current.reset();
-      yawV.current.add(rot.current.yaw, now);
-      pitchV.current.add(rot.current.pitch, now);
+      turned.current.fill(0);
+      for (const v of spinV.current) {
+        v.reset();
+        v.add(0, now);
+      }
       setGrabbing(true);
     },
     [strike, reduced, jelly],
@@ -2196,22 +2214,27 @@ export function LiquidGlobe({
       const now = performance.now();
       lastMoveAt.current = now;
       const at = grabAt.current;
+      const fromX = at.x;
+      const fromY = at.y;
       at.x = (e.clientX - at.left - at.r) / at.r;
       at.y = (e.clientY - at.top - at.r) / at.r;
 
-      const r = rot.current;
-      // Upside down (past a pole), the yaw axis points the other way on screen,
-      // so the same drag has to turn it the other way for the surface to follow.
-      r.yaw += dx * ROT_PER_PX * (Math.cos(r.pitch * DEG) < 0 ? -1 : 1);
-      // Tilt tracks the finger 1:1, without limit — over the pole and on round.
-      rawPitch.current -= dy * ROT_PER_PX;
-      r.pitch = rawPitch.current;
-      yawV.current.add(r.yaw, now);
-      pitchV.current.add(r.pitch, now);
+      // The trackball: the turn this stretch of the pointer's path puts on the
+      // globe (`dragRotvec` — the arc under the pointer on the sphere, twist and
+      // tumble off it), composed onto the orientation. No axis is special and
+      // nothing is clamped: it goes over the poles and round the rim alike.
+      dragRotvec(fromX, fromY, at.x, at.y, SV);
+      turn(rot.current.q, SV[0]!, SV[1]!, SV[2]!);
+      const acc = turned.current;
+      const sv = spinV.current;
+      for (let a = 0; a < 3; a++) {
+        acc[a] = acc[a]! + SV[a]!;
+        sv[a]!.add(acc[a]!, now);
+      }
       // Peak speed while the finger is still down — this is the half of the
       // approach the frame loop cannot see, and it is the one that matters for a
       // single-gesture "flick, hold, release".
-      const speed = Math.hypot(yawV.current.get(), pitchV.current.get());
+      const speed = Math.hypot(sv[0]!.get(), sv[1]!.get(), sv[2]!.get());
       if (speed > peakSpeed.current) peakSpeed.current = speed;
       dirty.current = true;
     };
@@ -2242,23 +2265,34 @@ export function LiquidGlobe({
       // a snap. A gentle release projects nowhere and lands on what is already in
       // front of you; a hard flick spins visibly around the sphere and arrives
       // somewhere new. (`lib/fluid` §projectDistance, §resolveDetent.)
+      //
+      // On the trackball the throw coasts about the axis it left on: the angle it
+      // would cover is projected along ω, and the pin nearest the front of THAT
+      // pose is the target, turned to centre by the shortest arc.
       const r = rot.current;
-      r.vYaw = clamp(yawV.current.get(), -MAX_SPIN, MAX_SPIN);
-      r.vPitch = clamp(pitchV.current.get(), -MAX_SPIN, MAX_SPIN);
-      const projectedYaw = r.yaw + projectDistance(r.vYaw, DECELERATION.normal);
-      const projectedPitch = r.pitch + projectDistance(r.vPitch, DECELERATION.normal);
-
-      let best: { yaw: number; pitch: number } | null = null;
-      let bestDistance = Infinity;
-      for (const n of nodes) {
-        const target = frontPose(n, projectedYaw, projectedPitch);
-        const distance = Math.hypot(target.yaw - projectedYaw, target.pitch - projectedPitch);
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          best = target;
+      const sv = spinV.current;
+      for (let a = 0; a < 3; a++) r.w[a] = sv[a]!.get();
+      const speed = Math.hypot(r.w[0]!, r.w[1]!, r.w[2]!);
+      if (speed > MAX_SPIN) for (let a = 0; a < 3; a++) r.w[a] = (r.w[a]! * MAX_SPIN) / speed;
+      const spin = Math.min(speed, MAX_SPIN);
+      const coast = spin > 1e-6 ? projectDistance(spin, DECELERATION.normal) / spin : 0;
+      const projected = copyQuat(r.q, quat());
+      turn(projected, r.w[0]! * coast, r.w[1]! * coast, r.w[2]! * coast);
+      matrixOf(projected, SM);
+      let best = -1;
+      let bestZ = -Infinity;
+      for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i]!;
+        const z = SM[6]! * n.bx + SM[7]! * n.by + SM[8]! * n.bz;
+        if (z > bestZ) {
+          bestZ = z;
+          best = i;
         }
       }
-      settle.current = best;
+      if (best >= 0) {
+        const n = nodes[best]!;
+        settle.current = facing(projected, n.bx, n.by, n.bz, projected);
+      }
       dirty.current = true;
     };
 
@@ -2341,9 +2375,8 @@ export function LiquidGlobe({
    * focus ring is sitting on back off the front of the sphere.
    */
   const faceNode = useCallback((n: GlobeNode) => {
-    settle.current = frontPose(n, rot.current.yaw, rot.current.pitch);
-    rot.current.vYaw = 0;
-    rot.current.vPitch = 0;
+    settle.current = facing(rot.current.q, n.bx, n.by, n.bz, quat());
+    rot.current.w.fill(0);
     touched.current = true;
     dirty.current = true;
   }, []);

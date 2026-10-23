@@ -291,6 +291,25 @@ describe('the default plan (spec §7.1)', () => {
     expect(t2.tick(w2.now).tilt).toBe(0);
   });
 
+  it('starts from the hub trackball roll (position and velocity) and unwinds it with the tilt', () => {
+    const { tl, wall } = started(config({ globe: { roll: -40, rollVel: 90 } }));
+    const s0 = tl.tick(wall.now);
+    expect(s0.roll).toBeCloseTo(-40 * DEG, 12);
+    const v = new Float64Array(3);
+    tl.sample('roll', wall.now, v);
+    expect(v[1]! * 1000).toBeCloseTo(90 * DEG, 9);
+    tl.afterReady(wall.now);
+    runTo(tl, wall, PLAN_MS.tiltEnd, 5);
+    expect(tl.tick(wall.now).roll).toBe(0);
+    // An upright hub (every caller but the trackball) never rolls at all.
+    const { tl: t2, wall: w2 } = started();
+    t2.afterReady(w2.now);
+    for (let t = 0; t < PLAN_MS.tiltEnd; t += 250) {
+      runTo(t2, w2, t, 5);
+      expect(t2.tick(w2.now).roll).toBe(0);
+    }
+  });
+
   it('turns about 1.25 turns (the nearest landing) when the hub is at rest', () => {
     for (const [yaw, align] of [
       [0, 0],

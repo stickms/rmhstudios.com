@@ -328,6 +328,7 @@ describe('timeline vocabulary (S§7.1)', () => {
       'evert',
       'spin',
       'tilt',
+      'roll',
       'afterMix',
       'unwrap',
       'pageAlpha',

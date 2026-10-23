@@ -149,6 +149,9 @@ function applyHardCut(s: TimelineSnapshot, channel: ChannelId): void {
     case 'tilt':
       s.tilt += 0.4;
       break;
+    case 'roll':
+      s.roll += 0.4;
+      break;
     case 'wrap':
       s.wrap = Math.max(0, s.wrap - 0.5);
       break;
