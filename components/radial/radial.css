@@ -714,7 +714,7 @@ body:has(.radial-shell) .call-banner {
   :root:not([data-desktop-nav='rail']) .radial-shell {
     /* A globe needs more room than a column of labels: its pins carry their
        names beside them, so the sphere is sized well inside the track. */
-    --rad-rail-nav: 17rem;
+    --rad-rail-nav: 19.5rem;
   }
   :root:not([data-desktop-nav='rail']) .rad-rail--nav {
     display: none;
@@ -733,7 +733,7 @@ body:has(.radial-shell) .call-banner {
 }
 @media (min-width: 1440px) {
   :root:not([data-desktop-nav='rail']) .radial-shell {
-    --rad-rail-nav: 18rem;
+    --rad-rail-nav: 21rem;
   }
 }
 /* Sticky like the rail, and the full height it is allowed, with the globe held
@@ -756,6 +756,19 @@ body:has(.radial-shell) .call-banner {
   );
   width: 100%;
   min-height: var(--dock-globe);
+}
+/* The self-eversion (LiquidGlobe, `SELF_EVERT_MS`): while the docked globe turns
+   itself inside out after a navigation, its pins and reticle step aside so the
+   wireframe is the whole of it, and come back as it lands. Opacity only. */
+.radial-globe .radial-globe__pins,
+.radial-globe .radial-globe__reticle {
+  transition: opacity 0.28s ease;
+}
+.radial-globe[data-self-evert] .radial-globe__pins,
+.radial-globe[data-self-evert] .radial-globe__reticle {
+  opacity: 0;
+  pointer-events: none;
+  transition-duration: 0.16s;
 }
 .rad-globe-dock .radial-globe {
   --globe-size: var(--dock-globe);
@@ -1953,6 +1966,36 @@ html.reduce-transparency .radial-globe__contact,
    stay at frame rate. The frame loop already owns this element (it writes its
    transform); toggling one class on it from there costs a class change on one
    node and no render at all. */
+/* The page you are on (`aria-current`, from LiquidGlobe): an accent ring around
+   the pin and its name in the accent, with a slow halo breathing out of it, so
+   "you are here" reads at a glance without looking like the hover / lock fill.
+   The halo is `transform` + `opacity` only (the compositor). */
+.radial-globe__pin[aria-current='page'] .radial-globe__pin-dot {
+  outline: 2px solid var(--site-accent);
+  outline-offset: 2px;
+}
+.radial-globe__pin[aria-current='page'] .radial-globe__pin-dot::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 2px solid var(--site-accent);
+  pointer-events: none;
+  animation: globe-current-halo 2.4s ease-out infinite;
+}
+.radial-globe__pin[aria-current='page'] .radial-globe__pin-name {
+  color: var(--site-accent);
+}
+@keyframes globe-current-halo {
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
 .radial-globe__pin-wrap.is-locked .radial-globe__pin-dot {
   background: var(--site-accent);
   color: var(--site-accent-fg);
