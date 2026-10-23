@@ -94,7 +94,7 @@ Page titles wrap by default, and search/filter rows must fit a 320px viewport.
 Search and filters sit directly below their tab group, before summaries or cards.
 Controls use `--site-control-radius` (the small radius), panels use `--site-radius`;
 avatars, circular icon controls, badges and the globe keep their explicit shape.
-Taps never emit ripples. Loading buttons reserve both label states before interaction.
+Taps never emit ripples, except on the navigator globe, whose jelly ripples where it is pressed. Loading buttons reserve both label states before interaction.
 The navigator and its flattening/eversion share the liquid-glass studio material
 in `lib/liquid/globe-material.ts`; captured pages transmit through the surface
 instead of becoming a matte, diffuse globe.
