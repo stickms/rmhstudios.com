@@ -59,6 +59,7 @@
  * - Still: no haze, so the rim draws the plasma — static, but it still answers press and click. Off tiers draw
  *   nothing at all.
  */
+import { ambientTickDue, msToAmbientTick } from '@/lib/jelly/ambient-tick';
 import { jellyBus } from '@/lib/jelly/bus';
 import { JellyGovernor, governBudget, knobsAt } from '@/lib/jelly/governor';
 import {
@@ -86,6 +87,7 @@ import {
   CALM,
   DEGRADED_ROOT_SELECTOR,
   DENT,
+  GLOBE_SELECTOR,
   JELLY_LAYER_SELECTOR,
   jellyBudget,
   jellyMode,
@@ -137,8 +139,7 @@ import { clearScene, publishScene } from './scene-store';
  */
 const SELECTOR =
   '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass],.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"],[data-sonner-toast]';
-const EXCLUDE =
-  '[data-jelly="off"],[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,.radial-globe__stage,.radial-hub__orb,.eversion-overlay,canvas,input,textarea,select';
+const EXCLUDE = `[data-jelly="off"],[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,${GLOBE_SELECTOR},.radial-hub__orb,.eversion-overlay,canvas,input,textarea,select`;
 /** Nodes this engine and the other jelly services insert: never surfaces, never "content changed". */
 const OWN_LAYERS = JELLY_LAYER_SELECTOR;
 /** Rim dispersion relative to crown glass (01 §2.7). */
@@ -195,6 +196,8 @@ interface Surface {
   look: JellyLook;
   flow: [number, number, number];
   quiet: number;
+  /** Extra haze swing in the bevel (`--site-jelly-haze-edge`), absolute alpha. */
+  edge: number;
   /** `--site-jelly-on` > 0. */
   jellyOn: boolean;
   /** Rim canvas overdraw past the host, px (fixed at activation). */
@@ -217,6 +220,12 @@ interface Surface {
   /** Target and eased plasma wake level (bus `plasma:level`). */
   plasmaTarget: number;
   plasmaLevel: number;
+  /**
+   * `performance.now()` the plasma level last advanced from (0 = settled). The level eases by REAL elapsed time from
+   * here, not by the frame's clamped `dt`: on a slow frame (software GL) the 50 ms cap would otherwise stall the ease
+   * several-fold, and the first frame after a sleep would ignore the rAF latency.
+   */
+  plasmaAt: number;
   /** Charge rings; `pending` ones still carry viewport coords until the next rim pass converts them. */
   rings: PulseRing[];
   pendingRings: PulseRing[];
@@ -529,7 +538,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       still: false,
       look: { ...NO_LOOK, seed: seedFor(nextId) },
       flow: [1, 1, 0],
-      quiet: 0.35,
+      quiet: 0.75,
+      edge: 0,
       jellyOn: true,
       margin: 0,
       haze: null,
@@ -543,6 +553,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       gel: defaultGel(),
       plasmaTarget: 0,
       plasmaLevel: 0,
+      plasmaAt: 0,
       rings: [],
       pendingRings: [],
       ringBuf: new Float32Array(16),
@@ -602,7 +613,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       Math.max(0, num('--jelly-flow-eddy', s.role === 'chrome' ? 0 : 1)),
       axis,
     ];
-    s.quiet = Math.max(0, Math.min(1, num('--site-jelly-quiet', 0.35)));
+    s.quiet = Math.max(0, Math.min(1, num('--site-jelly-quiet', 0.75)));
+    s.edge = Math.max(0, Math.min(0.3, num('--jelly-haze-edge', num('--site-jelly-haze-edge', 0))));
     // #989 gel tokens (U4's `--gel-*`), with fallbacks while a theme has none.
     const rgba = (name: string, fallback: RGBA): [number, number, number, number] => {
       const css = raw(name);
@@ -677,6 +689,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.light = 0;
     s.tiltX = s.tiltY = 0;
     s.plasmaLevel = 0;
+    s.plasmaAt = 0;
     s.rings = [];
     s.pendingRings = [];
     s.dent = null;
@@ -945,6 +958,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
         look: s.look,
         flow: s.flow,
         quiet: s.quiet,
+        edge: s.edge,
         amp,
         gel: s.gel,
         plasma: plasmaFor(s, win.performance.now()),
@@ -971,7 +985,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       lastTick = 0;
       return;
     }
-    const ticking = hz > 0 && now - lastTick >= 1000 / hz - 2;
+    const ticking = ambientTickDue(now, lastTick, hz);
     const batch = ticking
       ? dueHaze([...hazeSet], now)
       : dueHaze(
@@ -990,10 +1004,12 @@ export function installLiquidGlass(doc: Document = document): () => void {
       s.due = hz > 0 ? nextDue(now, hz, s.role) : now;
     }
     if (!ticking) return;
+    // Idle CSS carriers step on this frame too (lib/jelly/flow-carriers.ts), so rest stays one frame per tick.
+    jellyBus.emit('ambient:tick', {});
     const interval = lastTick ? now - lastTick : 0;
     lastTick = now;
     if (interval > 0) {
-      const step = governor.record(win.performance.now() - t0, interval);
+      const step = governor.record(win.performance.now() - t0, interval, hz);
       if (step !== null) {
         governed = governBudget(budget, step);
         liveGovernorStep = step;
@@ -1009,7 +1025,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
    */
   const scheduleAmbient = (now: number, hz: number): boolean => {
     if (hz <= 0 || hazeSet.size === 0 || disposed) return false;
-    const wait = lastTick + 1000 / hz - now;
+    // Wake on the shared grid (lib/jelly/ambient-tick.ts), not this clock's own phase, so the haze ticks in the same
+    // frame as the globe and the globe cursor instead of adding frames of its own.
+    const wait = msToAmbientTick(now, hz);
     if (wait <= 12) return true;
     win.clearTimeout(ambientTimer);
     ambientTimer = win.setTimeout(() => {
@@ -1098,6 +1116,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
     if (!s) return;
     const target = s.still ? 0 : Math.max(0, Math.min(1, Number.isFinite(level) ? level : 0));
     if (target === s.plasmaTarget) return;
+    // A settled level starts easing from now; one already easing keeps its clock.
+    if (s.plasmaAt === 0) s.plasmaAt = win.performance.now();
     s.plasmaTarget = target;
     if (s.canvas) requestFrame();
   };
@@ -1186,9 +1206,14 @@ export function installLiquidGlass(doc: Document = document): () => void {
       // Dormant plasma: ease toward the bus level (0 at rest).
       let plasmaMoved = false;
       if (s.plasmaLevel !== s.plasmaTarget) {
-        s.plasmaLevel = easePlasma(s.plasmaLevel, s.plasmaTarget, dt * 1000);
+        // Real elapsed time, unclamped (the ease is exponential, so any step is stable): frame-rate independent.
+        const elapsed = s.plasmaAt > 0 ? Math.max(0, now - s.plasmaAt) : dt * 1000;
+        s.plasmaLevel = easePlasma(s.plasmaLevel, s.plasmaTarget, elapsed);
+        s.plasmaAt = s.plasmaLevel === s.plasmaTarget ? 0 : now;
         plasmaMoved = true;
         if (s.plasmaLevel !== s.plasmaTarget) again = true;
+      } else {
+        s.plasmaAt = 0;
       }
 
       // Charge rings: place the queued ones (viewport → host px), drop the spent ones.

@@ -45,7 +45,7 @@ language:
 
 **Identity: silent, sleek, frontier AI.** Calm, never busy: a near-black void,
 graphite surfaces, white ink and **one** electric accent (`--site-accent`), which
-is also the plasma colour — the default theme is the same rule in daylight. No
+is also the plasma colour — this is the default theme (Midnight); Daylight is the same rule in daylight. No
 gradients on the ground, no neon or glowing type, no sci-fi illustration. Copy is
 short and literal. Text is Geist, eyebrows and data Geist Mono (§3). **One signal
 action per view** — `<Button variant="signal">`, ink gel (§5.2).
@@ -283,12 +283,13 @@ full-screen route loads). `lib/style-tier.ts` picks one per route, and
 `app/site-tier.css`'s header explains why the app tier is a superset. Inside
 `globals.css`, an `@theme inline` block binds the `--site-*` variables to
 utility classes. The `:root` block is
-the **default theme** — the strict-monochrome Radial Avant-Garde Glass baseline (a
-light palette: white canvas, ink text and accent). At runtime the default is the
-**absence** of any `.style-*` class on `<html>`; a `.style-default` block also
-exists in `globals.css`, restating the same tokens purely so the settings theme
-gallery can preview the default palette inside a card while another theme is
-active. Keep the two in sync.
+**Daylight** (theme id `default`, a historical name) — the strict-monochrome
+Radial Avant-Garde Glass baseline (a light palette: white canvas, ink text and
+accent). At runtime Daylight is the **absence** of any `.style-*` class on
+`<html>`; a `.style-default` block also exists in `globals.css`, restating the
+same tokens purely so the settings theme gallery can preview Daylight inside a
+card while another theme is active. Keep the two in sync. Daylight is no longer
+the default theme — Midnight (`.style-graphite`) is (§2).
 
 Tokens every theme defines (set in `:root`, overridden by each `.style-*`
 class):
@@ -374,10 +375,11 @@ theme mechanism.
 Theme = a `.style-<id>` class on `<html>`; the catalog lives in
 `stores/themeStore.ts` (`SITE_STYLES`, with id/label/icon/group) and the CSS for
 each in `app/globals.css`. Visitors with no saved preference get `DEFAULT_STYLE`
-(`graphite`, Midnight), and persisted-but-unknown prefs self-heal in `Providers.tsx`.
+(`graphite`, Midnight), and persisted-but-unknown prefs self-heal to it. A
+stored `default` is Daylight and is kept: it is a choice, not "the default".
 
-**Daylight** (`default` = the bare `:root`, no class, kept for visitors who chose
-it) is the **Radial Liquid Glass baseline**: strict **monochrome** — a white aurora canvas, ink text, an ink
+**Daylight** (`default` = the bare `:root`, no class) is the **Radial Liquid
+Glass baseline**: strict **monochrome** — a white aurora canvas, ink text, an ink
 accent, hairline black borders — rendered as glass, not paper: its surfaces are
 translucent white tints over the drifting canvas. Every other theme is the same
 material in its own palette over its own `--site-canvas` aurora. (The old
@@ -386,11 +388,11 @@ material in its own palette over its own `--site-canvas` aurora. (The old
 **The picker ships three**, and they are one system in three accessibility
 modes rather than a gallery of moods — light, dark, and the no-glass fallback:
 
-| Shipped in `SITE_STYLES` | Label               | What it is                                                                                                                                                                                         |
-| ------------------------ | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `default` (no class)     | **Daylight** ☀      | Daylight stays the default for anyone who chose it. Strict black-&-white, ink accent, translucent white frost over a white aurora. `color-scheme: light`, document bg `#ffffff`.                   |
-| `graphite`               | **Midnight** ◐      | The site default for new visitors. The dark twin: OLED-black ground, near-white ink, graphite elevated surfaces, hairline light borders, one calm blue signal. `color-scheme: dark`, bg `#000000`. |
-| `high-contrast`          | **High contrast** ◑ | WCAG AAA, and **the absence of the material**: opaque surfaces, no blur, no glint, no aurora, 2px borders, yellow accent. Everything must survive it.                                              |
+| Shipped in `SITE_STYLES` | Label               | What it is                                                                                                                                                         |
+| ------------------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `default` (no class)     | **Daylight** ☀      | The light theme. Strict black-&-white, ink accent, translucent white frost over a white aurora. `color-scheme: light`, document bg `#ffffff`.                      |
+| `graphite`               | **Midnight** ◐      | The site default. OLED-black ground, near-white ink, graphite elevated surfaces, hairline light borders, one calm blue signal. `color-scheme: dark`, bg `#000000`. |
+| `high-contrast`          | **High contrast** ◑ | WCAG AAA, and **the absence of the material**: opaque surfaces, no blur, no glint, no aurora, 2px borders, yellow accent. Everything must survive it.              |
 
 Four more palettes stay in `globals.css` as complete, ready token sets — they
 are not in the picker, and they exist as the reference every **user theme**
@@ -439,7 +441,7 @@ a `SITE_STYLES` entry** (with its `bg`); nothing else needs editing.
 - `stores/themeStore.ts` — Zustand `useThemeStore { style, setStyle, preview,
 setPreview, accent, setAccent }`. `THEME_BG` is derived from `SITE_STYLES`.
 - `components/Providers.tsx` — an effect swaps the `style-*` class on `<html>`
-  (Dark/`default` needs none — it uses `:root`), applies the accent override,
+  (Daylight/`default` needs none — it uses `:root`), applies the accent override,
   persists to `localStorage`, and updates `<meta name="theme-color">` + body
   background. It also **self-heals** any persisted-but-unknown style back to
   `DEFAULT_STYLE`. Games/app routes are excluded (`THEME_EXCLUDED_ROUTES`) —
@@ -1426,7 +1428,7 @@ Global (in `globals.css`):
   and `.rtl-flip` on directional icons.
 - `high-contrast` is an explicit theme choice (there is no
   `@media (prefers-contrast)` hook) — test new UI against `.style-high-contrast`
-  and `.style-graphite` (Midnight), not just the default Daylight theme.
+  and the Daylight theme (`default`, no class), not just the default Midnight.
 - **Never let colour be the only carrier of meaning.** Colour-vision modes
   (§2.1) retint the semantic tokens, but a retint cannot rescue a UI where the
   only difference between two states is hue. Pair status with a glyph, a label,

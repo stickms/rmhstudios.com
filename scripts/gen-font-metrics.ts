@@ -74,8 +74,25 @@ import { resolve } from 'node:path';
 
 // ── The two inputs ──────────────────────────────────────────────────────────
 
-/** The face the site actually downloads (see globals.css's `@import`). */
-const REAL_FONT = 'node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2';
+/**
+ * The faces the site downloads with `font-display: swap` (see globals.css's
+ * `@import`s), each with the fallback family its metric face is published
+ * under. `--font geist` picks one; Inter is the default so the original
+ * invocation keeps printing what it always printed.
+ *
+ *   pnpm exec tsx scripts/gen-font-metrics.ts               # Inter Fallback
+ *   pnpm exec tsx scripts/gen-font-metrics.ts --font geist  # Geist Fallback
+ */
+const REAL_FONTS = {
+  inter: {
+    path: 'node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2',
+    fallbackFamily: 'Inter Fallback',
+  },
+  geist: {
+    path: 'node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2',
+    fallbackFamily: 'Geist Fallback',
+  },
+} as const;
 
 /**
  * The fallback's METRIC SOURCE. Liberation Sans is a metric-compatible clone of
@@ -90,9 +107,6 @@ const FALLBACK_CANDIDATES = [
   '/System/Library/Fonts/Supplemental/Arial.ttf',
   'C:/Windows/Fonts/arial.ttf',
 ];
-
-/** The CSS family name the generated face is published under. */
-const FALLBACK_FAMILY = 'Inter Fallback';
 
 /** `src: local(...)` list, in resolution order. All metric-compatible. */
 const LOCAL_SOURCES = ['Arial', 'Helvetica Neue', 'Helvetica', 'Liberation Sans', 'Roboto'];
@@ -276,10 +290,9 @@ function readWoff2(buf: Buffer): RawFont {
     const transformVersion = (flags >> 6) & 0x03;
     const transformed =
       tag === 'glyf' || tag === 'loca' ? transformVersion === 0 : transformVersion !== 0;
-    let skip: number;
-    [skip, pos] = readUIntBase128(buf, pos);
-    void skip;
-    if (transformed) [skip, pos] = readUIntBase128(buf, pos);
+    // origLength, then transformLength when transformed: read past both.
+    [, pos] = readUIntBase128(buf, pos);
+    if (transformed) [, pos] = readUIntBase128(buf, pos);
     if (tag === 'hmtx' && transformed) hmtxAdvanceOffset = 1;
   }
 
@@ -440,6 +453,13 @@ function main(): void {
   const argv = process.argv.slice(2);
   const flagIndex = argv.indexOf('--fallback');
   const override = flagIndex >= 0 ? argv[flagIndex + 1] : undefined;
+  const fontIndex = argv.indexOf('--font');
+  const fontKey = fontIndex >= 0 ? argv[fontIndex + 1] : 'inter';
+  if (!(fontKey in REAL_FONTS)) {
+    throw new Error(`--font must be one of: ${Object.keys(REAL_FONTS).join(', ')}`);
+  }
+  const { path: REAL_FONT, fallbackFamily: FALLBACK_FAMILY } =
+    REAL_FONTS[fontKey as keyof typeof REAL_FONTS];
 
   const realPath = resolve(process.cwd(), REAL_FONT);
   if (!existsSync(realPath)) {

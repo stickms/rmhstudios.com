@@ -9,7 +9,7 @@
  * own rate by waking from a timer, never by spinning).
  *
  * Drivers run in ascending `order` (ties keep registration order), so a producer runs before its consumer in the same
- * frame: physics (10) writes the dent and lattice drives that the engine (20) draws, and arcs (30) draw last. Rect
+ * frame: a drag owner (`useFluidDrag`, 5) moves its sheet, physics (10) writes the dent and lattice drives that the engine (20) draws, and arcs (30) draw last. Rect
  * reads belong in scroll/resize/activation handlers, never in a driver.
  *
  * One driver throwing is reported asynchronously and never stops the others or the loop.

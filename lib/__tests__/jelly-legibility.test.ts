@@ -231,6 +231,7 @@ const TOKENS = [
   '--site-jelly-plasma',
   '--site-jelly-flow-speed',
   '--site-jelly-quiet',
+  '--site-jelly-haze-edge',
   '--site-jelly-on',
   '--site-arc-core',
   '--site-arc-glow',

@@ -393,14 +393,29 @@ cheapest at:
   hub's 20px blur, driven by the surface normal so it warps with every dent. It is
   placed (a layout read) when the globe attaches, finishes blooming, resizes, or a
   new picture lands, never per frame.
-- **It costs nothing at rest or while spinning.** A uniform glass ball looks the
-  same at any rotation, so the shader is redrawn only while the surface moves (a
-  ripple, the dough body) plus the frame it settles on, and never during the
-  eversion. Measured: 0 GL draws idle, ~70 over a poke's whole life; the CSS
-  sheen's infinite animation is retired while the material is up.
+- **It is Plasmatic Jelly, drawn round** (2026-10-23, owner: "the plasma is
+  outlining the shape in a square — the globe itself should be plasmatic jelly").
+  The site's slab services draw rounded rectangles, so the globe is excluded from
+  every one of them by `GLOBE_SELECTOR` (`lib/jelly/tiers.ts`, folded into
+  `OPT_OUT_SELECTOR`; test `lib/jelly/__tests__/globe-exclusion.test.ts`) and the
+  coat draws the same layers on the sphere instead: a slow haze current
+  (`--site-jelly-haze`, quiet behind the pins), dormant `--site-accent` plasma
+  clipped inside the limb (wakes on fine-pointer hover, bright while pressed,
+  rung by every ripple front), and the RGB-led rim (`--gel-edge-r/-g/-b`, red
+  toward the top-left light) with the 1px `--gel-fresnel` edge. No gloss band:
+  the studio reflection and key glint live at the limb; the dent keeps its sheen.
+- **It costs little, and nothing when it may not move.** A uniform glass ball looks
+  the same at any rotation, so spinning issues no GL work; the shader is redrawn
+  while the surface moves (a ripple, the dough body) or the plasma level eases, and
+  otherwise only on the jelly ambient clock (`jellyBudget().clockHz` engaged,
+  `idleClockHz` after `IDLE_AFTER_MS`), driven from the globe's own frame loop (no
+  second rAF). Jelly motion Still, reduced motion, a hidden or unfocused tab, an
+  off-screen ball, the rehearsal mount and the eversion all stop it; the haze then
+  holds still. The CSS sheen's infinite animation is retired while the material is up.
 - **One GL context per page**, shared by every mount; the idle rehearsal builds
   it, so the real open never compiles a shader. The stage only drops the CSS
-  glass (`data-globe-material="shader"`) after the first frame is drawn, and a lost context
+  glass (`data-globe-coat="on"`; never `data-jelly`, which would make the square
+  stage a rectangular site-material host) after the first frame is drawn, and a lost context
   hands back to it.
 - **Not everywhere.** High contrast, reduced transparency (setting or media
   query), `prefers-contrast: more`, `perf-lite` and no-WebGL keep the CSS glass;

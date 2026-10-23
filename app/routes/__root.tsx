@@ -59,7 +59,6 @@ import appTierCss from '@/app/app-tier.css?url';
 import { hasStylesheet, styleTierFor } from '@/lib/style-tier';
 // The Latin subset of the self-hosted body font. Imported for its hashed URL so
 // the document can PRELOAD it — see the `links` block in `head()` below.
-import interLatinWoff2 from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
 import geistLatinWoff2 from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
 import { resolveLocale, parseLocaleCookie } from '@/lib/i18n/resolve';
 import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from '@/lib/i18n/config';
@@ -579,26 +578,17 @@ export const Route = createRootRoute({
           title: 'RMH Studios',
           href: '/opensearch.xml',
         },
-        // Inter's Latin subset, requested in parallel with the stylesheet rather
+        // Geist's Latin subset, requested in parallel with the stylesheet rather
         // than after it. A font declared inside a stylesheet is not discoverable
         // until that sheet has been downloaded AND parsed, and the entry sheet
         // is ~315 KB on a site page — so the 47 KB font that renders essentially
         // all of the page's text used to start on the far side of that, and `font-display: swap`
-        // paid for it with a visible fallback-to-Inter reflow. Only the Latin
+        // paid for it with a visible fallback-to-webfont reflow. Only the Latin
         // subset is preloaded: the other six (Cyrillic, Greek, Vietnamese, …)
         // stay behind their `unicode-range` so a Latin-script visitor never
         // fetches them. `crossOrigin` is REQUIRED even same-origin — fonts are
         // fetched in CORS mode, and a preload without it is a second,
         // uncredentialed fetch instead of a warm cache hit.
-        {
-          rel: 'preload',
-          as: 'font',
-          type: 'font/woff2',
-          href: interLatinWoff2,
-          crossOrigin: 'anonymous',
-        },
-        // Geist leads the body/display stacks, so its Latin subset gets the same
-        // early, CORS-mode preload as Inter (kept as the non-Latin/fallback face).
         {
           rel: 'preload',
           as: 'font',

@@ -28,6 +28,15 @@
  * - **Degraded tier:** `.style-high-contrast` removes haze, carriers and the arc layer.
  * - **Teardown** leaves no jelly node or attribute behind.
  *
+ * **On a machine with no GPU** (SwiftShader / llvmpipe — every CI runner) frames are slow and the governor steps down.
+ * Its last step keeps a 6 Hz floor (`GOVERNED_FLOOR_HZ`), so R7 "never freezes" is judged on every renderer; only a
+ * governed clock of 0 on software GL (an older governor) is reported as `SKIP <name> — <reason>` with the renderer
+ * string (testing/e2e/lib/gpu.mjs), counted in the final line and annotated in CI — never passed silently. On hardware
+ * GL a 0 Hz clock is a failure. Every other check (budgets, bounds, ledger, rest-return, teardown, zero frames under
+ * still) is deterministic and fails for real.
+ *
+ *   JELLY_ASSUME_GPU=1|0   override the software-GL detection
+ *
  * A hidden tab is not exercised: headless Chromium cannot background a page reliably. `ambientHz()` (unit-tested in
  * lib/liquid/glass/__tests__/policy.test.ts and N1 in lib/__tests__/jelly-contract.test.ts) owns that branch.
  */
@@ -36,6 +45,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { build as bundle } from 'esbuild';
 import { chromium } from 'playwright';
+import { annotateSkip, describeRenderer, probeRenderer } from './lib/gpu.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const js = await bundle({
@@ -71,11 +81,14 @@ const js = await bundle({
       stops.push(installLiquidGlass());
       // #989: every plasma level, charge pulse and arc strike, timestamped, from before the services start.
       const events = { plasma: [], pulse: [], strike: [], press: [], admit: [] };
-      // Every flash onset the ONE site-wide ledger admits — the ceiling for every arc drawn.
+      // Every flash onset the ONE site-wide ledger admits — the ceiling for every arc drawn. Recorded on the ledger's
+      // OWN clock (the \`now\` it is asked about): the renderer asks ahead of time, at the instant the flash will be
+      // drawn (renderer.ts admitArc: \`arc.start + strikes[0].at\`), so the time of the call is not the flash time and
+      // a window judged on call times can read 4 where the ledger correctly holds 3 (seen on 2-core SwiftShader).
       const tryOnset = arcFlashLedger.tryOnset.bind(arcFlashLedger);
       arcFlashLedger.tryOnset = (now) => {
         const ok = tryOnset(now);
-        if (ok) events.admit.push({ t: performance.now() });
+        if (ok) events.admit.push({ t: now, calledAt: performance.now() });
         return ok;
       };
       const idOf = (el) => (el && el.id) || (el && el.tagName) || '?';
@@ -173,7 +186,10 @@ const markup = `<meta charset="utf-8"><meta name="viewport" content="width=devic
   </main>`;
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH,
+  // Same resolution as frame-budget.mjs / fouc.mjs: an explicit path, else the sandbox's pinned build, else Playwright's.
+  executablePath:
+    process.env.CHROMIUM_PATH ??
+    (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined),
   headless: true,
   args: [
     '--no-sandbox',
@@ -184,6 +200,13 @@ const browser = await chromium.launch({
 });
 let checks = 0;
 const failures = [];
+const skipped = [];
+/** A check this machine cannot judge (no GPU): printed, counted and annotated — never a silent pass. */
+function skip(name, reason) {
+  skipped.push(name);
+  console.log(`SKIP ${name} — ${reason}`);
+  annotateSkip('jelly-interaction SKIP', `${name} — ${reason}`);
+}
 /** Records and continues, so one run reports every broken promise; the exit code is non-zero if any failed. */
 function check(name, condition) {
   checks++;
@@ -213,6 +236,8 @@ try {
     return route.abort();
   });
   await page.goto('https://jelly-interaction.test/');
+  const gpu = await probeRenderer(page);
+  console.log(describeRenderer(gpu));
   await page.addScriptTag({ content: probe });
   await page.addScriptTag({ content: js.outputFiles[0].text });
   const settle = (ms) => page.waitForTimeout(ms);
@@ -499,9 +524,19 @@ try {
     const cy = card.y + card.height * 0.5;
     await page.mouse.move(cx - 30, cy);
     await page.mouse.move(cx, cy, { steps: 4 });
-    await settle(350);
-    const hoverLevels = (await ev()).plasma.slice(plasmaBefore).filter((p) => p.id === 'c2');
     const wake = await page.evaluate(() => window.__jelly.PLASMA.wake);
+    // PLASMA.easeMs eases the level up; on software GL its frames are slow, so wait (bounded) for it to arrive.
+    await page
+      .waitForFunction(
+        ({ from, wake }) =>
+          window.__jelly.events.plasma
+            .slice(from)
+            .some((p) => p.id === 'c2' && Math.abs(p.level - wake) < 0.051),
+        { from: plasmaBefore, wake },
+        { timeout: 4000, polling: 50 },
+      )
+      .catch(() => {});
+    const hoverLevels = (await ev()).plasma.slice(plasmaBefore).filter((p) => p.id === 'c2');
     check(
       `hover wakes the plasma: plasma:level ≈ PLASMA.wake on #c2 (${hoverLevels.map((p) => p.level.toFixed(2)).join(',') || 'none'})`,
       hoverLevels.some((p) => Math.abs(p.level - wake) < 0.051),
@@ -558,7 +593,18 @@ try {
     );
     await page.mouse.up();
     await page.mouse.move(5, 790, { steps: 3 });
-    await settle(1800);
+    // The ease-out is frame-driven; software GL draws slowly, so wait for the outcome (bounded) instead of a fixed time.
+    await page
+      .waitForFunction(
+        () =>
+          window.__jelly.dent('c2') === null &&
+          !document.getElementById('c2').hasAttribute('data-jelly-active') &&
+          window.__jelly.events.plasma.filter((p) => p.id === 'c2').at(-1)?.level === 0,
+        null,
+        { timeout: 5000, polling: 100 },
+      )
+      .catch(() => {});
+    await settle(200);
     const after = await page.evaluate(() => ({
       dent: window.__jelly.dent('c2'),
       active: document.getElementById('c2').hasAttribute('data-jelly-active'),
@@ -710,14 +756,23 @@ try {
     `after IDLE_AFTER_MS the clock sits on its floor: ${idleFps.toFixed(1)} fps ≤ ${budget.idleClockHz} + 1 (the frame-budget rest limit)`,
     idleFps <= budget.idleClockHz + 1,
   );
-  if (governed.idleClockHz > 0 && hazeNow > 0) {
-    check(
-      `…and never freezes while haze is visible (R7: ${idleFps.toFixed(1)} fps > 0)`,
-      idleFps > 0,
+  const r7 = `…and never freezes while haze is visible (R7: ${idleFps.toFixed(1)} fps > 0)`;
+  if (hazeNow === 0) {
+    check(`${r7} — no hazy host left to judge it on`, false);
+  } else if (governed.idleClockHz > 0) {
+    // The governor's last step keeps a floor (GOVERNED_FLOOR_HZ), so the clock must tick on any renderer, software
+    // GL included: this is a real check everywhere.
+    check(`${r7} [governor step ${governed.step}, floor ${governed.idleClockHz} Hz]`, idleFps > 0);
+  } else if (gpu.software) {
+    // A governed clock of 0 (static haze) on software GL is the designed answer to slow frames: not judgeable here.
+    skip(
+      r7,
+      `software GL (${gpu.renderer || 'no WebGL'}), governor step ${governed.step} at 0 Hz; run on a real GPU`,
     );
   } else {
-    console.log(
-      `SKIP R7 no-freeze: the governor reached step ${governed.step} (static haze) on this machine — run on a real GPU`,
+    check(
+      `${r7} — the governor fell to a 0 Hz clock on hardware GL (step ${governed.step}, ${gpu.renderer})`,
+      false,
     );
   }
 
@@ -787,7 +842,10 @@ try {
   );
   if (errors.length) console.log(errors.slice(0, 4));
   check('no browser exceptions', errors.length === 0);
-  console.log(`\n${checks - failures.length}/${checks} checks passed.`);
+  console.log(
+    `\n${checks - failures.length}/${checks} checks passed, ${skipped.length} skipped (GPU-only on ${gpu.software ? 'software' : 'hardware'} GL), ${failures.length} failed.`,
+  );
+  if (skipped.length) console.log(`SKIPPED:\n- ${skipped.join('\n- ')}`);
   if (failures.length) {
     console.log(`FAILED:\n- ${failures.join('\n- ')}`);
     process.exitCode = 1;

@@ -42,9 +42,17 @@ const hover = globals.slice(
   globals.indexOf(
     '@media (hover: hover) and (pointer: fine) {\n  @layer components {\n    [data-evert]',
   ),
-  globals.indexOf('/* Two variants of the layer'),
+  globals.indexOf('/* Legacy variant tint tokens'),
 );
-assert.ok(evert.length > 200 && hover.length > 100, 'real eversion rules found');
+assert.ok(
+  evert.length > 200 &&
+    evert.length < 8000 &&
+    ghostCss.length > 100 &&
+    ghostCss.length < 4000 &&
+    hover.length > 100 &&
+    hover.length < 1000,
+  'real eversion rules found (the slice markers still exist in app/globals.css)',
+);
 const wheelCss = radial.slice(
   radial.indexOf('/* ── The wheel'),
   radial.indexOf('/* ── RMHark card'),
@@ -122,20 +130,6 @@ function check(label, value) {
   assert.ok(value, label);
   checks++;
 }
-/**
- * A check that encodes the contract but is KNOWN to fail on the current tree (a real violation handed off to its
- * owner). It never stops the run — later checks still report — but any failure sets a non-zero exit code.
- */
-const knownFailures = new Set();
-function known(label, value) {
-  if (value) {
-    checks++;
-    return;
-  }
-  knownFailures.add(label.replace(/^\d+\/[\w-]*: /, ''));
-  process.exitCode = 1;
-  console.log(`KNOWN VIOLATION ${label}`);
-}
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   const errors = [];
@@ -194,7 +188,8 @@ try {
         scale: cs.scale,
         translate: cs.translate,
         offsetH: el.offsetHeight,
-        linkBody: link.hasAttribute('data-jelly-body') || ls.scale !== 'none' || ls.translate !== 'none',
+        linkBody:
+          link.hasAttribute('data-jelly-body') || ls.scale !== 'none' || ls.translate !== 'none',
         neighbourY: document.querySelector('#card-1')?.getBoundingClientRect().y,
         slotTransform: getComputedStyle(el.parentElement).transform,
         border: el.clientLeft,
@@ -229,15 +224,16 @@ try {
           rest.offsetH === hovered.offsetH &&
           hovered.transform === 'none' &&
           Math.abs((hovered.neighbourY ?? 0) - (rest.neighbourY ?? 0)) <= MOTION_BOUNDS.nudgePx &&
-          (theme !== 'style-high-contrast' || (hovered.scale === 'none' && hovered.translate === 'none')),
+          (theme !== 'style-high-contrast' ||
+            (hovered.scale === 'none' && hovered.translate === 'none')),
       );
       // The delegate link fills the card; the soft body must be the CARD (host + glass + hover layer move together),
       // never the link inside a still card — that slides the text and hit area off its own glass.
-      known(
+      check(
         `${width}/${theme}: a card's delegate link is not a soft body of its own`,
         !hovered.linkBody,
       );
-      known(
+      check(
         `${width}/${theme}: hover covers the card's inner width`,
         Math.abs(hovered.linkX - hovered.x - hovered.border) < 0.5 &&
           Math.abs(hovered.linkW - (hovered.width - 2 * hovered.border)) < 0.5,
@@ -251,7 +247,10 @@ try {
       );
       await page.mouse.move(1, 1);
       await settle(1500);
-      check(`${width}/${theme}: the card returns to identity after unhover`, atRest(await body('#card-0')));
+      check(
+        `${width}/${theme}: the card returns to identity after unhover`,
+        atRest(await body('#card-0')),
+      );
       check(
         `${width}/${theme}: no horizontal overflow`,
         await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -380,14 +379,45 @@ try {
       .catch(() => undefined); // the check below names the control that never got its slab
     const slab = await page.evaluate((host) => {
       const el = document.querySelector(host);
-      return el ? `${el.getAttribute('data-liquid-canvas')}|${el.getAttribute('data-liquid-glass')}|${el.className}` : 'missing';
+      return el
+        ? `${el.getAttribute('data-liquid-canvas')}|${el.getAttribute('data-liquid-glass')}|${el.className}`
+        : 'missing';
     }, host);
-    // Hover ghosts (inline links and fields) are a KNOWN regression: see the hand-off in the W3-D report.
-    (host === selector ? check : known)(
-      `${id}: shared material supplies the optical response (${slab})`,
-      slab.startsWith('on|'),
-    );
+    // Inline links and fields take the response on the hover ghost (lib/evert-auto.ts), which needs its base rules
+    // in app/globals.css (`.evert-ghost`, restored in F2 after a39a095e deleted them).
+    check(`${id}: shared material supplies the optical response (${slab})`, slab.startsWith('on|'));
   }
+  // The ghost is an out-of-flow overlay: fixed, never hit-testable, invisible once the pointer leaves, and it never
+  // adds page height (without its base rules it fell to the end of <body> as a static block).
+  await page.mouse.move(1, 1);
+  await settle(650);
+  const ghost = await page.evaluate(() => {
+    const el = document.querySelector('.evert-ghost[data-kind="hover"]');
+    if (!el) return null;
+    const cs = getComputedStyle(el);
+    const before = document.documentElement.scrollHeight;
+    el.style.display = 'none';
+    const without = document.documentElement.scrollHeight;
+    el.style.display = '';
+    return {
+      position: cs.position,
+      pointerEvents: cs.pointerEvents,
+      opacity: cs.opacity,
+      on: el.hasAttribute('data-on'),
+      extraHeight: before - without,
+      transition: cs.transitionProperty,
+    };
+  });
+  check(
+    `the hover ghost is a fixed, inert overlay that adds no page height (${JSON.stringify(ghost)})`,
+    !!ghost &&
+      ghost.position === 'fixed' &&
+      ghost.pointerEvents === 'none' &&
+      !ghost.on &&
+      ghost.opacity === '0' &&
+      ghost.extraHeight === 0 &&
+      !/transform|scale|translate/.test(ghost.transition),
+  );
   await page.evaluate(() => {
     window.stopGlass();
     window.stopInteractions();
@@ -406,7 +436,6 @@ try {
   );
   check('no page errors', errors.length === 0);
   console.log(`${checks} UI stability checks passed on ${name}; screenshots: ${out}`);
-  if (knownFailures.size) console.log(`known violations (exit 1): ${[...knownFailures].join('; ')}`);
 } finally {
   await browser.close();
 }

@@ -4,7 +4,9 @@
  * Modelled on `lib/eversion/gl/governor-tiers.ts`'s `DprGovernor`: pure (no DOM, no clock of its own — the engine
  * feeds it), **downscale-only**, with a warm-up so a route's first frames (shader compiles, decodes) never read as
  * load. Each window is {@link GOVERNOR_WINDOW_MS} of ticks; if its p90 jelly frame cost exceeds the tier's target, or
- * its p90 tick interval exceeds 1.5× the clock period, it takes ONE step down this ladder:
+ * its p90 tick interval exceeds 1.5× the period of the clock that was actually RUNNING for that tick (the engine drops
+ * to the 12 Hz idle floor after `IDLE_AFTER_MS` without input — an idle tick 83 ms apart is on time, not late), it takes
+ * ONE step down this ladder:
  *
  *   1. clock 30 → 20 Hz · 2. ambient slots halved · 3. carriers halved · 4. ambient arcs off ·
  *   5. haze canvases at 0.125 scale · 6. clock 0 (static haze).
@@ -28,16 +30,26 @@ export const GOVERNOR_DT_FACTOR = 1.5;
  * frame. It is dropped rather than clamped so a resume never steps the governor.
  */
 export const GOVERNOR_MAX_INTERVAL_MS = 1000;
-/** Main-thread jelly work per ambient tick (04 §3.5): 2 ms on desktop, 3 ms on handheld. */
+/**
+ * Main-thread jelly work per ambient tick. The measured cost includes each haze canvas's WebGL → 2D `drawImage` copy,
+ * which synchronises with the GPU, so a healthy desktop routinely spends 2–4 ms on a 6-draw tick; the original 2 ms
+ * target (04 §3.5) stepped real desktops down to a frozen haze within seconds. 6 ms at the 30 Hz engaged clock is
+ * ≤ 180 ms/s of main thread — inside the 250 ms/s rest-CPU target.
+ */
 export const GOVERNOR_COST_TARGET_MS: Readonly<Record<JellyTier, number>> = {
-  full: 2,
-  coarse: 2,
-  handheld: 3,
-  lite: 3,
-  off: 3,
+  full: 6,
+  coarse: 6,
+  handheld: 8,
+  lite: 8,
+  off: 8,
 };
 /** Step 1's clock ceiling. */
 export const GOVERNED_CLOCK_HZ = 20;
+/**
+ * The clock the last step keeps. The ladder sheds detail and rate but never freezes the haze: the material always has
+ * underlying motion while it is visible (master plan R7). Only hidden/unfocused/unseen/degraded/Still stop the clock.
+ */
+export const GOVERNED_FLOOR_HZ = 6;
 /** Step 5's haze canvas resolution scale. */
 export const GOVERNED_HAZE_SCALE = 0.125;
 /** The number of steps on the ladder. */
@@ -46,7 +58,7 @@ export const GOVERNOR_MAX_STEP = 6;
 export interface GovernorKnobs {
   /** 0 (untouched) … {@link GOVERNOR_MAX_STEP}. */
   step: number;
-  /** Ceiling on the ambient clock (Hz); `Infinity` = no ceiling, 0 = static haze. */
+  /** Ceiling on the ambient clock (Hz); `Infinity` = no ceiling; the last step keeps {@link GOVERNED_FLOOR_HZ}. */
   maxClockHz: number;
   /** Multiplier on `hazeSlots` (floored, at least 1 while the budget is non-zero). */
   slotScale: number;
@@ -62,7 +74,7 @@ export function knobsAt(step: number): GovernorKnobs {
   const s = Math.max(0, Math.min(GOVERNOR_MAX_STEP, Math.floor(step)));
   return {
     step: s,
-    maxClockHz: s >= 6 ? 0 : s >= 1 ? GOVERNED_CLOCK_HZ : Infinity,
+    maxClockHz: s >= 6 ? GOVERNED_FLOOR_HZ : s >= 1 ? GOVERNED_CLOCK_HZ : Infinity,
     slotScale: s >= 2 ? 0.5 : 1,
     carrierScale: s >= 3 ? 0.5 : 1,
     ambientArcs: s < 4,
@@ -105,6 +117,8 @@ export class JellyGovernor {
   private elapsed = 0;
   private seen = 0;
   private _step = 0;
+  /** The clock the previous tick ran at (0 = none yet): an interval spans two ticks, so it is judged by the slower. */
+  private lastTickHz = 0;
 
   /**
    * @param tier picks the cost target ({@link GOVERNOR_COST_TARGET_MS}).
@@ -131,23 +145,31 @@ export class JellyGovernor {
   }
 
   /**
-   * Record one ambient tick: `costMs` = main-thread jelly work in it, `intervalMs` = time since the previous tick.
-   * Returns the new step when one is taken, else `null`.
+   * Record one ambient tick: `costMs` = main-thread jelly work in it, `intervalMs` = time since the previous tick,
+   * `tickHz` = the clock this tick ran at (the engine's `ambientHz`: the engaged clock, or the idle floor after
+   * `IDLE_AFTER_MS` without input). Lateness is judged against THAT clock's period — the slower of this tick's and the
+   * previous tick's, since the interval spans both — never against the engaged clock: judging 12 Hz idle ticks
+   * (83 ms) against 30 Hz (50 ms) called every idle window late and ratcheted any desktop to step 6, a frozen haze, in
+   * ~12 s of reading without touching the mouse. Defaults to the governor's own clock. Returns the new step when one
+   * is taken, else `null`.
    */
-  record(costMs: number, intervalMs: number): number | null {
+  record(costMs: number, intervalMs: number, tickHz: number = this.clockHz): number | null {
     if (this._step >= GOVERNOR_MAX_STEP || this.clockHz <= 0) return null;
+    const prevHz = this.lastTickHz;
+    this.lastTickHz = tickHz > 0 ? tickHz : 0;
     if (this.seen++ < GOVERNOR_WARMUP_TICKS) return null;
     if (!(intervalMs > 0) || intervalMs > GOVERNOR_MAX_INTERVAL_MS || !(costMs >= 0)) return null;
+    if (!(tickHz > 0)) return null;
+    // The interval as a multiple of the period it was scheduled for (never a period shorter than the governor's own).
+    const hz = Math.min(tickHz, prevHz > 0 ? prevHz : tickHz, this.clockHz);
     const i = this.count++ % CAPACITY;
     this.costs[i] = costMs;
-    this.intervals[i] = intervalMs;
+    this.intervals[i] = (intervalMs * hz) / 1000;
     this.elapsed += intervalMs;
     if (this.elapsed < GOVERNOR_WINDOW_MS || this.count < GOVERNOR_MIN_SAMPLES) return null;
     const n = Math.min(this.count, CAPACITY);
-    const period = 1000 / this.clockHz;
     const over =
-      p90(this.costs, n) > this.costTargetMs ||
-      p90(this.intervals, n) > GOVERNOR_DT_FACTOR * period;
+      p90(this.costs, n) > this.costTargetMs || p90(this.intervals, n) > GOVERNOR_DT_FACTOR;
     // Disjoint windows: whatever the verdict, the next one is judged on fresh ticks (at the new settings after a step).
     this.count = 0;
     this.elapsed = 0;
@@ -161,5 +183,6 @@ export class JellyGovernor {
     this.count = 0;
     this.elapsed = 0;
     this.seen = 0;
+    this.lastTickHz = 0;
   }
 }

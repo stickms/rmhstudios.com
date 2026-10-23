@@ -96,7 +96,7 @@ material's palette through the same tokens throughout the site.
 
 The identity is **silent, sleek, frontier AI** — calm, never busy. Its reference
 form is a near-black void, graphite surfaces, white ink and **one** electric accent,
-which is also the plasma colour; the default theme is the same rule in daylight
+which is also the plasma colour, and it is the default theme (Midnight); Daylight is the same rule in daylight
 (white canvas, ink text, ink accent). No gradients on the ground, no neon or glowing
 type, no sci-fi illustration (robots, brains, circuits, sparkles). Copy is short and
 literal ("Deploy model", "Latency 42 ms"). Text is **Geist**; eyebrows and data are

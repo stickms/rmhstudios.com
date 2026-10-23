@@ -15,7 +15,7 @@
 //   pnpm build && node .output/server/index.mjs
 //
 //   node testing/e2e/fouc.mjs                       # every page, every profile
-//   node testing/e2e/fouc.mjs --quick               # 2 profiles (the CI shape)
+//   node testing/e2e/fouc.mjs --quick               # 3 profiles: fresh (Midnight default), graphite, daylight
 //   node testing/e2e/fouc.mjs --route /library      # one page, all profiles
 //   node testing/e2e/fouc.mjs --profiles fresh,rtl  # pick profiles
 //   node testing/e2e/fouc.mjs --json out.json       # machine-readable report
@@ -171,8 +171,14 @@ const FRAME_CONTENT_VARIANCE = 0.0015;
  */
 export const PROFILES = {
   fresh: {
-    why: 'A first-ever visitor: nothing stored, light OS. The default path through themeScript.',
+    why: 'A first-ever visitor: nothing stored, light OS. The default path through themeScript, which is Midnight (`style-graphite`, #000) since the 2026-10-23 dark default: a light OS must not flash white first.',
     localStorage: {},
+    colorScheme: 'light',
+    reducedMotion: 'reduce',
+  },
+  daylight: {
+    why: 'Daylight stored (`rmh-style` = `default`, the historical id). Since Midnight became the default, a stored `default` is a CHOICE of Daylight: the pre-paint script must keep the white ground and add no `style-graphite` before frame 1.',
+    localStorage: { 'rmh-style': 'default' },
     colorScheme: 'light',
     reducedMotion: 'reduce',
   },
@@ -242,8 +248,11 @@ export const PROFILES = {
   },
 };
 
-/** The profile pair CI runs: one light/empty, one dark/stored. */
-const QUICK_PROFILES = ['fresh', 'graphite'];
+/**
+ * The profiles CI runs: the empty first visit (the Midnight default), stored Midnight, and stored Daylight — the light
+ * path that only a stored `default` reaches now that the default is dark.
+ */
+const QUICK_PROFILES = ['fresh', 'graphite', 'daylight'];
 
 /**
  * CPU throttling applied to every run, as a slowdown multiplier.
@@ -901,9 +910,65 @@ async function auditPage({
     // paint? Inter is self-hosted and preloaded in `__root.tsx`'s `head()`, so it
     // lands before paint and never trips this, even though `document.fonts`
     // reports it as loaded like any other.
+    //
+    // A late 'loaded' STATUS is not a late font, though. A face whose file was
+    // preloaded and had finished downloading before first paint sits in the memory
+    // cache, and Chromium lays text out in it synchronously on the first layout —
+    // while its FontFace still reports 'unloaded'. The status flips in a later
+    // task, and a main thread busy hydrating under CPU throttle delays that task
+    // by up to ~2s. Measured on /jelly at 4x: at the first frame, before FCP, the
+    // Geist Latin face read 'unloaded' while a span in "'Geist Variable',
+    // monospace" laid out at Geist's width (637px), not monospace's (843px); the
+    // file had finished at ~200ms, first paint was at ~400ms. Trusting the status
+    // reported an intermittent ~1s "swap" on every route. So a family whose
+    // @font-face points at a preloaded file that finished before first paint is
+    // excused — read from Resource Timing after the fact, so the probe perturbs
+    // nothing (a per-frame layout probe in the instrument did, and the self-test
+    // caught it). Faces the page adds itself (the self-test's) are never excused.
+    const readyAtPaint = new Set(
+      await page.evaluate(() => {
+        const fp =
+          window.performance.getEntriesByName('first-paint')[0]?.startTime ??
+          window.performance.getEntriesByName('first-contentful-paint')[0]?.startTime;
+        if (fp === undefined) return [];
+        const preloaded = new Set(
+          [...document.querySelectorAll('link[rel="preload"][as="font"]')].map((l) => l.href),
+        );
+        const doneBeforePaint = new Set(
+          window.performance
+            .getEntriesByType('resource')
+            .filter((e) => preloaded.has(e.name) && e.responseEnd > 0 && e.responseEnd <= fp)
+            .map((e) => e.name),
+        );
+        const ready = [];
+        const walk = (rules) => {
+          for (const rule of rules) {
+            if (rule.cssRules) walk(rule.cssRules);
+            if (!(rule instanceof window.CSSFontFaceRule)) continue;
+            const family = rule.style
+              .getPropertyValue('font-family')
+              .replace(/^['"]|['"]$/g, '')
+              .trim();
+            const urls = [
+              ...rule.style.getPropertyValue('src').matchAll(/url\(\s*['"]?([^'")]+)/g),
+            ].map((m) => new URL(m[1], rule.parentStyleSheet?.href ?? location.href).href);
+            if (urls.some((u) => doneBeforePaint.has(u))) ready.push(family.toLowerCase());
+          }
+        };
+        for (const sheet of document.styleSheets) {
+          try {
+            walk(sheet.cssRules);
+          } catch {
+            /* cross-origin sheet: no rules to read */
+          }
+        }
+        return ready;
+      }),
+    );
     const lateFamilies = new Map();
     for (const [family, loadedAt] of Object.entries(state.fontLoadedAt ?? {})) {
       if (loadedAt <= fcp + 1) continue;
+      if (readyAtPaint.has(family.trim().toLowerCase())) continue;
       // Every face of this family is `font-display: optional` — the self-hosted
       // display faces (app/fonts/) all are. Such a face never swaps under text
       // already on screen: past its ~100ms window it is simply not used for this
