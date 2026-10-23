@@ -66,9 +66,9 @@ const DialogContent = React.forwardRef<
     /** Override the scrim's stacking position for dialogs above site chrome. */
     overlayClassName?: string;
     /**
-     * Portal into this element instead of `document.body`. A full-screen game scopes its palette
-     * tokens (`--app-*`, `--bum-*`) on its own root class, so a dialog portaled to the body would
-     * lose them; mounting inside that root keeps the game's palette (and a fullscreened game root).
+     * Portal target; defaults to <body>. A full-screen app or game scopes its palette tokens
+     * (`--app-*`, or a game's own) on its root element, so it passes that root here: a dialog
+     * portaled to the body would lose them.
      */
     container?: HTMLElement | null;
   }
