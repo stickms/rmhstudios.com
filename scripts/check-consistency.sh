@@ -277,10 +277,15 @@ review_site "Pointer-position effect — verify jelly service ownership" \
 
 # Plasmatic Jelly (lib/__tests__/jelly-ownership.test.ts N2, site-infinite-animation N3,
 # design-consistency N11). Previews of the vitest gates, scoped to added lines.
-blocking "Component imports the jelly physics/arc service (N2)" \
-  '^(components|app/routes)/.*\.tsx?$' \
-  "from ['\"]@/lib/jelly/(physics|compose|bridge|arcs)" \
-  'Components take jelly through role classes and data-jelly* attributes; the services mount once from hooks/useLiquidInteractions.ts (docs/plasmatic-jelly-system.md).'
+# The /jelly lab (app/routes/jelly.tsx) is the one sanctioned importer — it demonstrates strike() on
+# demand — matching jelly-ownership.test.ts N2(a). POSIX ERE has no lookahead, so it is filtered out after the scan.
+n2_hits=$(scan '^(components|app/routes)/.*\.tsx?$' "from ['\"]@/lib/jelly/(physics|compose|bridge|arcs)" |
+  grep -v '^  app/routes/jelly\.tsx:' || true)
+if [ -n "$n2_hits" ]; then
+  fail "Component imports the jelly physics/arc service (N2)"
+  printf '%s\n' "$n2_hits"
+  printf '%s    → %s%s\n' "$dim" 'Components take jelly through role classes and data-jelly* attributes; the services mount once from hooks/useLiquidInteractions.ts (docs/plasmatic-jelly-system.md).' "$off"
+fi
 
 blocking "Perpetual CSS animation (N3)" \
   '^(app/[^/]*|components/(ui|radial|feed|site)/.*)\.css$' \
