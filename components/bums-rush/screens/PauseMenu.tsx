@@ -58,8 +58,8 @@ export function PauseMenu({
     <Dialog open onOpenChange={(next) => { if (!next) onResume(); }}>
       <DialogContent
         container={host}
-        data-jelly="off"
-        className="w-auto max-w-sm gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
+        data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
+        className="w-auto max-w-sm gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
         onEscapeKeyDown={(event) => event.preventDefault()}
         onInteractOutside={(event) => event.preventDefault()}
       >

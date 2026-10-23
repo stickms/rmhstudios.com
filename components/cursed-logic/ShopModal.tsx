@@ -28,7 +28,7 @@ export function ShopModal({ open, onClose }: ShopModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent data-jelly="off" className="max-w-sm gap-0 border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
+      <DialogContent data-jelly="off" data-liquid-material="off" data-dialog-shell="bare" className="max-w-sm gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
        <div className="space-y-4 rounded-xl border border-amber-500/30 bg-[#0f0f14] p-4 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

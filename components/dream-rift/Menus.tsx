@@ -161,7 +161,7 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings, extr
 function HelpModal({ onClose }: { onClose: () => void }) {
     return (
         <Dialog open onOpenChange={(next) => { if (!next) onClose(); }}>
-            <DialogContent data-jelly="off" className="max-w-md gap-0 border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
+            <DialogContent data-jelly="off" data-liquid-material="off" data-dialog-shell="bare" className="max-w-md gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
               <div className="dr-frame grid gap-4 rounded-sm p-6 text-left text-sm text-[color:var(--dr-cream)]">
                 <DialogTitle className="dr-serif text-lg font-semibold tracking-[0.12em] text-[color:var(--dr-gold)]">How to Play</DialogTitle>
                 <DialogDescription className="sr-only">Controls and rules for Dream Rift.</DialogDescription>

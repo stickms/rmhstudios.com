@@ -407,3 +407,14 @@ html[data-game-state='playing'] [data-jelly-zone='hud'] :is(.jelly-flow, .jelly-
     background-image: none !important;
   }
 }
+
+/* ── Bare dialog shell ──────────────────────────────────────────────────────────────────────────────────────────────
+   A full-screen game's dialog keeps the GAME's own panel (its palette, its contrast); the `DialogContent` around it is
+   only a focus-trapped, positioned box and must paint nothing. `data-liquid-material='off'` already removes the rim,
+   haze and gel-coat (liquid-glass.css / jelly-material.css `:not([data-liquid-material='off'])`), but the unlayered
+   degradation rules in globals.css (high contrast, reduce transparency, forced colors) target `.glass-overlay` without
+   that guard and would turn the shell into an opaque or bordered box behind the game's panel. This out-ranks them. */
+html .glass-overlay[data-dialog-shell='bare'] {
+  background: none !important;
+  border: 0 !important;
+}
