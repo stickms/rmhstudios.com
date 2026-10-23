@@ -121,7 +121,7 @@ export function DailyWheel() {
  })}
  </div>
  {/* Hub */}
- <div className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-site-border bg-site-bg"/>
+ <div className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full glass-inset border-4 border-site-border bg-site-bg"/>
  </div>
 
  {won !== null ? (

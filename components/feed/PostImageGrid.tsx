@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useId, useRef } from'react';
-import { createPortal } from'react-dom';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { DialogPortal, DialogTitle } from '@/components/ui/dialog';
 import { X, ChevronLeft, ChevronRight } from'lucide-react';
 import { useTranslation } from'react-i18next';
 import { BlurImage } from'@/components/ui/BlurImage';
@@ -248,8 +249,8 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  [],
  ).filter((el) => !el.hasAttribute('disabled'));
  const onKey = (e: KeyboardEvent) => {
- if (e.key ==='Escape') onClose();
- else if (e.key ==='ArrowLeft'&& hasMultiple) prev();
+ // Escape is Radix's (DialogPrimitive.Content below).
+ if (e.key ==='ArrowLeft'&& hasMultiple) prev();
  else if (e.key ==='ArrowRight'&& hasMultiple) next();
  else if (e.key ==='Tab') {
  const items = focusables();
@@ -285,13 +286,18 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  return () => opener?.focus?.();
  }, []);
 
- return createPortal(
- <div
+ return (
+ <DialogPrimitive.Root open modal={false} onOpenChange={(o) => !o && onClose()}>
+ <DialogPortal>
+ <DialogPrimitive.Content
  ref={overlayRef}
- role="dialog"
- aria-modal="true"
  aria-labelledby={labelId}
+ aria-describedby={undefined}
  tabIndex={-1}
+ // The lightbox keeps its own focus hand-off, Tab trap and wheel block (effects
+ // above) and deliberately no document scroll-lock, so Radix's are off.
+ onOpenAutoFocus={(e) => e.preventDefault()}
+ onCloseAutoFocus={(e) => e.preventDefault()}
  // `touch-pinch-zoom` blocks the one-finger pan that would scroll the page
  // behind the overlay while still allowing the two-finger zoom a photo viewer
  // should support (plain `touch-none` would take that away too).
@@ -301,9 +307,9 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  onClose();
  }}
  >
- <span id={labelId} className="sr-only">
+ <DialogTitle id={labelId} className="sr-only">
  {t('image-viewer', { defaultValue:'Image viewer'})}
- </span>
+ </DialogTitle>
  <button
  type="button"
  onClick={onClose}
@@ -360,7 +366,8 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  {index + 1} / {urls.length}
  </div>
  )}
- </div>,
- document.body
+ </DialogPrimitive.Content>
+ </DialogPortal>
+ </DialogPrimitive.Root>
  );
 }
