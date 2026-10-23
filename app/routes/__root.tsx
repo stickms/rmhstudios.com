@@ -60,6 +60,7 @@ import { hasStylesheet, styleTierFor } from '@/lib/style-tier';
 // The Latin subset of the self-hosted body font. Imported for its hashed URL so
 // the document can PRELOAD it — see the `links` block in `head()` below.
 import interLatinWoff2 from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import geistLatinWoff2 from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
 import { resolveLocale, parseLocaleCookie } from '@/lib/i18n/resolve';
 import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from '@/lib/i18n/config';
 import { localeCoreResources, preloadLocale } from '@/lib/i18n/resources.server';
@@ -594,6 +595,15 @@ export const Route = createRootRoute({
           as: 'font',
           type: 'font/woff2',
           href: interLatinWoff2,
+          crossOrigin: 'anonymous',
+        },
+        // Geist leads the body/display stacks, so its Latin subset gets the same
+        // early, CORS-mode preload as Inter (kept as the non-Latin/fallback face).
+        {
+          rel: 'preload',
+          as: 'font',
+          type: 'font/woff2',
+          href: geistLatinWoff2,
           crossOrigin: 'anonymous',
         },
         { rel: 'stylesheet', href: appCss },

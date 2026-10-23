@@ -2,17 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  SPRINGS,
   VelocityTracker,
   rubberBandClamp,
   shouldDismiss,
-  springSettled,
-  springStep,
   type Spring,
   type SpringState,
 } from '@/lib/fluid';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
+import { onJellyPointer } from '@/lib/jelly/pointer';
 import { reportJellyDrag } from '@/lib/jelly/physics';
+import { createSettle, type Settle } from '@/hooks/fluid-drag-settle';
 
 /**
  * A single-axis drag that behaves the way a native one does — principles 2–5 of
@@ -97,39 +96,28 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
   const origin = useRef(0);
   const startValue = useRef(0);
   const tracker = useRef(new VelocityTracker());
-  const raf = useRef(0);
-  const last = useRef(0);
+  const settler = useRef<Settle | null>(null);
   const dismissing = useRef(false);
 
   const stop = useCallback(() => {
-    if (raf.current) cancelAnimationFrame(raf.current);
-    raf.current = 0;
-    last.current = 0;
+    settler.current?.cancel();
   }, []);
 
   const settle = useCallback(() => {
-    if (raf.current) return;
-    const frame = (now: number) => {
-      const dt = last.current ? Math.min(0.064, (now - last.current) / 1000) : 1 / 60;
-      last.current = now;
-      state.current = springStep(
-        state.current,
-        target.current,
-        opts.current.spring ?? SPRINGS.sheet,
-        dt,
-      );
-      opts.current.onUpdate(state.current.value);
-      if (springSettled(state.current, target.current, 0.2, 2)) {
-        state.current = { value: target.current, velocity: 0 };
-        opts.current.onUpdate(target.current);
-        raf.current = 0;
-        last.current = 0;
+    settler.current ??= createSettle();
+    settler.current.start(
+      state.current.value,
+      state.current.velocity,
+      target.current,
+      (value, velocity) => {
+        state.current = { value, velocity };
+        opts.current.onUpdate(value);
+      },
+      () => {
         if (!dismissing.current) opts.current.onSettle?.();
-        return;
-      }
-      raf.current = requestAnimationFrame(frame);
-    };
-    raf.current = requestAnimationFrame(frame);
+      },
+      opts.current.spring,
+    );
   }, []);
 
   const reset = useCallback(() => {
@@ -219,17 +207,24 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
     const onUp = (e: PointerEvent) => finish(e, true);
     const onCancel = (e: PointerEvent) => finish(e, false);
 
-    window.addEventListener('pointermove', onMove, { passive: true });
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onCancel);
+    const offs = [
+      onJellyPointer('pointermove', onMove),
+      onJellyPointer('pointerup', onUp),
+      onJellyPointer('pointercancel', onCancel),
+    ];
     return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onCancel);
+      for (const off of offs) off();
     };
   }, [settle]);
 
-  useEffect(() => stop, [stop]);
+  // Unmount: stop the settle's frame driver (the pointer subscriptions are released above).
+  useEffect(
+    () => () => {
+      settler.current?.dispose();
+      settler.current = null;
+    },
+    [],
+  );
 
   return {
     handleProps: {
