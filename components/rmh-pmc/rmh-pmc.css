@@ -16,7 +16,8 @@
   --amber-deep:#B9762A;
   --bone:#ECEAE4;
   --steel:#8B95A0;
-  --steel-dim:#4E5862;
+  /* was #4E5862 (~2.7:1 on the ground) while carrying 10-11px text; #7A8591 clears AA */
+  --steel-dim:#7A8591;
   --alert:#CF6B4E;
   --line:rgba(233,154,60,0.22);
   --line-strong:rgba(233,154,60,0.4);
@@ -128,7 +129,7 @@
 .rmhp-root .clock b{color:var(--amber);font-weight:500}
 .rmhp-root .nav-cta{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--base);background:var(--amber);padding:10px 16px;transition:background .2s,transform .2s}
 .rmhp-root .nav-cta:hover{background:var(--amber-bright);transform:translateY(-1px)}
-.rmhp-root .nav-toggle{display:none;background:none;border:0;color:var(--bone);cursor:pointer;width:40px;height:40px;align-items:center;justify-content:center}
+.rmhp-root .nav-toggle{display:none;background:none;border:0;color:var(--bone);cursor:pointer;width:44px;height:44px;align-items:center;justify-content:center}
 .rmhp-root .nav-toggle svg{width:24px;height:24px}
 .rmhp-root .mobile-menu{display:none;border-top:1px solid var(--line-soft);background:var(--base)}
 .rmhp-root .mobile-menu a{display:block;padding:15px var(--pad);font-family:var(--mono);font-size:13px;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);border-bottom:1px solid var(--hair)}
@@ -139,8 +140,7 @@
   .rmhp-root .nav-toggle{display:flex}
 }
 @media(max-width:560px){
-  .rmhp-root .backlink-label{display:none}
-  .rmhp-root .backlink{padding-right:14px}
+  .rmhp-root .backlink{min-height:2.75rem;padding-right:14px;font-size:10.5px;letter-spacing:0.1em}
   .rmhp-root .cmdbar-left{gap:14px}
 }
 
@@ -153,8 +153,14 @@
 .rmhp-root .gutter .g-prog::after{content:"";position:absolute;left:-2px;top:0;width:5px;height:var(--p,0%);background:var(--amber);transition:height .15s linear}
 .rmhp-root .gutter .g-tick{width:7px;height:1px;background:var(--steel-dim)}
 
+/* Touch targets: footer links and chips reach the 44px floor on coarse pointers. */
+@media(pointer:coarse){
+  .rmhp-root .footer-col a,.rmhp-root .footer-legal a{min-height:44px;display:flex;align-items:center}
+  .rmhp-root .chip,.rmhp-root .nav-cta,.rmhp-root .btn-text,.rmhp-root .navlinks a{min-height:44px}
+}
+
 /* ════ BUTTONS ════ */
-.rmhp-root .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;padding:14px 22px;transition:all .22s;cursor:pointer;border:1px solid transparent}
+.rmhp-root .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;padding:14px 22px;transition:background-color .22s,border-color .22s,color .22s;cursor:pointer;border:1px solid transparent}
 .rmhp-root .btn .arw{transition:transform .22s}
 .rmhp-root .btn:hover .arw{transform:translateX(4px)}
 .rmhp-root .btn-amber{background:var(--amber);color:var(--base)}
@@ -273,7 +279,7 @@
 
 /* ════ INTELLIGENCE — CABLE MANIFEST (log) ════ */
 .rmhp-root .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:36px}
-.rmhp-root .chip{font-family:var(--mono);font-size:11px;font-weight:400;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);background:transparent;border:1px solid var(--line-soft);padding:8px 14px;cursor:pointer;transition:all .18s}
+.rmhp-root .chip{font-family:var(--mono);font-size:11px;font-weight:400;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);background:transparent;border:1px solid var(--line-soft);padding:8px 14px;cursor:pointer;transition:background-color .18s,border-color .18s,color .18s}
 .rmhp-root .chip:hover{color:var(--bone);border-color:var(--line)}
 .rmhp-root .chip[aria-pressed="true"]{color:var(--base);background:var(--amber);border-color:var(--amber);font-weight:600}
 /* lead cable */
@@ -374,7 +380,7 @@
 .rmhp-root .footer-legal a{font-family:var(--mono);font-size:11px;letter-spacing:0.03em;color:var(--steel-dim);transition:color .2s}
 .rmhp-root .footer-legal a:hover{color:var(--steel)}
 .rmhp-root .footer-social{display:flex;gap:12px}
-.rmhp-root .footer-social a{width:34px;height:34px;border:1px solid var(--line-soft);display:flex;align-items:center;justify-content:center;color:var(--steel);transition:all .22s}
+.rmhp-root .footer-social a{width:44px;height:44px;border:1px solid var(--line-soft);display:flex;align-items:center;justify-content:center;color:var(--steel);transition:border-color .22s,color .22s}
 .rmhp-root .footer-social a:hover{border-color:var(--amber);color:var(--amber-bright)}
 .rmhp-root .footer-social svg{width:15px;height:15px}
 .rmhp-root .disclaimer{margin-top:26px;font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--steel-dim);max-width:98ch}

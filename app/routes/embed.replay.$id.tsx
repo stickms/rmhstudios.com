@@ -10,6 +10,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
+import { ExternalLink } from 'lucide-react';
 import { getReplay } from '@/lib/replays.server';
 import { REPLAY_GAME_TITLES } from '@/lib/game/replay-meta';
 import { GameReplayPlayer } from '@/components/replays/GameReplayPlayer';
@@ -39,17 +40,17 @@ function EmbedReplay() {
 
   if (!replay) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-site-bg p-4">
-        <div className="rounded-site border border-site-border bg-site-surface px-5 py-4 text-sm text-site-text-muted">
+      <main className="flex min-h-dvh items-center justify-center bg-site-bg p-4">
+        <div className="glass-fill px-5 py-4 text-sm text-site-text-muted">
           {t('replay-not-embeddable', { defaultValue: 'This replay isn’t available to embed.' })}
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="bg-site-bg p-3">
-      <div className="mx-auto max-w-xl rounded-site border border-site-border bg-site-surface p-4">
+    <main className="bg-site-bg p-3">
+      <div className="glass-fill mx-auto max-w-xl p-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-site-text">{gameTitle(replay.game)}</p>
@@ -65,7 +66,7 @@ function EmbedReplay() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-site-accent hover:underline"
           >
-            <span className="inline-block h-3.5 w-3.5 rounded bg-site-accent" />
+            <ExternalLink className="size-3.5" aria-hidden />
             {t('replay-view-on-rmh', { defaultValue: 'View on RMH Studios' })}
           </a>
         </div>
@@ -80,6 +81,6 @@ function EmbedReplay() {
           durationMs={replay.durationMs}
         />
       </div>
-    </div>
+    </main>
   );
 }

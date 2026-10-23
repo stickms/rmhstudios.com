@@ -123,7 +123,7 @@ export default function BusinessesPage() {
         <div className="container">
           <div className="cta-band reveal">
             <span className="eyebrow center">{t("cta-eyebrow-businesses-page", { defaultValue: "One Platform" })}</span>
-            <h2 style={{ marginTop: 18 }}>{t("cta-headline", { defaultValue: "The advantage is in the connections." })}</h2>
+            <h2 style={{ marginTop: 20 }}>{t("cta-headline", { defaultValue: "The advantage is in the connections." })}</h2>
             <p>
               {t("cta-desc", { defaultValue: "A founder we back through venture can become a banking client, an advisory client, and a co-investment partner over a decade. Talk to us about where you are on the arc." })}
             </p>

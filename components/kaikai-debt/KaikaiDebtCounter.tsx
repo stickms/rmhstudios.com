@@ -187,10 +187,10 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
           is the same `.glass-chrome` every sticky header on the site uses, at
           the same measure, in the same tokens. */}
       <header className="glass-chrome sticky top-0 z-20 border-b border-site-border">
-        <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
+        <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-3 sm:gap-3">
           <Link
             to="/"
-            className="flex shrink-0 items-center gap-1.5 rounded-site-sm px-1.5 py-1 text-sm whitespace-nowrap text-site-text-muted transition-colors hover:text-site-text"
+            className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-site-sm px-2 text-sm whitespace-nowrap text-site-text-muted transition-colors hover:text-site-text"
           >
             <ArrowLeft className="size-4" aria-hidden />
             {t('page.back', { defaultValue: 'RMH Studios' })}
@@ -207,8 +207,8 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
         </div>
       </header>
 
-      <main id="main-content" className="mx-auto w-full max-w-3xl px-3 py-5 sm:px-4 sm:py-8">
-        <div className="flex flex-col gap-5 sm:gap-7">
+      <main id="main-content" className="mx-auto w-full max-w-3xl px-4 pt-4 pb-12 sm:pt-8">
+        <div className="flex flex-col gap-4 sm:gap-6">
           <div className="flex flex-col gap-2">
             <p className="site-kicker text-site-text-muted">
               {t('page.kicker', { defaultValue: 'RMH Studios presents' })}
@@ -223,7 +223,7 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
               })}
             </p>
           </div>
-          <section className="glass-pane rounded-site px-3 py-2 sm:px-4">
+          <section className="glass-pane rounded-site px-4 py-3">
             <DebtCounter basisCents={basisCents} asOfMs={snapshot.asOfMs} />
 
             {/* The credit score, directly under the total it is a consequence

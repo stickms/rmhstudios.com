@@ -1,172 +1,80 @@
-/* ─── Legal page layout ───────────────────────────────────────────────────── */
-.legal-page {
-  min-height: 100dvh;
-  background: #000;
-  color: #f5f5f7;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial,
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
+/* ─── Legal document frame ────────────────────────────────────────────────────
+   /terms, /privacy, /cookies, /copyright and /security share one frame
+   (LegalLayout.tsx). It is layout-by-utility; this file holds only what a
+   utility cannot say: the skip link and the typography of the document body.
 
-.legal-nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  height: 52px;
-  backdrop-filter: saturate(180%) blur(24px);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
-  background: rgba(0, 0, 0, 0.82);
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  padding: 0 clamp(20px, 5vw, 48px);
-  gap: 16px;
-}
+   Everything is a --site-* token, so every theme — including High contrast and
+   the reduced-transparency fallback, where `.glass-pane` collapses to the
+   opaque surface — keeps the ink/surface pairing. Nothing here is hard-coded.
 
-.legal-nav__back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  color: #a1a1a6;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-decoration: none;
-  transition: color 180ms ease;
-  padding: 0;
-}
+   Body rules live in `@layer components` (below Tailwind's `utilities` layer)
+   and under `:where()`, so a utility class on an element inside the body — the
+   plain-language summary box, a section card on /security — always wins over
+   the document defaults. Unlayered rules would beat every utility.
+   ───────────────────────────────────────────────────────────────────────────── */
 
-.legal-nav__back:hover {
-  color: #f5f5f7;
-}
-
-.legal-nav__sep {
-  color: #3a3a3c;
-  font-size: 0.8rem;
-}
-
-.legal-nav__title {
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: rgba(245, 245, 247, 0.65);
-}
-
-.legal-content {
-  max-width: 740px;
-  margin: 0 auto;
-  padding: clamp(48px, 8vh, 96px) clamp(24px, 5vw, 48px) clamp(80px, 12vh, 120px);
-}
-
-.legal-content__eyebrow {
-  font-size: 0.6875rem;
+.legal-skip {
+  position: absolute;
+  inset-inline-start: 1rem;
+  top: 0.75rem;
+  z-index: var(--z-skip);
+  transform: translateY(-200%);
+  padding: 0.5rem 1rem;
+  border-radius: var(--site-radius-sm);
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  font-size: 0.875rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #86868b;
-  margin: 0 0 16px;
+  text-decoration: none;
+}
+.legal-skip:focus-visible {
+  transform: translateY(0);
 }
 
-.legal-content__title {
-  font-size: clamp(2rem, 5vw, 3.8rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.06;
-  color: #f5f5f7;
-  margin: 0 0 12px;
-}
-
-.legal-content__date {
-  font-size: 0.8rem;
-  color: #8e8e93;
-  margin: 0 0 52px;
-}
-
-/* The document pane. This page is a committed dark surface (`.legal-page`
-   paints #000 and hard-codes its ink), so it cannot borrow `glass-pane` —
-   that is built from the *site theme* tokens and resolved to a near-white
-   sheet on the default light theme, putting #f5f5f7 headings and #a1a1a6
-   body copy on a ~#b3b3b3 pane (≈1.2–1.6:1) for the whole document. */
-.legal-content__pane {
-  background: rgba(255, 255, 255, 0.045);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  padding: 32px 24px;
-}
-
-@media (min-width: 640px) {
-  .legal-content__pane {
-    padding: 40px;
+@layer components {
+  /* Document typography. 1rem / 1.7 body at ≤ 65–75 characters per line (the
+     column is max-w-3xl minus the pane's own padding). */
+  :where(.legal-content__body) :where(h2) {
+    margin: 2rem 0 0.75rem;
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--site-text);
+  }
+  :where(.legal-content__body) :where(h2):first-child {
+    margin-top: 0;
+  }
+  :where(.legal-content__body) :where(p, li) {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--site-text);
+  }
+  :where(.legal-content__body) :where(p) {
+    margin: 0 0 1rem;
+  }
+  :where(.legal-content__body) :where(ul, ol) {
+    margin: 0 0 1rem;
+    padding-inline-start: 1.5rem;
+  }
+  :where(.legal-content__body) :where(ul) {
+    list-style: disc;
+  }
+  :where(.legal-content__body) :where(ol) {
+    list-style: decimal;
+  }
+  :where(.legal-content__body) :where(li) {
+    margin: 0 0 0.5rem;
+  }
+  :where(.legal-content__body) :where(a) {
+    color: var(--site-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  :where(.legal-content__body) :where(a:hover) {
+    text-decoration-thickness: 2px;
+  }
+  :where(.legal-content__body) :where(strong) {
+    font-weight: 600;
   }
 }
-
-.legal-content__body h2 {
-  font-size: clamp(1.05rem, 2vw, 1.35rem);
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  color: #f5f5f7;
-  margin: 40px 0 12px;
-}
-
-.legal-content__body h2:first-child {
-  margin-top: 0;
-}
-
-.legal-content__body p,
-.legal-content__body li {
-  font-size: clamp(0.88rem, 1.2vw, 1rem);
-  line-height: 1.7;
-  color: #a1a1a6;
-  margin: 0 0 16px;
-}
-
-.legal-content__body ul,
-.legal-content__body ol {
-  padding-left: 1.4em;
-  margin: 0 0 16px;
-}
-
-.legal-content__body a {
-  color: rgba(245, 245, 247, 0.75);
-  text-underline-offset: 3px;
-}
-
-.legal-content__body a:hover {
-  color: #f5f5f7;
-}
-
-.legal-content__body strong {
-  color: rgba(245, 245, 247, 0.88);
-  font-weight: 500;
-}
-
-.legal-footer {
-  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
-  padding: 28px clamp(24px, 5vw, 48px);
-  display: flex;
-  justify-content: center;
-  gap: clamp(20px, 4vw, 44px);
-  flex-wrap: wrap;
-}
-
-.legal-footer__link {
-  font-size: 0.76rem;
-  font-weight: 500;
-  color: #8e8e93;
-  text-decoration: none;
-  transition: color 180ms ease;
-  /* 44px hit area on the footer's link row (audit AUD-004) without moving
-     the baseline: padding grows the box, the flex row stays centred. */
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-}
-
-.legal-footer__link:hover {
-  color: #f5f5f7;
-}
-
-/* ─── Responsive ─────────────────────────────────────────────────────────── */

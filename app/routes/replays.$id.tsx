@@ -74,18 +74,18 @@ function ReplayPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-site-bg text-site-text">
-      <header className="flex items-center justify-between border-b border-site-border px-4 py-3">
+      <header className="flex min-h-14 items-center justify-between border-b border-site-border px-4">
         <Link
           to="/games"
-          className="inline-flex items-center gap-2 text-sm font-medium text-site-text-muted hover:text-site-text"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-site-text-muted hover:text-site-text"
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden />
+          <ArrowLeft className="size-4" aria-hidden />
           {t('replay-back-to-games', { defaultValue: 'Back to games' })}
         </Link>
         <span className="text-sm font-bold">RMH Studios</span>
       </header>
 
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-8">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 pt-6 pb-12">
         {!replay ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
             <p className="font-medium text-site-text">
@@ -93,24 +93,24 @@ function ReplayPage() {
             </p>
             <Link
               to="/games"
-              className="text-sm font-semibold text-site-accent hover:underline"
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-site-accent hover:underline"
             >
               {t('replay-browse-games', { defaultValue: 'Browse games' })}
             </Link>
           </div>
         ) : (
           <>
-            <div className="mb-6 flex flex-col items-center gap-2 text-center">
-              <h1 className="text-2xl font-bold">{gameTitle(replay.game)}</h1>
-              <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-site-text-muted">
+            <div className="mb-4 flex flex-col items-center gap-2 text-center">
+              <h1 className="font-display text-2xl font-semibold tracking-tight">{gameTitle(replay.game)}</h1>
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-site-text-muted">
                 <span className="inline-flex items-center gap-1.5">
-                  <Trophy className="h-4 w-4" aria-hidden />
+                  <Trophy className="size-4" aria-hidden />
                   {replay.score != null
                     ? `${t('replay-score', { defaultValue: 'Score' })}: ${replay.score}`
                     : t('replay-unscored', { defaultValue: 'Unscored' })}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <Clock className="h-4 w-4" aria-hidden />
+                  <Clock className="size-4" aria-hidden />
                   {formatDuration(replay.durationMs)}
                 </span>
                 <span>

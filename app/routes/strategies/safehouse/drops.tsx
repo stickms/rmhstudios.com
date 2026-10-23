@@ -56,10 +56,10 @@ function DropsPage() {
               {d.status === 'CLASSIFIED' && <Lock size={12} className="text-white/20" />}
               {d.status === 'TEASED' && <EyeOff size={12} className="text-amber-400/60" />}
               {d.status === 'DISCLOSED' && <Eye size={12} className="text-green-400/60" />}
-              <span className="text-[10px] font-mono uppercase" style={{ color: d.status === 'CLASSIFIED' ? '#52525B' : d.status === 'TEASED' ? '#F59E0B' : '#22C55E' }}>
+              <span className="text-xs font-mono uppercase" style={{ color: d.status === 'CLASSIFIED' ? '#52525B' : d.status === 'TEASED' ? '#F59E0B' : '#22C55E' }}>
                 {d.status}
               </span>
-              <span className="text-xs font-mono text-white/30">{d.codename}</span>
+              <span className="text-xs font-mono text-white/50">{d.codename}</span>
               <DivisivenessBadge reactions={d.reactions ?? EMPTY_REACTIONS} />
             </div>
 
@@ -68,7 +68,7 @@ function DropsPage() {
             </h3>
 
             {d.narrative && (
-              <p className="text-xs text-white/40 line-clamp-2">{d.narrative}</p>
+              <p className="text-xs text-white/60 line-clamp-2">{d.narrative}</p>
             )}
 
             {d.status === 'DISCLOSED' && d.reactions && (

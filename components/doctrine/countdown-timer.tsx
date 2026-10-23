@@ -21,7 +21,7 @@ export function CountdownTimer({ target, label }: CountdownTimerProps) {
 
   return (
     <div className="inline-flex items-center gap-1">
-      {label && <span className="text-xs text-white/40 mr-1">{label}</span>}
+      {label && <span className="text-xs text-white/60 mr-1">{label}</span>}
       <span className="font-mono text-sm tabular-nums text-white/80">
         {hours > 0 && <>{String(hours).padStart(2, '0')}:</>}
         {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}

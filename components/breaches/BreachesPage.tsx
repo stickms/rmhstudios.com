@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import '@/components/security/security.css';
+import { Button } from '@/components/ui/button';
 import { PinnedHero } from '@/components/feed/PinnedHero';
 
 /**
@@ -295,7 +296,7 @@ export function BreachesPage() {
       </a>
 
       <header>
-        <nav className="sec-nav" aria-label="Breaches">
+        <nav className="glass-chrome sec-nav" aria-label="Breaches">
           <div className="sec-nav__inner">
             <a className="sec-nav__back" href="/">
               <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />
@@ -326,14 +327,18 @@ export function BreachesPage() {
           scrollCue="Read the post-mortem"
           actions={
             <>
-              <a className="sec-btn sec-btn--primary" href="#brc-incident">
+              <Button asChild variant="accent" size="lg">
+                <a href="#brc-incident">
                 What happened
                 <ArrowRight aria-hidden="true" />
               </a>
-              <a className="sec-btn sec-btn--ghost" href="/security">
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <a href="/security">
                 <ShieldCheck aria-hidden="true" />
                 How we protect you
               </a>
+              </Button>
             </>
           }
         />
@@ -343,7 +348,7 @@ export function BreachesPage() {
           {STATS.map((s, i) => (
             <div
               key={s.label}
-              className="sec-stat sec-reveal"
+              className="glass-fill sec-stat sec-reveal"
               style={{ '--sec-delay': `${i * 70}ms` } as CSSProperties}
             >
               <p className="sec-stat__num">{s.num}</p>
@@ -380,7 +385,7 @@ export function BreachesPage() {
                 of this repository&apos;s own history before it was written here.
               </p>
             </div>
-            <div className="sec-spec sec-reveal">
+            <div className="glass-fill sec-spec sec-reveal">
               {WHAT_HAPPENED.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -407,7 +412,7 @@ export function BreachesPage() {
             <ol className="sec-steps">
               {TIMELINE.map((s, i) => (
                 <li
-                  className="sec-step sec-reveal"
+                  className="glass-fill sec-step sec-reveal"
                   key={s.title}
                   style={{ '--sec-delay': `${(i % 2) * 80}ms` } as CSSProperties}
                 >
@@ -442,7 +447,7 @@ export function BreachesPage() {
                 return (
                   <article
                     key={c.title}
-                    className="sec-card sec-reveal"
+                    className="glass-fill sec-card sec-reveal"
                     style={{ '--sec-delay': `${(i % 3) * 80}ms` } as CSSProperties}
                   >
                     <span className="sec-card__icon">
@@ -472,7 +477,7 @@ export function BreachesPage() {
               </p>
             </div>
             <div className="sec-rules">
-              <div className="sec-rule sec-reveal">
+              <div className="glass-fill sec-rule sec-reveal">
                 <h3 className="sec-rule__title">
                   <span className="sec-rule__icon">
                     <XCircle aria-hidden="true" />
@@ -486,7 +491,7 @@ export function BreachesPage() {
                 </ul>
               </div>
               <div
-                className="sec-rule sec-reveal"
+                className="glass-fill sec-rule sec-reveal"
                 style={{ '--sec-delay': '80ms' } as CSSProperties}
               >
                 <h3 className="sec-rule__title">
@@ -502,7 +507,7 @@ export function BreachesPage() {
                 </ul>
               </div>
               <div
-                className="sec-rule sec-reveal"
+                className="glass-fill sec-rule sec-reveal"
                 style={{ '--sec-delay': '160ms' } as CSSProperties}
               >
                 <h3 className="sec-rule__title">
@@ -534,7 +539,7 @@ export function BreachesPage() {
                 mistake, so it gets its own section rather than a footnote.
               </p>
             </div>
-            <div className="sec-spec sec-reveal">
+            <div className="glass-fill sec-spec sec-reveal">
               {PERSISTENCE.map((s) => (
                 <div className="sec-spec__row" key={s.term}>
                   <div className="sec-spec__term">{s.term}</div>
@@ -580,7 +585,7 @@ export function BreachesPage() {
           aria-labelledby="brc-takeaway-title"
         >
           <div className="sec-shell">
-            <div className="sec-disclosure sec-reveal">
+            <div className="glass-pane sec-disclosure sec-reveal">
               <div className="sec-disclosure__glow" aria-hidden="true" />
               <div className="sec-disclosure__inner">
                 <p className="sec-eyebrow">If you take one thing away</p>
@@ -619,7 +624,7 @@ export function BreachesPage() {
             </div>
             <div className="sec-faq sec-reveal">
               {FAQ.map((f) => (
-                <details className="sec-faq__item" key={f.q}>
+                <details className="glass-fill sec-faq__item" key={f.q}>
                   <summary className="sec-faq__q">{f.q}</summary>
                   <p className="sec-faq__a">{f.a}</p>
                 </details>

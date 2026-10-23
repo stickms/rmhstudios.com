@@ -221,7 +221,7 @@ export default function HomePage() {
         <div className="container">
           <div className="cta-band reveal">
             <span className="eyebrow center">{t("careers-eyebrow", { defaultValue: "Careers" })}</span>
-            <h2 style={{ marginTop: 18 }}>{t("careers-heading", { defaultValue: "Build a career across the whole company arc." })}</h2>
+            <h2 style={{ marginTop: 20 }}>{t("careers-heading", { defaultValue: "Build a career across the whole company arc." })}</h2>
             <p>
               {t("careers-desc", { defaultValue: "From analyst programs to engineering and senior advisory roles, RMH Capital is a place to do the most interesting work in finance — and to grow with a platform built for the long term." })}
             </p>

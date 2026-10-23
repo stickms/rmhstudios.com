@@ -46,11 +46,9 @@ const secretPages: SecretItem[] = [
 
 function ItemCard({ item }: { item: SecretItem }) {
   const Icon = item.icon;
-  return (
-    <Link
-      to={item.href}
-      className="group relative overflow-hidden rounded-xl border border-white/6 bg-white/3 p-6 transition-colors duration-300 hover:border-white/12 hover:bg-white/6"
-    >
+  const { t } = useTranslation("r-secret");
+  const body = (
+    <>
       <div
         className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
         style={{ background: `radial-gradient(ellipse at center, ${item.accent}08 0%, transparent 70%)` }}
@@ -60,11 +58,35 @@ function ItemCard({ item }: { item: SecretItem }) {
           className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg"
           style={{ backgroundColor: `${item.accent}15`, color: item.accent }}
         >
-          <Icon className="h-5 w-5" />
+          <Icon className="h-5 w-5" aria-hidden />
         </div>
-        <h2 className="mb-1 text-lg font-semibold">{item.name}</h2>
-        <p className="text-sm text-white/40">{item.desc}</p>
+        <h3 className="mb-1 text-lg font-semibold">{item.name}</h3>
+        <p className="text-sm text-white/60">{item.desc}</p>
+        {item.href === '#' && (
+          <p className="mt-2 font-mono text-xs uppercase tracking-wider text-white/50">
+            {t("coming-soon", { defaultValue: "Coming soon" })}
+          </p>
+        )}
       </div>
+    </>
+  );
+  // A placeholder has nowhere to go: render it as a plain tile, not a link to "#".
+  if (item.href === '#') {
+    return (
+      <div
+        aria-disabled="true"
+        className="relative overflow-hidden rounded-xl border border-white/6 bg-white/3 p-6 opacity-70"
+      >
+        {body}
+      </div>
+    );
+  }
+  return (
+    <Link
+      to={item.href}
+      className="group relative overflow-hidden rounded-xl border border-white/6 bg-white/3 p-6 transition-colors duration-300 hover:border-white/12 hover:bg-white/6"
+    >
+      {body}
     </Link>
   );
 }
@@ -72,23 +94,23 @@ function ItemCard({ item }: { item: SecretItem }) {
 function SecretPage() {
   const { t } = useTranslation("r-secret");
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className="min-h-full bg-[#0a0a0f] text-white">
       <div className="mx-auto max-w-5xl px-6 py-12">
         <Link
           to="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-white/40 transition-colors hover:text-white/70"
+          className="mb-8 inline-flex min-h-11 items-center gap-2 text-sm text-white/60 transition-colors hover:text-white/90"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" aria-hidden />
           {t("back", { defaultValue: "Back" })}
         </Link>
 
         <div className="mb-12 text-center">
           <h1 className="mb-2 text-4xl font-bold tracking-tight">{t("the-vault", { defaultValue: "The Vault" })}</h1>
-          <p className="text-white/40">{t("vault-subtitle", { defaultValue: "Experimental projects. Enter at your own risk." })}</p>
+          <p className="text-white/60">{t("vault-subtitle", { defaultValue: "Experimental projects. Enter at your own risk." })}</p>
         </div>
 
         <section className="mb-12">
-          <h2 className="mb-4 text-lg font-semibold text-white/60">{t("section-games", { defaultValue: "Games" })}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white/70">{t("section-games", { defaultValue: "Games" })}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {secretGames.map((item) => (
               <ItemCard key={item.id} item={item} />
@@ -97,7 +119,7 @@ function SecretPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-lg font-semibold text-white/60">{t("section-pages", { defaultValue: "Pages" })}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white/70">{t("section-pages", { defaultValue: "Pages" })}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {secretPages.map((item) => (
               <ItemCard key={item.id} item={item} />

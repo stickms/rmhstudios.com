@@ -23,7 +23,7 @@ export function XpBar({ totalXp }: XpBarProps) {
           {currentRank.badge} {currentRank.name}
         </span>
         {nextRank && (
-          <span className="text-white/40">
+          <span className="text-white/60">
             {t("xp-progress", { defaultValue: "{{current}} / {{max}} XP", current: totalXp.toLocaleString(), max: nextRank.minXp.toLocaleString() })}
           </span>
         )}
@@ -38,7 +38,7 @@ export function XpBar({ totalXp }: XpBarProps) {
         />
       </div>
       {nextRank && (
-        <p className="text-[10px] text-white/30">
+        <p className="text-xs text-white/50">
           {t("xp-to-next-rank", { defaultValue: "{{xp}} XP to {{badge}} {{name}}", xp: (nextRank.minXp - totalXp).toLocaleString(), badge: nextRank.badge, name: nextRank.name })}
         </p>
       )}

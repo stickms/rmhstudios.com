@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { Moon, Zap, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -40,22 +40,22 @@ function SahurPage() {
 
         {/* Sahur exclusive content */}
         <div className="rounded-xl p-6 text-center space-y-4" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)' }}>
-          <Moon size={32} className="mx-auto text-amber-400" />
+          <Moon size={32} aria-hidden className="mx-auto text-amber-400" />
           <h2 className="text-lg font-bold text-amber-300">{t("sahur-challenge-heading", { defaultValue: "Sahur Challenge" })}</h2>
           <p className="text-sm text-amber-300/60">
             {t("sahur-challenge-desc", { defaultValue: "The exclusive 3 AM puzzle is available now. Complete it before the window closes. Miss it and it's gone. No archive. No second chance." })}
           </p>
-          <a
-            href="/strategies/puzzles"
-            className="inline-block px-6 py-2.5 rounded-lg text-sm font-bold transition hover:brightness-110"
+          <Link
+            to="/strategies/puzzles"
+            className="inline-flex items-center min-h-11 px-6 rounded-lg text-sm font-bold transition hover:brightness-110"
             style={{ background: '#F59E0B', color: '#000' }}
           >
             {t("play-sahur-puzzle", { defaultValue: "Play Sahur Puzzle" })}
-          </a>
+          </Link>
         </div>
 
         <div className="text-center">
-          <p className="text-[10px] font-mono text-amber-400/30">
+          <p className="text-xs font-mono text-amber-400/60">
             {t("temporal-monopoly", { defaultValue: "TEMPORAL MONOPOLY — THIS CONTENT SELF-DESTRUCTS AT 4:00 AM" })}
           </p>
         </div>
@@ -67,7 +67,7 @@ function SahurPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
       <div className="flex items-center gap-2">
-        <Moon size={20} className="text-white/30" />
+        <Moon size={20} className="text-white/50" />
         <h1 className="text-xl font-bold" style={{ color: 'var(--doctrine-text-primary)' }}>
           {t("sahur-mode-title", { defaultValue: "Sahur Mode" })}
         </h1>
@@ -76,13 +76,13 @@ function SahurPage() {
       <div className="rounded-xl p-8 text-center space-y-6" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
         <Moon size={48} className="mx-auto text-white/10" />
         <h2 className="text-lg font-semibold text-white/60">{t("not-active", { defaultValue: "Not Active" })}</h2>
-        <p className="text-sm text-white/30 max-w-md mx-auto">
+        <p className="text-sm text-white/50 max-w-md mx-auto">
           {t("not-active-desc", { defaultValue: "Sahur Mode activates between 3:00–4:00 AM in your local timezone. Triple XP. Exclusive puzzles. Bat cursor. TUNG TUNG TUNG." })}
         </p>
 
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg" style={{ background: 'var(--doctrine-bg-tertiary)' }}>
-          <Clock size={14} className="text-white/30" />
-          <span className="text-sm font-mono text-white/40">
+          <Clock size={14} className="text-white/50" />
+          <span className="text-sm font-mono text-white/60">
             {sahurCountdown > 0
               ? t("until-sahur", { defaultValue: "{{hours}}h {{minutes}}m until Sahur", hours: Math.floor(sahurCountdown / 60), minutes: sahurCountdown % 60 })
               : t("calculating", { defaultValue: "Calculating..." })}
@@ -91,8 +91,8 @@ function SahurPage() {
       </div>
 
       <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <h3 className="text-xs font-mono uppercase tracking-wider text-white/40">{t("what-happens-heading", { defaultValue: "What happens during Sahur" })}</h3>
-        <ul className="text-xs text-white/30 space-y-1">
+        <h3 className="text-xs font-mono uppercase tracking-wider text-white/60">{t("what-happens-heading", { defaultValue: "What happens during Sahur" })}</h3>
+        <ul className="text-xs text-white/50 space-y-1">
           <li>• {t("benefit-xp", { defaultValue: "All XP earned is multiplied by {{multiplier}}x", multiplier: SAHUR_WINDOW.xpMultiplier })}</li>
           <li>• {t("benefit-puzzle", { defaultValue: "An exclusive puzzle appears (no archive, no replays)" })}</li>
           <li>• {t("benefit-theme", { defaultValue: "The entire UI transforms with the Sahur theme" })}</li>

@@ -57,9 +57,10 @@ function PuzzlesIndex() {
           const info = MODE_INFO[puzzle.mode] ?? { name: puzzle.mode, descriptionKey: '', descriptionDefault: '', color: '#6B7280' };
 
           return (
-            <a
+            <Link
               key={puzzle.id}
-              href={`/strategies/puzzles/${puzzle.mode.toLowerCase()}`}
+              to="/strategies/puzzles/$mode"
+              params={{ mode: puzzle.mode.toLowerCase() }}
               className="block rounded-lg p-5 space-y-2 transition-transform hover:scale-[1.01] active:scale-[0.99]"
               style={{
                 background: 'var(--doctrine-bg-secondary)',
@@ -82,23 +83,23 @@ function PuzzlesIndex() {
               </div>
               <p className="text-sm text-white/80">{info.descriptionKey ? t(info.descriptionKey, { defaultValue: info.descriptionDefault }) : info.descriptionDefault}</p>
               {puzzle.isSahur && (
-                <span className="text-[10px] font-bold text-amber-400">{t("sahur-exclusive", { defaultValue: "SAHUR EXCLUSIVE" })}</span>
+                <span className="text-xs font-bold text-amber-400">{t("sahur-exclusive", { defaultValue: "SAHUR EXCLUSIVE" })}</span>
               )}
-            </a>
+            </Link>
           );
         })}
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-x-4">
         <Link
           to="/strategies/puzzles/archive"
-          className="text-xs text-white/30 hover:text-white/50 transition-colors"
+          className="text-xs text-white/50 hover:text-white/80 transition-colors min-h-11 flex items-center"
         >
           {t("browse-archive", { defaultValue: "Browse Archive →" })}
         </Link>
         <Link
           to="/strategies/puzzles/leaderboard"
-          className="text-xs text-white/30 hover:text-white/50 transition-colors"
+          className="text-xs text-white/50 hover:text-white/80 transition-colors min-h-11 flex items-center"
         >
           {t("leaderboards-index", { defaultValue: "Leaderboards →" })}
         </Link>

@@ -35,13 +35,15 @@ function LeaderboardPage() {
       </div>
 
       {/* Mode tabs */}
-      <div className="flex gap-1 overflow-x-auto">
+      <div role="group" aria-label={t("leaderboard-mode", { defaultValue: "Puzzle mode" })} className="flex gap-1 overflow-x-auto">
         {MODES.map(m => (
           <button
             key={m}
+            type="button"
+            aria-pressed={mode === m}
             onClick={() => setMode(m)}
-            className={`px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-mono rounded transition-colors shrink-0 min-h-[44px] md:min-h-0 ${
-              mode === m ? 'text-white bg-white/10' : 'text-white/40 hover:text-white/60'
+            className={`px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-mono rounded transition-colors shrink-0 min-h-11 md:min-h-0 ${
+              mode === m ? 'text-white bg-white/10' : 'text-white/60 hover:text-white/90'
             }`}
           >
             {m}
@@ -52,35 +54,35 @@ function LeaderboardPage() {
       {/* Leaderboard table */}
       <div className="rounded-lg overflow-x-auto" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
         {isLoading ? (
-          <div className="p-8 text-center text-sm text-white/30">{t("loading", { defaultValue: "Loading..." })}</div>
+          <div className="p-8 text-center text-sm text-white/50">{t("loading", { defaultValue: "Loading..." })}</div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: 'var(--doctrine-bg-secondary)' }}>
-                <th className="text-left px-2.5 md:px-4 py-2 text-xs md:text-[10px] font-mono text-white/30">#</th>
-                <th className="text-left px-2.5 md:px-4 py-2 text-xs md:text-[10px] font-mono text-white/30">{t("player", { defaultValue: "Player" })}</th>
-                <th className="text-right px-2.5 md:px-4 py-2 text-xs md:text-[10px] font-mono text-white/30">{t("score", { defaultValue: "Score" })}</th>
-                <th className="text-right px-2.5 md:px-4 py-2 text-xs md:text-[10px] font-mono text-white/30">{t("time", { defaultValue: "Time" })}</th>
+                <th scope="col" className="text-left px-2.5 md:px-4 py-2 text-xs font-mono text-white/50">#</th>
+                <th scope="col" className="text-left px-2.5 md:px-4 py-2 text-xs font-mono text-white/50">{t("player", { defaultValue: "Player" })}</th>
+                <th scope="col" className="text-right px-2.5 md:px-4 py-2 text-xs font-mono text-white/50">{t("score", { defaultValue: "Score" })}</th>
+                <th scope="col" className="text-right px-2.5 md:px-4 py-2 text-xs font-mono text-white/50">{t("time", { defaultValue: "Time" })}</th>
               </tr>
             </thead>
             <tbody>
               {data?.map?.((entry: { rank: number; user: { name: string; handle: string }; score: number; timeMs: number }, i: number) => (
                 <tr key={i} className="border-t border-white/[0.04] hover:bg-white/[0.02]">
-                  <td className="px-2.5 md:px-4 py-2.5 md:py-2 font-mono text-white/40">{entry.rank}</td>
+                  <td className="px-2.5 md:px-4 py-2.5 md:py-2 font-mono text-white/60">{entry.rank}</td>
                   <td className="px-2.5 md:px-4 py-2.5 md:py-2 text-white/80">
                     {entry.user?.name ?? entry.user?.handle ?? t("anonymous", { defaultValue: "Anonymous" })}
                   </td>
                   <td className="px-2.5 md:px-4 py-2.5 md:py-2 text-right font-mono" style={{ color: 'var(--doctrine-accent)' }}>
                     {entry.score}
                   </td>
-                  <td className="px-2.5 md:px-4 py-2.5 md:py-2 text-right font-mono text-white/40">
+                  <td className="px-2.5 md:px-4 py-2.5 md:py-2 text-right font-mono text-white/60">
                     {(entry.timeMs / 1000).toFixed(1)}s
                   </td>
                 </tr>
               ))}
               {(!data || data.length === 0) && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-white/30">
+                  <td colSpan={4} className="px-4 py-8 text-center text-white/50">
                     {t("no-submissions", { defaultValue: "No submissions yet today. Be the first." })}
                   </td>
                 </tr>

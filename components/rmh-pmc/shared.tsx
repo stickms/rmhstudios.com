@@ -92,17 +92,16 @@ function ZuluClock() {
  * docs/performance-audit-2026-08-12.md §1.4.
  */
 
-type NavItem = { to: string; label: string };
-const NAV: NavItem[] = [
-  { to: '/rmh-pmc/command', label: 'Command' },
-  { to: '/rmh-pmc/capabilities', label: 'Capabilities' },
-  { to: '/rmh-pmc/intelligence', label: 'Intelligence' },
-  { to: '/rmh-pmc/operators', label: 'Operators' },
-  { to: '/rmh-pmc/contact', label: 'Contact' },
-];
 
 export function CommandBar() {
   const { t } = useTranslation("c-rmh-pmc");
+  const NAV = [
+    { to: '/rmh-pmc/command', label: t('nav-command', { defaultValue: 'Command' }) },
+    { to: '/rmh-pmc/capabilities', label: t('nav-capabilities', { defaultValue: 'Capabilities' }) },
+    { to: '/rmh-pmc/intelligence', label: t('nav-intelligence', { defaultValue: 'Intelligence' }) },
+    { to: '/rmh-pmc/operators', label: t('nav-operators', { defaultValue: 'Operators' }) },
+    { to: '/rmh-pmc/contact', label: t('nav-contact', { defaultValue: 'Contact' }) },
+  ];
   // Shared with RMH Capital's TopNav — see `hooks/useVerticalNav.ts`. The look
   // of these two bars has nothing in common; the behaviour was identical.
   const { toggleMenu, closeMenu, current } = useVerticalNav({
@@ -114,11 +113,11 @@ export function CommandBar() {
     <header className="cmdbar">
       <div className="cmdbar-inner">
         <div className="cmdbar-left">
-          <a className="backlink" href="/" aria-label="Back to RMH Studios">
+          <a className="backlink" href="/" aria-label={t("back-to-rmh-studios", { defaultValue: "Back to RMH Studios" })}>
             <span aria-hidden="true">←</span>
             <span className="backlink-label">RMH Studios</span>
           </a>
-          <Link className="brand" to="/rmh-pmc" aria-label="RMH PMC home">
+          <Link className="brand" to="/rmh-pmc" aria-label={t("rmh-pmc-home", { defaultValue: "RMH PMC home" })}>
             <BrandMark />
             <span className="brand-text">RMH&nbsp;PMC</span>
           </Link>
@@ -215,7 +214,7 @@ export function SiteFooter() {
       <div className="container">
         <div className="footer-top">
           <div className="footer-brand">
-            <Link className="brand" to="/rmh-pmc" aria-label="RMH PMC home">
+            <Link className="brand" to="/rmh-pmc" aria-label={t("rmh-pmc-home", { defaultValue: "RMH PMC home" })}>
               <BrandMark />
               <span className="brand-text">RMH&nbsp;PMC</span>
             </Link>
@@ -245,7 +244,7 @@ export function SiteFooter() {
         </div>
 
         <div className="footer-bottom">
-          <span className="copy">© 2026 RMH PMC LLC · An RMH Studios company</span>
+          <span className="copy">{t("copyright", { defaultValue: "© 2026 RMH PMC LLC · An RMH Studios company" })}</span>
           <div className="footer-legal">
             <a href="#">{t("footer-vetting", { defaultValue: "Vetting" })}</a>
             <a href="#">{t("footer-compliance", { defaultValue: "Compliance" })}</a>
@@ -253,13 +252,13 @@ export function SiteFooter() {
             <a href="#">{t("footer-accessibility", { defaultValue: "Accessibility" })}</a>
           </div>
           <div className="footer-social">
-            <a href="#" aria-label="LinkedIn">
+            <a href="#" aria-label={t("linkedin", { defaultValue: "LinkedIn" })}>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21H21.4v-5.3c0-1.27-.02-2.9-1.77-2.9s-2.04 1.38-2.04 2.8V21H13.8z" /></svg>
             </a>
-            <a href="#" aria-label="X">
+            <a href="#" aria-label={t("x", { defaultValue: "X" })}>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.5 8.6L23 22h-6.8l-5-6.6L5.3 22H2l8-9.2L1.5 2h7l4.5 6zM17 20h1.7L7.1 3.8H5.3z" /></svg>
             </a>
-            <a href="#" aria-label="YouTube">
+            <a href="#" aria-label={t("youtube", { defaultValue: "YouTube" })}>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.4-.4-5c-.2-.9-.9-1.6-1.8-1.8C19.2 5 12 5 12 5s-7.2 0-8.8.4c-.9.2-1.6.9-1.8 1.8C1 8.6 1 12 1 12s0 3.4.4 5c.2.9.9 1.6 1.8 1.8 1.6.4 8.8.4 8.8.4s7.2 0 8.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-5 .4-5zM9.8 15.2V8.8l6 3.2z" /></svg>
             </a>
           </div>

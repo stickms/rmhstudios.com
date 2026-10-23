@@ -32,14 +32,14 @@ export function CrisisBanner({ incidentId, codename, severity, title }: CrisisBa
         <AlertTriangle size={16} style={{ color }} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono" style={{ color }}>{codename}</span>
-            <span className="text-[10px] font-mono uppercase px-1 rounded" style={{ color, background: `${color}15` }}>
+            <span className="text-xs font-mono" style={{ color }}>{codename}</span>
+            <span className="text-xs font-mono uppercase px-1 rounded" style={{ color, background: `${color}15` }}>
               {severity}
             </span>
           </div>
           <p className="text-sm text-white/80 truncate">{title}</p>
         </div>
-        <span className="text-[10px] text-white/20 shrink-0">{t("view-arrow", { defaultValue: "View →" })}</span>
+        <span className="text-xs text-white/50 shrink-0">{t("view-arrow", { defaultValue: "View →" })}</span>
       </motion.div>
     </Link>
   );
