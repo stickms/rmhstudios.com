@@ -52,7 +52,7 @@ export default function RmhMusicPage() {
       <Link
         to="/apps"
         onClick={goBack}
-        className="absolute top-[calc(1rem+var(--safe-top))] left-[calc(1rem+var(--safe-left))] z-20 flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+        className="absolute top-[calc(1rem+var(--safe-top))] left-[calc(1rem+var(--safe-left))] z-20 flex min-h-11 items-center gap-1.5 rounded-(--app-radius-sm) px-3 py-2 text-xs font-medium transition-colors"
         style={{
           background: 'color-mix(in srgb, var(--app-surface) 80%, transparent)',
           color: 'var(--app-text-muted)',
@@ -72,7 +72,7 @@ export default function RmhMusicPage() {
         >
           <div className="flex items-center justify-center gap-3 mb-4">
             <div
-              className="p-3 rounded-2xl"
+              className="p-3 rounded-(--app-radius-lg)"
               style={{ background: 'color-mix(in srgb, var(--app-accent) 20%, transparent)' }}
             >
               <Headphones className="w-8 h-8" style={{ color: 'var(--app-accent)' }} />
@@ -100,14 +100,14 @@ export default function RmhMusicPage() {
         >
           <button
             onClick={() => router.navigate({ to: '/rmhmusic/player' })}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-transform hover:scale-105"
+            className="flex items-center gap-2 px-6 py-3 rounded-(--app-radius) text-sm font-semibold transition-transform hover:scale-105"
             style={{ background: 'var(--app-accent)', color: 'var(--app-accent-fg)' }}
           >
             <Music className="w-4 h-4" /> {t('open-player', { defaultValue: 'Open Player' })}
           </button>
           <button
             onClick={() => router.navigate({ to: '/music-trivia' })}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-transform hover:scale-105"
+            className="flex items-center gap-2 px-6 py-3 rounded-(--app-radius) text-sm font-semibold transition-transform hover:scale-105"
             style={{ background: 'var(--app-surface)', color: 'var(--app-text)' }}
           >
             <Brain className="w-4 h-4" /> {t('guess-the-song', { defaultValue: 'Guess the Song' })}
@@ -123,7 +123,7 @@ export default function RmhMusicPage() {
         >
           {/* Create */}
           <div
-            className="p-4 rounded-xl"
+            className="p-4 rounded-(--app-radius)"
             style={{ background: 'color-mix(in srgb, var(--app-surface) 80%, transparent)' }}
           >
             <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--app-text)' }}>
@@ -134,14 +134,14 @@ export default function RmhMusicPage() {
               placeholder={t('room-name-placeholder', { defaultValue: 'Room name (optional)' })}
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-sm mb-3 outline-none"
+              className="w-full px-3 py-2 rounded-(--app-radius-sm) text-sm mb-3 outline-none"
               style={{ background: 'var(--app-bg)', color: 'var(--app-text)' }}
               maxLength={64}
             />
             <button
               onClick={createRoom}
               disabled={connectionStatus !== 'connected'}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-40"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-(--app-radius-sm) text-sm font-medium transition disabled:opacity-40"
               style={{ background: 'var(--app-accent)', color: 'var(--app-accent-fg)' }}
             >
               <Plus className="w-4 h-4" /> {t('create-room', { defaultValue: 'Create Room' })}
@@ -150,7 +150,7 @@ export default function RmhMusicPage() {
 
           {/* Join */}
           <div
-            className="p-4 rounded-xl"
+            className="p-4 rounded-(--app-radius)"
             style={{ background: 'color-mix(in srgb, var(--app-surface) 80%, transparent)' }}
           >
             <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--app-text)' }}>
@@ -161,14 +161,14 @@ export default function RmhMusicPage() {
               placeholder={t('enter-room-code', { defaultValue: 'Enter room code' })}
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              className="w-full px-3 py-2 rounded-lg text-sm mb-3 outline-none font-mono tracking-widest text-center"
+              className="w-full px-3 py-2 rounded-(--app-radius-sm) text-sm mb-3 outline-none font-mono tracking-widest text-center"
               style={{ background: 'var(--app-bg)', color: 'var(--app-text)' }}
               maxLength={6}
             />
             <button
               onClick={joinRoom}
               disabled={!joinCode.trim() || connectionStatus !== 'connected'}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-40"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-(--app-radius-sm) text-sm font-medium transition disabled:opacity-40"
               style={{ background: 'var(--app-surface)', color: 'var(--app-text)' }}
             >
               <ArrowRight className="w-4 h-4" /> {t('join-room', { defaultValue: 'Join Room' })}

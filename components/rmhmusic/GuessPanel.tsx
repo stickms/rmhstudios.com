@@ -112,20 +112,20 @@ export default function GuessPanel() {
           exit={{ x: 320, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           className="fixed right-0 top-0 bottom-[calc(73px+var(--safe-bottom))] z-40 flex w-80 max-w-full flex-col overflow-hidden pt-[var(--safe-top)] backdrop-blur-xl border-l"
-          style={{ background: 'color-mix(in srgb, var(--site-bg) 90%, transparent)', borderColor: 'color-mix(in srgb, var(--site-text) 10%, transparent)' }}
+          style={{ background: 'color-mix(in srgb, var(--app-bg) 90%, transparent)', borderColor: 'color-mix(in srgb, var(--app-text) 10%, transparent)' }}
         >
           {/* Header */}
-          <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'color-mix(in srgb, var(--site-text) 10%, transparent)' }}>
+          <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'color-mix(in srgb, var(--app-text) 10%, transparent)' }}>
             <div className="flex items-center gap-2">
-              <Music2 className="w-4 h-4" style={{ color: 'var(--site-accent)' }} />
-              <span className="text-sm font-semibold" style={{ color: 'var(--site-text)' }}>{t("guess-the-song", { defaultValue: "Guess the Song" })}</span>
+              <Music2 className="w-4 h-4" style={{ color: 'var(--app-accent)' }} />
+              <span className="text-sm font-semibold" style={{ color: 'var(--app-text)' }}>{t("guess-the-song", { defaultValue: "Guess the Song" })}</span>
             </div>
             <a
               href="/music-trivia"
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1 text-xs"
-              style={{ color: 'var(--site-text-muted)' }}
+              style={{ color: 'var(--app-text-muted)' }}
             >
               {t("new", { defaultValue: "New" })} <ExternalLink className="w-3 h-3" />
             </a>
@@ -134,7 +134,7 @@ export default function GuessPanel() {
           <div className="flex-1 overflow-y-auto p-3">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--site-accent)' }} />
+                <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--app-accent)' }} />
               </div>
             ) : active ? (
               /* ── Play view ── */
@@ -142,20 +142,20 @@ export default function GuessPanel() {
                 <button
                   onClick={backToList}
                   className="flex items-center gap-1.5 text-sm"
-                  style={{ color: 'var(--site-text-muted)' }}
+                  style={{ color: 'var(--app-text-muted)' }}
                 >
                   <ArrowLeft className="w-4 h-4" /> {t("puzzles", { defaultValue: "Puzzles" })}
                 </button>
 
                 <div>
-                  <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--site-text-dim)' }}>{t("artist", { defaultValue: "Artist" })}</p>
-                  <p className="text-sm font-medium" style={{ color: 'var(--site-text)' }}>{active.artist}</p>
+                  <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--app-text-dim)' }}>{t("artist", { defaultValue: "Artist" })}</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--app-text)' }}>{active.artist}</p>
                 </div>
 
                 <div className="space-y-1.5">
                   {active.hints.slice(0, revealed).map((h, i) => (
-                    <div key={i} className="flex gap-2 text-sm rounded-lg px-3 py-2" style={{ background: 'var(--site-surface)', color: 'var(--site-text)' }}>
-                      <Lightbulb className="w-4 h-4 shrink-0" style={{ color: 'var(--site-accent)' }} />
+                    <div key={i} className="flex gap-2 text-sm rounded-(--app-radius-sm) px-3 py-2" style={{ background: 'var(--app-surface)', color: 'var(--app-text)' }}>
+                      <Lightbulb className="w-4 h-4 shrink-0" style={{ color: 'var(--app-accent)' }} />
                       <span>{h}</span>
                     </div>
                   ))}
@@ -163,7 +163,7 @@ export default function GuessPanel() {
                     <button
                       onClick={() => setRevealed((r) => r + 1)}
                       className="text-xs"
-                      style={{ color: 'var(--site-accent)' }}
+                      style={{ color: 'var(--app-accent)' }}
                     >
                       {t("reveal-another-hint", { defaultValue: "Reveal another hint ({{count}} left)", count: active.hints.length - revealed })}
                     </button>
@@ -171,8 +171,8 @@ export default function GuessPanel() {
                 </div>
 
                 {result?.correct ? (
-                  <div className="rounded-lg px-3 py-3 text-sm flex items-center gap-2" style={{ background: 'color-mix(in srgb, var(--site-accent) 15%, transparent)', color: 'var(--site-text)' }}>
-                    <Check className="w-4 h-4" style={{ color: 'var(--site-accent)' }} />
+                  <div className="rounded-(--app-radius-sm) px-3 py-3 text-sm flex items-center gap-2" style={{ background: 'color-mix(in srgb, var(--app-accent) 15%, transparent)', color: 'var(--app-text)' }}>
+                    <Check className="w-4 h-4" style={{ color: 'var(--app-accent)' }} />
                     <span>
                       {t("correct-title", { defaultValue: "Correct — {{title}}", title: result.title })}
                       {typeof result.reward === 'number' ? t("reward-coins", { defaultValue: " · +{{reward}} coins", reward: result.reward }) : ''}
@@ -187,34 +187,34 @@ export default function GuessPanel() {
                         onChange={(e) => setGuess(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && submitGuess()}
                         placeholder={t("song-title-placeholder", { defaultValue: "Song title..." })}
-                        className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
-                        style={{ background: 'var(--site-surface)', color: 'var(--site-text)' }}
+                        className="flex-1 px-3 py-2 rounded-(--app-radius-sm) text-sm outline-none"
+                        style={{ background: 'var(--app-surface)', color: 'var(--app-text)' }}
                         maxLength={160}
                       />
                       <button
                         onClick={submitGuess}
                         disabled={!guess.trim() || submitting}
-                        className="px-3 py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-40"
-                        style={{ background: 'var(--site-accent)', color: '#fff' }}
+                        className="px-3 py-2 rounded-(--app-radius-sm) text-sm font-medium transition-opacity disabled:opacity-40"
+                        style={{ background: 'var(--app-accent)', color: 'var(--app-accent-fg)' }}
                       >
                         {t("guess", { defaultValue: "Guess" })}
                       </button>
                     </div>
                     {result && !result.correct && (
-                      <p className="text-xs" style={{ color: 'var(--site-text-muted)' }}>
+                      <p className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
                         {t("not-quite", { defaultValue: "Not quite — try another hint or guess." })}
                       </p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-xs" style={{ color: 'var(--site-text-muted)' }}>{t("sign-in-to-guess", { defaultValue: "Sign in to guess." })}</p>
+                  <p className="text-xs" style={{ color: 'var(--app-text-muted)' }}>{t("sign-in-to-guess", { defaultValue: "Sign in to guess." })}</p>
                 )}
               </div>
             ) : (
               /* ── List view ── */
               <div className="space-y-2">
                 {puzzles.length === 0 ? (
-                  <p className="text-sm text-center py-8" style={{ color: 'var(--site-text-muted)' }}>
+                  <p className="text-sm text-center py-8" style={{ color: 'var(--app-text-muted)' }}>
                     {t("no-puzzles-yet", { defaultValue: "No puzzles yet." })}
                   </p>
                 ) : (
@@ -222,17 +222,17 @@ export default function GuessPanel() {
                     <button
                       key={p.id}
                       onClick={() => openPuzzle(p.id)}
-                      className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors"
-                      style={{ background: 'var(--site-surface)' }}
+                      className="w-full flex items-center gap-2 rounded-(--app-radius-sm) px-3 py-2 text-left transition-colors"
+                      style={{ background: 'var(--app-surface)' }}
                     >
-                      <Music2 className="w-4 h-4 shrink-0" style={{ color: 'var(--site-accent)' }} />
+                      <Music2 className="w-4 h-4 shrink-0" style={{ color: 'var(--app-accent)' }} />
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium truncate" style={{ color: 'var(--site-text)' }}>{p.artist}</div>
-                        <div className="text-xs" style={{ color: 'var(--site-text-muted)' }}>
+                        <div className="text-sm font-medium truncate" style={{ color: 'var(--app-text)' }}>{p.artist}</div>
+                        <div className="text-xs" style={{ color: 'var(--app-text-muted)' }}>
                           {t("solves-plays", { defaultValue: "{{solves}} solved · {{plays}} plays", solves: p.solves, plays: p.plays })}
                         </div>
                       </div>
-                      {p.solved && <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--site-accent)' }} />}
+                      {p.solved && <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--app-accent)' }} />}
                     </button>
                   ))
                 )}

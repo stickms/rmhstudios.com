@@ -119,13 +119,13 @@ export function TimeRuler({ width, trackHeaderWidth }: TimeRulerProps) {
     <div className="flex h-7 shrink-0">
       {/* Track header spacer */}
       <div
-        className="shrink-0 border-b border-r border-[var(--site-border)] bg-[var(--site-surface)]"
+        className="shrink-0 border-b border-r border-site-border bg-site-surface"
         style={{ width: trackHeaderWidth }}
       />
       {/* Ruler canvas */}
       <canvas
         ref={canvasRef}
-        className="cursor-pointer border-b border-[var(--site-border)]"
+        className="cursor-pointer border-b border-site-border"
         onClick={handleClick}
       />
     </div>

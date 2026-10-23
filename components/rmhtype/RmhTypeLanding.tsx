@@ -156,7 +156,7 @@ export default function RmhTypeLanding() {
 
   return (
     <div className="app-page">
-      <RmhTypeHeader backLabel="Apps" backHref="/apps" />
+      <RmhTypeHeader backLabel={t("apps", { defaultValue: "Apps" })} backHref="/apps" />
 
       <div className="flex-1 p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-8">
@@ -165,7 +165,7 @@ export default function RmhTypeLanding() {
           <div className="text-center py-8">
             <div className="inline-flex items-center gap-2 mb-4">
               <Keyboard className="h-8 w-8 text-(--app-accent)" />
-              <h2 className="text-3xl font-bold">RMH Type</h2>
+              <h2 className="text-3xl font-bold" style={{ fontFamily: "var(--app-font-display)" }}>RMH Type</h2>
             </div>
             <p className="text-(--app-text-muted) max-w-md mx-auto">
               {t("hero-subtitle", { defaultValue: "Test your typing speed solo or race against friends in real-time." })}
@@ -174,7 +174,7 @@ export default function RmhTypeLanding() {
 
           <div className="grid md:grid-cols-2 gap-6">
             <Link to="/rmhtype/solo"
-              className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-left transition-colors hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
+              className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 text-left transition-colors hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
             >
               <User className="h-8 w-8 mb-4 text-(--app-accent)" />
               <h3 className="text-xl font-semibold mb-2">{t("solo-title", { defaultValue: "Solo Practice" })}</h3>
@@ -184,7 +184,7 @@ export default function RmhTypeLanding() {
             </Link>
 
             <Link to="/rmhtype/multiplayer"
-              className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-left transition-colors hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
+              className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 text-left transition-colors hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
             >
               <Users className="h-8 w-8 mb-4 text-(--app-accent)" />
               <h3 className="text-xl font-semibold mb-2">{t("multiplayer-title", { defaultValue: "Multiplayer Race" })}</h3>
@@ -203,10 +203,10 @@ export default function RmhTypeLanding() {
             </div>
 
             {DIFFICULTIES.map((d) => (
-              <div key={d} className="rounded-xl border border-(--app-border) bg-(--app-surface) p-5">
+              <div key={d} className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
                 <h4 className="text-sm font-semibold capitalize mb-3 flex items-center gap-2">
                   <span className={`inline-block w-2 h-2 rounded-full ${
-                    d === 'easy' ? 'bg-green-400' : d === 'medium' ? 'bg-yellow-400' : 'bg-red-400'
+                    d === 'easy' ? 'bg-(--app-success)' : d === 'medium' ? 'bg-(--app-warning)' : 'bg-(--app-danger)'
                   }`} />
                   {d}
                 </h4>

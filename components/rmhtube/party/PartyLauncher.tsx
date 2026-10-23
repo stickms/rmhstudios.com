@@ -35,7 +35,7 @@ export default function PartyLauncher() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         title={t('party-title', { defaultValue: 'Watch party games' })}
-        className="relative rounded-md p-2 text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
+        className="relative rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
       >
         <PartyPopper className="h-5 w-5" aria-hidden />
         {live && (

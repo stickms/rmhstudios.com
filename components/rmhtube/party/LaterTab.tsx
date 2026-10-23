@@ -112,7 +112,7 @@ export default function LaterTab() {
                 </button>
                 <button
                   type="button"
-                  className="rounded p-1 text-(--app-text-muted) hover:text-(--app-danger)"
+                  className="rounded-(--app-radius-sm) p-1 text-(--app-text-muted) hover:text-(--app-danger)"
                   onClick={() => void remove(i.id)}
                   title={t('remove', { defaultValue: 'Remove' })}
                 >

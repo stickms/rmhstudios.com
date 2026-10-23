@@ -14,7 +14,7 @@ export function StudioCreativeButtons() {
   const { t } = useTranslation('f-creative');
   const [panel, setPanel] = useState<'challenge' | 'jam' | null>(null);
   const live = useJamStore((s) => s.status === 'live');
-  const cls = 'rounded p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text';
+  const cls = 'rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text';
   return (
     <>
       <button

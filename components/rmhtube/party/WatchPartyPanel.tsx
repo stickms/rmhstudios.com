@@ -41,7 +41,7 @@ export default function WatchPartyPanel({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 rounded p-1 text-(--app-text-muted) hover:text-(--app-text)"
+          className="shrink-0 rounded-(--app-radius-sm) p-1 text-(--app-text-muted) hover:text-(--app-text)"
           title={t('close', { defaultValue: 'Close' })}
         >
           <X className="h-4 w-4" aria-hidden />

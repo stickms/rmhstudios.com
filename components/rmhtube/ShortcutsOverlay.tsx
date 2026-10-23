@@ -48,16 +48,16 @@ export default function ShortcutsOverlay({ onClose }: ShortcutsOverlayProps) {
 
   return (
     <div className="rmhtube-shortcuts-overlay" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60" />
+      <div className="absolute inset-0 app-scrim" />
       <div
-        className="relative w-full max-w-md rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl"
+        className="relative w-full max-w-md rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg font-semibold text-(--app-text)">{t("keyboard-shortcuts-title", { defaultValue: "Keyboard Shortcuts" })}</h3>
           <button
             onClick={onClose}
-            className="rounded p-1 text-(--app-text-muted) hover:text-(--app-text)"
+            className="rounded-(--app-radius-sm) p-1 text-(--app-text-muted) hover:text-(--app-text)"
           >
             <X className="h-5 w-5" />
           </button>

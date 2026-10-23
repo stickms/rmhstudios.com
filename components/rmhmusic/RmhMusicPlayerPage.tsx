@@ -86,7 +86,7 @@ export default function PlayerPage() {
   }, [room?.roomId, room?.hostUserId, room?.myUserId, isRadio, play, pause, resume, seek]);
 
   return (
-    <div className="app-ground relative" style={{ background: 'var(--site-bg)' }}>
+    <div className="app-ground relative" style={{ background: 'var(--app-bg)' }}>
       <Suspense fallback={null}><Visualizer /></Suspense>
 
       {/* Floating album art */}
@@ -95,7 +95,7 @@ export default function PlayerPage() {
           <img
             src={currentTrack.albumArt}
             alt=""
-            className="w-48 h-48 md:w-64 md:h-64 rounded-2xl shadow-2xl opacity-30"
+            className="w-48 h-48 md:w-64 md:h-64 rounded-(--app-radius-lg) opacity-30"
           />
         </div>
       )}

@@ -30,8 +30,8 @@ export default function BanListModal({ onClose }: BanListModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-sm rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl">
+      <div className="absolute inset-0 app-scrim" onClick={onClose} />
+      <div className="relative w-full max-w-sm rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <UserX className="h-5 w-5 text-(--app-danger)" />
@@ -39,7 +39,7 @@ export default function BanListModal({ onClose }: BanListModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-(--app-text-muted) hover:text-(--app-text)"
+            className="rounded-(--app-radius-sm) p-1 text-(--app-text-muted) hover:text-(--app-text)"
           >
             <X className="h-5 w-5" />
           </button>
@@ -54,7 +54,7 @@ export default function BanListModal({ onClose }: BanListModalProps) {
             {room.bannedUsers.map((ban) => (
               <div
                 key={ban.userId}
-                className="flex items-center justify-between p-3 rounded-lg bg-(--app-bg) border border-(--app-border)"
+                className="flex items-center justify-between p-3 rounded-(--app-radius-sm) bg-(--app-bg) border border-(--app-border)"
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate text-(--app-text)">
@@ -67,7 +67,7 @@ export default function BanListModal({ onClose }: BanListModalProps) {
                 </div>
                 <button
                   onClick={() => handleUnban(ban.userId)}
-                  className="shrink-0 ml-2 flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-success) hover:bg-(--app-success-dim)"
+                  className="shrink-0 ml-2 flex items-center gap-1 rounded-(--app-radius-sm) px-2 py-1 text-xs transition-colors bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-success) hover:bg-(--app-success-dim)"
                   title={t("unban-user-title", { defaultValue: "Unban user" })}
                 >
                   <Undo2 className="h-3 w-3" />

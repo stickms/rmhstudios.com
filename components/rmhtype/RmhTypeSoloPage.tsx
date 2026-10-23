@@ -171,7 +171,7 @@ export default function RmhTypeSolo() {
 
         <div className="flex-1 p-4 md:p-8">
           <div className="max-w-lg mx-auto">
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                 <User className="h-5 w-5 text-(--app-accent)" />
                 {t("solo-practice", { defaultValue: "Solo Practice" })}
@@ -185,9 +185,9 @@ export default function RmhTypeSolo() {
                       <button
                         key={d}
                         onClick={() => setSoloDifficulty(d)}
-                        className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
+                        className={`flex-1 py-2 rounded-(--app-radius-sm) text-sm font-medium capitalize transition-colors ${
                           soloDifficulty === d
-                            ? 'bg-(--app-accent) text-white'
+                            ? 'bg-(--app-accent) text-(--app-accent-fg)'
                             : 'bg-(--app-bg) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
                         }`}
                       >
@@ -204,9 +204,9 @@ export default function RmhTypeSolo() {
                       <button
                         key={l}
                         onClick={() => setSoloLength(l)}
-                        className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
+                        className={`flex-1 py-2 rounded-(--app-radius-sm) text-sm font-medium capitalize transition-colors ${
                           soloLength === l
-                            ? 'bg-(--app-accent) text-white'
+                            ? 'bg-(--app-accent) text-(--app-accent-fg)'
                             : 'bg-(--app-bg) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
                         }`}
                       >
@@ -235,7 +235,7 @@ export default function RmhTypeSolo() {
                     placeholder={t("topic-placeholder", {
                       defaultValue: "e.g. deep sea creatures, the Apollo program",
                     })}
-                    className="w-full px-3 py-2 rounded-lg text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent)"
+                    className="w-full px-3 py-2 rounded-(--app-radius-sm) text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent)"
                   />
                   <p className="mt-1.5 text-xs text-(--app-text-muted)">
                     {topic.trim()
@@ -252,7 +252,7 @@ export default function RmhTypeSolo() {
                 <button
                   onClick={handleSoloStart}
                   disabled={connectionStatus !== 'connected'}
-                  className="w-full py-3 mt-4 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                  className="w-full py-3 mt-4 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
                 >
                   {t("start-typing", { defaultValue: "Start Typing" })}
                 </button>
@@ -268,7 +268,7 @@ export default function RmhTypeSolo() {
   if (soloCountdown !== null) {
     return (
       <div className="app-viewport">
-        <RmhTypeHeader backLabel="Back" onBack={handleBackToSettings} />
+        <RmhTypeHeader backLabel={t("back", { defaultValue: "Back" })} onBack={handleBackToSettings} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-8xl font-bold text-(--app-accent) animate-pulse">
             {soloCountdown}
@@ -282,10 +282,10 @@ export default function RmhTypeSolo() {
   if (soloResult) {
     return (
       <div className="app-page">
-        <RmhTypeHeader backLabel="Back" onBack={handleBackToSettings} />
+        <RmhTypeHeader backLabel={t("back", { defaultValue: "Back" })} onBack={handleBackToSettings} />
         <div className="flex-1 p-4 md:p-8">
           <div className="max-w-lg mx-auto">
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-center">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-8 text-center">
               <Trophy className="h-12 w-12 mx-auto mb-4 text-(--app-accent)" />
               <h2 className="text-2xl font-bold mb-6">{t("results", { defaultValue: "Results" })}</h2>
 
@@ -304,21 +304,21 @@ export default function RmhTypeSolo() {
                   })}
                 </p>
               ) : soloResult.scorePosted === false ? (
-                <p className="text-sm text-red-400 mb-4">
+                <p className="text-sm text-(--app-danger) mb-4">
                   {t("score-not-posted", { defaultValue: "Score not posted — 90% accuracy required for leaderboard" })}
                 </p>
               ) : null}
 
               <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="p-4 rounded-lg bg-(--app-bg)">
+                <div className="p-4 rounded-(--app-radius-sm) bg-(--app-bg)">
                   <div className="text-3xl font-bold text-(--app-accent)">{soloResult.wpm}</div>
                   <div className="text-xs text-(--app-text-muted)">{t("wpm", { defaultValue: "WPM" })}</div>
                 </div>
-                <div className="p-4 rounded-lg bg-(--app-bg)">
+                <div className="p-4 rounded-(--app-radius-sm) bg-(--app-bg)">
                   <div className="text-3xl font-bold text-(--app-accent)">{soloResult.accuracy}%</div>
                   <div className="text-xs text-(--app-text-muted)">{t("accuracy", { defaultValue: "Accuracy" })}</div>
                 </div>
-                <div className="p-4 rounded-lg bg-(--app-bg)">
+                <div className="p-4 rounded-(--app-radius-sm) bg-(--app-bg)">
                   <div className="text-3xl font-bold">{(soloResult.timeMs / 1000).toFixed(1)}s</div>
                   <div className="text-xs text-(--app-text-muted)">{t("time", { defaultValue: "Time" })}</div>
                 </div>
@@ -327,14 +327,14 @@ export default function RmhTypeSolo() {
               <div className="flex gap-3">
                 <button
                   onClick={handleRetry}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-white transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
                 >
                   <RotateCcw className="h-4 w-4" />
                   {t("try-again", { defaultValue: "Try Again" })}
                 </button>
                 <button
                   onClick={handleBackToSettings}
-                  className="flex-1 py-3 rounded-lg font-semibold transition-colors bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-surface-active)"
+                  className="flex-1 py-3 rounded-(--app-radius-sm) font-semibold transition-colors bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-surface-active)"
                 >
                   {t("change-settings", { defaultValue: "Change Settings" })}
                 </button>
@@ -349,7 +349,7 @@ export default function RmhTypeSolo() {
   // Typing state
   return (
     <div className="app-viewport rmhtype-typing-view">
-      <RmhTypeHeader backLabel="Back" onBack={handleBackToSettings} />
+      <RmhTypeHeader backLabel={t("back", { defaultValue: "Back" })} onBack={handleBackToSettings} />
 
       <div className="flex-1 min-h-0 flex flex-col p-4 md:p-8">
         <div className="max-w-3xl w-full mx-auto flex-1 min-h-0 flex flex-col gap-4 rmhtype-typing-area">
@@ -377,7 +377,7 @@ export default function RmhTypeSolo() {
               )}
 
               {/* Passage — fills remaining space, scrolls internally */}
-              <div ref={passageRef} className="flex-1 min-h-0 rounded-xl border border-(--app-border) bg-(--app-surface) p-6 rmhtype-passage-scroll">
+              <div ref={passageRef} className="flex-1 min-h-0 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 rmhtype-passage-scroll">
                 <div className={`rmhtype-passage select-none${source === 'code' ? ' font-mono whitespace-pre-wrap' : ''}`}>
                   {[...soloPassage].map((char, i) => {
                     let className = 'rmhtype-char-untyped';
@@ -408,7 +408,7 @@ export default function RmhTypeSolo() {
                   spellCheck={false}
                   autoCapitalize="off"
                   autoCorrect="off"
-                  className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent) rmhtype-typing-input"
+                  className="shrink-0 w-full px-4 py-3 rounded-(--app-radius-sm) font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent) rmhtype-typing-input"
                   autoFocus
                 />
               ) : (
@@ -421,7 +421,7 @@ export default function RmhTypeSolo() {
                   onCopy={(e) => e.preventDefault()}
                   onCut={(e) => e.preventDefault()}
                   disabled={finished}
-                  className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent) rmhtype-typing-input"
+                  className="shrink-0 w-full px-4 py-3 rounded-(--app-radius-sm) font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent) rmhtype-typing-input"
                   autoFocus
                   placeholder={t("start-typing-placeholder", { defaultValue: "Start typing..." })}
                 />

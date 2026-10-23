@@ -42,7 +42,7 @@
   align-items: center;
   gap: 0.75rem;
   color: inherit;
-  padding: 0.25rem 0.35rem;
+  padding: 0.25rem 0.25rem;
 }
 
 .rmhcalc__header-actions {
@@ -56,9 +56,9 @@
 .rmhcalc__back {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   min-height: 2.75rem;
-  padding: 0 0.85rem;
+  padding: 0 0.75rem;
   border-radius: var(--site-radius, 0.75rem);
   border: 1px solid var(--site-border);
   background: var(--site-surface);
@@ -67,8 +67,8 @@
   font-weight: 500;
   text-decoration: none;
   transition:
-    color 0.15s ease,
-    background-color 0.15s ease;
+    color calc(var(--site-transition-speed, 200ms) * 0.75) ease,
+    background-color calc(var(--site-transition-speed, 200ms) * 0.75) ease;
 }
 .rmhcalc__back:hover {
   background: var(--site-surface-hover);
@@ -97,7 +97,7 @@
   letter-spacing: -0.02em;
 }
 .rmhcalc__brand-sub {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--site-text-muted);
 }
 
@@ -134,7 +134,7 @@
 .rmhcalc-sci__main {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.75rem;
   min-width: 0;
 }
 
@@ -143,7 +143,7 @@
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius, 0.9rem);
   background: var(--site-surface);
-  padding: clamp(0.85rem, 1.5vw, 1.15rem);
+  padding: clamp(0.75rem, 1.5vw, 1.15rem);
   box-shadow: var(--site-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.08));
 }
 
@@ -155,20 +155,23 @@
 
 .rmhcalc-angle {
   display: inline-flex;
-  gap: 0.15rem;
-  padding: 0.15rem;
+  gap: 0.25rem;
+  padding: 0.25rem;
   border: 1px solid var(--site-border);
   border-radius: 999px;
   background: var(--site-bg);
 }
 .rmhcalc-angle__btn {
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 0.2rem 0.6rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 999px;
   color: var(--site-text-muted);
-  transition: all 0.15s ease;
+  transition:
+    color calc(var(--site-transition-speed, 200ms) * 0.75) ease,
+    background-color calc(var(--site-transition-speed, 200ms) * 0.75) ease,
+    border-color calc(var(--site-transition-speed, 200ms) * 0.75) ease;
 }
 .rmhcalc-angle__btn.is-active {
   background: var(--site-accent);
@@ -185,7 +188,7 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
-  padding: 0.15rem 0;
+  padding: 0.25rem 0;
   /* A textarea now, so: no drag handle (the height is driven by the content),
      and no inherited monospace default — `font` is otherwise reset by the UA
      for this element in a way it is not for `input`. */
@@ -224,7 +227,7 @@
   flex-wrap: wrap;
   gap: 0.5rem 0.75rem;
   min-height: 2.2rem;
-  margin-top: 0.35rem;
+  margin-top: 0.25rem;
   padding-top: 0.5rem;
   border-top: 1px dashed var(--site-border);
 }
@@ -239,29 +242,29 @@
   cursor: copy;
 }
 .rmhcalc-display__exact {
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--site-text-muted);
   font-variant-numeric: tabular-nums;
 }
 .rmhcalc-display__hint {
   color: var(--site-text-dim);
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 .rmhcalc-display__error {
   color: var(--site-danger);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 500;
 }
 
 .rmhcalc-steps {
-  margin: 0.65rem 0 0;
+  margin: 0.75rem 0 0;
   padding-left: 1.2rem;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.25rem;
 }
 .rmhcalc-steps__item {
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: var(--site-text-muted);
   list-style: decimal;
 }
@@ -270,7 +273,7 @@
 .rmhcalc-fnpad {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 .rmhcalc-keypad {
   display: grid;
@@ -293,13 +296,13 @@
   font-variant-numeric: tabular-nums;
   transition:
     transform 0.08s ease,
-    background-color 0.15s ease,
-    border-color 0.15s ease;
+    background-color calc(var(--site-transition-speed, 200ms) * 0.75) ease,
+    border-color calc(var(--site-transition-speed, 200ms) * 0.75) ease;
   user-select: none;
 }
 .rmhcalc-fnpad .rmhcalc-key {
   min-height: 2.5rem;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 .rmhcalc-key:hover {
   background: var(--site-surface-hover);
@@ -335,7 +338,7 @@
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius, 0.9rem);
   background: var(--site-surface);
-  padding: 0.85rem;
+  padding: 0.75rem;
   position: sticky;
   top: 0.5rem;
   max-height: calc(100dvh - 1.5rem);
@@ -346,22 +349,22 @@
 .rmhcalc-history__header {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--site-text-muted);
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
 }
 .rmhcalc-history__empty {
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: var(--site-text-dim);
 }
 .rmhcalc-history__list {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.25rem;
   overflow-y: auto;
   min-height: 0;
 }
@@ -369,25 +372,28 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.1rem;
+  gap: 0.25rem;
   width: 100%;
   text-align: left;
-  padding: 0.45rem 0.55rem;
+  padding: 0.5rem 0.5rem;
   border-radius: var(--site-radius-sm, 0.55rem);
   border: 1px solid transparent;
-  transition: all 0.12s ease;
+  transition:
+    color calc(var(--site-transition-speed, 200ms) * 0.75) ease,
+    background-color calc(var(--site-transition-speed, 200ms) * 0.75) ease,
+    border-color calc(var(--site-transition-speed, 200ms) * 0.75) ease;
 }
 .rmhcalc-history__item:hover {
   background: var(--site-surface-hover);
   border-color: var(--site-border);
 }
 .rmhcalc-history__expr {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: var(--site-text-muted);
   word-break: break-all;
 }
 .rmhcalc-history__res {
-  font-size: 0.92rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--site-text);
   font-variant-numeric: tabular-nums;
@@ -405,10 +411,10 @@
 .rmhcalc-reasoning__header {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   width: 100%;
-  padding: 0.55rem 0.75rem;
-  font-size: 0.82rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--site-text-muted);
 }
@@ -434,21 +440,21 @@
 .rmhcalc-reasoning__body {
   max-height: 220px;
   overflow-y: auto;
-  padding: 0 0.85rem 0.75rem;
+  padding: 0 0.75rem 0.75rem;
   border-top: 1px solid var(--site-border);
 }
 .rmhcalc-reasoning__text {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: var(--site-text-muted);
   white-space: pre-wrap;
   word-break: break-word;
-  margin-top: 0.6rem;
+  margin-top: 0.5rem;
 }
 .rmhcalc-reasoning__placeholder {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: var(--site-text-dim);
-  margin-top: 0.6rem;
+  margin-top: 0.5rem;
 }
 
 @keyframes rmhcalc-pulse {
@@ -483,11 +489,11 @@
 .rmhcalc-graph__controls {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.75rem;
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius, 0.9rem);
   background: var(--site-surface);
-  padding: clamp(0.85rem, 1.5vw, 1.1rem);
+  padding: clamp(0.75rem, 1.5vw, 1.1rem);
 }
 
 .rmhcalc-graph__fns {
@@ -503,7 +509,7 @@
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius-sm, 0.6rem);
   background: var(--site-bg);
-  padding: 0.35rem 0.5rem;
+  padding: 0.25rem 0.5rem;
 }
 .rmhcalc-fnrow:focus-within {
   border-color: var(--site-accent);
@@ -515,7 +521,7 @@
   flex-shrink: 0;
 }
 .rmhcalc-fnrow__prefix {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: var(--site-text-muted);
   font-style: italic;
   flex-shrink: 0;
@@ -527,7 +533,7 @@
   border: none;
   outline: none;
   color: var(--site-text);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
 }
 .rmhcalc-fnrow__input::placeholder {
@@ -550,12 +556,12 @@
 .rmhcalc-graph__add {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.25rem;
   align-self: flex-start;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--site-accent);
-  padding: 0.3rem 0.15rem;
+  padding: 0.25rem 0.25rem;
 }
 .rmhcalc-graph__add:hover {
   text-decoration: underline;
@@ -564,17 +570,20 @@
 .rmhcalc-graph__examples {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 .rmhcalc-chip {
   font-size: 0.75rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  padding: 0.2rem 0.5rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 999px;
   border: 1px solid var(--site-border);
   background: var(--site-bg);
   color: var(--site-text-muted);
-  transition: all 0.12s ease;
+  transition:
+    color calc(var(--site-transition-speed, 200ms) * 0.75) ease,
+    background-color calc(var(--site-transition-speed, 200ms) * 0.75) ease,
+    border-color calc(var(--site-transition-speed, 200ms) * 0.75) ease;
 }
 .rmhcalc-chip:hover {
   border-color: var(--site-accent);
@@ -589,8 +598,8 @@
 .rmhcalc-check {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.85rem;
+  gap: 0.5rem;
+  font-size: 0.875rem;
   color: var(--site-text-muted);
   cursor: pointer;
 }
@@ -607,17 +616,17 @@
 .rmhcalc-field {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.72rem;
+  gap: 0.25rem;
+  font-size: 0.75rem;
   color: var(--site-text-muted);
 }
 .rmhcalc-field__input {
   background: var(--site-bg);
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius-sm, 0.5rem);
-  padding: 0.4rem 0.55rem;
+  padding: 0.5rem 0.5rem;
   color: var(--site-text);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   outline: none;
 }
 .rmhcalc-field__input:focus {
@@ -633,10 +642,10 @@
   min-height: 440px;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 .rmhcalc-graph__notes {
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
   color: var(--site-text-muted);
   padding: 0 0.25rem;
 }
@@ -651,7 +660,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
   color: var(--site-text-dim);
   text-align: center;
   max-width: 22rem;
@@ -678,14 +687,14 @@
 .rmhcalc-plot__legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem 1rem;
+  gap: 0.5rem 1rem;
   justify-content: center;
 }
 .rmhcalc-plot__legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--site-text-muted);
 }

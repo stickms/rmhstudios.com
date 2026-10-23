@@ -90,15 +90,15 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="absolute inset-0 app-scrim" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl">
+      <div className="relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">{t("add-video", { defaultValue: "Add Video" })}</h3>
           <button
             onClick={onClose}
-            className="rounded p-1 transition-colors text-(--app-text-muted) hover:text-(--app-text)"
+            className="rounded-(--app-radius-sm) p-1 transition-colors text-(--app-text-muted) hover:text-(--app-text)"
           >
             <X className="h-5 w-5" />
           </button>
@@ -111,7 +111,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
                 <ListPlus className="h-4 w-4" aria-hidden />
                 {t("batch-count", { defaultValue_one: "{{count}} link found", defaultValue: "{{count}} links found", count: batch.length })}
               </p>
-              <ul className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-(--app-border) bg-(--app-bg) p-2 text-xs">
+              <ul className="max-h-48 space-y-1 overflow-y-auto rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-2 text-xs">
                 {batch.map((link) => (
                   <li key={link} className="truncate text-(--app-text-muted)" title={link}>
                     {link}
@@ -148,7 +148,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
                 }}
                 onPaste={handlePaste}
                 placeholder={t("url-placeholder", { defaultValue: "https://youtube.com/watch?v=..." })}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+                className="w-full pl-10 pr-4 py-2.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
               />
             </div>
             {media && (
@@ -159,7 +159,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
                     alt=""
                     width={64}
                     height={36}
-                    className="h-9 w-16 shrink-0 rounded object-cover"
+                    className="h-9 w-16 shrink-0 rounded-(--app-radius-sm) object-cover"
                   />
                 )}
                 <p className="flex items-center gap-1.5 text-xs text-(--app-success)">
@@ -197,7 +197,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
               onChange={(e) => setTitle(e.target.value)}
               maxLength={256}
               placeholder={t("title-placeholder", { defaultValue: "Custom title..." })}
-              className="w-full px-4 py-2.5 rounded-lg border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+              className="w-full px-4 py-2.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
             />
           </div>
 
@@ -216,7 +216,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
                 maxLength={12}
                 placeholder="0:00"
                 aria-invalid={startInvalid || undefined}
-                className="w-32 px-4 py-2.5 rounded-lg border border-(--app-border) bg-(--app-bg) text-(--app-text) tabular-nums placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+                className="w-32 px-4 py-2.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) text-(--app-text) tabular-nums placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
               />
             </div>
           )}
@@ -227,7 +227,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
           <button
             type="submit"
             disabled={!batch && !url.trim()}
-            className="w-full py-2.5 rounded-lg font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+            className="w-full py-2.5 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
           >
             {batch
               ? t("add-batch-to-queue", { defaultValue: "Add {{count}} to Queue", count: batch.length })

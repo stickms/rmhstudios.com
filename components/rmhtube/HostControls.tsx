@@ -227,7 +227,7 @@ export default function HostControls({
           <>
             <button
               onClick={() => handleJump(-10)}
-              className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+              className="shrink-0 rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
               title={t('back-10', { defaultValue: 'Back 10 seconds' })}
               aria-label={t('back-10', { defaultValue: 'Back 10 seconds' })}
             >
@@ -235,7 +235,7 @@ export default function HostControls({
             </button>
             <button
               onClick={() => handleJump(10)}
-              className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+              className="shrink-0 rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
               title={t('forward-10', { defaultValue: 'Forward 10 seconds' })}
               aria-label={t('forward-10', { defaultValue: 'Forward 10 seconds' })}
             >
@@ -247,7 +247,7 @@ export default function HostControls({
         {!isLeader && (
           <button
             onClick={handleControlRequest}
-            className="shrink-0 flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors text-(--app-info) hover:bg-(--app-info-dim)"
+            className="shrink-0 flex items-center gap-1 rounded-(--app-radius-sm) px-2 py-1.5 text-xs font-medium transition-colors text-(--app-info) hover:bg-(--app-info-dim)"
             title={
               isHost
                 ? t('take-control', { defaultValue: 'Take control' })
@@ -293,7 +293,7 @@ export default function HostControls({
         <div className="shrink-0 flex items-center gap-1.5">
           <button
             onClick={handleMuteToggle}
-            className="rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+            className="rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
             title={
               muted ? t('unmute', { defaultValue: 'Unmute' }) : t('mute', { defaultValue: 'Mute' })
             }
@@ -318,7 +318,7 @@ export default function HostControls({
         {/* Captions toggle — always visible */}
         <button
           onClick={handleCaptionsToggle}
-          className={`shrink-0 rounded-md p-2 transition-colors ${
+          className={`shrink-0 rounded-(--app-radius-sm) p-2 transition-colors ${
             captionsEnabled
               ? 'text-(--app-accent) bg-(--app-accent-dim)'
               : 'text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)'
@@ -338,7 +338,7 @@ export default function HostControls({
           <button
             onClick={() => setShowSpeedMenu((v) => !v)}
             onDoubleClick={isLeader ? handleSpeedCycle : undefined}
-            className={`rounded-md p-2 transition-colors flex items-center gap-1 ${
+            className={`rounded-(--app-radius-sm) p-2 transition-colors flex items-center gap-1 ${
               currentSpeed !== 1
                 ? 'text-(--app-accent) bg-(--app-accent-dim)'
                 : 'text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)'
@@ -364,7 +364,7 @@ export default function HostControls({
             <div
               data-motion="pop"
               data-state={speedMenu.state}
-              className="absolute bottom-full mb-1 right-0 origin-bottom-right z-50 rounded-lg border border-(--app-border) bg-(--app-surface) shadow-lg py-1 min-w-25"
+              className="absolute bottom-full mb-1 right-0 origin-bottom-right z-50 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) shadow-(--app-shadow) py-1 min-w-25"
             >
               {PLAYBACK_SPEEDS.map((speed) => (
                 <button
@@ -387,7 +387,7 @@ export default function HostControls({
         {pipSupported && (
           <button
             onClick={handlePiP}
-            className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+            className="shrink-0 rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
             title={t('picture-in-picture', { defaultValue: 'Picture-in-Picture' })}
           >
             <PictureInPicture2 className="h-4 w-4" />
@@ -397,7 +397,7 @@ export default function HostControls({
         {/* Fullscreen toggle — always visible */}
         <button
           onClick={handleFullscreenToggle}
-          className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+          className="shrink-0 rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
           title={
             isFullscreen
               ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' })
@@ -410,7 +410,7 @@ export default function HostControls({
         {/* Skip — visible to all */}
         <button
           onClick={handleSkip}
-          className="shrink-0 rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+          className="shrink-0 rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
           title={t('skip-to-next', { defaultValue: 'Skip to next' })}
         >
           <SkipForward className="h-4 w-4" />

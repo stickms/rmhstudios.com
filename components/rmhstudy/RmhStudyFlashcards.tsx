@@ -159,20 +159,20 @@ export default function RmhStudyFlashcards() {
         </div>
 
         {done ? (
-          <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-center space-y-4">
+          <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-8 text-center space-y-4">
             <Layers className="h-8 w-8 mx-auto text-(--app-accent)" />
             <p className="font-semibold">{t("session-complete", { defaultValue: "Session complete!" })}</p>
             <p className="text-sm text-(--app-text-muted)">{t("session-reviewed", { defaultValue: "You reviewed {{count}} card.", count: cards.length })}</p>
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => startReview(activeDeck)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-surface-active)"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-(--app-radius-sm) text-sm font-medium bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-surface-active)"
               >
                 <RotateCw className="h-4 w-4" /> {t("again", { defaultValue: "Again" })}
               </button>
               <button
                 onClick={exitReview}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-(--app-accent-fg) bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                className="px-4 py-2 rounded-(--app-radius-sm) text-sm font-medium text-(--app-accent-fg) bg-(--app-accent) hover:bg-(--app-accent-hover)"
               >
                 {t("back-to-decks", { defaultValue: "Back to decks" })}
               </button>
@@ -183,7 +183,7 @@ export default function RmhStudyFlashcards() {
             <button
               type="button"
               onClick={() => setRevealed(true)}
-              className="w-full min-h-44 rounded-xl border border-(--app-border) bg-(--app-surface) p-6 flex flex-col items-center justify-center gap-3 text-center transition-colors hover:border-(--app-accent)"
+              className="w-full min-h-44 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 flex flex-col items-center justify-center gap-3 text-center transition-colors hover:border-(--app-accent)"
             >
               <span className="text-lg font-medium whitespace-pre-wrap">{card?.front}</span>
               {revealed ? (
@@ -203,7 +203,7 @@ export default function RmhStudyFlashcards() {
                     key={g.grade}
                     disabled={grading}
                     onClick={() => grade(g.grade)}
-                    className={`py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${g.cls}`}
+                    className={`py-2 rounded-(--app-radius-sm) text-sm font-medium transition-colors disabled:opacity-50 ${g.cls}`}
                   >
                     {t(`grade-${g.grade}`, { defaultValue: g.label })}
                   </button>
@@ -220,7 +220,7 @@ export default function RmhStudyFlashcards() {
   const DeckButton = ({ deck, subtitle }: { deck: DeckRow; subtitle?: string }) => (
     <button
       onClick={() => startReview(deck)}
-      className="w-full flex items-center gap-3 rounded-lg border border-(--app-border) bg-(--app-surface) p-3 text-left transition-colors hover:border-(--app-accent)"
+      className="w-full flex items-center gap-3 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) p-3 text-left transition-colors hover:border-(--app-accent)"
     >
       <Layers className="h-4 w-4 shrink-0 text-(--app-accent)" />
       <div className="min-w-0 flex-1">

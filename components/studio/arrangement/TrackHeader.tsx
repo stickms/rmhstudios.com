@@ -19,14 +19,14 @@ export function TrackHeader({ track, isSelected, width }: TrackHeaderProps) {
 
   return (
     <div
-      className={`flex shrink-0 items-center border-b border-r border-[var(--site-border)] ${
-        isSelected ? 'bg-white/5' : 'bg-[var(--site-surface)]'
+      className={`flex shrink-0 items-center border-b border-r border-site-border ${
+        isSelected ? 'bg-site-surface-hover' : 'bg-site-surface'
       }`}
       style={{ width, height: track.height }}
       onClick={() => selectTrack(track.id)}
     >
       {/* Drag handle */}
-      <div className="flex h-full w-5 cursor-grab items-center justify-center text-[var(--site-muted)] opacity-40 hover:opacity-100 active:cursor-grabbing">
+      <div className="flex h-full w-5 cursor-grab items-center justify-center text-site-text-muted opacity-40 hover:opacity-100 active:cursor-grabbing">
         <GripVertical className="h-3 w-3" />
       </div>
 
@@ -39,10 +39,10 @@ export function TrackHeader({ track, isSelected, width }: TrackHeaderProps) {
       {/* Track info */}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 px-2 py-1">
         <div className="flex items-center gap-1">
-          <span className="truncate text-xs font-medium text-[var(--site-text)]">
+          <span className="truncate text-xs font-medium text-site-text">
             {track.name}
           </span>
-          <span className="shrink-0 text-[9px] uppercase text-[var(--site-muted)]">
+          <span className="shrink-0 text-xs uppercase text-site-text-muted">
             {track.type}
           </span>
         </div>
@@ -52,10 +52,10 @@ export function TrackHeader({ track, isSelected, width }: TrackHeaderProps) {
           {/* Mute */}
           <button
             onClick={(e) => { e.stopPropagation(); toggleTrackMute(track.id); }}
-            className={`rounded p-0.5 ${
+            className={`rounded-site-sm p-0.5 ${
               track.muted
-                ? 'bg-red-500/20 text-red-400'
-                : 'text-[var(--site-muted)] hover:text-[var(--site-text)]'
+                ? 'bg-site-danger/15 text-site-danger'
+                : 'text-site-text-muted hover:text-site-text'
             }`}
             title={t("mute", { defaultValue: "Mute" })}
           >
@@ -65,10 +65,10 @@ export function TrackHeader({ track, isSelected, width }: TrackHeaderProps) {
           {/* Solo */}
           <button
             onClick={(e) => { e.stopPropagation(); toggleTrackSolo(track.id); }}
-            className={`rounded p-0.5 ${
+            className={`rounded-site-sm p-0.5 ${
               track.soloed
-                ? 'bg-yellow-500/20 text-yellow-400'
-                : 'text-[var(--site-muted)] hover:text-[var(--site-text)]'
+                ? 'bg-site-warning/15 text-site-warning'
+                : 'text-site-text-muted hover:text-site-text'
             }`}
             title={t("solo", { defaultValue: "Solo" })}
           >
@@ -79,10 +79,10 @@ export function TrackHeader({ track, isSelected, width }: TrackHeaderProps) {
           {(track.type === 'audio' || track.type === 'midi') && (
             <button
               onClick={(e) => { e.stopPropagation(); toggleTrackArm(track.id); }}
-              className={`rounded p-0.5 ${
+              className={`rounded-site-sm p-0.5 ${
                 track.armed
-                  ? 'bg-red-500/20 text-red-400'
-                  : 'text-[var(--site-muted)] hover:text-[var(--site-text)]'
+                  ? 'bg-site-danger/15 text-site-danger'
+                  : 'text-site-text-muted hover:text-site-text'
               }`}
               title={t("record-arm", { defaultValue: "Record Arm" })}
             >
@@ -126,18 +126,18 @@ export function AddTrackButton({ width }: AddTrackButtonProps) {
 
   return (
     <div
-      className="flex shrink-0 items-center gap-1 border-b border-r border-[var(--site-border)] bg-[var(--site-surface)] px-2 py-1"
+      className="flex shrink-0 items-center gap-1 border-b border-r border-site-border bg-site-surface px-2 py-1"
       style={{ width }}
     >
       <button
         onClick={() => handleAddTrack('midi')}
-        className="flex-1 rounded bg-cyan-500/10 px-2 py-1 text-[10px] text-cyan-400 hover:bg-cyan-500/20"
+        className="flex-1 rounded-site-sm bg-site-accent-dim px-2 py-1 text-xs text-site-accent hover:bg-site-accent-dim"
       >
         {t("add-midi", { defaultValue: "+ MIDI" })}
       </button>
       <button
         onClick={() => handleAddTrack('audio')}
-        className="flex-1 rounded bg-purple-500/10 px-2 py-1 text-[10px] text-purple-400 hover:bg-purple-500/20"
+        className="flex-1 rounded-site-sm bg-site-accent-dim px-2 py-1 text-xs text-site-accent hover:bg-site-accent-dim"
       >
         {t("add-audio", { defaultValue: "+ Audio" })}
       </button>

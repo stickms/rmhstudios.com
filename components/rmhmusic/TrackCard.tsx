@@ -20,39 +20,39 @@ export default function TrackCard({ uri, title, artist, albumArt, durationMs, al
   const { t } = useTranslation("c-rmhmusic");
   return (
     <div
-      className="flex items-center gap-3 p-2 rounded-lg transition-colors group cursor-pointer"
-      style={{ '--hover-bg': 'color-mix(in srgb, var(--site-text) 8%, transparent)' } as any}
-      onMouseEnter={(e) => (e.currentTarget.style.background = 'color-mix(in srgb, var(--site-text) 8%, transparent)')}
+      className="flex items-center gap-3 p-2 rounded-(--app-radius-sm) transition-colors group cursor-pointer"
+      style={{ '--hover-bg': 'color-mix(in srgb, var(--app-text) 8%, transparent)' } as any}
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'color-mix(in srgb, var(--app-text) 8%, transparent)')}
       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
       onClick={onPlay}
     >
-      <div className="relative w-10 h-10 rounded shrink-0 overflow-hidden">
+      <div className="relative w-10 h-10 rounded-(--app-radius-sm) shrink-0 overflow-hidden">
         {albumArt ? (
           <img src={albumArt} alt="" className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ background: 'var(--site-surface)' }}>
-            <Play className="w-4 h-4" style={{ color: 'var(--site-text-muted)' }} />
+          <div className="w-full h-full flex items-center justify-center" style={{ background: 'var(--app-surface)' }}>
+            <Play className="w-4 h-4" style={{ color: 'var(--app-text-muted)' }} />
           </div>
         )}
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <Play className="w-4 h-4 text-white" />
+          <Play className="w-4 h-4" style={{ color: "var(--app-text)" }} />
         </div>
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium truncate" style={{ color: 'var(--site-text)' }}>{title}</p>
-        <p className="text-xs truncate" style={{ color: 'var(--site-text-muted)' }}>{artist}{album ? ` · ${album}` : ''}</p>
+        <p className="text-sm font-medium truncate" style={{ color: 'var(--app-text)' }}>{title}</p>
+        <p className="text-xs truncate" style={{ color: 'var(--app-text-muted)' }}>{artist}{album ? ` · ${album}` : ''}</p>
       </div>
 
-      <span className="text-xs tabular-nums shrink-0" style={{ color: 'var(--site-text-dim)' }}>
+      <span className="text-xs tabular-nums shrink-0" style={{ color: 'var(--app-text-dim)' }}>
         {formatDuration(durationMs)}
       </span>
 
       {onAddToPlaylist && (
         <button
           onClick={(e) => { e.stopPropagation(); onAddToPlaylist(); }}
-          className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ color: 'var(--site-text-muted)' }}
+          className="p-1.5 rounded-(--app-radius-sm) opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ color: 'var(--app-text-muted)' }}
           title={t("add-to-playlist", { defaultValue: "Add to playlist" })}
         >
           <ListPlus className="w-4 h-4" />
@@ -62,8 +62,8 @@ export default function TrackCard({ uri, title, artist, albumArt, durationMs, al
       {onAddToQueue && (
         <button
           onClick={(e) => { e.stopPropagation(); onAddToQueue(); }}
-          className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ color: 'var(--site-accent)' }}
+          className="p-1.5 rounded-(--app-radius-sm) opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ color: 'var(--app-accent)' }}
           title={t("add-to-queue", { defaultValue: "Add to queue" })}
         >
           <Plus className="w-4 h-4" />

@@ -68,7 +68,7 @@ export function FaderControl({
         // names and dB readouts for it to sweep across. (globals.css §Selection;
         // its sibling `KnobControl` says the same thing.)
         data-gesture=""
-        className="relative cursor-ns-resize rounded-sm bg-black/40"
+        className="relative cursor-ns-resize rounded-sm bg-site-bg-subtle"
         style={{ width, height }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -87,14 +87,14 @@ export function FaderControl({
         {[0, 0.25, 0.5, 0.75, 1].map((mark) => (
           <div
             key={mark}
-            className="absolute left-0 right-0 border-t border-white/5"
+            className="absolute left-0 right-0 border-t border-site-border"
             style={{ top: `${(1 - mark) * 100}%` }}
           />
         ))}
 
         {/* Thumb */}
         <div
-          className="absolute left-0 right-0 rounded-sm border border-white/30"
+          className="absolute left-0 right-0 rounded-sm border border-site-border-bright"
           style={{
             top: thumbY,
             height: thumbHeight,
@@ -104,11 +104,11 @@ export function FaderControl({
         />
       </div>
 
-      <span className="text-[9px] tabular-nums text-[var(--site-muted)]">
+      <span className="text-xs tabular-nums text-site-text-muted">
         {dbValue} dB
       </span>
       {label && (
-        <span className="max-w-[50px] truncate text-[9px] text-[var(--site-muted)]">{label}</span>
+        <span className="max-w-[50px] truncate text-xs text-site-text-muted">{label}</span>
       )}
     </div>
   );
