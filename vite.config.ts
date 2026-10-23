@@ -6,6 +6,7 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import { nitro } from 'nitro/vite';
 import { materialHover } from './lib/liquid/hover-css';
+import { buildWasm } from './scripts/build-wasm.mjs';
 
 /**
  * Vite plugin that replaces *.server.{ts,tsx,js,jsx} imports with empty
@@ -218,6 +219,11 @@ export default defineConfig({
   },
   css: { postcss: { plugins: [materialHover()] } },
   plugins: [
+    {
+      name: 'build-numeric-wasm',
+      // Also covers direct `vite dev/build` and Docker's pnpm exec invocation.
+      async config() { await buildWasm(); },
+    },
     stubServerFiles(),
     tailwindcss(),
     tanstackStart({

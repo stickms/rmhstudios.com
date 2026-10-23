@@ -138,7 +138,7 @@ export class VegaGame {
         // PARADOX CHECK: Placing a tower on a Ghost
         if (state.selectedTower && existingTower.isGhost && !existingTower.isParadox) {
             // Check costs
-             const { TOWER_COSTS } = require('./GameState');
+             const { TOWER_COSTS } = require('./GameState') as typeof import('./GameState');
              const cost = TOWER_COSTS[state.selectedTower];
              
              if (state.focus < cost) {
@@ -170,7 +170,7 @@ export class VegaGame {
     // Economy Check
     if (!state.selectedTower) return; // No tower selected to place
 
-    const { TOWER_COSTS } = require('./GameState'); // Dynamic import to avoid cycles if any
+    const { TOWER_COSTS } = require('./GameState') as typeof import('./GameState'); // Deferred require to avoid cycles if any
     const cost = TOWER_COSTS[state.selectedTower];
     
     if (state.focus < cost) {
@@ -300,7 +300,7 @@ export class VegaGame {
         // 3. Level Up & Unlock
         state.setLevel(state.level + 1);
         
-        const { TOWER_UNLOCK_ORDER } = require('./GameState');
+        const { TOWER_UNLOCK_ORDER } = require('./GameState') as typeof import('./GameState');
         if (state.level <= TOWER_UNLOCK_ORDER.length) {
             const newTower = TOWER_UNLOCK_ORDER[state.level - 1]; // level is now 2, index 1
             if (newTower && !state.unlockedTowers.includes(newTower)) {

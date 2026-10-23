@@ -33,8 +33,9 @@
 /* eslint-disable no-console -- CLI generator: stdout reports what it wrote */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 interface Source {
   /** The Fontsource package. */
@@ -148,7 +149,10 @@ function rewriteFace(block: string, src: Source, outDir: string): string {
   const body = block.slice(block.indexOf('@font-face'));
   const woff2 = body.match(/url\(\.\/files\/([^)]+\.woff2)\)\s*format\('([^']+)'\)/);
   if (!woff2) throw new Error(`${src.pkg}: a face with no woff2 source:\n${block}`);
-  const fileUrl = relative(outDir, join(ROOT, 'node_modules', src.pkg, 'files', woff2[1]));
+  const fileUrl = relative(
+    outDir,
+    join(ROOT, 'node_modules', src.pkg, 'files', woff2[1]),
+  ).replaceAll('\\', '/');
   const descriptor = (name: string) => body.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1].trim();
   const lines = [
     `font-family: '${src.family}';`,
@@ -192,7 +196,7 @@ for (const group of GROUPS) {
   const next = render(group);
   let current = '';
   try {
-    current = readFileSync(path, 'utf8');
+    current = readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
   } catch {
     // Missing counts as stale.
   }

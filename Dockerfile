@@ -336,7 +336,8 @@ RUN rm -rf .output \
     # before `vite build`, and why the COPY above is not removable.
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
-    && pnpm exec tsx scripts/ci/bundle-budget.ts
+    && pnpm exec tsx scripts/ci/bundle-budget.ts \
+    && node scripts/check-wasm-output.mjs
 
 # Validate, prune, and COPY straight from /app/.output. This stage has no cache
 # mounts at all, so `.output` is a plain layer dir and the runner stage can

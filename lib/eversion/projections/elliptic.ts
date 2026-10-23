@@ -188,8 +188,7 @@ export function lemniscateIntegral(zr: number, zi: number, out: Float64Array): v
     const mm = Math.sqrt(mr * mr + mi * mi);
     const dev = Math.max(
       Math.hypot(mr - xr, mi - xi),
-      Math.hypot(mr - yr, mi - yi),
-      Math.hypot(mr - wr, mi - wi),
+      Math.max(Math.hypot(mr - yr, mi - yi), Math.hypot(mr - wr, mi - wi)),
     );
     if (dev <= RF_TOL * mm) break;
   }

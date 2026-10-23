@@ -109,7 +109,7 @@ export class EntityManager {
             // Need access to store here. 
             // Better practice: EntityManager emits event, Game listens.
             // For hackathon speed: direct import
-            const { useGameStore } = require('./GameState');
+            const { useGameStore } = require('./GameState') as typeof import('./GameState');
             useGameStore.getState().modifyFocus(5);
         }
       } else {

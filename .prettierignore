@@ -18,3 +18,6 @@ data/
 # Deploy manifests / vendored config
 deploy/
 packages/sdk/
+
+# AssemblyScript syntax is checked by its compiler, not the TypeScript formatter.
+/wasm/

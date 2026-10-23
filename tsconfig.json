@@ -19,6 +19,7 @@
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.mts", "app/routeTree.gen.ts"],
   "exclude": [
+    "wasm",
     "node_modules",
     "bazel-*",
     "dist-server",

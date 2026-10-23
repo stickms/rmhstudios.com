@@ -172,11 +172,11 @@ export const useRMHboxStore = create<RMHboxStore>()(
           if (minigameId !== '__vote__') {
             try {
               // eslint-disable-next-line @typescript-eslint/no-require-imports
-              const { MINIGAME_REGISTRY } = require('./minigame-registry');
+              const { MINIGAME_REGISTRY } = require('./minigame-registry') as typeof import('./minigame-registry');
               const def = MINIGAME_REGISTRY[minigameId];
               if (def?.settingsSchema && def.settingsSchema.length > 0) {
                 // eslint-disable-next-line @typescript-eslint/no-require-imports
-                const { getDefaultSettings } = require('./game-settings');
+                const { getDefaultSettings } = require('./game-settings') as typeof import('./game-settings');
                 set({
                   gameSettingsState: {
                     minigameId,
@@ -471,11 +471,11 @@ export function applyLobbyAction(
       if (minigameId !== '__vote__') {
         try {
           // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const { MINIGAME_REGISTRY } = require('./minigame-registry');
+          const { MINIGAME_REGISTRY } = require('./minigame-registry') as typeof import('./minigame-registry');
           const def = MINIGAME_REGISTRY[minigameId];
           if (def?.settingsSchema && def.settingsSchema.length > 0) {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const { getDefaultSettings } = require('./game-settings');
+            const { getDefaultSettings } = require('./game-settings') as typeof import('./game-settings');
             useRMHboxStore.setState({
               gameSettingsState: {
                 minigameId,

@@ -49,6 +49,7 @@ import { EVERSION_PLAYBACK_RATE, UNCOVER_LEAD_MS } from '../constants';
 import { SPIN_AXIS } from '../domain';
 import { afterDomainTransform, alignAngle, fitEndIsometry } from '../orientation';
 import { bakeLut } from '../projection-lut';
+import { tryBakePeirceLut, warmProjectionWasm } from '../../wasm/projection';
 import { getProjection } from '../projections';
 import { copySnapshot, createSnapshot } from '../snapshot';
 import { Timeline } from '../timeline';
@@ -101,12 +102,14 @@ export interface CoreDeps {
 
 /** The real collaborators. */
 export function defaultDeps(): CoreDeps {
+  void warmProjectionWasm();
   return {
     createRenderer,
     createTimeline: (config) => new Timeline(config),
     bakeLut(id, viewport) {
       const projection = getProjection(id);
-      return bakeLut(projection, projection.fit(viewport.w, viewport.h));
+      const fit = projection.fit(viewport.w, viewport.h);
+      return tryBakePeirceLut(fit) ?? bakeLut(projection, fit);
     },
     orientation() {
       const { R } = fitEndIsometry();
