@@ -160,10 +160,12 @@ curl_retry() {
     return 1
 }
 
+# Usage: get_commit_info [rev]   (default HEAD)
 get_commit_info() {
-    DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
-    DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B 2>/dev/null || echo "(no commit message)")
-    DEPLOY_AUTHOR=$("$GIT_BIN" log -1 --pretty='%an' 2>/dev/null || echo "unknown")
+    local rev="${1:-HEAD}"
+    DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short "$rev" 2>/dev/null || echo "unknown")
+    DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B "$rev" 2>/dev/null || echo "(no commit message)")
+    DEPLOY_AUTHOR=$("$GIT_BIN" log -1 --pretty='%an' "$rev" 2>/dev/null || echo "unknown")
     # Escape special JSON characters and control characters
     DEPLOY_COMMIT_MSG=$(printf '%s' "$DEPLOY_COMMIT_MSG" | \
         sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g; s/\r/\\r/g' | \
@@ -225,6 +227,29 @@ send_deploy_started() {
 
     set_github_status "pending" "Deploy started ($DEPLOY_SHORT_HASH)"
     DEPLOY_ANNOUNCED=1
+}
+
+# Final-state an embed for a request that ends WITHOUT update_deploy_status —
+# superseded in the queue, skipped as older than live, or deploy.sh dying — so it
+# doesn't sit at "handing off to the VPS…" / "deploying" forever. Describes
+# DEPLOY_TARGET_SHA, not HEAD: until this request's reset, HEAD is whatever the
+# previous deploy left live. Edit-only (no message id = nothing left hanging).
+# Usage: discord_close <color> <title-suffix>
+discord_close() {
+    [ -n "$DISCORD_WEBHOOK" ] && [ -n "$DEPLOY_MSG_ID" ] || return 0
+    local rev="${DEPLOY_TARGET_SHA:-HEAD}" env_label payload
+    if "$GIT_BIN" cat-file -e "${rev}^{commit}" 2>/dev/null; then
+        get_commit_info "$rev"
+    else
+        # A queued request's commit may not be fetched on the VPS yet.
+        DEPLOY_SHORT_HASH="${rev:0:7}"; DEPLOY_COMMIT_MSG="$rev"; DEPLOY_AUTHOR="unknown"
+    fi
+    env_label=$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
+    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"footer":{"text":"%s"}}]}' \
+        "[$env_label] Commit $DEPLOY_SHORT_HASH - $2" "$DEPLOY_COMMIT_MSG" "$1" "$DEPLOY_AUTHOR")
+    curl_retry -X PATCH -H "Content-Type: application/json" \
+        -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null || \
+        log "WARNING: Failed to edit Discord message ($2) after retries."
 }
 
 # ── On-call (deploy/oncall-send.sh → the off-box watchdog) ──────────────────
@@ -450,6 +475,9 @@ cleanup() {
         bash "${REPO_DIR}/deploy/oncall-send.sh" alert firing D04 2 "Deploy died without reporting a result" \
             "Commit ${DEPLOY_SHORT_HASH:-unknown} on ${ENVIRONMENT}: deploy.sh exited $rc before a final status. Check webhook.log." || true
     fi
+    if [ "$DEPLOY_IN_PROGRESS" = 1 ] && [ "$DEPLOY_REPORTED" = 0 ]; then
+        discord_close 16711680 "deploy died (exit $rc) without a result — check webhook.log" || true
+    fi
     rm -f "$DEPLOY_LOG"
 }
 trap cleanup EXIT
@@ -600,6 +628,7 @@ release_event queued
 if ! flock -n 200; then
     # Another deploy is running — signal for redeploy with our PID
     log "Deploy already in progress. Queuing for redeploy after current deploy finishes."
+    discord_close 16776960 "⏳ queued behind the deploy in progress…"
     printf '%s\n' "$$" > "${QUEUE_FILE}.$$" && mv -f "${QUEUE_FILE}.$$" "$QUEUE_FILE"
 
     # Block until the running deploy releases the lock. A healthy deploy holds it
@@ -616,6 +645,7 @@ if ! flock -n 200; then
     if [ "$queued_pid" != "$$" ]; then
         release_event superseded
         log "Superseded by a newer deploy request. Exiting."
+        discord_close 9807270 "⏹️ superseded by a newer commit while queued; not deployed"
         exit 0
     fi
 
@@ -680,6 +710,7 @@ if [ -n "$DEPLOY_TARGET_SHA" ] && [ "${ALLOW_OLDER_DEPLOY:-0}" != "1" ]; then
         log "  For an intentional rollback re-run with ALLOW_OLDER_DEPLOY=1."
         # No GitHub status: set_github_status posts to HEAD, which is the LIVE
         # commit, and would overwrite its real deploy result.
+        discord_close 9807270 "⏭️ skipped — already contained in the live release"
         exit 0
     fi
 fi
