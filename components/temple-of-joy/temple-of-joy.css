@@ -2925,38 +2925,6 @@ button.toj-row:active:not(:disabled) {
   margin-top: 0;
 }
 
-/* Switch. */
-.toj-switch {
-  position: relative;
-  width: 2.6rem;
-  height: 1.5rem;
-  border-radius: 99px;
-  background: var(--toj-rule-strong);
-  transition: background-color var(--toj-base) var(--toj-ease);
-  flex-shrink: 0;
-}
-
-.toj-switch[aria-checked='true'] {
-  background: var(--toj-gold);
-}
-
-.toj-switch::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 1.125rem;
-  height: 1.125rem;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
-  transition: transform var(--toj-base) var(--toj-ease-out);
-}
-
-.toj-switch[aria-checked='true']::after {
-  transform: translateX(1.1rem);
-}
-
 /* Slider. */
 .toj-slider {
   width: clamp(6rem, 22vw, 9rem);

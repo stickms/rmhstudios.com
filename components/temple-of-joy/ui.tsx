@@ -19,6 +19,7 @@ import {
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio, type ToneName } from '@/lib/temple-of-joy/audio';
 import { Emoji } from '@/components/ui/emoji';
+import { Switch } from '@/components/ui/switch';
 
 /* ─── Button ────────────────────────────────────────────────────────────── */
 
@@ -254,16 +255,12 @@ export function TempleSwitch({
   label: string;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      data-jelly="control"
-      aria-checked={checked}
+    <Switch
+      checked={checked}
       aria-label={label}
-      className="toj-switch"
-      onClick={() => {
+      onCheckedChange={(next) => {
         templeAudio.play('tick');
-        onChange(!checked);
+        onChange(next);
       }}
     />
   );
