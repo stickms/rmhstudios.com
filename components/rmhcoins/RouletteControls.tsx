@@ -93,18 +93,18 @@ export function RouletteControls({ coins }: Props) {
           <span className="text-xs text-site-text-dim text-center">{t("select-chip-value", { defaultValue: "Select chip value" })}</span>
           <div className="flex justify-center gap-2 py-1 overflow-x-auto" data-jelly-zone="playfield">
             {CHIP_VALUES.map((val) => (
-              <button
+              <Button
                 key={val}
+                type="button"
+                variant={selectedChip === val ? 'default' : 'secondary'}
                 onClick={() => setSelectedChip(val)}
                 disabled={val > coins}
-                className={`relative w-10 h-10 sm:w-11 sm:h-11 rounded-full font-bold text-xs shrink-0 transition active:scale-90 ${
-                  selectedChip === val
-                    ? 'bg-site-accent text-site-accent-fg ring-2 ring-site-accent ring-offset-1 ring-offset-site-bg'
-                    : 'bg-site-surface border-2 border-site-border text-site-text hover:border-site-accent/50'
-                } disabled:opacity-30 disabled:cursor-not-allowed`}
+                className={`relative size-10 sm:size-11 rounded-full p-0 text-xs font-bold ${
+                  selectedChip === val ? 'ring-2 ring-site-accent ring-offset-1 ring-offset-site-bg' : ''
+                }`}
               >
                 {val}
-              </button>
+              </Button>
             ))}
           </div>
           <p className="text-[11px] text-site-text-dim text-center">{t("place-bets-hint", { defaultValue: "Place your bets on the board above" })}</p>
