@@ -38,6 +38,7 @@ import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
 import type { JellyFrame, JellyGlass } from './jelly-glass';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
+import { evert } from '@/lib/eversion/thurston';
 import {
   copyQuat,
   dragRotvec,
@@ -116,6 +117,31 @@ const IDLE_SPIN = 5.5;
  * never turns away from a destination someone is still reading or aiming at.
  */
 const AMBIENT_RESUME_MS = 4000;
+/*
+ * The SELF-EVERSION — an `ambient` globe's answer to a navigation (the docked
+ * desktop globe does not hand the screen to the full-screen Globe Eversion; the
+ * hub's globe does). The page changes at once, and meanwhile the globe turns
+ * ITSELF inside out, in place: its wireframe is drawn through Thurston's
+ * eversion (`lib/eversion/thurston.ts`, the very surface the full-screen run
+ * renders) from `e = 0` to `1`, while it makes one full turn about the screen's
+ * vertical and tips toward you and back, as the button-sized run does
+ * (`lib/eversion/mini.ts`). At `e = 1` the surface is the antipodal sphere, and
+ * this cage — meridians every 30°, parallels symmetric about the equator — is its
+ * own antipode, so the last frame is the ordinary globe again: nothing jumps.
+ */
+const SELF_EVERT_MS = 1500;
+/** The eversion proper, as a fraction of the run: the turn and tip span the whole. */
+const SELF_EVERT_WINDOW = [0.06, 0.94] as const;
+/** The tip toward the viewer at the middle of the run, degrees (`mini.ts`: 0.38 rad). */
+const SELF_EVERT_TIP = 22;
+/** How far the everting surface bulges past its sphere (`MAX_EVERSION_EXTENT`), drawn back inside the glass. */
+const SELF_EVERT_BULGE = 0.35;
+const smoother01 = (t: number) => {
+  const x = t <= 0 ? 0 : t >= 1 ? 1 : t;
+  return x * x * x * (x * (6 * x - 15) + 10);
+};
+/** Scratch for one `evert` sample (the frame loop must not allocate). */
+const EVERT_OUT = new Float64Array(3);
 /* ── Dwell: how long you have to hold ───────────────────────────────────────
    Not a constant. The gesture that chose a destination is itself evidence about
    how sure you were, and the site already measures it — so somebody who flicks
@@ -211,13 +237,13 @@ function jellyEligible(): boolean {
  * inside the reticle at a time and the lock is never ambiguous.
  */
 const RETICLE = 0.26;
-/**
- * Magnetism: a pin this close is eased to dead centre once the spin settles.
- * 0.55 is a ~33° capture cone, which at this nav's size leaves very few
- * orientations with nothing in reach — so a release almost always parks on
- * something you can hold, instead of on empty ocean.
+/*
+ * Magnetism reaches no further than the reticle itself: a pin is eased to dead
+ * centre (on a hold, or by the release throw) only when it is already under the
+ * reticle. It used to reach a ~33° cone, so almost every release was pulled onto
+ * SOME pin — which read as the globe jerking sideways at the end of a turn
+ * whenever nothing had been aimed at. Open glass now stays open glass.
  */
-const SNAP_R = 0.55;
 /** The reticle's on-screen diameter, in % of the stage — derived, never re-typed. */
 const RETICLE_PCT = RETICLE * kAt(1) * 100;
 
@@ -765,10 +791,9 @@ export function LiquidGlobe({
 
   /**
    * Open oriented on the page you are already on, held clear of the reticle: the
-   * offset is wide enough that the current page is outside the SNAP cone
-   * (`asin(SNAP_R)` ≈ 27°), so "you are here" is legible without the magnetism
-   * immediately dragging it in — which would arm a hold to re-open the page the
-   * visitor is already looking at.
+   * offset is well outside it (`asin(RETICLE)` ≈ 15°), so "you are here" is
+   * legible without the magnetism dragging it in — which would arm a hold to
+   * re-open the page the visitor is already looking at.
    */
   useEffect(() => {
     const here = nodes.findIndex((n) => isNavLeafActive(pathname, n));
@@ -788,6 +813,32 @@ export function LiquidGlobe({
     // every route change behind an open menu.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * An `ambient` globe outlives navigations, so when the page changes under it
+   * (from the globe itself or from anywhere else) it turns to show where you
+   * are now: the same "you are here" pose a fresh mount opens on — the page's
+   * pin up front, held just outside the reticle so the magnet never arms a
+   * hold to re-open it. Never while a hand is on it (a pointer merely over it,
+   * as after clicking one of its pins, does not count); the drift resumes after
+   * the usual pause.
+   */
+  const shownPath = useRef(pathname);
+  useEffect(() => {
+    if (!ambient || shownPath.current === pathname) return;
+    shownPath.current = pathname;
+    if (drag.current.active) return;
+    const n = nodes.find((node) => isNavLeafActive(pathname, node));
+    if (!n) return;
+    const target = facing(rot.current.q, n.bx, n.by, n.bz, quat());
+    // The fresh-mount offset (`-lon + 42`, `-lat + 9`), as view-space turns: pin to the right of and just below centre.
+    mulQuat(quatFromRotvec(0, 42, 0, SQ), target, target);
+    normalizeQuat(mulQuat(quatFromRotvec(-9, 0, 0, SQ), target, target));
+    settle.current = target;
+    touched.current = true;
+    lastMoveAt.current = performance.now();
+    dirty.current = true;
+  }, [ambient, pathname, nodes]);
 
   // The stage is square and sized by a clamp, so its px size changes with the
   // viewport. Measured once and on resize — never read inside the frame loop.
@@ -1111,6 +1162,21 @@ export function LiquidGlobe({
     };
   }, [measureCentre]);
 
+  /** When the self-eversion started (`performance.now()`), or 0 when none is playing. */
+  const selfEvert = useRef(0);
+  /**
+   * Play the self-eversion (see `SELF_EVERT_MS`). An `ambient` globe only, never
+   * with reduced motion, and never in the rehearsal. The pins and the reticle
+   * step aside for it (radial.css, `data-self-evert`); the frame loop clears the
+   * attribute when the run ends.
+   */
+  const startSelfEvert = useCallback(() => {
+    if (!ambient || reduced || quiet.current) return;
+    selfEvert.current = performance.now();
+    stageRef.current?.closest('.radial-globe')?.setAttribute('data-self-evert', '');
+    dirty.current = true;
+  }, [ambient, reduced]);
+
   const go = useCallback(
     (node: GlobeNode, entry: Exclude<EntryPoint, 'preview'> = 'release') => {
       if (!quiet.current) vibrate(18);
@@ -1125,9 +1191,10 @@ export function LiquidGlobe({
         return;
       }
       onDismiss();
+      startSelfEvert();
       void navigate({ to: node.href } as never);
     },
-    [navigate, onDismiss, snapshotGlobeState],
+    [navigate, onDismiss, snapshotGlobeState, startSelfEvert],
   );
 
   /**
@@ -1146,6 +1213,8 @@ export function LiquidGlobe({
     (e: ReactMouseEvent<HTMLElement>, node: GlobeNode) => {
       const plain = e.button === 0 && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
       if (!onNavigateRef.current || quiet.current || node.external || !plain) {
+        // The pin's own Link navigates; an ambient globe answers it in place.
+        if (plain && !node.external) startSelfEvert();
         onDismiss();
         return;
       }
@@ -1156,7 +1225,7 @@ export function LiquidGlobe({
       go(node, e.detail === 0 ? 'enter' : 'click');
       swallowClick.current = false;
     },
-    [go, onDismiss],
+    [go, onDismiss, startSelfEvert],
   );
 
   /* ── The frame loop ───────────────────────────────────────────────────────
@@ -1180,7 +1249,6 @@ export function LiquidGlobe({
     /** Pin indices, re-sorted by depth each paint to derive the z-index rank. */
     const order = new Array<number>(count);
     let lockIdx = -1;
-    let snapIdx = -1;
 
     // What the last paint wrote, per pin. Seeded with values no first frame can
     // produce, so every property is written once on open and then only on change.
@@ -1296,13 +1364,15 @@ export function LiquidGlobe({
     /** The DRAWN rotation as a matrix (`drawQ`), and the TRUE one (`rot.current.q`) the lock reads. */
     const DM = new Float64Array(9);
     const TM = new Float64Array(9);
+    /** This frame's self-eversion: `e` (−1 = none), and the scale that keeps the bulge inside the glass. */
+    const selfRun = { e: -1, fit: 1 };
 
     /**
      * Screen-space position + depth of every pin, and what the reticle holds.
      *
      * The rotation is passed in rather than read from `rot.current` because
      * this runs twice on a wobbling frame: once at the true rotation, which is
-     * what `lockIdx`/`snapIdx` are measured from, and once at the drawn rotation,
+     * what `lockIdx` is measured from, and once at the drawn rotation,
      * which is what the paint uses. On every other frame the two are identical
      * and it runs once, exactly as before.
      */
@@ -1310,9 +1380,7 @@ export function LiquidGlobe({
       // The same matrix the cage is stroked through, which is what keeps the
       // projected pins glued to the drawn wireframe.
       let lockD = Infinity;
-      let snapD = Infinity;
       lockIdx = -1;
-      snapIdx = -1;
       for (let i = 0; i < count; i++) {
         const n = nodes[i];
         const x1 = m[0]! * n.bx + m[1]! * n.by + m[2]! * n.bz;
@@ -1324,10 +1392,6 @@ export function LiquidGlobe({
         if (d < RETICLE && d < lockD) {
           lockD = d;
           lockIdx = i;
-        }
-        if (d < SNAP_R && d < snapD) {
-          snapD = d;
-          snapIdx = i;
         }
       }
     };
@@ -1423,10 +1487,20 @@ export function LiquidGlobe({
         for (let s = 0; s <= RING_SAMPLES; s++) {
           const ct = RING_COS[s];
           const st = RING_SIN[s];
-          const bx = ux * ct + vx * st;
-          const by = uy * ct + vy * st + oy;
-          const bz = uz * ct + vz * st;
-          const swell = 1 + waveAt(bx, by, bz);
+          let bx = ux * ct + vx * st;
+          let by = uy * ct + vy * st + oy;
+          let bz = uz * ct + vz * st;
+          let swell: number;
+          if (selfRun.e >= 0) {
+            // The same point of the surface, part-way through turning inside out.
+            evert(Math.atan2(bx, bz), Math.asin(by < -1 ? 1 : by > 1 ? -1 : -by), selfRun.e, EVERT_OUT, 0);
+            bx = EVERT_OUT[0]!;
+            by = EVERT_OUT[1]!;
+            bz = EVERT_OUT[2]!;
+            swell = selfRun.fit;
+          } else {
+            swell = 1 + waveAt(bx, by, bz);
+          }
           const x1 = (m[0]! * bx + m[1]! * by + m[2]! * bz) * swell;
           const y2 = (m[3]! * bx + m[4]! * by + m[5]! * bz) * swell;
           const z2 = (m[6]! * bx + m[7]! * by + m[8]! * bz) * swell;
@@ -1868,6 +1942,23 @@ export function LiquidGlobe({
         dirty.current = true;
       }
 
+      // 1b. A free coast (a throw released over open glass): the globe carries on
+      //     about the axis it was thrown on, slowing on the platform's own
+      //     deceleration (`lib/fluid` §DECELERATION, per millisecond).
+      if (!drag.current.active && !settle.current) {
+        const speed = Math.hypot(r.w[0]!, r.w[1]!, r.w[2]!);
+        if (speed > 0) {
+          if (speed < 1 || reduced) {
+            r.w.fill(0);
+          } else {
+            turn(r.q, r.w[0]! * dt, r.w[1]! * dt, r.w[2]! * dt);
+            const decay = Math.pow(DECELERATION.normal, dt * 1000);
+            for (let a = 0; a < 3; a++) r.w[a] = r.w[a]! * decay;
+          }
+          dirty.current = true;
+        }
+      }
+
       // 2. Where everything is now, and what the reticle is holding. Always at
       //    the TRUE rotation — this is the pass the lock and the magnetism read.
       matrixOf(r.q, TM);
@@ -1884,19 +1975,24 @@ export function LiquidGlobe({
         touched.current &&
         !drag.current.active &&
         !settle.current &&
+        r.w[0] === 0 &&
+        r.w[1] === 0 &&
+        r.w[2] === 0 &&
         fill.current === 0 &&
         now - lastMoveAt.current > AMBIENT_RESUME_MS &&
         !stageRef.current?.contains(document.activeElement)
       ) {
         touched.current = false;
       }
-      if (touched.current && !settle.current && stationary && drag.current.held && snapIdx >= 0) {
+      if (touched.current && !settle.current && stationary && drag.current.held && lockIdx >= 0) {
         // Magnetism, but only while the finger is DOWN and still: it is what makes
         // "press, hold, let go" land on a phone. Once the finger is up the release
         // throw has already chosen a target, and pulling on the globe afterwards
         // would be the interface moving without being asked.
         // The shortest turn that centres it, eased: no twist on the way.
-        rotvecOf(quatToFront(px[snapIdx]!, py[snapIdx]!, pz[snapIdx]!, SQ2), SV);
+        // Only a pin already inside the reticle: with open glass under it the
+        // globe stays exactly where the hand left it.
+        rotvecOf(quatToFront(px[lockIdx]!, py[lockIdx]!, pz[lockIdx]!, SQ2), SV);
         if (Math.hypot(SV[0]!, SV[1]!, SV[2]!) > 0.05) {
           const k = reduced ? 1 : 1 - Math.exp(-9 * dt);
           turn(r.q, SV[0]! * k, SV[1]! * k, SV[2]! * k);
@@ -1916,13 +2012,36 @@ export function LiquidGlobe({
         project(TM);
       }
 
-      // 4. One paint. `lockIdx`/`snapIdx` are settled by now, so the display pass
+      // 3b. The self-eversion, if one is playing: it redraws every frame until it
+      //     ends, then once more as the ordinary globe.
+      if (selfEvert.current) {
+        const u = (now - selfEvert.current) / SELF_EVERT_MS;
+        if (u >= 1) {
+          selfEvert.current = 0;
+          selfRun.e = -1;
+          stageRef.current?.closest('.radial-globe')?.removeAttribute('data-self-evert');
+        } else {
+          const [a, b] = SELF_EVERT_WINDOW;
+          selfRun.e = smoother01((u - a) / (b - a));
+          selfRun.fit = 1 / (1 + SELF_EVERT_BULGE * Math.sin(Math.PI * selfRun.e));
+        }
+        dirty.current = true;
+      }
+
+      // 4. One paint. `lockIdx` is settled by now, so the display pass
       //    is free to run at the wobbled rotation without touching either — the
       //    globe rocks, the aim does not.
       if (dirty.current) {
         // The rock is a small view-space turn on top: pitch about x, yaw about y.
         copyQuat(r.q, drawQ);
         if (wob) turn(drawQ, wob.pitch, wob.yaw, 0);
+        // The self-eversion's turn and tip, on top of that: one revolution about
+        // the screen's vertical, and a tip toward you and back.
+        if (selfRun.e >= 0) {
+          const u = (now - selfEvert.current) / SELF_EVERT_MS;
+          turn(drawQ, 0, 360 * smoother01(u), 0);
+          turn(drawQ, -SELF_EVERT_TIP * Math.sin(Math.PI * u), 0, 0);
+        }
         matrixOf(drawQ, DM);
         if (wob) project(DM);
         paint(now);
@@ -2268,7 +2387,10 @@ export function LiquidGlobe({
       //
       // On the trackball the throw coasts about the axis it left on: the angle it
       // would cover is projected along ω, and the pin nearest the front of THAT
-      // pose is the target, turned to centre by the shortest arc.
+      // pose is the target, turned to centre by the shortest arc — but ONLY if
+      // that pin would actually be under the reticle. A throw that comes to rest
+      // on open glass just coasts there and stops: pulling it onto a pin it was
+      // never aimed at is the globe jerking sideways at the end of every turn.
       const r = rot.current;
       const sv = spinV.current;
       for (let a = 0; a < 3; a++) r.w[a] = sv[a]!.get();
@@ -2280,18 +2402,26 @@ export function LiquidGlobe({
       turn(projected, r.w[0]! * coast, r.w[1]! * coast, r.w[2]! * coast);
       matrixOf(projected, SM);
       let best = -1;
-      let bestZ = -Infinity;
+      let bestD = RETICLE;
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i]!;
-        const z = SM[6]! * n.bx + SM[7]! * n.by + SM[8]! * n.bz;
-        if (z > bestZ) {
-          bestZ = z;
+        if (SM[6]! * n.bx + SM[7]! * n.by + SM[8]! * n.bz <= 0) continue;
+        const d = Math.hypot(
+          SM[0]! * n.bx + SM[1]! * n.by + SM[2]! * n.bz,
+          SM[3]! * n.bx + SM[4]! * n.by + SM[5]! * n.bz,
+        );
+        if (d < bestD) {
+          bestD = d;
           best = i;
         }
       }
       if (best >= 0) {
         const n = nodes[best]!;
         settle.current = facing(projected, n.bx, n.by, n.bz, projected);
+      } else {
+        // Free coast: the frame loop decays `r.w` on the same deceleration the
+        // projection above assumed, so it stops exactly where it was projected to.
+        settle.current = null;
       }
       dirty.current = true;
     };
@@ -2344,7 +2474,8 @@ export function LiquidGlobe({
   // While the hub is in the eversion hand-off, the globe keeps a soft, irregular jelly motion so the hand-over
   // never reads as the ball freezing under a separate animation.
   useEffect(() => {
-    const root = stageRef.current?.closest('.radial-hub');
+    // The hub, or the desktop dock (`RadialGlobeDock`), which marks its hand-off the same way.
+    const root = stageRef.current?.closest('.radial-hub, .rad-globe-dock');
     if (!root) return;
     const read = () => {
       const active = root.getAttribute('data-phase') === 'everting';
@@ -2426,6 +2557,9 @@ export function LiquidGlobe({
         {nodes.map((n, i) => {
           const Icon = n.icon as LucideIcon;
           const label = t(n.tKey, { defaultValue: n.label });
+          // The page you are on: marked on the globe (radial.css), and named as the
+          // current page to assistive tech, the way a nav list's active link is.
+          const current = isNavLeafActive(pathname, n);
           const shared = {
             className: 'radial-globe__pin',
             role: 'menuitem' as const,
@@ -2438,6 +2572,7 @@ export function LiquidGlobe({
             // instead of staying stuck in a pressed state for the whole drag.
             'data-fluid-press': 'lift',
             'aria-label': label,
+            'aria-current': current ? ('page' as const) : undefined,
             onFocus: () => faceNode(n),
             onClick: (e: ReactMouseEvent<HTMLElement>) => onPinClick(e, n),
           };
@@ -2473,7 +2608,7 @@ export function LiquidGlobe({
         })}
       </ul>
     ),
-    [nodes, t, tabIndex, faceNode, onPinClick, setPinRef, setLabelRef],
+    [nodes, t, tabIndex, faceNode, onPinClick, setPinRef, setLabelRef, pathname],
   );
 
   return (

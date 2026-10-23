@@ -10,7 +10,12 @@
  * across the glass now and then, and it is driven exactly like the hub's — drag
  * to spin, hold a destination in the reticle, let go to land there, or click a
  * pin outright. The orb is retired at this width (radial.css), since the globe
- * it would open is already here.
+ * it would open is already here. The page you are on is marked on it, and it
+ * turns to show it after every navigation.
+ *
+ * A destination chosen on it does NOT hand the screen to the full-screen Globe
+ * Eversion (the hub's globe does). The page changes at once and the docked globe
+ * turns itself inside out in place while it does (`ambient` in LiquidGlobe).
  *
  * The aside is always rendered (radial.css decides from the pre-paint
  * `data-desktop-nav` attribute whether it or the rail takes the track, so the
