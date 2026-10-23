@@ -284,7 +284,7 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
                                 className={`mt-1.5 flex size-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
                                     validationErrors[i]
                                         ? 'border-site-danger/50 bg-site-danger/10 text-site-danger'
-                                        : 'border-site-border bg-site-surface text-site-text-muted'
+                                        : 'glass-inset border-site-border bg-site-surface text-site-text-muted'
                                 }`}
                             >
                                 {i + 2}
