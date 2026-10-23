@@ -827,72 +827,6 @@ else
     log "VITE_CDN_BASE_URL not set — skipping R2 static asset sync (assets served from origin/public)."
 fi
 
-# ── Step 2a.2: Backfill existing avatars to R2 (idempotent) ──────────────────
-# New avatar uploads already go straight to R2 (the built app inlines the CDN
-# base). This migrates any PRE-EXISTING avatars still on the local db/ volume into
-# R2 (user-avatars/<file>) and rewrites UserProfile.customImage to the CDN URL, so
-# db/avatars can later be reclaimed (scripts/reclaim-db.sh). Runs INSIDE the fresh
-# image (node + prod deps + the self-contained script) with the host db/ volume
-# bind-mounted. Idempotent: a no-op once everything is migrated (one DB query).
-# Best-effort + CDN-gated, exactly like the R2 asset sync above.
-if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
-    # Resolve the host db/ volume the same way docker-compose does
-    # (${STORAGE_PATH:-./db}, relative paths against the repo dir).
-    STORAGE_PATH_HOST=$(grep -E '^STORAGE_PATH=' "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"'"'"'')
-    [ -z "$STORAGE_PATH_HOST" ] && STORAGE_PATH_HOST="${REPO_DIR}/db"
-    case "$STORAGE_PATH_HOST" in
-        /*) ;;
-        *) STORAGE_PATH_HOST="${REPO_DIR}/${STORAGE_PATH_HOST#./}" ;;
-    esac
-    if [ -d "$STORAGE_PATH_HOST/avatars" ]; then
-        # Best-effort + idempotent (a no-op once migrated), and nothing between
-        # here and Step 6 depends on it — so run it in the background exactly
-        # like the R2 asset sync above instead of blocking the deploy on a
-        # node+Prisma container boot. Joined at Step 6 before we report success.
-        log "Backfilling existing avatars to R2 (idempotent, in background)..."
-        (
-            "$DOCKER_BIN" run --rm \
-                --env-file "$ENV_FILE" \
-                -e STORAGE_PATH=/app/db \
-                -v "${STORAGE_PATH_HOST}:/app/db:ro" \
-                --entrypoint node \
-                "${IMAGE_NAME}:latest" \
-                scripts/migrate-avatars-to-r2.ts \
-                && log "Avatar R2 backfill complete." \
-                || log "WARNING: avatar R2 backfill failed — existing avatars stay on the proxy path until the next run."
-        ) &
-        BG_AVATAR_PID=$!
-    else
-        log "No ${STORAGE_PATH_HOST}/avatars dir — skipping avatar backfill (nothing local to migrate)."
-    fi
-
-    # ── Step 2a.3: Backfill the remaining local media to R2 (idempotent) ─────
-    # Slice It songs + covers (db/music) and curated build thumbnails
-    # (db/builds) were written to the web container's own filesystem until
-    # 2026-08-06. That is worse than untidy here: web runs blue/green, so a file
-    # uploaded to one colour 404s from the other until the next deploy flips
-    # back. New uploads already go straight to R2; this moves what predates them
-    # and rewrites the Song rows. Same shape as the avatar backfill above —
-    # best-effort, idempotent, backgrounded, joined at Step 6.
-    if [ -d "$STORAGE_PATH_HOST/music" ] || [ -d "$STORAGE_PATH_HOST/builds" ]; then
-        log "Backfilling local media (songs, covers, build thumbnails) to R2 (idempotent, in background)..."
-        (
-            "$DOCKER_BIN" run --rm \
-                --env-file "$ENV_FILE" \
-                -e STORAGE_PATH=/app/db \
-                -v "${STORAGE_PATH_HOST}:/app/db:ro" \
-                --entrypoint node \
-                "${IMAGE_NAME}:latest" \
-                scripts/migrate-media-to-r2.ts \
-                && log "Media R2 backfill complete." \
-                || log "WARNING: media R2 backfill failed — existing songs/thumbnails keep being read from local disk until the next run."
-        ) &
-        BG_MEDIA_PID=$!
-    else
-        log "No ${STORAGE_PATH_HOST}/{music,builds} dirs — skipping media backfill (nothing local to migrate)."
-    fi
-fi
-
 # ── Step 2b (staging only): Connect DBLab clone to compose network ───────────
 # The DBLab thin-clone container ("staging") runs on its own network. The
 # compose services live on ${PROJECT_NAME}_default. Bridge them so the app
@@ -1065,6 +999,70 @@ else
     fi
 fi
 step_done
+
+# ── Step 3a: Backfill existing avatars to R2 (idempotent) ──────────────────
+# New avatar uploads already go straight to R2 (the built app inlines the CDN
+# base). This migrates any PRE-EXISTING avatars still on the local db/ volume into
+# R2 (user-avatars/<file>) and rewrites UserProfile.customImage to the CDN URL, so
+# db/avatars can later be reclaimed (scripts/reclaim-db.sh). Runs INSIDE the fresh
+# image (node + prod deps + the self-contained script) with the host db/ volume
+# bind-mounted. Idempotent: a no-op once everything is migrated (one DB query).
+# Runs only after staging DB attachment and successful schema migrations.
+# Compose supplies the web service network, host mappings and environment.
+# Best-effort + CDN-gated, exactly like the R2 asset sync above.
+if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
+    # Resolve the host db/ volume the same way docker-compose does
+    # (${STORAGE_PATH:-./db}, relative paths against the repo dir).
+    STORAGE_PATH_HOST=$(grep -E '^STORAGE_PATH=' "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"'"'"'')
+    [ -z "$STORAGE_PATH_HOST" ] && STORAGE_PATH_HOST="${REPO_DIR}/db"
+    case "$STORAGE_PATH_HOST" in
+        /*) ;;
+        *) STORAGE_PATH_HOST="${REPO_DIR}/${STORAGE_PATH_HOST#./}" ;;
+    esac
+    if [ -d "$STORAGE_PATH_HOST/avatars" ]; then
+        # Best-effort + idempotent (a no-op once migrated), and nothing between
+        # here and Step 6 depends on it — so run it in the background exactly
+        # like the R2 asset sync above instead of blocking the deploy on a
+        # node+Prisma container boot. Joined at Step 6 before we report success.
+        log "Backfilling existing avatars to R2 (idempotent, in background)..."
+        (
+            dc -f docker-compose.yml -f deploy/docker-compose.backfill.yml run --rm --no-deps -T \
+                -e STORAGE_PATH=/app/db \
+                --entrypoint node \
+                web \
+                scripts/migrate-avatars-to-r2.ts \
+                && log "Avatar R2 backfill complete." \
+                || log "WARNING: avatar R2 backfill failed — existing avatars stay on the proxy path until the next run."
+        ) &
+        BG_AVATAR_PID=$!
+    else
+        log "No ${STORAGE_PATH_HOST}/avatars dir — skipping avatar backfill (nothing local to migrate)."
+    fi
+
+    # ── Step 3a.2: Backfill the remaining local media to R2 (idempotent) ─────
+    # Slice It songs + covers (db/music) and curated build thumbnails
+    # (db/builds) were written to the web container's own filesystem until
+    # 2026-08-06. That is worse than untidy here: web runs blue/green, so a file
+    # uploaded to one colour 404s from the other until the next deploy flips
+    # back. New uploads already go straight to R2; this moves what predates them
+    # and rewrites the Song rows. Same shape as the avatar backfill above —
+    # best-effort, idempotent, backgrounded, joined at Step 6.
+    if [ -d "$STORAGE_PATH_HOST/music" ] || [ -d "$STORAGE_PATH_HOST/builds" ]; then
+        log "Backfilling local media (songs, covers, build thumbnails) to R2 (idempotent, in background)..."
+        (
+            dc -f docker-compose.yml -f deploy/docker-compose.backfill.yml run --rm --no-deps -T \
+                -e STORAGE_PATH=/app/db \
+                --entrypoint node \
+                web \
+                scripts/migrate-media-to-r2.ts \
+                && log "Media R2 backfill complete." \
+                || log "WARNING: media R2 backfill failed — existing songs/thumbnails keep being read from local disk until the next run."
+        ) &
+        BG_MEDIA_PID=$!
+    else
+        log "No ${STORAGE_PATH_HOST}/{music,builds} dirs — skipping media backfill (nothing local to migrate)."
+    fi
+fi
 
 # ── Step 3b: Fit the DB pools to the live max_connections ────────────────────
 # The fleet's pool sizes assume the tuned host (max_connections = 200), but that
