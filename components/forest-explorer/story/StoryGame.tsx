@@ -211,8 +211,8 @@ export function StoryGame() {
 
             {/* Pre-game menu */}
             {showMenu && !locked && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-50">
-                    <div className="text-center text-white px-8 py-9 rounded-2xl bg-black/40 border border-white/10 max-w-xs w-full space-y-4">
+                <div className="app-safe-pad absolute inset-0 flex items-center-safe justify-center-safe overflow-y-auto bg-black/80 backdrop-blur-sm z-50">
+                    <div className="text-center text-white mx-4 px-8 py-8 rounded-2xl bg-black/40 border border-white/10 max-w-xs w-full space-y-4">
                         <div className="text-5xl">🌲</div>
                         <h1 className="text-2xl font-bold tracking-wide text-green-200">{t("story-mode", { defaultValue: "Story Mode" })}</h1>
                         <p className="text-green-300/50 text-xs">
@@ -253,8 +253,8 @@ export function StoryGame() {
 
             {/* Pause menu (only when user explicitly presses ESC) */}
             {!showMenu && paused && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
-                    <div className="text-center text-white px-8 py-6 rounded-2xl bg-black/40 border border-white/10 max-w-xs w-full space-y-3">
+                <div className="app-safe-pad absolute inset-0 flex items-center-safe justify-center-safe overflow-y-auto bg-black/60 backdrop-blur-sm z-50">
+                    <div className="text-center text-white mx-4 px-8 py-8 rounded-2xl bg-black/40 border border-white/10 max-w-xs w-full space-y-3">
                         <h2 className="text-xl font-bold text-white/90">{t("paused", { defaultValue: "Paused" })}</h2>
                         <button
                             className="w-full py-2.5 bg-green-800 hover:bg-green-700 text-green-100 rounded-xl font-medium transition-colors text-sm cursor-pointer"
@@ -341,8 +341,8 @@ export function StoryGame() {
 
             {/* Game completion screen (Act 3 finale) */}
             {showCompletion && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-md z-[90]">
-                    <motion.div className="text-center text-white px-10 py-12 rounded-2xl bg-black/40 border border-green-700/20 max-w-md w-full space-y-6 duration-1000"
+                <div className="app-safe-pad absolute inset-0 flex items-center-safe justify-center-safe overflow-y-auto bg-black/90 backdrop-blur-md z-[90]">
+                    <motion.div className="text-center text-white mx-4 px-8 py-10 rounded-2xl bg-black/40 border border-green-700/20 max-w-md w-full space-y-6 duration-1000"
       variants={scaleIn}
       initial="initial"
       animate="animate"

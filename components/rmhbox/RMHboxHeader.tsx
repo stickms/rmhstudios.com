@@ -172,11 +172,11 @@ export default function RMHboxHeader({
 
   const statusIcon =
     connectionStatus === 'connected' ? (
-      <Circle className="h-2.5 w-2.5 fill-green-500 text-green-500 inline-block" />
+      <Circle className="h-2.5 w-2.5 fill-(--app-success) text-(--app-success) inline-block" />
     ) : connectionStatus === 'connecting' ? (
-      <Circle className="h-2.5 w-2.5 fill-yellow-500 text-yellow-500 inline-block" />
+      <Circle className="h-2.5 w-2.5 fill-(--app-warning) text-(--app-warning) inline-block" />
     ) : (
-      <Circle className="h-2.5 w-2.5 fill-red-500 text-red-500 inline-block" />
+      <Circle className="h-2.5 w-2.5 fill-(--app-danger) text-(--app-danger) inline-block" />
     );
 
   const statusText =
@@ -189,9 +189,9 @@ export default function RMHboxHeader({
           : t('connection-error', { defaultValue: 'Error' });
 
   return (
-    <header className="relative flex shrink-0 items-center border-b border-(--app-border) bg-(--app-bg)/90 px-3 py-3 h-16 backdrop-blur-sm">
+    <header className="grid h-16 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b border-(--app-border) bg-(--app-bg) px-3 sm:px-4">
       {/* Left side */}
-      <div className="flex items-center gap-2 z-10">
+      <div className="flex min-w-0 items-center gap-2">
         {hasBackLink && (
           <Link
             to={backHref ?? '/rmhbox'}
@@ -212,9 +212,11 @@ export default function RMHboxHeader({
               goBack(e);
             }}
           >
-            <span className="flex items-center gap-1">
-              <ArrowLeft size={16} />
-              {backLabel ?? t('back', { defaultValue: 'Back' })}
+            <span className="flex items-center gap-1.5">
+              <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden />
+              {/* The arrow alone carries the meaning once space is tight. */}
+              <span className="hidden xs:inline">{backLabel ?? t('back', { defaultValue: 'Back' })}</span>
+              <span className="sr-only xs:hidden">{backLabel ?? t('back', { defaultValue: 'Back' })}</span>
             </span>
           </Link>
         )}
@@ -230,18 +232,17 @@ export default function RMHboxHeader({
         )}
       </div>
 
-      {/* Center title — absolutely positioned for true centering */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible">
-        <h1
-          className="text-4xl font-bold leading-tight text-(--app-accent) truncate px-24"
-          style={{ fontFamily: 'var(--app-font-display)' }}
-        >
-          {displayTitle}
-        </h1>
-      </div>
+      {/* Centre column — a real grid track, so a long minigame name truncates
+          instead of running through the back link or the controls. */}
+      <h1
+        className="min-w-0 truncate px-2 text-center text-xl font-bold leading-tight text-(--app-accent) sm:text-2xl"
+        style={{ fontFamily: 'var(--app-font-display)' }}
+      >
+        {displayTitle}
+      </h1>
 
       {/* Right side */}
-      <div className="ml-auto flex items-center gap-2 z-10">
+      <div className="flex min-w-0 items-center justify-end gap-2">
         {showConnection && (
           <span
             className="flex items-center gap-1.5 text-sm text-(--app-text-muted)"

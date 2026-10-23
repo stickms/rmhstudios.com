@@ -142,14 +142,14 @@ export function LineArrangePuzzle() {
 
   if (!puzzle) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center app-ground">
         <p style={{ color: '#a89888' }}>{t("no-puzzle-loaded", { defaultValue: "No puzzle loaded." })}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col app-ground">
       {/* Header */}
       <div className="p-4 md:p-6 text-center" style={{ backgroundColor: 'rgba(26, 21, 32, 0.9)' }}>
         <h2

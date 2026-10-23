@@ -76,7 +76,7 @@ export default function MobileDPad({ onChange, side = 'left' }: MobileDPadProps)
         // `touch-none` below already refused the pan; this refuses the rest.
         // (globals.css §Selection)
         data-gesture=""
-        className="w-32 h-32 rounded-full border-2 border-white/20 bg-black/30 backdrop-blur-sm flex items-center justify-center touch-none"
+        className="w-32 h-32 rounded-full border-2 border-(--altair-hud-ink)/20 bg-(--altair-hud-scrim)/30 flex items-center justify-center touch-none"
         onTouchStart={handleTouch}
         onTouchMove={handleTouch}
         onTouchEnd={handleEnd}
@@ -84,7 +84,7 @@ export default function MobileDPad({ onChange, side = 'left' }: MobileDPadProps)
       >
         <div
           ref={thumbRef}
-          className="w-12 h-12 rounded-full bg-white/20 border border-white/30"
+          className="w-12 h-12 rounded-full bg-(--altair-hud-ink)/20 border border-(--altair-hud-ink)/30"
           style={{ willChange: 'transform' }}
         />
       </div>

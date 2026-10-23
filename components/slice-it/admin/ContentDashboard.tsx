@@ -20,6 +20,7 @@
  * page nobody should leave a tab on.
  */
 
+import { AdminBody } from '@/components/admin/AdminBody';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -27,7 +28,6 @@ import { AlertTriangle, Database, HardDrive, Trash2, TrendingUp } from 'lucide-r
 
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { formatCount } from '@/lib/utils';
@@ -111,10 +111,10 @@ export function ContentDashboard() {
       backLabel={t('back', { defaultValue: 'Back' })}
       wide
     >
-      <div className="space-y-6 p-4 md:p-6">
+      <AdminBody>
         {loading ? (
           <div className="flex flex-col items-center gap-3 py-16 text-site-text-muted">
-            <Spinner size={32} />
+            <Spinner />
             <span>{t('admin-content-loading', { defaultValue: 'Measuring…' })}</span>
           </div>
         ) : !dashboard ? (
@@ -124,12 +124,12 @@ export function ContentDashboard() {
           />
         ) : (
           <>
-            <Card pane className="p-5 space-y-3">
-              <h2 className="flex items-center gap-2 font-semibold text-site-text">
+            <section className="glass-fill space-y-3 rounded-site p-4">
+              <h2 className="site-section-label flex items-center gap-2">
                 <HardDrive className="size-4" aria-hidden />
                 {t('admin-content-storage', { defaultValue: 'Storage' })}
               </h2>
-              <p className="text-site-text-secondary">
+              <p className="text-site-text-muted">
                 {gib(dashboard.storage.usedBytes)} / {gib(dashboard.storage.limitBytes)} —{' '}
                 {(dashboard.storage.headroom * 100).toFixed(1)}%{' '}
                 {t('admin-content-headroom', { defaultValue: 'free' })}
@@ -147,7 +147,7 @@ export function ContentDashboard() {
                   })}
                 </p>
               )}
-              <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+              <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 <Stat
                   label={t('admin-content-songs', { defaultValue: 'Songs' })}
                   value={formatCount(dashboard.totals.songs)}
@@ -165,10 +165,10 @@ export function ContentDashboard() {
                   value={formatCount(dashboard.staleCharts)}
                 />
               </dl>
-            </Card>
+            </section>
 
-            <Card className="p-5 space-y-3">
-              <h2 className="flex items-center gap-2 font-semibold text-site-text">
+            <section className="glass-fill space-y-3 rounded-site p-4">
+              <h2 className="site-section-label flex items-center gap-2">
                 <TrendingUp className="size-4" aria-hidden />
                 {t('admin-content-uploads', { defaultValue: 'Uploads per day' })}
               </h2>
@@ -179,17 +179,17 @@ export function ContentDashboard() {
               ) : (
                 <ul className="flex flex-wrap gap-2 text-xs">
                   {dashboard.uploadRate.map((day) => (
-                    <li key={day.day} className="glass-inset rounded-site px-2 py-1 tabular-nums">
+                    <li key={day.day} className="glass-inset rounded-site px-3 py-2 tabular-nums">
                       <span className="text-site-text-muted">{day.day.slice(5)}</span>{' '}
                       <span className="text-site-text font-medium">{day.count}</span>
                     </li>
                   ))}
                 </ul>
               )}
-            </Card>
+            </section>
 
-            <Card className="p-5 space-y-3">
-              <h2 className="flex items-center gap-2 font-semibold text-site-text">
+            <section className="glass-fill space-y-3 rounded-site p-4">
+              <h2 className="site-section-label flex items-center gap-2">
                 <AlertTriangle className="size-4" aria-hidden />
                 {t('admin-content-broken', { defaultValue: 'Charts that look broken' })}
               </h2>
@@ -200,14 +200,14 @@ export function ContentDashboard() {
                   })}
                 </p>
               ) : (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {broken.map((chart) => (
                     <li
                       key={chart.chartId}
-                      className="glass-fill rounded-site p-3 flex flex-wrap items-baseline gap-x-3 gap-y-1"
+                      className="glass-inset flex flex-wrap items-baseline gap-x-3 gap-y-2 rounded-site px-4 py-3"
                     >
                       <span className="font-medium text-site-text">{chart.title}</span>
-                      <span className="text-sm text-site-text-secondary">
+                      <span className="text-sm text-site-text-muted">
                         {chart.reasons.join(', ')}
                       </span>
                       <span className="text-xs text-site-text-muted tabular-nums ml-auto">
@@ -224,43 +224,43 @@ export function ContentDashboard() {
                   ))}
                 </ul>
               )}
-            </Card>
+            </section>
 
-            <Card className="p-5 space-y-3">
-              <h2 className="flex items-center gap-2 font-semibold text-site-text">
+            <section className="glass-fill space-y-3 rounded-site p-4">
+              <h2 className="site-section-label flex items-center gap-2">
                 <Trash2 className="size-4" aria-hidden />
                 {t('admin-content-orphans', { defaultValue: 'Orphaned storage objects' })}
               </h2>
-              <p className="text-sm text-site-text-secondary">
+              <p className="text-sm text-site-text-muted">
                 {t('admin-content-orphans-note', {
                   defaultValue:
                     'Listed, never deleted. A listing can race an upload in flight, so this is a candidate list for a person to look at.',
                 })}
               </p>
-              <Button onClick={() => void scanOrphans()} disabled={scanning}>
+              <Button onClick={() => void scanOrphans()} loading={scanning}>
                 {scanning
                   ? t('admin-content-scanning', { defaultValue: 'Scanning…' })
                   : t('admin-content-scan', { defaultValue: 'Scan storage' })}
               </Button>
               {orphans !== null && (
-                <p className="text-sm text-site-text-secondary">
+                <p className="text-sm text-site-text-muted">
                   {t('admin-content-orphan-count', { defaultValue_one: '{{count}} object with no song pointing at it.',
                     defaultValue: '{{count}} objects with no song pointing at them.',
                     count: orphans.length,
                   })}
                 </p>
               )}
-            </Card>
+            </section>
           </>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="glass-inset rounded-site px-3 py-2">
+    <div className="glass-inset rounded-site px-4 py-3">
       <dt className="text-xs text-site-text-muted">{label}</dt>
       <dd className="text-site-text font-medium tabular-nums">{value}</dd>
     </div>

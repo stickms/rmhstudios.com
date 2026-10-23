@@ -12,7 +12,7 @@ import { AlibiGame } from '@/components/daily-puzzles/AlibiGame'
 function AlibiPage() {
     return (
         <GameErrorBoundary gameName="Alibi">
-            <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
+            <Suspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
                 <AlibiGame />
             </Suspense>
         </GameErrorBoundary>

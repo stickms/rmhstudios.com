@@ -25,13 +25,13 @@ interface TeamPanelProps {
 
 export default function TeamPanel({ team, isActive, getPlayerName, currentUserId }: TeamPanelProps) {
   const isRed = team.teamId === 'red';
-  const teamColor = isRed ? 'text-red-400' : 'text-blue-400';
-  const borderColor = isRed ? 'border-red-500/40' : 'border-blue-500/40';
-  const activeGlow = isActive ? (isRed ? 'ring-2 ring-red-500/30' : 'ring-2 ring-blue-500/30') : '';
+  const teamColor = isRed ? 'text-(--app-danger)' : 'text-(--app-info)';
+  const borderColor = isRed ? 'border-(--app-danger)/40' : 'border-(--app-info)/40';
+  const activeGlow = isActive ? (isRed ? 'ring-2 ring-(--app-danger)/30' : 'ring-2 ring-(--app-info)/30') : '';
 
   return (
     <div
-      className={`flex-1 rounded-xl border ${borderColor} bg-(--app-surface) p-3 ${activeGlow} transition`}
+      className={`flex-1 rounded-(--app-radius) border ${borderColor} bg-(--app-surface) p-3 ${activeGlow} transition`}
     >
       {/* Team header */}
       <div className="flex items-center justify-between">
@@ -46,7 +46,7 @@ export default function TeamPanel({ team, isActive, getPlayerName, currentUserId
       {/* Agent progress bar */}
       <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-(--app-border)">
         <div
-          className={`h-full rounded-full transition-colors duration-500 ${isRed ? 'bg-red-500' : 'bg-blue-500'}`}
+          className={`h-full rounded-full transition-colors duration-500 ${isRed ? 'bg-(--app-danger)' : 'bg-(--app-info)'}`}
           style={{ width: `${(team.agentsRevealed / team.agentsTotal) * 100}%` }}
         />
       </div>
@@ -66,7 +66,7 @@ export default function TeamPanel({ team, isActive, getPlayerName, currentUserId
         </li>
         {/* Divider between spymaster and operatives */}
         {team.operativeIds.length > 0 && (
-          <li aria-hidden className={`border-t ${isRed ? 'border-red-500/20' : 'border-blue-500/20'} my-1`} />
+          <li aria-hidden className={`border-t ${isRed ? 'border-(--app-danger)/20' : 'border-(--app-info)/20'} my-1`} />
         )}
         {/* Operatives */}
         {team.operativeIds.map((uid) => (

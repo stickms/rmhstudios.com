@@ -59,25 +59,26 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
         <>
           {/* Backdrop */}
           <div
-            className="app-overlay fixed inset-0 z-60 bg-black/30"
+            className="app-overlay fixed inset-0 z-60 bg-(--app-scrim)"
             onClick={() => setIsOpen(false)}
           />
 
           {/* Settings panel — centered on screen */}
           <div
-            className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-sm -translate-y-1/2 rounded-xl border p-4 shadow-xl"
+            className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-sm -translate-y-1/2 max-h-[85dvh] overflow-y-auto rounded-(--app-radius) border p-5 shadow-(--app-shadow)"
             style={{
               backgroundColor: 'var(--app-surface)',
               borderColor: 'var(--app-border)',
             }}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-(--app-text-muted)">
+              <h3 className="text-lg font-bold text-(--app-text)">
                 {t("settings", { defaultValue: "Settings" })}
               </h3>
               <button
                 onClick={() => setIsOpen(false)}
-                className="rounded p-1 text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+                aria-label={t("close", { defaultValue: "Close" })}
+                className="rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:text-(--app-text)"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -89,7 +90,7 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
                 <span className="text-sm font-medium text-(--app-text)">{t("theme", { defaultValue: "Theme" })}</span>
                 <button
                   onClick={onToggleTheme}
-                  className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+                  className="flex items-center gap-2 rounded-(--app-radius-sm) px-3 py-1.5 text-xs font-semibold transition-colors"
                   style={{
                     backgroundColor: 'var(--app-bg)',
                     color: 'var(--app-text)',

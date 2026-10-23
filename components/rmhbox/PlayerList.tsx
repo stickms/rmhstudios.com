@@ -37,7 +37,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
         return (
           <li
             key={player.userId}
-            className="flex items-center gap-3 rounded-lg bg-(--app-bg) border border-(--app-border) px-4 py-3 transition-colors hover:bg-(--app-surface-hover)"
+            className="flex items-center gap-3 rounded-(--app-radius-sm) bg-(--app-bg) border border-(--app-border) px-4 py-3 transition-colors hover:bg-(--app-surface-hover)"
           >
             {/* Avatar */}
             {player.avatarUrl ? (

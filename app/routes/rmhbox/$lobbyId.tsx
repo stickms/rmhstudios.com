@@ -185,12 +185,12 @@ function LobbyPage() {
   // Loading state
   if (connectionStatus === 'connecting' || connectionStatus === 'disconnected') {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="app-viewport">
         <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <div className="text-2xl mb-4 text-(--app-text)">{t("connecting", { defaultValue: "Connecting..." })}</div>
-            <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-(--app-accent)" style={{ borderTopColor: 'transparent' }} />
+        <div className="flex flex-1 items-center-safe justify-center-safe overflow-y-auto p-4">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="text-2xl text-(--app-text)">{t("connecting", { defaultValue: "Connecting..." })}</div>
+            <div role="status" aria-label={t("loading", { defaultValue: "Loading…" })} className="app-spin mx-auto h-8 w-8 rounded-full border-2 border-(--app-accent) border-t-transparent" />
           </div>
         </div>
       </div>
@@ -200,16 +200,16 @@ function LobbyPage() {
   // Error state — no longer blocks the screen; errors go to toast
   if (connectionStatus === 'error') {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="app-viewport">
         <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <div className="text-2xl mb-4 text-(--app-danger)">
+        <div className="flex flex-1 items-center-safe justify-center-safe overflow-y-auto p-4">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="text-2xl text-(--app-danger)">
               {t("connection-error", { defaultValue: "Connection error" })}
             </div>
             <button
               onClick={() => navigate({ to: '/rmhbox' })}
-              className="px-6 py-2 rounded-lg bg-(--app-accent) text-white font-semibold hover:bg-(--app-accent-hover) transition-colors"
+              className="rounded-(--app-radius-sm) bg-(--app-accent) px-6 py-3 text-(--app-accent-fg) font-semibold hover:bg-(--app-accent-hover) transition-colors"
             >
               {t("back-to-lobby", { defaultValue: "Back to Lobby" })}
             </button>
@@ -222,12 +222,12 @@ function LobbyPage() {
   // No lobby state yet
   if (!lobby) {
     return (
-      <div className="flex h-screen flex-col">
+      <div className="app-viewport">
         <RMHboxHeader backLabel={backlinkLabel} backHref={backlinkHref}/>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <div className="text-2xl mb-4 text-(--app-text)">{t("joining-lobby", { defaultValue: "Joining lobby {{lobbyId}}...", lobbyId })}</div>
-            <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-(--app-accent)" style={{ borderTopColor: 'transparent' }} />
+        <div className="flex flex-1 items-center-safe justify-center-safe overflow-y-auto p-4">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="text-2xl text-(--app-text)">{t("joining-lobby", { defaultValue: "Joining lobby {{lobbyId}}...", lobbyId })}</div>
+            <div role="status" aria-label={t("loading", { defaultValue: "Loading…" })} className="app-spin mx-auto h-8 w-8 rounded-full border-2 border-(--app-accent) border-t-transparent" />
           </div>
         </div>
       </div>
@@ -246,7 +246,7 @@ function LobbyPage() {
   const headerTitle = lobby.currentGame ? lobby.currentGame.displayName : undefined;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden relative">
+    <div className="app-viewport relative">
       <RMHboxHeader
         context={headerContext}
         title={headerTitle}
@@ -320,10 +320,10 @@ function LobbyPage() {
           </GameShell>
         ) : (
           /* Brief loading state while GAME_SELECTED action is in-flight */
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="text-xl mb-3 text-(--app-text)">{t("starting-game", { defaultValue: "Starting game..." })}</div>
-              <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto" style={{ borderColor: 'var(--app-accent)', borderTopColor: 'transparent' }} />
+          <div className="flex h-full items-center-safe justify-center-safe p-4">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="text-xl text-(--app-text)">{t("starting-game", { defaultValue: "Starting game..." })}</div>
+              <div role="status" aria-label={t("loading", { defaultValue: "Loading…" })} className="app-spin mx-auto h-8 w-8 rounded-full border-2 border-(--app-accent) border-t-transparent" />
             </div>
           </div>
         )
@@ -341,20 +341,20 @@ function LobbyPage() {
       )}
 
       {lobby.state === 'SESSION_RESULTS' && (
-        <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 p-6 h-full justify-center">
+        <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col items-center justify-center-safe gap-4 px-4 py-6 md:gap-6 md:px-8">
           <h1 className="text-4xl font-bold" style={{ fontFamily: 'var(--app-font-display)' }}>
             {t("session-complete", { defaultValue: "Session Complete!" })} <PartyPopper className="h-8 w-8 inline" />
           </h1>
 
           {/* Final Standings */}
           {sessionResults?.standings && sessionResults.standings.length > 0 && (
-            <div className="w-full rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
+            <section className="w-full rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) px-4 py-4">
               <h2 className="mb-3 text-lg font-semibold text-(--app-accent)">{t("final-standings", { defaultValue: "Final Standings" })}</h2>
               <div className="space-y-2">
                 {sessionResults.standings.map((s) => (
-                  <div key={s.userId} className="flex items-center justify-between rounded-lg bg-(--app-bg) px-4 py-2">
+                  <div key={s.userId} className="flex items-center justify-between rounded-(--app-radius-sm) bg-(--app-bg) px-4 py-2">
                     <div className="flex items-center gap-3">
-                      <span className="text-xl font-bold" style={{ color: s.rank === 1 ? 'var(--app-warning)' : s.rank === 2 ? '#c0c0c0' : s.rank === 3 ? '#cd7f32' : 'var(--app-text-muted)' }}>
+                      <span className="text-xl font-bold" style={{ color: s.rank === 1 ? 'var(--app-warning)' : s.rank === 2 ? 'var(--site-podium-silver)' : s.rank === 3 ? 'var(--site-podium-bronze)' : 'var(--app-text-muted)' }}>
                         #{s.rank}
                       </span>
                       <span className="font-semibold">{s.userName}</span>
@@ -366,16 +366,16 @@ function LobbyPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           )}
 
           {/* Match History */}
           {sessionResults?.matchHistory && sessionResults.matchHistory.length > 0 && (
-            <div className="w-full rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
+            <section className="w-full rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) px-4 py-4">
               <h2 className="mb-3 text-lg font-semibold text-(--app-accent)">{t("match-history", { defaultValue: "Match History" })}</h2>
               <div className="space-y-2">
                 {sessionResults.matchHistory.map((m) => (
-                  <div key={m.matchId} className="flex items-center justify-between rounded-lg bg-(--app-bg) px-4 py-2 text-sm">
+                  <div key={m.matchId} className="flex items-center justify-between rounded-(--app-radius-sm) bg-(--app-bg) px-4 py-2 text-sm">
                     <div>
                       <span className="font-semibold">{m.minigameDisplayName}</span>
                       <span className="ml-2 text-(--app-text-muted)">· {t("player-count", { defaultValue: "{{count}} players", count: m.playerCount })}</span>
@@ -384,7 +384,7 @@ function LobbyPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           )}
 
           <button
@@ -392,7 +392,7 @@ function LobbyPage() {
               useRMHboxStore.getState().leaveLobby();
               navigate({ to: '/rmhbox' });
             }}
-            className="px-8 py-3 rounded-lg font-semibold bg-(--app-accent) text-white hover:bg-(--app-accent-hover) transition-colors"
+            className="rounded-(--app-radius-sm) bg-(--app-accent) px-8 py-3 font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover)"
           >
             {t("back-to-lobby", { defaultValue: "Back to Lobby" })}
           </button>

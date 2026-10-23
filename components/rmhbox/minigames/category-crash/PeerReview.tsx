@@ -123,7 +123,7 @@ export default function PeerReview({
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-bold">{t("voting", { defaultValue: "Voting" })}</h3>
         </div>
-        <span className="rounded-lg bg-(--app-surface) px-3 py-1.5 text-sm font-medium text-(--app-text-muted)">
+        <span className="rounded-(--app-radius-sm) bg-(--app-surface) px-3 py-1.5 text-sm font-medium text-(--app-text-muted)">
           {t("host-directed", { defaultValue: "Host-directed" })}
         </span>
       </div>
@@ -195,7 +195,7 @@ export default function PeerReview({
             return (
               <div
                 key={answerSet.anonymousLabel}
-                className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors ${
+                className={`flex items-center justify-between rounded-(--app-radius-sm) border px-3 py-2 text-sm transition-colors ${
                   isOwn
                     ? 'border-(--app-accent)/40 bg-(--app-accent-dim)'
                     : isEmpty
@@ -280,7 +280,7 @@ export default function PeerReview({
           <button
             type="button"
             onClick={onAdvanceVoting}
-            className="flex items-center gap-2 rounded-lg bg-(--app-accent) px-5 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90"
+            className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent) px-5 py-2 text-sm font-semibold text-(--app-accent-fg) transition-colors hover:opacity-90"
           >
             {isLastCategory ? t("finish-voting", { defaultValue: "Finish Voting" }) : t("next-prompt", { defaultValue: "Next Prompt" })}
             <ChevronRight size={16} />

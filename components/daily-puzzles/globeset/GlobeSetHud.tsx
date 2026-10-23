@@ -118,7 +118,7 @@ function Stat({
     <div className="flex items-center gap-2">
       <span className="text-site-accent">{icon}</span>
       <div>
-        <dt className="text-[0.65rem] font-medium uppercase tracking-wide text-site-text-muted">
+        <dt className="text-xs font-medium text-site-text-muted">
           {label}
         </dt>
         <dd

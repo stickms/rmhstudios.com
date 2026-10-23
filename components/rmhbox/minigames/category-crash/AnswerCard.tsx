@@ -69,7 +69,7 @@ export default function AnswerCard({ answer, category, points, status }: AnswerC
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`flex flex-col gap-1 rounded-lg border p-2 ${style.bg} ${style.border}`}
+      className={`flex flex-col gap-1 rounded-(--app-radius-sm) border p-2 ${style.bg} ${style.border}`}
     >
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-medium uppercase tracking-wider text-(--app-text-muted)">

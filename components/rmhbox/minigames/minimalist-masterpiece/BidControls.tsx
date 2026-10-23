@@ -36,7 +36,7 @@ export default function BidControls({ currentBid, currency, onBid, disabled }: B
         {currentBid}
       </span>
       <button
-        className="w-8 h-8 rounded-full bg-(--app-accent) text-white font-bold disabled:opacity-40"
+        className="w-8 h-8 rounded-full bg-(--app-accent) text-(--app-accent-fg) font-bold disabled:opacity-40"
         onClick={() => onBid(currentBid + INCREMENT)}
         disabled={!canIncrease}
         aria-label={t("increase-bid", { defaultValue: "Increase bid" })}

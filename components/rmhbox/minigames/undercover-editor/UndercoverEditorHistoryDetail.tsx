@@ -106,7 +106,7 @@ export default function UndercoverEditorHistoryDetail({
     <div className="space-y-4" data-testid="undercover-editor-history-detail">
       {/* Game Settings */}
       {gameLog.initialState && (
-        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
           <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-1">
             {t("game-settings", { defaultValue: "Game Settings" })}
           </h4>
@@ -125,7 +125,7 @@ export default function UndercoverEditorHistoryDetail({
       {storyReveals.map((reveal, idx) => (
         <div
           key={reveal.storyId}
-          className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4"
+          className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4"
         >
           <h4 className="text-sm font-semibold text-(--app-text-muted) mb-3">
             📖 {t("story-number", { defaultValue: "Story {{number}}", number: idx + 1 })}
@@ -139,7 +139,7 @@ export default function UndercoverEditorHistoryDetail({
               const authorLabel = s.authorName || getName(s.authorUserId);
 
               return (
-                <div key={i} className="rounded-lg bg-(--app-surface) p-3">
+                <div key={i} className="rounded-(--app-radius-sm) bg-(--app-surface) p-3">
                   <p className="text-sm leading-relaxed text-(--app-text)">
                     <SentenceWithEdits sentence={s} edits={sentenceEdits} />
                   </p>
@@ -171,7 +171,7 @@ export default function UndercoverEditorHistoryDetail({
       ))}
 
       {/* Final Scores */}
-      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
         <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players

@@ -123,7 +123,7 @@ export function GlobeSetRace({ shapes, view, attitudeRef, gyroActive }: GlobeSet
 /* ── Shell ─────────────────────────────────────────────────────────────────── */
 
 function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="mt-5 glass-pane rounded-site p-5">{children}</div>;
+  return <div className="mt-4 glass-pane rounded-site p-5">{children}</div>;
 }
 
 /* ── Before a room ─────────────────────────────────────────────────────────── */
@@ -449,7 +449,7 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
     <div className="mt-5 space-y-4">
       <div className="glass-pane flex flex-wrap items-center justify-between gap-4 rounded-site p-4">
         <div>
-          <p className="text-[0.65rem] font-medium uppercase tracking-wide text-site-text-muted">
+          <p className="text-xs font-medium text-site-text-muted">
             {counting
               ? t('globeset-race-starting', { defaultValue: 'Starting in' })
               : t('globeset-stat-time', { defaultValue: 'Time' })}
@@ -459,7 +459,7 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[0.65rem] font-medium uppercase tracking-wide text-site-text-muted">
+          <p className="text-xs font-medium text-site-text-muted">
             {lobby.goal === 'sprint'
               ? t('globeset-race-goal-sprint-short', {
                   defaultValue: 'Sprint to {{n}}',
@@ -652,7 +652,7 @@ function RaceResults() {
 function RecordFigure({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[0.6rem] font-medium uppercase tracking-wide text-site-text-muted">
+      <dt className="text-xs font-medium text-site-text-muted">
         {label}
       </dt>
       <dd className="mt-0.5 font-mono text-base font-bold tabular-nums text-site-text">{value}</dd>

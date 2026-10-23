@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
 import { m as motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Trophy, Copy, Check, ArrowRight } from 'lucide-react';
+import { Trophy, ArrowRight } from 'lucide-react';
 import {
     generateOutcastPuzzle,
     checkOutcastGuess,
@@ -16,17 +15,28 @@ import { getResult, saveResult, hasCompleted } from '@/lib/daily-puzzles/persist
 import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/persistence';
 import { generateOutcastShare } from '@/lib/daily-puzzles/share';
 import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+    PuzzlePage,
+    PuzzleHeader,
+    PuzzleSection,
+    PuzzleResultCard,
+    PuzzleResultStack,
+    PuzzleShareRow,
+    TONE_TINT,
+} from '@/components/daily-puzzles/PuzzleShell';
 import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 
-const DIFFICULTY_COLORS: Record<string, string> = {
-    easy: 'text-emerald-400',
-    medium: 'text-yellow-400',
-    hard: 'text-orange-400',
-    expert: 'text-red-400',
-    nightmare: 'text-purple-400',
+const DIFFICULTY_VARIANT: Record<string, 'success' | 'accent' | 'warning' | 'danger'> = {
+    easy: 'success',
+    medium: 'accent',
+    hard: 'warning',
+    expert: 'danger',
+    nightmare: 'danger',
 };
 
 const MAX_SCORE = 175;
@@ -63,7 +73,6 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
     const [roundRevealed, setRoundRevealed] = useState(false);
     const [selectedName, setSelectedName] = useState<string | null>(null);
     const [completed, setCompleted] = useState(false);
-    const [copied, setCopied] = useState(false);
 
     // Check persistence on mount
     useEffect(() => {
@@ -126,39 +135,17 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
         }
     }, [currentRound, correctRounds, selectedNames, dateKey]);
 
-    const handleShare = useCallback(async () => {
-        const score = computeOutcastScore(correctRounds);
-        const shareText = generateOutcastShare(puzzleNumber, correctRounds, score, MAX_SCORE);
-        try {
-            await navigator.clipboard.writeText(shareText);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            // Fallback: do nothing
-        }
-    }, [correctRounds, puzzleNumber]);
-
     const score = computeOutcastScore(correctRounds);
     const round = currentRound < 5 ? puzzle.rounds[currentRound] : null;
+    const shareText = completed ? generateOutcastShare(puzzleNumber, correctRounds, score, MAX_SCORE) : '';
 
     return (
         <>
-            <Link
-                to="/daily"
-                className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
-            >
-                <ArrowLeft className="w-4 h-4" />
-                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
-            </Link>
-
-            <div className="text-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-site-text mb-1">
-                    🎭 Outcast
-                </h1>
-                <p className="text-site-text-muted text-sm">
-                    {t("outcast-subtitle", { defaultValue: "{{dateKey}} · Puzzle #{{puzzleNumber}} · Five rounds — spot the odd one out", dateKey, puzzleNumber })}
-                </p>
-            </div>
+            <PuzzleHeader
+                icon="🎭"
+                title={t("outcast-title", { defaultValue: "Outcast" })}
+                subtitle={t("outcast-subtitle", { defaultValue: "{{dateKey}} · Puzzle #{{puzzleNumber}} · Five rounds — spot the odd one out", dateKey, puzzleNumber })}
+            />
 
             <AnimatePresence mode="wait">
                 {!completed && round ? (
@@ -168,29 +155,28 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -30 }}
                         transition={{ duration: 0.3 }}
+                        className="flex flex-col gap-4"
                     >
                         {/* Round header */}
-                        <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                                <span className="text-lg font-semibold text-site-text">
+                                <h2 className="text-lg font-semibold text-site-text">
                                     {t("round-progress", { defaultValue: "Round {{current}}/5", current: currentRound + 1 })}
-                                </span>
-                                <span
-                                    className={`text-xs font-medium uppercase tracking-wide ${DIFFICULTY_COLORS[round.difficulty]}`}
-                                >
+                                </h2>
+                                <Badge variant={DIFFICULTY_VARIANT[round.difficulty] ?? 'default'} size="sm" icon={false}>
                                     {round.difficulty}
-                                </span>
+                                </Badge>
                             </div>
                             {/* Progress dots */}
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-2" aria-hidden>
                                 {Array.from({ length: 5 }).map((_, i) => (
                                     <div
                                         key={i}
-                                        className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                                        className={`size-2.5 rounded-full transition-colors duration-site-fast ${
                                             i < correctRounds.length
                                                 ? correctRounds[i]
-                                                    ? 'bg-emerald-400'
-                                                    : 'bg-red-400'
+                                                    ? 'bg-site-success'
+                                                    : 'bg-site-danger'
                                                 : i === currentRound
                                                   ? 'bg-site-text'
                                                   : 'bg-site-border'
@@ -200,58 +186,44 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
                             </div>
                         </div>
 
-                        <p className="text-site-text-muted text-sm mb-5 text-center">
+                        <p className="text-center text-sm text-site-text-muted">
                             {t("tap-outcast-prompt", { defaultValue: "Four of these share a trait. Tap the outcast." })}
                         </p>
 
                         {/* Items grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                             {round.items.map((item) => {
                                 const isSelected = selectedName === item.name;
                                 const isOutcast = round._solution.outcastName === item.name;
                                 const isCorrectPick = isSelected && isOutcast;
                                 const isWrongPick = isSelected && !isOutcast;
 
-                                let cardClass =
-                                    'bg-site-surface border border-site-border hover:border-emerald-500/50';
+                                let cardClass = 'glass-interactive border-transparent';
                                 if (roundRevealed) {
-                                    if (isCorrectPick) {
-                                        cardClass =
-                                            'bg-emerald-500/20 border border-emerald-500/60';
-                                    } else if (isWrongPick) {
-                                        cardClass =
-                                            'bg-red-500/20 border border-red-500/60';
-                                    } else if (isOutcast) {
-                                        cardClass =
-                                            'bg-yellow-500/20 border border-yellow-500/60';
-                                    } else {
-                                        cardClass =
-                                            'bg-site-surface border border-site-border opacity-60';
-                                    }
+                                    if (isCorrectPick) cardClass = TONE_TINT.success;
+                                    else if (isWrongPick) cardClass = TONE_TINT.danger;
+                                    else if (isOutcast) cardClass = TONE_TINT.warning;
+                                    else cardClass = 'border-transparent opacity-60';
                                 }
 
                                 return (
                                     <motion.button
                                         key={item.name}
-                                        whileHover={!roundRevealed ? { scale: 1.03 } : {}}
-                                        whileTap={!roundRevealed ? { scale: 0.97 } : {}}
+                                        type="button"
                                         onClick={() => handleItemTap(item.name)}
                                         disabled={roundRevealed}
-                                        className={`flex flex-col items-center gap-2 p-4 rounded-xl transition cursor-pointer disabled:cursor-default ${cardClass}`}
+                                        className={`glass-fill flex min-h-24 flex-col items-center justify-center gap-2 rounded-site border px-3 py-3 transition-colors duration-site-fast disabled:cursor-default ${cardClass}`}
                                     >
-                                        <span className="text-3xl">{item.emoji}</span>
-                                        <span className="text-sm font-medium text-site-text">
-                                            {item.name}
-                                        </span>
-                                        {/* Badges on reveal */}
+                                        <span aria-hidden className="text-3xl">{item.emoji}</span>
+                                        <span className="text-sm font-medium text-site-text">{item.name}</span>
                                         {roundRevealed && isCorrectPick && (
-                                            <span className="text-xs text-emerald-400 font-medium">{t("badge-outcast-correct", { defaultValue: "✓ Outcast" })}</span>
+                                            <span className="text-xs font-medium text-site-success">{t("badge-outcast-correct", { defaultValue: "✓ Outcast" })}</span>
                                         )}
                                         {roundRevealed && isWrongPick && (
-                                            <span className="text-xs text-red-400 font-medium">{t("badge-your-pick-wrong", { defaultValue: "✗ Your pick" })}</span>
+                                            <span className="text-xs font-medium text-site-danger">{t("badge-your-pick-wrong", { defaultValue: "✗ Your pick" })}</span>
                                         )}
                                         {roundRevealed && !isSelected && isOutcast && (
-                                            <span className="text-xs text-yellow-400 font-medium">{t("badge-outcast-missed", { defaultValue: "← Outcast" })}</span>
+                                            <span className="text-xs font-medium text-site-warning">{t("badge-outcast-missed", { defaultValue: "← Outcast" })}</span>
                                         )}
                                     </motion.button>
                                 );
@@ -265,47 +237,39 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
                                     initial={{ opacity: 0, y: 12 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0 }}
-                                    className="mt-5 space-y-4"
+                                    className="flex flex-col gap-3"
                                 >
-                                    <div className="p-4 rounded-xl bg-site-surface border border-site-border">
-                                        <p className="text-site-text text-sm font-medium mb-1">
+                                    <PuzzleSection>
+                                        <p role="status" className="text-sm font-medium text-site-text">
                                             {checkOutcastGuess(round, selectedName!)
                                                 ? t("correct", { defaultValue: "✅ Correct!" })
                                                 : t("wrong-outcast-was", { defaultValue: "❌ Wrong — the outcast was {{name}}", name: round._solution.outcastName })}
                                         </p>
-                                        <p className="text-site-text-muted text-sm">
-                                            <span className="font-medium text-site-text">
-                                                {t("shared-trait-label", { defaultValue: "Shared trait:" })}
-                                            </span>{' '}
+                                        <p className="text-sm text-site-text-muted">
+                                            <span className="font-medium text-site-text">{t("shared-trait-label", { defaultValue: "Shared trait:" })}</span>{' '}
                                             {round._solution.trait}
                                         </p>
                                         {!checkOutcastGuess(round, selectedName!) && (
-                                            <p className="text-site-text-muted text-sm mt-1">
-                                                <span className="font-medium text-site-text">
-                                                    {t("red-herring-label", { defaultValue: "Red herring:" })}
-                                                </span>{' '}
+                                            <p className="text-sm text-site-text-muted">
+                                                <span className="font-medium text-site-text">{t("red-herring-label", { defaultValue: "Red herring:" })}</span>{' '}
                                                 {round._solution.redHerring}
                                             </p>
                                         )}
-                                    </div>
+                                    </PuzzleSection>
 
-                                    <button
-                                        type="button"
-                                        onClick={handleNextRound}
-                                        className="w-full py-3 rounded-xl bg-site-surface border border-site-border text-site-text font-semibold hover:border-site-text/30 transition-colors flex items-center justify-center gap-2"
-                                    >
+                                    <Button type="button" variant="accent" size="lg" className="w-full" onClick={handleNextRound}>
                                         {currentRound < 4 ? (
                                             <>
                                                 {t("next-round", { defaultValue: "Next Round" })}
-                                                <ArrowRight className="w-4 h-4" />
+                                                <ArrowRight aria-hidden />
                                             </>
                                         ) : (
                                             <>
                                                 {t("see-results", { defaultValue: "See Results" })}
-                                                <Trophy className="w-4 h-4" />
+                                                <Trophy aria-hidden />
                                             </>
                                         )}
-                                    </button>
+                                    </Button>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -317,148 +281,90 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4 }}
                     >
-                        {/* Score */}
-                        <div className="text-center mb-8">
-                            <div className="inline-flex items-center gap-2 mb-2">
-                                <Trophy className="w-6 h-6 text-yellow-400" />
-                                <span className="text-4xl font-bold text-site-text">
-                                    {score}
-                                </span>
-                                <span className="text-site-text-muted text-lg">
-                                    / {MAX_SCORE}
-                                </span>
-                            </div>
-                            {correctRounds.every(Boolean) && (
-                                <p className="text-emerald-400 text-sm font-medium">
-                                    {t("perfect-streak-bonus", { defaultValue: "Perfect! +25 streak bonus" })}
-                                </p>
-                            )}
-                        </div>
+                        <PuzzleResultStack>
+                            <PuzzleResultCard
+                                tone={correctRounds.every(Boolean) ? 'success' : 'neutral'}
+                                title={`${score} / ${MAX_SCORE}`}
+                                description={
+                                    correctRounds.every(Boolean)
+                                        ? t("perfect-streak-bonus", { defaultValue: "Perfect! +25 streak bonus" })
+                                        : undefined
+                                }
+                                stats={correctRounds.map((correct, i) => ({
+                                    key: `r${i}`,
+                                    value: correct ? '✅' : '❌',
+                                    label: `R${i + 1}`,
+                                }))}
+                            />
 
-                        {/* Round-by-round summary bar */}
-                        <div className="flex items-center justify-center gap-3 mb-8 flex-wrap">
-                            {correctRounds.map((correct, i) => (
-                                <div
-                                    key={i}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${
-                                        correct
-                                            ? 'bg-emerald-500/15 text-emerald-400'
-                                            : 'bg-red-500/15 text-red-400'
-                                    }`}
-                                >
-                                    R{i + 1} {correct ? '✅' : '❌'}
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Detailed round results with all items */}
-                        <div className="space-y-4 mb-8">
+                            {/* Detailed round results with all items */}
                             {puzzle.rounds.map((r, i) => {
                                 const wasCorrect = correctRounds[i];
                                 const playerPick = selectedNames[i];
                                 const outcastName = r._solution.outcastName;
 
                                 return (
-                                    <div
-                                        key={i}
-                                        className="p-4 rounded-xl bg-site-surface border border-site-border"
-                                    >
-                                        <div className="flex items-center justify-between mb-3">
+                                    <PuzzleSection key={i}>
+                                        <div className="flex items-center justify-between gap-2">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-sm font-semibold text-site-text">
-                                                    {t("round-label", { defaultValue: "Round {{num}}", num: i + 1 })}
-                                                </span>
-                                                <span
-                                                    className={`text-xs font-medium uppercase tracking-wide ${DIFFICULTY_COLORS[r.difficulty]}`}
-                                                >
+                                                <h3 className="site-section-label">{t("round-label", { defaultValue: "Round {{num}}", num: i + 1 })}</h3>
+                                                <Badge variant={DIFFICULTY_VARIANT[r.difficulty] ?? 'default'} size="sm" icon={false}>
                                                     {r.difficulty}
-                                                </span>
+                                                </Badge>
                                             </div>
-                                            <span className="text-sm">
-                                                {wasCorrect ? '✅' : '❌'}
-                                            </span>
+                                            <span aria-hidden className="text-sm">{wasCorrect ? '✅' : '❌'}</span>
                                         </div>
 
-                                        {/* All items in this round */}
-                                        <div className="flex flex-wrap gap-2 mb-3">
+                                        <div className="flex flex-wrap gap-2">
                                             {r.items.map((item) => {
                                                 const isOutcast = item.name === outcastName;
                                                 const isPlayerPick = item.name === playerPick;
 
-                                                let pillClass = 'bg-site-bg-subtle border-site-border text-site-text-muted';
+                                                let pillClass = 'border-site-border bg-site-bg-subtle';
                                                 let label = '';
 
                                                 if (isOutcast && isPlayerPick) {
-                                                    // Correct pick
-                                                    pillClass = 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400';
+                                                    pillClass = TONE_TINT.success;
                                                     label = t("badge-outcast-correct", { defaultValue: "✓ Outcast" });
                                                 } else if (isPlayerPick && !isOutcast) {
-                                                    // Wrong pick
-                                                    pillClass = 'bg-red-500/15 border-red-500/40 text-red-400';
+                                                    pillClass = TONE_TINT.danger;
                                                     label = t("badge-your-pick-wrong", { defaultValue: "✗ Your pick" });
                                                 } else if (isOutcast && !isPlayerPick) {
-                                                    // Correct answer the player missed
-                                                    pillClass = 'bg-yellow-500/15 border-yellow-500/40 text-yellow-400';
+                                                    pillClass = TONE_TINT.warning;
                                                     label = t("badge-outcast-missed", { defaultValue: "← Outcast" });
                                                 }
 
                                                 return (
                                                     <div
                                                         key={item.name}
-                                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm ${pillClass}`}
+                                                        className={`inline-flex items-center gap-2 rounded-site-sm border px-3 py-1 text-sm text-site-text ${pillClass}`}
                                                     >
-                                                        <span>{item.emoji}</span>
+                                                        <span aria-hidden>{item.emoji}</span>
                                                         <span className="font-medium">{item.name}</span>
-                                                        {label && (
-                                                            <span className="text-xs font-medium ml-1">{label}</span>
-                                                        )}
+                                                        {label && <span className="text-xs font-medium">{label}</span>}
                                                     </div>
                                                 );
                                             })}
                                         </div>
 
-                                        {/* Trait explanation */}
-                                        <p className="text-site-text-muted text-xs">
-                                            <span className="text-site-text font-medium">{t("shared-trait-label", { defaultValue: "Shared trait:" })}</span>{' '}
-                                            {r._solution.trait}
-                                        </p>
-                                        {!wasCorrect && (
-                                            <p className="text-site-text-muted text-xs mt-0.5">
-                                                <span className="text-site-text font-medium">{t("red-herring-label", { defaultValue: "Red herring:" })}</span>{' '}
-                                                {r._solution.redHerring}
+                                        <div className="flex flex-col gap-1 text-xs text-site-text-muted">
+                                            <p>
+                                                <span className="font-medium text-site-text">{t("shared-trait-label", { defaultValue: "Shared trait:" })}</span>{' '}
+                                                {r._solution.trait}
                                             </p>
-                                        )}
-                                    </div>
+                                            {!wasCorrect && (
+                                                <p>
+                                                    <span className="font-medium text-site-text">{t("red-herring-label", { defaultValue: "Red herring:" })}</span>{' '}
+                                                    {r._solution.redHerring}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </PuzzleSection>
                                 );
                             })}
-                        </div>
 
-                        {/* Actions */}
-                        <div className="flex flex-col sm:flex-row items-center gap-3">
-                            <button
-                                onClick={handleShare}
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-colors"
-                            >
-                                {copied ? (
-                                    <>
-                                        <Check className="w-4 h-4" />
-                                        {t("copied", { defaultValue: "Copied!" })}
-                                    </>
-                                ) : (
-                                    <>
-                                        <Copy className="w-4 h-4" />
-                                        {t("share-results", { defaultValue: "Share Results" })}
-                                    </>
-                                )}
-                            </button>
-                            <Link
-                                to="/daily"
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border hover:border-site-text/30 text-site-text font-medium transition-colors"
-                            >
-                                <ArrowLeft className="w-4 h-4" />
-                                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
-                            </Link>
-                        </div>
+                            <PuzzleShareRow shareText={shareText} shareLabel={t("share-results", { defaultValue: "Share Results" })} />
+                        </PuzzleResultStack>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -481,13 +387,13 @@ export function OutcastGame() {
     const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
 
     return (
-        <div className="max-w-2xl mx-auto px-4 py-8">
+        <PuzzlePage>
             <OutcastGameLoader key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
             <PastPuzzlesSection
                 gameMode="outcast"
                 selectedDateKey={selectedDateKey}
                 onSelectDate={setSelectedDateKey}
             />
-        </div>
+        </PuzzlePage>
     );
 }

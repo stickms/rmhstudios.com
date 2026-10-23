@@ -30,9 +30,9 @@ interface ArticleRevealProps {
 }
 
 const difficultyColors: Record<string, string> = {
-  easy: 'bg-green-500/20 text-green-400',
-  medium: 'bg-amber-500/20 text-amber-400',
-  hard: 'bg-red-500/20 text-red-400',
+  easy: 'bg-(--app-success)/20 text-(--app-success)',
+  medium: 'bg-(--app-warning)/20 text-(--app-warning)',
+  hard: 'bg-(--app-danger)/20 text-(--app-danger)',
 };
 
 export default function ArticleReveal({
@@ -71,7 +71,7 @@ export default function ArticleReveal({
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="flex-1 rounded-xl border border-(--app-border) bg-(--app-surface) p-4"
+          className="flex-1 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4"
         >
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-(--app-text-muted)">
             <BookOpen size={12} />
@@ -95,7 +95,7 @@ export default function ArticleReveal({
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 1, duration: 0.5 }}
-          className="flex-1 rounded-xl border-2 border-(--app-accent)/50 bg-(--app-accent)/5 p-4"
+          className="flex-1 rounded-(--app-radius) border-2 border-(--app-accent)/50 bg-(--app-accent)/5 p-4"
         >
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-(--app-accent)">
             <Target size={12} />

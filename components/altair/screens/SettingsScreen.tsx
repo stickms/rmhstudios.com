@@ -72,16 +72,16 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
   }, []);
 
   return (
-    <div className="altair-parchment flex flex-col min-h-[calc(100vh-56px)] px-4 py-8 max-w-lg mx-auto">
+    <div className="altair-parchment flex flex-col flex-1 px-4 pt-4 pb-12 max-w-lg w-full mx-auto">
       <h2 className="text-2xl font-bold text-(--altair-text) mb-6">{t("settings", { defaultValue: "Settings" })}</h2>
 
       {/* Theme */}
       <section className="mb-6">
-        <h3 className="text-sm font-semibold text-(--altair-text-muted) uppercase tracking-wider mb-3">{t("theme", { defaultValue: "Theme" })}</h3>
+        <h3 className="text-sm font-semibold text-(--altair-text) mb-3">{t("theme", { defaultValue: "Theme" })}</h3>
         <div className="flex gap-2">
           <button
             onClick={() => setTheme('dark')}
-            className={`flex-1 py-2.5 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 rounded-(--altair-radius) border font-medium transition-colors flex items-center justify-center gap-2 ${
               theme === 'dark'
                 ? 'border-(--altair-accent) bg-(--altair-accent-dim) text-(--altair-accent)'
                 : 'border-(--altair-border) bg-(--altair-surface) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
@@ -91,7 +91,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
           </button>
           <button
             onClick={() => setTheme('light')}
-            className={`flex-1 py-2.5 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 rounded-(--altair-radius) border font-medium transition-colors flex items-center justify-center gap-2 ${
               theme === 'light'
                 ? 'border-(--altair-accent) bg-(--altair-accent-dim) text-(--altair-accent)'
                 : 'border-(--altair-border) bg-(--altair-surface) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
@@ -104,7 +104,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
 
       {/* Audio */}
       <section className="mb-6">
-        <h3 className="text-sm font-semibold text-(--altair-text-muted) uppercase tracking-wider mb-3 flex items-center gap-1.5">
+        <h3 className="text-sm font-semibold text-(--altair-text) mb-3 flex items-center gap-1.5">
           <Volume2 size={14} /> {t("audio", { defaultValue: "Audio" })}
         </h3>
         <div className="flex flex-col gap-3">
@@ -113,7 +113,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
             { label: t("music", { defaultValue: "Music" }), value: musicVolume, setter: (v: number) => { setMusicVolume(v); altairMusic.updateVolume(); } },
             { label: t("sfx", { defaultValue: "SFX" }), value: sfxVolume, setter: setSfxVolume },
           ] as { label: string; value: number; setter: (v: number) => void }[]).map(({ label, value, setter }) => (
-            <div key={label} className="flex items-center gap-3 py-2.5 px-4 rounded-lg bg-(--altair-surface) border border-(--altair-border)">
+            <div key={label} className="flex items-center gap-3 py-2.5 px-4 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border)">
               <span className="text-sm text-(--altair-text) w-14 shrink-0">{label}</span>
               <input
                 type="range"
@@ -134,7 +134,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
       {/* Keybinds */}
       <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-(--altair-text-muted) uppercase tracking-wider">{t("keybinds", { defaultValue: "Keybinds" })}</h3>
+          <h3 className="text-sm font-semibold text-(--altair-text)">{t("keybinds", { defaultValue: "Keybinds" })}</h3>
           <button
             onClick={resetKeybinds}
             data-altair-sfx="menu_toggle"
@@ -147,14 +147,14 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
           {bindActions.map(({ key, label }) => (
             <div
               key={key}
-              className="flex items-center justify-between py-2.5 px-4 rounded-lg bg-(--altair-surface) border border-(--altair-border)"
+              className="flex items-center justify-between py-2.5 px-4 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border)"
             >
               <span className="text-sm text-(--altair-text)">{label}</span>
               <button
                 onClick={() => setRebinding(key)}
                 className={`px-3 py-1 rounded text-sm font-mono font-bold transition-colors ${
                   rebinding === key
-                    ? 'bg-(--altair-accent) text-white animate-pulse'
+                    ? 'bg-(--altair-accent) text-(--altair-accent-fg) animate-pulse'
                     : 'bg-(--altair-surface-hover) text-(--altair-text) hover:bg-(--altair-surface-active)'
                 }`}
                 style={{ fontFamily: 'var(--altair-font-mono)' }}
@@ -168,9 +168,9 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
 
       {/* Gameplay */}
       <section className="mb-6">
-        <h3 className="text-sm font-semibold text-(--altair-text-muted) uppercase tracking-wider mb-3">{t("gameplay", { defaultValue: "Gameplay" })}</h3>
+        <h3 className="text-sm font-semibold text-(--altair-text) mb-3">{t("gameplay", { defaultValue: "Gameplay" })}</h3>
         <div className="flex flex-col gap-2">
-          <label className="flex items-center justify-between py-2.5 px-4 rounded-lg bg-(--altair-surface) border border-(--altair-border) cursor-pointer">
+          <label className="flex items-center justify-between py-2.5 px-4 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border) cursor-pointer">
             <span className="text-sm text-(--altair-text)">{t("screen-shake", { defaultValue: "Screen Shake" })}</span>
             <input
               type="checkbox"
@@ -179,7 +179,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
               className="w-4 h-4 accent-(--altair-accent)"
             />
           </label>
-          <div className="flex items-center gap-3 py-2.5 px-4 rounded-lg bg-(--altair-surface) border border-(--altair-border)">
+          <div className="flex items-center gap-3 py-2.5 px-4 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border)">
             <span className="text-sm text-(--altair-text) w-14 shrink-0">{t("zoom", { defaultValue: "Zoom" })}</span>
             <input
               type="range"
@@ -195,7 +195,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
             <span className="text-xs text-(--altair-text-muted) w-8 text-right font-mono">{zoomTiles}</span>
           </div>
           {doubleTimeUnlocked && (
-            <label className="flex items-center justify-between py-2.5 px-4 rounded-lg bg-(--altair-surface) border border-(--altair-border) cursor-pointer">
+            <label className="flex items-center justify-between py-2.5 px-4 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border) cursor-pointer">
               <span className="text-sm text-(--altair-text)">
                 {t("double-time", { defaultValue: "Double Time (2× speed)" })}
               </span>
@@ -213,14 +213,14 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
       {/* Mobile */}
       {isMobile && (
         <section className="mb-6">
-          <h3 className="text-sm font-semibold text-(--altair-text-muted) uppercase tracking-wider mb-3">{t("mobile", { defaultValue: "Mobile" })}</h3>
+          <h3 className="text-sm font-semibold text-(--altair-text) mb-3">{t("mobile", { defaultValue: "Mobile" })}</h3>
           <div className="flex flex-col gap-2">
-            <div className="py-2.5 px-4 rounded-lg bg-(--altair-surface) border border-(--altair-border)">
+            <div className="py-2.5 px-4 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border)">
               <span className="text-sm text-(--altair-text) block mb-2">{t("joystick-side", { defaultValue: "Joystick Side" })}</span>
               <div className="flex gap-2">
                 <button
                   onClick={() => setJoystickSide('left')}
-                  className={`flex-1 py-2 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 text-sm ${
+                  className={`flex-1 py-2 rounded-(--altair-radius) border font-medium transition-colors flex items-center justify-center gap-2 text-sm ${
                     joystickSide === 'left'
                       ? 'border-(--altair-accent) bg-(--altair-accent-dim) text-(--altair-accent)'
                       : 'border-(--altair-border) bg-(--altair-surface) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
@@ -230,7 +230,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
                 </button>
                 <button
                   onClick={() => setJoystickSide('right')}
-                  className={`flex-1 py-2 rounded-lg border font-medium transition-colors flex items-center justify-center gap-2 text-sm ${
+                  className={`flex-1 py-2 rounded-(--altair-radius) border font-medium transition-colors flex items-center justify-center gap-2 text-sm ${
                     joystickSide === 'right'
                       ? 'border-(--altair-accent) bg-(--altair-accent-dim) text-(--altair-accent)'
                       : 'border-(--altair-border) bg-(--altair-surface) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
@@ -248,7 +248,7 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
       <button
         onClick={onBack}
         data-altair-sfx="menu_back"
-        className="mt-auto py-3 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
+        className="mt-auto py-3 rounded-(--altair-radius-lg) font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
       >
         {t("back", { defaultValue: "Back" })}
       </button>

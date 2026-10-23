@@ -3,18 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
-import { Link } from '@tanstack/react-router';
-import {
-    ArrowLeft,
-    Search,
-    Trophy,
-    Clock,
-    Share2,
-    CheckCircle2,
-    XCircle,
-    AlertTriangle,
-    Eye,
-} from 'lucide-react';
+import { Search, Trophy, Clock, AlertTriangle, Eye } from 'lucide-react';
 import {
     generateAlibiPuzzle,
     checkAlibiGuess,
@@ -32,6 +21,18 @@ import {
 } from '@/lib/daily-puzzles/persistence';
 import { generateAlibiShare } from '@/lib/daily-puzzles/share';
 import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+    PuzzlePage,
+    PuzzleHeader,
+    PuzzleSection,
+    PuzzleResultCard,
+    PuzzleResultStack,
+    PuzzleShareRow,
+    PuzzleFootnote,
+    TONE_TINT,
+} from '@/components/daily-puzzles/PuzzleShell';
 import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 import { useSession } from '@/components/Providers';
@@ -73,7 +74,6 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
     const [failed, setFailed] = useState(false);
     const [score, setScore] = useState(0);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
-    const [copied, setCopied] = useState(false);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const startTimeRef = useRef<number | null>(null);
@@ -181,23 +181,14 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
         }
     };
 
-    const handleShare = async () => {
-        const shareText = generateAlibiShare(
-            puzzleNumber,
-            solved,
-            guesses.length,
-            elapsedSeconds,
-            score,
-            puzzle.difficulty,
-        );
-        try {
-            await navigator.clipboard.writeText(shareText);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            /* clipboard not available */
-        }
-    };
+    const shareText = generateAlibiShare(
+        puzzleNumber,
+        solved,
+        guesses.length,
+        elapsedSeconds,
+        score,
+        puzzle.difficulty,
+    );
 
     const formatTime = (seconds: number) => {
         const m = Math.floor(seconds / 60);
@@ -209,196 +200,143 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
     const isAccused = (name: string) => guesses.includes(name) && checkAlibiGuess(puzzle, name);
     const isGameOver = solved || failed;
 
+    const subtitle = (
+        <>
+            {isToday ? t("daily-puzzle", { defaultValue: "Daily puzzle" }) : t("past-puzzle", { defaultValue: "Past puzzle" })} · {dateKey} · #{puzzleNumber}
+        </>
+    );
+
     return (
         <>
-            {/* Rules Modal Overlay */}
-            <AnimatePresence>
-                {phase === 'rules' && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70  p-4"
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.92, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.92, y: 20 }}
-                            className="max-w-md w-full rounded-2xl bg-site-surface border border-site-border p-6 shadow-2xl"
-                        >
-                            <div className="text-center mb-5">
-                                <div className="text-4xl mb-3">🔍</div>
-                                <h2 className="text-2xl font-bold text-site-text mb-1">{t("alibi-title", { defaultValue: "Alibi" })}</h2>
-                                <p className="text-site-text-muted text-sm">
-                                    {isToday ? t("daily-puzzle", { defaultValue: "Daily puzzle" }) : t("past-puzzle", { defaultValue: "Past puzzle" })} · {dateKey} · #{puzzleNumber}
-                                </p>
-                            </div>
+            <PuzzleHeader icon={<Search />} title={t("alibi-title", { defaultValue: "Alibi" })} subtitle={subtitle} />
 
-                            <div className="space-y-3 mb-6">
-                                <div className="flex items-start gap-3 p-3 rounded-xl bg-site-bg-subtle">
-                                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            {/* Rules — inline, so the case file stays unread until the timer starts */}
+            {phase === 'rules' && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3">
+                    <PuzzleSection title={t("how-it-works", { defaultValue: "How it works" })}>
+                        <ul className="flex flex-col gap-3">
+                            {[
+                                { icon: <AlertTriangle />, title: t("read-crime-scenario", { defaultValue: "Read the crime scenario" }), desc: t("crime-committed-desc", { defaultValue: "A crime has been committed. Four suspects have alibis." }) },
+                                { icon: <Search />, title: t("find-contradiction", { defaultValue: "Find the contradiction" }), desc: t("contradiction-desc", { defaultValue: "Exactly one alibi contains a logical contradiction with the scenario or another alibi." }) },
+                                { icon: <Eye />, title: t("two-guesses", { defaultValue: "2 guesses to find the liar" }), desc: t("tap-to-accuse-desc", { defaultValue: "Tap a suspect to accuse them. Wrong guess clears them. You're timed — faster solves earn bonus points." }) },
+                            ].map((row) => (
+                                <li key={row.title} className="flex items-start gap-3">
+                                    <span aria-hidden className="mt-0.5 shrink-0 text-site-accent [&_svg]:size-5">{row.icon}</span>
                                     <div>
-                                        <p className="text-site-text text-sm font-medium">{t("read-crime-scenario", { defaultValue: "Read the crime scenario" })}</p>
-                                        <p className="text-site-text-muted text-xs">{t("crime-committed-desc", { defaultValue: "A crime has been committed. Four suspects have alibis." })}</p>
+                                        <p className="text-sm font-medium text-site-text">{row.title}</p>
+                                        <p className="text-xs text-site-text-muted">{row.desc}</p>
                                     </div>
-                                </div>
-                                <div className="flex items-start gap-3 p-3 rounded-xl bg-site-bg-subtle">
-                                    <Search className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="text-site-text text-sm font-medium">{t("find-contradiction", { defaultValue: "Find the contradiction" })}</p>
-                                        <p className="text-site-text-muted text-xs">{t("contradiction-desc", { defaultValue: "Exactly one alibi contains a logical contradiction with the scenario or another alibi." })}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3 p-3 rounded-xl bg-site-bg-subtle">
-                                    <Eye className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="text-site-text text-sm font-medium">{t("two-guesses", { defaultValue: "2 guesses to find the liar" })}</p>
-                                        <p className="text-site-text-muted text-xs">{t("tap-to-accuse-desc", { defaultValue: "Tap a suspect to accuse them. Wrong guess clears them. You're timed — faster solves earn bonus points." })}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2 mb-5 px-3">
-                                <p className="text-site-text-muted text-xs">
-                                    <span className="text-site-text font-medium">{t("guess-1-correct", { defaultValue: "Guess 1 correct:" })}</span> {t("guess-1-pts", { defaultValue: "100 pts + time bonus (max 50)" })}
-                                </p>
-                                <p className="text-site-text-muted text-xs">
-                                    <span className="text-site-text font-medium">{t("guess-2-correct", { defaultValue: "Guess 2 correct:" })}</span> {t("guess-2-pts", { defaultValue: "50 pts + time bonus (max 25)" })}
-                                </p>
-                                <p className="text-site-text-muted text-xs">
-                                    <span className="text-site-text font-medium">{t("failed-label", { defaultValue: "Failed:" })}</span> {t("failed-pts", { defaultValue: "0 pts" })}
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={startReading}
-                                className="w-full py-3 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 font-semibold hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Eye className="w-5 h-5" />
-                                {t("start-puzzle", { defaultValue: "Start Puzzle" })}
-                            </button>
-                            <p className="text-site-text-muted text-xs text-center mt-2">
-                                {t("timer-starts", { defaultValue: "Timer starts when you tap this button." })}
+                                </li>
+                            ))}
+                        </ul>
+                        <div className="flex flex-col gap-1 border-t border-site-border pt-3">
+                            <p className="text-xs text-site-text-muted">
+                                <span className="font-medium text-site-text">{t("guess-1-correct", { defaultValue: "Guess 1 correct:" })}</span> {t("guess-1-pts", { defaultValue: "100 pts + time bonus (max 50)" })}
                             </p>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                            <p className="text-xs text-site-text-muted">
+                                <span className="font-medium text-site-text">{t("guess-2-correct", { defaultValue: "Guess 2 correct:" })}</span> {t("guess-2-pts", { defaultValue: "50 pts + time bonus (max 25)" })}
+                            </p>
+                            <p className="text-xs text-site-text-muted">
+                                <span className="font-medium text-site-text">{t("failed-label", { defaultValue: "Failed:" })}</span> {t("failed-pts", { defaultValue: "0 pts" })}
+                            </p>
+                        </div>
+                    </PuzzleSection>
+                    <Button type="button" variant="accent" size="lg" className="w-full" onClick={startReading}>
+                        <Eye aria-hidden />
+                        {t("start-puzzle", { defaultValue: "Start Puzzle" })}
+                    </Button>
+                    <PuzzleFootnote>{t("timer-starts", { defaultValue: "Timer starts when you tap this button." })}</PuzzleFootnote>
+                </motion.div>
+            )}
 
-            {/* Back link */}
-            <Link
-                to="/daily"
-                className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
-            >
-                <ArrowLeft className="w-4 h-4" />
-                {t("back-to-daily", { defaultValue: "Back to Daily Puzzles" })}
-            </Link>
-
-            {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-site-text mb-1 flex items-center justify-center gap-2">
-                    <Search className="w-8 h-8 text-red-400" />
-                    Alibi
-                </h1>
-                <p className="text-site-text-muted text-sm">
-                    {isToday ? t("daily-puzzle", { defaultValue: "Daily puzzle" }) : t("past-puzzle", { defaultValue: "Past puzzle" })} · {dateKey} · #{puzzleNumber}
-                </p>
-            </div>
-
-            {/* Timer & guess counter (visible during reading and result) */}
             {phase !== 'rules' && (
-                <div className="flex justify-center items-center gap-6 mb-6">
-                    <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-site-text-muted" />
-                        <span className="text-site-text font-mono font-semibold">{formatTime(elapsedSeconds)}</span>
+                <div className="flex flex-col gap-3">
+                    {/* Timer & guess counter */}
+                    <div className="flex items-center justify-center gap-6">
+                        <div className="flex items-center gap-2">
+                            <Clock className="size-4 text-site-text-muted" aria-hidden />
+                            <span className="font-mono font-semibold text-site-text">{formatTime(elapsedSeconds)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-site-text-muted">{t("guesses-label", { defaultValue: "Guesses" })}</span>
+                            <span className="font-mono font-semibold text-site-text">{guesses.length}/2</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-site-text-muted text-sm">{t("guesses-label", { defaultValue: "Guesses" })}</span>
-                        <span className="text-site-text font-mono font-semibold">{guesses.length}/2</span>
+
+                    {/* Crime Scenario */}
+                    <motion.section
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="glass-pane flex flex-col gap-3 rounded-site px-4 py-4"
+                    >
+                        <h2 className="site-section-label flex items-center gap-2">
+                            <AlertTriangle className="size-4 shrink-0 text-site-danger" aria-hidden />
+                            {t("crime-report", { defaultValue: "Crime Report" })}
+                        </h2>
+                        <p className="text-sm leading-relaxed text-site-text">{puzzle.scenario}</p>
+                    </motion.section>
+
+                    {/* Suspect Cards */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {puzzle.suspects.map((suspect, i) => {
+                            const cleared = isCleared(suspect.name);
+                            const accused = isAccused(suspect.name);
+                            const clickable = phase === 'reading' && !isGameOver && !guesses.includes(suspect.name);
+
+                            return (
+                                <motion.button
+                                    key={suspect.name}
+                                    type="button"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.06 }}
+                                    onClick={() => clickable && handleAccuse(suspect.name)}
+                                    disabled={!clickable}
+                                    className={`glass-fill relative flex flex-col gap-2 rounded-site border px-4 py-3 text-left transition-colors duration-site-fast disabled:cursor-default ${
+                                        cleared
+                                            ? 'border-site-border opacity-60'
+                                            : accused
+                                              ? 'border-site-danger/50 bg-site-danger/10'
+                                              : clickable
+                                                ? 'glass-interactive cursor-pointer border-transparent'
+                                                : 'border-transparent'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="flex min-w-0 items-center gap-2">
+                                            <span aria-hidden className="text-2xl">{suspect.emoji}</span>
+                                            <span className="truncate font-semibold text-site-text">{suspect.name}</span>
+                                        </span>
+                                        {cleared && (
+                                            <Badge variant="success" size="sm">
+                                                {t("cleared", { defaultValue: "Cleared" })}
+                                            </Badge>
+                                        )}
+                                        {accused && (
+                                            <Badge variant="danger" size="sm">
+                                                {t("guilty", { defaultValue: "Guilty" })}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <p className="text-sm leading-relaxed text-site-text-muted">
+                                        &ldquo;{suspect.alibi}&rdquo;
+                                    </p>
+                                </motion.button>
+                            );
+                        })}
                     </div>
+
+                    {phase === 'reading' && !isGameOver && guesses.length === 0 && (
+                        <p className="text-center text-sm text-site-text-muted">
+                            {t("tap-to-accuse-hint", { defaultValue: "Tap a suspect to accuse them." })}
+                        </p>
+                    )}
+                    {phase === 'reading' && !isGameOver && guesses.length === 1 && (
+                        <p role="status" className="text-center text-sm text-site-text-muted">
+                            {t("wrong-guess-hint", { defaultValue: "Wrong — that suspect has been cleared. You have 1 guess left." })}
+                        </p>
+                    )}
                 </div>
-            )}
-
-            {/* Crime Scenario */}
-            <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-5 rounded-2xl bg-site-surface border border-site-border mb-6"
-            >
-                <div className="flex items-center gap-2 mb-3">
-                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
-                    <h2 className="text-sm font-semibold text-site-text uppercase tracking-wide">{t("crime-report", { defaultValue: "Crime Report" })}</h2>
-                </div>
-                <p className="text-site-text text-sm leading-relaxed">{puzzle.scenario}</p>
-            </motion.div>
-
-            {/* Suspect Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                {puzzle.suspects.map((suspect, i) => {
-                    const cleared = isCleared(suspect.name);
-                    const accused = isAccused(suspect.name);
-                    const clickable = phase === 'reading' && !isGameOver && !guesses.includes(suspect.name);
-
-                    return (
-                        <motion.button
-                            key={suspect.name}
-                            type="button"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.06 }}
-                            onClick={() => clickable && handleAccuse(suspect.name)}
-                            disabled={!clickable}
-                            className={`
-                                relative p-4 rounded-2xl border text-left transition-colors
-                                ${cleared
-                                    ? 'bg-site-bg opacity-50 border-site-border cursor-default'
-                                    : accused
-                                        ? 'bg-red-500/10 border-red-500/50 cursor-default'
-                                        : clickable
-                                            ? 'bg-site-surface border-site-border hover:border-red-500/50 hover:bg-red-500/5 cursor-pointer'
-                                            : 'bg-site-surface border-site-border cursor-default'
-                                }
-                            `}
-                        >
-                            {/* Cleared / Guilty badge */}
-                            {cleared && (
-                                <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium">
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    {t("cleared", { defaultValue: "Cleared" })}
-                                </div>
-                            )}
-                            {accused && (
-                                <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs font-medium">
-                                    <XCircle className="w-3 h-3" />
-                                    {t("guilty", { defaultValue: "Guilty" })}
-                                </div>
-                            )}
-
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-2xl">{suspect.emoji}</span>
-                                <span className="font-semibold text-site-text">{suspect.name}</span>
-                            </div>
-                            <p className="text-site-text-muted text-sm leading-relaxed">
-                                &ldquo;{suspect.alibi}&rdquo;
-                            </p>
-                        </motion.button>
-                    );
-                })}
-            </div>
-
-            {/* Tap to accuse hint (reading phase, no guesses yet) */}
-            {phase === 'reading' && !isGameOver && guesses.length === 0 && (
-                <p className="text-center text-site-text-muted text-sm">
-                    {t("tap-to-accuse-hint", { defaultValue: "Tap a suspect to accuse them." })}
-                </p>
-            )}
-
-            {/* Wrong guess hint */}
-            {phase === 'reading' && !isGameOver && guesses.length === 1 && (
-                <p className="text-center text-site-text-muted text-sm">
-                    {t("wrong-guess-hint", { defaultValue: "Wrong — that suspect has been cleared. You have 1 guess left." })}
-                </p>
             )}
 
             {/* Result screen */}
@@ -408,125 +346,53 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="mt-6 space-y-4"
                     >
-                        {/* Outcome banner */}
-                        <div
-                            className={`p-6 rounded-2xl text-center ${
-                                solved
-                                    ? 'bg-site-surface border border-emerald-500/30'
-                                    : 'bg-site-surface border border-red-500/30'
-                            }`}
-                        >
-                            {solved ? (
-                                <>
-                                    <div className="text-2xl font-bold text-emerald-400 mb-1">{t("case-closed", { defaultValue: "Case Closed!" })}</div>
-                                    <p className="text-site-text-muted text-sm">
-                                        {t("found-liar", { defaultValue: "You found the liar in {{count}} guess{{suffix}}.", count: guesses.length, suffix: guesses.length !== 1 ? 'es' : '' })}
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="text-2xl font-bold text-red-400 mb-1">{t("cold-case", { defaultValue: "Cold Case" })}</div>
-                                    <p className="text-site-text-muted text-sm">
-                                        {t("guilty-was", { defaultValue: "The guilty suspect was" })} <span className="text-site-text font-medium">{puzzle._solution.guiltyName}</span>.
-                                    </p>
-                                </>
-                            )}
-                        </div>
+                        <PuzzleResultStack>
+                            <PuzzleResultCard
+                                tone={solved ? 'success' : 'danger'}
+                                title={solved ? t("case-closed", { defaultValue: "Case Closed!" }) : t("cold-case", { defaultValue: "Cold Case" })}
+                                description={
+                                    solved ? (
+                                        t("found-liar", { defaultValue: "You found the liar in {{count}} guess{{suffix}}.", count: guesses.length, suffix: guesses.length !== 1 ? 'es' : '' })
+                                    ) : (
+                                        <>
+                                            {t("guilty-was", { defaultValue: "The guilty suspect was" })} <span className="font-medium text-site-text">{puzzle._solution.guiltyName}</span>.
+                                        </>
+                                    )
+                                }
+                                stats={[
+                                    { key: 'points', icon: <Trophy />, value: score, label: t("points", { defaultValue: "points" }), tone: 'warning' },
+                                    { key: 'time', icon: <Clock />, value: formatTime(elapsedSeconds), label: t("time", { defaultValue: "time" }) },
+                                    { key: 'guesses', icon: <Search />, value: `${guesses.length}/2`, label: t("guesses", { defaultValue: "guesses" }) },
+                                ]}
+                            />
 
-                        {/* Score display */}
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.15 }}
-                            className="p-5 rounded-2xl bg-site-surface border border-site-border text-center"
-                        >
-                            <div className="flex items-center justify-center gap-6 flex-wrap">
-                                <div className="flex flex-col items-center">
-                                    <Trophy className="w-6 h-6 text-amber-400 mb-1" />
-                                    <span className="text-2xl font-bold text-amber-400">{score}</span>
-                                    <span className="text-site-text-muted text-xs">{t("points", { defaultValue: "points" })}</span>
-                                </div>
-                                <div className="flex flex-col items-center">
-                                    <Clock className="w-6 h-6 text-site-text-muted mb-1" />
-                                    <span className="text-2xl font-bold text-site-text">{formatTime(elapsedSeconds)}</span>
-                                    <span className="text-site-text-muted text-xs">{t("time", { defaultValue: "time" })}</span>
-                                </div>
-                                <div className="flex flex-col items-center">
-                                    <Search className="w-6 h-6 text-site-text-muted mb-1" />
-                                    <span className="text-2xl font-bold text-site-text">{guesses.length}/2</span>
-                                    <span className="text-site-text-muted text-xs">{t("guesses", { defaultValue: "guesses" })}</span>
-                                </div>
-                            </div>
-                        </motion.div>
+                            <PuzzleSection icon={<AlertTriangle />} title={t("the-contradiction", { defaultValue: "The Contradiction" })}>
+                                <p className="text-sm leading-relaxed text-site-text">
+                                    {puzzle._solution.contradiction.explanation}
+                                </p>
+                                <ul className="flex flex-col gap-2">
+                                    {puzzle._solution.contradiction.highlights.map((highlight, idx) => (
+                                        <li
+                                            key={idx}
+                                            className={`rounded-site-sm border px-3 py-2 text-sm text-site-text ${
+                                                highlight.source === 'scenario' ? TONE_TINT.warning : TONE_TINT.danger
+                                            }`}
+                                        >
+                                            <span className="mr-2 text-xs font-medium text-site-text-muted">
+                                                {highlight.source === 'scenario' ? t("scenario-label", { defaultValue: "SCENARIO:" }) : `${highlight.suspectName}:`}
+                                            </span>
+                                            &ldquo;{highlight.text}&rdquo;
+                                        </li>
+                                    ))}
+                                </ul>
+                            </PuzzleSection>
 
-                        {/* Contradiction explanation */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="p-5 rounded-2xl bg-site-surface border border-site-border"
-                        >
-                            <h3 className="text-sm font-semibold text-site-text uppercase tracking-wide mb-3 flex items-center gap-2">
-                                <AlertTriangle className="w-4 h-4 text-amber-400" />
-                                {t("the-contradiction", { defaultValue: "The Contradiction" })}
-                            </h3>
-                            <p className="text-site-text text-sm leading-relaxed mb-4">
-                                {puzzle._solution.contradiction.explanation}
-                            </p>
-                            <div className="space-y-2">
-                                {puzzle._solution.contradiction.highlights.map((highlight, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`px-3 py-2 rounded-lg text-sm ${
-                                            highlight.source === 'scenario'
-                                                ? 'bg-amber-500/10 border border-amber-500/20 text-amber-300'
-                                                : 'bg-red-500/10 border border-red-500/20 text-red-300'
-                                        }`}
-                                    >
-                                        {highlight.source === 'scenario' ? (
-                                            <span className="text-xs text-site-text-muted mr-2 font-medium">{t("scenario-label", { defaultValue: "SCENARIO:" })}</span>
-                                        ) : (
-                                            <span className="text-xs text-site-text-muted mr-2 font-medium">{highlight.suspectName}:</span>
-                                        )}
-                                        &ldquo;{highlight.text}&rdquo;
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
-
-                        {/* Actions */}
-                        <div className="flex justify-center gap-3 flex-wrap">
-                            <motion.button
-                                type="button"
-                                onClick={handleShare}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.45 }}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors"
-                            >
-                                <Share2 className="w-4 h-4" />
-                                {copied ? t("copied", { defaultValue: "Copied!" }) : t("share-result", { defaultValue: "Share Result" })}
-                            </motion.button>
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.5 }}
-                            >
-                                <Link
-                                    to="/daily"
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors"
-                                >
-                                    <ArrowLeft className="w-4 h-4" />
-                                    {t("all-puzzles", { defaultValue: "All Puzzles" })}
-                                </Link>
-                            </motion.div>
-                        </div>
-
-                        <p className="text-site-text-muted text-xs text-center">
-                            {t("new-case-tomorrow", { defaultValue: "A new case unlocks tomorrow — same for everyone worldwide." })}
-                        </p>
+                            <PuzzleShareRow shareText={shareText} />
+                            <PuzzleFootnote>
+                                {t("new-case-tomorrow", { defaultValue: "A new case unlocks tomorrow — same for everyone worldwide." })}
+                            </PuzzleFootnote>
+                        </PuzzleResultStack>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -550,13 +416,13 @@ export function AlibiGame() {
     const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
 
     return (
-        <div className="max-w-2xl mx-auto px-4 py-8 relative">
+        <PuzzlePage>
             <AlibiGameLoader key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
             <PastPuzzlesSection
                 gameMode="alibi"
                 selectedDateKey={selectedDateKey}
                 onSelectDate={setSelectedDateKey}
             />
-        </div>
+        </PuzzlePage>
     );
 }

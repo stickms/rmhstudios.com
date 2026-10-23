@@ -361,7 +361,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="rounded-lg bg-(--app-danger-dim) border border-(--app-danger)/40 px-4 py-2 text-center text-sm text-(--app-danger)"
+            className="rounded-(--app-radius-sm) bg-(--app-danger-dim) border border-(--app-danger)/40 px-4 py-2 text-center text-sm text-(--app-danger)"
           >
             {errorMsg}
           </motion.div>
@@ -386,7 +386,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-(--app-accent) bg-(--app-accent)/10 text-5xl font-extrabold text-(--app-accent)"
+              className="flex h-24 w-24 items-center justify-center rounded-(--app-radius-lg) border-4 border-(--app-accent) bg-(--app-accent)/10 text-5xl font-extrabold text-(--app-accent)"
             >
               {letter}
             </motion.div>

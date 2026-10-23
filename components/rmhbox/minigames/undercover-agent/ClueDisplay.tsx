@@ -40,11 +40,11 @@ export default function ClueDisplay({
   onEndTurn,
 }: ClueDisplayProps) {
   const { t } = useTranslation('c-rmhbox');
-  const teamTextColor = teamId === 'red' ? 'text-red-400' : 'text-blue-400';
-  const teamBgColor = teamId === 'red' ? 'bg-red-400/20' : 'bg-blue-400/20';
+  const teamTextColor = teamId === 'red' ? 'text-(--app-danger)' : 'text-(--app-info)';
+  const teamBgColor = teamId === 'red' ? 'bg-(--app-danger)/20' : 'bg-(--app-info)/20';
   if (isWaiting && !clue) {
     return (
-      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-xl border border-(--app-border) bg-(--app-surface) p-4 text-center">
+      <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4 text-center">
         <MessageSquare className="h-6 w-6 text-(--app-text-muted) animate-pulse" />
         <p className="text-sm text-(--app-text-muted)">
           {t('waiting-for-label', { defaultValue: 'Waiting for' })}{' '}
@@ -64,7 +64,7 @@ export default function ClueDisplay({
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-xl border border-(--app-border) bg-(--app-surface) p-4"
+      className="mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4"
     >
       {/* Clue word + number */}
       <div className="flex items-baseline gap-3">
@@ -88,7 +88,7 @@ export default function ClueDisplay({
       {onEndTurn && (
         <button
           onClick={onEndTurn}
-          className="mt-1 rounded-lg border border-(--app-border) px-4 py-1.5 text-sm font-medium text-(--app-text-muted) transition-colors hover:border-(--app-accent) hover:text-(--app-accent)"
+          className="mt-1 rounded-(--app-radius-sm) border border-(--app-border) px-4 py-1.5 text-sm font-medium text-(--app-text-muted) transition-colors hover:border-(--app-accent) hover:text-(--app-accent)"
         >
           {t('end-turn', { defaultValue: 'End Turn' })}
         </button>

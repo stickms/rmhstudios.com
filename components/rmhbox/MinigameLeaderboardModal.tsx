@@ -65,12 +65,12 @@ export default function MinigameLeaderboardModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-(--app-scrim)"
       onClick={onClose}
       data-testid="minigame-leaderboard-modal"
     >
       <div
-        className="w-full max-w-md mx-4 rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl"
+        className="w-full max-w-md mx-4 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-5 shadow-(--app-shadow)"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -81,7 +81,7 @@ export default function MinigameLeaderboardModal({
           </h3>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-(--app-text-muted) hover:text-(--app-text) transition-colors"
+            className="rounded-(--app-radius-sm) p-2 text-(--app-text-muted) hover:text-(--app-text) transition-colors"
             aria-label={t("close-leaderboard", { defaultValue: "Close leaderboard" })}
           >
             <X className="h-5 w-5" />
@@ -94,7 +94,7 @@ export default function MinigameLeaderboardModal({
             <button
               key={period}
               onClick={() => setActivePeriod(period)}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 rounded-(--app-radius-sm) text-sm font-medium transition-colors ${
                 activePeriod === period
                   ? 'bg-(--app-accent) text-(--app-accent-fg)'
                   : 'bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)'

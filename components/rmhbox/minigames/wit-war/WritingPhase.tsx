@@ -109,7 +109,7 @@ export default function WritingPhase({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className="rounded-xl border border-(--app-border) bg-(--app-surface) p-4"
+              className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4"
             >
               <div className="text-sm font-medium text-(--app-text-muted) mb-2">
                 {t("prompt-number", { defaultValue: "Prompt {{number}}", number: idx + 1 })}
@@ -126,21 +126,21 @@ export default function WritingPhase({
                   disabled={hasSubmitted || isSent}
                   placeholder={t("type-your-answer", { defaultValue: "Type your answer..." })}
                   rows={2}
-                  className="w-full rounded-lg border border-(--app-border) bg-(--app-bg) px-3 py-2 text-(--app-text) placeholder:text-(--app-text-muted)/50 focus:outline-none focus:ring-2 focus:ring-(--app-accent) disabled:opacity-50 resize-none"
+                  className="w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-2 text-(--app-text) placeholder:text-(--app-text-muted)/50 focus:outline-none focus:ring-2 focus:ring-(--app-accent) disabled:opacity-50 resize-none"
                 />
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-xs text-(--app-text-muted)">
                     {value.length}/{WW_MAX_ANSWER_LENGTH}
                   </span>
                   {isSent ? (
-                    <span className="flex items-center gap-1 text-xs text-green-500">
+                    <span className="flex items-center gap-1 text-xs text-(--app-success)">
                       <Check className="h-3 w-3" /> {t("sent", { defaultValue: "Sent" })}
                     </span>
                   ) : (
                     <button
                       onClick={() => handleSubmitOne(prompt.promptIndex)}
                       disabled={!value.trim() || hasSubmitted}
-                      className="flex items-center gap-1 rounded-md bg-(--app-accent) px-3 py-1 text-xs font-medium text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
+                      className="flex items-center gap-1 rounded-(--app-radius-sm) bg-(--app-accent) px-3 py-1 text-xs font-medium text-(--app-accent-fg) disabled:opacity-40 hover:opacity-90 transition-opacity"
                     >
                       <Send className="h-3 w-3" /> {t("submit", { defaultValue: "Submit" })}
                     </button>
@@ -159,7 +159,7 @@ export default function WritingPhase({
           transition={{ delay: 0.3 }}
           onClick={handleSubmitAll}
           disabled={!allFilled}
-          className="w-full rounded-xl bg-(--app-accent) py-3 text-base font-bold text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
+          className="w-full rounded-(--app-radius) bg-(--app-accent) py-3 text-base font-bold text-(--app-accent-fg) disabled:opacity-40 hover:opacity-90 transition-opacity"
         >
           {allFilled ? t("lock-in-all-answers", { defaultValue: "Lock In All Answers" }) : t("fill-in-all-prompts", { defaultValue: "Fill in all prompts to submit" })}
         </motion.button>

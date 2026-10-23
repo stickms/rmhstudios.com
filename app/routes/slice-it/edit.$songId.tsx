@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * The Slice It chart editor.
@@ -36,18 +37,25 @@ export const Route = createFileRoute('/slice-it/edit/$songId')({
  * an inspector rail, and drawing that now makes the arrival a fill-in.
  */
 function EditorSkeleton() {
+  const { t } = useTranslation('r-slice-it');
   return (
-    <div className="flex min-h-dvh flex-col gap-3 bg-slice-bg p-4" role="status">
-      <span className="sr-only">Loading the chart editor</span>
-      <div className="slice-skeleton h-12 w-full shrink-0 rounded-2xl" />
+    <div
+      className="flex min-h-dvh flex-col gap-3 bg-slice-bg pt-[calc(1rem+var(--safe-top))] pr-[calc(1rem+var(--safe-right))] pb-[calc(1rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))]"
+      role="status"
+    >
+      <span className="sr-only">
+        {t('editor-loading', { defaultValue: 'Opening the chart…' })}
+      </span>
+      {/* `.slice-skeleton` carries its own radius; a `rounded-*` utility here would be dead. */}
+      <div className="slice-skeleton h-12 w-full shrink-0" />
       <div className="flex min-h-0 flex-1 gap-3">
-        <div className="slice-skeleton min-h-64 flex-1 rounded-2xl" />
+        <div className="slice-skeleton min-h-64 flex-1" />
         <div className="hidden w-72 shrink-0 flex-col gap-3 lg:flex">
-          <div className="slice-skeleton h-40 w-full rounded-2xl" />
-          <div className="slice-skeleton min-h-32 flex-1 rounded-2xl" />
+          <div className="slice-skeleton h-40 w-full" />
+          <div className="slice-skeleton min-h-32 flex-1" />
         </div>
       </div>
-      <div className="slice-skeleton h-24 w-full shrink-0 rounded-2xl" />
+      <div className="slice-skeleton h-24 w-full shrink-0" />
     </div>
   );
 }

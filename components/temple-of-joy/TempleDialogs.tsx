@@ -101,7 +101,7 @@ function VigilDialog() {
         <VigilLedger />
 
         {vigil.sinners > 0 && (
-          <p className="toj-dialog-text" style={{ marginTop: '0.9rem' }}>
+          <p className="toj-dialog-text" style={{ marginTop: 'var(--toj-flow)' }}>
             {t('vigil-sinner-note', {
               defaultValue:
                 'Everything the Sinners are holding comes back, multiplied, the moment you strike them.',
@@ -273,7 +273,7 @@ function MannaDialog() {
           </li>
         </ul>
 
-        <div style={{ marginTop: '0.8rem' }}>
+        <div style={{ marginTop: 'var(--toj-flow)' }}>
           {manna.rows
             .filter((row) => row.owned > 0 || row.level > 0)
             .map((row) => {

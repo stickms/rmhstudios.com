@@ -52,7 +52,7 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-xl border border-(--app-border) bg-(--app-surface) p-5">
+    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-5">
       {/* Timer */}
       {timeRemaining > 0 && (
         <div className="flex items-center gap-2 text-sm text-(--app-text-muted)">
@@ -75,15 +75,15 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
         onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
         placeholder={t("clue-placeholder", { defaultValue: "Enter a one-word clue..." })}
         maxLength={30}
-        className="w-full rounded-lg border border-(--app-border) bg-(--app-bg) px-4 py-2 text-sm text-(--app-text) placeholder:text-(--app-text-muted) focus:outline-none focus:ring-2 focus:ring-(--app-accent)"
+        className="w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-4 py-2 text-sm text-(--app-text) placeholder:text-(--app-text-muted) focus:outline-none focus:ring-2 focus:ring-(--app-accent)"
       />
 
       {/* Warnings */}
       {hasSpaces && (
-        <p className="text-xs text-yellow-400">{t("clue-no-spaces", { defaultValue: "Clue must be a single word (no spaces)" })}</p>
+        <p className="text-xs text-(--app-warning)">{t("clue-no-spaces", { defaultValue: "Clue must be a single word (no spaces)" })}</p>
       )}
       {isGridWord && (
-        <p className="text-xs text-yellow-400">{t("clue-on-grid", { defaultValue: "This word is on the grid!" })}</p>
+        <p className="text-xs text-(--app-warning)">{t("clue-on-grid", { defaultValue: "This word is on the grid!" })}</p>
       )}
 
       {/* Number selector */}
@@ -95,7 +95,7 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
             <button
               key={String(n)}
               onClick={() => setClueNumber(val as number | 'unlimited')}
-              className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors
+              className={`rounded-(--app-radius-sm) border px-3 py-1.5 text-sm font-medium transition-colors
                 ${
                   isSelected
                     ? 'border-(--app-accent) bg-(--app-accent)/20 text-(--app-accent)'
@@ -112,7 +112,7 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
       <button
         onClick={handleSubmit}
         disabled={!isValid}
-        className="flex items-center gap-2 rounded-lg bg-(--app-accent) px-6 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+        className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent) px-6 py-2 text-sm font-medium text-(--app-accent-fg) transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         <Send className="h-4 w-4" /> {t("submit-clue", { defaultValue: "Submit Clue" })}
       </button>

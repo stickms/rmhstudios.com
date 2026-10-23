@@ -56,11 +56,11 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
   };
 
   return (
-    <div className="altair-parchment flex flex-col min-h-[calc(100vh-56px)] px-4 py-6 max-w-2xl mx-auto">
+    <div className="altair-parchment flex flex-col flex-1 px-4 pt-4 pb-12 max-w-2xl w-full mx-auto">
       {/* Coin balance */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-(--altair-text)">{t("meta-shop-title", { defaultValue: "Meta Shop" })}</h2>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-(--altair-surface) border border-(--altair-warning)/30">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-(--altair-radius-lg) bg-(--altair-surface) border border-(--altair-warning)/30">
           <Coins size={18} className="text-(--altair-warning)" />
           <span className="text-lg font-bold text-(--altair-warning)">{coins}</span>
         </div>
@@ -74,7 +74,7 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
         if (categoryUpgrades.length === 0) return null;
         return (
           <div key={category} className="mb-6">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-(--altair-text-dim) mb-3">{category}</h3>
+            <h3 className="text-sm font-semibold text-(--altair-text) mb-3">{category}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {categoryUpgrades.map((def) => {
                 const currentLevel = upgrades[def.id] || 0;
@@ -85,7 +85,7 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
                 return (
                   <div
                     key={def.id}
-                    className={`p-4 rounded-xl border transition-colors ${
+                    className={`p-4 rounded-(--altair-radius-lg) border transition-colors ${
                       isMaxed
                         ? 'border-(--altair-success)/30 bg-(--altair-success-dim)'
                         : 'border-(--altair-border) bg-(--altair-surface) hover:bg-(--altair-surface-hover)'
@@ -115,9 +115,9 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
                       <button
                         onClick={() => handlePurchase(def.id, def.name)}
                         disabled={!canAfford}
-                        className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${
+                        className={`w-full py-2 rounded-(--altair-radius) text-sm font-semibold transition-colors ${
                           canAfford
-                            ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-white'
+                            ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-(--altair-accent-fg)'
                             : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'
                         }`}
                       >
@@ -136,7 +136,7 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
       <button
         onClick={onBack}
         data-altair-sfx="menu_back"
-        className="mt-auto py-3 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
+        className="mt-auto py-3 rounded-(--altair-radius-lg) font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
       >
         {t("back", { defaultValue: "Back" })}
       </button>

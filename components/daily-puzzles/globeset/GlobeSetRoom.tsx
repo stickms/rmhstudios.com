@@ -32,6 +32,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { X, Compass } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { RefObject } from 'react';
 import type { Card } from '@/lib/globeset/cards';
 import type { Quat } from '@/lib/device-attitude';
@@ -144,7 +145,7 @@ export function GlobeSetRoom(props: GlobeSetRoomProps) {
         aria-hidden
       />
 
-      <div className="absolute inset-0 flex flex-col justify-between p-4">
+      <div className="app-hud flex flex-col justify-between p-4">
         <div className="glass-overlay flex items-center justify-between gap-4 rounded-site px-4 py-2">
           <dl className="flex items-center gap-5 text-site-text">
             <Figure label={t('globeset-stat-time', { defaultValue: 'Time' })}>
@@ -155,14 +156,10 @@ export function GlobeSetRoom(props: GlobeSetRoomProps) {
             </Figure>
             <Figure label={t('globeset-stat-sets', { defaultValue: 'Sets' })}>{props.sets}</Figure>
           </dl>
-          <button
-            type="button"
-            onClick={props.onExit}
-            className="inline-flex items-center gap-1.5 rounded-full bg-site-surface px-3 py-1.5 text-sm font-medium text-site-text"
-          >
-            <X className="h-4 w-4" aria-hidden />
+          <Button type="button" variant="secondary" size="sm" onClick={props.onExit}>
+            <X aria-hidden />
             {t('globeset-ar-exit', { defaultValue: 'Leave' })}
-          </button>
+          </Button>
         </div>
 
         {live && (
@@ -209,7 +206,7 @@ export function GlobeSetRoom(props: GlobeSetRoomProps) {
 function Figure({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-[0.6rem] font-medium uppercase tracking-wide text-site-text-muted">
+      <dt className="text-xs font-medium text-site-text-muted">
         {label}
       </dt>
       <dd className="font-mono text-base font-bold tabular-nums">{children}</dd>

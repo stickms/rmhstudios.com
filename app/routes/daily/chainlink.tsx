@@ -12,7 +12,7 @@ import { ChainlinkGame } from '@/components/daily-puzzles/ChainlinkGame'
 function ChainlinkPage() {
     return (
         <GameErrorBoundary gameName="Chainlink">
-            <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
+            <Suspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
                 <ChainlinkGame />
             </Suspense>
         </GameErrorBoundary>

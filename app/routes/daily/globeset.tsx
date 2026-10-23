@@ -15,7 +15,7 @@ const PATH = '/daily/globeset';
 function GlobeSetPage() {
   return (
     <GameErrorBoundary gameName="GlobeSet">
-      <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
+      <Suspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
         <GlobeSetGame />
       </Suspense>
     </GameErrorBoundary>

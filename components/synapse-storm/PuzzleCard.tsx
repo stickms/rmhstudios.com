@@ -311,7 +311,7 @@ const LanguageRenderer: React.FC<{
                     spellCheck={false}
                 />
                 <button type="submit" className="submit-btn">
-                    ✓
+                    <span aria-hidden="true">✓</span>
                 </button>
             </form>
         </div>

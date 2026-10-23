@@ -333,7 +333,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
                   <button
                     key={movie.title}
                     onClick={() => handleSelectMovie(movie.title)}
-                    className="p-4 rounded-xl bg-(--app-surface) border border-(--app-border) hover:border-(--app-accent) hover:bg-(--app-border) transition-colors text-left"
+                    className="p-4 rounded-(--app-radius) bg-(--app-surface) border border-(--app-border) hover:border-(--app-accent) hover:bg-(--app-border) transition-colors text-left"
                   >
                     <div className="font-semibold text-(--app-text)">{movie.title} ({movie.year})</div>
                     <div className="text-xs text-(--app-text-muted) mt-1">
@@ -377,7 +377,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
             <>
               {/* Spectators see the movie title as a privileged info banner */}
               {isSpectator && movieTitle && (
-                <div className="mx-auto mb-3 flex w-full max-w-md items-center gap-2 rounded-lg border border-(--app-accent)/30 bg-(--app-accent)/10 px-4 py-2 text-center">
+                <div className="mx-auto mb-3 flex w-full max-w-md items-center gap-2 rounded-(--app-radius-sm) border border-(--app-accent)/30 bg-(--app-accent)/10 px-4 py-2 text-center">
                   <span className="text-xs font-semibold uppercase tracking-wider text-(--app-accent)">🎬 {t("answer-label", { defaultValue: "Answer:" })}</span>
                   <span className="font-bold text-(--app-text)">{movieTitle}</span>
                 </div>

@@ -12,8 +12,8 @@ interface GuessHistoryProps {
 }
 
 const RESULT_CONFIG = {
-  correct: { icon: '✅', className: 'text-green-400' },
-  close:   { icon: '🔥', className: 'text-orange-400' },
+  correct: { icon: '✅', className: 'text-(--app-success)' },
+  close:   { icon: '🔥', className: 'text-(--app-warning)' },
   wrong:   { icon: '❌', className: 'text-(--app-text-muted)' },
 } as const;
 
@@ -38,7 +38,7 @@ export default function GuessHistory({ guesses }: GuessHistoryProps) {
         return (
           <div
             key={i}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg bg-(--app-surface) text-sm ${cfg.className}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-(--app-radius-sm) bg-(--app-surface) text-sm ${cfg.className}`}
           >
             <span>{cfg.icon}</span>
             <span className="flex-1">{g.guess}</span>

@@ -20,7 +20,7 @@ export default function MobileControls({ onPause }: MobileControlsProps) {
     >
       <button
         onClick={onPause}
-        className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+        className="w-10 h-10 rounded-full bg-(--altair-hud-scrim)/40 border border-(--altair-hud-ink)/20 flex items-center justify-center text-(--altair-hud-ink)/60 hover:text-(--altair-hud-ink) transition-colors"
       >
         <Pause size={18} />
       </button>

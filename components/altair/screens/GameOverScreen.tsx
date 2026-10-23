@@ -65,8 +65,8 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center altair-overlay">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-      <div className="altair-parchment-surface relative z-10 w-full max-w-md mx-4 bg-(--altair-surface) border border-(--altair-border) rounded-2xl p-6 altair-modal">
+      <div className="absolute inset-0 bg-(--altair-hud-scrim)/80" />
+      <div className="altair-parchment-surface relative z-10 w-full max-w-md mx-4 bg-(--altair-surface) border border-(--altair-border) rounded-(--altair-radius-lg) p-6 altair-modal">
         {/* Header */}
         <div className="text-center mb-6">
           {isVictory ? (
@@ -86,25 +86,25 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
 
         {/* Run stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="text-center p-2 rounded-lg bg-(--altair-bg-subtle)">
+          <div className="text-center p-2 rounded-(--altair-radius) bg-(--altair-bg-subtle)">
             <Clock size={16} className="mx-auto mb-1 text-(--altair-text-muted)" />
             <div className="text-lg font-bold text-(--altair-text)">{formatTime(timeSurvived)}</div>
-            <div className="text-[10px] text-(--altair-text-dim)">{t("stat-time", { defaultValue: "Time" })}</div>
+            <div className="text-xs text-(--altair-text-dim)">{t("stat-time", { defaultValue: "Time" })}</div>
           </div>
-          <div className="text-center p-2 rounded-lg bg-(--altair-bg-subtle)">
+          <div className="text-center p-2 rounded-(--altair-radius) bg-(--altair-bg-subtle)">
             <Crosshair size={16} className="mx-auto mb-1 text-(--altair-text-muted)" />
             <div className="text-lg font-bold text-(--altair-text)">{kills}</div>
-            <div className="text-[10px] text-(--altair-text-dim)">{t("stat-kills", { defaultValue: "Kills" })}</div>
+            <div className="text-xs text-(--altair-text-dim)">{t("stat-kills", { defaultValue: "Kills" })}</div>
           </div>
-          <div className="text-center p-2 rounded-lg bg-(--altair-bg-subtle)">
+          <div className="text-center p-2 rounded-(--altair-radius) bg-(--altair-bg-subtle)">
             <Layers size={16} className="mx-auto mb-1 text-(--altair-text-muted)" />
             <div className="text-lg font-bold text-(--altair-text)">Lv.{level}</div>
-            <div className="text-[10px] text-(--altair-text-dim)">{t("stat-level", { defaultValue: "Level" })}</div>
+            <div className="text-xs text-(--altair-text-dim)">{t("stat-level", { defaultValue: "Level" })}</div>
           </div>
         </div>
 
         {/* Coin breakdown */}
-        <div className="mb-6 p-3 rounded-lg bg-(--altair-bg-subtle) border border-(--altair-border)">
+        <div className="mb-6 p-3 rounded-(--altair-radius) bg-(--altair-bg-subtle) border border-(--altair-border)">
           <div className="flex items-center gap-2 mb-2">
             <Coins size={16} className="text-(--altair-warning)" />
             <span className="text-sm font-bold text-(--altair-text)">{t("coin-payout", { defaultValue: "Coin Payout" })}</span>
@@ -182,21 +182,21 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
           <button
             onClick={onPlayAgain}
             data-altair-sfx="ui_confirm"
-            className={`py-3 rounded-xl font-bold text-white bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors ${focusClass(0)}`}
+            className={`py-3 rounded-(--altair-radius-lg) font-bold text-(--altair-accent-fg) bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors ${focusClass(0)}`}
           >
             {t("play-again", { defaultValue: "Play Again" })}
           </button>
           <button
             onClick={onMetaShop}
             data-altair-sfx="menu_open"
-            className={`py-2.5 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface-hover) border border-(--altair-border) hover:bg-(--altair-surface-active) transition-colors ${focusClass(1)}`}
+            className={`py-2.5 rounded-(--altair-radius-lg) font-semibold text-(--altair-text) bg-(--altair-surface-hover) border border-(--altair-border) hover:bg-(--altair-surface-active) transition-colors ${focusClass(1)}`}
           >
             {t("meta-shop", { defaultValue: "Meta Shop" })}
           </button>
           <button
             onClick={onMenu}
             data-altair-sfx="menu_back"
-            className={`py-2 rounded-xl font-medium text-(--altair-text-muted) hover:text-(--altair-text) transition-colors text-sm ${focusClass(2)}`}
+            className={`py-2 rounded-(--altair-radius-lg) font-medium text-(--altair-text-muted) hover:text-(--altair-text) transition-colors text-sm ${focusClass(2)}`}
           >
             {t("main-menu", { defaultValue: "Main Menu" })}
           </button>

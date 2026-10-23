@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { m as motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Loader2, Lightbulb } from 'lucide-react';
+import { Trophy, Lightbulb } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { formatDuration } from '@/lib/globeset/game';
 
@@ -53,6 +54,8 @@ interface DailyPuzzleLeaderboardProps {
    * "show me the board but do not submit this run" (a past-date replay).
    */
   timeSeconds?: number | null;
+  /** Outer spacing; the default sits the board below a result stack. */
+  className?: string;
 }
 
 export function DailyPuzzleLeaderboard({
@@ -65,6 +68,7 @@ export function DailyPuzzleLeaderboard({
   completed,
   resultJson,
   timeSeconds,
+  className = 'mt-6',
 }: DailyPuzzleLeaderboardProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -163,18 +167,18 @@ export function DailyPuzzleLeaderboard({
 
   return (
     <AnimatePresence>
-      <motion.div
+      <motion.section
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0 }}
-        className="mt-6 p-6 rounded-2xl bg-site-surface border border-site-border"
+        className={`glass-fill flex flex-col gap-3 rounded-site px-4 py-4 ${className}`}
       >
-        <div className="flex items-center gap-2 mb-4">
-          <Trophy className="w-5 h-5 text-amber-400" />
-          <h2 className="text-lg font-semibold text-site-text">
+        <div className="flex flex-wrap items-center gap-2">
+          <Trophy className="size-5 text-site-warning" aria-hidden />
+          <h2 className="site-section-label">
             {t('todays-leaderboard', { defaultValue: "Today's Leaderboard" })}
           </h2>
-          <span className="text-site-text-muted text-xs">
+          <span className="text-xs text-site-text-muted">
             (
             {isLightsOut
               ? t('least-moves', { defaultValue: 'least moves' })
@@ -187,12 +191,12 @@ export function DailyPuzzleLeaderboard({
 
         {/* Sign-in prompt for unauthenticated users */}
         {!session.data && (
-          <div className="mb-4 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-center">
-            <p className="text-sm text-amber-300">
+          <div className="rounded-site-sm border border-site-warning/40 bg-site-warning/10 px-4 py-3 text-center">
+            <p className="text-sm text-site-text">
               <Link
                 to="/login"
                 search={{ callbackURL: undefined }}
-                className="font-semibold underline hover:text-amber-200"
+                className="font-semibold underline"
               >
                 {t('sign-in', { defaultValue: 'Sign in' })}
               </Link>{' '}
@@ -205,32 +209,33 @@ export function DailyPuzzleLeaderboard({
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-8 text-site-text-muted">
-            <Loader2 className="w-6 h-6 animate-spin" />
+          <div className="flex items-center justify-center py-6">
+            <Spinner size={24} />
           </div>
         ) : leaderboard.length === 0 ? (
-          <p className="text-site-text-muted text-sm py-4 text-center">
+          <p className="py-3 text-center text-sm text-site-text-muted">
             {t('no-scores-yet', { defaultValue: 'No scores yet.' })}{' '}
             {session.data ? t('youre-the-first', { defaultValue: "You're the first!" }) : ''}
           </p>
         ) : (
-          <div className="space-y-2">
+          <ol className="flex flex-col gap-2">
             {leaderboard.map((e) => (
-              <div
+              <li
                 key={e.rank}
-                className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-site-bg-subtle"
+                className="flex items-center justify-between gap-3 rounded-site-sm bg-site-bg-subtle px-3 py-2"
               >
-                <span className="text-site-text-muted font-mono text-sm w-6">#{e.rank}</span>
-                <span className="text-site-text font-medium flex-1 truncate">{e.displayName}</span>
-                <span className="flex items-center gap-1.5">
+                <span className="w-8 shrink-0 font-mono text-sm text-site-text-muted">#{e.rank}</span>
+                <span className="min-w-0 flex-1 truncate font-medium text-site-text">{e.displayName}</span>
+                <span className="flex items-center gap-2">
                   {(isLightsOut || isTimed) && e.hintUsed && (
                     <span title={t('used-hint', { defaultValue: 'Used hint' })}>
-                      <Lightbulb className="w-3.5 h-3.5 text-cyan-400 shrink-0" aria-hidden />
+                      <Lightbulb className="size-4 shrink-0 text-site-accent" aria-hidden />
+                      <span className="sr-only">{t('used-hint', { defaultValue: 'Used hint' })}</span>
                     </span>
                   )}
                   <span
                     className={`font-mono font-semibold ${
-                      (isLightsOut || isTimed) && e.dnf ? 'text-red-400' : 'text-amber-400'
+                      (isLightsOut || isTimed) && e.dnf ? 'text-site-danger' : 'text-site-text'
                     }`}
                   >
                     {isLightsOut
@@ -244,11 +249,11 @@ export function DailyPuzzleLeaderboard({
                         : e.score}
                   </span>
                 </span>
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         )}
-      </motion.div>
+      </motion.section>
     </AnimatePresence>
   );
 }

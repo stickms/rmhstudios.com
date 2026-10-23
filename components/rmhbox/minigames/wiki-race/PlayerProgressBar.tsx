@@ -33,7 +33,7 @@ export default function PlayerProgressBar({
         {hasFinished && (
           <Trophy
             size={12}
-            className={finishRank === 1 ? 'text-yellow-400' : 'text-(--app-text-muted)'}
+            className={finishRank === 1 ? 'text-(--app-warning)' : 'text-(--app-text-muted)'}
           />
         )}
         <span className={hasFinished ? 'font-semibold' : ''}>{name}</span>

@@ -45,9 +45,9 @@ export function IsleVisit({ code }: { code: string }) {
       className="isw-panel"
       style={{
         position: 'fixed',
-        left: 12,
-        bottom: 12,
-        width: 'min(340px, calc(100vw - 24px))',
+        left: 'calc(12px + var(--safe-left, 0px))',
+        bottom: 'calc(12px + var(--safe-bottom, 0px))',
+        width: 'min(340px, calc(100vw - 24px - var(--safe-left, 0px) - var(--safe-right, 0px)))',
         zIndex: 30,
         padding: 12,
       }}

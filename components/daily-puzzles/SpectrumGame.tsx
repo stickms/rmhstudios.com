@@ -2,14 +2,25 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
 import { m as motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Lock, Trophy, Copy, Check, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
+import { Lock, ArrowUp, ArrowDown } from 'lucide-react';
 import { generateSpectrumPuzzle, computeSpectrumScore, type SpectrumPuzzle } from '@/lib/daily-puzzles/spectrum';
 import { formatDateKey, getTodayEST, getPuzzleNumber } from '@/lib/daily-puzzles/seed';
 import { getResult, saveResult, hasCompleted } from '@/lib/daily-puzzles/persistence';
 import { generateSpectrumShare } from '@/lib/daily-puzzles/share';
 import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
+import { Button } from '@/components/ui/button';
+import {
+    PuzzlePage,
+    PuzzleHeader,
+    PuzzleNotice,
+    PuzzleSection,
+    PuzzleResultCard,
+    PuzzleResultStack,
+    PuzzleShareRow,
+    TONE_TINT,
+    type PuzzleTone,
+} from '@/components/daily-puzzles/PuzzleShell';
 import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 import { useSession } from '@/components/Providers';
@@ -28,12 +39,10 @@ function scoreLabel(score: number): string {
     return 'Off by 2+';
 }
 
-function accuracyColor(accuracy: number): string {
-    if (accuracy === 10) return 'text-emerald-400';
-    if (accuracy >= 8) return 'text-green-400';
-    if (accuracy >= 6) return 'text-yellow-400';
-    if (accuracy >= 4) return 'text-orange-400';
-    return 'text-red-400';
+function accuracyTone(accuracy: number): PuzzleTone {
+    if (accuracy >= 8) return 'success';
+    if (accuracy >= 4) return 'warning';
+    return 'danger';
 }
 
 function SpectrumGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
@@ -67,7 +76,6 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
     );
     const [locked, setLocked] = useState(false);
     const [result, setResult] = useState<ReturnType<typeof computeSpectrumScore> | null>(null);
-    const [copied, setCopied] = useState(false);
     const [showResults, setShowResults] = useState(false);
 
     // Check for existing completion on mount
@@ -132,25 +140,15 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
         setTimeout(() => setShowResults(true), 600);
     }, [locked, playerOrder, puzzle._solution, dateKey]);
 
-    const handleShare = useCallback(async () => {
-        if (!result) return;
-
-        const shareText = generateSpectrumShare(
-            puzzleNumber,
-            result.accuracy,
-            result.itemScores.map(s => s.score),
-            result.points,
-            puzzle.label,
-        );
-
-        try {
-            await navigator.clipboard.writeText(shareText);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            // Fallback: nothing we can do without clipboard
-        }
-    }, [result, puzzleNumber, puzzle.label]);
+    const shareText = result
+        ? generateSpectrumShare(
+              puzzleNumber,
+              result.accuracy,
+              result.itemScores.map(s => s.score),
+              result.points,
+              puzzle.label,
+          )
+        : '';
 
     // Build a lookup from item name to solution data
     const solutionByName = Object.fromEntries(
@@ -164,153 +162,126 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
 
     return (
         <>
-            {/* Back link */}
-            <Link
-                to="/daily"
-                className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
-            >
-                <ArrowLeft className="w-4 h-4" />
-                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
-            </Link>
+            <PuzzleHeader
+                icon="🌈"
+                title={t("spectrum-title", { defaultValue: "Spectrum" })}
+                subtitle={<>#{puzzleNumber} · {isToday ? t("today", { defaultValue: "Today" }) : dateKey}</>}
+            />
 
-            {/* Header */}
-            <div className="text-center mb-8">
-                <div className="text-3xl mb-2">🌈</div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-site-text mb-1">
-                    Spectrum
-                </h1>
-                <p className="text-site-text-muted text-sm">
-                    #{puzzleNumber} · {isToday ? t("today", { defaultValue: "Today" }) : dateKey}
-                </p>
-            </div>
+            <div className="flex flex-col gap-3">
+                {/* Spectrum label */}
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                    <PuzzleNotice tone="neutral" title={puzzle.label}>
+                        {!locked && t("arrange-items-instruction", { defaultValue: "Arrange the items in the correct order, then lock in your answer." })}
+                    </PuzzleNotice>
+                </motion.div>
 
-            {/* Spectrum label */}
-            <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-site-surface border border-site-border rounded-xl p-4 mb-6 text-center"
-            >
-                <p className="text-site-text font-medium text-sm">
-                    {puzzle.label}
-                </p>
-                {!locked && (
-                    <p className="text-site-text-muted text-xs mt-1">
-                        {t("arrange-items-instruction", { defaultValue: "Arrange the items in the correct order, then lock in your answer." })}
-                    </p>
-                )}
-            </motion.div>
+                {/* Item list */}
+                <ul className="flex flex-col gap-2">
+                    <AnimatePresence mode="popLayout">
+                        {playerOrder.map((name, index) => {
+                            const item = itemByName[name];
+                            const solution = solutionByName[name];
+                            const itemScore = result?.itemScores.find(s => s.name === name);
 
-            {/* Item list */}
-            <div className="space-y-2 mb-6">
-                <AnimatePresence mode="popLayout">
-                    {playerOrder.map((name, index) => {
-                        const item = itemByName[name];
-                        const solution = solutionByName[name];
-                        const itemScore = result?.itemScores.find(s => s.name === name);
+                            return (
+                                <motion.li
+                                    key={name}
+                                    layout
+                                    initial={{ opacity: 0, x: -12 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                                    className={`glass-fill flex items-center gap-3 rounded-site border px-3 py-2 transition-colors duration-site-fast ${
+                                        showResults && itemScore
+                                            ? itemScore.score === 2
+                                                ? TONE_TINT.success
+                                                : itemScore.score === 1
+                                                  ? TONE_TINT.warning
+                                                  : TONE_TINT.danger
+                                            : 'border-transparent'
+                                    }`}
+                                >
+                                    <span className="flex size-8 shrink-0 items-center justify-center rounded-site-sm bg-site-bg-subtle text-sm font-bold text-site-text-muted">
+                                        {index + 1}
+                                    </span>
 
-                        return (
-                            <motion.div
-                                key={name}
-                                layout
-                                initial={{ opacity: 0, x: -12 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                                className={`flex items-center gap-3 bg-site-surface border rounded-xl p-3 transition-colors ${
-                                    showResults && itemScore
-                                        ? itemScore.score === 2
-                                            ? 'border-emerald-500/50 bg-emerald-500/5'
-                                            : itemScore.score === 1
-                                                ? 'border-orange-500/50 bg-orange-500/5'
-                                                : 'border-red-500/50 bg-red-500/5'
-                                        : 'border-site-border'
-                                }`}
-                            >
-                                {/* Rank number */}
-                                <div className="w-7 h-7 rounded-lg bg-site-bg flex items-center justify-center text-sm font-bold text-site-text-muted shrink-0">
-                                    {index + 1}
-                                </div>
-
-                                {/* Grip icon (visual only) */}
-                                <GripVertical className="w-4 h-4 text-site-text-muted/40 shrink-0" />
-
-                                {/* Item content */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-lg">{item?.emoji}</span>
-                                        <span className="text-sm font-medium text-site-text truncate">
-                                            {name}
-                                        </span>
-                                    </div>
-                                    {showResults && solution && (
-                                        <motion.div
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: 'auto' }}
-                                            transition={{ delay: 0.3 }}
-                                            className="mt-1 flex items-center gap-2 text-xs"
-                                        >
-                                            <span className="text-site-text-muted">
-                                                {t("actual-rank", { defaultValue: "Actual: #{{rank}} — {{value}}", rank: solution.trueRank, value: solution.displayValue })}
-                                            </span>
-                                            {itemScore && (
-                                                <span className="font-medium">
-                                                    {scoreEmoji(itemScore.score)} {scoreLabel(itemScore.score)}
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span aria-hidden className="text-lg">{item?.emoji}</span>
+                                            <span className="truncate text-sm font-medium text-site-text">{name}</span>
+                                        </div>
+                                        {showResults && solution && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                transition={{ delay: 0.3 }}
+                                                className="mt-1 flex flex-wrap items-center gap-2 text-xs"
+                                            >
+                                                <span className="text-site-text-muted">
+                                                    {t("actual-rank", { defaultValue: "Actual: #{{rank}} — {{value}}", rank: solution.trueRank, value: solution.displayValue })}
                                                 </span>
-                                            )}
-                                        </motion.div>
-                                    )}
-                                </div>
-
-                                {/* Move buttons */}
-                                {!locked && (
-                                    <div className="flex flex-col gap-0.5 shrink-0">
-                                        <button
-                                            onClick={() => moveItem(index, -1)}
-                                            disabled={index === 0}
-                                            className="p-1 rounded-md hover:bg-site-bg disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-site-text-muted hover:text-site-text"
-                                            aria-label={t("move-up", { defaultValue: "Move {{name}} up", name })}
-                                        >
-                                            <ArrowUp className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => moveItem(index, 1)}
-                                            disabled={index === playerOrder.length - 1}
-                                            className="p-1 rounded-md hover:bg-site-bg disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-site-text-muted hover:text-site-text"
-                                            aria-label={t("move-down", { defaultValue: "Move {{name}} down", name })}
-                                        >
-                                            <ArrowDown className="w-4 h-4" />
-                                        </button>
+                                                {itemScore && (
+                                                    <span className="font-medium text-site-text">
+                                                        {scoreEmoji(itemScore.score)} {scoreLabel(itemScore.score)}
+                                                    </span>
+                                                )}
+                                            </motion.div>
+                                        )}
                                     </div>
-                                )}
 
-                                {/* Score indicator when locked */}
-                                {showResults && itemScore && (
-                                    <motion.div
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        transition={{ type: 'spring', delay: 0.2 }}
-                                        className="text-lg shrink-0"
-                                    >
-                                        {scoreEmoji(itemScore.score)}
-                                    </motion.div>
-                                )}
-                            </motion.div>
-                        );
-                    })}
-                </AnimatePresence>
+                                    {/* Move buttons */}
+                                    {!locked && (
+                                        <div className="flex shrink-0 items-center gap-1">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                onClick={() => moveItem(index, -1)}
+                                                disabled={index === 0}
+                                                aria-label={t("move-up", { defaultValue: "Move {{name}} up", name })}
+                                            >
+                                                <ArrowUp aria-hidden />
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                onClick={() => moveItem(index, 1)}
+                                                disabled={index === playerOrder.length - 1}
+                                                aria-label={t("move-down", { defaultValue: "Move {{name}} down", name })}
+                                            >
+                                                <ArrowDown aria-hidden />
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {showResults && itemScore && (
+                                        <motion.span
+                                            aria-hidden
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ type: 'spring', delay: 0.2 }}
+                                            className="shrink-0 text-lg"
+                                        >
+                                            {scoreEmoji(itemScore.score)}
+                                        </motion.span>
+                                    )}
+                                </motion.li>
+                            );
+                        })}
+                    </AnimatePresence>
+                </ul>
+
+                {/* Lock In button */}
+                {!locked && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                        <Button type="button" variant="accent" size="lg" className="w-full" onClick={handleLockIn}>
+                            <Lock aria-hidden />
+                            {t("lock-in", { defaultValue: "Lock In" })}
+                        </Button>
+                    </motion.div>
+                )}
             </div>
-
-            {/* Lock In button */}
-            {!locked && (
-                <motion.button
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    onClick={handleLockIn}
-                    className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
-                >
-                    <Lock className="w-4 h-4" />
-                    {t("lock-in", { defaultValue: "Lock In" })}
-                </motion.button>
-            )}
 
             {/* Results panel */}
             <AnimatePresence>
@@ -320,83 +291,40 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 16 }}
                         transition={{ delay: 0.4 }}
-                        className="mt-6 space-y-4"
                     >
-                        {/* Score card */}
-                        <div className="bg-site-surface border border-site-border rounded-xl p-5 text-center">
-                            <div className="flex items-center justify-center gap-2 mb-3">
-                                <Trophy className="w-5 h-5 text-yellow-400" />
-                                <span className="text-site-text font-semibold">{t("results", { defaultValue: "Results" })}</span>
-                            </div>
+                        <PuzzleResultStack>
+                            <PuzzleResultCard
+                                tone={accuracyTone(result.accuracy)}
+                                title={`${result.accuracy}/10`}
+                                description={t("accuracy", { defaultValue: "Accuracy" })}
+                                stats={[
+                                    {
+                                        key: 'blocks',
+                                        value: (
+                                            <span className="flex items-center justify-center gap-1 text-xl">
+                                                {result.itemScores.map((s, i) => (
+                                                    <motion.span
+                                                        key={i}
+                                                        initial={{ scale: 0 }}
+                                                        animate={{ scale: 1 }}
+                                                        transition={{ delay: 0.5 + i * 0.1 }}
+                                                    >
+                                                        {scoreEmoji(s.score)}
+                                                    </motion.span>
+                                                ))}
+                                            </span>
+                                        ),
+                                        label: t("points-earned", { defaultValue: "{{points}} points earned", points: result.points }),
+                                    },
+                                ]}
+                            />
 
-                            {/* Accuracy bar */}
-                            <div className="mb-3">
-                                <div className={`text-3xl font-bold ${accuracyColor(result.accuracy)}`}>
-                                    {result.accuracy}/10
-                                </div>
-                                <p className="text-site-text-muted text-xs mt-1">{t("accuracy", { defaultValue: "Accuracy" })}</p>
-                            </div>
+                            <PuzzleSection title={t("fun-fact", { defaultValue: "Fun Fact" })}>
+                                <p className="text-sm leading-relaxed text-site-text-muted">{puzzle._funFact}</p>
+                            </PuzzleSection>
 
-                            {/* Visual block row */}
-                            <div className="flex items-center justify-center gap-1 mb-3">
-                                {result.itemScores.map((s, i) => (
-                                    <motion.span
-                                        key={i}
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        transition={{ delay: 0.5 + i * 0.1 }}
-                                        className="text-xl"
-                                    >
-                                        {scoreEmoji(s.score)}
-                                    </motion.span>
-                                ))}
-                            </div>
-
-                            {/* Points */}
-                            <div className="text-site-text text-sm font-medium">
-                                {t("points-earned", { defaultValue: "{{points}} points earned", points: result.points })}
-                            </div>
-                        </div>
-
-                        {/* Fun fact */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.8 }}
-                            className="bg-site-surface border border-site-border rounded-xl p-4"
-                        >
-                            <p className="text-xs font-semibold text-violet-400 mb-1">{t("fun-fact", { defaultValue: "Fun Fact" })}</p>
-                            <p className="text-site-text-muted text-sm leading-relaxed">
-                                {puzzle._funFact}
-                            </p>
-                        </motion.div>
-
-                        {/* Actions */}
-                        <div className="flex gap-3">
-                            <button
-                                onClick={handleShare}
-                                className="flex-1 flex items-center justify-center gap-2 bg-site-surface border border-site-border hover:border-violet-500/50 text-site-text font-medium py-3 px-4 rounded-xl transition-colors text-sm"
-                            >
-                                {copied ? (
-                                    <>
-                                        <Check className="w-4 h-4 text-emerald-400" />
-                                        {t("copied", { defaultValue: "Copied!" })}
-                                    </>
-                                ) : (
-                                    <>
-                                        <Copy className="w-4 h-4" />
-                                        {t("share-result", { defaultValue: "Share Result" })}
-                                    </>
-                                )}
-                            </button>
-                            <Link
-                                to="/daily"
-                                className="flex-1 flex items-center justify-center gap-2 bg-site-surface border border-site-border hover:border-site-text/30 text-site-text font-medium py-3 px-4 rounded-xl transition-colors text-sm"
-                            >
-                                <ArrowLeft className="w-4 h-4" />
-                                {t("all-puzzles", { defaultValue: "All Puzzles" })}
-                            </Link>
-                        </div>
+                            <PuzzleShareRow shareText={shareText} />
+                        </PuzzleResultStack>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -420,13 +348,13 @@ export function SpectrumGame() {
     const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
 
     return (
-        <div className="max-w-xl mx-auto px-4 py-8">
+        <PuzzlePage>
             <SpectrumGameLoader key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
             <PastPuzzlesSection
                 gameMode="spectrum"
                 selectedDateKey={selectedDateKey}
                 onSelectDate={setSelectedDateKey}
             />
-        </div>
+        </PuzzlePage>
     );
 }

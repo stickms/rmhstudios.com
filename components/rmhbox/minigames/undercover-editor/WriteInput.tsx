@@ -75,7 +75,7 @@ export default function WriteInput({
       </div>
 
       {/* Story so far — prompt shown as first sentence, full height */}
-      <div className="rounded-lg border border-(--app-border) bg-(--app-surface) p-3">
+      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) p-3">
         <p className="mb-2 text-[10px] uppercase tracking-wider text-(--app-text-muted)">
           {t("story-so-far", { defaultValue: "Story {{storyNumber}} so far", storyNumber })}
         </p>
@@ -102,7 +102,7 @@ export default function WriteInput({
           disabled={submitted}
           placeholder={t("continue-placeholder", { defaultValue: "Continue the story with a sentence…" })}
           rows={3}
-          className="w-full resize-none rounded-lg border border-(--app-border) bg-(--app-surface) px-4 py-3 text-sm text-(--app-text) placeholder:text-(--app-text-muted) focus:outline-none focus:ring-2 focus:ring-(--app-accent) disabled:opacity-50"
+          className="w-full resize-none rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) px-4 py-3 text-sm text-(--app-text) placeholder:text-(--app-text-muted) focus:outline-none focus:ring-2 focus:ring-(--app-accent) disabled:opacity-50"
         />
         {/* Character counter */}
         <span
@@ -129,7 +129,7 @@ export default function WriteInput({
       <button
         onClick={handleSubmit}
         disabled={!isValid || submitted}
-        className="flex items-center justify-center gap-2 rounded-lg bg-(--app-accent) px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+        className="flex items-center justify-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2.5 text-sm font-medium text-(--app-accent-fg) transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         <Send className="h-4 w-4" />
         {submitted ? t("submitted", { defaultValue: "Submitted!" }) : t("submit-sentence", { defaultValue: "Submit Sentence" })}

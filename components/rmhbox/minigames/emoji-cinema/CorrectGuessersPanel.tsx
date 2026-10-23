@@ -27,9 +27,9 @@ export default function CorrectGuessersPanel({ correctGuessers }: CorrectGuesser
         {correctGuessers.map((g) => (
           <div
             key={g.userId}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-(--app-surface) text-sm"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-(--app-radius-sm) bg-(--app-surface) text-sm"
           >
-            <span className="text-green-400">✅</span>
+            <span className="text-(--app-success)">✅</span>
             <span className="text-(--app-text)">{g.userName}</span>
             <span className="ml-auto text-xs text-(--app-text-muted)">
               #{g.rank}

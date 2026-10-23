@@ -94,9 +94,9 @@ export function MainMenu() {
       )}
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, transparent 45%, #100d16 95%)' }} />
 
-      <div className="relative z-10 min-h-[100dvh] flex flex-col items-center justify-center px-5 py-10">
+      <div className="relative z-10 min-h-[100dvh] flex flex-col items-center-safe justify-center-safe pl-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-10">
         {/* Title */}
-        <motion.div className="text-center mb-7" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
+        <motion.div className="text-center mb-8" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
           <div className="text-[11px] tracking-[0.6em] uppercase mb-3" style={{ color: '#c4a35a', opacity: 0.7 }}>✦ poetry · romance · fate ✦</div>
           {/* Fluid size, and no tracking below sm: at a fixed 60px with wide
               tracking the wordmark exceeded a 390px screen and the
@@ -148,11 +148,11 @@ export function MainMenu() {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={async () => { setContinuing(true); try { await continueGame(); } finally { setContinuing(false); } }}
-                    className="flex-1 rounded-lg py-2.5 text-sm active:scale-95 transition-transform"
+                    className="flex-1 rounded-lg py-2.5 pointer-coarse:min-h-11 text-sm active:scale-95 transition-transform"
                     style={{ backgroundColor: 'rgba(196,163,90,0.25)', border: '1px solid rgba(196,163,90,0.5)', color: '#fff', fontFamily: 'var(--font-playfair, serif)' }}>
                     ▸ Continue
                   </button>
-                  <button onClick={() => setScreen('cast')} className="rounded-lg px-4 py-2.5 text-sm active:scale-95 transition-transform"
+                  <button onClick={() => setScreen('cast')} className="rounded-lg px-4 py-2.5 pointer-coarse:min-h-11 text-sm active:scale-95 transition-transform"
                     style={{ backgroundColor: 'rgba(42,34,53,0.7)', border: '1px solid rgba(196,163,90,0.2)', color: '#e8e0d0' }}>♥ Cast</button>
                 </div>
                 <div className="mt-2 flex items-center justify-center gap-2"><ShareSeed seed={world.seed} compact /><PublishSeedButton seed={world.seed} /></div>
@@ -193,7 +193,7 @@ export function MainMenu() {
         </div>
 
         {!isLoggedIn && !checking && (
-          <p className="mt-7 text-xs text-center px-6 max-w-xs" style={{ color: '#6f6657' }}>
+          <p className="mt-8 text-xs text-center px-6 max-w-xs" style={{ color: '#6f6657' }}>
             {t('sign-in-hint', { defaultValue: 'Sign in to save your stories to the cloud and replay them anywhere.' })}
           </p>
         )}

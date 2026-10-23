@@ -12,13 +12,13 @@ import { useTranslation } from "react-i18next";
 import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
 
 const TILE_COLORS: Record<string, string> = {
-  red_agent: 'bg-red-500/20 text-red-400 border-red-500/30',
-  blue_agent: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  teamA: 'bg-red-500/20 text-red-400 border-red-500/30',
-  teamB: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  bystander: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-  neutral: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-  assassin: 'bg-black text-white border-gray-600',
+  red_agent: 'bg-(--app-danger)/20 text-(--app-danger) border-(--app-danger)/30',
+  blue_agent: 'bg-(--app-info)/20 text-(--app-info) border-(--app-info)/30',
+  teamA: 'bg-(--app-danger)/20 text-(--app-danger) border-(--app-danger)/30',
+  teamB: 'bg-(--app-info)/20 text-(--app-info) border-(--app-info)/30',
+  bystander: 'bg-(--app-surface-hover)/20 text-(--app-text-muted) border-(--app-border)/30',
+  neutral: 'bg-(--app-surface-hover)/20 text-(--app-text-muted) border-(--app-border)/30',
+  assassin: 'bg-(--app-surface-hover) text-(--app-text) border-(--app-border-bright)',
 };
 
 const TILE_LABELS: Record<string, string> = {
@@ -103,17 +103,17 @@ export default function UndercoverAgentHistoryDetail({
     <div className="space-y-4" data-testid="undercover-agent-history-detail">
       {/* Team Setup */}
       {(initial.teamASpymaster || initial.teamBSpymaster) && (
-        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
           <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-2">{t("team-setup", { defaultValue: "Team Setup" })}</h4>
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <span className="font-medium text-red-400">{t("red-team", { defaultValue: "Red Team" })}</span>
+              <span className="font-medium text-(--app-danger)">{t("red-team", { defaultValue: "Red Team" })}</span>
               <div className="text-(--app-text-muted) mt-0.5">
                 {t("spymaster-label", { defaultValue: "Spymaster:" })} <span className="text-(--app-text)">{initial.teamASpymaster ? getPlayerName(initial.teamASpymaster) : '—'}</span>
               </div>
             </div>
             <div>
-              <span className="font-medium text-blue-400">{t("blue-team", { defaultValue: "Blue Team" })}</span>
+              <span className="font-medium text-(--app-info)">{t("blue-team", { defaultValue: "Blue Team" })}</span>
               <div className="text-(--app-text-muted) mt-0.5">
                 {t("spymaster-label", { defaultValue: "Spymaster:" })} <span className="text-(--app-text)">{initial.teamBSpymaster ? getPlayerName(initial.teamBSpymaster) : '—'}</span>
               </div>
@@ -124,7 +124,7 @@ export default function UndercoverAgentHistoryDetail({
 
       {/* Grid */}
       {words.length > 0 && (
-        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
           <h4 className="text-sm font-semibold text-(--app-text-muted) mb-3">{t("grid-key-card-revealed", { defaultValue: "Grid (Key Card Revealed)" })}</h4>
           <div className="grid grid-cols-5 gap-1.5">
             {words.map((word, i) => {
@@ -134,7 +134,7 @@ export default function UndercoverAgentHistoryDetail({
                 <div
                   key={i}
                   className={`rounded border p-1.5 text-center text-xs font-medium ${TILE_COLORS[tileType] ?? TILE_COLORS.neutral} ${
-                    wasRevealed ? 'ring-1 ring-white/30' : 'opacity-70'
+                    wasRevealed ? 'ring-1 ring-(--app-border-bright)' : 'opacity-70'
                   }`}
                   title={wasRevealed ? t("tile-title-revealed", { defaultValue: "{{label}} (revealed during game)", label: TILE_LABELS[tileType] ?? t("unknown", { defaultValue: "Unknown" }) }) : (TILE_LABELS[tileType] ?? t("unknown", { defaultValue: "Unknown" }))}
                 >
@@ -144,22 +144,22 @@ export default function UndercoverAgentHistoryDetail({
             })}
           </div>
           <div className="flex gap-3 mt-2 text-[10px] text-(--app-text-muted)">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-red-500/40"></span> {t("legend-red-agent", { defaultValue: "Red Agent" })}</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-blue-500/40"></span> {t("legend-blue-agent", { defaultValue: "Blue Agent" })}</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-gray-500/40"></span> {t("legend-bystander", { defaultValue: "Bystander" })}</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-black border border-gray-600"></span> {t("legend-assassin", { defaultValue: "Assassin" })}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-(--app-danger)/40"></span> {t("legend-red-agent", { defaultValue: "Red Agent" })}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-(--app-info)/40"></span> {t("legend-blue-agent", { defaultValue: "Blue Agent" })}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-(--app-surface-hover)/40"></span> {t("legend-bystander", { defaultValue: "Bystander" })}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-(--app-radius-sm) bg-(--app-surface-hover) border border-(--app-border-bright)"></span> {t("legend-assassin", { defaultValue: "Assassin" })}</span>
           </div>
         </div>
       )}
 
       {/* Turn-by-turn Timeline */}
-      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
         <h4 className="text-sm font-semibold text-(--app-text-muted) mb-3">{t("turn-by-turn-timeline", { defaultValue: "Turn-by-Turn Timeline" })}</h4>
         <div className="space-y-3">
           {turns.map((turn, idx) => {
-            const teamColor = turn.team === 'red' || turn.team === 'A' ? 'text-red-400' : 'text-blue-400';
+            const teamColor = turn.team === 'red' || turn.team === 'A' ? 'text-(--app-danger)' : 'text-(--app-info)';
             const teamLabel = turn.team === 'red' || turn.team === 'A' ? t("team-red", { defaultValue: "Red" }) : t("team-blue", { defaultValue: "Blue" });
-            const borderColor = turn.team === 'red' || turn.team === 'A' ? 'border-red-500/40' : 'border-blue-500/40';
+            const borderColor = turn.team === 'red' || turn.team === 'A' ? 'border-(--app-danger)/40' : 'border-(--app-info)/40';
 
             const clue = turn.events.find((e) => e.type === 'clue_given');
             const turnGuesses = turn.events.filter((e) => e.type === 'guess');
@@ -200,7 +200,7 @@ export default function UndercoverAgentHistoryDetail({
                       return (
                         <div
                           key={gi}
-                          className={`text-xs flex items-center gap-1 ${correct ? 'text-green-400' : 'text-red-400'}`}
+                          className={`text-xs flex items-center gap-1 ${correct ? 'text-(--app-success)' : 'text-(--app-danger)'}`}
                         >
                           {correct ? '✓' : '✗'}
                           <span className="font-medium">{g.payload.word as string}</span>
@@ -237,7 +237,7 @@ export default function UndercoverAgentHistoryDetail({
 
       {/* Win summary */}
       {endAction && (
-        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
           <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">{t("result-heading", { defaultValue: "Result" })}</h4>
           <p className="text-sm text-(--app-text)">
             <span className="font-bold text-(--app-accent)">
@@ -256,7 +256,7 @@ export default function UndercoverAgentHistoryDetail({
       )}
 
       {/* Final scores */}
-      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
         <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players

@@ -71,7 +71,7 @@ export class LobbyUI {
 
         const panel = document.createElement('div');
         panel.style.cssText = `
-            width:min(680px, 94vw); max-height:92vh; overflow:auto;
+            width:min(680px, 94vw); max-height:92vh; max-height:92dvh; overflow:auto;
             border:2px solid ${NEON_CYAN}; border-radius:6px;
             box-shadow:0 0 24px rgba(0,255,234,0.35), inset 0 0 40px rgba(0,255,234,0.06);
             background:rgba(4,6,16,0.85); padding:22px 26px;`;

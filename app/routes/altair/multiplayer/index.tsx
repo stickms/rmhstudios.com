@@ -142,34 +142,33 @@ function AltairMultiplayerLanding() {
   }, [])
 
   return (
-    <div className="flex h-screen flex-col">
+    <>
       <AltairHeader context="menu" title={t("multiplayer-title", { defaultValue: "Multiplayer" })} onBack={() => navigate({ to: '/altair' })} connectionStatus={connectionStatus} />
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
-        <div className="max-w-4xl mx-auto space-y-6">
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 pt-4 pb-12 md:gap-6 md:px-8 md:pt-8">
 
           {/* Create & Join */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid gap-4 md:grid-cols-2 md:gap-6">
             {/* Create Lobby */}
-            <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) p-6">
+            <div className="rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) px-4 py-4 md:px-6 md:py-5">
               <h2 className="text-xl font-bold text-(--altair-text) mb-4 flex items-center gap-2">
                 <Users size={20} className="text-(--altair-accent)" />
                 {t("create-lobby", { defaultValue: "Create Lobby" })}
               </h2>
 
               {/* Settings */}
-              <div className="space-y-3 mb-5">
+              <div className="mb-5 flex flex-col gap-3">
                 {/* Max Players */}
                 <div>
-                  <label className="text-xs font-semibold text-(--altair-text-muted) uppercase tracking-wider">{t("players-label", { defaultValue: "Players" })}</label>
+                  <label className="text-xs font-semibold text-(--altair-text-muted)">{t("players-label", { defaultValue: "Players" })}</label>
                   <div className="flex gap-2 mt-1">
                     {([2, 3, 4] as const).map((n) => (
                       <button
                         key={n}
                         onClick={() => setMaxPlayers(n)}
-                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${
+                        className={`flex-1 min-h-11 rounded-(--altair-radius) text-sm font-bold transition-colors ${
                           maxPlayers === n
-                            ? 'bg-(--altair-accent) text-white'
+                            ? 'bg-(--altair-accent) text-(--altair-accent-fg)'
                             : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
                         }`}
                       >
@@ -181,7 +180,7 @@ function AltairMultiplayerLanding() {
 
                 {/* Visibility */}
                 <div>
-                  <label className="text-xs font-semibold text-(--altair-text-muted) uppercase tracking-wider">{t("visibility-label", { defaultValue: "Visibility" })}</label>
+                  <label className="text-xs font-semibold text-(--altair-text-muted)">{t("visibility-label", { defaultValue: "Visibility" })}</label>
                   <div className="flex gap-2 mt-1">
                     {(['private', 'public'] as const).map((v) => {
                       const Icon = VISIBILITY_ICONS[v]
@@ -189,9 +188,9 @@ function AltairMultiplayerLanding() {
                         <button
                           key={v}
                           onClick={() => setVisibility(v)}
-                          className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                          className={`flex-1 min-h-11 rounded-(--altair-radius) text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                             visibility === v
-                              ? 'bg-(--altair-accent) text-white'
+                              ? 'bg-(--altair-accent) text-(--altair-accent-fg)'
                               : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
                           }`}
                         >
@@ -209,7 +208,7 @@ function AltairMultiplayerLanding() {
                     type="checkbox"
                     checked={doubleTime}
                     onChange={(e) => setDoubleTime(e.target.checked)}
-                    className="w-4 h-4 rounded accent-(--altair-warning)"
+                    className="size-5 rounded accent-(--altair-warning)"
                   />
                   <span className="text-sm text-(--altair-text) flex items-center gap-1.5">
                     <Zap size={14} className="text-(--altair-warning)" />
@@ -223,7 +222,7 @@ function AltairMultiplayerLanding() {
                     type="checkbox"
                     checked={dropInAllowed}
                     onChange={(e) => setDropInAllowed(e.target.checked)}
-                    className="w-4 h-4 rounded accent-(--altair-accent)"
+                    className="size-5 rounded accent-(--altair-accent)"
                   />
                   <span className="text-sm text-(--altair-text)">{t("allow-drop-in", { defaultValue: "Allow drop-in" })}</span>
                 </label>
@@ -234,9 +233,9 @@ function AltairMultiplayerLanding() {
                         <button
                           key={w}
                           onClick={() => setDropInWindow(w)}
-                          className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                          className={`flex-1 min-h-11 rounded-(--altair-radius-sm) text-xs font-semibold transition-colors ${
                             dropInWindow === w
-                              ? 'bg-(--altair-accent) text-white'
+                              ? 'bg-(--altair-accent) text-(--altair-accent-fg)'
                               : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
                           }`}
                         >
@@ -251,14 +250,14 @@ function AltairMultiplayerLanding() {
               <button
                 onClick={handleCreateLobby}
                 disabled={connectionStatus !== 'connected'}
-                className="w-full py-3 rounded-lg font-bold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover)"
+                className="w-full py-3 rounded-(--altair-radius) font-bold text-(--altair-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover)"
               >
                 {t("create-lobby", { defaultValue: "Create Lobby" })}
               </button>
             </div>
 
             {/* Join Lobby */}
-            <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) p-6">
+            <div className="rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) px-4 py-4 md:px-6 md:py-5">
               <h2 className="text-xl font-bold text-(--altair-text) mb-4 flex items-center gap-2">
                 <UserPlus size={20} className="text-(--altair-accent)" />
                 {t("join-by-code", { defaultValue: "Join by Code" })}
@@ -273,12 +272,12 @@ function AltairMultiplayerLanding() {
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   placeholder="ABCDEF"
-                  className="w-10 min-w-0 flex-1 px-4 py-3 rounded-lg font-mono text-lg uppercase tracking-widest text-center border border-(--altair-border) bg-(--altair-bg) text-(--altair-text) placeholder:text-(--altair-text-dim) outline-none focus:ring-1 focus:ring-(--altair-accent)"
+                  className="min-w-0 flex-1 px-3 py-3 rounded-(--altair-radius) font-mono text-lg uppercase tracking-widest text-center border border-(--altair-border) bg-(--altair-bg) text-(--altair-text) placeholder:text-(--altair-text-dim)"
                 />
                 <button
                   type="submit"
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                  className="px-6 py-3 rounded-lg font-bold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover)"
+                  className="px-6 py-3 rounded-(--altair-radius) font-bold text-(--altair-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover)"
                 >
                   {t("join-button", { defaultValue: "Join" })}
                 </button>
@@ -287,8 +286,8 @@ function AltairMultiplayerLanding() {
           </div>
 
           {/* Public Lobbies */}
-          <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) px-4 py-4 md:px-6 md:py-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold text-(--altair-text) flex items-center gap-2">
                 <Globe size={20} className="text-(--altair-accent)" />
                 {t("public-lobbies", { defaultValue: "Public Lobbies" })}
@@ -296,7 +295,7 @@ function AltairMultiplayerLanding() {
               <button
                 onClick={handleBrowse}
                 disabled={connectionStatus !== 'connected'}
-                className="text-sm px-3 py-1.5 rounded-md transition-colors bg-(--altair-surface-hover) text-(--altair-text-muted) hover:text-(--altair-text) disabled:opacity-50 flex items-center gap-1.5"
+                className="min-h-11 text-sm px-3 py-2 rounded-(--altair-radius-sm) transition-colors bg-(--altair-surface-hover) text-(--altair-text-muted) hover:text-(--altair-text) disabled:opacity-50 flex items-center gap-1.5"
               >
                 <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
                 {t("refresh", { defaultValue: "Refresh" })}
@@ -308,11 +307,11 @@ function AltairMultiplayerLanding() {
                 {t("no-public-lobbies", { defaultValue: "No public lobbies available. Create one!" })}
               </p>
             ) : (
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {publicLobbies.map((lobby) => (
                   <button
                     key={lobby.lobbyId}
-                    className="w-full flex items-center justify-between p-3 rounded-lg transition-colors border border-(--altair-border) bg-(--altair-bg) hover:bg-(--altair-surface-hover) text-left"
+                    className="w-full flex items-center justify-between p-3 rounded-(--altair-radius) transition-colors border border-(--altair-border) bg-(--altair-bg) hover:bg-(--altair-surface-hover) text-left"
                     onClick={() => {
                       setJoinCode(lobby.lobbyId)
                       emit(C2S.LOBBY_JOIN, { lobbyId: lobby.lobbyId })
@@ -341,9 +340,8 @@ function AltairMultiplayerLanding() {
               </div>
             )}
           </div>
-        </div>
-      </div>
-    </div>
+      </main>
+    </>
   )
 }
 

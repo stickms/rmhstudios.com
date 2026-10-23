@@ -41,7 +41,7 @@ export default function AuctionPanel({ drawings, currency, onBid, disabled }: Au
       {drawings.map((drawing) => (
         <div
           key={drawing.drawingId}
-          className={`flex flex-col items-center gap-2 p-3 rounded-lg border ${
+          className={`flex flex-col items-center gap-2 p-3 rounded-(--app-radius-sm) border ${
             drawing.isMine
               ? 'border-(--app-text-muted) opacity-60'
               : 'border-(--app-border)'

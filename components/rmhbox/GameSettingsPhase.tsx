@@ -88,7 +88,7 @@ export default function GameSettingsPhase() {
           className="rounded-full px-4 py-1.5 text-sm font-bold"
           style={{
             backgroundColor: remaining <= 5 ? 'var(--app-danger)' : 'var(--app-surface)',
-            color: remaining <= 5 ? '#fff' : 'var(--app-text)',
+            color: remaining <= 5 ? 'var(--app-bg)' : 'var(--app-text)',
             border: '1px solid var(--app-border)',
           }}
         >
@@ -97,7 +97,7 @@ export default function GameSettingsPhase() {
       )}
 
       {/* Settings card */}
-      <div className="w-full rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
+      <div className="w-full rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4">
         <GameSettingsForm
           schema={settingsState.schema}
           values={settingsState.currentValues}
@@ -111,7 +111,7 @@ export default function GameSettingsPhase() {
       {isHost && (
         <button
           onClick={handleConfirm}
-          className="flex items-center gap-2 rounded-lg bg-(--app-accent) px-6 py-3 text-sm font-bold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover)"
+          className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent) px-6 py-3 text-sm font-bold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover)"
         >
           <Play className="h-4 w-4" />
           {t("confirm-and-start", { defaultValue: "Confirm & Start" })}

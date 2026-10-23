@@ -54,13 +54,14 @@ function SortButton({
 }) {
   return (
     <button
+      type="button"
       onClick={() => onSort(field)}
-      className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+      className={`flex min-h-11 items-center gap-1 text-xs font-medium transition-colors ${
         active ? 'text-(--app-accent)' : 'text-(--app-text-muted) hover:text-(--app-text)'
       }`}
     >
       {label}
-      <ArrowUpDown className="h-3 w-3" />
+      <ArrowUpDown className="h-3 w-3" aria-hidden />
     </button>
   );
 }
@@ -231,7 +232,9 @@ function MinigameHistoryPage() {
   const DetailComponent = historyConfig?.DetailComponent;
 
   return (
-    <div className="flex h-screen flex-col">
+    // A list you read top to bottom is a DOCUMENT (§12.1 rule 6): `.app-page`
+    // scrolls the page, not a box inside a viewport-height shell.
+    <div className="app-page">
       <RMHboxHeader
         context="history"
         backLabel={t('minigames', { defaultValue: 'Minigames' })}
@@ -239,14 +242,10 @@ function MinigameHistoryPage() {
         title={game?.displayName ?? minigameId}
       />
 
-      <div
-        className="flex-1 overflow-y-auto p-4 md:p-8"
-        style={{ scrollbarGutter: 'stable both-edges' }}
-      >
-        <div className="max-w-4xl mx-auto">
+      <main className="mx-auto w-full max-w-4xl px-4 pt-4 pb-12 md:px-8 md:pt-8">
           {/* Search bar */}
           <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-(--app-text-muted)" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-(--app-text-muted)" aria-hidden />
             <input
               type="text"
               value={searchQuery}
@@ -261,13 +260,13 @@ function MinigameHistoryPage() {
                     })
                   : t('search-games', { defaultValue: 'Search games...' })
               }
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent) text-sm"
+              className="w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) py-3 pl-10 pr-4 text-sm text-(--app-text) placeholder:text-(--app-text-dim)"
               data-testid="history-search"
             />
           </div>
 
           {/* Sort controls */}
-          <div className="flex items-center gap-4 mb-4 px-1">
+          <div className="mb-4 flex flex-wrap items-center gap-x-4 px-1">
             <span className="text-xs text-(--app-text-muted)">
               {t('sort-by', { defaultValue: 'Sort by:' })}
             </span>
@@ -308,7 +307,7 @@ function MinigameHistoryPage() {
                 className="flex flex-wrap items-center gap-3 mb-4 px-1"
                 data-testid="history-filters"
               >
-                <Filter className="h-3.5 w-3.5 text-(--app-text-muted)" />
+                <Filter className="h-4 w-4 text-(--app-text-muted)" aria-hidden />
                 {selectFields.map((field) => (
                   <Select
                     key={field.key}
@@ -365,7 +364,7 @@ function MinigameHistoryPage() {
                 return (
                   <div
                     key={match.id}
-                    className="rounded-lg border border-(--app-border) bg-(--app-surface) overflow-hidden"
+                    className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) overflow-hidden"
                     data-testid={`history-entry-${match.id}`}
                   >
                     {/* Summary row */}
@@ -406,9 +405,9 @@ function MinigameHistoryPage() {
                         </div>
                       </div>
                       {isExpanded ? (
-                        <ChevronUp className="h-4 w-4 text-(--app-text-muted) shrink-0" />
+                        <ChevronUp className="h-4 w-4 text-(--app-text-muted) shrink-0" aria-hidden />
                       ) : (
-                        <ChevronDown className="h-4 w-4 text-(--app-text-muted) shrink-0" />
+                        <ChevronDown className="h-4 w-4 text-(--app-text-muted) shrink-0" aria-hidden />
                       )}
                     </button>
 
@@ -456,7 +455,7 @@ function MinigameHistoryPage() {
               <button
                 onClick={() => setOffset((o) => Math.max(0, o - limit))}
                 disabled={offset === 0}
-                className="px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)"
+                className="min-h-11 px-4 py-2 text-sm rounded-(--app-radius-sm) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)"
               >
                 {t('pagination-previous', { defaultValue: 'Previous' })}
               </button>
@@ -471,14 +470,13 @@ function MinigameHistoryPage() {
               <button
                 onClick={() => setOffset((o) => o + limit)}
                 disabled={offset + limit >= total}
-                className="px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)"
+                className="min-h-11 px-4 py-2 text-sm rounded-(--app-radius-sm) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)"
               >
                 {t('pagination-next', { defaultValue: 'Next' })}
               </button>
             </div>
           )}
-        </div>
-      </div>
+      </main>
     </div>
   );
 }

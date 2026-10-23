@@ -93,50 +93,50 @@ function AltairLobbyPage() {
   // Loading state
   if (connectionStatus === 'connecting' || connectionStatus === 'disconnected') {
     return (
-      <div className="flex h-screen flex-col">
-        <AltairHeader context="menu" title="Multiplayer" onBack={() => navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <div className="text-2xl mb-4 text-(--altair-text)">{t("connecting", { defaultValue: "Connecting..." })}</div>
-            <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-(--altair-accent)" style={{ borderTopColor: 'transparent' }} />
+      <>
+        <AltairHeader context="menu" title={t("multiplayer-title", { defaultValue: "Multiplayer" })} onBack={() => navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
+        <div className="flex flex-1 items-center-safe justify-center-safe p-4">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="text-2xl text-(--altair-text)">{t("connecting", { defaultValue: "Connecting..." })}</div>
+            <div role="status" aria-label={t("loading", { defaultValue: "Loading…" })} className="mx-auto size-8 animate-spin rounded-full border-2 border-(--altair-accent) border-t-transparent" />
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
   // Error state
   if (connectionStatus === 'error') {
     return (
-      <div className="flex h-screen flex-col">
-        <AltairHeader context="menu" title="Multiplayer" onBack={() => navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <div className="text-2xl mb-4 text-(--altair-danger)">{t("connection-error", { defaultValue: "Connection error" })}</div>
+      <>
+        <AltairHeader context="menu" title={t("multiplayer-title", { defaultValue: "Multiplayer" })} onBack={() => navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
+        <div className="flex flex-1 items-center-safe justify-center-safe p-4">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="text-2xl text-(--altair-danger)">{t("connection-error", { defaultValue: "Connection error" })}</div>
             <button
               onClick={() => navigate({ to: '/altair/multiplayer' })}
-              className="px-6 py-2 rounded-lg bg-(--altair-accent) text-white font-semibold hover:bg-(--altair-accent-hover) transition-colors"
+              className="min-h-11 px-6 py-2 rounded-(--altair-radius) bg-(--altair-accent) text-(--altair-accent-fg) font-semibold hover:bg-(--altair-accent-hover) transition-colors"
             >
               {t("back-to-lobby-browser", { defaultValue: "Back to Lobby Browser" })}
             </button>
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
   // No lobby state yet
   if (!lobby) {
     return (
-      <div className="flex h-screen flex-col">
-        <AltairHeader context="menu" title="Multiplayer" onBack={() => navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <div className="text-2xl mb-4 text-(--altair-text)">{t("joining-lobby", { defaultValue: "Joining lobby {{lobbyId}}...", lobbyId })}</div>
-            <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-(--altair-accent)" style={{ borderTopColor: 'transparent' }} />
+      <>
+        <AltairHeader context="menu" title={t("multiplayer-title", { defaultValue: "Multiplayer" })} onBack={() => navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
+        <div className="flex flex-1 items-center-safe justify-center-safe p-4">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="text-2xl text-(--altair-text)">{t("joining-lobby", { defaultValue: "Joining lobby {{lobbyId}}...", lobbyId })}</div>
+            <div role="status" aria-label={t("loading", { defaultValue: "Loading…" })} className="mx-auto size-8 animate-spin rounded-full border-2 border-(--altair-accent) border-t-transparent" />
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -176,11 +176,11 @@ function AltairLobbyPage() {
   // Countdown
   if (lobby.state === 'COUNTDOWN' && countdown !== null) {
     return (
-      <div className="flex h-screen flex-col">
-        <AltairHeader context="menu" title="Multiplayer" connectionStatus={connectionStatus} />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <div className="text-sm text-(--altair-text-muted) mb-4 uppercase tracking-widest">{t("game-starts-in", { defaultValue: "Game starts in" })}</div>
+      <>
+        <AltairHeader context="menu" title={t("multiplayer-title", { defaultValue: "Multiplayer" })} connectionStatus={connectionStatus} />
+        <div className="flex flex-1 items-center-safe justify-center-safe p-4">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="text-sm tracking-widest text-(--altair-text-muted)">{t("game-starts-in", { defaultValue: "Game starts in" })}</div>
             <div
               className="text-9xl font-black text-(--altair-accent) animate-pulse"
               style={{ fontFamily: 'var(--altair-font-display)' }}
@@ -189,30 +189,28 @@ function AltairLobbyPage() {
             </div>
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
   // Class select phase
   if (lobby.state === 'CLASS_SELECT') {
     return (
-      <div className="flex h-screen flex-col">
-        <AltairHeader context="menu" title="Class Select" onBack={handleLeave} connectionStatus={connectionStatus} />
+      <>
+        <AltairHeader context="menu" title={t("class-select", { defaultValue: "Class Select" })} onBack={handleLeave} connectionStatus={connectionStatus} />
         <div className="flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable both-edges' }}>
           <ClassSelectLobby lobbyId={lobbyId} />
         </div>
-      </div>
+      </>
     )
   }
 
   // Waiting state (default)
   return (
-    <div className="flex h-screen flex-col">
-      <AltairHeader context="menu" title={`Lobby ${lobbyId}`} onBack={handleLeave} connectionStatus={connectionStatus} />
-      <div className="flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable both-edges' }}>
-        <LobbyWaiting lobbyId={lobbyId} onLeave={handleLeave} />
-      </div>
-    </div>
+    <>
+      <AltairHeader context="menu" title={t("lobby-title", { defaultValue: "Lobby {{lobbyId}}", lobbyId })} onBack={handleLeave} connectionStatus={connectionStatus} />
+      <LobbyWaiting lobbyId={lobbyId} onLeave={handleLeave} />
+    </>
   )
 }
 

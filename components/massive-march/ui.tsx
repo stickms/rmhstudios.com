@@ -73,7 +73,7 @@ export function MarchButton({
       type="button"
       {...props}
       className={cn(
-        'border-[3px] px-4 py-2 text-sm font-bold tracking-wide uppercase',
+        'border-[3px] px-4 py-2 text-sm font-bold tracking-wide uppercase pointer-coarse:min-h-11',
         'transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-45',
         !props.disabled && 'cursor-pointer hover:brightness-105 active:translate-y-px',
         className,

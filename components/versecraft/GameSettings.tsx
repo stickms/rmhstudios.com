@@ -56,7 +56,7 @@ export function GameSettings() {
   const [cleared, setCleared] = useState(false);
 
   return (
-    <div className="min-h-[100dvh] overflow-y-auto px-4 py-6 md:py-10" style={{ background: 'radial-gradient(ellipse at top, #221b2c, #13101a 75%)' }}>
+    <div className="min-h-[100dvh] overflow-y-auto pl-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] py-6 md:py-10" style={{ background: 'radial-gradient(ellipse at top, #221b2c, #13101a 75%)' }}>
       <div className="max-w-lg mx-auto">
         <div className="flex items-center gap-3 mb-5">
           <button onClick={goBack} className="text-sm px-3 py-2 rounded -ml-1" style={{ color: '#a89888' }}>← Back</button>

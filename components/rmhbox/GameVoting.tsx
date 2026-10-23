@@ -35,10 +35,10 @@ interface GameVotingProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  word: 'bg-blue-500/20 text-blue-400',
-  trivia: 'bg-emerald-500/20 text-emerald-400',
-  action: 'bg-red-500/20 text-red-400',
-  creative: 'bg-purple-500/20 text-purple-400',
+  word: 'bg-(--app-info)/20 text-(--app-info)',
+  trivia: 'bg-(--app-success)/20 text-(--app-success)',
+  action: 'bg-(--app-danger)/20 text-(--app-danger)',
+  creative: 'bg-(--app-rare)/20 text-(--app-rare)',
 };
 
 export default function GameVoting({ candidates, durationSeconds, endsAt, onVote }: GameVotingProps) {
@@ -108,7 +108,7 @@ export default function GameVoting({ candidates, durationSeconds, endsAt, onVote
             <button
               key={c.minigameId}
               onClick={() => handleVote(c.minigameId)}
-              className={`relative overflow-hidden rounded-xl border p-4 text-left transition-colors ${
+              className={`relative overflow-hidden rounded-(--app-radius) border p-4 text-left transition-colors ${
                 isSelected
                   ? 'border-(--app-accent) bg-(--app-accent)/10 ring-2 ring-(--app-accent)'
                   : 'border-(--app-border) bg-(--app-surface) hover:bg-(--app-surface-hover)'
@@ -121,7 +121,7 @@ export default function GameVoting({ candidates, durationSeconds, endsAt, onVote
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-(--app-text)">{c.displayName}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${CATEGORY_COLORS[c.category] ?? 'bg-gray-500/20 text-gray-400'}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${CATEGORY_COLORS[c.category] ?? 'bg-(--app-surface-hover)/20 text-(--app-text-muted)'}`}>
                       {c.category}
                     </span>
                   </div>

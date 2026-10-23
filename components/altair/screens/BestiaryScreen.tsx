@@ -113,7 +113,7 @@ export default function BestiaryScreen({ onBack }: BestiaryScreenProps) {
   const discoveredBosses = BOSSES.filter((b) => discovered(b.id)).length;
 
   return (
-    <div className="altair-parchment flex flex-col items-center min-h-[calc(100vh-56px)] px-4 py-8">
+    <div className="altair-parchment flex flex-col items-center flex-1 px-4 pt-4 pb-12">
       <div className="w-full max-w-2xl flex flex-col gap-4">
         {/* Title */}
         <div className="text-center">
@@ -139,25 +139,25 @@ export default function BestiaryScreen({ onBack }: BestiaryScreenProps) {
         <div className="flex gap-1.5">
           <button
             onClick={() => { setTab('enemies'); setSelectedEnemy(null); }}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-colors ${
+            className={`flex-1 py-2 px-3 rounded-(--altair-radius) text-xs font-semibold transition-colors ${
               tab === 'enemies'
-                ? 'bg-(--altair-accent) text-white'
+                ? 'bg-(--altair-accent) text-(--altair-accent-fg)'
                 : 'bg-(--altair-surface) text-(--altair-text-muted) hover:bg-(--altair-surface-hover) border border-(--altair-border)'
             }`}
           >
             <span className="block font-bold">{t("tab-enemies", { defaultValue: "Enemies" })}</span>
-            <span className="block text-[10px] opacity-80 mt-0.5">{t("tab-discovered-count", { defaultValue: "{{discovered}}/{{total}} discovered", discovered: discoveredEnemies, total: totalEnemies })}</span>
+            <span className="block text-xs opacity-80 mt-0.5">{t("tab-discovered-count", { defaultValue: "{{discovered}}/{{total}} discovered", discovered: discoveredEnemies, total: totalEnemies })}</span>
           </button>
           <button
             onClick={() => { setTab('bosses'); setSelectedEnemy(null); }}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-colors ${
+            className={`flex-1 py-2 px-3 rounded-(--altair-radius) text-xs font-semibold transition-colors ${
               tab === 'bosses'
-                ? 'bg-(--altair-accent) text-white'
+                ? 'bg-(--altair-accent) text-(--altair-accent-fg)'
                 : 'bg-(--altair-surface) text-(--altair-text-muted) hover:bg-(--altair-surface-hover) border border-(--altair-border)'
             }`}
           >
             <span className="block font-bold">{t("tab-bosses", { defaultValue: "Bosses" })}</span>
-            <span className="block text-[10px] opacity-80 mt-0.5">{t("tab-discovered-count", { defaultValue: "{{discovered}}/{{total}} discovered", discovered: discoveredBosses, total: totalBosses })}</span>
+            <span className="block text-xs opacity-80 mt-0.5">{t("tab-discovered-count", { defaultValue: "{{discovered}}/{{total}} discovered", discovered: discoveredBosses, total: totalBosses })}</span>
           </button>
         </div>
 
@@ -186,7 +186,7 @@ export default function BestiaryScreen({ onBack }: BestiaryScreenProps) {
         <button
           onClick={onBack}
           data-altair-sfx="menu_back"
-          className="mt-4 py-3 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
+          className="mt-4 py-3 rounded-(--altair-radius-lg) font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
         >
           {t("back", { defaultValue: "Back" })}
         </button>
@@ -269,7 +269,7 @@ function EnemyCard({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition ${
+      className={`flex flex-col items-center gap-1 p-2 rounded-(--altair-radius) border transition ${
         selected
           ? 'border-(--altair-accent) bg-(--altair-accent)/10'
           : discovered
@@ -284,11 +284,11 @@ function EnemyCard({
           <Skull size={20} className="text-(--altair-text-dim)" />
         </div>
       )}
-      <span className="text-[10px] font-semibold text-(--altair-text) truncate w-full text-center">
+      <span className="text-xs font-semibold text-(--altair-text) truncate w-full text-center">
         {discovered ? enemy.name : '???'}
       </span>
       {discovered && stats && stats.killed > 0 && (
-        <span className="text-[9px] text-(--altair-text-dim)">{t("kills-count", { defaultValue: "{{count}} kills", count: stats.killed })}</span>
+        <span className="text-xs text-(--altair-text-dim)">{t("kills-count", { defaultValue: "{{count}} kills", count: stats.killed })}</span>
       )}
     </button>
   );
@@ -306,7 +306,7 @@ function EnemyDetail({
   const { t } = useTranslation("c-altair");
   if (!discovered) {
     return (
-      <div className="mt-2 p-3 rounded-lg bg-(--altair-surface) border border-(--altair-border)/50 text-center text-(--altair-text-dim) text-xs">
+      <div className="mt-2 p-3 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border)/50 text-center text-(--altair-text-dim) text-xs">
         {t("enemy-undiscovered", { defaultValue: "Undiscovered — encounter this enemy to learn more." })}
       </div>
     );
@@ -315,10 +315,10 @@ function EnemyDetail({
   const s = stats || { encountered: 0, killed: 0, killedBy: 0 };
 
   return (
-    <div className="mt-2 p-3 rounded-lg bg-(--altair-surface) border border-(--altair-border)/50 space-y-2">
+    <div className="mt-2 p-3 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border)/50 space-y-2">
       <div className="flex items-center gap-2">
         <span className="text-sm font-bold text-(--altair-text)">{enemy.name}</span>
-        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: `${TIER_COLORS[enemy.tier]}22`, color: TIER_COLORS[enemy.tier] }}>
+        <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: `${TIER_COLORS[enemy.tier]}22`, color: TIER_COLORS[enemy.tier] }}>
           {t("tier-badge", { defaultValue: "Tier {{tier}}", tier: enemy.tier })}
         </span>
       </div>
@@ -337,7 +337,7 @@ function EnemyDetail({
           <span>{t("stat-deaths", { defaultValue: "{{count}} deaths", count: s.killedBy })}</span>
         </div>
       </div>
-      <div className="flex gap-3 text-[10px] text-(--altair-text-dim)">
+      <div className="flex gap-3 text-xs text-(--altair-text-dim)">
         <span>{t("stat-hp", { defaultValue: "HP: {{value}}", value: enemy.baseHp })}</span>
         <span>{t("stat-dmg", { defaultValue: "DMG: {{value}}", value: enemy.baseDamage })}</span>
         <span>{t("stat-speed", { defaultValue: "Speed: {{value}}", value: enemy.baseSpeed })}</span>
@@ -403,7 +403,7 @@ function BossCard({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition ${
+      className={`flex flex-col items-center gap-1.5 p-3 rounded-(--altair-radius) border transition ${
         selected
           ? 'border-(--altair-accent) bg-(--altair-accent)/10'
           : discovered
@@ -421,11 +421,11 @@ function BossCard({
       <span className="text-xs font-bold text-(--altair-text) truncate w-full text-center">
         {discovered ? boss.name : '???'}
       </span>
-      <span className="text-[10px] text-(--altair-text-dim)">
+      <span className="text-xs text-(--altair-text-dim)">
         {discovered ? `${Math.floor(boss.spawnTime / 60)}:${(boss.spawnTime % 60).toString().padStart(2, '0')}` : '??:??'}
       </span>
       {discovered && stats && stats.killed > 0 && (
-        <span className="text-[9px] text-(--altair-success)">{t("defeated-count", { defaultValue: "{{count}} defeated", count: stats.killed })}</span>
+        <span className="text-xs text-(--altair-success)">{t("defeated-count", { defaultValue: "{{count}} defeated", count: stats.killed })}</span>
       )}
     </button>
   );
@@ -443,7 +443,7 @@ function BossDetail({
   const { t } = useTranslation("c-altair");
   if (!discovered) {
     return (
-      <div className="p-3 rounded-lg bg-(--altair-surface) border border-(--altair-border)/50 text-center text-(--altair-text-dim) text-xs">
+      <div className="p-3 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border)/50 text-center text-(--altair-text-dim) text-xs">
         {t("boss-undiscovered", { defaultValue: "Undiscovered — survive long enough to encounter this boss." })}
       </div>
     );
@@ -452,11 +452,11 @@ function BossDetail({
   const s = stats || { encountered: 0, killed: 0, killedBy: 0 };
 
   return (
-    <div className="p-3 rounded-lg bg-(--altair-surface) border border-(--altair-border)/50 space-y-2">
+    <div className="p-3 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border)/50 space-y-2">
       <div className="flex items-center gap-2">
         <Crown size={14} className="text-(--altair-warning)" />
         <span className="text-sm font-bold text-(--altair-text)">{boss.name}</span>
-        <span className="text-[10px] text-(--altair-text-dim)">
+        <span className="text-xs text-(--altair-text-dim)">
           {t("boss-spawns-at", { defaultValue: "Spawns at {{time}}", time: `${Math.floor(boss.spawnTime / 60)}:${(boss.spawnTime % 60).toString().padStart(2, '0')}` })}
         </span>
       </div>
@@ -475,7 +475,7 @@ function BossDetail({
           <span>{t("stat-deaths", { defaultValue: "{{count}} deaths", count: s.killedBy })}</span>
         </div>
       </div>
-      <div className="flex gap-3 text-[10px] text-(--altair-text-dim)">
+      <div className="flex gap-3 text-xs text-(--altair-text-dim)">
         <span>{t("stat-hp", { defaultValue: "HP: {{value}}", value: boss.baseHp })}</span>
         <span>{t("stat-speed", { defaultValue: "Speed: {{value}}", value: boss.baseSpeed })}</span>
         <span>{t("stat-armor", { defaultValue: "Armor: {{value}}", value: boss.armor })}</span>

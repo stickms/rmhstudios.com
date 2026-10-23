@@ -89,9 +89,9 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-5">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 pt-4 pb-12 md:px-6">
       {/* Player selection summary bar */}
-      <div className="flex items-center gap-3 p-3 rounded-xl bg-(--altair-surface) border border-(--altair-border)">
+      <div className="flex items-center gap-3 p-3 rounded-(--altair-radius-lg) bg-(--altair-surface) border border-(--altair-border)">
         <Users size={16} className="text-(--altair-text-muted) shrink-0" />
         <div className="flex-1 flex flex-wrap gap-2">
           {lobby.players.map((player) => {
@@ -101,10 +101,10 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
             return (
               <div
                 key={player.userId}
-                className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-(--altair-bg) text-xs"
+                className="flex items-center gap-1.5 px-2 py-1 rounded-(--altair-radius-sm) bg-(--altair-bg) text-xs"
               >
                 <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-(--altair-hud-ink)"
                   style={{ backgroundColor: player.color || PLAYER_SLOT_COLORS[player.slot] || '#666' }}
                 >
                   {player.userName.charAt(0).toUpperCase()}
@@ -134,9 +134,9 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
               key={cls.id}
               onClick={() => isUnlocked && handleSelect(cls.id)}
               disabled={!isUnlocked}
-              className={`relative p-4 rounded-xl border text-left transition-colors ${
+              className={`relative p-4 rounded-(--altair-radius-lg) border text-left transition-colors ${
                 isMySelection
-                  ? 'border-2 scale-[1.02] shadow-lg'
+                  ? 'border-2 scale-[1.02] shadow-(--altair-shadow)'
                   : isUnlocked
                     ? 'border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover)'
                     : 'border-(--altair-border) opacity-50 cursor-not-allowed'
@@ -144,7 +144,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
               style={isMySelection ? { borderColor: cls.color, boxShadow: `0 0 20px ${cls.color}30` } : {}}
             >
               {!isUnlocked && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 z-10">
+                <div className="absolute inset-0 flex items-center justify-center rounded-(--altair-radius-lg) bg-(--altair-hud-scrim)/40 z-10">
                   <Lock size={20} className="text-(--altair-text-dim)" />
                 </div>
               )}
@@ -153,7 +153,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
                 {cls.name}
               </h3>
               <span
-                className="text-[10px] font-bold uppercase tracking-wider"
+                className="text-xs font-bold uppercase tracking-wider"
                 style={{ color: DIFFICULTY_COLORS[cls.difficulty] }}
               >
                 {cls.difficulty}
@@ -165,7 +165,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
                   {takers.map((p) => (
                     <div
                       key={p.userId}
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white border-2 border-(--altair-surface)"
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-(--altair-hud-ink) border-2 border-(--altair-surface)"
                       style={{ backgroundColor: p.color || PLAYER_SLOT_COLORS[p.slot] || '#666' }}
                       title={p.userName}
                     >
@@ -182,7 +182,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
       {/* Selected class detail */}
       {detailClass && (
         <div
-          className="p-5 rounded-xl border bg-(--altair-surface) altair-modal"
+          className="p-5 rounded-(--altair-radius-lg) border bg-(--altair-surface) altair-modal"
           style={{ borderColor: `${detailClass.color}40` }}
         >
           <div className="flex items-start gap-4 mb-4">
@@ -197,7 +197,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
           </div>
 
           {detailWeapon && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-(--altair-bg-subtle) mb-3">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-(--altair-radius) bg-(--altair-bg-subtle) mb-3">
               <Swords size={14} className="text-(--altair-text-muted)" />
               <span className="text-xs text-(--altair-text-muted)">{t("starting-weapon", { defaultValue: "Starting weapon:" })}</span>
               <span className="text-xs font-bold text-(--altair-text)">{detailWeapon.name}</span>
@@ -205,21 +205,21 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
           )}
 
           <div className="flex flex-col gap-2">
-            <div className="px-3 py-2 rounded-lg bg-(--altair-bg-subtle)">
+            <div className="px-3 py-2 rounded-(--altair-radius) bg-(--altair-bg-subtle)">
               <div className="flex items-center gap-2 mb-1">
                 <Shield size={12} className="text-(--altair-info)" />
                 <span className="text-xs font-bold text-(--altair-text)">{detailClass.ability1.name}</span>
-                <span className="text-[10px] text-(--altair-text-dim)">{t("innate", { defaultValue: "Innate" })}</span>
+                <span className="text-xs text-(--altair-text-dim)">{t("innate", { defaultValue: "Innate" })}</span>
               </div>
-              <p className="text-[11px] text-(--altair-text-muted)">{detailClass.ability1.description}</p>
+              <p className="text-xs text-(--altair-text-muted)">{detailClass.ability1.description}</p>
             </div>
-            <div className="px-3 py-2 rounded-lg bg-(--altair-bg-subtle)">
+            <div className="px-3 py-2 rounded-(--altair-radius) bg-(--altair-bg-subtle)">
               <div className="flex items-center gap-2 mb-1">
                 <Zap size={12} className="text-(--altair-warning)" />
                 <span className="text-xs font-bold text-(--altair-text)">{detailClass.ability2.name}</span>
-                <span className="text-[10px] text-(--altair-text-dim)">{t("lv10", { defaultValue: "Lv.10" })}</span>
+                <span className="text-xs text-(--altair-text-dim)">{t("lv10", { defaultValue: "Lv.10" })}</span>
               </div>
-              <p className="text-[11px] text-(--altair-text-muted)">{detailClass.ability2.description}</p>
+              <p className="text-xs text-(--altair-text-muted)">{detailClass.ability2.description}</p>
             </div>
           </div>
         </div>
@@ -230,9 +230,9 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
         <button
           onClick={handleToggleReady}
           disabled={!myClassId}
-          className={`flex-1 py-3 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 ${
+          className={`flex-1 py-3 rounded-(--altair-radius-lg) font-bold text-lg transition-colors flex items-center justify-center gap-2 ${
             myReady
-              ? 'bg-(--altair-success) text-white hover:bg-(--altair-success)/80'
+              ? 'bg-(--altair-success) text-(--altair-bg) hover:bg-(--altair-success)/80'
               : myClassId
                 ? 'bg-(--altair-surface) text-(--altair-text) border border-(--altair-border) hover:bg-(--altair-surface-hover)'
                 : 'bg-(--altair-surface) text-(--altair-text-dim) cursor-not-allowed opacity-50'
@@ -252,7 +252,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
           <button
             onClick={handleStartGame}
             disabled={!allReady}
-            className="flex-1 py-3 rounded-xl font-bold text-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover) flex items-center justify-center gap-2"
+            className="flex-1 py-3 rounded-(--altair-radius-lg) font-bold text-lg text-(--altair-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover) flex items-center justify-center gap-2"
           >
             {t("start-game", { defaultValue: "Start Game" })}
           </button>

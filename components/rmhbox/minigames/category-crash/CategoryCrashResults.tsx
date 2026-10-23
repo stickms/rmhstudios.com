@@ -98,7 +98,7 @@ export default function CategoryCrashResults({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className={`rounded-xl border p-4 ${
+              className={`rounded-(--app-radius) border p-4 ${
                 isMe
                   ? 'border-(--app-accent)/50 bg-(--app-accent)/5'
                   : 'border-(--app-border) bg-(--app-surface)'
@@ -144,7 +144,7 @@ export default function CategoryCrashResults({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="rounded-xl border border-(--app-border) bg-(--app-surface) p-4"
+        className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4"
       >
         <h4 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-(--app-text-muted)">
           <TrendingUp size={14} />
@@ -156,7 +156,7 @@ export default function CategoryCrashResults({
             return (
               <div
                 key={entry.userId}
-                className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-sm ${
+                className={`flex items-center justify-between rounded-(--app-radius-sm) px-3 py-1.5 text-sm ${
                   isMe ? 'bg-(--app-accent)/10 font-semibold' : ''
                 }`}
               >

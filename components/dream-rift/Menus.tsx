@@ -56,7 +56,7 @@ function DiffPicker({ value, onChange, disabled }: { value: Difficulty; onChange
                     type="button"
                     disabled={disabled}
                     onClick={() => onChange(d)}
-                    className="dr-serif flex-1 rounded-sm border px-2 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition disabled:opacity-40"
+                    className="dr-serif flex-1 rounded-sm border px-2 py-2 pointer-coarse:min-h-11 text-xs font-semibold uppercase tracking-[0.18em] transition disabled:opacity-40"
                     style={{
                         borderColor: value === d ? DIFF_COLOR[d] : 'rgba(231,205,140,0.22)',
                         background: value === d ? `${DIFF_COLOR[d]}22` : 'transparent',
@@ -159,9 +159,9 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings, extr
 
 function HelpModal({ onClose }: { onClose: () => void }) {
     return (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-6" onClick={onClose}>
-            <div className="dr-frame max-w-md rounded-sm p-6 text-left text-sm text-[color:var(--dr-cream)]" onClick={(e) => e.stopPropagation()}>
-                <h3 className="dr-serif mb-1 text-lg font-semibold tracking-[0.12em] text-[color:var(--dr-gold)]">How to Play</h3>
+        <div className="app-safe-x absolute inset-0 z-50 flex items-center-safe justify-center-safe overflow-y-auto bg-black/80 p-6" onClick={onClose}>
+            <div role="dialog" aria-modal="true" aria-labelledby="dr-help-title" className="dr-frame max-w-md rounded-sm p-6 text-left text-sm text-[color:var(--dr-cream)]" onClick={(e) => e.stopPropagation()}>
+                <h3 id="dr-help-title" className="dr-serif mb-1 text-lg font-semibold tracking-[0.12em] text-[color:var(--dr-gold)]">How to Play</h3>
                 <div className="dr-rule mb-4 mt-2" />
                 <ul className="space-y-2 text-[color:var(--dr-cream-dim)]">
                     <li>• Your true hitbox is the tiny dot at your center — hold <b className="text-[color:var(--dr-cream)]">Focus</b> (Shift) to see it and move slowly for precise dodging.</li>
@@ -171,7 +171,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
                     <li>• Capture a boss's <b className="text-[color:var(--dr-cream)]">spell card</b> by defeating it before the timer runs out.</li>
                     <li>• In co-op you only die from hits on <b className="text-[color:var(--dr-cream)]">your</b> screen — lag never kills you. The boss fight stays in sync for everyone.</li>
                 </ul>
-                <button type="button" onClick={onClose} className="dr-plaque dr-plaque-primary mt-5 w-full rounded-sm py-2 text-sm font-semibold">
+                <button type="button" onClick={onClose} className="dr-plaque dr-plaque-primary mt-5 w-full rounded-sm py-2 text-sm font-semibold pointer-coarse:min-h-11">
                     Got it
                 </button>
             </div>
@@ -350,7 +350,7 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
                     <button
                         type="button"
                         onClick={() => void copyLink()}
-                        className="dr-inset mt-2 rounded-sm px-3 py-1.5 text-xs font-semibold tracking-wide text-[color:var(--dr-cream-dim)] transition hover:border-[rgba(231,205,140,0.5)] hover:text-[color:var(--dr-cream)]"
+                        className="dr-inset mt-2 rounded-sm px-3 py-2 pointer-coarse:min-h-11 text-xs font-semibold tracking-wide text-[color:var(--dr-cream-dim)] transition hover:border-[rgba(231,205,140,0.5)] hover:text-[color:var(--dr-cream)]"
                     >
                         {linkCopied ? 'Invite link copied' : 'Copy invite link'}
                     </button>
@@ -383,8 +383,8 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
                                 {p.isHost ? <span className="text-[color:var(--dr-gold)]">★ Host</span> : p.ready ? <span className="text-emerald-300">Ready</span> : <span className="text-[color:var(--dr-cream-faint)]">Not ready</span>}
                             </div>
                             {isHost && !p.isHost && (
-                                <button type="button" onClick={() => kickPlayer(slot)} className="absolute right-1 top-1 text-xs text-[color:var(--dr-cream-faint)] hover:text-rose-400">
-                                    ✕
+                                <button type="button" onClick={() => kickPlayer(slot)} aria-label={`Remove ${p.name}`} className="absolute right-0 top-0 inline-flex size-8 items-center justify-center text-xs text-[color:var(--dr-cream-faint)] hover:text-rose-400 pointer-coarse:size-11">
+                                    <span aria-hidden="true">✕</span>
                                 </button>
                             )}
                         </div>

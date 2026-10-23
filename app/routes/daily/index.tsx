@@ -16,7 +16,7 @@ const PATH = '/daily';
 function DailyIndex() {
   return (
     <GameErrorBoundary gameName="Daily Puzzles">
-      <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
+      <Suspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
         <DailyPuzzlesHub />
       </Suspense>
     </GameErrorBoundary>

@@ -39,12 +39,12 @@ export default function RoomCodeDisplay({ code, onLeave }: RoomCodeDisplayProps)
   }, [code]);
 
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-(--app-surface) border border-(--app-border) px-6 py-4">
+    <div className="flex items-center gap-3 rounded-(--app-radius) bg-(--app-surface) border border-(--app-border) px-6 py-4">
       {/* Leave button — left side, icon flipped to point left */}
       {onLeave && (
         <button
           onClick={onLeave}
-          className="mr-2 rounded-lg p-2 text-(--app-danger) transition-colors hover:bg-(--app-danger)/15 hover:text-(--app-danger)"
+          className="mr-2 rounded-(--app-radius-sm) p-2 text-(--app-danger) transition-colors hover:bg-(--app-danger)/15 hover:text-(--app-danger)"
           aria-label={t("leave-lobby", { defaultValue: "Leave lobby" })}
           title={t("leave-lobby", { defaultValue: "Leave lobby" })}
         >
@@ -60,14 +60,14 @@ export default function RoomCodeDisplay({ code, onLeave }: RoomCodeDisplayProps)
       </span>
       <button
         onClick={handleCopy}
-        className="ml-2 rounded-lg p-2 text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-accent)"
+        className="ml-2 rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-accent)"
         aria-label={copied ? t("copied", { defaultValue: "Copied" }) : t("copy-room-code", { defaultValue: "Copy room code" })}
       >
         {copied ? <Check className="h-5 w-5 text-(--app-success)" /> : <Copy className="h-5 w-5" />}
       </button>
       <button
         onClick={() => void copyLink()}
-        className="rounded-lg p-2 text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-accent)"
+        className="rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-accent)"
         aria-label={linkCopied ? t("copied", { defaultValue: "Copied" }) : t("copy-invite-link", { defaultValue: "Copy invite link" })}
         title={t("copy-invite-link", { defaultValue: "Copy invite link" })}
       >
