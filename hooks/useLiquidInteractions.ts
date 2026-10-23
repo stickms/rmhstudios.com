@@ -2,9 +2,6 @@
 
 import { useEffect } from 'react';
 import { installLiquidInteractions } from '@/lib/liquid/runtime';
-import { installJellyRegistry } from '@/lib/jelly/registry';
-import { installJellyFlow } from '@/lib/jelly/flow-carriers';
-import { governBudget } from '@/lib/jelly/governor';
 import { jellyBudget } from '@/lib/jelly/tiers';
 
 /**
@@ -26,6 +23,9 @@ import { jellyBudget } from '@/lib/jelly/tiers';
  * 5. the electric arcs (`lib/jelly/arcs`, lazy);
  * 6. the glass engine (`lib/liquid/glass/engine.ts`, lazy): rim slabs, haze canvases, cursor light.
  *
+ * Every service is its own chunk, not entry weight: nothing above has to run before hydration, and the entry is
+ * budgeted (scripts/check-bundle-budget.ts). Each reader waits for the registry's chunk, so the order holds.
+ *
  * Every optional chunk fails soft: the CSS material is the fallback for each.
  */
 export function useLiquidInteractions(): void {
@@ -41,21 +41,29 @@ export function useLiquidInteractions(): void {
     };
 
     keep(installLiquidInteractions());
-    keep(installJellyRegistry(document));
-    void import('@/lib/jelly/physics')
-      .then((m) => keep(m.installJellyPhysics(document)))
+    const registry = import('@/lib/jelly/registry').then((m) => keep(m.installJellyRegistry(document)));
+    void Promise.all([import('@/lib/jelly/physics'), registry])
+      .then(([m]) => keep(m.installJellyPhysics(document)))
       .catch(failSoft);
 
     const start = () => {
       if (cancelled) return;
       // The engine's governor sheds carriers too (step 3); until its chunk loads the step is 0.
       let governorStep = () => 0;
-      keep(installJellyFlow(document, { budget: () => governBudget(jellyBudget(), governorStep()) }));
-      void import('@/lib/jelly/arcs')
-        .then((m) => keep(m.installElectricArcs(document)))
+      void Promise.all([import('@/lib/jelly/flow-carriers'), import('@/lib/jelly/governor'), registry])
+        .then(([flow, governor]) =>
+          keep(
+            flow.installJellyFlow(document, {
+              budget: () => governor.governBudget(jellyBudget(), governorStep()),
+            }),
+          ),
+        )
         .catch(failSoft);
-      void import('@/lib/liquid/glass/engine')
-        .then((m) => {
+      void Promise.all([import('@/lib/jelly/arcs'), registry])
+        .then(([m]) => keep(m.installElectricArcs(document)))
+        .catch(failSoft);
+      void Promise.all([import('@/lib/liquid/glass/engine'), registry])
+        .then(([m]) => {
           governorStep = m.jellyGovernorStep;
           keep(m.installLiquidGlass());
         })
