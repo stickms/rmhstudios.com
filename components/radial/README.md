@@ -30,6 +30,17 @@ a shared local contact indentation for cage/pins, with CSS and preference
 fallbacks. Historical compositor measurements still explain the blur budgets;
 they do not validate the replacement on native hardware.
 
+## WebAssembly numerical kernels
+
+`LiquidGlobe.tsx` calls `DoughBody.enableWasm()` after mounting. Loading migrates
+the current deformation into fixed per-body memory; JavaScript and the texture
+uploader read the same field without a per-frame state copy. The existing
+JavaScript solver handles interaction while the module loads or if it fails.
+Eversion similarly warms its Peirce lookup-table kernel in the renderer's realm.
+Rendering stays in WebGL and the existing idle/reduced-motion rules still apply.
+See [frontend WebAssembly](../../docs/frontend-webassembly.md) for source locations,
+build/test/benchmark commands and the Apache policy required in production.
+
 ## Files
 
 | File                 | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |

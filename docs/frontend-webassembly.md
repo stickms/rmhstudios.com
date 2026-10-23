@@ -5,6 +5,25 @@ the dough grid's numerical substep/height field, and `wasm/projection.ts` for
 Peirce projection lookup textures. Rendering stays in WebGL. Other projections
 keep their inexpensive JavaScript implementation.
 
+## Source map
+
+| Source                                                              | Responsibility                                                                                                   |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| [`wasm/dough.ts`](../wasm/dough.ts)                                 | Numerical substeps and derived displacement/height field.                                                        |
+| [`lib/dough.ts`](../lib/dough.ts)                                   | Input, rest detection, state migration and JavaScript fallback.                                                  |
+| [`wasm/projection.ts`](../wasm/projection.ts)                       | Peirce LUT kernel; its elliptic helper is derived from [`elliptic.ts`](../lib/eversion/projections/elliptic.ts). |
+| [`lib/wasm/`](../lib/wasm/)                                         | Browser/worker loading, module caching and fixed-memory interfaces.                                              |
+| [`scripts/build-wasm.mjs`](../scripts/build-wasm.mjs)               | Pinned compiler, helper generation and binary outputs.                                                           |
+| [`scripts/check-wasm-output.mjs`](../scripts/check-wasm-output.mjs) | Production binary validation and optional live MIME/cache checks.                                                |
+| [`lib/wasm/__tests__/`](../lib/wasm/__tests__/)                     | Real-binary parity, state, memory and loading-failure tests.                                                     |
+| [`scripts/bench-wasm.mjs`](../scripts/bench-wasm.mjs)               | Warm CPU benchmark runner and timing report.                                                                     |
+
+The source lives in `wasm/`; `wasm/.generated/` and `lib/wasm/generated/` are
+gitignored compiler outputs. Make source changes and rebuild them with
+`pnpm wasm:build`.
+
+## Build and asset delivery
+
 `pnpm wasm:build` compiles both with the pinned npm dependency. Vite also runs
 this compiler before dev and production builds, including Docker's direct
 `pnpm exec vite build`. `pnpm test` compiles before running the tests. No native
@@ -54,7 +73,12 @@ pnpm test lib/wasm/__tests__ lib/__tests__/dough.test.ts lib/eversion/__tests__/
 pnpm wasm:bench
 pnpm build:frontend
 node scripts/check-wasm-output.mjs
+node scripts/check-wasm-output.mjs http://127.0.0.1:7005 # verify a running production build
 ```
+
+When invoking Vitest directly instead of the package scripts, run
+`pnpm wasm:build` first. The [testing guide](./testing.md) covers suite discovery
+and CI; [architecture](./architecture.md) describes the image and deploy pipeline.
 
 The tests run the actual compiled modules, compare simulation trajectories and
 LUTs with JS, check volume conservation and settling, migrate a live drag, and

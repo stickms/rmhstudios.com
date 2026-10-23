@@ -65,6 +65,15 @@ Local ports: web 7005 · socket-server 7001 · rmhtube 7003 · rmhbox 7676 ·
 status 7008 · assets 7007. Env: see `.env.example`; minimum is
 `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
 
+**Frontend WebAssembly:** `wasm/` holds the AssemblyScript dough/Peirce kernels;
+`lib/wasm/` owns browser/worker loading and fallbacks. Vite compiles them before
+dev/build, and `pnpm test` compiles before Vitest. Use `pnpm wasm:build` explicitly
+before direct `pnpm exec vitest` runs involving these modules; `pnpm wasm:bench`
+compares warm CPU costs with JavaScript. `lib/wasm/generated/` and
+`wasm/.generated/` are generated, gitignored outputs. See
+[`docs/frontend-webassembly.md`](docs/frontend-webassembly.md) for the source map,
+memory contract, asset checks and one-time Apache policy update.
+
 ## The commit gate — run this before EVERY commit
 
 This repo's recurring failure mode is not broken code; it is code that works

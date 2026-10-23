@@ -11,6 +11,18 @@ lab signs off.
 - **Task plan:** [`docs/plans/2026-10-17-globe-eversion-tasks.md`](../../docs/plans/2026-10-17-globe-eversion-tasks.md)
   — 39 tasks, file ownership (§3), dependency table (§2).
 
+## WebAssembly projection baking
+
+`gl/core.ts#defaultDeps` warms `lib/wasm/projection.ts` in the realm that owns the
+renderer, including the render worker when available. Peirce LUT baking uses
+`wasm/projection.ts` after it is ready; other projections and an early/failed
+Wasm load use the existing JavaScript path. The resulting LUT is copied into an
+owned buffer so a later bake cannot overwrite the current navigation's data.
+The compiler derives the elliptic helper from `projections/elliptic.ts` to keep
+one authoritative implementation. Rendering remains in the existing shaders.
+Build, fallback, parity-test and deployment details:
+[frontend WebAssembly](../../docs/frontend-webassembly.md).
+
 ## Module map
 
 Pure and client-safe unless noted: importable from node vitest, no DOM at import.

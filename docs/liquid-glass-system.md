@@ -70,6 +70,13 @@ through `lib/liquid/globe-material.ts`. The neutral liquid globe transmits the c
 page and deforms during direct manipulation. Taps do not launch waves. During eversion,
 the liquid surface flattens and turns inside out; pages do not become a matte texture
 mapped onto a diffuse sphere. Ordinary navigation has no eversion or ripple delay.
+The globe's dough solver uses the AssemblyScript kernel in `wasm/dough.ts` after
+loading, with fixed memory shared by `DoughBody` and the texture uploader. Peirce
+projection baking has a separate Wasm kernel in the eversion renderer's realm.
+Both preserve their JavaScript fallback and the existing bounded frame lifecycle;
+glass and eversion rendering stay in WebGL. Build and deployment requirements:
+[frontend WebAssembly](./frontend-webassembly.md).
+
 Legacy `all` preferences resolve to `globe`; only destinations chosen in the open globe
 use the transition. Interruptions preserve the running animation's pose and derivatives.
 

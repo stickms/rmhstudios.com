@@ -87,6 +87,12 @@ change, change the rule in the same commit and say so in the message.
 
 ## Key commands
 
+The globe's dough simulation and Peirce projection bake use AssemblyScript
+WebAssembly kernels with JavaScript fallbacks. Vite and `pnpm test` compile them
+automatically; use `pnpm wasm:build` before direct Vitest runs and `pnpm wasm:bench`
+for CPU comparisons. Build/deployment details and the Apache CSP prerequisite:
+[`docs/frontend-webassembly.md`](./docs/frontend-webassembly.md).
+
 ```bash
 pnpm install && pnpm db:push && pnpm dev   # run locally → http://localhost:7005
 pnpm check:consistency                     # the commit gate — before EVERY commit
