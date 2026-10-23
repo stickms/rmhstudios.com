@@ -38,7 +38,7 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
     .slice(0, 12);
 
   return (
-    <article className="glass-fill space-y-4 rounded-site p-4">
+    <article className="glass-fill space-y-3 rounded-site p-4">
       <header className="flex flex-wrap items-center gap-2">
         <h3 className="text-base font-bold text-site-text">{p.service}</h3>
         <Badge variant="default" size="sm">
@@ -178,7 +178,7 @@ export function ProcessesTab({ overview }: { overview: PerfOverview }) {
   const all = [...overview.processes, ...up];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {down.length > 0 && (
         <div className="space-y-2">
           {down.map((h) => (
@@ -197,7 +197,7 @@ export function ProcessesTab({ overview }: { overview: PerfOverview }) {
           ))}
         </div>
       )}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         {all.map((p) => (
           <ProcessCard key={`${p.service}:${p.hostname}:${p.pid}`} p={p} />
         ))}

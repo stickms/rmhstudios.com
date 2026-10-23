@@ -4,15 +4,19 @@
  * Review pending driver applications (vehicle details + self-reported licence
  * number) and approve or reject.
  */
+import { AdminBody } from '@/components/admin/AdminBody';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Car, Check, X, MapPin, Search, Route as RouteIcon } from 'lucide-react';
+import { Car, Check, X, MapPin, Route as RouteIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchField } from '@/components/ui/search-field';
+import { Badge } from '@/components/ui/badge';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -51,13 +55,13 @@ type RideStatus = 'SCHEDULED' | 'REQUESTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMP
 const RIDE_STATUS_FILTERS: ('ALL' | RideStatus)[] = [
   'ALL', 'REQUESTED', 'SCHEDULED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED',
 ];
-const RIDE_STATUS_META: Record<RideStatus, { label: string; className: string }> = {
-  SCHEDULED: { label: 'Scheduled', className: 'text-site-accent bg-site-accent/10' },
-  REQUESTED: { label: 'Awaiting driver', className: 'text-site-warning bg-site-warning/10' },
-  ACCEPTED: { label: 'Accepted', className: 'text-site-accent bg-site-accent/10' },
-  IN_PROGRESS: { label: 'In progress', className: 'text-site-accent bg-site-accent/10' },
-  COMPLETED: { label: 'Completed', className: 'text-site-success bg-site-success/10' },
-  CANCELLED: { label: 'Cancelled', className: 'text-site-text-muted bg-site-surface-hover' },
+const RIDE_STATUS_VARIANT: Record<RideStatus, 'accent' | 'warning' | 'success' | 'default'> = {
+  SCHEDULED: 'accent',
+  REQUESTED: 'warning',
+  ACCEPTED: 'accent',
+  IN_PROGRESS: 'accent',
+  COMPLETED: 'success',
+  CANCELLED: 'default',
 };
 
 interface RidePerson {
@@ -79,6 +83,36 @@ interface AdminRide {
   requestedAt: string;
   rider: RidePerson | null;
   driver: RidePerson | null;
+}
+
+type TFn = (key: string, options: { defaultValue: string }) => string;
+
+function rideStatusLabel(status: RideStatus, t: TFn): string {
+  switch (status) {
+    case 'SCHEDULED':
+      return t('ride-status-scheduled', { defaultValue: 'Scheduled' });
+    case 'REQUESTED':
+      return t('ride-status-requested', { defaultValue: 'Awaiting driver' });
+    case 'ACCEPTED':
+      return t('ride-status-accepted', { defaultValue: 'Accepted' });
+    case 'IN_PROGRESS':
+      return t('ride-status-in-progress', { defaultValue: 'In progress' });
+    case 'COMPLETED':
+      return t('ride-status-completed', { defaultValue: 'Completed' });
+    case 'CANCELLED':
+      return t('ride-status-cancelled', { defaultValue: 'Cancelled' });
+  }
+}
+
+function appStatusLabel(status: Status, t: TFn): string {
+  switch (status) {
+    case 'PENDING':
+      return t('app-status-pending', { defaultValue: 'Pending' });
+    case 'APPROVED':
+      return t('app-status-approved', { defaultValue: 'Approved' });
+    case 'REJECTED':
+      return t('app-status-rejected', { defaultValue: 'Rejected' });
+  }
 }
 
 function AdminRidesharePage() {
@@ -164,29 +198,22 @@ function AdminRidesharePage() {
     <PageLayout
       title={t('rideshare-title', { defaultValue: 'Rideshare Applications' })}
       backTo="/admin"
+      description={t('rideshare-admin-description', {
+        defaultValue: 'Review and verify community drivers, and browse every ride placed across the community.',
+      })}
       backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
       wide
     >
-      <div className="mx-auto w-full max-w-4xl space-y-5 p-4 md:p-8">
-        <p className="text-sm text-site-text-muted">
-          {t('rideshare-admin-description', { defaultValue: 'Review and verify community drivers, and browse every ride placed across the community.' })}
-        </p>
-
-        {/* View switcher */}
-        <div className="flex gap-1 rounded-site border border-site-border bg-site-surface/80 p-1">
-          {([[`applications`, t('view-driver-applications', { defaultValue: 'Driver applications' })], [`rides`, t('view-ride-history', { defaultValue: 'Ride history' })]] as const).map(([v, label]) => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              className={`flex-1 rounded-site-sm px-3 py-1.5 text-sm font-semibold transition-colors ${
-                view === v ? 'bg-site-accent text-(--site-accent-fg)' : 'text-site-text-muted hover:text-site-text'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
+      <PageTabs
+        value={view}
+        onChange={(id) => setView(id as View)}
+        aria-label={t('rideshare-title', { defaultValue: 'Rideshare Applications' })}
+        tabs={[
+          { id: 'applications', label: t('view-driver-applications', { defaultValue: 'Driver applications' }) },
+          { id: 'rides', label: t('view-ride-history', { defaultValue: 'Ride history' }) },
+        ]}
+      />
+      <AdminBody>
         {view === 'rides' ? (
           <RideHistory
             rides={rides}
@@ -198,31 +225,24 @@ function AdminRidesharePage() {
           />
         ) : (
         <>
-        <div className="flex gap-1 rounded-site border border-site-border bg-site-surface/80 p-1">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setStatus(t)}
-              className={`flex-1 rounded-site-sm px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
-                status === t ? 'bg-site-accent text-(--site-accent-fg)' : 'text-site-text-muted hover:text-site-text'
-              }`}
-            >
-              {t.toLowerCase()}
-            </button>
-          ))}
-        </div>
+        <LiquidTabs
+          value={status}
+          onChange={(id) => setStatus(id as Status)}
+          aria-label={t('application-status', { defaultValue: 'Application status' })}
+          tabs={TABS.map((s) => ({ id: s, label: appStatusLabel(s, t) }))}
+        />
 
         {loading ? (
           <div className="flex justify-center py-16"><Spinner /></div>
         ) : items.length === 0 ? (
           <EmptyState
             icon={Car}
-            title={t('no-applications', { status: status.toLowerCase(), defaultValue: 'No {{status}} applications.' })}
+            title={t('no-applications', { status: appStatusLabel(status, t).toLowerCase(), defaultValue: 'No {{status}} applications.' })}
           />
         ) : (
-          <ul className="space-y-4">
+          <ul className="space-y-3">
             {items.map((app) => (
-              <li key={app.id} className="glass-fill rounded-site p-5">
+              <li key={app.id} className="glass-fill rounded-site p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={app.user.image} alt={app.user.name ?? t('user-alt', { defaultValue: 'User' })} size={40} />
@@ -238,13 +258,13 @@ function AdminRidesharePage() {
                   </span>
                 </div>
 
-                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                   {/* Vehicle */}
                   <div className="glass-inset rounded-site-sm p-4">
                     <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
-                      <Car className="h-4 w-4 text-site-accent" /> {t('vehicle-section', { defaultValue: 'Vehicle' })}
+                      <Car className="size-4 text-site-accent" aria-hidden /> {t('vehicle-section', { defaultValue: 'Vehicle' })}
                     </div>
-                    <dl className="mt-2 space-y-1 text-sm">
+                    <dl className="mt-2 space-y-2 text-sm">
                       <Row label={t('vehicle-label', { defaultValue: 'Vehicle' })} value={`${app.vehicleColor} ${app.vehicleMake} ${app.vehicleModel}`} />
                       <Row label={t('year-label', { defaultValue: 'Year' })} value={String(app.vehicleYear)} />
                       <Row label={t('plate-label', { defaultValue: 'Plate' })} value={app.licensePlate} />
@@ -255,8 +275,8 @@ function AdminRidesharePage() {
 
                   {/* License */}
                   <div className="glass-inset rounded-site-sm p-4">
-                    <div className="mb-2 text-sm font-semibold text-site-text">{t('drivers-license-section', { defaultValue: "Driver's license" })}</div>
-                    <dl className="space-y-1.5">
+                    <div className="text-sm font-semibold text-site-text">{t('drivers-license-section', { defaultValue: "Driver's license" })}</div>
+                    <dl className="mt-2 space-y-2 text-sm">
                       <Row label={t('license-number-label', { defaultValue: 'License #' })} value={app.licenseNumber || '—'} />
                     </dl>
                   </div>
@@ -269,7 +289,7 @@ function AdminRidesharePage() {
                 )}
 
                 {app.status === 'PENDING' && (
-                  <div className="mt-4">
+                  <div className="mt-3">
                     {rejecting === app.id ? (
                       <div className="space-y-2">
                         <Textarea
@@ -287,7 +307,7 @@ function AdminRidesharePage() {
                             onClick={() => decide(app.id, 'reject', reason.trim() || undefined)}
                             loading={busy === app.id}
                           >
-                            <X className="h-4 w-4" /> {t('confirm-reject', { defaultValue: 'Confirm reject' })}
+                            <X aria-hidden /> {t('confirm-reject', { defaultValue: 'Confirm reject' })}
                           </Button>
                           <Button
                             variant="outline"
@@ -300,16 +320,17 @@ function AdminRidesharePage() {
                       </div>
                     ) : (
                       <div className="flex gap-2">
-                        <Button onClick={() => decide(app.id, 'approve')} loading={busy === app.id}>
-                          <Check className="h-4 w-4" /> {t('approve', { defaultValue: 'Approve' })}
+                        <Button size="sm" onClick={() => decide(app.id, 'approve')} loading={busy === app.id}>
+                          <Check aria-hidden /> {t('approve', { defaultValue: 'Approve' })}
                         </Button>
                         <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => setRejecting(app.id)}
                           disabled={busy === app.id}
                           className="text-site-danger hover:bg-site-danger/10"
                         >
-                          <X className="h-4 w-4" /> {t('reject', { defaultValue: 'Reject' })}
+                          <X aria-hidden /> {t('reject', { defaultValue: 'Reject' })}
                         </Button>
                       </div>
                     )}
@@ -321,7 +342,7 @@ function AdminRidesharePage() {
         )}
         </>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }
@@ -343,34 +364,23 @@ function RideHistory({
 }) {
   const { t } = useTranslation('admin');
   return (
-    <div className="space-y-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
-        <Input
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          placeholder={t('ride-search-placeholder', { defaultValue: 'Search rider, driver, or address…' })}
-          className="pl-9"
-        />
-      </div>
+    <div className="space-y-3">
+      <SearchField
+        value={query}
+        onValueChange={onQuery}
+        placeholder={t('ride-search-placeholder', { defaultValue: 'Search rider, driver, or address…' })}
+        aria-label={t('ride-search-label', { defaultValue: 'Search rides' })}
+      />
 
-      {/* Status filter */}
-      <div className="flex flex-wrap gap-1.5">
-        {RIDE_STATUS_FILTERS.map((s) => (
-          <button
-            key={s}
-            onClick={() => onStatus(s)}
-            className={`rounded-site-sm px-3 py-1.5 text-xs font-medium transition-colors ${
-              status === s
-                ? 'bg-site-accent text-(--site-accent-fg)'
-                : 'border border-site-border bg-site-surface/80 text-site-text-muted hover:text-site-text'
-            }`}
-          >
-            {s === 'ALL' ? t('status-all', { defaultValue: 'All' }) : RIDE_STATUS_META[s].label}
-          </button>
-        ))}
-      </div>
+      <LiquidTabs
+        value={status}
+        onChange={(id) => onStatus(id as 'ALL' | RideStatus)}
+        aria-label={t('ride-status-filter', { defaultValue: 'Filter rides by status' })}
+        tabs={RIDE_STATUS_FILTERS.map((s) => ({
+          id: s,
+          label: s === 'ALL' ? t('status-all', { defaultValue: 'All' }) : rideStatusLabel(s, t),
+        }))}
+      />
 
       {loading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
@@ -379,8 +389,7 @@ function RideHistory({
       ) : (
         <ul className="space-y-3">
           {rides.map((ride) => {
-            const meta = RIDE_STATUS_META[ride.status];
-            return (
+                        return (
               <li key={ride.id} className="glass-fill rounded-site p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -394,25 +403,27 @@ function RideHistory({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-site-text-muted">{rideClassName(ride.rideClass)}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${meta.className}`}>{meta.label}</span>
+                    <Badge variant={RIDE_STATUS_VARIANT[ride.status]} icon={false}>
+                      {rideStatusLabel(ride.status, t)}
+                    </Badge>
                   </div>
                 </div>
 
-                <div className="mt-3 space-y-1 text-xs text-site-text-muted">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-site-success" />
+                <div className="mt-3 space-y-2 text-xs text-site-text-muted">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 shrink-0 rounded-full bg-site-success" aria-hidden />
                     <span className="truncate" title={ride.pickupLabel}>{ride.pickupLabel}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3 w-3 shrink-0 text-site-accent" />
+                  <div className="flex items-center gap-2">
+                    <MapPin className="size-3 shrink-0 text-site-accent" aria-hidden />
                     <span className="truncate" title={ride.dropoffLabel}>{ride.dropoffLabel}</span>
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-site-border pt-3 text-xs text-site-text-dim">
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-site-border pt-3 text-xs text-site-text-dim">
                   {ride.distanceMeters != null && (
                     <span className="flex items-center gap-1">
-                      <RouteIcon className="h-3 w-3" /> {formatDistance(ride.distanceMeters)}
+                      <RouteIcon className="size-3" aria-hidden /> {formatDistance(ride.distanceMeters)}
                     </span>
                   )}
                   {ride.estimatedFareCents != null && (

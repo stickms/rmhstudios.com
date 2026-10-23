@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AlarmsPanel } from '@/components/admin/oncall/AlarmsPanel';
 
@@ -14,9 +15,9 @@ function AlarmsPage() {
   const { t } = useTranslation('f-oncall');
   return (
     <PageLayout title={t('page-title', { defaultValue: 'On-call alarms' })} wide backTo="/admin">
-      <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
+      <AdminBody width="wide">
         <AlarmsPanel />
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

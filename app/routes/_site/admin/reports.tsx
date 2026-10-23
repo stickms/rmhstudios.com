@@ -1,15 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Flag, ExternalLink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { PageTabs } from '@/components/feed/PageTabs';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { MacroField } from '@/components/safety/MacroField';
 
 export const Route = createFileRoute('/_site/admin/reports')({
@@ -48,6 +50,12 @@ function entityLink(r: Report): string | null {
 
 function AdminReportsPage() {
   const { t } = useTranslation('admin');
+  const STATUS_LABELS: Record<Status, string> = {
+    PENDING: t('status-pending', { defaultValue: 'Pending' }),
+    REVIEWING: t('status-reviewing', { defaultValue: 'Reviewing' }),
+    RESOLVED: t('status-resolved', { defaultValue: 'Resolved' }),
+    DISMISSED: t('status-dismissed', { defaultValue: 'Dismissed' }),
+  };
   const [status, setStatus] = useState<Status>('PENDING');
   const [reports, setReports] = useState<Report[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -112,33 +120,33 @@ function AdminReportsPage() {
   };
 
   return (
-    <PageLayout title={t('moderation-queue-title', { defaultValue: 'Moderation Queue' })} wide backTo="/admin">
-      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center gap-2 text-site-text-muted text-sm">
-          <Flag className="h-5 w-5 text-site-accent shrink-0" />
-          {t('moderation-queue-description', { defaultValue: 'Review and resolve user reports.' })}
-        </div>
-
+    <PageLayout
+      title={t('moderation-queue-title', { defaultValue: 'Moderation Queue' })}
+      description={t('moderation-queue-description', { defaultValue: 'Review and resolve user reports.' })}
+      wide
+      backTo="/admin"
+      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+    >
         {/* An exclusive switcher IS a tab strip, whatever it is built from — an
             accent pill row with no `role` is still one, and this one had no
             `aria-pressed` either, so a screen reader could not tell which status
             was showing. `LiquidTabs` brings the roving focus, the selected
             state and the shared capsule; `count` is the badge this was drawing
             by hand. */}
-        <LiquidTabs
+        <PageTabs
           tabs={STATUS_TABS.map((s) => ({
             id: s,
-            label: s.charAt(0) + s.slice(1).toLowerCase(),
+            label: STATUS_LABELS[s],
             count: counts[s] || undefined,
           }))}
           value={status}
           onChange={(id) => setStatus(id as (typeof STATUS_TABS)[number])}
-          scroll
           aria-label={t('moderation-queue', { defaultValue: 'Moderation queue' })}
         />
 
+      <AdminBody>
         {loading ? (
-          <div className="flex justify-center py-20">
+          <div className="flex justify-center py-16">
             <Spinner />
           </div>
         ) : reports.length === 0 ? (
@@ -148,14 +156,10 @@ function AdminReportsPage() {
             {reports.map((r) => {
               const link = entityLink(r);
               return (
-                <li key={r.id} className="glass-fill rounded-site p-4">
+                <li key={r.id} className="glass-fill space-y-3 rounded-site p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-site-sm bg-site-danger/15 px-2 py-0.5 text-xs font-semibold text-site-danger">
-                      {r.reason.replace('_', ' ')}
-                    </span>
-                    <span className="rounded-site-sm bg-site-bg px-2 py-0.5 text-xs text-site-text-muted border border-site-border">
-                      {r.entityType}
-                    </span>
+                    <Badge variant="danger">{r.reason.replace('_', ' ')}</Badge>
+                    <Badge variant="outline">{r.entityType}</Badge>
                     <span className="text-xs text-site-text-dim">
                       {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
                     </span>
@@ -166,20 +170,20 @@ function AdminReportsPage() {
                         rel="noreferrer"
                         className="ml-auto inline-flex items-center gap-1 text-xs text-site-accent hover:underline"
                       >
-                        {t('view-content', { defaultValue: 'View content' })} <ExternalLink className="h-3 w-3" />
+                        {t('view-content', { defaultValue: 'View content' })} <ExternalLink className="size-3" aria-hidden />
                       </a>
                     )}
                   </div>
 
-                  {r.details && <p className="mt-2 text-sm text-site-text">{r.details}</p>}
+                  {r.details && <p className="text-sm text-site-text">{r.details}</p>}
 
-                  <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-site-text-muted">
-                    <span className="inline-flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-site-text-muted">
+                    <span className="inline-flex items-center gap-2">
                       <UserAvatar src={r.reporter.image} alt={r.reporter.name || t('reporter', { defaultValue: 'Reporter' })} size={20} fallbackName={r.reporter.name || 'R'} />
                       {t('reported-by', { defaultValue: 'reported by' })} <strong className="text-site-text">{r.reporter.name || r.reporter.handle}</strong>
                     </span>
                     {r.targetUser && (
-                      <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-2">
                         <UserAvatar src={r.targetUser.image} alt={r.targetUser.name || t('user', { defaultValue: 'User' })} size={20} fallbackName={r.targetUser.name || 'U'} />
                         {t('against', { defaultValue: 'against' })} <strong className="text-site-text">{r.targetUser.name || r.targetUser.handle}</strong>
                       </span>
@@ -187,7 +191,7 @@ function AdminReportsPage() {
                   </div>
 
                   {(status === 'PENDING' || status === 'REVIEWING') && r.targetUser && (
-                    <div className="mt-4">
+                    <div>
                       <MacroField
                         scope={{ kind: 'admin' }}
                         vars={{ user: r.targetUser.name || r.targetUser.handle || undefined, reason: r.reason.replace('_', ' ').toLowerCase() }}
@@ -198,7 +202,7 @@ function AdminReportsPage() {
                   )}
 
                   {(status === 'PENDING' || status === 'REVIEWING') && (
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {status === 'PENDING' && (
                         <Button size="sm" variant="secondary" disabled={busyId === r.id} onClick={() => act(r.id, 'review')}>
                           {t('mark-reviewing', { defaultValue: 'Mark reviewing' })}
@@ -232,7 +236,7 @@ function AdminReportsPage() {
             })}
           </ul>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

@@ -603,8 +603,8 @@
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   color: var(--site-text);
-  font-size: 0.82rem;
-  line-height: 1.4;
+  font-size: 0.875rem;
+  line-height: 1.5;
   font-family: inherit;
   outline: none;
 }
@@ -1583,7 +1583,7 @@
   gap: 6px;
 }
 .lib-blog__tag {
-  font-size: 9px;
+  font-size: 0.625rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 2px 7px;
@@ -1616,8 +1616,8 @@
   margin-top: auto;
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.7rem;
+  gap: 6px;
+  font-size: 0.75rem;
   color: var(--site-text-muted);
 }
 .lib__section-title {
@@ -1655,8 +1655,6 @@
   background: var(--site-glass-tint-strong, var(--site-surface));
   color: var(--site-text);
   cursor: pointer;
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome));
-  backdrop-filter: blur(var(--site-glass-blur-chrome));
   transition:
     background var(--site-transition-speed),
     transform 0.15s ease;
@@ -2629,7 +2627,7 @@
      The playground does not clip, so the 3D orbit still has room to lift. */
   --lib-gutter: clamp(8px, 1.2vw, 12px);
   --lib-content: 1400px;
-  padding-bottom: clamp(88px, 12vw, 152px);
+  padding-bottom: var(--site-page-bottom-space);
   background:
     radial-gradient(
       circle at 84% 8%,
@@ -2644,13 +2642,6 @@
 }
 
 .lib-playground {
-  min-height: 100vh;
-  /* `100vh` on mobile is the LARGEST viewport, so this ground is taller than
-     the visible page whenever the browser toolbars are showing — the page
-     gains a phantom scroll. `svh` is the smallest viewport, so the ground
-     always fills without overshooting; the plain `vh` line above stays as
-     the fallback for engines that don't parse it. */
-  min-height: 100svh;
   padding-inline: var(--lib-gutter);
   perspective: 1200px;
 }
@@ -2682,18 +2673,20 @@
    that reason; it no longer has to.) */
 .lib--glass-playground .lib-section-shell {
   max-width: var(--lib-content);
-  margin: 14px auto 0;
-  padding: clamp(14px, 2.4vw, 28px);
+  margin: var(--site-section-gap) auto 0;
+  padding: var(--site-panel-padding);
   overflow: visible;
   border-radius: calc(var(--site-radius) * 1.25);
 }
 
+
 .lib--glass-playground .lib__section + .lib__section {
-  margin-top: 14px;
+  margin-top: var(--site-section-gap);
 }
 
+
 .lib--glass-playground .lib__section--catalog + .lib__section--catalog {
-  margin-top: 14px;
+  margin-top: var(--site-section-gap);
 }
 
 .lib--glass-playground .lib__section-head,
@@ -2753,20 +2746,20 @@
 .lib--glass-playground .lib__shelf--catalog {
   --cover-h: 280px;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 218px), 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .lib--glass-playground .lib-collections .lib__shelf {
   grid-auto-rows: auto;
-  gap: 14px;
+  gap: 12px;
 }
 
 .lib--glass-playground .lib-collections__group-wrap + .lib-collections__group-wrap {
-  margin-top: 20px;
+  margin-top: var(--site-section-gap);
 }
 
 .lib--glass-playground .lib-collections__subhead {
-  margin: 0 2px 10px;
+  margin: 0 2px 12px;
   color: var(--site-text-dim);
   font-family: var(--site-font-mono);
   font-size: 0.6875rem;
@@ -2810,7 +2803,7 @@
 
 .lib--glass-playground .lib-blog__card {
   min-height: 214px;
-  padding: 18px;
+  padding: 16px;
   background-color: var(--site-glass-tint);
 }
 
@@ -2881,7 +2874,7 @@
 
 .lib--glass-playground .lib-edit__migrate {
   max-width: var(--lib-content);
-  margin: 14px auto 0;
+  margin: var(--site-section-gap) auto 0;
   border-radius: var(--site-radius);
   background: var(--site-surface);
 }
@@ -2893,17 +2886,17 @@
 
   .lib-explorer {
     inset-block-start: 6px;
-    padding: 7px;
+    padding: 8px;
   }
 
   .lib--glass-playground .lib-section-shell {
-    padding: 14px 10px;
+    padding: var(--site-panel-padding);
   }
 
   .lib--glass-playground .lib__shelf--catalog {
     --cover-h: 220px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 12px;
   }
 
   .lib--glass-playground .lib-volume .lib-book,

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -47,15 +47,12 @@ export function DeleteBlogButton({ slug, title }: { slug: string; title: string 
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
+    <IconButton
+      icon={Trash2}
+      label={t('delete-post', { defaultValue: 'Delete Post' })}
       onClick={handleDelete}
       disabled={isDeleting}
-      className="text-site-danger hover:text-site-danger hover:bg-site-danger/10"
-      title={t('delete-post', { defaultValue: 'Delete Post' })}
-    >
-      <Trash2 className="w-4 h-4" />
-    </Button>
+      className="text-site-danger hover:bg-site-danger/10 hover:text-site-danger"
+    />
   );
 }

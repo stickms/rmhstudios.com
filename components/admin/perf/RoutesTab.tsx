@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { SearchField } from '@/components/ui/search-field';
 import type { RouteRow } from '@/lib/perf/process-metrics';
 import { DataTable, type Column } from './DataTable';
 import { fmtInt, fmtMs, fmtNum, fmtPct } from './format';
@@ -122,15 +122,14 @@ export function RoutesTab({ routes }: { routes: RouteRow[] }) {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
-        <Input
-          type="search"
+        <SearchField
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          onValueChange={setFilter}
           placeholder={t('routes-filter', { defaultValue: 'Filter routes…' })}
           aria-label={t('routes-filter-label', { defaultValue: 'Filter routes' })}
-          className="max-w-xs"
+          containerClassName="w-full max-w-xs"
         />
         <p className="text-xs text-site-text-dim">
           {t('routes-note', {

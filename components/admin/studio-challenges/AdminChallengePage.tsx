@@ -1,5 +1,6 @@
 'use client';
 
+import { AdminBody } from '@/components/admin/AdminBody';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -68,7 +69,7 @@ export function AdminChallengePage() {
       {label}
       <Input
         type="datetime-local"
-        className="glass-inset mt-1"
+        className="mt-2"
         value={value}
         onChange={(e) => set(e.target.value)}
       />
@@ -81,49 +82,51 @@ export function AdminChallengePage() {
       description={t('admin-page-desc', {
         defaultValue: 'Post a sample and a window; members submit flips and vote.',
       })}
+      wide
       backTo="/admin"
+      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
     >
-      <div className="glass-pane mx-4 mt-4 mb-12 space-y-3 rounded-site p-4">
-        <Input
-          className="glass-inset"
-          placeholder={t('admin-title', { defaultValue: 'Challenge title' })}
-          maxLength={120}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <Textarea
-          className="glass-inset"
-          placeholder={t('admin-brief', { defaultValue: 'Brief and rules' })}
-          maxLength={1000}
-          value={brief}
-          onChange={(e) => setBrief(e.target.value)}
-        />
-        <label className="block text-xs font-medium text-site-text-muted">
-          {t('admin-sample', { defaultValue: 'Sample audio (WAV or MP3, up to 8 MB)' })}
-          <input
-            type="file"
-            accept="audio/*"
-            className="mt-1 block text-sm"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+      <AdminBody width="narrow">
+        <div className="glass-pane space-y-3 rounded-site p-4">
+          <Input
+            placeholder={t('admin-title', { defaultValue: 'Challenge title' })}
+            maxLength={120}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
           />
-        </label>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {dateField(t('admin-starts', { defaultValue: 'Opens' }), startsAt, setStartsAt)}
-          {dateField(t('admin-ends', { defaultValue: 'Submissions close' }), endsAt, setEndsAt)}
-          {dateField(
-            t('admin-voting', { defaultValue: 'Voting ends' }),
-            votingEndsAt,
-            setVotingEndsAt,
-          )}
+          <Textarea
+            placeholder={t('admin-brief', { defaultValue: 'Brief and rules' })}
+            maxLength={1000}
+            value={brief}
+            onChange={(e) => setBrief(e.target.value)}
+          />
+          <label className="block text-xs font-medium text-site-text-muted">
+            {t('admin-sample', { defaultValue: 'Sample audio (WAV or MP3, up to 8 MB)' })}
+            <input
+              type="file"
+              accept="audio/*"
+              className="mt-2 block text-sm"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {dateField(t('admin-starts', { defaultValue: 'Opens' }), startsAt, setStartsAt)}
+            {dateField(t('admin-ends', { defaultValue: 'Submissions close' }), endsAt, setEndsAt)}
+            {dateField(
+              t('admin-voting', { defaultValue: 'Voting ends' }),
+              votingEndsAt,
+              setVotingEndsAt,
+            )}
+          </div>
+          <Button
+            variant="accent"
+            disabled={busy || !title.trim() || !file}
+            onClick={() => void create()}
+          >
+            {t('admin-create', { defaultValue: 'Start challenge' })}
+          </Button>
         </div>
-        <Button
-          variant="accent"
-          disabled={busy || !title.trim() || !file}
-          onClick={() => void create()}
-        >
-          {t('admin-create', { defaultValue: 'Start challenge' })}
-        </Button>
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

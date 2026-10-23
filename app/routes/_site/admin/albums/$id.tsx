@@ -9,6 +9,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Play, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AlbumUploader, type AdminSlide } from '@/components/library/AlbumUploader';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Spinner } from '@/components/ui/spinner';
 
 export const Route = createFileRoute('/_site/admin/albums/$id')({
   head: () => ({ meta: [{ title: 'Manage Album | Admin' }] }),
@@ -79,11 +81,18 @@ function ManageAlbumPage() {
         body: JSON.stringify({ title: title.trim(), description }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || t('album-save-failed', { defaultValue: 'Save failed' }));
-      setAlbum((prev) => (prev ? { ...prev, title: data.album.title, description: data.album.description } : prev));
+      if (!res.ok)
+        throw new Error(data?.error || t('album-save-failed', { defaultValue: 'Save failed' }));
+      setAlbum((prev) =>
+        prev ? { ...prev, title: data.album.title, description: data.album.description } : prev,
+      );
       toast.success(t('album-saved', { defaultValue: 'Saved.' }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('album-save-failed', { defaultValue: 'Save failed' }));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t('album-save-failed', { defaultValue: 'Save failed' }),
+      );
     } finally {
       setSaving(false);
     }
@@ -98,7 +107,9 @@ function ManageAlbumPage() {
     if (!album) return;
     const prev = album.slides;
     setAlbum({ ...album, slides: prev.filter((s) => s.id !== slideId) });
-    const res = await fetch(`/api/admin/albums/${album.id}/slides/${slideId}`, { method: 'DELETE' }).catch(() => null);
+    const res = await fetch(`/api/admin/albums/${album.id}/slides/${slideId}`, {
+      method: 'DELETE',
+    }).catch(() => null);
     if (!res?.ok) {
       setAlbum((a) => (a ? { ...a, slides: prev } : a));
       toast.error(t('slide-delete-failed', { defaultValue: 'Failed to delete slide.' }));
@@ -132,7 +143,10 @@ function ManageAlbumPage() {
     if (!album) return;
     if (
       !(await confirm({
-        title: t('album-delete-confirm', { title: album.title, defaultValue: 'Delete album "{{title}}"?' }),
+        title: t('album-delete-confirm', {
+          title: album.title,
+          defaultValue: 'Delete album "{{title}}"?',
+        }),
         description: t('album-delete-desc', {
           count: album.slides.length,
           defaultValue_one: 'The 1 item will be removed. This cannot be undone.',
@@ -142,7 +156,9 @@ function ManageAlbumPage() {
       }))
     )
       return;
-    const res = await fetch(`/api/admin/albums/${album.id}`, { method: 'DELETE' }).catch(() => null);
+    const res = await fetch(`/api/admin/albums/${album.id}`, { method: 'DELETE' }).catch(
+      () => null,
+    );
     if (res?.ok) {
       toast.success(t('album-deleted', { defaultValue: 'Album deleted.' }));
       navigate({ to: '/admin/albums' });
@@ -159,9 +175,11 @@ function ManageAlbumPage() {
         backLabel={t('back-to-albums', { defaultValue: 'All albums' })}
         wide
       >
-        <div className="mx-auto flex w-full max-w-3xl justify-center p-8 text-site-text-muted">
-          {t('loading', { defaultValue: 'Loading…' })}
-        </div>
+        <AdminBody width="narrow">
+          <div className="flex justify-center py-12">
+            <Spinner />
+          </div>
+        </AdminBody>
       </PageLayout>
     );
   }
@@ -173,9 +191,9 @@ function ManageAlbumPage() {
         backLabel={t('back-to-albums', { defaultValue: 'All albums' })}
         wide
       >
-        <div className="mx-auto w-full max-w-3xl p-4 md:p-8">
+        <AdminBody width="narrow">
           <EmptyState title={t('album-not-found', { defaultValue: 'Album not found.' })} />
-        </div>
+        </AdminBody>
       </PageLayout>
     );
   }
@@ -187,7 +205,7 @@ function ManageAlbumPage() {
       backLabel={t('back-to-albums', { defaultValue: 'All albums' })}
       wide
     >
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 p-4 md:p-8">
+      <AdminBody width="narrow">
         {/* Album details — a singular editing panel gets the L2 glass pane. */}
         <div className="glass-pane flex flex-col gap-3 rounded-site p-4">
           <Input
@@ -208,10 +226,17 @@ function ManageAlbumPage() {
             maxLength={2000}
           />
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={saveMeta} loading={saving} disabled={!dirty || !title.trim()} size="sm">
+            <Button
+              onClick={saveMeta}
+              loading={saving}
+              disabled={!dirty || !title.trim()}
+              size="sm"
+            >
               {t('save-details', { defaultValue: 'Save details' })}
             </Button>
-            <span className="truncate font-mono text-xs text-site-text-dim">/library/albums/{album.slug}</span>
+            <span className="truncate font-mono text-xs text-site-text-dim">
+              /library/albums/{album.slug}
+            </span>
           </div>
         </div>
 
@@ -219,7 +244,7 @@ function ManageAlbumPage() {
 
         {slides.length > 0 && (
           <div className="flex flex-col gap-3">
-            <p className="font-mono text-xs uppercase tracking-widest text-site-text-dim">
+            <p className="text-xs text-site-text-muted">
               {t('slides-count-reorder', {
                 count: slides.length,
                 defaultValue_one: '{{count}} item · drag to reorder',
@@ -247,8 +272,8 @@ function ManageAlbumPage() {
                     className="h-full w-full cursor-grab object-cover active:cursor-grabbing"
                   />
                   {slide.type === 'video' && (
-                    <span className="absolute left-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink">
-                      <Play size={12} aria-hidden="true" />
+                    <span className="absolute left-2 top-2 flex size-5 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink">
+                      <Play className="size-3" aria-hidden="true" />
                     </span>
                   )}
                   <button
@@ -260,9 +285,9 @@ function ManageAlbumPage() {
                       defaultValue: 'Delete {{type}} {{index}}',
                     })}
                     // Always visible on touch (no hover); softens in on hover on pointer devices.
-                    className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink transition-colors hover:bg-site-danger sm:size-6 sm:opacity-70 sm:group-hover:opacity-100"
+                    className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink transition-colors hover:bg-site-danger sm:opacity-70 sm:group-hover:opacity-100"
                   >
-                    <Trash2 size={12} aria-hidden="true" />
+                    <Trash2 className="size-3" aria-hidden="true" />
                   </button>
                 </div>
               ))}
@@ -271,12 +296,12 @@ function ManageAlbumPage() {
         )}
 
         {/* Danger zone */}
-        <div className="mt-2 flex justify-end border-t border-site-border pt-4">
+        <div className="flex justify-end border-t border-site-border pt-4">
           <Button variant="danger" onClick={deleteAlbum}>
             <Trash2 aria-hidden="true" /> {t('delete-album', { defaultValue: 'Delete album' })}
           </Button>
         </div>
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

@@ -19,6 +19,7 @@ import {
   Library,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { StatTile } from '@/components/admin/StatTile';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,37 +31,6 @@ type Health = {
   total: number;
   missing: { slug: string; title: string; key: string }[];
 };
-
-/** An etched glass stat tile: mono label above a display-font value. */
-function StatTile({
-  icon: Icon,
-  label,
-  value,
-  tone = 'default',
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: React.ReactNode;
-  tone?: 'default' | 'success' | 'danger';
-}) {
-  const toneText =
-    tone === 'success'
-      ? 'text-site-success'
-      : tone === 'danger'
-        ? 'text-site-danger'
-        : 'text-site-text';
-  return (
-    <div className="glass-pane flex flex-col gap-2 p-4">
-      <div className="flex items-center gap-2 font-mono text-[0.68rem] tracking-widest text-site-text-dim uppercase">
-        <Icon className="size-3.5" />
-        {label}
-      </div>
-      <div className={`truncate font-display text-2xl font-bold tracking-tight ${toneText}`}>
-        {value}
-      </div>
-    </div>
-  );
-}
 
 export function StorageHealthPanel({
   reloadToken = 0,
@@ -90,7 +60,7 @@ export function StorageHealthPanel({
   if (loading && !health) {
     // Skeleton mirrors the final layout so nothing pops in out of order.
     return (
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-24 rounded-site" />
@@ -111,7 +81,7 @@ export function StorageHealthPanel({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       {/* Stat grid — reads at a glance on desktop, wraps to 2-up on phones. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile
@@ -122,7 +92,7 @@ export function StorageHealthPanel({
               ? t('stat-durable', { defaultValue: 'Durable' })
               : t('stat-ephemeral', { defaultValue: 'Ephemeral' })
           }
-          tone={health.durable ? 'success' : 'danger'}
+          tone={health.durable ? 'good' : 'bad'}
         />
         <StatTile
           icon={Database}
@@ -138,7 +108,7 @@ export function StorageHealthPanel({
           icon={FileWarning}
           label={t('stat-missing', { defaultValue: 'Missing files' })}
           value={health.missing.length.toLocaleString()}
-          tone={health.missing.length > 0 ? 'danger' : 'success'}
+          tone={health.missing.length > 0 ? 'bad' : 'good'}
         />
       </div>
 
@@ -159,7 +129,7 @@ export function StorageHealthPanel({
           className="gap-2 border-site-danger/40 p-4 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--site-danger)_35%,transparent)]"
         >
           <div className="flex items-center gap-2 font-semibold text-site-text">
-            <AlertTriangle className="size-[18px] shrink-0 text-site-danger" aria-hidden />
+            <AlertTriangle className="size-4 shrink-0 text-site-danger" aria-hidden />
             {t('storage-ephemeral-title', { defaultValue: 'Uploads are not durable' })}
           </div>
           <p className="text-sm text-site-danger">
@@ -173,7 +143,7 @@ export function StorageHealthPanel({
 
       {/* Missing objects */}
       <section className="flex flex-col gap-3">
-        <h2 className="font-display text-lg font-semibold text-site-text">
+        <h2 className="site-section-label">
           {t('missing-objects', {
             missing: health.missing.length,
             total: health.total,
@@ -193,7 +163,7 @@ export function StorageHealthPanel({
         ) : (
           <ul className="flex flex-col gap-2">
             {health.missing.map((m) => (
-              <li key={m.slug} className="glass-fill flex flex-col gap-0.5 px-3.5 py-2.5">
+              <li key={m.slug} className="glass-fill flex flex-col gap-1 rounded-site px-4 py-3">
                 <p className="text-sm font-medium text-site-text">{m.title}</p>
                 <p className="truncate font-mono text-xs text-site-text-muted">{m.key}</p>
               </li>

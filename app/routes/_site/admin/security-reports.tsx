@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +12,8 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
 import { toast } from 'sonner';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
+import { Badge } from '@/components/ui/badge';
 import {
   listSecurityReports,
   updateSecurityReport,
@@ -121,22 +123,17 @@ function AdminSecurityReportsPage() {
   return (
     <PageLayout
       title={t('security-reports-title', { defaultValue: 'Security Reports' })}
+      description={t('security-reports-description', {
+        defaultValue: 'Triage and resolve bug-bounty submissions from the /security page.',
+      })}
       backTo="/admin"
       backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
       wide
     >
-      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center gap-2 text-site-text-muted text-sm">
-          <ShieldAlert className="h-5 w-5 text-site-accent shrink-0" />
-          {t('security-reports-description', {
-            defaultValue: 'Triage and resolve bug-bounty submissions from the /security page.',
-          })}
-        </div>
-
         {/* The byte-identical twin of the switcher in admin/reports.tsx — same
             hand-rolled accent pill, same missing `aria-pressed`. Both are
             `LiquidTabs` now, which is what stops them drifting apart again. */}
-        <LiquidTabs
+      <PageTabs
           tabs={SECURITY_REPORT_STATUSES.map((s) => ({
             id: s,
             label: SECURITY_STATUS_LABELS[s],
@@ -144,12 +141,12 @@ function AdminSecurityReportsPage() {
           }))}
           value={status}
           onChange={(id) => setStatus(id as SecurityReportStatus)}
-          scroll
           aria-label={t('security-reports', { defaultValue: 'Security reports' })}
         />
 
+      <AdminBody>
         {loading ? (
-          <div className="flex justify-center py-20">
+          <div className="flex justify-center py-16">
             <Spinner />
           </div>
         ) : items.length === 0 ? (
@@ -171,7 +168,7 @@ function AdminSecurityReportsPage() {
             ))}
           </ul>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }
@@ -193,16 +190,14 @@ function ReportCard({
   const [notes, setNotes] = useState(report.adminNotes ?? '');
 
   return (
-    <li className="glass-fill rounded-site p-4">
+    <li className="glass-fill space-y-3 rounded-site p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="rounded-site-sm bg-site-danger/15 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-site-danger">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <Badge variant="danger" className="capitalize">
               {report.severity}
-            </span>
-            <span className="rounded-site-sm border border-site-border bg-site-bg px-2 py-0.5 text-xs text-site-text-muted">
-              {securityCategoryLabel(report.category)}
-            </span>
+            </Badge>
+            <Badge variant="outline">{securityCategoryLabel(report.category)}</Badge>
           </div>
           <h3 className="text-base font-semibold text-site-text break-words">{report.title}</h3>
         </div>
@@ -212,15 +207,15 @@ function ReportCard({
       </div>
 
       {report.affectedArea ? (
-        <p className="mt-2 text-xs text-site-text-muted break-words">
+        <p className="text-xs text-site-text-muted break-words">
           <span className="text-site-text-dim">{t('affected-label', { defaultValue: 'Affected:' })}</span> {report.affectedArea}
         </p>
       ) : null}
 
-      <p className="mt-2 whitespace-pre-wrap break-words text-sm text-site-text">{report.description}</p>
+      <p className="whitespace-pre-wrap break-words text-sm text-site-text">{report.description}</p>
 
       {report.reporterName || report.reporterEmail || report.userId ? (
-        <p className="mt-3 text-xs text-site-text-muted">
+        <p className="text-xs text-site-text-muted">
           <span className="text-site-text-dim">{t('reporter-label', { defaultValue: 'Reporter:' })}</span>{' '}
           {report.reporterName || t('anonymous', { defaultValue: 'Anonymous' })}
           {report.reporterEmail ? (
@@ -236,14 +231,13 @@ function ReportCard({
       ) : null}
 
       <Textarea
-        className="mt-3"
         rows={2}
         placeholder={t('triage-notes-placeholder', { defaultValue: 'Internal triage notes…' })}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <label className="sr-only" htmlFor={`status-${report.id}`}>
           {t('status-label', { defaultValue: 'Status' })}
         </label>
@@ -271,7 +265,7 @@ function ReportCard({
           className="ml-auto text-site-danger hover:bg-site-danger/10"
           aria-label={t('delete-report', { defaultValue: 'Delete report' })}
         >
-          <Trash2 className="size-4" aria-hidden="true" />
+          <Trash2 aria-hidden />
         </Button>
       </div>
     </li>

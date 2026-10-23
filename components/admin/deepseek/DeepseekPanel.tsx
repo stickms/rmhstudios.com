@@ -76,9 +76,9 @@ export function DeepseekPanel() {
 
   if (state?.error === 'not_configured') {
     return (
-      <div className="space-y-6">
-        <section className="glass-pane rounded-site p-6">
-          <h2 className="text-lg font-semibold text-site-text">
+      <div className="space-y-[var(--site-section-gap)]">
+        <section className="glass-pane rounded-site p-4">
+          <h2 className="site-section-label">
             {t('not-configured-title', { defaultValue: 'DeepSeek is not configured' })}
           </h2>
           <p className="mt-2 text-sm text-site-text-muted">
@@ -119,7 +119,7 @@ export function DeepseekPanel() {
       }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[var(--site-section-gap)]">
       <div className="flex flex-wrap items-center gap-3">
         {live ? (
           <Badge variant={live.isAvailable ? 'success' : 'danger'}>
@@ -145,23 +145,23 @@ export function DeepseekPanel() {
       </div>
 
       {state?.error && (
-        <p role="alert" className="glass-fill rounded-site p-4 text-sm text-site-danger">
+        <p role="alert" className="glass-fill rounded-site px-4 py-3 text-sm text-site-danger">
           {errorText(state.error)}{' '}
           {state.latest.length > 0 &&
             t('showing-saved', { defaultValue: 'Showing the last saved balance.' })}
         </p>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         {cardsFor.map((b) => (
-          <section key={b.currency} className="glass-pane rounded-site p-5">
-            <h2 className="text-xs font-semibold text-site-text-muted">
+          <section key={b.currency} className="glass-pane rounded-site p-4">
+            <h2 className="text-xs text-site-text-muted">
               {t('balance-heading', { defaultValue: '{{currency}} balance', currency: b.currency })}
             </h2>
-            <p className="mt-1 text-3xl font-bold tabular-nums text-site-text">
+            <p className="mt-1 font-display text-2xl font-bold tabular-nums text-site-text">
               {fmtMoney(b.totalBalance, b.currency)}
             </p>
-            <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+            <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
               <div>
                 <dt className="text-xs text-site-text-muted">
                   {t('granted', { defaultValue: 'Granted' })}
@@ -198,12 +198,12 @@ export function DeepseekPanel() {
       {history.loading && !history.series ? (
         <Spinner />
       ) : history.failed && !history.series ? (
-        <p className="glass-fill rounded-site p-6 text-center text-sm text-site-text-muted">
+        <p className="glass-fill rounded-site px-4 py-6 text-center text-sm text-site-text-muted">
           {t('history-failed', { defaultValue: 'Could not load balance history.' })}
         </p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Kpi
               label={t('burn-hour', { defaultValue: 'Spend per hour' })}
               value={fmtMoney(summary?.perHour, currency, 4)}

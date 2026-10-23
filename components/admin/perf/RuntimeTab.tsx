@@ -11,7 +11,7 @@ function Pairs({ rows }: { rows: Array<[string, string]> }) {
   return (
     <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
       {rows.map(([k, v]) => (
-        <div key={k} className="flex justify-between gap-3 border-t border-site-border py-1.5">
+        <div key={k} className="flex justify-between gap-3 border-t border-site-border py-2">
           <dt className="text-site-text-muted">{k}</dt>
           <dd className="text-right font-mono text-xs break-all tabular-nums text-site-text">
             {v}
@@ -183,7 +183,7 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
   const os = overview.processes[0]?.os ?? snaps[0]?.os;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <section className="space-y-3">
         <h2 className="site-section-label">{t('redis-title', { defaultValue: 'Redis' })}</h2>
         {!overview.redis.enabled ? (
@@ -194,7 +194,7 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
             })}
           </p>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-3 lg:grid-cols-2">
             <RedisCard
               title={
                 overview.redis.distinct
@@ -224,7 +224,7 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
             })}
           </p>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-3 lg:grid-cols-2">
             {cgroups.map((s) => {
               const c = s.cgroup!;
               return (

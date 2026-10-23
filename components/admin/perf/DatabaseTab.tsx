@@ -76,7 +76,7 @@ function DiagnosticsSection() {
     return (
       <section className="space-y-3">
         {header}
-        <p className="glass-fill rounded-site p-6 text-center text-sm text-site-text-muted">
+        <p className="glass-fill rounded-site p-4 text-sm text-site-text-muted">
           {t('diag-failed', { defaultValue: 'Could not load Postgres diagnostics.' })}
         </p>
       </section>
