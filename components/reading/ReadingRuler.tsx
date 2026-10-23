@@ -75,7 +75,7 @@ export default function ReadingRuler({
     const onKeyDown = (e: KeyboardEvent) => {
       viaKeyboard.current = KEYS.has(e.key) || e.shiftKey;
       if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-      if (inField(e.target) || (e.target as HTMLElement | null)?.closest?.('[role=dialog]'))
+      if (inField(e.target) || (e.target as HTMLElement | null)?.closest?.('[role="dialog"]'))
         return;
       if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
       const b = box();

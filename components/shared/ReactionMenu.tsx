@@ -1,6 +1,7 @@
 'use client';
 
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { createPortal } from 'react-dom';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -55,10 +56,11 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
         // Exempt the emoji-picker widget from the app-wide twemoji observer: it
         // renders its own emoji and re-renders internally, so letting twemoji
         // rewrite its nodes crashes React with a removeChild error.
-        <div data-no-twemoji>
+        // The picker floats in a bare fixed div, so it carries the L4 surface itself.
+        <div data-no-twemoji className="glass-overlay overflow-hidden p-0">
           <Suspense
             fallback={
-              <div className="w-[300px] h-[360px] rounded-site glass-inset border border-site-border bg-site-bg animate-pulse" />
+              <Skeleton className="h-[360px] w-[300px] rounded-site" />
             }
           >
             <EmojiPickerPanel

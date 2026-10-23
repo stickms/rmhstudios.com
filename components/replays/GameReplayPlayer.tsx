@@ -248,7 +248,7 @@ function LightsOutStage({ data, step }: { data: ReplayData; step: number }) {
                   'h-9 w-9 rounded-site-sm border transition-colors',
                   cell
                     ? 'border-site-accent bg-site-accent/80 shadow-[0_0_10px_var(--site-accent)]'
-                    : 'glass-inset border-site-border bg-site-bg',
+                    : 'border-site-border bg-site-bg',
                   isCurrent && 'ring-2 ring-site-accent ring-offset-2 ring-offset-site-surface',
                 )}
               />

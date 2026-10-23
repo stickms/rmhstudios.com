@@ -208,6 +208,10 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  mobileFullscreen
  aria-describedby={undefined}
  data-motion="rise"
+ onInteractOutside={(e) => {
+ // Menus and pickers portal to <body> outside this Radix layer; a press on one is not "outside".
+ if ((e.target as HTMLElement | null)?.closest?.('[data-slot="anchored-menu"]')) e.preventDefault();
+ }}
  onEscapeKeyDown={(e) => {
  if (menuOpen) {
  e.preventDefault();

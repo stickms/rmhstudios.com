@@ -68,7 +68,6 @@ export function SignInRequiredDialog({
           e.preventDefault();
           ref.current?.querySelector<HTMLElement>('a, button')?.focus();
         }}
-        aria-labelledby="sign-in-required-title"
         aria-describedby={undefined}
         className="app-modal fixed left-1/2 top-1/2 z-50 w-[calc(100dvw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 p-5 outline-none"
         style={{
@@ -83,7 +82,6 @@ export function SignInRequiredDialog({
         <div className="flex items-center gap-2">
           <LogIn className="size-4 shrink-0" aria-hidden style={{ color: 'var(--app-accent, #6ea8d9)' }} />
           <DialogPrimitive.Title
-            id="sign-in-required-title"
             className="text-base font-semibold"
             style={{ fontFamily: 'var(--app-font-display, inherit)' }}
           >

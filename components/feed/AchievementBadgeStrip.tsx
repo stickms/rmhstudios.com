@@ -72,7 +72,7 @@ export function AchievementBadgeStrip({
  <span
  key={a.id}
  title={a.name}
- className={`flex h-7 w-7 items-center justify-center rounded-full glass-inset border-2 bg-site-bg text-sm leading-none ${i > 0 ?'-ml-1.5':''}`}
+ className={`flex h-7 w-7 items-center justify-center rounded-full border-2 bg-site-bg text-sm leading-none ${i > 0 ?'-ml-1.5':''}`}
  style={{ borderColor: TIER_COLORS[a.tier] }}
  >
  <span aria-hidden>{a.icon}</span>

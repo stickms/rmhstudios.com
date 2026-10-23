@@ -39,7 +39,7 @@ const ResizableHandle = ({
  {/* The grip is 16×12px, so the full `--site-radius` would clamp to an oval —
      it takes the small step of the scale. */}
  {withHandle && (
- <div className="glass-inset z-10 flex h-4 w-3 items-center justify-center rounded-site-sm border border-site-border bg-site-surface">
+ <div className="z-10 flex h-4 w-3 items-center justify-center rounded-site-sm border border-site-border bg-site-surface">
  <GripVertical className="h-2.5 w-2.5" />
  </div>
  )}

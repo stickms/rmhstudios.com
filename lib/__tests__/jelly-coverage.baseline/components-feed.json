@@ -1,0 +1,9 @@
+{
+  "surfaces": {
+    "components/feed/AchievementBadgeStrip.tsx": 1,
+    "components/feed/DailyWheel.tsx": 1,
+    "components/feed/NotificationsColumn.tsx": 2
+  },
+  "dialogs": {},
+  "switches": {}
+}

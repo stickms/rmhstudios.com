@@ -52,6 +52,10 @@ export function LibraryDialogShell({ onClose, label, children }: LibraryDialogSh
         <DialogPrimitive.Content
           className="lib-upload__overlay outline-none"
           aria-describedby={undefined}
+          onInteractOutside={(e) => {
+            if ((e.target as HTMLElement | null)?.closest?.('[data-slot="anchored-menu"]'))
+              e.preventDefault();
+          }}
           onMouseDown={onClose}
         >
           <DialogPrimitive.Title className="sr-only">

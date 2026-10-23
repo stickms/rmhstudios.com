@@ -23,7 +23,7 @@
  */
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CloudDownload, HardDrive } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
@@ -64,13 +64,6 @@ export function SaveConflictDialog({ local, cloud, onChoose, gameName }: SaveCon
     defaultValue: 'Played here, signed out or offline.',
   });
 
-  useEffect(() => {
-    // `preventScroll`, and it is load-bearing on a short screen: the body below
-    // scrolls, and focusing the first button scrolled it into view — which on a
-    // 320px-tall landscape phone dragged both cards' headings off the top, so
-    // the dialog opened showing two unlabelled columns of figures.
-    ref.current?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
-  }, []);
 
   const choose = (origin: SaveOrigin) => {
     if (chosen) return;
@@ -100,7 +93,6 @@ export function SaveConflictDialog({ local, cloud, onChoose, gameName }: SaveCon
       */}
       <DialogPrimitive.Content
         ref={ref}
-        aria-labelledby="save-conflict-title"
         aria-describedby={undefined}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
@@ -127,7 +119,6 @@ export function SaveConflictDialog({ local, cloud, onChoose, gameName }: SaveCon
           }
         >
           <DialogPrimitive.Title
-            id="save-conflict-title"
             className={wide ? 'text-base font-semibold sm:text-xl' : 'text-sm font-semibold'}
             style={{ fontFamily: 'var(--app-font-display, inherit)' }}
           >

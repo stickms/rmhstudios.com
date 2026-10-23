@@ -93,7 +93,6 @@ export function QuickPanel({
   // reads this — every listener below stays on `open`, so a panel on its way out
   // has already stopped taking Escape, outside presses and focus.
   const { present, state } = usePopPresence(open);
-  const headingId = useId();
   const [anchor, setAnchor] = useState({ top: 56, right: 12 });
   const [mounted, setMounted] = useState(false);
 
@@ -175,11 +174,12 @@ export function QuickPanel({
       // Focus in on open and back to the trigger on close are the effect above's.
       onOpenAutoFocus={(e) => e.preventDefault()}
       onCloseAutoFocus={(e) => e.preventDefault()}
+      // Not dismissing on focus-outside was the old behaviour: only Escape and a press do.
+      onFocusOutside={(e) => e.preventDefault()}
       onInteractOutside={(e) => {
         if (anchorRef.current?.contains(e.target as Node)) e.preventDefault();
       }}
       aria-describedby={undefined}
-      aria-labelledby={headingId}
       tabIndex={-1}
       style={
         {
@@ -191,7 +191,7 @@ export function QuickPanel({
     >
       <header className="rad-panel__head" data-slot="quick-panel-head">
         {Icon && <Icon aria-hidden />}
-        <h2 id={headingId}>{title}</h2>
+        <DialogPrimitive.Title>{title}</DialogPrimitive.Title>
       </header>
       <div className="rad-panel__body" data-slot="quick-panel-body">
         {children}

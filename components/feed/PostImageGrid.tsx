@@ -228,7 +228,6 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  }, [index, urls.length, onIndexChange]);
 
  const overlayRef = useRef<HTMLDivElement | null>(null);
- const labelId = useId();
 
  // Escape / arrow keys, background-scroll blocking, and the focus trap.
  //
@@ -291,7 +290,6 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  <DialogPrimitive.Portal>
  <DialogPrimitive.Content
  ref={overlayRef}
- aria-labelledby={labelId}
  aria-describedby={undefined}
  tabIndex={-1}
  // The lightbox keeps its own focus hand-off, Tab trap and wheel block (effects
@@ -307,7 +305,7 @@ function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: Lightbo
  onClose();
  }}
  >
- <DialogTitle id={labelId} className="sr-only">
+ <DialogTitle className="sr-only">
  {t('image-viewer', { defaultValue:'Image viewer'})}
  </DialogTitle>
  <button

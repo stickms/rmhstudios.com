@@ -3,6 +3,7 @@
 import { lazy, Suspense, useRef, useState } from 'react';
 import { Smile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
 const EmojiPickerPanel = lazy(() => import('./EmojiPickerPanel'));
@@ -87,7 +88,7 @@ export function EmojiPickerButton({
         <div data-no-twemoji>
           <Suspense
             fallback={
-              <div className="w-[300px] h-[360px] rounded-site glass-inset border border-site-border bg-site-bg animate-pulse" />
+              <Skeleton className="h-[360px] w-[300px] rounded-site" />
             }
           >
             <EmojiPickerPanel onSelect={onSelect} />

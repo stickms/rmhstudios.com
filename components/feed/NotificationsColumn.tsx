@@ -569,7 +569,7 @@ export function NotificationsColumn({
  />
  </span>
  ))}
- <span className="absolute -bottom-1 -right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full glass-inset border border-site-border bg-site-bg">
+ <span className="absolute -bottom-1 -right-1 z-10 flex h-5 w-5 items-center justify-center rounded-full border border-site-border bg-site-bg">
  <Icon className={`h-3 w-3 ${meta.color}`} />
  </span>
  </div>
@@ -581,7 +581,7 @@ export function NotificationsColumn({
  size={40}
  fallbackName={actorName}
  />
- <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full glass-inset border border-site-border bg-site-bg">
+ <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-site-border bg-site-bg">
  <Icon className={`h-3 w-3 ${meta.color}`} />
  </span>
  </div>
