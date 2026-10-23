@@ -27,8 +27,12 @@
  */
 'use client';
 
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useDialogHost } from '@/components/shared/useDialogHost';
+import { useFocusReturn } from '@/components/shared/useFocusReturn';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { supportsWebGL } from '@/lib/shared/platform';
 import { motionCapableDevice, requestDeviceMotionAccess } from '@/lib/device-attitude';
@@ -120,6 +124,13 @@ function Alley() {
    */
   const down = BOWL_PINS - standing.filter(Boolean).length;
 
+  /* ── Dialog host ──────────────────────────────────────────────────────── */
+
+  // Radix owns the focus trap, Escape and focus return. The dialog is portaled
+  // into the game root (the nearest `.toj`) so the temple's tokens still apply.
+  const { host, sentinel } = useDialogHost('.toj');
+  const returnFocus = useFocusReturn();
+
   /* ── Palette ──────────────────────────────────────────────────────────── */
 
   /**
@@ -141,34 +152,14 @@ function Alley() {
       gold: read('--toj-gold', FALLBACK_PALETTE.gold),
       goldBright: read('--toj-gold-bright', FALLBACK_PALETTE.goldBright),
     });
-  }, []);
+    // The card mounts once the dialog host is found, a render after this one.
+  }, [host]);
 
-  /* ── Focus and escape ─────────────────────────────────────────────────── */
-
-  useEffect(() => {
-    // The alley is modal, so focus has to move into it — and it lands on the
-    // close button rather than on the aim slider, because arriving with focus
-    // already on a control that Left/Right will change is a trap for anyone
-    // orienting themselves with the arrow keys.
-    closeRef.current?.focus();
-  }, []);
+  /* ── Leaving ──────────────────────────────────────────────────────────── */
 
   const close = useCallback(() => {
-    // Never mid-roll: the settle is what banks the frame, and closing over it
-    // would spend the day's cooldown on nothing.
     if (useTempleStore.getState().showBowl) useTempleStore.getState().closeBowl();
   }, []);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      if (phase === 'rolling') return;
-      event.preventDefault();
-      close();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [close, phase]);
 
   /* ── Rolling ──────────────────────────────────────────────────────────── */
 
@@ -449,19 +440,41 @@ function Alley() {
                 });
 
   return (
-    <div className="toj-bowl" ref={rootRef}>
-      <div
-        className="toj-bowl-card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="toj-bowl-title"
+    <>
+    {sentinel}
+    {host ? (
+    <Dialog open onOpenChange={(next) => { if (!next) close(); }}>
+      <DialogContent
+        // The Leave button below is the way out, and it is disabled mid-roll —
+        // a corner close would be a second exit that is not.
+        hideClose
+        container={host}
         aria-describedby="toj-bowl-status"
+        data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
+        overlayClassName="toj-bowl-scrim"
+        className="flex max-w-[46rem] flex-col gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none"
+        // Focus lands on Leave rather than on the aim slider, because arriving
+        // with focus already on a control that Left/Right will change is a trap
+        // for anyone orienting themselves with the arrow keys.
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          closeRef.current?.focus();
+        }}
+        onCloseAutoFocus={returnFocus}
+        // Never mid-roll: the settle is what banks the frame, and closing over
+        // it would spend the day's cooldown on nothing.
+        onEscapeKeyDown={(event) => {
+          if (phase === 'rolling') event.preventDefault();
+        }}
+        // A swipe that ends on the scrim is a throw, not a request to leave.
+        onInteractOutside={(event) => event.preventDefault()}
       >
+      <div className="toj-bowl-card" ref={rootRef}>
         <header className="toj-bowl-head">
           <div>
-            <h2 className="toj-bowl-title" id="toj-bowl-title">
+            <DialogPrimitive.Title className="toj-bowl-title">
               {t('bowl-title', { defaultValue: 'The Lane' })}
-            </h2>
+            </DialogPrimitive.Title>
             <p className="toj-bowl-sub">
               {t('bowl-sub', {
                 minutes: Math.round(BOWL_BOOST_SECONDS / 60),
@@ -667,7 +680,10 @@ function Alley() {
           </div>
         )}
       </div>
-    </div>
+      </DialogContent>
+    </Dialog>
+    ) : null}
+    </>
   );
 }
 

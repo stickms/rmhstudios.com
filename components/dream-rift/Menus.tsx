@@ -163,7 +163,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
     const returnFocus = useFocusReturn();
     return (
         <Dialog open onOpenChange={(next) => { if (!next) onClose(); }}>
-            <DialogContent onCloseAutoFocus={returnFocus} overlayClassName="bg-black/80" data-jelly="off" data-liquid-material="off" data-dialog-shell="bare" className="max-w-md gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
+            <DialogContent hideClose onCloseAutoFocus={returnFocus} overlayClassName="bg-black/80" data-jelly="off" data-liquid-material="off" data-dialog-shell="bare" className="max-w-md gap-0 rounded-none border-0 bg-transparent p-0 shadow-none">
               <div className="dr-frame grid gap-4 rounded-sm p-6 text-left text-sm text-[color:var(--dr-cream)]">
                 <DialogTitle className="dr-serif text-lg font-semibold tracking-[0.12em] text-[color:var(--dr-gold)]">How to Play</DialogTitle>
                 <DialogDescription className="sr-only">Controls and rules for Dream Rift.</DialogDescription>

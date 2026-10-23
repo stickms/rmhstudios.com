@@ -71,8 +71,14 @@ const DialogContent = React.forwardRef<
      * portaled to the body would lose them.
      */
     container?: HTMLElement | null;
+    /**
+     * Drop the corner close button, for a dialog that brings its own way out (a game panel's
+     * Leave button) or must not be closable for a while. Escape and a scrim click still close it
+     * unless the caller prevents them (`onEscapeKeyDown`, `onInteractOutside`).
+     */
+    hideClose?: boolean;
   }
->(({ className, children, mobileFullscreen = false, overlayClassName, container, ...props }, ref) => {
+>(({ className, children, mobileFullscreen = false, overlayClassName, container, hideClose = false, ...props }, ref) => {
   const { t } = useTranslation('c-ui');
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const overlayRef = React.useRef<HTMLDivElement | null>(null);
@@ -144,6 +150,8 @@ const DialogContent = React.forwardRef<
         {children}
         <DialogPrimitive.Close
           ref={closeRef}
+          // Hidden rather than unmounted: the sheet gesture dismisses by clicking this button.
+          hidden={hideClose}
           className={cn(
             // 44px target centred on the title's first line: p-5 (sm:p-6) + half an 18px
             // line = 29px (33px), so top-2.5 (sm:top-3) puts the centre at 32px (34px).
@@ -151,6 +159,7 @@ const DialogContent = React.forwardRef<
             mobileFullscreen
               ? 'top-[max(0.5rem,env(safe-area-inset-top))] sm:top-3'
               : 'top-2.5 sm:top-3',
+            hideClose && 'hidden',
           )}
           data-fluid-press=""
         >

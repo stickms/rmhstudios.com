@@ -13,10 +13,11 @@ export function OverlayFrame({ title, children }: { title: string; children: Rea
   return (
     <Dialog open onOpenChange={(next) => { if (!next) close(); }}>
       <DialogContent
+        hideClose
         aria-describedby={undefined}
         overlayClassName="bg-black/60"
         data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
-        className="max-w-[640px] gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
+        className="max-w-[640px] gap-0 rounded-none border-0 bg-transparent p-0 shadow-none"
       >
         {/* The game's own dark panel is the surface: its text is light-on-dark in every site theme. */}
         <div className="rounded-lg border border-neutral-700 bg-neutral-900 p-4 text-white sm:p-6">
