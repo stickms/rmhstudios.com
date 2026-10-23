@@ -13,8 +13,14 @@ const JamPanel = lazy(() => import('./JamPanel'));
 export function StudioCreativeButtons() {
   const { t } = useTranslation('f-creative');
   const [panel, setPanel] = useState<'challenge' | 'jam' | null>(null);
+  // The panels portal into the app root (not <body>) so they keep the `--app-*` palette.
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+  const open = (e: React.MouseEvent<HTMLElement>, next: 'challenge' | 'jam') => {
+    setContainer(e.currentTarget.closest<HTMLElement>('.app-theme'));
+    setPanel(next);
+  };
   const live = useJamStore((s) => s.status === 'live');
-  const cls = 'rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text';
+  const cls = 'rounded-(--app-radius-sm) p-1.5 text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)';
   return (
     <>
       <button
@@ -22,25 +28,25 @@ export function StudioCreativeButtons() {
         className={cls}
         title={t('btn-challenge', { defaultValue: 'Sample flip challenge' })}
         aria-label={t('btn-challenge', { defaultValue: 'Sample flip challenge' })}
-        onClick={() => setPanel('challenge')}
+        onClick={(e) => open(e, 'challenge')}
       >
         <Trophy className="h-4 w-4" />
       </button>
       <button
         type="button"
-        className={`${cls} ${live ? 'text-site-accent' : ''}`}
+        className={`${cls} ${live ? 'text-(--app-accent)' : ''}`}
         title={t('btn-jam', { defaultValue: 'Live jam' })}
         aria-label={t('btn-jam', { defaultValue: 'Live jam' })}
-        onClick={() => setPanel('jam')}
+        onClick={(e) => open(e, 'jam')}
       >
         <Users className="h-4 w-4" />
       </button>
       {panel && (
         <Suspense fallback={null}>
           {panel === 'challenge' ? (
-            <ChallengePanel onClose={() => setPanel(null)} />
+            <ChallengePanel container={container} onClose={() => setPanel(null)} />
           ) : (
-            <JamPanel onClose={() => setPanel(null)} />
+            <JamPanel container={container} onClose={() => setPanel(null)} />
           )}
         </Suspense>
       )}

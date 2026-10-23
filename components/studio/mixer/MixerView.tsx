@@ -14,7 +14,7 @@ export function MixerView({ compact = false }: MixerViewProps) {
 
   if (tracks.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-site-text-muted">
+      <div className="flex h-full items-center justify-center text-(--app-text-muted)">
         <div className="text-center">
           <SlidersHorizontal className="mx-auto h-10 w-10 opacity-20" />
           <p className="mt-2 text-xs">{t("add-tracks-to-see-mixer", { defaultValue: "Add tracks to see the mixer" })}</p>
@@ -26,7 +26,7 @@ export function MixerView({ compact = false }: MixerViewProps) {
   return (
     <div className="flex h-full" data-jelly-group="off">
       {/* Channel strips (scrollable) */}
-      <div className="flex flex-1 overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-site-border">
+      <div className="flex flex-1 overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-(--app-border)">
         {tracks.map((track) => (
           <ChannelStrip
             key={track.id}

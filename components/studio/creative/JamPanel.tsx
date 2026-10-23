@@ -12,7 +12,13 @@ import { useStudioStore } from '@/lib/studio/store';
 import { joinJam, leaveJam, saveLocalProject, startJam } from '@/lib/studio/jam/client';
 
 /** F13 — start or join a live jam, see who is here and which tracks they hold. */
-export default function JamPanel({ onClose }: { onClose: () => void }) {
+export default function JamPanel({
+  container,
+  onClose,
+}: {
+  container: HTMLElement | null;
+  onClose: () => void;
+}) {
   const { t } = useTranslation('f-creative');
   const jam = useJamStore();
   const tracks = useStudioStore((s) => s.tracks);
@@ -38,7 +44,7 @@ export default function JamPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent container={container} className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -48,7 +54,7 @@ export default function JamPanel({ onClose }: { onClose: () => void }) {
 
         {jam.status !== 'live' ? (
           <div className="space-y-4">
-            <p className="text-sm text-site-text-muted">
+            <p className="text-sm text-(--app-text-muted)">
               {t('jam-intro', {
                 defaultValue:
                   'Edit one project with up to 3 friends. MIDI and pattern tracks are shared; audio recordings stay on your device.',
@@ -57,8 +63,8 @@ export default function JamPanel({ onClose }: { onClose: () => void }) {
             <Button variant="accent" disabled={busy} onClick={() => void run(startJam)}>
               {t('jam-start', { defaultValue: 'Start a jam from this project' })}
             </Button>
-            <div className="glass-pane space-y-2 rounded-site p-3">
-              <p className="text-xs text-site-text-muted">
+            <div className="glass-pane space-y-2 rounded-(--app-radius) p-3">
+              <p className="text-xs text-(--app-text-muted)">
                 {t('jam-join-hint', {
                   defaultValue:
                     'Or join with a room code. Your open project is saved to your library first.',
@@ -84,7 +90,7 @@ export default function JamPanel({ onClose }: { onClose: () => void }) {
         ) : (
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-lg tracking-widest text-site-text">{jam.code}</span>
+              <span className="font-mono text-lg tracking-widest text-(--app-text)">{jam.code}</span>
               <Button
                 size="xs"
                 variant="ghost"
@@ -99,10 +105,10 @@ export default function JamPanel({ onClose }: { onClose: () => void }) {
             </div>
             <ul className="space-y-1 text-sm">
               {jam.peers.map((p) => (
-                <li key={p.userId} className="flex justify-between text-site-text">
+                <li key={p.userId} className="flex justify-between text-(--app-text)">
                   <span>{p.name}</span>
                   {p.isHost && (
-                    <span className="text-xs text-site-text-dim">
+                    <span className="text-xs text-(--app-text-dim)">
                       {t('jam-host', { defaultValue: 'host' })}
                     </span>
                   )}
@@ -110,10 +116,10 @@ export default function JamPanel({ onClose }: { onClose: () => void }) {
               ))}
             </ul>
             <div>
-              <p className="mb-1 text-xs font-medium text-site-text-muted">
+              <p className="mb-1 text-xs font-medium text-(--app-text-muted)">
                 {t('jam-tracks', { defaultValue: 'Track editors' })}
               </p>
-              <ul className="space-y-1 text-xs text-site-text-muted">
+              <ul className="space-y-1 text-xs text-(--app-text-muted)">
                 {tracks
                   .filter((tr) => tr.type !== 'audio')
                   .map((tr) => (
@@ -134,7 +140,7 @@ export default function JamPanel({ onClose }: { onClose: () => void }) {
                     </li>
                   ))}
               </ul>
-              <p className="mt-2 text-xs text-site-text-dim">
+              <p className="mt-2 text-xs text-(--app-text-dim)">
                 {t('jam-lock-hint', {
                   defaultValue:
                     'Editing a track locks it for you until you pause for a few seconds.',

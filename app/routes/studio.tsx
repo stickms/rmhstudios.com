@@ -9,6 +9,7 @@ import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { appRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestSession } from '@/lib/auth-session.server';
+import studioCss from '@/components/studio/studio.css?url';
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await getRequestSession();
@@ -18,6 +19,6 @@ const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
 
 export const Route = createFileRoute('/studio')({
   beforeLoad: () => checkAuth(),
-  head: () => appRouteHead('studio'),
+  head: () => appRouteHead('studio', { links: [{ rel: 'stylesheet', href: studioCss }] }),
   component: () => <Outlet />,
 });
