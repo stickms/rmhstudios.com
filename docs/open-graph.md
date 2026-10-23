@@ -21,10 +21,10 @@ A card is 1200×630, and it is the same three things the site is
 | The globe  | The navigation globe as the mark, drawn from the same cage `components/radial/LiquidGlobe.tsx` draws — six meridians, seven parallels, same weights. |
 | The picture | When the page has one — a post's attachments, a game's key art — it takes the right ~40% of the pane, rounded and hairlined like every other surface. |
 
-The palette is the **default theme's `--site-*` block, restated by hand** in
+The palette is **Daylight's `:root` `--site-*` block, restated by hand** in
 `lib/og/shared.server.ts`, because satori cannot read CSS custom properties.
 That file is the only place in the codebase allowed to restate those tokens;
-keep it in sync when the default theme moves.
+keep it in sync when that block moves.
 
 Geometry goes through `SCALE = 2`. A card is displayed at roughly half its
 rendered size in every unfurl that matters (Discord ~500px, Twitter ~600px,

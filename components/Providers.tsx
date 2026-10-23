@@ -245,8 +245,8 @@ const loadMotionFeatures = () => import('@/lib/motion-features').then((mod) => m
 /**
  * Routes where the site-wide theme must NOT be applied (apps/games own their
  * styling). Exported so the no-flash inline themeScript in app/routes/__root.tsx
- * can apply the same gate before hydration — necessary now that the default
- * style is a non-":root" theme (liquid-glass), which is applied as a class.
+ * can apply the same gate before hydration — necessary because the default
+ * style (Midnight, `style-graphite`) is a non-":root" theme applied as a class.
  */
 export const THEME_EXCLUDED_ROUTES = [
   ...games.map((g) => g.href),
@@ -620,7 +620,7 @@ export function Providers({
   // gallery's hover "try it on") is rendered in place of the committed style but
   // never persisted, so hovering a swatch previews instantly without saving.
   useEffect(() => {
-    // On the very first render the Zustand store still holds "default"
+    // On the very first render the Zustand store still holds DEFAULT_STYLE
     // because localStorage hasn't hydrated yet. The inline ThemeScript
     // already applied the correct class, background colour, meta tag, and
     // accent — touching ANYTHING here would flash the wrong colour and Safari
@@ -741,7 +741,7 @@ export function Providers({
       ? (activeUserTheme as AppliedUserTheme).bg
       : isAppRoute
         ? (ground?.bg ?? APP_THEME_BG)
-        : (THEME_BG[activeStyle] ?? THEME_BG.default);
+        : (THEME_BG[activeStyle] ?? THEME_BG[DEFAULT_STYLE]);
 
     // Paints <html>/<body>, publishes `data-app-dark` for a page whose own
     // stylesheet keys its tokens off it, pins `color-scheme` to the background's

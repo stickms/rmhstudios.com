@@ -40,6 +40,17 @@ import type { JellyFrame, JellyGlass } from './jelly-glass';
 import type { SelfEvertSkin } from './self-evert-skin';
 import { luminance, resolveColor } from '@/lib/liquid/glass/color';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
+import { PLASMA_LOOK } from '@/lib/liquid/glass/policy';
+import {
+  CALM,
+  FINE_POINTER_QUERY,
+  IDLE_AFTER_MS,
+  PLASMA,
+  jellyBudget,
+  jellyMode,
+  jellyMotionLevel,
+  onJellyEnvChange,
+} from '@/lib/jelly/tiers';
 import { evert } from '@/lib/eversion/thurston';
 import {
   copyQuat,
@@ -788,7 +799,16 @@ export function LiquidGlobe({
     gx: 0,
     gy: 0,
     pinch: 0,
+    time: 0,
+    amp: 0,
+    plasma: 0,
   }));
+  /**
+   * The coat's Plasmatic Jelly clock (jelly-glass.ts header): the ambient rate it may redraw the haze at (0 = still,
+   * hidden, degraded or off screen), the haze amplitude, the eased plasma level and whether a fine pointer is over
+   * the ball. Driven by the globe's own (allowlisted) frame loop — no second rAF; the jelly env watcher refreshes it.
+   */
+  const coatClock = useRef({ hz: 0, idleHz: 0, amp: 0, onScreen: false, last: 0, plasma: 0, over: false });
 
   // Only these three reach the render: the caption, the ring's state classes.
   const [lock, setLock] = useState(-1);
@@ -941,7 +961,7 @@ export function LiquidGlobe({
      page's one GL context and program are built there, off the open.
 
      The CSS glass stays underneath as the fallback, and the stage only drops it
-     (`data-jelly="on"`) once the material has drawn its first frame, so the swap
+     (`data-globe-coat="on"`) once the material has drawn its first frame, so the swap
      happens inside one frame and there is never a frame with neither. */
   useEffect(() => {
     let cancelled = false;
@@ -1001,7 +1021,7 @@ export function LiquidGlobe({
       if (reduced || !jellyEligible() || preferences.some((q) => q.matches)) {
         if (glass?.canvas.parentElement === host) glass.canvas.remove();
         jellyGlass.current = null;
-        delete stage.dataset.jelly;
+        delete stage.dataset.globeCoat;
         return;
       }
       if (!factory) {
@@ -1025,20 +1045,54 @@ export function LiquidGlobe({
       g.onChange = sync;
       if (!g.ready) {
         jellyGlass.current = null;
-        delete stage.dataset.jelly;
+        delete stage.dataset.globeCoat;
         return;
       }
+      // The theme's tokens, resolved through one probe (var() and color-mix() computed by the browser): the ground,
+      // and the Plasmatic Jelly layers' colours — the same tokens the slab services and jelly-material.css draw with.
       const probe = document.createElement('span');
-      probe.style.backgroundColor = 'var(--site-bg)';
       host.appendChild(probe);
       const ps = getComputedStyle(probe);
-      const bgCss = ps.backgroundColor;
+      const token = (name: string) => {
+        probe.style.color = `var(${name})`;
+        return ps.color;
+      };
+      const bgCss = token('--site-bg');
+      const accentCss = token('--site-accent');
+      const hazeCss = token('--site-jelly-haze');
+      const edgeCss = [token('--gel-edge-r'), token('--gel-edge-g'), token('--gel-edge-b')];
+      const fresnelCss = token('--gel-fresnel');
       probe.remove();
-      const ink = factory.resolveColor(getComputedStyle(host).color || 'rgb(0 0 0)', [0, 0, 0]);
+      const hs = getComputedStyle(host);
+      const num = (name: string, fallback: number) => {
+        const v = parseFloat(hs.getPropertyValue(name));
+        return Number.isFinite(v) ? v : fallback;
+      };
+      const ink = factory.resolveColor(hs.color || 'rgb(0 0 0)', [0, 0, 0]);
       const bg = factory.resolveColor(bgCss, [1, 1, 1]);
       const lum = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2];
+      const rgba = factory.resolveRgba;
+      const haze = factory.resolveColor(hazeCss, [0.9, 0.9, 0.95]);
       g.resize(sizeRef.current, window.devicePixelRatio || 1);
-      g.palette({ ink, light: lum > 0.5 ? 1 : 0, bg: [bg[0], bg[1], bg[2]] }, RIPPLE);
+      g.palette(
+        {
+          ink,
+          light: lum > 0.5 ? 1 : 0,
+          bg: [bg[0], bg[1], bg[2]],
+          accent: factory.resolveColor(accentCss, [0.16, 0.6, 1]),
+          haze: [haze[0], haze[1], haze[2], num('--site-jelly-haze-pane', 0.14)],
+          quiet: num('--site-jelly-quiet', 0.35),
+          edgeR: rgba(edgeCss[0]!, [1, 0.33, 0.41, 0.16]),
+          edgeG: rgba(edgeCss[1]!, [0.25, 0.78, 0.55, 0.08]),
+          edgeB: rgba(edgeCss[2]!, [0.28, 0.47, 1, 0.16]),
+          fresnel: rgba(fresnelCss, [1, 1, 1, 0.55]),
+          bevelPx: num('--gel-bevel', 6),
+          disperseRPx: num('--gel-disperse-r', -1.5),
+          disperseBPx: num('--gel-disperse-b', 1.5),
+          plasmaPeak: lum > 0.5 ? PLASMA_LOOK.peakLight : PLASMA_LOOK.peakDark,
+        },
+        RIPPLE,
+      );
       attachScene(g);
       const f = jellyFrame;
       f.ripples.fill(0);
@@ -1050,7 +1104,7 @@ export function LiquidGlobe({
       jellyGlass.current = g;
       jellyDirty.current = true;
       dirty.current = true;
-      stage.dataset.jelly = 'on';
+      stage.dataset.globeCoat = 'on';
     };
     const observer = new MutationObserver(sync);
     observer.observe(root, { attributes: true, attributeFilter: ['class', 'style'] });
@@ -1069,9 +1123,42 @@ export function LiquidGlobe({
       if (glass?.onChange === sync) glass.onChange = null;
       if (glass?.canvas.parentElement === host) glass.canvas.remove();
       jellyGlass.current = null;
-      if (stage) delete stage.dataset.jelly;
+      if (stage) delete stage.dataset.globeCoat;
     };
   }, [jelly, jellyFrame, reduced, ambient]);
+
+  /* ── The coat's ambient clock ─────────────────────────────────────────────
+     What the jelly policy allows the coat's haze to do right now (lib/jelly/tiers.ts — the same budget every slab's
+     haze runs on), re-read whenever the jelly environment changes (motion level, arcs, degradation, tab visibility),
+     and whether the ball is on screen at all. Nothing here runs per frame; step 4b of the loop reads the result. */
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const clock = coatClock.current;
+    const read = () => {
+      const on = jellyMode().ambient && !reduced;
+      const budget = jellyBudget();
+      clock.hz = on ? budget.clockHz : 0;
+      clock.idleHz = on ? budget.idleClockHz : 0;
+      clock.amp = on ? (jellyMotionLevel() === 'calm' ? CALM.amplitude : 1) : 0;
+      jellyDirty.current = true;
+    };
+    read();
+    const stopEnv = onJellyEnvChange(read);
+    const io =
+      typeof IntersectionObserver === 'function'
+        ? new IntersectionObserver((entries) => {
+            for (const e of entries) clock.onScreen = e.isIntersecting;
+          })
+        : null;
+    if (io) io.observe(stage);
+    else clock.onScreen = true;
+    return () => {
+      stopEnv();
+      io?.disconnect();
+      clock.onScreen = false;
+    };
+  }, [reduced]);
 
   /* ── Where the globe is on screen, for the eversion hand-off ──────────────
      The WebGL sphere has to start on top of this one, so the hand-off needs the
@@ -1741,6 +1828,49 @@ export function LiquidGlobe({
 
        Only `transform` genuinely changes every frame, which is the one write
        that is free — it never leaves the compositor. */
+    /**
+     * Draw the coat (jelly-glass) if anything it shows changed, or unconditionally with `force` (an ambient haze tick
+     * or a plasma level step). A turn alone does not touch it: a uniform glass ball looks the same at any rotation.
+     * It is held still during the eversion, which owns the GPU for that second. Returns whether it drew.
+     */
+    let coatDrawnAt = -1;
+    const drawCoat = (now: number, soft: boolean, force: boolean): boolean => {
+      const jg = jellyGlass.current;
+      // Only the mount that holds the shared canvas draws into it.
+      if (!jg || jg.canvas.parentElement !== glassRef.current || everting.current) return false;
+      if (coatDrawnAt === now) return false;
+      const live = soft || waveCount > 0;
+      if (!(force || live || jellyLive.current || jellyDirty.current)) return false;
+      // The ripples' impact points, turned by the DRAWN rotation into the
+      // material's screen space — the same rotation the cage is drawn at.
+      const m = DM;
+      const f = jellyFrame;
+      for (let i = 0; i < 3; i++) {
+        const o = i * 4;
+        if (i >= waveCount) {
+          f.ripples[o + 3] = -1;
+          continue;
+        }
+        const w = waveWin[i];
+        f.ripples[o] = m[0]! * w.bx + m[1]! * w.by + m[2]! * w.bz;
+        f.ripples[o + 1] = m[3]! * w.bx + m[4]! * w.by + m[5]! * w.bz;
+        f.ripples[o + 2] = m[6]! * w.bx + m[7]! * w.by + m[8]! * w.bz;
+        f.ripples[o + 3] = waveAge[i]!;
+      }
+      f.gx = soft ? jelly.gx : 0;
+      f.gy = soft ? jelly.gy : 0;
+      f.pinch = soft ? jelly.pinch : 0;
+      const clock = coatClock.current;
+      f.amp = clock.amp;
+      f.plasma = clock.plasma;
+      jg.setField(jelly.field, jelly.version);
+      jg.render(f);
+      coatDrawnAt = now;
+      jellyDirty.current = false;
+      jellyLive.current = live;
+      return true;
+    };
+
     const paint = (now: number) => {
       const R = sizeRef.current / 2;
       // Depth rank, so `z-index` expresses the ORDER rather than the depth.
@@ -1767,40 +1897,9 @@ export function LiquidGlobe({
         if (soft)
           contactRef.current.style.transform = `translate3d(${(jelly.gx * R).toFixed(2)}px,${(jelly.gy * R).toFixed(2)}px,0) scale(${(0.85 + depth * 0.15).toFixed(3)})`;
       }
-      // The material redraws only while the SURFACE is moving (a ripple, the
-      // soft body), plus the one frame it comes to rest on. A turn alone does
-      // not touch it: a uniform glass ball looks the same at any rotation. It is
-      // held still during the eversion, which owns the GPU for that second.
-      const jg = jellyGlass.current;
-      // Only the mount that holds the shared canvas draws into it.
-      if (jg && jg.canvas.parentElement === glassRef.current) {
-        const live = soft || waveCount > 0;
-        if ((live || jellyLive.current || jellyDirty.current) && !everting.current) {
-          // The ripples' impact points, turned by the DRAWN rotation into the
-          // material's screen space — the same rotation the cage is drawn at.
-          const m = DM;
-          const f = jellyFrame;
-          for (let i = 0; i < 3; i++) {
-            const o = i * 4;
-            if (i >= waveCount) {
-              f.ripples[o + 3] = -1;
-              continue;
-            }
-            const w = waveWin[i];
-            f.ripples[o] = m[0]! * w.bx + m[1]! * w.by + m[2]! * w.bz;
-            f.ripples[o + 1] = m[3]! * w.bx + m[4]! * w.by + m[5]! * w.bz;
-            f.ripples[o + 2] = m[6]! * w.bx + m[7]! * w.by + m[8]! * w.bz;
-            f.ripples[o + 3] = waveAge[i]!;
-          }
-          f.gx = soft ? jelly.gx : 0;
-          f.gy = soft ? jelly.gy : 0;
-          f.pinch = soft ? jelly.pinch : 0;
-          jg.setField(jelly.field, jelly.version);
-          jg.render(f);
-          jellyDirty.current = false;
-          jellyLive.current = live;
-        }
-      }
+      // The material redraws while the SURFACE is moving (a ripple, the soft body), plus the one frame it comes to
+      // rest on; its own jelly life (haze clock, plasma easing) is driven from step 4b below.
+      drawCoat(now, soft, false);
 
       for (let rank = 0; rank < count; rank++) {
         const i = order[rank];
@@ -2133,6 +2232,39 @@ export function LiquidGlobe({
         dirty.current = false;
       }
 
+      // 4b. The coat's own jelly life (jelly-glass.ts header), on this loop rather than a second one. The dormant
+      //     plasma eases toward its target (press while held, wake while a fine pointer is over the ball, rest
+      //     otherwise) on PLASMA.easeMs; the haze advances on the jelly ambient clock — the engaged rate while the
+      //     ball is touched or pointed at, the idle floor after IDLE_AFTER_MS, nothing when Still, degraded, hidden,
+      //     unfocused or off screen. Either one is a coat-only redraw: the cage and pins are not repainted for it.
+      const clock = coatClock.current;
+      const target =
+        drag.current.held || drag.current.active
+          ? PLASMA.press
+          : clock.over
+            ? PLASMA.wake
+            : PLASMA.rest;
+      let coatDue = false;
+      if (clock.plasma !== target) {
+        const k = 1 - Math.exp((-dt * 1000) / PLASMA.easeMs);
+        const next = clock.plasma + (target - clock.plasma) * k;
+        clock.plasma = Math.abs(target - next) < 0.004 ? target : next;
+        coatDue = true;
+      }
+      if (clock.hz > 0 && clock.onScreen && !quiet.current) {
+        const engaged = clock.over || drag.current.active || now - lastMoveAt.current < IDLE_AFTER_MS;
+        const hz = engaged ? clock.hz : clock.idleHz;
+        if (hz > 0 && now - clock.last >= 1000 / hz && document.hasFocus()) {
+          // The haze clock only runs while it is being drawn, so a pause (Still, a hidden tab) resumes in place.
+          jellyFrame.time += Math.min(0.25, (now - (clock.last || now)) / 1000);
+          clock.last = now;
+          coatDue = true;
+        }
+      } else {
+        clock.last = 0;
+      }
+      if (coatDue) drawCoat(now, jelly.active(), true);
+
       // 5. The dwell ring. It only fills while the pointer is DOWN on a locked-on
       //    pin, so nothing can ever navigate without a deliberate hold-and-release
       //    — drag away, or let go early, and it drains.
@@ -2201,15 +2333,19 @@ export function LiquidGlobe({
   }, [nodes, reduced, jelly, jellyFrame, ambient]);
 
   // An ambient globe holds its drift while the pointer is over it: a pin you are
-  // reading or about to click should not slide out from under the cursor.
+  // reading or about to click should not slide out from under the cursor. Every
+  // globe also wakes its dormant plasma while a FINE pointer is over the ball
+  // (a touch has no hover; its press brightens it instead).
   useEffect(() => {
     const stage = stageRef.current;
-    if (!ambient || !stage) return;
-    const enter = () => {
-      hovering.current = true;
+    if (!stage) return;
+    const enter = (e: PointerEvent) => {
+      if (ambient) hovering.current = true;
+      coatClock.current.over = e.pointerType !== 'touch' && matchMedia(FINE_POINTER_QUERY).matches;
     };
     const leave = () => {
       hovering.current = false;
+      coatClock.current.over = false;
     };
     stage.addEventListener('pointerenter', enter);
     stage.addEventListener('pointerleave', leave);

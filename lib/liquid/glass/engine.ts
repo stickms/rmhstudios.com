@@ -86,6 +86,7 @@ import {
   CALM,
   DEGRADED_ROOT_SELECTOR,
   DENT,
+  GLOBE_SELECTOR,
   JELLY_LAYER_SELECTOR,
   jellyBudget,
   jellyMode,
@@ -137,8 +138,7 @@ import { clearScene, publishScene } from './scene-store';
  */
 const SELECTOR =
   '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass],.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"],[data-sonner-toast]';
-const EXCLUDE =
-  '[data-jelly="off"],[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,.radial-globe__stage,.radial-hub__orb,.eversion-overlay,canvas,input,textarea,select';
+const EXCLUDE = `[data-jelly="off"],[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,${GLOBE_SELECTOR},.radial-hub__orb,.eversion-overlay,canvas,input,textarea,select`;
 /** Nodes this engine and the other jelly services insert: never surfaces, never "content changed". */
 const OWN_LAYERS = JELLY_LAYER_SELECTOR;
 /** Rim dispersion relative to crown glass (01 §2.7). */
@@ -217,6 +217,12 @@ interface Surface {
   /** Target and eased plasma wake level (bus `plasma:level`). */
   plasmaTarget: number;
   plasmaLevel: number;
+  /**
+   * `performance.now()` the plasma level last advanced from (0 = settled). The level eases by REAL elapsed time from
+   * here, not by the frame's clamped `dt`: on a slow frame (software GL) the 50 ms cap would otherwise stall the ease
+   * several-fold, and the first frame after a sleep would ignore the rAF latency.
+   */
+  plasmaAt: number;
   /** Charge rings; `pending` ones still carry viewport coords until the next rim pass converts them. */
   rings: PulseRing[];
   pendingRings: PulseRing[];
@@ -543,6 +549,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       gel: defaultGel(),
       plasmaTarget: 0,
       plasmaLevel: 0,
+      plasmaAt: 0,
       rings: [],
       pendingRings: [],
       ringBuf: new Float32Array(16),
@@ -677,6 +684,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.light = 0;
     s.tiltX = s.tiltY = 0;
     s.plasmaLevel = 0;
+    s.plasmaAt = 0;
     s.rings = [];
     s.pendingRings = [];
     s.dent = null;
@@ -993,7 +1001,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     const interval = lastTick ? now - lastTick : 0;
     lastTick = now;
     if (interval > 0) {
-      const step = governor.record(win.performance.now() - t0, interval);
+      const step = governor.record(win.performance.now() - t0, interval, hz);
       if (step !== null) {
         governed = governBudget(budget, step);
         liveGovernorStep = step;
@@ -1098,6 +1106,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
     if (!s) return;
     const target = s.still ? 0 : Math.max(0, Math.min(1, Number.isFinite(level) ? level : 0));
     if (target === s.plasmaTarget) return;
+    // A settled level starts easing from now; one already easing keeps its clock.
+    if (s.plasmaAt === 0) s.plasmaAt = win.performance.now();
     s.plasmaTarget = target;
     if (s.canvas) requestFrame();
   };
@@ -1186,9 +1196,14 @@ export function installLiquidGlass(doc: Document = document): () => void {
       // Dormant plasma: ease toward the bus level (0 at rest).
       let plasmaMoved = false;
       if (s.plasmaLevel !== s.plasmaTarget) {
-        s.plasmaLevel = easePlasma(s.plasmaLevel, s.plasmaTarget, dt * 1000);
+        // Real elapsed time, unclamped (the ease is exponential, so any step is stable): frame-rate independent.
+        const elapsed = s.plasmaAt > 0 ? Math.max(0, now - s.plasmaAt) : dt * 1000;
+        s.plasmaLevel = easePlasma(s.plasmaLevel, s.plasmaTarget, elapsed);
+        s.plasmaAt = s.plasmaLevel === s.plasmaTarget ? 0 : now;
         plasmaMoved = true;
         if (s.plasmaLevel !== s.plasmaTarget) again = true;
+      } else {
+        s.plasmaAt = 0;
       }
 
       // Charge rings: place the queued ones (viewport → host px), drop the spent ones.

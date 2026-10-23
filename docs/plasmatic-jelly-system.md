@@ -134,10 +134,11 @@ becomes **13 fps** (the 12 Hz floor + 1). The CPU target at rest stays **≤ 250
 free-standing `infinite` animation outside `.jelly-flow`.
 
 **The governor** (`lib/jelly/governor.ts`) is the battery and thermal answer. The engine
-feeds it each tick's cost and interval; after a 30-tick warm-up, a 2 s window whose p90
-cost exceeds 2 ms (3 ms handheld) or whose p90 interval exceeds 1.5× the period takes one
+feeds it each tick's cost, interval and the clock that tick ran at; after a 30-tick warm-up,
+a 2 s window whose p90 cost exceeds 6 ms (8 ms handheld; the cost includes the WebGL → 2D copies) or whose p90 interval exceeds 1.5×
+the period of the clock actually running (the 12 Hz idle floor is on time at 83 ms) takes one
 step down: clock 30 → 20 Hz · slots halved · carriers halved · ambient arcs off · haze at
-0.125 scale · clock 0. Downscale only, one step per window, reset on route change. The
+0.125 scale · floor clock 6 Hz (the ladder never freezes the haze). Downscale only, one step per window, reset on route change. The
 tier itself never flips on a frame-rate reading.
 
 ## 3. Soft body (R11, R12)
@@ -367,7 +368,11 @@ the one exception) and never add their own pointer loop, deformation or arc code
 take jelly through role classes and `data-jelly*` attributes. The globe keeps its name,
 its dough simulation (`lib/dough.ts`) and its own coat (`components/radial/jelly-glass.ts`,
 "the globe's jelly coat" — unrelated to `lib/jelly/`); it shares the plasma palette only
-through tokens (R15).
+through tokens (R15). That coat draws the material's layers itself — haze, dormant plasma, the RGB-led rim and
+Fresnel edge — clipped to the sphere, so no globe element may ever be a rectangular host: `GLOBE_SELECTOR` in
+`lib/jelly/tiers.ts` is part of `OPT_OUT_SELECTOR` and of the engine's and registry's excludes, and click arcs never
+take a press on the globe (`lib/jelly/__tests__/globe-exclusion.test.ts`). The coat's private "drawn" flag is
+`data-globe-coat`, never `data-jelly` (a `data-jelly` stage was the square plasma outline of 2026-10-23).
 
 Retained from the liquid-glass contract, unchanged: the snapshot lifecycle
 (`scene.ts`: 260 ms coalescing, ≥ 1.5 s spacing, idle-time capture, 1.6 s mutation
@@ -385,7 +390,7 @@ and calls `d.wake()` when something starts to move. A driver runs on the next fr
 while it is awake; returning `true` keeps it awake, anything else lets it sleep. **When no
 driver is awake no frame is requested at all**, so the page at rest pays nothing beyond
 what the ambient clock asks for, and the clock asks by waking from a timer, never by
-spinning. Drivers run in ascending `order` (physics 10 → engine 20 → fallback light 25 → arcs 30), so a
+spinning. Drivers run in ascending `order` (`useFluidDrag` 5 → physics 10 → engine 20 → fallback light 25 → arcs 30), so a
 producer's state (the dent, the lattice drive, the charge) is drawn the same frame it is
 written. `stop()` unregisters and cancels a pending frame nobody else needs; one driver
 throwing is reported asynchronously and never stops the others.

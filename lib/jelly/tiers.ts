@@ -256,9 +256,20 @@ export const DEGRADED_ROOT_SELECTOR = '.reduce-transparency,.style-high-contrast
 /** The app tier's high-contrast theme lives on the app shell, not `<html>`, so it is looked up in the document. */
 export const APP_HIGH_CONTRAST_SELECTOR = '.app-high-contrast';
 
-/** Per-element opt-outs, including the Liquid Glass and fluid-press aliases that stay accepted (R11). */
-export const OPT_OUT_SELECTOR =
-  '[data-jelly="off"],[data-liquid-material="off"],[data-liquid-glass="off"],[data-liquid-motion="off"],[data-fluid-press="off"],[data-fluid-press="none"]';
+/**
+ * The liquid globe's own elements (components/radial/LiquidGlobe.tsx, RadialGlobeDock.tsx): the root, its square
+ * stage, the disc and coat layers, and the dock that holds it. The globe IS Plasmatic Jelly, but drawn by its own ROUND
+ * shader (components/radial/jelly-glass.ts: haze, dormant plasma, RGB-led rim, all clipped to the sphere), so none of
+ * these may ever become a rectangular slab host — a rim, haze canvas, carrier, soft body or arc endpoint on one of
+ * these boxes is the "plasma outlining the globe in a square" bug. Folded into {@link OPT_OUT_SELECTOR} so every
+ * service that honours opt-outs (registry → carriers and arc candidates, engine, physics, click arcs, the fallback
+ * cursor light) drops them through one selector. The pins inside keep their own press (`data-fluid-press="lift"`).
+ */
+export const GLOBE_SELECTOR =
+  '.radial-globe,.radial-globe__stage,.radial-globe__glass,.radial-globe__jelly,.radial-globe__cage,.radial-globe__skin,.rad-globe-dock';
+
+/** Per-element opt-outs, including the Liquid Glass and fluid-press aliases that stay accepted (R11), and the globe. */
+export const OPT_OUT_SELECTOR = `[data-jelly="off"],[data-liquid-material="off"],[data-liquid-glass="off"],[data-liquid-motion="off"],[data-fluid-press="off"],[data-fluid-press="none"],${GLOBE_SELECTOR}`;
 
 /** Subtree opt-outs: an ancestor matching this switches jelly off for everything inside it. */
 export const OPT_OUT_SCOPE_SELECTOR =

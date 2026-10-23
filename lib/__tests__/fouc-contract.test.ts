@@ -4,6 +4,7 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
 import { collectRoutes, parseRouteTree } from '../../testing/e2e/fouc-routes.mjs';
+import { DEFAULT_STYLE, SITE_STYLES, THEME_BG } from '../../stores/themeStore';
 
 /**
  * The FOUC contract — the half of `testing/e2e/fouc.mjs` that does not need a
@@ -79,6 +80,88 @@ describe('retired glass preferences before first paint', () => {
     expect(properties.has('--glass-user-tint')).toBe(false);
     expect(stored.has('rmh-glass-level')).toBe(false);
     expect(stored.has('rmh-reduce-transparency')).toBe(false);
+  });
+});
+
+/**
+ * Dark by default (owner decision 2026-10-23): a visitor with nothing stored gets
+ * Midnight before first paint, while a stored `default` keeps Daylight. Runs the
+ * real `themeScript` body against the real `THEME_BG` / `DEFAULT_STYLE`, so the
+ * default cannot drift between the store and the pre-paint script.
+ */
+describe('default theme before first paint', () => {
+  function runThemeScript(initial: Record<string, string>) {
+    const source = read('app/routes/__root.tsx');
+    const body = source.match(
+      /function buildThemeScript\(siteTier: boolean\): string \{([\s\S]*?)\n\}/,
+    )![1];
+    const script = runInNewContext(`(function(siteTier) {${body}})(false)`, {
+      THEME_BG,
+      APP_THEME_BG: '#0b0b0b',
+      APP_ROUTE_THEME_BG: {},
+      DEFAULT_STYLE,
+      THEME_EXCLUDED_ROUTES: [],
+      THEME_EXCLUDED_EXCEPTIONS: [],
+      ACCENT_MAP: {},
+    });
+    const stored = new Map(Object.entries(initial));
+    const classes = new Set<string>();
+    const meta = { content: '' };
+    const html = {
+      classList: { add: (v: string) => classes.add(v), contains: (v: string) => classes.has(v) },
+      style: { backgroundColor: '', colorScheme: '', setProperty: () => {} },
+      setAttribute: () => {},
+    };
+    runInNewContext(script, {
+      localStorage: {
+        getItem: (key: string) => stored.get(key) ?? null,
+        setItem: (key: string, value: string) => stored.set(key, value),
+        removeItem: (key: string) => stored.delete(key),
+      },
+      document: { documentElement: html, querySelector: () => meta },
+      location: { pathname: '/' },
+      window: {},
+    });
+    return { classes, html, meta, stored };
+  }
+
+  it('the default is Midnight, listed first in the picker, and Daylight is still offered', () => {
+    expect(DEFAULT_STYLE).toBe('graphite');
+    expect(SITE_STYLES[0].id).toBe(DEFAULT_STYLE);
+    expect(SITE_STYLES.some((s) => s.id === 'default')).toBe(true);
+    expect(THEME_BG[DEFAULT_STYLE]).toBe('#000000');
+  });
+
+  it('a new visitor paints the dark ground, class, colour scheme and theme-color pre-paint', () => {
+    const { classes, html, meta, stored } = runThemeScript({});
+    expect(classes.has('style-graphite')).toBe(true);
+    expect(html.style.backgroundColor).toBe('#000000');
+    expect(html.style.colorScheme).toBe('dark');
+    expect(meta.content).toBe('#000000');
+    // Nothing is persisted for a visitor who never chose.
+    expect(stored.has('rmh-style')).toBe(false);
+  });
+
+  it('a stored `default` keeps Daylight (an explicit choice is never flipped)', () => {
+    const { classes, html, meta, stored } = runThemeScript({ 'rmh-style': 'default' });
+    expect([...classes].some((c) => c.startsWith('style-'))).toBe(false);
+    expect(html.style.backgroundColor).toBe('#ffffff');
+    expect(html.style.colorScheme).toBe('light');
+    expect(meta.content).toBe('#ffffff');
+    expect(stored.get('rmh-style')).toBe('default');
+  });
+
+  it('high contrast is unaffected', () => {
+    const { classes, html } = runThemeScript({ 'rmh-style': 'high-contrast' });
+    expect(classes.has('style-high-contrast')).toBe(true);
+    expect(classes.has('style-graphite')).toBe(false);
+    expect(html.style.backgroundColor).toBe('#000000');
+  });
+
+  it('a retired id self-heals to the default', () => {
+    const { classes, stored } = runThemeScript({ 'rmh-style': 'nocturne' });
+    expect(classes.has('style-graphite')).toBe(true);
+    expect(stored.get('rmh-style')).toBe(DEFAULT_STYLE);
   });
 });
 

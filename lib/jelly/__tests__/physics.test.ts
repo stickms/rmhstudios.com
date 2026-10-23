@@ -23,7 +23,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { dentOf, latticeDrive, resetLatticeInputsForTests } from '../lattice-inputs';
 import { createJellyLens, type JellyLens } from '../lens';
-import { installJellyPhysics, reportJellyDrag } from '../physics';
+import { installJellyPhysics, plasmaEaseFactor, reportJellyDrag } from '../physics';
 import { DENT, FINE_POINTER_QUERY, MOTION_BOUNDS, PLASMA } from '../tiers';
 
 // ── Fake DOM ──────────────────────────────────────────────────────────────
@@ -778,6 +778,33 @@ describe('installJellyPhysics', () => {
     expect(inlineClean(card)).toBe(true);
   });
 
+  it('stacked strikes on an untouched neighbour still move it ≤ 1.5px in total', () => {
+    install();
+    const card = make('div', { cls: ['glass-fill'] });
+    body.append(card);
+    const hit = () =>
+      jellyBus.emit('arc:strike', {
+        el: card as unknown as Element,
+        x: 0,
+        y: 0,
+        nx: 1,
+        ny: 0,
+        energy: 1,
+        kind: 'click',
+      });
+    let peak = 0;
+    for (let i = 0; i < 30; i++) {
+      if (i < 4) hit();
+      step(1);
+      const m = /^(-?[\d.]+)px(?: (-?[\d.]+)px)?/.exec(card.style.translate);
+      if (m) peak = Math.max(peak, Math.hypot(Number(m[1]), Number(m[2] ?? 0)));
+    }
+    expect(peak).toBeGreaterThan(0.3);
+    expect(peak).toBeLessThanOrEqual(MOTION_BOUNDS.nudgePx + 1e-6);
+    settle();
+    expect(inlineClean(card)).toBe(true);
+  });
+
   it('drag owners: drag:start/drag:end on the bus and a scale-only stretch', () => {
     install();
     const events: string[] = [];
@@ -1071,6 +1098,60 @@ describe('plasma:level (#989)', () => {
     }
     expect(r.log.every((e) => e.el === el)).toBe(true);
   });
+
+  it('plasmaEaseFactor is frame-rate independent: n steps of dt compose to one step of n·dt', () => {
+    expect(plasmaEaseFactor(0)).toBe(0);
+    expect(plasmaEaseFactor(-5)).toBe(0);
+    expect(plasmaEaseFactor(Number.NaN)).toBe(0);
+    expect(plasmaEaseFactor(3 * PLASMA.easeMs)).toBeGreaterThanOrEqual(0.95);
+    for (const hz of [3, 10, 30, 60, 144]) {
+      const dt = 1000 / hz;
+      let level = 0;
+      for (let t = 0; t + dt <= 3 * PLASMA.easeMs + 1e-9; t += dt)
+        level += (1 - level) * plasmaEaseFactor(dt);
+      const steps = Math.floor((3 * PLASMA.easeMs + 1e-9) / dt);
+      expect(level).toBeCloseTo(plasmaEaseFactor(steps * dt), 10);
+    }
+  });
+
+  /**
+   * The e2e on software GL saw ~1.8 s to reach 0.95 against a 180 ms time constant: the level eased by the frame's
+   * `dt`, which is capped at 250 ms and reads 1/60 s on the first frame after a wake, so slow frames stalled it. It now
+   * eases by real elapsed time from the input: the level crosses 0.95 of its target at 3·easeMs of wall time at any
+   * frame rate. The bus announces it in steps of ≥ 0.02, so the first ANNOUNCED level ≥ 0.95 may trail to ~0.97
+   * (3.5·easeMs), plus at most one frame of quantization.
+   */
+  it.each([3, 10, 30, 60, 144])(
+    'press reaches ≥ 0.95 of PLASMA.press within ~3·easeMs of real time at %i Hz',
+    (hz) => {
+      install();
+      const el = make('div', {
+        cls: ['glass-fill'],
+        box: { left: 0, top: 0, width: 200, height: 100 },
+      });
+      body.append(el);
+      const r = record();
+      const ms = 1000 / hz;
+      const t0 = clock;
+      fire('pointerdown', el, 100, 50);
+      let at = Infinity;
+      while (clock - t0 < 10 * PLASMA.easeMs && frames.length) {
+        step(1, ms);
+        if ((r.log.filter((e) => e.el === el).at(-1)?.level ?? 0) >= 0.95 * PLASMA.press) {
+          at = clock - t0;
+          break;
+        }
+      }
+      r.off();
+      expect(at).toBeLessThanOrEqual(3.5 * PLASMA.easeMs + ms);
+      // …and no faster than the time constant allows (no snap on the first frame, no skipped ease).
+      expect(at).toBeGreaterThanOrEqual(3 * PLASMA.easeMs - ms);
+      const first = r.log.find((e) => e.el === el)!.level;
+      expect(first).toBeLessThanOrEqual(plasmaEaseFactor(ms) + 1e-9);
+      fire('pointerup', el, 100, 50);
+      while (frames.length) step(1, ms);
+    },
+  );
 
   it('keyboard focus-visible and click brighten to PLASMA.press, then rest; a pointer focus does not', () => {
     install();

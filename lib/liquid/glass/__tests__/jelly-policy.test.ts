@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { governBudget, GOVERNED_HAZE_SCALE, knobsAt } from '@/lib/jelly/governor';
+import {
+  governBudget,
+  GOVERNED_HAZE_SCALE,
+  knobsAt,
+  GOVERNED_FLOOR_HZ,
+} from '@/lib/jelly/governor';
 import { AMBIENT_BOUNDS, CHARGE, IDLE_AFTER_MS, JELLY_BUDGETS, PLASMA } from '@/lib/jelly/tiers';
 import { HAZE_FRAG } from '../haze-shader';
 import {
@@ -67,7 +72,7 @@ describe('ambient clock (R7)', () => {
     const ladderEnd = governBudget(JELLY_BUDGETS.full, 6);
     expect(
       ambientHz({ ...engaged, clockHz: ladderEnd.clockHz, idleClockHz: ladderEnd.idleClockHz }),
-    ).toBe(0);
+    ).toBe(GOVERNED_FLOOR_HZ);
     expect(
       ambientHz({ ...engaged, clockHz: 12, idleClockHz: 30, msSinceInput: IDLE_AFTER_MS + 1 }),
     ).toBe(12);
@@ -223,6 +228,24 @@ describe('#989 plasma level and charge rings', () => {
     expect(easePlasma(0.5, -3, 1e6)).toBe(0);
     expect(easePlasma(0, 0, 16)).toBe(0); // at rest it stays exactly 0
     expect(easePlasma(0.3, 1, 0)).toBe(0.3);
+  });
+
+  /**
+   * Frame-rate independence. The engine feeds `easePlasma` the REAL elapsed time since the level last advanced (not
+   * the frame's dt, which it caps at 50 ms — on software GL that cap stalled the plasma several-fold), so the level
+   * must reach ≥ 0.95 of its target by 3·easeMs of wall time whatever the frame rate, and not much sooner.
+   */
+  it.each([3, 10, 30, 60, 144])('reaches ≥ 0.95 of the target by 3·easeMs at %i Hz', (hz) => {
+    const dt = 1000 / hz;
+    let v = 0;
+    let t = 0;
+    while (t < 3 * PLASMA.easeMs) {
+      const step = Math.min(dt, 3 * PLASMA.easeMs - t);
+      v = easePlasma(v, 1, step);
+      t += step;
+    }
+    expect(v).toBeGreaterThanOrEqual(0.95);
+    expect(v).toBeLessThan(0.96);
   });
 
   it('a ring travels at the pulse speed and decays with the pulse tau', () => {

@@ -24,20 +24,39 @@ import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 // hand-copied color map in two other files.
 //
 // The shared site ships one new social-first system in three accessibility
-// modes. Retired decorative themes self-heal to Daylight during hydration.
+// modes. Retired decorative themes self-heal to DEFAULT_STYLE during hydration.
+// Listed in picker order: the default first.
+//
+// The id `default` is historical: it names Daylight (the bare `:root` tokens),
+// which is no longer the default. It keeps its id because that is the value
+// already persisted in `rmh-style` and in `AppearancePreference.style` for
+// everyone who has Daylight — renaming it would silently move those people.
 export const SITE_STYLES = [
-  { id: 'default', label: 'Daylight', icon: '☀', group: 'RMH', bg: '#ffffff' },
   { id: 'graphite', label: 'Midnight', icon: '◐', group: 'RMH', bg: '#000000' },
+  { id: 'default', label: 'Daylight', icon: '☀', group: 'RMH', bg: '#ffffff' },
   { id: 'high-contrast', label: 'High contrast', icon: '◑', group: 'RMH', bg: '#000000' },
 ] as const;
 
 /**
- * Theme applied when the visitor has no stored/saved preference. Must stay in
- * sync with the fallback in app/routes/__root.tsx's inline themeScript and the
- * self-heal rewrite in components/Providers.tsx. Daylight (`default`, the bare
- * :root) is the site default.
+ * Theme applied when the visitor has no stored/saved preference: Midnight
+ * (`graphite`), the near-black void of the Plasmatic Jelly identity (owner
+ * decision, 2026-10-23 — it was Daylight).
+ *
+ * Migration semantics, which follow from what is persisted rather than from any
+ * migration code:
+ * - `rmh-style` ABSENT (a new visitor, or a browser that never stored one) →
+ *   this default, so dark. Nothing is written until something re-persists.
+ * - `rmh-style` = `default` → Daylight, kept. A stored `default` is treated as a
+ *   choice of Daylight, never as "whatever the default is now".
+ * - `rmh-style` = an unknown/retired id → rewritten to this default.
+ * - Signed in: a saved `AppearancePreference.style` wins (seeded pre-paint by
+ *   `lib/appearance/account-seed.ts`); a null column means the device's value,
+ *   and the account sync then saves that value up.
+ *
+ * Read by app/routes/__root.tsx's inline themeScript, the self-heal in
+ * components/Providers.tsx, and the store's initial state; never restate it.
  */
-export const DEFAULT_STYLE: SiteStyle = 'default';
+export const DEFAULT_STYLE: SiteStyle = 'graphite';
 
 export type SiteStyle = (typeof SITE_STYLES)[number]['id'];
 

@@ -1821,7 +1821,10 @@ html.reduce-transparency .radial-globe__contact,
    specular, transmission, caustic and the accent's subsurface tint, drawn over
    the cage inside the glass disc — so it takes the soft body's affine transform
    with the disc, and its own shader follows the local lobe. LiquidGlobe sets
-   `data-jelly="on"` on the stage once the material has drawn its first frame;
+   `data-globe-coat="on"` on the stage once the material has drawn its first frame
+   (NOT `data-jelly`: that attribute is the site material's opt-in, and on the
+   square stage it made jelly-coverage.css paint a rectangular rim, haze floor and
+   plasma glow round the ball — the globe's jelly is drawn by its own round shader);
    until then (and wherever it is not eligible — high contrast, reduced
    transparency, `perf-lite`, no WebGL) the CSS glass above is the material.
 
@@ -1843,23 +1846,23 @@ html.reduce-transparency .radial-globe__contact,
 }
 /* The shader owns the body, rim hairline and silhouette now, so the CSS disc stops clipping and stops drawing them.
    Only the drop shadow stays CSS (a static ellipse on the surface below: it does not need to deform). */
-.radial-globe__stage[data-jelly='on'] .radial-globe__glass {
+.radial-globe__stage[data-globe-coat='on'] .radial-globe__glass {
   background: none;
   overflow: visible;
   border-radius: 0;
   box-shadow: none;
 }
-.radial-globe__stage[data-jelly='on'] .radial-globe__glass::before {
+.radial-globe__stage[data-globe-coat='on'] .radial-globe__glass::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 50%;
   box-shadow: 0 30px 70px -34px rgba(0, 0, 0, 0.5);
 }
-.radial-globe__stage[data-jelly='on'] .radial-globe__contact {
+.radial-globe__stage[data-globe-coat='on'] .radial-globe__contact {
   display: none;
 }
-.radial-globe__stage[data-jelly='on'] .radial-globe__glass::after {
+.radial-globe__stage[data-globe-coat='on'] .radial-globe__glass::after {
   content: none;
   animation: none;
 }
