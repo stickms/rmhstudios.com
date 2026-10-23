@@ -1,0 +1,13 @@
+{
+  "surfaces": {
+    "components/shared/EmojiPickerButton.tsx": 1,
+    "components/shared/EmojiPickerPanel.tsx": 1,
+    "components/shared/ReactionChips.tsx": 1,
+    "components/shared/ReactionMenu.tsx": 1
+  },
+  "dialogs": {
+    "components/shared/SaveConflictDialog.tsx": 1,
+    "components/shared/SignInRequiredDialog.tsx": 1
+  },
+  "switches": {}
+}

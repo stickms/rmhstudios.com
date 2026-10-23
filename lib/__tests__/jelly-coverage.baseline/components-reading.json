@@ -1,0 +1,10 @@
+{
+  "surfaces": {
+    "components/reading/StoryTimeline.tsx": 1
+  },
+  "dialogs": {
+    "components/reading/InlinePopover.tsx": 1,
+    "components/reading/ReadingRuler.tsx": 1
+  },
+  "switches": {}
+}

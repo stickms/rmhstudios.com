@@ -1,0 +1,8 @@
+{
+  "surfaces": {},
+  "dialogs": {
+    "components/site/CookieConsent.tsx": 2,
+    "components/site/NotificationsPopover.tsx": 1
+  },
+  "switches": {}
+}
