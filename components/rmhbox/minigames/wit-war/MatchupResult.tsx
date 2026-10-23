@@ -63,10 +63,10 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className={`app-glass rounded-(--app-radius) border-2 p-4 ${
+          className={`glass-fill rounded-(--app-radius) border-2 p-4 ${
             winnerIsA && !isDraw
               ? 'border-(--app-success)/60 bg-(--app-success)/10'
-              : 'border-(--app-border) '
+              : 'border-(--app-border)'
           }`}
         >
           {winnerIsA && !isDraw && (
@@ -85,10 +85,10 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className={`app-glass rounded-(--app-radius) border-2 p-4 ${
+          className={`glass-fill rounded-(--app-radius) border-2 p-4 ${
             !winnerIsA && !isDraw
               ? 'border-(--app-success)/60 bg-(--app-success)/10'
-              : 'border-(--app-border) '
+              : 'border-(--app-border)'
           }`}
         >
           {!winnerIsA && !isDraw && (

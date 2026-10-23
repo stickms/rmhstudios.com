@@ -38,6 +38,7 @@ export interface GameSettingsFormProps {
 // ─── Individual setting renderers ────────────────────────────────
 
 function BooleanSetting({
+  def,
   value,
   editable,
   onChange,
@@ -48,7 +49,12 @@ function BooleanSetting({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <Switch checked={value} onCheckedChange={onChange} disabled={!editable} />
+    <Switch
+      checked={value}
+      onCheckedChange={onChange}
+      disabled={!editable}
+      aria-label={def.label}
+    />
   );
 }
 

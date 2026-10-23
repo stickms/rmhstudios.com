@@ -67,7 +67,7 @@ export default function WitWarResults({
             className={`glass-fill flex items-center justify-between rounded-(--app-radius) border p-3 ${
               idx === 0
                 ? 'border-(--app-warning)/40 bg-(--app-warning)/10'
-                : 'border-(--app-border) '
+                : 'border-(--app-border)'
             }`}
           >
             <div className="flex items-center gap-3">

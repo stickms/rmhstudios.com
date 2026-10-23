@@ -98,10 +98,10 @@ export default function CategoryCrashResults({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className={`app-glass rounded-(--app-radius) border p-4 ${
+              className={`glass-fill rounded-(--app-radius) border p-4 ${
                 isMe
                   ? 'border-(--app-accent)/50 bg-(--app-accent)/5'
-                  : 'border-(--app-border) '
+                  : 'border-(--app-border)'
               }`}
             >
               {/* Player header */}

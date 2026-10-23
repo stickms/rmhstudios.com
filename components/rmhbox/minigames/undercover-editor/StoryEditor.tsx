@@ -174,7 +174,7 @@ export default function StoryEditor({
       )}
 
       {/* Editable sentence — word-level tokens */}
-      <div className="app-glass rounded-(--app-radius) border-(--app-rare)/30 p-4">
+      <div className="glass-fill rounded-(--app-radius) border border-(--app-rare)/30 p-4">
         <p className="mb-2 text-[10px] text-(--app-text-muted)">
           {t("latest-sentence-by", { defaultValue: "Latest sentence — by {{author}}", author: editableSentence.authorName })}
         </p>

@@ -202,7 +202,7 @@ export default function PeerReview({
                       ? 'border-(--app-border)/30 opacity-40'
                       : isDuplicate
                         ? 'border-(--app-warning)/40 bg-(--app-warning-dim) text-(--app-warning)'
-                        : 'border-(--app-border) '
+                        : 'border-(--app-border)'
                 }`}
               >
                 <span className="flex items-center gap-2 min-w-0 flex-1">
