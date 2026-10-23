@@ -122,7 +122,7 @@ export function ImageCropModal({
  aria-describedby={undefined}
  overlayClassName="z-[60]"
  data-motion="rise"
- className="z-[60] flex flex-col gap-0 overflow-y-auto p-0 sm:p-0"
+ className="z-[60] flex flex-col gap-0 overflow-y-auto p-0 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] sm:p-0"
  >
  {/* Header */}
  <div className="flex shrink-0 items-center justify-between border-b border-site-border py-3 pl-5 pr-14">

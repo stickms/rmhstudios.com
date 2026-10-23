@@ -129,12 +129,15 @@ export function QuickPanel({
   useEffect(() => {
     if (!open) return;
     const trigger = anchorRef.current;
-    // Captured now: by cleanup time React may already have detached the node,
-    // and the check below has to run against the panel this effect opened.
-    const panel = panelRef.current;
+    // The panel this effect opened, taken in the frame below rather than now:
+    // Radix's portal mounts it a render after `open` flips, so at this point the
+    // ref is still null, and a cleanup checking against that let Escape strand
+    // focus on <body>.
+    let panel: HTMLElement | null = panelRef.current;
     const raf = requestAnimationFrame(() => {
       const el = panelRef.current;
       if (!el) return;
+      panel = el;
       // `preventScroll` because the panel is position:fixed — it is already in
       // view by construction, so the browser's focus scroll can only drag the
       // page underneath it. On a phone that scroll lands at the same moment the
@@ -146,9 +149,12 @@ export function QuickPanel({
     });
     return () => {
       cancelAnimationFrame(raf);
-      // Only reclaim focus if it is still inside the panel we are unmounting;
-      // a click that navigated away must not be yanked back to the top bar.
-      if (panel?.contains(document.activeElement)) trigger?.focus?.();
+      // Only reclaim focus if the panel held it: still inside it, or orphaned on
+      // <body> by its removal. Focus that landed somewhere real (a page a click
+      // navigated to) is not yanked back to the top bar.
+      const active = document.activeElement;
+      const orphaned = !active || active === document.body;
+      if (orphaned || panel?.contains(active)) trigger?.focus?.();
     };
   }, [open, anchorRef]);
 
