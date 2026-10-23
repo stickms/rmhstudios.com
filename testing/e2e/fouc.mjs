@@ -15,7 +15,7 @@
 //   pnpm build && node .output/server/index.mjs
 //
 //   node testing/e2e/fouc.mjs                       # every page, every profile
-//   node testing/e2e/fouc.mjs --quick               # 2 profiles (the CI shape)
+//   node testing/e2e/fouc.mjs --quick               # 3 profiles: fresh (Midnight default), graphite, daylight
 //   node testing/e2e/fouc.mjs --route /library      # one page, all profiles
 //   node testing/e2e/fouc.mjs --profiles fresh,rtl  # pick profiles
 //   node testing/e2e/fouc.mjs --json out.json       # machine-readable report
@@ -171,8 +171,14 @@ const FRAME_CONTENT_VARIANCE = 0.0015;
  */
 export const PROFILES = {
   fresh: {
-    why: 'A first-ever visitor: nothing stored, light OS. The default path through themeScript.',
+    why: 'A first-ever visitor: nothing stored, light OS. The default path through themeScript, which is Midnight (`style-graphite`, #000) since the 2026-10-23 dark default: a light OS must not flash white first.',
     localStorage: {},
+    colorScheme: 'light',
+    reducedMotion: 'reduce',
+  },
+  daylight: {
+    why: 'Daylight stored (`rmh-style` = `default`, the historical id). Since Midnight became the default, a stored `default` is a CHOICE of Daylight: the pre-paint script must keep the white ground and add no `style-graphite` before frame 1.',
+    localStorage: { 'rmh-style': 'default' },
     colorScheme: 'light',
     reducedMotion: 'reduce',
   },
@@ -242,8 +248,11 @@ export const PROFILES = {
   },
 };
 
-/** The profile pair CI runs: one light/empty, one dark/stored. */
-const QUICK_PROFILES = ['fresh', 'graphite'];
+/**
+ * The profiles CI runs: the empty first visit (the Midnight default), stored Midnight, and stored Daylight — the light
+ * path that only a stored `default` reaches now that the default is dark.
+ */
+const QUICK_PROFILES = ['fresh', 'graphite', 'daylight'];
 
 /**
  * CPU throttling applied to every run, as a slowdown multiplier.
