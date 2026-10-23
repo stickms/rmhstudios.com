@@ -348,7 +348,7 @@ function LobbyPage() {
 
           {/* Final Standings */}
           {sessionResults?.standings && sessionResults.standings.length > 0 && (
-            <section className="w-full rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) px-4 py-4">
+            <section className="app-glass w-full rounded-(--app-radius) px-4 py-4">
               <h2 className="mb-3 text-lg font-semibold text-(--app-accent)">{t("final-standings", { defaultValue: "Final Standings" })}</h2>
               <div className="space-y-2">
                 {sessionResults.standings.map((s) => (
@@ -371,7 +371,7 @@ function LobbyPage() {
 
           {/* Match History */}
           {sessionResults?.matchHistory && sessionResults.matchHistory.length > 0 && (
-            <section className="w-full rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) px-4 py-4">
+            <section className="app-glass w-full rounded-(--app-radius) px-4 py-4">
               <h2 className="mb-3 text-lg font-semibold text-(--app-accent)">{t("match-history", { defaultValue: "Match History" })}</h2>
               <div className="space-y-2">
                 {sessionResults.matchHistory.map((m) => (
