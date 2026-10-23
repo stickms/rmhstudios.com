@@ -84,8 +84,8 @@
   :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):is(:focus-visible, :focus-within) {
     --jelly-plasma-k: 0.08;
   }
-  /* Buttons: no haze (a solid fill keeps its colour); the current is a ±4% luminance band of the button's own ink
-     on filled variants, a faint plasma drift on the clear ones. */
+  /* Buttons: no haze on solid fills (a solid fill keeps its colour); the current is a ±4% luminance band of the
+     button's own ink on filled variants, the fill role's haze plus a faint plasma drift on the clear ones (below). */
   [data-slot='button'] {
     --jelly-haze-a: 0;
     --jelly-plasma-k: 0.04;
@@ -101,6 +101,15 @@
   ) {
     --jelly-current-color: currentColor;
     --jelly-current-mix: 4%;
+  }
+  /* Clear-bodied buttons (a surface or no fill, not a solid colour) carry the fill role's haze in their carrier, so the
+     current reads as moving haze rather than a plasma tint alone. Same alpha as a card: same legibility bound. */
+  [data-slot='button']:is(
+    [data-variant='secondary'],
+    [data-variant='outline'],
+    [data-variant='accent-outline']
+  ) {
+    --jelly-haze-a: var(--site-jelly-haze-fill);
   }
 
   /* ── 2. Static haze floor (01 §3.6) ─────────────────────────────────────────────────────────────────────────────
@@ -206,7 +215,7 @@
          <span class="jelly-flow__drift"></span>
          <span class="jelly-flow__current"></span>   (omitted on handheld; fields add .jelly-flow--rim-only)
        </span>
-     `contain: strict` + overflow clip bound the raster to the host box; the spans are 140% of it for travel room.
+     `contain: strict` + overflow clip bound the raster to the host box; the spans are 160% of it for travel room.
      Opacity is the hover boost (compositor-only); speed is never changed on a running animation (it would jump). */
   .jelly-flow {
     position: absolute;
@@ -222,26 +231,47 @@
   }
   .jelly-flow > span {
     position: absolute;
-    inset: -20%;
+    /* 160% of the host: room for jelly-drift's 10° turn and 8% travel without baring a corner on a tall host. */
+    inset: -30%;
     will-change: transform;
     animation-delay: var(--jelly-phase, 0s);
     animation-play-state: running;
   }
+  /* The drift span is the carrier's haze: a flat veil at half density with three elongated current streaks on it, each
+     peaking at ~0.45 α above the veil (so the composite stays inside the α/2…α range
+     jelly-legibility.test.ts bounds), plus the plasma blob and the grain tile. The streaks sit apart and at different
+     slants, so the span's turn and travel (jelly-drift) reads as currents swirling past each other, not one blob
+     breathing. Each streak's mid stop keeps a defined body instead of a long linear fade. (V1: the single soft blob it
+     replaces moved ≈ 2 px/s with a ±α/4 swing and nobody could see it.) */
   .jelly-flow > .jelly-flow__drift {
+    --jelly-streak: color-mix(
+      in srgb,
+      var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 45%),
+      transparent
+    );
+    --jelly-streak-mid: color-mix(
+      in srgb,
+      var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 22%),
+      transparent
+    );
     background-image:
       radial-gradient(
-        40% 55% at 30% 35%,
-        color-mix(
-          in srgb,
-          var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 100%),
-          transparent
-        ),
-        color-mix(
-            in srgb,
-            var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
-            transparent
-          )
-          70%
+        46% 17% at 30% 30%,
+        var(--jelly-streak),
+        var(--jelly-streak-mid) 55%,
+        transparent 100%
+      ),
+      radial-gradient(
+        20% 40% at 74% 38%,
+        var(--jelly-streak),
+        var(--jelly-streak-mid) 50%,
+        transparent 100%
+      ),
+      radial-gradient(
+        42% 15% at 46% 76%,
+        var(--jelly-streak),
+        var(--jelly-streak-mid) 55%,
+        transparent 100%
       ),
       radial-gradient(
         35% 45% at 72% 68%,
@@ -256,12 +286,21 @@
         ),
         transparent 70%
       ),
+      linear-gradient(
+        color-mix(
+            in srgb,
+            var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
+            transparent
+          )
+          0 0
+      ),
       var(--jelly-tile);
-    background-size: auto, auto, var(--jelly-tile-size);
-    /* Feature size ≥ 35% of the host, 29 s period, ≤ ~4 px/s of travel on a 600 px card (01 §5.3). */
+    background-size: auto, auto, auto, auto, auto, var(--jelly-tile-size);
+    /* 22 s per leg, alternate: ≈ 10.5 px/s at the fastest leg on a 300 × 150 card; wide hosts are capped at 12 px/s by
+       `cappedFlowSpeed` (lib/jelly/flow-carriers.ts `driftPerSpeed` mirrors these keyframes; 01 §5.3). */
     animation: jelly-drift
       calc(
-        29s /
+        22s /
           max(
             0.05,
             var(--jelly-flow-speed, 1) * var(--jelly-flow-gain, var(--site-jelly-flow-speed, 1)) *
@@ -290,10 +329,10 @@
         50%,
       transparent 70%
     );
-    /* ±18% of a 140% span over 36 s, linear: ~8 px/s on a 600 px card, slower on chrome (speed 0.7). */
+    /* ±24% of a 160% span over 26 s, linear: ~8.9 px/s on a 300 px card, capped at 12 px/s on wide hosts. */
     animation: jelly-current
       calc(
-        36s /
+        26s /
           max(
             0.05,
             var(--jelly-flow-speed, 1) * var(--jelly-flow-gain, var(--site-jelly-flow-speed, 1)) *
@@ -377,8 +416,12 @@
 /* ── 6. Paused states ───────────────────────────────────────────────────────────────────────────────────────────────
    Unlayered so no utility can restart them. Scrolling (04 §3.3), `still` (WCAG 2.2.2: a pause mechanism; the carrier
    service also detaches carriers), a game in play (R16), and a focused host (04 §4.5: a ring over a moving ground is
-   harder to track; fields never animate their rim band while focused). The paused frame is the static haze. */
+   harder to track; fields never animate their rim band while focused). The paused frame is the static haze.
+   `html[data-jelly-idle]` (no input for IDLE_AFTER_MS, stamped by lib/jelly/flow-carriers.ts) is the one pause that
+   does not stop the motion: the service steps the paused animations at the idle clock's rate (R7: ≤ 12 frames/s at
+   rest, not vsync), so the haze keeps drifting at the same speed in visible steps. */
 html[data-scrolling] .jelly-flow > span,
+html[data-jelly-idle] .jelly-flow > span,
 html[data-jelly-motion='still'] .jelly-flow > span,
 html[data-game-state='playing'] .jelly-flow > span,
 :focus-visible > .jelly-flow > span,
@@ -445,20 +488,20 @@ html[data-game-state='playing'] .jelly-flow > span,
 
 @keyframes jelly-drift {
   0% {
-    transform: translate3d(-4%, -3%, 0) rotate(-3deg) scale(1.02);
+    transform: translate3d(-8%, -6%, 0) rotate(-8deg) scale(1.04);
   }
   50% {
-    transform: translate3d(3%, 2%, 0) rotate(2deg) scale(0.99);
+    transform: translate3d(7%, 4%, 0) rotate(6deg) scale(0.98);
   }
   100% {
-    transform: translate3d(-1%, 4%, 0) rotate(3deg) scale(1.03);
+    transform: translate3d(-3%, 8%, 0) rotate(10deg) scale(1.05);
   }
 }
 @keyframes jelly-current {
   from {
-    transform: translate3d(-18%, 0, 0);
+    transform: translate3d(-24%, 0, 0);
   }
   to {
-    transform: translate3d(18%, 0, 0);
+    transform: translate3d(24%, 0, 0);
   }
 }

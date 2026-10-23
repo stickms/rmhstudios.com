@@ -23,7 +23,7 @@
  */
 
 import { onJellyPointer } from '../pointer';
-import { JELLY_SELECTOR, jellyOptedOut } from '../tiers';
+import { GLOBE_SELECTOR, JELLY_SELECTOR, jellyOptedOut } from '../tiers';
 import { closestRimPoints, pointToRoundedRect, type RoundedRect } from './geometry';
 import type { FlashLedger } from './ledger';
 import { clickTargets, nearestRimWithin, type ClickTarget } from './pairs';
@@ -76,6 +76,9 @@ export function pressHost(target: EventTarget | null): Element | null {
   const el = target as Element | null;
   if (!el || typeof el.closest !== 'function') return null;
   if (isEditable(el)) return null;
+  // The liquid globe answers a press with its own ripple and plasma (round, in its shader): no rect host above it may
+  // take the charge for it.
+  if (el.closest(GLOBE_SELECTOR)) return null;
   const host = el.closest(JELLY_SELECTOR);
   if (!host) return null;
   if (el.closest(CLICK_BLOCK_SELECTOR) || jellyOptedOut(host)) return null;
@@ -317,6 +320,7 @@ export function installClickArcs(doc: Document, opts: ClickInputOptions): () => 
     // Only a press on bare page (no jelly ancestor, nothing blocked or editable) draws charge to the cursor.
     if (
       target.closest(JELLY_SELECTOR) ||
+      target.closest(GLOBE_SELECTOR) ||
       target.closest(CLICK_BLOCK_SELECTOR) ||
       isEditable(target)
     )

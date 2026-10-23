@@ -101,10 +101,14 @@ export function AccessPrefsPanel() {
   const { t } = useTranslation('f-access');
   const p = useAccessPrefs();
   const [phone, setPhone] = useState(false);
+  // Notification support is a browser fact: false on the server, so it is read
+  // after hydration like `phone` — rendering it directly mismatches the SSR HTML.
+  const [activityOk, setActivityOk] = useState(false);
   const [quiet, setQuiet] = useState<boolean | null>(null);
 
   useEffect(() => {
     setPhone(isTouchPhone());
+    setActivityOk(activityNotificationsSupported());
     setQuiet(readQuietHours() !== null);
     // Bedtime follows the quiet hours saved with the notification settings; mirror
     // them onto this device so the pre-paint script can read them without a request.
@@ -293,7 +297,7 @@ export function AccessPrefsPanel() {
             </Link>
           </p>
         ) : null}
-        {activityNotificationsSupported() ? (
+        {activityOk ? (
           <ToggleRow
             label={t('activity-label', { defaultValue: 'Show my study timer in notifications' })}
             description={t('activity-desc', {

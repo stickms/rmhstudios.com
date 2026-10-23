@@ -90,7 +90,7 @@ bundle only**. SSR/server builds get the real module.
   observers over every jelly host, cached rects, no rAF), `governor.ts`
   (downscale-only frame-cost governor), `flow-carriers.ts` (which hosts carry a CSS
   `.jelly-flow`), `frame.ts` (the ONE jelly `requestAnimationFrame`: every service
-  registers a driver with `drive(fn, { order })` — physics 10, engine 20, arcs 30 — and no
+  registers a driver with `drive(fn, { order })` — `useFluidDrag` 5, physics 10, engine 20, fallback light 25, arcs 30 — and no
   frame runs while no driver is awake), `pointer.ts` (the ONE set of window pointer
   listeners, `onJellyPointer(type, fn)`), `lens.ts` (the press dent's SVG lens, the only
   code that filters a body, only while it is dented), the soft body (`physics.ts` — the

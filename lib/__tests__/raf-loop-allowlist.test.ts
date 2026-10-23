@@ -77,14 +77,24 @@ import { join } from 'node:path';
  *                                       wake only on input, a strike or a live arc.
  *                                       Proven in lib/jelly/__tests__/frame.test.ts.
  *   - components/radial/LiquidGlobe.tsx — the navigation globe's spin/dwell loop.
- *                                       Bounded by MOUNT, like a game's: RadialHub
- *                                       renders it only while the hub is open, and
- *                                       the effect cancels the frame on unmount, so
- *                                       a page at rest (menu closed) has no loop at
- *                                       all. While it does run it writes only
- *                                       transform/opacity/custom properties, skips
- *                                       every write on a frame where nothing moved,
- *                                       and reads no layout.
+ *                                       NOT bounded by mount: the desktop shell
+ *                                       DOCKS it (`RadialGlobeDock`), on every page,
+ *                                       for the whole visit. So it is idle-at-rest
+ *                                       like a jelly driver: it runs every vsync
+ *                                       only while something moves (a hand on it,
+ *                                       a settle, a ripple, the dwell ring, the
+ *                                       soft body, an eversion); otherwise it
+ *                                       sleeps on a timer to the next jelly
+ *                                       ambient tick (drift + coat haze: engaged
+ *                                       rate, then the 12 Hz idle floor after
+ *                                       IDLE_AFTER_MS, on the grid it shares with
+ *                                       the globe cursor) — and with NOTHING
+ *                                       scheduled under jellyMotion `still`, the
+ *                                       degraded tiers, a hidden/unfocused tab or
+ *                                       off screen. Every handler that moves it
+ *                                       wakes it (raising `dirty`). It writes only
+ *                                       transform/opacity/custom properties and
+ *                                       reads no layout; unmount cancels both.
  *   - components/rideshare/cars/LiquidCarStage.tsx — the RMH family of cars'
  *                                       turntable. Idle-at-rest by construction
  *                                       and NOT bounded by mount, which matters
@@ -173,14 +183,18 @@ const ALLOW = new Set<string>([
   // no rAF themselves. No frame is requested while no driver is awake; `stop()`
   // cancels. Settle proven in lib/jelly/__tests__/frame.test.ts.
   'lib/jelly/frame.ts',
-  // The globe cursor (owner, 2026-10-22: "a constantly everting globe"). The one
-  // standing loop on a site page, and it is standing only while it IS the pointer:
-  // a frame is scheduled while the mouse is over the document or a fade, sparkle,
-  // ripple or trail is still settling (`GlobeCursorEngine.busy()`), and never
-  // otherwise — pointer out of the window, window blurred, touch input, tab
-  // hidden. Under reduced motion it draws one still frame per pointer event and
-  // no loop at all. Mounted once per document; unmount cancels the frame. It
-  // loads only on a fine, hovering pointer with the cursor switched on.
+  // The globe cursor (owner, 2026-10-22: "a constantly everting globe"). Every
+  // vsync only while something the pointer did is still settling — movement, a
+  // spring, the fade, sparkles, the trail (`GlobeCursorEngine.busy()`). With the
+  // pointer resting, the eversion alone runs on the jelly ambient tick (a timer to
+  // the shared grid in lib/jelly/ambient-tick.ts: engaged rate, then the
+  // idle floor after IDLE_AFTER_MS — `everting()`), never per vsync; under
+  // jellyMotion `still`, the degraded tiers, a game in play or a hidden tab the
+  // eversion holds and nothing is scheduled once the cursor rests. Nothing either
+  // with the pointer out of the window, the window blurred or touch input. Under
+  // reduced motion it draws one still frame per pointer event. Mounted once per
+  // document; unmount cancels the frame and the timer. It loads only on a fine,
+  // hovering pointer with the cursor switched on.
   'components/globe-cursor/GlobeCursor.tsx',
   'app/routes/_site/library/index.tsx',
   'app/routes/_site/rmhladder/pipeline.tsx',

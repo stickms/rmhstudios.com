@@ -23,14 +23,20 @@ export interface Settle {
   dispose(): void;
 }
 
+/**
+ * Frame order of the settle driver: before physics (10), engine (20), runtime (25) and arcs (30), so a drag owner's
+ * position for a frame is written before the soft body reads it (the order table in `lib/jelly/frame.ts`).
+ */
+export const FLUID_DRAG_FRAME_ORDER = 5;
+
 export interface SettleOptions {
-  /** Frame order; the default sits between physics (10) and the engine (20). */
+  /** Frame order; defaults to `FLUID_DRAG_FRAME_ORDER` (before physics). */
   order?: number;
   drive?: (fn: FrameDriverFn, opts?: { order?: number }) => FrameDriver;
 }
 
 export function createSettle(options: SettleOptions = {}): Settle {
-  const order = options.order ?? 15;
+  const order = options.order ?? FLUID_DRAG_FRAME_ORDER;
   const drive = options.drive ?? ((fn, opts) => sharedDrive(fn, opts));
 
   let driver: FrameDriver | null = null;
@@ -43,7 +49,8 @@ export function createSettle(options: SettleOptions = {}): Settle {
 
   const frame: FrameDriverFn = (_now, dtMs) => {
     if (!active) return false;
-    state = springStep(state, target, spring, Math.min(0.064, dtMs / 1000));
+    // A 64ms cap: a long frame (tab switch) must not integrate the spring past stability.
+    state = springStep(state, target, spring, Math.min(0.064, Math.max(0, dtMs) / 1000));
     onStep(state.value, state.velocity);
     if (springSettled(state, target, 0.2, 2)) {
       active = false;

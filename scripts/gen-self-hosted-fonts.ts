@@ -60,8 +60,9 @@ const GROUPS: Group[] = [
     usedBy:
       'app/globals.css (@import) — the --font-* tokens and the themes whose display/mono stacks name these families',
     sources: [
-      { pkg: '@fontsource-variable/jetbrains-mono', css: ['wght.css'], family: 'JetBrains Mono' },
+      // The site's mono (eyebrows, kickers and data — CLAUDE.md "Identity").
       { pkg: '@fontsource-variable/geist-mono', css: ['wght.css'], family: 'Geist Mono' },
+      { pkg: '@fontsource-variable/jetbrains-mono', css: ['wght.css'], family: 'JetBrains Mono' },
       {
         pkg: '@fontsource-variable/playfair-display',
         css: ['wght.css'],
