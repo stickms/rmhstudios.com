@@ -77,7 +77,7 @@ export function RentSplitCalculator({
   return (
     <div className={className}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="space-y-1 text-sm">
+        <label className="space-y-2 text-sm">
           <span className="text-site-text-muted">
             {t('rs-rent', { defaultValue: 'Total monthly rent ($)' })}
           </span>
@@ -111,7 +111,7 @@ export function RentSplitCalculator({
         </div>
       </div>
 
-      <ul className="mt-5 space-y-3">
+      <ul className="mt-4 space-y-3">
         {rooms.map((room, i) => {
           const d = details[i];
           const factors = room.features.map(
@@ -120,7 +120,7 @@ export function RentSplitCalculator({
           return (
             <li key={i} className="glass-fill rounded-site p-4">
               <div className="flex flex-wrap items-end gap-3">
-                <label className="min-w-32 flex-1 space-y-1 text-sm">
+                <label className="min-w-32 flex-1 space-y-2 text-sm">
                   <span className="text-site-text-muted">
                     {t('rs-room-name', { defaultValue: 'Room name' })}
                   </span>
@@ -130,7 +130,7 @@ export function RentSplitCalculator({
                     onChange={(e) => patch(i, { name: e.target.value })}
                   />
                 </label>
-                <label className="w-28 space-y-1 text-sm">
+                <label className="w-28 space-y-2 text-sm">
                   <span className="text-site-text-muted">
                     {t('rs-area', { defaultValue: 'Area (m² or ft²)' })}
                   </span>

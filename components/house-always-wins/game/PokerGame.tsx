@@ -208,8 +208,13 @@ export function PokerGame({ onClose }: { onClose: () => void }) {
           <div className="flex items-center gap-4 font-mono text-xs">
             <span className="text-[#e7c95a]">Chips {chips}</span>
             <span className={debt > 0 ? "text-[#c0392b]" : "text-[#555]"}>Tab {debt}</span>
-            <button onClick={onClose} className="text-[#6b6155] hover:text-[#cabba0]">
-              ✕
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="inline-flex size-8 items-center justify-center text-[#6b6155] hover:text-[#cabba0] pointer-coarse:size-11"
+            >
+              <span aria-hidden="true">✕</span>
             </button>
           </div>
         </div>

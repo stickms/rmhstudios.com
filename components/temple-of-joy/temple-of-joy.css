@@ -2709,7 +2709,7 @@ button.toj-row:active:not(:disabled) {
   background: var(--toj-surface-sunk);
   /* The same box the switch's own track makes round its pills, so a lone
      toggle and a group of them line up on the same height. */
-  padding: calc(var(--toj-2) + 1px) var(--toj-4);
+  padding: var(--toj-2) var(--toj-4);
 }
 
 .toj-toolbar > .toj-segment[aria-pressed='true'] {
@@ -2978,9 +2978,9 @@ button.toj-row:active:not(:disabled) {
 .toj-beds {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 3px;
+  gap: var(--toj-1);
   margin: var(--toj-2) 0;
-  padding: 4px;
+  padding: var(--toj-1);
   border-radius: var(--toj-radius);
   background: var(--toj-surface-sunk);
 }
@@ -3236,7 +3236,6 @@ button.toj-row:active:not(:disabled) {
   place-items: center;
   padding: var(--toj-gutter);
   background: color-mix(in oklab, var(--toj-ground-deep) 80%, transparent);
-  backdrop-filter: blur(3px);
   animation: toj-fade var(--toj-base) var(--toj-ease);
 }
 
@@ -3992,10 +3991,6 @@ button.toj-row:active:not(:disabled) {
 
   /* The garden is 36 targets in a grid — the one place where a few pixels of
      cell size is the difference between planting and mis-planting. */
-  .toj-beds {
-    gap: 4px;
-  }
-
   .toj-plot {
     min-height: 44px;
   }

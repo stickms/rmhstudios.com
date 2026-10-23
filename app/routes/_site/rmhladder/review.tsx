@@ -21,7 +21,12 @@ import {
   type ActionsPrisma,
   type ReviewResolution,
 } from '@/lib/rmhladder/server/actions';
+import { useTranslation } from 'react-i18next';
+import { ShieldCheck } from 'lucide-react';
 import { timeAgo } from '@/components/rmhladder/time';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
@@ -109,6 +114,7 @@ function taskTitle(task: AnyRow): string {
 }
 
 function ReviewPage() {
+  const { t } = useTranslation('site');
   const { tasks } = Route.useLoaderData();
   const tab = Route.useSearch().tab ?? 'open';
   const navigate = useNavigate({ from: '/rmhladder/review' });
@@ -127,7 +133,7 @@ function ReviewPage() {
   }, [tasks]);
 
   // Apply optimistic removal only on the open tab; resolved tab shows all loaded rows
-  const visible = (tasks as AnyRow[]).filter((t) => tab !== 'open' || !removed.has(t.id as string));
+  const visible = (tasks as AnyRow[]).filter((row) => tab !== 'open' || !removed.has(row.id as string));
 
   async function handleResolve(task: AnyRow, resolution: ReviewResolution) {
     const id = task.id as string;
@@ -140,7 +146,12 @@ function ReviewPage() {
         next.delete(id);
         return next;
       });
-      setErrorLine(`Could not resolve: ${result.error ?? 'unknown error'}`);
+      setErrorLine(
+        t('ladder.review.resolveFailed', {
+          defaultValue: 'Could not resolve: {{error}}',
+          error: result.error ?? 'unknown error',
+        }),
+      );
       return;
     }
     await router.invalidate();
@@ -148,78 +159,96 @@ function ReviewPage() {
 
   // Group open tasks by reason
   const groups = new Map<string, AnyRow[]>();
-  for (const t of visible) {
-    const key = t.reason as string;
+  for (const row of visible) {
+    const key = row.reason as string;
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(t);
+    groups.get(key)!.push(row);
   }
 
   return (
-    <div>
-      <div className="rl-filter-bar" role="tablist" aria-label="Review tabs">
-        {(['open', 'resolved'] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            role="tab"
-            aria-selected={tab === t}
-            className={`rl-chip${tab === t ? ' rl-chip--active' : ''}`}
-            onClick={() => void navigate({ search: { tab: t }, replace: true })}
-          >
-            {t === 'open' ? 'Open' : 'Resolved'}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-4">
+      <LiquidTabs
+        tabs={[
+          { id: 'open', label: t('ladder.review.open', { defaultValue: 'Open' }) },
+          { id: 'resolved', label: t('ladder.review.resolved', { defaultValue: 'Resolved' }) },
+        ]}
+        value={tab}
+        onChange={(id) => void navigate({ search: { tab: id === 'resolved' ? 'resolved' : undefined }, replace: true })}
+        aria-label={t('ladder.review.tabs', { defaultValue: 'Review tabs' })}
+      />
 
-      {errorLine && <p className="rl-review-error rl-mono">{errorLine}</p>}
+      {errorLine && (
+        <p role="alert" className="text-sm text-site-danger">
+          {errorLine}
+        </p>
+      )}
 
       {visible.length === 0 ? (
-        <div className="rl-empty-state">
-          <p>{tab === 'open' ? 'Queue is clear. Nothing needs a human right now.' : 'Nothing resolved yet.'}</p>
-        </div>
+        <EmptyState
+          icon={ShieldCheck}
+          title={
+            tab === 'open'
+              ? t('ladder.review.clear', { defaultValue: 'Queue is clear. Nothing needs a human right now.' })
+              : t('ladder.review.nothingResolved', { defaultValue: 'Nothing resolved yet.' })
+          }
+        />
       ) : tab === 'resolved' ? (
-        <ul className="rl-review-list">
+        <ul className="glass-fill divide-y divide-site-border overflow-hidden rounded-site">
           {visible.map((task) => (
-            <li key={task.id as string} className="rl-review-row rl-hairline">
-              <div className="rl-review-row__main">
-                <span className="rl-review-row__title">{taskTitle(task)}</span>
-                <span className="rl-mono rl-review-row__meta">
-                  {REASON_LABELS[task.reason as string]} · resolved {task.resolution as string}
-                  {task.resolvedAt ? ` · ${timeAgo(task.resolvedAt as Date)}` : ''}
-                </span>
-              </div>
+            <li key={task.id as string} className="flex flex-col gap-1 px-4 py-3">
+              <span className="font-semibold text-site-text">{taskTitle(task)}</span>
+              <span className="rl-mono text-site-text-muted">
+                {REASON_LABELS[task.reason as string]} ·{' '}
+                {t('ladder.review.resolvedAs', {
+                  defaultValue: 'resolved {{resolution}}',
+                  resolution: task.resolution as string,
+                })}
+                {task.resolvedAt ? ` · ${timeAgo(task.resolvedAt as Date)}` : ''}
+              </span>
             </li>
           ))}
         </ul>
       ) : (
         Array.from(groups.entries()).map(([reason, groupTasks]) => (
-          <section key={reason} className="rl-review-group">
-            <h2 className="rl-eyebrow">
+          <section key={reason} className="space-y-3">
+            <h2 className="site-section-label">
               {REASON_LABELS[reason] ?? reason} · {groupTasks.length}
             </h2>
-            <ul className="rl-review-list">
+            <ul className="glass-fill divide-y divide-site-border overflow-hidden rounded-site">
               {groupTasks.map((task) => {
                 const isSourceTask = !task.jobId;
                 const resolutions = isSourceTask ? SOURCE_RESOLUTIONS : JOB_RESOLUTIONS;
                 return (
-                  <li key={task.id as string} className="rl-review-row rl-hairline">
-                    <div className="rl-review-row__main">
-                      <span className="rl-review-row__title">{taskTitle(task)}</span>
-                      <span className="rl-review-row__context">{taskContext(task)}</span>
-                      <span className="rl-mono rl-review-row__meta">
-                        opened {timeAgo(task.createdAt as Date)}
+                  <li
+                    key={task.id as string}
+                    className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
+                  >
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <span className="font-semibold text-site-text">{taskTitle(task)}</span>
+                      <span className="text-sm text-site-text-muted">{taskContext(task)}</span>
+                      <span className="rl-mono text-site-text-dim">
+                        {t('ladder.review.opened', {
+                          defaultValue: 'opened {{ago}}',
+                          ago: timeAgo(task.createdAt as Date),
+                        })}
                       </span>
                     </div>
-                    <div className="rl-review-row__actions" role="group" aria-label="Resolutions">
+                    <div
+                      className="flex shrink-0 flex-wrap gap-2"
+                      role="group"
+                      aria-label={t('ladder.review.resolutions', { defaultValue: 'Resolutions' })}
+                    >
                       {resolutions.map((r) => (
-                        <button
+                        <Button
                           key={r.value}
                           type="button"
-                          className="rl-chip"
+                          size="sm"
+                          variant="outline"
+                          className="min-h-11"
                           onClick={() => void handleResolve(task, r.value)}
                         >
                           {r.label}
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </li>

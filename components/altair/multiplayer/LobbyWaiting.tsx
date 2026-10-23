@@ -109,11 +109,11 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-4 pb-12 md:gap-6 md:px-6">
       {/* Room Code Banner */}
-      <div className="flex items-center justify-between p-4 rounded-xl bg-(--altair-surface) border border-(--altair-border)">
+      <div className="flex items-center justify-between p-4 rounded-(--altair-radius-lg) bg-(--altair-surface) border border-(--altair-border)">
         <div>
-          <div className="text-xs text-(--altair-text-muted) uppercase tracking-wider mb-1">
+          <div className="mb-1 text-xs text-(--altair-text-muted)">
             {t('room-code', { defaultValue: 'Room Code' })}
           </div>
           <div className="text-3xl font-mono font-black tracking-[0.2em] text-(--altair-accent)">
@@ -122,7 +122,7 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
         </div>
         <button
           onClick={handleCopyCode}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-(--altair-bg) text-(--altair-text-muted) hover:text-(--altair-text) transition-colors border border-(--altair-border)"
+          className="flex items-center gap-2 px-4 py-2 rounded-(--altair-radius) bg-(--altair-bg) text-(--altair-text-muted) hover:text-(--altair-text) transition-colors border border-(--altair-border)"
         >
           {codeCopied ? (
             <Check size={16} className="text-(--altair-success)" />
@@ -135,12 +135,12 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
         </button>
       </div>
 
-      <div className="grid md:grid-cols-[1fr_300px] gap-6">
+      <div className="grid gap-4 md:grid-cols-[1fr_300px] md:gap-6">
         {/* Left column: Players + Controls */}
         <div className="space-y-4">
           {/* Player List */}
-          <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) p-4">
-            <h3 className="text-sm font-bold text-(--altair-text-muted) uppercase tracking-wider mb-3 flex items-center gap-2">
+          <div className="rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) p-4">
+            <h3 className="text-sm font-semibold text-(--altair-text) mb-3 flex items-center gap-2">
               <Users size={16} />
               {t('players-count', {
                 defaultValue: 'Players ({{current}}/{{max}})',
@@ -164,7 +164,7 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
               {Array.from({ length: lobby.settings.maxPlayers - players.length }).map((_, i) => (
                 <div
                   key={`empty-${i}`}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-(--altair-border) opacity-40"
+                  className="flex items-center gap-3 p-3 rounded-(--altair-radius) border border-dashed border-(--altair-border) opacity-40"
                 >
                   <div className="w-8 h-8 rounded-full bg-(--altair-surface-hover)" />
                   <span className="text-sm text-(--altair-text-dim) italic">
@@ -187,9 +187,9 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
           />
 
           {/* Lobby Settings */}
-          <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) p-4">
+          <div className="rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-bold text-(--altair-text-muted) uppercase tracking-wider">
+              <h3 className="text-sm font-semibold text-(--altair-text)">
                 {t('settings', { defaultValue: 'Settings' })}
               </h3>
               {isHost && (
@@ -217,9 +217,9 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
                       <button
                         key={n}
                         onClick={() => handleUpdateSettings({ maxPlayers: n as 2 | 3 | 4 })}
-                        className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${
+                        className={`px-3 py-1 rounded-(--altair-radius-sm) text-xs font-bold transition-colors ${
                           lobby.settings.maxPlayers === n
-                            ? 'bg-(--altair-accent) text-white'
+                            ? 'bg-(--altair-accent) text-(--altair-accent-fg)'
                             : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
                         }`}
                       >
@@ -239,9 +239,9 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
                       <button
                         key={v}
                         onClick={() => handleUpdateSettings({ visibility: v })}
-                        className={`px-3 py-1 rounded-md text-xs font-bold capitalize transition-colors ${
+                        className={`px-3 py-1 rounded-(--altair-radius-sm) text-xs font-bold capitalize transition-colors ${
                           lobby.settings.visibility === v
-                            ? 'bg-(--altair-accent) text-white'
+                            ? 'bg-(--altair-accent) text-(--altair-accent-fg)'
                             : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
                         }`}
                       >
@@ -258,9 +258,9 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
                   </span>
                   <button
                     onClick={() => handleUpdateSettings({ doubleTime: !lobby.settings.doubleTime })}
-                    className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${
+                    className={`px-3 py-1 rounded-(--altair-radius-sm) text-xs font-bold transition-colors ${
                       lobby.settings.doubleTime
-                        ? 'bg-(--altair-warning) text-white'
+                        ? 'bg-(--altair-warning) text-(--altair-bg)'
                         : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
                     }`}
                   >
@@ -272,19 +272,19 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
               </div>
             ) : (
               <div className="flex flex-wrap gap-2 text-xs">
-                <span className="px-2 py-1 rounded-md bg-(--altair-bg) text-(--altair-text-muted)">
+                <span className="px-2 py-1 rounded-(--altair-radius-sm) bg-(--altair-bg) text-(--altair-text-muted)">
                   {lobby.settings.maxPlayers} Players
                 </span>
-                <span className="px-2 py-1 rounded-md bg-(--altair-bg) text-(--altair-text-muted) capitalize">
+                <span className="px-2 py-1 rounded-(--altair-radius-sm) bg-(--altair-bg) text-(--altair-text-muted) capitalize">
                   {lobby.settings.visibility.replace('_', ' ')}
                 </span>
                 {lobby.settings.doubleTime && (
-                  <span className="px-2 py-1 rounded-md bg-(--altair-warning-dim) text-(--altair-warning) flex items-center gap-1">
+                  <span className="px-2 py-1 rounded-(--altair-radius-sm) bg-(--altair-warning-dim) text-(--altair-warning) flex items-center gap-1">
                     <Zap size={12} /> {t('double-time-lobby-waiting', { defaultValue: 'Double Time' })}
                   </span>
                 )}
                 {lobby.settings.dropInAllowed && (
-                  <span className="px-2 py-1 rounded-md bg-(--altair-bg) text-(--altair-text-muted)">
+                  <span className="px-2 py-1 rounded-(--altair-radius-sm) bg-(--altair-bg) text-(--altair-text-muted)">
                     Drop-in:{' '}
                     {lobby.settings.dropInWindow.replace('first_', '').replace('min', ' min')}
                   </span>
@@ -298,7 +298,7 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
             <button
               onClick={handleStartGame}
               disabled={players.length < 2}
-              className="w-full py-4 rounded-xl font-bold text-white text-lg tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover) shadow-lg flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-(--altair-radius-lg) font-bold text-(--altair-accent-fg) text-lg tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover) shadow-(--altair-shadow) flex items-center justify-center gap-2"
             >
               <Play size={22} />
               {t('start-game', { defaultValue: 'Start Game' })}
@@ -313,10 +313,10 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
         </div>
 
         {/* Right column: Shared Chat */}
-        <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) flex flex-col h-80 md:h-auto overflow-hidden">
+        <div className="rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) flex flex-col h-80 md:h-auto overflow-hidden">
           <div className="px-4 py-3 border-b border-(--altair-border) flex items-center gap-2">
             <MessageSquare size={16} className="text-(--altair-text-muted)" />
-            <h3 className="text-sm font-bold text-(--altair-text-muted) uppercase tracking-wider">
+            <h3 className="text-sm font-semibold text-(--altair-text)">
               {t('chat', { defaultValue: 'Chat' })}
             </h3>
           </div>
@@ -337,7 +337,7 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
       {/* Leave button */}
       <button
         onClick={onLeave}
-        className="w-full py-3 rounded-xl font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) hover:text-(--altair-danger) transition-colors"
+        className="w-full py-3 rounded-(--altair-radius-lg) font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) hover:text-(--altair-danger) transition-colors"
       >
         {t('leave-lobby', { defaultValue: 'Leave Lobby' })}
       </button>
@@ -367,7 +367,7 @@ function PlayerRow({
 
   return (
     <div
-      className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+      className={`flex items-center gap-3 p-3 rounded-(--altair-radius) transition-colors ${
         isLocalPlayer
           ? 'bg-(--altair-accent)/10 border border-(--altair-accent)/30'
           : 'bg-(--altair-bg)'
@@ -375,7 +375,7 @@ function PlayerRow({
     >
       {/* Color dot */}
       <div
-        className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white"
+        className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-(--altair-hud-ink)"
         style={{ backgroundColor: player.color || PLAYER_SLOT_COLORS[player.slot] || '#666' }}
       >
         {player.userName.charAt(0).toUpperCase()}
@@ -391,7 +391,7 @@ function PlayerRow({
           </span>
           {player.isHost && <Crown size={14} className="text-(--altair-warning) shrink-0" />}
           {isLocalPlayer && (
-            <span className="text-[10px] text-(--altair-text-dim)">
+            <span className="text-xs text-(--altair-text-dim)">
               {t('you', { defaultValue: '(you)' })}
             </span>
           )}
@@ -404,17 +404,17 @@ function PlayerRow({
                 frameIndex={0}
                 size={14}
               />
-              <span className="text-[10px] font-semibold" style={{ color: classDef.color }}>
+              <span className="text-xs font-semibold" style={{ color: classDef.color }}>
                 {classDef.name}
               </span>
             </>
           ) : (
-            <span className="text-[10px] text-(--altair-text-dim) italic">
+            <span className="text-xs text-(--altair-text-dim) italic">
               {t('no-class-selected', { defaultValue: 'No class selected' })}
             </span>
           )}
           {!player.isConnected && (
-            <span className="text-[10px] text-(--altair-danger) ml-1">
+            <span className="text-xs text-(--altair-danger) ml-1">
               {t('disconnected', { defaultValue: 'Disconnected' })}
             </span>
           )}
@@ -426,14 +426,14 @@ function PlayerRow({
         <div className="flex gap-1">
           <button
             onClick={onTransferHost}
-            className="p-1.5 rounded-md text-(--altair-text-dim) hover:text-(--altair-warning) hover:bg-(--altair-surface-hover) transition-colors"
+            className="p-1.5 rounded-(--altair-radius-sm) text-(--altair-text-dim) hover:text-(--altair-warning) hover:bg-(--altair-surface-hover) transition-colors"
             title={t('transfer-host', { defaultValue: 'Transfer host' })}
           >
             <ArrowRightLeft size={14} />
           </button>
           <button
             onClick={onKick}
-            className="p-1.5 rounded-md text-(--altair-text-dim) hover:text-(--altair-danger) hover:bg-(--altair-surface-hover) transition-colors"
+            className="p-1.5 rounded-(--altair-radius-sm) text-(--altair-text-dim) hover:text-(--altair-danger) hover:bg-(--altair-surface-hover) transition-colors"
             title={t('kick-player', { defaultValue: 'Kick player' })}
           >
             <UserMinus size={16} />
@@ -461,8 +461,8 @@ function ClassPicker({
   const currentClass = currentClassId ? CLASS_MAP.get(currentClassId) : null;
 
   return (
-    <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) p-4">
-      <h3 className="text-sm font-bold text-(--altair-text-muted) uppercase tracking-wider mb-3 flex items-center gap-2">
+    <div className="rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) p-4">
+      <h3 className="text-sm font-semibold text-(--altair-text) mb-3 flex items-center gap-2">
         <Swords size={16} />
         {t('your-class', { defaultValue: 'Your Class' })}
       </h3>
@@ -470,7 +470,7 @@ function ClassPicker({
       {/* Current selection / toggle */}
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-3 p-3 rounded-lg bg-(--altair-bg) hover:bg-(--altair-surface-hover) transition-colors border border-(--altair-border)"
+        className="w-full flex items-center gap-3 p-3 rounded-(--altair-radius) bg-(--altair-bg) hover:bg-(--altair-surface-hover) transition-colors border border-(--altair-border)"
       >
         {currentClass ? (
           <>
@@ -513,9 +513,9 @@ function ClassPicker({
                   onSelect(cls.id);
                   setExpanded(false);
                 }}
-                className={`flex items-center gap-2 p-2.5 rounded-lg text-left transition-colors border ${
+                className={`flex items-center gap-2 p-2.5 rounded-(--altair-radius) text-left transition-colors border ${
                   isActive
-                    ? 'border-2 shadow-md'
+                    ? 'border-2 shadow-(--altair-shadow)'
                     : isUnlocked
                       ? 'border-(--altair-border) hover:bg-(--altair-surface-hover)'
                       : 'border-(--altair-border) opacity-35 cursor-not-allowed'
@@ -536,7 +536,7 @@ function ClassPicker({
                   >
                     {cls.name}
                   </div>
-                  <div className="text-[9px] text-(--altair-text-dim)">{cls.difficulty}</div>
+                  <div className="text-xs text-(--altair-text-dim)">{cls.difficulty}</div>
                 </div>
               </button>
             );

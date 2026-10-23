@@ -32,7 +32,7 @@ export default function VoteSkipIndicator() {
       <button
         onClick={handleVoteSkip}
         disabled={hasVoted}
-        className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md transition-colors ${
+        className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-(--app-radius-sm) transition-colors ${
           hasVoted
             ? 'bg-(--app-surface-active) text-(--app-text-dim) cursor-not-allowed'
             : 'bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)'

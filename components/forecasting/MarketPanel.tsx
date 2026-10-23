@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Swords } from 'lucide-react';
+import { Swords } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Spinner } from '@/components/ui/spinner';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 
 function ago(ts: number, now: number): string {
@@ -94,7 +95,7 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-site-sm glass-inset p-3">
+    <div className="flex flex-col gap-3 rounded-site-sm glass-inset px-4 py-3">
       {aiAvailable && signedIn && (
         <div className="flex flex-col gap-2">
           <Button
@@ -102,13 +103,9 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
             size="sm"
             className="self-start"
             onClick={advocate}
-            disabled={arguing}
+            loading={arguing}
           >
-            {arguing ? (
-              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-            ) : (
-              <Swords className="w-4 h-4 mr-1" aria-hidden />
-            )}
+            <Swords className="size-4" aria-hidden />
             {target === 'YES'
               ? t('advocate-yes', { defaultValue: "Devil's advocate: the case for YES" })
               : t('advocate-no', { defaultValue: "Devil's advocate: the case for NO" })}
@@ -116,7 +113,7 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
           {argument && (
             <div className="text-sm text-site-text">
               <p className="whitespace-pre-line">{argument.text}</p>
-              <p className="mt-1 text-[11px] text-site-text-dim">
+              <p className="mt-2 text-xs text-site-text-dim">
                 {t('advocate-note', {
                   defaultValue: 'AI-written, no sources checked. Verify before you trade on it.',
                 })}
@@ -141,7 +138,8 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
             size="sm"
             className="self-end"
             onClick={post}
-            disabled={posting || !draft.trim()}
+            loading={posting}
+            disabled={!draft.trim()}
           >
             {t('post', { defaultValue: 'Post' })}
           </Button>
@@ -149,7 +147,7 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
       )}
 
       {comments === null ? (
-        <Loader2 className="w-4 h-4 animate-spin text-site-text-dim" />
+        <Spinner size={16} />
       ) : comments.length === 0 ? (
         <p className="text-xs text-site-text-dim">
           {t('no-comments', { defaultValue: 'No comments yet.' })}
@@ -158,13 +156,13 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
         <ul className="flex flex-col gap-2">
           {comments.map((c) => (
             <li key={c.id} className="text-sm">
-              <div className="flex items-center gap-2 flex-wrap text-xs text-site-text-dim">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-site-text-dim">
                 <span className="font-medium text-site-text">
                   {c.user.name ?? c.user.handle ?? ''}
                 </span>
                 {c.side && (
                   <span
-                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
                       c.side === 'YES'
                         ? 'bg-site-success/15 text-site-success'
                         : 'bg-site-danger/15 text-site-danger'

@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import MarathonPlanner from '@/components/marathon/MarathonPlanner';
+import { CalendarClock } from 'lucide-react';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { useSession } from '@/components/Providers';
 import { noindexHead } from '@/lib/seo';
 
@@ -18,9 +20,11 @@ function MarathonPage() {
       {session?.user ? (
         <MarathonPlanner />
       ) : (
-        <p className="p-4 text-sm text-site-text-muted">
-          {t('marathon-signin', { defaultValue: 'Sign in to build and share a watch list.' })}
-        </p>
+        <SignedOutPrompt
+          icon={CalendarClock}
+          title={t('marathon-signin', { defaultValue: 'Sign in to build and share a watch list.' })}
+          callbackURL="/marathon"
+        />
       )}
     </PageLayout>
   );

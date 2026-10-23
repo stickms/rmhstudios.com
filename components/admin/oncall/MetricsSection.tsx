@@ -38,7 +38,7 @@ export function MetricsSection() {
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-site-text">
+          <h2 className="site-section-label">
             {t('metrics-title', { defaultValue: 'Metrics' })}
           </h2>
           <p className="mt-1 text-sm text-site-text-muted">

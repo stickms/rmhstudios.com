@@ -60,7 +60,7 @@ export function NgPlusOffer({ endingId }: { endingId: string }) {
           startNewGamePlus();
           window.location.reload();
         }}
-        className="rounded-lg border border-[#d4a054]/40 bg-[#d4a054]/10 px-6 py-2.5 font-mono text-sm tracking-wide text-[#f0c674] transition-colors hover:bg-[#d4a054]/20"
+        className="rounded-lg border border-[#d4a054]/40 bg-[#d4a054]/10 px-6 py-2.5 pointer-coarse:min-h-11 font-mono text-sm tracking-wide text-[#f0c674] transition-colors hover:bg-[#d4a054]/20"
       >
         {t('ng-start', { defaultValue: 'New Game+' })}
       </button>
@@ -84,7 +84,7 @@ export function NgPlusSlot() {
           switchSlot(onNg ? 'main' : 'ngplus');
           window.location.reload();
         }}
-        className="rounded border border-[#d4a054]/30 px-3 py-1.5 font-mono text-xs text-[#f0c674] hover:bg-[#d4a054]/10"
+        className="rounded border border-[#d4a054]/30 px-3 py-1.5 pointer-coarse:min-h-11 font-mono text-xs text-[#f0c674] hover:bg-[#d4a054]/10"
       >
         {onNg
           ? t('ng-to-classic', { defaultValue: 'Switch to classic save' })

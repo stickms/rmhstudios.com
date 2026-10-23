@@ -28,7 +28,7 @@ export function Masthead() {
       <div className="mx-auto flex max-w-[86rem] items-center justify-between gap-6 px-6 py-4 sm:px-10">
         <Link
           to="/services"
-          className="group inline-flex items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.18em] text-rebar-ink-faint transition-colors duration-[var(--rebar-dur-quick)] hover:text-rebar-ink focus-visible:text-rebar-ink"
+          className="group inline-flex min-h-11 items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.18em] text-rebar-ink-faint transition-colors duration-[var(--rebar-dur-quick)] hover:text-rebar-ink focus-visible:text-rebar-ink"
         >
           <ArrowLeft
             className="size-3.5 transition-transform duration-[var(--rebar-dur-quick)] group-hover:-translate-x-0.5"

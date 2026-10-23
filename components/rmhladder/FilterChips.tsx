@@ -103,7 +103,7 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
 
   return (
     <div
-      className="mb-5 space-y-3 rounded-site border border-site-border bg-site-surface p-3"
+      className="glass-fill space-y-3 rounded-site p-4"
       role="search"
       aria-label={t('ladder.jobFilters', { defaultValue: 'Job filters' })}
     >
@@ -128,7 +128,7 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
 
       {/* Program type toggles */}
       <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-site-text-muted">
+        <p className="mb-2 text-xs font-medium text-site-text-muted">
           {t('ladder.programTypes', { defaultValue: 'Program types' })}
         </p>
         <div className="flex flex-wrap gap-2">
@@ -138,7 +138,7 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
               type="button"
               size="xs"
               variant={(search.programTypes ?? []).includes(value) ? 'accent' : 'ghost'}
-              className="min-h-9"
+              className="min-h-11"
               aria-pressed={(search.programTypes ?? []).includes(value)}
               onClick={() => toggleProgramType(value)}
             >

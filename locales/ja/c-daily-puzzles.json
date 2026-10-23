@@ -251,5 +251,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "間違い — その容疑者は除外されました。残り1回の推測です。",
   "wrong-outcast-was": "❌ 間違い — 仲間はずれは {{name}} でした",
-  "youre-the-first": "あなたが最初です！"
+  "youre-the-first": "あなたが最初です！",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

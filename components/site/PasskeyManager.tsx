@@ -15,6 +15,8 @@ import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { IconButton } from '@/components/ui/icon-button';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 interface PasskeyRow {
   id: string;
@@ -63,7 +65,9 @@ export function PasskeyManager() {
           : t('passkey-default-name-desktop', { defaultValue: 'This computer' }),
       });
       if (res && 'error' in res && res.error) {
-        toast.error(res.error.message ?? t('passkey-add-failed', { defaultValue: 'Could not add passkey.' }));
+        toast.error(
+          res.error.message ?? t('passkey-add-failed', { defaultValue: 'Could not add passkey.' }),
+        );
       } else {
         toast.success(t('passkey-added', { defaultValue: 'Passkey added.' }));
         await load();
@@ -78,7 +82,7 @@ export function PasskeyManager() {
   const renamePasskey = async (pk: PasskeyRow) => {
     const name = window.prompt(
       t('passkey-rename-prompt', { defaultValue: 'New name for this passkey:' }),
-      pk.name ?? ''
+      pk.name ?? '',
     );
     if (!name || name === pk.name) return;
     setBusy(true);
@@ -127,22 +131,16 @@ export function PasskeyManager() {
   // modifier MULTIPLIES, so the panel rendered at 0.026 — five panels in one
   // column, two materials, and two of them nearly invisible.
   return (
-    <section className="glass-pane rounded-site p-4">
-      <div className="mb-1 flex items-center gap-2">
-        <Fingerprint className="h-5 w-5 text-site-accent" aria-hidden />
-        <h2 className="text-base font-bold text-site-text">
-          {t('passkeys-title', { defaultValue: 'Passkeys' })}
-        </h2>
-      </div>
-      <p className="mb-4 text-sm text-site-text-muted">
-        {t('passkeys-description', {
-          defaultValue:
-            'Sign in without a password using Face ID, Touch ID, Windows Hello, or a security key. Passkeys are phishing-resistant and never leave your device.',
-        })}
-      </p>
-
+    <SettingsSection
+      icon={Fingerprint}
+      title={t('passkeys-title', { defaultValue: 'Passkeys' })}
+      description={t('passkeys-description', {
+        defaultValue:
+          'Sign in without a password using Face ID, Touch ID, Windows Hello, or a security key. Passkeys are phishing-resistant and never leave your device.',
+      })}
+    >
       {!supported && (
-        <p className="mb-3 rounded-site-sm glass-fill px-3 py-2 text-sm text-site-text-dim">
+        <p className="rounded-site-sm glass-fill px-3 py-2 text-sm text-site-text-dim">
           {t('passkeys-unsupported', {
             defaultValue: 'This browser does not support passkeys.',
           })}
@@ -154,13 +152,13 @@ export function PasskeyManager() {
           <Spinner />
         </div>
       ) : passkeys.length === 0 ? (
-        <p className="mb-3 text-sm text-site-text-dim">
+        <p className="text-sm text-site-text-dim">
           {t('passkeys-empty', { defaultValue: 'You have no passkeys yet.' })}
         </p>
       ) : (
-        <ul className="mb-3 divide-y divide-site-border rounded-site-sm border border-site-border">
+        <ul className="divide-y divide-site-border rounded-site-sm border border-site-border">
           {passkeys.map((pk) => (
-            <li key={pk.id} className="flex items-center gap-3 px-3 py-2.5">
+            <li key={pk.id} className="flex items-center gap-3 px-3 py-2">
               <KeyRound className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-site-text">
@@ -173,27 +171,22 @@ export function PasskeyManager() {
                         when: formatDistanceToNow(new Date(pk.createdAt), { addSuffix: true }),
                       })
                     : null}
-                  {pk.backedUp
-                    ? ` · ${t('passkey-synced', { defaultValue: 'Synced' })}`
-                    : ''}
+                  {pk.backedUp ? ` · ${t('passkey-synced', { defaultValue: 'Synced' })}` : ''}
                 </p>
               </div>
-              <button
+              <IconButton
+                icon={Pencil}
+                label={t('passkey-rename', { defaultValue: 'Rename passkey' })}
                 onClick={() => renamePasskey(pk)}
                 disabled={busy}
-                aria-label={t('passkey-rename', { defaultValue: 'Rename passkey' })}
-                className="rounded-site-sm p-1.5 text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-text"
-              >
-                <Pencil className="h-4 w-4" aria-hidden />
-              </button>
-              <button
+              />
+              <IconButton
+                icon={Trash2}
+                label={t('passkey-delete', { defaultValue: 'Delete passkey' })}
                 onClick={() => deletePasskey(pk)}
                 disabled={busy}
-                aria-label={t('passkey-delete', { defaultValue: 'Delete passkey' })}
-                className="rounded-site-sm p-1.5 text-site-text-dim transition-colors hover:bg-site-danger/10 hover:text-site-danger"
-              >
-                <Trash2 className="h-4 w-4" aria-hidden />
-              </button>
+                className="hover:text-site-danger"
+              />
             </li>
           ))}
         </ul>
@@ -203,6 +196,6 @@ export function PasskeyManager() {
         <Plus className="h-4 w-4" aria-hidden />
         {t('passkey-add', { defaultValue: 'Add a passkey' })}
       </Button>
-    </section>
+    </SettingsSection>
   );
 }

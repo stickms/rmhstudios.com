@@ -307,7 +307,7 @@
 .ds-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .ds-stat {
@@ -333,7 +333,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-top: 12px;
   padding: 10px 14px;
   border-radius: var(--ds-radius-sm);
@@ -372,7 +372,7 @@
 
 .ds-field {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
 .ds-label {
@@ -436,7 +436,7 @@
 .ds-check {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   font-size: 14px;
   cursor: pointer;
 }
@@ -543,7 +543,7 @@
 
 .ds-weekday-btns {
   display: flex;
-  gap: 2px;
+  gap: 4px;
 }
 
 .ds-mini-btn {
@@ -570,7 +570,7 @@
 .ds-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .ds-chip {
@@ -616,7 +616,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 8px 10px;
   border-radius: var(--ds-radius-sm);
   background: rgba(255, 255, 255, 0.16);
@@ -857,7 +857,7 @@
 .ds-group-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--ds-glass-edge);
@@ -874,7 +874,7 @@
 .ds-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 
@@ -921,7 +921,7 @@
 .ds-buddy-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 10px 12px;
   background: var(--ds-title-bar);
   border-bottom: 1px solid rgba(80, 150, 210, 0.45);
@@ -947,7 +947,7 @@
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(230, 246, 255, 0.4));
 }
 
@@ -1034,7 +1034,7 @@
 .ds-buddy-suggest {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   padding: 8px 12px 0;
 }
 
@@ -1088,10 +1088,11 @@
   position: fixed;
   z-index: 35;
   right: calc(16px + var(--safe-right, 0px));
-  bottom: calc(80px + var(--safe-bottom, 0px));
+  /* 16px clear of the taskbar (--ds-tb already includes the bottom inset). */
+  bottom: calc(var(--ds-tb, 40px) + 16px);
   display: grid;
-  gap: 10px;
-  width: min(320px, calc(100vw - 32px));
+  gap: 12px;
+  width: min(320px, calc(100vw - 32px - var(--safe-left, 0px) - var(--safe-right, 0px)));
   pointer-events: none;
 }
 
@@ -1099,7 +1100,7 @@
   position: relative;
   pointer-events: auto;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 14px;
   border-radius: 12px;
   background: linear-gradient(180deg, #fffff0, #fff7cf);
@@ -1271,7 +1272,7 @@ html.reduce-motion .ds-bubble {
   padding: 6px 2px 6px 8px;
   min-height: 34px;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
 }
 
 .ds-win-title {
@@ -1652,7 +1653,7 @@ html.reduce-motion .ds-bubble {
 .ds-weather-top {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .ds-weather-sun {
@@ -1746,7 +1747,7 @@ html.reduce-motion .ds-bubble {
 .ds-start-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   padding: 7px 8px;
   border: 1px solid transparent;
@@ -2089,4 +2090,57 @@ html:has(.ds)::-webkit-scrollbar-thumb {
 
 html.reduce-motion .ds-sparkle {
   display: none;
+}
+
+/* ── Touch targets ─────────────────────────────────────────────────────────
+   Drawn sizes stay what the Aero art direction wants on a mouse; on a coarse
+   pointer every control reaches the 44px platform minimum (WCAG 2.5.8 / HIG). */
+@media (pointer: coarse) {
+  .ds-btn,
+  .ds-btn--sm {
+    min-height: 44px;
+  }
+  .ds-btn--icon,
+  .ds-btn--icon.ds-btn--sm {
+    width: 44px;
+  }
+  .ds-seg button {
+    min-height: 40px;
+  }
+  .ds-input {
+    min-height: 44px;
+    /* iOS zooms the page into any field under 16px. */
+    font-size: 16px;
+  }
+  .ds-check {
+    min-height: 44px;
+    align-items: center;
+  }
+  .ds-check input {
+    margin-top: 0;
+  }
+  .ds-suggest {
+    min-height: 44px;
+    padding-inline: 12px;
+  }
+  /* The 22px round stepper keeps its look; an inert pad carries the target. */
+  .ds-mini-btn {
+    position: relative;
+  }
+  .ds-mini-btn::before {
+    content: '';
+    position: absolute;
+    inset: -11px;
+  }
+  .ds-weekday-btns {
+    gap: 12px;
+  }
+  .ds-chip button {
+    position: relative;
+  }
+  .ds-chip button::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+  }
 }

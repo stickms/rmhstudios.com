@@ -22,27 +22,29 @@ function SliceItPage() {
   const goBack = useBackOrFallback();
   return (
     <DarkModeWrapper>
-      <main className="fixed inset-0 slice-theme overflow-hidden flex flex-col bg-slice-bg transition-colors duration-300">
-        {/* Header */}
-        <div className="p-3 shrink-0 flex items-center gap-3 shadow-sm z-10 bg-slice-bg border-b border-slice-shadow-dark/30 transition-colors duration-300">
-          <Link to="/games" onClick={goBack}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/20 transition-colors rounded-lg text-xs"
-            >
-              <ArrowLeft className="w-3 h-3 mr-1" />
-              <span className="hidden sm:inline font-bold">
+      <main className="app-viewport slice-theme bg-slice-bg transition-colors duration-site">
+        {/* Header — clears the notch (§12.1 rule 1); the world below runs edge to edge. */}
+        <div className="flex shrink-0 items-center gap-3 border-b border-slice-shadow-dark/30 bg-slice-bg pt-[calc(0.75rem+var(--safe-top))] pr-[calc(0.75rem+var(--safe-right))] pb-3 pl-[calc(0.75rem+var(--safe-left))] transition-colors duration-site">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="text-slice-text-muted transition-colors hover:bg-slice-shadow-dark/20 hover:text-slice-text"
+          >
+            <Link to="/games" onClick={goBack}>
+              <ArrowLeft aria-hidden />
+              <span className="hidden font-bold sm:inline">
                 {t('back-to-builds', { defaultValue: 'Back to Builds' })}
               </span>
-            </Button>
-          </Link>
-          <span className="text-xs font-black text-slice-text-light uppercase tracking-widest hidden sm:inline">
+              <span className="sr-only sm:hidden">
+                {t('back-to-builds', { defaultValue: 'Back to Builds' })}
+              </span>
+            </Link>
+          </Button>
+          <span aria-hidden className="hidden text-xs font-black text-slice-text-light sm:inline">
             |
           </span>
-          <span className="text-sm font-black text-slice-text uppercase tracking-widest hidden sm:inline">
-            Slice-It
-          </span>
+          <span className="hidden text-sm font-black text-slice-text sm:inline">Slice-It</span>
         </div>
 
         {/* Game Canvas — occupies remaining space */}

@@ -51,11 +51,14 @@ export function LiquidGlassPage() {
 
   return (
     <div ref={pageRef} className="spatial-design-page">
-      <a className="sr-only focus:not-sr-only" href="#spatial-design-main">
+      <a
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-4 focus:z-(--z-skip) focus:rounded-site-sm focus:bg-site-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-site-accent-fg"
+        href="#spatial-design-main"
+      >
         {t('skip-to-content', { defaultValue: 'Skip to content' })}
       </a>
 
-      <header className="spatial-design-nav">
+      <header className="glass-chrome spatial-design-nav">
         <a href="/" className="spatial-design-nav__brand">
           <ChevronLeft aria-hidden />
           <span>{t('rmh-studios', { defaultValue: 'RMH Studios' })}</span>

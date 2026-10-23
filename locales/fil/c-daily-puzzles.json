@@ -253,5 +253,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "Wrong — that suspect has been cleared. You have 1 guess left.",
   "wrong-outcast-was": "❌ Wrong — the outcast was {{name}}",
-  "youre-the-first": "You're the first!"
+  "youre-the-first": "You're the first!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

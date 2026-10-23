@@ -42,7 +42,7 @@ export function SensitiveMedia({
  e.stopPropagation();
  setRevealed(true);
  }}
- className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-site-bg/70 text-center transition-colors hover:bg-site-bg/60"
+ className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-site-bg/70 text-center transition-colors hover:bg-site-bg/60"
  >
  <EyeOff className="h-5 w-5 text-site-text-muted"aria-hidden="true"/>
  <span className="text-sm font-semibold text-site-text">

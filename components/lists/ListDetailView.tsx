@@ -5,9 +5,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Pin, Trash2 } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -16,13 +18,7 @@ import type { ListView } from '@/lib/lists/constants';
 import type { ResolvedUser } from '@/lib/user-display';
 import type { ListTimelinePost } from '@/lib/lists/lists.server';
 
-export function ListDetailView({
-  list,
-  members,
-}: {
-  list: ListView;
-  members: ResolvedUser[];
-}) {
+export function ListDetailView({ list, members }: { list: ListView; members: ResolvedUser[] }) {
   const { t } = useTranslation('c-lists');
   const navigate = useNavigate();
   const confirm = useConfirm();
@@ -83,27 +79,41 @@ export function ListDetailView({
   return (
     <div className="px-4 pt-4 pb-12">
       <div className="mb-4">
-        <div className="mb-1 flex items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold text-site-text">{list.name}</h2>
-          {list.isOwner ? (
-            <div className="flex items-center gap-1">
+        {list.isOwner ? (
+          <div className="mb-3 flex items-center justify-end gap-2">
+            <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={togglePin} aria-pressed={pinned}>
-                <Pin className={pinned ? 'h-4 w-4 text-site-accent' : 'h-4 w-4'} aria-hidden />
-                {pinned ? t('pinned', { defaultValue: 'Pinned' }) : t('pin', { defaultValue: 'Pin' })}
+                <Pin className={pinned ? 'text-site-accent' : undefined} aria-hidden />
+                {pinned
+                  ? t('pinned', { defaultValue: 'Pinned' })
+                  : t('pin', { defaultValue: 'Pin' })}
               </Button>
-              <Button variant="ghost" size="sm" onClick={remove} className="text-site-danger">
-                <Trash2 className="h-4 w-4" aria-hidden />
-              </Button>
+              <IconButton
+                icon={Trash2}
+                variant="ghost"
+                size="icon-sm"
+                onClick={remove}
+                className="text-site-danger"
+                label={t('delete-list', { defaultValue: 'Delete list' })}
+              />
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
         {list.bio ? <p className="text-sm text-site-text-muted">{list.bio}</p> : null}
         <div className="mt-3 flex -space-x-2">
           {members.slice(0, 12).map((m) => (
-            <UserAvatar key={m.id} src={m.image ?? undefined} alt={m.name ?? 'User'} size={28} fallbackName={m.name ?? undefined} />
+            <UserAvatar
+              key={m.id}
+              src={m.image ?? undefined}
+              alt={m.name ?? 'User'}
+              size={28}
+              fallbackName={m.name ?? undefined}
+            />
           ))}
           {list.memberCount > 12 ? (
-            <span className="ms-3 self-center text-xs text-site-text-muted">+{list.memberCount - 12}</span>
+            <span className="ms-3 self-center text-xs text-site-text-muted">
+              +{list.memberCount - 12}
+            </span>
           ) : null}
         </div>
       </div>
@@ -118,19 +128,26 @@ export function ListDetailView({
           description={t('feed-empty-desc', { defaultValue: 'Posts from this list show up here.' })}
         />
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {posts.map((p) => (
             <li key={p.id}>
-              <Card interactive className="px-4 py-3">
-                <a href={`/thread/${p.id}`} className="block">
+              <Card interactive className="px-4 py-3 sm:py-3">
+                <Link to="/thread/$rootId" params={{ rootId: p.id }} className="block">
                   <span className="mb-1 flex items-center gap-2">
-                    <UserAvatar src={p.author.image ?? undefined} alt={p.author.name ?? 'User'} size={24} fallbackName={p.author.name ?? undefined} />
-                    <span className="truncate text-sm font-medium text-site-text">{p.author.name ?? p.author.handle}</span>
+                    <UserAvatar
+                      src={p.author.image ?? undefined}
+                      alt={p.author.name ?? 'User'}
+                      size={24}
+                      fallbackName={p.author.name ?? undefined}
+                    />
+                    <span className="truncate text-sm font-medium text-site-text">
+                      {p.author.name ?? p.author.handle}
+                    </span>
                   </span>
                   <span className="line-clamp-3 whitespace-pre-wrap break-words text-sm text-site-text">
                     {p.content}
                   </span>
-                </a>
+                </Link>
               </Card>
             </li>
           ))}

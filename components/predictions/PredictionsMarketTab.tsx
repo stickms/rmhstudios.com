@@ -11,6 +11,7 @@ import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { CreatePredictionModal } from './CreatePredictionModal';
 import type { Market } from './types';
 import { Reveal } from '@/components/motion';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface Props {
   coins: number;
@@ -58,7 +59,7 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
   ];
 
   return (
-    <div className="flex flex-col gap-4 p-3 sm:p-4">
+    <div className="flex flex-col gap-4 px-4 pb-12">
       {/* Filter row + create. The filters were a hand-rolled row of tinted
           buttons with no tab semantics and their own active style — a third
           switcher look on the same page as the Markets/Games strip above it.
@@ -83,7 +84,7 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
               : promptSignIn(t('create-sign-in', { defaultValue: 'Sign in to open a market.' }))
           }
         >
-          <Plus className="w-4 h-4 mr-1" />
+          <Plus className="size-4" aria-hidden />
           {t('create', { defaultValue: 'Create' })}
         </Button>
       </div>
@@ -94,15 +95,17 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
           <Spinner />
         </div>
       ) : markets.length === 0 ? (
-        <Reveal className="flex flex-col items-center justify-center py-16 text-center gap-3 text-site-text-dim">
-          <TrendingUp className="w-10 h-10 opacity-40" />
-          <p className="text-sm max-w-xs">
-            {filter === 'mine'
-              ? t('empty-mine', { defaultValue: "You haven't created or traded any predictions yet." })
-              : filter === 'resolved'
-                ? t('empty-resolved', { defaultValue: 'No resolved markets yet.' })
-                : t('empty-open', { defaultValue: 'No open markets right now. Create the first one!' })}
-          </p>
+        <Reveal>
+          <EmptyState
+            icon={TrendingUp}
+            title={
+              filter === 'mine'
+                ? t('empty-mine', { defaultValue: "You haven't created or traded any predictions yet." })
+                : filter === 'resolved'
+                  ? t('empty-resolved', { defaultValue: 'No resolved markets yet.' })
+                  : t('empty-open', { defaultValue: 'No open markets right now. Create the first one!' })
+            }
+          />
         </Reveal>
       ) : (
         <Reveal className="grid gap-3 sm:grid-cols-2">

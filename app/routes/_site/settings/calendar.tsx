@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import CalendarSettings from '@/components/calendar/CalendarSettings';
+import { SettingsPageBody } from '@/components/settings/SettingsSection';
 
 export const Route = createFileRoute('/_site/settings/calendar')({
   head: () => ({
@@ -12,15 +13,19 @@ export const Route = createFileRoute('/_site/settings/calendar')({
 
 function CalendarSettingsPage() {
   const { t } = useTranslation('f-calendar');
+  const settingsLabel = t('settings-crumb', { defaultValue: 'Settings' });
+  const title = t('settings-title', { defaultValue: 'Calendar' });
   return (
     <PageLayout
-      title={t('settings-title', { defaultValue: 'Calendar' })}
-      breadcrumbs={[
-        { label: t('settings-crumb', { defaultValue: 'Settings' }), to: '/settings' },
-        { label: t('settings-title', { defaultValue: 'Calendar' }) },
-      ]}
+      title={title}
+      wide
+      backTo="/settings"
+      backLabel={settingsLabel}
+      breadcrumbs={[{ label: settingsLabel, to: '/settings' }, { label: title }]}
     >
-      <CalendarSettings />
+      <SettingsPageBody>
+        <CalendarSettings />
+      </SettingsPageBody>
     </PageLayout>
   );
 }

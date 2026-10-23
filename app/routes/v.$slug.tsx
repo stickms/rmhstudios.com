@@ -634,7 +634,7 @@ function VibeGenerating({ title, slow }: { title: string; slow: boolean }) {
 function VibeGenerationFailed() {
   const { t } = useTranslation('pages');
   return (
-    <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-4">
+    <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 px-6 text-center">
       <p className="vibe-rise text-2xl font-bold tracking-tight">
         {t('generation-failed-title', { defaultValue: "Couldn't finish this vibe" })}
       </p>
@@ -643,7 +643,7 @@ function VibeGenerationFailed() {
           defaultValue: "Generation didn't complete. Give it another go.",
         })}
       </p>
-      <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta mt-3">
+      <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta">
         {t('back-to-pages', { defaultValue: 'Back to pages' })}
       </Link>
     </div>
@@ -653,14 +653,14 @@ function VibeGenerationFailed() {
 function VibeNotFound() {
   const { t } = useTranslation('pages');
   return (
-    <div className="vibe-screen fixed inset-0 flex flex-col items-center justify-center gap-4">
+    <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 px-6 text-center">
       <p className="vibe-rise text-3xl font-bold tracking-tight">
         {t('not-found-title', { defaultValue: 'Vibe not found' })}
       </p>
       <p className="vibe-rise-2 vibe-hint">
         {t('not-found-hint', { defaultValue: "This page doesn't exist (or never did)." })}
       </p>
-      <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta mt-3">
+      <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta">
         {t('make-your-own', { defaultValue: 'Make your own' })}
       </Link>
     </div>

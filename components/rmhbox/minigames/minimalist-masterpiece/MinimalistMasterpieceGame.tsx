@@ -489,10 +489,10 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             <button
               onClick={handleSubmitDrawing}
               disabled={drawingSubmitted}
-              className={`mt-1 rounded-lg px-6 py-2 text-sm font-semibold transition-colors ${
+              className={`mt-1 rounded-(--app-radius-sm) px-6 py-2 text-sm font-semibold transition-colors ${
                 drawingSubmitted
                   ? 'bg-(--app-border) text-(--app-text-muted) cursor-not-allowed'
-                  : 'bg-(--app-accent) text-white hover:opacity-90'
+                  : 'bg-(--app-accent) text-(--app-accent-fg) hover:opacity-90'
               }`}
             >
               {drawingSubmitted ? t("drawing-submitted", { defaultValue: "Drawing Submitted ✓" }) : t("submit-drawing", { defaultValue: "Submit Drawing" })}
@@ -532,10 +532,10 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             <button
               onClick={handleSubmitBids}
               disabled={bidSubmitted}
-              className={`mt-2 rounded-lg px-6 py-2 text-sm font-semibold transition-colors ${
+              className={`mt-2 rounded-(--app-radius-sm) px-6 py-2 text-sm font-semibold transition-colors ${
                 bidSubmitted
                   ? 'bg-(--app-border) text-(--app-text-muted) cursor-not-allowed'
-                  : 'bg-(--app-accent) text-white hover:opacity-90'
+                  : 'bg-(--app-accent) text-(--app-accent-fg) hover:opacity-90'
               }`}
             >
               {bidSubmitted ? t("bids-submitted", { defaultValue: "Bids Submitted ✓" }) : t("submit-bids", { defaultValue: "Submit Bids" })}

@@ -24,8 +24,8 @@ function RecruitPage() {
       <RecruitForm />
 
       <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <h3 className="text-sm md:text-xs font-mono uppercase tracking-wider text-white/40">{t("how-recruitment-works", { defaultValue: "How Recruitment Works" })}</h3>
-        <ul className="text-sm md:text-xs text-white/30 space-y-1.5 md:space-y-1">
+        <h3 className="text-sm md:text-xs font-mono uppercase tracking-wider text-white/60">{t("how-recruitment-works", { defaultValue: "How Recruitment Works" })}</h3>
+        <ul className="text-sm md:text-xs text-white/50 space-y-1.5 md:space-y-1">
           <li>{t("recruit-step-1", { defaultValue: "1. Generate a personalized invite link with a custom message" })}</li>
           <li>{t("recruit-step-2", { defaultValue: "2. Share the link with your target recruit" })}</li>
           <li>{t("recruit-step-3", { defaultValue: "3. When they join, you earn 50 XP per signup" })}</li>

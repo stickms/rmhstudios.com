@@ -124,12 +124,12 @@ export function QotdPage({ day }: { day?: string }) {
           'One question a day. Answer with a post - answers show up here and in the feed.',
       })}
     >
-      <div className="space-y-6 px-4 pt-2 pb-12">
+      <div className="space-y-6 px-4 pt-4 pb-12">
         {!archive || !selected ? (
           <Skeleton className="h-28 w-full rounded-site" />
         ) : (
-          <section className="glass-pane rounded-site p-5">
-            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+          <section className="glass-pane rounded-site p-4">
+            <p className="flex items-center gap-2 text-xs font-semibold text-site-text-muted">
               <MessageCircleQuestion className="h-4 w-4 text-site-accent" aria-hidden />
               {isToday
                 ? t('qotd-today', { defaultValue: 'Today' })
@@ -213,7 +213,7 @@ export function QotdPage({ day }: { day?: string }) {
 
         {archive && archive.length > 1 && (
           <section aria-labelledby="qotd-past">
-            <h2 id="qotd-past" className="mb-2 text-sm font-semibold text-site-text">
+            <h2 id="qotd-past" className="site-section-label mb-3">
               {t('qotd-past', { defaultValue: 'Past questions' })}
             </h2>
             <ul className="space-y-2">

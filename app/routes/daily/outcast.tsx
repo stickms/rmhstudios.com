@@ -12,7 +12,7 @@ import { OutcastGame } from '@/components/daily-puzzles/OutcastGame'
 function OutcastPage() {
     return (
         <GameErrorBoundary gameName="Outcast">
-            <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
+            <Suspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
                 <OutcastGame />
             </Suspense>
         </GameErrorBoundary>

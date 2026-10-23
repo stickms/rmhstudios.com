@@ -1,4 +1,6 @@
 {
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
   "all-categories": "All Categories",
   "anonymous": "Anonymous",
   "cancel": "Cancel",
@@ -43,6 +45,7 @@
   "placeholder-tag": "Add a tag...",
   "placeholder-title": "My Awesome Project",
   "popular": "Popular",
+  "post-comment": "Post comment",
   "premium-build": "Premium build",
   "premium-build-desc": "Unlock the README, source, and live demo for this build.",
   "price-description": "Charge coins to unlock the README, source, and demo. Leave 0 to keep it free. A 10% platform fee applies to sales.",

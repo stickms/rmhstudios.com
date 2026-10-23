@@ -136,7 +136,7 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  aria-label={t('comment', { defaultValue:'Comment'})}
  className="group flex min-h-11 min-w-11 items-center rounded-full text-site-text-muted hover:text-site-accent transition-colors duration-site-fast"
  >
- <span className={`${engagementPill} h-9 gap-0.5 px-2 sm:gap-1 sm:px-2.5 group-hover:bg-site-accent-dim/50 group-active:scale-95`}>
+ <span className={`${engagementPill} h-9 gap-1 px-2 group-hover:bg-site-accent-dim/50 group-active:scale-95`}>
  <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
  <EngagementCount value={item.commentCount} />
  </span>
@@ -166,7 +166,7 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  >
  <span
  ref={repostIconRef}
- className={`${engagementPill} h-9 gap-0.5 px-2 sm:gap-1 sm:px-2.5 group-hover:bg-site-success/10 group-active:scale-95`}
+ className={`${engagementPill} h-9 gap-1 px-2 group-hover:bg-site-success/10 group-active:scale-95`}
  >
  <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform"aria-hidden />
  <EngagementCount value={item.repostCount} />
@@ -254,7 +254,7 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  : t('like', { defaultValue:'Like'})
  }
  >
- <span className={`${engagementPill} h-9 gap-0.5 px-2 sm:gap-1 sm:px-2.5 group-hover:bg-site-danger/10 group-active:scale-95`}>
+ <span className={`${engagementPill} h-9 gap-1 px-2 group-hover:bg-site-danger/10 group-active:scale-95`}>
  <Heart
  className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ?'fill-current':''}`}
  aria-hidden
@@ -267,7 +267,7 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  also where it wants to be: this is the largest number on the row
  ("18.4K") and the only one nothing the viewer taps can change. */}
  <div className="flex min-h-11 items-center text-site-text-dim">
- <span className={`${engagementPill} h-9 gap-0.5 px-2 sm:gap-1 sm:px-2.5`}>
+ <span className={`${engagementPill} h-9 gap-1 px-2`}>
  <Eye className="w-4 h-4"/>
  <EngagementCount value={item.viewCount} />
  </span>

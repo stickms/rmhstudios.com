@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 type AppealStatus = 'NONE' | 'PENDING' | 'UPHELD' | 'OVERTURNED';
 
@@ -170,17 +171,16 @@ export function AccountStandingPanel() {
         : 'text-site-warning';
 
   return (
-    <div className="space-y-4">
+    <>
       {/* Standing summary */}
-      <section className="rounded-site border border-site-border bg-site-surface/40 p-4">
-        <div className="mb-1 flex items-center gap-2">
-          <LevelIcon className={`h-5 w-5 ${levelTone}`} aria-hidden />
-          <h2 className="text-base font-bold text-site-text">{levelCopy[standing.level].label}</h2>
-        </div>
-        <p className="text-sm text-site-text-muted">{levelCopy[standing.level].description}</p>
-
-        <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="rounded-site border border-site-border bg-site-bg/40 px-3 py-2">
+      <SettingsSection
+        icon={LevelIcon}
+        iconClassName={levelTone}
+        title={levelCopy[standing.level].label}
+        description={levelCopy[standing.level].description}
+      >
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="glass-fill rounded-site px-4 py-3">
             <dt className="text-xs text-site-text-muted">
               {t('standing-active-strikes', { defaultValue: 'Active strikes' })}
             </dt>
@@ -192,13 +192,13 @@ export function AccountStandingPanel() {
               </span>
             </dd>
           </div>
-          <div className="rounded-site border border-site-border bg-site-bg/40 px-3 py-2">
+          <div className="glass-fill rounded-site px-4 py-3">
             <dt className="text-xs text-site-text-muted">
               {t('standing-total-strikes', { defaultValue: 'Total on record' })}
             </dt>
             <dd className="text-lg font-bold text-site-text">{standing.totalStrikes}</dd>
           </div>
-          <div className="rounded-site border border-site-border bg-site-bg/40 px-3 py-2">
+          <div className="glass-fill rounded-site px-4 py-3">
             <dt className="text-xs text-site-text-muted">
               {t('standing-appeal-window', { defaultValue: 'Appeal window' })}
             </dt>
@@ -212,7 +212,7 @@ export function AccountStandingPanel() {
         </dl>
 
         {standing.banned && (
-          <div className="mt-4 rounded-site border border-site-danger/20 bg-site-danger/10 p-3">
+          <div className="rounded-site border border-site-danger/20 bg-site-danger/10 px-4 py-3">
             <p className="text-sm font-semibold text-site-danger">
               {t('standing-suspended', { defaultValue: 'Account suspended' })}
             </p>
@@ -230,22 +230,17 @@ export function AccountStandingPanel() {
             )}
           </div>
         )}
-      </section>
+      </SettingsSection>
 
       {/* Strike history */}
-      <section className="rounded-site border border-site-border bg-site-surface/40 p-4">
-        <div className="mb-1 flex items-center gap-2">
-          <Gavel className="h-5 w-5 text-site-accent" aria-hidden />
-          <h2 className="text-base font-bold text-site-text">
-            {t('standing-history', { defaultValue: 'Moderation history' })}
-          </h2>
-        </div>
-        <p className="mb-4 text-sm text-site-text-muted">
-          {t('standing-history-desc', {
-            defaultValue:
-              'Every strike issued against your account, and what happened to any appeal you filed.',
-          })}
-        </p>
+      <SettingsSection
+        icon={Gavel}
+        title={t('standing-history', { defaultValue: 'Moderation history' })}
+        description={t('standing-history-desc', {
+          defaultValue:
+            'Every strike issued against your account, and what happened to any appeal you filed.',
+        })}
+      >
 
         {standing.strikes.length === 0 ? (
           <EmptyState
@@ -257,7 +252,7 @@ export function AccountStandingPanel() {
             {standing.strikes.map((s) => {
               const href = entityHref(s);
               return (
-                <li key={s.id} className="glass-fill rounded-site p-4">
+                <li key={s.id} className="glass-fill rounded-site px-4 py-3">
                   <div className="flex flex-wrap items-center gap-2">
                     {s.appealStatus === 'OVERTURNED' ? (
                       <Badge variant="success" size="sm">
@@ -288,7 +283,7 @@ export function AccountStandingPanel() {
                     {href && (
                       <Link
                         to={href}
-                        className="ml-auto inline-flex items-center gap-1 text-xs text-site-accent hover:underline"
+                        className="ms-auto inline-flex items-center gap-1 text-xs text-site-accent hover:underline"
                       >
                         {t('view-content', { defaultValue: 'View content' })}
                         <ExternalLink className="h-3 w-3" aria-hidden />
@@ -397,7 +392,7 @@ export function AccountStandingPanel() {
             })}
           </ul>
         )}
-      </section>
-    </div>
+      </SettingsSection>
+    </>
   );
 }

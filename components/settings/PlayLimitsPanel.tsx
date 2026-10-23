@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { PlayLimitsView } from '@/lib/economy/play-limits.server';
 import { MAX_COOL_OFF_DAYS, MAX_DAILY_CAP } from '@/lib/economy/play-limits';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 /**
  * Responsible play (W8) — the member's own guard rails, in Settings → Privacy.
@@ -123,24 +124,17 @@ export function PlayLimitsPanel() {
   }
 
   return (
-    <section className="glass-pane rounded-site p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <ShieldCheck className="h-4.5 w-4.5 text-site-accent" aria-hidden />
-        <div>
-          <h2 className="text-base font-bold text-site-text">
-            {t('play-limits-title', { defaultValue: 'Staking limits' })}
-          </h2>
-          <p className="text-xs text-site-text-muted">
-            {t('play-limits-subtitle', {
-              defaultValue:
-                'Limits you set on wagers, predictions and the casino tables. Tightening one applies at once; loosening one waits a day.',
-            })}
-          </p>
-        </div>
-      </div>
+    <SettingsSection
+      icon={ShieldCheck}
+      title={t('play-limits-title', { defaultValue: 'Staking limits' })}
+      description={t('play-limits-subtitle', {
+        defaultValue:
+          'Limits you set on wagers, predictions and the casino tables. Tightening one applies at once; loosening one waits a day.',
+      })}
+    >
 
       {excludedUntil && (
-        <p className="glass-inset mb-3 rounded-site p-3 text-sm text-site-text">
+        <p className="glass-inset rounded-site p-3 text-sm text-site-text">
           {t('play-limits-excluded-until', {
             defaultValue: "You're excluded from staking until {{when}}.",
             when: excludedUntil,
@@ -148,7 +142,7 @@ export function PlayLimitsPanel() {
         </p>
       )}
       {!excludedUntil && coolingUntil && (
-        <p className="glass-inset mb-3 rounded-site p-3 text-sm text-site-text">
+        <p className="glass-inset rounded-site p-3 text-sm text-site-text">
           {t('play-limits-cooling-until', {
             defaultValue: "You're taking a break from staking until {{when}}.",
             when: coolingUntil,
@@ -212,7 +206,7 @@ export function PlayLimitsPanel() {
         )}
       </div>
 
-      <div className="mt-4 space-y-2 border-t border-site-border pt-4">
+      <div className="space-y-2 border-t border-site-border pt-4">
         <p className="text-sm font-medium text-site-text">
           {t('play-limits-break-label', { defaultValue: 'Take a break' })}
         </p>
@@ -236,7 +230,7 @@ export function PlayLimitsPanel() {
         </p>
       </div>
 
-      <div className="mt-4 space-y-2 border-t border-site-border pt-4">
+      <div className="space-y-2 border-t border-site-border pt-4">
         <p className="text-sm font-medium text-site-text">
           {t('play-limits-exclude-label', { defaultValue: 'Exclude myself' })}
         </p>
@@ -259,6 +253,6 @@ export function PlayLimitsPanel() {
           })}
         </p>
       </div>
-    </section>
+    </SettingsSection>
   );
 }

@@ -136,7 +136,7 @@ export function InventorySheet() {
   const packOwner = pack ? members.find((m) => m.socketId === pack.target) : null;
 
   return (
-    <Panel className="max-h-[min(34rem,76vh)] w-[min(26rem,90vw)] space-y-4 overflow-y-auto">
+    <Panel className="max-h-[min(34rem,76dvh)] w-[min(26rem,90vw)] space-y-4 overflow-y-auto">
       <h2 className="text-lg font-black tracking-tight">
         {t('carrying', { defaultValue: 'What you are carrying' })}
       </h2>

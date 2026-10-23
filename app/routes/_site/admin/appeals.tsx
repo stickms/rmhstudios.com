@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -101,7 +102,7 @@ function AdminAppealsPage() {
                 defaultValue: 'Strike removed and the automatic ban was lifted.',
               })
             : t('appeal-overturned-toast', { defaultValue: 'Strike removed.' })
-          : t('appeal-upheld-toast', { defaultValue: 'Strike upheld.' })
+          : t('appeal-upheld-toast', { defaultValue: 'Strike upheld.' }),
       );
       setItems((prev) => prev.filter((a) => a.id !== id));
       load(view);
@@ -132,16 +133,16 @@ function AdminAppealsPage() {
   ];
 
   return (
-    <PageLayout title={t('appeals-queue', { defaultValue: 'Strike Appeals' })} wide backTo="/admin">
-      <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
-        <div className="flex items-center gap-2 text-sm text-site-text-muted">
-          <Gavel className="h-5 w-5 shrink-0 text-site-accent" aria-hidden />
-          {t('appeals-queue-description', {
-            defaultValue:
-              'Users contesting a strike. Overturning removes the strike and lifts any ban it triggered.',
-          })}
-        </div>
-
+    <PageLayout
+      title={t('appeals-queue', { defaultValue: 'Strike Appeals' })}
+      description={t('appeals-queue-description', {
+        defaultValue:
+          'Users contesting a strike. Overturning removes the strike and lifts any ban it triggered.',
+      })}
+      wide
+      backTo="/admin"
+    >
+      <AdminBody>
         <LiquidTabs
           tabs={tabs}
           value={view}
@@ -161,7 +162,7 @@ function AdminAppealsPage() {
         ) : (
           <ul className="space-y-3">
             {items.map((a) => (
-              <li key={a.id} className="glass-fill rounded-site p-4">
+              <li key={a.id} className="glass-fill rounded-site px-4 py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="danger" size="sm">
                     {t('strike', { defaultValue: 'Strike' })}
@@ -217,7 +218,7 @@ function AdminAppealsPage() {
                 </div>
 
                 {a.appealText && (
-                  <div className="mt-3 rounded-site border border-site-border bg-site-bg/40 p-3">
+                  <div className="mt-3 glass-inset rounded-site-sm px-3 py-2">
                     <p className="text-xs font-semibold text-site-text-muted">
                       {t('user-appeal', { defaultValue: "User's appeal" })}
                     </p>
@@ -228,7 +229,7 @@ function AdminAppealsPage() {
                 )}
 
                 {a.appealNote && view !== 'PENDING' && (
-                  <div className="mt-3 rounded-site border border-site-border bg-site-bg/40 p-3">
+                  <div className="mt-3 glass-inset rounded-site-sm px-3 py-2">
                     <p className="text-xs font-semibold text-site-text-muted">
                       {t('decision-note', { defaultValue: 'Decision note' })}
                     </p>
@@ -239,7 +240,7 @@ function AdminAppealsPage() {
                 )}
 
                 {view === 'PENDING' && (
-                  <div className="mt-4 space-y-2">
+                  <div className="mt-3 space-y-2">
                     <Textarea
                       rows={2}
                       value={notes[a.id] ?? ''}
@@ -256,7 +257,7 @@ function AdminAppealsPage() {
                         disabled={busyId === a.id}
                         onClick={() => decide(a.id, 'overturn')}
                       >
-                        <ShieldCheck className="h-4 w-4" aria-hidden />
+                        <ShieldCheck className="size-4" aria-hidden />
                         {t('overturn', { defaultValue: 'Overturn strike' })}
                       </Button>
                       <Button
@@ -264,7 +265,7 @@ function AdminAppealsPage() {
                         disabled={busyId === a.id}
                         onClick={() => decide(a.id, 'uphold')}
                       >
-                        <ShieldX className="h-4 w-4" aria-hidden />
+                        <ShieldX className="size-4" aria-hidden />
                         {t('uphold', { defaultValue: 'Uphold strike' })}
                       </Button>
                     </div>
@@ -274,7 +275,7 @@ function AdminAppealsPage() {
             ))}
           </ul>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

@@ -16,7 +16,7 @@ function ArchivePage() {
         {t("archive-description", { defaultValue: "Browse past puzzles. History is classified until it isn't." })}
       </p>
       <div className="text-center py-16">
-        <p className="text-sm text-white/30">{t("archive-coming-soon", { defaultValue: "Archive coming in Phase 1: First Light" })}</p>
+        <p className="text-sm text-white/50">{t("archive-coming-soon", { defaultValue: "Archive coming in Phase 1: First Light" })}</p>
       </div>
     </div>
   );

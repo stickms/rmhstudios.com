@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -107,7 +108,7 @@ export function PacksPage() {
   }
 
   const card = (p: PackView) => (
-    <Card key={p.id} className="flex flex-col gap-2 p-4">
+    <Card key={p.id} className="gap-3 p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="truncate font-semibold text-site-text">{p.name}</h3>
@@ -119,7 +120,7 @@ export function PacksPage() {
             })}
           </p>
         </div>
-        <div className="flex shrink-0 gap-1">
+        <div className="flex shrink-0 gap-2">
           {p.featured ? (
             <Badge variant="accent">{t('featured', { defaultValue: 'Featured' })}</Badge>
           ) : null}
@@ -129,7 +130,7 @@ export function PacksPage() {
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <code className="glass-inset rounded-site px-2.5 py-1 font-mono text-sm tracking-widest text-site-text">
+        <code className="glass-inset rounded-site px-3 py-2 font-mono text-sm tracking-widest text-site-text">
           {p.code}
         </code>
         <CopyButton
@@ -171,8 +172,8 @@ export function PacksPage() {
   );
 
   const section = (title: string, items: PackView[], empty: string) => (
-    <section className="space-y-2">
-      <h2 className="font-display text-lg font-bold text-site-text">{title}</h2>
+    <section className="space-y-3">
+      <h2 className="site-section-label">{title}</h2>
       {items.length ? (
         <div className="grid gap-3 sm:grid-cols-2">{items.map(card)}</div>
       ) : (
@@ -189,20 +190,19 @@ export function PacksPage() {
           'Write your own Wit-War prompts, share the code, and the host picks it in the lobby game settings.',
       })}
     >
-      <div className="space-y-6 px-4 pb-12">
+      <div className="space-y-6 px-4 pt-4 pb-12">
         {signedIn ? (
-          <Card pane className="space-y-3 p-5">
-            <h2 className="flex items-center gap-2 font-display text-lg font-bold text-site-text">
+          <Card pane className="gap-3 p-4">
+            <h2 className="site-section-label flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-site-accent" aria-hidden />
               {t('new-pack', { defaultValue: 'Make a pack' })}
             </h2>
-            <input
+            <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={60}
               placeholder={t('name-ph', { defaultValue: 'Pack name' })}
               aria-label={t('name-ph', { defaultValue: 'Pack name' })}
-              className="glass-inset h-11 w-full rounded-[var(--site-control-radius)] px-3.5 text-sm text-site-text"
             />
             <Textarea
               value={text}

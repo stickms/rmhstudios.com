@@ -5,11 +5,11 @@ import { ExternalLink } from 'lucide-react';
 export function MarathonLink() {
   const { t } = useTranslation('f-tools');
   return (
-    <div className="ds-card" style={{ padding: 14 }}>
-      <div className="ds-row" style={{ marginBottom: 6 }}>
+    <div className="ds-card" style={{ padding: 16 }}>
+      <div className="ds-row" style={{ marginBottom: 8 }}>
         <strong>{t('marathon-link-title', { defaultValue: 'Plan a marathon of your own' })}</strong>
       </div>
-      <p className="ds-hint" style={{ margin: '0 0 10px' }}>
+      <p className="ds-hint" style={{ margin: '0 0 12px' }}>
         {t('marathon-link-body', {
           defaultValue:
             'Build a watch list for any franchise, set a deadline, and share the schedule.',

@@ -83,7 +83,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
   const startingWeapon = selectedClass ? WEAPONS.find((w) => w.id === selectedClass.startingWeaponId) : null;
 
   return (
-    <div className="altair-parchment flex flex-col min-h-[calc(100vh-56px)] px-4 py-6 max-w-3xl mx-auto">
+    <div className="altair-parchment flex flex-col flex-1 px-4 pt-4 pb-12 max-w-3xl w-full mx-auto">
       <h2 className="text-2xl font-bold text-(--altair-text) mb-1">{t("choose-your-class", { defaultValue: "Choose Your Class" })}</h2>
       <p className="text-sm text-(--altair-text-muted) mb-6">{t("select-class-prompt", { defaultValue: "Select a class to begin your run" })}</p>
 
@@ -99,9 +99,9 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
               key={cls.id}
               onClick={() => isUnlocked && setSelectedId(cls.id)}
               disabled={!isUnlocked}
-              className={`relative p-4 rounded-xl border text-left transition-colors ${
+              className={`relative p-4 rounded-(--altair-radius-lg) border text-left transition-colors ${
                 isSelected
-                  ? 'border-2 scale-[1.02] shadow-lg'
+                  ? 'border-2 scale-[1.02] shadow-(--altair-shadow)'
                   : isFocused
                     ? 'border-2 border-(--altair-accent)/60 ring-1 ring-(--altair-accent)/30 bg-(--altair-surface-hover)'
                     : isUnlocked
@@ -118,7 +118,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
                 {cls.name}
               </h3>
               <span
-                className="text-[10px] font-bold uppercase tracking-wider"
+                className="text-xs font-bold uppercase tracking-wider"
                 style={{ color: DIFFICULTY_COLORS[cls.difficulty] }}
               >
                 {cls.difficulty}
@@ -131,7 +131,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
       {/* Selected class details */}
       {selectedClass && (
         <div
-          className="p-5 rounded-xl border bg-(--altair-surface) mb-6 altair-modal"
+          className="p-5 rounded-(--altair-radius-lg) border bg-(--altair-surface) mb-6 altair-modal"
           style={{ borderColor: `${selectedClass.color}40` }}
         >
           <div className="flex items-start gap-4 mb-4">
@@ -147,7 +147,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
 
           {/* Starting weapon */}
           {startingWeapon && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-(--altair-bg-subtle) mb-3">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-(--altair-radius) bg-(--altair-bg-subtle) mb-3">
               <Swords size={14} className="text-(--altair-text-muted)" />
               <span className="text-xs text-(--altair-text-muted)">{t("starting-weapon", { defaultValue: "Starting weapon:" })}</span>
               <span className="text-xs font-bold text-(--altair-text)">{startingWeapon.name}</span>
@@ -156,21 +156,21 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
 
           {/* Abilities */}
           <div className="flex flex-col gap-2">
-            <div className="px-3 py-2 rounded-lg bg-(--altair-bg-subtle)">
+            <div className="px-3 py-2 rounded-(--altair-radius) bg-(--altair-bg-subtle)">
               <div className="flex items-center gap-2 mb-1">
                 <Shield size={12} className="text-(--altair-info)" />
                 <span className="text-xs font-bold text-(--altair-text)">{selectedClass.ability1.name}</span>
-                <span className="text-[10px] text-(--altair-text-dim)">{t("ability-innate", { defaultValue: "Innate" })}</span>
+                <span className="text-xs text-(--altair-text-dim)">{t("ability-innate", { defaultValue: "Innate" })}</span>
               </div>
-              <p className="text-[11px] text-(--altair-text-muted)">{selectedClass.ability1.description}</p>
+              <p className="text-xs text-(--altair-text-muted)">{selectedClass.ability1.description}</p>
             </div>
-            <div className="px-3 py-2 rounded-lg bg-(--altair-bg-subtle)">
+            <div className="px-3 py-2 rounded-(--altair-radius) bg-(--altair-bg-subtle)">
               <div className="flex items-center gap-2 mb-1">
                 <Zap size={12} className="text-(--altair-warning)" />
                 <span className="text-xs font-bold text-(--altair-text)">{selectedClass.ability2.name}</span>
-                <span className="text-[10px] text-(--altair-text-dim)">{t("ability-lv10", { defaultValue: "Lv.10" })}</span>
+                <span className="text-xs text-(--altair-text-dim)">{t("ability-lv10", { defaultValue: "Lv.10" })}</span>
               </div>
-              <p className="text-[11px] text-(--altair-text-muted)">{selectedClass.ability2.description}</p>
+              <p className="text-xs text-(--altair-text-muted)">{selectedClass.ability2.description}</p>
             </div>
           </div>
         </div>
@@ -188,7 +188,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
         <button
           onClick={onBack}
           data-altair-sfx="menu_back"
-          className="flex-1 py-3 rounded-xl font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
+          className="flex-1 py-3 rounded-(--altair-radius-lg) font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
         >
           {t("back", { defaultValue: "Back" })}
         </button>
@@ -196,7 +196,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
           onClick={() => selectedId && onSelect(selectedId)}
           data-altair-sfx="ui_confirm"
           disabled={!selectedId}
-          className={`flex-2 py-3 rounded-xl font-bold text-white transition-colors ${
+          className={`flex-2 py-3 rounded-(--altair-radius-lg) font-bold text-(--altair-accent-fg) transition-colors ${
             selectedId
               ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover)'
               : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'
@@ -260,7 +260,7 @@ function LockOverlay({ cls }: { cls: ClassDef }) {
   return (
     <div
       ref={ref}
-      className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/50 z-10"
+      className="absolute inset-0 flex items-center justify-center rounded-(--altair-radius-lg) bg-(--altair-hud-scrim)/50 z-10"
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
       onClick={(e) => {
@@ -271,7 +271,7 @@ function LockOverlay({ cls }: { cls: ClassDef }) {
       <Lock size={20} className="text-(--altair-text-dim)" />
 
       {open && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-48 p-3 rounded-lg bg-(--altair-surface) border border-(--altair-border) shadow-xl pointer-events-auto">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-48 p-3 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border) shadow-(--altair-shadow) pointer-events-auto">
           {/* Arrow */}
           <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-(--altair-surface) border-l border-t border-(--altair-border)" />
 
@@ -280,12 +280,12 @@ function LockOverlay({ cls }: { cls: ClassDef }) {
             <span className="text-xs font-semibold text-(--altair-text)">
               {cls.name}
             </span>
-            <p className="text-[11px] text-(--altair-text-muted) leading-snug">
+            <p className="text-xs text-(--altair-text-muted) leading-snug">
               {cls.unlockCondition}
             </p>
             {cls.unlockCost > 0 && (
               <>
-                <span className="flex items-center gap-1 text-[11px] font-bold text-(--altair-warning)">
+                <span className="flex items-center gap-1 text-xs font-bold text-(--altair-warning)">
                   <Coins size={12} />
                   {t("unlock-cost-coins", { defaultValue: "{{cost}} coins", cost: cls.unlockCost })}
                 </span>
@@ -295,9 +295,9 @@ function LockOverlay({ cls }: { cls: ClassDef }) {
                   onClick={handlePurchase}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePurchase(e as unknown as React.MouseEvent); } }}
                   aria-disabled={!canPurchase}
-                  className={`w-full mt-1 py-1.5 rounded-lg text-[11px] font-semibold transition-colors text-center ${
+                  className={`w-full mt-1 py-1.5 rounded-(--altair-radius) text-xs font-semibold transition-colors text-center ${
                     canPurchase
-                      ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-white cursor-pointer'
+                      ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-(--altair-accent-fg) cursor-pointer'
                       : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed pointer-events-none'
                   }`}
                 >
@@ -343,15 +343,15 @@ function DoubleTimeToggle({
     return (
       <button
         onClick={onToggle}
-        className="flex items-center gap-3 px-4 py-3 rounded-xl bg-(--altair-surface) border border-(--altair-border) mb-4 cursor-pointer select-none hover:bg-(--altair-surface-hover) transition-colors w-full text-left"
+        className="flex items-center gap-3 px-4 py-3 rounded-(--altair-radius-lg) bg-(--altair-surface) border border-(--altair-border) mb-4 cursor-pointer select-none hover:bg-(--altair-surface-hover) transition-colors w-full text-left"
       >
         <div className={`w-9 h-5 rounded-full relative transition-colors ${enabled ? 'bg-(--altair-warning)' : 'bg-(--altair-surface-active)'}`}>
-          <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${enabled ? 'translate-x-4' : ''}`} />
+          <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-(--altair-text) transition-transform ${enabled ? 'translate-x-4' : ''}`} />
         </div>
         <div className="flex items-center gap-2">
           <Zap size={16} className={enabled ? 'text-(--altair-warning)' : 'text-(--altair-text-dim)'} />
           <span className="text-sm font-semibold text-(--altair-text)">{t("double-time-lobby-waiting", { defaultValue: "Double Time" })}</span>
-          <span className="text-[10px] text-(--altair-text-dim)">{t("double-time-speed", { defaultValue: "2x game speed" })}</span>
+          <span className="text-xs text-(--altair-text-dim)">{t("double-time-speed", { defaultValue: "2x game speed" })}</span>
         </div>
       </button>
     );
@@ -365,25 +365,25 @@ function DoubleTimeToggle({
       onMouseLeave={() => setPopoverOpen(false)}
       onClick={() => setPopoverOpen((v) => !v)}
     >
-      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-(--altair-surface) border border-(--altair-border) opacity-50 cursor-pointer select-none">
+      <div className="flex items-center gap-3 px-4 py-3 rounded-(--altair-radius-lg) bg-(--altair-surface) border border-(--altair-border) opacity-50 cursor-pointer select-none">
         <div className="w-9 h-5 rounded-full relative bg-(--altair-surface-active)">
-          <div className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white/50" />
+          <div className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-(--altair-hud-ink)/50" />
         </div>
         <div className="flex items-center gap-2">
           <Lock size={14} className="text-(--altair-text-dim)" />
           <span className="text-sm font-semibold text-(--altair-text-dim)">{t("double-time-lobby-waiting", { defaultValue: "Double Time" })}</span>
-          <span className="text-[10px] text-(--altair-text-dim)">{t("locked", { defaultValue: "Locked" })}</span>
+          <span className="text-xs text-(--altair-text-dim)">{t("locked", { defaultValue: "Locked" })}</span>
         </div>
       </div>
 
       {popoverOpen && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-56 p-3 rounded-lg bg-(--altair-surface) border border-(--altair-border) shadow-xl">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-56 p-3 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border) shadow-(--altair-shadow)">
           {/* Arrow */}
           <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-(--altair-surface) border-r border-b border-(--altair-border)" />
           <div className="relative flex flex-col items-center text-center gap-1.5">
             <Zap size={16} className="text-(--altair-warning)" />
             <span className="text-xs font-bold text-(--altair-text)">{t("double-time-lobby-waiting", { defaultValue: "Double Time" })}</span>
-            <p className="text-[11px] text-(--altair-text-muted) leading-snug">
+            <p className="text-xs text-(--altair-text-muted) leading-snug">
               {t("double-time-unlock-hint", { defaultValue: "Complete a run (survive 20:00) to unlock 2x game speed mode" })}
             </p>
           </div>

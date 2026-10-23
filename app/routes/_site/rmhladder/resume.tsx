@@ -11,6 +11,8 @@ import { listUserResumes, type ResumePrisma } from '@/lib/rmhladder/resume/servi
 import type { CandidateProfile } from '@/lib/rmhladder/resume/schemas';
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 
 const resumePrisma = prisma as unknown as ResumePrisma;
@@ -100,7 +102,7 @@ function ResumePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><FileText className="size-5 text-site-accent" aria-hidden />{t('ladder.resume.title', { defaultValue: 'Resume reviewer' })}</CardTitle>
@@ -134,9 +136,11 @@ function ResumePage() {
       </Card>
 
       {resumes.length === 0 ? (
-        <div className="rounded-site glass-fill p-8 text-center text-site-text-muted">
-          {t('ladder.resume.empty', { defaultValue: 'No resumes yet. Upload one to get a private review and role matches.' })}
-        </div>
+        <EmptyState
+          icon={FileText}
+          title={t('ladder.resume.emptyTitle', { defaultValue: 'No resumes yet' })}
+          description={t('ladder.resume.emptyHint', { defaultValue: 'Upload one to get a private review and role matches.' })}
+        />
       ) : resumes.map((resume) => {
         const version = resume.versions.find((item) => item.id === resume.activeVersionId) ?? resume.versions[0];
         return <ResumeCard key={resume.id} resume={resume} version={version} busyId={busyId} aiConsent={aiConsent} onAnalyze={analyze} onDelete={remove} onRefresh={refresh} />;
@@ -165,14 +169,14 @@ function ResumeCard({
       <CardHeader>
         <CardTitle>{resume.name}</CardTitle>
         <CardDescription>{version.filename} · {formatBytes(version.sizeBytes)} · {t('ladder.resume.version', { defaultValue: 'Version {{version}}', version: version.versionNumber })}</CardDescription>
-        <CardAction className="flex gap-1">
+        <CardAction className="flex gap-2">
           <Button asChild variant="ghost" size="icon-sm"><a href={`/api/rmhladder/resume/${resume.id}`} aria-label={t('ladder.resume.download', { defaultValue: 'Download resume' })}><Download aria-hidden /></a></Button>
           <Button variant="ghost" size="icon-sm" loading={busyId === `delete-${resume.id}`} aria-label={t('ladder.resume.delete', { defaultValue: 'Delete resume' })} onClick={() => void onDelete(resume)}><Trash2 aria-hidden /></Button>
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="rounded-full border border-site-border px-3 py-1 text-xs text-site-text-muted">{version.parseStatus.replace(/_/g, ' ')}</span>
+          <Badge variant="outline">{version.parseStatus.replace(/_/g, ' ')}</Badge>
           <Button disabled={!aiConsent} loading={busyId === `analyze-${version.id}`} loadingText={t('ladder.resume.reviewing', { defaultValue: 'Reviewing…' })} onClick={() => void onAnalyze(resume, version)}>
             <Sparkles aria-hidden />{review?.status === 'complete' ? t('ladder.resume.reviewAgain', { defaultValue: 'Review again' }) : t('ladder.resume.review', { defaultValue: 'Review with AI' })}
           </Button>
@@ -184,10 +188,10 @@ function ResumeCard({
 
         {version.matches.length > 0 && (
           <section className="space-y-3">
-            <h3 className="font-semibold">{t('ladder.resume.matches', { defaultValue: 'Best role matches' })}</h3>
+            <h3 className="site-section-label">{t('ladder.resume.matches', { defaultValue: 'Best role matches' })}</h3>
             <div className="grid gap-3 md:grid-cols-2">
               {version.matches.slice(0, 12).map((match) => (
-                <Link key={match.id} to="/rmhladder/jobs/$jobId" params={{ jobId: match.jobId }} className="rounded-site-sm border border-site-border p-4 hover:border-site-accent hover:bg-site-surface-hover">
+                <Link key={match.id} to="/rmhladder/jobs/$jobId" params={{ jobId: match.jobId }} className="glass-fill rounded-site-sm p-4 transition-colors hover:bg-site-surface-hover">
                   <div className="flex items-start justify-between gap-3">
                     <div><p className="font-medium">{match.job?.title ?? t('ladder.resume.role', { defaultValue: 'Role' })}</p><p className="text-sm text-site-text-muted">{match.job?.company?.name}</p></div>
                     <span className="font-mono text-lg text-site-accent">{match.score}</span>
@@ -207,7 +211,7 @@ function ReviewPanel({ review }: { review: Record<string, unknown> }) {
   const strengths = Array.isArray(review.strengths) ? review.strengths as string[] : [];
   const issues = Array.isArray(review.issues) ? review.issues as Array<{ severity: string; message: string; suggestion: string }> : [];
   return (
-    <section className="grid gap-4 rounded-site-sm bg-site-surface-hover p-4 md:grid-cols-[auto_1fr]">
+    <section className="grid gap-4 glass-inset rounded-site-sm p-4 md:grid-cols-[auto_1fr]">
       <div className="flex size-20 items-center justify-center rounded-full border-4 border-site-accent font-mono text-2xl">{Number(review.overallScore ?? 0)}</div>
       <div className="space-y-3"><p>{String(review.summary ?? '')}</p>{strengths.length > 0 && <ul className="list-disc space-y-1 pl-5 text-sm text-site-text-muted">{strengths.map((item) => <li key={item}>{item}</li>)}</ul>}{issues.slice(0, 5).map((issue, index) => <div key={`${issue.message}-${index}`} className="border-l-2 border-site-warning pl-3 text-sm"><p className="font-medium">{issue.message}</p><p className="text-site-text-muted">{issue.suggestion}</p></div>)}</div>
     </section>
@@ -231,12 +235,12 @@ function ProfileConfirmation({ resume, version, initial, onRefresh }: { resume: 
     finally { setSaving(false); }
   }
   return (
-    <section className="space-y-4 rounded-site-sm border border-site-accent/40 p-4">
-      <div><h3 className="font-semibold">{t('ladder.resume.confirmTitle', { defaultValue: 'Confirm the extracted profile' })}</h3><p className="text-sm text-site-text-muted">{t('ladder.resume.confirmDescription', { defaultValue: 'Correct anything the model got wrong. Matching stays off until you confirm.' })}</p></div>
+    <section className="glass-inset space-y-4 rounded-site-sm border border-site-accent/40 p-4">
+      <div><h3 className="site-section-label">{t('ladder.resume.confirmTitle', { defaultValue: 'Confirm the extracted profile' })}</h3><p className="text-sm text-site-text-muted">{t('ladder.resume.confirmDescription', { defaultValue: 'Correct anything the model got wrong. Matching stays off until you confirm.' })}</p></div>
       <div className="grid gap-3 md:grid-cols-2">
-        <label className="space-y-1 text-sm"><span>{t('ladder.resume.headline', { defaultValue: 'Headline' })}</span><Input value={profile.headline} onChange={(event) => setProfile((value) => ({ ...value, headline: event.target.value }))} /></label>
-        <label className="space-y-1 text-sm"><span>{t('ladder.resume.years', { defaultValue: 'Years of experience' })}</span><Input type="number" min={0} max={60} value={profile.yearsExperience ?? ''} onChange={(event) => setProfile((value) => ({ ...value, yearsExperience: event.target.value === '' ? null : Number(event.target.value) }))} /></label>
-        <label className="space-y-1 text-sm md:col-span-2"><span>{t('ladder.resume.skills', { defaultValue: 'Skills (comma-separated)' })}</span><Input value={skills} onChange={(event) => setProfile((value) => ({ ...value, skills: event.target.value.split(',').map((item) => item.trim()).filter(Boolean) }))} /></label>
+        <label className="space-y-2 text-sm"><span>{t('ladder.resume.headline', { defaultValue: 'Headline' })}</span><Input value={profile.headline} onChange={(event) => setProfile((value) => ({ ...value, headline: event.target.value }))} /></label>
+        <label className="space-y-2 text-sm"><span>{t('ladder.resume.years', { defaultValue: 'Years of experience' })}</span><Input type="number" min={0} max={60} value={profile.yearsExperience ?? ''} onChange={(event) => setProfile((value) => ({ ...value, yearsExperience: event.target.value === '' ? null : Number(event.target.value) }))} /></label>
+        <label className="space-y-2 text-sm md:col-span-2"><span>{t('ladder.resume.skills', { defaultValue: 'Skills (comma-separated)' })}</span><Input value={skills} onChange={(event) => setProfile((value) => ({ ...value, skills: event.target.value.split(',').map((item) => item.trim()).filter(Boolean) }))} /></label>
       </div>
       <Button loading={saving} loadingText={t('ladder.resume.matching', { defaultValue: 'Matching roles…' })} onClick={() => void confirm()}><CheckCircle2 aria-hidden />{t('ladder.resume.confirmAndMatch', { defaultValue: 'Confirm and match roles' })}</Button>
     </section>

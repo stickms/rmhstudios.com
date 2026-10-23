@@ -451,5 +451,9 @@
   "your-prompts": "당신의 프롬프트",
   "your-rank": "당신의 순위:",
   "youre-the-producer": "당신이 프로듀서입니다!",
-  "yours-label": "(당신의 것)"
+  "yours-label": "(당신의 것)",
+  "close": "Close",
+  "guesses-remaining-guess-input_other": "{{count}} guesses remaining",
+  "players-count-host-control-modal_other": "Players ({{count}})",
+  "score-pts-rmhbox-discord-activity_other": "{{count}} pts"
 }

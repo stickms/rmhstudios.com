@@ -45,5 +45,8 @@
   "starting-game": "게임 시작 중...",
   "view-minigames": "미니게임 보기",
   "winner-label": "승자:",
-  "winner-none": "없음"
+  "winner-none": "없음",
+  "loading": "Loading…",
+  "room-code": "Room code",
+  "player-count-of-max_other": "{{count}}/{{max}} players"
 }

@@ -33,13 +33,13 @@ export default function MultiplayerGameScreen({ lobbyId }: MultiplayerGameScreen
       />
 
       {/* Temporary overlay showing game is running */}
-      <div className="absolute top-[calc(1rem+var(--safe-top))] left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-lg bg-black/60 backdrop-blur-sm">
+      <div className="absolute top-[calc(1rem+var(--safe-top))] left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-(--altair-radius) bg-(--altair-hud-scrim)/60">
         <div className="w-2 h-2 rounded-full bg-(--altair-success) animate-pulse" />
-        <span className="text-sm text-white font-mono">
+        <span className="text-sm text-(--altair-hud-ink) font-mono">
           {isHost ? t("role-host", { defaultValue: "HOST" }) : t("role-client", { defaultValue: "CLIENT" })} — {t("lobby-label", { defaultValue: "Lobby" })} {lobbyId}
         </span>
         {gameSnapshot && (
-          <span className="text-xs text-white/60">
+          <span className="text-xs text-(--altair-hud-ink)/60">
             {t("game-tick", { defaultValue: "Tick {{tick}} | {{players}} players | {{enemies}} enemies", tick: gameSnapshot.tick, players: gameSnapshot.players?.length ?? 0, enemies: gameSnapshot.enemies?.length ?? 0 })}
           </span>
         )}

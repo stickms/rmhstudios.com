@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
+import { CalendarX } from 'lucide-react';
 import { MarathonSchedule } from '@/components/marathon/MarathonSchedule';
 import { toolsApi } from '@/lib/tools/client';
 import { noindexHead } from '@/lib/seo';
@@ -29,12 +32,15 @@ function SharedMarathon() {
       backTo="/marathon"
       backLabel={t('marathon-back', { defaultValue: 'My lists' })}
     >
-      {list === undefined ? null : list === null ? (
-        <p className="p-4 text-sm text-site-text-muted">
-          {t('marathon-missing', { defaultValue: 'This marathon link is not valid.' })}
-        </p>
+      {list === undefined ? (
+        <Skeleton className="mx-4 h-40" />
+      ) : list === null ? (
+        <EmptyState
+          icon={CalendarX}
+          title={t('marathon-missing', { defaultValue: 'This marathon link is not valid.' })}
+        />
       ) : (
-        <div className="space-y-3 p-1">
+        <div className="space-y-3 px-4 pt-4 pb-12">
           <p className="text-sm text-site-text-muted">
             {t('marathon-shared-intro', {
               defaultValue: '{{count}} titles, to finish by {{date}}. Planned from today.',

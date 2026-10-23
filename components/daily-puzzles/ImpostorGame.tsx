@@ -2,15 +2,25 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
 import { m as motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Trophy, Copy, Check, CircleAlert } from 'lucide-react';
+import { Trophy, Check, CircleAlert } from 'lucide-react';
 import { generateImpostorPuzzle, checkImpostorGuess, computeImpostorScore, type ImpostorPuzzle } from '@/lib/daily-puzzles/impostor';
 import { formatDateKey, getTodayEST, getPuzzleNumber } from '@/lib/daily-puzzles/seed';
 import { getResult, saveResult, hasCompleted } from '@/lib/daily-puzzles/persistence';
 import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/persistence';
 import { generateImpostorShare } from '@/lib/daily-puzzles/share';
 import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+    PuzzlePage,
+    PuzzleHeader,
+    PuzzleNotice,
+    PuzzleResultCard,
+    PuzzleResultStack,
+    PuzzleShareRow,
+    TONE_TINT,
+} from '@/components/daily-puzzles/PuzzleShell';
 import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 import { useSession } from '@/components/Providers';
@@ -50,7 +60,6 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
     const [foundFakes, setFoundFakes] = useState<string[]>([]);
     const [completed, setCompleted] = useState(false);
     const [finalScore, setFinalScore] = useState(0);
-    const [copied, setCopied] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
     // Check persistence on mount
@@ -166,173 +175,131 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
         });
     };
 
-    const handleShare = async () => {
-        const results = getStatementResults();
-        const guessCount = finalScore === 100 ? 1 : 2;
-        const shareText = generateImpostorShare(
-            puzzleNumber,
-            puzzle.topic,
-            puzzle.topicEmoji,
-            results,
-            finalScore,
-            guessCount,
-        );
-
-        try {
-            await navigator.clipboard.writeText(shareText);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            // Fallback
-        }
-    };
+    const shareText = completed
+        ? generateImpostorShare(
+              puzzleNumber,
+              puzzle.topic,
+              puzzle.topicEmoji,
+              getStatementResults(),
+              finalScore,
+              finalScore === 100 ? 1 : 2,
+          )
+        : '';
 
     const getCardClasses = (index: number) => {
         if (completed) {
             const isFake = puzzle._solution[index]?.isFake ??
                 puzzle._solution.find(s => s.text === puzzle.statements[index].text)?.isFake;
             const wasFound = foundFakes.includes(puzzle.statements[index].text);
-            if (isFake && wasFound) return 'border-red-500/60 bg-red-500/10';
-            if (isFake && !wasFound) return 'border-amber-500/60 bg-amber-500/10';
-            return 'border-emerald-500/40 bg-emerald-500/5';
+            if (isFake && wasFound) return TONE_TINT.danger;
+            if (isFake && !wasFound) return TONE_TINT.warning;
+            return 'border-site-success/40';
         }
-        if (foundFakes.includes(puzzle.statements[index].text)) return 'border-red-500/50 bg-red-500/10 opacity-70 cursor-not-allowed';
-        if (confirmedReal.has(index)) return 'border-site-border bg-site-surface/30 opacity-50 cursor-not-allowed';
-        if (selectedStatements.has(index)) return 'border-amber-400 bg-amber-500/10 ring-1 ring-amber-400/40';
-        return 'border-site-border bg-site-surface hover:border-site-text-muted/50 cursor-pointer';
+        if (foundFakes.includes(puzzle.statements[index].text)) return `${TONE_TINT.danger} opacity-70 cursor-not-allowed`;
+        if (confirmedReal.has(index)) return 'border-site-border opacity-50 cursor-not-allowed';
+        if (selectedStatements.has(index)) return 'border-site-accent bg-site-accent-dim';
+        return 'glass-interactive cursor-pointer border-transparent';
     };
 
     return (
         <>
-            <Link
-                to="/daily"
-                className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
+            <PuzzleHeader
+                icon={<span>{puzzle.topicEmoji}</span>}
+                title={puzzle.topic}
+                subtitle={`${t("impostor-title", { defaultValue: "Impostor" })} #${puzzleNumber} · ${dateKey}`}
             >
-                <ArrowLeft className="w-4 h-4" />
-                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
-            </Link>
-
-            {/* Header */}
-            <motion.div
-                className="text-center mb-8"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <div className="text-4xl mb-2">{puzzle.topicEmoji}</div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-site-text mb-1">
-                    {puzzle.topic}
-                </h1>
-                <p className="text-site-text-muted text-sm">
-                    Impostor #{puzzleNumber} · {dateKey}
-                </p>
-                <p className="text-site-text-muted text-xs mt-2">
-                    <CircleAlert className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
+                <p className="flex items-center gap-1 text-xs text-site-text-muted">
+                    <CircleAlert className="size-3.5 shrink-0" aria-hidden />
                     {t("five-facts-tagline", { defaultValue: "Five facts. Two are lies. Find the impostors." })}
                 </p>
-            </motion.div>
+            </PuzzleHeader>
 
-            {/* Feedback message */}
-            <AnimatePresence>
-                {feedbackMessage && !completed && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        className="mb-4 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-center text-sm text-amber-300"
-                    >
-                        {feedbackMessage} {t("guess-again", { defaultValue: "— Guess again." })}
-                    </motion.div>
+            <div className="flex flex-col gap-3">
+                {/* Feedback message */}
+                <AnimatePresence>
+                    {feedbackMessage && !completed && (
+                        <motion.div
+                            role="status"
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                        >
+                            <PuzzleNotice tone="warning">
+                                <span className="text-sm text-site-text">
+                                    {feedbackMessage} {t("guess-again", { defaultValue: "— Guess again." })}
+                                </span>
+                            </PuzzleNotice>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Guess indicator */}
+                {!completed && (
+                    <p className="text-center text-xs text-site-text-muted">
+                        {t("guess-indicator", { defaultValue: "Guess {{guessNumber}}/2 · Select {{remaining}} more", guessNumber, remaining: remainingToFind - selectedStatements.size })}
+                    </p>
                 )}
-            </AnimatePresence>
 
-            {/* Guess indicator */}
-            {!completed && (
-                <div className="text-center mb-4 text-xs text-site-text-muted">
-                    {t("guess-indicator", { defaultValue: "Guess {{guessNumber}}/2 · Select {{remaining}} more", guessNumber, remaining: remainingToFind - selectedStatements.size })}
-                </div>
-            )}
-
-            {/* Statements */}
-            <div className="flex flex-col gap-3 mb-6">
-                {puzzle.statements.map((statement, i) => (
-                    <motion.button
-                        key={i}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.06 }}
-                        onClick={() => toggleStatement(i)}
-                        disabled={completed || confirmedReal.has(i) || foundFakes.includes(puzzle.statements[i].text)}
-                        className={`relative w-full text-left p-4 rounded-xl border transition-colors ${getCardClasses(i)}`}
-                    >
-                        <div className="flex items-start gap-3">
-                            <span className="text-site-text-muted text-xs font-mono mt-0.5 shrink-0">
-                                {i + 1}.
-                            </span>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm text-site-text leading-relaxed">
-                                    {statement.text}
-                                </p>
-                                {/* Show explanation after completion */}
-                                {completed && (() => {
-                                    const solution = puzzle._solution.find(s => s.text === statement.text);
-                                    if (!solution) return null;
-                                    return (
-                                        <motion.div
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: 'auto' }}
-                                            transition={{ delay: 0.2 + i * 0.08 }}
-                                        >
-                                            <span className={`inline-block mt-2 text-xs font-semibold px-2 py-0.5 rounded-full ${
-                                                solution.isFake
-                                                    ? 'bg-red-500/20 text-red-400'
-                                                    : 'bg-emerald-500/20 text-emerald-400'
-                                            }`}>
-                                                {solution.isFake ? t("label-fake", { defaultValue: "FAKE" }) : t("label-true", { defaultValue: "TRUE" })}
-                                            </span>
-                                            <p className="mt-1.5 text-xs text-site-text-muted leading-relaxed">
-                                                {solution.explanation}
-                                            </p>
-                                        </motion.div>
-                                    );
-                                })()}
+                {/* Statements */}
+                {puzzle.statements.map((statement, i) => {
+                    const solution = completed ? puzzle._solution.find(s => s.text === statement.text) : undefined;
+                    return (
+                        <motion.button
+                            key={i}
+                            type="button"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.06 }}
+                            onClick={() => toggleStatement(i)}
+                            disabled={completed || confirmedReal.has(i) || foundFakes.includes(puzzle.statements[i].text)}
+                            aria-pressed={!completed ? selectedStatements.has(i) : undefined}
+                            className={`glass-fill flex w-full items-start gap-3 rounded-site border px-4 py-3 text-left transition-colors duration-site-fast ${getCardClasses(i)}`}
+                        >
+                            <span className="mt-0.5 shrink-0 font-mono text-xs text-site-text-muted">{i + 1}.</span>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm leading-relaxed text-site-text">{statement.text}</p>
+                                {solution && (
+                                    <motion.div
+                                        className="mt-2 flex flex-col items-start gap-2"
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        transition={{ delay: 0.2 + i * 0.08 }}
+                                    >
+                                        <Badge variant={solution.isFake ? 'danger' : 'success'} size="sm">
+                                            {solution.isFake ? t("label-fake", { defaultValue: "FAKE" }) : t("label-true", { defaultValue: "TRUE" })}
+                                        </Badge>
+                                        <p className="text-xs leading-relaxed text-site-text-muted">{solution.explanation}</p>
+                                    </motion.div>
+                                )}
                             </div>
                             {!completed && selectedStatements.has(i) && (
-                                <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    className="shrink-0 w-5 h-5 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center"
-                                >
-                                    <Check className="w-3 h-3 text-amber-400" />
-                                </motion.div>
+                                <Check className="mt-0.5 size-4 shrink-0 text-site-accent" aria-hidden />
                             )}
                             {!completed && foundFakes.includes(puzzle.statements[i].text) && (
-                                <span className="shrink-0 text-xs text-red-400 font-semibold">{t("label-lie", { defaultValue: "Lie" })}</span>
+                                <span className="shrink-0 text-xs font-semibold text-site-danger">{t("label-lie", { defaultValue: "Lie" })}</span>
                             )}
                             {!completed && confirmedReal.has(i) && (
                                 <span className="shrink-0 text-xs text-site-text-muted">{t("label-real", { defaultValue: "Real" })}</span>
                             )}
-                        </div>
-                    </motion.button>
-                ))}
-            </div>
+                        </motion.button>
+                    );
+                })}
 
-            {/* Lock In button */}
-            {!completed && (
-                <motion.div
-                    className="text-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                >
-                    <button
-                        onClick={handleLockIn}
-                        disabled={selectedStatements.size !== remainingToFind}
-                        className="px-6 py-3 rounded-xl font-semibold text-sm transition disabled:opacity-30 disabled:cursor-not-allowed bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 enabled:hover:scale-[1.02]"
-                    >
-                        {t("lock-in-guess", { defaultValue: "Lock In Guess" })}
-                    </button>
-                </motion.div>
-            )}
+                {/* Lock In button */}
+                {!completed && (
+                    <div className="mt-3 flex justify-center">
+                        <Button
+                            type="button"
+                            variant="accent"
+                            size="lg"
+                            onClick={handleLockIn}
+                            disabled={selectedStatements.size !== remainingToFind}
+                        >
+                            {t("lock-in-guess", { defaultValue: "Lock In Guess" })}
+                        </Button>
+                    </div>
+                )}
+            </div>
 
             {/* Results */}
             <AnimatePresence>
@@ -341,47 +308,25 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
-                        className="mt-8 p-6 rounded-2xl border border-site-border bg-site-surface/50 text-center"
                     >
-                        <Trophy className="w-8 h-8 mx-auto mb-3 text-amber-400" />
-                        <p className="text-2xl font-bold text-site-text mb-1">
-                            {t("score-pts", { defaultValue: "{{score}} pts", score: finalScore })}
-                        </p>
-                        <p className="text-sm text-site-text-muted mb-1">
-                            {t("impostors-found", { defaultValue: "{{found}}/2 impostors found", found: foundFakes.length })}
-                        </p>
-                        <p className="text-xs text-site-text-muted mb-6">
-                            {finalScore === 100 && t("result-perfect", { defaultValue: "Perfect — both found on the first guess!" })}
-                            {finalScore === 50 && t("result-two-guesses", { defaultValue: "Both found across two guesses. Nice detective work." })}
-                            {finalScore === 20 && t("result-one-missed", { defaultValue: "One impostor slipped through the cracks." })}
-                            {finalScore === 0 && t("result-none-found", { defaultValue: "The impostors got away this time." })}
-                        </p>
-
-                        <div className="flex items-center justify-center gap-3">
-                            <button
-                                onClick={handleShare}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-site-surface border border-site-border hover:border-site-text-muted/50 text-site-text transition-colors"
-                            >
-                                {copied ? (
+                        <PuzzleResultStack>
+                            <PuzzleResultCard
+                                tone={finalScore >= 50 ? 'success' : finalScore > 0 ? 'warning' : 'danger'}
+                                title={t("score-pts", { defaultValue: "{{score}} pts", score: finalScore })}
+                                description={
                                     <>
-                                        <Check className="w-4 h-4 text-emerald-400" />
-                                        {t("copied", { defaultValue: "Copied!" })}
+                                        {t("impostors-found", { defaultValue: "{{found}}/2 impostors found", found: foundFakes.length })}
+                                        <br />
+                                        {finalScore === 100 && t("result-perfect", { defaultValue: "Perfect — both found on the first guess!" })}
+                                        {finalScore === 50 && t("result-two-guesses", { defaultValue: "Both found across two guesses. Nice detective work." })}
+                                        {finalScore === 20 && t("result-one-missed", { defaultValue: "One impostor slipped through the cracks." })}
+                                        {finalScore === 0 && t("result-none-found", { defaultValue: "The impostors got away this time." })}
                                     </>
-                                ) : (
-                                    <>
-                                        <Copy className="w-4 h-4" />
-                                        {t("share-result", { defaultValue: "Share Result" })}
-                                    </>
-                                )}
-                            </button>
-                            <Link
-                                to="/daily"
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-site-surface border border-site-border hover:border-site-text-muted/50 text-site-text transition-colors"
-                            >
-                                <ArrowLeft className="w-4 h-4" />
-                                {t("all-puzzles", { defaultValue: "All Puzzles" })}
-                            </Link>
-                        </div>
+                                }
+                                emoji={<Trophy className="mx-auto size-8 text-site-warning" />}
+                            />
+                            <PuzzleShareRow shareText={shareText} />
+                        </PuzzleResultStack>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -404,13 +349,13 @@ export function ImpostorGame() {
     const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
 
     return (
-        <div className="max-w-2xl mx-auto px-4 py-8">
+        <PuzzlePage>
             <ImpostorGameLoader key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
             <PastPuzzlesSection
                 gameMode="impostor"
                 selectedDateKey={selectedDateKey}
                 onSelectDate={setSelectedDateKey}
             />
-        </div>
+        </PuzzlePage>
     );
 }

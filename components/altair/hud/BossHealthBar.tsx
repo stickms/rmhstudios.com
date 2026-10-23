@@ -39,13 +39,13 @@ export default function BossHealthBar({
             <span className="text-xs font-mono text-(--altair-text-dim) uppercase tracking-wider">
               {bossTitle}
             </span>
-            <h3 className="text-sm font-bold text-white leading-tight">{bossName}</h3>
+            <h3 className="text-sm font-bold text-(--altair-hud-ink) leading-tight">{bossName}</h3>
           </div>
           <span className="text-xs font-mono text-(--altair-text-dim)">
             Phase {phase}/{totalPhases}
           </span>
         </div>
-        <div className="h-3 rounded-full bg-black/60 overflow-hidden border border-white/10">
+        <div className="h-3 rounded-full bg-(--altair-hud-scrim)/60 overflow-hidden border border-(--altair-hud-ink)/10">
           <div
             className="h-full w-full origin-left transition-[transform,background-color] duration-300"
             style={{

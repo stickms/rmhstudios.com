@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ScrollText } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { NoteBody } from '@/components/devplatform/NoteBody';
 import type { ReleaseNoteView } from '@/lib/devplatform/release-notes';
@@ -27,17 +29,18 @@ export function ChangelogList() {
   }
   if (notes.length === 0) {
     return (
-      <p className="py-12 text-center text-sm text-site-text-muted">
-        {t('changelog-empty', { defaultValue: 'No release notes yet.' })}
-      </p>
+      <EmptyState
+        icon={ScrollText}
+        title={t('changelog-empty', { defaultValue: 'No release notes yet.' })}
+      />
     );
   }
   return (
-    <ol className="space-y-4">
+    <ol className="mx-auto max-w-2xl space-y-3">
       {notes.map((n) => (
-        <li key={n.id} className="glass-fill rounded-site p-4">
-          <div className="mb-2 flex items-baseline justify-between gap-2">
-            <h2 className="text-base font-bold text-site-text">{n.title}</h2>
+        <li key={n.id} className="glass-fill rounded-site px-4 py-3">
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <h2 className="text-base font-semibold text-site-text">{n.title}</h2>
             <span className="shrink-0 text-xs text-site-text-dim">
               {n.version}
               {n.publishedAt ? ` · ${new Date(n.publishedAt).toLocaleDateString()}` : ''}

@@ -137,7 +137,7 @@ export default function BodyDoublePanel() {
   return (
     <section
       aria-labelledby="body-double-title"
-      className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6"
+      className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6"
     >
       <h2 id="body-double-title" className="mb-1 flex items-center gap-2 text-xl font-semibold">
         <Users className="h-5 w-5 text-(--app-accent)" aria-hidden />
@@ -191,7 +191,7 @@ export default function BodyDoublePanel() {
               setPreset(e.target.value.trim() ? null : 'math');
             }}
             placeholder={t('bd-custom-ph', { defaultValue: 'Organic chemistry' })}
-            className="mt-1 w-full rounded-lg border border-(--app-border) bg-(--app-bg) px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-2 text-sm"
           />
         </div>
 
@@ -233,7 +233,7 @@ export default function BodyDoublePanel() {
               id="bd-when"
               value={when}
               onChange={(e) => setWhen(e.target.value)}
-              className="w-full rounded-lg border border-(--app-border) bg-(--app-bg) px-3 py-2 text-sm"
+              className="w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-2 text-sm"
             >
               <option value="now">{t('bd-now', { defaultValue: 'Right now' })}</option>
               {slots.map((s) => (
@@ -249,7 +249,7 @@ export default function BodyDoublePanel() {
           type="button"
           onClick={submit}
           disabled={!canSubmit}
-          className="w-full rounded-lg bg-(--app-accent) py-3 font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-(--app-radius-sm) bg-(--app-accent) py-3 font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t('bd-find', { defaultValue: 'Find a study buddy' })}
         </button>
@@ -265,7 +265,7 @@ export default function BodyDoublePanel() {
             return (
               <div
                 key={m.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-(--app-accent) p-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-(--app-radius-sm) border border-(--app-accent) p-3"
               >
                 <div className="min-w-0">
                   <p className="font-semibold">
@@ -284,7 +284,7 @@ export default function BodyDoublePanel() {
                 {open ? (
                   <a
                     href={`/rmhstudy/${m.roomCode}?bd=${m.id}`}
-                    className="rounded-lg bg-(--app-accent) px-4 py-2 text-sm font-semibold text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+                    className="rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2 text-sm font-semibold text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
                   >
                     {t('bd-open-room', { defaultValue: 'Open the room' })}
                   </a>
@@ -299,7 +299,7 @@ export default function BodyDoublePanel() {
           {status.waiting.map((w) => (
             <div
               key={w.requestId}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-(--app-border) p-3"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-(--app-radius-sm) border border-(--app-border) p-3"
             >
               <p className="text-sm">
                 {w.mode === 'now'
@@ -319,7 +319,7 @@ export default function BodyDoublePanel() {
               <button
                 type="button"
                 onClick={() => void cancel(w.requestId)}
-                className="rounded-lg border border-(--app-border) px-3 py-1.5 text-sm hover:border-(--app-accent)"
+                className="rounded-(--app-radius-sm) border border-(--app-border) px-3 py-1.5 text-sm hover:border-(--app-accent)"
               >
                 {t('bd-cancel', { defaultValue: 'Cancel' })}
               </button>

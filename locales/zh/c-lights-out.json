@@ -84,5 +84,7 @@
   "waiting-for-host": "等待房主开始下一轮...",
   "waiting-for-players": "等待玩家中",
   "welcome-user": "欢迎，{{name}}！",
-  "your-moves": "你的动作"
+  "your-moves": "你的动作",
+  "lights-out-title": "Lights Out",
+  "rating-tiers": "Rating tiers"
 }

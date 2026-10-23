@@ -62,27 +62,25 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
       role="region"
       aria-label={t('bracket', { defaultValue: 'Tournament bracket' })}
       tabIndex={0}
-      className="glass-fill max-w-full overflow-x-auto rounded-site p-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-site-accent"
+      className="glass-fill max-w-full overflow-x-auto rounded-site p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-site-accent"
     >
       <div className="flex gap-4 min-w-max">
         {rounds.map(([round, matches]) => (
-          <div key={round} className="flex flex-col gap-3 min-w-[220px]">
-            <h3 className="site-section-label px-1">
-              {roundLabel(round, rounds.length)}
-            </h3>
+          <div key={round} className="flex flex-col gap-3 min-w-56">
+            <h3 className="site-section-label px-1">{roundLabel(round, rounds.length)}</h3>
             {matches.map((m) => {
               const aWon = m.winnerEntrantId && m.winnerEntrantId === m.entrantAId;
               const bWon = m.winnerEntrantId && m.winnerEntrantId === m.entrantBId;
               const ready = m.state === 'READY' || m.state === 'LIVE';
               return (
-                <div key={m.id} className="glass-fill rounded-site p-2 space-y-1.5">
+                <div key={m.id} className="glass-fill flex flex-col gap-2 rounded-site p-3">
                   {[
                     { id: m.entrantAId, won: aWon },
                     { id: m.entrantBId, won: bWon },
                   ].map((side, i) => (
                     <div
                       key={i}
-                      className={`flex items-center justify-between gap-2 rounded-[calc(var(--site-radius)-4px)] px-2 py-1.5 text-sm ${
+                      className={`flex items-center justify-between gap-2 rounded-site-sm px-3 py-2 text-sm ${
                         side.won
                           ? 'bg-site-accent-dim text-site-accent font-semibold'
                           : 'text-site-text'
@@ -95,11 +93,11 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
                           </span>
                         )}
                       </span>
-                      {side.won && <Trophy className="size-3.5 shrink-0" />}
+                      {side.won && <Trophy className="size-3.5 shrink-0" aria-hidden />}
                     </div>
                   ))}
                   {canReport && ready && m.entrantAId && m.entrantBId && (
-                    <div className="flex gap-1 pt-1">
+                    <div className="flex gap-2">
                       <Button
                         size="xs"
                         variant="outline"

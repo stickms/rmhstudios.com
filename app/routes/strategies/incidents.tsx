@@ -64,7 +64,7 @@ function IncidentsPage() {
       {data?.length === 0 && (
         <div className="text-center py-16">
           <AlertTriangle size={32} className="mx-auto mb-3 opacity-10" />
-          <p className="text-sm text-white/30">{t("all-systems-nominal", { defaultValue: "All systems nominal. For now." })}</p>
+          <p className="text-sm text-white/50">{t("all-systems-nominal", { defaultValue: "All systems nominal. For now." })}</p>
         </div>
       )}
     </div>

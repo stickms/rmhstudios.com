@@ -63,12 +63,10 @@ function PersonaChatPage() {
   const { id } = Route.useParams();
   const { personaChat } = Route.useLoaderData();
   return (
-    <>
-      <PageFrame noDockPadding>
-        {/* `key` remounts the column on persona→persona navigation so it
-            re-seeds cleanly from the new loader data (no stale-state carryover). */}
-        <PersonaChatColumn key={id} id={id} initialData={personaChat} />
-      </PageFrame>
-    </>
+    <PageFrame noDockPadding>
+      {/* `key` remounts the column on persona→persona navigation so it
+          re-seeds cleanly from the new loader data (no stale-state carryover). */}
+      <PersonaChatColumn key={id} id={id} initialData={personaChat} />
+    </PageFrame>
   );
 }

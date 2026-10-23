@@ -1,24 +1,18 @@
 'use client';
 
-import { Link } from '@tanstack/react-router';
+import { AdminHubCard } from '@/components/admin/AdminHubCard';
 import { useTranslation } from 'react-i18next';
 
 /** Admin dashboard card for the delight tools. */
 export function AdminDelightLink() {
   const { t } = useTranslation('f-delight');
   return (
-    <Link
+    <AdminHubCard
       to="/admin/delight"
-      className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
-    >
-      <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">
-        {t('admin-link-title', { defaultValue: 'Delight tools' })}
-      </h2>
-      <p className="text-site-text-muted text-sm mt-2">
-        {t('admin-link-desc', {
-          defaultValue: 'Hunt, museum, fortunes, April Fools and community translations.',
-        })}
-      </p>
-    </Link>
+      title={t('admin-link-title', { defaultValue: 'Delight tools' })}
+      description={t('admin-link-desc', {
+        defaultValue: 'Hunt, museum, fortunes, April Fools and community translations.',
+      })}
+    />
   );
 }

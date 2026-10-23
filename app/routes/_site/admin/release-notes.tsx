@@ -10,7 +10,7 @@ export const Route = createFileRoute('/_site/admin/release-notes')({
     ],
   }),
   component: () => (
-    <PageLayout title="Release notes" backTo="/admin">
+    <PageLayout title="Release notes" wide backTo="/admin">
       <AdminReleaseNotes />
     </PageLayout>
   ),

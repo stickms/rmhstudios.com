@@ -8,6 +8,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Images, Plus, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,14 +65,24 @@ function AdminAlbumsPage() {
         body: JSON.stringify({ title: trimmed }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || t('album-create-failed', { defaultValue: 'Failed to create album' }));
+      if (!res.ok)
+        throw new Error(
+          data?.error || t('album-create-failed', { defaultValue: 'Failed to create album' }),
+        );
       toast.success(
-        t('album-created', { title: data.album.title, defaultValue: 'Created "{{title}}". Now upload media.' }),
+        t('album-created', {
+          title: data.album.title,
+          defaultValue: 'Created "{{title}}". Now upload media.',
+        }),
       );
       // Straight to the manager so the admin can upload all images afterwards.
       navigate({ to: '/admin/albums/$id', params: { id: data.album.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('album-create-failed', { defaultValue: 'Failed to create album' }));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t('album-create-failed', { defaultValue: 'Failed to create album' }),
+      );
     } finally {
       setCreating(false);
     }
@@ -81,21 +92,18 @@ function AdminAlbumsPage() {
     <PageLayout
       title={t('albums-title', { defaultValue: 'Library Albums' })}
       backTo="/admin"
+      description={t('albums-intro', {
+        defaultValue:
+          'Create an album, then bulk-upload photos and videos. Images are compressed to WebP and videos transcoded before being stored in object storage.',
+      })}
       backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
       wide
     >
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4 md:p-8">
-        <p className="text-sm text-site-text-muted">
-          {t('albums-intro', {
-            defaultValue:
-              'Create an album, then bulk-upload photos and videos. Images are compressed to WebP and videos transcoded before being stored in object storage.',
-          })}
-        </p>
-
+      <AdminBody>
         {/* Create — a singular action panel gets the L2 glass pane. */}
         <form
           onSubmit={createAlbum}
-          className="glass-pane flex flex-col gap-2 rounded-site p-3 sm:flex-row sm:items-center"
+          className="glass-pane flex flex-col gap-2 rounded-site p-4 sm:flex-row sm:items-center"
         >
           <Input
             type="text"
@@ -111,19 +119,21 @@ function AdminAlbumsPage() {
         </form>
 
         {loading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="aspect-[4/3] rounded-site" />
+              <Skeleton key={i} className="aspect-4/3 rounded-site" />
             ))}
           </div>
         ) : albums.length === 0 ? (
           <EmptyState
             icon={Images}
             title={t('albums-empty', { defaultValue: 'No albums yet' })}
-            description={t('albums-empty-hint', { defaultValue: 'Create one above to get started.' })}
+            description={t('albums-empty-hint', {
+              defaultValue: 'Create one above to get started.',
+            })}
           />
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {albums.map((album) => {
               const cover = album.slides[0]?.thumb;
               const images = album.slides.filter((s) => s.type === 'image').length;
@@ -135,7 +145,7 @@ function AdminAlbumsPage() {
                   params={{ id: album.id }}
                   className="glass-fill glass-interactive group flex flex-col overflow-hidden rounded-site"
                 >
-                  <div className="aspect-[4/3] w-full overflow-hidden bg-site-bg">
+                  <div className="aspect-4/3 w-full overflow-hidden bg-site-bg">
                     {cover ? (
                       <img
                         src={cover}
@@ -149,15 +159,17 @@ function AdminAlbumsPage() {
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col gap-1 p-3">
+                  <div className="flex flex-col gap-1 px-4 py-3">
                     <span className="truncate font-semibold text-site-text">{album.title}</span>
-                    <span className="truncate font-mono text-xs text-site-text-dim">/library/albums/{album.slug}</span>
-                    <span className="mt-1 flex items-center gap-3 text-xs text-site-text-muted">
-                      <span className="inline-flex items-center gap-1">
-                        <Images size={12} aria-hidden="true" /> {images}
+                    <span className="truncate font-mono text-xs text-site-text-dim">
+                      /library/albums/{album.slug}
+                    </span>
+                    <span className="flex items-center gap-3 text-xs text-site-text-muted">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Images className="size-3" aria-hidden="true" /> {images}
                       </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Video size={12} aria-hidden="true" /> {videos}
+                      <span className="inline-flex items-center gap-1.5">
+                        <Video className="size-3" aria-hidden="true" /> {videos}
                       </span>
                     </span>
                   </div>
@@ -166,7 +178,7 @@ function AdminAlbumsPage() {
             })}
           </div>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

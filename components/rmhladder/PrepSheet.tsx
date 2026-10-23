@@ -86,7 +86,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
     <section className="glass-pane p-4 sm:p-5" aria-labelledby="ladder-prep-heading">
       <div className="flex flex-wrap items-center gap-2">
         <Sparkles className="size-4 text-site-accent" aria-hidden />
-        <h2 id="ladder-prep-heading" className="text-sm font-semibold text-site-text">
+        <h2 id="ladder-prep-heading" className="site-section-label">
           {t('ladder.prepTitle', { defaultValue: 'Interview prep' })}
         </h2>
         <Button
@@ -157,19 +157,19 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
 
           {sheet.roleSummary && (
             <div>
-              <h3 className="text-sm font-semibold text-site-text">
+              <h3 className="site-section-label">
                 {t('ladder.prepRole', { defaultValue: 'The role' })}
               </h3>
-              <p className="mt-1.5 text-sm leading-6 text-site-text-muted">{sheet.roleSummary}</p>
+              <p className="mt-2 text-sm leading-6 text-site-text-muted">{sheet.roleSummary}</p>
             </div>
           )}
 
           {sheet.companyFacts.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-site-text">
+              <h3 className="site-section-label">
                 {t('ladder.prepFacts', { defaultValue: 'Worth remembering' })}
               </h3>
-              <ul className="mt-1.5 grid gap-1.5">
+              <ul className="mt-2 grid gap-2">
                 {sheet.companyFacts.map((fact, i) => (
                   <li key={i} className="text-sm leading-6 text-site-text-muted">
                     {fact}
@@ -181,7 +181,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
 
           {sheet.questions.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-site-text">
+              <h3 className="site-section-label">
                 {t('ladder.prepQuestions', { defaultValue: 'Likely questions' })}
               </h3>
               <ul className="mt-2 grid gap-2">
@@ -194,7 +194,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
                       <Badge variant="outline">{CATEGORY_LABELS[q.category] ?? q.category}</Badge>
                     </div>
                     {q.why && (
-                      <p className="mt-1.5 text-xs leading-5 text-site-text-muted">{q.why}</p>
+                      <p className="mt-2 text-xs leading-5 text-site-text-muted">{q.why}</p>
                     )}
                   </li>
                 ))}
@@ -204,7 +204,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
 
           {sheet.storyMatches.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-site-text">
+              <h3 className="site-section-label">
                 {t('ladder.prepStories', { defaultValue: 'Your stories to use' })}
               </h3>
               <ul className="mt-2 grid gap-2">
@@ -225,11 +225,11 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
 
           {sheet.gaps.length > 0 && (
             <div>
-              <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
+              <h3 className="site-section-label flex items-center gap-2">
                 <Lightbulb className="size-4 text-site-warning" aria-hidden />
                 {t('ladder.prepGaps', { defaultValue: 'Worth preparing' })}
               </h3>
-              <ul className="mt-1.5 grid gap-1.5">
+              <ul className="mt-2 grid gap-2">
                 {sheet.gaps.map((gap, i) => (
                   <li key={i} className="text-sm leading-6 text-site-text-muted">
                     {gap}

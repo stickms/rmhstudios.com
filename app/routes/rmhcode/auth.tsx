@@ -69,18 +69,18 @@ function AuthContent() {
     }
   }
 
-  if (isPending) return <div className="min-h-screen bg-site-bg flex items-center justify-center"><Loader2 className="w-8 h-8 text-violet-400 animate-spin" /></div>;
+  if (isPending) return <div className="app-ground bg-site-bg flex items-center justify-center"><Loader2 className="w-8 h-8 text-site-accent animate-spin" aria-hidden="true" /></div>;
 
   if (!session) {
     const loginUrl = `/login?redirect=${encodeURIComponent(`/rmhcode/auth?callback=${encodeURIComponent(callback || '')}&session=${sessionId || ''}`)}`;
     return (
-      <div className="min-h-screen bg-site-bg flex items-center justify-center p-4">
+      <div className="app-ground bg-site-bg flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
-          <div className="rounded-xl border border-site-border bg-site-surface p-6 text-center">
-            <div className="flex justify-center mb-4"><div className="p-3 rounded-xl bg-violet-500/20 border border-violet-500/30"><Terminal className="w-8 h-8 text-violet-400" /></div></div>
+          <div className="glass-pane rounded-site p-6 text-center">
+            <div className="flex justify-center mb-4"><div className="p-3 rounded-site bg-site-accent-dim border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div></div>
             <h1 className="text-xl font-semibold text-site-text mb-2">{t("sign-in-to-authorize", { defaultValue: "Sign in to authorize rmhcode" })}</h1>
             <p className="text-sm text-site-text-muted mb-6">{t("sign-in-description", { defaultValue: "You need to sign in to your RMH account to authorize the CLI." })}</p>
-            <Link to={loginUrl}><Button variant="accent" className="w-full bg-violet-600 hover:bg-violet-500">{t("sign-in-to-continue", { defaultValue: "Sign In to Continue" })}</Button></Link>
+            <Link to={loginUrl}><Button variant="accent" className="w-full">{t("sign-in-to-continue", { defaultValue: "Sign In to Continue" })}</Button></Link>
           </div>
         </motion.div>
       </div>
@@ -89,10 +89,10 @@ function AuthContent() {
 
   if (!callback || !sessionId) {
     return (
-      <div className="min-h-screen bg-site-bg flex items-center justify-center p-4">
+      <div className="app-ground bg-site-bg flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
-          <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-6 text-center">
-            <X className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <div className="rounded-site border border-site-danger/30 bg-site-danger/10 p-6 text-center">
+            <X className="w-12 h-12 text-site-danger mx-auto mb-4" />
             <h1 className="text-xl font-semibold text-site-text mb-2">{t("invalid-auth-request", { defaultValue: "Invalid Authorization Request" })}</h1>
             <p className="text-sm text-site-text-muted mb-6">{t("invalid-auth-request-description", { defaultValue: "This page should be opened from the rmhcode CLI. Missing required parameters." })}</p>
             <Link to="/rmhcode"><Button variant="secondary">{t("go-to-rmhcode", { defaultValue: "Go to rmhcode" })}</Button></Link>
@@ -104,10 +104,10 @@ function AuthContent() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-site-bg flex items-center justify-center p-4">
+      <div className="app-ground bg-site-bg flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full">
-          <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-6 text-center">
-            <div className="flex justify-center mb-4"><div className="p-3 rounded-xl bg-green-500/20 border border-green-500/30"><Check className="w-8 h-8 text-green-400" /></div></div>
+          <div className="rounded-site border border-site-success/30 bg-site-success/10 p-6 text-center">
+            <div className="flex justify-center mb-4"><div className="p-3 rounded-site bg-site-success/15 border border-site-success/30"><Check className="w-8 h-8 text-site-success" /></div></div>
             <h1 className="text-xl font-semibold text-site-text mb-2">{t("authorization-successful", { defaultValue: "Authorization Successful!" })}</h1>
             <p className="text-sm text-site-text-muted">{t("redirecting", { defaultValue: "Redirecting back to rmhcode CLI..." })}</p>
           </div>
@@ -117,31 +117,31 @@ function AuthContent() {
   }
 
   return (
-    <div className="min-h-screen bg-site-bg flex items-center justify-center p-4">
+    <div className="app-ground bg-site-bg flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
-        <div className="rounded-xl border border-site-border bg-site-surface p-6">
+        <div className="glass-pane rounded-site p-6">
           <div className="flex items-center gap-4 mb-6">
-            <div className="p-3 rounded-xl bg-violet-500/20 border border-violet-500/30"><Terminal className="w-8 h-8 text-violet-400" /></div>
+            <div className="p-3 rounded-site bg-site-accent-dim border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div>
             <div><h1 className="text-xl font-semibold text-site-text">{t("authorize-rmhcode", { defaultValue: "Authorize rmhcode" })}</h1><p className="text-sm text-site-text-muted">{t("cli-requesting-access", { defaultValue: "CLI is requesting access to your account" })}</p></div>
           </div>
-          <div className="p-4 rounded-lg bg-site-bg border border-site-border mb-6">
+          <div className="p-4 glass-inset rounded-site-sm mb-6">
             <div className="flex items-center gap-3">
-              {session.user.image ? <img src={session.user.image} alt={session.user.name || t("user", { defaultValue: "User" })} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 font-bold">{(session.user.name?.[0] || 'U').toUpperCase()}</div>}
+              {session.user.image ? <img src={session.user.image} alt={session.user.name || t("user", { defaultValue: "User" })} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 rounded-full bg-site-accent-dim flex items-center justify-center text-site-accent font-bold">{(session.user.name?.[0] || 'U').toUpperCase()}</div>}
               <div><p className="font-medium text-site-text">{session.user.name}</p><p className="text-sm text-site-text-muted">{session.user.email}</p></div>
             </div>
           </div>
           <div className="mb-6">
-            <h2 className="text-sm font-medium text-site-text mb-3 flex items-center gap-2"><Shield className="w-4 h-4 text-violet-400" />{t("permissions-heading", { defaultValue: "This will allow rmhcode to:" })}</h2>
+            <h2 className="text-sm font-medium text-site-text mb-3 flex items-center gap-2"><Shield className="w-4 h-4 text-site-accent" />{t("permissions-heading", { defaultValue: "This will allow rmhcode to:" })}</h2>
             <ul className="space-y-2 text-sm text-site-text-muted">
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-400" />{t("perm-account-info", { defaultValue: "Access your account information" })}</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-400" />{t("perm-user-builds", { defaultValue: "Create and manage your User Builds" })}</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-400" />{t("perm-publish", { defaultValue: "Publish projects on your behalf" })}</li>
+              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-site-success" />{t("perm-account-info", { defaultValue: "Access your account information" })}</li>
+              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-site-success" />{t("perm-user-builds", { defaultValue: "Create and manage your User Builds" })}</li>
+              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-site-success" />{t("perm-publish", { defaultValue: "Publish projects on your behalf" })}</li>
             </ul>
           </div>
-          {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400 mb-6">{error}</div>}
+          {error && <div className="p-3 rounded-site-sm bg-site-danger/10 border border-site-danger/30 text-sm text-site-danger mb-6">{error}</div>}
           <div className="flex gap-3">
             <Button onClick={handleDeny} variant="secondary" className="flex-1" disabled={authorizing}>{t("deny", { defaultValue: "Deny" })}</Button>
-            <Button onClick={handleAuthorize} variant="accent" className="flex-1 bg-violet-600 hover:bg-violet-500" disabled={authorizing || !!error}>
+            <Button onClick={handleAuthorize} variant="accent" className="flex-1" disabled={authorizing || !!error}>
               {authorizing ? <Loader2 className="w-4 h-4 animate-spin" /> : t("authorize", { defaultValue: "Authorize" })}
             </Button>
           </div>
@@ -154,7 +154,7 @@ function AuthContent() {
 
 function RmhCodeAuthPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-site-bg flex items-center justify-center"><Loader2 className="w-8 h-8 text-violet-400 animate-spin" /></div>}>
+    <Suspense fallback={<div className="app-ground bg-site-bg flex items-center justify-center"><Loader2 className="w-8 h-8 text-site-accent animate-spin" aria-hidden="true" /></div>}>
       <AuthContent />
     </Suspense>
   );

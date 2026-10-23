@@ -11,6 +11,7 @@ import {
   DEFAULT_PRESENCE_VISIBILITY,
   type PresenceVisibility,
 } from '@/lib/presence-types';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 /**
  * PresencePrivacyControls (§9) — who may see the user in the Friends rail /
@@ -53,30 +54,22 @@ export function PresencePrivacyControls() {
   };
 
   return (
-    <section className="rounded-site border border-site-border bg-site-surface/40 p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Radio className="h-4.5 w-4.5 text-site-accent" aria-hidden />
-        <div>
-          <h2 className="text-base font-bold text-site-text">
-            {t('presence-title', { defaultValue: 'Activity & presence' })}
-          </h2>
-          <p className="text-xs text-site-text-muted">
-            {t('presence-subtitle', {
-              defaultValue: 'Control who sees when you are online and what you are doing.',
-            })}
-          </p>
-        </div>
-      </div>
-
-      <fieldset className="mb-4" disabled={!loaded}>
+    <SettingsSection
+      icon={Radio}
+      title={t('presence-title', { defaultValue: 'Activity & presence' })}
+      description={t('presence-subtitle', {
+        defaultValue: 'Control who sees when you are online and what you are doing.',
+      })}
+    >
+      <fieldset disabled={!loaded}>
         <legend className="mb-2 text-sm font-medium text-site-text">
           {t('presence-who', { defaultValue: 'Who can see my presence' })}
         </legend>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1">
           {PRESENCE_VISIBILITIES.map((v) => (
             <label
               key={v}
-              className="flex cursor-pointer items-center gap-2.5 rounded-site-sm px-2 py-1.5 hover:bg-site-surface-hover"
+              className="flex cursor-pointer items-center gap-3 rounded-site-sm px-3 py-2 hover:bg-site-surface-hover"
             >
               <input
                 type="radio"
@@ -116,6 +109,6 @@ export function PresencePrivacyControls() {
           aria-label={t('presence-detail', { defaultValue: 'Show activity detail' })}
         />
       </div>
-    </section>
+    </SettingsSection>
   );
 }

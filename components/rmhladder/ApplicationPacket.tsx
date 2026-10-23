@@ -117,7 +117,7 @@ export function ApplicationPacket({
     <section className="glass-pane p-4 sm:p-5" aria-labelledby="ladder-packet-heading">
       <div className="flex flex-wrap items-center gap-2">
         <ClipboardList className="size-4 text-site-accent" aria-hidden />
-        <h2 id="ladder-packet-heading" className="text-sm font-semibold text-site-text">
+        <h2 id="ladder-packet-heading" className="site-section-label">
           {t('ladder.packetTitle', {
             defaultValue: 'Application packet — {{ats}} order',
             ats: atsPlatformLabel(platform),

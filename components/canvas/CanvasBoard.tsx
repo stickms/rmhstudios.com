@@ -226,7 +226,7 @@ export default function CanvasBoard({
           )}
         </div>
       </div>
-      <div className="absolute right-2 bottom-2 flex gap-1">
+      <div className="absolute right-3 bottom-3 flex gap-2">
         <Button
           variant="secondary"
           size="icon-sm"

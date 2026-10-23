@@ -87,7 +87,7 @@ export default function MixtapeEditor({
           max: MIXTAPE_MAX_TRACKS,
         })}
       </h2>
-      <ol className="space-y-1">
+      <ol className="space-y-2">
         {tracks.map((tr) => (
           <li
             key={tr.id}
@@ -125,7 +125,7 @@ export default function MixtapeEditor({
         </Button>
       </form>
       {hits.length > 0 ? (
-        <ul className="space-y-1">
+        <ul className="space-y-2">
           {hits.slice(0, 8).map((h) => (
             <li key={h.id} className="flex items-center justify-between gap-2 text-sm">
               <span className="min-w-0 truncate">

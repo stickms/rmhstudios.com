@@ -81,7 +81,7 @@ export function SmartReplies({
 
   return (
     <div
-      className="mb-2 flex flex-wrap items-center gap-1.5"
+      className="mb-2 flex flex-wrap items-center gap-2"
       role="group"
       aria-label={t('smart-replies-label', { defaultValue: 'Suggested replies' })}
       aria-busy={loading}

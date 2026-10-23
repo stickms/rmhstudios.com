@@ -34,5 +34,7 @@
   "settings": "设置",
   "visibility-label": "可见性",
   "visibility-private": "私人",
-  "visibility-public": "公共的"
+  "visibility-public": "公共的",
+  "loading": "Loading…",
+  "lobby-title": "Lobby {{lobbyId}}"
 }

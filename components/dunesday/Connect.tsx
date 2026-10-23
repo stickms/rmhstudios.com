@@ -69,7 +69,7 @@ export function Connect({ sync }: { sync: CloudSync }) {
       bodyClassName="ds-stack"
     >
       {!sync.slot ? (
-        <div className="ds-stack" style={{ gap: 10 }}>
+        <div className="ds-stack" style={{ gap: 12 }}>
           <p style={{ margin: 0 }}>
             {t('connect-intro', {
               defaultValue:
@@ -181,12 +181,12 @@ function SyncedPanels({
 
   return (
     <div className="ds-stack">
-      <div className="ds-card" style={{ padding: 14 }}>
-        <div className="ds-row" style={{ marginBottom: 6 }}>
+      <div className="ds-card" style={{ padding: 16 }}>
+        <div className="ds-row" style={{ marginBottom: 8 }}>
           <CalendarCheck size={18} aria-hidden="true" />
           <strong>{t('cal-title', { defaultValue: 'Live calendar' })}</strong>
         </div>
-        <p className="ds-hint" style={{ margin: '0 0 10px' }}>
+        <p className="ds-hint" style={{ margin: '0 0 12px' }}>
           {t('cal-hint', {
             defaultValue:
               'A subscription, not a one-off file: every watch night appears at your start time, and your calendar re-plans itself when you tick titles off or skip a night (calendars refresh every hour or so).',
@@ -217,12 +217,12 @@ function SyncedPanels({
         </div>
       </div>
 
-      <div className="ds-card" style={{ padding: 14 }}>
-        <div className="ds-row" style={{ marginBottom: 6 }}>
+      <div className="ds-card" style={{ padding: 16 }}>
+        <div className="ds-row" style={{ marginBottom: 8 }}>
           <Rss size={18} aria-hidden="true" />
           <strong>{t('rss-title', { defaultValue: 'RSS feed' })}</strong>
         </div>
-        <p className="ds-hint" style={{ margin: '0 0 10px' }}>
+        <p className="ds-hint" style={{ margin: '0 0 12px' }}>
           {t('rss-hint', {
             defaultValue:
               'Tonight’s lineup plus every title you finish. Works with any feed reader or RSS-to-anything bridge.',
@@ -303,8 +303,8 @@ function DiscordCard({ sync }: { sync: CloudSync }) {
   };
 
   return (
-    <div className="ds-card" style={{ padding: 14 }}>
-      <div className="ds-row" style={{ marginBottom: 6 }}>
+    <div className="ds-card" style={{ padding: 16 }}>
+      <div className="ds-row" style={{ marginBottom: 8 }}>
         <MessageSquare size={18} aria-hidden="true" />
         <strong>{t('discord-title', { defaultValue: 'Discord updates' })}</strong>
         {saved?.webhook && (
@@ -313,13 +313,13 @@ function DiscordCard({ sync }: { sync: CloudSync }) {
           </span>
         )}
       </div>
-      <p className="ds-hint" style={{ margin: '0 0 10px' }}>
+      <p className="ds-hint" style={{ margin: '0 0 12px' }}>
         {t('discord-hint', {
           defaultValue:
             'In Discord: Channel Settings → Integrations → Webhooks → New Webhook → Copy Webhook URL, then paste it here. Great for a watch-party server.',
         })}
       </p>
-      <div className="ds-stack" style={{ gap: 10 }}>
+      <div className="ds-stack" style={{ gap: 12 }}>
         <label className="ds-field">
           <span className="ds-label">
             {saved?.webhook

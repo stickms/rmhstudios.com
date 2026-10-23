@@ -195,7 +195,7 @@ export function ExploreRecommendations({
 
  if (needsExploreData && loading) {
  return (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  );
@@ -208,7 +208,7 @@ export function ExploreRecommendations({
  {/* Trending tags */}
  {showTrending && data && data.trendingTags.length > 0 && (
  <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="site-section-label mb-2 flex items-center gap-1.5">
+ <h2 className="site-section-label mb-3 flex items-center gap-2">
  <TrendingUp className="h-3.5 w-3.5"/> {t('trending-heading', { defaultValue:'Trending'})}
  </h2>
  <div className="flex flex-wrap gap-2">
@@ -232,13 +232,13 @@ export function ExploreRecommendations({
  {/* Who to follow */}
  {showPeople && data && data.suggestedUsers.length > 0 && (
  <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="site-section-label mb-2">{t('who-to-follow', { defaultValue:'Who to follow'})}</h2>
+ <h2 className="site-section-label mb-3">{t('who-to-follow', { defaultValue:'Who to follow'})}</h2>
  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
  {data.suggestedUsers.map((u) => (
  <Link
  key={u.id}
  to={`/u/${u.handle || u.id}`as string}
- className={`flex items-center gap-3 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site glass-fill px-4 py-3 ${LIFT_CARD}`}
  >
  <UserAvatar src={u.image} alt={u.name || t('user-alt', { defaultValue:'User'})} size={36} fallbackName={u.name ||'U'} />
  <div className="min-w-0">
@@ -263,11 +263,11 @@ export function ExploreRecommendations({
  gate as "who to follow" rather than being a fourth thing on Top only. */}
  {showPeople && tipLeaders.length > 0 && (
  <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="site-section-label mb-2 flex items-center gap-1.5">
+ <h2 className="site-section-label mb-3 flex items-center gap-2">
  <Coins className="h-3.5 w-3.5 text-site-warning"/>{''}
  {t('top-supported-this-week', { defaultValue:'Top supported this week'})}
  </h2>
- <div className="space-y-1.5">
+ <div className="space-y-2">
  {tipLeaders.slice(0, 5).map((l, i) => (
  <Link
  key={l.user.id}
@@ -296,7 +296,7 @@ export function ExploreRecommendations({
  {/* Communities to discover */}
  {showCommunities && data && data.communities.length > 0 && (
  <RevealItem as="section"className="border-b border-site-border p-4">
- <h2 className="site-section-label mb-2 flex items-center gap-1.5">
+ <h2 className="site-section-label mb-3 flex items-center gap-2">
  <Users className="h-3.5 w-3.5"/> {t('communities-heading', { defaultValue:'Communities'})}
  </h2>
  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -304,7 +304,7 @@ export function ExploreRecommendations({
  <Link
  key={c.id}
  to={`/c/${c.slug}`as string}
- className={`flex items-center gap-3 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site glass-fill px-4 py-3 ${LIFT_CARD}`}
  >
  <div
  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-site text-xl"
@@ -329,7 +329,7 @@ export function ExploreRecommendations({
  {showBuilds && (
  builds.length > 0 ? (
  <RevealItem as="section"className="p-4">
- <h2 className="site-section-label mb-2 flex items-center gap-1.5">
+ <h2 className="site-section-label mb-3 flex items-center gap-2">
  <Package className="h-3.5 w-3.5"/> {t('builds-heading', { defaultValue:'Builds to try'})}
  </h2>
  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -337,7 +337,7 @@ export function ExploreRecommendations({
  <a
  key={b.id}
  href={b.href}
- className={`flex items-center gap-3 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site glass-fill px-4 py-3 ${LIFT_CARD}`}
  >
  <BuildThumb src={b.thumbnailUrl} title={b.title} />
  <div className="min-w-0">
@@ -350,7 +350,7 @@ export function ExploreRecommendations({
  <Link
  key={b.id}
  to={`/user-builds/${b.slug}`as string}
- className={`flex items-center gap-3 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site glass-fill px-4 py-3 ${LIFT_CARD}`}
  >
  <BuildThumb src={b.thumbnailUrl} title={b.title} />
  <div className="min-w-0">
@@ -369,8 +369,8 @@ export function ExploreRecommendations({
  {/* Blog to read */}
  {showBlog && (
  blogPosts.length > 0 ? (
- <RevealItem as="section"className="py-2">
- <h2 className="site-section-label flex items-center gap-1.5 px-4 py-1">
+ <RevealItem as="section"className="py-4">
+ <h2 className="site-section-label mb-3 flex items-center gap-2 px-4">
  <BookOpen className="h-3.5 w-3.5"/> {t('blog-heading', { defaultValue:'From the blog'})}
  </h2>
  {blogPosts.map((p) => (
@@ -409,7 +409,7 @@ export function ExploreRecommendations({
  <Link
  key={doc.id}
  to={`/library/${doc.slug}`as string}
- className={`glass-fill flex items-center gap-3 rounded-site p-2.5 ${LIFT_CARD}`}
+ className={`glass-fill flex items-center gap-3 rounded-site px-4 py-3 ${LIFT_CARD}`}
  >
  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-site bg-site-surface-hover">
  <BookOpen className="h-4 w-4 text-site-accent"aria-hidden />
@@ -433,7 +433,7 @@ export function ExploreRecommendations({
  the game or app (top-level full-screen routes, hence <a> and not <Link>),
  and each heading links to the catalog page holding the rest. */}
  {showPlaces && (
- <RevealItem as="section"className="space-y-5 p-4">
+ <RevealItem as="section"className="space-y-6 p-4">
  {catalogSections.map(({ kind, to, heading, icon }) => (
  <div key={kind}>
  <SectionHeading
@@ -447,7 +447,7 @@ export function ExploreRecommendations({
  <a
  key={b.id}
  href={b.href}
- className={`glass-fill flex items-center gap-3 rounded-site p-2.5 ${LIFT_CARD}`}
+ className={`glass-fill flex items-center gap-3 rounded-site px-4 py-3 ${LIFT_CARD}`}
  >
  <BuildThumb src={b.thumbnailUrl} title={b.title} />
  <div className="min-w-0">
@@ -465,7 +465,7 @@ export function ExploreRecommendations({
  {/* Hot posts — feed cards keep their own entrance; the block reveals once. */}
  {showHot && data && data.hotPosts.length > 0 && (
  <RevealItem as="section">
- <h2 className="site-section-label px-4 pt-4">{t('hot-this-week', { defaultValue:'Hot this week'})}</h2>
+ <h2 className="site-section-label px-4 pt-4 pb-3">{t('hot-this-week', { defaultValue:'Hot this week'})}</h2>
  <div className="divide-y divide-site-border">
  {data.hotPosts.map((item) => (
  <RMHarkCard key={item.id} item={item} />
@@ -518,8 +518,8 @@ function SectionHeading({
  seeAll: string;
 }) {
  return (
- <div className="mb-2 flex items-baseline justify-between gap-3">
- <h2 className="site-section-label flex items-center gap-1.5">
+ <div className="mb-3 flex items-baseline justify-between gap-3">
+ <h2 className="site-section-label flex items-center gap-2">
  <Icon className="h-3.5 w-3.5"aria-hidden /> {label}
  </h2>
  <Link

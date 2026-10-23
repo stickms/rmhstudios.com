@@ -68,5 +68,6 @@
   "view-arrangement": "Arrangement",
   "view-mixer": "Mixeur",
   "view-pattern": "Motif",
-  "view-piano-roll": "Rouleau de piano"
+  "view-piano-roll": "Rouleau de piano",
+  "sample-source": "Sample source"
 }

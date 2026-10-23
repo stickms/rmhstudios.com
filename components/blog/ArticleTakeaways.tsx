@@ -42,17 +42,17 @@ export function ArticleTakeaways({ slug }: { slug: string }) {
 
   return (
     <aside
-      className="glass-pane p-4 sm:p-5"
+      className="glass-pane max-w-2xl rounded-site p-4 sm:p-5"
       aria-label={t('takeaways-title', { defaultValue: 'Key takeaways' })}
     >
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-site-text">
+      <h2 className="site-section-label mb-3 flex items-center gap-2">
         <Sparkles className="size-4 text-site-accent" aria-hidden />
         {t('takeaways-title', { defaultValue: 'Key takeaways' })}
       </h2>
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {takeaways.map((line) => (
           <li key={line} className="flex gap-2 text-sm text-site-text-muted">
-            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-site-accent" aria-hidden />
+            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-site-accent" aria-hidden />
             <span>{line}</span>
           </li>
         ))}

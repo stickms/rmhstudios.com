@@ -51,7 +51,7 @@ const CSS = `
 .vs-card.glitch .who { text-shadow:1px 0 0 rgba(255,40,80,0.5), -1px 0 0 rgba(40,120,255,0.45); }
 
 .vs-modal { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:min(560px,92vw); max-height:88vh; overflow:auto; pointer-events:auto;
+  width:min(560px,92vw); max-height:88vh; max-height:88dvh; overflow:auto; pointer-events:auto;
   background:rgba(4,6,16,0.94); border:2px solid rgba(0,255,213,0.5); border-radius:8px;
   box-shadow:0 0 30px rgba(0,255,213,0.28), inset 0 0 40px rgba(0,255,213,0.05);
   padding:22px 24px; animation:vs-modal-in 0.18s ease-out; }

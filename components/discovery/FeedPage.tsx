@@ -87,16 +87,20 @@ export function FeedPage({ id }: { id: string }) {
   if (missing) {
     return (
       <PageLayout title={t('feed-title', { defaultValue: 'Feed' })} backTo="/feeds">
-        <EmptyState
-          title={t('feed-missing', { defaultValue: 'This feed does not exist or is private' })}
-        />
+        <div className="px-4 pt-4 pb-12">
+          <EmptyState
+            title={t('feed-missing', { defaultValue: 'This feed does not exist or is private' })}
+          />
+        </div>
       </PageLayout>
     );
   }
   if (!view) {
     return (
       <PageLayout title={t('feed-title', { defaultValue: 'Feed' })} backTo="/feeds">
-        <Skeleton className="m-4 h-40" />
+        <div className="px-4 pt-4 pb-12">
+          <Skeleton className="h-40 w-full" />
+        </div>
       </PageLayout>
     );
   }
@@ -117,7 +121,7 @@ export function FeedPage({ id }: { id: string }) {
       backTo="/feeds"
       description={feed.description ?? undefined}
     >
-      <div className="space-y-4 px-4 pt-2 pb-12">
+      <div className="space-y-4 px-4 pt-4 pb-12">
         <section className="glass-pane flex flex-wrap items-center gap-3 rounded-site p-4">
           <p className="min-w-0 flex-1 text-sm text-site-text-muted">
             {[...feed.tags.map((x) => `#${x}`), ...feed.keywords].join(' · ')}

@@ -50,7 +50,7 @@ export function StudioDashboard() {
   if (!overview) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[var(--site-section-gap)]">
       <OverviewSection overview={overview} />
       <div className="max-w-2xl">
         <TierEditor initialTiers={overview?.tiers ?? []} />
@@ -74,7 +74,7 @@ function StatTile({
   return (
     <Card className="p-4">
       <div className="text-xs uppercase tracking-wide text-site-text-dim">{label}</div>
-      <div className="text-2xl font-bold flex items-center gap-1.5 tabular-nums">
+      <div className="flex items-center gap-2 text-2xl font-bold tabular-nums">
         {Icon ? <Icon className="size-5 text-site-warning" aria-hidden /> : null}
         {value.toLocaleString()}
       </div>
@@ -108,7 +108,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[var(--site-section-gap)]">
       {/* Headline stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatTile
@@ -134,9 +134,9 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
       </div>
 
       {/* Per-source split (window) */}
-      <Card className="p-5 space-y-4" pane>
+      <Card className="space-y-4 p-4" pane>
         <div className="flex items-baseline justify-between gap-2">
-          <h2 className="font-semibold text-site-text">
+          <h2 className="site-section-label">
             {t('earnings-by-source', { defaultValue: 'Earnings by source' })}
           </h2>
           <span className="text-xs text-site-text-dim">
@@ -205,10 +205,8 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
       </Card>
 
       {/* Recent tips */}
-      <div className="space-y-2">
-        <h2 className="site-section-label">
-          {t('recent-tips', { defaultValue: 'Recent tips' })}
-        </h2>
+      <div className="space-y-3">
+        <h2 className="site-section-label">{t('recent-tips', { defaultValue: 'Recent tips' })}</h2>
         {recentTips.length === 0 ? (
           <p className="text-sm text-site-text-dim">
             {t('no-tips-yet', {
@@ -216,11 +214,11 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
             })}
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {recentTips.map((tip) => (
               <div
                 key={tip.id}
-                className="flex items-center justify-between gap-3 glass-fill rounded-site px-3 py-2.5"
+                className="flex items-center justify-between gap-3 glass-fill rounded-site px-4 py-3"
               >
                 <div className="min-w-0">
                   <span className="text-sm font-medium text-site-text">

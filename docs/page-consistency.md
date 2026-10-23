@@ -166,7 +166,9 @@ Work through this for every new or edited page:
       columns; `PageLayout`/`.site-sticky-chrome` owns the gap from a page header
       to the first content below it. Internal padding at the
       primitive's canonical value, never a cramped per-page override: text
-      inputs/wells `px-3 py-2` (with 44px targets restored for coarse pointers), card content
+      fields `px-4` at the primitive's fixed `h-11` (`Input`, `Select`,
+      `SearchField`; `Textarea` is `px-4 py-3`) — use the primitive rather than
+      re-padding a raw `<input>` — card content
       `px-4 py-3`+, menu/list rows ≥12px inline padding (text never touches the
       glass edge).
 - [ ] **Dialogs and editors:** standard dialogs use `DialogContent` and remain

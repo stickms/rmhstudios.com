@@ -34,5 +34,7 @@
   "settings": "الإعدادات",
   "visibility-label": "الرؤية",
   "visibility-private": "خاص",
-  "visibility-public": "عامة"
+  "visibility-public": "عامة",
+  "loading": "Loading…",
+  "lobby-title": "Lobby {{lobbyId}}"
 }

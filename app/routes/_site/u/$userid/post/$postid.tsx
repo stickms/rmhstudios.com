@@ -50,7 +50,9 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
     // quoted verbatim in `og:description` two tags further down.
     const showContent = postCardShowsContent(rmhark);
     const isPublicFree =
-      rmhark.audience === 'PUBLIC' && (rmhark.unlockPrice ?? 0) === 0 && !rmhark.community?.isPrivate;
+      rmhark.audience === 'PUBLIC' &&
+      (rmhark.unlockPrice ?? 0) === 0 &&
+      !rmhark.community?.isPrivate;
     const imageCount = rmhark.imageUrls?.length ?? 0;
 
     let description: string;
@@ -198,7 +200,7 @@ function PostPage() {
         />
       }
     >
-        <PostDetail postId={postid} />
+      <PostDetail postId={postid} />
     </PageFrame>
   );
 }

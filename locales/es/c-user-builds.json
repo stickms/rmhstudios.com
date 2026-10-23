@@ -89,5 +89,8 @@
   "write-reply": "Escribe una respuesta...",
   "years-ago_one": "hace {{count}} año",
   "years-ago_many": "{{count}}y ago",
-  "years-ago_other": "hace {{count}} años"
+  "years-ago_other": "hace {{count}} años",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

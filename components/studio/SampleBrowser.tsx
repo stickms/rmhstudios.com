@@ -1,3 +1,4 @@
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FolderOpen, Upload, Play, Trash2, Search, Music } from 'lucide-react';
@@ -59,13 +60,13 @@ export function SampleBrowser() {
   };
 
   return (
-    <div className="flex h-full flex-col border-r border-[var(--site-border)] bg-[var(--site-surface)]">
+    <div className="flex h-full flex-col border-r border-site-border bg-site-surface">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[var(--site-border)] px-3 py-2">
-        <span className="text-xs font-semibold uppercase text-[var(--site-muted)]">{t("samples-heading", { defaultValue: "Samples" })}</span>
+      <div className="flex items-center justify-between border-b border-site-border px-3 py-2">
+        <span className="text-xs font-semibold uppercase text-site-text-muted">{t("samples-heading", { defaultValue: "Samples" })}</span>
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="rounded p-1 text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]"
+          className="rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
           title={t("upload-samples", { defaultValue: "Upload samples" })}
         >
           <Upload className="h-3.5 w-3.5" />
@@ -81,43 +82,36 @@ export function SampleBrowser() {
       </div>
 
       {/* Search */}
-      <div className="border-b border-[var(--site-border)] px-2 py-1.5">
-        <div className="flex items-center gap-1.5 rounded bg-black/30 px-2 py-1">
-          <Search className="h-3 w-3 text-[var(--site-muted)]" />
+      <div className="border-b border-site-border px-2 py-1.5">
+        <div className="flex items-center gap-1.5 rounded-site-sm bg-site-bg-subtle px-2 py-1">
+          <Search className="h-3 w-3 text-site-text-muted" />
           <input
             type="text"
             placeholder={t("search-placeholder", { defaultValue: "Search..." })}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-transparent text-xs text-[var(--site-text)] outline-none placeholder:text-[var(--site-muted)]"
+            className="flex-1 bg-transparent text-xs text-site-text outline-none placeholder:text-site-text-muted"
           />
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[var(--site-border)]">
-        <button
-          onClick={() => setActiveTab('user')}
-          className={`flex-1 py-1.5 text-[10px] font-medium ${
-            activeTab === 'user' ? 'border-b-2 border-cyan-400 text-cyan-400' : 'text-[var(--site-muted)]'
-          }`}
-        >
-          {t("my-samples-tab", { defaultValue: "My Samples" })}
-        </button>
-        <button
-          onClick={() => setActiveTab('packs')}
-          className={`flex-1 py-1.5 text-[10px] font-medium ${
-            activeTab === 'packs' ? 'border-b-2 border-cyan-400 text-cyan-400' : 'text-[var(--site-muted)]'
-          }`}
-        >
-          {t("packs-tab", { defaultValue: "Packs" })}
-        </button>
-      </div>
+      <LiquidTabs
+        size="sm"
+        className="m-2"
+        aria-label={t("sample-source", { defaultValue: "Sample source" })}
+        value={activeTab}
+        onChange={(id) => setActiveTab(id as typeof activeTab)}
+        tabs={[
+          { id: 'user', label: t("my-samples-tab", { defaultValue: "My Samples" }) },
+          { id: 'packs', label: t("packs-tab", { defaultValue: "Packs" }) },
+        ]}
+      />
 
       {/* Content */}
       <div
-        className={`flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 ${
-          isDragOver ? 'bg-cyan-500/5' : ''
+        className={`flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-site-border ${
+          isDragOver ? 'bg-site-accent-dim' : ''
         }`}
         onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}
@@ -125,7 +119,7 @@ export function SampleBrowser() {
       >
         {activeTab === 'user' ? (
           filteredSamples.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 p-4 text-center text-[var(--site-muted)]">
+            <div className="flex flex-col items-center justify-center gap-2 p-4 text-center text-site-text-muted">
               <FolderOpen className="h-8 w-8 opacity-30" />
               <p className="text-xs">
                 {isDragOver ? t("drop-files-here", { defaultValue: "Drop files here" }) : t("drag-drop-hint", { defaultValue: "Drag & drop audio files or click upload" })}
@@ -136,23 +130,23 @@ export function SampleBrowser() {
               {filteredSamples.map((sample) => (
                 <div
                   key={sample.id}
-                  className="group flex items-center gap-2 rounded px-2 py-1.5 hover:bg-white/5"
+                  className="group flex items-center gap-2 rounded-site-sm px-2 py-1.5 hover:bg-site-surface-hover"
                   draggable
                   onDragStart={(e) => {
                     e.dataTransfer.setData('application/x-studio-sample', sample.id);
                     e.dataTransfer.effectAllowed = 'copy';
                   }}
                 >
-                  <Music className="h-3 w-3 shrink-0 text-[var(--site-muted)]" />
+                  <Music className="h-3 w-3 shrink-0 text-site-text-muted" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[10px] text-[var(--site-text)]">{sample.name}</p>
-                    <p className="text-[9px] text-[var(--site-muted)]">
+                    <p className="truncate text-xs text-site-text">{sample.name}</p>
+                    <p className="text-xs text-site-text-muted">
                       {formatDuration(sample.duration)} · {formatSize(sample.size)}
                     </p>
                   </div>
                   <button
                     onClick={() => handleDelete(sample.id)}
-                    className="hidden rounded p-0.5 text-[var(--site-muted)] hover:text-red-400 group-hover:block"
+                    className="hidden rounded-site-sm p-0.5 text-site-text-muted hover:text-site-danger group-hover:block"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>
@@ -163,14 +157,14 @@ export function SampleBrowser() {
         ) : (
           <div className="space-y-2 p-2">
             {SAMPLE_PACKS.map((pack) => (
-              <div key={pack.id} className="rounded border border-[var(--site-border)] bg-black/20 p-2">
-                <p className="text-xs font-medium text-[var(--site-text)]">{pack.name}</p>
-                <p className="mt-0.5 text-[9px] text-[var(--site-muted)]">{pack.description}</p>
+              <div key={pack.id} className="rounded-site-sm border border-site-border bg-site-bg-subtle p-2">
+                <p className="text-xs font-medium text-site-text">{pack.name}</p>
+                <p className="mt-0.5 text-xs text-site-text-muted">{pack.description}</p>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className="rounded bg-cyan-500/10 px-1.5 py-0.5 text-[9px] text-cyan-400">
+                  <span className="rounded-site-sm bg-site-accent-dim px-1.5 py-0.5 text-xs text-site-accent">
                     {t("samples-count", { defaultValue: "{{count}} samples", count: pack.samples.length })}
                   </span>
-                  <span className="text-[9px] text-[var(--site-muted)]">{pack.license}</span>
+                  <span className="text-xs text-site-text-muted">{pack.license}</span>
                 </div>
               </div>
             ))}

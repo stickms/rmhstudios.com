@@ -8,6 +8,8 @@ import { CalendarCheck, Plus, Share2, Star, Trash2 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -22,9 +24,6 @@ import {
 } from '@/lib/party/connections';
 
 const BAND = ['bg-site-warning/25', 'bg-site-success/25', 'bg-site-accent/25', 'bg-site-danger/25'];
-
-const inputCls =
-  'glass-inset h-10 w-full rounded-[var(--site-control-radius)] px-3 text-sm text-site-text';
 
 function GridRow({ g, tag }: { g: GridSummary; tag?: string }) {
   const { t } = useTranslation('f-party');
@@ -46,7 +45,7 @@ function GridRow({ g, tag }: { g: GridSummary; tag?: string }) {
           {tag ? <span className="text-xs font-semibold text-site-accent">{tag}</span> : null}
           {g.rating != null ? (
             <span className="flex items-center gap-1">
-              <Star className="h-3.5 w-3.5" aria-hidden />
+              <Star className="size-3.5" aria-hidden />
               {g.rating}
             </span>
           ) : null}
@@ -72,8 +71,8 @@ export function ConnectionsHome() {
 
   const list = (title: string, items: GridSummary[]) =>
     items.length ? (
-      <section className="space-y-2">
-        <h2 className="font-display text-lg font-bold text-site-text">{title}</h2>
+      <section className="space-y-3">
+        <h2 className="site-section-label">{title}</h2>
         {items.map((g) => (
           <GridRow key={g.id} g={g} />
         ))}
@@ -96,17 +95,17 @@ export function ConnectionsHome() {
         </Button>
       }
     >
-      <div className="space-y-6 px-4 pb-12">
+      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
         {!data ? (
-          <div className="flex justify-center py-10">
+          <div className="flex justify-center py-20">
             <Spinner />
           </div>
         ) : (
           <>
             {data.daily ? (
-              <section className="space-y-2">
-                <h2 className="flex items-center gap-2 font-display text-lg font-bold text-site-text">
-                  <CalendarCheck className="h-4 w-4 text-site-accent" aria-hidden />
+              <section className="space-y-3">
+                <h2 className="site-section-label flex items-center gap-2">
+                  <CalendarCheck className="size-4 text-site-accent" aria-hidden />
                   {t('todays-grid', { defaultValue: 'Today’s grid' })}
                 </h2>
                 <GridRow g={data.daily} tag={t('daily', { defaultValue: 'Daily' })} />
@@ -168,9 +167,10 @@ export function ConnectionsNew() {
   if (!session.data?.user) {
     return (
       <PageLayout title={t('make-grid', { defaultValue: 'Make a grid' })}>
-        <p className="px-4 text-sm text-site-text-muted">
-          {t('grid-sign-in', { defaultValue: 'Sign in to make a grid.' })}
-        </p>
+        <SignedOutPrompt
+          callbackURL="/connections/new"
+          title={t('grid-sign-in', { defaultValue: 'Sign in to make a grid.' })}
+        />
       </PageLayout>
     );
   }
@@ -183,9 +183,8 @@ export function ConnectionsNew() {
           'Four groups, four items each, sixteen different items. Each group needs a label.',
       })}
     >
-      <div className="space-y-4 px-4 pb-12">
-        <input
-          className={inputCls}
+      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+        <Input
           value={title}
           maxLength={80}
           onChange={(e) => setTitle(e.target.value)}
@@ -193,9 +192,8 @@ export function ConnectionsNew() {
           aria-label={t('grid-title', { defaultValue: 'Grid title' })}
         />
         {groups.map((g, gi) => (
-          <Card key={gi} className={cn('space-y-2 p-4', BAND[gi])}>
-            <input
-              className={inputCls}
+          <Card key={gi} className={cn('space-y-3 p-4', BAND[gi])}>
+            <Input
               value={g.label}
               maxLength={40}
               onChange={(e) => setLabel(gi, e.target.value)}
@@ -204,9 +202,8 @@ export function ConnectionsNew() {
             />
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {g.items.map((it, k) => (
-                <input
+                <Input
                   key={k}
-                  className={inputCls}
                   value={it}
                   maxLength={30}
                   onChange={(e) => setItem(gi, k, e.target.value)}
@@ -271,7 +268,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
   if (!grid) {
     return (
       <PageLayout title={t('conn-title', { defaultValue: 'Connections grids' })}>
-        <div className="flex justify-center py-16">
+        <div className="flex justify-center py-20">
           <Spinner />
         </div>
       </PageLayout>
@@ -373,7 +370,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
         author: grid.author?.name ?? grid.author?.handle ?? '?',
       })}
     >
-      <div className="mx-auto max-w-2xl space-y-4 px-4 pb-12">
+      <div className="mx-auto max-w-2xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
         {grid.dailyDate ? (
           <p className="text-sm font-semibold text-site-accent">
             {t('daily-on', { defaultValue: 'Daily grid for {{d}}', d: grid.dailyDate })}
@@ -381,8 +378,11 @@ export function ConnectionsPlay({ id }: { id: string }) {
         ) : null}
         <div className="space-y-2">
           {grid.found.map((f) => (
-            <div key={f.index} className={cn('rounded-site p-3 text-center', BAND[f.index % 4])}>
-              <p className="text-xs font-bold uppercase text-site-text">{f.label}</p>
+            <div
+              key={f.index}
+              className={cn('rounded-site px-4 py-3 text-center', BAND[f.index % 4])}
+            >
+              <p className="text-xs font-bold text-site-text uppercase">{f.label}</p>
               <p className="text-sm text-site-text">{f.items.join(', ')}</p>
             </div>
           ))}
@@ -390,7 +390,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
             <div
               key={g.label}
               className={cn(
-                'rounded-site p-3 text-center opacity-70',
+                'rounded-site px-4 py-3 text-center opacity-70',
                 BAND[(grid.found.length + i) % 4],
               )}
             >
@@ -410,7 +410,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
                 aria-pressed={picked.includes(item)}
                 onClick={() => toggle(item)}
                 className={cn(
-                  'glass-fill min-h-14 break-words rounded-site px-1 py-2 text-xs font-semibold text-site-text transition-colors disabled:opacity-60 sm:text-sm',
+                  'glass-fill min-h-14 break-words rounded-site px-2 py-2 text-xs font-semibold text-site-text transition-colors disabled:opacity-60 sm:text-sm',
                   picked.includes(item) && 'bg-site-accent text-site-accent-fg',
                 )}
               >
@@ -462,7 +462,7 @@ export function ConnectionsPlay({ id }: { id: string }) {
                 : t('failed', { defaultValue: 'Out of mistakes.' })}
             </p>
             <div
-              className="flex flex-wrap items-center justify-center gap-1"
+              className="flex flex-wrap items-center justify-center gap-2"
               role="group"
               aria-label={t('rate', { defaultValue: 'Rate this grid' })}
             >
@@ -497,10 +497,10 @@ export function ConnectionsPlay({ id }: { id: string }) {
         ) : null}
 
         {isAdmin ? (
-          <Card className="flex flex-wrap items-center gap-2 p-3">
-            <input
+          <Card className="flex flex-wrap items-center gap-2 px-4 py-3">
+            <Input
               type="date"
-              className={cn(inputCls, 'w-auto')}
+              className="w-auto"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               aria-label={t('daily-date', { defaultValue: 'Daily date (UTC)' })}

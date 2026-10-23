@@ -49,7 +49,7 @@ function TaskRow({
   return (
     <Link
       to={to}
-      className="-mx-2 flex items-center gap-2.5 rounded-site-sm px-2 py-1.5 transition-colors hover:bg-site-surface-hover"
+      className="-mx-2 flex items-center gap-3 rounded-site-sm px-2 py-2 transition-colors hover:bg-site-surface-hover"
     >
       <span
         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
@@ -201,7 +201,7 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
           type="button"
           onClick={buyFreeze}
           disabled={buying || data.streak.freezeTokens >= 3}
-          className="shrink-0 rounded-full border border-site-border px-2.5 py-1 text-xs font-semibold text-site-text transition-colors hover:bg-site-surface-hover disabled:opacity-50"
+          className="shrink-0 rounded-full border border-site-border px-3 py-1 text-xs font-semibold text-site-text transition-colors hover:bg-site-surface-hover disabled:opacity-50"
         >
           {data.streak.freezeTokens >= 3
             ? t('freeze-max', { defaultValue: 'Max' })

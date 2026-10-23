@@ -55,7 +55,7 @@ export function SahurOverlay() {
             <p className="text-base md:text-lg text-amber-300/60 mt-3 md:mt-4 font-mono">
               {sahurCountdown} minutes remaining — {SAHUR_WINDOW.xpMultiplier}x XP
             </p>
-            <p className="text-sm text-amber-300/30 mt-4 md:mt-6">
+            <p className="text-sm text-amber-300/60 mt-4 md:mt-6">
               {t("tap-to-enter", { defaultValue: "Tap to enter" })}
             </p>
           </motion.div>

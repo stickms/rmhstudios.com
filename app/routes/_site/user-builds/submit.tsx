@@ -2,7 +2,7 @@
  * Submit Build Route
  */
 
-import { createFileRoute, Link, useNavigate, useLocation } from '@tanstack/react-router';
+import { createFileRoute, Link, useLocation } from '@tanstack/react-router';
 import { Suspense, useState, useEffect } from 'react';
 import { Terminal, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -25,8 +25,7 @@ export const Route = createFileRoute('/_site/user-builds/submit')({
 });
 
 function SubmitBuildContent() {
-  const { t } = useTranslation("user-builds");
-  const navigate = useNavigate();
+  const { t } = useTranslation('user-builds');
   const location = useLocation();
   const searchParams = new URLSearchParams(location.searchStr);
   const editId = searchParams.get('edit');
@@ -55,7 +54,11 @@ function SubmitBuildContent() {
 
   if (isPending || loadingBuild || (editId && !build && !fetchError)) {
     return (
-      <PageLayout title={t("submit-a-build", { defaultValue: "Submit a Build" })} backTo="/user-builds" wide>
+      <PageLayout
+        title={t('submit-a-build', { defaultValue: 'Submit a Build' })}
+        backTo="/user-builds"
+        wide
+      >
         <div className="flex min-h-[40dvh] items-center justify-center">
           <Spinner />
         </div>
@@ -65,13 +68,19 @@ function SubmitBuildContent() {
 
   if (!session) {
     return (
-      <PageLayout title={t("submit-a-build", { defaultValue: "Submit a Build" })} backTo="/user-builds" wide>
+      <PageLayout
+        title={t('submit-a-build', { defaultValue: 'Submit a Build' })}
+        backTo="/user-builds"
+        wide
+      >
         <SignedOutPrompt
           icon={Terminal}
           callbackURL="/user-builds/submit"
-          title={t("sign-in-required", { defaultValue: "Sign In Required" })}
-          description={t("sign-in-to-submit", { defaultValue: "You need to sign in to submit a build." })}
-          actionLabel={t("sign-in", { defaultValue: "Sign In" })}
+          title={t('sign-in-required', { defaultValue: 'Sign In Required' })}
+          description={t('sign-in-to-submit', {
+            defaultValue: 'You need to sign in to submit a build.',
+          })}
+          actionLabel={t('sign-in', { defaultValue: 'Sign In' })}
         />
       </PageLayout>
     );
@@ -79,14 +88,20 @@ function SubmitBuildContent() {
 
   if (fetchError) {
     return (
-      <PageLayout title={t("submit-a-build", { defaultValue: "Submit a Build" })} backTo="/user-builds" wide>
+      <PageLayout
+        title={t('submit-a-build', { defaultValue: 'Submit a Build' })}
+        backTo="/user-builds"
+        wide
+      >
         <EmptyState
           icon={AlertCircle}
-          title={t("error-loading-build", { defaultValue: "Error Loading Build" })}
+          title={t('error-loading-build', { defaultValue: 'Error Loading Build' })}
           description={fetchError}
           action={
             <Link to="/user-builds/manage">
-              <Button variant="secondary">{t("back-to-my-builds", { defaultValue: "Back to My Builds" })}</Button>
+              <Button variant="secondary">
+                {t('back-to-my-builds', { defaultValue: 'Back to My Builds' })}
+              </Button>
             </Link>
           }
         />
@@ -104,23 +119,47 @@ function SubmitBuildContent() {
   // chrome), and no page-enter animation. Four things the frame does for free.
   return (
     <PageLayout
-      title={isEditing ? t("edit-build", { defaultValue: "Edit Build" }) : t("submit-a-build", { defaultValue: "Submit a Build" })}
-      description={isEditing ? t("update-build-details", { defaultValue: "Update your build details below." }) : t("share-project-with-community", { defaultValue: "Share your project with the community." })}
+      title={
+        isEditing
+          ? t('edit-build', { defaultValue: 'Edit Build' })
+          : t('submit-a-build', { defaultValue: 'Submit a Build' })
+      }
+      description={
+        isEditing
+          ? t('update-build-details', { defaultValue: 'Update your build details below.' })
+          : t('share-project-with-community', {
+              defaultValue: 'Share your project with the community.',
+            })
+      }
       backTo={isEditing ? '/user-builds/manage' : '/user-builds'}
-      backLabel={isEditing ? t("back-to-my-builds", { defaultValue: "Back to My Builds" }) : t("back-to-builds", { defaultValue: "Back to Builds" })}
+      backLabel={
+        isEditing
+          ? t('back-to-my-builds', { defaultValue: 'Back to My Builds' })
+          : t('back-to-builds', { defaultValue: 'Back to Builds' })
+      }
       wide
     >
-      <Reveal className="glass-pane rounded-site p-6">
-        <BuildForm key={build?.id} build={build ?? undefined} />
-      </Reveal>
-
-      {!isEditing && (
-        <div className="glass-fill mt-8 rounded-site-sm p-4">
-          <h3 className="font-medium text-site-text mb-2">{t("prefer-the-cli", { defaultValue: "Prefer the CLI?" })}</h3>
-          <p className="text-sm text-site-text-muted mb-3">{t("cli-description", { defaultValue: "You can also publish builds directly from the terminal with rmhcode." })}</p>
-          <code className="glass-inset block rounded-site-sm p-3 text-sm font-mono text-site-accent">rmhcode push-build</code>
-        </div>
-      )}
+      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+        <Reveal className="glass-pane rounded-site p-4 sm:p-6">
+          <BuildForm key={build?.id} build={build ?? undefined} />
+        </Reveal>
+        {!isEditing && (
+          <div className="glass-fill space-y-2 rounded-site px-4 py-3">
+            <h2 className="site-section-label">
+              {t('prefer-the-cli', { defaultValue: 'Prefer the CLI?' })}
+            </h2>
+            <p className="text-sm text-site-text-muted">
+              {t('cli-description', {
+                defaultValue:
+                  'You can also publish builds directly from the terminal with rmhcode.',
+              })}
+            </p>
+            <code className="glass-inset block rounded-site-sm px-3 py-2 font-mono text-sm text-site-accent">
+              rmhcode push-build
+            </code>
+          </div>
+        )}
+      </div>
     </PageLayout>
   );
 }

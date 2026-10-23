@@ -122,7 +122,7 @@ export function KnobControl({
             y1={cy}
             x2={cx + (r - 4) * Math.cos(arcEnd - Math.PI / 2)}
             y2={cy + (r - 4) * Math.sin(arcEnd - Math.PI / 2)}
-            stroke="white"
+            stroke="var(--site-text)"
             strokeWidth={2}
             strokeLinecap="round"
           />
@@ -133,12 +133,12 @@ export function KnobControl({
       </div>
 
       {isDragging && (
-        <span className="text-[9px] tabular-nums text-cyan-400">
+        <span className="text-xs tabular-nums text-site-accent">
           {displayValue}{unit}
         </span>
       )}
       {label && !isDragging && (
-        <span className="text-[9px] text-[var(--site-muted)]">{label}</span>
+        <span className="text-xs text-site-text-muted">{label}</span>
       )}
     </div>
   );

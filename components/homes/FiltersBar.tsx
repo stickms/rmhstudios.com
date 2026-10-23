@@ -12,6 +12,7 @@ import {
 import { propertyTypeLabel } from '@/lib/homes/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Select } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 
@@ -59,24 +60,16 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
     (filters.petsAllowed ? 1 : 0);
 
   return (
-    <div className="rounded-site border border-site-border bg-site-surface/80 p-3">
+    <div className="glass-fill rounded-site p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-site-sm border border-site-border p-0.5">
-          {LISTING_TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => onChange({ listingType: t.id })}
-              className={`rounded-[6px] px-3 py-1.5 text-sm font-medium transition-colors ${
-                filters.listingType === t.id
-                  ? 'bg-site-accent text-site-accent-fg'
-                  : 'text-site-text-muted hover:text-site-text'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <LiquidTabs
+          size="sm"
+          tabs={LISTING_TABS}
+          value={filters.listingType}
+          onChange={(id) => onChange({ listingType: id as ListingType | 'any' })}
+          aria-label="Listing type"
+          className="w-auto"
+        />
 
         <Select
           value={filters.minBeds ?? ''}
@@ -84,7 +77,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
             onChange({ minBeds: e.target.value === '' ? undefined : Number(e.target.value) })
           }
           aria-label="Minimum bedrooms"
-          className="h-9 w-auto min-w-[8rem]"
+          className="w-auto min-w-32"
         >
           <option value="">Any beds</option>
           {BED_OPTIONS.map((b) => (
@@ -98,7 +91,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
           value={filters.source}
           onChange={(e) => onChange({ source: e.target.value as SearchFilters['source'] })}
           aria-label="Listing source"
-          className="h-9 w-auto min-w-[9.5rem]"
+          className="w-auto min-w-40"
         >
           {(Object.keys(SOURCE_LABELS) as SearchFilters['source'][]).map((s) => (
             <option key={s} value={s}>
@@ -111,7 +104,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
           value={filters.sort}
           onChange={(e) => onChange({ sort: e.target.value as SortOrder })}
           aria-label="Sort order"
-          className="h-9 w-auto min-w-[11rem]"
+          className="w-auto min-w-44"
         >
           {(Object.keys(SORT_LABELS) as SortOrder[]).map((s) => (
             <option key={s} value={s}>
@@ -130,7 +123,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
           <SlidersHorizontal className="h-4 w-4" />
           Filters
           {activeAdvanced > 0 && (
-            <span className="ml-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-site-accent px-1 text-[11px] font-semibold text-site-accent-fg">
+            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-site-accent px-1 text-xs font-semibold text-site-accent-fg">
               {activeAdvanced}
             </span>
           )}
@@ -138,9 +131,9 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
       </div>
 
       {advanced && (
-        <div className="mt-3 grid gap-4 border-t border-site-border pt-3 sm:grid-cols-2">
+        <div className="mt-4 grid gap-4 border-t border-site-border pt-4 sm:grid-cols-2">
           <div>
-            <span className="mb-1.5 block text-xs font-medium text-site-text-muted">
+            <span className="mb-2 block text-xs font-medium text-site-text-muted">
               Price ({filters.listingType === 'SALE' ? 'total' : 'per month'})
             </span>
             <div className="flex items-center gap-2">
@@ -152,8 +145,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                 onChange={(e) =>
                   onChange({ minPrice: e.target.value === '' ? undefined : Number(e.target.value) })
                 }
-                className="h-9"
-              />
+                              />
               <span className="text-site-text-dim">–</span>
               <Input
                 type="number"
@@ -163,14 +155,13 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                 onChange={(e) =>
                   onChange({ maxPrice: e.target.value === '' ? undefined : Number(e.target.value) })
                 }
-                className="h-9"
-              />
+                              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <span className="mb-1.5 block text-xs font-medium text-site-text-muted">
+              <span className="mb-2 block text-xs font-medium text-site-text-muted">
                 Min baths
               </span>
               <Select
@@ -178,8 +169,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                 onChange={(e) =>
                   onChange({ minBaths: e.target.value === '' ? undefined : Number(e.target.value) })
                 }
-                className="h-9"
-                aria-label="Minimum bathrooms"
+                                aria-label="Minimum bathrooms"
               >
                 <option value="">Any</option>
                 {[1, 2, 3].map((b) => (
@@ -190,10 +180,10 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
               </Select>
             </div>
             <div>
-              <span className="mb-1.5 block text-xs font-medium text-site-text-muted">
+              <span className="mb-2 block text-xs font-medium text-site-text-muted">
                 Radius: {filters.radiusKm} km
               </span>
-              <div className="flex h-9 items-center">
+              <div className="flex h-11 items-center">
                 <Slider
                   min={2}
                   max={200}
@@ -207,7 +197,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
           </div>
 
           <div className="sm:col-span-2">
-            <span className="mb-1.5 block text-xs font-medium text-site-text-muted">
+            <span className="mb-2 block text-xs font-medium text-site-text-muted">
               Property type
             </span>
             <div className="flex flex-wrap gap-2">
@@ -218,7 +208,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                     key={t}
                     type="button"
                     onClick={() => togglePropertyType(t)}
-                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
                       active
                         ? 'border-site-accent bg-site-accent-dim text-site-accent'
                         : 'border-site-border text-site-text-muted hover:text-site-text'
@@ -232,7 +222,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
             </div>
           </div>
 
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-site-text sm:col-span-2">
+          <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm text-site-text sm:col-span-2">
             <input
               type="checkbox"
               checked={Boolean(filters.petsAllowed)}

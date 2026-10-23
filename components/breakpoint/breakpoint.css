@@ -373,3 +373,11 @@
   .bp-result-verdict { font-size: 64px; }
   .bp-lobby-play { min-width: 180px; font-size: 20px; padding: 10px 24px; }
 }
+
+/* Touch targets: menu pills and the small lobby action reach the 44px floor on
+   coarse pointers (desktop sizing is unchanged). */
+@media (pointer: coarse) {
+  .bp-pillrow button,
+  .bp-mini-btn,
+  .bp-lobby-btn { min-height: 44px; }
+}

@@ -139,7 +139,7 @@ export function TrashPanel() {
   return (
     <section aria-labelledby="trash-heading" className="flex flex-col gap-4">
       <div>
-        <h2 id="trash-heading" className="font-display text-lg font-semibold text-site-text">
+        <h2 id="trash-heading" className="site-section-label">
           {t('trash-heading', { defaultValue: 'Recently deleted' })}
         </h2>
         <p className="mt-1 text-sm text-site-text-muted">

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Star, TrendingUp, Clock } from 'lucide-react';
+import { Star, TrendingUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { Build } from '@/lib/user-builds-types';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
@@ -16,17 +17,17 @@ function BuildMiniCard({ build }: { build: Build }) {
   const { t } = useTranslation('c-user-builds');
   return (
     <Link to={`/user-builds/${build.slug}` as string}>
-      <div className="flex gap-3 p-3 rounded-site-sm hover:bg-site-surface-hover transition-colors">
+      <div className="flex gap-3 rounded-site-sm px-3 py-2 transition-colors hover:bg-site-surface-hover">
         {build.thumbnailUrl ? (
           <OptimizedImage
             src={build.thumbnailUrl}
             alt={build.title}
             width={64}
             height={48}
-            className="w-16 h-12 rounded object-cover shrink-0"
+            className="h-12 w-16 shrink-0 rounded-site-sm object-cover"
           />
         ) : (
-          <div className="w-16 h-12 rounded bg-site-accent/20 flex items-center justify-center text-site-accent text-xs font-bold shrink-0">
+          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-accent-dim text-xs font-bold text-site-accent">
             {build.title[0]?.toUpperCase()}
           </div>
         )}
@@ -82,19 +83,19 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
 
   if (loading) {
     return (
-      <div className={`flex justify-center py-8 ${className}`}>
+      <div className={`flex justify-center py-20 ${className}`}>
         <Spinner />
       </div>
     );
   }
 
   return (
-    <div className={className}>
+    <div className={`space-y-[var(--site-section-gap)] ${className}`}>
       {/* Featured Builds */}
       {featured.length > 0 && (
-        <div className="mb-8">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text mb-4">
-            <Star className="w-4 h-4 text-site-warning" />
+        <div>
+          <h3 className="site-section-label mb-3 flex items-center gap-2">
+            <Star className="size-4 text-site-warning" aria-hidden />
             {t('featured', { defaultValue: 'Featured' })}
           </h3>
           <div className="space-y-1">
@@ -108,8 +109,8 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
       {/* Popular Builds */}
       {popular.length > 0 && (
         <div>
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text mb-4">
-            <TrendingUp className="w-4 h-4 text-site-accent" />
+          <h3 className="site-section-label mb-3 flex items-center gap-2">
+            <TrendingUp className="size-4 text-site-accent" aria-hidden />
             {t('popular', { defaultValue: 'Popular' })}
           </h3>
           <div className="space-y-1">
@@ -121,21 +122,20 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
       )}
 
       {/* Submit CTA */}
-      <div className="mt-8 p-4 rounded-site border border-site-border bg-gradient-to-br from-site-accent/10 to-site-accent-dim/10">
-        <h4 className="font-semibold text-site-text mb-2">
+      <div className="glass-fill space-y-2 rounded-site px-4 py-3">
+        <h4 className="font-semibold text-site-text">
           {t('share-your-build', { defaultValue: 'Share Your Build' })}
         </h4>
-        <p className="text-sm text-site-text-muted mb-4">
+        <p className="text-sm text-site-text-muted">
           {t('share-your-build-desc', {
             defaultValue: 'Built something cool with rmhcode? Share it with the community!',
           })}
         </p>
-        <Link
-          to="/user-builds/submit"
-          className="block w-full py-2 rounded-site-sm bg-site-accent hover:bg-site-accent text-site-accent-fg text-sm font-medium text-center transition-colors"
-        >
-          {t('submit-a-build', { defaultValue: 'Submit a Build' })}
-        </Link>
+        <Button asChild variant="accent" className="w-full">
+          <Link to="/user-builds/submit">
+            {t('submit-a-build', { defaultValue: 'Submit a Build' })}
+          </Link>
+        </Button>
       </div>
     </div>
   );

@@ -385,7 +385,7 @@ export function ProfileColumn({
 
  if (loading) {
  return (
- <div className="flex items-center justify-center py-20">
+ <div className="flex items-center justify-center px-4 pt-4 pb-12">
  <Spinner size={32} />
  </div>
  );
@@ -393,8 +393,8 @@ export function ProfileColumn({
 
  if (notFound || !profile) {
  return (
- <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
- <p className="text-lg font-medium text-site-text mb-1">
+ <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
+ <p className="text-lg font-medium text-site-text mb-2">
  {t('user-not-found', { defaultValue:'User not found'})}
  </p>
  <p className="text-sm text-site-text-muted mb-4">
@@ -431,7 +431,7 @@ export function ProfileColumn({
  <div className="glass-chrome site-sticky-chrome">
  <div className="flex items-center gap-3 px-4 py-3">
  <div className="min-w-0 flex-1">
- <div className="flex min-w-0 items-center gap-1.5">
+ <div className="flex min-w-0 items-center gap-2">
  <h1 className="truncate font-display text-lg font-bold text-site-text">
  {displayName || profile.username || t('user', { defaultValue:'User'})}
  </h1>
@@ -481,7 +481,7 @@ export function ProfileColumn({
  </Suspense>
  )}
 
- <div className="px-3 pt-3">
+ <div className="px-4 pt-4">
  <ProfileShowcase
  modules={profile.modules ?? []}
  isOwner={profile.isOwnProfile}
@@ -497,7 +497,7 @@ export function ProfileColumn({
 
  {/* Tab bar → shared LiquidTabs (§5.4). handleTabChange keeps the lazy
  liked-posts fetch on first switch. */}
- <div className="px-3 py-3">
+ <div className="px-4 py-3">
  <LiquidTabs
  tabs={[
  {
@@ -533,7 +533,7 @@ export function ProfileColumn({
 
  {!loadingItems && items.length === 0 && (
  <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
- <p className="text-lg font-medium text-site-text mb-1">
+ <p className="text-lg font-medium text-site-text mb-2">
  {t('no-rmharks-yet', { defaultValue:'No RMHarks yet'})}
  </p>
  <p className="text-sm text-site-text-muted">
@@ -570,7 +570,7 @@ export function ProfileColumn({
 
  {!loadingLiked && likedItems.length === 0 && (
  <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
- <p className="text-lg font-medium text-site-text mb-1">
+ <p className="text-lg font-medium text-site-text mb-2">
  {t('no-likes-yet', { defaultValue:'No likes yet'})}
  </p>
  <p className="text-sm text-site-text-muted">

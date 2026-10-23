@@ -26,6 +26,7 @@ export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) 
   return (
     <>
       <button
+        aria-label={t("pause", { defaultValue: "Pause" })}
         className={`fixed top-[calc(3.5rem+var(--safe-top))] right-[calc(0.75rem+var(--safe-right))] z-40 w-11 h-11 ${btn} bg-[#1a1a24] border border-[#c9a227]/30 active:bg-[#252530]`}
         onTouchStart={(e) => { e.stopPropagation(); onPause(); }}
         style={{ touchAction: 'none' }}
@@ -48,6 +49,7 @@ export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) 
           <div className="pointer-events-auto grid grid-cols-3 gap-1">
             <div />
             <button className={`w-14 h-14 ${btn} bg-[#1a1a24]/80 border border-[#c9a227]/25 active:bg-[#252530]`}
+              aria-label={t("move-up", { defaultValue: "Move up" })}
               {...bind('up')} style={{ touchAction: 'none' }}>
               <svg viewBox="0 0 24 24" className="w-7 h-7 text-[#d4af37]/70" fill="currentColor">
                 <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
@@ -55,6 +57,7 @@ export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) 
             </button>
             <div />
             <button className={`w-14 h-14 ${btn} bg-[#1a1a24]/80 border border-[#c9a227]/25 active:bg-[#252530]`}
+              aria-label={t("move-left", { defaultValue: "Move left" })}
               {...bind('left')} style={{ touchAction: 'none' }}>
               <svg viewBox="0 0 24 24" className="w-7 h-7 text-[#d4af37]/70" fill="currentColor">
                 <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
@@ -62,6 +65,7 @@ export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) 
             </button>
             <div />
             <button className={`w-14 h-14 ${btn} bg-[#1a1a24]/80 border border-[#c9a227]/25 active:bg-[#252530]`}
+              aria-label={t("move-right", { defaultValue: "Move right" })}
               {...bind('right')} style={{ touchAction: 'none' }}>
               <svg viewBox="0 0 24 24" className="w-7 h-7 text-[#d4af37]/70" fill="currentColor">
                 <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
@@ -69,6 +73,7 @@ export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) 
             </button>
             <div />
             <button className={`w-14 h-14 ${btn} bg-[#1a1a24]/80 border border-[#c9a227]/25 active:bg-[#252530]`}
+              aria-label={t("move-down", { defaultValue: "Move down" })}
               {...bind('down')} style={{ touchAction: 'none' }}>
               <svg viewBox="0 0 24 24" className="w-7 h-7 text-[#d4af37]/70" fill="currentColor">
                 <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z" />

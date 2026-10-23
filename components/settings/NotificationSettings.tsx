@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 
 import { Switch } from '@/components/ui/switch';
 import { Spinner } from '@/components/ui/spinner';
+import { Input } from '@/components/ui/input';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 import { readTabBadgePref, writeTabBadgePref } from '@/lib/tab-badge';
 import { mirrorQuietHours } from '@/lib/access/prefs';
 import {
@@ -131,11 +133,8 @@ export function NotificationSettings() {
   }
 
   return (
-    <div className="space-y-6">
-      <section>
-        <h3 className="mb-2 text-sm font-semibold text-site-text">
-          {t('categories', { defaultValue: 'Categories' })}
-        </h3>
+    <>
+      <SettingsSection title={t('categories', { defaultValue: 'Categories' })}>
         <ul className="divide-y divide-site-border">
           {NOTIFY_CATEGORIES.map((cat) => {
             const ch = resolveChannels(prefs.matrix, cat);
@@ -150,7 +149,7 @@ export function NotificationSettings() {
                   type="button"
                   onClick={() => setOpen(expanded ? null : cat)}
                   aria-expanded={expanded}
-                  className="flex w-full items-center justify-between gap-3 py-3 text-start"
+                  className="flex min-h-11 w-full items-center justify-between gap-3 py-3 text-start"
                 >
                   <span className="min-w-0">
                     <span className="block text-sm text-site-text">{categoryLabel(t, cat)}</span>
@@ -179,42 +178,41 @@ export function NotificationSettings() {
             );
           })}
         </ul>
-      </section>
+      </SettingsSection>
 
-      <section>
-        <h3 className="mb-2 text-sm font-semibold text-site-text">
-          {t('quiet-hours', { defaultValue: 'Quiet hours' })}
-        </h3>
-        <p className="mb-2 text-sm text-site-text-muted">
-          {t('quiet-desc', { defaultValue: 'Push notifications are held during these hours.' })}
-        </p>
-        <div className="flex items-center gap-3">
+      <SettingsSection
+        title={t('quiet-hours', { defaultValue: 'Quiet hours' })}
+        description={t('quiet-desc', {
+          defaultValue: 'Push notifications are held during these hours.',
+        })}
+      >
+        <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-sm text-site-text">
             {t('from', { defaultValue: 'From' })}
-            <input
+            <Input
               type="time"
               value={toHHMM(prefs.quietStart)}
               onChange={(e) => setQuiet('quietStart', e.target.value)}
-              className=" rounded-site-sm px-2 py-1 text-site-text"
+              className="w-auto"
               aria-label={t('quiet-start', { defaultValue: 'Quiet hours start' })}
             />
           </label>
           <label className="flex items-center gap-2 text-sm text-site-text">
             {t('to', { defaultValue: 'To' })}
-            <input
+            <Input
               type="time"
               value={toHHMM(prefs.quietEnd)}
               onChange={(e) => setQuiet('quietEnd', e.target.value)}
-              className=" rounded-site-sm px-2 py-1 text-site-text"
+              className="w-auto"
               aria-label={t('quiet-end', { defaultValue: 'Quiet hours end' })}
             />
           </label>
         </div>
-        <p className="mt-2 text-xs text-site-text-dim">{prefs.tz}</p>
-      </section>
+        <p className="text-xs text-site-text-dim">{prefs.tz}</p>
+      </SettingsSection>
 
       <TabBadgeToggle />
-    </div>
+    </>
   );
 }
 
@@ -224,27 +222,26 @@ function TabBadgeToggle() {
   const [on, setOn] = useState(true);
   useEffect(() => setOn(readTabBadgePref()), []);
   return (
-    <section className="flex items-center justify-between gap-3">
-      <span className="min-w-0">
-        <span id="tab-badge-label" className="block text-sm font-semibold text-site-text">
-          {t('tab-badge', { defaultValue: 'Unread count in browser tab' })}
-        </span>
-        <span id="tab-badge-desc" className="block text-xs text-site-text-muted">
-          {t('tab-badge-desc', {
-            defaultValue:
-              'Shows the number of unread messages and notifications in the tab title and icon on this device.',
-          })}
-        </span>
-      </span>
-      <Switch
-        checked={on}
-        aria-labelledby="tab-badge-label"
-        aria-describedby="tab-badge-desc"
-        onCheckedChange={(v) => {
-          setOn(v);
-          writeTabBadgePref(v);
-        }}
-      />
-    </section>
+    <SettingsSection
+      surface="fill"
+      title={t('tab-badge', { defaultValue: 'Unread count in browser tab' })}
+      titleId="tab-badge-label"
+      description={t('tab-badge-desc', {
+        defaultValue:
+          'Shows the number of unread messages and notifications in the tab title and icon on this device.',
+      })}
+      descriptionId="tab-badge-desc"
+      action={
+        <Switch
+          checked={on}
+          aria-labelledby="tab-badge-label"
+          aria-describedby="tab-badge-desc"
+          onCheckedChange={(v) => {
+            setOn(v);
+            writeTabBadgePref(v);
+          }}
+        />
+      }
+    />
   );
 }

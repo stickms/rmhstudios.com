@@ -140,9 +140,9 @@ export function ArcadeHub({
         </div>
       )}
 
-      <div className="space-y-5 px-4 py-5 sm:px-5">
+      <div className="space-y-4 px-4 py-4">
         {/* Streak + reset countdown */}
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-site border border-site-border bg-site-surface p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 glass-fill rounded-site px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
               <Flame className="h-6 w-6" aria-hidden />
@@ -150,17 +150,17 @@ export function ArcadeHub({
             <div>
               <p className="text-2xl font-bold leading-none text-site-text">
                 {streak.current}
-                <span className="ml-1.5 text-sm font-medium text-site-text-muted">
+                <span className="ml-2 text-sm font-medium text-site-text-muted">
                   {t('arcade-day-streak', { defaultValue: 'day streak' })}
                 </span>
               </p>
-              <p className="mt-1 flex items-center gap-1 text-xs text-site-text-dim">
+              <p className="mt-2 flex items-center gap-2 text-xs text-site-text-dim">
                 <Trophy className="h-3 w-3" aria-hidden />
                 {t('arcade-best-streak', { best: streak.best, defaultValue: 'Best: {{best}}' })}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-sm text-site-text-muted" aria-live="off">
+          <div className="flex items-center gap-2 text-sm text-site-text-muted" aria-live="off">
             <Clock className="h-4 w-4 text-site-text-dim" aria-hidden />
             <span>
               {t('arcade-resets-in', { defaultValue: 'Resets in' })}{' '}
@@ -184,8 +184,8 @@ export function ArcadeHub({
         </div>
 
         {/* How it works */}
-        <div className="rounded-site border border-site-border bg-site-surface/60 p-4">
-          <h2 className="site-section-label mb-1.5">
+        <div className="glass-fill rounded-site px-4 py-3">
+          <h2 className="site-section-label mb-2">
             {t('arcade-how-title', { defaultValue: 'How it works' })}
           </h2>
           <p className="text-sm leading-relaxed text-site-text-muted">
@@ -223,7 +223,7 @@ function ChallengeCard({
     // reactivity is retired site-wide (see the §5.1 note in app/globals.css);
     // what stays is the part that answers a real gesture, the press spring.
     <motion.div
-      className="flex flex-col items-stretch gap-3 glass-fill glass-interactive rounded-site p-3 sm:flex-row"
+      className="flex flex-col items-stretch gap-3 glass-fill glass-interactive rounded-site px-4 py-3 sm:flex-row"
       whileHover={{ scale: 1.008 }}
       whileTap={{ scale: 0.994 }}
       transition={APPLE_SPRING.press}
@@ -249,22 +249,22 @@ function ChallengeCard({
       {/* Details */}
       <div className="flex min-w-0 flex-1 flex-col">
         <p className="text-sm font-semibold text-site-text">{challenge.title}</p>
-        {game && <p className="mt-0.5 text-xs text-site-text-muted">{game.title}</p>}
+        {game && <p className="mt-1 text-xs text-site-text-muted">{game.title}</p>}
 
         <div className="mt-auto pt-2">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-site-bg">
             <div className="h-full rounded-full bg-site-accent" style={{ width: `${pct}%` }} />
           </div>
-          <div className="mt-1 flex items-center gap-2 text-[11px] text-site-text-muted">
+          <div className="mt-2 flex items-center gap-2 text-xs text-site-text-muted">
             <span className="whitespace-nowrap tabular-nums">
               {challenge.progress} / {challenge.target}
             </span>
             <span aria-hidden>·</span>
-            <span className="inline-flex items-center gap-0.5">
+            <span className="inline-flex items-center gap-2">
               <Zap className="h-3 w-3 text-site-accent" aria-hidden /> {challenge.xp}
             </span>
             {challenge.coins > 0 && (
-              <span className="inline-flex items-center gap-0.5">
+              <span className="inline-flex items-center gap-2">
                 <CoinIcon className="h-3 w-3" /> {challenge.coins}
               </span>
             )}
@@ -275,7 +275,7 @@ function ChallengeCard({
       {/* Action */}
       <div className="flex shrink-0 flex-col items-stretch justify-center gap-2 sm:items-end">
         {challenge.claimed ? (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-site-text-muted">
+          <span className="inline-flex items-center gap-2 text-xs font-semibold text-site-text-muted">
             <Check className="h-3.5 w-3.5" aria-hidden />{' '}
             {t('arcade-claimed-label', { defaultValue: 'Claimed' })}
           </span>
@@ -284,7 +284,7 @@ function ChallengeCard({
             variant="accent"
             loading={busy}
             onClick={onClaim}
-            className="w-full gap-1 sm:w-auto"
+            className="w-full sm:w-auto"
           >
             {!busy && <Gift className="h-3.5 w-3.5" aria-hidden />}
             {t('arcade-claim', { defaultValue: 'Claim' })}
@@ -292,7 +292,7 @@ function ChallengeCard({
         ) : game ? (
           // asChild: a <button> inside an <a> is invalid HTML and gives keyboard
           // users two focus stops for one action.
-          <Button asChild variant="outline" className="w-full gap-1 sm:w-auto">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link to={game.href}>
               <Play className="h-3.5 w-3.5" aria-hidden />
               {t('arcade-play-now', { defaultValue: 'Play now' })}

@@ -1,8 +1,11 @@
 import { useId, useState, type FormEvent } from 'react';
-import { ShieldCheck, Send, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Send, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { submitSecurityReport } from '@/lib/security-reports';
 import { SECURITY_CATEGORIES, SECURITY_SEVERITIES } from '@/lib/security-report-schema';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 /**
  * Public bug-bounty submission form on /security. Calls the `submitSecurityReport`
@@ -91,9 +94,8 @@ export function BugBountyForm() {
           <label className="sec-field__label" htmlFor={`${uid}-title`}>
             Title <span aria-hidden="true">*</span>
           </label>
-          <input
+          <Input
             id={`${uid}-title`}
-            className="sec-field__input"
             type="text"
             required
             maxLength={160}
@@ -112,7 +114,6 @@ export function BugBountyForm() {
           </label>
           <Select
             id={`${uid}-category`}
-            className="sec-field__input"
             required
             value={values.category}
             onChange={set('category')}
@@ -134,7 +135,6 @@ export function BugBountyForm() {
           </label>
           <Select
             id={`${uid}-severity`}
-            className="sec-field__input"
             required
             value={values.severity}
             onChange={set('severity')}
@@ -156,9 +156,8 @@ export function BugBountyForm() {
           <label className="sec-field__label" htmlFor={`${uid}-area`}>
             Affected URL or area <span className="sec-field__opt">(optional)</span>
           </label>
-          <input
+          <Input
             id={`${uid}-area`}
-            className="sec-field__input"
             type="text"
             maxLength={300}
             autoComplete="off"
@@ -174,9 +173,9 @@ export function BugBountyForm() {
           <label className="sec-field__label" htmlFor={`${uid}-desc`}>
             What did you find? <span aria-hidden="true">*</span>
           </label>
-          <textarea
+          <Textarea
             id={`${uid}-desc`}
-            className="sec-field__input sec-field__textarea"
+            className="min-h-32"
             required
             rows={7}
             maxLength={8000}
@@ -192,9 +191,8 @@ export function BugBountyForm() {
           <label className="sec-field__label" htmlFor={`${uid}-name`}>
             Your name <span className="sec-field__opt">(optional)</span>
           </label>
-          <input
+          <Input
             id={`${uid}-name`}
-            className="sec-field__input"
             type="text"
             maxLength={120}
             autoComplete="name"
@@ -207,9 +205,8 @@ export function BugBountyForm() {
           <label className="sec-field__label" htmlFor={`${uid}-email`}>
             Contact email <span className="sec-field__opt">(optional)</span>
           </label>
-          <input
+          <Input
             id={`${uid}-email`}
-            className="sec-field__input"
             type="email"
             maxLength={200}
             autoComplete="email"
@@ -241,19 +238,16 @@ export function BugBountyForm() {
       ) : null}
 
       <div className="sec-form__actions">
-        <button className="sec-btn sec-btn--primary" type="submit" disabled={submitting}>
-          {submitting ? (
-            <>
-              <Loader2 className="sec-spin" aria-hidden="true" />
-              Submitting…
-            </>
-          ) : (
-            <>
-              <Send aria-hidden="true" />
-              Submit report
-            </>
-          )}
-        </button>
+        <Button
+          type="submit"
+          variant="accent"
+          size="lg"
+          loading={submitting}
+          loadingText="Submitting…"
+        >
+          <Send aria-hidden="true" />
+          Submit report
+        </Button>
         <span className="sec-form__note">
           Prefer email? <a href="mailto:security@rmhstudios.com">security@rmhstudios.com</a>
         </span>

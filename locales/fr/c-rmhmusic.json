@@ -50,5 +50,8 @@
   "sign-in-to-guess": "Connectez-vous pour deviner.",
   "solves-plays": "{{solves}} résolues · {{plays}} écoutes",
   "song-title-placeholder": "Titre de la chanson...",
-  "your-playlists": "Your playlists"
+  "your-playlists": "Your playlists",
+  "listening-count_many": "{{count}} listening",
+  "listening-count_one": "{{count}} listening",
+  "listening-count_other": "{{count}} listening"
 }

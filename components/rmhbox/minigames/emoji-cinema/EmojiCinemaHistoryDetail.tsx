@@ -69,7 +69,7 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
           : correctGuessersData.length;
 
         return (
-          <div key={roundNum} className="rounded-lg border border-(--app-border) p-3 space-y-2">
+          <div key={roundNum} className="rounded-(--app-radius-sm) border border-(--app-border) p-3 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-(--app-text)">{t("round-label", { defaultValue: "Round {{num}}", num: roundNum })}</span>
               <span className="text-xs text-(--app-text-muted)">
@@ -102,14 +102,14 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
                 {correctGuessersData.map((cg, j) => {
                   const guesserPlayer = players.find((p) => p.userId === cg.userId);
                   return (
-                    <div key={j} className="text-xs text-green-500">
+                    <div key={j} className="text-xs text-(--app-success)">
                       #{cg.rank} {guesserPlayer?.userName ?? cg.userName ?? t("unknown", { defaultValue: "Unknown" })}
                     </div>
                   );
                 })}
               </div>
             ) : correctGuessCount > 0 ? (
-              <div className="text-xs text-green-500">{t("correct-guesses", { defaultValue: "{{count}} correct guess", defaultValue_other: "{{count}} correct guesses", count: correctGuessCount })}</div>
+              <div className="text-xs text-(--app-success)">{t("correct-guesses", { defaultValue: "{{count}} correct guess", defaultValue_other: "{{count}} correct guesses", count: correctGuessCount })}</div>
             ) : !noEmojis ? (
               <div className="text-xs text-(--app-text-muted)">{t("no-correct-guesses", { defaultValue: "No one guessed correctly" })}</div>
             ) : null}
@@ -134,7 +134,7 @@ export default function EmojiCinemaHistoryDetail({ gameLog, players }: HistoryDe
               .map(([userId, score], i) => {
                 const player = players.find((p) => p.userId === userId);
                 return (
-                  <div key={userId} className="flex items-center justify-between rounded-md bg-(--app-surface) px-3 py-1.5 text-sm">
+                  <div key={userId} className="flex items-center justify-between rounded-(--app-radius-sm) bg-(--app-surface) px-3 py-1.5 text-sm">
                     <span className="text-(--app-text)">#{i + 1} {player?.userName ?? t("unknown", { defaultValue: "Unknown" })}</span>
                     <span className="font-medium text-(--app-accent)">{t("score-pts", { defaultValue: "{{score}} pts", score })}</span>
                   </div>

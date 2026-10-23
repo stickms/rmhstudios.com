@@ -49,7 +49,7 @@ export default function BreadcrumbTrail({
   return (
     <div
       ref={scrollRef}
-      className="flex items-center gap-1 overflow-x-auto rounded-lg border border-(--app-border) bg-(--app-surface) px-3 py-2 scrollbar-thin"
+      className="flex items-center gap-1 overflow-x-auto rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) px-3 py-2 scrollbar-thin"
     >
       <span className="mr-1 text-xs font-medium text-(--app-text-muted) shrink-0">
         Path ({path.length}):
@@ -73,9 +73,9 @@ export default function BreadcrumbTrail({
                 ${isCurrent
                   ? 'bg-(--app-accent)/20 text-(--app-accent) font-bold'
                   : isStart
-                    ? 'text-green-400 hover:bg-green-500/10'
+                    ? 'text-(--app-success) hover:bg-(--app-success)/10'
                     : isTarget
-                      ? 'text-yellow-400 hover:bg-yellow-500/10'
+                      ? 'text-(--app-warning) hover:bg-(--app-warning)/10'
                       : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)'
                 }
                 ${isClickable ? 'cursor-pointer' : 'cursor-default'}

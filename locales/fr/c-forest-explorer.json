@@ -108,5 +108,8 @@
   "walk": "marcher",
   "ward-seal-instruction-v2": "Rotate each ring until its glowing ward glyph rests beneath the marker",
   "watch-the-pattern": "Observez le motif...",
-  "wrong-watch-again": "Faux ! Observez à nouveau..."
+  "wrong-watch-again": "Faux ! Observez à nouveau...",
+  "close-overlay": "Close",
+  "mute": "Mute",
+  "unmute": "Unmute"
 }

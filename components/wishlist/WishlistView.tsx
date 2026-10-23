@@ -40,18 +40,23 @@ export function WishlistView({ initial }: { initial: WishlistItemView[] }) {
   }
 
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-3">
       {items.map((item) => (
         <li key={item.id}>
-          <Card interactive className="flex-row items-center gap-3 px-4 py-3">
+          <Card interactive className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
             <Gift className="h-5 w-5 shrink-0 text-site-accent" aria-hidden />
             <span className="min-w-0 flex-1">
               {item.href ? (
-                <a href={item.href} className="block truncate text-sm font-medium text-site-text hover:underline">
+                <a
+                  href={item.href}
+                  className="block truncate text-sm font-medium text-site-text hover:underline"
+                >
                   {item.title}
                 </a>
               ) : (
-                <span className="block truncate text-sm font-medium text-site-text">{item.title}</span>
+                <span className="block truncate text-sm font-medium text-site-text">
+                  {item.title}
+                </span>
               )}
               {item.targetPrice != null ? (
                 <span className="block text-xs text-site-text-muted">

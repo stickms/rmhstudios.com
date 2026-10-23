@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Star, Search } from 'lucide-react';
+import { Star } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchField } from '@/components/ui/search-field';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
@@ -95,24 +96,18 @@ export function CircleManager() {
   }
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-site-text-muted">
-        {t('intro', {
-          defaultValue:
-            'Pick close friends from the people you follow. No one is told they were added.',
-        })}
-      </p>
-
-      <div className="relative">
-        <Search className="pointer-events-none absolute inset-y-0 left-3 my-auto h-4 w-4 text-site-text-dim" aria-hidden />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t('search', { defaultValue: 'Search people you follow' })}
-          aria-label={t('search', { defaultValue: 'Search people you follow' })}
-          className="ps-9"
-        />
-      </div>
+    <SettingsSection
+      description={t('intro', {
+        defaultValue:
+          'Pick close friends from the people you follow. No one is told they were added.',
+      })}
+    >
+      <SearchField
+        value={query}
+        onValueChange={setQuery}
+        placeholder={t('search', { defaultValue: 'Search people you follow' })}
+        aria-label={t('search', { defaultValue: 'Search people you follow' })}
+      />
 
       {filtered.length === 0 ? (
         <EmptyState
@@ -130,7 +125,7 @@ export function CircleManager() {
                   type="button"
                   onClick={() => toggle(u.id)}
                   aria-pressed={checked}
-                  className="flex w-full items-center gap-3 py-2.5 text-start"
+                  className="flex min-h-11 w-full items-center gap-3 py-2 text-start"
                 >
                   <UserAvatar src={u.image ?? undefined} alt={u.name ?? 'User'} size={40} fallbackName={u.name ?? undefined} />
                   <span className="min-w-0 flex-1">
@@ -155,7 +150,7 @@ export function CircleManager() {
         </ul>
       )}
 
-      <div className="sticky bottom-0 flex items-center justify-between gap-3 border-t border-site-border bg-site-surface py-3">
+      <div className="flex items-center justify-between gap-3 border-t border-site-border pt-3">
         <span className="text-sm text-site-text-muted">
           {selected.size}/{MAX_CIRCLE}
         </span>
@@ -163,6 +158,6 @@ export function CircleManager() {
           {t('save', { defaultValue: 'Save' })}
         </Button>
       </div>
-    </div>
+    </SettingsSection>
   );
 }

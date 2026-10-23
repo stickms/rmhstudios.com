@@ -71,5 +71,8 @@
   "views-count_other": "{{count}} lượt xem",
   "write-comment": "Viết bình luận...",
   "write-reply": "Viết phản hồi...",
-  "years-ago_other": "{{count}} năm trước"
+  "years-ago_other": "{{count}} năm trước",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

@@ -119,7 +119,7 @@ const MessageRow = memo(function MessageRow({
 
   return (
     <div
-      className="group relative rounded-md px-2 py-1 transition-colors hover:bg-(--app-surface)"
+      className="group relative rounded-(--app-radius-sm) px-2 py-1 transition-colors hover:bg-(--app-surface)"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
       onContextMenu={canPin ? (e) => onContextMenu(e, msg) : undefined}
@@ -127,7 +127,7 @@ const MessageRow = memo(function MessageRow({
       {msg.replyToId && msg.replyToUserName && (
         <div className="flex items-center gap-1 mb-0.5 pl-3">
           <Reply className="h-3 w-3 text-(--app-text-dim) rotate-180" aria-hidden />
-          <span className="text-[11px] text-(--app-text-dim) truncate max-w-50">
+          <span className="text-xs text-(--app-text-dim) truncate max-w-50">
             <span className="font-semibold">{msg.replyToUserName}</span>
             {': '}
             {msg.replyToContent}
@@ -172,7 +172,7 @@ const MessageRow = memo(function MessageRow({
         )}
 
         {showTimestamps && (
-          <span className="shrink-0 text-[11px] text-(--app-text-dim) ml-auto">
+          <span className="shrink-0 text-xs text-(--app-text-dim) ml-auto">
             {formatRelativeTime(msg.createdAt)}
           </span>
         )}
@@ -203,17 +203,17 @@ const MessageRow = memo(function MessageRow({
       )}
 
       {showActions && (
-        <div className="absolute -top-2 right-1 flex items-center gap-0.5 rounded-md border border-(--app-border) bg-(--app-bg) shadow-sm z-10">
+        <div className="absolute -top-2 right-1 flex items-center gap-0.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) shadow-(--app-shadow-sm) z-10">
           <button
             onClick={(e) => { e.stopPropagation(); onReply(msg); }}
-            className="p-1 rounded hover:bg-(--app-surface) transition-colors"
+            className="p-1 rounded-(--app-radius-sm) hover:bg-(--app-surface) transition-colors"
             title={t('reply', { defaultValue: 'Reply' })}
           >
             <Reply className="h-3.5 w-3.5 text-(--app-text-muted)" aria-hidden />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); setShowReactionPicker((v) => !v); }}
-            className="p-1 rounded hover:bg-(--app-surface) transition-colors"
+            className="p-1 rounded-(--app-radius-sm) hover:bg-(--app-surface) transition-colors"
             title={t('react', { defaultValue: 'React' })}
           >
             <SmilePlus className="h-3.5 w-3.5 text-(--app-text-muted)" aria-hidden />
@@ -223,14 +223,14 @@ const MessageRow = memo(function MessageRow({
 
       {showReactionPicker && (
         <div
-          className="absolute -top-8 right-1 flex items-center gap-0.5 rounded-lg border border-(--app-border) bg-(--app-bg) shadow-lg px-1 py-0.5 z-20"
+          className="absolute -top-8 right-1 flex items-center gap-0.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) shadow-(--app-shadow) px-1 py-0.5 z-20"
           onClick={(e) => e.stopPropagation()}
         >
           {CHAT_REACTION_EMOJIS.map((emoji) => (
             <button
               key={emoji}
               onClick={() => { onReact(msg.id, emoji); setShowReactionPicker(false); }}
-              className="p-1 rounded hover:bg-(--app-surface) transition-colors text-sm"
+              className="p-1 rounded-(--app-radius-sm) hover:bg-(--app-surface) transition-colors text-sm"
               title={emoji}
             >
               {emoji}
@@ -464,7 +464,7 @@ export default function ChatPanel() {
           {isHost && (
             <button
               onClick={() => handlePin(null, false)}
-              className="shrink-0 p-0.5 rounded hover:bg-(--app-border) transition-colors"
+              className="shrink-0 p-0.5 rounded-(--app-radius-sm) hover:bg-(--app-border) transition-colors"
               title={t('unpin-message', { defaultValue: 'Unpin message' })}
             >
               <X className="h-3.5 w-3.5 text-(--app-text-muted)" aria-hidden />
@@ -524,7 +524,7 @@ export default function ChatPanel() {
         {!isPinned && entries.length > 0 && (
           <button
             onClick={() => scrollToBottom('smooth')}
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-(--app-border) bg-(--app-surface) px-3 py-1 text-xs font-medium text-(--app-text) shadow-lg transition-colors hover:bg-(--app-surface-hover)"
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-(--app-border) bg-(--app-surface) px-3 py-1 text-xs font-medium text-(--app-text) shadow-(--app-shadow) transition-colors hover:bg-(--app-surface-hover)"
           >
             <ArrowDown className="h-3 w-3" aria-hidden />
             {t('jump-to-latest', { defaultValue: 'Jump to latest' })}
@@ -549,7 +549,7 @@ export default function ChatPanel() {
           </div>
           <button
             onClick={() => setReplyTo(null)}
-            className="shrink-0 p-0.5 rounded hover:bg-(--app-border) transition-colors"
+            className="shrink-0 p-0.5 rounded-(--app-radius-sm) hover:bg-(--app-border) transition-colors"
             aria-label={t('cancel-reply', { defaultValue: 'Cancel reply' })}
           >
             <X className="h-3.5 w-3.5 text-(--app-text-muted)" aria-hidden />
@@ -562,7 +562,7 @@ export default function ChatPanel() {
         <div
           data-motion="pop"
           data-state={mentionMenu.state}
-          className="relative mx-3 mb-1 origin-bottom rounded-lg border border-(--app-border) bg-(--app-bg) shadow-lg overflow-hidden max-h-32 overflow-y-auto"
+          className="relative mx-3 mb-1 origin-bottom rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) shadow-(--app-shadow) overflow-hidden max-h-32 overflow-y-auto"
         >
           {mentionMenu.present.map((member) => (
             <button
@@ -613,7 +613,7 @@ export default function ChatPanel() {
                 ? t('reply-to-placeholder', { defaultValue: 'Reply to {{userName}}...', userName: replyTo.userName })
                 : t('type-a-message', { defaultValue: 'Type a message...' })
             }
-            className="w-full px-3 py-2 rounded-lg text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+            className="w-full px-3 py-2 rounded-(--app-radius-sm) text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
           />
           {shortcodes.menu}
         </div>
@@ -624,7 +624,7 @@ export default function ChatPanel() {
             aria-pressed={attachTimestamp}
             aria-label={t('attach-timestamp-aria', { defaultValue: 'Attach the current playback time' })}
             title={t('attach-timestamp', { defaultValue: 'Attach the current time' })}
-            className={`shrink-0 rounded-lg px-2 py-2 transition-colors ${
+            className={`shrink-0 rounded-(--app-radius-sm) px-2 py-2 transition-colors ${
               attachTimestamp
                 ? 'text-(--app-accent) bg-(--app-accent-dim)'
                 : 'text-(--app-text-dim) hover:text-(--app-accent)'
@@ -637,7 +637,7 @@ export default function ChatPanel() {
           type="button"
           onClick={() => setShowGifPicker((v) => !v)}
           aria-label={t('add-gif-aria', { defaultValue: 'Add a GIF' })}
-          className="shrink-0 rounded-lg px-2 py-2 text-(--app-text-dim) hover:text-(--app-accent) transition-colors"
+          className="shrink-0 rounded-(--app-radius-sm) px-2 py-2 text-(--app-text-dim) hover:text-(--app-accent) transition-colors"
         >
           <ImageIcon className="h-4 w-4" aria-hidden />
         </button>
@@ -651,7 +651,7 @@ export default function ChatPanel() {
           type="submit"
           disabled={!message.trim() || slowBlock.secondsLeft > 0}
           aria-label={t('send', { defaultValue: 'Send' })}
-          className="shrink-0 rounded-lg px-3 py-2 transition-colors disabled:opacity-50 bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+          className="shrink-0 rounded-(--app-radius-sm) px-3 py-2 transition-colors disabled:opacity-50 bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
         >
           <Send className="h-4 w-4" aria-hidden />
         </button>
@@ -662,7 +662,7 @@ export default function ChatPanel() {
         <div
           data-motion="pop"
           data-state={pinMenu.state}
-          className="fixed z-50 origin-top-left rounded-lg border border-(--app-border) bg-(--app-bg) shadow-xl overflow-hidden py-1 min-w-35"
+          className="fixed z-50 origin-top-left rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) shadow-(--app-shadow) overflow-hidden py-1 min-w-35"
           style={{ left: contextMenuPos.x, top: contextMenuPos.y }}
           onClick={(e) => e.stopPropagation()}
         >

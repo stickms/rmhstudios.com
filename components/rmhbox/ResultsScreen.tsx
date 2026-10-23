@@ -36,7 +36,7 @@ interface ResultsScreenProps {
   lobbyId: string;
 }
 
-const PODIUM_COLORS = ['text-yellow-400', 'text-gray-300', 'text-amber-600'];
+const PODIUM_COLORS = ['text-(--app-warning)', 'text-(--app-text-muted)', 'text-(--app-warning)'];
 const PODIUM_HEIGHTS = ['h-28', 'h-20', 'h-14'];
 
 /** Fade-in animation props with a configurable stagger delay. */
@@ -103,7 +103,7 @@ export default function ResultsScreen({
               <span className="text-sm font-semibold">{player.userName}</span>
               <span className="text-xs text-(--app-text-muted)">{t("score-pts", { defaultValue: "{{score}} pts", score: player.score })}</span>
               <div
-                className={`${PODIUM_HEIGHTS[podiumIndex]} w-20 rounded-t-lg bg-(--app-accent)`}
+                className={`${PODIUM_HEIGHTS[podiumIndex]} w-20 rounded-t-(--app-radius-sm) bg-(--app-accent)`}
                 style={{ opacity: 1 - podiumIndex * 0.2 }}
               />
             </div>
@@ -113,7 +113,7 @@ export default function ResultsScreen({
 
       {/* Full rankings */}
       {rankings.length > 0 && (
-        <motion.div {...fadeInProps(0.3)} className="mb-6 rounded-xl bg-(--app-surface) border border-(--app-border) p-4">
+        <motion.div {...fadeInProps(0.3)} className="mb-6 rounded-(--app-radius) bg-(--app-surface) border border-(--app-border) p-4">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
             {t("all-players", { defaultValue: "All Players" })}
           </h3>
@@ -133,7 +133,7 @@ export default function ResultsScreen({
 
       {/* Awards */}
       {awards.length > 0 && (
-        <motion.div {...fadeInProps(0.45)} className="mb-6 rounded-xl bg-(--app-surface) border border-(--app-border) p-4">
+        <motion.div {...fadeInProps(0.45)} className="mb-6 rounded-(--app-radius) bg-(--app-surface) border border-(--app-border) p-4">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
             <AwardIcon className="h-4 w-4" /> {t("awards", { defaultValue: "Awards" })}
           </h3>
@@ -160,7 +160,7 @@ export default function ResultsScreen({
 
       {/* Session standings */}
       {sessionStandings.length > 0 && (
-        <motion.div {...fadeInProps(0.6)} className="mb-6 rounded-xl bg-(--app-surface) border border-(--app-border) p-4">
+        <motion.div {...fadeInProps(0.6)} className="mb-6 rounded-(--app-radius) bg-(--app-surface) border border-(--app-border) p-4">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
             {t("session-standings", { defaultValue: "Session Standings" })}
           </h3>
@@ -192,7 +192,7 @@ export default function ResultsScreen({
         <motion.div {...fadeInProps(0.75)} className="flex justify-center pt-2 pb-4">
           <button
             onClick={handleNext}
-            className="flex items-center gap-2 rounded-lg px-8 py-3 text-base font-semibold text-white transition hover:brightness-110 active:scale-95 animate-pulse"
+            className="flex items-center gap-2 rounded-(--app-radius-sm) px-8 py-3 text-base font-semibold text-(--app-accent-fg) transition hover:brightness-110 active:scale-95 animate-pulse"
             style={{ backgroundColor: 'var(--app-accent)' }}
           >
             {t("continue-to-lobby", { defaultValue: "Continue to Lobby" })}

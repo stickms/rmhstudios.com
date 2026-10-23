@@ -2,6 +2,7 @@
  * Admin — Prediction Markets moderation + resolution.
  */
 
+import { AdminBody } from '@/components/admin/AdminBody';
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
@@ -46,9 +47,9 @@ function AdminPredictionsPage() {
         setPending(data.pending ?? []);
         setOpen(data.open ?? []);
       })
-      .catch(() => toast.error('Failed to load'))
+      .catch(() => toast.error(t('predictions-load-failed', { defaultValue: 'Failed to load predictions.' })))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -64,10 +65,14 @@ function AdminPredictionsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || 'Failed');
+        toast.error(data.error || t('action-failed', { defaultValue: 'Action failed.' }));
         return;
       }
-      toast.success(action === 'approve' ? 'Approved' : 'Denied');
+      toast.success(
+        action === 'approve'
+          ? t('approved', { defaultValue: 'Approved' })
+          : t('denied', { defaultValue: 'Denied' }),
+      );
       load();
     } finally {
       setBusy(null);
@@ -87,7 +92,7 @@ function AdminPredictionsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || 'Failed');
+        toast.error(data.error || t('action-failed', { defaultValue: 'Action failed.' }));
         return;
       }
       toast.success(t('resolved-paid', { defaultValue: 'Resolved {{outcome}} — paid {{payouts}} coins', outcome, payouts: data.payouts }));
@@ -98,8 +103,13 @@ function AdminPredictionsPage() {
   }
 
   return (
-    <PageLayout title={t('predictions-title', { defaultValue: 'Prediction Markets' })} wide backTo="/admin">
-      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
+    <PageLayout
+      title={t('predictions-title', { defaultValue: 'Prediction Markets' })}
+      wide
+      backTo="/admin"
+      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+    >
+      <AdminBody>
         {loading ? (
           <div className="flex justify-center py-16">
             <Spinner size={28} />
@@ -108,28 +118,28 @@ function AdminPredictionsPage() {
           <>
             {/* Pending approval */}
             <section className="space-y-3">
-              <h2 className="text-lg font-bold text-site-text">
+              <h2 className="site-section-label">
                 {t('pending-approval', { defaultValue: 'Pending approval' })} ({pending.length})
               </h2>
               {pending.length === 0 ? (
                 <EmptyState title={t('none-pending', { defaultValue: 'Nothing waiting for review.' })} />
               ) : (
                 pending.map((m) => (
-                  <div key={m.id} className="glass-fill rounded-site p-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <div key={m.id} className="glass-fill flex flex-col gap-3 rounded-site p-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-site-text">{m.title}</h3>
-                      {m.description && <p className="text-sm text-site-text-dim mt-1">{m.description}</p>}
-                      <p className="text-xs text-site-text-dim mt-2">
-                        {m.creator ? `@${m.creator.handle ?? m.creator.name ?? 'user'}` : 'system'}
-                        {m.closesAt ? ` · closes ${new Date(m.closesAt).toLocaleString()}` : ''}
+                      <h3 className="text-base font-semibold text-site-text">{m.title}</h3>
+                      {m.description && <p className="mt-1 text-sm text-site-text-muted">{m.description}</p>}
+                      <p className="mt-2 text-xs text-site-text-dim">
+                        {m.creator ? `@${m.creator.handle ?? m.creator.name ?? t('user-fallback', { defaultValue: 'user' })}` : t('system', { defaultValue: 'system' })}
+                        {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: new Date(m.closesAt).toLocaleString() })}` : ''}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 sm:shrink-0">
                       <Button size="sm" variant="secondary" loading={busy === m.id} onClick={() => moderate(m.id, 'approve')}>
-                        <Check className="w-4 h-4" /> {t('approve', { defaultValue: 'Approve' })}
+                        <Check aria-hidden /> {t('approve', { defaultValue: 'Approve' })}
                       </Button>
                       <Button size="sm" variant="danger" loading={busy === m.id} onClick={() => moderate(m.id, 'deny')}>
-                        <X className="w-4 h-4" /> {t('deny', { defaultValue: 'Deny' })}
+                        <X aria-hidden /> {t('deny', { defaultValue: 'Deny' })}
                       </Button>
                     </div>
                   </div>
@@ -139,22 +149,22 @@ function AdminPredictionsPage() {
 
             {/* Open markets — resolve */}
             <section className="space-y-3">
-              <h2 className="text-lg font-bold text-site-text">
+              <h2 className="site-section-label">
                 {t('open-markets', { defaultValue: 'Open markets' })} ({open.length})
               </h2>
               {open.length === 0 ? (
                 <EmptyState title={t('none-open', { defaultValue: 'No open markets.' })} />
               ) : (
                 open.map((m) => (
-                  <div key={m.id} className="glass-fill rounded-site p-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <div key={m.id} className="glass-fill flex flex-col gap-3 rounded-site p-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-site-text flex items-center gap-2">
+                      <h3 className="flex items-center gap-2 text-base font-semibold text-site-text">
                         {m.title}
-                        {m.isAiGenerated && <Sparkles className="w-3.5 h-3.5 text-site-accent shrink-0" />}
+                        {m.isAiGenerated && <Sparkles className="size-4 shrink-0 text-site-accent" aria-label={t('ai-generated', { defaultValue: 'AI generated' })} role="img" />}
                       </h3>
-                      <p className="text-xs text-site-text-dim mt-1">
-                        {m.yesPercent}% YES · {m.volume} vol
-                        {m.closesAt ? ` · closes ${new Date(m.closesAt).toLocaleString()}` : ''}
+                      <p className="mt-1 text-xs text-site-text-dim">
+                        {t('market-stats', { defaultValue: '{{percent}}% YES · {{volume}} vol', percent: m.yesPercent, volume: m.volume })}
+                        {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: new Date(m.closesAt).toLocaleString() })}` : ''}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 sm:shrink-0">
@@ -171,7 +181,7 @@ function AdminPredictionsPage() {
             </section>
           </>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

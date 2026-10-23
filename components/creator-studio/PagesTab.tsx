@@ -12,6 +12,7 @@ import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState }
 import { useNavigate } from '@tanstack/react-router';
 import { ArrowRight, CloudUpload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { SearchField } from '@/components/ui/search-field';
 import { useSession } from '@/components/Providers';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
@@ -74,7 +75,7 @@ export function PagesTab({
       const res = await fetch('/api/admin/vibe/backfill-thumbs', { method: 'POST' });
       const data = (await res.json().catch(() => ({}))) as { count?: number; error?: string };
       if (!res.ok) throw new Error(data.error || 'Request failed');
-      window.alert(
+      toast.success(
         t('backfill-thumbs-done', {
           defaultValue:
             'Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.',
@@ -82,7 +83,7 @@ export function PagesTab({
         }),
       );
     } catch {
-      window.alert(
+      toast.error(
         t('backfill-thumbs-failed', {
           defaultValue: 'Failed to queue thumbnail backfill. Try again.',
         }),

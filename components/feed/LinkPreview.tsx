@@ -95,9 +95,9 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  />
  </div>
  )}
- <div className="px-3 py-2.5">
+ <div className="px-4 py-3">
  {data.archivedUrl && <ArchivedCopyLabel archivedAt={data.archivedAt} />}
- <p className="text-xs text-site-text-dim mb-0.5 flex items-center gap-1">
+ <p className="text-xs text-site-text-dim mb-1 flex items-center gap-1">
  <ExternalLink className="w-3 h-3"/>
  {data.siteName}
  </p>
@@ -105,7 +105,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  <p className="text-sm font-semibold text-site-text line-clamp-2">{data.title}</p>
  )}
  {data.description && (
- <p className="text-xs text-site-text-dim mt-0.5 line-clamp-2">{data.description}</p>
+ <p className="text-xs text-site-text-dim mt-1 line-clamp-2">{data.description}</p>
  )}
  </div>
  </a>

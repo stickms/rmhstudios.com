@@ -42,10 +42,10 @@ function Showcase() {
       backTo="/services"
       backLabel={t('nav-services', { ns: 'feed', defaultValue: 'Services' })}
     >
-      <div className="px-4 pb-12">
+      <div className="px-4 pt-4 pb-12">
         {/* Holds the showcase's height while its chunk loads, so the page does
             not collapse to the title and shove back down when it lands. */}
-        <Suspense fallback={<div className="min-h-[70vh]" aria-hidden />}>
+        <Suspense fallback={<div className="min-h-[70dvh]" aria-hidden />}>
           <FashionStudio />
         </Suspense>
       </div>

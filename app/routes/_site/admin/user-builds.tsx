@@ -2,13 +2,16 @@
  * Admin User Builds Route
  */
 
+import { AdminBody } from '@/components/admin/AdminBody';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { Loader2, Search, Edit, ExternalLink, Lock, Award } from 'lucide-react';
+import { Search, Edit, ExternalLink, Lock, Award } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
-import { Input } from '@/components/ui/input';
+import { SearchField } from '@/components/ui/search-field';
+import { Badge } from '@/components/ui/badge';
+import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 
@@ -96,79 +99,83 @@ function AdminUserBuildsPage() {
   return (
     <PageLayout
       title={t("manage-user-builds", { defaultValue: "Manage User Builds" })}
+      description={t("user-builds-description", { defaultValue: "Search, moderate, and manage all user-submitted builds." })}
       backTo="/admin"
       backLabel={t("back-to-admin", { defaultValue: "Back to admin" })}
       wide
     >
-      <div className="p-4 md:p-6 space-y-6">
-        <p className="text-site-text-muted">{t("user-builds-description", { defaultValue: "Search, moderate, and manage all user-submitted builds." })}</p>
+      <AdminBody>
+        <SearchField
+          value={search}
+          onValueChange={setSearch}
+          placeholder={t("search-builds-placeholder", { defaultValue: "Search by build title or description..." })}
+          aria-label={t("search-builds-label", { defaultValue: "Search builds" })}
+        />
 
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-site-text-dim" />
-          <Input type="text" placeholder={t("search-builds-placeholder", { defaultValue: "Search by build title or description..." })} value={search} onChange={(e) => setSearch(e.target.value)} className="h-12 pl-10" />
-        </div>
-
-        <div className="glass-fill rounded-site overflow-hidden min-h-[400px]">
-          <div className="divide-y divide-site-border relative">
-            {loading && (
-              <div className="absolute inset-0 bg-site-surface/50 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-8">
-                <Spinner size={32} className="mb-4" />
-                <span className="text-site-text-muted">{t("loading-builds", { defaultValue: "Loading builds..." })}</span>
-              </div>
-            )}
-
-            {!loading && builds.length === 0 && (
-              <EmptyState icon={Search} title={t("no-builds-found", { defaultValue: "No builds found matching your search." })} />
-            )}
-
-            {builds.map((build, index) => {
-              const isLast = index === builds.length - 1;
-              return (
-                <div key={build.id} ref={isLast ? lastElementRef : null} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-site-surface-hover transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Link to={`/user-builds/${build.slug}` as string} className="font-semibold text-lg text-site-text hover:text-site-accent truncate">{build.title}</Link>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${build.visibility === 'PUBLIC' ? 'bg-site-success/10 text-site-success' : build.visibility === 'UNLISTED' ? 'bg-site-warning/10 text-site-warning' : 'bg-site-bg text-site-text-dim'}`}>{build.visibility}</span>
-                      {build.visibility === 'PRIVATE' && <Lock className="w-3.5 h-3.5 text-site-text-dim ml-1" />}
-                      {build.featured && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-site-warning/10 text-site-warning">{t("curated-badge", { defaultValue: "Curated" })}</span>
-                      )}
+        <div className="glass-fill overflow-hidden rounded-site">
+          {loading && builds.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-site-text-muted">
+              <Spinner />
+              <span>{t("loading-builds", { defaultValue: "Loading builds..." })}</span>
+            </div>
+          ) : !loading && builds.length === 0 ? (
+            <EmptyState icon={Search} title={t("no-builds-found", { defaultValue: "No builds found matching your search." })} />
+          ) : (
+            <div
+              className={`divide-y divide-site-border transition-opacity duration-site-fast ${loading ? 'opacity-60' : ''}`}
+              aria-busy={loading}
+            >
+              {builds.map((build, index) => {
+                const isLast = index === builds.length - 1;
+                return (
+                  <div key={build.id} ref={isLast ? lastElementRef : null} className="flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-site-surface-hover sm:flex-row sm:items-center sm:gap-4">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link to={`/user-builds/${build.slug}` as string} className="truncate text-base font-semibold text-site-text hover:text-site-accent">{build.title}</Link>
+                        <Badge
+                          variant={build.visibility === 'PUBLIC' ? 'success' : build.visibility === 'UNLISTED' ? 'warning' : 'default'}
+                          icon={build.visibility === 'PRIVATE' ? <Lock aria-hidden /> : undefined}
+                          className="capitalize"
+                        >
+                          {build.visibility.toLowerCase()}
+                        </Badge>
+                        {build.featured && (
+                          <Badge variant="warning" icon={<Award aria-hidden />}>{t("curated-badge", { defaultValue: "Curated" })}</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 truncate text-sm text-site-text-dim">
+                        <Link to={`/u/${build.user.handle || build.user.username}` as string} className="transition-colors hover:text-site-text">@{build.user.handle || build.user.username}</Link>
+                        <span aria-hidden>&bull;</span>
+                        <span>{build.category?.name || t("uncategorized", { defaultValue: "Uncategorized" })}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-site-text-dim truncate">
-                      <Link to={`/u/${build.user.handle || build.user.username}` as string} className="hover:text-site-text transition-colors">@{build.user.handle || build.user.username}</Link>
-                      <span>&bull;</span>
-                      <span>{build.category?.name || t("uncategorized", { defaultValue: "Uncategorized" })}</span>
+                    <div className="flex items-center gap-2">
+                      <IconButton
+                        icon={Award}
+                        variant="outline"
+                        className={build.featured ? 'border-site-warning/40 text-site-warning' : undefined}
+                        aria-pressed={build.featured}
+                        onClick={() => handleToggleCurated(build.id)}
+                        label={build.featured ? t("remove-curated-badge", { defaultValue: "Remove Curated badge" }) : t("add-curated-badge", { defaultValue: "Add Curated badge" })}
+                      />
+                      <IconButton asChild variant="outline" label={t("view-build", { defaultValue: "View Build" })}>
+                        <Link to={`/user-builds/${build.slug}` as string}><ExternalLink aria-hidden /></Link>
+                      </IconButton>
+                      <IconButton asChild variant="outline" label={t("edit-build-as-admin", { defaultValue: "Edit Build as Admin" })}>
+                        <Link to="/user-builds/submit" search={{ edit: build.id }}><Edit aria-hidden /></Link>
+                      </IconButton>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-3 sm:mt-0">
-                    <button
-                      onClick={() => handleToggleCurated(build.id)}
-                      className={`p-2 rounded-site-sm transition-colors border border-transparent ${
-                        build.featured
-                          ? 'text-site-warning hover:bg-site-warning/10 hover:border-site-warning/20'
-                          : 'text-site-text-dim hover:text-site-warning hover:bg-site-warning/10 hover:border-site-warning/20'
-                      }`}
-                      title={build.featured ? t("remove-curated-badge", { defaultValue: "Remove Curated badge" }) : t("add-curated-badge", { defaultValue: "Add Curated badge" })}
-                    >
-                      <Award className="w-4 h-4" />
-                    </button>
-                    <Link to={`/user-builds/${build.slug}` as string} className="p-2 rounded-site-sm text-site-text-dim hover:text-site-accent hover:bg-site-bg transition-colors border border-transparent hover:border-site-border" title={t("view-build", { defaultValue: "View Build" })}>
-                      <ExternalLink className="w-4 h-4" />
-                    </Link>
-                    <Link to="/user-builds/submit" search={{ edit: build.id }} className="p-2 rounded-site-sm text-site-accent hover:bg-site-accent/10 transition-colors border border-transparent hover:border-site-accent/20" title={t("edit-build-as-admin", { defaultValue: "Edit Build as Admin" })}>
-                      <Edit className="w-4 h-4" />
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          )}
 
-            {loadingMore && (
-              <div className="p-4 flex justify-center text-site-text-dim"><Loader2 className="w-6 h-6 animate-spin" /></div>
-            )}
-          </div>
+          {loadingMore && (
+            <div className="flex justify-center p-4 text-site-text-dim"><Spinner /></div>
+          )}
         </div>
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

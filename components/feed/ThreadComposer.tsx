@@ -75,7 +75,7 @@ export function ThreadComposer() {
  <DialogTrigger asChild>
  <button
  type="button"
- className="inline-flex items-center gap-1.5 rounded-site-sm px-2.5 py-1.5 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
+ className="inline-flex items-center gap-2 rounded-site-sm px-3 py-2 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
  >
  <MessagesSquare className="h-4 w-4"aria-hidden />
  {t('start-thread', { defaultValue:'Start a thread'})}
@@ -92,7 +92,7 @@ export function ThreadComposer() {
  {segments.map((seg, i) => (
  <div
  key={i}
- className="relative rounded-site border border-site-border bg-site-surface/40 p-2"
+ className="relative rounded-site glass-fill p-3"
  >
  <div className="flex items-start gap-2">
  <span className="mt-2 text-xs font-bold text-site-text-dim">{i + 1}</span>
@@ -142,7 +142,7 @@ export function ThreadComposer() {
  size="sm"
  onClick={addSeg}
  disabled={segments.length >= MAX_SEGMENTS}
- className="gap-1"
+
  >
  <Plus className="h-4 w-4"aria-hidden />{''}
  {t('thread-add-post', { defaultValue:'Add post'})}

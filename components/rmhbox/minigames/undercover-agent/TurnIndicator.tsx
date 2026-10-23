@@ -50,14 +50,14 @@ export default function TurnIndicator({
   winner,
 }: TurnIndicatorProps) {
   const isRed = currentTeam === 'red';
-  const teamColor = isRed ? 'text-red-400' : 'text-blue-400';
+  const teamColor = isRed ? 'text-(--app-danger)' : 'text-(--app-info)';
   const phaseLabel = PHASE_LABELS[phase] ?? phase;
   const isGameOver = phase === 'GAME_OVER' || phase === 'BOARD_REVEAL';
 
   return (
     <motion.div
       layout
-      className="flex items-center justify-between rounded-lg border border-(--app-border) bg-(--app-surface) px-4 py-2 text-sm"
+      className="flex items-center justify-between rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) px-4 py-2 text-sm"
     >
       {/* Left: team + phase */}
       <div className="flex items-center gap-2">
@@ -71,7 +71,7 @@ export default function TurnIndicator({
         )}
         <span className="font-medium text-(--app-text)">{phaseLabel}</span>
         {winner && winner !== 'draw' && (
-          <span className={`ml-2 font-bold flex items-center gap-1 ${winner === 'red' ? 'text-red-400' : 'text-blue-400'}`}>
+          <span className={`ml-2 font-bold flex items-center gap-1 ${winner === 'red' ? 'text-(--app-danger)' : 'text-(--app-info)'}`}>
             <Trophy className="h-4 w-4" /> {winner.charAt(0).toUpperCase() + winner.slice(1)} wins!
           </span>
         )}
@@ -88,7 +88,7 @@ export default function TurnIndicator({
         {!isGameOver && timeRemaining > 0 && (
           <span
             className={`flex items-center gap-1 font-mono font-semibold ${
-              timeRemaining <= 10 ? 'text-red-400' : 'text-(--app-text-muted)'
+              timeRemaining <= 10 ? 'text-(--app-danger)' : 'text-(--app-text-muted)'
             }`}
           >
             <Clock className="h-3.5 w-3.5" />

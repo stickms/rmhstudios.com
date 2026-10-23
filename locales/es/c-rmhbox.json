@@ -509,5 +509,15 @@
   "your-prompts": "Tus indicaciones",
   "your-rank": "Tu rango:",
   "youre-the-producer": "¡Eres el Productor!",
-  "yours-label": "(tuyo)"
+  "yours-label": "(tuyo)",
+  "close": "Close",
+  "guesses-remaining-guess-input_many": "{{count}} guesses remaining",
+  "guesses-remaining-guess-input_one": "{{count}} guess remaining",
+  "guesses-remaining-guess-input_other": "{{count}} guesses remaining",
+  "players-count-host-control-modal_many": "Players ({{count}})",
+  "players-count-host-control-modal_one": "Players ({{count}})",
+  "players-count-host-control-modal_other": "Players ({{count}})",
+  "score-pts-rmhbox-discord-activity_many": "{{count}} pts",
+  "score-pts-rmhbox-discord-activity_one": "{{count}} pts",
+  "score-pts-rmhbox-discord-activity_other": "{{count}} pts"
 }

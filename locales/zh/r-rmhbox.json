@@ -45,5 +45,8 @@
   "starting-game": "游戏开始...",
   "view-minigames": "查看小游戏",
   "winner-label": "胜者：",
-  "winner-none": "无"
+  "winner-none": "无",
+  "loading": "Loading…",
+  "room-code": "Room code",
+  "player-count-of-max_other": "{{count}}/{{max}} players"
 }

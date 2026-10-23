@@ -451,5 +451,9 @@
   "your-prompts": "Gợi ý của bạn",
   "your-rank": "Xếp hạng của bạn:",
   "youre-the-producer": "Bạn là Nhà sản xuất!",
-  "yours-label": "(của bạn)"
+  "yours-label": "(của bạn)",
+  "close": "Close",
+  "guesses-remaining-guess-input_other": "{{count}} guesses remaining",
+  "players-count-host-control-modal_other": "Players ({{count}})",
+  "score-pts-rmhbox-discord-activity_other": "{{count}} pts"
 }

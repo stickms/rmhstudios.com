@@ -93,7 +93,7 @@ function CreateForm() {
           aria-label={t('create-theme', { defaultValue: 'Theme, e.g. songs for a rainy day' })}
         />
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label htmlFor="ex-budget" className="site-section-label block">
             {t('create-budget', { defaultValue: 'Budget per gift (coins)' })}
           </label>
@@ -108,7 +108,7 @@ function CreateForm() {
         </div>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label htmlFor="ex-draw" className="site-section-label block">
             {t('create-draw', { defaultValue: 'Sign-ups close and the draw runs' })}
           </label>
@@ -119,7 +119,7 @@ function CreateForm() {
             onChange={(e) => setDrawAt(e.target.value)}
           />
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label htmlFor="ex-reveal" className="site-section-label block">
             {t('create-reveal', { defaultValue: 'Everyone sees who gave to whom' })}
           </label>
@@ -160,9 +160,9 @@ export default function ExchangesPage() {
   };
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4 px-4 pt-4 pb-12">
       <CreateForm />
-      <section aria-labelledby="ex-mine" className="space-y-2">
+      <section aria-labelledby="ex-mine" className="space-y-3">
         <h2 id="ex-mine" className="site-section-label px-1">
           {t('list-title', { defaultValue: 'Your exchanges' })}
         </h2>
@@ -183,7 +183,7 @@ export default function ExchangesPage() {
                 <Link
                   to="/exchange/$id"
                   params={{ id: e.id }}
-                  className="glass-fill flex items-center justify-between gap-3 rounded-site-sm p-3 hover:text-site-accent"
+                  className="glass-fill flex items-center justify-between gap-3 rounded-site px-4 py-3 hover:text-site-accent"
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     {e.kind === 'MIXTAPE' ? (

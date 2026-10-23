@@ -84,5 +84,7 @@
   "waiting-for-host": "호스트가 다음 라운드를 시작하기를 기다리는 중...",
   "waiting-for-players": "플레이어를 기다리는 중",
   "welcome-user": "환영합니다, {{name}}님!",
-  "your-moves": "내 수 목록"
+  "your-moves": "내 수 목록",
+  "lights-out-title": "Lights Out",
+  "rating-tiers": "Rating tiers"
 }

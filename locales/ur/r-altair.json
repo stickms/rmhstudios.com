@@ -34,5 +34,7 @@
   "settings": "سیٹنگز",
   "visibility-label": "مرئیت",
   "visibility-private": "نجی",
-  "visibility-public": "عوامی"
+  "visibility-public": "عوامی",
+  "loading": "Loading…",
+  "lobby-title": "Lobby {{lobbyId}}"
 }

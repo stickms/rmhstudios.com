@@ -109,7 +109,7 @@ export function MDXEditor({
           {isEdit
             ? t('post-updated-successfully', { defaultValue: 'Post updated successfully!' })
             : t('post-created-successfully', { defaultValue: 'Post created successfully!' })}
-          <p className="text-sm mt-1 text-site-text-dim">
+          <p className="mt-1 text-sm text-site-text-dim">
             {t('changes-now-live', { defaultValue: 'Your changes are now live.' })}
           </p>
         </div>,
@@ -142,9 +142,9 @@ export function MDXEditor({
   if (typeof document === 'undefined') return null;
 
   return createPortal(
-    <div className="h-screen w-screen flex flex-col bg-site-bg overflow-hidden fixed inset-0 z-50">
-      <div className="h-16 border-b border-site-border flex items-center justify-between px-4 lg:px-6 shrink-0 bg-site-surface w-full shadow-sm">
-        <div className="flex items-center gap-4">
+    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-site-bg">
+      <div className="glass-chrome flex h-16 w-full shrink-0 items-center justify-between gap-3 px-4 lg:px-6">
+        <div className="flex min-w-0 items-center gap-3">
           <Button
             variant="ghost"
             size="sm"
@@ -155,10 +155,10 @@ export function MDXEditor({
             <span className="hidden md:inline">
               {t('back-to-admin-label', { defaultValue: 'Back to Admin' })}
             </span>
-            <ArrowLeft className="w-5 h-5 md:hidden" />
+            <ArrowLeft className="size-5 md:hidden" aria-hidden />
           </Button>
-          <div className="h-4 w-px bg-site-border hidden md:block"></div>
-          <span className="text-sm font-bold text-site-text truncate max-w-[200px] md:max-w-xs">
+          <div className="hidden h-4 w-px bg-site-border md:block" aria-hidden />
+          <span className="truncate text-sm font-semibold text-site-text max-w-48 md:max-w-xs">
             {isEdit
               ? t('editing-title', {
                   defaultValue: 'Editing: {{title}}',
@@ -169,7 +169,7 @@ export function MDXEditor({
           </span>
         </div>
 
-        <div className="flex gap-2 items-center">
+        <div className="flex shrink-0 items-center gap-2">
           <Button
             type="button"
             onClick={togglePreview}
@@ -184,9 +184,10 @@ export function MDXEditor({
           <Button
             type="submit"
             form="blog-form"
-            disabled={isSubmitting || !content.trim()}
+            disabled={!content.trim()}
             size="sm"
-            className="bg-site-accent hover:bg-site-accent-hover text-site-accent-fg"
+            variant="accent"
+            loading={isSubmitting}
           >
             {isSubmitting
               ? t('saving', { defaultValue: 'Saving...' })
@@ -202,11 +203,11 @@ export function MDXEditor({
           <ResizablePanel
             defaultSize="50%"
             minSize="25%"
-            className={`flex flex-col ${isPreviewMode ? 'hidden lg:flex' : 'flex'} relative h-full bg-site-surface min-h-0`}
+            className={`flex flex-col ${isPreviewMode ? 'hidden lg:flex' : 'flex'} relative h-full min-h-0 bg-site-bg`}
           >
-            <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col gap-6 min-h-0">
-              <div className="flex justify-between items-center">
-                <h2 className="font-display text-lg font-bold text-site-text">
+            <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col gap-4 min-h-0">
+              <div className="flex items-center justify-between">
+                <h2 className="site-section-label">
                   {t('metadata', { defaultValue: 'Metadata' })}
                 </h2>
               </div>
@@ -324,14 +325,13 @@ export function MDXEditor({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Upload className="w-4 h-4 mr-1.5" aria-hidden="true" />
+                    <Upload aria-hidden="true" />
                     {t('upload-markdown', { defaultValue: 'Upload .md' })}
                   </Button>
                 </div>
-                <div className="flex-1 border border-site-border rounded-site-sm overflow-hidden relative min-h-75 sm:min-h-0">
+                <div className="glass-inset relative min-h-75 flex-1 overflow-hidden rounded-site-sm sm:min-h-0">
                   <MarkdownEditor
                     value={content}
                     onChange={setContent}
@@ -356,32 +356,26 @@ export function MDXEditor({
               <h2 className="site-section-label">
                 {t('live-preview', { defaultValue: 'Live Preview' })}
               </h2>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={generatePreview}
-                className="h-8"
-              >
+              <Button type="button" variant="ghost" size="sm" onClick={generatePreview}>
                 {t('refresh', { defaultValue: 'Refresh' })}
               </Button>
             </div>
 
-            <div className="p-6 lg:p-10 prose prose-invert max-w-3xl mx-auto prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-site prose-img:border prose-img:border-site-border">
+            <div className="mx-auto max-w-3xl p-4 lg:p-6">
               {previewContent ? (
                 <>
-                  <h1 className="text-4xl lg:text-5xl font-black mb-4 tracking-tight leading-tight">
+                  <h1 className="site-display-3 mb-4">
                     {formData.title || t('untitled-post', { defaultValue: 'Untitled Post' })}
                   </h1>
                   {formData.description && (
-                    <p className="text-xl border-l-4 border-site-accent pl-6 mb-8 text-site-text-muted">
+                    <p className="site-lede mb-6 border-s-2 border-site-accent ps-4">
                       {formData.description}
                     </p>
                   )}
                   <ReactMarkdown components={markdownComponents}>{previewContent}</ReactMarkdown>
                 </>
               ) : (
-                <div className="text-center text-site-text-dim mt-32 flex flex-col items-center gap-4">
+                <div className="text-center text-site-text-dim mt-16 flex flex-col items-center gap-3">
                   <p>
                     {t('preview-hint', {
                       defaultValue: 'Start typing to see the preview or click Refresh.',

@@ -51,7 +51,7 @@ export function SynapseStormGate() {
 
   if (session.isPending || loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-[#0a0a1a]">
+      <div className="app-ground w-full flex items-center justify-center bg-[#0a0a1a]">
         <Loader2 className="w-12 h-12 text-cyan-500 animate-spin" />
       </div>
     );

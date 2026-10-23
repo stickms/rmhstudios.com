@@ -189,7 +189,7 @@ export function PianoRollView() {
   // ─── No clip selected ─────────────────────────────────────────────────
   if (!clip || clip.type !== 'midi') {
     return (
-      <div className="flex h-full items-center justify-center text-[var(--site-muted)]">
+      <div className="flex h-full items-center justify-center text-site-text-muted">
         <div className="text-center">
           <p className="text-sm">{t("select-midi-clip", { defaultValue: "Select a MIDI clip to edit" })}</p>
           <p className="mt-1 text-xs opacity-50">{t("double-click-clip-hint", { defaultValue: "Double-click a clip in the arrangement" })}</p>
@@ -201,13 +201,13 @@ export function PianoRollView() {
   return (
     <div ref={containerRef} className="flex h-full flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex h-6 shrink-0 items-center gap-2 border-b border-[var(--site-border)] bg-[var(--site-surface)] px-3">
-        <span className="text-xs font-medium text-[var(--site-text)]">{clip.name}</span>
-        <span className="text-[10px] text-[var(--site-muted)]">{t("note-count", { defaultValue: "{{count}} notes", count: clip.notes.length })}</span>
+      <div className="flex h-6 shrink-0 items-center gap-2 border-b border-site-border bg-site-surface px-3">
+        <span className="text-xs font-medium text-site-text">{clip.name}</span>
+        <span className="text-xs text-site-text-muted">{t("note-count", { defaultValue: "{{count}} notes", count: clip.notes.length })}</span>
       </div>
 
       {/* Main area — single scroll container with sticky keyboard */}
-      <div className="flex-1 overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+      <div className="flex-1 overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-site-border">
         <div className="relative flex" style={{ height: TOTAL_NOTES * NOTE_HEIGHT }}>
           {/* Piano keyboard — sticky left */}
           <div
@@ -222,10 +222,10 @@ export function PianoRollView() {
               return (
                 <div
                   key={note}
-                  className={`flex items-center border-b border-r border-[var(--site-border)] text-[9px] ${
+                  className={`flex items-center border-b border-r border-site-border text-xs ${
                     isBlack
-                      ? 'border-b-black/30 bg-gray-800 text-gray-400'
-                      : 'border-b-white/5 bg-gray-900 text-gray-300'
+                      ? 'border-b-site-border bg-site-bg-subtle text-site-text-muted'
+                      : 'border-b-site-border bg-site-surface text-site-text'
                   } ${name === 'C' ? 'font-bold' : ''}`}
                   style={{ height: NOTE_HEIGHT, paddingLeft: 4 }}
                 >
@@ -245,8 +245,8 @@ export function PianoRollView() {
       </div>
 
       {/* Velocity lane */}
-      <div className="flex shrink-0 border-t border-[var(--site-border)]">
-        <div className="flex shrink-0 items-center justify-center bg-[var(--site-surface)] text-[9px] text-[var(--site-muted)]" style={{ width: PIANO_KEY_WIDTH }}>
+      <div className="flex shrink-0 border-t border-site-border">
+        <div className="flex shrink-0 items-center justify-center bg-site-surface text-xs text-site-text-muted" style={{ width: PIANO_KEY_WIDTH }}>
           {t("velocity-abbr", { defaultValue: "Vel" })}
         </div>
         <canvas ref={velocityRef} />

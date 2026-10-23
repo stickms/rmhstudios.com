@@ -33,6 +33,12 @@
   --altair-accent: #c8a44a;
   --altair-accent-hover: #d4b45a;
   --altair-accent-dim: rgba(200, 164, 74, 0.15);
+  /* Ink paired to the accent fill (white on burnished gold is ~2:1). */
+  --altair-accent-fg: #1a1410;
+  /* HUD ink + scrim: chrome that floats over the game world is always light-on-dark,
+     whatever the menu theme is. Used as `text-(--altair-hud-ink)/70`, `bg-(--altair-hud-scrim)/40`. */
+  --altair-hud-ink: #ffffff;
+  --altair-hud-scrim: #000000;
 
   /* Semantic colors */
   --altair-success: #5a9a4a;
@@ -55,6 +61,7 @@
   --altair-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
   --altair-radius: 8px;
   --altair-radius-sm: 4px;
+  --altair-radius-lg: 12px;
   --altair-toast-bg: #2a2218;
 }
 
@@ -74,6 +81,7 @@
   --altair-accent: #a88830;
   --altair-accent-hover: #8e7420;
   --altair-accent-dim: rgba(168, 136, 48, 0.10);
+  --altair-accent-fg: #ffffff;
   --altair-success: #408a40;
   --altair-success-dim: rgba(64, 138, 64, 0.08);
   --altair-danger: #a04030;

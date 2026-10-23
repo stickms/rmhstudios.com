@@ -12,6 +12,7 @@
   "allow-queue-voting-desc": "Members can upvote queue items",
   "appearance": "Appearance",
   "appearance-desc": "How RmhTube looks on this device",
+  "apps": "Apps",
   "attach-timestamp": "Attach the current time",
   "attach-timestamp-aria": "Attach the current playback time",
   "auto-play": "Auto-Play",

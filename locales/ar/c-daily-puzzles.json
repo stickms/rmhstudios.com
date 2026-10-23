@@ -261,5 +261,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "خطأ — تم تبرئة ذلك المشتبه به. لديك تخمين واحد متبقي.",
   "wrong-outcast-was": "❌ خطأ — المنبوذ كان {{name}}",
-  "youre-the-first": "أنت الأول!"
+  "youre-the-first": "أنت الأول!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

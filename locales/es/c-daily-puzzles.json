@@ -255,5 +255,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "Incorrecto — ese sospechoso ha sido descartado. Te queda 1 intento.",
   "wrong-outcast-was": "❌ Incorrecto — el excluido era {{name}}",
-  "youre-the-first": "¡Eres el primero!"
+  "youre-the-first": "¡Eres el primero!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

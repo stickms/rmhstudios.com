@@ -107,7 +107,7 @@ function PoemTutorial({ onDismiss, presentations }: {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center-safe justify-center-safe overflow-y-auto p-4"
       style={{ backgroundColor: 'rgba(10, 8, 15, 0.85)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -313,14 +313,14 @@ export function WordSelectPuzzle() {
 
   if (!puzzle) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center app-ground">
         <p style={{ color: '#a89888' }}>{t("no-puzzle-loaded", { defaultValue: "No puzzle loaded." })}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col app-ground">
       {/* Tutorial overlay for first poem */}
       <AnimatePresence>
         {showTutorial && (

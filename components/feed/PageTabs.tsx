@@ -62,7 +62,7 @@ interface PageTabsProps {
 }
 
 /** The shared gutter. One number, so no page can drift off the column edge. */
-const GUTTER = 'px-2 md:px-3';
+const GUTTER = 'px-4';
 
 export function PageTabs({
   tabs,

@@ -324,7 +324,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  ) : (
  suggestions.map((suggestion, i) => {
  const active = i === activeIndex;
- const rowClass = `flex min-h-9 pointer-coarse:min-h-11 items-center gap-2.5 w-full rounded-site-sm px-3 py-2 text-left transition-colors duration-site ${
+ const rowClass = `flex min-h-9 pointer-coarse:min-h-11 items-center gap-3 w-full rounded-site-sm px-3 py-2 text-left transition-colors duration-site ${
  active ?'bg-site-surface-hover':'hover:bg-site-surface-hover'
  }`;
  if (suggestion.kind ==='user') {
@@ -339,7 +339,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  onMouseDown={(e) => e.preventDefault()}
  onClick={() => applySuggestion(suggestion)}
  >
- <span className="w-7 h-7 rounded-full bg-white/10 shrink-0 overflow-hidden flex items-center justify-center text-xs font-bold text-site-text">
+ <span className="w-7 h-7 rounded-full bg-site-surface-hover shrink-0 overflow-hidden flex items-center justify-center text-xs font-bold text-site-text">
  {u.image ? (
  <img
  src={u.image}

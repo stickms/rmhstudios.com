@@ -71,5 +71,8 @@
   "views-count_other": "{{count}} views",
   "write-comment": "Write a comment...",
   "write-reply": "Write a reply...",
-  "years-ago_other": "{{count}}y ago"
+  "years-ago_other": "{{count}}y ago",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

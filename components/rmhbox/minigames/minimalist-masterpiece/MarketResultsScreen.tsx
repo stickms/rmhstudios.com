@@ -58,7 +58,7 @@ export default function MarketResultsScreen({
         {rankings.map((r) => (
           <div
             key={r.drawingId}
-            className="flex items-center gap-3 p-3 rounded-lg border border-(--app-border)"
+            className="flex items-center gap-3 p-3 rounded-(--app-radius-sm) border border-(--app-border)"
           >
             <span className="text-2xl font-bold text-(--app-accent) w-8 text-center">
               #{r.rank}
@@ -96,7 +96,7 @@ export default function MarketResultsScreen({
               .map((sb) => (
                 <div
                   key={sb.userId}
-                  className="flex justify-between items-center text-sm px-3 py-2 rounded-lg bg-(--app-surface) border border-(--app-border)"
+                  className="flex justify-between items-center text-sm px-3 py-2 rounded-(--app-radius-sm) bg-(--app-surface) border border-(--app-border)"
                 >
                   <span className="font-medium text-(--app-text)">{sb.userName}</span>
                   <div className="flex items-center gap-3 text-xs">
@@ -107,7 +107,7 @@ export default function MarketResultsScreen({
                       <span className="text-(--app-text-muted)">{t("owned-value", { defaultValue: "Owned: {{value}}", value: sb.ownedValue })}</span>
                     )}
                     {sb.overbidPenalty > 0 && (
-                      <span className="text-red-500">{t("penalty-value", { defaultValue: "Penalty: -{{value}}", value: sb.overbidPenalty })}</span>
+                      <span className="text-(--app-danger)">{t("penalty-value", { defaultValue: "Penalty: -{{value}}", value: sb.overbidPenalty })}</span>
                     )}
                     <span className="font-bold text-(--app-accent)">{t("total-score-pts", { defaultValue: "{{score}} pts", score: sb.totalScore })}</span>
                   </div>

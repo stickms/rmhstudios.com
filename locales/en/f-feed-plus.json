@@ -1,8 +1,8 @@
 {
   "alt-chip": "ALT",
-  "alt-required-fix": "Describe it",
   "alt-required_one": "Alt text is required: {{count}} image still needs a description.",
   "alt-required_other": "Alt text is required: {{count}} images still need a description.",
+  "alt-required-fix": "Describe it",
   "alt-setting-failed": "Could not save that setting",
   "alt-setting-hint": "Block your own posts that have an image without a description, so everything you share can be read with a screen reader.",
   "alt-setting-title": "Require alt text",

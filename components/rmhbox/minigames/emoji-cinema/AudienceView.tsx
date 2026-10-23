@@ -82,7 +82,7 @@ export default function AudienceView({
       {hasGuessedCorrectly ? (
         <div className="text-center py-4">
           <span className="text-2xl">🎉</span>
-          <p className="text-sm font-semibold text-green-400 mt-1">{t("guessed-correctly", { defaultValue: "You guessed correctly!" })}</p>
+          <p className="text-sm font-semibold text-(--app-success) mt-1">{t("guessed-correctly", { defaultValue: "You guessed correctly!" })}</p>
         </div>
       ) : (
         <GuessInput

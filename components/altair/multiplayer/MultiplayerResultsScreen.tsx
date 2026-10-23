@@ -28,9 +28,9 @@ export default function MultiplayerResultsScreen({
   const isVictory = results.victory;
 
   return (
-    <div className="app-page">
-      <div className="flex-1 p-4 md:p-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+    <div className="flex flex-1 flex-col">
+      <div className="flex-1 px-4 pt-4 pb-12 md:px-8 md:pt-8">
+        <div className="mx-auto flex max-w-4xl flex-col gap-4 md:gap-6">
           {/* Title */}
           <div className="text-center py-6">
             <h1
@@ -47,7 +47,7 @@ export default function MultiplayerResultsScreen({
           </div>
 
           {/* Player stat cards */}
-          <div className={`grid gap-4 ${results.players.length <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-' + Math.min(results.players.length, 4)}`}>
+          <div className={`grid gap-4 ${results.players.length <= 2 ? 'md:grid-cols-2' : results.players.length === 3 ? 'md:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
             {results.players.map((player) => (
               <PlayerStatCard key={player.userId} player={player} />
             ))}
@@ -57,14 +57,14 @@ export default function MultiplayerResultsScreen({
           <div className="flex gap-4 justify-center pt-4">
             <button
               onClick={onPlayAgain}
-              className="flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-white bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors"
+              className="flex items-center gap-2 px-8 py-3 rounded-(--altair-radius-lg) font-bold text-(--altair-accent-fg) bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors"
             >
               <RotateCcw size={18} />
               {t("play-again", { defaultValue: "Play Again" })}
             </button>
             <button
               onClick={onLeave}
-              className="flex items-center gap-2 px-8 py-3 rounded-xl font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
+              className="flex items-center gap-2 px-8 py-3 rounded-(--altair-radius-lg) font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
             >
               <ArrowLeft size={18} />
               {t("leave", { defaultValue: "Leave" })}
@@ -82,11 +82,11 @@ function PlayerStatCard({ player }: { player: PlayerResultData }) {
   const color = classDef?.color || PLAYER_SLOT_COLORS[player.slot] || '#666';
 
   return (
-    <div className="rounded-xl border bg-(--altair-surface) p-4" style={{ borderColor: `${color}40` }}>
+    <div className="rounded-(--altair-radius-lg) border bg-(--altair-surface) p-4" style={{ borderColor: `${color}40` }}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-3">
         <div
-          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white"
+          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-(--altair-hud-ink)"
           style={{ backgroundColor: color }}
         >
           {player.userName.charAt(0).toUpperCase()}
@@ -112,8 +112,8 @@ function PlayerStatCard({ player }: { player: PlayerResultData }) {
 
       {/* Coin breakdown */}
       <div className="mt-3 pt-3 border-t border-(--altair-border)">
-        <div className="text-[10px] text-(--altair-text-dim) uppercase tracking-wider mb-1">{t("coin-breakdown", { defaultValue: "Coin Breakdown" })}</div>
-        <div className="grid grid-cols-2 gap-1 text-[11px]">
+        <div className="text-xs text-(--altair-text-dim) uppercase tracking-wider mb-1">{t("coin-breakdown", { defaultValue: "Coin Breakdown" })}</div>
+        <div className="grid grid-cols-2 gap-1 text-xs">
           {player.coinBreakdown.enemyDrops > 0 && <CoinRow label={t("enemy-drops", { defaultValue: "Enemy drops" })} value={player.coinBreakdown.enemyDrops} />}
           {player.coinBreakdown.bossKills > 0 && <CoinRow label={t("boss-kills", { defaultValue: "Boss kills" })} value={player.coinBreakdown.bossKills} />}
           {player.coinBreakdown.chestDrops > 0 && <CoinRow label={t("chests", { defaultValue: "Chests" })} value={player.coinBreakdown.chestDrops} />}

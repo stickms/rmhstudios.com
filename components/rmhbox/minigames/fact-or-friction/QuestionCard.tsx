@@ -16,12 +16,12 @@ interface QuestionCardProps {
   totalQuestions: number;
 }
 
-const DEFAULT_DIFFICULTY_STYLE = 'bg-yellow-500/20 text-yellow-400';
+const DEFAULT_DIFFICULTY_STYLE = 'bg-(--app-warning)/20 text-(--app-warning)';
 
 const DIFFICULTY_STYLES: Record<string, string> = {
-  easy: 'bg-green-500/20 text-green-400',
+  easy: 'bg-(--app-success)/20 text-(--app-success)',
   medium: DEFAULT_DIFFICULTY_STYLE,
-  hard: 'bg-red-500/20 text-red-400',
+  hard: 'bg-(--app-danger)/20 text-(--app-danger)',
 };
 
 export default function QuestionCard({
@@ -36,7 +36,7 @@ export default function QuestionCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, type: 'spring' }}
-      className="w-full rounded-xl border border-(--app-border) bg-(--app-bg) p-5"
+      className="w-full rounded-(--app-radius) border border-(--app-border) bg-(--app-bg) p-5"
     >
       {/* Header: question number + badges */}
       <div className="mb-3 flex items-center justify-between">

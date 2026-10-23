@@ -104,7 +104,7 @@ export function SettingsSheet() {
   }, [binding, settings]);
 
   return (
-    <Panel className="max-h-[min(38rem,80vh)] w-[min(30rem,92vw)] space-y-5 overflow-y-auto">
+    <Panel className="max-h-[min(38rem,80dvh)] w-[min(30rem,92vw)] space-y-5 overflow-y-auto">
       <h2 className="text-lg font-black tracking-tight">
         {t('settings', { defaultValue: 'Options' })}
       </h2>

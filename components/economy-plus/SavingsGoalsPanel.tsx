@@ -114,7 +114,7 @@ export default function SavingsGoalsPanel() {
 
   if (isLoading || !data) {
     return (
-      <div className="space-y-3 px-3 pb-8">
+      <div className="space-y-3 px-3 pb-12">
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-28 w-full" />
       </div>
@@ -122,7 +122,7 @@ export default function SavingsGoalsPanel() {
   }
 
   return (
-    <div className="space-y-3 px-3 pb-8">
+    <div className="space-y-3 px-3 pb-12">
       <p className="px-1 text-sm text-site-text-muted">
         {t('goals-intro', {
           defaultValue:

@@ -55,13 +55,13 @@ export function RecruitForm() {
           <code className="flex-1 text-xs font-mono text-white/60 bg-white/5 p-2 rounded truncate">
             {link}
           </code>
-          <button onClick={copyLink} className="p-3 md:p-2 rounded hover:bg-white/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
-            {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-white/40" />}
+          <button type="button" onClick={copyLink} aria-label={copied ? t("link-copied", { defaultValue: "Link copied" }) : t("copy-link", { defaultValue: "Copy link" })} className="rounded hover:bg-white/10 transition-colors size-11 shrink-0 flex items-center justify-center">
+            {copied ? <Check size={16} aria-hidden className="text-green-400" /> : <Copy size={16} aria-hidden className="text-white/60" />}
           </button>
         </div>
         <button
           onClick={() => { setCode(null); setMessage(''); }}
-          className="text-sm md:text-xs text-white/40 hover:text-white/60 transition-colors min-h-[44px] md:min-h-0 flex items-center"
+          className="text-sm md:text-xs text-white/60 hover:text-white/90 transition-colors min-h-11 md:min-h-0 flex items-center"
         >
           {t("generate-another", { defaultValue: "Generate another" })}
         </button>
@@ -76,22 +76,25 @@ export function RecruitForm() {
         {t("recruit-an-asset", { defaultValue: "Recruit an Asset" })}
       </h3>
       <textarea
+        aria-label={t("recruitment-message-label", { defaultValue: "Recruitment message" })}
         value={message}
         onChange={e => setMessage(e.target.value)}
         placeholder={t("recruitment-message-placeholder", { defaultValue: "Write a personal recruitment message..." })}
-        className="w-full h-28 md:h-24 text-base md:text-sm bg-white/5 border border-white/10 rounded-lg p-3 text-white/80 placeholder:text-white/20 resize-none focus:outline-none focus:border-white/20"
+        className="w-full h-28 md:h-24 text-base md:text-sm bg-white/5 border border-white/10 rounded-lg p-3 text-white/80 placeholder:text-white/50 resize-none focus:outline-none focus:border-white/20"
         maxLength={500}
       />
       <input
+        aria-label={t("target-skills-label", { defaultValue: "Target skills" })}
         value={skills}
         onChange={e => setSkills(e.target.value)}
         placeholder={t("target-skills-placeholder", { defaultValue: "Target skills (comma-separated): frontend, design, music" })}
-        className="w-full text-base md:text-sm bg-white/5 border border-white/10 rounded-lg p-3 md:p-2.5 text-white/80 placeholder:text-white/20 focus:outline-none focus:border-white/20 min-h-[44px]"
+        className="w-full text-base md:text-sm bg-white/5 border border-white/10 rounded-lg p-3 md:p-2.5 text-white/80 placeholder:text-white/50 focus:outline-none focus:border-white/20 min-h-11"
       />
       <button
+        type="button"
         onClick={handleGenerate}
         disabled={!message.trim() || loading}
-        className="w-full py-3 md:py-2 text-base md:text-sm font-medium rounded-lg transition disabled:opacity-40 min-h-[44px]"
+        className="w-full py-3 md:py-2 text-base md:text-sm font-medium rounded-lg transition disabled:opacity-40 min-h-11"
         style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
       >
         {loading ? t("generating", { defaultValue: "Generating..." }) : t("generate-recruitment-code", { defaultValue: "Generate Recruitment Code" })}

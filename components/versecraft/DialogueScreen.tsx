@@ -323,7 +323,7 @@ export function DialogueScreen() {
 
   if (!currentScene || !currentNode) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center app-ground">
         <p style={{ color: '#a89888' }}>{t('loading', { defaultValue: 'Loading...' })}</p>
       </div>
     );
@@ -336,7 +336,7 @@ export function DialogueScreen() {
 
   return (
     <div
-      className="relative w-full min-h-screen overflow-hidden cursor-pointer"
+      className="relative w-full app-ground overflow-hidden cursor-pointer"
       onClick={handleClick}
     >
       {/* Background — z-0 */}

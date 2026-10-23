@@ -27,7 +27,7 @@ export function GameLoadingFallback({
   const { t } = useTranslation('shared');
   return (
     <div
-      className="flex h-screen w-full items-center justify-center"
+      className="app-ground flex w-full items-center justify-center"
       style={{ backgroundColor: background, color: foreground }}
       role="status"
     >

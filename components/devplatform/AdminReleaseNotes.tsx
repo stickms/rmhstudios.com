@@ -1,9 +1,11 @@
 'use client';
 
+import { AdminBody } from '@/components/admin/AdminBody';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Sparkles, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -79,9 +81,9 @@ export function AdminReleaseNotes() {
   }
 
   return (
-    <div className="space-y-6 px-4 pb-12">
-      <section className="glass-fill space-y-2 rounded-site p-4">
-        <h2 className="text-sm font-bold text-site-text">
+    <AdminBody width="narrow">
+      <section className="glass-fill space-y-3 rounded-site p-4">
+        <h2 className="site-section-label">
           {t('admin-pasteTitle', { defaultValue: 'Merged pull requests' })}
         </h2>
         <Textarea
@@ -97,20 +99,19 @@ export function AdminReleaseNotes() {
         <Button
           variant="accent"
           size="sm"
-          className="gap-1"
           disabled={busy || prs.trim().length < 10}
           onClick={draft}
         >
-          <Sparkles className="h-4 w-4" aria-hidden />
+          <Sparkles aria-hidden />
           {t('admin-draft', { defaultValue: 'Draft with AI' })}
         </Button>
       </section>
 
-      <section className="glass-fill space-y-2 rounded-site p-4">
-        <h2 className="text-sm font-bold text-site-text">
+      <section className="glass-fill space-y-3 rounded-site p-4">
+        <h2 className="site-section-label">
           {t('admin-editTitle', { defaultValue: 'Release note' })}
         </h2>
-        <div className="grid gap-2 sm:grid-cols-[10rem_1fr]">
+        <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
           <Input
             value={version}
             onChange={(e) => setVersion(e.target.value)}
@@ -156,18 +157,18 @@ export function AdminReleaseNotes() {
         </div>
       </section>
 
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {notes.map((n) => (
-          <li key={n.id} className="glass-fill space-y-2 rounded-site p-4">
+          <li key={n.id} className="glass-fill space-y-3 rounded-site p-4">
             <div className="flex items-center gap-2">
               <p className="min-w-0 flex-1 truncate text-sm font-semibold text-site-text">
                 {n.version} · {n.title}
               </p>
-              <span className="text-xs text-site-text-dim">
+              <Badge variant={n.publishedAt ? 'success' : 'default'}>
                 {n.publishedAt
                   ? t('admin-live', { defaultValue: 'Live' })
                   : t('admin-draftLabel', { defaultValue: 'Draft' })}
-              </span>
+              </Badge>
               <Button variant="ghost" size="sm" onClick={() => toggle(n)}>
                 {n.publishedAt
                   ? t('admin-unpublish', { defaultValue: 'Unpublish' })
@@ -179,13 +180,13 @@ export function AdminReleaseNotes() {
                 onClick={() => remove(n)}
                 aria-label={t('admin-delete', { defaultValue: 'Delete note' })}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 aria-hidden />
               </Button>
             </div>
             <NoteBody body={n.body} />
           </li>
         ))}
       </ul>
-    </div>
+    </AdminBody>
   );
 }

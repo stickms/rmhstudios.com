@@ -32,18 +32,18 @@ import type { GridTileClient } from './UndercoverAgentGame';
 
 /** Revealed tile background colors by tile type */
 const REVEALED_COLORS: Record<string, { bg: string; text: string }> = {
-  RED_AGENT: { bg: 'bg-red-600/80', text: 'text-white' },
-  BLUE_AGENT: { bg: 'bg-blue-600/80', text: 'text-white' },
-  BYSTANDER: { bg: 'bg-amber-200/50 dark:bg-amber-200/40', text: 'text-black' },
-  ASSASSIN: { bg: 'bg-neutral-900 border-2 dark:border-white/60 border-neutral-400/60', text: 'text-white' },
+  RED_AGENT: { bg: 'bg-(--app-danger)/80', text: 'text-(--app-bg)' },
+  BLUE_AGENT: { bg: 'bg-(--app-info)/80', text: 'text-(--app-bg)' },
+  BYSTANDER: { bg: 'bg-(--app-warning)/40', text: 'text-(--app-text)' },
+  ASSASSIN: { bg: 'bg-(--app-surface-hover) border-2 border-(--app-border-bright)', text: 'text-(--app-text)' },
 };
 
 /** Spymaster key-card border colors for hidden tiles */
 const SPYMASTER_HINTS: Record<string, string> = {
-  RED_AGENT: 'ring-2 ring-red-500/50',
-  BLUE_AGENT: 'ring-2 ring-blue-500/50',
-  BYSTANDER: 'ring-2 ring-amber-500/50',
-  ASSASSIN: 'ring-2 ring-black-800/60 dark:ring-white-800/60 bg-black/40',
+  RED_AGENT: 'ring-2 ring-(--app-danger)/50',
+  BLUE_AGENT: 'ring-2 ring-(--app-info)/50',
+  BYSTANDER: 'ring-2 ring-(--app-warning)/50',
+  ASSASSIN: 'ring-2 ring-(--app-border-bright) bg-(--app-scrim)',
 };
 
 /** Get font size class based on word length so long words fit without truncating */
@@ -136,17 +136,17 @@ export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts
             whileHover={clickable ? { scale: 1.05 } : undefined}
             whileTap={clickable ? { scale: 0.95 } : undefined}
             className={`
-              relative flex items-center justify-center rounded-lg border-2 box-border px-1 py-3 font-semibold
+              relative flex items-center justify-center rounded-(--app-radius-sm) border-2 box-border px-1 py-3 font-semibold
               transition duration-200 sm:py-4
               ${getWordSizeClass(tile.word)}
               ${
                 isRevealed
                   ? `${revealedStyle?.bg ?? ''} ${revealedStyle?.text ?? ''} border-transparent opacity-80 ${spymasterHint}`
                   : isHighlighted
-                    ? `border-amber-400 bg-amber-400/15 text-(--app-text) ring-2 ring-amber-400/50 ${spymasterHint}`
+                    ? `border-(--app-warning) bg-(--app-warning)/15 text-(--app-text) ring-2 ring-(--app-warning)/50 ${spymasterHint}`
                     : `border-(--app-border) bg-(--app-surface) text-(--app-text) ${spymasterHint}`
               }
-              ${clickable && !isHighlighted ? 'cursor-pointer hover:border-amber-400/60 hover:bg-transparent' : ''}
+              ${clickable && !isHighlighted ? 'cursor-pointer hover:border-(--app-warning)/60 hover:bg-transparent' : ''}
               ${clickable && isHighlighted ? 'cursor-pointer' : ''}
               ${!clickable && !isRevealed ? 'cursor-default' : ''}
             `}
@@ -160,7 +160,7 @@ export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.5 }}
-                  className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-black shadow-lg sm:h-6 sm:w-6"
+                  className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-(--app-warning) text-(--app-bg) shadow-lg sm:h-6 sm:w-6"
                   title={t("operatives-highlighting", { count: hlCount, defaultValue: "{{count}} operative highlighting", defaultValue_other: "{{count}} operatives highlighting" })}
                 >
                   <span className="text-[9px] font-bold sm:text-[10px]">{hlCount}</span>
@@ -176,7 +176,7 @@ export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.5 }}
                   onClick={(e) => handleConfirmClick(e, tile.position)}
-                  className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-black shadow-lg cursor-pointer hover:bg-amber-300 transition-colors sm:h-6 sm:w-6"
+                  className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-(--app-warning) text-(--app-bg) shadow-lg cursor-pointer hover:bg-(--app-warning) transition-colors sm:h-6 sm:w-6"
                   title={t("confirm-guess", { defaultValue: "Confirm guess" })}
                 >
                   <MousePointerClick className="h-3 w-3 sm:h-3.5 sm:w-3.5" />

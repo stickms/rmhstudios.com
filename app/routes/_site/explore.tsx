@@ -86,7 +86,7 @@ function ExplorePage() {
         defaultValue: 'Search people, posts, builds and writing across RMH Studios.',
       })}
     >
-      <div className="flex justify-end px-4 pt-3">
+      <div className="flex justify-end px-4 pt-4">
         <SurpriseButton />
       </div>
       <SavedSearches currentQuery={q} />

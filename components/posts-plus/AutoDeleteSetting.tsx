@@ -8,6 +8,7 @@ import { Hourglass } from 'lucide-react';
 import { Select } from '@/components/ui/select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { AUTO_DELETE_MONTHS, type AutoDeleteMonths } from '@/lib/posts-plus/constants';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 /**
  * X8 - "Auto-delete my posts older than N months", in Settings > Content.
@@ -99,13 +100,13 @@ export function AutoDeleteSetting() {
   };
 
   return (
-    <section className="glass-fill mb-6 flex flex-col gap-3 rounded-site p-4 sm:flex-row sm:items-start">
-      <Hourglass className="mt-0.5 h-5 w-5 shrink-0 text-site-text-dim" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <h2 id={labelId} className="text-sm font-semibold text-site-text">
-          {t('autodelete-title', { defaultValue: 'Auto-delete old posts' })}
-        </h2>
-        <p id={hintId} className="mt-0.5 text-sm text-site-text-muted">
+    <SettingsSection
+      surface="fill"
+      icon={Hourglass}
+      title={t('autodelete-title', { defaultValue: 'Auto-delete old posts' })}
+      titleId={labelId}
+      description={
+        <>
           {t('autodelete-hint', {
             defaultValue:
               'Move your posts to the recycle bin once they are older than the window you pick. Pinned posts, posts you bookmarked, and posts you restore are always kept.',
@@ -113,15 +114,17 @@ export function AutoDeleteSetting() {
           <Link to="/trash" className="text-site-accent underline-offset-2 hover:underline">
             {t('autodelete-trash', { defaultValue: 'Open recycle bin' })}
           </Link>
-        </p>
-      </div>
+        </>
+      }
+      descriptionId={hintId}
+    >
       <Select
         value={months ? String(months) : ''}
         onChange={(e) => void change(e.target.value)}
         disabled={!ready || saving}
         aria-labelledby={labelId}
         aria-describedby={hintId}
-        className="sm:w-44"
+        className="sm:w-60"
       >
         <option value="">{t('autodelete-off', { defaultValue: 'Off' })}</option>
         {AUTO_DELETE_MONTHS.map((m) => (
@@ -130,6 +133,6 @@ export function AutoDeleteSetting() {
           </option>
         ))}
       </Select>
-    </section>
+    </SettingsSection>
   );
 }

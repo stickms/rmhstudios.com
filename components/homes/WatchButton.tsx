@@ -1,11 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Link } from '@tanstack/react-router';
-import { Bell, X } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useSession } from '@/components/Providers';
 import { propertyTypeLabel } from '@/lib/homes/format';
@@ -92,57 +102,25 @@ export function WatchButton({ filters, center }: WatchButtonProps) {
   if (!session) return null;
 
   return (
-    <>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <Bell className="h-4 w-4" />
-        <span className="hidden sm:inline">Watch</span>
-      </Button>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="min-h-11">
+          <Bell className="h-4 w-4" aria-hidden />
+          <span className="hidden sm:inline">Watch</span>
+          <span className="sr-only sm:hidden">Watch</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create an alert</DialogTitle>
+          <DialogDescription>
+            We’ll notify you when a new listing matches this search.
+          </DialogDescription>
+        </DialogHeader>
 
-      {open &&
-        typeof document !== 'undefined' &&
-        // PORTALLED. `fixed inset-0` was already covering the viewport —
-        // `.radial-frame` is `position: relative`, not a containing block for
-        // fixed descendants — but its `z-50` was measured inside that frame's
-        // stacking context, which is pinned at 1. So the hub orb (z-80, a shell
-        // child) painted its 60px accent disc straight over the bottom of this
-        // sheet, and the sheet is `items-end`: the disc landed on the "Create
-        // alert" row and ate every tap inside that circle.
-        createPortal(
-          <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={() => setOpen(false)}
-              data-motion="fade"
-              className="absolute inset-0 h-full w-full cursor-default bg-site-media-scrim-strong"
-            />
-          <div
-            role="dialog"
-            aria-modal="true"
-            data-motion="rise"
-            className="relative z-10 w-full max-w-md rounded-t-site glass-overlay p-5 sm:rounded-site"
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-site-text font-display">Create an alert</h3>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Close"
-                className="text-site-text-muted hover:text-site-text"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <p className="mb-3 text-sm text-site-text-muted">
-              We’ll notify you when a new listing matches this search.
-            </p>
-
-            <label
-              htmlFor="watch-label"
-              className="mb-1.5 block text-sm font-medium text-site-text"
-            >
-              Name
-            </label>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="watch-label">Name</Label>
             <Input
               id="watch-label"
               value={label}
@@ -150,35 +128,31 @@ export function WatchButton({ filters, center }: WatchButtonProps) {
               placeholder={defaultLabel}
               onChange={(e) => setLabel(e.target.value)}
             />
+          </div>
 
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {criteria.map((c) => (
-                <span
-                  key={c}
-                  className="rounded-full border border-site-border bg-site-bg px-2.5 py-1 text-xs text-site-text-dim"
-                >
-                  {c}
-                </span>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {criteria.map((c) => (
+              <Badge key={c} variant="outline" size="default">
+                {c}
+              </Badge>
+            ))}
+          </div>
+        </div>
 
-            <div className="mt-5 flex items-center gap-2">
-              <Button onClick={create} loading={saving}>
-                {!saving && <Bell className="h-4 w-4" />}
-                Create alert
-              </Button>
-              <Link
-                to="/homes/manage"
-                search={{ tab: 'alerts' }}
-                className="text-sm text-site-text-muted hover:text-site-text"
-              >
-                Manage alerts
-              </Link>
-            </div>
-            </div>
-          </div>,
-          document.body,
-        )}
-    </>
+        <DialogFooter>
+          <Link
+            to="/homes/manage"
+            search={{ tab: 'alerts' }}
+            className="inline-flex min-h-11 items-center text-sm text-site-text-muted hover:text-site-text sm:mr-auto"
+          >
+            Manage alerts
+          </Link>
+          <Button onClick={create} loading={saving}>
+            {!saving && <Bell className="h-4 w-4" aria-hidden />}
+            Create alert
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

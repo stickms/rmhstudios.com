@@ -198,7 +198,7 @@ export default function RmhStudyRoom() {
   const timerAndTasks = (
     <div className="space-y-6">
       {/* Timer */}
-      <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-8 text-center">
+      <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-8 text-center">
         <div className={`text-sm font-medium uppercase tracking-wider mb-2 ${phaseColor(timer.phase)}`}>
           {phaseLabel(timer.phase, t)}
         </div>
@@ -234,7 +234,7 @@ export default function RmhStudyRoom() {
             {timer.phase === 'idle' && (
               <button
                 onClick={() => emit(C2S.TIMER_START, { roomCode })}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-(--app-accent-fg) transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
               >
                 <Play className="h-4 w-4" />
                 {t('start', { defaultValue: 'Start' })}
@@ -243,7 +243,7 @@ export default function RmhStudyRoom() {
             {timer.phase !== 'idle' && !timer.isPaused && (
               <button
                 onClick={() => emit(C2S.TIMER_PAUSE, { roomCode })}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-surface-active)"
+                className="flex items-center gap-2 px-4 py-2 rounded-(--app-radius-sm) font-medium transition-colors bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-surface-active)"
               >
                 <Pause className="h-4 w-4" />
                 {t('pause', { defaultValue: 'Pause' })}
@@ -252,7 +252,7 @@ export default function RmhStudyRoom() {
             {timer.isPaused && (
               <button
                 onClick={() => emit(C2S.TIMER_RESUME, { roomCode })}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-(--app-accent-fg) transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                className="flex items-center gap-2 px-4 py-2 rounded-(--app-radius-sm) font-medium text-(--app-accent-fg) transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
               >
                 <Play className="h-4 w-4" />
                 {t('resume', { defaultValue: 'Resume' })}
@@ -262,14 +262,14 @@ export default function RmhStudyRoom() {
               <>
                 <button
                   onClick={() => emit(C2S.TIMER_SKIP, { roomCode })}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-surface-active)"
+                  className="flex items-center gap-2 px-4 py-2 rounded-(--app-radius-sm) font-medium transition-colors bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-surface-active)"
                 >
                   <SkipForward className="h-4 w-4" />
                   {t('skip', { defaultValue: 'Skip' })}
                 </button>
                 <button
                   onClick={() => emit(C2S.TIMER_RESET, { roomCode })}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-(--app-danger-dim) text-(--app-danger) hover:bg-(--app-danger) hover:text-white"
+                  className="flex items-center gap-2 px-4 py-2 rounded-(--app-radius-sm) font-medium transition-colors bg-(--app-danger-dim) text-(--app-danger) hover:bg-(--app-danger) hover:text-(--app-bg)"
                 >
                   <RotateCcw className="h-4 w-4" />
                   {t('reset', { defaultValue: 'Reset' })}
@@ -281,7 +281,7 @@ export default function RmhStudyRoom() {
       </div>
 
       {/* Tasks */}
-      <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-4">
+      <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4">
         <h3 className="text-sm font-semibold mb-3">{t('my-tasks', { defaultValue: 'My Tasks' })}</h3>
         <form onSubmit={handleAddTask} className="flex gap-2 mb-3">
           <input
@@ -290,9 +290,9 @@ export default function RmhStudyRoom() {
             onChange={(e) => setNewTask(e.target.value)}
             maxLength={200}
             placeholder={t('add-task-placeholder', { defaultValue: 'Add a task...' })}
-            className="flex-1 px-3 py-2 rounded-lg text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+            className="flex-1 px-3 py-2 rounded-(--app-radius-sm) text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
           />
-          <button type="submit" className="p-2 rounded-lg bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)">
+          <button type="submit" className="p-2 rounded-(--app-radius-sm) bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)">
             <Plus className="h-4 w-4" />
           </button>
         </form>
@@ -301,12 +301,12 @@ export default function RmhStudyRoom() {
         ) : (
           <div className="space-y-1">
             {tasks.map((task) => (
-              <div key={task.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-(--app-bg) group">
+              <div key={task.id} className="flex items-center gap-2 p-2 rounded-(--app-radius-sm) hover:bg-(--app-bg) group">
                 <button
                   onClick={() => emit(C2S.TASK_TOGGLE, { roomCode, taskId: task.id })}
-                  className={`shrink-0 h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
+                  className={`shrink-0 h-5 w-5 rounded-(--app-radius-sm) border-2 flex items-center justify-center transition-colors ${
                     task.completed
-                      ? 'bg-(--app-success) border-(--app-success) text-white'
+                      ? 'bg-(--app-success) border-(--app-success) text-(--app-bg)'
                       : 'border-(--app-border-bright) hover:border-(--app-accent)'
                   }`}
                 >
@@ -317,7 +317,7 @@ export default function RmhStudyRoom() {
                 </span>
                 <button
                   onClick={() => emit(C2S.TASK_DELETE, { roomCode, taskId: task.id })}
-                  className="shrink-0 p-1 rounded text-(--app-text-dim) opacity-0 group-hover:opacity-100 hover:text-(--app-danger)"
+                  className="shrink-0 p-1 rounded-(--app-radius-sm) text-(--app-text-dim) opacity-0 group-hover:opacity-100 hover:text-(--app-danger)"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -339,7 +339,7 @@ export default function RmhStudyRoom() {
           {isHost && (
             <button
               onClick={handleTogglePublic}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-(--app-radius-sm) transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
             >
               {room.isPublic ? <Globe className="h-3 w-3" /> : <GlobeLock className="h-3 w-3" />}
               {room.isPublic ? t('public', { defaultValue: 'Public' }) : t('private', { defaultValue: 'Private' })}
@@ -347,7 +347,7 @@ export default function RmhStudyRoom() {
           )}
           <button
             onClick={handleCopyCode}
-            className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+            className="flex items-center gap-1 text-xs px-2 py-1 rounded-(--app-radius-sm) bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
           >
             <Copy className="h-3 w-3" />
             {roomCode}
@@ -374,14 +374,14 @@ export default function RmhStudyRoom() {
               <div className="flex gap-0.5 ml-auto opacity-0 group-hover/member:opacity-100">
                 <button
                   onClick={() => handleKick(m.userId)}
-                  className="rounded p-0.5 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
+                  className="rounded-(--app-radius-sm) p-0.5 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
                   title={t('kick', { defaultValue: 'Kick' })}
                 >
                   <UserX className="h-3 w-3" />
                 </button>
                 <button
                   onClick={() => setBanTarget({ userId: m.userId, userName: m.userName })}
-                  className="rounded p-0.5 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
+                  className="rounded-(--app-radius-sm) p-0.5 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
                   title={t('ban', { defaultValue: 'Ban' })}
                 >
                   <Ban className="h-3 w-3" />
@@ -397,7 +397,7 @@ export default function RmhStudyRoom() {
         <div className="mt-3 flex items-center justify-end">
           <button
             onClick={() => setShowBanList(true)}
-            className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+            className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-(--app-radius-sm) transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
           >
             <Ban className="h-3 w-3" />
             {t('banned-count', { defaultValue: '{{count}} banned', count: room.bannedUsers.length })}
@@ -417,7 +417,7 @@ export default function RmhStudyRoom() {
         leftActions={
           <button
             onClick={() => setShowSettings(true)}
-            className="p-1.5 rounded-lg transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+            className="p-1.5 rounded-(--app-radius-sm) transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
             title={isHost ? t('room-settings', { defaultValue: 'Room Settings' }) : t('room-info', { defaultValue: 'Room Info' })}
           >
             {isHost ? <Settings className="h-4 w-4" /> : <Info className="h-4 w-4" />}
@@ -430,12 +430,12 @@ export default function RmhStudyRoom() {
         {/* Main content — Timer + Tasks / Flashcards */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6" style={{ scrollbarGutter: 'stable' }}>
           <div className="max-w-2xl mx-auto">
-            <div className="mb-4 flex gap-1 rounded-xl bg-(--app-surface) p-1 text-sm">
+            <div className="mb-4 flex gap-1 rounded-(--app-radius) bg-(--app-surface) p-1 text-sm">
               {(['session', 'flashcards'] as const).map((v) => (
                 <button
                   key={v}
                   onClick={() => setDesktopView(v)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-medium transition-colors ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-(--app-radius-sm) py-1.5 font-medium transition-colors ${
                     desktopView === v
                       ? 'bg-(--app-accent) text-(--app-accent-fg)'
                       : 'text-(--app-text-muted) hover:text-(--app-text)'
@@ -535,7 +535,7 @@ export default function RmhStudyRoom() {
             <MessageCircle className="h-4 w-4" />
             {t('tab-chat', { defaultValue: 'Chat' })}
             {unreadChat > 0 && (
-              <span className="absolute top-1.5 right-1/4 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-(--app-accent) text-(--app-accent-fg) text-[10px] font-bold">
+              <span className="absolute top-1.5 right-1/4 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-(--app-accent) text-(--app-accent-fg) text-xs font-bold">
                 {unreadChat > 9 ? '9+' : unreadChat}
               </span>
             )}
@@ -546,8 +546,8 @@ export default function RmhStudyRoom() {
       {/* Settings modal */}
       {showSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowSettings(false)} />
-          <div className="relative w-full max-w-md rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl max-h-[80vh] overflow-y-auto">
+          <div className="absolute inset-0 app-scrim" onClick={() => setShowSettings(false)} />
+          <div className="relative w-full max-w-md rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow) max-h-[80dvh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 {isHost ? <Settings className="h-5 w-5 text-(--app-accent)" /> : <Info className="h-5 w-5 text-(--app-accent)" />}
@@ -555,7 +555,7 @@ export default function RmhStudyRoom() {
               </h3>
               <button
                 onClick={() => setShowSettings(false)}
-                className="p-1 rounded-lg text-(--app-text-muted) hover:text-(--app-text) transition-colors"
+                className="p-1 rounded-(--app-radius-sm) text-(--app-text-muted) hover:text-(--app-text) transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -580,7 +580,7 @@ export default function RmhStudyRoom() {
                       <button
                         key={m}
                         onClick={() => handleUpdateSetting('workDurationMs', m * 60000)}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        className={`flex-1 py-1.5 rounded-(--app-radius-sm) text-xs font-medium transition-colors ${
                           Math.round(room.settings.workDurationMs / 60000) === m
                             ? 'bg-(--app-accent) text-(--app-accent-fg)'
                             : 'bg-(--app-bg) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
@@ -591,7 +591,7 @@ export default function RmhStudyRoom() {
                     ))}
                   </div>
                 ) : (
-                  <div className="h-8 flex items-center px-3 rounded-lg bg-(--app-bg) text-sm text-(--app-text-muted)">
+                  <div className="h-8 flex items-center px-3 rounded-(--app-radius-sm) bg-(--app-bg) text-sm text-(--app-text-muted)">
                     {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.workDurationMs / 60000) })}
                   </div>
                 )}
@@ -609,7 +609,7 @@ export default function RmhStudyRoom() {
                       <button
                         key={m}
                         onClick={() => handleUpdateSetting('shortBreakMs', m * 60000)}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        className={`flex-1 py-1.5 rounded-(--app-radius-sm) text-xs font-medium transition-colors ${
                           Math.round(room.settings.shortBreakMs / 60000) === m
                             ? 'bg-(--app-accent) text-(--app-accent-fg)'
                             : 'bg-(--app-bg) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
@@ -620,7 +620,7 @@ export default function RmhStudyRoom() {
                     ))}
                   </div>
                 ) : (
-                  <div className="h-8 flex items-center px-3 rounded-lg bg-(--app-bg) text-sm text-(--app-text-muted)">
+                  <div className="h-8 flex items-center px-3 rounded-(--app-radius-sm) bg-(--app-bg) text-sm text-(--app-text-muted)">
                     {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.shortBreakMs / 60000) })}
                   </div>
                 )}
@@ -638,7 +638,7 @@ export default function RmhStudyRoom() {
                       <button
                         key={m}
                         onClick={() => handleUpdateSetting('longBreakMs', m * 60000)}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        className={`flex-1 py-1.5 rounded-(--app-radius-sm) text-xs font-medium transition-colors ${
                           Math.round(room.settings.longBreakMs / 60000) === m
                             ? 'bg-(--app-accent) text-(--app-accent-fg)'
                             : 'bg-(--app-bg) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
@@ -649,7 +649,7 @@ export default function RmhStudyRoom() {
                     ))}
                   </div>
                 ) : (
-                  <div className="h-8 flex items-center px-3 rounded-lg bg-(--app-bg) text-sm text-(--app-text-muted)">
+                  <div className="h-8 flex items-center px-3 rounded-(--app-radius-sm) bg-(--app-bg) text-sm text-(--app-text-muted)">
                     {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.longBreakMs / 60000) })}
                   </div>
                 )}
@@ -671,7 +671,7 @@ export default function RmhStudyRoom() {
                     className="w-full accent-(--app-accent)"
                   />
                 ) : (
-                  <div className="h-8 flex items-center px-3 rounded-lg bg-(--app-bg) text-sm text-(--app-text-muted)">
+                  <div className="h-8 flex items-center px-3 rounded-(--app-radius-sm) bg-(--app-bg) text-sm text-(--app-text-muted)">
                     {t('n-sessions', { defaultValue: '{{count}} sessions', count: room.settings.sessionsBeforeLongBreak })}
                   </div>
                 )}
@@ -688,7 +688,7 @@ export default function RmhStudyRoom() {
                         room.settings.autoStartBreaks ? 'bg-(--app-accent)' : 'bg-(--app-border-bright)'
                       }`}
                     >
-                      <span className={`absolute top-0.5 h-4.5 w-4.5 rounded-full bg-white transition-transform ${
+                      <span className={`absolute top-0.5 h-4.5 w-4.5 rounded-full bg-(--app-text) transition-transform ${
                         room.settings.autoStartBreaks ? 'translate-x-5' : 'translate-x-0.5'
                       }`} />
                     </button>
@@ -705,7 +705,7 @@ export default function RmhStudyRoom() {
                         room.settings.autoStartWork ? 'bg-(--app-accent)' : 'bg-(--app-border-bright)'
                       }`}
                     >
-                      <span className={`absolute top-0.5 h-4.5 w-4.5 rounded-full bg-white transition-transform ${
+                      <span className={`absolute top-0.5 h-4.5 w-4.5 rounded-full bg-(--app-text) transition-transform ${
                         room.settings.autoStartWork ? 'translate-x-5' : 'translate-x-0.5'
                       }`} />
                     </button>
@@ -722,8 +722,8 @@ export default function RmhStudyRoom() {
       {/* Ban confirm dialog */}
       {banTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => { setBanTarget(null); setBanReason(''); }} />
-          <div className="relative w-full max-w-sm rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl">
+          <div className="absolute inset-0 app-scrim" onClick={() => { setBanTarget(null); setBanReason(''); }} />
+          <div className="relative w-full max-w-sm rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
             <h3 className="text-lg font-semibold mb-2">{t('ban-confirm-title', { defaultValue: 'Ban {{userName}}?', userName: banTarget.userName })}</h3>
             <p className="text-sm text-(--app-text-muted) mb-4">
               {t('ban-confirm-desc', { defaultValue: 'This member will be removed and cannot rejoin this room.' })}
@@ -734,18 +734,18 @@ export default function RmhStudyRoom() {
               onChange={(e) => setBanReason(e.target.value)}
               placeholder={t('ban-reason-placeholder', { defaultValue: 'Reason (optional)' })}
               maxLength={200}
-              className="w-full px-3 py-2 rounded-lg text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent) mb-4"
+              className="w-full px-3 py-2 rounded-(--app-radius-sm) text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent) mb-4"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => { setBanTarget(null); setBanReason(''); }}
-                className="flex-1 py-2 rounded-lg font-medium text-sm transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+                className="flex-1 py-2 rounded-(--app-radius-sm) font-medium text-sm transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
               >
                 {t('cancel', { defaultValue: 'Cancel' })}
               </button>
               <button
                 onClick={handleBanConfirm}
-                className="flex-1 py-2 rounded-lg font-medium text-sm text-white transition-colors bg-(--app-danger) hover:opacity-90"
+                className="flex-1 py-2 rounded-(--app-radius-sm) font-medium text-sm text-(--app-bg) transition-colors bg-(--app-danger) hover:opacity-90"
               >
                 {t('ban', { defaultValue: 'Ban' })}
               </button>

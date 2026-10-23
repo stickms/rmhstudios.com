@@ -27,9 +27,9 @@ const STATE_STYLES: Record<OptionState, string> = {
   selected:
     'border-(--app-accent) bg-(--app-accent)/20 text-(--app-accent) ring-2 ring-(--app-accent)/40',
   correct:
-    'border-green-500 bg-green-500/20 text-green-400',
+    'border-(--app-success) bg-(--app-success)/20 text-(--app-success)',
   incorrect:
-    'border-red-500 bg-red-500/20 text-red-400',
+    'border-(--app-danger) bg-(--app-danger)/20 text-(--app-danger)',
   disabled:
     'border-(--app-border) bg-(--app-bg) text-(--app-text-muted) opacity-60 cursor-not-allowed',
 };
@@ -49,10 +49,10 @@ export default function OptionButton({
       whileTap={isInteractive ? { scale: 0.97 } : undefined}
       onClick={isInteractive ? onClick : undefined}
       disabled={!isInteractive}
-      className={`flex w-full items-center gap-3 rounded-lg border-2 px-4 py-3 text-left transition-colors ${STATE_STYLES[state]}`}
+      className={`flex w-full items-center gap-3 rounded-(--app-radius-sm) border-2 px-4 py-3 text-left transition-colors ${STATE_STYLES[state]}`}
     >
       {/* Letter prefix */}
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-black/20 text-sm font-bold">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-(--app-radius-sm) bg-(--app-scrim) text-sm font-bold">
         {label}
       </span>
 

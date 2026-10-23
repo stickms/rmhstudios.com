@@ -82,7 +82,7 @@ export function HuntPage() {
           'Clues are hidden on pages across the site. Find one, work out the answer, and enter it here.',
       })}
     >
-      <div className="space-y-6 px-4 pt-2 pb-12">
+      <div className="space-y-6 px-4 pt-4 pb-12">
         {!session ? (
           <SignedOutPrompt
             icon={Compass}
@@ -148,7 +148,7 @@ export function HuntPage() {
             <section aria-labelledby="hunt-board">
               <h2
                 id="hunt-board"
-                className="mb-2 flex items-center gap-2 text-sm font-semibold text-site-text"
+                className="site-section-label mb-3 flex items-center gap-2"
               >
                 <Trophy className="size-4" aria-hidden />
                 {t('hunt-board', { defaultValue: 'Fastest finishers' })}
@@ -158,7 +158,7 @@ export function HuntPage() {
                   {q.data.board.rows.map((r, i) => (
                     <li
                       key={r.user.id}
-                      className="glass-fill flex items-center gap-3 rounded-site px-4 py-2"
+                      className="glass-fill flex items-center gap-3 rounded-site px-4 py-3"
                     >
                       <span className="w-6 text-sm text-site-text-dim">{i + 1}</span>
                       <UserAvatar

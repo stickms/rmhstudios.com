@@ -87,8 +87,8 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
     >
       <DatacenterTabs active="/rmh-datacenter/contact" />
 
-      <div className="space-y-8 px-4 pb-12">
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+      <div className="space-y-6 px-4 pt-4 pb-12">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <p className="max-w-prose text-site-text-muted">
             {t('con-lede', {
               defaultValue:
@@ -98,7 +98,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
         </section>
 
         <div className="grid gap-3 lg:grid-cols-2">
-          <Card className="p-5">
+          <Card className="p-4">
             <SectionHeading
               kicker={t('con-desks', { defaultValue: 'Desks' })}
               heading={t('con-desks-heading', { defaultValue: 'Who reads what' })}
@@ -118,7 +118,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
               </SpecRow>
             </dl>
           </Card>
-          <Card className="p-5">
+          <Card className="p-4">
             <SectionHeading
               kicker={t('con-response', { defaultValue: 'What happens next' })}
               heading={t('con-response-heading', { defaultValue: 'An engineer, not a queue' })}
@@ -140,7 +140,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
 
         {sent ? (
           <section
-            className="glass-pane rounded-site border border-site-accent p-6 sm:p-8"
+            className="glass-pane rounded-site border border-site-accent p-4 sm:p-6"
             role="status"
           >
             <h2 className="font-display text-xl font-semibold text-site-text">
@@ -155,12 +155,12 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
           </section>
         ) : null}
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('con-form-kicker', { defaultValue: 'Capacity request' })}
             heading={t('con-form-heading', { defaultValue: 'Tell us the shape of the load' })}
           />
-          <form className="mt-6" onSubmit={onSubmit}>
+          <form className="mt-4" onSubmit={onSubmit}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="dc-name">{t('con-f-name', { defaultValue: 'Name' })}</Label>
@@ -223,7 +223,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
                 />
               </div>
             </div>
-            <div className="mt-6 flex flex-wrap items-center gap-4">
+            <div className="mt-4 flex flex-wrap items-center gap-4">
               <Button type="submit" variant="accent">
                 {t('con-submit', { defaultValue: 'Compose request' })}
               </Button>
@@ -242,7 +242,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
             kicker={t('con-faq-kicker', { defaultValue: 'Asked first, usually' })}
             heading={t('con-faq-heading', { defaultValue: 'Four answers before you write' })}
           />
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {[
               [
                 t('con-q1', { defaultValue: 'What is the smallest thing you sell?' }),
@@ -273,7 +273,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
                 }),
               ],
             ].map(([q, a]) => (
-              <Card key={q} className="flex flex-col gap-2 p-5">
+              <Card key={q} className="flex flex-col gap-2 p-4">
                 <h3 className="font-display text-lg font-semibold text-site-text">{q}</h3>
                 <p className="text-sm text-site-text-muted">{a}</p>
               </Card>

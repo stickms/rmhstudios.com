@@ -8,6 +8,7 @@
  */
 
 import type { KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type AnyRow = Record<string, unknown>;
 
@@ -57,6 +58,7 @@ function ApplicationCard({
   onMove: (app: AnyRow, direction: 1 | -1) => void;
 }) {
   const job = app.job as AnyRow | undefined;
+  const { t } = useTranslation('site');
   const company = (job?.company as AnyRow | undefined)?.name as string | undefined;
 
   function handleKey(e: KeyboardEvent<HTMLButtonElement>) {
@@ -72,14 +74,19 @@ function ApplicationCard({
   return (
     <button
       type="button"
-      className={`rl-app-card${selected ? ' rl-app-card--selected' : ''}`}
+      className={`rl-app-card glass-fill rounded-site-sm${selected ? ' rl-app-card--selected' : ''}`}
       data-app-id={app.id as string}
       onClick={() => onSelect(app)}
       onKeyDown={handleKey}
-      aria-label={`${(job?.title as string) ?? 'Application'}${company ? ` at ${company}` : ''} — ${STAGE_LABELS[app.status as string]}. Arrow up or down moves stage.`}
+      aria-label={t('ladder.pipeline.cardLabel', {
+        defaultValue: '{{title}}{{company}} — {{stage}}. Arrow up or down moves stage.',
+        title: (job?.title as string) ?? t('ladder.pipeline.application', { defaultValue: 'Application' }),
+        company: company ? ` ${t('ladder.pipeline.at', { defaultValue: 'at' })} ${company}` : '',
+        stage: STAGE_LABELS[app.status as string],
+      })}
     >
       <span className="rl-app-card__company">{company ?? '—'}</span>
-      <span className="rl-app-card__title">{(job?.title as string) ?? 'Untitled role'}</span>
+      <span className="rl-app-card__title">{(job?.title as string) ?? t('ladder.pipeline.untitled', { defaultValue: 'Untitled role' })}</span>
       {app.appliedDate ? (
         <span className="rl-mono rl-app-card__date">
           {new Date(app.appliedDate as Date).toLocaleDateString('en-US', {
@@ -103,6 +110,7 @@ export function PipelineLadder({
   onSelect: (app: AnyRow) => void;
   onMove: (app: AnyRow, direction: 1 | -1) => void;
 }) {
+  const { t } = useTranslation('site');
   const byStage = new Map<string, AnyRow[]>();
   for (const app of applications) {
     const key = app.status as string;
@@ -115,7 +123,7 @@ export function PipelineLadder({
 
   return (
     <div className="rl-pipeline">
-      <div className="rl-ladder" role="list" aria-label="Application ladder, bottom to top">
+      <div className="rl-ladder" role="list" aria-label={t('ladder.pipeline.ladderLabel', { defaultValue: 'Application ladder, bottom to top' })}>
         {stagesTopDown.map((stage) => {
           const apps = byStage.get(stage) ?? [];
           const isOffer = stage === 'offer';
@@ -125,7 +133,7 @@ export function PipelineLadder({
               role="listitem"
               className={`rl-ladder__rung${isOffer ? ' rl-ladder__rung--offer' : ''}`}
             >
-              <span className={`rl-ladder__label${isOffer ? ' rl-display' : ' rl-eyebrow'}`}>
+              <span className={`rl-ladder__label${isOffer ? ' rl-ladder__label--offer' : ' rl-label'}`}>
                 {STAGE_LABELS[stage]}
                 {apps.length > 0 && (
                   <span className="rl-mono rl-ladder__count"> · {apps.length}</span>
@@ -147,10 +155,15 @@ export function PipelineLadder({
         })}
       </div>
 
-      <aside className="rl-off-ladder" aria-label="Off the ladder">
-        <p className="rl-eyebrow">off the ladder</p>
+      <aside
+        className="rl-off-ladder rounded-site"
+        aria-label={t('ladder.pipeline.offLadder', { defaultValue: 'Off the ladder' })}
+      >
+        <p className="rl-label">{t('ladder.pipeline.offLadderTitle', { defaultValue: 'Off the ladder' })}</p>
         {offLadder.length === 0 ? (
-          <p className="rl-quicklist__empty">Nothing here. Keep climbing.</p>
+          <p className="text-sm text-site-text-muted">
+            {t('ladder.pipeline.offLadderEmpty', { defaultValue: 'Nothing here. Keep climbing.' })}
+          </p>
         ) : (
           offLadder.map((app) => (
             <ApplicationCard

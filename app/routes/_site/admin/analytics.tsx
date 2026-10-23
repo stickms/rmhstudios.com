@@ -1,8 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState } from 'react';
-import { Users, FileText, Flag, Coins } from 'lucide-react';
+import { Users, FileText, Flag, Coins, BarChart3 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
+import { AdminBody } from '@/components/admin/AdminBody';
+import { StatTile } from '@/components/admin/StatTile';
 import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/_site/admin/analytics')({
@@ -16,19 +19,6 @@ interface Analytics {
   moderation: { pendingReports: number };
   economy: { coinsInCirculation: number };
   postsPerDay: { day: string; count: number }[];
-}
-
-function Stat({ icon: Icon, label, value, sub }: { icon: typeof Users; label: string; value: number; sub?: string }) {
-  return (
-    <div className="glass-fill rounded-site p-4">
-      <div className="flex items-center gap-2 text-site-text-muted">
-        <Icon className="h-4 w-4 text-site-accent" />
-        <span className="font-mono text-[0.68rem] uppercase tracking-widest text-site-text-dim">{label}</span>
-      </div>
-      <p className="mt-1 font-display text-2xl font-bold tracking-tight text-site-text">{value.toLocaleString()}</p>
-      {sub && <p className="text-xs text-site-text-dim">{sub}</p>}
-    </div>
-  );
 }
 
 function AnalyticsPage() {
@@ -47,44 +37,96 @@ function AnalyticsPage() {
 
   return (
     <PageLayout title={t('analytics', { defaultValue: 'Analytics' })} wide backTo="/admin">
-      <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
-
+      <AdminBody>
         {loading ? (
           <div className="flex justify-center py-20">
             <Spinner />
           </div>
         ) : !data ? (
-          <p className="text-center text-sm text-site-text-muted">{t('analytics-load-error', { defaultValue: 'Could not load analytics.' })}</p>
+          <EmptyState
+            icon={BarChart3}
+            title={t('analytics-load-error', { defaultValue: 'Could not load analytics.' })}
+          />
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <Stat icon={Users} label={t('stat-users', { defaultValue: 'Users' })} value={data.users.total} sub={t('stat-new-this-week', { count: data.users.new7, defaultValue: '+{{count}} this week' })} />
-              <Stat icon={Users} label={t('stat-active-7d', { defaultValue: 'Active (7d)' })} value={data.users.active7} sub={t('stat-posted-recently', { defaultValue: 'posted recently' })} />
-              <Stat icon={FileText} label={t('stat-posts', { defaultValue: 'Posts' })} value={data.content.posts} sub={t('stat-new-this-week', { count: data.content.posts7, defaultValue: '+{{count}} this week' })} />
-              <Stat icon={FileText} label={t('stat-comments', { defaultValue: 'Comments' })} value={data.content.comments} />
-              <Stat icon={FileText} label={t('stat-builds', { defaultValue: 'Builds' })} value={data.content.builds} />
-              <Stat icon={Users} label={t('stat-new-30d', { defaultValue: 'New (30d)' })} value={data.users.new30} />
-              <Stat icon={Flag} label={t('stat-open-reports', { defaultValue: 'Open reports' })} value={data.moderation.pendingReports} />
-              <Stat icon={Coins} label={t('stat-coins-in-circulation', { defaultValue: 'Coins in circulation' })} value={data.economy.coinsInCirculation} />
+              <StatTile
+                icon={Users}
+                label={t('stat-users', { defaultValue: 'Users' })}
+                value={data.users.total}
+                hint={t('stat-new-this-week', {
+                  count: data.users.new7,
+                  defaultValue: '+{{count}} this week',
+                })}
+              />
+              <StatTile
+                icon={Users}
+                label={t('stat-active-7d', { defaultValue: 'Active (7d)' })}
+                value={data.users.active7}
+                hint={t('stat-posted-recently', { defaultValue: 'posted recently' })}
+              />
+              <StatTile
+                icon={FileText}
+                label={t('stat-posts', { defaultValue: 'Posts' })}
+                value={data.content.posts}
+                hint={t('stat-new-this-week', {
+                  count: data.content.posts7,
+                  defaultValue: '+{{count}} this week',
+                })}
+              />
+              <StatTile
+                icon={FileText}
+                label={t('stat-comments', { defaultValue: 'Comments' })}
+                value={data.content.comments}
+              />
+              <StatTile
+                icon={FileText}
+                label={t('stat-builds', { defaultValue: 'Builds' })}
+                value={data.content.builds}
+              />
+              <StatTile
+                icon={Users}
+                label={t('stat-new-30d', { defaultValue: 'New (30d)' })}
+                value={data.users.new30}
+              />
+              <StatTile
+                icon={Flag}
+                label={t('stat-open-reports', { defaultValue: 'Open reports' })}
+                value={data.moderation.pendingReports}
+              />
+              <StatTile
+                icon={Coins}
+                label={t('stat-coins-in-circulation', { defaultValue: 'Coins in circulation' })}
+                value={data.economy.coinsInCirculation}
+              />
             </div>
 
             <div className="glass-pane rounded-site p-4">
-              <h2 className="mb-3 text-sm font-semibold text-site-text">{t('posts-per-day-14d', { defaultValue: 'Posts per day (14 days)' })}</h2>
+              <h2 className="site-section-label mb-3">
+                {t('posts-per-day-14d', { defaultValue: 'Posts per day (14 days)' })}
+              </h2>
               <div className="flex h-40 items-end gap-1">
                 {data.postsPerDay.map((d) => (
-                  <div key={d.day} className="flex flex-1 flex-col items-center gap-1" title={`${d.day}: ${d.count}`}>
+                  <div
+                    key={d.day}
+                    className="flex flex-1 flex-col items-center gap-1"
+                    title={`${d.day}: ${d.count}`}
+                  >
                     <div
-                      className="w-full rounded-t bg-site-accent"
-                      style={{ height: `${(d.count / maxCount) * 100}%`, minHeight: d.count > 0 ? 2 : 0 }}
+                      className="w-full rounded-t-site-sm bg-site-accent"
+                      style={{
+                        height: `${(d.count / maxCount) * 100}%`,
+                        minHeight: d.count > 0 ? 2 : 0,
+                      }}
                     />
-                    <span className="text-[9px] text-site-text-dim">{d.day.slice(5)}</span>
+                    <span className="text-[10px] text-site-text-dim">{d.day.slice(5)}</span>
                   </div>
                 ))}
               </div>
             </div>
           </>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

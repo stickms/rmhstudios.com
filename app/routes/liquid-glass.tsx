@@ -159,7 +159,7 @@ function Section({
 }) {
   return (
     <section id={id} aria-labelledby={`${id}-heading`} className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <span className="font-mono text-xs uppercase tracking-[0.2em] text-site-text-dim">
           {eyebrow}
         </span>
@@ -181,10 +181,10 @@ function LiquidGlassLab() {
     // Full-screen top-level page (outside _site/): its own padding + document scroll. Every glass surface below is
     // drawn by `lib/liquid/glass/engine.ts`: a canvas behind the content, transparent in the middle, refracting and lit
     // at the rim. There is no backdrop-filter anywhere, so it looks the same in Chromium, Safari and Firefox.
-    <div className="min-h-screen w-full">
-      <div className="mx-auto flex max-w-6xl flex-col gap-14 px-4 py-10 sm:px-6 md:gap-20 lg:py-16">
+    <main className="min-h-dvh w-full">
+      <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 py-10 sm:px-6 md:gap-16 lg:py-16">
         {/* ── 1 · Hero ── a pane: a lit slab over the page ground. */}
-        <header className="glass-pane relative rounded-site px-6 py-14 sm:px-12 sm:py-20">
+        <header className="glass-pane relative rounded-site px-6 py-12 sm:px-12 sm:py-20">
           <div className="relative z-10 flex flex-col items-center gap-4 text-center">
             <span className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-site-accent">
               <Droplets className="h-4 w-4" aria-hidden />
@@ -430,7 +430,7 @@ function LiquidGlassLab() {
           <Mono>--site-*</Mono> tokens and the <Mono>.glass-*</Mono> classes only.
         </footer>
       </div>
-    </div>
+    </main>
   );
 }
 

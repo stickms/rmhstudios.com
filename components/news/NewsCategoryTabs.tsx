@@ -2,6 +2,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { getCategoryColor, ALL_CATEGORIES } from '@/lib/news-categories';
+import { Button } from '@/components/ui/button';
 import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
 
 interface NewsCategoryTabsProps {
@@ -18,38 +19,39 @@ export function NewsCategoryTabs({
   const { t } = useTranslation('c-news');
   const categories = availableCategories ?? ALL_CATEGORIES;
 
+  // Filter chips are toggles (`aria-pressed`), not tabs — they can also be
+  // switched off — so they are `Button`s in the pill shape, which brings the
+  // 44px coarse-pointer target and the shared press/focus behaviour with them.
   return (
     <HorizontalScroller
       aria-label={t('categories-label', { defaultValue: 'News categories' })}
       surface="pill"
     >
-      <button
+      <Button
+        type="button"
+        size="sm"
+        variant={!activeCategory ? 'default' : 'secondary'}
+        className="rounded-full"
         onClick={() => onCategoryChange(null)}
         aria-pressed={!activeCategory}
-        className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-[scale,background-color,color,box-shadow] duration-site-fast active:scale-95 ${
-          !activeCategory
-            ? 'bg-(--site-accent) text-site-accent-fg shadow-site-sm'
-            : 'bg-(--site-surface) text-(--site-text-muted) border border-(--site-border) hover:text-(--site-text) hover:bg-(--site-surface-hover)'
-        }`}
       >
         {t('all', { defaultValue: 'All' })}
-      </button>
+      </Button>
       {categories.map((category) => {
         const color = getCategoryColor(category);
         const isActive = activeCategory === category;
         return (
-          <button
+          <Button
+            type="button"
             key={category}
+            size="sm"
+            variant="secondary"
+            className={`rounded-full ${isActive ? `${color.bg} ${color.text} ${color.border}` : ''}`}
             onClick={() => onCategoryChange(isActive ? null : category)}
             aria-pressed={isActive}
-            className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-[scale,background-color,color,box-shadow] duration-site-fast active:scale-95 ${
-              isActive
-                ? `${color.bg} ${color.text} ${color.border} border shadow-site-sm`
-                : 'bg-(--site-surface) text-(--site-text-muted) border border-(--site-border) hover:text-(--site-text) hover:bg-(--site-surface-hover)'
-            }`}
           >
             {category}
-          </button>
+          </Button>
         );
       })}
     </HorizontalScroller>

@@ -176,7 +176,7 @@ export default function DrawingCanvas({
       <svg
         ref={svgRef}
         viewBox="0 0 300 300"
-        className={`w-72 h-72 rounded-lg border-2 touch-none outline-none ${
+        className={`w-72 h-72 rounded-(--app-radius-sm) border-2 touch-none outline-none ${
           canDraw
             ? 'border-(--app-accent) cursor-crosshair'
             : 'border-(--app-border) cursor-not-allowed'

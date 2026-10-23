@@ -140,7 +140,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
 
  return (
  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
- <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80dvh] overflow-hidden">
+ <DialogContent className="max-w-md p-0 gap-0 flex flex-col max-h-[80dvh] overflow-hidden">
  {/* Header */}
  <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
  <DialogTitle className="font-display font-bold text-lg text-site-text">
@@ -151,7 +151,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  {/* List */}
  <div className="overflow-y-auto flex-1">
  {users.length === 0 && !loading && (
- <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+ <div className="flex flex-col items-center justify-center py-12 px-5 text-center">
  <p className="text-site-text font-medium mb-1">{t('no-list-yet', { defaultValue:'No {{title}} yet', title: title.toLowerCase() })}</p>
  <p className="text-sm text-site-text-muted">
  {type ==='followers'
@@ -186,7 +186,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  <button
  onClick={() => handleFollowToggle(user)}
  disabled={followingInProgress.has(user.id)}
- className={`shrink-0 px-4 py-1.5 rounded-site-sm text-xs font-bold transition-[color,background-color,border-color,scale] duration-site-fast active:scale-95 ${
+ className={`shrink-0 px-4 py-2 rounded-site-sm text-xs font-bold transition-[color,background-color,border-color,scale] duration-site-fast active:scale-95 ${
  user.isFollowing
  ?'border border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10'
  :'bg-site-accent text-site-bg hover:bg-site-accent-hover'

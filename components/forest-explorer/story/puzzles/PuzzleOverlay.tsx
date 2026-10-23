@@ -52,7 +52,7 @@ export function PuzzleOverlay() {
     const PuzzleComponent = PuzzleRegistry[puzzle.type];
 
     return (
-        <div className="fixed inset-0 z-[80] flex flex-col items-center justify-center">
+        <div className="app-safe-pad fixed inset-0 z-[80] flex flex-col items-center-safe justify-center-safe overflow-y-auto">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
@@ -71,10 +71,12 @@ export function PuzzleOverlay() {
                             </span>
                         )}
                         <button
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors cursor-pointer"
+                            type="button"
+                            aria-label={t("close-overlay", { defaultValue: "Close" })}
+                            className="w-8 h-8 pointer-coarse:w-11 pointer-coarse:h-11 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors cursor-pointer"
                             onClick={closePuzzle}
                         >
-                            X
+                            <span aria-hidden="true">X</span>
                         </button>
                     </div>
                 </div>

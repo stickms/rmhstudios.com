@@ -3,6 +3,7 @@
   "admin-tab-links": "Link warnings",
   "admin-tab-view-as": "View as member",
   "admin-title": "Safety Tools",
+  "back-to-admin": "Back to admin",
   "macro-delete": "Delete this saved response",
   "macro-message-placeholder": "Optional message to the author. Use {{user}} and {{reason}} in saved responses.",
   "macro-none": "Saved responses…",

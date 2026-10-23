@@ -79,5 +79,7 @@
   "trash-view-thread": "View thread",
   "trash-window-note_one": "Posts and comments you delete stay here for {{count}} days, then go for good.",
   "trash-window-note_few": "Posts and comments you delete stay here for {{count}} days, then go for good.",
-  "trash-window-note_other": "Posts and comments you delete stay here for {{count}} days, then go for good."
+  "trash-window-note_other": "Posts and comments you delete stay here for {{count}} days, then go for good.",
+  "remove-tag": "Remove",
+  "trash-crumb-settings": "Settings"
 }

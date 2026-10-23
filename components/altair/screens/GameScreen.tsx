@@ -421,7 +421,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       : 0;
 
     return (
-      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center gap-4">
+      <div className="fixed inset-0 bg-(--altair-hud-scrim) flex flex-col items-center justify-center gap-4">
         <h1
           className="text-3xl font-bold text-(--altair-accent) tracking-wider"
           style={{ fontFamily: 'var(--altair-font-display)' }}
@@ -444,7 +444,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
   return (
     <div
       ref={rootRef}
-      className="fixed inset-0 bg-black overflow-hidden"
+      className="fixed inset-0 bg-(--altair-hud-scrim) overflow-hidden"
       style={{ width: '100vw', height: '100dvh' }}
     >
       <canvas

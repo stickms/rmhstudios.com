@@ -4,7 +4,7 @@ import { parseNoteBody } from '@/lib/devplatform/release-notes';
 export function NoteBody({ body }: { body: string }) {
   const lines = parseNoteBody(body);
   return (
-    <div className="space-y-1 text-sm text-site-text-muted">
+    <div className="space-y-2 text-sm leading-relaxed text-site-text-muted">
       {lines.map((l, i) =>
         l.kind === 'li' ? (
           <p key={i} className="flex gap-2">

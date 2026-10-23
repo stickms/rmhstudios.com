@@ -86,5 +86,7 @@
   "waiting-for-host": "Waiting for host to start next round...",
   "waiting-for-players": "Waiting for players",
   "welcome-user": "Welcome, {{name}}!",
-  "your-moves": "Your moves"
+  "your-moves": "Your moves",
+  "lights-out-title": "Lights Out",
+  "rating-tiers": "Rating tiers"
 }

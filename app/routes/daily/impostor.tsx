@@ -12,7 +12,7 @@ import { ImpostorGame } from '@/components/daily-puzzles/ImpostorGame'
 function ImpostorPage() {
     return (
         <GameErrorBoundary gameName="Impostor">
-            <Suspense fallback={<GameLoadingFallback background="#efeae0" foreground="#1b1a17" />}>
+            <Suspense fallback={<GameLoadingFallback background="var(--site-bg)" foreground="var(--site-text)" />}>
                 <ImpostorGame />
             </Suspense>
         </GameErrorBoundary>

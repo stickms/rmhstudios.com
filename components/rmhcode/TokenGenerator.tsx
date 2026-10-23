@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Key, Copy, Check, RefreshCw, Trash2, Clock, AlertCircle } from 'lucide-react';
+import { Key, Check, RefreshCw, Trash2, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/components/ui/copy-button';
 
 interface Token {
   id: string;
@@ -17,7 +18,6 @@ export default function TokenGenerator() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [newToken, setNewToken] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [tokenName, setTokenName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -81,13 +81,6 @@ export default function TokenGenerator() {
     }
   }
 
-  async function copyToken() {
-    if (!newToken) return;
-    await navigator.clipboard.writeText(newToken);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
   function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
@@ -110,14 +103,14 @@ export default function TokenGenerator() {
             placeholder={t("token-name-placeholder", { defaultValue: "Token name (optional)" })}
             value={tokenName}
             onChange={(e) => setTokenName(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-lg bg-site-bg border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
+            className="flex-1 px-3 py-2 glass-inset rounded-site-sm text-site-text text-sm outline-none focus:border-site-border-bright transition-colors"
             maxLength={100}
           />
           <Button
             onClick={generateToken}
             disabled={generating}
             variant="accent"
-            className="bg-violet-600 hover:bg-violet-500"
+            className=""
           >
             {generating ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -131,7 +124,7 @@ export default function TokenGenerator() {
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 text-sm text-red-400">
+          <div className="flex items-center gap-2 text-sm text-site-danger">
             <AlertCircle className="w-4 h-4" />
             {error}
           </div>
@@ -140,29 +133,19 @@ export default function TokenGenerator() {
 
       {/* New Token Display */}
       {newToken && (
-        <div className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/30">
-          <div className="flex items-center gap-2 text-sm text-violet-300 mb-2">
+        <div className="p-4 rounded-site-sm bg-site-accent-dim border border-site-border">
+          <div className="flex items-center gap-2 text-sm text-site-accent mb-2">
             <Check className="w-4 h-4" />
             {t("token-generated-notice", { defaultValue: "Token generated! Copy it now - it won't be shown again." })}
           </div>
           <div className="flex items-center gap-2">
-            <code className="flex-1 p-2 rounded bg-site-bg border border-site-border text-sm font-mono text-site-text break-all">
+            <code className="glass-inset flex-1 rounded-site-sm p-2 text-sm font-mono text-site-text break-all">
               {newToken}
             </code>
-            <button
-              onClick={copyToken}
-              className="p-2 rounded-lg bg-site-surface hover:bg-site-surface-hover border border-site-border transition-colors shrink-0"
-              aria-label={t("copy-token-label", { defaultValue: "Copy token" })}
-            >
-              {copied ? (
-                <Check className="w-4 h-4 text-green-400" />
-              ) : (
-                <Copy className="w-4 h-4 text-site-text-muted" />
-              )}
-            </button>
+            <CopyButton value={newToken} label={t("copy-token-label", { defaultValue: "Copy token" })} variant="outline" className="shrink-0" />
           </div>
           <p className="text-xs text-site-text-dim mt-2">
-            {t("token-auth-instruction-pre", { defaultValue: "Run" })} <code className="text-violet-400">rmhcode login --token YOUR_TOKEN</code> {t("token-auth-instruction-post", { defaultValue: "to authenticate." })}
+            {t("token-auth-instruction-pre", { defaultValue: "Run" })} <code className="text-site-accent">rmhcode login --token YOUR_TOKEN</code> {t("token-auth-instruction-post", { defaultValue: "to authenticate." })}
           </p>
         </div>
       )}
@@ -173,11 +156,11 @@ export default function TokenGenerator() {
         {loading ? (
           <div className="space-y-2">
             {[1, 2].map((i) => (
-              <div key={i} className="h-16 bg-site-surface-hover rounded-lg animate-pulse" />
+              <div key={i} className="h-16 bg-site-surface-hover rounded-site-sm animate-pulse" />
             ))}
           </div>
         ) : tokens.length === 0 ? (
-          <p className="text-sm text-site-text-dim py-4 text-center border border-dashed border-site-border rounded-lg">
+          <p className="text-sm text-site-text-dim py-4 text-center border border-dashed border-site-border rounded-site-sm">
             {t("no-active-tokens", { defaultValue: "No active tokens. Generate one to get started." })}
           </p>
         ) : (
@@ -185,9 +168,9 @@ export default function TokenGenerator() {
             {tokens.map((token) => (
               <div
                 key={token.id}
-                className={`flex items-center justify-between p-3 rounded-lg border ${
+                className={`flex items-center justify-between p-3 rounded-site-sm border ${
                   isExpired(token.expiresAt)
-                    ? 'bg-red-500/5 border-red-500/30'
+                    ? 'bg-site-danger/10 border-site-danger/30'
                     : 'bg-site-surface border-site-border'
                 }`}
               >
@@ -198,7 +181,7 @@ export default function TokenGenerator() {
                       {token.name || t("unnamed-token", { defaultValue: "Unnamed token" })}
                     </span>
                     {isExpired(token.expiresAt) && (
-                      <span className="px-1.5 py-0.5 rounded text-xs bg-red-500/20 text-red-400">
+                      <span className="px-2 py-0.5 rounded-site-sm text-xs bg-site-danger/15 text-site-danger">
                         {t("expired", { defaultValue: "Expired" })}
                       </span>
                     )}
@@ -215,7 +198,7 @@ export default function TokenGenerator() {
                 </div>
                 <button
                   onClick={() => revokeToken(token.id)}
-                  className="p-2 rounded-lg hover:bg-red-500/10 text-site-text-dim hover:text-red-400 transition-colors shrink-0"
+                  className="p-2 rounded-site-sm hover:bg-site-danger/10 text-site-text-dim hover:text-site-danger transition-colors shrink-0"
                   aria-label={t("revoke-token-label", { defaultValue: "Revoke token" })}
                 >
                   <Trash2 className="w-4 h-4" />

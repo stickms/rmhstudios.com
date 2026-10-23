@@ -86,7 +86,7 @@ export function StakingCard() {
  <PiggyBank className="h-4 w-4 text-site-accent"/>
  <h2 className="text-sm font-bold text-site-text">{t("coin-vault", { defaultValue:"Coin vault"})}</h2>
  </div>
- <span className="inline-flex items-center gap-1 rounded-full bg-site-accent/15 px-2 py-0.5 text-[11px] font-semibold text-site-accent">
+ <span className="inline-flex items-center gap-1 rounded-full bg-site-accent/15 px-2 py-0.5 text-xs font-semibold text-site-accent">
  <TrendingUp className="h-3 w-3"/> {(data.apr * 100).toFixed(0)}% APR
  </span>
  </div>

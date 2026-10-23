@@ -255,5 +255,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "Faux — ce suspect a été éliminé. Il vous reste 1 tentative.",
   "wrong-outcast-was": "❌ Faux — l'exclu était {{name}}",
-  "youre-the-first": "Vous êtes le premier !"
+  "youre-the-first": "Vous êtes le premier !",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

@@ -270,7 +270,7 @@ export function MessagesColumn({
 
  if (!session) {
  return (
- <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+ <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
  <MessageCircle className="w-12 h-12 text-site-text-dim mb-4"/>
  <p className="text-lg font-medium text-site-text mb-1">
  {t('sign-in-to-view-messages', { defaultValue:'Sign in to view messages'})}
@@ -355,7 +355,7 @@ export function MessagesColumn({
  {/* Search results */}
  {query.trim() ? (
  searching ? (
- <div className="flex items-center justify-center py-20">
+ <div className="flex items-center justify-center px-4 pt-4 pb-12">
  <Spinner size={32} />
  </div>
  ) : searchResults.length === 0 ? (
@@ -381,7 +381,7 @@ export function MessagesColumn({
  </div>
  )
  ) : /* Conversation list */ loading ? (
- <div className="flex items-center justify-center py-20">
+ <div className="flex items-center justify-center px-4 pt-4 pb-12">
  <Spinner size={32} />
  </div>
  ) : conversations.length === 0 ? (

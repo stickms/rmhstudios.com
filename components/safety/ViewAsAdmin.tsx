@@ -50,8 +50,8 @@ export function ViewAsAdmin() {
   };
 
   const list = (title: string, users: Brief[]) => (
-    <section className="glass-fill rounded-site p-3">
-      <h3 className="mb-1 text-sm font-semibold text-site-text">
+    <section className="glass-fill rounded-site p-4">
+      <h3 className="mb-2 text-sm font-semibold text-site-text">
         {title} ({users.length})
       </h3>
       {users.length === 0 ? (
@@ -96,7 +96,7 @@ export function ViewAsAdmin() {
       {data && (
         <div className="flex flex-col gap-3">
           <section className="glass-pane rounded-site p-4">
-            <h3 className="font-bold text-site-text">{label(data.member)}</h3>
+            <h3 className="text-base font-semibold text-site-text">{label(data.member)}</h3>
             <p className="text-xs text-site-text-muted">
               {t('viewas-meta', {
                 defaultValue: 'Plan: {{tier}} · joined {{date}}',
@@ -110,15 +110,15 @@ export function ViewAsAdmin() {
           {list(t('viewas-mutes', { defaultValue: 'Muted accounts' }), data.mutes)}
           {list(t('viewas-blocks', { defaultValue: 'Blocked accounts' }), data.blocks)}
           {list(t('viewas-blocked-by', { defaultValue: 'Blocked by' }), data.blockedBy)}
-          <section className="glass-fill rounded-site p-3">
-            <h3 className="mb-1 text-sm font-semibold text-site-text">
+          <section className="glass-fill rounded-site p-4">
+            <h3 className="mb-2 text-sm font-semibold text-site-text">
               {t('viewas-words', { defaultValue: 'Muted words' })} ({data.mutedWords.length})
             </h3>
             <p className="break-words text-xs text-site-text-muted">
               {data.mutedWords.join(', ') || '—'}
             </p>
           </section>
-          <section className="glass-fill rounded-site p-3">
+          <section className="glass-fill rounded-site p-4">
             <h3 className="mb-2 text-sm font-semibold text-site-text">
               {t('viewas-feed', { defaultValue: 'Top of their For You feed' })}
             </h3>

@@ -42,13 +42,15 @@ export function TechBadges({ technologies, size = 'md', limit }: TechBadgesProps
       {displayTechs.map((tech, i) => (
         <span
           key={`${tech}-${i}`}
-          className={`${sizeClasses} rounded border font-medium ${TECH_CHIP}`}
+          className={`${sizeClasses} rounded-[var(--site-control-radius)] border font-medium ${TECH_CHIP}`}
         >
           {tech}
         </span>
       ))}
       {remaining > 0 && (
-        <span className={`${sizeClasses} rounded border bg-site-surface text-site-text-dim border-site-border`}>
+        <span
+          className={`${sizeClasses} rounded-[var(--site-control-radius)] border bg-site-surface text-site-text-dim border-site-border`}
+        >
           +{remaining}
         </span>
       )}

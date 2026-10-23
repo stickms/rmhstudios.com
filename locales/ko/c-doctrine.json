@@ -34,5 +34,10 @@
   "upgrade-operator": "Operator($15/월)으로 업그레이드하여 잠금 해제하세요.",
   "view-arrow": "보기 →",
   "xp-progress": "{{current}} / {{max}} XP",
-  "xp-to-next-rank": "{{badge}} {{name}}까지 {{xp}} XP"
+  "xp-to-next-rank": "{{badge}} {{name}}까지 {{xp}} XP",
+  "back-to-puzzles": "Back to Puzzles",
+  "copy-link": "Copy link",
+  "link-copied": "Link copied",
+  "recruitment-message-label": "Recruitment message",
+  "target-skills-label": "Target skills"
 }

@@ -10,7 +10,7 @@ export function VersecraftClient({ isLoggedIn }: { isLoggedIn: boolean }) {
   const { t } = useTranslation("c-versecraft");
   return (
     <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#1a1520' }}>
+      <div className="flex items-center justify-center app-ground" style={{ backgroundColor: '#1a1520' }}>
         <p style={{ color: '#a89888', fontFamily: 'serif' }}>{t("loading", { defaultValue: "Loading..." })}</p>
       </div>
     }>

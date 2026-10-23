@@ -43,7 +43,7 @@ export function SaveLoadMenu({ mode }: { mode: 'save' | 'load' }) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    <div className="flex flex-col items-center justify-center app-ground p-4">
       <motion.div
         className="max-w-md w-full rounded-lg p-6"
         style={{

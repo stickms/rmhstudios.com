@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -72,9 +74,6 @@ const VENUE_KINDS: {
     refPlaceholder: 'Game id / room (optional)',
   },
 ];
-
-const inputCls =
-  'w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
 
 export function EventComposer({ open, onOpenChange, communityId, onCreated }: EventComposerProps) {
   const { t } = useTranslation('site');
@@ -156,15 +155,17 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
-          <input
-            className={inputCls}
+          <Input
+            aria-label={t('event-title-placeholder', { defaultValue: 'Title' })}
             placeholder={t('event-title-placeholder', { defaultValue: 'Title' })}
             value={title}
             maxLength={120}
             onChange={(e) => setTitle(e.target.value)}
           />
-          <textarea
-            className={inputCls}
+          <Textarea
+            aria-label={t('event-description-placeholder', {
+              defaultValue: 'Description (optional)',
+            })}
             placeholder={t('event-description-placeholder', {
               defaultValue: 'Description (optional)',
             })}
@@ -175,20 +176,18 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
           />
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-xs font-medium text-site-text-muted">
+            <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
               {t('event-starts', { defaultValue: 'Starts' })}
-              <input
+              <Input
                 type="datetime-local"
-                className={inputCls}
                 value={startsAt}
                 onChange={(e) => setStartsAt(e.target.value)}
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-site-text-muted">
+            <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
               {t('event-ends', { defaultValue: 'Ends (optional)' })}
-              <input
+              <Input
                 type="datetime-local"
-                className={inputCls}
                 value={endsAt}
                 min={startsAt || undefined}
                 onChange={(e) => setEndsAt(e.target.value)}
@@ -197,7 +196,7 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-xs font-medium text-site-text-muted">
+            <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
               {t('event-venue-kind', { defaultValue: 'Venue' })}
               <Select
                 controlSize="sm"
@@ -212,12 +211,11 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
                 ))}
               </Select>
             </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-site-text-muted">
+            <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
               {t('event-capacity', { defaultValue: 'Capacity (optional)' })}
-              <input
+              <Input
                 type="number"
                 min={1}
-                className={inputCls}
                 placeholder={t('event-capacity-placeholder', { defaultValue: 'No limit' })}
                 value={capacity}
                 onChange={(e) => setCapacity(e.target.value)}
@@ -225,12 +223,11 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
             </label>
           </div>
 
-          <label className="flex flex-col gap-1 text-xs font-medium text-site-text-muted">
+          <label className="flex flex-col gap-2 text-xs font-medium text-site-text-muted">
             {t(venue.refLabel === 'URL' ? 'event-venue-url' : 'event-venue-ref', {
               defaultValue: venue.refLabel,
             })}
-            <input
-              className={inputCls}
+            <Input
               type={venueKind === 'URL' ? 'url' : 'text'}
               placeholder={venue.refPlaceholder}
               value={venueRef}

@@ -82,7 +82,7 @@ export default function BingoTab() {
               <div
                 key={i}
                 role="gridcell"
-                className={`flex aspect-square items-center justify-center overflow-hidden rounded-(--app-radius-sm) border p-0.5 text-center text-[10px] leading-tight ${
+                className={`flex aspect-square items-center justify-center overflow-hidden rounded-(--app-radius-sm) border p-0.5 text-center text-xs leading-tight ${
                   inLine.has(i)
                     ? 'border-(--app-accent) bg-(--app-accent) text-(--app-accent-fg)'
                     : marked

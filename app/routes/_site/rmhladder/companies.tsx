@@ -23,7 +23,12 @@ import {
   type ActionsPrisma,
 } from '@/lib/rmhladder/server/actions';
 import { timeAgo } from '@/components/rmhladder/time';
+import { useTranslation } from 'react-i18next';
+import { Minus, Plus, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
@@ -91,6 +96,7 @@ const API_PLATFORMS = [
 ] as const;
 
 function CompaniesPage() {
+  const { t } = useTranslation('site');
   const { companies, watchlistCompanyIds } = Route.useLoaderData();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: '/rmhladder/companies' });
@@ -125,10 +131,10 @@ function CompaniesPage() {
   const typingRef = useRef(false);
   useEffect(() => {
     if (!typingRef.current) return;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       void navigate({ search: qInput ? { q: qInput } : {}, replace: true });
     }, 300);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [qInput, navigate]);
 
   function patchRow(companyId: string, patch: AnyRow) {
@@ -145,7 +151,7 @@ function CompaniesPage() {
       await router.invalidate();
     } catch (err) {
       if (prev !== undefined) patchRow(companyId, { priorityLevel: prev });
-      setErrorLine(err instanceof Error ? err.message : 'Failed to update priority');
+      setErrorLine(err instanceof Error ? err.message : t('ladder.companies.priorityFailed', { defaultValue: 'Failed to update priority' }));
     }
   }
 
@@ -158,7 +164,7 @@ function CompaniesPage() {
       await router.invalidate();
     } catch (err) {
       if (prev !== undefined) patchRow(companyId, { enabled: prev });
-      setErrorLine(err instanceof Error ? err.message : 'Failed to update enabled state');
+      setErrorLine(err instanceof Error ? err.message : t('ladder.companies.enabledFailed', { defaultValue: 'Failed to update enabled state' }));
     }
   }
 
@@ -176,40 +182,51 @@ function CompaniesPage() {
       await router.invalidate();
     } catch (err) {
       setWatchlist(prevWatchlist);
-      setErrorLine(err instanceof Error ? err.message : 'Failed to update watchlist');
+      setErrorLine(err instanceof Error ? err.message : t('ladder.companies.watchlistFailed', { defaultValue: 'Failed to update watchlist' }));
     }
   }
 
   return (
-    <div>
-      {errorLine && <p className="rl-review-error rl-mono">{errorLine}</p>}
+    <div className="space-y-4">
+      {errorLine && (
+        <p role="alert" className="text-sm text-site-danger">
+          {errorLine}
+        </p>
+      )}
 
       <div data-slot="page-controls" className="rl-filter-bar">
-        <input
+        <Input
           type="search"
-          className="rl-search-box"
-          placeholder="Search companies"
-          aria-label="Search companies"
+          className="sm:max-w-xs"
+          placeholder={t('ladder.companies.search', { defaultValue: 'Search companies' })}
+          aria-label={t('ladder.companies.search', { defaultValue: 'Search companies' })}
           value={qInput}
           onChange={(e) => {
             typingRef.current = true;
             setQInput(e.target.value);
           }}
         />
-        <span className="rl-eyebrow">{rows.length} companies</span>
+        <span className="text-sm text-site-text-muted">
+          {t('ladder.companies.count', {
+            defaultValue: '{{count}} companies',
+            count: rows.length,
+          })}
+        </span>
       </div>
 
-      <table className="rl-jobs-table rl-companies-table">
+      <table className="rl-jobs-table rl-companies-table glass-fill rounded-site">
         <thead>
           <tr>
-            <th scope="col">Company</th>
-            <th scope="col">Priority</th>
-            <th scope="col">Sources</th>
-            <th scope="col">Active jobs</th>
-            <th scope="col">Enabled</th>
-            <th scope="col">Watch</th>
+            <th scope="col">{t('ladder.companies.company', { defaultValue: 'Company' })}</th>
+            <th scope="col">{t('ladder.companies.priority', { defaultValue: 'Priority' })}</th>
+            <th scope="col">{t('ladder.companies.sources', { defaultValue: 'Sources' })}</th>
+            <th scope="col">{t('ladder.companies.activeJobs', { defaultValue: 'Active jobs' })}</th>
+            <th scope="col">{t('ladder.companies.enabled', { defaultValue: 'Enabled' })}</th>
+            <th scope="col">{t('ladder.companies.watch', { defaultValue: 'Watch' })}</th>
             <th scope="col">
-              <span className="rl-visually-hidden">Details</span>
+              <span className="rl-visually-hidden">
+                {t('ladder.companies.details', { defaultValue: 'Details' })}
+              </span>
             </th>
           </tr>
         </thead>
@@ -220,42 +237,48 @@ function CompaniesPage() {
             const isExpanded = expanded === c.id;
             const watched = watchlist.has(c.id as string);
             const priority = c.priorityLevel as number;
+            const name = c.name as string;
             return [
               <tr key={c.id as string}>
-                <td data-label="Company">
+                <td data-label={t('ladder.companies.company', { defaultValue: 'Company' })}>
                   <div className="rl-company-cell">
-                    <span>{c.name as string}</span>
-                    <span className="rl-eyebrow">{c.industry as string}</span>
+                    <span className="font-medium">{name}</span>
+                    <span className="text-xs text-site-text-muted">{c.industry as string}</span>
                   </div>
                 </td>
-                <td data-label="Priority">
+                <td data-label={t('ladder.companies.priority', { defaultValue: 'Priority' })}>
                   <div
                     className="rl-priority-stepper"
                     role="group"
-                    aria-label={`Priority for ${c.name as string}`}
+                    aria-label={t('ladder.companies.priorityFor', {
+                      defaultValue: 'Priority for {{name}}',
+                      name,
+                    })}
                   >
-                    <button
+                    <Button
                       type="button"
-                      className="rl-chip"
-                      aria-label="Higher priority"
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label={t('ladder.companies.higherPriority', { defaultValue: 'Higher priority' })}
                       disabled={priority <= 1}
                       onClick={() => void handlePriority(c.id as string, priority - 1)}
                     >
-                      −
-                    </button>
-                    <span className="rl-mono">{priority}</span>
-                    <button
+                      <Minus aria-hidden />
+                    </Button>
+                    <span className="rl-mono min-w-4 text-center">{priority}</span>
+                    <Button
                       type="button"
-                      className="rl-chip"
-                      aria-label="Lower priority"
+                      variant="outline"
+                      size="icon-sm"
+                      aria-label={t('ladder.companies.lowerPriority', { defaultValue: 'Lower priority' })}
                       disabled={priority >= 5}
                       onClick={() => void handlePriority(c.id as string, priority + 1)}
                     >
-                      +
-                    </button>
+                      <Plus aria-hidden />
+                    </Button>
                   </div>
                 </td>
-                <td data-label="Sources">
+                <td data-label={t('ladder.companies.sources', { defaultValue: 'Sources' })}>
                   <div className="rl-source-dots">
                     {API_PLATFORMS.map((p) => {
                       const src = byPlatform.get(p);
@@ -280,55 +303,78 @@ function CompaniesPage() {
                     })}
                   </div>
                 </td>
-                <td className="rl-mono" data-label="Active jobs">
+                <td className="rl-mono" data-label={t('ladder.companies.activeJobs', { defaultValue: 'Active jobs' })}>
                   {(c.activeJobCount as number) ?? 0}
                 </td>
-                <td data-label="Enabled">
-                  <button
-                    type="button"
-                    className="rl-toggle"
-                    role="switch"
-                    aria-checked={c.enabled === true}
-                    aria-label={`${c.enabled ? 'Disable' : 'Enable'} ${c.name as string}`}
-                    onClick={() => void handleEnabled(c.id as string, !(c.enabled === true))}
-                  >
-                    {c.enabled ? 'On' : 'Off'}
-                  </button>
+                <td data-label={t('ladder.companies.enabled', { defaultValue: 'Enabled' })}>
+                  <Switch
+                    checked={c.enabled === true}
+                    aria-label={
+                      c.enabled
+                        ? t('ladder.companies.disable', { defaultValue: 'Disable {{name}}', name })
+                        : t('ladder.companies.enable', { defaultValue: 'Enable {{name}}', name })
+                    }
+                    onCheckedChange={(next) => void handleEnabled(c.id as string, next)}
+                  />
                 </td>
-                <td data-label="Watch">
-                  <button
+                <td data-label={t('ladder.companies.watch', { defaultValue: 'Watch' })}>
+                  <Button
                     type="button"
-                    className={`rl-star${watched ? ' rl-star--on' : ''}`}
+                    variant="ghost"
+                    size="icon-sm"
                     aria-pressed={watched}
-                    aria-label={`${watched ? 'Remove' : 'Add'} ${c.name as string} ${watched ? 'from' : 'to'} watchlist`}
+                    aria-label={
+                      watched
+                        ? t('ladder.companies.unwatch', {
+                            defaultValue: 'Remove {{name}} from watchlist',
+                            name,
+                          })
+                        : t('ladder.companies.addWatch', {
+                            defaultValue: 'Add {{name}} to watchlist',
+                            name,
+                          })
+                    }
                     onClick={() => void handleWatchlist(c.id as string, !watched)}
                   >
-                    {watched ? '★' : '☆'}
-                  </button>
+                    <Star
+                      aria-hidden
+                      className={watched ? 'fill-site-accent text-site-accent' : 'text-site-text-muted'}
+                    />
+                  </Button>
                 </td>
-                <td data-label="Details">
-                  <button
+                <td data-label={t('ladder.companies.details', { defaultValue: 'Details' })}>
+                  <Button
                     type="button"
-                    className="rl-chip"
+                    variant="outline"
+                    size="sm"
                     aria-expanded={isExpanded}
                     onClick={() => setExpanded(isExpanded ? null : (c.id as string))}
                   >
-                    {isExpanded ? 'Hide' : 'Sources'}
-                  </button>
+                    {isExpanded
+                      ? t('ladder.companies.hide', { defaultValue: 'Hide' })
+                      : t('ladder.companies.sources', { defaultValue: 'Sources' })}
+                  </Button>
                 </td>
               </tr>,
               isExpanded ? (
                 <tr key={`${c.id as string}-sources`} className="rl-source-detail">
                   <td colSpan={7}>
                     <ul>
-                      {sources.length === 0 && <li className="rl-mono">No sources configured.</li>}
+                      {sources.length === 0 && (
+                        <li className="rl-mono">
+                          {t('ladder.companies.noSources', { defaultValue: 'No sources configured.' })}
+                        </li>
+                      )}
                       {sources.map((s) => (
                         <li key={s.id as string} className="rl-mono">
                           {s.platform as string} · {(s.slug ?? s.url ?? '—') as string} ·{' '}
-                          <span className="rl-program-chip">{s.status as string}</span> ·{' '}
+                          <Badge size="sm" variant="outline">{s.status as string}</Badge> ·{' '}
                           {s.lastSuccessAt
-                            ? `ok ${timeAgo(s.lastSuccessAt as Date)}`
-                            : 'never succeeded'}
+                            ? t('ladder.companies.okAgo', {
+                                defaultValue: 'ok {{ago}}',
+                                ago: timeAgo(s.lastSuccessAt as Date),
+                              })
+                            : t('ladder.companies.neverSucceeded', { defaultValue: 'never succeeded' })}
                         </li>
                       ))}
                     </ul>
@@ -341,9 +387,18 @@ function CompaniesPage() {
       </table>
 
       {rows.length > limit && (
-        <button type="button" className="rl-show-more" onClick={() => setLimit((n) => n + PAGE)}>
-          Show more — {rows.length - limit} of {rows.length} remaining
-        </button>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => setLimit((n) => n + PAGE)}
+        >
+          {t('ladder.companies.showMore', {
+            defaultValue: 'Show more — {{remaining}} of {{total}} remaining',
+            remaining: rows.length - limit,
+            total: rows.length,
+          })}
+        </Button>
       )}
     </div>
   );

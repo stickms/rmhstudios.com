@@ -61,14 +61,7 @@ export function JobDetail({
   ];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <Link
-        to="/rmhladder/jobs"
-        className="inline-flex min-h-11 items-center text-sm font-medium text-site-accent hover:underline"
-      >
-        ← {t('ladder.backToJobs', { defaultValue: 'Back to jobs' })}
-      </Link>
-
+    <div className="max-w-3xl space-y-4">
       <Card className="gap-5">
         <CardHeader className="gap-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -96,9 +89,9 @@ export function JobDetail({
         <CardContent className="space-y-6">
           <section
             aria-labelledby="ladder-match-heading"
-            className="rounded-site-sm border border-site-border bg-site-bg p-4"
+            className="glass-inset rounded-site-sm p-4"
           >
-            <h2 id="ladder-match-heading" className="text-sm font-semibold text-site-text">
+            <h2 id="ladder-match-heading" className="site-section-label">
               {t('ladder.roleRelevance', { defaultValue: 'Role relevance' })}
             </h2>
             <div className="mt-3 flex items-center gap-3">
@@ -109,7 +102,7 @@ export function JobDetail({
 
           {verification && (
             <section aria-labelledby="ladder-verification-heading">
-              <h2 id="ladder-verification-heading" className="text-sm font-semibold text-site-text">
+              <h2 id="ladder-verification-heading" className="site-section-label">
                 {t('ladder.verification', { defaultValue: 'Verification' })}
               </h2>
               {verificationEvidence && (
@@ -130,7 +123,7 @@ export function JobDetail({
 
           {summary && (
             <section aria-labelledby="ladder-summary-heading">
-              <h2 id="ladder-summary-heading" className="text-sm font-semibold text-site-text">
+              <h2 id="ladder-summary-heading" className="site-section-label">
                 {t('ladder.summary', { defaultValue: 'Role summary' })}
               </h2>
               <p className="mt-2 whitespace-pre-line text-sm leading-7 text-site-text-muted">

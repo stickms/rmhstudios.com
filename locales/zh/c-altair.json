@@ -163,5 +163,6 @@
   "webgl-context-lost": "WebGL上下文丢失！请重新加载页面。",
   "you": "（你）",
   "your-class": "你的班级",
-  "zoom": "Zoom"
+  "zoom": "Zoom",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
 }

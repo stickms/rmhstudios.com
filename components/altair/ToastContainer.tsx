@@ -23,7 +23,7 @@ export default function ToastContainer() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`pointer-events-auto px-4 py-2.5 rounded-lg text-sm font-medium shadow-lg cursor-pointer ${
+          className={`pointer-events-auto px-4 py-2.5 rounded-(--altair-radius) text-sm font-medium shadow-(--altair-shadow) cursor-pointer ${
             toast.exiting ? 'altair-toast-exit' : 'altair-toast-enter'
           }`}
           style={{

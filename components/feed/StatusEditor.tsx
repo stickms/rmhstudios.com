@@ -156,7 +156,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  setEmoji(p.emoji);
  setText(t(p.key, { defaultValue: p.text }));
  }}
- className="glass-fill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-site-text hover:border-site-text/40"
+ className="glass-fill inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm text-site-text hover:border-site-text/40"
  >
  <span aria-hidden>{p.emoji}</span>
  {t(p.key, { defaultValue: p.text })}
@@ -168,7 +168,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-site-text-muted">
  {t('clear-after', { defaultValue:'Clear after'})}
  </p>
- <div className="flex flex-wrap gap-1.5">
+ <div className="flex flex-wrap gap-2">
  {EXPIRY_OPTIONS.map((o) => (
  <button
  key={o.value}
@@ -176,7 +176,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  onClick={() => setExpiresIn(o.value)}
  aria-pressed={expiresIn === o.value}
  className={cn(
-'rounded-full px-3 py-1.5 text-sm transition-colors',
+'rounded-full px-3 py-2 text-sm transition-colors',
  expiresIn === o.value
  ?'bg-site-accent text-site-accent-fg'
  :'glass-fill text-site-text-muted hover:border-site-text/40',

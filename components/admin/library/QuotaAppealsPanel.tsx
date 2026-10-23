@@ -118,7 +118,7 @@ export function QuotaAppealsPanel() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-semibold text-site-text">{who}</p>
-                <p className="mt-0.5 text-sm text-site-text-muted">
+                <p className="mt-1 text-sm text-site-text-muted">
                   {t('quota-summary', {
                     used: req.user.used,
                     current: req.user.currentQuota,
@@ -141,10 +141,10 @@ export function QuotaAppealsPanel() {
                   disabled={busy === req.id}
                   onClick={() => decide(req, false)}
                 >
-                  <X size={15} /> {t('deny', { defaultValue: 'Deny' })}
+                  <X aria-hidden /> {t('deny', { defaultValue: 'Deny' })}
                 </Button>
                 <Button size="sm" loading={busy === req.id} onClick={() => decide(req, true)}>
-                  <Check size={15} /> {t('approve', { defaultValue: 'Approve' })}
+                  <Check aria-hidden /> {t('approve', { defaultValue: 'Approve' })}
                 </Button>
               </div>
             </div>

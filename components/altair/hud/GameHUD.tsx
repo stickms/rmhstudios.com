@@ -130,7 +130,7 @@ export default function GameHUD() {
     <div className="absolute inset-0 z-30 pointer-events-none">
       {/* Top bar */}
       <div
-        className="flex items-center gap-3 px-3 py-2 bg-black/40 backdrop-blur-sm pointer-events-auto"
+        className="flex items-center gap-3 px-3 py-2 bg-(--altair-hud-scrim)/40 pointer-events-auto"
         style={{
           paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
           paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 12px)',
@@ -139,11 +139,11 @@ export default function GameHUD() {
       >
         {/* HP Bar */}
         <div className="flex-1 max-w-[200px]">
-          <div className="flex items-center justify-between text-[10px] font-mono text-white/70 mb-0.5">
+          <div className="flex items-center justify-between text-xs font-mono text-(--altair-hud-ink)/70 mb-0.5">
             <span>HP</span>
             <span>{Math.ceil(hp)}/{maxHp}</span>
           </div>
-          <div className="h-2.5 rounded-full bg-black/50 overflow-hidden">
+          <div className="h-2.5 rounded-full bg-(--altair-hud-scrim)/50 overflow-hidden">
             <div
               className="h-full w-full origin-left transition-[transform,background-color] duration-200"
               style={{ transform: `scaleX(${(hpPercent) / 100})`, backgroundColor: hpColor }}
@@ -153,11 +153,11 @@ export default function GameHUD() {
 
         {/* XP Bar */}
         <div className="flex-1 max-w-[200px]">
-          <div className="flex items-center justify-between text-[10px] font-mono text-white/70 mb-0.5">
+          <div className="flex items-center justify-between text-xs font-mono text-(--altair-hud-ink)/70 mb-0.5">
             <span>Lv.{level}</span>
             <span>{xp}/{xpNeeded}</span>
           </div>
-          <div className="h-2.5 rounded-full bg-black/50 overflow-hidden">
+          <div className="h-2.5 rounded-full bg-(--altair-hud-scrim)/50 overflow-hidden">
             <div
               className="h-full bg-(--altair-info) w-full origin-left transition-transform duration-200"
               style={{ transform: `scaleX(${(xpPercent) / 100})` }}
@@ -166,25 +166,25 @@ export default function GameHUD() {
         </div>
 
         {/* Timer */}
-        <div className="text-sm font-mono font-bold text-white/90 tabular-nums">
+        <div className="text-sm font-mono font-bold text-(--altair-hud-ink)/90 tabular-nums">
           {formatTime(timeSurvived)}
         </div>
 
         {/* Kills */}
-        <div className="text-xs font-mono text-white/60">
-          <span className="text-white/90 font-bold">{kills}</span> {t("kills-game-hud", { defaultValue: "kills" })}
+        <div className="text-xs font-mono text-(--altair-hud-ink)/60">
+          <span className="text-(--altair-hud-ink)/90 font-bold">{kills}</span> {t("kills-game-hud", { defaultValue: "kills" })}
         </div>
 
         {/* Coins */}
         <div className="text-xs font-mono text-(--altair-warning)">
-          {coins} <span className="text-white/40">{t("coins-game-hud", { defaultValue: "coins" })}</span>
+          {coins} <span className="text-(--altair-hud-ink)/40">{t("coins-game-hud", { defaultValue: "coins" })}</span>
         </div>
       </div>
 
       {/* Weapon & passive slots — below header bar */}
       <div
         ref={barRef}
-        className="relative flex items-center justify-center gap-2 sm:gap-4 px-2 sm:px-3 py-1.5 bg-black/30 pointer-events-auto"
+        className="relative flex items-center justify-center gap-2 sm:gap-4 px-2 sm:px-3 py-1.5 bg-(--altair-hud-scrim)/30 pointer-events-auto"
         style={{
           paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 8px)',
           paddingRight: 'calc(env(safe-area-inset-right, 0px) + 8px)',
@@ -202,12 +202,12 @@ export default function GameHUD() {
             return (
               <div
                 key={`w${i}`}
-                className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center overflow-hidden cursor-pointer ${
+                className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-(--altair-radius-sm) border flex items-center justify-center overflow-hidden cursor-pointer ${
                   w
                     ? w.evolved
                       ? 'border-(--altair-warning)'
                       : 'border-(--altair-border-bright)'
-                    : 'border-(--altair-border) bg-black/30'
+                    : 'border-(--altair-border) bg-(--altair-hud-scrim)/30'
                 }`}
                 onPointerEnter={(e) => {
                   if (info) showTooltip(info, e.currentTarget);
@@ -231,13 +231,13 @@ export default function GameHUD() {
                       size={24}
                     />
                     <span
-                      className="absolute bottom-0 right-0 text-[7px] font-bold bg-black/70 px-0.5 leading-tight rounded-tl-sm text-white/90"
+                      className="absolute bottom-0 right-0 text-xs font-bold bg-(--altair-hud-scrim)/70 px-0.5 leading-tight rounded-tl-sm text-(--altair-hud-ink)/90"
                     >
                       {w.level}{w.evolved ? '★' : ''}
                     </span>
                   </>
                 ) : (
-                  <span className="text-white/20 text-[9px]">—</span>
+                  <span className="text-(--altair-hud-ink)/20 text-xs">—</span>
                 )}
               </div>
             );
@@ -245,7 +245,7 @@ export default function GameHUD() {
         </div>
 
         {/* Divider */}
-        <div className="w-px h-5 sm:h-6 bg-white/20" />
+        <div className="w-px h-5 sm:h-6 bg-(--altair-hud-ink)/20" />
 
         {/* Passive + Catalyst slots (shared 6 slots) */}
         <div className="flex gap-0.5 sm:gap-1">
@@ -274,12 +274,12 @@ export default function GameHUD() {
             return (
               <div
                 key={`p${i}`}
-                className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center overflow-hidden cursor-pointer ${
+                className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-(--altair-radius-sm) border flex items-center justify-center overflow-hidden cursor-pointer ${
                   hasItem
                     ? c
                       ? 'border-(--altair-accent)' // catalyst: accent border
                       : 'border-(--altair-rare)' // passive: rare border
-                    : 'border-(--altair-border) bg-black/30'
+                    : 'border-(--altair-border) bg-(--altair-hud-scrim)/30'
                 }`}
                 onPointerEnter={(e) => {
                   if (info) showTooltip(info, e.currentTarget);
@@ -303,13 +303,13 @@ export default function GameHUD() {
                       size={24}
                     />
                     <span
-                      className="absolute bottom-0 right-0 text-[7px] font-bold bg-black/70 px-0.5 leading-tight rounded-tl-sm text-white/90"
+                      className="absolute bottom-0 right-0 text-xs font-bold bg-(--altair-hud-scrim)/70 px-0.5 leading-tight rounded-tl-sm text-(--altair-hud-ink)/90"
                     >
                       {slotLevel}
                     </span>
                   </>
                 ) : (
-                  <span className="text-white/20 text-[9px]">—</span>
+                  <span className="text-(--altair-hud-ink)/20 text-xs">—</span>
                 )}
               </div>
             );
@@ -321,16 +321,16 @@ export default function GameHUD() {
       {tooltip && (
         <div
           ref={tooltipRef}
-          className="rounded-lg bg-black/85 backdrop-blur-sm border border-white/15 px-3 py-2 text-left pointer-events-auto z-50"
+          className="rounded-(--altair-radius) bg-(--altair-hud-scrim)/85 border border-(--altair-hud-ink)/15 px-3 py-2 text-left pointer-events-auto z-50"
           style={tooltipStyle}
         >
           <div className="flex items-baseline gap-1.5 mb-1">
-            <span className="text-xs font-bold text-white/95">{tooltip.name}</span>
-            <span className="text-[10px] font-mono text-white/50">
+            <span className="text-xs font-bold text-(--altair-hud-ink)/95">{tooltip.name}</span>
+            <span className="text-xs font-mono text-(--altair-hud-ink)/50">
               Lv.{tooltip.level}{tooltip.evolved ? ' ★' : ''}
             </span>
           </div>
-          <p className="text-[10px] leading-relaxed text-white/65">{tooltip.description}</p>
+          <p className="text-xs leading-relaxed text-(--altair-hud-ink)/65">{tooltip.description}</p>
         </div>
       )}
 

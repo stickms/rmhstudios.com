@@ -71,7 +71,7 @@ export function TagColumn({
  <ColumnHeader icon={Hash} title={tag} />
 
  {loading && (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  )}
@@ -89,7 +89,7 @@ export function TagColumn({
  </AsyncReveal>
 
  {hasMore && (
- <div className="flex justify-center py-4">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Button variant="secondary"size="sm"onClick={loadMore} disabled={loadingMore}>
  {loadingMore ? (
  <Loader2 className="h-4 w-4 animate-spin"/>

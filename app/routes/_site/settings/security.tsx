@@ -8,7 +8,8 @@
  * following it cannot sign in.
  */
 
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
+import { KeyRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PasskeyManager } from '@/components/site/PasskeyManager';
@@ -17,6 +18,8 @@ import { ProfileLinksPanel } from '@/components/settings/ProfileLinksPanel';
 import { RecoveryPanel } from '@/components/settings/RecoveryPanel';
 import { TrustedContactsPanel } from '@/components/settings/TrustedContactsPanel';
 import { useSession } from '@/components/Providers';
+import { SettingsPageBody } from '@/components/settings/SettingsSection';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 interface SecuritySearch {
   /** Recovery request id, from the emailed completion link. */
@@ -50,30 +53,24 @@ function SecuritySettingsPage() {
   return (
     <PageLayout
       title={title}
+      description={t('security-subtitle', { defaultValue: 'Manage how you sign in to your account.' })}
       wide
       backTo="/settings"
       backLabel={settingsLabel}
       breadcrumbs={[{ label: settingsLabel, to: '/settings' }, { label: title }]}
     >
-      <div className="space-y-4 p-4">
-        <p className="text-sm text-site-text-muted">
-          {t('security-subtitle', { defaultValue: 'Manage how you sign in to your account.' })}
-        </p>
-
+      <SettingsPageBody>
         {/* Rendered before the sign-in gate on purpose — see the file header. */}
         {completion ? <RecoveryPanel completion={completion} signedIn={!signedOut} /> : null}
 
         {signedOut ? (
-          <p className="text-sm text-site-text-muted">
-            <Link
-              to="/login"
-              search={{ callbackURL: '/settings/security' }}
-              className="text-site-accent hover:underline"
-            >
-              {t('security-sign-in', { defaultValue: 'Sign in' })}
-            </Link>{' '}
-            {t('security-sign-in-rest', { defaultValue: 'to manage your security settings.' })}
-          </p>
+          <SignedOutPrompt
+            icon={KeyRound}
+            title={t('security-signed-out', {
+              defaultValue: 'Sign in to manage your security settings.',
+            })}
+            callbackURL="/settings/security"
+          />
         ) : (
           <>
             <PasskeyManager />
@@ -83,7 +80,7 @@ function SecuritySettingsPage() {
             <ProfileLinksPanel handle={user?.handle ?? null} />
           </>
         )}
-      </div>
+      </SettingsPageBody>
     </PageLayout>
   );
 }

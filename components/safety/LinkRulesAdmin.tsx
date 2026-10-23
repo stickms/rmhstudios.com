@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -61,7 +62,7 @@ export function LinkRulesAdmin() {
             'Links to blocked domains, and to domains that only just started appearing, open a warning page first. Allowed domains skip the new-domain warning.',
         })}
       </p>
-      <div className="glass-fill flex flex-wrap items-end gap-2 rounded-site p-3">
+      <div className="glass-fill flex flex-wrap items-end gap-2 rounded-site p-4">
         <Input
           className="min-w-48 flex-1"
           value={domain}
@@ -70,7 +71,6 @@ export function LinkRulesAdmin() {
           aria-label={t('rules-domain-label', { defaultValue: 'Domain' })}
         />
         <Select
-          controlSize="sm"
           containerClassName="inline-block w-auto"
           className="w-auto"
           value={kind}
@@ -103,12 +103,15 @@ export function LinkRulesAdmin() {
       ) : (
         <ul className="flex flex-col gap-2">
           {rules.map((r) => (
-            <li key={r.domain} className="glass-fill flex items-center gap-3 rounded-site p-3">
-              <span className="rounded-site-sm border border-site-border px-2 py-0.5 text-xs font-semibold text-site-text">
+            <li
+              key={r.domain}
+              className="glass-fill flex items-center gap-3 rounded-site px-4 py-3"
+            >
+              <Badge variant="outline">
                 {r.kind === 'DENY'
                   ? t('rules-deny', { defaultValue: 'Block' })
                   : t('rules-allow', { defaultValue: 'Allow' })}
-              </span>
+              </Badge>
               <span className="min-w-0 flex-1 break-all font-mono text-sm text-site-text">
                 {r.domain}
               </span>
@@ -116,12 +119,12 @@ export function LinkRulesAdmin() {
                 <span className="hidden text-xs text-site-text-muted sm:inline">{r.note}</span>
               )}
               <Button
-                size="sm"
+                size="icon-sm"
                 variant="ghost"
                 onClick={() => remove(r.domain)}
                 aria-label={t('rules-remove', { defaultValue: 'Remove rule' })}
               >
-                <Trash2 className="h-4 w-4" aria-hidden />
+                <Trash2 aria-hidden />
               </Button>
             </li>
           ))}

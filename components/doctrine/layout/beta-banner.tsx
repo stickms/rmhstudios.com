@@ -9,7 +9,7 @@ export function BetaBanner() {
   const { t } = useTranslation("c-doctrine");
   return (
     <div
-      className="h-7 flex items-center justify-center gap-2 text-[11px] font-mono tracking-wider shrink-0 select-none"
+      className="h-7 flex items-center justify-center gap-2 text-xs font-mono tracking-wider shrink-0 select-none"
       style={{
         background: 'var(--doctrine-bg-secondary, #141416)',
         color: 'var(--doctrine-text-muted, #52525B)',

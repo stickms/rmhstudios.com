@@ -5,6 +5,7 @@ import { useTranslation } from'react-i18next';
 import { Swords, Trophy, Check, X, Flag } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { Spinner } from'@/components/ui/spinner';
+import { toast } from'sonner';
 import { Select } from'@/components/ui/select';
 import { UserAvatar } from'./UserAvatar';
 import { HandleInput } from'./HandleInput';
@@ -48,7 +49,7 @@ function TierBadge({ tier }: { tier?: RankTier }) {
  if (!tier) return null;
  return (
  <span
- className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+ className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
  style={{
  color: tier.color,
  backgroundColor: `${tier.color}1a`,
@@ -180,7 +181,7 @@ export function RankedColumn({
  if (res.ok) await load();
  else {
  const b = await res.json().catch(() => ({}));
- if (b?.error) alert(b.error);
+ if (b?.error) toast.error(b.error);
  }
  } finally {
  setBusy(null);
@@ -191,7 +192,7 @@ export function RankedColumn({
 
  if (loading) {
  return (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  );
@@ -209,7 +210,7 @@ export function RankedColumn({
  as="section"
  className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}
  >
- <h2 id="ranked-challenge-heading"className="mb-2 text-sm font-bold text-site-text">
+ <h2 id="ranked-challenge-heading"className="site-section-label mb-3">
  {t('challenge-a-player', { defaultValue:'Challenge a player'})}
  </h2>
  <div className="flex flex-wrap items-center gap-2">
@@ -230,7 +231,7 @@ export function RankedColumn({
  value={opponent}
  onChange={setOpponent}
  placeholder={t('handle-placeholder', { defaultValue:'@handle'})}
- className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
+ className="glass-inset h-11 w-full rounded-[var(--site-control-radius)] px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus-visible:border-site-accent focus-visible:outline-none"
  />
  </div>
  <Button
@@ -243,20 +244,20 @@ export function RankedColumn({
  {t('challenge-btn', { defaultValue:'Challenge'})}
  </Button>
  </div>
- {formMsg && <p className="mt-2 text-xs text-site-text-muted">{formMsg}</p>}
+ {formMsg && <p className="mt-3 text-xs text-site-text-muted">{formMsg}</p>}
  </Reveal>
 
  {/* Incoming challenges */}
  {incoming.length > 0 && (
  <Reveal as="section">
- <h2 className="site-section-label mb-2">
+ <h2 className="site-section-label mb-3">
  {t('challenges-for-you', { defaultValue:'Challenges for you'})}
  </h2>
  <div className="space-y-2">
  {incoming.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -265,20 +266,19 @@ export function RankedColumn({
  c.user.handle ||
  t('player-fallback', { defaultValue:'Player'})}
  </p>
- <p className="text-[11px] text-site-text-dim">
+ <p className="text-xs text-site-text-dim">
  {nameOf(c.game)} · {c.status}
  </p>
  </div>
  {c.status ==='pending'? (
- <div className="flex gap-1">
+ <div className="flex gap-2">
  <Button
  size="sm"
  variant="accent"
  disabled={busy === `a:${c.id}`}
  onClick={() => act(c.id, { action:'accept'}, `a:${c.id}`)}
- className="gap-1"
  >
- <Check className="h-3.5 w-3.5"/>{''}
+ <Check className="h-3.5 w-3.5"aria-hidden />{''}
  {t('accept', { defaultValue:'Accept'})}
  </Button>
  <Button
@@ -287,8 +287,9 @@ export function RankedColumn({
  disabled={busy === `a:${c.id}`}
  onClick={() => act(c.id, { action:'decline'}, `a:${c.id}`)}
  className="text-site-text-muted hover:text-site-danger"
+ aria-label={t('decline-challenge', { defaultValue:'Decline challenge'})}
  >
- <X className="h-3.5 w-3.5"/>
+ <X className="h-3.5 w-3.5"aria-hidden />
  </Button>
  </div>
  ) : (
@@ -303,14 +304,14 @@ export function RankedColumn({
  {/* Outgoing challenges */}
  {outgoing.length > 0 && (
  <Reveal as="section">
- <h2 className="site-section-label mb-2">
+ <h2 className="site-section-label mb-3">
  {t('your-challenges', { defaultValue:'Your challenges'})}
  </h2>
  <div className="space-y-2">
  {outgoing.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -319,7 +320,7 @@ export function RankedColumn({
  c.user.handle ||
  t('player-fallback', { defaultValue:'Player'})}
  </p>
- <p className="text-[11px] text-site-text-dim">
+ <p className="text-xs text-site-text-dim">
  {nameOf(c.game)} · {c.status}
  </p>
  </div>
@@ -333,14 +334,14 @@ export function RankedColumn({
  {/* Your ratings */}
  {ratings.length > 0 && (
  <Reveal as="section">
- <h2 className="site-section-label mb-2">
+ <h2 className="site-section-label mb-3">
  {t('your-ratings', { defaultValue:'Your ratings'})}
  </h2>
- <div className="space-y-1">
+ <div className="space-y-2">
  {ratings.map((r) => (
  <div
  key={r.game}
- className={`flex items-center justify-between gap-2 rounded-site glass-fill px-3 py-2.5 ${LIFT_CARD}`}
+ className={`flex items-center justify-between gap-2 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
  >
  <span className="flex min-w-0 items-center gap-2">
  <span className="truncate text-sm font-medium text-site-text">
@@ -362,9 +363,9 @@ export function RankedColumn({
 
  {/* Leaderboard */}
  <Reveal as="section">
- <div className="mb-2 flex items-center justify-between">
- <h2 id="ranked-leaderboard-heading"className="site-section-label flex items-center gap-1.5">
- <Trophy className="h-3.5 w-3.5"/> {t('leaderboard', { defaultValue:'Leaderboard'})}
+ <div className="mb-3 flex items-center justify-between gap-2">
+ <h2 id="ranked-leaderboard-heading"className="site-section-label flex items-center gap-2">
+ <Trophy className="h-3.5 w-3.5"aria-hidden /> {t('leaderboard', { defaultValue:'Leaderboard'})}
  </h2>
  <Select
  aria-labelledby="ranked-leaderboard-heading"
@@ -388,11 +389,11 @@ export function RankedColumn({
  {t('no-ranked-players', { defaultValue:'No ranked players yet.'})}
  </p>
  ) : (
- <div className="space-y-1">
+ <div className="space-y-2">
  {lb.map((row) => (
  <div
  key={row.user.id}
- className={`flex items-center gap-3 rounded-site glass-fill p-2.5 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
  >
  <span className="w-5 text-center text-xs font-bold text-site-text-dim">
  {row.rank}
@@ -404,7 +405,7 @@ export function RankedColumn({
  row.user.handle ||
  t('player-fallback', { defaultValue:'Player'})}
  </p>
- <p className="flex items-center gap-1.5 text-[11px] text-site-text-dim">
+ <p className="flex items-center gap-2 text-xs text-site-text-dim">
  <TierBadge tier={row.tier} />
  {row.wins}W {row.losses}L {row.draws}D
  </p>
@@ -431,34 +432,32 @@ function ReportButtons({
 }) {
  const { t } = useTranslation('feed');
  return (
- <div className="flex items-center gap-1">
- <span className="mr-1 inline-flex items-center gap-1 text-[10px] text-site-text-dim">
- <Flag className="h-3 w-3"/> {t('report-label', { defaultValue:'report:'})}
+ <div className="flex items-center gap-2">
+ <span className="inline-flex items-center gap-2 text-xs text-site-text-dim">
+ <Flag className="h-3 w-3"aria-hidden /> {t('report-label', { defaultValue:'report:'})}
  </span>
  <Button
- size="sm"
+ size="xs"
  variant="outline"
  disabled={busy === `r:${id}`}
  onClick={() => act(id, { action:'report', result:'win'}, `r:${id}`)}
- className="h-7 px-2 text-xs"
  >
  {t('won', { defaultValue:'Won'})}
  </Button>
  <Button
- size="sm"
+ size="xs"
  variant="outline"
  disabled={busy === `r:${id}`}
  onClick={() => act(id, { action:'report', result:'loss'}, `r:${id}`)}
- className="h-7 px-2 text-xs"
  >
  {t('lost', { defaultValue:'Lost'})}
  </Button>
  <Button
- size="sm"
+ size="xs"
  variant="ghost"
  disabled={busy === `r:${id}`}
  onClick={() => act(id, { action:'report', result:'draw'}, `r:${id}`)}
- className="h-7 px-2 text-xs text-site-text-muted"
+ className="text-site-text-muted"
  >
  {t('draw', { defaultValue:'Draw'})}
  </Button>

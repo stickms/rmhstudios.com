@@ -127,11 +127,11 @@ export function AIImageButton({
  onClick={(e) => e.stopPropagation()}
  >
  {/* Decorative gradient header */}
- <div className="relative bg-linear-to-br from-site-accent/30 via-site-accent/10 to-transparent px-6 pb-5 pt-8">
+ <div className="relative bg-linear-to-br from-site-accent/30 via-site-accent/10 to-transparent px-6 pb-6 pt-8">
  <button
  onClick={() => setShowUpgrade(false)}
  aria-label={t('close', { defaultValue:'Close'})}
- className="absolute right-3 top-3 rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
+ className="absolute right-3 top-3 rounded-site-sm p-2 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
  >
  <X className="h-4 w-4"/>
  </button>
@@ -140,10 +140,10 @@ export function AIImageButton({
  </div>
  </div>
 
- <div className="px-6 pb-6 -mt-1">
+ <div className="px-6 pb-6">
  <h2
  id="ai-image-upgrade-title"
- className="inline-flex items-center gap-1.5 text-xl font-bold text-site-text"
+ className="inline-flex items-center gap-2 text-xl font-bold text-site-text"
  >
  <Sparkles className="h-5 w-5 text-site-accent"/>
  {t('ai-image-upgrade-title', { defaultValue:'Unlock AI image generation'})}
@@ -154,13 +154,13 @@ export function AIImageButton({
 'Turn your posts into eye-catching art. Generate custom AI images straight from the composer — available on HARD-R and above.',
  })}
  </p>
- <div className="mt-5 flex flex-col gap-2">
+ <div className="mt-6 flex flex-col gap-2">
  <Link
               to="/store"
               search={{ tab: 'membership' }}
               onClick={() => setShowUpgrade(false)}
             >
- <Button variant="accent"className="w-full gap-1.5">
+ <Button variant="accent"className="w-full">
  <Sparkles className="h-4 w-4"/>
  {t('ai-image-upgrade-cta', { defaultValue:'Upgrade to unlock'})}
  </Button>

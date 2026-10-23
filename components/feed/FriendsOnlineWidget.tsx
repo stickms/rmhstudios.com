@@ -88,7 +88,7 @@ export function FriendsOnlineWidget({ onSettled }: { onSettled?: () => void } = 
  </span>
  </span>
  {activity && (
- <span className="shrink-0 rounded-full bg-site-accent-dim px-2 py-0.5 text-[11px] font-semibold text-site-accent">
+ <span className="shrink-0 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-semibold text-site-accent">
  {t('activity-join', { defaultValue:'Join'})}
  </span>
  )}

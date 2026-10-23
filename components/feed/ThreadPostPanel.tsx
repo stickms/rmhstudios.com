@@ -69,7 +69,7 @@ export default function ThreadPostPanel({ content, blockedBy, onPosted }: Thread
 
   return (
     <section
-      className="glass-fill mt-2 rounded-site p-3"
+      className="glass-fill mt-2 rounded-site px-4 py-3"
       aria-label={t('thread-panel-label', { defaultValue: 'Post as thread' })}
     >
       <div className="flex items-start gap-2">
@@ -83,7 +83,7 @@ export default function ThreadPostPanel({ content, blockedBy, onPosted }: Thread
       </div>
 
       {count >= 2 && (
-        <ol className="mt-2 max-h-56 space-y-1.5 overflow-y-auto pr-1" aria-live="polite">
+        <ol className="mt-2 max-h-56 space-y-2 overflow-y-auto pr-1" aria-live="polite">
           {posts.map((post, i) => (
             <li
               key={i}

@@ -43,7 +43,7 @@ export function EndingOverlay({ endingId }: { endingId: string }) {
   };
 
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/92 backdrop-blur-sm">
+    <div className="app-safe-pad absolute inset-0 z-40 flex items-center-safe justify-center-safe overflow-y-auto bg-black/92 backdrop-blur-sm">
       <div className="max-w-lg px-8 text-center">
         <div
           className="mb-3 font-mono text-xs tracking-[0.4em] uppercase"
@@ -64,7 +64,7 @@ export function EndingOverlay({ endingId }: { endingId: string }) {
         <NgPlusOffer endingId={endingId} />
         <button
           onClick={playAgain}
-          className="rounded-lg border border-[#d4a054]/40 bg-[#d4a054]/10 px-6 py-2.5 font-mono text-sm tracking-wide text-[#f0c674] transition-colors hover:bg-[#d4a054]/20"
+          className="rounded-lg border border-[#d4a054]/40 bg-[#d4a054]/10 px-6 py-2.5 pointer-coarse:min-h-11 font-mono text-sm tracking-wide text-[#f0c674] transition-colors hover:bg-[#d4a054]/20"
         >
           Spin Again
         </button>

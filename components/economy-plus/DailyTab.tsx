@@ -13,7 +13,7 @@ export function DailyTab({ signedIn }: { signedIn: boolean }) {
   return (
     <Suspense
       fallback={
-        <div className="grid grid-cols-1 gap-3 px-3 pb-8 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 px-3 pb-12 sm:grid-cols-2">
           <Skeleton className="h-36 w-full" />
           <Skeleton className="h-36 w-full" />
         </div>

@@ -78,10 +78,12 @@ export function JournalOverlay() {
                             {t("journal-entries-count", { defaultValue: "{{discovered}}/{{total}} entries", discovered: discoveredEntries.length, total: journalEntries.length })}
                         </span>
                         <button
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors cursor-pointer"
+                            type="button"
+                            aria-label={t("close-overlay", { defaultValue: "Close" })}
+                            className="w-8 h-8 pointer-coarse:w-11 pointer-coarse:h-11 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors cursor-pointer"
                             onClick={toggleJournal}
                         >
-                            X
+                            <span aria-hidden="true">X</span>
                         </button>
                     </div>
                 </div>

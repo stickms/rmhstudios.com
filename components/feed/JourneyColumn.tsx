@@ -6,8 +6,7 @@ import { useTranslation } from'react-i18next';
 import { ProgressColumn } from'./ProgressColumn';
 import { AchievementsColumn } from'./AchievementsColumn';
 import { StreakColumn } from'./StreakColumn';
-import { ColumnHeader } from'./ColumnHeader';
-import { LiquidTabs } from'@/components/ui/liquid-tabs';
+import { PageTabs } from'./PageTabs';
 import { Reveal } from'@/components/motion';
 import type { AchievementsPayload } from'@/lib/achievements.server';
 
@@ -63,16 +62,10 @@ export function JourneyColumn({
  <div>
  {/* Reveal header — stat-grid dashboard, lighter treatment than marquee pages. */}
  <Reveal>
- {/* The tab bar *is* this page's header: no title, so the nav fills the
- row. Padding is mobile-only, to make room for the drawer button. */}
- {/* §15.1: unified flowing-capsule tab strip (was a border-b underline
- row). sheet={false} keeps it inside the existing sticky ColumnHeader —
- the header IS this page's chrome — without nesting glass-in-glass. */}
- <ColumnHeader className="px-2 py-2 md:px-2">
- <LiquidTabs
- fullWidth
- scroll
- sheet={false}
+ {/* The tab strip *is* this page's header: no title, so the nav fills the
+ row. PageTabs owns the placement (same gutter and sheet as Inbox and
+ Explore) instead of a one-off sticky capsule. */}
+ <PageTabs
  aria-label={t('journey-sections-label', { defaultValue:'Journey sections'})}
  value={tab}
  onChange={(id) => selectTab(id as JourneyTab)}
@@ -82,7 +75,6 @@ export function JourneyColumn({
  icon,
  }))}
  />
- </ColumnHeader>
  </Reveal>
 
  {tab ==='streaks'&& <StreakColumn hideHeader />}

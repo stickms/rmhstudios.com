@@ -22,7 +22,7 @@ function CommunityCardSkeleton() {
 /** A run of community card placeholders. */
 export function CommunityListSkeleton({ count = 6 }: { count?: number }) {
  return (
- <ul className="flex flex-col gap-3 p-3"role="status"aria-label="Loading communities">
+ <ul className="flex flex-col gap-3 px-4 pb-12"role="status"aria-label="Loading communities">
  {Array.from({ length: count }, (_, i) => (
  <CommunityCardSkeleton key={i} />
  ))}
@@ -49,7 +49,7 @@ export function CommunitiesSkeleton() {
  <Skeleton className="h-6 w-32"/>
  </div>
  </ColumnHeader>
- <div className="border-b border-site-border p-3">
+ <div className="px-4 pb-3">
  <Skeleton className="h-9 w-full rounded-site-sm"/>
  </div>
  <CommunityListSkeleton />

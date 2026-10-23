@@ -1557,6 +1557,24 @@
   }
 }
 
+/* ── Coarse pointers ──────────────────────────────────────────────────────
+   Buttons and segmented options reach the 44px floor on touch screens; on a
+   mouse they keep the denser desktop sizing. */
+
+@media (pointer: coarse) {
+  .stk-btn {
+    min-height: 44px;
+  }
+
+  .stk-btn--icon {
+    width: 44px;
+  }
+
+  .stk-segment {
+    min-height: 44px;
+  }
+}
+
 /* ── Reduced motion ───────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {

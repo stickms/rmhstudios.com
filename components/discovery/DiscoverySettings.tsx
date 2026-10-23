@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { IconButton } from '@/components/ui/icon-button';
 import { MAX_ALERTS, MAX_ALERT_LENGTH } from '@/lib/search/keyword-alerts';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 interface Alert {
   id: string;
@@ -88,19 +89,16 @@ export function DiscoverySettings() {
   };
 
   return (
-    <div className="mt-6 space-y-6">
-      <section className="glass-pane space-y-3 rounded-site p-4">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-site-text">
-          <BellRing className="h-4 w-4" aria-hidden />{' '}
-          {t('alerts-title', { defaultValue: 'Keyword alerts' })}
-        </h2>
-        <p className="text-sm text-site-text-muted">
-          {t('alerts-desc', {
-            max: MAX_ALERTS,
-            defaultValue:
-              'Get a notification when someone posts a word or phrase. Use quotes for phrases, -word to exclude, #tag for tags. Up to {{max}} alerts.',
-          })}
-        </p>
+    <>
+      <SettingsSection
+        icon={BellRing}
+        title={t('alerts-title', { defaultValue: 'Keyword alerts' })}
+        description={t('alerts-desc', {
+          max: MAX_ALERTS,
+          defaultValue:
+            'Get a notification when someone posts a word or phrase. Use quotes for phrases, -word to exclude, #tag for tags. Up to {{max}} alerts.',
+        })}
+      >
         <form
           className="flex gap-2"
           onSubmit={(e) => {
@@ -118,7 +116,6 @@ export function DiscoverySettings() {
           <Button
             type="submit"
             variant="accent"
-            size="sm"
             loading={busy}
             disabled={draft.trim().length < 2 || (alerts?.length ?? 0) >= MAX_ALERTS}
           >
@@ -126,11 +123,11 @@ export function DiscoverySettings() {
           </Button>
         </form>
         {alerts && alerts.length > 0 && (
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {alerts.map((a) => (
               <li
                 key={a.id}
-                className="glass-fill flex items-center justify-between gap-2 rounded-site px-3 py-1.5 text-sm text-site-text"
+                className="glass-fill flex items-center justify-between gap-2 rounded-site px-3 py-2 text-sm text-site-text"
               >
                 <span className="min-w-0 truncate">{a.query}</span>
                 <IconButton
@@ -142,27 +139,23 @@ export function DiscoverySettings() {
             ))}
           </ul>
         )}
-      </section>
+      </SettingsSection>
 
-      <section className="glass-pane flex items-center justify-between gap-3 rounded-site p-4">
-        <div>
-          <h2 className="text-base font-semibold text-site-text">
-            {t('memories-title', { defaultValue: 'On this day' })}
-          </h2>
-          <p className="text-sm text-site-text-muted">
-            {t('memories-desc', {
-              defaultValue:
-                'Once a day, get a notification with a post of yours from this date in a past year.',
-            })}
-          </p>
-        </div>
-        <Switch
-          checked={!!memories}
-          disabled={memories === null}
-          onCheckedChange={(c) => void toggleMemories(c)}
-          aria-label={t('memories-title', { defaultValue: 'On this day' })}
-        />
-      </section>
-    </div>
+      <SettingsSection
+        title={t('memories-title', { defaultValue: 'On this day' })}
+        description={t('memories-desc', {
+          defaultValue:
+            'Once a day, get a notification with a post of yours from this date in a past year.',
+        })}
+        action={
+          <Switch
+            checked={!!memories}
+            disabled={memories === null}
+            onCheckedChange={(c) => void toggleMemories(c)}
+            aria-label={t('memories-title', { defaultValue: 'On this day' })}
+          />
+        }
+      />
+    </>
   );
 }

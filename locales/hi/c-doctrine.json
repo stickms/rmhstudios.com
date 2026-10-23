@@ -35,5 +35,10 @@
   "upgrade-operator": "अनलॉक करने के लिए ऑपरेटर ($15/माह) में अपग्रेड करें।",
   "view-arrow": "देखें →",
   "xp-progress": "{{current}} / {{max}} XP",
-  "xp-to-next-rank": "{{badge}} {{name}} के लिए {{xp}} XP"
+  "xp-to-next-rank": "{{badge}} {{name}} के लिए {{xp}} XP",
+  "back-to-puzzles": "Back to Puzzles",
+  "copy-link": "Copy link",
+  "link-copied": "Link copied",
+  "recruitment-message-label": "Recruitment message",
+  "target-skills-label": "Target skills"
 }

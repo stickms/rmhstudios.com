@@ -30,7 +30,7 @@ export function StreakDisplay({ streak, longestStreak }: StreakDisplayProps) {
           {streak}
         </span>
       </motion.div>
-      <div className="text-[10px] text-white/30 leading-tight">
+      <div className="text-xs text-white/50 leading-tight">
         <p>{t("day-streak", { defaultValue: "day streak" })}</p>
         <p>{t("best-streak", { defaultValue: "best: {{longestStreak}}", longestStreak })}</p>
       </div>

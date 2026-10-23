@@ -7,9 +7,10 @@
  */
 
 import { createFileRoute, notFound, Link } from '@tanstack/react-router';
-import { PageFrame } from '@/components/feed/PageLayout';
+import { PageLayout } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { getMoment } from '@/lib/moments.server';
@@ -67,50 +68,43 @@ function MomentPage() {
     (moment.user.handle
       ? `@${moment.user.handle}`
       : t('moment-a-member', { defaultValue: 'A member' }));
+  const byline = `${who}${moment.user.handle && moment.user.name ? ` · @${moment.user.handle}` : ''}`;
 
   return (
-    <>
-      <PageFrame>
-        <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 px-4 py-12 text-center">
-          <p className="text-sm font-semibold uppercase tracking-wide text-site-accent">{label}</p>
-
-          <div className="w-full overflow-hidden rounded-site border border-site-border shadow-site">
-            <img
-              src={`/api/og/moment/${id}`}
-              alt={`${who}: ${moment.payload.value}`}
-              width={1200}
-              height={630}
-              className="h-auto w-full"
-            />
-          </div>
-
-          <div className="flex flex-col items-center gap-1">
-            <h1 className="text-2xl font-bold text-site-text">{moment.payload.value}</h1>
-            {moment.payload.subtitle && (
-              <p className="text-site-text-muted">{moment.payload.subtitle}</p>
-            )}
-            <p className="mt-1 text-sm text-site-text-dim">
-              {who}
-              {moment.user.handle && moment.user.name ? ` · @${moment.user.handle}` : ''}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {moment.user.handle && (
-              <Link to="/u/$userid" params={{ userid: moment.user.handle }}>
-                <Button variant="outline">
-                  {t('moment-view-profile', { defaultValue: 'View profile' })}
-                </Button>
-              </Link>
-            )}
-            <Link to="/">
-              <Button variant="accent">
-                {t('moment-explore', { defaultValue: 'Explore RMH Studios' })}
-              </Button>
-            </Link>
-          </div>
+    <PageLayout
+      title={moment.payload.value}
+      wrapTitle
+      description={moment.payload.subtitle ?? undefined}
+    >
+      <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 pt-4 pb-12">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="accent">{label}</Badge>
+          <span className="text-sm text-site-text-dim">{byline}</span>
         </div>
-      </PageFrame>
-    </>
+
+        <div className="overflow-hidden rounded-site border border-site-border">
+          <img
+            src={`/api/og/moment/${id}`}
+            alt={`${who}: ${moment.payload.value}`}
+            width={1200}
+            height={630}
+            className="h-auto w-full"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {moment.user.handle && (
+            <Button variant="outline" asChild>
+              <Link to="/u/$userid" params={{ userid: moment.user.handle }}>
+                {t('moment-view-profile', { defaultValue: 'View profile' })}
+              </Link>
+            </Button>
+          )}
+          <Button variant="accent" asChild>
+            <Link to="/">{t('moment-explore', { defaultValue: 'Explore RMH Studios' })}</Link>
+          </Button>
+        </div>
+      </div>
+    </PageLayout>
   );
 }

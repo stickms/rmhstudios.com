@@ -239,7 +239,7 @@ export default function OperatorsPage() {
         <div className="container">
           <div className="cta-band reveal">
             <span className="desig center">{t('cta-desig', { defaultValue: 'Selection' })}</span>
-            <h2 style={{ marginTop: 18 }}>{t('cta-h2', { defaultValue: 'Prove it once more.' })}</h2>
+            <h2 style={{ marginTop: 16 }}>{t('cta-h2', { defaultValue: 'Prove it once more.' })}</h2>
             <p>
               {t('cta-body', { defaultValue: 'Selection inquiries are reviewed by the recruiting staff, in confidence. Tell us who you served with and what you did. We will tell you whether there is a place to compete for — and we will not waste your time if there isn\'t.' })}
             </p>

@@ -119,5 +119,6 @@
   "tap-to-reveal": "انقر للكشف",
   "unban": "إلغاء الحظر",
   "unban-user": "إلغاء حظر المستخدم",
-  "work-duration": "مدة العمل: {{minutes}} دقيقة"
+  "work-duration": "مدة العمل: {{minutes}} دقيقة",
+  "apps": "Apps"
 }

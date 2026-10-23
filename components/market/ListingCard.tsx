@@ -153,13 +153,13 @@ export function ListingCard({
         <div className="flex flex-wrap items-center gap-2">
           <p className="break-words text-sm font-semibold text-site-text">{name}</p>
           <span
-            className="text-[10px] font-bold uppercase"
+            className="text-xs font-semibold uppercase"
             style={{ color: RARITY_COLORS[rarity] }}
           >
             {rarity}
           </span>
         </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-xs text-site-text-muted">
+        <div className="mt-0.5 flex items-center gap-2 text-xs text-site-text-muted">
           <UserAvatar
             src={listing.seller.image}
             alt=""

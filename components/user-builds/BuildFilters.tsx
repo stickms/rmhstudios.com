@@ -2,9 +2,11 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Search, ChevronDown, X, User, Plus, Award } from 'lucide-react';
+import { ChevronDown, User, Plus, Award } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { Button } from '@/components/ui/button';
+import { SearchField } from '@/components/ui/search-field';
 import { MenuItem } from '@/components/ui/menu';
 import { useSession } from '@/components/Providers';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
@@ -77,55 +79,46 @@ export function BuildFilters({
   const selectedSortData = SORT_OPTIONS.find((s) => s.value === selectedSort);
 
   return (
-    <div className="flex flex-col gap-3 mb-6">
+    <div className="mb-6 flex flex-col gap-3">
       {/* Search + Filter toggle */}
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim" />
-          <input
-            type="text"
-            placeholder={t('search-builds', { defaultValue: 'Search builds...' })}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-site-text-dim hover:text-site-text"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-        <Link
-          to="/user-builds/submit"
-          className="flex items-center gap-1.5 shrink-0 px-4 py-2 rounded-site-sm bg-site-accent hover:bg-site-accent text-site-accent-fg text-sm font-medium transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">{t('submit', { defaultValue: 'Submit' })}</span>
-        </Link>
+        <SearchField
+          value={search}
+          onValueChange={setSearch}
+          placeholder={t('search-builds', { defaultValue: 'Search builds...' })}
+          aria-label={t('search-builds', { defaultValue: 'Search builds...' })}
+          containerClassName="flex-1"
+        />
+        <Button asChild variant="accent">
+          <Link to="/user-builds/submit">
+            <Plus aria-hidden />
+            <span className="hidden sm:inline">{t('submit', { defaultValue: 'Submit' })}</span>
+            <span className="sr-only sm:hidden">{t('submit', { defaultValue: 'Submit' })}</span>
+          </Link>
+        </Button>
       </div>
 
       {/* Filter controls */}
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="flex flex-wrap items-center gap-2">
         {/* Category Filter */}
         <div className="relative">
-          <button
+          <Button
             ref={categoryTriggerRef}
+            variant="outline"
             onClick={() => setShowCategories(!showCategories)}
             aria-haspopup="menu"
             aria-expanded={showCategories}
-            className="flex items-center gap-2 px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-sm text-site-text hover:border-site-accent/50 transition-colors min-w-[140px]"
+            className="min-w-36 justify-between"
           >
             <span className="truncate">
               {selectedCategoryData?.name ||
                 t('all-categories', { defaultValue: 'All Categories' })}
             </span>
             <ChevronDown
-              className={`w-4 h-4 ml-auto transition-transform ${showCategories ? 'rotate-180' : ''}`}
+              className={`ml-auto transition-transform ${showCategories ? 'rotate-180' : ''}`}
+              aria-hidden
             />
-          </button>
+          </Button>
 
           <AnchoredMenu
             open={showCategories}
@@ -163,18 +156,20 @@ export function BuildFilters({
 
         {/* Sort */}
         <div className="relative">
-          <button
+          <Button
             ref={sortTriggerRef}
+            variant="outline"
             onClick={() => setShowSort(!showSort)}
             aria-haspopup="menu"
             aria-expanded={showSort}
-            className="flex items-center gap-2 px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-sm text-site-text hover:border-site-accent/50 transition-colors min-w-[140px]"
+            className="min-w-36 justify-between"
           >
             <span>{selectedSortData?.label || t('sort-by', { defaultValue: 'Sort by' })}</span>
             <ChevronDown
-              className={`w-4 h-4 ml-auto transition-transform ${showSort ? 'rotate-180' : ''}`}
+              className={`ml-auto transition-transform ${showSort ? 'rotate-180' : ''}`}
+              aria-hidden
             />
-          </button>
+          </Button>
 
           <AnchoredMenu
             open={showSort}
@@ -199,31 +194,29 @@ export function BuildFilters({
         </div>
 
         {/* Curated Toggle */}
-        <button
+        <Button
+          variant="outline"
+          aria-pressed={curated}
           onClick={() => onCuratedChange(!curated)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-site-sm border text-sm transition-colors ${
-            curated
-              ? 'bg-site-warning/10 border-site-warning/40 text-site-warning'
-              : 'bg-site-surface border-site-border text-site-text hover:border-site-warning/50'
-          }`}
+          className={
+            curated ? 'border-site-warning/40 bg-site-warning/10 text-site-warning' : undefined
+          }
         >
-          <Award className="w-4 h-4" />
+          <Award aria-hidden />
           <span>{t('curated', { defaultValue: 'Curated' })}</span>
-        </button>
+        </Button>
 
         {/* My Builds Toggle */}
         {session?.user && (
-          <button
+          <Button
+            variant="outline"
+            aria-pressed={myBuilds}
             onClick={() => onMyBuildsChange(!myBuilds)}
-            className={`flex items-center gap-2 ml-auto px-4 py-2 rounded-site-sm border text-sm transition-colors ${
-              myBuilds
-                ? 'bg-site-accent/10 border-site-accent/40 text-site-accent'
-                : 'bg-site-surface border-site-border text-site-text hover:border-site-accent/50'
-            }`}
+            className={`ml-auto ${myBuilds ? 'border-site-accent/40 bg-site-accent/10 text-site-accent' : ''}`}
           >
-            <User className="w-4 h-4" />
+            <User aria-hidden />
             <span>{t('my-builds', { defaultValue: 'My Builds' })}</span>
-          </button>
+          </Button>
         )}
       </div>
     </div>

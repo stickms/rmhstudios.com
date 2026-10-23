@@ -34,7 +34,7 @@ export default function SettingsPanel() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+        className="rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
         title={t('settings', { defaultValue: 'Settings' })}
         aria-label={t('settings', { defaultValue: 'Settings' })}
       >
@@ -68,14 +68,14 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
         className="absolute inset-0 app-scrim app-overlay"
         onClick={onClose}
       />
-      <div className="app-modal relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl">
+      <div className="app-modal relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
         <div className="flex items-center justify-between mb-4">
           <h3 id={titleId} className="text-lg font-semibold text-(--app-text)">
             {t('settings', { defaultValue: 'Settings' })}
           </h3>
           <button
             onClick={onClose}
-            className="rounded p-1 text-(--app-text-muted) hover:text-(--app-text) transition-colors"
+            className="rounded-(--app-radius-sm) p-1 text-(--app-text-muted) hover:text-(--app-text) transition-colors"
             aria-label={t('close', { defaultValue: 'Close' })}
           >
             <X className="h-5 w-5" aria-hidden />
@@ -324,7 +324,7 @@ function RoomSection({ settings }: { settings: RoomSettings }) {
               value={customReactionsInput}
               onChange={(e) => setCustomReactionsInput(e.target.value)}
               aria-invalid={reactionsInvalid}
-              className="w-full rounded-lg border border-(--app-border) bg-(--app-bg) px-3 py-2 text-sm text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+              className="w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-2 text-sm text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
             />
             <p className={`mt-1 text-xs ${reactionsInvalid ? 'text-(--app-danger)' : 'text-(--app-text-dim)'}`}>
               {t('custom-reactions-count', { defaultValue: '{{count}} selected', count: customReactions.length })}
@@ -336,7 +336,7 @@ function RoomSection({ settings }: { settings: RoomSettings }) {
       <button
         onClick={handleSave}
         disabled={reactionsInvalid}
-        className="w-full py-2.5 rounded-lg font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 bg-(--app-accent) hover:bg-(--app-accent-hover)"
+        className="w-full py-2.5 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 bg-(--app-accent) hover:bg-(--app-accent-hover)"
       >
         {saved
           ? t('room-settings-saved', { defaultValue: 'Saved' })
@@ -357,7 +357,7 @@ function SectionHeader({ title, note }: { title: string; note?: string }) {
   return (
     <div className="mb-3 flex items-baseline justify-between gap-2">
       <h4 className="text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">{title}</h4>
-      {note && <span className="text-[11px] text-(--app-text-dim)">{note}</span>}
+      {note && <span className="text-xs text-(--app-text-dim)">{note}</span>}
     </div>
   );
 }
@@ -447,7 +447,7 @@ function SelectOption({
           id={id}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="shrink-0 rounded-lg border border-(--app-border) bg-(--app-bg) px-2 py-1.5 text-sm text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent)"
+          className="shrink-0 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-2 py-1.5 text-sm text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent)"
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>{option.label}</option>
@@ -490,7 +490,7 @@ function NumberOption({
             const next = Number.parseInt(e.target.value, 10);
             if (!Number.isNaN(next)) onChange(Math.min(max, Math.max(min, next)));
           }}
-          className="w-20 shrink-0 rounded-lg border border-(--app-border) bg-(--app-bg) px-2 py-1.5 text-sm text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent)"
+          className="w-20 shrink-0 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-2 py-1.5 text-sm text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent)"
         />
       }
     />
@@ -524,7 +524,7 @@ function TextOption({
           maxLength={64}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
-          className="w-32 shrink-0 rounded-lg border border-(--app-border) bg-(--app-bg) px-2 py-1.5 text-sm text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+          className="w-32 shrink-0 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-2 py-1.5 text-sm text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
         />
       }
     />

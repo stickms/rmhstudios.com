@@ -123,7 +123,7 @@ export default function FirmPage() {
         <div className="container">
           <div className="cta-band reveal">
             <span className="eyebrow center">{t("work-with-us", { defaultValue: "Work With Us" })}</span>
-            <h2 style={{ marginTop: 18 }}>{t("cta-heading-firm-page", { defaultValue: "Bring the whole firm to your next decision." })}</h2>
+            <h2 style={{ marginTop: 20 }}>{t("cta-heading-firm-page", { defaultValue: "Bring the whole firm to your next decision." })}</h2>
             <p>{t("cta-body-firm-page", { defaultValue: "Whether you're raising your first round or weighing a transformative acquisition, our teams are ready to help." })}</p>
             <Link className="btn btn-gold" to="/rmh-capital/contact">{t("cta-link", { defaultValue: "Contact RMH Capital" })} <span className="arw">→</span></Link>
           </div>

@@ -73,7 +73,7 @@ export const Route = createFileRoute('/_site/games/slice-it')({
 function SliceItHubPage() {
   const data = Route.useLoaderData();
   return (
-    <PageLayout title="Slice It!" backTo="/">
+    <PageLayout title="Slice It!" backTo="/games">
       <Suspense fallback={null}>
         <SliceItHub data={data} />
       </Suspense>

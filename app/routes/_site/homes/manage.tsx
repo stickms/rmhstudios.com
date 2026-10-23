@@ -21,12 +21,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Bell, Bookmark, Loader2, Plus, Home as HomeIcon } from 'lucide-react';
+import { Bell, Bookmark, Plus, Home as HomeIcon } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { type LiquidTab } from '@/components/ui/liquid-tabs';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { Spinner } from '@/components/ui/spinner';
 import { ListingGrid } from '@/components/homes/ListingGrid';
 import { WatchManager } from '@/components/homes/WatchManager';
 import type { Listing } from '@/lib/homes/types';
@@ -121,7 +123,7 @@ function HomesManagePage() {
     return (
       <PageLayout title={title} backTo="/homes" wide>
         <div className="grid place-items-center py-24 text-site-text-muted">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <Spinner />
         </div>
       </PageLayout>
     );
@@ -132,18 +134,12 @@ function HomesManagePage() {
   if (!session) {
     return (
       <PageLayout title={title} backTo="/homes" wide>
-        <div className="mx-auto max-w-md px-4 py-20 text-center text-site-text-dim">
-          <p className="mb-4">
-            {t('homes-manage-signin', {
-              defaultValue: 'Sign in to see your listings, saved homes and alerts.',
-            })}
-          </p>
-          <Button asChild>
-            <Link to="/login" search={{ callbackURL: '/homes/manage' }}>
-              {t('sign-in', { defaultValue: 'Sign in' })}
-            </Link>
-          </Button>
-        </div>
+        <SignedOutPrompt
+          callbackURL="/homes/manage"
+          title={t('homes-manage-signin', {
+            defaultValue: 'Sign in to see your listings, saved homes and alerts.',
+          })}
+        />
       </PageLayout>
     );
   }
@@ -165,9 +161,12 @@ function HomesManagePage() {
       backLabel={t('homes-back-to-browse', { defaultValue: 'Back to browse' })}
       wide
       headerRight={
-        <Button asChild size="sm">
-          <Link to="/homes/submit">
-            <Plus className="h-4 w-4" />
+        <Button asChild size="sm" className="min-h-11">
+          <Link
+            to="/homes/submit"
+            aria-label={t('homes-new-listing', { defaultValue: 'New listing' })}
+          >
+            <Plus className="h-4 w-4" aria-hidden />
             <span className="hidden sm:inline">
               {t('homes-new-listing', { defaultValue: 'New listing' })}
             </span>
@@ -183,7 +182,7 @@ function HomesManagePage() {
         aria-label={title}
       />
 
-      <div className="mx-auto w-full max-w-6xl px-4 pt-2 pb-16 md:px-6">
+      <div className="w-full px-4 pt-4 pb-12">
         {tab === 'listings' && (
           <div
             role="tabpanel"
@@ -223,7 +222,7 @@ function HomesManagePage() {
             role="tabpanel"
             id="homes-manage-panel-alerts"
             aria-labelledby="homes-manage-tab-alerts"
-            className="mx-auto w-full max-w-3xl"
+            className="w-full max-w-3xl"
           >
             <p className="mb-4 text-sm text-site-text-muted">
               {t('homes-alerts-hint', {

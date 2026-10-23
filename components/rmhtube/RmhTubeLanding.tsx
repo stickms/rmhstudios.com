@@ -143,14 +143,14 @@ export default function RmhTubeLanding() {
   return (
     <div className="app-page">
       <div className="border-b border-(--app-border)">
-        <RmhTubeHeader backLabel="Apps" backHref="/apps" />
+        <RmhTubeHeader backLabel={t("apps", { defaultValue: "Apps" })} backHref="/apps" />
       </div>
 
       <div className="flex-1 p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-8">
 
           {/* Hero */}
-          <div className="text-center py-4">
+          <div className="text-center py-8">
             <div className="inline-flex items-center gap-3 mb-2">
               <MonitorPlay className="h-8 w-8 text-(--app-accent)" />
               <h2
@@ -168,7 +168,7 @@ export default function RmhTubeLanding() {
           {/* Create & Join */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* Create Room */}
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-4">{t("create-room", { defaultValue: "Create Room" })}</h2>
               <p className="text-sm mb-4 text-(--app-text-muted)">
                 {t("create-room-desc", { defaultValue: "Start a new watch session and invite friends." })}
@@ -176,14 +176,14 @@ export default function RmhTubeLanding() {
               <button
                 onClick={handleCreateRoom}
                 disabled={connectionStatus !== 'connected'}
-                className="w-full py-3 rounded-lg font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                className="w-full py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
               >
                 {t("create-room", { defaultValue: "Create Room" })}
               </button>
             </div>
 
             {/* Join Room */}
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-4">{t("join-room", { defaultValue: "Join Room" })}</h2>
               <p className="text-sm mb-4 text-(--app-text-muted)">
                 {t("join-room-desc", { defaultValue: "Enter a 6-character room code to join." })}
@@ -197,12 +197,12 @@ export default function RmhTubeLanding() {
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   placeholder="ABCDEF"
-                  className="w-10 min-w-0 flex-1 px-4 py-3 rounded-lg font-mono text-lg uppercase tracking-widest text-center border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+                  className="w-10 min-w-0 flex-1 px-4 py-3 rounded-(--app-radius-sm) font-mono text-lg uppercase tracking-widest text-center border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
                 />
                 <button
                   type="submit"
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                  className="px-6 py-3 rounded-lg font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                  className="px-6 py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
                 >
                   {t("join", { defaultValue: "Join" })}
                 </button>
@@ -212,7 +212,7 @@ export default function RmhTubeLanding() {
 
           {/* Favorite Rooms (Phase 4) */}
           {favoriteRooms.length > 0 && (
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Star className="h-5 w-5 text-(--app-warning)" />
                 <h2 className="text-xl font-semibold">{t("favorites", { defaultValue: "Favorites" })}</h2>
@@ -224,7 +224,7 @@ export default function RmhTubeLanding() {
                     <button
                       key={favRoomId}
                       onClick={() => emit(C2S.ROOM_JOIN, { roomId: favRoomId })}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-(--app-border) bg-(--app-bg) hover:bg-(--app-surface-hover) transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) hover:bg-(--app-surface-hover) transition-colors"
                     >
                       <span className="font-mono font-bold text-sm">{favRoomId}</span>
                       {historyEntry?.roomName && (
@@ -246,12 +246,12 @@ export default function RmhTubeLanding() {
           )}
 
           {/* Public Rooms */}
-          <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+          <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">{t("public-rooms", { defaultValue: "Public Rooms" })}</h2>
               <button
                 onClick={handleBrowse}
-                className="text-sm px-3 py-1 rounded-md transition-colors bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)"
+                className="text-sm px-3 py-1 rounded-(--app-radius-sm) transition-colors bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)"
               >
                 {t("refresh", { defaultValue: "Refresh" })}
               </button>
@@ -265,7 +265,7 @@ export default function RmhTubeLanding() {
                 {publicRooms.map((room) => (
                   <div
                     key={room.roomId}
-                    className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors border border-(--app-border) bg-(--app-bg) hover:bg-(--app-surface-hover)"
+                    className="flex items-center justify-between p-3 rounded-(--app-radius-sm) cursor-pointer transition-colors border border-(--app-border) bg-(--app-bg) hover:bg-(--app-surface-hover)"
                     onClick={() => {
                       setJoinCode(room.roomId);
                       emit(C2S.ROOM_JOIN, { roomId: room.roomId });
@@ -301,7 +301,7 @@ export default function RmhTubeLanding() {
 
           {/* Recent Rooms — only shows rooms that are currently open */}
           {openRecentRooms.length > 0 && (
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
               <div className="flex items-center gap-2 mb-4">
                 <History className="h-5 w-5 text-(--app-info)" />
                 <h2 className="text-xl font-semibold">{t("recent-rooms", { defaultValue: "Recent Rooms" })}</h2>
@@ -313,7 +313,7 @@ export default function RmhTubeLanding() {
                   return (
                     <div
                       key={entry.roomId}
-                      className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors border border-(--app-border) bg-(--app-bg) hover:bg-(--app-surface-hover)"
+                      className="flex items-center justify-between p-3 rounded-(--app-radius-sm) cursor-pointer transition-colors border border-(--app-border) bg-(--app-bg) hover:bg-(--app-surface-hover)"
                       onClick={() => emit(C2S.ROOM_JOIN, { roomId: entry.roomId })}
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -339,7 +339,7 @@ export default function RmhTubeLanding() {
                         <span
                           role="button"
                           onClick={(e) => { e.stopPropagation(); toggleFavoriteRoom(entry.roomId); }}
-                          className={`rounded p-1 transition-colors ${
+                          className={`rounded-(--app-radius-sm) p-1 transition-colors ${
                             isFavorite
                               ? 'text-(--app-warning)'
                               : 'text-(--app-text-dim) hover:text-(--app-warning)'

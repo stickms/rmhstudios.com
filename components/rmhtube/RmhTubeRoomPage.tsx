@@ -23,7 +23,7 @@ import { extrapolate } from '@/lib/rmhtube/sync-math';
 import { getServerNow } from '@/lib/rmhtube/clock';
 import { PopOutPortal, usePopOut } from '@/components/shared/pop-out';
 import { isNativeVideo } from '@/lib/rmhtube/media';
-import { PictureInPicture2 } from 'lucide-react';
+import { Ban, Link2, PictureInPicture2 } from 'lucide-react';
 import RmhTubeHeader from '@/components/rmhtube/RmhTubeHeader';
 import SettingsPanel from '@/components/rmhtube/SettingsPanel';
 import VideoPlayer from '@/components/rmhtube/VideoPlayer';
@@ -361,23 +361,25 @@ export default function RmhTubeRoomPage() {
             onCopyCode={handleCopyCode}
           />
         </div>
-        <div className="pr-3 flex items-center gap-1">
+        <div className="pr-3 flex items-center gap-2">
           {isHost && (
             <button
               onClick={() => setShowBanList(true)}
-              className="rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+              className="rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
               title={t("ban-list", { defaultValue: "Ban List" })}
+              aria-label={t("ban-list", { defaultValue: "Ban List" })}
             >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+              <Ban className="h-5 w-5" aria-hidden />
             </button>
           )}
           {isHost && (
             <button
               onClick={() => setShowInviteModal(true)}
-              className="rounded-md p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+              className="rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
               title={t("create-invite", { defaultValue: "Create Invite" })}
+              aria-label={t("create-invite", { defaultValue: "Create Invite" })}
             >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <Link2 className="h-5 w-5" aria-hidden />
             </button>
           )}
           <PartyLauncher />
@@ -439,7 +441,7 @@ export default function RmhTubeRoomPage() {
               <>
                 <button
                   onClick={() => setSidebarOpen((s) => !s)}
-                  className="fixed right-4 top-20 z-40 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors bg-(--app-surface) text-(--app-text-muted) hover:text-(--app-text) border border-(--app-border)"
+                  className="fixed right-4 top-20 z-40 rounded-(--app-radius-sm) px-3 py-1.5 text-xs font-medium transition-colors bg-(--app-surface) text-(--app-text-muted) hover:text-(--app-text) border border-(--app-border)"
                 >
                   {sidebarOpen ? t("hide-chat", { defaultValue: "Hide Chat" }) : t("show-chat", { defaultValue: "Show Chat" })}
                 </button>
@@ -512,7 +514,7 @@ export default function RmhTubeRoomPage() {
       {popOut.win && (
         <PopOutPortal
           win={popOut.win}
-          themeClassName={`${rootRef.current?.closest('.app-theme')?.className ?? 'app-theme'} flex flex-col h-screen bg-(--app-bg)`}
+          themeClassName={`${rootRef.current?.closest('.app-theme')?.className ?? 'app-theme'} app-viewport bg-(--app-bg)`}
         >
           <div className="shrink-0">{player}</div>
           <div className="flex-1 min-h-0 overflow-hidden border-t border-(--app-border)">
@@ -532,7 +534,7 @@ export default function RmhTubeRoomPage() {
 function PoppedOutNotice({ onReturn }: { onReturn: () => void }) {
   const { t } = useTranslation('c-rmhtube');
   return (
-    <div className="relative flex w-full aspect-video flex-col items-center justify-center gap-3 rounded-xl bg-(--app-surface) text-center">
+    <div className="relative flex w-full aspect-video flex-col items-center justify-center gap-3 rounded-(--app-radius) bg-(--app-surface) text-center">
       <PictureInPicture2 className="h-8 w-8 text-(--app-text-muted)" aria-hidden />
       <p className="text-sm text-(--app-text-muted)">
         {t('popped-out', { defaultValue: 'Playing in a pop-out window' })}
@@ -540,7 +542,7 @@ function PoppedOutNotice({ onReturn }: { onReturn: () => void }) {
       <button
         type="button"
         onClick={onReturn}
-        className="rounded-lg border border-(--app-border) px-3 py-1.5 text-sm font-medium text-(--app-text) transition-colors hover:bg-(--app-surface-hover)"
+        className="rounded-(--app-radius-sm) border border-(--app-border) px-3 py-1.5 text-sm font-medium text-(--app-text) transition-colors hover:bg-(--app-surface-hover)"
       >
         {t('bring-back', { defaultValue: 'Bring it back' })}
       </button>

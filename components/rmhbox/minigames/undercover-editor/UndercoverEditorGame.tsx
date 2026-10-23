@@ -489,14 +489,14 @@ export default function UndercoverEditorGame({
     <div className="flex w-full flex-col items-center gap-4">
       {/* Spectator indicator */}
       {isSpectator && (
-        <div className="rounded-lg bg-(--app-rare-dim) border border-(--app-rare)/30 px-3 py-1.5 text-xs font-medium text-(--app-rare)">
+        <div className="rounded-(--app-radius-sm) bg-(--app-rare-dim) border border-(--app-rare)/30 px-3 py-1.5 text-xs font-medium text-(--app-rare)">
           👁 {t("spectating", { defaultValue: "Spectating" })}
         </div>
       )}
 
       {/* Error toast */}
       {errorMessage && (
-        <div className="rounded-lg bg-(--app-danger-dim) border border-(--app-danger)/30 px-3 py-1.5 text-xs text-(--app-danger)">
+        <div className="rounded-(--app-radius-sm) bg-(--app-danger-dim) border border-(--app-danger)/30 px-3 py-1.5 text-xs text-(--app-danger)">
           {errorMessage}
         </div>
       )}
@@ -544,12 +544,12 @@ export default function UndercoverEditorGame({
                 {/* Write input or submitted indicator */}
                 {mySubmission ? (
                   <div className="flex items-center gap-2">
-                    <p className="flex-1 rounded-lg bg-(--app-success-dim) border border-(--app-success)/30 px-3 py-2 text-sm text-(--app-success)">
+                    <p className="flex-1 rounded-(--app-radius-sm) bg-(--app-success-dim) border border-(--app-success)/30 px-3 py-2 text-sm text-(--app-success)">
                       ✓ {mySubmission}
                     </p>
                     <button
                       onClick={handleUnsubmitSentence}
-                      className="rounded-lg bg-(--app-surface) border border-(--app-border) px-3 py-2 text-xs text-(--app-text-muted) hover:bg-(--app-border) transition-colors"
+                      className="rounded-(--app-radius-sm) bg-(--app-surface) border border-(--app-border) px-3 py-2 text-xs text-(--app-text-muted) hover:bg-(--app-border) transition-colors"
                     >
                       {t("edit", { defaultValue: "Edit" })}
                     </button>
@@ -638,7 +638,7 @@ export default function UndercoverEditorGame({
             {currentReadingStory && (
               <div className="w-full max-w-lg flex flex-col gap-3">
                 {/* Slim "Story so far" panel — shows story number, prompt as sentence, revealed sentences */}
-                <div className="rounded-lg border border-(--app-border) bg-(--app-surface) p-3">
+                <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) p-3">
                   <p className="mb-2 text-[10px] uppercase tracking-wider text-(--app-text-muted)">
                     {t("ue-story-number", { defaultValue: "Story {{number}}", number: readingStoryIndex + 1 })}
                   </p>
@@ -667,7 +667,7 @@ export default function UndercoverEditorGame({
                     {readingSentenceIndex < currentReadingStory.sentenceCount ? (
                       <button
                         onClick={handleNextSentence}
-                        className="flex items-center gap-1.5 rounded-lg bg-(--app-accent) px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                        className="flex items-center gap-1.5 rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2 text-sm font-medium text-(--app-accent-fg) hover:opacity-90 transition-opacity"
                       >
                         {t("ue-next-sentence", { defaultValue: "Next Sentence" })}
                         <ChevronRight className="h-4 w-4" />
@@ -675,7 +675,7 @@ export default function UndercoverEditorGame({
                     ) : (
                       <button
                         onClick={handleNextStory}
-                        className="flex items-center gap-1.5 rounded-lg bg-(--app-accent) px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                        className="flex items-center gap-1.5 rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2 text-sm font-medium text-(--app-accent-fg) hover:opacity-90 transition-opacity"
                       >
                         {readingStoryIndex + 1 < readingStories.length ? t("ue-next-story", { defaultValue: "Next Story" }) : t("ue-start-matching", { defaultValue: "Start Matching" })}
                         <ChevronRight className="h-4 w-4" />
@@ -754,7 +754,7 @@ export default function UndercoverEditorGame({
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: revealIdx * 0.08, duration: 0.35 }}
-                    className="flex flex-col gap-3 rounded-xl border border-(--app-border) bg-(--app-surface) p-4"
+                    className="flex flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4"
                   >
                     {/* Story header with match result badge */}
                     <div className="flex items-center justify-between">
@@ -777,7 +777,7 @@ export default function UndercoverEditorGame({
                     </p>
 
                     {/* Full story with in-situ edit highlighting */}
-                    <div className="flex flex-col gap-1 rounded-lg bg-(--app-surface)/60 p-3 text-sm leading-relaxed">
+                    <div className="flex flex-col gap-1 rounded-(--app-radius-sm) bg-(--app-surface)/60 p-3 text-sm leading-relaxed">
                       {/* Prompt as first sentence */}
                       <span className="text-(--app-text)">
                         <span className="opacity-50 text-xs">(prompt)</span> {reveal.prompt}
@@ -841,7 +841,7 @@ export default function UndercoverEditorGame({
                   {[...scores].sort((a, b) => b.score - a.score).map((s) => (
                     <div
                       key={s.userId}
-                      className="flex items-center justify-between rounded-lg bg-(--app-surface) px-3 py-1.5 text-sm"
+                      className="flex items-center justify-between rounded-(--app-radius-sm) bg-(--app-surface) px-3 py-1.5 text-sm"
                     >
                       <span className={`${s.userId === playerId ? 'font-bold text-(--app-accent)' : 'text-(--app-text)'}`}>
                         {s.userName}

@@ -54,11 +54,11 @@ export function PatternView() {
   // ─── Empty state ──────────────────────────────────────────────────────
   if (patterns.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-[var(--site-muted)]">
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-site-text-muted">
         <p className="text-sm">{t('no-patterns-yet', { defaultValue: 'No patterns yet' })}</p>
         <button
           onClick={handleCreatePattern}
-          className="flex items-center gap-2 rounded-lg bg-cyan-500/20 px-4 py-2 text-sm text-cyan-400 hover:bg-cyan-500/30"
+          className="flex items-center gap-2 rounded-site-sm bg-site-accent-dim px-4 py-2 text-sm text-site-accent hover:bg-site-accent-dim"
         >
           <Plus className="h-4 w-4" />
           {t('create-pattern', { defaultValue: 'Create Pattern' })}
@@ -70,7 +70,7 @@ export function PatternView() {
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Pattern header */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-[var(--site-border)] bg-[var(--site-surface)] px-3 py-1.5">
+      <div className="flex shrink-0 items-center gap-2 border-b border-site-border bg-site-surface px-3 py-1.5">
         {/* Pattern selector */}
         <Select
           controlSize="sm"
@@ -88,7 +88,7 @@ export function PatternView() {
         </Select>
         <button
           onClick={handleCreatePattern}
-          className="rounded p-1 text-[var(--site-muted)] hover:bg-white/10"
+          className="rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover"
           title={t('new-pattern', { defaultValue: 'New Pattern' })}
         >
           <Plus className="h-3.5 w-3.5" />
@@ -102,7 +102,7 @@ export function PatternView() {
             {selectedPattern.tracks.map((track, trackIdx) => (
               <div key={trackIdx} className="flex items-center gap-1">
                 {/* Row label */}
-                <div className="w-16 shrink-0 truncate text-right text-[10px] text-[var(--site-muted)]">
+                <div className="w-16 shrink-0 truncate text-right text-xs text-site-text-muted">
                   {RMHDrums.PAD_LABELS[trackIdx] ||
                     t('pad-number', { defaultValue: 'Pad {{number}}', number: trackIdx + 1 })}
                 </div>
@@ -119,9 +119,9 @@ export function PatternView() {
                         onClick={() => toggleStep(trackIdx, stepIdx)}
                         className={`h-7 rounded-sm transition-colors ${isBeatStart ? 'ml-1' : ''} ${
                           step.active
-                            ? 'bg-cyan-500/80 hover:bg-cyan-400/80'
-                            : 'bg-white/5 hover:bg-white/10'
-                        } ${isCurrentStep ? 'ring-1 ring-white/50' : ''}`}
+                            ? 'bg-site-accent hover:bg-site-accent-hover'
+                            : 'bg-site-surface-hover hover:bg-site-surface-hover'
+                        } ${isCurrentStep ? 'ring-1 ring-site-text/50' : ''}`}
                         style={{
                           width: 28,
                           minWidth: 28,

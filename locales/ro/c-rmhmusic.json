@@ -50,5 +50,8 @@
   "sign-in-to-guess": "Sign in to guess.",
   "solves-plays": "{{solves}} solved · {{plays}} plays",
   "song-title-placeholder": "Song title...",
-  "your-playlists": "Your playlists"
+  "your-playlists": "Your playlists",
+  "listening-count_few": "{{count}} listening",
+  "listening-count_one": "{{count}} listening",
+  "listening-count_other": "{{count}} listening"
 }

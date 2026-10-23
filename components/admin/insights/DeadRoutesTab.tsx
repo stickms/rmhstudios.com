@@ -17,7 +17,7 @@ export function DeadRoutesTab() {
   const dead = data.routes.filter((r) => r.known && r.views <= DEAD_AT);
   const live = data.routes.filter((r) => !dead.includes(r));
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       <p className="text-sm text-site-text-muted">
         {t('dead-intro', {
           defaultValue:
@@ -27,14 +27,14 @@ export function DeadRoutesTab() {
           ? t('dead-since', { defaultValue: 'Counting since {{date}}.', date: data.trackingSince })
           : t('dead-nodata', { defaultValue: 'No views recorded yet.' })}
       </p>
-      <h2 className="font-display text-lg font-bold text-site-text">
+      <h2 className="site-section-label">
         {t('dead-flagged', {
           defaultValue: 'Candidates for consolidation ({{count}})',
           count: dead.length,
         })}
       </h2>
       <RouteTable rows={dead} />
-      <h2 className="font-display text-lg font-bold text-site-text">
+      <h2 className="site-section-label">
         {t('dead-rest', { defaultValue: 'Everything else' })}
       </h2>
       <RouteTable rows={[...live].reverse()} />
@@ -53,7 +53,7 @@ function RouteTable({ rows }: { rows: { route: string; views: number }[] }) {
   return (
     <ul className="glass-fill divide-y divide-site-border rounded-site">
       {rows.map((r) => (
-        <li key={r.route} className="flex items-center justify-between px-4 py-2 text-sm">
+        <li key={r.route} className="flex items-center justify-between px-4 py-3 text-sm">
           <span className="font-mono text-site-text">{r.route}</span>
           <span className="text-site-text-muted">{r.views.toLocaleString()}</span>
         </li>

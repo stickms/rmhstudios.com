@@ -253,5 +253,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "गलत — वह संदिग्ध हटा दिया गया है। आपके पास 1 अनुमान बचा है।",
   "wrong-outcast-was": "❌ गलत — बहिष्कृत {{name}} था",
-  "youre-the-first": "आप पहले हैं!"
+  "youre-the-first": "आप पहले हैं!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

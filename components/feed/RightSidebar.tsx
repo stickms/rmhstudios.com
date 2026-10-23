@@ -260,7 +260,7 @@ export function RightSidebar({
                       })}
                     </p>
                   )}
-                  <div className="flex items-center gap-2 text-[11px] text-site-text-dim mt-0.5">
+                  <div className="flex items-center gap-2 text-xs text-site-text-dim mt-0.5">
                     <span className="inline-flex items-center gap-1">
                       <Heart className="w-3 h-3" />
                       {build.likeCount}

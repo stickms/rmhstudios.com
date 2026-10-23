@@ -17,8 +17,10 @@ import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
  */
 export const Route = createFileRoute('/_site/trash')({
   head: () => ({
-    meta: [{ title: 'Trash | RMH Studios' }, { name: 'robots', content: 'noindex' }] }),
-  component: TrashPage });
+    meta: [{ title: 'Trash | RMH Studios' }, { name: 'robots', content: 'noindex' }],
+  }),
+  component: TrashPage,
+});
 
 function TrashPage() {
   const { t } = useTranslation('settings-content');
@@ -28,11 +30,14 @@ function TrashPage() {
     <PageLayout
       title={t('trash-page-title', { defaultValue: 'Trash' })}
       description={t('trash-page-description', {
-        defaultValue: 'Restore something you deleted, or clear out a lot of it at once.' })}
-      backTo="/settings"
-      breadcrumbs={[{ label: 'Settings', to: '/settings' }, { label: 'Trash' }]}
+        defaultValue: 'Restore something you deleted, or clear out a lot of it at once.',
+      })}
+      breadcrumbs={[
+        { label: t('trash-crumb-settings', { defaultValue: 'Settings' }), to: '/settings' },
+        { label: t('trash-page-title', { defaultValue: 'Trash' }) },
+      ]}
     >
-      <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 pt-4 pb-12">
+      <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 pt-4 pb-12">
         {isPending ? null : session ? (
           <>
             <TrashPanel />

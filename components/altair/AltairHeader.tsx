@@ -57,9 +57,9 @@ export default function AltairHeader({
   }, [onBack]);
 
   return (
-    <header className="altair-parchment-surface relative flex shrink-0 items-center border-b border-(--altair-border) bg-(--altair-bg)/90 px-3 py-3 h-14 backdrop-blur-sm overflow-hidden">
+    <header className="altair-parchment-surface grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 overflow-hidden border-b border-(--altair-border) bg-(--altair-bg) px-3 sm:px-4">
       {/* Left side */}
-      <div className="flex items-center gap-2 z-10">
+      <div className="flex min-w-0 items-center gap-2">
         {hasBack && (
           isMenu && !onBack ? (
             <Link
@@ -67,20 +67,23 @@ export default function AltairHeader({
               onClick={goBack}
               className="text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
             >
-              <span className="flex items-center gap-1">
-                <ArrowLeft size={16} />
-                {t("builds", { defaultValue: "Builds" })}
+              <span className="flex items-center gap-1.5">
+                <ArrowLeft size={16} className="shrink-0 rtl-flip" aria-hidden />
+                <span className="hidden xs:inline">{t("builds", { defaultValue: "Builds" })}</span>
+                <span className="sr-only xs:hidden">{t("builds", { defaultValue: "Builds" })}</span>
               </span>
             </Link>
           ) : (
             <button
+              type="button"
               onClick={handleBack}
               data-altair-sfx="menu_back"
               className="text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
             >
-              <span className="flex items-center gap-1">
-                <ArrowLeft size={16} />
-                {t("back", { defaultValue: "Back" })}
+              <span className="flex items-center gap-1.5">
+                <ArrowLeft size={16} className="shrink-0 rtl-flip" aria-hidden />
+                <span className="hidden xs:inline">{t("back", { defaultValue: "Back" })}</span>
+                <span className="sr-only xs:hidden">{t("back", { defaultValue: "Back" })}</span>
               </span>
             </button>
           )
@@ -95,25 +98,24 @@ export default function AltairHeader({
         )}
       </div>
 
-      {/* Center title — absolutely positioned for true centering */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible">
-        <h1
-          className="text-3xl font-bold leading-tight text-(--altair-accent) truncate px-24 tracking-wider"
-          style={{ fontFamily: 'var(--altair-font-display)' }}
-        >
-          {displayTitle}
-        </h1>
-      </div>
+      {/* Centre column — a grid track, so a long title truncates instead of
+          running through the back link or the controls. */}
+      <h1
+        className="min-w-0 truncate px-2 text-center text-xl font-bold leading-tight tracking-wider text-(--altair-accent) sm:text-3xl"
+        style={{ fontFamily: 'var(--altair-font-display)' }}
+      >
+        {displayTitle}
+      </h1>
 
       {/* Right side */}
-      <div className="ml-auto flex items-center gap-2 z-10">
+      <div className="flex min-w-0 items-center justify-end gap-2">
         {connectionStatus && (
           <span title={connectionStatus === 'connected' ? t("connected", { defaultValue: "Connected" }) : connectionStatus === 'connecting' ? t("connecting", { defaultValue: "Connecting..." }) : t("disconnected", { defaultValue: "Disconnected" })}>
             <Circle
               className={`h-2.5 w-2.5 ${
-                connectionStatus === 'connected' ? 'fill-green-500 text-green-500' :
-                connectionStatus === 'connecting' ? 'fill-yellow-500 text-yellow-500 animate-pulse' :
-                'fill-red-500 text-red-500'
+                connectionStatus === 'connected' ? 'fill-(--altair-success) text-(--altair-success)' :
+                connectionStatus === 'connecting' ? 'fill-(--altair-warning) text-(--altair-warning) animate-pulse' :
+                'fill-(--altair-danger) text-(--altair-danger)'
               }`}
             />
           </span>
@@ -124,20 +126,24 @@ export default function AltairHeader({
           </span>
         )}
         <button
+          type="button"
           onClick={toggleTheme}
           data-altair-sfx="menu_toggle"
-          className="w-8 h-8 rounded-full flex items-center justify-center text-(--altair-text-muted) hover:text-(--altair-accent) hover:bg-(--altair-surface-hover) transition-colors"
+          aria-label={theme === 'dark' ? t("switch-to-light-mode", { defaultValue: "Switch to light mode" }) : t("switch-to-dark-mode", { defaultValue: "Switch to dark mode" })}
+          className="size-9 pointer-coarse:size-11 rounded-full flex items-center justify-center text-(--altair-text-muted) hover:text-(--altair-accent) hover:bg-(--altair-surface-hover) transition-colors"
           title={theme === 'dark' ? t("switch-to-light-mode", { defaultValue: "Switch to light mode" }) : t("switch-to-dark-mode", { defaultValue: "Switch to dark mode" })}
         >
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          {theme === 'dark' ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
         </button>
         {isGame && onSettings && (
           <button
+            type="button"
             onClick={onSettings}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-(--altair-text-muted) hover:text-(--altair-accent) hover:bg-(--altair-surface-hover) transition-colors"
+            aria-label={t("settings", { defaultValue: "Settings" })}
+            className="size-9 pointer-coarse:size-11 rounded-full flex items-center justify-center text-(--altair-text-muted) hover:text-(--altair-accent) hover:bg-(--altair-surface-hover) transition-colors"
             title={t("settings", { defaultValue: "Settings" })}
           >
-            <Settings size={16} />
+            <Settings size={16} aria-hidden />
           </button>
         )}
       </div>

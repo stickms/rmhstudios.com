@@ -87,7 +87,7 @@ export function CreateWagerDialog({ open, onClose, onCreated, opponentId, oppone
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="wager-game">{t('game', { defaultValue: 'Game' })}</Label>
             <Select id="wager-game" value={gameId} onChange={(e) => setGameId(e.target.value)}>

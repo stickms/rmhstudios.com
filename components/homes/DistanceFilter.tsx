@@ -174,11 +174,11 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
               placeholder={t('homes.distanceLabelHint', { defaultValue: 'Work, campus, Mom’s' })}
               value={draftLabel}
               onChange={(e) => setDraftLabel(e.target.value)}
-              className="mt-1.5"
+              className="mt-2"
             />
           </div>
           <div>
-            <span className="mb-1.5 block text-sm font-medium text-site-text">
+            <span className="mb-2 block text-sm font-medium text-site-text">
               {t('homes.distanceWhere', { defaultValue: 'Where is it?' })}
             </span>
             <LocationSearch
@@ -254,7 +254,7 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
             <div className="mt-4">
               <span
                 id="homes-distance-radius-label"
-                className="mb-1.5 block text-sm font-medium text-site-text"
+                className="mb-2 block text-sm font-medium text-site-text"
               >
                 {t('homes.distanceWithin', {
                   defaultValue: 'Within {{distance}} of {{label}}',
@@ -284,7 +284,7 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
         )
       )}
 
-      <p className="mt-4 flex items-start gap-1.5 text-xs text-site-text-dim">
+      <p className="mt-4 flex items-start gap-2 text-xs text-site-text-dim">
         <Info className="mt-px size-3 shrink-0" aria-hidden />
         <span>
           {t('homes.distanceCaveat', {

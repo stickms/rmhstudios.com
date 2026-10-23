@@ -130,16 +130,16 @@ export function ConciergePanel({ className }: { className?: string }) {
   return (
     <div className={cn('flex flex-col min-h-0 h-full', className)}>
       {/* Conversation */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-6">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
         {empty ? (
-          <div className="mx-auto max-w-lg text-center py-10">
+          <div className="mx-auto max-w-2xl py-10 text-center">
             <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-site-accent/15 text-site-accent">
               <Sparkles className="size-7" aria-hidden />
             </div>
             <h2 className="text-lg font-semibold text-site-text">
               {t('concierge-title', { defaultValue: 'Ask the RMH concierge' })}
             </h2>
-            <p className="mt-1.5 text-sm text-site-text-muted">
+            <p className="mt-2 text-sm text-site-text-muted">
               {t('concierge-subtitle', {
                 defaultValue:
                   'Questions about games, apps, coins, or where to find something? Ask away.',
@@ -147,7 +147,7 @@ export function ConciergePanel({ className }: { className?: string }) {
             </p>
           </div>
         ) : (
-          <div className="mx-auto max-w-lg flex flex-col gap-4">
+          <div className="mx-auto flex max-w-2xl flex-col gap-4">
             {messages.map((m) => (
               <div
                 key={m.id}
@@ -158,10 +158,10 @@ export function ConciergePanel({ className }: { className?: string }) {
               >
                 <div
                   className={cn(
-                    'max-w-[85%] rounded-site px-4 py-2.5 text-sm leading-relaxed',
+                    'max-w-[85%] rounded-site px-4 py-3 text-sm leading-relaxed',
                     m.role === 'user'
                       ? 'bg-site-accent text-site-accent-fg'
-                      : 'bg-site-surface text-site-text border border-site-border',
+                      : 'glass-fill text-site-text',
                   )}
                 >
                   {m.content}
@@ -172,7 +172,7 @@ export function ConciergePanel({ className }: { className?: string }) {
                       <Link
                         key={l.to}
                         to={l.to as string}
-                        className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1.5 text-xs font-medium text-site-accent transition-colors hover:border-site-accent/50 hover:bg-site-accent/10"
+                        className="glass-fill glass-interactive inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2 text-xs font-medium text-site-accent"
                       >
                         {l.label}
                         <ArrowRight className="size-3" aria-hidden />
@@ -184,7 +184,7 @@ export function ConciergePanel({ className }: { className?: string }) {
             ))}
             {loading && (
               <div className="flex items-center gap-2 text-site-text-muted">
-                <Spinner className="size-4" />
+                <Spinner size={16} />
                 <span className="text-sm">
                   {t('concierge-thinking', { defaultValue: 'Thinking…' })}
                 </span>
@@ -196,16 +196,16 @@ export function ConciergePanel({ className }: { className?: string }) {
 
       {/* Composer */}
       <div className="border-t border-site-border bg-site-bg/60 px-4 py-3">
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto max-w-2xl">
           {/* Suggested-question chips */}
-          <div className="mb-2.5 flex flex-wrap gap-2">
+          <div className="mb-3 flex flex-wrap gap-2">
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.key}
                 type="button"
                 disabled={loading}
                 onClick={() => void ask(t(s.key, { defaultValue: s.text }))}
-                className="inline-flex min-h-11 items-center rounded-full border border-site-border bg-site-surface px-3.5 py-1.5 text-xs text-site-text-muted transition-colors hover:border-site-accent/50 hover:text-site-text disabled:opacity-50"
+                className="inline-flex min-h-11 items-center rounded-full border border-site-border bg-site-surface px-4 py-2 text-xs text-site-text-muted transition-colors hover:border-site-accent/50 hover:text-site-text disabled:opacity-50"
               >
                 {t(s.key, { defaultValue: s.text })}
               </button>
@@ -219,7 +219,7 @@ export function ConciergePanel({ className }: { className?: string }) {
               rows={1}
               maxLength={500}
               placeholder={t('concierge-placeholder', { defaultValue: 'Ask about RMH Studios…' })}
-              className="min-h-[44px] max-h-32 resize-none rounded-site"
+              className="min-h-11 max-h-32 resize-none rounded-site"
               aria-label={t('concierge-input-label', {
                 defaultValue: 'Your question for the concierge',
               })}
@@ -231,10 +231,10 @@ export function ConciergePanel({ className }: { className?: string }) {
               disabled={loading || !input.trim()}
               aria-label={t('concierge-send', { defaultValue: 'Send' })}
             >
-              {loading ? <Spinner className="size-4" /> : <Send className="size-4" aria-hidden />}
+              {loading ? <Spinner size={16} /> : <Send className="size-4" aria-hidden />}
             </Button>
           </form>
-          <p className="mt-2 text-center text-[11px] text-site-text-muted">
+          <p className="mt-2 text-center text-xs text-site-text-muted">
             {t('concierge-disclaimer', {
               defaultValue:
                 'The concierge answers questions about RMH Studios. It can be wrong — verify anything important.',

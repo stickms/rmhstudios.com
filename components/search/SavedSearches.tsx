@@ -65,23 +65,24 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
   if (saved.length === 0 && !q) return null;
 
   return (
-    <div className="border-b border-site-border px-4 py-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="site-section-label flex items-center gap-1.5">
-          <Bookmark className="h-3.5 w-3.5" aria-hidden />
+    <div className="px-4 pt-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span className="site-section-label flex items-center gap-2">
+          <Bookmark className="size-4" aria-hidden />
           {t('saved-searches', { defaultValue: 'Saved searches' })}
         </span>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="xs"
             onClick={() => setShowTips((v) => !v)}
-            className="text-xs text-site-text-dim hover:text-site-text-muted"
+            aria-expanded={showTips}
           >
             {t('operators', { defaultValue: 'Operators' })}
-          </button>
+          </Button>
           {q && !alreadySaved ? (
             <Button variant="ghost" size="xs" onClick={saveCurrent}>
-              <BookmarkPlus className="h-4 w-4" aria-hidden />
+              <BookmarkPlus aria-hidden />
               {t('save', { defaultValue: 'Save' })}
             </Button>
           ) : null}
@@ -89,9 +90,11 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
       </div>
 
       {showTips ? (
-        <p className="mb-2 text-xs text-site-text-muted">
-          <code className="font-mono">from:@user</code> · <code className="font-mono">has:media</code> ·{' '}
-          <code className="font-mono">before:2026-01-01</code> · <code className="font-mono">after:2025-01-01</code>
+        <p className="mb-3 text-xs text-site-text-muted">
+          <code className="font-mono">from:@user</code> ·{' '}
+          <code className="font-mono">has:media</code> ·{' '}
+          <code className="font-mono">before:2026-01-01</code> ·{' '}
+          <code className="font-mono">after:2025-01-01</code>
         </p>
       ) : null}
 
@@ -100,9 +103,12 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
           {saved.map((s) => (
             <li
               key={s.id}
-              className="glass-fill inline-flex items-center gap-1 rounded-full py-1 ps-3 pe-1 text-sm"
+              className="glass-fill inline-flex items-center gap-2 rounded-full py-1 ps-3 pe-1 text-sm"
             >
-              <a href={`/explore?q=${encodeURIComponent(s.query)}`} className="max-w-[180px] truncate text-site-text hover:underline">
+              <a
+                href={`/explore?q=${encodeURIComponent(s.query)}`}
+                className="max-w-44 truncate text-site-text hover:underline"
+              >
                 {s.query}
               </a>
               <IconButton
@@ -111,9 +117,19 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
                 variant="ghost"
                 onClick={() => toggleAlert(s)}
                 className={cn(s.alerts && 'text-site-accent')}
-                label={s.alerts ? t('alerts-on', { defaultValue: 'Alerts on' }) : t('alerts-off', { defaultValue: 'Alerts off' })}
+                label={
+                  s.alerts
+                    ? t('alerts-on', { defaultValue: 'Alerts on' })
+                    : t('alerts-off', { defaultValue: 'Alerts off' })
+                }
               />
-              <IconButton icon={X} size="icon-xs" variant="ghost" onClick={() => remove(s.id)} label={t('remove', { defaultValue: 'Remove' })} />
+              <IconButton
+                icon={X}
+                size="icon-xs"
+                variant="ghost"
+                onClick={() => remove(s.id)}
+                label={t('remove', { defaultValue: 'Remove' })}
+              />
             </li>
           ))}
         </ul>

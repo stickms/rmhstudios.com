@@ -147,7 +147,7 @@ export function QuotesDialog({
           )}
 
           {failed && (
-            <div className="flex flex-col items-center gap-2 px-5 py-8 text-center">
+            <div className="flex flex-col items-center gap-2 px-5 py-6 text-center">
               <p className="text-sm text-site-text-muted">
                 {t('quotes-error', { defaultValue: 'Could not load quotes.' })}
               </p>

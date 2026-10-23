@@ -2,15 +2,20 @@
  * Admin Users Route
  */
 
+import { AdminBody } from '@/components/admin/AdminBody';
 import { useTranslation } from "react-i18next";
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { Loader2, Search, CheckCircle, Shield, Pencil, Check, X, Crown, Coins, Bot, User as UserIcon, Users } from 'lucide-react';
+import { Search, CheckCircle, Shield, Pencil, Check, X, Crown, Coins, Bot, User as UserIcon, Users } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Input } from '@/components/ui/input';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { SearchField } from '@/components/ui/search-field';
+import { Badge } from '@/components/ui/badge';
+import { IconButton } from '@/components/ui/icon-button';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import { PageTabs } from '@/components/feed/PageTabs';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -180,147 +185,158 @@ function AdminUsersPage() {
     } catch { setHandleError(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
 
+  const busyOf = (id: string) => updating === id;
+
   return (
-    <PageLayout title={t("page-title", { defaultValue: "Manage Users" })} wide backTo="/admin">
-      <div className="p-4 md:p-6 space-y-6">
-        <p className="text-site-text-muted">{t("page-subtitle", { defaultValue: "Search users, verify accounts, and manage admin privileges." })}</p>
-
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-site-text-dim" />
-          <Input type="text" placeholder={t("search-placeholder", { defaultValue: "Search by name, handle, or email..." })} value={search} onChange={(e) => setSearch(e.target.value)} className="h-12 pl-10" />
-        </div>
-
-        <LiquidTabs
-          aria-label={t("filter-accounts", { defaultValue: "Filter accounts" })}
-          value={accounts}
-          onChange={(id) => setAccounts(id as AccountFilter)}
-          tabs={[
-            { id: 'all', label: t("filter-all", { defaultValue: "All" }), icon: Users },
-            { id: 'people', label: t("filter-people", { defaultValue: "People" }), icon: UserIcon },
-            { id: 'bots', label: t("filter-bots", { defaultValue: "Bots" }), icon: Bot },
-          ]}
+    <PageLayout
+      title={t("page-title", { defaultValue: "Manage Users" })}
+      description={t("page-subtitle", { defaultValue: "Search users, verify accounts, and manage admin privileges." })}
+      wide
+      backTo="/admin"
+      backLabel={t("back-to-admin", { defaultValue: "Back to admin" })}
+    >
+      <PageTabs
+        aria-label={t("filter-accounts", { defaultValue: "Filter accounts" })}
+        value={accounts}
+        onChange={(id) => setAccounts(id as AccountFilter)}
+        tabs={[
+          { id: 'all', label: t("filter-all", { defaultValue: "All" }), icon: Users },
+          { id: 'people', label: t("filter-people", { defaultValue: "People" }), icon: UserIcon },
+          { id: 'bots', label: t("filter-bots", { defaultValue: "Bots" }), icon: Bot },
+        ]}
+      />
+      <AdminBody width="wide">
+        <SearchField
+          value={search}
+          onValueChange={setSearch}
+          placeholder={t("search-placeholder", { defaultValue: "Search by name, handle, or email..." })}
+          aria-label={t("search-label", { defaultValue: "Search users" })}
         />
 
-        <div className="glass-fill rounded-site overflow-x-auto min-h-[400px]">
-          {/* From `sm` this is a real 4-column table and `min-w` keeps the header
-              aligned with the rows, scrolling horizontally rather than crushing
-              the name column. Below `sm` the columns become a stacked card (the
-              row wraps, see below), so the min-width — and the column header it
-              existed to align — would only push five sixths of every row behind
-              a swipe with nothing on screen saying so. */}
-          <div className="min-w-0 sm:min-w-[600px]">
-          <div className="hidden sm:block p-4 border-b border-site-border bg-site-bg/50">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-xs font-semibold text-site-text-dim uppercase tracking-wider">
+        <div className="glass-fill overflow-hidden rounded-site">
+          {/* From `sm` this is a 4-column table; below `sm` each row wraps into a
+              stacked card, so there is no column header (and no min-width that
+              would hide most of a row behind a sideways swipe). */}
+          <div className="hidden border-b border-site-border px-4 py-3 sm:block">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-xs font-semibold text-site-text-muted">
               <div>{t("col-user", { defaultValue: "User" })}</div>
               <div className="w-20 text-center">{t("col-verified", { defaultValue: "Verified" })}</div>
-              <div className="w-28 text-center">{t("col-actions", { defaultValue: "Actions" })}</div>
+              <div className="w-32 text-center">{t("col-actions", { defaultValue: "Actions" })}</div>
               <div className="w-24 text-right">{t("col-activity", { defaultValue: "Activity" })}</div>
             </div>
           </div>
 
-          <div className="divide-y divide-site-border relative">
-            {loading && (
-              <div className="absolute inset-0 bg-site-surface/50 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-8">
-                <Spinner size={32} className="mb-4" />
-                <span className="text-site-text-muted">{t("loading-users", { defaultValue: "Loading users..." })}</span>
-              </div>
-            )}
-
-            {!loading && users.length === 0 && (
-              <EmptyState icon={Search} title={t("no-users-found", { defaultValue: "No users found matching your search." })} />
-            )}
-
-            {users.map((user, index) => {
-              const isLast = index === users.length - 1;
-              const isEditingThis = editingHandle === user.id;
-              // Bot accounts are inserted by the bot-worker without an email,
-              // so the secondary line would otherwise trail a lone bullet.
-              const secondaryLine =
-                user.email ?? (user.isBot ? t("bot-no-email", { defaultValue: "Automated account" }) : null);
-              return (
-                <div key={user.id} ref={isLast ? lastUserElementRef : null} className="p-4 flex flex-wrap items-center gap-4 hover:bg-site-surface-hover transition-colors">
-                  <div className="flex-1 basis-full sm:basis-auto flex items-center gap-4 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-site-bg overflow-hidden flex-shrink-0 border border-site-border">
-                      {user.image ? (
-                        <img src={user.image} alt={user.name} loading="lazy" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center">
-                          <span className="text-xs font-bold text-site-text-dim">{user.name?.charAt(0) || user.handle?.charAt(0) || 'U'}</span>
+          {loading && users.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-site-text-muted">
+              <Spinner />
+              <span>{t("loading-users", { defaultValue: "Loading users..." })}</span>
+            </div>
+          ) : !loading && users.length === 0 ? (
+            <EmptyState icon={Search} title={t("no-users-found", { defaultValue: "No users found matching your search." })} />
+          ) : (
+            <div
+              className={`divide-y divide-site-border transition-opacity duration-site-fast ${loading ? 'opacity-60' : ''}`}
+              aria-busy={loading}
+            >
+              {users.map((user, index) => {
+                const isLast = index === users.length - 1;
+                const isEditingThis = editingHandle === user.id;
+                const busy = busyOf(user.id);
+                // Bot accounts are inserted by the bot-worker without an email,
+                // so the secondary line would otherwise trail a lone bullet.
+                const secondaryLine =
+                  user.email ?? (user.isBot ? t("bot-no-email", { defaultValue: "Automated account" }) : null);
+                return (
+                  <div key={user.id} ref={isLast ? lastUserElementRef : null} className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 transition-colors hover:bg-site-surface-hover">
+                    <div className="flex min-w-0 flex-1 basis-full items-center gap-3 sm:basis-auto">
+                      <UserAvatar src={user.image} alt={user.name || user.handle || user.username} size={40} fallbackName={user.name || user.handle || 'U'} />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Link to={`/u/${user.handle || user.id}` as string} className="truncate font-semibold text-site-text hover:text-site-accent">{user.name || user.handle || user.username}</Link>
+                          {user.isVerified && <CheckCircle className="size-4 shrink-0 text-site-accent" role="img" aria-label={t("title-verified", { defaultValue: "Verified" })} />}
+                          {user.isAdmin && <Shield className="size-4 shrink-0 text-site-danger" role="img" aria-label={t("title-admin", { defaultValue: "Admin" })} />}
+                          {user.isBot && (
+                            <Badge variant="accent" size="sm" icon={<Bot aria-hidden />}>
+                              {t("badge-bot", { defaultValue: "Bot" })}
+                            </Badge>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <Link to={`/u/${user.handle || user.id}` as string} className="font-semibold text-site-text hover:text-site-accent truncate">{user.name || user.handle || user.username}</Link>
-                        {user.isVerified && <CheckCircle className="w-3.5 h-3.5 text-site-accent shrink-0" />}
-                        {user.isAdmin && <Shield className="w-3.5 h-3.5 text-site-danger shrink-0" />}
-                        {user.isBot && (
-                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-site-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-site-accent">
-                            <Bot className="w-3 h-3" aria-hidden />
-                            {t("badge-bot", { defaultValue: "Bot" })}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-sm text-site-text-dim">
-                        {isEditingThis ? (
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            <span className="text-site-text-dim">@</span>
-                            <input type="text" value={handleInput} onChange={(e) => setHandleInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} className="glass-inset px-1.5 py-0.5 text-sm text-site-text w-32 focus:outline-none focus:border-site-accent" autoFocus maxLength={20} onKeyDown={(e) => { if (e.key === 'Enter') saveHandle(user.id); if (e.key === 'Escape') cancelEditHandle(); }} />
-                            <button onClick={() => saveHandle(user.id)} className="p-0.5 text-site-success hover:text-site-success" disabled={updating === user.id}><Check className="w-3.5 h-3.5" /></button>
-                            <button onClick={cancelEditHandle} className="p-0.5 text-site-text-dim hover:text-site-text"><X className="w-3.5 h-3.5" /></button>
-                            {handleError && <span className="text-xs text-site-danger">{handleError}</span>}
-                          </div>
-                        ) : (
-                          <span className="flex items-center gap-1 truncate">
-                            @{user.handle || '\u2014'}
-                            {!user.isAdmin && (
-                              <button onClick={(e) => { e.stopPropagation(); startEditHandle(user); }} className="p-0.5 text-site-text-dim hover:text-site-accent transition-colors" title={t("title-change-handle", { defaultValue: "Change handle" })}>
-                                <Pencil className="w-3 h-3" />
-                              </button>
-                            )}
-                          </span>
-                        )}
-                        {secondaryLine && (
-                          <>
-                            <span className="hidden sm:inline">&bull;</span>
-                            <span className="truncate">{secondaryLine}</span>
-                          </>
-                        )}
+                        <div className="flex flex-col text-sm text-site-text-dim sm:flex-row sm:items-center sm:gap-2">
+                          {isEditingThis ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span>@</span>
+                              <Input
+                                type="text"
+                                value={handleInput}
+                                onChange={(e) => setHandleInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                                className="h-9 w-36 py-1"
+                                aria-label={t("title-change-handle", { defaultValue: "Change handle" })}
+                                autoFocus
+                                maxLength={20}
+                                onKeyDown={(e) => { if (e.key === 'Enter') saveHandle(user.id); if (e.key === 'Escape') cancelEditHandle(); }}
+                              />
+                              <IconButton icon={Check} size="icon-xs" variant="outline" label={t("save-handle", { defaultValue: "Save handle" })} onClick={() => saveHandle(user.id)} disabled={busy} />
+                              <IconButton icon={X} size="icon-xs" variant="ghost" label={t("cancel-handle", { defaultValue: "Cancel" })} onClick={cancelEditHandle} />
+                              {handleError && <span className="text-xs text-site-danger">{handleError}</span>}
+                            </div>
+                          ) : (
+                            <span className="flex items-center gap-2 truncate">
+                              @{user.handle || '\u2014'}
+                              {!user.isAdmin && (
+                                <IconButton icon={Pencil} size="icon-xs" variant="ghost" label={t("title-change-handle", { defaultValue: "Change handle" })} onClick={() => startEditHandle(user)} />
+                              )}
+                            </span>
+                          )}
+                          {secondaryLine && (
+                            <>
+                              <span className="hidden sm:inline" aria-hidden>&bull;</span>
+                              <span className="truncate">{secondaryLine}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex w-20 shrink-0 justify-center">
+                      <IconButton
+                        icon={CheckCircle}
+                        size="icon-sm"
+                        variant={user.isVerified ? 'accent-outline' : 'outline'}
+                        disabled={busy}
+                        onClick={() => toggleStatus(user.id, 'isVerified', user.isVerified)}
+                        aria-pressed={user.isVerified}
+                        label={user.isVerified ? t("title-remove-verification", { defaultValue: "Remove Verification" }) : t("title-verify-user", { defaultValue: "Verify User" })}
+                      />
+                    </div>
+                    <div className="flex w-32 shrink-0 justify-center gap-2">
+                      <IconButton icon={Coins} size="icon-sm" variant="outline" disabled={busy} onClick={() => setCoins(user)} label={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })} />
+                      <IconButton icon={Crown} size="icon-sm" variant="outline" disabled={busy} onClick={() => grantMembership(user.id)} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
+                      <IconButton
+                        icon={Shield}
+                        size="icon-sm"
+                        variant="outline"
+                        className={user.isAdmin ? 'border-site-danger/40 text-site-danger' : undefined}
+                        disabled={busy}
+                        onClick={() => toggleStatus(user.id, 'isAdmin', user.isAdmin)}
+                        aria-pressed={user.isAdmin}
+                        label={user.isAdmin ? t("title-remove-admin", { defaultValue: "Remove Admin" }) : t("title-make-admin", { defaultValue: "Make Admin" })}
+                      />
+                    </div>
+                    <div className="flex w-24 shrink-0 flex-col items-end text-xs text-site-text-dim">
+                      <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
+                      <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
+                      <span className="flex items-center gap-1 text-site-warning"><Coins className="size-3" aria-hidden />{(user.profile?.coins ?? 0).toLocaleString()}</span>
+                    </div>
                   </div>
-                  <div className="w-20 flex-shrink-0 flex justify-center">
-                    <button onClick={() => toggleStatus(user.id, 'isVerified', user.isVerified)} disabled={updating === user.id} className={`p-1.5 rounded-site-sm transition-colors border ${user.isVerified ? 'bg-site-accent/10 text-site-accent border-site-accent/20 hover:bg-site-accent/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={user.isVerified ? t("title-remove-verification", { defaultValue: "Remove Verification" }) : t("title-verify-user", { defaultValue: "Verify User" })}>
-                      <CheckCircle className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="w-28 flex-shrink-0 flex justify-center gap-1">
-                    <button onClick={() => setCoins(user)} disabled={updating === user.id} className={`p-1.5 rounded-site-sm transition-colors border bg-transparent text-site-text-dim border-site-border hover:border-site-warning/40 hover:text-site-warning ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })}>
-                      <Coins className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => grantMembership(user.id)} disabled={updating === user.id} className={`p-1.5 rounded-site-sm transition-colors border bg-transparent text-site-text-dim border-site-border hover:border-site-warning/40 hover:text-site-warning ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })}>
-                      <Crown className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => toggleStatus(user.id, 'isAdmin', user.isAdmin)} disabled={updating === user.id} className={`p-1.5 rounded-site-sm transition-colors border ${user.isAdmin ? 'bg-site-danger/10 text-site-danger border-site-danger/20 hover:bg-site-danger/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={user.isAdmin ? t("title-remove-admin", { defaultValue: "Remove Admin" }) : t("title-make-admin", { defaultValue: "Make Admin" })}>
-                      <Shield className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="w-24 flex-shrink-0 flex flex-col items-end text-xs text-site-text-dim">
-                    <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
-                    <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
-                    <span className="flex items-center gap-1 text-site-warning/80"><Coins className="w-3 h-3" />{(user.profile?.coins ?? 0).toLocaleString()}</span>
-                  </div>
-                </div>
-              )
-            })}
+                );
+              })}
+            </div>
+          )}
 
-            {loadingMore && (
-              <div className="p-4 flex justify-center text-site-text-dim"><Loader2 className="w-6 h-6 animate-spin" /></div>
-            )}
-          </div>
-          </div>
+          {loadingMore && (
+            <div className="flex justify-center p-4 text-site-text-dim"><Spinner /></div>
+          )}
         </div>
-      </div>
+      </AdminBody>
     </PageLayout>
-  )
+  );
 }

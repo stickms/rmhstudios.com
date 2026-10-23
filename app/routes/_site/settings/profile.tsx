@@ -6,11 +6,14 @@
  * whereas the Appearance section controls the site-wide theme for this viewer.
  */
 
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
+import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ProfileCosmetics } from '@/components/settings/ProfileCosmetics';
 import { useSession } from '@/components/Providers';
+import { SettingsPageBody } from '@/components/settings/SettingsSection';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
 // P05 — pronouns, /now, Top Four, stamps, profile card… loaded after the page is idle.
@@ -36,21 +39,22 @@ function ProfileCustomizationPage() {
   const title = t('profile-cosmetics-title', { defaultValue: 'Profile customization' });
 
   const signInPrompt = (
-    <p className="text-sm text-site-text-muted">
-      <Link
-        to="/login"
-        search={{ callbackURL: '/settings/profile' }}
-        className="text-site-accent hover:underline"
-      >
-        {t('settings-sign-in', { defaultValue: 'Sign in' })}
-      </Link>{' '}
-      {t('settings-sign-in-rest', { defaultValue: 'to manage this section.' })}
-    </p>
+    <SignedOutPrompt
+      icon={Sparkles}
+      title={t('profile-cosmetics-signed-out', {
+        defaultValue: 'Sign in to customize your profile.',
+      })}
+      callbackURL="/settings/profile"
+    />
   );
 
   return (
     <PageLayout
       title={title}
+      description={t('profile-cosmetics-subtitle', {
+        defaultValue:
+          'Equip the cosmetics you own from the shop. These apply to your profile — everyone who visits it sees them.',
+      })}
       wide
       // Back to your own profile when we know the handle — that's what these
       // cosmetics change — otherwise up to the settings hub.
@@ -58,17 +62,11 @@ function ProfileCustomizationPage() {
       backLabel={handle ? t('profile-cosmetics-back', { defaultValue: 'Profile' }) : settingsLabel}
       breadcrumbs={[{ label: settingsLabel, to: '/settings' }, { label: title }]}
     >
-      <div className="space-y-4 p-4">
-        <p className="text-sm text-site-text-muted">
-          {t('profile-cosmetics-subtitle', {
-            defaultValue:
-              'Equip the cosmetics you own from the shop. These apply to your profile — everyone who visits it sees them.',
-          })}
-        </p>
+      <SettingsPageBody>
         {!isPending && !signedIn ? signInPrompt : <ProfileCosmetics />}
         {signedIn && idle ? <ProfilePlusSettings /> : null}
         {signedIn && idle ? <BirthdaySettings /> : null}
-      </div>
+      </SettingsPageBody>
     </PageLayout>
   );
 }

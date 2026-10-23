@@ -71,5 +71,8 @@
   "views-count_other": "조회수 {{count}}회",
   "write-comment": "댓글 작성...",
   "write-reply": "답변 작성...",
-  "years-ago_other": "{{count}}년 전"
+  "years-ago_other": "{{count}}년 전",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

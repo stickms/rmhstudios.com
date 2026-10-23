@@ -1,8 +1,8 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+import { PuzzleBackLink } from '@/components/daily-puzzles/PuzzleShell';
 
 /**
  * Loading state shown while a daily puzzle is fetched from the server
@@ -13,18 +13,16 @@ export function PuzzleLoading({ title, emoji }: { title: string; emoji?: string 
     const { t } = useTranslation('c-daily-puzzles');
     return (
         <>
-            <Link
-                to="/daily"
-                className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
-            >
-                <ArrowLeft className="w-4 h-4" />
-                {t('back-to-daily-puzzles', { defaultValue: 'Back to Daily Puzzles' })}
-            </Link>
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-                {emoji && <div className="mb-3 text-4xl">{emoji}</div>}
-                <Loader2 className="mb-3 h-6 w-6 animate-spin text-site-accent" aria-hidden />
+            <PuzzleBackLink />
+            <div role="status" className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+                {emoji && (
+                    <div aria-hidden className="text-4xl">
+                        {emoji}
+                    </div>
+                )}
+                <Spinner size={24} />
                 <p className="font-medium text-site-text">{title}</p>
-                <p className="mt-1 text-sm text-site-text-muted">
+                <p className="text-sm text-site-text-muted">
                     {t('loading-puzzle', { defaultValue: "Preparing today's puzzle…" })}
                 </p>
             </div>

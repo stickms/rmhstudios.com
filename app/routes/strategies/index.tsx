@@ -68,7 +68,7 @@ function DashboardPage() {
           </div>
           <XpBar totalXp={rep.totalXp} />
           {rep.coalitionScore > 1 && (
-            <p className="text-sm md:text-xs text-white/30 font-mono">
+            <p className="text-sm md:text-xs text-white/50 font-mono">
               {t("coalition-multiplier", { defaultValue: "Coalition Multiplier: {{score}}x", score: rep.coalitionScore.toFixed(1) })}
             </p>
           )}
@@ -105,10 +105,10 @@ function DashboardPage() {
       {!sahurActive && (
         <div className="rounded-lg p-4 flex items-center justify-between" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center gap-2">
-            <Moon size={16} className="text-amber-400/40" />
-            <span className="text-sm md:text-xs text-white/40">{t("next-sahur-mode", { defaultValue: "Next Sahur Mode (3x XP)" })}</span>
+            <Moon size={16} className="text-amber-400/60" />
+            <span className="text-sm md:text-xs text-white/60">{t("next-sahur-mode", { defaultValue: "Next Sahur Mode (3x XP)" })}</span>
           </div>
-          <span className="text-sm md:text-xs font-mono text-white/30">
+          <span className="text-sm md:text-xs font-mono text-white/50">
             {sahurCountdown > 0 ? `${Math.floor(sahurCountdown / 60)}h ${sahurCountdown % 60}m` : '—'}
           </span>
         </div>
@@ -120,9 +120,9 @@ function DashboardPage() {
           {t("coalition", { defaultValue: "Coalition" })}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <ProjectCard name="Daily Puzzles" description="Alibi, Spectrum, Outcast, Chainlink, Impostor" status="active" userActive={true} url="/strategies/puzzles" />
-          <ProjectCard name="Safehouse" description="Insider content, dev logs, disclosures" status="active" userActive={false} url="/strategies/safehouse" />
-          <ProjectCard name="Nightfall Onslaught" description="Tower defense action game" status="beta" userActive={false} />
+          <ProjectCard name={t("project-daily-puzzles", { defaultValue: "Daily Puzzles" })} description={t("project-daily-puzzles-desc", { defaultValue: "Alibi, Spectrum, Outcast, Chainlink, Impostor" })} status="active" userActive={true} url="/strategies/puzzles" />
+          <ProjectCard name={t("project-safehouse", { defaultValue: "Safehouse" })} description={t("project-safehouse-desc", { defaultValue: "Insider content, dev logs, disclosures" })} status="active" userActive={false} url="/strategies/safehouse" />
+          <ProjectCard name={t("project-nightfall", { defaultValue: "Nightfall Onslaught" })} description={t("project-nightfall-desc", { defaultValue: "Tower defense action game" })} status="beta" userActive={false} />
         </div>
       </div>
     </div>
@@ -139,16 +139,16 @@ function QuickAction({ to, icon: Icon, label, count, countLabel, color, pulse }:
   pulse?: boolean;
 }) {
   return (
-    <a
-      href={to}
-      className={`rounded-lg p-3 md:p-4 flex flex-col items-center gap-2 text-center transition-colors hover:bg-white/[0.02] min-h-[44px] ${pulse ? 'animate-pulse' : ''}`}
+    <Link
+      to={to}
+      className={`rounded-lg p-3 md:p-4 flex flex-col items-center gap-2 text-center transition-colors hover:bg-white/[0.02] min-h-11 ${pulse ? 'animate-pulse' : ''}`}
       style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}
     >
       <Icon size={20} style={{ color }} />
       <span className="text-sm md:text-xs font-medium text-white/80">{label}</span>
       {count !== undefined && count > 0 && (
-        <span className="text-xs md:text-[10px] text-white/30">{count} {countLabel}</span>
+        <span className="text-xs text-white/50">{count} {countLabel}</span>
       )}
-    </a>
+    </Link>
   );
 }

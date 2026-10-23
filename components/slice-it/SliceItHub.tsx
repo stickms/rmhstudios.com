@@ -30,8 +30,8 @@ export function SliceItHub({ data }: { data: HubPayload }) {
 
   return (
     <div className="space-y-6">
-      <Card pane className="p-5 space-y-3">
-        <p className="text-site-text-secondary">
+      <Card pane className="gap-3 p-4">
+        <p className="text-site-text-muted">
           {t('hub-pitch', {
             defaultValue:
               'Upload any track and Slice It! charts it — onsets, tempo and sections, four nested difficulties. Then race up to eight players on it.',
@@ -40,19 +40,19 @@ export function SliceItHub({ data }: { data: HubPayload }) {
         <div className="flex flex-wrap items-center gap-3">
           <Link
             to="/slice-it"
-            className="glass-fill glass-interactive rounded-site px-4 py-2 inline-flex items-center gap-2 font-medium text-site-text"
+            className="glass-fill glass-interactive rounded-site px-4 py-3 inline-flex items-center gap-2 font-medium text-site-text"
           >
             <Play className="size-4" aria-hidden />
             {t('hub-play', { defaultValue: 'Play Slice It!' })}
           </Link>
-          <span className="text-sm text-site-text-secondary inline-flex items-center gap-1.5">
+          <span className="text-sm text-site-text-muted inline-flex items-center gap-2">
             <Music className="size-4" aria-hidden />
             {t('hub-total-songs', { defaultValue_one: '{{count}} chart',
               defaultValue: '{{count}} charts',
               count: data.totals.songs,
             })}
           </span>
-          <span className="text-sm text-site-text-secondary inline-flex items-center gap-1.5">
+          <span className="text-sm text-site-text-muted inline-flex items-center gap-2">
             <Trophy className="size-4" aria-hidden />
             {t('hub-total-runs', { defaultValue_one: '{{count}} score set',
               defaultValue: '{{count}} scores set',
@@ -63,7 +63,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
       </Card>
 
       <section aria-labelledby="hub-top-charts" className="space-y-3">
-        <h2 id="hub-top-charts" className="text-lg font-semibold text-site-text">
+        <h2 id="hub-top-charts" className="site-section-label">
           {t('hub-top-charts', { defaultValue: 'Most played' })}
         </h2>
         {data.topCharts.length === 0 ? (
@@ -75,7 +75,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {data.topCharts.map((chart) => (
               <li key={chart.id}>
-                <Card className="p-3 flex items-center gap-3">
+                <Card className="flex-row items-center gap-3 px-4 py-3">
                   {chart.coverUrl ? (
                     <img
                       src={chart.coverUrl}
@@ -88,7 +88,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
                   )}
                   <span className="min-w-0">
                     <span className="block truncate font-medium text-site-text">{chart.title}</span>
-                    <span className="block truncate text-sm text-site-text-secondary">
+                    <span className="block truncate text-sm text-site-text-muted">
                       {chart.artist} · {duration(chart.duration)} ·{' '}
                       {t('hub-plays', { defaultValue_one: '{{count}} play', defaultValue: '{{count}} plays', count: chart.plays })}
                     </span>
@@ -101,7 +101,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
       </section>
 
       <section aria-labelledby="hub-records" className="space-y-3">
-        <h2 id="hub-records" className="text-lg font-semibold text-site-text">
+        <h2 id="hub-records" className="site-section-label">
           {t('hub-recent-records', { defaultValue: 'Recent records' })}
         </h2>
         {data.recentRecords.length === 0 ? (
@@ -110,11 +110,11 @@ export function SliceItHub({ data }: { data: HubPayload }) {
             title={t('hub-no-records', { defaultValue: 'No scores yet — go first' })}
           />
         ) : (
-          <Card className="divide-y divide-site-border">
+          <Card className="gap-0 divide-y divide-site-border py-0 sm:gap-0 sm:py-0">
             {data.recentRecords.map((record) => (
               <div
                 key={`${record.songId}:${record.user.id}:${record.at}`}
-                className="flex items-center gap-3 p-3"
+                className="flex items-center gap-3 px-4 py-3"
               >
                 <UserAvatar
                   src={record.user.image ?? undefined}
@@ -126,7 +126,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
                   <span className="block truncate text-sm text-site-text">
                     {record.user.name ?? record.user.username}
                   </span>
-                  <span className="block truncate text-xs text-site-text-secondary">
+                  <span className="block truncate text-xs text-site-text-muted">
                     {record.title} — {record.artist}
                   </span>
                 </span>
@@ -140,7 +140,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
       </section>
 
       <section aria-labelledby="hub-charters" className="space-y-3">
-        <h2 id="hub-charters" className="text-lg font-semibold text-site-text">
+        <h2 id="hub-charters" className="site-section-label">
           {t('hub-charters', { defaultValue: 'Most played uploaders' })}
         </h2>
         {data.featuredCharters.length === 0 ? (
@@ -152,7 +152,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {data.featuredCharters.map((charter) => (
               <li key={charter.user.id}>
-                <Card className="p-3 flex items-center gap-3">
+                <Card className="flex-row items-center gap-3 px-4 py-3">
                   <UserAvatar
                     src={charter.user.image ?? undefined}
                     alt={charter.user.name ?? ''}
@@ -163,7 +163,7 @@ export function SliceItHub({ data }: { data: HubPayload }) {
                     <span className="block truncate font-medium text-site-text">
                       {charter.user.name ?? charter.user.username}
                     </span>
-                    <span className="block truncate text-sm text-site-text-secondary">
+                    <span className="block truncate text-sm text-site-text-muted">
                       {t('hub-uploads', { defaultValue_one: '{{count}} upload',
                         defaultValue: '{{count}} uploads',
                         count: charter.uploads,

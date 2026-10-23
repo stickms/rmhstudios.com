@@ -172,7 +172,7 @@ export default function WikiRaceHistoryDetail({
     <div className="space-y-4" data-testid="wiki-race-history-detail">
       {/* Game-level header */}
       {isMultiRound && (
-        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase">
               {t("wiki-race-n-rounds", { defaultValue: "Wiki-Race — {{count}} Rounds", count: totalRounds })}
@@ -199,7 +199,7 @@ export default function WikiRaceHistoryDetail({
       ))}
 
       {/* Final scores */}
-      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
         <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">
           {isMultiRound ? t("cumulative-scores", { defaultValue: "Cumulative Scores" }) : t("final-scores", { defaultValue: "Final Scores" })}
         </h4>
@@ -266,15 +266,15 @@ function RoundSection({
     | undefined;
 
   const difficultyColors: Record<string, string> = {
-    easy: 'bg-green-500/20 text-green-400',
-    medium: 'bg-amber-500/20 text-amber-400',
-    hard: 'bg-red-500/20 text-red-400',
+    easy: 'bg-(--app-success)/20 text-(--app-success)',
+    medium: 'bg-(--app-warning)/20 text-(--app-warning)',
+    hard: 'bg-(--app-danger)/20 text-(--app-danger)',
   };
 
   return (
     <div className="space-y-3">
       {/* Race Info / Round header */}
-      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase">
             {showRoundHeader ? t("round-n", { defaultValue: "Round {{round}}", round: round.round }) : t("race-details", { defaultValue: "Race Details" })}
@@ -308,7 +308,7 @@ function RoundSection({
       </div>
 
       {/* Player paths for this round */}
-      <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-4">
+      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
         <h4 className="text-sm font-semibold text-(--app-text-muted) mb-3">
           {t("player-paths", { defaultValue: "Player Paths" })}
         </h4>
@@ -347,7 +347,7 @@ function RoundSection({
                   </span>
                   <div className="flex items-center gap-2 text-xs">
                     {finish ? (
-                      <span className="text-green-400 font-medium">
+                      <span className="text-(--app-success) font-medium">
                         {t("finished-clicks", { defaultValue: "✓ Finished — {{clicks}} clicks", clicks: path.length - 1 })}
                         {(finish.payload.timeMs as number) != null && (
                           <>
@@ -360,7 +360,7 @@ function RoundSection({
                         )}
                       </span>
                     ) : timeout ? (
-                      <span className="text-red-400 font-medium">
+                      <span className="text-(--app-danger) font-medium">
                         {t("timeout-clicks", { defaultValue: "✗ Timeout — {{clicks}} clicks", clicks: path.length - 1 })}
                       </span>
                     ) : (
@@ -393,7 +393,7 @@ function RoundSection({
                       <span
                         className={
                           article === round.targetArticle
-                            ? 'text-green-400 font-semibold'
+                            ? 'text-(--app-success) font-semibold'
                             : article === round.startArticle
                               ? 'text-(--app-text) font-medium'
                               : ''
@@ -412,7 +412,7 @@ function RoundSection({
 
       {/* Round End Summary */}
       {round.endAction && (
-        <div className="rounded-lg border border-(--app-border) bg-(--app-bg) p-3">
+        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
           <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-1">
             {showRoundHeader ? t("round-n-end", { defaultValue: "Round {{round}} End", round: round.round }) : t("game-end", { defaultValue: "Game End" })}
           </h4>

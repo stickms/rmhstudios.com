@@ -24,7 +24,7 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
 
   if (points.length < 2) {
     return (
-      <p className="glass-fill rounded-site p-6 text-center text-sm text-site-text-muted">
+      <p className="glass-fill rounded-site px-4 py-6 text-center text-sm text-site-text-muted">
         {t('chart-empty', {
           defaultValue: 'Not enough samples in this window yet. One is recorded every hour.',
         })}

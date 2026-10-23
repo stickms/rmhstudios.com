@@ -125,11 +125,11 @@ export function VoidBreakerUI({
   // ── Settings Screen ──
   if (showSettings) {
     return (
-      <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
+      <div className="app-safe-pad absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
         <div className="vb-anim max-w-sm mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
-          <button onClick={() => setShowSettings(false)}
-            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-4">
-            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
+          <button type="button" onClick={() => setShowSettings(false)}
+            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors pointer-coarse:min-h-11">
+            <ArrowLeft className="w-4 h-4" aria-hidden /> {t("back", { defaultValue: "Back" })}
           </button>
 
           <h2 className="text-xl font-bold text-[#d4af37] flex items-center gap-2">
@@ -214,11 +214,11 @@ export function VoidBreakerUI({
   // ── Void Forge (meta-progression) ──
   if (showForge) {
     return (
-      <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="vb-anim max-w-md mx-auto px-6 py-10 space-y-5" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
-          <button onClick={() => setShowForge(false)}
-            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors">
-            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
+      <div className="app-safe-pad absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
+        <div className="vb-anim max-w-md mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
+          <button type="button" onClick={() => setShowForge(false)}
+            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors pointer-coarse:min-h-11">
+            <ArrowLeft className="w-4 h-4" aria-hidden /> {t("back", { defaultValue: "Back" })}
           </button>
 
           <div className="flex items-center justify-between">
@@ -292,11 +292,11 @@ export function VoidBreakerUI({
       [t('hp-bosses-title', { defaultValue: 'Bosses' }), t('hp-bosses', { defaultValue: 'Every 5th wave. Each has its own tricks — rotating beams, collapsing walls, inverted controls, and worse.' })],
     ];
     return (
-      <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
+      <div className="app-safe-pad absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
         <div className="vb-anim max-w-lg mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
-          <button onClick={() => setShowHelp(false)}
-            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-2">
-            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
+          <button type="button" onClick={() => setShowHelp(false)}
+            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors pointer-coarse:min-h-11">
+            <ArrowLeft className="w-4 h-4" aria-hidden /> {t("back", { defaultValue: "Back" })}
           </button>
 
           <h2 className="text-xl font-bold text-[#d4af37] flex items-center gap-2">
@@ -336,11 +336,11 @@ export function VoidBreakerUI({
   // ── Lore Screen ── (obsidian & gold)
   if (showLore) {
     return (
-      <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
+      <div className="app-safe-pad absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
         <div className="vb-anim max-w-2xl mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
-          <button onClick={() => setShowLore(false)}
-            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-4">
-            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
+          <button type="button" onClick={() => setShowLore(false)}
+            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors pointer-coarse:min-h-11">
+            <ArrowLeft className="w-4 h-4" aria-hidden /> {t("back", { defaultValue: "Back" })}
           </button>
 
           <div className="text-center space-y-2">
@@ -445,16 +445,18 @@ export function VoidBreakerUI({
   if (uiState === 'menu') {
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-hidden bg-[#0d0d14]">
-        <div className="relative h-full flex items-center-safe justify-center-safe overflow-y-auto py-8">
+        <div className="app-safe-pad relative h-full flex items-center-safe justify-center-safe overflow-y-auto">
           <div className="vb-anim text-center space-y-4 sm:space-y-5 w-full max-w-md px-4 py-6"
             style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>
-            <div className="absolute top-4 right-4 flex items-center gap-2">
+            <div className="absolute top-[calc(1rem+var(--safe-top))] right-[calc(1rem+var(--safe-right))] flex items-center gap-2">
               <button onClick={() => setShowSettings(true)}
-                className="w-9 h-9 rounded-full bg-[#1a1a24] border border-[#c9a227]/30 flex items-center justify-center hover:bg-[#252530] transition-colors">
-                <Settings className="w-4 h-4 text-[#d4af37]" />
+                aria-label={t("settings", { defaultValue: "Settings" })}
+                className="w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-full bg-[#1a1a24] border border-[#c9a227]/30 flex items-center justify-center hover:bg-[#252530] transition-colors">
+                <Settings className="w-4 h-4 text-[#d4af37]" aria-hidden />
               </button>
               <button onClick={onToggleMute}
-                className="w-9 h-9 rounded-full bg-[#1a1a24] border border-[#c9a227]/30 flex items-center justify-center hover:bg-[#252530] transition-colors">
+                aria-label={muted ? t('menu-unmute', { defaultValue: 'Unmute' }) : t('menu-mute', { defaultValue: 'Mute' })}
+                className="w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-full bg-[#1a1a24] border border-[#c9a227]/30 flex items-center justify-center hover:bg-[#252530] transition-colors">
                 {muted ? <VolumeX className="w-4 h-4 text-zinc-600" /> : <Volume2 className="w-4 h-4 text-[#d4af37]" />}
               </button>
             </div>
@@ -652,7 +654,7 @@ export function VoidBreakerUI({
     const secs = Math.floor(runStats.timeSurvivedMs / 1000);
     const timeStr = `${Math.floor(secs / 60)}:${(secs % 60).toString().padStart(2, '0')}`;
     return (
-      <div className="absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
+      <div className="app-safe-pad absolute inset-0 flex items-center-safe justify-center-safe z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
         <ResultMomentSlot moment={scoreMoment} gameName="Void Breaker" onDismiss={clearScoreMoment} />
         <div className="vb-anim max-w-md w-full px-4 space-y-3 py-6"
           style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>

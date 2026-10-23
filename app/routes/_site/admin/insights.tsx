@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { BarChart3, Bell, FlaskConical, Bug, Route as RouteIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { CohortsTab } from '@/components/admin/insights/CohortsTab';
@@ -22,7 +23,7 @@ function InsightsPage() {
   const [tab, setTab] = useState<TabId>('cohorts');
   return (
     <PageLayout title={t('page-title', { defaultValue: 'Insights' })} wide backTo="/admin">
-      <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
+      <AdminBody>
         <LiquidTabs
           aria-label={t('page-tabs', { defaultValue: 'Insight tools' })}
           value={tab}
@@ -52,7 +53,7 @@ function InsightsPage() {
         {tab === 'routes' && <DeadRoutesTab />}
         {tab === 'errors' && <ErrorsTab />}
         {tab === 'experiments' && <ExperimentsTab />}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

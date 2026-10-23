@@ -32,7 +32,7 @@ function SliceItLayout() {
       // classes on the site's `dark` class, and this subtree's ink is
       // `--slice-text`, which `.slice-theme` already sets. They disagreed
       // whenever the game's toggle and the site theme did.
-      className="slice-theme min-h-screen transition-colors duration-300"
+      className="slice-theme min-h-svh transition-colors duration-site"
     >
       {/* No <Toaster> here. `components/Providers.tsx` already mounts one for
           the whole app, at bottom-left and themed. A second one rendered every

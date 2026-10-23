@@ -132,8 +132,8 @@ export function AlarmsPanel() {
 
   if (!data.ok) {
     return (
-      <section className="glass-pane rounded-site p-6">
-        <h2 className="text-lg font-semibold text-site-text">
+      <section className="glass-pane rounded-site p-4">
+        <h2 className="site-section-label">
           {data.error === 'not_configured'
             ? t('not-configured-title', { defaultValue: 'On-call watchdog not configured' })
             : t('unreachable-title', { defaultValue: 'Watchdog unreachable' })}
@@ -165,7 +165,7 @@ export function AlarmsPanel() {
   const paging = open.filter((a) => phaseOf(a) === 'paging').length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[var(--site-section-gap)]">
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-site-text-muted">
           {t('refreshed', {
@@ -205,8 +205,8 @@ export function AlarmsPanel() {
         />
       </div>
 
-      <section className="glass-pane rounded-site p-5">
-        <h2 className="text-lg font-semibold text-site-text">
+      <section className="glass-pane rounded-site p-4">
+        <h2 className="site-section-label">
           {t('heartbeats-title', { defaultValue: 'Check-ins' })}
         </h2>
         <p className="mt-1 text-sm text-site-text-muted">
@@ -221,7 +221,7 @@ export function AlarmsPanel() {
           {data.heartbeats.map((h) => {
             const health = heartbeatHealth(h, data.now);
             return (
-              <li key={h.name} className="glass-fill min-w-0 rounded-site p-3">
+              <li key={h.name} className="glass-fill min-w-0 rounded-site px-4 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                   <span className="min-w-0 break-words font-mono text-sm text-site-text">
                     {h.name}
@@ -259,7 +259,7 @@ export function AlarmsPanel() {
       <AlarmRules />
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-site-text">
+        <h2 className="site-section-label mb-3">
           {t('open-title', { defaultValue: 'Open alarms' })}
         </h2>
         {open.length ? (
@@ -277,7 +277,7 @@ export function AlarmsPanel() {
 
       {resolved.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-site-text">
+          <h2 className="site-section-label mb-3">
             {t('resolved-title', { defaultValue: 'Resolved in the last 24 hours' })}
           </h2>
           <ul className="space-y-3">

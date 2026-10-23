@@ -34,5 +34,7 @@
   "settings": "설정",
   "visibility-label": "공개 설정",
   "visibility-private": "비공개",
-  "visibility-public": "공개"
+  "visibility-public": "공개",
+  "loading": "Loading…",
+  "lobby-title": "Lobby {{lobbyId}}"
 }

@@ -30,7 +30,7 @@ const ScheduledGiftsPanel = lazy(() => import('./ScheduledGiftsPanel'));
 
 function PanelFallback() {
   return (
-    <div className="space-y-3 px-3 pb-8">
+    <div className="space-y-3 px-3 pb-12">
       <Skeleton className="h-28 w-full" />
       <Skeleton className="h-28 w-full" />
     </div>

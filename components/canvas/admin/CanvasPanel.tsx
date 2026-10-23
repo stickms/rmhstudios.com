@@ -62,7 +62,7 @@ export default function CanvasPanel() {
 
   const ready = title.trim() && startsAt && endsAt && Number(minutes) >= 1;
   return (
-    <div className="space-y-6">
+    <div className="space-y-[var(--site-section-gap)]">
       <form
         className="glass-pane space-y-3 rounded-site p-4"
         onSubmit={(e) => {
@@ -118,11 +118,11 @@ export default function CanvasPanel() {
           {t('admin-create', { defaultValue: 'Schedule event' })}
         </Button>
       </form>
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {q.data?.events.map((e) => (
           <li
             key={e.id}
-            className="glass-fill flex items-center justify-between gap-3 rounded-site p-3"
+            className="glass-fill flex items-center justify-between gap-3 rounded-site px-4 py-3"
           >
             <div className="min-w-0">
               <p className="truncate font-medium text-site-text">{e.title}</p>

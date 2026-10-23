@@ -6,6 +6,9 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Gamepad2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { games } from '@/lib/games';
 import { lobbyLink, lobbyPathLink } from '@/lib/lobby-link';
@@ -127,13 +130,13 @@ function AdminCreate({ onCreated }: { onCreated: () => void }) {
             defaultValue={20}
           />
         </div>
-        <fieldset className="sm:col-span-2 space-y-1.5">
+        <fieldset className="sm:col-span-2 space-y-2">
           <legend className="text-sm font-medium">
             {t('gn-f-games', { defaultValue: 'Games, in order' })}
           </legend>
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
             {games.map((g) => (
-              <label key={g.id} className="flex items-center gap-1.5 text-sm">
+              <label key={g.id} className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={picked.includes(g.id)}
@@ -177,7 +180,7 @@ function LobbyCodeForm({ night, onSaved }: { night: Night; onSaved: () => void }
     }
   };
   return (
-    <div className="flex gap-2 pt-2">
+    <div className="flex gap-2">
       <Input
         value={code}
         onChange={(e) => setCode(e.target.value)}
@@ -214,14 +217,15 @@ export function GameNightBoard() {
   return (
     <div className="space-y-4 max-w-3xl">
       {nights === null ? (
-        <div className="h-32 rounded-site glass-fill animate-pulse" />
+        <Skeleton className="h-32 rounded-site" />
       ) : nights.length === 0 ? (
-        <p className="text-site-text-dim py-8 text-center">
-          {t('gn-none', { defaultValue: 'No game night is scheduled yet.' })}
-        </p>
+        <EmptyState
+          icon={Gamepad2}
+          title={t('gn-none', { defaultValue: 'No game night is scheduled yet.' })}
+        />
       ) : (
         nights.map((n) => (
-          <Card key={n.id} className="p-4 space-y-2" pane>
+          <Card key={n.id} className="gap-3 px-4 py-4" pane>
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-semibold">{n.title}</h2>
               <span className="text-xs text-site-text-dim">
@@ -238,8 +242,8 @@ export function GameNightBoard() {
               </span>
             </div>
             {n.nowPlaying && (
-              <div className="space-y-1">
-                <div className="text-xs text-site-text-dim uppercase tracking-wide">
+              <div className="flex flex-col gap-2">
+                <div className="text-xs font-medium text-site-text-muted">
                   {t('gn-now', { defaultValue: 'Now playing' })} · {time(n.nowPlaying.endsAt)}
                 </div>
                 <div className="flex items-center justify-between gap-2">

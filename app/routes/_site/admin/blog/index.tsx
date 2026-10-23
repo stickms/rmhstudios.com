@@ -4,6 +4,7 @@
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { getAllPosts } from '@/lib/blog';
 import { Plus, Edit, FileText } from 'lucide-react';
@@ -31,44 +32,57 @@ export const Route = createFileRoute('/_site/admin/blog/')({
 
 function AdminBlogDashboard() {
   const { posts } = Route.useLoaderData();
-  const { t } = useTranslation("admin");
+  const { t } = useTranslation('admin');
 
   return (
     <PageLayout
-      title={t("manage-blog-posts", { defaultValue: "Manage Blog Posts" })}
+      title={t('manage-blog-posts', { defaultValue: 'Manage Blog Posts' })}
       backTo="/admin"
-      backLabel={t("back-to-admin", { defaultValue: "Back to admin" })}
+      description={t('manage-blog-posts-description', {
+        defaultValue: 'Create, edit, and delete blog posts.',
+      })}
+      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+      headerRight={
+        <Button asChild>
+          <Link to="/admin/blog/new">
+            <Plus aria-hidden /> {t('new-post', { defaultValue: 'New Post' })}
+          </Link>
+        </Button>
+      }
       wide
     >
-      <div className="mx-auto w-full max-w-4xl p-4 md:p-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <p className="text-site-text-muted text-sm">{t("manage-blog-posts-description", { defaultValue: "Create, edit, and delete blog posts." })}</p>
-
-          <Button asChild className="self-end sm:self-auto shrink-0">
-            <Link to="/admin/blog/new">
-              <Plus className="w-4 h-4" /> {t("new-post", { defaultValue: "New Post" })}
-            </Link>
-          </Button>
-        </div>
-
+      <AdminBody>
         {posts.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title={t("no-blog-posts-found", { defaultValue: "No blog posts found." })}
-            description={t("no-blog-posts-hint", { defaultValue: "Create one to get started!" })}
+            title={t('no-blog-posts-found', { defaultValue: 'No blog posts found.' })}
+            description={t('no-blog-posts-hint', { defaultValue: 'Create one to get started!' })}
           />
         ) : (
           <div className="glass-fill rounded-site divide-y divide-site-border overflow-hidden">
             {posts.map((post) => (
-              <div key={post.slug as string} className="flex items-center justify-between gap-2 p-4 transition-colors hover:bg-site-surface-hover">
+              <div
+                key={post.slug as string}
+                className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-site-surface-hover"
+              >
                 <div className="min-w-0">
-                  <h3 className="font-bold text-site-text truncate">{post.title as string}</h3>
-                  <p className="text-sm text-site-text-dim truncate">{post.date as string} · /{post.slug as string}</p>
+                  <h3 className="truncate font-semibold text-site-text">{post.title as string}</h3>
+                  <p className="text-sm text-site-text-dim truncate">
+                    {post.date as string} · /{post.slug as string}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button asChild variant="ghost" size="icon-sm" title={t("edit-post", { defaultValue: "Edit Post" })}>
-                    <Link to={`/admin/blog/${post.slug as string}/edit` as string} aria-label={t("edit-post", { defaultValue: "Edit Post" })}>
-                      <Edit className="w-4 h-4" />
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon-sm"
+                    title={t('edit-post', { defaultValue: 'Edit Post' })}
+                  >
+                    <Link
+                      to={`/admin/blog/${post.slug as string}/edit` as string}
+                      aria-label={t('edit-post', { defaultValue: 'Edit Post' })}
+                    >
+                      <Edit aria-hidden />
                     </Link>
                   </Button>
                   <DeleteBlogButton slug={post.slug as string} title={post.title as string} />
@@ -77,7 +91,7 @@ function AdminBlogDashboard() {
             ))}
           </div>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

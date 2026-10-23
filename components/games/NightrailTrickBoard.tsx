@@ -74,8 +74,8 @@ export function NightrailTrickBoard({
   };
 
   return (
-    <Card className="space-y-3 p-4">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-site-text">
+    <Card className="gap-3 p-4">
+      <h2 className="site-section-label flex items-center gap-2">
         <Trophy className="h-4 w-4 text-site-warning" aria-hidden />
         {t('trick-week-title', { defaultValue: 'Trick of the week' })}
       </h2>
@@ -107,7 +107,7 @@ export function NightrailTrickBoard({
         ) : (
           <ul className="space-y-2">
             {data.tricks.map((trick) => (
-              <li key={trick.id} className="glass-fill flex items-center gap-3 rounded-site p-3">
+              <li key={trick.id} className="glass-fill flex items-center gap-3 rounded-site px-4 py-3">
                 <TrickLine trick={trick} />
                 <Button
                   size="sm"

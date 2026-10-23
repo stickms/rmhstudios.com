@@ -85,20 +85,20 @@ function PlayerPage() {
   if (!profile) return null;
 
   return (
-    <main className="min-h-dvh px-4 py-8 sm:px-8">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <main className="min-h-dvh px-4 pt-[calc(1rem+var(--safe-top))] pb-12 sm:px-8">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 sm:gap-6">
         <Link
           to="/slice-it"
-          className="inline-flex w-fit items-center gap-2 text-xs font-bold uppercase tracking-widest text-slice-text-light hover:text-slice-text"
+          className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-bold text-slice-text-light hover:text-slice-text"
         >
-          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          <ArrowLeft className="size-4" aria-hidden />
           {t('player-back', { defaultValue: 'Back to Slice It' })}
         </Link>
 
         <PlayerHeader profile={profile} />
         <LampSummary profile={profile} />
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
           <BestScores profile={profile} />
           <RecentRuns profile={profile} />
         </div>
@@ -110,8 +110,8 @@ function PlayerPage() {
 /** The neumorphic panel every section on this page sits in. */
 function Panel({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    <section className="rounded-[1.5rem] bg-slice-bg p-5 shadow-[10px_10px_24px_var(--slice-shadow-dark),-10px_-10px_24px_var(--slice-shadow-light)]">
-      <h2 className="mb-4 text-xs font-black uppercase tracking-widest text-slice-text-light">
+    <section className="neumorphic p-4 sm:p-5">
+      <h2 className="mb-4 text-sm font-bold text-slice-text">
         {title}
       </h2>
       {children}
@@ -124,19 +124,19 @@ function PlayerHeader({ profile }: { profile: PlayerProfile }) {
   const { user, career } = profile;
 
   return (
-    <header className="flex flex-wrap items-center gap-5 rounded-[2rem] bg-slice-bg p-6 shadow-[16px_16px_40px_var(--slice-shadow-dark),-16px_-16px_40px_var(--slice-shadow-light)]">
+    <header className="neumorphic flex flex-wrap items-center gap-4 p-4 sm:gap-5 sm:p-6">
       {user.image ? (
         <img
           src={user.image}
           alt=""
           width={72}
           height={72}
-          className="h-18 w-18 shrink-0 rounded-full object-cover shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
+          className="h-18 w-18 shrink-0 rounded-full object-cover neumorphic-inset"
         />
       ) : (
         <span
           aria-hidden
-          className="flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-slice-bg text-2xl font-black text-slice-text-light shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
+          className="flex h-18 w-18 shrink-0 items-center justify-center rounded-full bg-slice-bg text-2xl font-black text-slice-text-light neumorphic-inset"
         >
           {user.name.slice(0, 1).toUpperCase()}
         </span>
@@ -145,7 +145,7 @@ function PlayerHeader({ profile }: { profile: PlayerProfile }) {
       <div className="min-w-0 flex-1">
         <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight text-slice-text-darker">
           <span className="truncate">{user.name}</span>
-          {user.isVerified && <BadgeCheck className="h-5 w-5 shrink-0 text-blue-500" aria-hidden />}
+          {user.isVerified && <BadgeCheck className="h-5 w-5 shrink-0 text-(--slice-primary)" aria-hidden />}
         </h1>
         {user.handle && <p className="text-sm font-bold text-slice-text-light">@{user.handle}</p>}
         <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-slice-text-muted">
@@ -160,17 +160,17 @@ function PlayerHeader({ profile }: { profile: PlayerProfile }) {
         </p>
       </div>
 
-      <dl className="flex gap-6">
+      <dl className="flex gap-4 sm:gap-6">
         <div className="text-right">
-          <dt className="text-[10px] font-bold uppercase tracking-widest text-slice-text-light">
+          <dt className="text-xs font-bold text-slice-text-light">
             {t('player-total-score', { defaultValue: 'Total score' })}
           </dt>
-          <dd className="text-xl font-black tabular-nums text-blue-600">
+          <dd className="text-xl font-black tabular-nums text-(--slice-primary)">
             {(career?.totalScore ?? 0).toLocaleString()}
           </dd>
         </div>
         <div className="text-right">
-          <dt className="text-[10px] font-bold uppercase tracking-widest text-slice-text-light">
+          <dt className="text-xs font-bold text-slice-text-light">
             {t('player-games-played', { defaultValue: 'Runs' })}
           </dt>
           <dd className="text-xl font-black tabular-nums text-slice-text">
@@ -193,13 +193,13 @@ function LampSummary({ profile }: { profile: PlayerProfile }) {
           {profile.lamps.map((tier) => (
             <li
               key={tier.difficulty}
-              className="rounded-xl bg-slice-bg p-3 shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
+              className="neumorphic-inset p-3"
             >
-              <p className="text-[10px] font-black uppercase tracking-widest text-slice-text-light">
+              <p className="text-xs font-bold text-slice-text-light">
                 {tier.difficulty}
               </p>
               <p className="text-lg font-black tabular-nums text-slice-text">{tier.played}</p>
-              <ul className="mt-1 space-y-0.5 text-[10px] font-bold text-slice-text-muted">
+              <ul className="mt-1 flex flex-col gap-1 text-xs font-bold text-slice-text-muted">
                 <li>
                   <LampDot lamp="cleared" />
                   {t('player-lamp-cleared', { defaultValue: '{{count}} cleared', count: tier.cleared })}
@@ -245,28 +245,28 @@ function BestScores({ profile }: { profile: PlayerProfile }) {
           {t('player-no-scores', { defaultValue: 'No scores on the board yet.' })}
         </p>
       ) : (
-        <ol className="space-y-2">
+        <ol className="flex flex-col gap-2">
           {profile.best.map((best) => (
             <li
               key={`${best.songId}-${best.difficulty}-${best.modPool}`}
-              className="flex items-center gap-3 rounded-xl bg-slice-bg p-3 shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
+              className="flex items-center gap-3 neumorphic-inset p-3"
             >
               <LampDot lamp={best.lamp} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-bold text-slice-text">
                   {best.title}
                 </span>
-                <span className="block truncate text-[11px] font-bold text-slice-text-light">
+                <span className="block truncate text-xs font-bold text-slice-text-light">
                   {best.artist} · {best.difficulty}
                   {best.modPool !== 'none' ? ` · ${best.modPool}` : ''}
                 </span>
               </span>
               <span className="shrink-0 text-right">
-                <span className="block font-black tabular-nums text-blue-600">
+                <span className="block font-black tabular-nums text-(--slice-primary)">
                   {best.score.toLocaleString()}
                 </span>
                 {best.accuracy !== null && (
-                  <span className="block font-mono text-[10px] font-bold text-slice-text-light">
+                  <span className="block font-mono text-xs font-bold text-slice-text-light">
                     {gradeFor(best.accuracy)} · {(best.accuracy * 100).toFixed(1)}%
                   </span>
                 )}
@@ -292,16 +292,16 @@ function RecentRuns({ profile }: { profile: PlayerProfile }) {
           {t('player-no-runs', { defaultValue: 'No runs recorded yet.' })}
         </p>
       ) : (
-        <ol className="space-y-2">
+        <ol className="flex flex-col gap-2">
           {profile.recent.map((run, index) => (
             <li
               key={`${run.songId}-${run.playedAt}-${index}`}
-              className="flex items-center gap-3 rounded-xl bg-slice-bg p-3 shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
+              className="flex items-center gap-3 neumorphic-inset p-3"
             >
               <LampDot lamp={run.lamp} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-bold text-slice-text">{run.title}</span>
-                <span className="block truncate text-[11px] font-bold text-slice-text-light">
+                <span className="block truncate text-xs font-bold text-slice-text-light">
                   {run.artist} · {run.difficulty}
                 </span>
               </span>
@@ -309,7 +309,7 @@ function RecentRuns({ profile }: { profile: PlayerProfile }) {
                 <span className="block font-black tabular-nums text-slice-text">
                   {run.score.toLocaleString()}
                 </span>
-                <span className="block font-mono text-[10px] font-bold text-slice-text-light">
+                <span className="block font-mono text-xs font-bold text-slice-text-light">
                   {(run.accuracy * 100).toFixed(1)}%
                 </span>
               </span>

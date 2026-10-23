@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ArrowDown, ArrowUp, Link2, Plus, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { MarathonSchedule } from '@/components/marathon/MarathonSchedule';
 import { toolsApi } from '@/lib/tools/client';
 import type { MarathonItem } from '@/lib/dunesday/marathon';
@@ -22,7 +24,6 @@ interface Draft {
   shareId: string | null;
 }
 const blank = (): Draft => ({ id: null, title: '', deadline: '', items: [], shareId: null });
-const inputCls = 'glass-inset h-9 rounded-site-sm px-2 text-sm text-site-text';
 
 export default function MarathonPlanner() {
   const { t } = useTranslation('f-tools');
@@ -111,11 +112,11 @@ export default function MarathonPlanner() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 px-4 pt-4 pb-12">
       <div className="flex flex-wrap items-center gap-2">
-        <select
+        <Select
           aria-label={t('marathon-pick', { defaultValue: 'Choose a list' })}
-          className={inputCls}
+          containerClassName="min-w-48"
           value={draft.id ?? ''}
           onChange={(e) => {
             const l = saved.find((x) => x.id === e.target.value);
@@ -130,7 +131,7 @@ export default function MarathonPlanner() {
               {l.title}
             </option>
           ))}
-        </select>
+        </Select>
         <Button variant="outline" size="sm" onClick={() => setDraft(blank())}>
           <Plus /> {t('marathon-new', { defaultValue: 'New list' })}
         </Button>
@@ -148,31 +149,29 @@ export default function MarathonPlanner() {
 
       <section className="glass-pane space-y-4 rounded-site p-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1 text-sm">
+          <label className="flex flex-col gap-2 text-sm">
             <span className="text-site-text-muted">
               {t('marathon-title', { defaultValue: 'List name' })}
             </span>
-            <input
-              className={`${inputCls} w-full`}
+            <Input
               maxLength={120}
               value={draft.title}
               onChange={(e) => patch({ title: e.target.value })}
             />
           </label>
-          <label className="space-y-1 text-sm">
+          <label className="flex flex-col gap-2 text-sm">
             <span className="text-site-text-muted">
               {t('marathon-deadline', { defaultValue: 'Finish by' })}
             </span>
-            <input
+            <Input
               type="date"
-              className={`${inputCls} w-full`}
               value={draft.deadline}
               onChange={(e) => patch({ deadline: e.target.value })}
             />
           </label>
         </div>
 
-        <ol className="space-y-1.5">
+        <ol className="space-y-2">
           {draft.items.map((it, i) => (
             <li key={i} className="flex items-center gap-2 text-sm">
               <span className="min-w-0 flex-1 truncate">{it.title}</span>
@@ -211,8 +210,8 @@ export default function MarathonPlanner() {
 
         {draft.items.length < 150 && (
           <div className="flex flex-wrap gap-2">
-            <input
-              className={`${inputCls} min-w-0 flex-1`}
+            <Input
+              className="min-w-0 flex-1"
               maxLength={100}
               placeholder={t('marathon-item-title', {
                 defaultValue: 'Title (film, episode, season)',
@@ -224,11 +223,11 @@ export default function MarathonPlanner() {
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && add()}
             />
-            <input
+            <Input
               type="number"
               min={1}
               max={2000}
-              className={`${inputCls} w-24`}
+              className="w-24"
               aria-label={t('marathon-item-minutes', { defaultValue: 'Runtime in minutes' })}
               value={newMin}
               onChange={(e) => setNewMin(Number(e.target.value))}

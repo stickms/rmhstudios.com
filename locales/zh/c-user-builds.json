@@ -71,5 +71,8 @@
   "views-count_other": "{{count}} 次观看",
   "write-comment": "写一条评论……",
   "write-reply": "写回复...",
-  "years-ago_other": "{{count}}年前"
+  "years-ago_other": "{{count}}年前",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

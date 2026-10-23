@@ -300,7 +300,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="rounded-lg bg-red-500/20 border border-red-500/40 px-4 py-2 text-center text-sm text-red-300"
+            className="rounded-(--app-radius-sm) bg-(--app-danger)/20 border border-(--app-danger)/40 px-4 py-2 text-center text-sm text-(--app-danger)"
           >
             {errorMsg}
           </motion.div>
@@ -335,7 +335,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
             className="flex flex-col gap-3"
           >
             {/* Target reminder + timer */}
-            <div className="flex items-center justify-between rounded-lg border border-(--app-border) bg-(--app-surface) px-4 py-2">
+            <div className="flex items-center justify-between rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) px-4 py-2">
               <div className="flex flex-col gap-0.5 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="text-(--app-text-muted)">{t("target-label", { defaultValue: "Target:" })}</span>
@@ -350,7 +350,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
                 )}
               </div>
               <div
-                className={`shrink-0 rounded-lg px-3 py-1 text-sm font-medium ${
+                className={`shrink-0 rounded-(--app-radius-sm) px-3 py-1 text-sm font-medium ${
                   timeRemaining <= 15
                     ? 'bg-(--app-danger-dim) text-(--app-danger) animate-pulse'
                     : 'bg-(--app-surface) text-(--app-text-muted)'
@@ -362,7 +362,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
 
             {/* Finished banner */}
             {hasFinished && (
-              <div className="rounded-lg bg-(--app-success-dim) border border-(--app-success)/40 px-4 py-3 text-center">
+              <div className="rounded-(--app-radius-sm) bg-(--app-success-dim) border border-(--app-success)/40 px-4 py-3 text-center">
                 <span className="text-lg font-bold text-(--app-success)">
                   <Flag className="h-5 w-5 inline" /> {t("finished-rank", { defaultValue: "Finished! Rank #{{rank}}", rank: finishRank })}
                 </span>
@@ -392,7 +392,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
 
             {/* Other players progress */}
             {Object.keys(otherPlayers).length > 0 && (
-              <div className="flex flex-col gap-1.5 rounded-lg border border-(--app-border) bg-(--app-surface) p-3">
+              <div className="flex flex-col gap-1.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) p-3">
                 <span className="text-xs font-medium uppercase tracking-wider text-(--app-text-muted)">
                   {t("other-players", { defaultValue: "Other Players" })}
                 </span>

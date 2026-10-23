@@ -2,9 +2,10 @@
 
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
-import { Loader2, TrendingUp, Gamepad2 } from 'lucide-react';
+import { TrendingUp, Gamepad2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -78,7 +79,7 @@ export function RMHCoinsPage() {
   if (isPending || loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+        <Spinner />
       </div>
     );
   }
@@ -90,15 +91,15 @@ export function RMHCoinsPage() {
   ];
 
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex w-full flex-col gap-4">
       {/* Balance bar — a balance once you have one, the offer of one before. */}
-      <div className="flex items-center justify-between gap-3 px-4 py-4 border-b border-site-border">
+      <div className="glass-fill mx-4 flex items-center justify-between gap-3 rounded-site px-4 py-3">
         {signedIn ? (
           <>
             <div className="flex items-center gap-2">
-              <CoinIcon className="w-6 h-6" />
+              <CoinIcon className="size-6" />
               <span className="font-bold text-2xl text-site-warning">{coins}</span>
-              <span className="text-sm text-site-text-dim ml-1">{t("rmh-coins", { defaultValue: "RMH Coins" })}</span>
+              <span className="text-sm text-site-text-dim">{t("rmh-coins", { defaultValue: "RMH Coins" })}</span>
             </div>
             {coins < 10 && (
               <Button
@@ -106,7 +107,7 @@ export function RMHCoinsPage() {
                 loading={claiming}
                 variant="outline"
                 size="sm"
-                className="rounded-site-sm border-site-warning/50 text-site-warning hover:bg-site-warning/10"
+                className="border-site-warning/50 text-site-warning hover:bg-site-warning/10"
               >
                 {t("claim-free-coins", { defaultValue: "Claim 10 Free Coins" })}
               </Button>
@@ -115,7 +116,7 @@ export function RMHCoinsPage() {
         ) : (
           <>
             <div className="flex items-center gap-2 min-w-0">
-              <CoinIcon className="w-6 h-6 shrink-0" />
+              <CoinIcon className="size-6 shrink-0" />
               <span className="text-sm text-site-text-muted">
                 {t("signed-out-balance", {
                   defaultValue: "Sign in to claim free RMH Coins and back your calls.",
@@ -134,7 +135,7 @@ export function RMHCoinsPage() {
       {/* Markets / Games switch — §5.45 tab sheet on the shared LiquidTabs renderer
           (§17.5: this strip was hand-rolled with no tab semantics, so the §16.2
           design-lint gate never saw it). Sits below the balance header. */}
-      <div className="px-4 pt-3">
+      <div className="px-4">
         <LiquidTabs
           tabs={tabs}
           value={tab}
@@ -145,14 +146,20 @@ export function RMHCoinsPage() {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 pt-3">
+      <div className="flex-1">
         {tab === 'markets' ? (
           <div id="rmhcoins-panel-markets" role="tabpanel" aria-labelledby="rmhcoins-tab-markets">
             <PredictionsMarketTab coins={coins} setCoins={setCoins} signedIn={signedIn} />
           </div>
         ) : tab === 'forecasting' ? (
           <div id="rmhcoins-panel-forecasting" role="tabpanel" aria-labelledby="rmhcoins-tab-forecasting">
-            <Suspense fallback={<Loader2 className="w-5 h-5 animate-spin mx-auto my-10 text-site-text-dim" />}>
+            <Suspense
+              fallback={
+                <div className="flex justify-center py-10">
+                  <Spinner />
+                </div>
+              }
+            >
               <ForecastingPanel signedIn={signedIn} />
             </Suspense>
           </div>

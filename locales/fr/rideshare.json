@@ -92,5 +92,7 @@
   "vehicle-details": "Détails du véhicule",
   "where-to-heading": "Où allez-vous ?",
   "which-class-drive": "Quelle classe conduirez-vous ?",
-  "your-active-trip": "Votre trajet en cours"
+  "your-active-trip": "Votre trajet en cours",
+  "drive-page-title": "Drive with RMH",
+  "ride-class": "Ride class"
 }

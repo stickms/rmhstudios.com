@@ -163,5 +163,6 @@
   "webgl-context-lost": "WebGL 컨텍스트가 손실되었습니다! 페이지를 새로고침하세요.",
   "you": "(당신)",
   "your-class": "당신의 클래스",
-  "zoom": "확대/축소"
+  "zoom": "확대/축소",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
 }

@@ -257,5 +257,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "Неверно — этот подозреваемый снят. У вас осталась 1 попытка.",
   "wrong-outcast-was": "❌ Неверно — изгоем был {{name}}",
-  "youre-the-first": "Вы первый!"
+  "youre-the-first": "Вы первый!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

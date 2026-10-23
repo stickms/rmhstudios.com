@@ -105,5 +105,8 @@
   "walk": "yürü",
   "ward-seal-instruction-v2": "Rotate each ring until its glowing ward glyph rests beneath the marker",
   "watch-the-pattern": "Deseni izleyin...",
-  "wrong-watch-again": "Yanlış! Tekrar izleyin..."
+  "wrong-watch-again": "Yanlış! Tekrar izleyin...",
+  "close-overlay": "Close",
+  "mute": "Mute",
+  "unmute": "Unmute"
 }

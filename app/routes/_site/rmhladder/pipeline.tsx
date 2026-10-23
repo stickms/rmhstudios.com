@@ -10,7 +10,8 @@ import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { doUpdateApplicationSchema } from '@/lib/rmhladder/server-fn-schemas.server';
-import { CalendarDays, Download } from 'lucide-react';
+import { CalendarDays, Download, GitPullRequestArrow, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { listApplications, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
@@ -27,7 +28,10 @@ import {
   STAGE_LABELS,
 } from '@/components/rmhladder/PipelineLadder';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
@@ -88,6 +92,7 @@ export const Route = createFileRoute('/_site/rmhladder/pipeline')({
 const ALL_STAGES = [...CLIMB_STAGES, ...OFF_LADDER];
 
 function PipelinePage() {
+  const { t } = useTranslation('site');
   const { applications, resumeVersions } = Route.useLoaderData();
   const router = useRouter();
 
@@ -117,7 +122,7 @@ function PipelinePage() {
     const result = await doUpdateApplication({ data: { jobId: app.jobId as string, patch } });
     if (!result.ok) {
       setApps((prev) => prev.map((a) => (a.id === app.id ? app : a))); // revert
-      setSaveError(result.error ?? 'Save failed');
+      setSaveError(result.error ?? t('ladder.pipeline.saveFailed', { defaultValue: 'Save failed' }));
       return false;
     }
     await router.invalidate();
@@ -129,7 +134,12 @@ function PipelinePage() {
     if (!to) return;
     const ok = await applyPatch(app, { status: to });
     if (ok) {
-      announce(`Moved to ${STAGE_LABELS[to]}`);
+      announce(
+        t('ladder.pipeline.moved', {
+          defaultValue: 'Moved to {{stage}}',
+          stage: STAGE_LABELS[to],
+        }),
+      );
       // Card re-parents to a new rung on stage change, dropping focus to body.
       // rAF gives React one frame to commit the new DOM before we refocus.
       const appId = app.id as string;
@@ -140,29 +150,37 @@ function PipelinePage() {
   }
 
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap justify-end gap-2">
+    <div className="space-y-4">
+      <div className="flex flex-wrap justify-end gap-2">
         <Button asChild size="sm" variant="outline" className="min-h-11">
           <a href="/api/rmhladder/export?kind=applications" download>
-            <Download aria-hidden /> Export applications
+            <Download aria-hidden />{' '}
+            {t('ladder.pipeline.exportApplications', { defaultValue: 'Export applications' })}
           </a>
         </Button>
         <Button asChild size="sm" variant="outline" className="min-h-11">
           <a href="/api/rmhladder/calendar" download>
-            <CalendarDays aria-hidden /> Export calendar
+            <CalendarDays aria-hidden />{' '}
+            {t('ladder.pipeline.exportCalendar', { defaultValue: 'Export calendar' })}
           </a>
         </Button>
       </div>
       <p ref={liveRef} aria-live="polite" className="rl-visually-hidden" />
-      {saveError && <p className="rl-review-error rl-mono">{saveError}</p>}
+      {saveError && (
+        <p role="alert" className="text-sm text-site-danger">
+          {saveError}
+        </p>
+      )}
 
       {apps.length === 0 ? (
-        <div className="rl-empty-state">
-          <p>
-            No applications yet. Mark a job as applied from the Jobs page and it appears on the
-            ladder.
-          </p>
-        </div>
+        <EmptyState
+          icon={GitPullRequestArrow}
+          title={t('ladder.pipeline.empty', { defaultValue: 'No applications yet' })}
+          description={t('ladder.pipeline.emptyHint', {
+            defaultValue:
+              'Mark a job as applied from the Jobs page and it appears on the ladder.',
+          })}
+        />
       ) : (
         <div className="rl-pipeline-layout">
           <PipelineLadder
@@ -203,6 +221,7 @@ function ApplicationEditor({
   onPatch: (patch: ApplicationPatch) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('site');
   const job = app.job as AnyRow | undefined;
 
   // Local draft for text fields; saved on blur
@@ -231,8 +250,8 @@ function ApplicationEditor({
     };
     return (
       <label className="rl-field" htmlFor={shared.id}>
-        <span className="rl-eyebrow">{label}</span>
-        {multiline ? <textarea rows={4} {...shared} /> : <input type="text" {...shared} />}
+        <span className="rl-label">{label}</span>
+        {multiline ? <Textarea rows={4} {...shared} /> : <Input type="text" {...shared} />}
       </label>
     );
   }
@@ -243,27 +262,36 @@ function ApplicationEditor({
   }
 
   return (
-    <aside className="rl-app-editor" aria-label="Application details">
+    <aside
+      className="rl-app-editor glass-pane rounded-site"
+      aria-label={t('ladder.pipeline.details', { defaultValue: 'Application details' })}
+    >
       <div className="rl-app-editor__head">
         <div>
-          <p className="rl-eyebrow">
-            {((job?.company as AnyRow | undefined)?.name as string) ?? 'APPLICATION'}
+          <p className="rl-label">
+            {((job?.company as AnyRow | undefined)?.name as string) ??
+              t('ladder.pipeline.application', { defaultValue: 'Application' })}
           </p>
-          <h2 className="rl-display rl-app-editor__title">
-            {(job?.title as string) ?? 'Untitled role'}
+          <h2 className="site-section-label rl-app-editor__title">
+            {(job?.title as string) ?? t('ladder.pipeline.untitled', { defaultValue: 'Untitled role' })}
           </h2>
         </div>
-        <button type="button" className="rl-chip" onClick={onClose} aria-label="Close editor">
-          Close
-        </button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={onClose}
+          aria-label={t('ladder.pipeline.close', { defaultValue: 'Close editor' })}
+        >
+          <X aria-hidden />
+        </Button>
       </div>
 
       <label className="rl-field" htmlFor="rl-app-status">
-        <span className="rl-eyebrow">Stage</span>
+        <span className="rl-label">{t('ladder.pipeline.stage', { defaultValue: 'Stage' })}</span>
         <Select
           id="rl-app-status"
-          controlSize="sm"
-          value={app.status as string}
+                    value={app.status as string}
           onChange={(e) => onPatch({ status: e.target.value as ApplicationPatch['status'] })}
         >
           {ALL_STAGES.map((s) => (
@@ -275,8 +303,8 @@ function ApplicationEditor({
       </label>
 
       <label className="rl-field" htmlFor="rl-app-applied">
-        <span className="rl-eyebrow">Applied date</span>
-        <input
+        <span className="rl-label">{t('ladder.pipeline.appliedDate', { defaultValue: 'Applied date' })}</span>
+        <Input
           id="rl-app-applied"
           type="date"
           value={dateValue(app.appliedDate)}
@@ -287,8 +315,8 @@ function ApplicationEditor({
       </label>
 
       <label className="rl-field" htmlFor="rl-app-followup">
-        <span className="rl-eyebrow">Follow-up date</span>
-        <input
+        <span className="rl-label">{t('ladder.pipeline.followUpDate', { defaultValue: 'Follow-up date' })}</span>
+        <Input
           id="rl-app-followup"
           type="date"
           value={dateValue(app.followUpDate)}
@@ -299,11 +327,10 @@ function ApplicationEditor({
       </label>
 
       <label className="rl-field" htmlFor="rl-app-resume-version-id">
-        <span className="rl-eyebrow">Submitted resume</span>
+        <span className="rl-label">{t('ladder.pipeline.resume', { defaultValue: 'Submitted resume' })}</span>
         <Select
           id="rl-app-resume-version-id"
-          controlSize="sm"
-          value={(app.resumeVersionId as string | null) ?? ''}
+                    value={(app.resumeVersionId as string | null) ?? ''}
           onChange={(event) => {
             const selected = resumeVersions.find((version) => version.id === event.target.value);
             onPatch({
@@ -314,7 +341,7 @@ function ApplicationEditor({
             });
           }}
         >
-          <option value="">None selected</option>
+          <option value="">{t('ladder.pipeline.noneSelected', { defaultValue: 'None selected' })}</option>
           {resumeVersions.map((version) => (
             <option key={version.id} value={version.id}>
               {version.resumeName} · v{version.versionNumber} · {version.filename}
@@ -324,17 +351,18 @@ function ApplicationEditor({
       </label>
 
       <div className="rl-field">
-        <span className="rl-eyebrow">Interviews</span>
+        <span className="rl-label">{t('ladder.pipeline.interviews', { defaultValue: 'Interviews' })}</span>
         <div className="flex flex-wrap gap-2">
-          <input
-            aria-label="Interview date and time"
+          <Input
+            aria-label={t('ladder.pipeline.interviewAt', { defaultValue: 'Interview date and time' })}
             type="datetime-local"
+            className="w-auto min-w-0 flex-1"
             value={interviewDraft}
             onChange={(event) => setInterviewDraft(event.target.value)}
           />
-          <button
+          <Button
             type="button"
-            className="rl-chip"
+            variant="outline"
             disabled={!interviewDraft || interviewDates.length >= 25}
             onClick={() => {
               const next = new Date(interviewDraft);
@@ -343,16 +371,23 @@ function ApplicationEditor({
               setInterviewDraft('');
             }}
           >
-            Add interview
-          </button>
+            {t('ladder.pipeline.addInterview', { defaultValue: 'Add interview' })}
+          </Button>
         </div>
-        <div className="rl-chip-row">
+        <div className="flex flex-wrap gap-2">
           {interviewDates.map((date, index) => (
-            <span key={`${date.toISOString()}-${index}`} className="rl-keyword-chip">
+            <span
+              key={`${date.toISOString()}-${index}`}
+              className="inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-accent-dim py-1 pr-1 pl-3 text-sm"
+            >
               {date.toLocaleString()}
               <button
                 type="button"
-                aria-label={`Remove interview ${date.toLocaleString()}`}
+                className="touch-target inline-flex size-8 items-center justify-center rounded-site-sm text-site-text-muted transition-colors hover:text-site-text"
+                aria-label={t('ladder.pipeline.removeInterview', {
+                  defaultValue: 'Remove interview {{date}}',
+                  date: date.toLocaleString(),
+                })}
                 onClick={() =>
                   onPatch({
                     interviewDates: interviewDates.filter(
@@ -361,16 +396,16 @@ function ApplicationEditor({
                   })
                 }
               >
-                ×
+                <X className="size-4" aria-hidden />
               </button>
             </span>
           ))}
         </div>
       </div>
 
-      {textField('Referral', 'referralName')}
-      {textField('Contact email', 'contactEmail')}
-      {textField('Notes', 'notes', true)}
+      {textField(t('ladder.pipeline.referral', { defaultValue: 'Referral' }), 'referralName')}
+      {textField(t('ladder.pipeline.contactEmail', { defaultValue: 'Contact email' }), 'contactEmail')}
+      {textField(t('ladder.pipeline.notes', { defaultValue: 'Notes' }), 'notes', true)}
     </aside>
   );
 }

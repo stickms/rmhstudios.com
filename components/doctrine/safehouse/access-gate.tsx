@@ -35,12 +35,12 @@ export function AccessGate({ requiredTier, children, userTier }: AccessGateProps
       <h3 className="text-sm font-semibold text-white/80">
         {t("access-required", { defaultValue: "{{tierName}} Access Required", tierName: tier.name })}
       </h3>
-      <p className="text-xs text-white/40 max-w-xs">
+      <p className="text-xs text-white/60 max-w-xs">
         {t("content-restricted", { defaultValue: "This content is restricted to {{tierName}} tier and above.", tierName: tier.name })}
         {requiredTier === 'INSIDER' && ' ' + t("upgrade-insider", { defaultValue: "Upgrade to Asset ($5/mo) to unlock." })}
         {requiredTier === 'OPERATOR' && ' ' + t("upgrade-operator", { defaultValue: "Upgrade to Operator ($15/mo) to unlock." })}
       </p>
-      <div className="flex items-center gap-1 text-[10px] text-white/20 font-mono">
+      <div className="flex items-center gap-1 text-xs text-white/50 font-mono">
         <Shield size={10} />
         <span>{t("classification", { defaultValue: "CLASSIFICATION: {{tier}}", tier: requiredTier })}</span>
       </div>

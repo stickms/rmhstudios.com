@@ -601,7 +601,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  />
  </div>
 
- <div className="grid gap-6 px-4 py-5 md:grid-cols-[minmax(0,1fr)_17rem] md:px-6">
+ <div className="grid gap-6 px-4 py-6 md:grid-cols-[minmax(0,1fr)_17rem] md:px-6">
  <div className="min-w-0">
  {section ==='identity'? (
  <div role="tabpanel"className="space-y-5">
@@ -788,7 +788,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  </div>
  <p
  className={cn(
-'mt-1.5 text-xs',
+'mt-2 text-xs',
  handleStatus ==='available'
  ?'text-site-success'
  : handleStatus ==='taken'|| handleStatus ==='invalid'
@@ -884,7 +884,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  />
  <div className="space-y-3">
  {links.map((link, index) => (
- <div key={index} className="glass-fill rounded-site-sm p-3">
+ <div key={index} className="glass-fill rounded-site-sm px-4 py-3">
  <div className="flex items-center gap-2">
  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
  <LinkIcon className="size-4"aria-hidden />
@@ -1187,7 +1187,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
  <aside className="hidden md:block">
  <div className="sticky top-0 space-y-3">
- <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+ <div className="flex items-center gap-2 text-xs font-semibold text-site-text-dim">
  <Sparkles className="size-3.5"aria-hidden />
  {t('live-preview', { defaultValue:'Live preview'})}
  </div>

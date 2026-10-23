@@ -87,7 +87,7 @@ export function InterviewReports({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2
           id="ladder-interviews-heading"
-          className="flex items-center gap-2 text-sm font-semibold text-site-text"
+          className="site-section-label flex items-center gap-2"
         >
           <MessagesSquare className="size-4" aria-hidden />
           {t('ir-heading', { defaultValue: 'Interview reports' })}

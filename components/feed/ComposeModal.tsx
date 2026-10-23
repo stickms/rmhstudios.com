@@ -265,7 +265,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  >
  <X className="w-5 h-5"aria-hidden />
  </button>
- <div className="flex items-center gap-1.5">
+ <div className="flex items-center gap-2">
  {/* AI draft button */}
  <AIGenerateButton
  request={{ mode:'post', draft: content }}
@@ -297,7 +297,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  }}
  aria-pressed={attachment ==='gif'}
  title={t('attach-gif-title', { defaultValue:'Add a GIF'})}
- className={`px-1.5 py-1 rounded-full text-[11px] font-bold leading-none border transition-colors ${
+ className={`px-1.5 py-1 rounded-full text-xs font-bold leading-none border transition-colors ${
  attachment ==='gif'
  ?'border-site-accent text-site-accent bg-site-accent/10'
  :'border-site-border text-site-text-dim hover:text-site-accent hover:bg-site-accent/10'
@@ -411,7 +411,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* Quoted post preview */}
  {quoteItem && (
- <div className="mt-2 rounded-site border border-site-border p-3">
+ <div className="glass-fill mt-2 rounded-site px-4 py-3">
  <p className="text-xs font-semibold text-site-text">
  {quoteItem.user?.name || quoteItem.user?.handle ||'Someone'}
  </p>
@@ -423,7 +423,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* Poll creator */}
  {attachment ==='poll'&& (
- <div className="glass-fill mt-2 rounded-site p-3">
+ <div className="glass-fill mt-2 rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
  <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">
  Poll
@@ -447,7 +447,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  defaultValue:'Ask a question…',
  })}
  maxLength={MAX_POLL_QUESTION_LENGTH}
- className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
+ className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
  />
 
  <div className="space-y-2">
@@ -466,7 +466,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  defaultValue:'Option {{index}}',
  })}
  maxLength={MAX_POLL_OPTION_LENGTH}
- className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
+ className="flex-1 glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
  />
  {poll.options.length > MIN_POLL_OPTIONS && (
  <button
@@ -510,7 +510,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* GIF picker */}
  {attachment ==='gif'&& (
- <div className="glass-fill mt-2 rounded-site p-3">
+ <div className="glass-fill mt-2 rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
  <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">
  {t('gif-heading', { defaultValue:'GIF'})}
@@ -693,7 +693,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  placeholder={t('alt-text-placeholder', {
  defaultValue:'e.g. A golden retriever running on a beach at sunset',
  })}
- className="w-full resize-none rounded-site-sm glass-inset p-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
+ className="w-full resize-none rounded-site-sm glass-inset px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
  />
  <div className="mt-3 flex items-center justify-between">
  <span className="text-xs font-mono text-site-text-dim">

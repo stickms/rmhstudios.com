@@ -47,7 +47,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
 
  if (loading) {
  return (
- <div className="flex justify-center py-20">
+ <div className="flex justify-center px-4 pt-4 pb-12">
  <Spinner />
  </div>
  );

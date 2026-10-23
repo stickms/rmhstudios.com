@@ -34,5 +34,7 @@
   "settings": "設定",
   "visibility-label": "公開設定",
   "visibility-private": "非公開",
-  "visibility-public": "公開"
+  "visibility-public": "公開",
+  "loading": "Loading…",
+  "lobby-title": "Lobby {{lobbyId}}"
 }

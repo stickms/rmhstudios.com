@@ -164,7 +164,7 @@ export function AlarmRules() {
 
   return (
     <section>
-      <h2 className="text-lg font-semibold text-site-text">
+      <h2 className="site-section-label">
         {t('rules-title', { defaultValue: 'Alarm rules' })}
       </h2>
       <p className="mt-1 text-sm text-site-text-muted">

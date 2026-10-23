@@ -34,5 +34,7 @@
   "settings": "Pengaturan",
   "visibility-label": "Visibilitas",
   "visibility-private": "Pribadi",
-  "visibility-public": "Publik"
+  "visibility-public": "Publik",
+  "loading": "Loading…",
+  "lobby-title": "Lobby {{lobbyId}}"
 }

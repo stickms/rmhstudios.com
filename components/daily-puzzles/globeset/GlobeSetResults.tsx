@@ -11,12 +11,11 @@
 
 import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
-import { Link } from '@tanstack/react-router';
-import { Flag, Flame, Share2, Timer, Trophy } from 'lucide-react';
+import { Flag, Flame, Timer, Trophy } from 'lucide-react';
 import { formatDuration, type RunSummary } from '@/lib/globeset/game';
 import { accuracy, generateGlobeSetShare, shareGrid, SIZE_LEGEND } from '@/lib/globeset/share';
 import type { GlobeSetStats } from '@/lib/globeset/persistence';
-import { CopyButton } from '@/components/ui/copy-button';
+import { PuzzleShareRow } from '@/components/daily-puzzles/PuzzleShell';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 
 export interface GlobeSetResultsProps {
@@ -47,10 +46,10 @@ export function GlobeSetResults({
     <motion.section
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mt-6 space-y-6"
+      className="flex flex-col gap-3"
       aria-label={t('globeset-results-label', { defaultValue: 'Your result' })}
     >
-      <div className="glass-pane rounded-site p-6 text-center">
+      <div className="glass-pane rounded-site px-4 py-5 text-center sm:px-6">
         {summary.solverUsed ? (
           <>
             <Flag className="mx-auto h-8 w-8 text-site-text-muted" aria-hidden />
@@ -112,28 +111,13 @@ export function GlobeSetResults({
           />
         </dl>
 
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-          <CopyButton
-            value={shareText}
-            variant="default"
-            size="default"
-            icon={Share2}
-            toastOnCopy
-            label={t('globeset-share', { defaultValue: 'Share result' })}
-          >
-            {t('globeset-share', { defaultValue: 'Share result' })}
-          </CopyButton>
-          <Link
-            to="/daily"
-            className="inline-flex items-center gap-1.5 rounded-full border border-site-border bg-site-surface px-4 py-2 text-sm font-medium text-site-text transition-colors hover:border-site-accent"
-          >
-            {t('back-to-daily-puzzles', { defaultValue: 'Back to Daily Puzzles' })}
-          </Link>
+        <div className="mt-5">
+          <PuzzleShareRow shareText={shareText} />
         </div>
       </div>
 
       {/* ── The player's own record ──────────────────────────────────────── */}
-      <div className="glass-fill grid grid-cols-3 gap-3 rounded-site p-4 text-center">
+      <div className="glass-fill grid grid-cols-3 gap-3 rounded-site px-4 py-3 text-center">
         <Figure
           icon={<Trophy className="h-4 w-4" aria-hidden />}
           label={t('globeset-stat-best', { defaultValue: 'Best time' })}
@@ -151,6 +135,7 @@ export function GlobeSetResults({
       </div>
 
       <DailyPuzzleLeaderboard
+        className="mt-3"
         gameMode="globeset"
         dateKey={dateKey}
         completed={isToday}
@@ -172,7 +157,7 @@ export function GlobeSetResults({
 function Figure({ icon, label, value }: { icon?: React.ReactNode; label: string; value: string }) {
   return (
     <div>
-      <dt className="flex items-center justify-center gap-1 text-[0.65rem] font-medium uppercase tracking-wide text-site-text-muted">
+      <dt className="flex items-center justify-center gap-1 text-xs font-medium text-site-text-muted">
         {icon}
         {label}
       </dt>

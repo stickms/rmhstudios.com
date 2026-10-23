@@ -279,7 +279,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
 
         {/* Feed */}
         {mode === 'friends' && !session ? (
-          <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+          <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
             <p className="text-lg font-medium text-site-text mb-2">
               {t('sign-in-to-see-following', { defaultValue: 'Sign in to see who you follow' })}
             </p>

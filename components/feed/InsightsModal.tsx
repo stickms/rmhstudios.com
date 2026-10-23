@@ -60,7 +60,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
 
  return (
  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
- <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80dvh] overflow-hidden">
+ <DialogContent className="max-w-md p-0 gap-0 flex flex-col max-h-[80dvh] overflow-hidden">
  <div className="flex shrink-0 items-center justify-between border-b border-site-border px-5 py-4">
  <DialogTitle className="flex items-center gap-2 font-display text-lg font-bold text-site-text">
  <TrendingUp className="h-5 w-5 text-site-accent"/>
@@ -86,7 +86,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  <div key={s.label} className="rounded-site glass-fill p-3">
  <s.icon className="h-4 w-4 text-site-text-dim"/>
  <p className="mt-1 text-lg font-bold text-site-text">{fmt(s.value)}</p>
- <p className="text-[11px] text-site-text-dim">{s.label}</p>
+ <p className="text-xs text-site-text-dim">{s.label}</p>
  </div>
  ))}
  <div className="rounded-site glass-fill p-3">
@@ -94,7 +94,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  <p className="mt-1 text-lg font-bold text-site-text">
  {(data.engagementRate * 100).toFixed(1)}%
  </p>
- <p className="text-[11px] text-site-text-dim">{t('engagement-rate', { defaultValue:'Engagement rate'})}</p>
+ <p className="text-xs text-site-text-dim">{t('engagement-rate', { defaultValue:'Engagement rate'})}</p>
  </div>
  </div>
 
@@ -104,7 +104,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  <Unlock className="h-4 w-4 text-site-accent"/>
  <div>
  <p className="text-sm font-semibold text-site-text">{t('unlocks-count', { count: fmt(data.unlocks), defaultValue:'{{count}} unlocks'})}</p>
- <p className="text-[11px] text-site-text-dim">{t('unlock-price-each', { price: data.unlockPrice, defaultValue:'at {{price}} each'})}</p>
+ <p className="text-xs text-site-text-dim">{t('unlock-price-each', { price: data.unlockPrice, defaultValue:'at {{price}} each'})}</p>
  </div>
  </div>
  <span className="inline-flex items-center gap-1 text-sm font-bold text-site-text">
@@ -141,7 +141,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  </div>
  </div>
 
- <p className="mt-4 text-center text-[11px] text-site-text-dim">
+ <p className="mt-4 text-center text-xs text-site-text-dim">
  {t('posted-date', { date: new Date(data.createdAt).toLocaleString(), defaultValue:'Posted {{date}}'})}
  </p>
  </>

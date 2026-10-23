@@ -995,8 +995,8 @@ export function ConversationView({
 
   if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-lg font-medium text-site-text mb-1">
+      <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
+        <p className="text-lg font-medium text-site-text mb-2">
           {t('sign-in-to-view-messages', { defaultValue: 'Sign in to view messages' })}
         </p>
         <Link to="/login" search={{ callbackURL: undefined }}>
@@ -1010,8 +1010,8 @@ export function ConversationView({
 
   if (notFound) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-lg font-medium text-site-text mb-1">
+      <div className="flex flex-col items-center justify-center px-4 pt-4 pb-12 text-center">
+        <p className="text-lg font-medium text-site-text mb-2">
           {t('conversation-not-found', { defaultValue: 'Conversation not found' })}
         </p>
         <Link to="/messages">
@@ -1051,9 +1051,10 @@ export function ConversationView({
         <div className="flex items-center gap-3 px-4 py-3">
           <Link
             to="/messages"
-            className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface-hover transition-colors"
+            aria-label={t('back', { defaultValue: 'Back' })}
+            className="p-2 -ml-2 rounded-site-sm hover:bg-site-surface-hover transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-site-text" />
+            <ArrowLeft className="w-5 h-5 text-site-text" aria-hidden />
           </Link>
           {isSavedChat && <SavedMessagesHeader />}
           {otherUser && !isSavedChat && (
@@ -1071,7 +1072,7 @@ export function ConversationView({
                 className="ring-2 ring-site-bg"
               />
               <div>
-                <p className="flex items-center gap-1.5 font-display font-bold text-sm text-site-text">
+                <p className="flex items-center gap-2 font-display font-bold text-sm text-site-text">
                   {otherUser.name || 'Unknown'}
                   {otherUser.isBot && <AutomatedBadge />}
                 </p>
@@ -1088,7 +1089,7 @@ export function ConversationView({
               no WebRTC); the server is still the authority on whether this person
               accepts calls from you. */}
           {otherUser && !isSavedChat && (
-            <div className="ml-auto flex gap-1">
+            <div className="ml-auto flex gap-2">
               <CallButton
                 user={{
                   id: otherUser.id,
@@ -1219,7 +1220,7 @@ export function ConversationView({
                 >
                   {showDate && (
                     <div className="flex items-center justify-center my-4">
-                      <span className="text-xs text-site-text-dim bg-site-surface px-3 py-1 rounded-full">
+                      <span className="glass-fill text-xs text-site-text-dim px-3 py-1 rounded-full">
                         {formatDateSeparator(msg.createdAt)}
                       </span>
                     </div>
@@ -1318,14 +1319,14 @@ export function ConversationView({
                             {msg.imageUrls && msg.imageUrls.length > 0 && (
                               <PostImageGrid
                                 urls={msg.imageUrls}
-                                className="mt-1.5 rounded-site-sm overflow-hidden"
+                                className="mt-2 rounded-site-sm overflow-hidden"
                               />
                             )}
                             {msg.gifUrl && (
                               <img
                                 src={msg.gifUrl}
                                 alt=""
-                                className="mt-1.5 max-h-60 w-auto rounded-site-sm"
+                                className="mt-2 max-h-60 w-auto rounded-site-sm"
                                 loading="lazy"
                               />
                             )}
@@ -1529,7 +1530,7 @@ export function ConversationView({
                   placeholder={t('type-a-message', { defaultValue: 'Type a message...' })}
                   rows={1}
                   maxLength={2000}
-                  className="bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
+                  className="glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site px-3 py-2 outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
                   style={{ minHeight: '42px' }}
                 />
                 {shortcodes.menu}
@@ -1605,8 +1606,9 @@ export function ConversationView({
               disabled={(!input.trim() && !gifUrl && imageUrls.length === 0) || sending}
               onClick={handleSend}
               className="rounded-site h-[42px] px-3"
+              aria-label={t('send-message', { defaultValue: 'Send message' })}
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-4 h-4" aria-hidden />
             </Button>
           )}
         </div>

@@ -101,7 +101,7 @@ function GamesIndexPage() {
             }
           />
         </div>
-        <div className="px-4 pt-6 pb-12">
+        <div className="px-4 pb-12">
           {/* Below the whole catalog; built after the top of the page has
               painted on a page switch (it carries its own tab strip and
               panels). A `?sub=` deep link is the one arrival that is ABOUT

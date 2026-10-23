@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Send, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export interface RideChatMessage {
   id: string;
@@ -77,23 +79,24 @@ export function RideChat({ messages, currentUserId, onSend, disabled, otherName 
         )}
       </div>
 
-      <form onSubmit={submit} className="flex items-center gap-2 border-t border-site-border p-2.5">
-        <input
+      <form onSubmit={submit} className="flex items-center gap-2 border-t border-site-border p-3">
+        <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={disabled}
           maxLength={500}
+          aria-label={t("type-message", { defaultValue: "Type a message…" })}
           placeholder={disabled ? t("chat-unavailable", { defaultValue: "Chat unavailable" }) : t("type-message", { defaultValue: "Type a message…" })}
-          className="min-w-0 flex-1 glass-inset rounded-site-sm px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 disabled:opacity-50 sm:py-2 sm:text-sm"
+          className="min-w-0 flex-1"
         />
-        <button
+        <Button
           type="submit"
+          size="icon"
           disabled={disabled || sending || !input.trim()}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm bg-site-accent text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={t("send-message", { defaultValue: "Send message" })}
         >
-          <Send className="h-4 w-4" />
-        </button>
+          <Send aria-hidden />
+        </Button>
       </form>
     </div>
   );

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import { Switch } from '@/components/ui/switch';
 import { MIN_SPEED_FLOOR, type AssistSettings } from '@/lib/game/assist';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 /**
  * Cross-game assists (P7), in Settings → Appearance.
@@ -101,22 +102,14 @@ export function GameAssistPanel() {
   ];
 
   return (
-    <section className="glass-pane rounded-site p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Accessibility className="h-4.5 w-4.5 text-site-accent" aria-hidden />
-        <div>
-          <h2 className="text-base font-bold text-site-text">
-            {t('assists-title', { defaultValue: 'Game assists' })}
-          </h2>
-          <p className="text-xs text-site-text-muted">
-            {t('assists-subtitle', {
-              defaultValue: 'Settings games apply so they stay playable.',
-            })}
-          </p>
-        </div>
-      </div>
-
-      <p className="glass-inset mb-4 rounded-site p-3 text-sm text-site-text">
+    <SettingsSection
+      icon={Accessibility}
+      title={t('assists-title', { defaultValue: 'Game assists' })}
+      description={t('assists-subtitle', {
+        defaultValue: 'Settings games apply so they stay playable.',
+      })}
+    >
+      <p className="glass-inset rounded-site p-3 text-sm text-site-text">
         {t('assists-ranked-warning', {
           defaultValue:
             'A run with any assist on does not count towards leaderboards or ranked play. A board that mixed assisted and unassisted runs would measure nothing.',
@@ -167,7 +160,7 @@ export function GameAssistPanel() {
               value={Math.round(a.speedFloor * 100)}
               disabled={saving}
               onChange={(e) => void save({ speedFloor: Number(e.target.value) / 100 })}
-              className="w-48 accent-site-accent"
+              className="w-full max-w-xs accent-site-accent"
             />
             <span className="font-mono text-sm tabular-nums text-site-text">
               {Math.round(a.speedFloor * 100)}%
@@ -176,7 +169,7 @@ export function GameAssistPanel() {
         </div>
       </div>
 
-      <p className="mt-4 border-t border-site-border pt-3 text-xs text-site-text-muted">
+      <p className="border-t border-site-border pt-3 text-xs text-site-text-muted">
         {state.honouredBy.length === 0
           ? t('assists-none-yet', {
               defaultValue:
@@ -187,6 +180,6 @@ export function GameAssistPanel() {
               games: state.honouredBy.join(', '),
             })}
       </p>
-    </section>
+    </SettingsSection>
   );
 }

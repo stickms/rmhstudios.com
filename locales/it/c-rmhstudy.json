@@ -101,5 +101,6 @@
   "tap-to-reveal": "Tocca per rivelare",
   "unban": "Sbanna",
   "unban-user": "Sbanna utente",
-  "work-duration": "Durata lavoro: {{minutes}} min"
+  "work-duration": "Durata lavoro: {{minutes}} min",
+  "apps": "Apps"
 }

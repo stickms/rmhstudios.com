@@ -166,7 +166,7 @@ export function ContractDock() {
         data-floating="feature-overlay"
         variant="secondary"
         size="sm"
-        className="glass-overlay fixed end-3 bottom-24 z-30"
+        className="glass-overlay fixed end-[calc(0.75rem+var(--safe-right))] bottom-24 z-30"
         onClick={() => setOpen(true)}
       >
         <ScrollText aria-hidden />

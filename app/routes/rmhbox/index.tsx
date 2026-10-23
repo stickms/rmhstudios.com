@@ -119,36 +119,41 @@ function RMHboxLanding() {
     emit(C2S.LOBBY_BROWSE, {});
   }, []);
 
+  const connected = connectionStatus === 'connected';
+  const card = 'flex flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) px-4 py-4 md:px-6 md:py-5';
+  const primaryBtn =
+    'rounded-(--app-radius-sm) bg-(--app-accent) px-6 py-3 font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover) disabled:cursor-not-allowed disabled:opacity-50';
+
   return (
-    <div className="flex h-screen flex-col">
-      {/* Shared header — fixed at top */}
+    // A landing is a DOCUMENT (design-language §12.1 rule 6): `.app-page`, so the
+    // page scrolls and mobile Safari can collapse its toolbars. It used to be a
+    // viewport-height shell with a `flex-1 overflow-y-auto` box inside it.
+    <div className="app-page">
       <RMHboxHeader backLabel='Games' backHref='/games' />
 
-      {/* Scrollable content below header */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
-      <div className="max-w-4xl mx-auto space-y-8">
-
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 pt-4 pb-12 md:gap-6 md:px-8 md:pt-8">
         {/* Create & Join */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid gap-4 md:grid-cols-2 md:gap-6">
           {/* Create Lobby */}
-          <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
-            <h2 className="text-xl font-semibold mb-4">{t("create-lobby", { defaultValue: "Create Lobby" })}</h2>
-            <p className="text-sm mb-4 text-(--app-text-muted)">
+          <section className={card}>
+            <h2 className="text-xl font-semibold">{t("create-lobby", { defaultValue: "Create Lobby" })}</h2>
+            <p className="flex-1 text-sm text-(--app-text-muted)">
               {t("create-lobby-desc", { defaultValue: "Start a new game session and invite friends." })}
             </p>
             <button
+              type="button"
               onClick={handleCreateLobby}
-              disabled={connectionStatus !== 'connected'}
-              className="w-full py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+              disabled={!connected}
+              className={`w-full ${primaryBtn}`}
             >
               {t("create-lobby", { defaultValue: "Create Lobby" })}
             </button>
-          </div>
+          </section>
 
           {/* Join Lobby */}
-          <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
-            <h2 className="text-xl font-semibold mb-4">{t("join-lobby", { defaultValue: "Join Lobby" })}</h2>
-            <p className="text-sm mb-4 text-(--app-text-muted)">
+          <section className={card}>
+            <h2 className="text-xl font-semibold">{t("join-lobby", { defaultValue: "Join Lobby" })}</h2>
+            <p className="text-sm text-(--app-text-muted)">
               {t("join-lobby-desc", { defaultValue: "Enter a 6-character room code to join." })}
             </p>
             <form onSubmit={(e) => { e.preventDefault(); handleJoinLobby(); }} className="flex gap-2">
@@ -160,79 +165,84 @@ function RMHboxLanding() {
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                 placeholder="ABCDEF"
-                className="w-10 min-w-0 flex-1 px-4 py-3 rounded-lg font-mono text-lg uppercase tracking-widest text-center border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+                aria-label={t("room-code", { defaultValue: "Room code" })}
+                autoCapitalize="characters"
+                autoComplete="off"
+                spellCheck={false}
+                className="min-w-0 flex-1 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-3 text-center font-mono text-lg uppercase tracking-widest text-(--app-text) placeholder:text-(--app-text-dim)"
               />
               <button
                 type="submit"
-                disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                className="px-6 py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                disabled={!connected || joinCode.trim().length !== 6}
+                className={primaryBtn}
               >
                 {t("join", { defaultValue: "Join" })}
               </button>
             </form>
-          </div>
+          </section>
         </div>
 
         {/* Public Lobbies */}
-        <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
-          <div className="flex items-center justify-between mb-4">
+        <section className={card}>
+          <div className="flex items-center justify-between gap-3">
             <h2 className="text-xl font-semibold">{t("public-lobbies", { defaultValue: "Public Lobbies" })}</h2>
             <button
+              type="button"
               onClick={handleBrowse}
-              className="text-sm px-3 py-1 rounded-md transition-colors bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)"
+              className="rounded-(--app-radius-sm) bg-(--app-surface-hover) px-3 py-2 text-sm text-(--app-text-muted) transition-colors hover:text-(--app-text)"
             >
               {t("refresh", { defaultValue: "Refresh" })}
             </button>
           </div>
           {publicLobbies.length === 0 ? (
-            <p className="text-sm text-center py-4 text-(--app-text-muted)">
+            <p className="py-4 text-center text-sm text-(--app-text-muted)">
               {t("no-public-lobbies", { defaultValue: "No public lobbies available. Create one!" })}
             </p>
           ) : (
-            <div className="space-y-2">
+            <ul className="flex flex-col gap-2">
               {publicLobbies.map((lobby) => (
-                <div
-                  key={lobby.lobbyId}
-                  className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors border border-(--app-border) bg-(--app-bg) hover:bg-(--app-surface-hover)"
-                  onClick={() => {
-                    setJoinCode(lobby.lobbyId);
-                    emit(C2S.LOBBY_JOIN, { lobbyId: lobby.lobbyId });
-                  }}
-                >
-                  <div>
-                    <span className="font-mono font-bold">{lobby.lobbyId}</span>
-                    <span className="ml-3 text-sm text-(--app-text-muted)">
-                      {t("host-name", { defaultValue: "Host: {{name}}", name: lobby.hostName })}
-                    </span>
-                    {lobby.selectedGame && (
-                      <span className="ml-2 text-xs text-(--app-accent)">
-                        · {lobby.selectedGame}
+                <li key={lobby.lobbyId}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between gap-3 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-3 text-left transition-colors hover:bg-(--app-surface-hover)"
+                    onClick={() => {
+                      setJoinCode(lobby.lobbyId);
+                      emit(C2S.LOBBY_JOIN, { lobbyId: lobby.lobbyId });
+                    }}
+                  >
+                    <span className="min-w-0">
+                      <span className="font-mono font-bold">{lobby.lobbyId}</span>
+                      <span className="ml-3 text-sm text-(--app-text-muted)">
+                        {t("host-name", { defaultValue: "Host: {{name}}", name: lobby.hostName })}
                       </span>
-                    )}
-                  </div>
-                  <div className="text-sm text-(--app-text-muted)">
-                    {t("player-count-of-max", { defaultValue: "{{count}}/{{max}} players", count: lobby.playerCount, max: lobby.maxPlayers })}
-                  </div>
-                </div>
+                      {lobby.selectedGame && (
+                        <span className="ml-2 text-xs text-(--app-accent)">· {lobby.selectedGame}</span>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-sm text-(--app-text-muted)">
+                      {t("player-count-of-max", { defaultValue: "{{count}}/{{max}} players", count: lobby.playerCount, max: lobby.maxPlayers })}
+                    </span>
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        </div>
+        </section>
 
         {/* View Minigames */}
         <button
+          type="button"
           onClick={() => navigate({ to: '/rmhbox/minigames' })}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-(--app-border) bg-(--app-surface) font-semibold transition-colors text-(--app-text) hover:bg-(--app-surface-hover) hover:text-(--app-accent)"
+          className="flex w-full items-center justify-center gap-2 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) px-4 py-3 font-semibold text-(--app-text) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-accent)"
           data-testid="view-minigames-btn"
         >
-          <Gamepad2 className="h-5 w-5" />
+          <Gamepad2 className="h-5 w-5" aria-hidden />
           {t("view-minigames", { defaultValue: "View Minigames" })}
         </button>
 
         {/* Leaderboard */}
         <LeaderboardPanel />
-      </div>
-      </div>
+      </main>
     </div>
   );
 }

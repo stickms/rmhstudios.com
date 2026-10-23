@@ -221,14 +221,14 @@ export default function RmhTypeRoom() {
           {/* WAITING — Lobby */}
           {room.status === 'WAITING' && (
             <>
-              <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+              <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold">{t("players-count", { defaultValue: "Players ({{count}}/8)", count: room.players.length })}</h2>
                   <div className="flex items-center gap-2">
                     {isHost && (
                       <button
                         onClick={handleTogglePublic}
-                        className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+                        className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-(--app-radius-sm) transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
                       >
                         {room.isPublic ? <Globe className="h-3.5 w-3.5" /> : <GlobeLock className="h-3.5 w-3.5" />}
                         {room.isPublic ? t("public", { defaultValue: "Public" }) : t("private", { defaultValue: "Private" })}
@@ -236,7 +236,7 @@ export default function RmhTypeRoom() {
                     )}
                     <button
                       onClick={handleCopyCode}
-                      className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+                      className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-(--app-radius-sm) bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
                     >
                       <Copy className="h-3.5 w-3.5" />
                       {roomCode}
@@ -245,7 +245,7 @@ export default function RmhTypeRoom() {
                 </div>
                 <div className="space-y-2">
                   {room.players.map((p) => (
-                    <div key={p.userId} className="flex items-center justify-between p-3 rounded-lg bg-(--app-bg)">
+                    <div key={p.userId} className="flex items-center justify-between p-3 rounded-(--app-radius-sm) bg-(--app-bg)">
                       <div className="flex items-center gap-2">
                         {p.isHost && <Crown className="h-4 w-4 text-(--app-accent)" />}
                         <span className="font-medium">{p.userName}</span>
@@ -257,14 +257,14 @@ export default function RmhTypeRoom() {
                           <div className="flex gap-1">
                             <button
                               onClick={() => handleKick(p.userId)}
-                              className="rounded p-1 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
+                              className="rounded-(--app-radius-sm) p-1 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
                               title={t("kick", { defaultValue: "Kick" })}
                             >
                               <UserX className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => setBanTarget({ userId: p.userId, userName: p.userName })}
-                              className="rounded p-1 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
+                              className="rounded-(--app-radius-sm) p-1 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
                               title={t("ban", { defaultValue: "Ban" })}
                             >
                               <Ban className="h-3.5 w-3.5" />
@@ -280,10 +280,10 @@ export default function RmhTypeRoom() {
                   {!isHost && (
                     <button
                       onClick={handleReady}
-                      className={`flex-1 py-2.5 rounded-lg font-semibold transition-colors ${
+                      className={`flex-1 py-2.5 rounded-(--app-radius-sm) font-semibold transition-colors ${
                         myPlayer?.isReady
-                          ? 'bg-(--app-success) text-white'
-                          : 'bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-accent) hover:text-white'
+                          ? 'bg-(--app-success) text-(--app-bg)'
+                          : 'bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-accent) hover:text-(--app-accent-fg)'
                       }`}
                     >
                       {myPlayer?.isReady ? t("ready-done", { defaultValue: "Ready!" }) : t("ready-up", { defaultValue: "Ready Up" })}
@@ -293,14 +293,14 @@ export default function RmhTypeRoom() {
                     <button
                       onClick={handleStart}
                       disabled={!allReady}
-                      className="flex-1 py-2.5 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                      className="flex-1 py-2.5 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
                     >
                       {t("start-game", { defaultValue: "Start Game" })}
                     </button>
                   )}
                 </div>
 
-                <div className="mt-4 p-3 rounded-lg bg-(--app-bg) text-sm text-(--app-text-muted)">
+                <div className="mt-4 p-3 rounded-(--app-radius-sm) bg-(--app-bg) text-sm text-(--app-text-muted)">
                   {isHost ? (
                     <div className="space-y-3">
                       <div>
@@ -310,9 +310,9 @@ export default function RmhTypeRoom() {
                             <button
                               key={d}
                               onClick={() => emit(C2S.ROOM_UPDATE_SETTINGS, { settings: { difficulty: d } })}
-                              className={`flex-1 py-1.5 rounded text-xs font-medium capitalize transition-colors ${
+                              className={`flex-1 py-1.5 rounded-(--app-radius-sm) text-xs font-medium capitalize transition-colors ${
                                 room.settings.difficulty === d
-                                  ? 'bg-(--app-accent) text-white'
+                                  ? 'bg-(--app-accent) text-(--app-accent-fg)'
                                   : 'bg-(--app-surface) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
                               }`}
                             >
@@ -328,9 +328,9 @@ export default function RmhTypeRoom() {
                             <button
                               key={l}
                               onClick={() => emit(C2S.ROOM_UPDATE_SETTINGS, { settings: { passageLength: l } })}
-                              className={`flex-1 py-1.5 rounded text-xs font-medium capitalize transition-colors ${
+                              className={`flex-1 py-1.5 rounded-(--app-radius-sm) text-xs font-medium capitalize transition-colors ${
                                 room.settings.passageLength === l
-                                  ? 'bg-(--app-accent) text-white'
+                                  ? 'bg-(--app-accent) text-(--app-accent-fg)'
                                   : 'bg-(--app-surface) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
                               }`}
                             >
@@ -374,7 +374,7 @@ export default function RmhTypeRoom() {
                   <div className="mt-4 flex items-center justify-end">
                     <button
                       onClick={() => setShowBanList(true)}
-                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-(--app-radius-sm) transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
                     >
                       <Ban className="h-3.5 w-3.5" />
                       {t("banned-count", { defaultValue: "{{count}} banned", count: room.bannedUsers.length })}
@@ -384,7 +384,7 @@ export default function RmhTypeRoom() {
               </div>
 
               {/* Chat */}
-              <div className="rounded-xl border border-(--app-border) bg-(--app-surface) overflow-hidden" style={{ height: '16rem' }}>
+              <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) overflow-hidden" style={{ height: '16rem' }}>
                 <ChatPanel
                   messages={room.chat as ChatPanelMessage[]}
                   onSendMessage={handleSendChat}
@@ -422,7 +422,7 @@ export default function RmhTypeRoom() {
               </div>
 
               {/* Passage display — fills remaining space, scrolls internally */}
-              <div ref={passageRef} className="flex-1 min-h-0 rounded-xl border border-(--app-border) bg-(--app-surface) p-6 rmhtype-passage-scroll">
+              <div ref={passageRef} className="flex-1 min-h-0 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 rmhtype-passage-scroll">
                 <div className="rmhtype-passage select-none">
                   {[...room.passage].map((char, i) => {
                     let className = 'rmhtype-char-untyped';
@@ -449,7 +449,7 @@ export default function RmhTypeRoom() {
                 onCopy={(e) => e.preventDefault()}
                 onCut={(e) => e.preventDefault()}
                 disabled={finished}
-                className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent) rmhtype-typing-input"
+                className="shrink-0 w-full px-4 py-3 rounded-(--app-radius-sm) font-mono border border-(--app-border) bg-(--app-bg) text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent) rmhtype-typing-input"
                 autoFocus
                 placeholder={finished ? t("waiting-for-others", { defaultValue: "Waiting for others..." }) : t("start-typing-rmh-type-room-page", { defaultValue: "Start typing..." })}
               />
@@ -477,13 +477,13 @@ export default function RmhTypeRoom() {
 
           {/* ROUND_RESULTS */}
           {room.status === 'ROUND_RESULTS' && room.roundResults && (
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-xl font-semibold mb-4 text-center">
                 {t("round-results", { defaultValue: "Round {{round}} Results", round: room.roundResults.round })}
               </h2>
               <div className="space-y-2">
                 {room.roundResults.rankings.map((r, i) => (
-                  <div key={r.userId} className={`flex items-center justify-between p-3 rounded-lg ${
+                  <div key={r.userId} className={`flex items-center justify-between p-3 rounded-(--app-radius-sm) ${
                     i === 0 ? 'bg-(--app-accent-dim) border border-(--app-accent)' : 'bg-(--app-bg)'
                   }`}>
                     <div className="flex items-center gap-3">
@@ -508,11 +508,11 @@ export default function RmhTypeRoom() {
 
           {/* FINAL_RESULTS */}
           {room.status === 'FINAL_RESULTS' && room.finalResults && (
-            <div className="rounded-xl border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
               <h2 className="text-2xl font-bold mb-6 text-center">{t("final-results", { defaultValue: "Final Results" })}</h2>
               <div className="space-y-2">
                 {room.finalResults.rankings.map((r, i) => (
-                  <div key={r.userId} className={`flex items-center justify-between p-4 rounded-lg ${
+                  <div key={r.userId} className={`flex items-center justify-between p-4 rounded-(--app-radius-sm) ${
                     i === 0 ? 'bg-(--app-accent-dim) border-2 border-(--app-accent)' : 'bg-(--app-bg)'
                   }`}>
                     <div className="flex items-center gap-3">
@@ -529,7 +529,7 @@ export default function RmhTypeRoom() {
               {isHost && (
                 <button
                   onClick={handleStart}
-                  className="w-full mt-6 py-3 rounded-lg font-semibold text-white transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                  className="w-full mt-6 py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
                 >
                   {t("play-again", { defaultValue: "Play Again" })}
                 </button>
@@ -543,8 +543,8 @@ export default function RmhTypeRoom() {
       {/* Ban confirm dialog */}
       {banTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => { setBanTarget(null); setBanReason(''); }} />
-          <div className="relative w-full max-w-sm rounded-xl border border-(--app-border) bg-(--app-surface) p-6 shadow-xl">
+          <div className="absolute inset-0 app-scrim" onClick={() => { setBanTarget(null); setBanReason(''); }} />
+          <div className="relative w-full max-w-sm rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
             <h3 className="text-lg font-semibold mb-2">{t("ban-confirm-title", { defaultValue: "Ban {{name}}?", name: banTarget.userName })}</h3>
             <p className="text-sm text-(--app-text-muted) mb-4">
               {t("ban-confirm-body", { defaultValue: "This player will be removed and cannot rejoin this room." })}
@@ -555,18 +555,18 @@ export default function RmhTypeRoom() {
               onChange={(e) => setBanReason(e.target.value)}
               placeholder={t("ban-reason-placeholder", { defaultValue: "Reason (optional)" })}
               maxLength={200}
-              className="w-full px-3 py-2 rounded-lg text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent) mb-4"
+              className="w-full px-3 py-2 rounded-(--app-radius-sm) text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent) mb-4"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => { setBanTarget(null); setBanReason(''); }}
-                className="flex-1 py-2 rounded-lg font-medium text-sm transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+                className="flex-1 py-2 rounded-(--app-radius-sm) font-medium text-sm transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
               >
                 {t("cancel", { defaultValue: "Cancel" })}
               </button>
               <button
                 onClick={handleBanConfirm}
-                className="flex-1 py-2 rounded-lg font-medium text-sm text-white transition-colors bg-(--app-danger) hover:opacity-90"
+                className="flex-1 py-2 rounded-(--app-radius-sm) font-medium text-sm text-(--app-bg) transition-colors bg-(--app-danger) hover:opacity-90"
               >
                 {t("ban", { defaultValue: "Ban" })}
               </button>

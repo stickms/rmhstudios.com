@@ -18,13 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import {
-  m as motion,
-  AnimatePresence,
-  useMotionValue,
-  useSpring,
-  useMotionTemplate,
-} from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Sparkles,
@@ -54,6 +48,9 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useCelebration } from '@/hooks/useCelebration';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { PuzzlePage } from '@/components/daily-puzzles/PuzzleShell';
 import { useSession } from '@/components/Providers';
 
 const LIGHTS_OUT = 'lights-out';
@@ -305,25 +302,25 @@ export function DailyPuzzlesHub() {
   ];
 
   return (
-    <div className="relative mx-auto max-w-5xl px-4 pb-10">
+    <PuzzlePage width="lg" className="relative">
       <AuroraBackground />
 
-      <div className="relative">
+      <div className="relative flex flex-col gap-4 sm:gap-6">
         {/* ── Hero ────────────────────────────────────────────────────────── */}
-        <header className="pt-2 text-center">
+        <header className="flex flex-col items-center gap-2 text-center">
           <motion.p
             initial={reduced ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-site-accent"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-site-accent"
           >
-            <Sparkles className="h-3.5 w-3.5" aria-hidden />
+            <Sparkles className="size-4" aria-hidden />
             {t('daily-puzzles-title', { defaultValue: 'Daily Puzzles' })}
           </motion.p>
           <motion.h1
             initial={reduced ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="mt-2 text-4xl font-extrabold tracking-tight text-site-text sm:text-5xl"
+            className="text-3xl font-bold tracking-tight text-site-text sm:text-4xl"
           >
             {t('hub-headline', { defaultValue: "Today's Puzzles" })}
           </motion.h1>
@@ -331,7 +328,7 @@ export function DailyPuzzlesHub() {
             initial={reduced ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="mt-2 text-sm text-site-text-muted"
+            className="text-sm text-site-text-muted"
           >
             {dateLabel} · {t('puzzle-number', { defaultValue: 'Puzzle #{{n}}', n: puzzleNumber })}
           </motion.p>
@@ -341,9 +338,9 @@ export function DailyPuzzlesHub() {
             initial={reduced ? false : { opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.15 }}
-            className="mt-4 inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-4 py-1.5 text-sm shadow-site-sm"
+            className="glass-fill inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm"
           >
-            <Clock className="h-4 w-4 text-site-accent" aria-hidden />
+            <Clock className="size-4 text-site-accent" aria-hidden />
             <span className="text-site-text-muted">
               {t('next-drop-in', { defaultValue: 'Next drop in' })}
             </span>
@@ -358,51 +355,54 @@ export function DailyPuzzlesHub() {
 
         {/* ── Stats ───────────────────────────────────────────────────────── */}
         <section
-          className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4"
+          className="grid grid-cols-2 gap-3 sm:grid-cols-4"
           aria-label={t('todays-progress', { defaultValue: "Today's progress" })}
         >
           <StatTile
-            icon={<ListChecks className="h-4 w-4" aria-hidden />}
+            icon={<ListChecks className="size-4" aria-hidden />}
             label={t('stat-solved-today', { defaultValue: 'Solved today' })}
             value={`${solvedToday}/${DESK_MODES.length}`}
             highlight={allDone}
           />
           <StatTile
-            icon={<Trophy className="h-4 w-4" aria-hidden />}
+            icon={<Trophy className="size-4" aria-hidden />}
             label={t('stat-points-today', { defaultValue: 'Points today' })}
             value={<AnimatedCount value={pointsToday} />}
           />
           <StatTile
             icon={
-              <Flame className={`h-4 w-4 ${streak > 0 ? 'text-orange-400' : ''}`} aria-hidden />
+              <Flame className={`size-4 ${streak > 0 ? 'text-site-warning' : ''}`} aria-hidden />
             }
             label={t('stat-streak', { defaultValue: 'Day streak' })}
             value={<AnimatedCount value={streak} />}
             highlight={streak >= 3}
           />
           <StatTile
-            icon={<Star className="h-4 w-4" aria-hidden />}
+            icon={<Star className="size-4" aria-hidden />}
             label={t('stat-all-time', { defaultValue: 'All-time solves' })}
             value={<AnimatedCount value={allTime} />}
           />
         </section>
 
         {/* ── Overall progress bar ────────────────────────────────────────── */}
-        <div className="mt-6">
-          <div className="h-2 overflow-hidden rounded-full bg-site-surface">
-            <motion.div
-              className="h-full rounded-full bg-site-accent"
-              initial={false}
-              animate={{ width: `${(solvedToday / DESK_MODES.length) * 100}%` }}
-              transition={
-                reduced ? { duration: 0 } : { type: 'spring', stiffness: 120, damping: 20 }
-              }
-            />
-          </div>
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={DESK_MODES.length}
+          aria-valuenow={solvedToday}
+          aria-label={t('todays-progress', { defaultValue: "Today's progress" })}
+          className="h-2 overflow-hidden rounded-full bg-site-surface"
+        >
+          <motion.div
+            className="h-full w-full origin-left rounded-full bg-site-accent"
+            initial={false}
+            animate={{ scaleX: solvedToday / DESK_MODES.length }}
+            transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 120, damping: 20 }}
+          />
         </div>
 
         {/* ── Filters + share ─────────────────────────────────────────────── */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Filter tabs → shared LiquidTabs (§5.4): the single flowing-capsule
               implementation replaces this hub's hand-rolled layoutId pill. */}
           <LiquidTabs
@@ -414,15 +414,16 @@ export function DailyPuzzlesHub() {
             aria-label={t('filter-label', { defaultValue: 'Filter puzzles' })}
           />
 
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={shareToday}
             disabled={!mounted || solvedToday === 0}
-            className="inline-flex items-center gap-1.5 rounded-full border border-site-border bg-site-surface px-4 py-1.5 text-sm font-medium text-site-text transition-colors hover:border-site-accent disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Share2 className="h-4 w-4" aria-hidden />
+            <Share2 aria-hidden />
             {t('share-today', { defaultValue: 'Share today' })}
-          </button>
+          </Button>
         </div>
 
         {/* ── All-cleared banner ──────────────────────────────────────────── */}
@@ -432,10 +433,10 @@ export function DailyPuzzlesHub() {
               initial={reduced ? false : { opacity: 0, y: -8, height: 0 }}
               animate={{ opacity: 1, y: 0, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-6 overflow-hidden"
+              className="overflow-hidden"
             >
-              <div className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center text-sm font-medium text-emerald-300">
-                <CheckCircle2 className="h-5 w-5" aria-hidden />
+              <div className="flex items-center justify-center gap-2 rounded-site border border-site-success/40 bg-site-success/10 px-4 py-3 text-center text-sm font-medium text-site-text">
+                <CheckCircle2 className="size-5 text-site-success" aria-hidden />
                 {t('all-cleared', { defaultValue: '🎉 All puzzles cleared today — nice!' })}
               </div>
             </motion.div>
@@ -443,7 +444,7 @@ export function DailyPuzzlesHub() {
         </AnimatePresence>
 
         {/* ── Puzzle cards ────────────────────────────────────────────────── */}
-        <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {visibleModes.map((mode) => (
               <motion.div
@@ -461,7 +462,6 @@ export function DailyPuzzlesHub() {
                   index={DESK_MODES.indexOf(mode) + 1}
                   status={statusMap[mode.id] ?? { completed: false, label: null }}
                   mounted={mounted}
-                  reduced={reduced}
                   onOpen={() => openMode(mode)}
                   labelPts={t('pts-suffix', { defaultValue: 'pts' })}
                   labelMoves={t('moves-suffix', { defaultValue: 'moves' })}
@@ -476,20 +476,20 @@ export function DailyPuzzlesHub() {
         </section>
 
         {visibleModes.length === 0 && (
-          <p className="mt-8 text-center text-sm text-site-text-muted">
+          <p className="text-center text-sm text-site-text-muted">
             {filter === 'done'
               ? t('none-done-yet', { defaultValue: 'Nothing solved yet — pick a puzzle to start.' })
               : t('all-done-filter', { defaultValue: 'All caught up! Every puzzle is solved.' })}
           </p>
         )}
 
-        <p className="mt-10 text-center text-xs text-site-text-muted">
+        <p className="text-center text-xs text-site-text-muted">
           {t('hub-footer', {
             defaultValue: 'New puzzles every day at midnight EST — same for everyone worldwide.',
           })}
         </p>
       </div>
-    </div>
+    </PuzzlePage>
   );
 }
 
@@ -508,15 +508,15 @@ function StatTile({
 }) {
   return (
     <div
-      className={`rounded-2xl border bg-site-surface p-4 shadow-site-sm transition-colors ${
-        highlight ? 'border-site-accent/50' : 'border-site-border'
+      className={`glass-fill flex flex-col gap-1 rounded-site border px-4 py-3 transition-colors duration-site-fast ${
+        highlight ? 'border-site-accent/50' : 'border-transparent'
       }`}
     >
-      <div className="flex items-center gap-1.5 text-site-text-muted">
+      <div className="flex items-center gap-2 text-site-text-muted">
         <span className={highlight ? 'text-site-accent' : ''}>{icon}</span>
-        <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
+        <span className="text-xs font-medium">{label}</span>
       </div>
-      <div className="mt-1.5 text-2xl font-bold tabular-nums text-site-text">{value}</div>
+      <div className="text-2xl font-bold tabular-nums text-site-text">{value}</div>
     </div>
   );
 }
@@ -555,7 +555,6 @@ function PuzzleCard({
   index,
   status,
   mounted,
-  reduced,
   onOpen,
   labelPts,
   labelMoves,
@@ -568,7 +567,6 @@ function PuzzleCard({
   index: number;
   status: ModeStatus;
   mounted: boolean;
-  reduced: boolean;
   onOpen: () => void;
   labelPts: string;
   labelMoves: string;
@@ -577,36 +575,6 @@ function PuzzleCard({
   title: string;
   description: string;
 }) {
-  const rotX = useSpring(0, { stiffness: 150, damping: 15 });
-  const rotY = useSpring(0, { stiffness: 150, damping: 15 });
-  const scale = useSpring(1, { stiffness: 200, damping: 18 });
-  const px = useMotionValue(50);
-  const py = useMotionValue(50);
-
-  const transform = useMotionTemplate`perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${scale})`;
-  const spotlight = useMotionTemplate`radial-gradient(200px circle at ${px}% ${py}%, ${hexToRgba(
-    mode.accent,
-    0.22,
-  )}, transparent 72%)`;
-
-  const onMove = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (reduced) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    px.set(x * 100);
-    py.set(y * 100);
-    rotY.set((x - 0.5) * 10);
-    rotX.set(-(y - 0.5) * 10);
-  };
-  const reset = () => {
-    rotX.set(0);
-    rotY.set(0);
-    scale.set(1);
-    px.set(50);
-    py.set(50);
-  };
-
   const done = mounted && status.completed;
   const isLightsOut = mode.id === LIGHTS_OUT;
   const scoreText =
@@ -617,74 +585,53 @@ function PuzzleCard({
         : `${status.label} ${isLightsOut ? labelMoves : labelPts}`;
 
   return (
-    <motion.button
+    <button
       type="button"
       onClick={onOpen}
-      onPointerMove={onMove}
-      onPointerEnter={() => !reduced && scale.set(1.03)}
-      onPointerLeave={reset}
-      onPointerDown={() => !reduced && scale.set(0.985)}
-      onPointerUp={() => !reduced && scale.set(1.03)}
-      style={reduced ? undefined : { transform }}
-      className="group relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-site-border bg-site-surface p-5 text-left shadow-site-sm outline-none transition-colors hover:border-site-accent/60 focus-visible:ring-2 focus-visible:ring-site-accent/50"
+      className="glass-fill glass-interactive group relative flex h-full w-full flex-col gap-2 overflow-hidden rounded-site px-4 py-4 text-left"
       aria-label={`${title} — ${done ? ctaView : ctaPlay}`}
     >
-      {/* Accent top edge */}
+      {/* Accent top edge — decoration only; the per-mode accent is data. */}
       <span
         aria-hidden
-        className="absolute inset-x-0 top-0 h-1 opacity-70 transition-opacity group-hover:opacity-100"
+        className="absolute inset-x-0 top-0 h-1 opacity-70 transition-opacity duration-site-fast group-hover:opacity-100"
         style={{ background: `linear-gradient(90deg, transparent, ${mode.accent}, transparent)` }}
       />
-      {/* Pointer spotlight */}
-      {!reduced && (
-        <motion.span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-          style={{ background: spotlight }}
-        />
-      )}
 
-      <div className="relative flex items-start justify-between">
-        <motion.span
-          className="text-4xl"
-          aria-hidden
-          whileHover={reduced ? undefined : { scale: 1.15, rotate: -6 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 12 }}
-        >
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-4xl" aria-hidden>
           {mode.emoji}
-        </motion.span>
-        <span className="flex items-center gap-2">
-          {done ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-400">
-              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-              {scoreText}
-            </span>
-          ) : (
-            <span
-              aria-hidden
-              className="rounded-md border border-site-border px-1.5 py-0.5 font-mono text-xs text-site-text-muted"
-            >
-              {index}
-            </span>
-          )}
         </span>
+        {done ? (
+          <Badge variant="success" size="sm" icon={false}>
+            <CheckCircle2 aria-hidden />
+            {scoreText}
+          </Badge>
+        ) : (
+          <span
+            aria-hidden
+            className="rounded-site-sm border border-site-border px-2 py-0.5 font-mono text-xs text-site-text-muted"
+          >
+            {index}
+          </span>
+        )}
       </div>
 
-      <h3 className="relative mt-3 text-lg font-bold text-site-text">{title}</h3>
-      <p className="relative mt-1 flex-1 text-sm text-site-text-muted">{description}</p>
+      <h3 className="text-lg font-bold text-site-text">{title}</h3>
+      <p className="flex-1 text-sm text-site-text-muted">{description}</p>
 
       {/* The LABEL takes the card's ink; the accent is carried by the arrow.
           Painting the label itself in the raw per-mode accent put it at
           1.79-3.78:1 on the white card — the yellow mode's "Play →" nearly
           vanished. Decoration can be brand-coloured; the words cannot. */}
-      <span className="relative mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-site-text">
+      <span className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-site-text">
         {done ? ctaView : ctaPlay}
         <ArrowRight
-          className="h-4 w-4 transition-transform group-hover:translate-x-1"
+          className="size-4 transition-transform duration-site-fast group-hover:translate-x-1"
           style={{ color: mode.accent }}
           aria-hidden
         />
       </span>
-    </motion.button>
+    </button>
   );
 }

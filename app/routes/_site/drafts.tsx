@@ -23,7 +23,8 @@ const fetchDrafts = createServerFn({ method: 'GET' }).handler(async () => {
 export const Route = createFileRoute('/_site/drafts')({
   head: () => ({ meta: [{ title: 'Drafts | RMH Studios' }] }),
   loader: () => fetchDrafts(),
-  component: DraftsPage });
+  component: DraftsPage,
+});
 
 function DraftsPage() {
   const { t } = useTranslation('site');
@@ -34,34 +35,32 @@ function DraftsPage() {
   const { drafts } = Route.useLoaderData();
 
   return (
-    <>
-      <PageFrame>
-        {session && !isPending ? (
-          <>
-            <DraftsColumn initialData={drafts} />
-            <TimeCapsuleList />
-          </>
-        ) : (
-          /* The gate states get their own header so the mobile drawer button is
-             present when signed out / still resolving the session. */
-          <>
-            <ColumnHeader
-              icon={FileText}
-              title={tFeed('drafts-and-scheduled', { defaultValue: 'Drafts & Scheduled' })}
+    <PageFrame>
+      {session && !isPending ? (
+        <>
+          <DraftsColumn initialData={drafts} />
+          <TimeCapsuleList />
+        </>
+      ) : (
+        /* The gate states get their own header so the mobile drawer button is
+           present when signed out / still resolving the session. */
+        <>
+          <ColumnHeader
+            icon={FileText}
+            title={tFeed('drafts-and-scheduled', { defaultValue: 'Drafts & Scheduled' })}
+          />
+          {isPending ? (
+            <div className="flex justify-center px-4 pt-4 pb-12">
+              <Spinner />
+            </div>
+          ) : (
+            <SignedOutPrompt
+              callbackURL="/drafts"
+              title={t('sign-in-to-manage-drafts', { defaultValue: 'Sign in to manage drafts' })}
             />
-            {isPending ? (
-              <div className="flex justify-center py-20">
-                <Spinner />
-              </div>
-            ) : (
-              <SignedOutPrompt
-                callbackURL="/drafts"
-                title={t('sign-in-to-manage-drafts', { defaultValue: 'Sign in to manage drafts' })}
-              />
-            )}
-          </>
-        )}
-      </PageFrame>
-    </>
+          )}
+        </>
+      )}
+    </PageFrame>
   );
 }

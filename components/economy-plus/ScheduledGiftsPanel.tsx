@@ -42,7 +42,7 @@ export default function ScheduledGiftsPanel() {
 
   if (isLoading || !data) {
     return (
-      <div className="space-y-3 px-3 pb-8">
+      <div className="space-y-3 px-3 pb-12">
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-48 w-full" />
       </div>
@@ -53,7 +53,7 @@ export default function ScheduledGiftsPanel() {
   const opened = data.received.filter((g) => g.unwrapped);
 
   return (
-    <div className="space-y-5 px-3 pb-8">
+    <div className="space-y-4 px-3 pb-12">
       <section aria-labelledby="gifts-for-you" className="space-y-3">
         <h2 id="gifts-for-you" className="site-section-label px-1">
           {t('gifts-for-you', { defaultValue: 'Gifts for you' })}

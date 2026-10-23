@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 
 type State = { status: 'OFFERED' | 'ACTIVE' | 'REVERTED' | 'DISMISSED'; expiresAt: string | null };
@@ -45,20 +46,21 @@ export default function PileOnPage({ postId }: { postId: string }) {
       title={t('pileon-title', { defaultValue: 'Replies on your post' })}
       backTo="/notifications"
     >
-      <div className="mx-auto max-w-xl p-4 md:p-8">
+      <div className="mx-auto max-w-xl px-4 pt-4 pb-12">
         {state === null ? (
-          <div className="flex justify-center py-16">
+          <div className="flex justify-center py-20">
             <Spinner />
           </div>
         ) : state === 'missing' ? (
-          <p className="text-site-text-muted">
-            {t('pileon-missing', { defaultValue: 'We could not find that notice.' })}
-          </p>
+          <EmptyState
+            icon={ShieldCheck}
+            description={t('pileon-missing', { defaultValue: 'We could not find that notice.' })}
+          />
         ) : (
-          <div className="glass-pane flex flex-col gap-4 rounded-site p-5">
+          <div className="glass-pane flex flex-col gap-4 rounded-site p-4 sm:p-5">
             <div className="flex items-center gap-2 text-site-text">
-              <ShieldCheck className="h-5 w-5 shrink-0 text-site-accent" aria-hidden />
-              <h2 className="text-lg font-bold">
+              <ShieldCheck className="size-5 shrink-0 text-site-accent" aria-hidden />
+              <h2 className="font-display text-lg font-medium">
                 {state.status === 'ACTIVE'
                   ? t('pileon-active', { defaultValue: 'Replies are limited for 24 hours' })
                   : state.status === 'OFFERED'

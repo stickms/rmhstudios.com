@@ -54,17 +54,17 @@ export default function GameSettingsModal({
     <>
       {/* Backdrop */}
       <div
-        className="app-overlay fixed inset-0 z-60 bg-black/50"
+        className="app-overlay fixed inset-0 z-60 bg-(--app-scrim)"
         onClick={onClose}
       />
 
       {/* Panel */}
       <div
-        className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-md -translate-y-1/2 rounded-xl border p-5 shadow-2xl"
+        className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-md -translate-y-1/2 rounded-(--app-radius) border p-5 shadow-(--app-shadow)"
         style={{
           backgroundColor: 'var(--app-surface)',
           borderColor: 'var(--app-border)',
-          maxHeight: '80vh',
+          maxHeight: '85dvh',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -77,7 +77,8 @@ export default function GameSettingsModal({
           </h2>
           <button
             onClick={onClose}
-            className="rounded p-1 text-(--app-text-muted) hover:text-(--app-text)"
+            aria-label={t("close", { defaultValue: "Close" })}
+                className="rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:text-(--app-text)"
           >
             <X className="h-5 w-5" />
           </button>

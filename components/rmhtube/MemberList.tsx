@@ -42,7 +42,7 @@ function PresenceBadge({ status }: { status: UserPresenceStatus }) {
   const { t } = useTranslation("c-rmhtube");
   if (status === 'afk') {
     return (
-      <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-yellow-500/20 text-yellow-400">
+      <span className="inline-flex items-center gap-0.5 rounded-(--app-radius-sm) px-1 py-0.5 text-xs font-semibold leading-none bg-(--app-warning-dim) text-(--app-warning)">
         <Coffee className="h-2.5 w-2.5" />
         {t("status-afk", { defaultValue: "AFK" })}
       </span>
@@ -50,7 +50,7 @@ function PresenceBadge({ status }: { status: UserPresenceStatus }) {
   }
   if (status === 'brb') {
     return (
-      <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-orange-500/20 text-orange-400">
+      <span className="inline-flex items-center gap-0.5 rounded-(--app-radius-sm) px-1 py-0.5 text-xs font-semibold leading-none bg-(--app-info-dim) text-(--app-info)">
         <Clock className="h-2.5 w-2.5" />
         {t("status-brb", { defaultValue: "BRB" })}
       </span>
@@ -110,7 +110,7 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
       <button
         ref={btnRef}
         onClick={handleOpen}
-        className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors
+        className="flex items-center gap-1 rounded-(--app-radius-sm) px-1.5 py-0.5 text-xs font-medium transition-colors
           text-(--app-text-dim) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
         title={t("change-your-status", { defaultValue: "Change your status" })}
       >
@@ -125,7 +125,7 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
           <div
             data-motion="pop"
             data-state={state}
-            className="fixed z-50 min-w-27.5 origin-top-right rounded-md border border-(--app-border) bg-(--app-surface) shadow-lg py-1"
+            className="fixed z-50 min-w-27.5 origin-top-right rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) shadow-(--app-shadow) py-1"
             style={{ top: pos.top, right: pos.right }}
           >
             {STATUS_OPTIONS.map((opt) => (
@@ -138,9 +138,9 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
                     : 'text-(--app-text)'
                 }`}
               >
-                {opt.value === 'watching' && <Eye className="h-3 w-3 text-green-400" />}
-                {opt.value === 'afk' && <Coffee className="h-3 w-3 text-yellow-400" />}
-                {opt.value === 'brb' && <Clock className="h-3 w-3 text-orange-400" />}
+                {opt.value === 'watching' && <Eye className="h-3 w-3 text-(--app-success)" />}
+                {opt.value === 'afk' && <Coffee className="h-3 w-3 text-(--app-warning)" />}
+                {opt.value === 'brb' && <Clock className="h-3 w-3 text-(--app-info)" />}
                 {opt.value === 'watching' ? t("status-watching", { defaultValue: "Watching" }) : opt.value === 'afk' ? t("status-afk", { defaultValue: "AFK" }) : t("status-brb", { defaultValue: "BRB" })}
               </button>
             ))}
@@ -158,13 +158,13 @@ function RoleBadge({ isHost, isLeader }: { isHost: boolean; isLeader: boolean })
   return (
     <>
       {isHost && (
-        <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--app-warning)/20 text-(--app-warning)">
+        <span className="inline-flex items-center gap-0.5 rounded-(--app-radius-sm) px-1 py-0.5 text-xs font-semibold leading-none bg-(--app-warning)/20 text-(--app-warning)">
           <Crown className="h-2.5 w-2.5" />
           {t("role-host", { defaultValue: "Host" })}
         </span>
       )}
       {isLeader && (
-        <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--app-info)/20 text-(--app-info)">
+        <span className="inline-flex items-center gap-0.5 rounded-(--app-radius-sm) px-1 py-0.5 text-xs font-semibold leading-none bg-(--app-info)/20 text-(--app-info)">
           <Star className="h-2.5 w-2.5" />
           {t("role-leader", { defaultValue: "Leader" })}
         </span>
@@ -190,10 +190,10 @@ function BanConfirmDialog({
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 z-50 bg-black/50" onClick={onCancel} />
+      <div className="fixed inset-0 z-50 app-scrim" onClick={onCancel} />
       <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
         <div
-          className="pointer-events-auto w-80 rounded-lg border border-(--app-border) bg-(--app-surface) p-4 shadow-xl"
+          className="pointer-events-auto w-80 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) p-4 shadow-(--app-shadow)"
           onClick={(e) => e.stopPropagation()}
         >
           <h4 className="text-sm font-semibold text-(--app-text) mb-2">
@@ -207,18 +207,18 @@ function BanConfirmDialog({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder={t("ban-reason-placeholder", { defaultValue: "Reason (optional)" })}
-            className="w-full rounded border border-(--app-border) bg-(--app-bg) px-2 py-1.5 text-xs text-(--app-text) placeholder:text-(--app-text-dim) focus:outline-none focus:border-(--app-accent) mb-3"
+            className="w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-2 py-1.5 text-xs text-(--app-text) placeholder:text-(--app-text-dim) focus:outline-none focus:border-(--app-accent) mb-3"
           />
           <div className="flex justify-end gap-2">
             <button
               onClick={onCancel}
-              className="rounded px-3 py-1.5 text-xs font-medium text-(--app-text-muted) hover:bg-(--app-surface-hover) transition-colors"
+              className="rounded-(--app-radius-sm) px-3 py-1.5 text-xs font-medium text-(--app-text-muted) hover:bg-(--app-surface-hover) transition-colors"
             >
               {t("cancel", { defaultValue: "Cancel" })}
             </button>
             <button
               onClick={() => onConfirm(reason)}
-              className="rounded px-3 py-1.5 text-xs font-medium bg-(--app-danger) text-white hover:opacity-90 transition-opacity"
+              className="rounded-(--app-radius-sm) px-3 py-1.5 text-xs font-medium bg-(--app-danger) text-(--app-bg) hover:opacity-90 transition-opacity"
             >
               {t("ban-confirm", { defaultValue: "Ban" })}
             </button>
@@ -285,7 +285,7 @@ export default function MemberList() {
           {isHost && !isLeader && (
             <button
               onClick={() => handleSetLeader(room.myUserId)}
-              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors text-(--app-info) hover:bg-(--app-info-dim)"
+              className="flex items-center gap-1 rounded-(--app-radius-sm) px-2 py-1 text-xs font-medium transition-colors text-(--app-info) hover:bg-(--app-info-dim)"
             >
               <Star className="h-3 w-3" aria-hidden />
               {t("take-control", { defaultValue: "Take control" })}
@@ -315,7 +315,7 @@ export default function MemberList() {
           return (
             <div
               key={member.userId}
-              className={`flex items-center gap-2 p-2 rounded-lg transition-colors hover:bg-(--app-surface-hover) ${
+              className={`flex items-center gap-2 p-2 rounded-(--app-radius-sm) transition-colors hover:bg-(--app-surface-hover) ${
                 !member.isConnected ? 'opacity-50' : ''
               }`}
             >
@@ -350,7 +350,7 @@ export default function MemberList() {
                     <span className="text-xs text-(--app-text-dim)">{t("you-label", { defaultValue: "(you)" })}</span>
                   )}
                   {wantsControl && (
-                    <span className="rounded-full bg-(--app-info-dim) px-1.5 py-0.5 text-[10px] font-semibold text-(--app-info)">
+                    <span className="rounded-full bg-(--app-info-dim) px-1.5 py-0.5 text-xs font-semibold text-(--app-info)">
                       {t("wants-control", { defaultValue: "Wants control" })}
                     </span>
                   )}
@@ -379,7 +379,7 @@ export default function MemberList() {
                   {showTransfer && (
                     <button
                       onClick={() => handleTransferHost(member.userId)}
-                      className="rounded p-1 transition-colors text-(--app-text-dim) hover:text-(--app-warning) hover:bg-(--app-warning-dim)"
+                      className="rounded-(--app-radius-sm) p-1 transition-colors text-(--app-text-dim) hover:text-(--app-warning) hover:bg-(--app-warning-dim)"
                       title={t("transfer-host", { defaultValue: "Transfer host" })}
                     >
                       <ArrowRightLeft className="h-3 w-3" />
@@ -390,7 +390,7 @@ export default function MemberList() {
                   {showMakeLeader && (
                     <button
                       onClick={() => handleSetLeader(member.userId)}
-                      className={`rounded p-1 transition-colors hover:text-(--app-info) hover:bg-(--app-info-dim) ${
+                      className={`rounded-(--app-radius-sm) p-1 transition-colors hover:text-(--app-info) hover:bg-(--app-info-dim) ${
                         wantsControl ? 'text-(--app-info) bg-(--app-info-dim)' : 'text-(--app-text-dim)'
                       }`}
                       title={t("make-leader", { defaultValue: "Make leader" })}
@@ -404,7 +404,7 @@ export default function MemberList() {
                   {showKick && (
                     <button
                       onClick={() => handleKick(member.userId)}
-                      className="rounded p-1 transition-colors text-(--app-text-dim) hover:text-(--app-danger) hover:bg-(--app-danger-dim)"
+                      className="rounded-(--app-radius-sm) p-1 transition-colors text-(--app-text-dim) hover:text-(--app-danger) hover:bg-(--app-danger-dim)"
                       title={t("kick", { defaultValue: "Kick" })}
                     >
                       <UserX className="h-3 w-3" />
@@ -415,7 +415,7 @@ export default function MemberList() {
                   {showBan && (
                     <button
                       onClick={() => setBanTarget(member)}
-                      className="rounded p-1 transition-colors text-(--app-text-dim) hover:text-(--app-danger) hover:bg-(--app-danger-dim)"
+                      className="rounded-(--app-radius-sm) p-1 transition-colors text-(--app-text-dim) hover:text-(--app-danger) hover:bg-(--app-danger-dim)"
                       title={t("ban", { defaultValue: "Ban" })}
                     >
                       <Ban className="h-3 w-3" />

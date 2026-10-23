@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Coins, Users, Play, Trophy, Medal } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -146,16 +148,17 @@ function TournamentDetailPage() {
   if (loading) {
     return (
       <PageLayout title={t('title-tournaments-id', { defaultValue: 'Tournament' })} backTo="/tournaments" wide>
-        <div className="h-64 rounded-site glass-fill animate-pulse" />
+        <Skeleton className="h-64 rounded-site" />
       </PageLayout>
     );
   }
   if (!tourney) {
     return (
       <PageLayout title={t('title-tournaments-id', { defaultValue: 'Tournament' })} backTo="/tournaments" wide>
-        <p className="text-site-text-dim py-12 text-center">
-          {t('not-found', { defaultValue: 'This tournament no longer exists.' })}
-        </p>
+        <EmptyState
+          icon={Trophy}
+          title={t('not-found', { defaultValue: 'This tournament no longer exists.' })}
+        />
       </PageLayout>
     );
   }
@@ -190,35 +193,35 @@ function TournamentDetailPage() {
         </Badge>
       }
     >
-      <div className="space-y-5 max-w-4xl">
+      <div className="max-w-4xl space-y-4">
         {/* Summary */}
-        <Card className="p-4 flex flex-wrap items-center gap-x-6 gap-y-3" pane>
+        <Card className="flex-row flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4" pane>
           <div>
-            <div className="text-xs text-site-text-dim uppercase tracking-wide">
+            <div className="text-xs font-medium text-site-text-muted">
               {t('game', { defaultValue: 'Game' })}
             </div>
             <div className="font-medium">{tourney.gameTitle ?? tourney.gameId}</div>
           </div>
           <div>
-            <div className="text-xs text-site-text-dim uppercase tracking-wide">
+            <div className="text-xs font-medium text-site-text-muted">
               {t('prize-pool', { defaultValue: 'Prize pool' })}
             </div>
-            <div className="font-medium flex items-center gap-1.5">
-              <Coins className="size-4 text-site-warning" />
+            <div className="flex items-center gap-2 font-medium">
+              <Coins className="size-4 text-site-warning" aria-hidden />
               {tourney.prizePoolCoins || tourney.seedPoolCoins}
             </div>
           </div>
           <div>
-            <div className="text-xs text-site-text-dim uppercase tracking-wide">
+            <div className="text-xs font-medium text-site-text-muted">
               {t('players', { defaultValue: 'Players' })}
             </div>
-            <div className="font-medium flex items-center gap-1.5">
-              <Users className="size-4" />
+            <div className="flex items-center gap-2 font-medium">
+              <Users className="size-4" aria-hidden />
               {tourney.playerCount}/{tourney.maxPlayers}
             </div>
           </div>
           <div>
-            <div className="text-xs text-site-text-dim uppercase tracking-wide">
+            <div className="text-xs font-medium text-site-text-muted">
               {t('entry-fee', { defaultValue: 'Entry fee' })}
             </div>
             <div className="font-medium">
@@ -231,10 +234,10 @@ function TournamentDetailPage() {
 
         {/* Winner banner */}
         {tourney.status === 'COMPLETE' && winner && (
-          <Card className="p-4 flex items-center gap-3" pane>
-            <Trophy className="size-8 text-site-warning shrink-0" />
+          <Card className="flex-row items-center gap-3 px-4 py-4" pane>
+            <Trophy className="size-8 shrink-0 text-site-warning" aria-hidden />
             <div>
-              <div className="text-xs text-site-text-dim uppercase tracking-wide">
+              <div className="text-xs font-medium text-site-text-muted">
                 {t('champion', { defaultValue: 'Champion' })}
               </div>
               <div className="text-lg font-semibold">{winner.user?.name}</div>
@@ -288,7 +291,7 @@ function TournamentDetailPage() {
               loading={busy}
               disabled={tourney.playerCount < 2}
             >
-              <Play className="size-4" />
+              <Play className="size-4" aria-hidden />
               {t('start', { defaultValue: 'Start' })}
             </Button>
           )}
@@ -311,7 +314,7 @@ function TournamentDetailPage() {
         {/* Bracket (live / complete) */}
         {(tourney.status === 'LIVE' || tourney.status === 'COMPLETE') && (
           <div>
-            <h2 className="site-section-label mb-2">
+            <h2 className="site-section-label mb-3">
               {t('bracket-tournaments-id', { defaultValue: 'Bracket' })}
             </h2>
             <BracketView
@@ -321,7 +324,7 @@ function TournamentDetailPage() {
               onReport={report}
             />
             {canReport && (
-              <p className="text-xs text-site-text-dim mt-2">
+              <p className="mt-3 text-xs text-site-text-dim">
                 {t('report-hint', {
                   defaultValue: 'Tap the winner of each match to advance the bracket.',
                 })}
@@ -340,18 +343,18 @@ function TournamentDetailPage() {
 
         {/* Entrants */}
         <div>
-          <h2 className="site-section-label mb-2">
+          <h2 className="site-section-label mb-3">
             {t('entrants', { defaultValue: 'Entrants' })} ({tourney.playerCount})
           </h2>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             {(tourney.entrants ?? []).map((e) => (
-              <div key={e.id} className="flex items-center gap-2 glass-fill rounded-site px-3 py-2">
+              <div key={e.id} className="glass-fill flex items-center gap-2 rounded-site px-4 py-3">
                 {e.placement ? (
                   <span className="w-5 text-center text-sm font-semibold text-site-text-dim">
                     {e.placement === 1 ? (
-                      <Trophy className="size-4 text-site-warning inline" />
+                      <Trophy role="img" className="inline size-4 text-site-warning" aria-label={t('champion', { defaultValue: 'Champion' })} />
                     ) : e.placement <= 3 ? (
-                      <Medal className="size-4 text-site-text-dim inline" />
+                      <Medal className="inline size-4 text-site-text-dim" aria-hidden />
                     ) : (
                       `#${e.placement}`
                     )}

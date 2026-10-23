@@ -201,7 +201,9 @@
 /* ── HUD ──────────────────────────────────────────────────── */
 .rfs-hud {
     position: absolute;
-    inset: 0;
+    /* Inset by the device's safe area so the top bar and bottom controls clear
+       the notch / home indicator (the world behind still runs edge to edge). */
+    inset: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
     pointer-events: none;
 }
 .rfs-topbar {
@@ -384,17 +386,19 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.55);
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: safe center;
+    justify-content: safe center;
+    overflow-y: auto;
     z-index: 30;
     pointer-events: auto;
-    padding: 16px;
+    padding: calc(16px + var(--safe-top)) calc(16px + var(--safe-right)) calc(16px + var(--safe-bottom))
+        calc(16px + var(--safe-left));
 }
 .rfs-modal {
     width: 100%;
     max-width: 600px;
     max-height: 82vh;
-  max-height: 82dvh;
+    max-height: 82dvh;
     display: flex;
     flex-direction: column;
     background: linear-gradient(180deg, var(--rfs-wood), var(--rfs-wood-dark));
@@ -717,4 +721,13 @@
         width: 46px;
         height: 46px;
     }
+}
+
+/* Touch targets: top-bar buttons and panel tabs reach the 44px floor on coarse
+   pointers (desktop sizing is unchanged). */
+@media (pointer: coarse) {
+  .rfs-btn,
+  .rfs-tabs button {
+    min-height: 44px;
+  }
 }

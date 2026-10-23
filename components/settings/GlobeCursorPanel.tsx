@@ -112,7 +112,7 @@ export function GlobeCursorPanel() {
             })}
           </p>
         ) : null}
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           {GLOBE_CURSOR_PRESETS.map((id) => (
             <Button
               key={id}
