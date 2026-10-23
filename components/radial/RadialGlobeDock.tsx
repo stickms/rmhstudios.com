@@ -6,8 +6,9 @@
  * On a wide screen the text rail (`RadialNavRail`) and the orb's globe were two
  * maps of the same `SIDEBAR_NAV`, one of them always on screen and the other a
  * click away. So by default (Settings → Layout → Desktop navigation) the left
- * track holds the globe itself, always up: it drifts on its own, a sheen sweeps
- * across the glass now and then, and it is driven exactly like the hub's — drag
+ * track holds the globe itself, always up: it drifts on its own (on the jelly
+ * ambient clock — never under jellyMotion `still`), a sheen sweeps across the
+ * glass when you point at it, and it is driven exactly like the hub's — drag
  * to spin, hold a destination in the reticle, let go to land there, or click a
  * pin outright. The orb is retired at this width (radial.css), since the globe
  * it would open is already here. The page you are on is marked on it, and it

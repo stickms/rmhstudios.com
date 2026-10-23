@@ -810,11 +810,18 @@ body:has(.radial-shell) .call-banner {
 .rad-globe-dock .radial-globe__title {
   display: none;
 }
-/* Shimmer: a soft band of light that sweeps across the glass now and then.
-   A clipped disc over the sphere with ONE gradient band inside it, moved by
-   `transform` — compositor-only, no gradient positions animated, no paint per
-   frame. It sits over the sphere and takes no pointer, so the gesture underneath
-   is untouched; `screen` blending means it only ever adds light. */
+/* Shimmer: a soft band of light that sweeps across the glass when a pointer
+   arrives on it. A clipped disc over the sphere with ONE gradient band inside it,
+   moved by `transform` — compositor-only, no gradient positions animated, no
+   paint per frame. It sits over the sphere and takes no pointer, so the gesture
+   underneath is untouched; `screen` blending means it only ever adds light.
+
+   ONE sweep per hover, never a loop (2026-10-23, H1). It used to be a 7s
+   `infinite` sweep plus a 7s `infinite` rim breath, which made every desktop
+   page re-render on every vsync for as long as it was open — under `still`
+   too (≈58 frames/s at rest, `frame-budget --gate`). The globe's own life at
+   rest is its drift and its coat's haze, both on the jelly ambient clock
+   (LiquidGlobe step 4b), which stop under `still` and the degraded tiers. */
 .rad-globe-dock__shimmer {
   position: absolute;
   top: 50%;
@@ -841,10 +848,9 @@ body:has(.radial-shell) .call-banner {
     transparent 62%
   );
   transform: translateX(-80%);
-  animation: dock-globe-shimmer 7s cubic-bezier(0.45, 0, 0.25, 1) infinite;
 }
-/* A breathing rim glint under the sweep, so the glass never reads as flat
-   between passes. Opacity only. */
+/* The rim glint under the sweep: a resting hairline, so the glass never reads
+   as flat, that brightens once with the sweep. Opacity only. */
 .rad-globe-dock__shimmer::after {
   content: '';
   position: absolute;
@@ -852,23 +858,36 @@ body:has(.radial-shell) .call-banner {
   border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--site-accent) 30%, transparent);
   opacity: 0.35;
-  animation: dock-globe-glint 7s ease-in-out infinite;
+}
+.rad-globe-dock:hover .rad-globe-dock__shimmer::before {
+  animation: dock-globe-shimmer 1.6s cubic-bezier(0.45, 0, 0.25, 1) 1 both;
+}
+.rad-globe-dock:hover .rad-globe-dock__shimmer::after {
+  animation: dock-globe-glint 1.6s ease-in-out 1;
+}
+/* `still` stops it, as it stops every ambient motion (WCAG 2.2.2), and so do the
+   degraded tiers (lib/jelly/tiers.ts DEGRADED_ROOT_SELECTOR; high contrast hides
+   the whole ring below). */
+html[data-jelly-motion='still'] .rad-globe-dock__shimmer::before,
+html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
+:root:is(.reduce-transparency, .perf-lite) .rad-globe-dock__shimmer::before,
+:root:is(.reduce-transparency, .perf-lite) .rad-globe-dock__shimmer::after {
+  animation: none;
 }
 @keyframes dock-globe-shimmer {
-  0%,
-  55% {
+  from {
     transform: translateX(-80%);
   }
-  100% {
+  to {
     transform: translateX(80%);
   }
 }
 @keyframes dock-globe-glint {
   0%,
   100% {
-    opacity: 0.25;
+    opacity: 0.35;
   }
-  70% {
+  60% {
     opacity: 0.7;
   }
 }
@@ -943,6 +962,12 @@ body:has(.radial-shell) .call-banner {
     background: inherit;
     animation: radial-pulse-soft 1.8s ease-in-out infinite;
   }
+/* A live dot is a state signal, but its pulse is decoration: `still` holds it
+   steady (WCAG 2.2.2), as it does the empty feed's breathing disc below. */
+html[data-jelly-motion='still'] .rad-live__dot::after,
+html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
+  animation: none;
+}
 .rad-live__card {
   padding: var(--rad-4);
   border-radius: var(--site-radius, 22px);
@@ -2000,9 +2025,15 @@ html.reduce-transparency .radial-globe__contact,
    transform); toggling one class on it from there costs a class change on one
    node and no render at all. */
 /* The page you are on (`aria-current`, from LiquidGlobe): an accent ring around
-   the pin and its name in the accent, with a slow halo breathing out of it, so
+   the pin and its name in the accent, with a halo breathing out of it, so
    "you are here" reads at a glance without looking like the hover / lock fill.
-   The halo is `transform` + `opacity` only (the compositor). */
+   The halo is `transform` + `opacity` only (the compositor).
+
+   The ring is the signal; the halo only announces it. It breathes THREE times
+   when the pin becomes current (the pseudo-element is created then, so every
+   navigation replays it) and then rests. It used to breathe forever — on the
+   DOCKED globe too, i.e. on every desktop page at rest, under `still` included
+   (2026-10-23, H1). `still` and the degraded tiers skip it entirely. */
 .radial-globe__pin[aria-current='page'] .radial-globe__pin-dot {
   outline: 2px solid var(--site-accent);
   outline-offset: 2px;
@@ -2014,7 +2045,14 @@ html.reduce-transparency .radial-globe__contact,
   border-radius: inherit;
   border: 2px solid var(--site-accent);
   pointer-events: none;
-  animation: globe-current-halo 2.4s ease-out infinite;
+  opacity: 0;
+  animation: globe-current-halo 2.4s ease-out 3;
+}
+html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-globe__pin-dot::before,
+:root:is(.reduce-transparency, .style-high-contrast, .perf-lite)
+  .radial-globe__pin[aria-current='page']
+  .radial-globe__pin-dot::before {
+  animation: none;
 }
 .radial-globe__pin[aria-current='page'] .radial-globe__pin-name {
   color: var(--site-accent);

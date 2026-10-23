@@ -52,6 +52,7 @@ import {
   onJellyEnvChange,
 } from '@/lib/jelly/tiers';
 import { evert } from '@/lib/eversion/thurston';
+import { ambientTickDue, msToAmbientTick } from '@/lib/jelly/ambient-tick';
 import {
   copyQuat,
   dragRotvec,
@@ -122,7 +123,11 @@ const DEG = Math.PI / 180;
  * whether it is closing a 3° gap or a 300° flick (`lib/fluid` §spring).
  */
 const SETTLE_SPRING = spring(0.62, 0.1);
-/** Idle drift (deg/s) — only until the visitor first takes hold. */
+/**
+ * Idle drift (deg/s) — only until the visitor first takes hold. It advances on the jelly ambient tick (step 2b), not
+ * per vsync: 30 Hz while someone is there, the 12 Hz idle floor after `IDLE_AFTER_MS`, and not at all under `still`,
+ * the degraded tiers, a hidden or unfocused tab, or off screen (CLAUDE.md "Plasmatic Jelly" → Performance, R7).
+ */
 const IDLE_SPIN = 5.5;
 /**
  * An `ambient` globe (docked in the desktop shell, always on screen) goes back to
@@ -266,6 +271,31 @@ const RETICLE_PCT = RETICLE * kAt(1) * 100;
 const GOLDEN_DEG = 180 * (3 - Math.sqrt(5));
 
 const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+
+/**
+ * Make each boolean ref wake the frame loop whenever it is raised. `dirty` and `jellyDirty` are raised from a dozen
+ * handlers (resize, scene, theme, pointer, keyboard, route), and the loop sleeps when nothing moves (step 6), so
+ * raising one has to be what brings it back — one place, rather than a wake call beside every write. The refs stay
+ * ordinary `useRef` objects (a plain `{ current }`); only `current` becomes an accessor. Run once, at mount.
+ */
+function wakeOnRaise(
+  refs: ReadonlyArray<{ current: boolean }>,
+  wake: { readonly current: () => void },
+): true {
+  for (const ref of refs) {
+    let value = ref.current;
+    Object.defineProperty(ref, 'current', {
+      configurable: true,
+      enumerable: true,
+      get: () => value,
+      set: (next: boolean) => {
+        value = next;
+        if (next) wake.current();
+      },
+    });
+  }
+  return true;
+}
 const clamp01 = (v: number) => clamp(v, 0, 1);
 
 /* Trackball scratch. Every globe's work on these is synchronous and never spans
@@ -746,7 +776,16 @@ export function LiquidGlobe({
   const sizeRef = useRef(320);
   /** CSS px across the cage canvas — the stage plus its bleed on both sides. */
   const cageSpan = useRef(320 * (1 + 2 * CAGE_BLEED));
+  /** Bring the sleeping frame loop back (step 6). A no-op while it runs or before it mounts. */
+  const wakeLoop = useRef<() => void>(() => {});
+  /** Something needs a repaint. Raising it wakes the loop (`wakeOnRaise`, below). */
   const dirty = useRef(true);
+  /**
+   * The last input anywhere in the window (pointer, key, wheel) or the mount, whichever is later: the globe's
+   * ambient tick runs at the engaged rate for `IDLE_AFTER_MS` after it, then at the idle floor — the same rule the
+   * glass engine's clock follows (`lib/liquid/glass/policy.ts` `ambientHz`).
+   */
+  const lastInputAt = useRef(0);
   /**
    * Whether the visitor has taken hold of the globe yet (a press, or a keyboard
    * focus). It switches the loop between its two moods, and they are mutually
@@ -789,8 +828,9 @@ export function LiquidGlobe({
    * body), never for a turn: a uniform glass ball looks the same at any rotation.
    */
   const jellyGlass = useRef<JellyGlass | null>(null);
-  /** Force one material frame (attach, resize). */
+  /** Force one material frame (attach, resize). Raising it wakes the loop (`wakeOnRaise`). */
   const jellyDirty = useRef(false);
+  useState(() => wakeOnRaise([dirty, jellyDirty], wakeLoop));
   /** Whether the last paint drew a moving surface, so the frame it comes to rest is drawn too. */
   const jellyLive = useRef(false);
   /** The material's per-frame inputs, preallocated — the loop must not allocate. Ripples are (x, y, z, age) × 3. */
@@ -1149,6 +1189,7 @@ export function LiquidGlobe({
       typeof IntersectionObserver === 'function'
         ? new IntersectionObserver((entries) => {
             for (const e of entries) clock.onScreen = e.isIntersecting;
+            wakeLoop.current();
           })
         : null;
     if (io) io.observe(stage);
@@ -1159,6 +1200,34 @@ export function LiquidGlobe({
       clock.onScreen = false;
     };
   }, [reduced]);
+
+  /* ── Someone is there ─────────────────────────────────────────────────────
+     Input anywhere in the window keeps the ambient tick at its engaged rate (step 2b); a window regaining focus
+     resumes a tick that `document.hasFocus()` had stopped. Only the idle → engaged edge wakes the loop: inside the
+     engaged window it is already ticking. */
+  useEffect(() => {
+    lastInputAt.current = performance.now();
+    const onInput = () => {
+      const now = performance.now();
+      const idle = now - lastInputAt.current >= IDLE_AFTER_MS;
+      lastInputAt.current = now;
+      if (idle) wakeLoop.current();
+    };
+    const onFocus = () => wakeLoop.current();
+    const opts = { passive: true, capture: true } as const;
+    window.addEventListener('pointermove', onInput, opts);
+    window.addEventListener('pointerdown', onInput, opts);
+    window.addEventListener('keydown', onInput, opts);
+    window.addEventListener('wheel', onInput, opts);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.removeEventListener('pointermove', onInput, opts);
+      window.removeEventListener('pointerdown', onInput, opts);
+      window.removeEventListener('keydown', onInput, opts);
+      window.removeEventListener('wheel', onInput, opts);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
 
   /* ── Where the globe is on screen, for the eversion hand-off ──────────────
      The WebGL sphere has to start on top of this one, so the hand-off needs the
@@ -2002,15 +2071,65 @@ export function LiquidGlobe({
     };
 
     let raf = 0;
+    let timer: ReturnType<typeof setTimeout> | 0 = 0;
+    let running = false;
     let last = 0;
 
-    const step = (now: number) => {
+    /* The loop SLEEPS when nothing moves (step 6) — no frame scheduled at all, or one timer to the next ambient tick —
+       and anything that starts motion wakes it: raising `dirty`/`jellyDirty` (every handler that changes the pose or
+       the surface does), a pointer arriving on or leaving the ball, focus, the tab or window coming back, the ball
+       coming on screen, the hand-off starting. A wake from inside a frame is a no-op: step 6 decides for that one. */
+    const wake = () => {
+      if (running || raf) return;
+      if (timer) {
+        clearTimeout(timer);
+        timer = 0;
+      }
       raf = requestAnimationFrame(step);
+    };
+    wakeLoop.current = wake;
+
+    const step = (now: number) => {
+      raf = 0;
+      running = true;
+      try {
+        frame(now);
+      } finally {
+        running = false;
+      }
+    };
+
+    const frame = (now: number) => {
       const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
       last = now;
 
       const r = rot.current;
       const stationary = now - lastMoveAt.current > 110;
+
+      // 0′. The ambient tick (lib/jelly/ambient-tick.ts): what the jelly policy lets the globe do on its own
+      //     right now — the idle drift (3) and the coat's haze (4b) — on the shared grid, so this globe and the
+      //     globe cursor draw in the SAME frame. Engaged rate while the ball is pointed at, held, or anyone has
+      //     touched anything in the last IDLE_AFTER_MS; the idle floor after; nothing under `still`, a degraded tier,
+      //     a hidden or unfocused tab, off screen, or in the rehearsal. `tick` is the seconds since the last one, 0
+      //     on a frame that is not a tick.
+      const clock = coatClock.current;
+      const engaged =
+        clock.over ||
+        drag.current.active ||
+        now - Math.max(lastMoveAt.current, lastInputAt.current) < IDLE_AFTER_MS;
+      const tickHz =
+        clock.hz > 0 && clock.onScreen && !quiet.current && document.hasFocus()
+          ? engaged
+            ? clock.hz
+            : clock.idleHz
+          : 0;
+      let tick = 0;
+      if (tickHz <= 0) {
+        clock.last = 0;
+      } else if (ambientTickDue(now, clock.last, tickHz)) {
+        tick = clock.last > 0 ? Math.min(0.25, (now - clock.last) / 1000) : 1 / tickHz;
+        clock.last = now;
+      }
 
       // 0. Ripples. Retiring a spent wave is what lets the paint below settle
       //    back to "nothing changed" — while any are live the globe is redrawn
@@ -2052,6 +2171,7 @@ export function LiquidGlobe({
         dirty.current = true;
       }
 
+      let soft = false;
       // 0c. The soft body. While held, the grabbed region chases the finger's velocity (zero once it holds still);
       //     after, every mode springs back. Repaints only while something is deformed.
       if (!reduced) {
@@ -2073,7 +2193,10 @@ export function LiquidGlobe({
             now + EVERT_JELLY_PULSE_MIN + (EVERT_JELLY_PULSE_MAX - EVERT_JELLY_PULSE_MIN) * jitter;
           dirty.current = true;
         }
-        if (jelly.step(dt)) dirty.current = true;
+        if (jelly.step(dt)) {
+          soft = true;
+          dirty.current = true;
+        }
       }
 
       // 1. Motion. Dragging writes the rotation directly (in the pointer handler);
@@ -2179,12 +2302,13 @@ export function LiquidGlobe({
           turn(r.q, SV[0]! * k, SV[1]! * k, SV[2]! * k);
           moved = true;
         }
-      } else if (!touched.current && !reduced && !hovering.current) {
+      } else if (!touched.current && !reduced && !hovering.current && tick > 0) {
         // Untouched: drift, so a globe left alone still reads as a globe rather
         // than a picture of one. It stops the moment anyone takes hold (for good,
         // unless the globe is `ambient`). About the screen's vertical, so it
-        // reads as turning whatever way up the globe was left.
-        turn(r.q, 0, IDLE_SPIN * dt, 0);
+        // reads as turning whatever way up the globe was left. On the ambient
+        // tick only (0′): `still` and the degraded tiers stop it outright.
+        turn(r.q, 0, IDLE_SPIN * tick, 0);
         moved = true;
       }
       if (moved) {
@@ -2237,7 +2361,6 @@ export function LiquidGlobe({
       //     otherwise) on PLASMA.easeMs; the haze advances on the jelly ambient clock — the engaged rate while the
       //     ball is touched or pointed at, the idle floor after IDLE_AFTER_MS, nothing when Still, degraded, hidden,
       //     unfocused or off screen. Either one is a coat-only redraw: the cage and pins are not repainted for it.
-      const clock = coatClock.current;
       const target =
         drag.current.held || drag.current.active
           ? PLASMA.press
@@ -2251,17 +2374,10 @@ export function LiquidGlobe({
         clock.plasma = Math.abs(target - next) < 0.004 ? target : next;
         coatDue = true;
       }
-      if (clock.hz > 0 && clock.onScreen && !quiet.current) {
-        const engaged = clock.over || drag.current.active || now - lastMoveAt.current < IDLE_AFTER_MS;
-        const hz = engaged ? clock.hz : clock.idleHz;
-        if (hz > 0 && now - clock.last >= 1000 / hz && document.hasFocus()) {
-          // The haze clock only runs while it is being drawn, so a pause (Still, a hidden tab) resumes in place.
-          jellyFrame.time += Math.min(0.25, (now - (clock.last || now)) / 1000);
-          clock.last = now;
-          coatDue = true;
-        }
-      } else {
-        clock.last = 0;
+      if (tick > 0) {
+        // The haze clock only runs while it is being drawn, so a pause (Still, a hidden tab) resumes in place.
+        jellyFrame.time += tick;
+        coatDue = true;
       }
       if (coatDue) drawCoat(now, jelly.active(), true);
 
@@ -2326,10 +2442,52 @@ export function LiquidGlobe({
         readyRef.current = false;
         setReady(false);
       }
+
+      // 6. The next frame, or sleep. Every vsync while anything is in motion — a hand on the ball, a settle or coast,
+      //    a ripple, the rock, the soft body, the plasma easing, the ring filling or draining, a self-eversion or the
+      //    hand-off, a coat still drawing a moving surface, or a repaint still owed. Otherwise nothing moves until the
+      //    next ambient tick, so the loop sleeps on a timer to that grid boundary (0′) — or, when no tick is coming
+      //    (`still`, degraded, hidden, unfocused, off screen), with nothing scheduled at all until a wake. An ambient
+      //    globe that is still `touched` also needs to wake when it may let go (AMBIENT_RESUME_MS, step 3).
+      const busy =
+        dirty.current ||
+        drag.current.active ||
+        drag.current.held ||
+        settle.current !== null ||
+        speed > 0 ||
+        ripples.current.length > 0 ||
+        wobble.current !== null ||
+        soft ||
+        jellyLive.current ||
+        clock.plasma !== target ||
+        fill.current !== 0 ||
+        selfEvert.current !== 0 ||
+        everting.current;
+      if (busy) {
+        raf = requestAnimationFrame(step);
+        return;
+      }
+      const at = performance.now();
+      let wait = msToAmbientTick(at, tickHz);
+      const letGo = lastMoveAt.current + AMBIENT_RESUME_MS + 1 - at;
+      if (ambient && touched.current && letGo > 0) wait = Math.min(wait, letGo);
+      // A sleep restarts `dt` from one nominal frame, so whatever wakes the loop starts from where it was.
+      last = 0;
+      if (wait === Infinity) return;
+      timer = setTimeout(() => {
+        timer = 0;
+        if (!raf) raf = requestAnimationFrame(step);
+      }, Math.max(0, wait));
     };
 
     raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (timer) clearTimeout(timer);
+      raf = 0;
+      timer = 0;
+      wakeLoop.current = () => {};
+    };
   }, [nodes, reduced, jelly, jellyFrame, ambient]);
 
   // An ambient globe holds its drift while the pointer is over it: a pin you are
@@ -2342,16 +2500,24 @@ export function LiquidGlobe({
     const enter = (e: PointerEvent) => {
       if (ambient) hovering.current = true;
       coatClock.current.over = e.pointerType !== 'touch' && matchMedia(FINE_POINTER_QUERY).matches;
+      wakeLoop.current();
     };
     const leave = () => {
       hovering.current = false;
       coatClock.current.over = false;
+      wakeLoop.current();
     };
+    // Focus entering or leaving the globe changes whether an ambient globe may let go of its pose (step 3).
+    const refocus = () => wakeLoop.current();
     stage.addEventListener('pointerenter', enter);
     stage.addEventListener('pointerleave', leave);
+    stage.addEventListener('focusin', refocus);
+    stage.addEventListener('focusout', refocus);
     return () => {
       stage.removeEventListener('pointerenter', enter);
       stage.removeEventListener('pointerleave', leave);
+      stage.removeEventListener('focusin', refocus);
+      stage.removeEventListener('focusout', refocus);
     };
   }, [ambient]);
 
@@ -2719,6 +2885,7 @@ export function LiquidGlobe({
       const active = root.getAttribute('data-phase') === 'everting';
       everting.current = active;
       if (active) nextEvertPulse.current = 0;
+      wakeLoop.current();
     };
     read();
     const mo = new MutationObserver(read);

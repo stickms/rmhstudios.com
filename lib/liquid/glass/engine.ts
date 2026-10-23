@@ -59,6 +59,7 @@
  * - Still: no haze, so the rim draws the plasma — static, but it still answers press and click. Off tiers draw
  *   nothing at all.
  */
+import { ambientTickDue, msToAmbientTick } from '@/lib/jelly/ambient-tick';
 import { jellyBus } from '@/lib/jelly/bus';
 import { JellyGovernor, governBudget, knobsAt } from '@/lib/jelly/governor';
 import {
@@ -984,7 +985,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       lastTick = 0;
       return;
     }
-    const ticking = hz > 0 && now - lastTick >= 1000 / hz - 2;
+    const ticking = ambientTickDue(now, lastTick, hz);
     const batch = ticking
       ? dueHaze([...hazeSet], now)
       : dueHaze(
@@ -1024,7 +1025,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
    */
   const scheduleAmbient = (now: number, hz: number): boolean => {
     if (hz <= 0 || hazeSet.size === 0 || disposed) return false;
-    const wait = lastTick + 1000 / hz - now;
+    // Wake on the shared grid (lib/jelly/ambient-tick.ts), not this clock's own phase, so the haze ticks in the same
+    // frame as the globe and the globe cursor instead of adding frames of its own.
+    const wait = msToAmbientTick(now, hz);
     if (wait <= 12) return true;
     win.clearTimeout(ambientTimer);
     ambientTimer = win.setTimeout(() => {
