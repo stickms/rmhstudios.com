@@ -402,7 +402,7 @@ function ToggleOption({
           onCheckedChange={onChange}
           aria-label={label}
           // Track and knob in the app palette (the primitive paints with --site-*).
-          className="border-(--app-border) bg-(--app-border) aria-checked:bg-(--app-accent) [&>span]:bg-(--app-text) aria-checked:[&>span]:bg-(--app-accent-fg)"
+          className="border-(--app-border) bg-(--app-border) before:bg-(--app-accent) [&>span]:bg-(--app-text) aria-checked:[&>span]:bg-(--app-accent-fg)"
         />
       }
     />
