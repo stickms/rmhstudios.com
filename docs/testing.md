@@ -242,7 +242,7 @@ against `pnpm dev` — it must run against `.output`. Its commit-time half,
 Full detail, including why each detector asks its question when it does:
 [`fouc.md`](./fouc.md).
 
-### 6. Frame-budget audit (not in CI)
+### 6. Frame-budget audit (CI: `jelly-e2e`, non-blocking)
 
 `testing/e2e/frame-budget.mjs` drives the **built** app and asks the question a
 high-refresh display asks of a page: does it drop to its **resting cadence** at
@@ -516,7 +516,7 @@ a target to farm.
 
 ## CI
 
-Ten workflows live in `.github/workflows/`. The ones that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from a cache keyed on the lockfile + Prisma schema and only installs on a miss):
+Twelve workflows live in `.github/workflows/`. The ones that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from a cache keyed on the lockfile + Prisma schema and only installs on a miss):
 
 | Workflow                      | Runs                                                                                    | Gate?                                                                                    |
 | ----------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
@@ -529,7 +529,38 @@ Ten workflows live in `.github/workflows/`. The ones that touch tests/quality (e
 | `deploy.yml` (`ci` job)       | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | blocks — typecheck, lint and test all gate the deploy; see below                         |
 | `deploy.yml` (`integration`)  | same as web-ci's `integration`, on the **merged** commit                                | **blocks the deploy**; runs in parallel with the image build                             |
 | `web-ci.yml` (`eversion-e2e`) | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7          |
+| `web-ci.yml` (`jelly-e2e`)    | `jelly-interaction.mjs` (fixture, no server) → `build:frontend` → Postgres + migrate → serve → `frame-budget.mjs --gate` | `jelly-interaction` **blocks**; `frame-budget --gate` non-blocking (`continue-on-error`); nightly + manual + PRs touching the jelly paths; see below |
 | `go-microservices.yml`        | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                   |
+
+**The `jelly-e2e` job** (Plasmatic Jelly in a real browser) is its own job,
+not a step of `eversion-e2e`: as that job's last step it never ran, because the
+eversion scripts alone outlast its 75-minute timeout. It runs on every nightly
+and manual dispatch, and on a pull request only when the change touches the
+material — a filter step matches `lib/jelly/`, `lib/liquid/`,
+`app/jelly-*.css`, `app/liquid-glass.css`, `app/globals.css`,
+`components/ui/button.tsx`, `hooks/useLiquidInteractions.ts`,
+`hooks/useFluidDrag.ts`, `lib/fluid.ts`, the three jelly e2e scripts
+(`frame-budget`, `jelly-interaction`, `fouc-routes`), `testing/e2e/lib/gpu.mjs`,
+`package.json`, `pnpm-lock.yaml`, `vite.config.*` and `web-ci.yml` itself
+(otherwise it writes "jelly e2e skipped" to the job summary and passes).
+
+- **Blocking: `testing/e2e/jelly-interaction.mjs`** — a fixture that needs no
+  server, deterministic on SwiftShader (~75 s). It fails for real on every
+  deterministic check: budgets, neighbour bounds, the flash ledger, return to
+  rest, teardown, zero frames under `still`, rest cadence, perpetual animations.
+- **Non-blocking: `testing/e2e/frame-budget.mjs --gate`** against the built app
+  (`continue-on-error`, but still a red summary row and an `::error::`
+  annotation). It drives ~50 routes and is red today for real reasons — the CSS
+  flow carriers keep the compositor at vsync rate, and the dock globe has
+  infinite keyframes — so it becomes blocking once those are fixed and a few
+  nightlies are green.
+- **GPU-only checks SKIP, never silently pass.** The runner has no GPU;
+  `testing/e2e/lib/gpu.mjs` detects SwiftShader from the WebGL renderer string,
+  and a check that needs real GPU frames is reported as `SKIP` in the log, as a
+  `::notice`, and in the job summary (with the GL string). Today that is
+  frame-budget's R7 "a hazy page never draws 0 frames at rest". jelly-interaction
+  judges R7 on the governor's clock (its last step keeps a 6 Hz floor), so it is
+  a real check there and SKIPs only if a governor ever reaches 0 Hz on software GL.
 
 **Where enforcement lives.** web-ci's Test step is a hard gate on the PR, and
 the deploy's own `ci` job re-runs the suite on the merge result as a hard gate
