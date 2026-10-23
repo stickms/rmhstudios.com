@@ -39,11 +39,11 @@ feature lives in that feature's directory; genuinely shared primitives live in
   `.glass-inset` for fields. `bg-site-surface border border-site-border
 rounded-site shadow-site-sm` renders the same _box_ and none of the
   _material_ — no bevel, no light, and nothing for high-contrast / reduced
-  transparency / `perf-lite` to switch off. Budget: at most 8 visible shader slabs
+  transparency / `perf-lite` to switch off. Budget: at most 24 visible shader slabs
   (`lib/liquid/glass/policy.ts`; roles first, cards, then controls). **No box-shadow
   on any UI surface** — shadow tokens are zero; the refracting edge is the depth.
-- **Liquid material.** `pane`/`chrome`/`overlay` (and the app tier's `app-glass`)
-  are drawn by `lib/liquid/glass/engine.ts`: a canvas appended as the host's LAST
+- **Liquid material.** Every glass role (and the app tier's `app-glass`, solid
+  buttons and fields) is drawn by `lib/liquid/glass/engine.ts`: a canvas appended as the host's LAST
   child, painted behind its content (`z-index: -2` in an isolated stacking
   context, under the eversion hover layer at -1), transparent in the middle and refracting/lit at the rim. **There is no
   `backdrop-filter` in any glass role, and you must not add one**: it is the one

@@ -438,6 +438,8 @@ const DEFORM_OUT = new Float64Array(2);
 
 /** Concurrent ripples. Older ones are evicted, so a mash cannot grow the work. */
 const MAX_RIPPLES = 3;
+/** Scratch matrix for un-rotating a strike; module-level so a poke allocates nothing. */
+const strikeM = new Float64Array(9);
 /**
  * How brightly the crest is drawn. The wave is a specular travelling over glass,
  * so it has to read as brighter than the structure it passes over — the cage's
@@ -2209,6 +2211,23 @@ export function LiquidGlobe({
       w.vPitch += hit.y * WOBBLE_DEG * WOBBLE_KICK;
       jelly.nudge(-hit.x * 8, hit.y * 8, 1.1);
 
+      // Un-rotate the impact into the globe's own frame: screen = M·body for the
+      // trackball's matrix M, which is orthonormal, so body = Mᵀ·screen. This is
+      // what makes the ripple a mark on the BALL: everything the renderer samples
+      // (cage points, pin directions) lives in this space, so the wave turns with
+      // the surface instead of hanging in front of the screen.
+      const m = matrixOf(rot.current.q, strikeM);
+      const impact: Ripple = {
+        bx: m[0]! * hit.x + m[3]! * hit.y + m[6]! * hit.z,
+        by: m[1]! * hit.x + m[4]! * hit.y + m[7]! * hit.z,
+        bz: m[2]! * hit.x + m[5]! * hit.y + m[8]! * hit.z,
+        t0: performance.now(),
+      };
+
+      // Newest wins: a mash drops the oldest wave rather than accumulating work.
+      const live = ripples.current;
+      if (live.length >= MAX_RIPPLES) live.splice(0, live.length - MAX_RIPPLES + 1);
+      live.push(impact);
       dirty.current = true;
     },
     [reduced, jelly],
