@@ -10,7 +10,7 @@
  * or while the panel is open.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 import { usePopPresence } from '@/hooks/usePopPresence';
@@ -37,6 +37,7 @@ export default function SyncStatus() {
   const { t } = useTranslation('c-rmhtube');
   const [health, setHealth] = useState<SyncHealth>('idle');
   const [open, setOpen] = useState(false);
+  const panelId = useId();
   const [, setTick] = useState(0);
   const panel = usePopPresence(open);
   const isLive = useRmhTubeStore((s) => s.room?.videoState.mode === 'live');
@@ -92,6 +93,7 @@ export default function SyncStatus() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
+        aria-controls={panel.present ? panelId : undefined}
         className="flex items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1.5 text-xs font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
         title={t('sync-status-title', { defaultValue: 'Sync status' })}
       >
@@ -102,6 +104,7 @@ export default function SyncStatus() {
 
       {panel.present && (
         <div
+          id={panelId}
           role="group"
           aria-label={t('sync-status-title', { defaultValue: 'Sync status' })}
           data-motion="pop"
