@@ -621,7 +621,7 @@ export function useWindowKeys(winId: string, handler: (e: KeyboardEvent) => void
     const on = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
-      if (el?.closest?.('[role="menu"], [role="dialog"]')) return;
+      if (el?.closest?.('[role="menu"], [role=dialog]')) return;
       ref.current(e);
     };
     window.addEventListener('keydown', on);
