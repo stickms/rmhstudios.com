@@ -83,7 +83,7 @@ export function EmojiPickerButton({
         // exclude it from the app-wide twemoji observer so it never rewrites a
         // node the picker owns (which crashes React) and never walks its huge
         // subtree on every scroll mutation.
-        className="z-[60] p-0"
+        className="p-0"
       >
         <div data-no-twemoji>
           <Suspense

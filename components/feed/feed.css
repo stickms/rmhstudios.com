@@ -614,10 +614,3 @@
     -webkit-backdrop-filter: none;
   }
 }
-
-/* A modal Radix dialog (the composer, edit-post, library modals) sets `pointer-events: none` on <body>
-   while it is open. A picker or mention list inside it portals to <body> OUTSIDE the dialog's layer,
-   so it would inherit that and be unclickable. AnchoredMenu is a deliberate, interactive overlay. */
-body:has([data-slot='dialog-content']) [data-slot='anchored-menu'] {
-  pointer-events: auto;
-}

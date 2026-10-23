@@ -39,3 +39,12 @@
 .anchored-menu[data-align='end'] {
   --motion-origin-inline: right;
 }
+
+/* Opened from inside a modal Radix dialog (the composer, edit-post, library modals). The menu
+   portals to <body>, OUTSIDE the dialog's layer, so two things change while a dialog is open:
+   it stacks above the z-50 dialog and its scrim, or it would paint behind them; and it takes
+   pointer events back, because Radix sets `pointer-events: none` on <body>. */
+body:has([data-slot='dialog-content']) .anchored-menu {
+  z-index: var(--z-menu-in-dialog);
+  pointer-events: auto;
+}

@@ -284,12 +284,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* The ROW is the shared `MenuItem` primitive; the PANEL deliberately
  stays in place rather than moving onto AnchoredMenu. AnchoredMenu
- portals to <body> and paints at `--z-menu` (40), which is the band
- that clears the SHELL — and this composer is itself a body-level
- modal at z-50, so a portalled panel would land under its own dialog
- and under the scrim. `.anchored-menu` sets that z-index from an
- UNLAYERED rule, so a Tailwind `z-*` on the panel cannot lift it out
- either (`Select` clears a dialog with its own `z-[60]` instead).
+ portals to <body> to clear the SHELL chrome (inside a dialog it lifts
+ to `--z-menu-in-dialog`, see components/ui/anchored-menu.css).
  In here there is no shell chrome to clear and nothing clips the
  panel, so the reason to portal does not apply. Outside-click,
  Escape and the close animation therefore stay local, above. */}
