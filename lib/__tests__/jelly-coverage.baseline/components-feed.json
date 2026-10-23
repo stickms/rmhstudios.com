@@ -4,12 +4,6 @@
     "components/feed/DailyWheel.tsx": 1,
     "components/feed/NotificationsColumn.tsx": 2
   },
-  "dialogs": {
-    "components/feed/AIImageButton.tsx": 1,
-    "components/feed/ComposeModal.tsx": 2,
-    "components/feed/ImageCropModal.tsx": 1,
-    "components/feed/MusicGuessColumn.tsx": 1,
-    "components/feed/PostImageGrid.tsx": 1
-  },
+  "dialogs": {},
   "switches": {}
 }

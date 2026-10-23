@@ -99,7 +99,7 @@ export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             disabled={disabled}
-            className="w-full px-3 py-2 rounded-(--app-radius-sm) bg-(--app-surface) text-(--app-text) border border-(--app-border) outline-none disabled:opacity-50"
+            className="glass-inset w-full px-3 py-2 rounded-(--app-radius-sm) text-(--app-text) border border-(--app-border) outline-none disabled:opacity-50"
           />
           {/* Suggestions dropdown */}
           {suggestionList.present && (
@@ -107,7 +107,7 @@ export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed
               ref={suggestionsRef}
               data-motion="pop"
               data-state={suggestionList.state}
-              className="absolute top-full left-0 right-0 z-20 mt-1 origin-top rounded-(--app-radius-sm) bg-(--app-surface) border border-(--app-border) shadow-lg overflow-hidden max-h-48 overflow-y-auto"
+              className="glass-overlay absolute top-full left-0 right-0 z-20 mt-1 origin-top rounded-(--app-radius-sm) overflow-hidden max-h-48 overflow-y-auto"
             >
               {suggestionList.present.map((title) => (
                 <button

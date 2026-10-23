@@ -31,6 +31,7 @@ import { formatDuration } from '@/lib/call/state';
 import type { CallEndReason } from '@/lib/call/events';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
 /** How long the ended-call card lingers before it clears itself. */
@@ -92,15 +93,7 @@ export function CallOverlay() {
     return () => clearTimeout(id);
   }, [phase]);
 
-  // Escape declines a ringing call — the same affordance as the button.
-  useEffect(() => {
-    if (phase !== 'incoming') return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') declineCall();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [phase]);
+  // Escape declines a ringing call — Radix's onOpenChange below, the same affordance as the button.
 
   if (phase === 'idle' || !peer) return null;
 
@@ -109,16 +102,14 @@ export function CallOverlay() {
   /* ── Incoming: a dialog, because it needs an answer now ─────────────── */
   if (phase === 'incoming') {
     return (
-      <div
-        className="fixed inset-0 z-[120] flex items-center justify-center p-4"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="incoming-call-title"
-      >
-        <div className="absolute inset-0 bg-black/50" aria-hidden onClick={() => declineCall()} />
-        {/* Floating UI is L4 per the design language — a menu on a blur-less
-            tier ghosts against whatever is behind it. */}
-        <div className="glass-overlay relative w-full max-w-sm rounded-site p-6 text-center">
+      <Dialog open onOpenChange={(o) => !o && declineCall()}>
+        {/* Floating UI is L4 per the design language — DialogContent is `.glass-overlay`.
+            z-120 keeps it above the call banner's band. */}
+        <DialogContent
+          overlayClassName="z-[120]"
+          aria-describedby={undefined}
+          className="z-[120] max-w-sm text-center"
+        >
           <p className="flex items-center justify-center gap-2 text-sm text-site-text-muted">
             <PhoneIncoming className="h-4 w-4" aria-hidden />
             {t('call-incoming', { defaultValue: 'Incoming voice call' })}
@@ -126,9 +117,9 @@ export function CallOverlay() {
 
           <div className="mt-5 flex flex-col items-center gap-3">
             <UserAvatar src={peer.image} alt={name} size={80} fallbackName={name} />
-            <h2 id="incoming-call-title" className="text-lg font-semibold text-site-text">
+            <DialogTitle className="font-sans text-lg font-semibold text-site-text">
               {name}
-            </h2>
+            </DialogTitle>
           </div>
 
           <div className="mt-7 flex items-center justify-center gap-4">
@@ -157,8 +148,8 @@ export function CallOverlay() {
               defaultValue: 'Answering asks for microphone access.',
             })}
           </p>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 

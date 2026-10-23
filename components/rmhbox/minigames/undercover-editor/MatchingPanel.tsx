@@ -151,7 +151,7 @@ export default function MatchingPanel({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.08, duration: 0.35 }}
-              className="flex flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4"
+              className="glass-fill flex flex-col gap-3 rounded-(--app-radius) p-4"
             >
               {/* Story header — numbered */}
               <div className="flex items-center justify-between">

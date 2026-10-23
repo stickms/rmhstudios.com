@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from'react-i18next';
 import Cropper from'react-easy-crop';
 import type { Area } from'react-easy-crop';
@@ -10,11 +9,11 @@ import {
  FlipVertical,
  RotateCcw,
  RotateCw,
- X,
  ZoomIn,
  ZoomOut,
 } from'lucide-react';
 import { Button } from'@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 interface ImageCropModalProps {
  imageSrc: string;
@@ -111,38 +110,25 @@ export function ImageCropModal({
  // opened from inside a dialog.
  if (typeof document === 'undefined') return null;
 
- return createPortal(
- <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4">
- <button
- type="button"
- tabIndex={-1}
- data-motion="fade"
- className="absolute inset-0 bg-site-media-scrim-strong"
- onClick={onCancel}
- aria-label={t('close-crop-modal', { defaultValue:'Close crop modal'})}
- />
-
- <div
- data-mobile-fullscreen="true"
- role="dialog"
- aria-modal="true"
- aria-labelledby="image-crop-title"
+ return (
+ <Dialog
+ open
+ onOpenChange={(o) => {
+ if (!o) onCancel();
+ }}
+ >
+ <DialogContent
+ mobileFullscreen
+ aria-describedby={undefined}
+ overlayClassName="z-[60]"
  data-motion="rise"
- className="glass-overlay relative flex h-dvh w-dvw max-w-none flex-col overflow-y-auto rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] sm:h-auto sm:max-h-[90dvh] sm:w-full sm:max-w-lg sm:rounded-site sm:p-0"
+ className="z-[60] flex flex-col gap-0 overflow-y-auto p-0 sm:p-0"
  >
  {/* Header */}
- <div className="flex items-center justify-between px-5 py-3 border-b border-site-border shrink-0">
- <h2 id="image-crop-title"className="font-bold text-site-text">
+ <div className="flex shrink-0 items-center justify-between border-b border-site-border py-3 pl-5 pr-14">
+ <DialogTitle className="font-sans text-base font-bold">
  {t('crop-image', { defaultValue:'Crop Image'})}
- </h2>
- <button
- type="button"
- onClick={onCancel}
- className="p-3 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
- aria-label={t('close-crop-modal', { defaultValue:'Close crop modal'})}
- >
- <X className="w-5 h-5"aria-hidden />
- </button>
+ </DialogTitle>
  </div>
 
  {/* Crop area */}
@@ -178,6 +164,7 @@ export function ImageCropModal({
  step={0.05}
  value={zoom}
  onChange={(e) => setZoom(Number(e.target.value))}
+ aria-label={t('crop-image', { defaultValue:'Crop Image'})}
  className="flex-1 accent-site-accent"
  />
  <ZoomIn className="w-4 h-4 text-site-text-dim shrink-0"/>
@@ -235,9 +222,8 @@ export function ImageCropModal({
  : t('apply', { defaultValue:'Apply'})}
  </Button>
  </div>
- </div>
- </div>,
- document.body,
+ </DialogContent>
+ </Dialog>
  );
 }
 

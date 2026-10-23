@@ -3,6 +3,7 @@
 import { lazy, Suspense, useRef, useState } from 'react';
 import { Smile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
 const EmojiPickerPanel = lazy(() => import('./EmojiPickerPanel'));
@@ -82,12 +83,12 @@ export function EmojiPickerButton({
         // exclude it from the app-wide twemoji observer so it never rewrites a
         // node the picker owns (which crashes React) and never walks its huge
         // subtree on every scroll mutation.
-        className="z-[60] p-0"
+        className="p-0"
       >
         <div data-no-twemoji>
           <Suspense
             fallback={
-              <div className="w-[300px] h-[360px] rounded-site border border-site-border bg-site-bg animate-pulse" />
+              <Skeleton className="h-[360px] w-[300px] rounded-site" />
             }
           >
             <EmojiPickerPanel onSelect={onSelect} />

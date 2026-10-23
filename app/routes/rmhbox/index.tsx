@@ -233,7 +233,7 @@ function RMHboxLanding() {
         <button
           type="button"
           onClick={() => navigate({ to: '/rmhbox/minigames' })}
-          className="flex w-full items-center justify-center gap-2 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) px-4 py-3 font-semibold text-(--app-text) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-accent)"
+          className="glass-fill flex w-full items-center justify-center gap-2 rounded-(--app-radius) px-4 py-3 font-semibold text-(--app-text) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-accent)"
           data-testid="view-minigames-btn"
         >
           <Gamepad2 className="h-5 w-5" aria-hidden />

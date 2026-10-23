@@ -18,7 +18,8 @@
  */
 
 import { memo, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { createPortal } from 'react-dom';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { DialogPortal, DialogTitle } from '@/components/ui/dialog';
 import { useNavigate } from '@tanstack/react-router';
 import {
   ChevronLeft,
@@ -393,8 +394,20 @@ export function AlbumViewer({ album }: { album: Album }) {
   // someone already thought about this.
   if (typeof document === 'undefined') return null;
 
-  return createPortal(
-    <div className="av" role="dialog" aria-modal="true" aria-label={album.title}>
+  return (
+    <DialogPrimitive.Root open modal={false} onOpenChange={(o) => !o && close()}>
+    <DialogPortal>
+    <DialogPrimitive.Content
+      className="av outline-none"
+      aria-describedby={undefined}
+      // Non-modal on purpose: the slide context menu portals to <body>, and a modal Radix layer
+      // would make it inert. Escape (menu first, then close), arrows and zoom stay the effect's;
+      // nothing on the page behind can be pressed, the viewer covers it.
+      onEscapeKeyDown={(e) => e.preventDefault()}
+      onInteractOutside={(e) => e.preventDefault()}
+      onOpenAutoFocus={(e) => e.preventDefault()}
+    >
+      <DialogTitle className="sr-only">{album.title}</DialogTitle>
       <header className="av__bar av__bar--top">
         <div className="av__title-group">
           <button type="button" className="av__btn" onClick={close} aria-label={t('album-close', { defaultValue: 'Close' })}>
@@ -559,8 +572,9 @@ export function AlbumViewer({ album }: { album: Album }) {
         stripRef={stripRef}
         thumbnailsLabel={t('album-thumbnails', { defaultValue: 'Thumbnails' })}
       />
-    </div>,
-    document.body,
+    </DialogPrimitive.Content>
+    </DialogPortal>
+    </DialogPrimitive.Root>
   );
 }
 

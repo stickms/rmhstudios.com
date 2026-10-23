@@ -47,7 +47,7 @@ export default function PromptReveal({ prompts, round, totalRounds }: PromptReve
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 + idx * 0.3, duration: 0.4 }}
-            className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-5"
+            className="app-glass rounded-(--app-radius) p-5"
           >
             <div className="text-xs font-medium text-(--app-text-muted) mb-2">
               {t("prompt-number", { defaultValue: "Prompt {{number}}", number: idx + 1 })}

@@ -397,7 +397,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 + i * 0.15 }}
-                  className="rounded-full border border-(--app-border) bg-(--app-surface) px-3 py-1 text-sm font-medium"
+                  className="glass-fill rounded-full px-3 py-1 text-sm font-medium"
                 >
                   {cat.name}
                 </motion.span>

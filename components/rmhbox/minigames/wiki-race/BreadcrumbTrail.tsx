@@ -49,7 +49,7 @@ export default function BreadcrumbTrail({
   return (
     <div
       ref={scrollRef}
-      className="flex items-center gap-1 overflow-x-auto rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) px-3 py-2 scrollbar-thin"
+      className="glass-fill flex items-center gap-1 overflow-x-auto rounded-(--app-radius-sm) px-3 py-2 scrollbar-thin"
     >
       <span className="mr-1 text-xs font-medium text-(--app-text-muted) shrink-0">
         Path ({path.length}):

@@ -357,7 +357,7 @@ function PollGridImpl(props: PollGridProps) {
               nodes.current[i] = el;
             }}
             className={cn(
-              'group relative flex h-7 min-w-11 cursor-pointer select-none items-center justify-center rounded-site-sm border border-site-border/60 bg-site-bg text-[0.65rem] tabular-nums text-site-text outline-none',
+              'glass-inset border border-transparent group relative flex h-7 min-w-11 cursor-pointer select-none items-center justify-center rounded-site-sm text-[0.65rem] tabular-nums text-site-text outline-none',
               'focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-site-accent',
               "data-[a='1']:border-site-success data-[a='2']:border-site-warning",
               mode === 'paint' &&

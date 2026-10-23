@@ -10,10 +10,12 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { createPortal } from 'react-dom';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { DialogPortal } from '@/components/ui/dialog';
 import { ArrowRight, Pause, Play, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { useThemeStore } from '@/stores/themeStore';
 import { DEFAULT_JELLY_MOTION, type JellyMotion } from '@/lib/appearance/prefs';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
@@ -91,7 +93,6 @@ export function QuickPanel({
   // reads this — every listener below stays on `open`, so a panel on its way out
   // has already stopped taking Escape, outside presses and focus.
   const { present, state } = usePopPresence(open);
-  const headingId = useId();
   const [anchor, setAnchor] = useState({ top: 56, right: 12 });
   const [mounted, setMounted] = useState(false);
 
@@ -119,31 +120,8 @@ export function QuickPanel({
   // its own exit would be worse than having no exit.
   useMenuViewportFit(present, panelRef, [anchor.top, anchor.right]);
 
-  // Escape closes; an outside press closes. `pointerdown` (not click) so the
-  // panel dismisses before the press lands on whatever is underneath.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    const onDown = (e: PointerEvent) => {
-      const target = e.target as Node | null;
-      if (!target) return;
-      if (panelRef.current?.contains(target)) return;
-      if (anchorRef.current?.contains(target)) return;
-      onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    // Capture phase: a panel must close even if something below stops propagation.
-    document.addEventListener('pointerdown', onDown, true);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.removeEventListener('pointerdown', onDown, true);
-    };
-  }, [open, onClose, anchorRef]);
+  // Escape and the outside press are Radix's (a non-modal Dialog, below). The one thing it
+  // cannot know is that the trigger is not "outside": a press on it toggles, so it is excused.
 
   // Move focus into the panel on open and hand it back to the trigger on close —
   // the panel lives at the end of <body>, so without this a keyboard user would
@@ -176,8 +154,10 @@ export function QuickPanel({
 
   if (!present || !mounted) return null;
 
-  return createPortal(
-    <div
+  return (
+    <DialogPrimitive.Root modal={false} open onOpenChange={(o) => !o && onClose()}>
+    <DialogPortal>
+    <DialogPrimitive.Content
       ref={panelRef}
       className={['rad-panel', 'glass-overlay', className].filter(Boolean).join(' ')}
       // Themes restyle through `[data-slot]` (see components/CLAUDE.md), and the
@@ -191,8 +171,15 @@ export function QuickPanel({
       // its top edge, so the same origin reads correctly there.
       data-motion="pop"
       data-state={state}
-      role="dialog"
-      aria-labelledby={headingId}
+      // Focus in on open and back to the trigger on close are the effect above's.
+      onOpenAutoFocus={(e) => e.preventDefault()}
+      onCloseAutoFocus={(e) => e.preventDefault()}
+      // Not dismissing on focus-outside was the old behaviour: only Escape and a press do.
+      onFocusOutside={(e) => e.preventDefault()}
+      onInteractOutside={(e) => {
+        if (anchorRef.current?.contains(e.target as Node)) e.preventDefault();
+      }}
+      aria-describedby={undefined}
       tabIndex={-1}
       style={
         {
@@ -204,14 +191,15 @@ export function QuickPanel({
     >
       <header className="rad-panel__head" data-slot="quick-panel-head">
         {Icon && <Icon aria-hidden />}
-        <h2 id={headingId}>{title}</h2>
+        <DialogPrimitive.Title>{title}</DialogPrimitive.Title>
       </header>
       <div className="rad-panel__body" data-slot="quick-panel-body">
         {children}
       </div>
       {more}
-    </div>,
-    document.body,
+    </DialogPrimitive.Content>
+    </DialogPortal>
+    </DialogPrimitive.Root>
   );
 }
 
@@ -308,18 +296,17 @@ export function QuickPanelMotionToggle({ className }: { className?: string }) {
   };
 
   const Icon = paused ? Play : Pause;
+  const labelId = useId();
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={paused}
+    <div
       className={['rad-panel__row', className].filter(Boolean).join(' ')}
       data-slot="quick-panel-motion-toggle"
-      onClick={toggle}
     >
       <Icon aria-hidden />
       <span className="rad-panel__row-main">
-        <strong>{t('pause-ambient-motion', { defaultValue: 'Pause ambient motion' })}</strong>
+        <strong id={labelId}>
+          {t('pause-ambient-motion', { defaultValue: 'Pause ambient motion' })}
+        </strong>
         <small>
           {paused
             ? t('pause-ambient-motion-on', { defaultValue: 'Paused. Tap to resume.' })
@@ -328,6 +315,7 @@ export function QuickPanelMotionToggle({ className }: { className?: string }) {
               })}
         </small>
       </span>
-    </button>
+      <Switch checked={paused} onCheckedChange={toggle} aria-labelledby={labelId} />
+    </div>
   );
 }

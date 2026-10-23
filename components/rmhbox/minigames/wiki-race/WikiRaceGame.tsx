@@ -335,7 +335,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
             className="flex flex-col gap-3"
           >
             {/* Target reminder + timer */}
-            <div className="flex items-center justify-between rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) px-4 py-2">
+            <div className="glass-fill flex items-center justify-between rounded-(--app-radius-sm) px-4 py-2">
               <div className="flex flex-col gap-0.5 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="text-(--app-text-muted)">{t("target-label", { defaultValue: "Target:" })}</span>
@@ -392,7 +392,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
 
             {/* Other players progress */}
             {Object.keys(otherPlayers).length > 0 && (
-              <div className="flex flex-col gap-1.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) p-3">
+              <div className="glass-fill flex flex-col gap-1.5 rounded-(--app-radius-sm) p-3">
                 <span className="text-xs font-medium uppercase tracking-wider text-(--app-text-muted)">
                   {t("other-players", { defaultValue: "Other Players" })}
                 </span>

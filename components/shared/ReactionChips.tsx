@@ -21,10 +21,10 @@ export function ReactionChips({ reactions, onToggle, className = '' }: ReactionC
             onToggle(r.emoji);
           }}
           aria-pressed={r.reactedByMe}
-          className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors ${
+          className={`glass-fill flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors ${
             r.reactedByMe
               ? 'border-site-accent bg-site-accent/15 text-site-accent'
-              : 'border-site-border bg-site-surface/60 text-site-text-dim hover:border-site-text-dim'
+              : 'border-site-border text-site-text-dim hover:border-site-text-dim'
           }`}
         >
           <span className="text-sm leading-none">{r.emoji}</span>
