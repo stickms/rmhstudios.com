@@ -48,7 +48,7 @@ function MinigamesPage() {
             {minigames.map((game) => (
               <div
                 key={game.id}
-                className="app-glass flex flex-col rounded-(--app-radius) px-4 py-4 md:px-6 md:py-5"
+                className="glass-fill flex flex-col rounded-(--app-radius) px-4 py-4 md:px-6 md:py-5"
                 data-testid={`minigame-card-${game.id}`}
               >
                 {/* Icon + name + category */}
