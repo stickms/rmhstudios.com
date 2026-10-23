@@ -219,7 +219,7 @@ export function ThemeEditor({
               </div>
             </Section>
 
-            <Section title={t('section-material', { defaultValue: 'Glass material' })}>
+            <Section title={t('section-material-jelly', { defaultValue: 'Jelly material' })}>
               <div className="grid grid-cols-2 gap-3">
                 <ColorField
                   field={{ key: 'tint', label: 'Glass tint' }}

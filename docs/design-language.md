@@ -381,8 +381,8 @@ id) self-heal to `default` during hydration.
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
 `GlassFilter` — the tab-capsule merge host, with no optical lenses) with a
-design-lab reference at `/liquid-glass`. Everyone uses the shared default glass
-material. The Glass clarity slider is retired: saved device and account values
+material lab at `/jelly` (`/liquid-glass` redirects there). Everyone uses the
+shared default jelly material. The Glass clarity slider is retired: saved device and account values
 cannot make the site opaque or change its tint. Old device keys are cleared
 before first paint and during hydration. OS reduced-transparency preferences,
 forced colours, high contrast and renderer capability fallbacks still apply.
@@ -503,9 +503,11 @@ mode list, the CSS blocks, the pre-paint script) is CI-enforced — §13.
 
 ### 5.1 The glass elevation classes (use these for surfaces)
 
-Glass is opt-in per element via these classes (in `app/globals.css`). Pick by
-role, not by looks — the tier decides cost (budget: ≤24 visible shader slabs per
-viewport; roles first, then cards, then controls).
+Glass is opt-in per element via these role classes (base in
+`app/liquid-glass.css`, the jelly material in `app/jelly-material.css`). Pick by
+role, not by looks — the tier decides cost (budget: ≤24 visible rim slabs per
+viewport on a desktop, fewer on phones; admission order overlay → chrome → pane →
+fill → control; `JELLY_BUDGETS` in `lib/jelly/tiers.ts` is the authority).
 
 | Class                               | Tier            | Use for                                                                                             |
 | ----------------------------------- | --------------- | --------------------------------------------------------------------------------------------------- |
@@ -516,15 +518,17 @@ viewport; roles first, then cards, then controls).
 | `.glass-inset`                      | —               | Fields: inputs, search fields, tab tracks. A flush fill of the glass — never a recessed well.       |
 | `.glass-scrim`                      | —               | Dialog/drawer backdrops.                                                                            |
 
-Modifiers layer **on top of** a tier class. Each carries a per-page budget —
-they are signature moments, not defaults:
+Modifiers layer **on top of** a tier class. The three retired optics
+modifiers below are kept only as compatibility aliases under jelly (05 §3.1);
+the live ones are `.glass-interactive`, `.glass-sheen-hover`, `.glass-bevel-sm`
+and `.glass-opaque`:
 
 | Modifier                                  | Budget      | What it adds                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ----------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.glass-interactive`                      | unlimited   | Hover tint-raise, springy press flex (`--ease-glass`), and — **paired with `.glass-fill`** — the specular rim glint raised from ambient to full on hover. The glint selector is `.glass-fill.glass-interactive`: on its own, `.glass-interactive` still gives the press, but there is no rim to light. It used to add a **pointer-tracked** diffuse hotspot on `::after`; that is retired (§5.1.1) and `::after` now carries the travelling sheen (§5.1.2). |
-| `.glass-refract` + `data-glass-lens`      | **≤2/page** | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`; Chromium bends the backdrop, Gecko/WebKit displace a mirrored aurora copy — §3.6). Pressing deepens the bend (`:active`, ×1.6, §3.7). Not compatible with `.glass-chrome--aside` (see below).                           |
-| `.glass-refract--prism`                   | **≤1/page** | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. Sanctioned users: login card, command palette, `/store` featured tier, design lab.                                                                                                                                                                                                                                                                                            |
-| `.glass-liquid` (or `<GlassPane liquid>`) | **≤3/page** | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, never on list items.                                                                                                                                                                                                                                                 |
+| `.glass-refract` (+ `data-glass-lens`)  | —           | **Retired — compatibility alias, no-op.** The SVG lens it drove (and `lib/glass-lens.ts`) is deleted; refraction is the jelly rim slab for every role (`plasmatic-jelly-system.md` §1). Do not add it to new code. |
+| `.glass-refract--prism`                   | —           | **Retired — compatibility alias, no-op.** Dispersion is part of every rim slab now.                                                                                                                                                                                                                                                                       |
+| `.glass-liquid` (or `<GlassPane liquid>`) | —           | **Retired — compatibility alias, no-op** (`app/liquid-glass.css` sets its `::after` to `content: none`). The jelly haze is the ambient motion on every role. |
 | `.glass-sheen-hover`                      | unlimited   | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in).                                                                                                                                                                                                                                                                                                                                                                |
 | `.glass-bevel-sm`                         | unlimited   | Narrow 6px optics ring for small capsules — the `LiquidTabs` sheet pill (§5.45), plus discs like BackToTop.                                                                                                                                                                                                                                                                                                                                                 |
 | `.glass-opaque`                           | —           | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -638,8 +642,8 @@ for something static. Never add a third owner.
 **L4 keeps a fixed legible tint.** A popover must be readable over arbitrary
 content. `.glass-overlay` uses an 86% tint; tooltip arrows and toast fills use
 the named `--site-glass-overlay-fill` token. These fills are shared by every
-user and cannot be changed by a clarity preference. See
-[`liquid-glass-system.md`](./liquid-glass-system.md) for the shader and CSS tiers.
+user and cannot be changed by any preference. See
+[`plasmatic-jelly-system.md`](./plasmatic-jelly-system.md) for the shader and CSS tiers.
 **Floating UI must be `.glass-overlay`.** L1 `.glass-fill` has no backdrop blur
 by design (it is the repeated-card tier); a menu built on it sits transparent
 over whatever it opened on top of. This is CI-enforced — see §13.

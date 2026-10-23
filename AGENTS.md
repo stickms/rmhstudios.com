@@ -27,8 +27,12 @@
   arcs (`lib/jelly/arcs/`) are document services under one policy
   (`lib/jelly/tiers.ts`). No `backdrop-filter`; no component-level pointer
   loops, deformation, arc code, `infinite` keyframes or animated custom
-  properties on `<html>`; layout never changes (hosts squash ≤4px/3%,
-  neighbours nudge ≤1.5px). See `docs/plasmatic-jelly-system.md`. Full-screen apps use the parallel
+  properties on `<html>` — components take jelly through role classes and
+  `data-jelly*` attributes only; layout never changes (hosts squash ≤4px/3%,
+  neighbours nudge ≤1.5px). Ambient motion and arcs have their own material
+  switches (`jellyMotion`, `electricArcs`; WCAG 2.2.2/2.3.1) read only by
+  `lib/jelly/tiers.ts`; the retired reduced-motion setting does not return. See
+  `docs/plasmatic-jelly-system.md`. Full-screen apps use the parallel
   `--app-*` contract (`components/shared/app-theme.css` + `AppShell`). The
   statement of the language is `design.md` at the root; read
   `docs/design-language.md` §0 before a UI commit; checklist in

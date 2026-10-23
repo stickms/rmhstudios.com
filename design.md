@@ -316,8 +316,8 @@ nothing else changes.
   opaque surfaces, 2px borders, no optics, no haze, no arcs. Everything must
   survive it.
 - On top of any theme, an **accent preset** overrides only the accent tokens.
-- A **glass clarity** setting scales how much scene shows through, from opaque
-  (the manual equivalent of the OS reduced-transparency preference) to clear.
+- A **reduce transparency** switch (beside the OS preference) makes every
+  surface opaque; the old glass-clarity slider is retired.
 - **User themes** are the same idea taken to a marketplace: a theme is colours
   plus a few scalar knobs, from which the full contract is _derived_ — so every
   user theme is a correct glass tint and inherits future optics upgrades for
@@ -349,8 +349,8 @@ makes the accessible variants work.
   `perf-lite` tier derived from conservative device facts (not a measured-fps
   probe, which would restyle the page under the user for reasons they can't see).
 - **Comfort is a settings suite, not a theme.** On top of whichever theme is
-  active, a visitor sets text size, density, a dyslexia-friendly face, an
-  jelly-motion and electric-arc switch, glass clarity, tilt effects, and a
+  active, a visitor sets text size, density, a dyslexia-friendly face, a
+  jelly-motion and electric-arc switch, reduced transparency, tilt effects, and a
   **colour-vision mode**. Each is one more layer of the same token contract, so
   no component knows it happened.
 - **Colour is never the only carrier of meaning.** Roughly 8% of men have some

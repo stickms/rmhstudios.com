@@ -388,7 +388,7 @@ jobs:
           #   • build inputs: the lockfile and package.json (modern-screenshot,
           #     playwright, vite bumps), the Vite config, the bundle-budget script;
           #   • strings: the two namespaces the effect's UI uses.
-          if echo "$changed" | grep -Eq '^(lib/eversion/|components/radial/|app/globals\.css$|app/routes/eversion-lab\.tsx$|app/routes/api/preferences/appearance\.ts$|testing/e2e/eversion|testing/e2e/lib/|testing/e2e/baselines/|stores/themeStore|lib/appearance/|lib/perf-tier|lib/render/|components/settings/AppearancePanel|components/ui/liquid-|locales/en/(feed|settings-appearance)\.json$|prisma/schema\.prisma$|package\.json$|pnpm-lock\.yaml$|vite\.config\.[cm]?[jt]s$|scripts/check-bundle-budget|\.github/workflows/web-ci\.yml$)'; then
+          if echo "$changed" | grep -Eq '^(lib/eversion/|components/radial/|app/globals\.css$|app/routes/eversion-lab\.tsx$|app/routes/api/preferences/appearance\.ts$|testing/e2e/eversion|testing/e2e/lib/|testing/e2e/baselines/|stores/themeStore|lib/appearance/|lib/perf-tier|lib/render/|components/settings/AppearancePanel|components/ui/liquid-|lib/jelly/|lib/liquid/|app/jelly-[a-z-]+\.css$|app/liquid-glass\.css$|testing/e2e/(frame-budget|jelly-interaction)\.mjs$|locales/en/(feed|settings-appearance)\.json$|prisma/schema\.prisma$|package\.json$|pnpm-lock\.yaml$|vite\.config\.[cm]?[jt]s$|scripts/check-bundle-budget|\.github/workflows/web-ci\.yml$)'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
@@ -554,6 +554,38 @@ jobs:
             echo "::error::failed: ${failed[*]}"
             exit 1
           fi
+      # Plasmatic Jelly (docs/plans/plasmatic-jelly/05-gates-docs-naming.md N10): the
+      # material's one real risk is a perpetual loop, which only a browser can measure.
+      # `frame-budget --gate` holds every site-shell route to the R7 rest cadence
+      # (idle floor + 1 = 13 fps, derived from lib/jelly/tiers.ts) with no
+      # unsanctioned `infinite` animation; jelly-interaction.mjs mounts every jelly
+      # service on a fixture (no server) and checks bounded neighbour motion, carrier
+      # / React safety, the arc switches and the frame counts. Same path filter as
+      # the eversion scripts (extended with lib/jelly, lib/liquid, app/jelly-*.css);
+      # `!cancelled()` so a red eversion step above never hides this verdict.
+      - name: Jelly frame budget and interaction
+        if: ${{ !cancelled() && !inputs.update-baselines }}
+        run: |
+          failed=0
+          {
+            echo "### Plasmatic Jelly e2e"
+            echo
+            echo "| script | result |"
+            echo "| --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for cmd in "frame-budget.mjs --gate" "jelly-interaction.mjs"; do
+            echo "::group::$cmd"
+            # shellcheck disable=SC2086 # the flag is meant to split
+            if node testing/e2e/$cmd; then
+              echo "| \`$cmd\` | PASS |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "| \`$cmd\` | **FAIL** |" >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=jelly e2e::$cmd failed"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $failed
       # S#31/S#32 (smoothness, photosensitivity): deterministic stills of the timeline
       # scrubbed in the lab, so the verdict does not depend on how fast this runner draws.
       # The lab route is dev-only (a production build ignores EVERSION_LAB_OPEN), hence

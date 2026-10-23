@@ -424,6 +424,11 @@ else
     lib/__tests__/doc-pointers.test.ts
     lib/__tests__/appearance-jelly-motion.test.ts
     lib/__tests__/appearance-electric-arcs.test.ts
+    # The arc renderer (the arcs' only rAF owner) and runtime are named on
+    # their own as well as through lib/jelly/, so moving the directory can
+    # never silently drop the flash-ledger / live-arc-only contract.
+    lib/jelly/arcs/__tests__/renderer.test.ts
+    lib/jelly/arcs/__tests__/runtime.test.ts
     lib/jelly/
     lib/liquid/
   )

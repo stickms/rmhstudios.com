@@ -23,15 +23,15 @@ The `glass-*` classes keep their names (R1): "glass" names the **elevation role*
 "jelly" names the **material** that renders every role. There are no `jelly-*` alias
 classes and no `data-material` flag (R5).
 
-| Role                                    | Rim (shader slab)                          | Haze                                          | Soft body                         | Arcs                              |
-| --------------------------------------- | ------------------------------------------ | --------------------------------------------- | --------------------------------- | --------------------------------- |
-| `glass-overlay` (L4)                    | admitted first; refracts settled snapshot  | canvas slot or carrier; quietest interior     | lattice rim only, host never moves | endpoints yes; never across its text |
-| `glass-chrome` (L3)                     | admitted second; refracts snapshot         | canvas slot or carrier                        | lattice rim only                  | yes                               |
-| `glass-pane` (L2), `app-glass`          | admitted third; lit, refract by opt-in     | canvas slot or carrier                        | lattice rim only                  | yes                               |
-| `glass-fill` (L1), cards                | within budget                              | carrier, else static haze floor               | envelope + lattice when admitted  | yes                               |
-| `glass-inset`, fields                   | within budget                              | rim-only carrier on the wrapper               | rim only; never moves while focused | **never** an endpoint            |
-| solid buttons (`[data-slot=button]`)    | admitted last                              | static haze floor (never a canvas slot)       | envelope (press / hover dent)     | yes                               |
-| toasts (`[data-sonner-toast]`)          | —                                          | static haze floor                             | envelope                          | **never** struck                  |
+| Role                                 | Rim (shader slab)                         | Haze                                      | Soft body                           | Arcs                                 |
+| ------------------------------------ | ----------------------------------------- | ----------------------------------------- | ----------------------------------- | ------------------------------------ |
+| `glass-overlay` (L4)                 | admitted first; refracts settled snapshot | canvas slot or carrier; quietest interior | lattice rim only, host never moves  | endpoints yes; never across its text |
+| `glass-chrome` (L3)                  | admitted second; refracts snapshot        | canvas slot or carrier                    | lattice rim only                    | yes                                  |
+| `glass-pane` (L2), `app-glass`       | admitted third; lit, refract by opt-in    | canvas slot or carrier                    | lattice rim only                    | yes                                  |
+| `glass-fill` (L1), cards             | within budget                             | carrier, else static haze floor           | envelope + lattice when admitted    | yes                                  |
+| `glass-inset`, fields                | within budget                             | rim-only carrier on the wrapper           | rim only; never moves while focused | **never** an endpoint                |
+| solid buttons (`[data-slot=button]`) | admitted last                             | static haze floor (never a canvas slot)   | envelope (press / hover dent)       | yes                                  |
+| toasts (`[data-sonner-toast]`)       | —                                         | static haze floor                         | envelope                            | **never** struck                     |
 
 What draws what:
 
@@ -72,12 +72,12 @@ box (`AMBIENT_BOUNDS.maxOverdrawPx`, the focus ring's offset).
 The owner's brief is that jelly **always** has underlying motion. The engine's ambient
 clock therefore never freezes while someone could be looking:
 
-| State                                              | Clock                                   |
-| -------------------------------------------------- | --------------------------------------- |
-| engaged (input within the last 20 s)               | tier clock: 30 Hz (15 Hz handheld)      |
-| idle (`IDLE_AFTER_MS` = 20 s without input)        | floor: 12 Hz (8 Hz handheld) — **no freeze** |
-| `jellyMotion = calm`                               | ≤ 12 Hz, amplitude × 0.4, slots halved  |
-| hidden tab · unfocused window · scroll in flight · nothing hazy on screen · degraded tier · `still` · game playing | **0** — no loop at all |
+| State                                                                                                              | Clock                                        |
+| ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| engaged (input within the last 20 s)                                                                               | tier clock: 30 Hz (15 Hz handheld)           |
+| idle (`IDLE_AFTER_MS` = 20 s without input)                                                                        | floor: 12 Hz (8 Hz handheld) — **no freeze** |
+| `jellyMotion = calm`                                                                                               | ≤ 12 Hz, amplitude × 0.4, slots halved       |
+| hidden tab · unfocused window · scroll in flight · nothing hazy on screen · degraded tier · `still` · game playing | **0** — no loop at all                       |
 
 Between ticks the engine sleeps on a timer, not on a spinning rAF; each tick draws at
 most six due surfaces with one shared `uTime`.
@@ -162,14 +162,14 @@ dragged bodies are never evicted) and cleared at sleep (inline values restored,
 From `JELLY_BUDGETS` in `lib/jelly/tiers.ts` (the tests read the constants, never this
 table):
 
-| Tier                                  | Rims | Haze slots | Carriers | Clock / idle | Bodies | Lattices | Ambient arcs | Click bolts |
-| ------------------------------------- | ---- | ---------- | -------- | ------------ | ------ | -------- | ------------ | ----------- |
-| `full` (fine pointer)                 | 24   | 8          | 24       | 30 / 12 Hz   | 12     | 8        | ≥ 2 s apart  | 3           |
-| `coarse`                              | 16   | 6          | 16       | 30 / 12 Hz   | 8      | 6        | ≥ 2 s apart  | 2           |
-| `handheld` (coarse, ≤ 1024 px)        | 10   | 4          | 8        | 15 / 8 Hz    | 6      | 4        | ≥ 4 s apart  | 1           |
-| `lite` (`perf-lite`)                  | 0    | 0          | 0        | 0            | 3 (press) | 0     | off          | 0           |
-| `off` (degraded)                      | 0    | 0          | 0        | 0            | 3 (press) | 0     | off          | 0           |
-| game playing (`html[data-game-state]`) | 2   | 0          | 0        | 0            | 0      | 0        | off          | 0           |
+| Tier                                   | Rims | Haze slots | Carriers | Clock / idle | Bodies    | Lattices | Ambient arcs | Click bolts |
+| -------------------------------------- | ---- | ---------- | -------- | ------------ | --------- | -------- | ------------ | ----------- |
+| `full` (fine pointer)                  | 24   | 8          | 24       | 30 / 12 Hz   | 12        | 8        | ≥ 2 s apart  | 3           |
+| `coarse`                               | 16   | 6          | 16       | 30 / 12 Hz   | 8         | 6        | ≥ 2 s apart  | 2           |
+| `handheld` (coarse, ≤ 1024 px)         | 10   | 4          | 8        | 15 / 8 Hz    | 6         | 4        | ≥ 4 s apart  | 1           |
+| `lite` (`perf-lite`)                   | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
+| `off` (degraded)                       | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
+| game playing (`html[data-game-state]`) | 2    | 0          | 0        | 0            | 0         | 0        | off          | 0           |
 
 Animated area (haze + carriers) is also capped at 1.5 / 1.25 / 1 viewports. Ambient
 bounds (`AMBIENT_BOUNDS`): drift ≤ 12 px/s, feature size ≥ 120 px, luminance period ≥ 6 s,
@@ -180,18 +180,18 @@ no luminance modulation above 3 Hz; ambient motion never moves a host's position
 `jellyMode()` in `tiers.ts` folds the tier, the off predicate, both preferences and game
 state into `{ambient, arcs, deform}` so the four services cannot disagree.
 
-| Condition                                                          | Ambient haze | Soft body       | Arcs                 | Rim slabs | CSS            |
-| ------------------------------------------------------------------ | ------------ | --------------- | -------------------- | --------- | -------------- |
-| `lively` (default)                                                 | yes          | full            | per `electricArcs`   | yes       | haze floor     |
-| `calm`                                                             | × 0.4, ≤ 12 Hz | full          | clicks (or off)      | yes       | haze floor     |
-| `still`                                                            | no           | press only      | off (forced)         | yes       | haze floor     |
-| `perf-lite`                                                        | no           | press only      | off                  | no        | haze floor + CSS rim |
-| reduced transparency (OS or account) · high contrast (site or app) | no           | press only      | off                  | no        | opaque surfaces |
-| forced colours · print                                             | no           | none            | off                  | no        | system colours / flat |
-| hidden tab                                                         | clock 0      | none            | off, layer cleared   | frames stop | —            |
-| game playing                                                       | no           | none            | off                  | ≤ 2       | —              |
-| `[data-jelly-zone="playfield"]`, `[data-jelly-scope="off"]` subtree | no          | none            | none                 | no        | —              |
-| no WebGL2 / context loss / past the rim budget                     | carrier      | unchanged       | unchanged            | no        | haze floor     |
+| Condition                                                           | Ambient haze   | Soft body  | Arcs               | Rim slabs   | CSS                   |
+| ------------------------------------------------------------------- | -------------- | ---------- | ------------------ | ----------- | --------------------- |
+| `lively` (default)                                                  | yes            | full       | per `electricArcs` | yes         | haze floor            |
+| `calm`                                                              | × 0.4, ≤ 12 Hz | full       | clicks (or off)    | yes         | haze floor            |
+| `still`                                                             | no             | press only | off (forced)       | yes         | haze floor            |
+| `perf-lite`                                                         | no             | press only | off                | no          | haze floor + CSS rim  |
+| reduced transparency (OS or account) · high contrast (site or app)  | no             | press only | off                | no          | opaque surfaces       |
+| forced colours · print                                              | no             | none       | off                | no          | system colours / flat |
+| hidden tab                                                          | clock 0        | none       | off, layer cleared | frames stop | —                     |
+| game playing                                                        | no             | none       | off                | ≤ 2         | —                     |
+| `[data-jelly-zone="playfield"]`, `[data-jelly-scope="off"]` subtree | no             | none       | none               | no          | —                     |
+| no WebGL2 / context loss / past the rim budget                      | carrier        | unchanged  | unchanged          | no          | haze floor            |
 
 Per-element opt-outs (`OPT_OUT_SELECTOR`): `data-jelly="off"` and the accepted aliases
 `data-liquid-material="off"`, `data-liquid-glass="off"`, `data-liquid-motion="off"`,
@@ -204,8 +204,12 @@ WCAG 2.2.2 (Pause, Stop, Hide) needs a mechanism on every page:
 
 - **`jellyMotion`: `lively` | `calm` | `still`** (default `lively`) in Settings →
   Appearance, stamped pre-paint as `html[data-jelly-motion]` (absent = `lively`).
-- **"Pause ambient motion"**, a one-tap toggle in the radial quick panel that cycles to
-  `still` and back.
+- **"Pause ambient motion"** (`QuickPanelMotionToggle`, `components/radial/QuickPanel.tsx`),
+  a one-tap toggle that cycles to `still` and back to the previous level. A signed-in
+  visitor finds it in the top-bar profile panel; a **signed-out** visitor, who has no
+  profile panel and no Settings page, gets a **Display** panel (`DisplayPanel` in
+  `components/radial/TopBarPanels.tsx`) holding the same control, because 2.2.2's pause
+  has to reach everyone the motion reaches. Signed out, the choice lives on the device.
 - **`electricArcs`: `full` | `clicks` | `off`** (default `full`), stamped as
   `html[data-electric-arcs]`. `still` forces arcs off whatever this says.
 
@@ -218,21 +222,21 @@ never change, and the focus ring is drawn by the host, so the envelope carries i
 
 ## 8. Ownership
 
-| File                                                         | Owns                                                                                                   |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `lib/jelly/tiers.ts`                                         | the single shared policy: tiers, budgets, `jellyMode`, off predicate, selectors, bounds, flash ledger constants |
-| `lib/jelly/bus.ts`                                           | the typed event bus (`arc:strike`, `body:release`, `drag:*`, `haze:change`)                            |
-| `lib/jelly/registry.ts`                                      | one IntersectionObserver + ResizeObserver + MutationObserver over every jelly host; cached rects; no rAF |
-| `lib/jelly/governor.ts`                                      | downscale-only frame-cost governor (pure)                                                              |
-| `lib/jelly/flow-carriers.ts`                                 | which hosts carry a CSS `.jelly-flow`; no rAF                                                          |
-| `lib/jelly/{physics,compose,envelope,lattice,lattice-inputs,soft-policy}.ts` | the soft body; `physics.ts` is the only rAF owner                                      |
-| `lib/jelly/arcs/*`                                           | arcs; `renderer.ts` is the only rAF owner                                                              |
-| `lib/liquid/glass/{engine,shader,jelly-glsl,haze-shader,renderer,policy,scene,scene-store,color}.ts` | rims, haze canvases, the ambient clock (the one standing loop), lattice stepping, snapshots |
-| `lib/liquid/runtime.ts`                                      | fallback cursor light on hosts the engine does not draw                                                |
-| `hooks/useLiquidInteractions.ts`                             | mounts registry, engine, carriers, physics and arcs in one idle callback with one teardown             |
-| `app/jelly-material.css` · `app/jelly-arcs.css` · `app/jelly-coverage.css` | CSS tier, arc layer, coverage adapters; `app/liquid-glass.css` keeps the role base         |
-| `components/shared/app-theme.css`                            | the `--app-jelly-*` adapter for `.app-glass`                                                           |
-| `app/routes/jelly.tsx`                                       | the `/jelly` material lab (`/liquid-glass` redirects there)                                            |
+| File                                                                                                 | Owns                                                                                                            |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `lib/jelly/tiers.ts`                                                                                 | the single shared policy: tiers, budgets, `jellyMode`, off predicate, selectors, bounds, flash ledger constants |
+| `lib/jelly/bus.ts`                                                                                   | the typed event bus (`arc:strike`, `body:release`, `drag:*`, `haze:change`)                                     |
+| `lib/jelly/registry.ts`                                                                              | one IntersectionObserver + ResizeObserver + MutationObserver over every jelly host; cached rects; no rAF        |
+| `lib/jelly/governor.ts`                                                                              | downscale-only frame-cost governor (pure)                                                                       |
+| `lib/jelly/flow-carriers.ts`                                                                         | which hosts carry a CSS `.jelly-flow`; no rAF                                                                   |
+| `lib/jelly/{physics,compose,envelope,lattice,lattice-inputs,soft-policy}.ts`                         | the soft body; `physics.ts` is the only rAF owner                                                               |
+| `lib/jelly/arcs/*`                                                                                   | arcs; `renderer.ts` is the only rAF owner                                                                       |
+| `lib/liquid/glass/{engine,shader,jelly-glsl,haze-shader,renderer,policy,scene,scene-store,color}.ts` | rims, haze canvases, the ambient clock (the one standing loop), lattice stepping, snapshots                     |
+| `lib/liquid/runtime.ts`                                                                              | fallback cursor light on hosts the engine does not draw                                                         |
+| `hooks/useLiquidInteractions.ts`                                                                     | mounts registry, engine, carriers, physics and arcs in one idle callback with one teardown                      |
+| `app/jelly-material.css` · `app/jelly-arcs.css` · `app/jelly-coverage.css`                           | CSS tier, arc layer, coverage adapters; `app/liquid-glass.css` keeps the role base                              |
+| `components/shared/app-theme.css`                                                                    | the `--app-jelly-*` adapter for `.app-glass`                                                                    |
+| `app/routes/jelly.tsx`                                                                               | the `/jelly` material lab (`/liquid-glass` redirects there)                                                     |
 
 Exactly three jelly frame owners exist: the engine's ambient clock, `physics.ts` and
 `arcs/renderer.ts`. **Components never import the physics or arc services** (the lab is
@@ -252,17 +256,17 @@ history.
 
 ## 9. Validation
 
-| Proves                                  | Where                                                                                                   |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| tiers, budgets, `jellyMode`, bounds      | `lib/jelly/__tests__/tiers.test.ts`, `governor.test.ts`                                                |
-| soft body                               | `lib/jelly/__tests__/{envelope,lattice,lattice-inputs,soft-policy,physics}.test.ts`, `testing/e2e/jelly-soft-body.mjs` |
-| arcs and the ledger                     | `lib/jelly/arcs/__tests__/*` (`ledger`, `rate`, `scheduler`, `renderer` scans for blur)                |
-| carriers and registry                   | `lib/jelly/__tests__/{flow-carriers,registry,bus}.test.ts`                                             |
-| rims, haze, clock                       | `lib/liquid/glass/__tests__/*`, `testing/e2e/glass-slab.mjs`, `liquid-glass-engine.mjs`                 |
-| legibility over haze                    | `lib/__tests__/jelly-legibility.test.ts`                                                               |
-| preferences pipeline                    | `lib/__tests__/appearance-jelly-motion.test.ts`, `appearance-electric-arcs.test.ts`, `fouc-contract.test.ts` |
+| Proves                                   | Where                                                                                                                                                                           |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| tiers, budgets, `jellyMode`, bounds      | `lib/jelly/__tests__/tiers.test.ts`, `governor.test.ts`                                                                                                                         |
+| soft body                                | `lib/jelly/__tests__/{envelope,lattice,lattice-inputs,soft-policy,physics}.test.ts`, `testing/e2e/jelly-soft-body.mjs`                                                          |
+| arcs and the ledger                      | `lib/jelly/arcs/__tests__/*` (`ledger`, `rate`, `scheduler`, `renderer` scans for blur)                                                                                         |
+| carriers and registry                    | `lib/jelly/__tests__/{flow-carriers,registry,bus}.test.ts`                                                                                                                      |
+| rims, haze, clock                        | `lib/liquid/glass/__tests__/*`, `testing/e2e/glass-slab.mjs`, `liquid-glass-engine.mjs`                                                                                         |
+| legibility over haze                     | `lib/__tests__/jelly-legibility.test.ts`                                                                                                                                        |
+| preferences pipeline                     | `lib/__tests__/appearance-jelly-motion.test.ts`, `appearance-electric-arcs.test.ts`, `fouc-contract.test.ts`                                                                    |
 | frame loops, filters, stacking, backdrop | `lib/__tests__/{raf-loop-allowlist,filter-cost-budget,stacking-consistency,static-backdrop,handheld-tier}.test.ts` and the jelly gates listed in `scripts/check-consistency.sh` |
-| rest and engaged frame rates            | `testing/e2e/frame-budget.mjs` (rest ≤ 13 fps after the idle threshold)                                |
+| rest and engaged frame rates             | `testing/e2e/frame-budget.mjs` (rest ≤ 13 fps after the idle threshold)                                                                                                         |
 
 Browser review (the part no script checks): `/`, a feed page, settings, an app and a
 game; Daylight, Midnight and high contrast; phone and desktop width; `jellyMotion`

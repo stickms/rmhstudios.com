@@ -26,7 +26,7 @@
  *    there is nothing further. → {@link rubberBand}
  *
  * Everything here is **pure** (no DOM, no React, no time source of its own) so
- * it is unit-testable and shared by the press layer, the sheet drag, the
+ * it is unit-testable and shared by the jelly soft body, the sheet drag, the
  * navigation globe and anything added later. Units are pixels and
  * pixels-per-second unless a doc comment says otherwise.
  */

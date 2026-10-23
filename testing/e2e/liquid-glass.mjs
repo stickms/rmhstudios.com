@@ -69,10 +69,15 @@ const browser = await engine.launch({
     : {}),
 });
 let checks = 0;
+const failures = [];
+/** Records and continues, so one run reports every broken promise; the exit code is non-zero if any failed. */
 const check = (name, value) => {
-  assert.ok(value, name);
   checks++;
-  console.log(`PASS ${name}`);
+  if (value) console.log(`PASS ${name}`);
+  else {
+    failures.push(name);
+    console.log(`FAIL ${name}`);
+  }
 };
 try {
   const page = await browser.newPage({ viewport: { width: 1000, height: 760 } });
@@ -99,6 +104,15 @@ try {
     route.fulfill({ contentType: 'text/html', body: markup }),
   );
   await page.goto('https://rmh-glass.test/');
+  /**
+   * Wait until no soft body is awake (lib/jelly/physics.ts clears `data-jelly-body` at sleep). A hover leave or a
+   * button press wobbles back over ~1–2 s, longer on a loaded software-GL machine; a probe that starts while a
+   * previous action is still settling would measure THAT motion, not its own.
+   */
+  const bodiesAsleep = () =>
+    page
+      .waitForFunction(() => !document.querySelector('[data-jelly-body]'), null, { timeout: 6000 })
+      .catch(() => undefined);
   await page.addScriptTag({ content: result.outputFiles[0].text });
   /**
    * Movement probe over `selectors` for one action: the peak displacement of each element's box (which includes the
@@ -106,7 +120,13 @@ try {
    * (same box, computed `scale`/`translate`/`transform` as before) once the action has settled.
    * `bound` is the allowed peak: 0 for an action with no jelly target, MOTION_BOUNDS.nudgePx for neighbours.
    */
-  const stationary = async (label, action, selectors = ['#left', '#right', '#off', '#far'], bound = 0) => {
+  const stationary = async (
+    label,
+    action,
+    selectors = ['#left', '#right', '#off', '#far'],
+    bound = 0,
+  ) => {
+    await bodiesAsleep();
     await page.evaluate((selectors) => {
       const elements = selectors.map((s) => document.querySelector(s));
       const original = elements.map((el) => {
@@ -195,18 +215,21 @@ try {
     (await page.locator('.liquid-light').count()) > 0,
   );
   await page.mouse.move(2, 700); // let the hover body from the cursor-light probe settle first
-  await advance(1500);
+  await advance(300);
+  await bodiesAsleep();
   await page.mouse.click(405, 160);
   await advance(150);
-  check(
-    'the retired reduce-motion class neither stops nor adds motion: a bare-page click moves nothing',
-    await page
-      .locator('#left')
-      .evaluate((el) => {
-        const cs = getComputedStyle(el);
-        return cs.transform === 'none' && cs.scale === 'none' && cs.translate === 'none';
-      }),
-  );
+  {
+    const left = await page.locator('#left').evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { transform: cs.transform, scale: cs.scale, translate: cs.translate };
+    });
+    const moved = left.transform !== 'none' || left.scale !== 'none' || left.translate !== 'none';
+    check(
+      `the retired reduce-motion class neither stops nor adds motion: a bare-page click moves nothing${moved ? ` — #left scale ${left.scale}, translate ${left.translate}` : ''}`,
+      !moved,
+    );
+  }
   await page.evaluate(() => document.documentElement.classList.remove('reduce-motion'));
   // Ambient off (jellyMotion = still) and the degraded tiers: press-only bodies, no hover body (04 §4.2, §4.7).
   for (const state of [
@@ -221,7 +244,9 @@ try {
       `${state.join('=')}: hovering a host gives it no body`,
       await page.locator('#left').evaluate((el) => {
         const cs = getComputedStyle(el);
-        return cs.scale === 'none' && cs.translate === 'none' && !el.hasAttribute('data-jelly-body');
+        return (
+          cs.scale === 'none' && cs.translate === 'none' && !el.hasAttribute('data-jelly-body')
+        );
       }),
     );
     await page.mouse.move(2, 700);
@@ -258,6 +283,8 @@ try {
     el.style.cssText = 'left:510px;top:300px;transform:rotate(8deg);will-change:opacity';
     document.body.append(el);
   });
+  await page.mouse.move(2, 700); // the button press above wobbles #left; let it settle before probing
+  await bodiesAsleep();
   await stationary(
     'new surfaces keep their own transforms during a bare-page click',
     () => page.mouse.click(430, 345),
@@ -339,7 +366,10 @@ try {
       }),
   );
   await phone.screenshot({ path: join(out, `${browserName}-touch.png`) });
-  check(`a bare-page touch tap never moves neighbouring surfaces (peak ${peak.toFixed(2)})`, peak < 0.01);
+  check(
+    `a bare-page touch tap never moves neighbouring surfaces (peak ${peak.toFixed(2)})`,
+    peak < 0.01,
+  );
   check('touch creates no cursor light', (await phone.locator('.liquid-light').count()) === 0);
   await phone.evaluate(() => document.dispatchEvent(new window.Event('pointercancel')));
   await phone.waitForTimeout(500);
@@ -369,7 +399,13 @@ try {
   });
   await phone.close();
   check('no browser runtime errors', errors.length === 0);
-  console.log(`${checks} checks passed on ${browserName}; screenshots: ${out}`);
+  console.log(
+    `${checks - failures.length}/${checks} checks passed on ${browserName}; screenshots: ${out}`,
+  );
+  if (failures.length) {
+    console.log(`FAILED:\n- ${failures.join('\n- ')}`);
+    process.exitCode = 1;
+  }
 } finally {
   await browser.close();
 }
