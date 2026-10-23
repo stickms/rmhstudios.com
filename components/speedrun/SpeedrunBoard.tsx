@@ -69,7 +69,7 @@ export function SpeedrunBoard({ entries, metric, tier, version, viewerId }: Spee
               <li
                 key={entry.id}
                 className={cn(
-                  'glass-fill rounded-site px-3 py-2.5',
+                  'glass-fill rounded-site px-3 py-3',
                   entry.runner.id === viewerId && 'ring-1 ring-site-accent',
                 )}
               >
@@ -98,7 +98,7 @@ export function SpeedrunBoard({ entries, metric, tier, version, viewerId }: Spee
                   </Link>
 
                   <div className="ml-auto flex items-center gap-3">
-                    <span className="flex items-center gap-1.5 font-mono text-sm tabular-nums text-site-text">
+                    <span className="flex items-center gap-2 font-mono text-sm tabular-nums text-site-text">
                       <Clock className="size-3.5 text-site-text-dim" aria-hidden />
                       {formatRunTime(entry.timeMs)}
                     </span>
@@ -151,7 +151,7 @@ export function SpeedrunQueue({
       </h3>
       <ul className="flex flex-col gap-2">
         {unranked.map((entry) => (
-          <li key={entry.id} className="glass-fill rounded-site px-3 py-2.5">
+          <li key={entry.id} className="glass-fill rounded-site px-3 py-3">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <span className="min-w-0 flex-1 truncate text-sm text-site-text">
                 {entry.runner.name ??

@@ -94,7 +94,7 @@ function GamesIndexPage() {
             own tab strip and a "sign in to play" block, and above the catalog
             it pushed every game below the fold on a "browse the games" page
             (UI minimalism audit, 2026-10-09). */}
-        <div className="flex flex-col gap-4 px-4 pt-2">
+        <div className="flex flex-col gap-4 px-4">
           <PartyBar inline />
           <RankedSummary />
         </div>
@@ -106,7 +106,7 @@ function GamesIndexPage() {
             emptyLabel={t('empty-games', { defaultValue: 'No games match that search.' })}
           />
         </div>
-        <div className="px-4 pt-6 pb-12">
+        <div className="px-4 pb-12">
           {/* Below the whole catalog; built after the top of the page has
               painted on a page switch (it carries its own tab strip and
               panels). A `?sub=` deep link is the one arrival that is ABOUT

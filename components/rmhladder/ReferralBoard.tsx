@@ -98,12 +98,8 @@ export function ReferralBoard() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 pb-12">
-      <header className="space-y-2">
-        <h1 className="flex items-center gap-2 text-xl font-semibold text-site-text">
-          <Handshake className="size-5" aria-hidden />
-          {t('rb-title', { defaultValue: 'Referral board' })}
-        </h1>
+    <div className="space-y-6">
+      <header className="space-y-3">
         <p className="text-sm text-site-text-muted">
           {t('rb-intro', {
             defaultValue:
@@ -135,7 +131,7 @@ export function ReferralBoard() {
         <>
           {data.mine.length > 0 && (
             <section aria-labelledby="rb-mine" className="space-y-3">
-              <h2 id="rb-mine" className="text-sm font-semibold text-site-text">
+              <h2 id="rb-mine" className="site-section-label">
                 {t('rb-mine', { defaultValue: 'Your offers' })}
               </h2>
               {data.mine.map((o) => (
@@ -217,7 +213,7 @@ export function ReferralBoard() {
 
           {data.sent.length > 0 && (
             <section aria-labelledby="rb-sent" className="space-y-3">
-              <h2 id="rb-sent" className="text-sm font-semibold text-site-text">
+              <h2 id="rb-sent" className="site-section-label">
                 {t('rb-sent', { defaultValue: 'Your requests' })}
               </h2>
               <ul className="space-y-2">
@@ -257,7 +253,7 @@ export function ReferralBoard() {
 
           <section aria-labelledby="rb-board" className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 id="rb-board" className="text-sm font-semibold text-site-text">
+              <h2 id="rb-board" className="site-section-label">
                 {t('rb-board', { defaultValue: 'Open offers' })}
               </h2>
               <Input

@@ -40,9 +40,7 @@ export const Route = createFileRoute('/_site/user-builds/$slug')({
           description: loaderData.description,
           path: `/user-builds/${params.slug}`,
           image: loaderData.thumbnailUrl || undefined,
-          imageAlt: loaderData.thumbnailUrl
-            ? `${loaderData.title} on RMH Studios`
-            : undefined,
+          imageAlt: loaderData.thumbnailUrl ? `${loaderData.title} on RMH Studios` : undefined,
           imageSize: loaderData.thumbnailUrl ? null : undefined,
           type: 'article',
         })
@@ -83,7 +81,7 @@ function BuildPage() {
     >
       <div className="px-4 pt-4 pb-12">
         <BuildDetail build={build} />
-        <div className="mt-6 flex justify-end">
+        <div className="mt-[var(--site-section-gap)] flex justify-end">
           <WatchControl kind="build" targetId={build.id} />
         </div>
       </div>

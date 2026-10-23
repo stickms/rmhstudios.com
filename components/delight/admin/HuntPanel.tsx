@@ -51,7 +51,7 @@ export default function HuntPanel() {
     setClues((cs) => cs.map((c, j) => (j === i ? { ...c, [k]: v } : c)));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[var(--site-section-gap)]">
       <form
         className="glass-pane space-y-3 rounded-site p-4"
         onSubmit={(e) => {
@@ -155,7 +155,7 @@ export default function HuntPanel() {
         </div>
       </form>
 
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {q.data?.hunts.map((h) => (
           <li
             key={h.id}

@@ -3,6 +3,8 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Swords, Plus } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
@@ -60,7 +62,7 @@ function WagerPage() {
       headerRight={
         viewerId ? (
           <Button size="sm" onClick={() => setCreating(true)}>
-            <Plus className="size-4" />
+            <Plus className="size-4" aria-hidden />
             {t('new-challenge', { defaultValue: 'New challenge' })}
           </Button>
         ) : null
@@ -68,7 +70,7 @@ function WagerPage() {
     >
       {/* §15.1: unified sheet + flowing-capsule tab strip below the page title.
           The "My matches" tab stays disabled (roving-nav-skipped) for guests. */}
-      <div className="mt-3 mb-3">
+      <div>
         <LiquidTabs
           aria-label={t('title', { defaultValue: 'Wager Matches' })}
           value={tab}
@@ -87,25 +89,27 @@ function WagerPage() {
       {loading ? (
         <div className="grid gap-3 sm:grid-cols-2">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-40 rounded-site glass-fill animate-pulse" />
+            <Skeleton key={i} className="h-40 rounded-site" />
           ))}
         </div>
       ) : wagers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <Swords className="size-10 text-site-text-dim" />
-          <p className="text-site-text-dim max-w-sm">
-            {tab === 'open'
+        <EmptyState
+          icon={Swords}
+          title={
+            tab === 'open'
               ? t('empty-open', {
                   defaultValue: 'No open challenges right now. Post one and stake some coins!',
                 })
-              : t('empty-mine', { defaultValue: "You haven't played any wager matches yet." })}
-          </p>
-          {viewerId && (
-            <Button onClick={() => setCreating(true)}>
-              {t('new-challenge', { defaultValue: 'New challenge' })}
-            </Button>
-          )}
-        </div>
+              : t('empty-mine', { defaultValue: "You haven't played any wager matches yet." })
+          }
+          action={
+            viewerId ? (
+              <Button onClick={() => setCreating(true)}>
+                {t('new-challenge', { defaultValue: 'New challenge' })}
+              </Button>
+            ) : null
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {wagers.map((w) => (

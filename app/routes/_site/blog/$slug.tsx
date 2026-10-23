@@ -170,7 +170,7 @@ function BlogPost() {
             sidenotes, glossary links, highlights and the reading ruler. */}
         <ArticleBody kind="blog" slug={slug} content={post.content as string} />
 
-        <hr className="border-site-border" />
+        <hr className="max-w-2xl border-site-border" />
 
         {/* Below the body, after the reader has the post. `AdSlot` renders
             nothing for members, for anyone who hasn't answered the cookie
@@ -178,7 +178,7 @@ function BlogPost() {
             lib/ads/adsense.ts. */}
         <AdSlot placement="article-end" />
 
-        <p className="text-center text-site-text-dim italic">
+        <p className="max-w-2xl text-center text-sm text-site-text-dim italic">
           {t('end-of-log', { defaultValue: 'End of Log' })}
         </p>
       </article>

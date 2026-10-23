@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 interface CodeStatus {
   remaining: number;
@@ -177,20 +178,15 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
   };
 
   return (
-    <section className="glass-pane rounded-site p-4 sm:p-5">
-      <div className="mb-1 flex items-center gap-2">
-        <KeyRound className="h-5 w-5 text-site-accent" aria-hidden />
-        <h2 className="text-base font-bold text-site-text">
-          {t('recovery-title', { defaultValue: 'Account recovery' })}
-        </h2>
-      </div>
-      <p className="mb-4 text-sm text-site-text-muted">
-        {t('recovery-description', {
-          defaultValue:
-            'Ways back into this account that do not depend on one email address still working.',
-        })}
-      </p>
-
+    <SettingsSection
+      icon={KeyRound}
+      title={t('recovery-title', { defaultValue: 'Account recovery' })}
+      description={t('recovery-description', {
+        defaultValue:
+          'Ways back into this account that do not depend on one email address still working.',
+      })}
+      bodyClassName="space-y-0"
+    >
       {completion ? (
         <div className="glass-inset mb-4 rounded-site-sm p-3">
           <h3 className="text-sm font-semibold text-site-text">
@@ -345,6 +341,6 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
           </div>
         </>
       )}
-    </section>
+    </SettingsSection>
   );
 }

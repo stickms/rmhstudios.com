@@ -77,9 +77,9 @@ export default function AdventCalendar() {
                       ? t('advent-door-open', { defaultValue: 'Open door {{door}}', door })
                       : t('advent-door-shut', { defaultValue: 'Door {{door}}, shut', door })
                 }
-                className={`flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-site-sm font-display text-lg font-semibold transition-colors ${
+                className={`flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-site-sm font-display text-lg font-semibold transition-colors ${
                   isToday && !done
-                    ? 'glass-overlay text-site-accent hover:text-site-accent-hover'
+                    ? 'glass-pane text-site-accent hover:text-site-accent-hover'
                     : done
                       ? 'glass-inset text-site-success'
                       : 'glass-fill text-site-text-dim'
@@ -98,8 +98,8 @@ export default function AdventCalendar() {
           );
         })}
       </ol>
-      <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
-        <CoinIcon className="size-3.5" />
+      <p className="flex items-center gap-2 text-xs text-site-text-muted">
+        <CoinIcon className="size-3.5" aria-hidden />
         {t('advent-tally', {
           defaultValue: '{{count}} of {{total}} doors opened this year',
           count: data.opened.length,

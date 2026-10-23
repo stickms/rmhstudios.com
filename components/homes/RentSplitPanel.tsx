@@ -26,8 +26,8 @@ export function RentSplitPanel({
     rooms: Array.from({ length: count }, (_, i) => ({ name: `Room ${i + 1}`, area, features: [] })),
   };
   return (
-    <section className="mt-5">
-      <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold text-site-text font-display">
+    <section className="mt-4">
+      <h2 className="mb-2 flex items-center gap-2 site-section-label">
         <Scale className="size-5" aria-hidden />
         {t('rsp-heading', { defaultValue: 'Splitting this with roommates?' })}
       </h2>

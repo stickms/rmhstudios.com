@@ -27,7 +27,7 @@ function FeedRow({ f }: { f: FeedSummary }) {
       <Link
         to="/feeds/$id"
         params={{ id: f.id }}
-        className="glass-fill block rounded-site p-3 hover:bg-site-surface-hover"
+        className="glass-fill block rounded-site px-4 py-3 hover:bg-site-surface-hover"
       >
         <p className="text-sm font-semibold text-site-text">{f.name}</p>
         <p className="mt-0.5 truncate text-xs text-site-text-muted">
@@ -53,8 +53,8 @@ function Section({ title, items }: { title: string; items: FeedSummary[] }) {
   if (!items.length) return null;
   return (
     <section>
-      <h2 className="site-section-label mb-2">{title}</h2>
-      <ul className="space-y-2">
+      <h2 className="site-section-label mb-3">{title}</h2>
+      <ul className="space-y-3">
         {items.map((f) => (
           <FeedRow key={f.id} f={f} />
         ))}
@@ -119,7 +119,7 @@ export function FeedsPage() {
           'Build a feed from tags, people and keywords, or subscribe to one someone else made.',
       })}
     >
-      <div className="space-y-5 px-4 pt-2 pb-12">
+      <div className="space-y-6 px-4 pt-4 pb-12">
         {!session ? (
           <EmptyState
             title={t('feeds-signin', { defaultValue: 'Sign in to build and follow feeds' })}

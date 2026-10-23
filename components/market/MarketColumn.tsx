@@ -135,7 +135,7 @@ export function MarketColumn({
           value={itemFilter}
           onChange={(e) => setItemFilter(e.target.value)}
           aria-label={t('market-filter-item', { defaultValue: 'Filter by item' })}
-          className="h-11 w-full min-w-0 flex-1 sm:w-auto sm:min-w-[10rem]"
+          className="h-11 w-full min-w-0 flex-1 sm:w-auto sm:min-w-40"
         >
           <option value="">{t('market-all-items', { defaultValue: 'All items' })}</option>
           {filterOptions.map((o) => (
@@ -148,7 +148,7 @@ export function MarketColumn({
           value={sort}
           onChange={(e) => setSort(e.target.value as typeof sort)}
           aria-label={t('market-sort', { defaultValue: 'Sort listings' })}
-          className="h-11 w-full min-w-0 flex-1 sm:w-auto sm:min-w-[9rem] sm:flex-none"
+          className="h-11 w-full min-w-0 flex-1 sm:w-auto sm:min-w-36 sm:flex-none"
         >
           <option value="recent">{t('market-sort-recent', { defaultValue: 'Newest' })}</option>
           <option value="price_asc">
@@ -169,7 +169,7 @@ export function MarketColumn({
       {itemFilter && history && history.count > 0 && (
         <div className="flex items-center justify-between gap-3 border-b border-site-border px-4 py-3">
           <div className="min-w-0">
-            <p className="truncate text-xs font-semibold uppercase tracking-wider text-site-text-muted">
+            <p className="truncate text-sm font-semibold text-site-text">
               {t('market-history-heading', {
                 name: filteredName,
                 defaultValue: '{{name}} · recent sales',
@@ -205,7 +205,7 @@ export function MarketColumn({
           />
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
           {listings.map((listing) => (
             <ListingCard
               key={listing.id}

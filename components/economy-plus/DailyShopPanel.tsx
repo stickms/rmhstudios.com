@@ -116,7 +116,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
 
   if (isLoading || !data) {
     return (
-      <div className="grid grid-cols-1 gap-3 px-3 pb-8 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 px-3 pb-12 sm:grid-cols-2">
         {Array.from({ length: 4 }, (_, i) => (
           <Skeleton key={i} className="h-36 w-full" />
         ))}
@@ -135,7 +135,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
   }
 
   return (
-    <div className="space-y-5 px-3 pb-8">
+    <div className="space-y-4 px-3 pb-12">
       <section aria-labelledby="daily-title" className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-2 px-1">
           <div>
@@ -218,7 +218,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
                     <span
-                      className="mt-0.5 inline-block rounded border px-1 py-0.5 text-[11px] font-bold uppercase text-site-text"
+                      className="mt-0.5 inline-block rounded-full border px-2 py-0.5 text-xs font-semibold uppercase text-site-text"
                       style={{
                         background: `${RARITY_COLORS[item.rarity]}2e`,
                         borderColor: `${RARITY_COLORS[item.rarity]}99`,

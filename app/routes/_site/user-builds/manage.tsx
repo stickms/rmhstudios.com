@@ -2,11 +2,13 @@
  * Manage Builds Route
  */
 
-import { createFileRoute, Link, useNavigate, useLocation } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState, useEffect, Suspense } from 'react';
-import { Boxes, Plus, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
+import { Boxes, Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { useSession } from '@/components/Providers';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import type { Build } from '@/lib/user-builds-types';
@@ -27,8 +29,6 @@ export const Route = createFileRoute('/_site/user-builds/manage')({
 function ManageContent() {
   const { t } = useTranslation('user-builds');
   const confirm = useConfirm();
-  const navigate = useNavigate();
-  const location = useLocation();
   const { data: session, isPending } = useSession();
 
   const [builds, setBuilds] = useState<Build[]>([]);
@@ -112,67 +112,72 @@ function ManageContent() {
       backTo="/user-builds"
       wide
       headerRight={
-        <Link to="/user-builds/submit">
-          <Button variant="accent">
-            <Plus className="w-4 h-4" /> {t('new-build', { defaultValue: 'New Build' })}
-          </Button>
-        </Link>
+        <Button asChild variant="accent">
+          <Link to="/user-builds/submit">
+            <Plus aria-hidden /> {t('new-build', { defaultValue: 'New Build' })}
+          </Link>
+        </Button>
       }
     >
-
+      <div className="px-4 pt-4 pb-12">
         {loading ? (
-          <div className="flex justify-center py-12">
+          <div className="flex justify-center py-20">
             <Spinner size={32} />
           </div>
         ) : builds.length === 0 ? (
-          <Reveal className="text-center py-12 rounded-site glass-fill">
-            <Boxes className="w-12 h-12 text-site-text-dim mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-site-text mb-2">
-              {t('no-builds-yet', { defaultValue: 'No builds yet' })}
-            </h2>
-            <p className="text-site-text-muted mb-6">
-              {t('no-builds-description', {
-                defaultValue: 'Create your first build and share it with the community.',
-              })}
-            </p>
-            <Link to="/user-builds/submit">
-              <Button variant="accent" className="bg-site-accent hover:bg-site-accent">
-                <Plus className="w-4 h-4 mr-2" />{' '}
-                {t('create-build', { defaultValue: 'Create Build' })}
+          <EmptyState
+            icon={Boxes}
+            title={t('no-builds-yet', { defaultValue: 'No builds yet' })}
+            description={t('no-builds-description', {
+              defaultValue: 'Create your first build and share it with the community.',
+            })}
+            action={
+              <Button asChild variant="accent">
+                <Link to="/user-builds/submit">
+                  <Plus aria-hidden /> {t('create-build', { defaultValue: 'Create Build' })}
+                </Link>
               </Button>
-            </Link>
-          </Reveal>
+            }
+          />
         ) : (
-          <Reveal className="space-y-4">
+          <Reveal className="space-y-3">
             {builds.map((build) => (
               <div
                 key={build.id}
-                className={`flex items-center gap-4 p-4 rounded-site glass-fill ${LIFT_CARD}`}
+                className={`flex items-center gap-3 rounded-site px-4 py-3 glass-fill ${LIFT_CARD}`}
               >
                 {build.thumbnailUrl ? (
                   <img
                     src={build.thumbnailUrl}
                     alt={build.title}
-                    className="w-20 h-14 rounded object-cover shrink-0"
+                    className="h-14 w-20 shrink-0 rounded-site-sm object-cover"
                   />
                 ) : (
-                  <div className="w-20 h-14 rounded bg-site-accent/20 flex items-center justify-center text-site-accent text-lg font-bold shrink-0">
+                  <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-site-sm bg-site-accent-dim text-lg font-bold text-site-accent">
                     {build.title[0]?.toUpperCase()}
                   </div>
                 )}
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <Link to={`/user-builds/${build.slug}` as string}>
-                    <h3 className="font-semibold text-site-text hover:text-site-accent transition-colors truncate">
+                    <h3 className="truncate font-semibold text-site-text transition-colors hover:text-site-accent">
                       {build.title}
                     </h3>
                   </Link>
-                  <p className="text-sm text-site-text-muted truncate">{build.description}</p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-site-text-dim">
-                    <span
-                      className={`px-2 py-0.5 rounded ${build.visibility === 'PUBLIC' ? 'bg-site-success/20 text-site-success' : build.visibility === 'UNLISTED' ? 'bg-site-warning/20 text-site-warning' : 'bg-site-surface text-site-text-muted'}`}
+                  <p className="truncate text-sm text-site-text-muted">{build.description}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-site-text-dim">
+                    <Badge
+                      size="sm"
+                      variant={
+                        build.visibility === 'PUBLIC'
+                          ? 'success'
+                          : build.visibility === 'UNLISTED'
+                            ? 'warning'
+                            : 'default'
+                      }
+                      icon={false}
                     >
                       {build.visibility}
-                    </span>
+                    </Badge>
                     <span>
                       {t('like-count', { count: build.likeCount, defaultValue: '{{count}} likes' })}
                     </span>
@@ -182,35 +187,43 @@ function ManageContent() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Link to={`/user-builds/${build.slug}` as string}>
-                    <Button variant="ghost" size="icon" title={t('view', { defaultValue: 'View' })}>
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                  <Link to="/user-builds/submit" search={{ edit: build.id }}>
-                    <Button variant="ghost" size="icon" title={t('edit', { defaultValue: 'Edit' })}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  <Button asChild variant="ghost" size="icon">
+                    <Link
+                      to={`/user-builds/${build.slug}` as string}
+                      aria-label={t('view', { defaultValue: 'View' })}
+                      title={t('view', { defaultValue: 'View' })}
+                    >
+                      <Eye aria-hidden />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" size="icon">
+                    <Link
+                      to="/user-builds/submit"
+                      search={{ edit: build.id }}
+                      aria-label={t('edit', { defaultValue: 'Edit' })}
+                      title={t('edit', { defaultValue: 'Edit' })}
+                    >
+                      <Edit aria-hidden />
+                    </Link>
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDelete(build)}
-                    disabled={deleting === build.id}
+                    loading={deleting === build.id}
+                    loadingText={<></>}
                     className="text-site-danger hover:text-site-danger"
+                    aria-label={t('delete', { defaultValue: 'Delete' })}
                     title={t('delete', { defaultValue: 'Delete' })}
                   >
-                    {deleting === build.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
+                    <Trash2 aria-hidden />
                   </Button>
                 </div>
               </div>
             ))}
           </Reveal>
         )}
+      </div>
     </PageLayout>
   );
 }

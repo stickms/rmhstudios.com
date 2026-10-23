@@ -77,7 +77,7 @@ export function SeriesIndexPage() {
         className="glass-fill glass-interactive block rounded-site px-4 py-3"
       >
         <span className="block text-sm font-medium text-site-text">{s.title}</span>
-        <span className="block text-xs text-site-text-muted">
+        <span className="mt-1 block text-xs text-site-text-muted">
           {t('series-parts', { defaultValue: '{{n}} parts', n: s.postCount })}
           {s.author && (s.author.name || s.author.handle)
             ? ` · ${s.author.name ?? s.author.handle}`
@@ -94,6 +94,7 @@ export function SeriesIndexPage() {
         defaultValue: 'Group your posts into a numbered series, and follow other people’s.',
       })}
     >
+      <div className="max-w-2xl px-4 pt-4 pb-12">
       {!session && !isPending ? (
         <SignedOutPrompt
           callbackURL="/series"
@@ -104,9 +105,9 @@ export function SeriesIndexPage() {
           <Spinner />
         </div>
       ) : (
-        <div className="space-y-6 px-4 pt-2 pb-12">
+        <div className="space-y-[var(--site-section-gap)]">
           <form
-            className="glass-pane flex gap-2 rounded-site p-4"
+            className="glass-pane flex gap-2 rounded-site px-4 py-3"
             onSubmit={(e) => {
               e.preventDefault();
               void create();
@@ -130,7 +131,7 @@ export function SeriesIndexPage() {
           </form>
 
           <section aria-labelledby="series-mine">
-            <h2 id="series-mine" className="mb-2 text-sm font-semibold text-site-text">
+            <h2 id="series-mine" className="site-section-label mb-3">
               {t('series-mine', { defaultValue: 'Your series' })}
             </h2>
             {data.mine.length === 0 ? (
@@ -143,20 +144,21 @@ export function SeriesIndexPage() {
                 })}
               />
             ) : (
-              <ul className="space-y-2">{data.mine.map(row)}</ul>
+              <ul className="space-y-3">{data.mine.map(row)}</ul>
             )}
           </section>
 
           {data.following.length > 0 && (
             <section aria-labelledby="series-following">
-              <h2 id="series-following" className="mb-2 text-sm font-semibold text-site-text">
+              <h2 id="series-following" className="site-section-label mb-3">
                 {t('series-following', { defaultValue: 'Following' })}
               </h2>
-              <ul className="space-y-2">{data.following.map(row)}</ul>
+              <ul className="space-y-3">{data.following.map(row)}</ul>
             </section>
           )}
         </div>
       )}
+      </div>
     </PageLayout>
   );
 }

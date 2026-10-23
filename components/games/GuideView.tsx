@@ -99,7 +99,7 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
 
   if (editing) {
     return (
-      <div className="px-4 pt-4 pb-12 space-y-3">
+      <div className="space-y-3 px-4 pt-4 pb-12">
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value.slice(0, 120))}
@@ -146,9 +146,9 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
 
   return (
     <article className="px-4 pt-4 pb-12">
+      {/* The title is the page's h1 (PageLayout), so it is not repeated here. */}
       <header className="mb-4">
-        <h1 className="font-display text-xl font-bold text-site-text">{guide!.title}</h1>
-        <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           <span className="flex items-center gap-2">
             <UserAvatar src={guide!.author.image ?? undefined} alt={guide!.author.name ?? 'User'} size={28} fallbackName={guide!.author.name ?? undefined} />
             <span className="text-sm text-site-text-muted">{guide!.author.name ?? guide!.author.handle}</span>
@@ -161,7 +161,7 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
           ) : null}
         </div>
       </header>
-      <div className="prose-guide space-y-3 text-[15px] leading-relaxed text-site-text [&_a]:text-site-accent [&_code]:font-mono [&_h2]:mt-5 [&_h2]:font-semibold [&_pre]:overflow-x-auto [&_pre]:rounded-site [&_pre]:bg-site-surface [&_pre]:p-3">
+      <div className="prose-guide space-y-3 text-base leading-relaxed text-site-text [&_a]:text-site-accent [&_code]:font-mono [&_h2]:mt-4 [&_h2]:font-semibold [&_pre]:overflow-x-auto [&_pre]:rounded-site [&_pre]:bg-site-surface [&_pre]:p-3">
         <ReactMarkdown>{guide!.body}</ReactMarkdown>
       </div>
     </article>

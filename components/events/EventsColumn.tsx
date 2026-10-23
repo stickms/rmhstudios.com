@@ -18,11 +18,11 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
 import { CalendarDays, Plus } from 'lucide-react';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { EventCard } from '@/components/events/EventCard';
@@ -103,7 +103,7 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="pb-12">
       <ColumnHeader
         // Embedded on /communities the page title + tab sheet already name this
         // surface, so the column's own title would be a second copy of it.
@@ -113,7 +113,7 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
         actions={
           signedIn && (
             <Button size="sm" variant="accent" onClick={() => setComposerOpen(true)}>
-              <Plus className="h-4 w-4" /> {t('new-button', { defaultValue: 'New' })}
+              <Plus aria-hidden /> {t('new-button', { defaultValue: 'New' })}
             </Button>
           )
         }
@@ -139,14 +139,12 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
         )}
         <AsyncReveal show={!loading}>
           {needsSignIn ? (
-            <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-              <p className="font-medium text-site-text">
-                {t('sign-in-to-see-events', { defaultValue: 'Sign in to see your events' })}
-              </p>
-              <Link to="/login" search={{ callbackURL: '/events' }}>
-                <Button variant="accent">{t('sign-in', { defaultValue: 'Sign in' })}</Button>
-              </Link>
-            </div>
+            <SignedOutPrompt
+              icon={CalendarDays}
+              callbackURL="/communities?tab=events"
+              title={t('sign-in-to-see-events', { defaultValue: 'Sign in to see your events' })}
+              actionLabel={t('sign-in', { defaultValue: 'Sign in' })}
+            />
           ) : events.length === 0 ? (
             <EmptyState
               icon={CalendarDays}

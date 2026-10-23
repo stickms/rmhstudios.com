@@ -54,7 +54,7 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
   }
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-site-text-muted">
           {t('home-intro', {
@@ -71,8 +71,8 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
 
       {creating && <CreatePollForm attach={attach} onCancel={() => setCreating(false)} />}
 
-      <section aria-labelledby="polls-list" className="space-y-2">
-        <h2 id="polls-list" className="text-sm font-bold text-site-text">
+      <section aria-labelledby="polls-list" className="space-y-3">
+        <h2 id="polls-list" className="site-section-label">
           {t('home-list', { defaultValue: 'Your polls' })}
         </h2>
         {polls === null ? (
@@ -85,13 +85,13 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
             })}
           />
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {polls.map((p) => (
               <li key={p.id}>
                 <Link
                   to="/when/$id"
                   params={{ id: p.id }}
-                  className="glass-fill flex items-center justify-between gap-3 rounded-site p-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+                  className="glass-fill flex items-center justify-between gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-site-text">

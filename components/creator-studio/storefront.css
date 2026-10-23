@@ -10,7 +10,7 @@
 .store {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 clamp(2px, 1vw, 8px);
+  padding: 0; /* the page gutter (.cstudio-body) already insets the store */
   /* Never let the storefront push the page wider than its column. */
   min-width: 0;
   width: 100%;
@@ -74,8 +74,8 @@
      mechanism already used for scroll reveals. */
   opacity: 0;
   transition:
-    transform 600ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 320ms ease-out;
+    transform calc(var(--site-transition-speed) * 3) var(--ease-glass),
+    opacity calc(var(--site-transition-speed) * 1.6) var(--ease-out);
 }
 
 .store-art__img.is-loaded {
@@ -85,7 +85,7 @@
 /* Reduced motion still wants the image, just not the fade. */
 @media (prefers-reduced-motion: reduce) {
   .store-art__img {
-    transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform calc(var(--site-transition-speed) * 3) var(--ease-glass);
   }
 }
 
@@ -285,8 +285,8 @@
   font-size: 0.9rem;
   font-weight: 700;
   transition:
-    transform 160ms ease,
-    background 160ms ease;
+    transform var(--site-transition-speed) var(--ease-out),
+    background var(--site-transition-speed) var(--ease-out);
 }
 
 .store-hero__link:hover .store-hero__cta {
@@ -342,9 +342,9 @@
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    border-color var(--site-transition-speed) var(--ease-out),
+    box-shadow var(--site-transition-speed) var(--ease-out),
+    transform var(--site-transition-speed) var(--ease-glass);
 }
 
 .store-spot__link:hover {
@@ -388,7 +388,7 @@
     rgba(255, 255, 255, 0) 60%
   );
   opacity: 0;
-  transition: opacity 240ms ease;
+  transition: opacity var(--site-transition-speed) var(--ease-out);
 }
 .store-spot__link:hover .store-spot__glow,
 .store-card__link:hover .store-card__glow {
@@ -479,9 +479,9 @@
   color: inherit;
   border: 0.5px solid var(--site-border);
   transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    border-color var(--site-transition-speed) var(--ease-out),
+    box-shadow var(--site-transition-speed) var(--ease-out),
+    transform var(--site-transition-speed) var(--ease-glass);
 }
 
 .store-card__link:hover {
@@ -534,7 +534,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   transition:
-    opacity 220ms ease,
+    opacity var(--site-transition-speed) var(--ease-out),
     transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .store-card__link:hover .store-card__hoverdesc {
@@ -602,7 +602,7 @@
   transition:
     opacity 200ms ease,
     transform 200ms ease,
-    background 160ms ease;
+    background var(--site-transition-speed) var(--ease-out);
 }
 .store-card:hover .store-card__details,
 .store-card:focus-within .store-card__details {
@@ -641,7 +641,7 @@
 .store-personas__mine {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 @media (min-width: 640px) {
   .store-personas__mine {

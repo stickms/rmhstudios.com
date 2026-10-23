@@ -54,7 +54,7 @@ export function SeasonAdminForm({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <details className="rounded-site-sm glass-inset p-3">
+    <details className="rounded-site-sm glass-inset px-4 py-3">
       <summary className="cursor-pointer text-sm font-medium">
         {t('new-season', { defaultValue: 'New season (admin)' })}
       </summary>
@@ -80,7 +80,7 @@ export function SeasonAdminForm({ onCreated }: { onCreated: () => void }) {
             aria-label={t('ends', { defaultValue: 'Ends' })}
           />
         </div>
-        <ul className="max-h-48 overflow-y-auto flex flex-col gap-1">
+        <ul className="max-h-48 overflow-y-auto flex flex-col gap-2">
           {markets.map((m) => (
             <li key={m.id}>
               <label className="flex items-start gap-2 text-sm">
@@ -105,7 +105,8 @@ export function SeasonAdminForm({ onCreated }: { onCreated: () => void }) {
           variant="accent"
           size="sm"
           className="self-end"
-          disabled={busy || !title || !startsAt || !endsAt || picked.size === 0}
+          loading={busy}
+          disabled={!title || !startsAt || !endsAt || picked.size === 0}
           onClick={create}
         >
           {t('create-season', { defaultValue: 'Create season' })}

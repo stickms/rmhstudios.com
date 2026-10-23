@@ -1,9 +1,11 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { Terminal, BookOpen, ExternalLink } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { KeysManager } from '@/components/developer/KeysManager';
 import { RecipesManager } from '@/components/developer/RecipesManager';
 import { BadgeSnippets } from '@/components/developer/BadgeSnippets';
@@ -25,46 +27,39 @@ export const Route = createFileRoute('/_site/developer/')({
 });
 
 function DeveloperHome() {
+  const { t } = useTranslation('site');
   const { data: session, isPending } = useSession();
 
   return (
     <PageLayout
-      title="Developer API"
+      title={t('developer-title', { defaultValue: 'Developer API' })}
       wide
       headerRight={
-        <Button asChild variant="ghost" size="sm" className="gap-1">
-          <a href={DEVELOPER_DOCS_URL} target="_blank" rel="noreferrer">
-            <BookOpen className="h-4 w-4" /> Docs
-            <ExternalLink className="h-3 w-3" aria-hidden />
-            <span className="sr-only">(opens in a new tab)</span>
-          </a>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <a href="/api/v1/openapi.json">
+              <Terminal aria-hidden /> {t('developer-openapi', { defaultValue: 'OpenAPI spec' })}
+            </a>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <a href={DEVELOPER_DOCS_URL} target="_blank" rel="noreferrer">
+              <BookOpen aria-hidden /> {t('developer-docs', { defaultValue: 'Docs' })}
+              <ExternalLink aria-hidden />
+              <span className="sr-only">
+                {t('developer-opens-new-tab', { defaultValue: '(opens in a new tab)' })}
+              </span>
+            </a>
+          </Button>
+        </div>
       }
     >
-      <div className="space-y-6 px-4 pb-[var(--site-page-bottom-space)]">
-        <section>
-          <p className="flex items-start gap-2 text-sm leading-relaxed text-site-text-muted">
-            <Terminal className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
-            <span>
-              Build on RMH Studios programmatically. The REST API is available to{' '}
-              <strong className="text-site-text">HARD-R subscribers and above</strong>. Create a
-              scoped key below, then read the{' '}
-              <a
-                href={DEVELOPER_DOCS_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="text-site-accent hover:underline"
-              >
-                documentation
-              </a>{' '}
-              or point your codegen at the{' '}
-              <a href="/api/v1/openapi.json" className="text-site-accent hover:underline">
-                OpenAPI spec
-              </a>
-              .
-            </span>
-          </p>
-        </section>
+      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+        <p className="max-w-prose text-sm leading-relaxed text-site-text-muted">
+          {t('developer-intro', {
+            defaultValue:
+              'Build on RMH Studios programmatically. The REST API is available to HARD-R subscribers and above. Create a scoped key below, then read the documentation or point your codegen at the OpenAPI spec.',
+          })}
+        </p>
 
         <AiPracticesLink />
 
@@ -73,14 +68,11 @@ function DeveloperHome() {
             <Spinner />
           </div>
         ) : !session ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-            <p className="font-medium text-site-text">Sign in to manage developer keys</p>
-            <Button asChild variant="accent">
-              <Link to="/login" search={{ callbackURL: '/developer' }}>
-                Sign in
-              </Link>
-            </Button>
-          </div>
+          <SignedOutPrompt
+            icon={Terminal}
+            callbackURL="/developer"
+            title={t('developer-sign-in', { defaultValue: 'Sign in to manage developer keys' })}
+          />
         ) : (
           <>
             <KeysManager />

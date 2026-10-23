@@ -1,53 +1,32 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Builds — toolbar (Curated/User switch + sort + submit) for the /builds bookshelf.
+   Builds — toolbar (search + sort + submit) for the /builds bookshelf.
    Shelf + book styles are reused from library.css; this only adds the toolbar.
    Black/white "vibe" aesthetic.
    ───────────────────────────────────────────────────────────────────────────── */
 
+/* The storefront (and `.cstudio-body` around it) already supplies the page gutter,
+   so the toolbar adds none of its own. */
 .builds-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
+  gap: 0.75rem;
   flex-wrap: wrap;
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: 16px clamp(16px, 4vw, 44px) 4px;
+  padding: 0 0 0.75rem;
 }
 
 .builds-toolbar__right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 /* Sort dropdown. */
 .builds-sort {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-}
-
-/* Submit (user builds) button. */
-.builds-submit {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 9999px;
-  background: var(--site-surface);
-  border: 0.5px solid var(--site-border);
-  color: var(--site-text);
-  font-size: 0.82rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: border-color 160ms ease, color 160ms ease;
-}
-
-.builds-submit:hover {
-  border-color: var(--site-border-bright);
-  color: var(--site-text);
+  gap: 0.5rem;
 }
 
 /* Like count badge content. */
@@ -63,7 +42,7 @@
 
 /* The `.builds-card*`, `.builds-grid` and `.builds-switch*` blocks that used to
    sit here are gone. Nothing carried any of those classes — `BuildsTab` renders
-   the shelf with the `.builds-toolbar`/`-sort`/`-submit`/`-likes` rules above
+   the shelf with the `.builds-toolbar`/`-sort`/`-likes` rules above
    and `--site-*` token utilities for the tiles themselves.
 
    Deleting them matters beyond the dead bytes: `.builds-card__inner` carried a

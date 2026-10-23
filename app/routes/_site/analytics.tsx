@@ -8,7 +8,8 @@ import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 export const Route = createFileRoute('/_site/analytics')({
   head: () => ({ meta: [{ title: 'Creator Analytics | RMH Studios' }] }),
-  component: AnalyticsPage });
+  component: AnalyticsPage,
+});
 
 function AnalyticsPage() {
   const { t } = useTranslation('feed');
@@ -16,9 +17,9 @@ function AnalyticsPage() {
 
   return (
     <PageLayout title={t('creator-analytics', { defaultValue: 'Creator analytics' })} wide>
-      <div className="min-w-0 px-4 pb-[var(--site-page-bottom-space)]">
+      <div className="min-w-0 px-4 pt-4 pb-[var(--site-page-bottom-space)]">
         {isPending ? (
-          <div className="flex justify-center py-20">
+          <div className="flex justify-center py-12">
             <Spinner />
           </div>
         ) : !session ? (

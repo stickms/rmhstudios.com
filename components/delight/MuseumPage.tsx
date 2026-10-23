@@ -31,7 +31,7 @@ export function MuseumPage() {
         defaultValue: 'How the site has looked and grown, era by era.',
       })}
     >
-      <div className="px-4 pt-2 pb-12">
+      <div className="px-4 pt-4 pb-12">
         {q.isPending ? (
           <Skeleton className="h-48 w-full" />
         ) : !q.data?.eras.length ? (
@@ -40,9 +40,9 @@ export function MuseumPage() {
             title={t('museum-empty', { defaultValue: 'The museum is still being curated' })}
           />
         ) : (
-          <ol className="space-y-4 border-s border-site-border ps-4">
+          <ol className="max-w-2xl space-y-3 border-s border-site-border ps-4">
             {q.data.eras.map((e) => (
-              <li key={e.id} className="glass-fill space-y-2 rounded-site p-4">
+              <li key={e.id} className="glass-fill space-y-3 rounded-site px-4 py-3">
                 <time
                   className="text-xs font-semibold uppercase tracking-wide text-site-text-dim"
                   dateTime={e.eraDate}
@@ -65,7 +65,7 @@ export function MuseumPage() {
                     className="w-full rounded-site"
                   />
                 )}
-                <p className="whitespace-pre-line text-sm text-site-text-muted">{e.body}</p>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-site-text-muted">{e.body}</p>
               </li>
             ))}
           </ol>

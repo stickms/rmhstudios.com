@@ -18,6 +18,8 @@ import { useTranslation } from 'react-i18next';
 import { Radio, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import type { LiveSpaceSummary } from '@/lib/spaces/types';
@@ -77,57 +79,65 @@ export function SpacesColumn() {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="border-b border-site-border p-4">
-        <h1 className="mb-1 text-lg font-bold text-site-text">
-          {t('spaces-title', { defaultValue: 'Spaces' })}
-        </h1>
-        <p className="text-sm text-site-text-dim">
+    <div className="space-y-[var(--site-section-gap)] px-3 pt-3 pb-12">
+      <section className="glass-pane space-y-3 rounded-site p-4">
+        <p className="text-sm text-site-text-muted">
           {t('spaces-subtitle', {
             defaultValue: 'Live rooms to chat, listen together, and hang out in real time.',
           })}
         </p>
 
         {session ? (
-          <div className="mt-4 flex gap-2">
-            <input
+          <div className="flex gap-2">
+            <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void create();
               }}
               maxLength={120}
+              aria-label={t('spaces-create-placeholder', {
+                defaultValue: 'Give your Space a title…',
+              })}
               placeholder={t('spaces-create-placeholder', {
                 defaultValue: 'Give your Space a title…',
               })}
-              className="min-w-0 flex-1 rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+              className="min-w-0 flex-1"
             />
-            <Button onClick={() => void create()} disabled={creating || !title.trim()}>
-              <Plus className="mr-1 h-4 w-4" />
+            <Button
+              variant="accent"
+              onClick={() => void create()}
+              loading={creating}
+              disabled={!title.trim()}
+            >
+              <Plus aria-hidden />
               {t('spaces-create-cta', { defaultValue: 'Start' })}
             </Button>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-site-text-dim">
+          <p className="text-sm text-site-text-dim">
             {t('spaces-signin', { defaultValue: 'Sign in to start a Space.' })}
           </p>
         )}
-      </div>
+      </section>
 
-      <div className="p-4">
-        <div className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-danger">
-          <span className="h-2 w-2 animate-pulse-settle rounded-full bg-site-danger" aria-hidden />
+      <section className="space-y-3">
+        <h2 className="site-section-label flex items-center gap-2">
+          <span className="size-2 animate-pulse-settle rounded-full bg-site-danger" aria-hidden />
           {t('live-now', { defaultValue: 'Live now' })}
-        </div>
+        </h2>
 
         {loading ? (
           <div className="flex justify-center py-20">
             <Spinner />
           </div>
         ) : spaces.length === 0 ? (
-          <div className="rounded-site border border-dashed border-site-border p-8 text-center text-sm text-site-text-dim">
-            {t('spaces-empty', { defaultValue: 'No live Spaces right now. Start one!' })}
-          </div>
+          <EmptyState
+            icon={Radio}
+            description={t('spaces-empty', {
+              defaultValue: 'No live Spaces right now. Start one!',
+            })}
+          />
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
             {spaces.map((s: LiveSpaceSummary) => (
@@ -135,10 +145,10 @@ export function SpacesColumn() {
                 <Link
                   to="/spaces/$id"
                   params={{ id: s.id }}
-                  className="flex flex-col gap-1 rounded-site border border-site-border bg-site-surface p-4 transition-colors hover:border-site-border-bright"
+                  className="glass-fill glass-interactive flex flex-col gap-1 rounded-site px-4 py-3"
                 >
-                  <div className="flex items-center gap-1.5 text-xs text-site-text-dim">
-                    <Radio className="h-3.5 w-3.5 text-site-accent" aria-hidden />
+                  <div className="flex items-center gap-2 text-xs text-site-text-dim">
+                    <Radio className="size-3.5 text-site-accent" aria-hidden />
                     {s.community?.name ??
                       s.host.name ??
                       t('space-fallback-host', { defaultValue: 'Space' })}
@@ -149,7 +159,7 @@ export function SpacesColumn() {
             ))}
           </ul>
         )}
-      </div>
+      </section>
     </div>
   );
 }

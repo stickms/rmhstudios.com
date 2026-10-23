@@ -233,12 +233,12 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
         })}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-site border border-site-border bg-site-surface md:block">
+      <div className="glass-fill hidden overflow-x-auto rounded-site md:block">
         <table
           className="w-full border-collapse text-left text-sm"
           aria-label={t('ladder.jobPostings', { defaultValue: 'Job postings' })}
         >
-          <thead className="border-b border-site-border bg-site-surface-hover text-xs uppercase tracking-wide text-site-text-muted">
+          <thead className="border-b border-site-border bg-site-surface-hover text-xs font-medium text-site-text-muted">
             <tr>
               <th scope="col" className="px-4 py-3">
                 {t('ladder.titleCompany', { defaultValue: 'Title / Company' })}

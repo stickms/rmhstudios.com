@@ -30,8 +30,8 @@ export default function PlatformPage() {
     >
       <DatacenterTabs active="/rmh-datacenter/platform" />
 
-      <div className="space-y-8 px-4 pb-12">
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+      <div className="space-y-6 px-4 pt-4 pb-12">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <p className="max-w-prose text-site-text-muted">
             {t('plat-lede', {
               defaultValue:
@@ -40,7 +40,7 @@ export default function PlatformPage() {
           </p>
         </section>
 
-        <section id="colocation" className="glass-pane rounded-site p-6 sm:p-8">
+        <section id="colocation" className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker="PL-01"
             heading={t('plat-colo-heading', {
@@ -53,7 +53,7 @@ export default function PlatformPage() {
                 'Half racks, full racks and locked cages from a quarter cabinet to a private suite. Sold by drawn kilowatts rather than by rack unit, so a half-empty cabinet full of GPUs is priced honestly and a full cabinet of storage is not penalised for existing.',
             })}
           </p>
-          <dl className="mt-5">
+          <dl className="mt-4">
             <SpecRow term={t('plat-colo-t1', { defaultValue: 'Power' })}>
               {t('plat-colo-t1-desc', {
                 defaultValue:
@@ -81,7 +81,7 @@ export default function PlatformPage() {
           </dl>
         </section>
 
-        <section id="bare-metal" className="glass-pane rounded-site p-6 sm:p-8">
+        <section id="bare-metal" className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker="PL-02"
             heading={t('plat-metal-heading', {
@@ -94,7 +94,7 @@ export default function PlatformPage() {
                 'Single-tenant servers with no hypervisor between your workload and the silicon: no noisy neighbour, no steal time, and a NUMA topology that is the one on the datasheet.',
             })}
           </p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {[
               [
                 'GP',
@@ -124,8 +124,8 @@ export default function PlatformPage() {
                 t('chip-numa', { defaultValue: 'Pinned NUMA' }),
               ],
             ].map(([code, name, desc, chip]) => (
-              <Card key={code} className="flex flex-col items-start gap-2 p-5">
-                <span className="text-xs font-medium tracking-wide text-site-accent uppercase">
+              <Card key={code} className="flex flex-col items-start gap-2 p-4">
+                <span className="text-xs font-medium text-site-accent">
                   {code}
                 </span>
                 <h3 className="font-display text-lg font-semibold text-site-text">{name}</h3>
@@ -136,7 +136,7 @@ export default function PlatformPage() {
           </div>
         </section>
 
-        <section id="accelerated" className="glass-pane rounded-site p-6 sm:p-8">
+        <section id="accelerated" className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker="PL-03"
             heading={t('plat-gpu-heading', {
@@ -149,7 +149,7 @@ export default function PlatformPage() {
                 'A training run does not fail because the GPUs are slow; it fails because the rack cannot dissipate them. These halls are direct-to-chip liquid cooled from the slab up, with a coolant distribution unit per row and a dry cooler loop that never touches the building chillers.',
             })}
           </p>
-          <dl className="mt-5">
+          <dl className="mt-4">
             <SpecRow term={t('plat-gpu-t1', { defaultValue: 'By the node' })}>
               {t('plat-gpu-t1-desc', {
                 defaultValue:
@@ -177,7 +177,7 @@ export default function PlatformPage() {
           </dl>
         </section>
 
-        <section id="storage" className="glass-pane rounded-site p-6 sm:p-8">
+        <section id="storage" className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker="PL-04"
             heading={t('plat-store-heading', {
@@ -190,7 +190,7 @@ export default function PlatformPage() {
                 'Block, object and archive tiers on the same floor as your servers, reachable over a cross-connect rather than the internet — which is the difference between a restore that is a scheduling problem and one that is a budget problem.',
             })}
           </p>
-          <dl className="mt-5">
+          <dl className="mt-4">
             <SpecRow term={t('plat-store-block', { defaultValue: 'Block' })}>
               {t('plat-store-block-desc', {
                 defaultValue:
@@ -212,7 +212,7 @@ export default function PlatformPage() {
           </dl>
         </section>
 
-        <section id="resilience" className="glass-pane rounded-site p-6 sm:p-8">
+        <section id="resilience" className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker="PL-05"
             heading={t('plat-dr-heading', {
@@ -225,7 +225,7 @@ export default function PlatformPage() {
                 'A warm standby on a different grid interconnection and a different fibre path, replicated over the backbone at no egress cost. The contract requires two rehearsed failovers a year, because an untested plan is a document rather than a recovery.',
             })}
           </p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {[
               [
                 'RPO',
@@ -252,8 +252,8 @@ export default function PlatformPage() {
                 }),
               ],
             ].map(([code, name, desc]) => (
-              <Card key={code} className="flex flex-col gap-2 p-5">
-                <span className="text-xs font-medium tracking-wide text-site-accent uppercase">
+              <Card key={code} className="flex flex-col gap-2 p-4">
+                <span className="text-xs font-medium text-site-accent">
                   {code}
                 </span>
                 <h3 className="font-display text-lg font-semibold text-site-text">{name}</h3>
@@ -263,7 +263,7 @@ export default function PlatformPage() {
           </div>
         </section>
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('plat-cta-kicker', { defaultValue: 'Quoting' })}
             heading={t('plat-cta-heading', { defaultValue: 'Send a load, get a hall' })}
@@ -274,7 +274,7 @@ export default function PlatformPage() {
                 'Kilowatts, cabinets, regions and compliance obligations. A quote comes back within two working days, with the campuses that do not fit named as well as the ones that do.',
             })}
           </p>
-          <div className="mt-6">
+          <div className="mt-4">
             <Button asChild variant="accent">
               <Link to="/rmh-datacenter/contact">
                 {t('request-capacity', { defaultValue: 'Request capacity' })}

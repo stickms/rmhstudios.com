@@ -95,10 +95,10 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
   const median = data?.stats.medianMinutes;
 
   return (
-    <Card className="min-h-28 space-y-3 p-4">
+    <Card className="min-h-28 gap-3 p-4">
       <div className="flex flex-wrap items-end gap-3">
         {signedIn ? (
-          <label className="flex min-w-44 flex-1 flex-col gap-1 text-xs text-site-text-muted">
+          <label className="flex min-w-44 flex-1 flex-col gap-2 text-xs text-site-text-muted">
             {t('your-status', { defaultValue: 'Your status' })}
             <Select
               value={status}
@@ -118,7 +118,7 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
           </label>
         ) : null}
         {signedIn && status && (FINISH_STATUSES as readonly string[]).includes(status) ? (
-          <label className="flex w-36 flex-col gap-1 text-xs text-site-text-muted">
+          <label className="flex w-36 flex-col gap-2 text-xs text-site-text-muted">
             {t('hours-label', { defaultValue: 'Hours to finish' })}
             <span className="flex gap-2">
               <Input

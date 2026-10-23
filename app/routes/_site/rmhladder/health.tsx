@@ -19,7 +19,10 @@ import {
 } from '@/lib/rmhladder/server/queries';
 import { resumeSubsystemReadiness } from '@/lib/rmhladder/resume/readiness.server';
 import { detectLadderHealthAlerts, resolveAlertThresholds } from '@/lib/rmhladder/health-alerts';
+import { useTranslation } from 'react-i18next';
 import { timeAgo } from '@/components/rmhladder/time';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 
@@ -77,24 +80,42 @@ function durationLabel(run: AnyRow): string {
 }
 
 function HealthPage() {
+  const { t } = useTranslation('site');
   const { stale, runs, openReviewTasks, resumeReadiness, alerts } = Route.useLoaderData();
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
 
-  return (
-    <div>
-      <Link to="/rmhladder/review" className="rl-chip rl-review-chip">
-        Review queue · {openReviewTasks} open
-      </Link>
+  const panel = 'glass-fill space-y-3 rounded-site p-4 sm:p-5';
+  const rowCls = 'flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm';
+  const hint = 'text-sm text-site-text-muted';
 
-      <section className="rl-stale-panel">
-        <h2 className="rl-eyebrow">Health alerts</h2>
+  return (
+    <div className="space-y-4">
+      <div>
+        <Button asChild variant="outline" size="sm" className="min-h-11">
+          <Link to="/rmhladder/review">
+            {t('ladder.health.reviewQueue', {
+              defaultValue: 'Review queue · {{count}} open',
+              count: openReviewTasks,
+            })}
+          </Link>
+        </Button>
+      </div>
+
+      <section className={panel} aria-labelledby="rl-health-alerts">
+        <h2 id="rl-health-alerts" className="site-section-label">
+          {t('ladder.health.alerts', { defaultValue: 'Health alerts' })}
+        </h2>
         {alerts.length === 0 ? (
-          <p className="rl-quicklist__empty">No active alerts — the pipeline is healthy.</p>
+          <p className={hint}>
+            {t('ladder.health.healthy', { defaultValue: 'No active alerts — the pipeline is healthy.' })}
+          </p>
         ) : (
-          <ul>
+          <ul className="divide-y divide-site-border">
             {alerts.map((a) => (
-              <li key={a.code} className="rl-stale-row">
-                <span className="rl-program-chip">{a.severity}</span>
+              <li key={a.code} className={rowCls}>
+                <Badge variant={a.severity === 'high' ? 'danger' : 'warning'} size="sm">
+                  {a.severity}
+                </Badge>
                 <span className="rl-mono">{a.code}</span>
                 <span>{a.message}</span>
               </li>
@@ -103,15 +124,23 @@ function HealthPage() {
         )}
       </section>
 
-      <section className="rl-stale-panel">
-        <h2 className="rl-eyebrow">Resume subsystem</h2>
+      <section className={panel} aria-labelledby="rl-health-resume">
+        <h2 id="rl-health-resume" className="site-section-label">
+          {t('ladder.health.resume', { defaultValue: 'Resume subsystem' })}
+        </h2>
         {resumeReadiness.ready ? (
-          <p className="rl-quicklist__empty">Object storage and encryption key are configured.</p>
+          <p className={hint}>
+            {t('ladder.health.resumeReady', {
+              defaultValue: 'Object storage and encryption key are configured.',
+            })}
+          </p>
         ) : (
-          <ul>
+          <ul className="divide-y divide-site-border">
             {resumeReadiness.missing.map((item) => (
-              <li key={item} className="rl-stale-row">
-                <span className="rl-mono">missing: {item}</span>
+              <li key={item} className={rowCls}>
+                <span className="rl-mono">
+                  {t('ladder.health.missing', { defaultValue: 'missing: {{item}}', item })}
+                </span>
               </li>
             ))}
           </ul>
@@ -119,33 +148,46 @@ function HealthPage() {
       </section>
 
       {/* Silent sources — the page's thesis */}
-      <section className="rl-stale-panel">
-        <h2 className="rl-eyebrow">Silent for two scrape cycles (8h)</h2>
+      <section className={panel} aria-labelledby="rl-health-silent">
+        <h2 id="rl-health-silent" className="site-section-label">
+          {t('ladder.health.silent', { defaultValue: 'Silent for two scrape cycles (8h)' })}
+        </h2>
         {(stale as AnyRow[]).length === 0 ? (
-          <p className="rl-quicklist__empty">
-            Every active source has succeeded within the last eight hours.
+          <p className={hint}>
+            {t('ladder.health.allOk', {
+              defaultValue: 'Every active source has succeeded within the last eight hours.',
+            })}
           </p>
         ) : (
-          <ul>
+          <ul className="divide-y divide-site-border">
             {(stale as AnyRow[]).map((s) => (
-              <li key={s.id as string} className="rl-stale-row">
-                <span className="rl-stale-row__company">
+              <li key={s.id as string} className={rowCls}>
+                <span className="min-w-44 font-semibold">
                   {((s.company as AnyRow | undefined)?.name as string) ?? (s.companyId as string)}
                 </span>
-                <span className="rl-program-chip">{s.platform as string}</span>
+                <Badge variant="outline" size="sm">{s.platform as string}</Badge>
                 <span className="rl-mono">
                   {s.lastSuccessAt
-                    ? `last ok ${timeAgo(s.lastSuccessAt as Date)}`
-                    : 'never succeeded'}
+                    ? t('ladder.health.lastOk', {
+                        defaultValue: 'last ok {{ago}}',
+                        ago: timeAgo(s.lastSuccessAt as Date),
+                      })
+                    : t('ladder.health.neverSucceeded', { defaultValue: 'never succeeded' })}
                 </span>
                 <span className="rl-mono">
                   {s.lastAttemptAt
-                    ? `last tried ${timeAgo(s.lastAttemptAt as Date)}`
-                    : 'never attempted'}
+                    ? t('ladder.health.lastTried', {
+                        defaultValue: 'last tried {{ago}}',
+                        ago: timeAgo(s.lastAttemptAt as Date),
+                      })
+                    : t('ladder.health.neverAttempted', { defaultValue: 'never attempted' })}
                 </span>
                 <span className="rl-mono">
-                  {Number(s.consecutiveFailures ?? 0)} consecutive failure
-                  {Number(s.consecutiveFailures ?? 0) === 1 ? '' : 's'}
+                  {t('ladder.health.failures', {
+                    defaultValue: '{{count}} consecutive failures',
+                    defaultValue_one: '{{count}} consecutive failure',
+                    count: Number(s.consecutiveFailures ?? 0),
+                  })}
                 </span>
               </li>
             ))}
@@ -154,21 +196,25 @@ function HealthPage() {
       </section>
 
       {/* Run ledger */}
-      <section>
-        <h2 className="rl-eyebrow">Scrape runs</h2>
-        <table className="rl-jobs-table rl-runs-table">
+      <section className="space-y-3" aria-labelledby="rl-health-runs">
+        <h2 id="rl-health-runs" className="site-section-label">
+          {t('ladder.health.runs', { defaultValue: 'Scrape runs' })}
+        </h2>
+        <table className="rl-jobs-table rl-runs-table glass-fill rounded-site">
           <thead>
             <tr>
-              <th scope="col">Started</th>
-              <th scope="col">Duration</th>
-              <th scope="col">Found</th>
-              <th scope="col">New</th>
-              <th scope="col">Verified</th>
-              <th scope="col">Expired</th>
-              <th scope="col">Errors</th>
-              <th scope="col">Trigger</th>
+              <th scope="col">{t('ladder.health.started', { defaultValue: 'Started' })}</th>
+              <th scope="col">{t('ladder.health.duration', { defaultValue: 'Duration' })}</th>
+              <th scope="col">{t('ladder.health.found', { defaultValue: 'Found' })}</th>
+              <th scope="col">{t('ladder.health.new', { defaultValue: 'New' })}</th>
+              <th scope="col">{t('ladder.health.verified', { defaultValue: 'Verified' })}</th>
+              <th scope="col">{t('ladder.health.expired', { defaultValue: 'Expired' })}</th>
+              <th scope="col">{t('ladder.health.errors', { defaultValue: 'Errors' })}</th>
+              <th scope="col">{t('ladder.health.trigger', { defaultValue: 'Trigger' })}</th>
               <th scope="col">
-                <span className="rl-visually-hidden">Details</span>
+                <span className="rl-visually-hidden">
+                  {t('ladder.health.details', { defaultValue: 'Details' })}
+                </span>
               </th>
             </tr>
           </thead>
@@ -186,20 +232,25 @@ function HealthPage() {
                   <td className="rl-mono">{run.expiredCount as number}</td>
                   <td className="rl-mono">{run.errorCount as number}</td>
                   <td>
-                    <span className="rl-program-chip">{run.trigger as string}</span>
+                    <Badge variant="outline" size="sm">{run.trigger as string}</Badge>
                   </td>
                   <td>
                     {errors.length > 0 && (
-                      <button
+                      <Button
                         type="button"
-                        className="rl-chip"
+                        variant="outline"
+                        size="sm"
                         aria-expanded={expanded}
                         onClick={() => setExpandedRun(expanded ? null : (run.id as string))}
                       >
                         {expanded
-                          ? 'Hide errors'
-                          : `${errors.length} error${errors.length > 1 ? 's' : ''}`}
-                      </button>
+                          ? t('ladder.health.hideErrors', { defaultValue: 'Hide errors' })
+                          : t('ladder.health.showErrors', {
+                              defaultValue: '{{count}} errors',
+                              defaultValue_one: '{{count}} error',
+                              count: errors.length,
+                            })}
+                      </Button>
                     )}
                   </td>
                 </tr>,
@@ -221,8 +272,9 @@ function HealthPage() {
           </tbody>
         </table>
         {(runs as AnyRow[]).length === 0 && (
-          <p className="rl-quicklist__empty">
-            No runs recorded. Start one: <code>pnpm ladder:run</code>
+          <p className={hint}>
+            {t('ladder.health.noRuns', { defaultValue: 'No runs recorded. Start one:' })}{' '}
+            <code className="rl-mono">pnpm ladder:run</code>
           </p>
         )}
       </section>

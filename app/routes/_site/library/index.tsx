@@ -517,7 +517,7 @@ function Library() {
           ) : undefined
         }
       >
-        <div className="vibe-screen lib lib--glass-playground min-h-screen">
+        <div className="vibe-screen lib lib--glass-playground">
           {/* The strip sits OUTSIDE `.lib-playground`. The playground is the 3D
               stage for the shelf — it owns the perspective, the orbit handlers and
               its own `--lib-gutter` inset — and page chrome inside it inherited

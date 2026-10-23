@@ -89,10 +89,8 @@ export const Route = createFileRoute('/_site/thread/$rootId')({
 function ThreadPage() {
   const { items } = Route.useLoaderData();
   return (
-    <>
-      <PageFrame>
-        <ThreadView items={items} />
-      </PageFrame>
-    </>
+    <PageFrame>
+      <ThreadView items={items} />
+    </PageFrame>
   );
 }

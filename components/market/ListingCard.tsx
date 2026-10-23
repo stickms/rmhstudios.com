@@ -151,13 +151,13 @@ export function ListingCard({
         <div className="flex items-center gap-2">
           <p className="truncate text-sm font-semibold text-site-text">{name}</p>
           <span
-            className="text-[10px] font-bold uppercase"
+            className="text-xs font-semibold uppercase"
             style={{ color: RARITY_COLORS[rarity] }}
           >
             {rarity}
           </span>
         </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-xs text-site-text-muted">
+        <div className="mt-0.5 flex items-center gap-2 text-xs text-site-text-muted">
           <UserAvatar
             src={listing.seller.image}
             alt=""
@@ -171,7 +171,7 @@ export function ListingCard({
           </span>
         </div>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-1.5">
+      <div className="flex shrink-0 flex-col items-end gap-2">
         <span className="inline-flex items-center gap-1 text-sm font-semibold text-site-text">
           <CoinIcon className="h-4 w-4" /> {listing.priceCoins.toLocaleString()}
         </span>

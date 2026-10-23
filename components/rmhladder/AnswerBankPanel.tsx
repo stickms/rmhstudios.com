@@ -125,7 +125,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
   return (
     <section className="glass-pane p-4 sm:p-5" aria-labelledby="ladder-answers-heading">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 id="ladder-answers-heading" className="text-sm font-semibold text-site-text">
+        <h2 id="ladder-answers-heading" className="site-section-label">
           {t('ladder.answersTitle', { defaultValue: 'Answer bank' })}
         </h2>
         <span className="text-xs text-site-text-dim">
@@ -161,7 +161,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
           const value = bank[field.key];
           return (
             <div key={field.key}>
-              <Label htmlFor={id} className="flex items-center gap-1.5">
+              <Label htmlFor={id} className="flex items-center gap-2">
                 {field.label}
                 {field.sensitive && (
                   <ShieldAlert
@@ -175,7 +175,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
               {field.kind === 'boolean' ? (
                 <Select
                   id={id}
-                  containerClassName="mt-1.5"
+                  containerClassName="mt-2"
                   value={value === null ? '' : value ? 'yes' : 'no'}
                   onChange={(e) =>
                     setScalar(field.key, e.target.value === '' ? null : e.target.value === 'yes')
@@ -190,7 +190,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
               ) : (
                 <Input
                   id={id}
-                  className="mt-1.5"
+                  className="mt-2"
                   type={field.kind === 'url' ? 'url' : 'text'}
                   inputMode={field.kind === 'url' ? 'url' : 'text'}
                   placeholder={field.placeholder}
@@ -203,7 +203,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
         })}
       </div>
 
-      <p className="mt-3 flex items-start gap-1.5 text-xs text-site-text-dim">
+      <p className="mt-3 flex items-start gap-2 text-xs text-site-text-dim">
         <ShieldAlert className="mt-px size-3 shrink-0 text-site-warning" aria-hidden />
         <span>
           {t('ladder.answersSensitiveNote', {
@@ -216,7 +216,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
       {/* Essays */}
       <div className="mt-6 border-t border-site-border pt-4">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-site-text">
+          <h3 className="site-section-label">
             {t('ladder.answersEssays', { defaultValue: 'Repeated essay questions' })}
           </h3>
           <Button
@@ -292,7 +292,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
       {/* STAR stories */}
       <div className="mt-6 border-t border-site-border pt-4">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-site-text">
+          <h3 className="site-section-label">
             {t('ladder.answersStories', { defaultValue: 'STAR stories' })}
           </h3>
           <Button
@@ -307,7 +307,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
             {t('ladder.answersAddStory', { defaultValue: 'Add' })}
           </Button>
         </div>
-        <p className="mt-1.5 text-xs text-site-text-dim">
+        <p className="mt-2 text-xs text-site-text-dim">
           {t('ladder.answersStoriesHint', {
             defaultValue: 'These are what the interview prep sheet matches against a posting.',
           })}

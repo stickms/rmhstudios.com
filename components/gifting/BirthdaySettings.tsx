@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { apiJson } from '@/components/economy-plus/api';
 import { isValidMonthDay } from '@/lib/gifting/birthday';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 export default function BirthdaySettings() {
   const { t } = useTranslation('f-gifting');
@@ -67,17 +68,14 @@ export default function BirthdaySettings() {
   }
 
   return (
-    <section aria-labelledby="birthday-h" className="glass-pane space-y-3 p-4">
-      <h2 id="birthday-h" className="flex items-center gap-2 font-display text-base font-semibold">
-        <Cake className="size-4" aria-hidden />
-        {t('birthday-title', { defaultValue: 'Birthday' })}
-      </h2>
-      <p className="text-sm text-site-text-muted">
-        {t('birthday-desc', {
-          defaultValue:
-            'Optional. Share the day and month (never the year): your followers get one nudge and your profile gets confetti that day. Anyone signed in can schedule you a gift for it.',
-        })}
-      </p>
+    <SettingsSection
+      icon={Cake}
+      title={t('birthday-title', { defaultValue: 'Birthday' })}
+      description={t('birthday-desc', {
+        defaultValue:
+          'Optional. Share the day and month (never the year): your followers get one nudge and your profile gets confetti that day. Anyone signed in can schedule you a gift for it.',
+      })}
+    >
       <div className="flex flex-wrap items-end gap-3">
         <Select
           value={month}
@@ -114,6 +112,6 @@ export default function BirthdaySettings() {
           </Button>
         ) : null}
       </div>
-    </section>
+    </SettingsSection>
   );
 }

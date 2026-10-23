@@ -8,9 +8,9 @@ export function AiPracticesLink() {
   return (
     <Link
       to="/developer/ai-practices"
-      className="glass-fill glass-interactive group flex items-start gap-3 rounded-site p-4 hover:-translate-y-px"
+      className="glass-fill glass-interactive group flex items-start gap-3 rounded-site p-4"
     >
-      <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
+      <Sparkles className="mt-0.5 size-5 shrink-0 text-site-accent" aria-hidden />
       <span>
         <span className="block font-semibold text-site-text transition-colors group-hover:text-site-accent">
           {t('link-title', { defaultValue: 'Coding with AI' })}

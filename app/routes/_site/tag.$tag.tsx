@@ -57,10 +57,8 @@ function TagPage() {
   // exactly the loader's return, so assert it.
   const { data } = Route.useLoaderData() as unknown as { data: TagFeedResult };
   return (
-    <>
-      <PageFrame>
-        <TagColumn tag={tag} initialData={data} />
-      </PageFrame>
-    </>
+    <PageFrame>
+      <TagColumn tag={tag} initialData={data} />
+    </PageFrame>
   );
 }

@@ -2,6 +2,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Swords } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { WagerCard } from '@/components/wager/WagerCard';
 import type { SerializedWager } from '@/lib/wager/wager.server';
@@ -42,13 +45,14 @@ function WagerDetailPage() {
     >
       <div className="max-w-xl">
         {loading ? (
-          <div className="h-48 rounded-site glass-fill animate-pulse" />
+          <Skeleton className="h-48 rounded-site" />
         ) : wager ? (
           <WagerCard wager={wager} viewerId={viewerId} onChange={(w) => w && setWager(w)} />
         ) : (
-          <p className="text-site-text-dim py-12 text-center">
-            {t('not-found', { defaultValue: 'This match no longer exists.' })}
-          </p>
+          <EmptyState
+            icon={Swords}
+            title={t('not-found', { defaultValue: 'This match no longer exists.' })}
+          />
         )}
       </div>
     </PageLayout>

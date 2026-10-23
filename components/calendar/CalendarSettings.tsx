@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { CalendarFeedView } from '@/lib/calendar/types';
 import { api } from './api';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 export default function CalendarSettings() {
   const { t, i18n } = useTranslation('f-calendar');
@@ -33,7 +34,7 @@ export default function CalendarSettings() {
     );
   }, [isPending, signedIn]);
 
-  if (isPending) return <Skeleton className="m-4 h-48" />;
+  if (isPending) return <Skeleton className="h-48" />;
   if (!signedIn) {
     return (
       <SignedOutPrompt
@@ -83,21 +84,16 @@ export default function CalendarSettings() {
   };
 
   return (
-    <div className="space-y-6 p-4">
-      <section className="glass-pane space-y-4 rounded-site p-4" aria-labelledby="feed-heading">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 id="feed-heading" className="font-display text-lg font-medium text-site-text">
-              {t('feed-title', { defaultValue: 'Calendar feed' })}
-            </h2>
-            <p className="mt-1 text-sm text-site-text-muted">
-              {t('feed-intro', {
-                defaultValue:
-                  'One private link for Google Calendar, Apple Calendar or Outlook: events you RSVP to, tournaments you entered, office hours, locked-in polls and the game nights you pick below.',
-              })}
-            </p>
-          </div>
-          <label className="flex shrink-0 items-center gap-2 text-sm text-site-text-muted">
+    <>
+      <SettingsSection
+        icon={CalendarCheck}
+        title={t('feed-title', { defaultValue: 'Calendar feed' })}
+        description={t('feed-intro', {
+          defaultValue:
+            'One private link for Google Calendar, Apple Calendar or Outlook: events you RSVP to, tournaments you entered, office hours, locked-in polls and the game nights you pick below.',
+        })}
+        action={
+          <label className="flex items-center gap-2 text-sm text-site-text-muted">
             <Switch
               checked={feed?.enabled ?? false}
               disabled={busy || !feed}
@@ -106,8 +102,8 @@ export default function CalendarSettings() {
             />
             {t('feed-enabled', { defaultValue: 'Feed on' })}
           </label>
-        </div>
-
+        }
+      >
         {feed === null ? (
           <Skeleton className="h-11" />
         ) : feed.url ? (
@@ -138,27 +134,24 @@ export default function CalendarSettings() {
             {t('feed-create', { defaultValue: 'Create my calendar link' })}
           </Button>
         )}
-      </section>
+      </SettingsSection>
 
-      <section className="space-y-2" aria-labelledby="feed-slots">
-        <h2 id="feed-slots" className="text-sm font-bold text-site-text">
-          {t('feed-slots-title', { defaultValue: 'Game nights and scheduled drops' })}
-        </h2>
-        <p className="text-sm text-site-text-muted">
-          {t('feed-slots-body', {
-            defaultValue: 'Pick the programming-grid entries you want in your calendar.',
-          })}
-        </p>
+      <SettingsSection
+        title={t('feed-slots-title', { defaultValue: 'Game nights and scheduled drops' })}
+        description={t('feed-slots-body', {
+          defaultValue: 'Pick the programming-grid entries you want in your calendar.',
+        })}
+      >
         {feed && feed.slots.length === 0 ? (
           <p className="text-sm text-site-text-muted">
             {t('feed-slots-none', { defaultValue: 'Nothing is scheduled right now.' })}
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {feed?.slots.map((s) => (
               <li
                 key={s.id}
-                className="glass-fill flex items-center justify-between gap-3 rounded-site p-3"
+                className="glass-fill flex items-center justify-between gap-3 rounded-site px-4 py-3"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-site-text">
@@ -187,7 +180,7 @@ export default function CalendarSettings() {
             ))}
           </ul>
         )}
-      </section>
+      </SettingsSection>
 
       <section
         className="grid gap-3 sm:grid-cols-2"
@@ -195,7 +188,7 @@ export default function CalendarSettings() {
       >
         <Link
           to="/when"
-          className="glass-fill flex items-center gap-3 rounded-site p-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+          className="glass-fill flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
         >
           <CalendarCheck className="size-5 text-site-accent" aria-hidden />
           <span className="text-sm font-semibold text-site-text">
@@ -204,7 +197,7 @@ export default function CalendarSettings() {
         </Link>
         <Link
           to="/office-hours"
-          className="glass-fill flex items-center gap-3 rounded-site p-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+          className="glass-fill flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
         >
           <CalendarClock className="size-5 text-site-accent" aria-hidden />
           <span className="text-sm font-semibold text-site-text">
@@ -212,6 +205,6 @@ export default function CalendarSettings() {
           </span>
         </Link>
       </section>
-    </div>
+    </>
   );
 }

@@ -27,7 +27,7 @@ export function BuildGrid({
   userId,
   curated,
 }: BuildGridProps) {
-  const { t } = useTranslation("c-user-builds");
+  const { t } = useTranslation('c-user-builds');
   const [builds, setBuilds] = useState<Build[]>(initialBuilds);
   const [loading, setLoading] = useState(initialBuilds.length === 0);
   const [resorting, setResorting] = useState(false);
@@ -81,7 +81,7 @@ export function BuildGrid({
         setLoadingMore(false);
       }
     },
-    [category, technology, search, sort, userId, curated]
+    [category, technology, search, sort, userId, curated],
   );
 
   // Initial fetch and refetch on filter changes
@@ -99,7 +99,7 @@ export function BuildGrid({
           fetchBuilds(cursor);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     if (loadMoreRef.current) {
@@ -119,8 +119,8 @@ export function BuildGrid({
               liked: !b.liked,
               likeCount: b.liked ? b.likeCount - 1 : b.likeCount + 1,
             }
-          : b
-      )
+          : b,
+      ),
     );
 
     try {
@@ -135,8 +135,8 @@ export function BuildGrid({
                 liked: !b.liked,
                 likeCount: b.liked ? b.likeCount + 1 : b.likeCount - 1,
               }
-            : b
-        )
+            : b,
+        ),
       );
     }
   };
@@ -152,10 +152,12 @@ export function BuildGrid({
   if (builds.length === 0) {
     return (
       <Reveal className="text-center py-20">
-        <p className="text-site-text-muted">{t("no-builds-found", { defaultValue: "No builds found" })}</p>
+        <p className="text-site-text-muted">
+          {t('no-builds-found', { defaultValue: 'No builds found' })}
+        </p>
         {search && (
           <p className="text-sm text-site-text-dim mt-2">
-            {t("try-different-search", { defaultValue: "Try a different search term" })}
+            {t('try-different-search', { defaultValue: 'Try a different search term' })}
           </p>
         )}
       </Reveal>
@@ -165,25 +167,25 @@ export function BuildGrid({
   return (
     <div>
       <LayoutGroup>
-        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-site ${resorting ? 'opacity-50 pointer-events-none' : ''}`}>
-            {builds.map((build) => (
-              <motion.div
-                key={build.id}
-                layout
-                transition={{ layout: { type: 'spring', stiffness: 300, damping: 30 } }}
-              >
-                <BuildCard build={build} onLike={handleLike} />
-              </motion.div>
-            ))}
+        <div
+          className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity duration-site ${resorting ? 'opacity-50 pointer-events-none' : ''}`}
+        >
+          {builds.map((build) => (
+            <motion.div
+              key={build.id}
+              layout
+              transition={{ layout: { type: 'spring', stiffness: 300, damping: 30 } }}
+            >
+              <BuildCard build={build} onLike={handleLike} />
+            </motion.div>
+          ))}
         </div>
       </LayoutGroup>
 
       {/* Load more trigger */}
       <div ref={loadMoreRef} className="py-8 flex justify-center">
         {loadingMore && <Spinner />}
-        {!hasMore && builds.length > 0 && (
-          <div className="h-px" />
-        )}
+        {!hasMore && builds.length > 0 && <div className="h-px" />}
       </div>
     </div>
   );

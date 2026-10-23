@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
 import { ThemeGallery } from '@/components/settings/ThemeGallery';
 import { AccentPicker } from '@/components/settings/AccentPicker';
 import { NotificationPrefsPanel } from '@/components/settings/NotificationPrefsPanel';
@@ -40,7 +41,7 @@ export const Route = createFileRoute('/_site/settings/')({
 
 function SectionCard({
   id,
-  icon: Icon,
+  icon,
   title,
   subtitle,
   children,
@@ -52,23 +53,16 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section
+    <SettingsSection
       id={id}
-      aria-labelledby={`${id}-heading`}
-      // Discrete floating L2 slab (§8.4); rows keep their hairlines INSIDE.
-      className="glass-pane rounded-site p-4"
+      icon={icon}
+      title={title}
+      titleId={`${id}-heading`}
+      description={subtitle}
+      bodyClassName="space-y-4"
     >
-      <div className="mb-4 flex items-center gap-2">
-        <Icon className="h-4.5 w-4.5 text-site-accent" aria-hidden />
-        <div>
-          <h2 id={`${id}-heading`} className="text-sm font-bold text-site-text">
-            {title}
-          </h2>
-          <p className="text-xs text-site-text-muted">{subtitle}</p>
-        </div>
-      </div>
       {children}
-    </section>
+    </SettingsSection>
   );
 }
 
@@ -86,7 +80,7 @@ function AccountLink({
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 rounded-site px-3 py-2.5 text-sm transition-colors hover:bg-site-surface-hover"
+      className="flex min-h-11 items-center gap-3 rounded-site px-3 py-2 text-sm transition-colors hover:bg-site-surface-hover"
     >
       <Icon className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
       <span className="min-w-0 flex-1">
@@ -146,16 +140,14 @@ function SettingsPage() {
     // how privacy/security do it — keeping the sticky header compact.
     <PageLayout
       title={t('settings-title', { defaultValue: 'Settings' })}
+      description={t('settings-subtitle', {
+        defaultValue: 'Appearance, language, notifications, and your account.',
+      })}
       wide
       backTo="/"
       backLabel={t('settings-back', { defaultValue: 'Back' })}
     >
-      <div className="space-y-4 p-4">
-        <p className="text-sm text-site-text-muted">
-          {t('settings-subtitle', {
-            defaultValue: 'Appearance, language, notifications, and your account.',
-          })}
-        </p>
+      <SettingsPageBody>
         <SectionCard
           id="appearance"
           icon={Palette}
@@ -167,7 +159,7 @@ function SettingsPage() {
         >
           <ThemeGallery />
 
-          <div className="mt-5 border-t border-site-border pt-4">
+          <div className="border-t border-site-border pt-4">
             <h3 className="site-section-label mb-2">
               {t('settings-accent-title', { defaultValue: 'Accent color' })}
             </h3>
@@ -178,7 +170,7 @@ function SettingsPage() {
             </p>
             <AccentPicker />
           </div>
-          <div className="mt-4 flex items-center gap-2 rounded-site border border-site-border bg-site-bg-subtle px-3 py-2.5">
+          <div className="glass-inset flex items-center gap-2 rounded-site px-3 py-2">
             <Sparkles className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
             <p className="text-xs text-site-text-muted">
               {t('settings-premium-themes', {
@@ -235,10 +227,10 @@ function SettingsPage() {
             aria-label={t('settings-search-label', { defaultValue: 'Search settings' })}
           />
 
-          {!isPending && !signedIn && <div className="mt-3">{signInPrompt}</div>}
+          {!isPending && !signedIn && signInPrompt}
 
           {groups.map(({ group, items }) => (
-            <div key={group} className="mt-4">
+            <div key={group}>
               <h3 className="site-section-label mb-1">
                 {GROUP_LABELS[group](t)}
               </h3>
@@ -257,7 +249,7 @@ function SettingsPage() {
           ))}
 
           {signedIn && handle && !query && (
-            <div className="-mx-3 mt-4 border-t border-site-border pt-2">
+            <div className="-mx-3 border-t border-site-border pt-2">
               <AccountLink
                 to={`/u/${handle}`}
                 icon={User}
@@ -270,7 +262,7 @@ function SettingsPage() {
           )}
 
           {groups.length === 0 && (
-            <p className="mt-4 text-sm text-site-text-muted">
+            <p className="text-sm text-site-text-muted">
               {t('settings-search-empty', {
                 query,
                 defaultValue: 'Nothing in settings matches "{{query}}".',
@@ -289,7 +281,7 @@ function SettingsPage() {
         >
           {!isPending && !signedIn ? signInPrompt : <NotificationPrefsPanel />}
         </SectionCard>
-      </div>
+      </SettingsPageBody>
     </PageLayout>
   );
 }

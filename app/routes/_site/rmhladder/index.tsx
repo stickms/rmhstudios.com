@@ -7,7 +7,7 @@
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { ListX } from 'lucide-react';
+import { Flag, ListX } from 'lucide-react';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
@@ -65,13 +65,13 @@ export const Route = createFileRoute('/_site/rmhladder/')({
 function useLastRunLine(lastRun: Record<string, unknown> | null): string {
   const { t } = useTranslation('site');
   if (!lastRun) {
-    return t('ladder-awaiting-first-run', {
-      defaultValue: 'AWAITING THE FIRST AUTOMATED UPDATE',
+    return t('ladder-awaiting-first-run-line', {
+      defaultValue: 'Awaiting the first automated update',
     });
   }
-  return t('ladder-last-run', {
-    defaultValue: 'LAST RUN · {{ago}} · {{found}} FOUND · {{errors}} ERRORS',
-    ago: timeAgo(lastRun.startedAt as Date).toUpperCase(),
+  return t('ladder-last-run-line', {
+    defaultValue: 'Last run · {{ago}} · {{found}} found · {{errors}} errors',
+    ago: timeAgo(lastRun.startedAt as Date),
     found: lastRun.discoveredCount ?? 0,
     errors: lastRun.errorCount ?? 0,
   });
@@ -91,8 +91,8 @@ function QuickList({
   renderMeta: (row: JobRow) => React.ReactNode;
 }) {
   return (
-    <section className="rl-quicklist">
-      <h2 className="rl-eyebrow">{title}</h2>
+    <section className="rl-quicklist glass-fill rounded-site p-4 sm:p-5">
+      <h2 className="site-section-label">{title}</h2>
       {rows.length === 0 ? (
         // Canonical EmptyState, as /messages already uses — this was a bare
         // hardcoded `<p>Nothing here yet.</p>` that also skipped t().
@@ -100,7 +100,7 @@ function QuickList({
       ) : (
         <ul>
           {rows.map((row) => (
-            <li key={row.id as string} className="rl-quicklist__row rl-hairline">
+            <li key={row.id as string} className="rl-quicklist__row">
               <Link
                 to="/rmhladder/jobs/$jobId"
                 params={{ jobId: row.id as string }}
@@ -128,7 +128,7 @@ function OverviewPage() {
   const lastRun = useLastRunLine(overview.lastRun);
 
   return (
-    <div>
+    <div className="space-y-4">
       <div className="rl-stats-grid">
         <StatBlock
           label={t('ladder-stat-new', { defaultValue: 'New this week' })}
@@ -191,7 +191,7 @@ function OverviewPage() {
           rows={expiringRows}
           renderMeta={(row) => (
             <span className="rl-quicklist__meta rl-mono rl-expiring">
-              ⚑{' '}
+              <Flag className="size-3" aria-hidden />
               {row.applicationDeadline
                 ? new Date(row.applicationDeadline as Date).toLocaleDateString('en-US', {
                     month: 'short',

@@ -59,7 +59,7 @@ export function RideClassPicker({ value, onChange, fareLabels }: RideClassPicker
             {fareLabels?.[cls.id] && (
               <div className="shrink-0 text-right">
                 <div className="text-sm font-bold text-site-text">{fareLabels[cls.id]}</div>
-                <div className="text-[11px] text-site-text-dim">{t("estimated-abbr", { defaultValue: "est." })}</div>
+                <div className="text-xs text-site-text-dim">{t("estimated-abbr", { defaultValue: "est." })}</div>
               </div>
             )}
           </button>

@@ -72,7 +72,7 @@ export function TranslatePage() {
           'Missing or untranslated strings for your language. Suggest wording and vote; admins review accepted ones.',
       })}
     >
-      <div className="space-y-4 px-4 pt-2 pb-12">
+      <div className="max-w-3xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
         {!session ? (
           <SignedOutPrompt
             icon={Languages}
@@ -83,7 +83,7 @@ export function TranslatePage() {
           <>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-sm text-site-text-muted">
-                <span className="mb-1 block">{t('tr-locale', { defaultValue: 'Language' })}</span>
+                <span className="mb-2 block">{t('tr-locale', { defaultValue: 'Language' })}</span>
                 <Select
                   value={locale}
                   onChange={(e) => {
@@ -100,7 +100,7 @@ export function TranslatePage() {
                 </Select>
               </label>
               <label className="text-sm text-site-text-muted">
-                <span className="mb-1 block">{t('tr-ns', { defaultValue: 'Section' })}</span>
+                <span className="mb-2 block">{t('tr-ns', { defaultValue: 'Section' })}</span>
                 <Select
                   value={ns}
                   onChange={(e) => {
@@ -153,7 +153,7 @@ export function TranslatePage() {
                     />
                   ))}
                 </ul>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <Button
                     variant="ghost"
                     disabled={offset === 0}
@@ -199,7 +199,7 @@ function StringRow({
   const mine = item.suggestions.find((s) => s.mine);
   const [text, setText] = useState(mine?.text ?? '');
   return (
-    <li className="glass-fill space-y-2 rounded-site p-3">
+    <li className="glass-fill space-y-3 rounded-site px-4 py-3">
       <p className="text-xs text-site-text-dim">{item.key}</p>
       <p className="text-site-text">{item.en}</p>
       {item.current && (

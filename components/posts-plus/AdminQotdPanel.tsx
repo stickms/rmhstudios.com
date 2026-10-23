@@ -1,5 +1,6 @@
 'use client';
 
+import { AdminBody } from '@/components/admin/AdminBody';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -100,20 +101,22 @@ export function AdminQotdPanel() {
         defaultValue:
           'Prompts run oldest first, one per UTC day. With an empty queue the built-in list covers the day.',
       })}
+      wide
       backTo="/admin"
+      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
     >
-      <div className="space-y-6 px-4 pt-2 pb-12">
+      <AdminBody width="narrow">
         {data && (
           <section className="glass-fill rounded-site p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+            <p className="text-xs font-semibold text-site-text-muted">
               {t('admin-today', { defaultValue: 'Running today' })}
               {data.today.source === 'builtin' && (
-                <span className="ms-2 normal-case text-site-warning">
+                <span className="ms-2 text-site-warning">
                   {t('admin-builtin', { defaultValue: '(built-in list - the queue is empty)' })}
                 </span>
               )}
             </p>
-            <p className="mt-1 text-site-text">{data.today.text}</p>
+            <p className="mt-2 text-site-text">{data.today.text}</p>
           </section>
         )}
 
@@ -125,7 +128,7 @@ export function AdminQotdPanel() {
           }}
         >
           <label className="block text-sm text-site-text-muted">
-            <span className="mb-1 block">{t('admin-new', { defaultValue: 'New prompt' })}</span>
+            <span className="mb-2 block">{t('admin-new', { defaultValue: 'New prompt' })}</span>
             <Textarea
               value={text}
               rows={2}
@@ -137,7 +140,7 @@ export function AdminQotdPanel() {
             />
           </label>
           <label className="block text-sm text-site-text-muted">
-            <span className="mb-1 block">
+            <span className="mb-2 block">
               {t('admin-day', { defaultValue: 'Pin to a day (optional)' })}
             </span>
             <Input
@@ -153,13 +156,13 @@ export function AdminQotdPanel() {
         </form>
 
         {!data ? (
-          <div className="flex justify-center py-8">
+          <div className="flex justify-center py-16">
             <Spinner />
           </div>
         ) : (
           <>
-            <section aria-labelledby="qotd-queue">
-              <h2 id="qotd-queue" className="mb-2 text-sm font-semibold text-site-text">
+            <section aria-labelledby="qotd-queue" className="space-y-3">
+              <h2 id="qotd-queue" className="site-section-label">
                 {t('admin-queue', { defaultValue: 'Queue and scheduled' })}
               </h2>
               {data.queue.length === 0 ? (
@@ -170,7 +173,7 @@ export function AdminQotdPanel() {
                   })}
                 />
               ) : (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {data.queue.map((row) => (
                     <li
                       key={row.id}
@@ -194,11 +197,11 @@ export function AdminQotdPanel() {
             </section>
 
             {data.recent.length > 0 && (
-              <section aria-labelledby="qotd-recent">
-                <h2 id="qotd-recent" className="mb-2 text-sm font-semibold text-site-text">
+              <section aria-labelledby="qotd-recent" className="space-y-3">
+                <h2 id="qotd-recent" className="site-section-label">
                   {t('admin-recent', { defaultValue: 'Recently run' })}
                 </h2>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {data.recent.map((row) => (
                     <li
                       key={row.id}
@@ -215,7 +218,7 @@ export function AdminQotdPanel() {
             )}
           </>
         )}
-      </div>
+      </AdminBody>
     </PageLayout>
   );
 }

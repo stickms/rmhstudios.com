@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Hammer } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { JAM_CATEGORIES, type JamCategory } from '@/lib/competitive/jam';
 import { PhaseBadge } from './JamsList';
@@ -76,9 +79,9 @@ function RateForm({
     }
   };
   return (
-    <div className="grid grid-cols-2 gap-2 pt-2">
+    <div className="grid grid-cols-2 gap-2">
       {JAM_CATEGORIES.map((c) => (
-        <label key={c} className="text-xs text-site-text-dim space-y-1">
+        <label key={c} className="flex flex-col gap-2 text-xs text-site-text-dim">
           {names[c]}
           <Select
             value={scores[c] ?? ''}
@@ -117,12 +120,13 @@ export function JamDetail({ slug }: { slug: string }) {
     void load();
   }, [load, signedIn]);
 
-  if (jam === undefined) return <div className="h-48 rounded-site glass-fill animate-pulse" />;
+  if (jam === undefined) return <Skeleton className="h-48 rounded-site" />;
   if (jam === null) {
     return (
-      <p className="text-site-text-dim py-12 text-center">
-        {t('jam-missing', { defaultValue: 'This jam does not exist.' })}
-      </p>
+      <EmptyState
+        icon={Hammer}
+        title={t('jam-missing', { defaultValue: 'This jam does not exist.' })}
+      />
     );
   }
 
@@ -148,8 +152,8 @@ export function JamDetail({ slug }: { slug: string }) {
 
   const canRate = jam.phase === 'open' || jam.phase === 'rating';
   return (
-    <div className="space-y-5 max-w-3xl">
-      <Card className="p-4 space-y-2" pane>
+    <div className="space-y-4 max-w-3xl">
+      <Card className="gap-3 px-4 py-4" pane>
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm">{jam.description}</p>
           <PhaseBadge phase={jam.phase} />
@@ -171,7 +175,7 @@ export function JamDetail({ slug }: { slug: string }) {
       </Card>
 
       {jam.phase === 'open' && signedIn && (
-        <Card className="p-4 space-y-2" pane>
+        <Card className="gap-3 px-4 py-4" pane>
           <h2 className="site-section-label">
             {t('jam-submit', { defaultValue: 'Submit a build' })}
           </h2>
@@ -222,7 +226,7 @@ export function JamDetail({ slug }: { slug: string }) {
             </p>
           )}
           {jam.entries.map((e, i) => (
-            <Card key={e.id} className="p-4 space-y-1" interactive={false}>
+            <Card key={e.id} className="gap-2 px-4 py-4">
               <div className="flex items-center justify-between gap-2">
                 <Link
                   to="/user-builds/$slug"

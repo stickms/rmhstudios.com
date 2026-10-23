@@ -99,10 +99,10 @@ function InvitePage() {
   const { community } = preview;
   return (
     <PageFrame>
-      <div className="px-4 pt-6 pb-12">
+      <div className="px-4 pt-4 pb-12">
         <LockedCommunityPreview community={community} requestState={community.requestState}>
           {session ? (
-            <Button variant="accent" onClick={join} disabled={busy}>
+            <Button variant="accent" onClick={join} loading={busy}>
               {t('invite-join', { defaultValue: 'Join' })}
             </Button>
           ) : (

@@ -163,11 +163,8 @@ export function FashionStudio() {
   );
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <h2 className="font-display text-2xl font-semibold tracking-[-0.02em] text-site-text">
-          {t('title', { defaultValue: 'RMH Fashion' })}
-        </h2>
         <p className="max-w-prose text-site-text-muted">
           {t('lede', {
             defaultValue:
@@ -176,7 +173,7 @@ export function FashionStudio() {
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         <section aria-label={t('stage-label', { defaultValue: 'Figure viewer' })}>
           <Suspense
             fallback={
@@ -191,7 +188,7 @@ export function FashionStudio() {
           </Suspense>
         </section>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           {/* ── Looks ───────────────────────────────────────────────────── */}
           <section className="flex flex-col gap-3">
             <SectionHeading icon={Sparkles}>
@@ -274,7 +271,7 @@ export function FashionStudio() {
             ) : (
               <ul className="flex flex-col gap-2">
                 {worn.map(({ item, garment }) => (
-                  <li key={garment.id} className="glass-fill rounded-site flex flex-col gap-2 p-3">
+                  <li key={garment.id} className="glass-fill flex flex-col gap-2 rounded-site px-4 py-3">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-semibold text-site-text">
                         {garments[garment.id] ?? garment.id}
@@ -315,13 +312,13 @@ export function FashionStudio() {
             </SectionHeading>
             {rail.map((group) => (
               <div key={group.category} className="flex flex-col gap-2">
-                <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-site-text-dim">
+                <h4 className="text-xs font-medium text-site-text-muted">
                   {categories[group.category]}
                 </h4>
                 <div
                   role="group"
                   aria-label={categories[group.category]}
-                  className="flex flex-wrap gap-1.5"
+                  className="flex flex-wrap gap-2"
                 >
                   {group.garments.map((garment) => {
                     const on = isWorn(outfit, garment.id);
@@ -335,7 +332,7 @@ export function FashionStudio() {
                         // Worn is marked twice — an accent tint AND a heavier
                         // outline — so the state does not depend on hue under
                         // the colour-vision modes (§13).
-                        className={`glass-fill rounded-site px-2.5 py-1.5 text-xs transition-colors ${
+                        className={`glass-fill min-h-11 rounded-site px-3 py-2 text-xs transition-colors ${
                           on
                             ? 'text-site-accent ring-2 ring-site-accent'
                             : 'text-site-text-muted hover:text-site-text'
@@ -357,7 +354,7 @@ export function FashionStudio() {
 
 function SectionHeading({ icon: Icon, children }: { icon: typeof Shirt; children: ReactNode }) {
   return (
-    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.08em] text-site-text-dim">
+    <h3 className="site-section-label flex items-center gap-2">
       <Icon className="size-3.5" aria-hidden />
       {children}
     </h3>
@@ -378,7 +375,7 @@ function FigureSlider({
   onChange: (v: number) => void;
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <label className="flex flex-col gap-2">
       <span className="flex items-center justify-between text-xs text-site-text-muted">
         {label}
         <span className="font-semibold text-site-text">{format(value)}</span>
@@ -411,9 +408,9 @@ function Swatches({
   onPick: (id: SwatchId) => void;
 }) {
   return (
-    <div role="group" aria-label={legend} className="flex flex-col gap-1.5">
+    <div role="group" aria-label={legend} className="flex flex-col gap-2">
       {!hideLegend && <span className="text-xs text-site-text-muted">{legend}</span>}
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-2">
         {options.map((id) => {
           const on = id === value;
           return (
@@ -426,7 +423,7 @@ function Swatches({
               aria-label={names[id]}
               // The chip IS the colour, so selection cannot be a tint — it is a
               // ring, which reads under every colour-vision mode.
-              className={`rmhfash-chip size-6 rounded-full transition-transform ${
+              className={`rmhfash-chip touch-target size-6 rounded-full transition-transform ${
                 on ? 'ring-2 ring-site-accent scale-110' : 'hover:scale-105'
               }`}
               style={{ background: `var(${swatchVar(id)})` }}

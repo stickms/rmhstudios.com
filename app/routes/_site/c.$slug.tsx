@@ -94,21 +94,19 @@ function CommunityPage() {
     // fetched the feed), with the way in. `head()` already marks it noindex.
     return (
       <PageFrame>
-        <div className="px-4 pt-6 pb-12">
+        <div className="px-4 pt-4 pb-12">
           <LockedCommunityPreview community={community} requestState={community.requestState} />
         </div>
       </PageFrame>
     );
   }
   return (
-    <>
-      <PageFrame>
-        <CommunityColumn
-          slug={slug}
-          initialCommunity={community}
-          initialItems={feed?.items ?? null}
-        />
-      </PageFrame>
-    </>
+    <PageFrame>
+      <CommunityColumn
+        slug={slug}
+        initialCommunity={community}
+        initialItems={feed?.items ?? null}
+      />
+    </PageFrame>
   );
 }

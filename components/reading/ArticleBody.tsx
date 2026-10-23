@@ -98,10 +98,12 @@ export function ArticleBody({
 
   return (
     <GlossaryContext.Provider value={glossaryMap}>
-      <ReadingToolbar />
+      <div className="max-w-2xl">
+        <ReadingToolbar />
+      </div>
       <div
         ref={ref}
-        className="rf-article max-w-none break-words"
+        className="rf-article max-w-2xl break-words"
         data-rf-doc={`${kind}:${slug}`}
         data-sidenotes="off"
       >

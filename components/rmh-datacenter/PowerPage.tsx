@@ -47,8 +47,8 @@ export default function PowerPage() {
     >
       <DatacenterTabs active="/rmh-datacenter/power" />
 
-      <div className="space-y-8 px-4 pb-12">
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+      <div className="space-y-6 px-4 pt-4 pb-12">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <p className="max-w-prose text-site-text-muted">
             {t('pow-lede', {
               defaultValue:
@@ -86,7 +86,7 @@ export default function PowerPage() {
           />
         </div>
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('pow-s1-kicker', { defaultValue: 'The train' })}
             heading={t('pow-s1-heading', { defaultValue: 'From the substation to the PDU' })}
@@ -97,7 +97,7 @@ export default function PowerPage() {
                 'Every hall is fed by two independent paths from the utility to the cabinet, and each path is sized to carry the whole load on its own. Concurrent maintainability is the design goal: any component can be taken out for work with the hall still running on the other side.',
             })}
           </p>
-          <dl className="mt-5">
+          <dl className="mt-4">
             <SpecRow term={t('pow-utility', { defaultValue: 'Utility' })}>
               {t('pow-utility-desc', {
                 defaultValue:
@@ -125,7 +125,7 @@ export default function PowerPage() {
           </dl>
         </section>
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('pow-s2-kicker', { defaultValue: 'Efficiency' })}
             heading={t('pow-s2-heading', { defaultValue: 'PUE per campus, worst included' })}
@@ -136,7 +136,7 @@ export default function PowerPage() {
                 'Singapore is the outlier and stays on the list. A tropical hall running 40 kW cabinets on liquid will never post a Dublin number, and hiding it behind a fleet average would misrepresent both.',
             })}
           </p>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {ranked.map((c) => (
               <CapacityMeter
                 key={c.id}
@@ -147,7 +147,7 @@ export default function PowerPage() {
               />
             ))}
           </div>
-          <p className="mt-5 max-w-prose text-sm text-site-text-dim">
+          <p className="mt-4 max-w-prose text-sm text-site-text-dim">
             {t('pow-s2-note', {
               defaultValue:
                 'The bar is total facility power divided by IT load, measured at the utility intake and averaged over the trailing twelve months, plotted against a 1.40 floor. A fuller bar is a better ratio, and a campus above 1.20 is drawn in the warning tone rather than the accent.',
@@ -166,7 +166,7 @@ export default function PowerPage() {
                 'There is no single right cooling design; there is a right one for the ambient outside the wall. Each campus was built for its own climate rather than to a group standard.',
             })}
           </p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {[
               [
                 'C-01',
@@ -193,8 +193,8 @@ export default function PowerPage() {
                 }),
               ],
             ].map(([code, name, desc]) => (
-              <Card key={code} className="flex flex-col gap-2 p-5">
-                <span className="text-xs font-medium tracking-wide text-site-accent uppercase">
+              <Card key={code} className="flex flex-col gap-2 p-4">
+                <span className="text-xs font-medium text-site-accent">
                   {code}
                 </span>
                 <h3 className="font-display text-lg font-semibold text-site-text">{name}</h3>
@@ -204,7 +204,7 @@ export default function PowerPage() {
           </div>
         </section>
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('pow-s4-kicker', { defaultValue: 'Afterwards' })}
             heading={t('pow-s4-heading', { defaultValue: 'The heat has somewhere to go' })}
@@ -215,7 +215,7 @@ export default function PowerPage() {
                 'A datacenter converts almost all of its electricity into low-grade heat. Rejecting that to the sky is the default; selling it into a district loop is better, and at Frankfurt it is what happens.',
             })}
           </p>
-          <dl className="mt-5">
+          <dl className="mt-4">
             <SpecRow term={t('pow-heat-fra', { defaultValue: 'Frankfurt · 42 °C out' })}>
               {t('pow-heat-fra-desc', {
                 defaultValue:
@@ -231,7 +231,7 @@ export default function PowerPage() {
           </dl>
         </section>
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('pow-cta-kicker', { defaultValue: 'Reporting' })}
             heading={t('pow-cta-heading', { defaultValue: 'Your share of all of this, monthly' })}
@@ -242,7 +242,7 @@ export default function PowerPage() {
                 'Customers get their own energy, water and carbon attribution against measured load rather than a floor-space ratio — the numbers a sustainability report can actually be built from.',
             })}
           </p>
-          <div className="mt-6">
+          <div className="mt-4">
             <Button asChild variant="accent">
               <Link to="/rmh-datacenter/contact" search={{ intent: 'Sustainability reporting' }}>
                 {t('pow-cta-button', { defaultValue: 'Ask for a sample report' })}

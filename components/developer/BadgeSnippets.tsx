@@ -20,13 +20,11 @@ export function BadgeSnippets({ userId }: { userId: string }) {
     },
   ];
   return (
-    <section className="space-y-2" aria-labelledby="badges-heading">
-      <div className="flex items-center gap-2">
-        <Award className="h-4 w-4 text-site-accent" aria-hidden />
-        <h2 id="badges-heading" className="text-sm font-bold text-site-text">
-          {t('badges-title', { defaultValue: 'Stat badges' })}
-        </h2>
-      </div>
+    <section className="space-y-3" aria-labelledby="badges-heading">
+      <h2 id="badges-heading" className="site-section-label flex items-center gap-2">
+        <Award className="size-4 text-site-accent" aria-hidden />
+        {t('badges-title', { defaultValue: 'Stat badges' })}
+      </h2>
       <p className="text-xs text-site-text-muted">
         {t('badges-blurb', {
           defaultValue:
@@ -36,9 +34,9 @@ export function BadgeSnippets({ userId }: { userId: string }) {
       {rows.map((r) => {
         const md = `![${r.label}](${origin}${r.path})`;
         return (
-          <div key={r.path} className="glass-fill flex items-center gap-2 rounded-site p-2">
+          <div key={r.path} className="glass-fill flex items-center gap-2 rounded-site px-3 py-2">
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold text-site-text-dim">{r.label}</p>
+              <p className="text-xs font-semibold text-site-text-dim">{r.label}</p>
               <code className="block truncate text-xs text-site-text">{md}</code>
             </div>
             <CopyButton

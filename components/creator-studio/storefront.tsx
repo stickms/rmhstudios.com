@@ -22,9 +22,11 @@
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, Info } from 'lucide-react';
 import { IMAGE_VARIANTS, variantUrl } from '@/lib/images/variants.gen';
 import { DeferOnNavigate } from '@/components/ui/defer-on-navigate';
+import { EmptyState } from '@/components/ui/empty-state';
 import '@/components/creator-studio/storefront.css';
 
 /** A single thing on the shelf — a game, app, persona, build, or page. */
@@ -283,6 +285,7 @@ function TagRow({ tags }: { tags?: string[] }) {
 
 /** The big top banner. */
 function HeroCard({ item }: { item: StoreItem }) {
+  const { t } = useTranslation('feed');
   return (
     <div
       className="store-hero"
@@ -294,7 +297,9 @@ function HeroCard({ item }: { item: StoreItem }) {
           <span className="store-hero__scrim" aria-hidden="true" />
         </div>
         <div className="store-hero__body">
-          <span className="store-hero__eyebrow">{item.badge ?? 'Featured'}</span>
+          <span className="store-hero__eyebrow">
+            {item.badge ?? t('store-featured', { defaultValue: 'Featured' })}
+          </span>
           <h3 className="store-hero__title">{item.title}</h3>
           {item.description && <p className="store-hero__desc">{item.description}</p>}
           <TagRow tags={item.tags} />
@@ -330,6 +335,8 @@ function SpotlightCard({ item }: { item: StoreItem }) {
 
 /** A catalog tile — `wide` ones span two columns and show their description. */
 function MosaicCard({ item, wide, index }: { item: StoreItem; wide: boolean; index: number }) {
+  const { t } = useTranslation('feed');
+  const detailsLabel = item.detailsLabel ?? t('store-details', { defaultValue: 'Details' });
   return (
     <div
       className={`store-card ${wide ? 'is-wide' : ''}`}
@@ -352,10 +359,10 @@ function MosaicCard({ item, wide, index }: { item: StoreItem; wide: boolean; ind
         <Link
           to={item.detailsTo as string}
           className="store-card__details"
-          aria-label={item.detailsLabel ?? 'Details'}
-          title={item.detailsLabel ?? 'Details'}
+          aria-label={detailsLabel}
+          title={detailsLabel}
         >
-          <Info size={15} />
+          <Info size={15} aria-hidden />
         </Link>
       )}
     </div>
@@ -436,19 +443,25 @@ export function Storefront({
   }, [orderedItems, featured, spotlightCount]);
 
   const flags = useMemo(() => wideFlags(mosaic.length, seed), [mosaic.length, seed]);
+  const { t } = useTranslation('feed');
 
   return (
     <div className="store">
       {toolbar}
 
       {items.length === 0 ? (
-        <p className="store__empty">{emptyLabel ?? 'Nothing here yet.'}</p>
+        <EmptyState
+          description={emptyLabel ?? t('store-empty', { defaultValue: 'Nothing here yet.' })}
+        />
       ) : (
         <>
           {hero && <HeroCard item={hero} />}
 
           {spotlight.length > 0 && (
-            <section className="store-rail" aria-label="Featured">
+            <section
+              className="store-rail"
+              aria-label={t('store-featured', { defaultValue: 'Featured' })}
+            >
               <div className="store-rail__track">
                 {spotlight.map((item) => (
                   <SpotlightCard key={item.id} item={item} />

@@ -120,7 +120,7 @@ export const Route = createFileRoute('/_site/games/$gameId')({
 function GameHubPage() {
   const data = Route.useLoaderData();
   return (
-    <PageLayout title={data.title} backTo="/">
+    <PageLayout title={data.title} backTo="/games">
       <GameHub data={data} />
     </PageLayout>
   );

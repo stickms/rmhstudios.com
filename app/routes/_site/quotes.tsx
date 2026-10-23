@@ -6,6 +6,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { definePage } from '@/lib/route/define-page';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Clock, Quote } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Reveal } from '@/components/motion';
 
 export const Route = createFileRoute('/_site/quotes')({
@@ -150,44 +152,28 @@ const categories = [...new Set(quotes.map((q) => q.category))];
 
 function QuoteCard({ quote, index }: { quote: (typeof quotes)[number]; index: number }) {
   return (
-    <div className="group relative pl-8 border-l-2 border-site-border hover:border-site-accent transition-colors duration-site-slow py-6">
+    <div className="group relative border-s-2 border-site-border py-6 ps-8 transition-colors duration-site-slow hover:border-site-accent">
       {/* Quote number badge */}
-      <div className="absolute -left-3 top-6 w-6 h-6 rounded-full glass-fill flex items-center justify-center group-hover:bg-site-accent/10 group-hover:border-site-accent transition-colors duration-site-slow">
-        <span className="text-xs font-mono text-site-text-muted group-hover:text-site-accent transition-colors duration-site-slow">
+      <div className="absolute -start-3 top-6 flex size-6 items-center justify-center rounded-full glass-fill">
+        <span className="font-mono text-xs text-site-text-muted transition-colors duration-site-slow group-hover:text-site-accent">
           {index + 1}
         </span>
       </div>
 
       {/* Quote text */}
-      <blockquote className="mb-3">
+      <blockquote className="mb-4">
         <p className="text-site-text text-lg leading-relaxed font-display italic">
           &ldquo;{quote.text}&rdquo;
         </p>
       </blockquote>
 
       {/* Context and category */}
-      <div className="flex flex-wrap items-center gap-2 text-sm text-site-text-muted">
-        <span className="inline-flex items-center gap-1">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="opacity-60"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-site-text-muted">
+        <span className="inline-flex items-center gap-2">
+          <Clock aria-hidden className="size-3.5 opacity-60" />
           {quote.context}
         </span>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full glass-fill text-xs font-medium text-site-text-muted">
-          {quote.category}
-        </span>
+        <Badge>{quote.category}</Badge>
       </div>
     </div>
   );
@@ -196,30 +182,14 @@ function QuoteCard({ quote, index }: { quote: (typeof quotes)[number]; index: nu
 function QuotesPage() {
   const { t } = useTranslation('site');
   return (
-    <PageLayout title={t('steve-jobs-quotes-title', { defaultValue: 'Steve Jobs Quotes' })} wide>
-      <div className="px-4 pt-4 pb-12 max-w-2xl mx-auto">
+    <PageLayout title={t('steve-jobs-quotes-title', { defaultValue: 'Steve Jobs Quotes' })}>
+      <div className="px-4 pt-4 pb-12">
         {/* Hero section */}
-        <Reveal className="text-center mb-12">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-site glass-fill flex items-center justify-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="36"
-              height="36"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-site-accent"
-            >
-              <path d="M3 21c3 0 7-1 7-8" />
-              <path d="M13 21c3 0 7-1 7-8" />
-              <path d="M10 12c.5-3 1.5-5 5-5" />
-              <path d="M20 12c.5-3 1.5-5 5-5" />
-            </svg>
+        <Reveal className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-site glass-fill">
+            <Quote aria-hidden className="size-9 text-site-accent" strokeWidth={1.5} />
           </div>
-          <p className="text-site-text-muted text-sm leading-relaxed max-w-lg mx-auto">
+          <p className="mx-auto max-w-lg text-sm leading-relaxed text-site-text-muted">
             {t('quotes-hero-description', {
               defaultValue:
                 'A curated collection of the most memorable words from Steve Jobs — co-founder of Apple, visionary, and one of the most influential thinkers of the modern era.',
@@ -228,14 +198,11 @@ function QuotesPage() {
         </Reveal>
 
         {/* Category filter chips */}
-        <div className="flex flex-wrap gap-2 mb-8 justify-center">
+        <div className="mb-6 flex flex-wrap justify-center gap-2">
           {categories.map((cat) => (
-            <span
-              key={cat}
-              className="inline-flex items-center px-3 py-1 rounded-full glass-fill text-xs font-medium text-site-text-muted hover:text-site-accent hover:border-site-accent/50 transition-colors duration-site cursor-default"
-            >
+            <Badge key={cat} size="lg">
               {cat}
-            </span>
+            </Badge>
           ))}
         </div>
 
@@ -245,14 +212,14 @@ function QuotesPage() {
             <div className="w-full border-t border-site-border" />
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-site-bg px-3 text-xs font-mono text-site-text-muted uppercase tracking-widest">
+            <span className="bg-site-bg px-3 font-mono text-xs text-site-text-muted">
               {t('quotes-count', { count: quotes.length, defaultValue: '{{count}} Quotes' })}
             </span>
           </div>
         </div>
 
         {/* Quote list — each entry reveals once as it scrolls into view. */}
-        <div className="space-y-0 divide-y divide-site-border">
+        <div className="divide-y divide-site-border">
           {quotes.map((quote, index) => (
             <Reveal key={index} y={12}>
               <QuoteCard quote={quote} index={index} />
@@ -261,8 +228,8 @@ function QuotesPage() {
         </div>
 
         {/* Footer note */}
-        <div className="mt-12 pt-8 border-t border-site-border text-center">
-          <p className="text-xs text-site-text-muted">
+        <div className="mt-10 border-t border-site-border pt-6 text-center">
+          <p className="text-sm leading-relaxed text-site-text-muted">
             {t('quotes-footer-note', {
               defaultValue:
                 '“Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work. And the only way to do great work is to love what you do.”',

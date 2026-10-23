@@ -18,7 +18,13 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { useSession } from '@/components/Providers';
 import { LocationSearch, type SavedPlaceOption } from '@/components/rideshare/LocationSearch';
 import { RideMap } from '@/components/rideshare/RideMap';
@@ -62,13 +68,16 @@ interface Ride {
   driver: (RidePerson & { rideshareDriver: RideVehicle | null }) | null;
 }
 
-const STATUS_META: Record<Ride['status'], { label: string; className: string }> = {
-  SCHEDULED: { label: 'Scheduled', className: 'text-site-accent bg-site-accent/10' },
-  REQUESTED: { label: 'Finding a driver', className: 'text-site-warning bg-site-warning/10' },
-  ACCEPTED: { label: 'Driver on the way', className: 'text-site-accent bg-site-accent/10' },
-  IN_PROGRESS: { label: 'On your trip', className: 'text-site-accent bg-site-accent/10' },
-  COMPLETED: { label: 'Completed', className: 'text-site-success bg-site-success/10' },
-  CANCELLED: { label: 'Cancelled', className: 'text-site-text-muted bg-site-surface-hover' },
+const STATUS_META: Record<
+  Ride['status'],
+  { label: string; variant: 'accent' | 'warning' | 'success' | 'outline' }
+> = {
+  SCHEDULED: { label: 'Scheduled', variant: 'accent' },
+  REQUESTED: { label: 'Finding a driver', variant: 'warning' },
+  ACCEPTED: { label: 'Driver on the way', variant: 'accent' },
+  IN_PROGRESS: { label: 'On your trip', variant: 'accent' },
+  COMPLETED: { label: 'Completed', variant: 'success' },
+  CANCELLED: { label: 'Cancelled', variant: 'outline' },
 };
 
 const ACTIVE = new Set<Ride['status']>(['REQUESTED', 'ACCEPTED', 'IN_PROGRESS']);
@@ -299,7 +308,7 @@ function RequestRidePage() {
 
   return (
     <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
-      <div className="mx-auto w-full max-w-4xl space-y-8 px-4 py-6 md:px-8">
+      <div className="w-full max-w-4xl space-y-6 px-4 pt-4 pb-12">
         {focusRideId ? (
           /* Live trip takes over the page while a ride is in flight. */
           <ActiveRidePanel
@@ -312,11 +321,11 @@ function RequestRidePage() {
             }}
           />
         ) : (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Left: form */}
-            <div className="space-y-5">
-              <div className="glass-fill rounded-site p-5">
-                <h2 className="mb-4 text-lg font-bold text-site-text">
+            <div className="space-y-4">
+              <div className="glass-fill rounded-site p-4">
+                <h2 className="site-section-label mb-3">
                   {t('where-to-heading', { defaultValue: 'Where to?' })}
                 </h2>
                 <div className="space-y-3">
@@ -341,15 +350,15 @@ function RequestRidePage() {
                 </div>
 
                 {routing && !routeInfo && (
-                  <div className="mt-4 flex items-center gap-2 rounded-site glass-fill px-4 py-3 text-sm text-site-text-muted">
+                  <div className="glass-inset mt-3 flex items-center gap-2 rounded-site-sm px-4 py-3 text-sm text-site-text-muted">
                     <Loader2 className="h-4 w-4 animate-spin" />{' '}
                     {t('calculating-route', { defaultValue: 'Calculating route…' })}
                   </div>
                 )}
               </div>
 
-              <div className="glass-fill rounded-site p-5">
-                <h2 className="mb-3 text-lg font-bold text-site-text">
+              <div className="glass-fill rounded-site p-4">
+                <h2 className="site-section-label mb-3">
                   {t('pick-your-ride-heading', { defaultValue: 'Pick your ride' })}
                 </h2>
                 <RideClassPicker
@@ -367,59 +376,59 @@ function RequestRidePage() {
                 />
               )}
 
-              <div className="glass-fill rounded-site p-5">
-                <label className="mb-1.5 block text-xs font-medium text-site-text-muted">
+              <div className="glass-fill rounded-site p-4">
+                <label htmlFor="ride-notes" className="mb-2 block text-sm font-medium text-site-text">
                   {t('notes-label', { defaultValue: 'Notes for your driver (optional)' })}
                 </label>
-                <textarea
+                <Textarea
+                  id="ride-notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   maxLength={500}
                   rows={2}
+                  className="resize-none"
                   placeholder={t('notes-placeholder', {
                     defaultValue: "e.g. I'll be by the main entrance",
                   })}
-                  className="w-full resize-none glass-inset rounded-site-sm px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
                 />
               </div>
 
               {/* Schedule for later */}
-              <div className="glass-fill rounded-site p-5">
-                <label className="flex cursor-pointer items-center justify-between gap-3">
-                  <span className="flex items-center gap-2 text-sm font-medium text-site-text">
-                    <CalendarClock className="h-4 w-4 text-site-accent" />{' '}
+              <div className="glass-fill rounded-site p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span
+                    id="ride-schedule-label"
+                    className="flex items-center gap-2 text-sm font-medium text-site-text"
+                  >
+                    <CalendarClock className="h-4 w-4 text-site-accent" aria-hidden />{' '}
                     {t('schedule-for-later', { defaultValue: 'Schedule for later' })}
                   </span>
-                  <input
-                    type="checkbox"
+                  <Switch
                     checked={scheduleMode}
-                    onChange={(e) => setScheduleMode(e.target.checked)}
-                    className="h-4 w-4 accent-(--site-accent)"
+                    onCheckedChange={setScheduleMode}
+                    aria-labelledby="ride-schedule-label"
                   />
-                </label>
+                </div>
                 {scheduleMode && (
-                  <input
+                  <Input
                     type="datetime-local"
                     value={scheduledFor}
                     min={minScheduleValue()}
                     onChange={(e) => setScheduledFor(e.target.value)}
-                    className="mt-3 w-full glass-inset rounded-site-sm px-3 py-2.5 text-base text-site-text outline-none transition-colors focus:border-site-accent/60 sm:py-2 sm:text-sm"
+                    className="mt-3"
+                    aria-label={t('schedule-for-later', { defaultValue: 'Schedule for later' })}
                   />
                 )}
               </div>
 
-              <button
+              <Button
+                size="lg"
+                className="w-full"
                 onClick={submit}
-                disabled={submitting || !pickup || !dropoff}
-                className="flex w-full items-center justify-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
+                loading={submitting}
+                disabled={!pickup || !dropoff}
               >
-                {submitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : scheduleMode ? (
-                  <CalendarClock className="h-4 w-4" />
-                ) : (
-                  <Car className="h-4 w-4" />
-                )}
+                {scheduleMode ? <CalendarClock aria-hidden /> : <Car aria-hidden />}
                 {scheduleMode
                   ? t('schedule-ride-button', {
                       rideClass: rideClassName(rideClass),
@@ -429,11 +438,11 @@ function RequestRidePage() {
                       rideClass: rideClassName(rideClass),
                       defaultValue: 'Request {{rideClass}}',
                     })}
-              </button>
+              </Button>
             </div>
 
             {/* Right: live map preview + saved places */}
-            <div className="space-y-5 lg:sticky lg:top-[var(--site-sticky-secondary-top)] lg:self-start">
+            <div className="space-y-4 lg:sticky lg:top-[var(--site-sticky-secondary-top)] lg:self-start">
               <RideMap pickup={pickup} dropoff={dropoff} className="h-80" />
               <SavedPlaces places={savedPlaces} onChanged={loadPlaces} />
             </div>
@@ -443,8 +452,8 @@ function RequestRidePage() {
         {/* Upcoming scheduled rides */}
         {upcomingRides.length > 0 && (
           <div>
-            <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-site-text">
-              <CalendarClock className="h-5 w-5 text-site-accent" />{' '}
+            <h2 className="site-section-label mb-3 flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-site-accent" aria-hidden />{' '}
               {t('upcoming-rides-heading', { defaultValue: 'Upcoming rides' })}
             </h2>
             <ul className="space-y-3">
@@ -472,13 +481,15 @@ function RequestRidePage() {
                       {ride.pickupLabel} → {ride.dropoffLabel}
                     </div>
                   </div>
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="min-h-11 shrink-0 text-site-danger"
                     onClick={() => cancelScheduled(ride.id)}
-                    className="flex shrink-0 items-center gap-1 text-xs text-site-danger transition-colors hover:text-site-danger"
                   >
-                    <XCircle className="h-3.5 w-3.5" />{' '}
-                    {t('cancel-button', { defaultValue: 'Cancel' })}
-                  </button>
+                    <XCircle aria-hidden /> {t('cancel-button', { defaultValue: 'Cancel' })}
+                  </Button>
                 </motion.li>
               ))}
             </ul>
@@ -487,13 +498,13 @@ function RequestRidePage() {
 
         {/* Ride history */}
         <div>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-site-text">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="site-section-label">
               {t('ride-history-heading', { defaultValue: 'Ride history' })}
             </h2>
-            <button onClick={loadRides} className="text-xs text-site-accent hover:underline">
+            <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={loadRides}>
               {t('refresh-button', { defaultValue: 'Refresh' })}
-            </button>
+            </Button>
           </div>
 
           {loadingRides ? (
@@ -501,13 +512,16 @@ function RequestRidePage() {
               <Spinner size={20} className="text-site-text-muted" />
             </div>
           ) : pastRides.length === 0 ? (
-            <p className="rounded-site border border-dashed border-site-border px-4 py-8 text-center text-sm text-site-text-muted">
-              {focusRideId || upcomingRides.length > 0
-                ? t('past-trips-placeholder', { defaultValue: 'Your past trips will appear here.' })
-                : t('no-rides-placeholder', {
-                    defaultValue: 'No rides yet. Request your first ride!',
-                  })}
-            </p>
+            <EmptyState
+              icon={Car}
+              title={
+                focusRideId || upcomingRides.length > 0
+                  ? t('past-trips-placeholder', { defaultValue: 'Your past trips will appear here.' })
+                  : t('no-rides-placeholder', {
+                      defaultValue: 'No rides yet. Request your first ride!',
+                    })
+              }
+            />
           ) : (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {pastRides.map((ride) => (
@@ -521,20 +535,18 @@ function RequestRidePage() {
                     <span className="text-sm font-semibold text-site-text">
                       {rideClassName(ride.rideClass)}
                     </span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_META[ride.status].className}`}
-                    >
+                    <Badge variant={STATUS_META[ride.status].variant}>
                       {STATUS_META[ride.status].label}
-                    </span>
+                    </Badge>
                   </div>
                   <div className="mt-2 space-y-1 text-xs text-site-text-muted">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-site-success" />
                       <span className="truncate" title={ride.pickupLabel}>
                         {ride.pickupLabel}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-site-accent" />
                       <span className="truncate" title={ride.dropoffLabel}>
                         {ride.dropoffLabel}

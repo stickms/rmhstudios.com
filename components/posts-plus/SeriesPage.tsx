@@ -110,7 +110,7 @@ export function SeriesPage({ id }: { id: string }) {
   if (!view) {
     return (
       <PageLayout title={t('series-page-title', { defaultValue: 'Series' })}>
-        <div className="space-y-3 px-4">
+        <div className="space-y-3 px-4 pt-4">
           <Skeleton className="h-20 w-full rounded-site" />
           <Skeleton className="h-32 w-full rounded-site" />
         </div>
@@ -186,8 +186,8 @@ export function SeriesPage({ id }: { id: string }) {
       backTo={owner ? '/series' : undefined}
       description={series.description ?? undefined}
     >
-      <div className="space-y-4 px-4 pt-2 pb-12">
-        <section className="glass-pane flex flex-wrap items-center gap-3 rounded-site p-4">
+      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+        <section className="glass-pane flex flex-wrap items-center gap-3 rounded-site px-4 py-3">
           <p className="min-w-0 flex-1 text-sm text-site-text-muted">
             {t('series-by', { defaultValue: 'A series by' })}{' '}
             <Link
@@ -238,7 +238,7 @@ export function SeriesPage({ id }: { id: string }) {
                     value={title}
                     onChange={(e) => setTitle(e.target.value.slice(0, MAX_SERIES_TITLE))}
                     aria-label={t('series-name', { defaultValue: 'Series name' })}
-                    className="h-9 w-56"
+                    className="h-9 w-full min-w-0 sm:w-56"
                     autoFocus
                   />
                   <Button
@@ -292,15 +292,15 @@ export function SeriesPage({ id }: { id: string }) {
             }
           />
         ) : (
-          <ol className="space-y-4">
+          <ol className="space-y-[var(--site-section-gap)]">
             {items.map((item, i) => (
               <li key={item.id}>
-                <div className="mb-1 flex items-center gap-2 px-1">
+                <div className="mb-2 flex items-center gap-2 px-1">
                   <span className="text-xs font-semibold text-site-text-dim">
                     {t('series-part-label', { defaultValue: 'Part {{k}}', k: i + 1 })}
                   </span>
                   {owner && (
-                    <span className="ms-auto flex items-center gap-1">
+                    <span className="ms-auto flex items-center gap-2">
                       <IconButton
                         icon={ArrowUp}
                         label={t('series-move-up', { defaultValue: 'Move earlier' })}

@@ -12,6 +12,9 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Bot, Plus, MessageSquare, X, Globe, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
@@ -46,7 +49,14 @@ export function PersonasTab({ seed }: { seed: number }) {
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', tagline: '', emoji: '', greeting: '', systemPrompt: '', isPublic: true });
+  const [form, setForm] = useState({
+    name: '',
+    tagline: '',
+    emoji: '',
+    greeting: '',
+    systemPrompt: '',
+    isPublic: true,
+  });
 
   const load = useCallback(async () => {
     const res = await fetch('/api/personas', { credentials: 'include' });
@@ -105,17 +115,20 @@ export function PersonasTab({ seed }: { seed: number }) {
   const personaMeta = useCallback(
     (p: Persona, showOwner: boolean) => (
       <span className="store-persona-meta">
-        <MessageSquare className="h-3 w-3" /> {fmt(p.chatCount)}
+        <MessageSquare className="size-3" aria-hidden /> {fmt(p.chatCount)}
         {p.isPublic === false && (
           <>
             <span aria-hidden> · </span>
-            <Lock className="h-3 w-3" /> {t('private', { defaultValue: 'Private' })}
+            <Lock className="size-3" aria-hidden /> {t('private', { defaultValue: 'Private' })}
           </>
         )}
         {showOwner && p.owner && (
           <>
             <span aria-hidden> · </span>
-            {t('by-owner', { owner: p.owner.name || p.owner.handle || t('someone', { defaultValue: 'Someone' }), defaultValue: 'by {{owner}}' })}
+            {t('by-owner', {
+              owner: p.owner.name || p.owner.handle || t('someone', { defaultValue: 'Someone' }),
+              defaultValue: 'by {{owner}}',
+            })}
           </>
         )}
       </span>
@@ -153,69 +166,104 @@ export function PersonasTab({ seed }: { seed: number }) {
     <div className="store-personas">
       {signedIn && (
         <div className="store-personas__bar">
-          <Button size="sm" variant="accent" className="gap-1" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-3.5 w-3.5" /> {t('create', { defaultValue: 'Create' })}
+          <Button
+            size="sm"
+            variant="accent"
+            aria-expanded={showForm}
+            onClick={() => setShowForm((v) => !v)}
+          >
+            <Plus aria-hidden /> {t('create', { defaultValue: 'Create' })}
           </Button>
         </div>
       )}
 
       {showForm && (
-        <div className="mb-5 rounded-site border border-site-border bg-site-surface/30 p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-site-text">{t('new-persona', { defaultValue: 'New persona' })}</h2>
-            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label={t('close', { defaultValue: 'Close' })}>
-              <X className="h-4 w-4" />
-            </button>
+        <div className="glass-pane mb-6 space-y-3 rounded-site p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="site-section-label">
+              {t('new-persona', { defaultValue: 'New persona' })}
+            </h2>
+            <IconButton
+              icon={X}
+              size="icon-xs"
+              label={t('close', { defaultValue: 'Close' })}
+              onClick={() => setShowForm(false)}
+            />
           </div>
-          <div className="mt-3 space-y-2">
+          <div className="space-y-3">
             <div className="flex gap-2">
-              <input
+              <Input
                 value={form.emoji}
                 onChange={(e) => setForm((f) => ({ ...f, emoji: e.target.value.slice(0, 4) }))}
                 placeholder="🤖"
-                className="w-14 rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-center text-sm outline-none focus:border-site-accent"
+                aria-label={t('emoji-label', { defaultValue: 'Emoji' })}
+                className="w-16 text-center"
               />
-              <input
+              <Input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder={t('name-placeholder', { defaultValue: 'Name' })}
+                aria-label={t('name-placeholder', { defaultValue: 'Name' })}
                 maxLength={40}
-                className="flex-1 rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+                className="flex-1"
               />
             </div>
-            <input
+            <Input
               value={form.tagline}
               onChange={(e) => setForm((f) => ({ ...f, tagline: e.target.value }))}
               placeholder={t('tagline-placeholder', { defaultValue: 'Short tagline (optional)' })}
+              aria-label={t('tagline-placeholder', { defaultValue: 'Short tagline (optional)' })}
               maxLength={120}
-              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
-            <textarea
+            <Textarea
               value={form.systemPrompt}
               onChange={(e) => setForm((f) => ({ ...f, systemPrompt: e.target.value }))}
-              placeholder={t('system-prompt-placeholder', { defaultValue: 'Personality & instructions — who is this character, how do they talk, what do they know?' })}
+              placeholder={t('system-prompt-placeholder', {
+                defaultValue:
+                  'Personality & instructions — who is this character, how do they talk, what do they know?',
+              })}
+              aria-label={t('system-prompt-label', {
+                defaultValue: 'Personality and instructions',
+              })}
               maxLength={2000}
               rows={4}
-              className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
-            <input
+            <Input
               value={form.greeting}
               onChange={(e) => setForm((f) => ({ ...f, greeting: e.target.value }))}
-              placeholder={t('greeting-placeholder', { defaultValue: 'Opening greeting (optional)' })}
+              placeholder={t('greeting-placeholder', {
+                defaultValue: 'Opening greeting (optional)',
+              })}
+              aria-label={t('greeting-placeholder', {
+                defaultValue: 'Opening greeting (optional)',
+              })}
               maxLength={500}
-              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
-            <div className="flex items-center justify-between">
-              <button
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button
                 type="button"
+                size="sm"
+                variant="outline"
+                aria-pressed={form.isPublic}
                 onClick={() => setForm((f) => ({ ...f, isPublic: !f.isPublic }))}
-                className="inline-flex items-center gap-1.5 rounded-site-sm border border-site-border px-2.5 py-1.5 text-xs font-medium text-site-text-muted hover:text-site-text"
               >
-                {form.isPublic ? <Globe className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-                {form.isPublic ? t('public', { defaultValue: 'Public' }) : t('private-label', { defaultValue: 'Private' })}
-              </button>
-              {error && <p className="text-xs text-site-danger">{error}</p>}
-              <Button size="sm" variant="accent" loading={busy} disabled={!validForm} onClick={create}>
+                {form.isPublic ? <Globe aria-hidden /> : <Lock aria-hidden />}
+                {form.isPublic
+                  ? t('public', { defaultValue: 'Public' })
+                  : t('private-label', { defaultValue: 'Private' })}
+              </Button>
+              {error && (
+                <p role="alert" className="text-xs text-site-danger">
+                  {error}
+                </p>
+              )}
+              <Button
+                size="sm"
+                variant="accent"
+                loading={busy}
+                disabled={!validForm}
+                onClick={create}
+              >
                 {t('create-persona', { defaultValue: 'Create persona' })}
               </Button>
             </div>
@@ -224,8 +272,10 @@ export function PersonasTab({ seed }: { seed: number }) {
       )}
 
       {mine.length > 0 && (
-        <section className="mb-6">
-          <h2 className="site-section-label mb-2">{t('your-personas', { defaultValue: 'Your personas' })}</h2>
+        <section className="mb-6 space-y-3">
+          <h2 className="site-section-label">
+            {t('your-personas', { defaultValue: 'Your personas' })}
+          </h2>
           <div className="store-personas__mine">
             {mine.map((p) => (
               <Link
@@ -243,22 +293,29 @@ export function PersonasTab({ seed }: { seed: number }) {
                     navigate({ to: `/personas/${p.id}` } as never),
                   );
                 }}
-                className="flex items-start gap-3 rounded-site border border-site-border bg-site-surface p-3 transition-colors hover:border-site-accent/60"
+                className="glass-fill glass-interactive flex items-start gap-3 rounded-site px-3 py-3"
               >
                 <div
                   data-persona-avatar
-                  className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-site bg-site-accent/12 text-xl"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-site bg-site-accent-dim text-xl"
                 >
                   {p.avatarUrl ? (
-                    <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    <img
+                      src={p.avatarUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                   ) : (
-                    p.emoji || <Bot className="h-5 w-5 text-site-accent" />
+                    p.emoji || <Bot className="size-5 text-site-accent" aria-hidden />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-site-text">{p.name}</p>
-                  {p.tagline && <p className="truncate text-xs text-site-text-muted">{p.tagline}</p>}
-                  <p className="mt-0.5 text-[11px] text-site-text-dim">{personaMeta(p, false)}</p>
+                  {p.tagline && (
+                    <p className="truncate text-xs text-site-text-muted">{p.tagline}</p>
+                  )}
+                  <p className="mt-0.5 text-xs text-site-text-dim">{personaMeta(p, false)}</p>
                 </div>
               </Link>
             ))}

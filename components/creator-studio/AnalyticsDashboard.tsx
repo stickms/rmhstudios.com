@@ -52,7 +52,7 @@ export function AnalyticsDashboard() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
+      <div className="flex justify-center py-12">
         <Spinner />
       </div>
     );
@@ -60,7 +60,7 @@ export function AnalyticsDashboard() {
 
   if (failed || !data) {
     return (
-      <div className="px-4 py-16">
+      <div className="py-12">
         <EmptyState
           icon={TrendingUp}
           title={t('analytics-unavailable', { defaultValue: 'Analytics unavailable' })}
@@ -84,39 +84,39 @@ export function AnalyticsDashboard() {
   ];
 
   return (
-    <div className="px-4 py-4 space-y-6">
+    <div className="space-y-[var(--site-section-gap)]">
       {/* Summary tiles */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {tiles.map(({ icon: Icon, label, value }) => (
-          <div key={label} className="rounded-site border border-site-border bg-site-surface/40 p-4">
+          <div key={label} className="glass-fill rounded-site px-4 py-3">
             <div className="flex items-center gap-2 text-site-text-dim">
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
+              <Icon className="size-4" aria-hidden="true" />
+              <span className="text-xs font-medium">{label}</span>
             </div>
-            <p className="mt-1.5 text-2xl font-bold text-site-text">{formatCount(value)}</p>
+            <p className="mt-2 text-2xl font-bold text-site-text">{formatCount(value)}</p>
           </div>
         ))}
       </div>
 
       {/* Engagement rate */}
-      <div className="rounded-site border border-site-border bg-site-surface/40 p-4">
+      <div className="glass-fill rounded-site px-4 py-3">
         <div className="flex items-center gap-2 text-site-text-dim">
-          <TrendingUp className="h-4 w-4" aria-hidden="true" />
-          <span className="text-xs font-medium uppercase tracking-wide">
+          <TrendingUp className="size-4" aria-hidden="true" />
+          <span className="text-xs font-medium">
             {t('engagement-rate', { defaultValue: 'Engagement rate' })}
           </span>
         </div>
-        <p className="mt-1.5 text-2xl font-bold text-site-text">{engagementPct}%</p>
+        <p className="mt-2 text-2xl font-bold text-site-text">{engagementPct}%</p>
         <p className="text-xs text-site-text-dim">
           {t('engagement-rate-desc', { defaultValue: 'Interactions ÷ impressions across all your posts' })}
         </p>
       </div>
 
       {/* Posts-per-day chart (last 30 days) */}
-      <div className="rounded-site border border-site-border bg-site-surface/40 p-4">
-        <h3 className="mb-3 text-sm font-semibold text-site-text">
+      <div className="glass-fill rounded-site px-4 py-3">
+        <h2 className="site-section-label mb-3">
           {t('posts-last-30-days', { defaultValue: 'Posts in the last 30 days' })}
-        </h3>
+        </h2>
         <div className="flex h-28 items-end gap-1" role="img" aria-label={t('posts-per-day-chart', { defaultValue: 'Posts per day, last 30 days' })}>
           {data.daily.map((d) => (
             <div
@@ -131,28 +131,28 @@ export function AnalyticsDashboard() {
 
       {/* Top posts */}
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-site-text">
+        <h2 className="site-section-label mb-3">
           {t('top-posts', { defaultValue: 'Top posts by impressions' })}
-        </h3>
+        </h2>
         {data.topPosts.length === 0 ? (
           <p className="text-sm text-site-text-dim">{t('no-posts-yet', { defaultValue: 'No posts yet. Be the first!' })}</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {data.topPosts.map((p) => (
               <li key={p.id}>
                 <Link
                   to="/u/$userid/post/$postid"
                   params={{ userid: '_', postid: p.id }}
-                  className="block rounded-site border border-site-border bg-site-surface/40 p-3 transition-colors hover:border-site-accent/50"
+                  className="glass-fill glass-interactive block rounded-site px-4 py-3"
                 >
                   <p className="line-clamp-2 text-sm text-site-text">
                     {p.content || t('no-text-post', { defaultValue: '(media post)' })}
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-4 text-xs text-site-text-dim">
-                    <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5" />{formatCount(p.views)}</span>
-                    <span className="inline-flex items-center gap-1"><Heart className="h-3.5 w-3.5" />{formatCount(p.likes)}</span>
-                    <span className="inline-flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" />{formatCount(p.comments)}</span>
-                    <span className="inline-flex items-center gap-1"><Repeat2 className="h-3.5 w-3.5" />{formatCount(p.reposts)}</span>
+                  <div className="mt-3 flex flex-wrap gap-4 text-xs text-site-text-dim">
+                    <span className="inline-flex items-center gap-2"><Eye aria-hidden className="size-3.5" />{formatCount(p.views)}</span>
+                    <span className="inline-flex items-center gap-2"><Heart aria-hidden className="size-3.5" />{formatCount(p.likes)}</span>
+                    <span className="inline-flex items-center gap-2"><MessageCircle aria-hidden className="size-3.5" />{formatCount(p.comments)}</span>
+                    <span className="inline-flex items-center gap-2"><Repeat2 aria-hidden className="size-3.5" />{formatCount(p.reposts)}</span>
                   </div>
                 </Link>
               </li>

@@ -76,10 +76,10 @@ export function DriverEarnings() {
 
   return (
     <section className="space-y-4">
-      <h2 className="text-lg font-bold text-site-text">{tr("earnings", { defaultValue: "Earnings" })}</h2>
+      <h2 className="site-section-label">{tr("earnings", { defaultValue: "Earnings" })}</h2>
 
       {/* Earnings headline */}
-      <div className="flex items-center justify-between rounded-site border border-site-border bg-linear-to-r from-site-surface to-site-bg p-5">
+      <div className="flex items-center justify-between glass-fill rounded-site p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-site bg-site-success/15 text-site-success">
             <Wallet className="h-5 w-5" />
@@ -96,7 +96,7 @@ export function DriverEarnings() {
       </div>
 
       {/* Payout breakdown */}
-      <div className="glass-fill rounded-site p-5">
+      <div className="glass-fill rounded-site p-4">
         <h3 className="mb-3 text-sm font-semibold text-site-text">{tr("how-your-pay-adds-up", { defaultValue: "How your pay adds up" })}</h3>
         <dl className="space-y-2">
           {breakdown.map((r) => (
@@ -121,7 +121,7 @@ export function DriverEarnings() {
             <s.icon className="h-4 w-4 text-site-accent" />
             <div className="mt-2 text-lg font-bold text-site-text">{s.value}</div>
             <div className="text-xs text-site-text-muted">{s.label}</div>
-            <div className="text-[11px] text-site-text-dim">{s.sub}</div>
+            <div className="text-xs text-site-text-dim">{s.sub}</div>
           </div>
         ))}
       </div>
@@ -148,7 +148,7 @@ export function DriverEarnings() {
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="text-sm font-semibold text-site-success">{formatUsd(t.driverEarningsCents)}</div>
-                  <div className="text-[11px] text-site-text-dim">
+                  <div className="text-xs text-site-text-dim">
                     {tr("fare-amount", { defaultValue: "{{amount}} fare", amount: formatUsd(t.estimatedFareCents) })}{t.tipCents > 0 ? ' · ' + tr("tip-amount", { defaultValue: "+{{amount}} tip", amount: formatUsd(t.tipCents) }) : ''}
                   </div>
                 </div>

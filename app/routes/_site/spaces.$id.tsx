@@ -28,10 +28,8 @@ export const Route = createFileRoute('/_site/spaces/$id')({
 function SpacePage() {
   const space = Route.useLoaderData() as SpaceView;
   return (
-    <>
-      <PageFrame>
-        <SpaceRoom initialSpace={space} />
-      </PageFrame>
-    </>
+    <PageFrame>
+      <SpaceRoom initialSpace={space} />
+    </PageFrame>
   );
 }

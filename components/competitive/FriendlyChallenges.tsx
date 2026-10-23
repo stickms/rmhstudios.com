@@ -63,7 +63,7 @@ export default function FriendlyChallenges() {
   return (
     <section className="glass-pane rounded-site p-4 space-y-3" aria-labelledby="friendly-heading">
       <div>
-        <h2 id="friendly-heading" className="text-sm font-bold text-site-text">
+        <h2 id="friendly-heading" className="site-section-label">
           {t('fr-title', { defaultValue: 'Friendly challenge' })}
         </h2>
         <p className="text-xs text-site-text-dim">
@@ -93,7 +93,7 @@ export default function FriendlyChallenges() {
           className="max-w-48"
         />
         {HANDICAP_HOOKS[game] && (
-          <label className="flex items-center gap-1.5 text-sm">
+          <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={handicap}
@@ -127,7 +127,7 @@ export default function FriendlyChallenges() {
       {rows.length > 0 && (
         <ul className="space-y-2">
           {rows.map((r) => (
-            <li key={r.id} className="glass-fill rounded-site p-3 space-y-1.5 text-sm">
+            <li key={r.id} className="glass-fill rounded-site px-4 py-3 space-y-2 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span>
                   <strong>{gameName(r.game)}</strong> · {r.other.name}

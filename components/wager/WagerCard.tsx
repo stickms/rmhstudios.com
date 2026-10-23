@@ -91,16 +91,20 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
   };
 
   return (
-    <Card className="p-4 space-y-3" interactive>
+    <Card className="gap-3 px-4 py-4" interactive>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <Swords className="size-4 shrink-0 text-site-accent" />
+          <Swords className="size-4 shrink-0 text-site-accent" aria-hidden />
           <Link to="/wager/$id" params={{ id: wager.id }} className="font-semibold truncate hover:underline">
             {wager.gameTitle ?? wager.gameId}
           </Link>
           {wager.authoritative && (
-            <span title={t('authoritative', { defaultValue: 'Server-verified result' })}>
-              <ShieldCheck className="size-4 text-site-success" />
+            <span
+              title={t('authoritative', { defaultValue: 'Server-verified result' })}
+              role="img"
+              aria-label={t('authoritative', { defaultValue: 'Server-verified result' })}
+            >
+              <ShieldCheck className="size-4 text-site-success" aria-hidden />
             </span>
           )}
         </div>
@@ -126,8 +130,8 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
       </div>
 
       <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-1.5 text-site-text-dim">
-          <Coins className="size-4 text-site-warning" />
+        <div className="flex items-center gap-2 text-site-text-dim">
+          <Coins className="size-4 text-site-warning" aria-hidden />
           <span>
             {t('pot', { defaultValue: '{{pot}} coin pot', pot: wager.potCoins || wager.stakeCoins * 2 })}
             {' · '}
@@ -135,15 +139,15 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
           </span>
         </div>
         {wager.status === 'SETTLED' && wager.winnerId && (
-          <div className="flex items-center gap-1 text-site-success font-medium">
-            <Trophy className="size-4" />
+          <div className="flex items-center gap-2 text-site-success font-medium">
+            <Trophy className="size-4" aria-hidden />
             {wager.winnerId === wager.challenger?.id ? wager.challenger?.name : wager.opponent?.name}
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-2 pt-1">
+      <div className="flex flex-wrap gap-2">
         {wager.status === 'OPEN' && !isChallenger && viewerId && (
           <Button size="sm" onClick={accept} loading={busy}>
             {t('accept', { defaultValue: 'Accept' })} · {wager.stakeCoins}

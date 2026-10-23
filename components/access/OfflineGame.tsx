@@ -120,7 +120,7 @@ export function OfflineGame() {
   }, [move]);
 
   return (
-    <div className="mt-2 flex w-full flex-col items-center gap-3 border-t border-site-border pt-4">
+    <div className="flex w-full flex-col items-center gap-3 border-t border-site-border pt-4">
       <p className="text-sm font-semibold text-site-text">
         {t('game-title', { defaultValue: 'While you wait' })}
       </p>
@@ -150,10 +150,10 @@ export function OfflineGame() {
           onClick={() => move(-1)}
           aria-label={t('game-left', { defaultValue: 'Move left' })}
         >
-          <ChevronLeft className="h-4 w-4" aria-hidden />
+          <ChevronLeft aria-hidden />
         </Button>
         <Button onClick={start} disabled={running}>
-          <Play className="me-2 h-4 w-4" aria-hidden />
+          <Play aria-hidden />
           {lastOver
             ? t('game-again', { defaultValue: 'Play again' })
             : t('game-start', { defaultValue: 'Play' })}
@@ -164,7 +164,7 @@ export function OfflineGame() {
           onClick={() => move(1)}
           aria-label={t('game-right', { defaultValue: 'Move right' })}
         >
-          <ChevronRight className="h-4 w-4" aria-hidden />
+          <ChevronRight aria-hidden />
         </Button>
       </div>
     </div>

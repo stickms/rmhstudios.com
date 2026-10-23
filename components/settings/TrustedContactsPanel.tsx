@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 interface ContactUser {
   id: string;
@@ -195,20 +196,15 @@ export function TrustedContactsPanel() {
   const atLimit = contacts.length >= MAX_CONTACTS;
 
   return (
-    <section className="glass-pane rounded-site p-4 sm:p-5">
-      <div className="mb-1 flex items-center gap-2">
-        <ShieldQuestion className="h-5 w-5 text-site-accent" aria-hidden />
-        <h2 className="text-base font-bold text-site-text">
-          {t('contacts-title', { defaultValue: 'Trusted contacts' })}
-        </h2>
-      </div>
-      <p className="mb-4 text-sm text-site-text-muted">
-        {t('contacts-description', {
-          defaultValue:
-            'Nominate up to three people. If you ever lose access, two of them approving — after a 24-hour wait you can cancel — gets you back in.',
-        })}
-      </p>
-
+    <SettingsSection
+      icon={ShieldQuestion}
+      title={t('contacts-title', { defaultValue: 'Trusted contacts' })}
+      description={t('contacts-description', {
+        defaultValue:
+          'Nominate up to three people. If you ever lose access, two of them approving — after a 24-hour wait you can cancel — gets you back in.',
+      })}
+      bodyClassName="space-y-0"
+    >
       {loading ? (
         <div className="flex justify-center py-6">
           <Spinner />
@@ -377,6 +373,6 @@ export function TrustedContactsPanel() {
           ) : null}
         </>
       )}
-    </section>
+    </SettingsSection>
   );
 }

@@ -61,7 +61,7 @@ export default function TranslationsPanel() {
       {q.data && q.data.suggestions.length === 0 ? (
         <EmptyState title={t('tr-admin-empty', { defaultValue: 'No open suggestions' })} />
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {q.data?.suggestions.map((s) => (
             <li key={s.id} className="glass-fill flex items-center gap-3 rounded-site px-4 py-3">
               <div className="min-w-0 flex-1">

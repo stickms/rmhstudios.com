@@ -5,14 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Bookmark, FolderPlus, Trash2, FileX } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
-import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
+import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import type { HydratedSave, SaveFolderView } from '@/lib/saves/types';
 import { RemindersList } from '@/components/reminders/RemindersList';
 import { SaveNoteEditor } from '@/components/posts-plus/SaveNoteEditor';
@@ -110,38 +109,27 @@ export function SavesHub({ initial }: { initial: HubData }) {
     }
   }
 
-  const chip = (value: FolderFilter, label: string, count?: number) => (
-    <button
-      key={value}
-      type="button"
-      onClick={() => setFilter(value)}
-      aria-pressed={filter === value}
-      className={cn(
-        'shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors',
-        filter === value
-          ? 'bg-site-accent text-site-accent-fg'
-          : 'glass-fill text-site-text-muted hover:border-site-border-bright',
-      )}
-    >
-      {label}
-      {typeof count === 'number' ? <span className="ms-1 opacity-70">{count}</span> : null}
-    </button>
-  );
+  const filterTabs: LiquidTab[] = [
+    { id: 'all', label: t('all', { defaultValue: 'All' }) },
+    { id: 'default', label: t('unfiled', { defaultValue: 'Saved' }) },
+    ...folders.map((f) => ({ id: f.id, label: f.name, count: f.count })),
+    { id: REMINDERS, label: t('reminders', { defaultValue: 'Reminders' }) },
+  ];
 
   return (
     <div className="px-4 pt-4 pb-12">
-      {/* Folder filter row — scrolls horizontally on mobile. */}
-      <HorizontalScroller
-        aria-label={t('folders-label', { defaultValue: 'Saved item folders' })}
-        className="mb-4"
-        surface="pill"
-      >
-        {chip('all', t('all', { defaultValue: 'All' }))}
-        {chip('default', t('unfiled', { defaultValue: 'Saved' }))}
-        {folders.map((f) => chip(f.id, f.name, f.count))}
-        {chip(REMINDERS, t('reminders', { defaultValue: 'Reminders' }))}
+      {/* Folder filter — mutually exclusive, so it is a tab strip (LiquidTabs
+          scrolls with an edge fade when the folders outgrow the row). */}
+      <div className="mb-4 flex items-center gap-2">
+        <LiquidTabs
+          tabs={filterTabs}
+          value={filter}
+          onChange={setFilter}
+          className="min-w-0 flex-1"
+          aria-label={t('folders-label', { defaultValue: 'Saved item folders' })}
+        />
         {creating ? (
-          <span className="flex shrink-0 items-center gap-1">
+          <span className="flex shrink-0 items-center gap-2">
             <Input
               value={newName}
               onChange={(e) => setNewName(e.target.value.slice(0, 40))}
@@ -151,7 +139,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
               }}
               placeholder={t('folder-name', { defaultValue: 'Folder name' })}
               aria-label={t('folder-name', { defaultValue: 'Folder name' })}
-              className="h-8 w-36"
+              className="w-40"
               autoFocus
             />
             <Button size="sm" variant="accent" onClick={createFolder}>
@@ -167,7 +155,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
             label={t('new-folder', { defaultValue: 'New folder' })}
           />
         )}
-      </HorizontalScroller>
+      </div>
 
       {filter !== REMINDERS && <SaveNoteSearch value={q} onChange={setQ} />}
 
@@ -182,7 +170,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
           })}
         />
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {items.map((save) => (
             <li key={save.id}>
               <SavedRow save={save} onRemove={() => removeItem(save)} />
@@ -211,7 +199,7 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
 
   if (save.tombstone) {
     return (
-      <Card className="flex-row items-center gap-3 px-4 py-3">
+      <Card className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
         <FileX className="h-5 w-5 shrink-0 text-site-text-dim" aria-hidden />
         <span className="flex-1 text-sm text-site-text-muted">
           {t('unavailable', { defaultValue: 'This item is no longer available' })}
@@ -252,25 +240,25 @@ function SavedRow({ save, onRemove }: { save: HydratedSave; onRemove: () => void
 
   return (
     <>
-    <Card interactive className="flex-row items-center gap-3 px-4 py-3">
-      {save.href ? (
-        <a href={save.href} className="flex min-w-0 flex-1 items-center gap-3">
-          {body}
-        </a>
-      ) : (
-        <span className="flex min-w-0 flex-1 items-center gap-3">{body}</span>
-      )}
-      <IconButton
-        icon={Trash2}
-        variant="ghost"
-        size="icon-sm"
-        onClick={onRemove}
-        label={t('remove', { defaultValue: 'Remove' })}
-      />
-    </Card>
-    <div className="px-3 pb-1">
-      <SaveNoteEditor entityType={save.entityType} entityId={save.entityId} initial={save.note} />
-    </div>
+      <Card interactive className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
+        {save.href ? (
+          <a href={save.href} className="flex min-w-0 flex-1 items-center gap-3">
+            {body}
+          </a>
+        ) : (
+          <span className="flex min-w-0 flex-1 items-center gap-3">{body}</span>
+        )}
+        <IconButton
+          icon={Trash2}
+          variant="ghost"
+          size="icon-sm"
+          onClick={onRemove}
+          label={t('remove', { defaultValue: 'Remove' })}
+        />
+      </Card>
+      <div className="px-4 pt-1 pb-1">
+        <SaveNoteEditor entityType={save.entityType} entityId={save.entityId} initial={save.note} />
+      </div>
     </>
   );
 }

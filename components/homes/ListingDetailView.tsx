@@ -32,6 +32,7 @@ import { toast } from 'sonner';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -166,15 +167,17 @@ export function ListingDetailView({ id }: { id: string }) {
   if (notFound || !listing) {
     return (
       <PageLayout title="Listing" backTo="/homes" wide>
-        <div className="mx-auto max-w-md px-4 py-20 text-center text-site-text-dim">
-          <Home className="mx-auto mb-3 h-10 w-10 text-site-text-muted" />
-          <p className="mb-4">This listing is no longer available.</p>
-          <Button asChild variant="outline">
-            <Link to="/homes" onClick={goBack}>
-              <ArrowLeft className="h-4 w-4" /> Back to browse
-            </Link>
-          </Button>
-        </div>
+        <EmptyState
+          icon={Home}
+          title="This listing is no longer available."
+          action={
+            <Button asChild variant="outline">
+              <Link to="/homes" onClick={goBack}>
+                <ArrowLeft className="h-4 w-4" aria-hidden /> Back to browse
+              </Link>
+            </Button>
+          }
+        />
       </PageLayout>
     );
   }
@@ -189,16 +192,16 @@ export function ListingDetailView({ id }: { id: string }) {
 
   return (
     <PageLayout title={listing.title} backTo="/homes" backLabel="Back to browse" wide>
-      <div className="mx-auto w-full max-w-4xl px-4 pb-16 pt-4 md:px-6">
+      <div className="w-full max-w-4xl px-4 pt-4 pb-12">
         {/* Owner controls */}
         {listing.isOwner && (
-          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-site border border-site-border bg-site-surface/80 p-3">
+          <div className="mb-4 glass-fill flex flex-wrap items-center gap-2 rounded-site px-4 py-3">
             <span className="text-sm text-site-text-dim">You posted this ·</span>
             <Select
               value={listing.status}
               disabled={savingStatus}
               onChange={(e) => changeStatus(e.target.value as ListingStatus)}
-              className="h-8 w-auto"
+              className="w-auto"
               aria-label="Listing status"
             >
               <option value="ACTIVE">Active</option>
@@ -207,12 +210,12 @@ export function ListingDetailView({ id }: { id: string }) {
               <option value="REMOVED">Hidden</option>
             </Select>
             <div className="ml-auto flex items-center gap-2">
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="sm" className="min-h-11">
                 <Link to="/homes/submit" search={{ edit: listing.id }}>
                   <Pencil className="h-4 w-4" /> Edit
                 </Link>
               </Button>
-              <Button variant="outline" size="sm" onClick={remove} className="text-site-danger">
+              <Button variant="outline" size="sm" onClick={remove} className="min-h-11 text-site-danger">
                 <Trash2 className="h-4 w-4" /> Delete
               </Button>
             </div>
@@ -221,7 +224,7 @@ export function ListingDetailView({ id }: { id: string }) {
 
         {/* Gallery */}
         {images.length > 0 && (
-          <div className="mb-5">
+          <div className="mb-4">
             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-site border border-site-border bg-site-bg">
               <img
                 src={images[activeImage]}
@@ -274,8 +277,7 @@ export function ListingDetailView({ id }: { id: string }) {
             <div className="text-3xl font-bold text-site-text font-display">
               {formatPrice(listing.price, listing.listingType)}
             </div>
-            <h1 className="mt-1 text-lg font-semibold text-site-text">{listing.title}</h1>
-            <div className="mt-1 flex items-center gap-1.5 text-site-text-dim">
+            <div className="mt-2 flex items-center gap-2 text-site-text-dim">
               <MapPin className="h-4 w-4" />
               <span>{listing.address || location}</span>
             </div>
@@ -290,7 +292,7 @@ export function ListingDetailView({ id }: { id: string }) {
         </div>
 
         {/* Specs */}
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Spec icon={BedDouble} label={formatBeds(listing.beds)} sub="Bedrooms" />
           <Spec icon={Bath} label={formatBaths(listing.baths)} sub="Bathrooms" />
           <Spec icon={Ruler} label={sqft || '—'} sub="Size" />
@@ -317,7 +319,7 @@ export function ListingDetailView({ id }: { id: string }) {
 
         {/* Poster / source card */}
         {isExternal ? (
-          <div className="mt-5 flex flex-wrap items-center gap-3 rounded-site border border-site-border bg-site-surface/80 p-4">
+          <div className="mt-4 flex flex-wrap items-center gap-3 glass-fill rounded-site p-4">
             <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
               <Globe className="h-5 w-5" />
             </span>
@@ -342,7 +344,7 @@ export function ListingDetailView({ id }: { id: string }) {
             )}
           </div>
         ) : (
-          <div className="mt-5 flex flex-wrap items-center gap-3 rounded-site border border-site-border bg-site-surface/80 p-4">
+          <div className="mt-4 flex flex-wrap items-center gap-3 glass-fill rounded-site p-4">
             <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
               {listing.author?.image ? (
                 <img src={listing.author.image} alt="" className="h-full w-full object-cover" />
@@ -375,8 +377,8 @@ export function ListingDetailView({ id }: { id: string }) {
         )}
 
         {/* Description */}
-        <div className="mt-5">
-          <h2 className="mb-2 text-lg font-semibold text-site-text font-display">
+        <div className="mt-4">
+          <h2 className="mb-2 site-section-label">
             About this place
           </h2>
           <p className="whitespace-pre-wrap text-site-text-dim">{listing.description}</p>
@@ -384,8 +386,8 @@ export function ListingDetailView({ id }: { id: string }) {
 
         {/* Amenities */}
         {listing.amenities.length > 0 && (
-          <div className="mt-5">
-            <h2 className="mb-2 text-lg font-semibold text-site-text font-display">Amenities</h2>
+          <div className="mt-4">
+            <h2 className="mb-2 site-section-label">Amenities</h2>
             <div className="flex flex-wrap gap-2">
               {listing.amenities.map((a) => (
                 <Badge key={a} variant="outline" size="lg">
@@ -408,8 +410,8 @@ export function ListingDetailView({ id }: { id: string }) {
         )}
 
         {/* Map */}
-        <div className="mt-5">
-          <h2 className="mb-2 text-lg font-semibold text-site-text font-display">Location</h2>
+        <div className="mt-4">
+          <h2 className="mb-2 site-section-label">Location</h2>
           <ListingsMap
             listings={[listing]}
             center={{ lat: listing.lat, lng: listing.lng, label: location }}
@@ -425,8 +427,8 @@ export function ListingDetailView({ id }: { id: string }) {
 
 function Spec({ icon: Icon, label, sub }: { icon: typeof Home; label: string; sub: string }) {
   return (
-    <div className="rounded-site border border-site-border bg-site-surface/80 p-3">
-      <Icon className="mb-1 h-5 w-5 text-site-accent" />
+    <div className="glass-fill rounded-site px-4 py-3">
+      <Icon className="mb-2 h-5 w-5 text-site-accent" />
       <div className="font-semibold text-site-text">{label}</div>
       <div className="text-xs text-site-text-muted">{sub}</div>
     </div>

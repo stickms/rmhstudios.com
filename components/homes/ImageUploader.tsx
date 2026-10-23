@@ -191,7 +191,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
         onChange={(e) => handleFiles(e.target.files)}
       />
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
         <p className="text-xs text-site-text-muted">
           Up to {max} photos. The first is the cover — hover to set cover or remove.
         </p>
@@ -208,10 +208,10 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
       </div>
 
       {aiAvailable && aiOpen && (
-        <div className="mt-2 rounded-site border border-site-border bg-site-surface p-3">
+        <div className="glass-fill mt-3 rounded-site p-4">
           <label
             htmlFor="ai-prompt"
-            className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-site-text"
+            className="mb-2 flex items-center gap-2 text-sm font-medium text-site-text"
           >
             <Sparkles className="h-4 w-4 text-site-accent" /> Generate a photo with AI
           </label>

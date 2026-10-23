@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Clock, Gamepad2, Link as LinkIcon, MapPin, Radio, Trophy, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SITE_URL } from '@/lib/seo';
 import { safeHref } from '@/lib/url-safety';
@@ -54,7 +55,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
   return (
     <li
       className={cn(
-        'flex flex-col gap-3 rounded-site border border-site-border bg-site-surface p-4',
+        'glass-fill flex flex-col gap-3 rounded-site px-4 py-4',
         canceled && 'opacity-60',
         className,
       )}
@@ -62,10 +63,10 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-medium text-site-accent">
-              <VenueIcon className="h-3.5 w-3.5" aria-hidden />
+            <Badge variant="accent">
+              <VenueIcon aria-hidden />
               {t(venue.labelKey, { defaultValue: venue.label })}
-            </span>
+            </Badge>
             {event.community && (
               <span
                 className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-site-text-muted"
@@ -75,15 +76,13 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
               </span>
             )}
             {canceled && (
-              <span className="rounded-full bg-site-danger/15 px-2 py-0.5 text-xs font-medium text-site-danger">
-                {t('event-canceled', { defaultValue: 'Canceled' })}
-              </span>
+              <Badge variant="danger">{t('event-canceled', { defaultValue: 'Canceled' })}</Badge>
             )}
           </div>
           <h3 className="mt-2 truncate text-base font-bold text-site-text">{event.title}</h3>
           {/* Always the viewer's zone, always labelled — plus the organiser's
               in parentheses when the two clocks differ (B24). */}
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-site-text-muted">
+          <p className="mt-1 flex items-center gap-2 text-sm text-site-text-muted">
             <Clock className="h-4 w-4 shrink-0" aria-hidden />
             <EventTime
               startsAt={event.startsAt}

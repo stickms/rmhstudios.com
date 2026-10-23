@@ -3,11 +3,14 @@
  * means for the account, and the appeal form.
  */
 
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
+import { ShieldAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AccountStandingPanel } from '@/components/moderation/AccountStandingPanel';
 import { useSession } from '@/components/Providers';
+import { SettingsPageBody } from '@/components/settings/SettingsSection';
+import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 export const Route = createFileRoute('/_site/settings/account-status')({
   head: () => ({
@@ -25,33 +28,28 @@ function AccountStatusPage() {
   return (
     <PageLayout
       title={title}
+      description={t('account-status-subtitle', {
+        defaultValue:
+          'Your standing on RMH Studios, every moderation action taken on your account, and how to contest one.',
+      })}
       wide
       backTo="/settings"
       backLabel={settingsLabel}
       breadcrumbs={[{ label: settingsLabel, to: '/settings' }, { label: title }]}
     >
-      <div className="space-y-4 p-4">
-        <p className="text-sm text-site-text-muted">
-          {t('account-status-subtitle', {
-            defaultValue:
-              'Your standing on RMH Studios, every moderation action taken on your account, and how to contest one.',
-          })}
-        </p>
+      <SettingsPageBody>
         {!isPending && !session?.user ? (
-          <p className="text-sm text-site-text-muted">
-            <Link
-              to="/login"
-              search={{ callbackURL: '/settings/account-status' }}
-              className="text-site-accent hover:underline"
-            >
-              {t('account-status-sign-in', { defaultValue: 'Sign in' })}
-            </Link>{' '}
-            {t('account-status-sign-in-rest', { defaultValue: 'to view your account status.' })}
-          </p>
+          <SignedOutPrompt
+            icon={ShieldAlert}
+            title={t('account-status-signed-out', {
+              defaultValue: 'Sign in to view your account status.',
+            })}
+            callbackURL="/settings/account-status"
+          />
         ) : (
           <AccountStandingPanel />
         )}
-      </div>
+      </SettingsPageBody>
     </PageLayout>
   );
 }

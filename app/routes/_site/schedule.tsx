@@ -3,6 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { CalendarClock, Circle } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Skeleton } from '@/components/ui/skeleton';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 import type { SlotKind } from '@/lib/schedule/slots';
 
@@ -79,7 +80,7 @@ function SchedulePage() {
       title={title}
       breadcrumbs={[{ label: title }]}
     >
-      <div className="space-y-4 p-4">
+      <div className="max-w-2xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
         <p className="text-sm text-site-text-muted">
           {t('schedule-subtitle', {
             defaultValue:
@@ -88,11 +89,11 @@ function SchedulePage() {
         </p>
 
         {grid?.next && (
-          <section className="glass-pane rounded-site p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-site-text-muted">
+          <section className="glass-pane rounded-site px-4 py-3">
+            <p className="text-xs font-medium text-site-text-muted">
               {t('schedule-next', { defaultValue: 'Next up' })}
             </p>
-            <p className="mt-1 text-base font-bold text-site-text">
+            <p className="mt-2 text-base font-semibold text-site-text">
               {grid.next.href ? (
                 <Link to={grid.next.href} className="hover:underline">
                   {grid.next.title}
@@ -101,7 +102,7 @@ function SchedulePage() {
                 grid.next.title
               )}
             </p>
-            <p className="mt-1 text-sm text-site-text-muted">
+            <p className="mt-2 text-sm text-site-text-muted">
               {dayLabel(grid.next.startsAt)} · {time(grid.next.startsAt)}
             </p>
           </section>
@@ -114,22 +115,22 @@ function SchedulePage() {
         )}
 
         {!grid && !failed && (
-          <div className="space-y-2" aria-hidden>
+          <div className="space-y-3" aria-hidden>
             {[0, 1, 2].map((i) => (
-              <div key={i} className="glass-fill h-20 rounded-site" />
+              <Skeleton key={i} className="h-20 w-full rounded-site" />
             ))}
           </div>
         )}
 
         {grid?.byDay.map((bucket) => (
-          <section key={bucket.day} className="glass-fill rounded-site p-4">
-            <h2 className="text-sm font-bold text-site-text">{dayLabel(bucket.day)}</h2>
+          <section key={bucket.day} className="glass-fill rounded-site px-4 py-3">
+            <h2 className="site-section-label">{dayLabel(bucket.day)}</h2>
             {bucket.occurrences.length === 0 ? (
               <p className="mt-2 text-sm text-site-text-muted">
                 {t('schedule-quiet', { defaultValue: 'Nothing scheduled.' })}
               </p>
             ) : (
-              <ul className="mt-2 space-y-2">
+              <ul className="mt-3 space-y-3">
                 {bucket.occurrences.map((o) => (
                   <li key={`${o.slotId}-${o.startsAt}`} className="flex items-baseline gap-3">
                     <Circle
@@ -155,7 +156,7 @@ function SchedulePage() {
           </section>
         ))}
 
-        <p className="flex items-center gap-2 pt-2 text-xs text-site-text-muted">
+        <p className="flex items-center gap-2 text-xs text-site-text-muted">
           <CalendarClock className="size-3.5" aria-hidden />
           {t('schedule-timezone', {
             defaultValue: 'Times are shown in your device timezone.',

@@ -99,9 +99,9 @@ export function TrashRow({ item, busy, onRestore, onPurge }: TrashRowProps) {
           </p>
         ) : null}
 
-        {/* Stacks on a 360px phone and sits inline from `xs` up, so neither
+        {/* Stacks on a 360px phone and sits inline from `xs` (480px) up, so neither
             action is ever clipped or forced into a horizontal scroll. */}
-        <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:justify-end">
+        <div className="flex flex-col gap-2 xs:flex-row xs:justify-end">
           <Button
             variant="secondary"
             onClick={() => onRestore(item)}

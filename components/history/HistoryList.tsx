@@ -116,7 +116,7 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
           {t('pause', { defaultValue: 'Pause history' })}
         </label>
         <Button variant="ghost" size="sm" onClick={clearAll} className="text-site-danger">
-          <Trash2 className="h-4 w-4" aria-hidden />
+          <Trash2 aria-hidden />
           {t('clear-all', { defaultValue: 'Clear all' })}
         </Button>
       </div>
@@ -150,7 +150,7 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
           })}
         />
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {items.map((item) => (
             <li key={item.id}>
               <HistoryRow item={item} onRemove={() => removeOne(item.id)} />
@@ -194,8 +194,8 @@ function HistoryRow({ item, onRemove }: { item: HistoryView; onRemove: () => voi
         </span>
       )}
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5">
-          {resumable ? <Play className="h-3 w-3 shrink-0 text-site-accent" aria-hidden /> : null}
+        <span className="flex items-center gap-2">
+          {resumable ? <Play className="size-3 shrink-0 text-site-accent" aria-hidden /> : null}
           <span className="truncate text-sm font-medium text-site-text">{item.title}</span>
         </span>
         {item.subtitle ? (
@@ -215,7 +215,7 @@ function HistoryRow({ item, onRemove }: { item: HistoryView; onRemove: () => voi
   );
 
   return (
-    <Card interactive className="flex-row items-center gap-3 px-4 py-3">
+    <Card interactive className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
       {item.href ? (
         <a href={item.href} className="flex min-w-0 flex-1 items-center gap-3">
           {inner}

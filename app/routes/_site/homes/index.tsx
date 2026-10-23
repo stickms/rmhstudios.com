@@ -20,9 +20,11 @@ import {
   Search,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { LocationSearch, type HomesPlace } from '@/components/homes/LocationSearch';
 import { FiltersBar } from '@/components/homes/FiltersBar';
 import { ListingGrid } from '@/components/homes/ListingGrid';
@@ -50,6 +52,7 @@ export const Route = createFileRoute('/_site/homes/')({
 });
 
 function HomesBrowsePage() {
+  const { t } = useTranslation('site');
   const { data: session } = useSession();
 
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
@@ -85,7 +88,7 @@ function HomesBrowsePage() {
       if (myReq !== reqIdRef.current) return;
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Search failed');
+        throw new Error(data.error || t('homes-search-failed', { defaultValue: 'Search failed' }));
       }
       const data = await res.json();
       setListings(data.listings ?? []);
@@ -93,13 +96,15 @@ function HomesBrowsePage() {
       setTotal(data.total ?? 0);
     } catch (err) {
       if (myReq === reqIdRef.current) {
-        toast.error(err instanceof Error ? err.message : 'Search failed');
+        toast.error(
+          err instanceof Error ? err.message : t('homes-search-failed', { defaultValue: 'Search failed' }),
+        );
         setListings([]);
       }
     } finally {
       if (myReq === reqIdRef.current) setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // Seed from the URL and run an initial browse (newest everywhere if no filters).
   useEffect(() => {
@@ -169,11 +174,11 @@ function HomesBrowsePage() {
       activeId={activeId}
       onHover={setActiveId}
       onFavoriteChange={onFavoriteChange}
-      emptyTitle="No listings here yet"
+      emptyTitle={t('homes-empty-title', { defaultValue: 'No listings here yet' })}
       // The copy used to say to tap "Post a listing" — a header button whose
       // label is `hidden sm:inline`, so on a phone the reader was told to find
       // a word that isn't on screen. Put the action in the empty state instead.
-      emptyDescription="Be the first to post a home in this area."
+      emptyDescription={t('homes-empty-desc', { defaultValue: 'Be the first to post a home in this area.' })}
       emptyAction={
         <Button asChild>
           <Link
@@ -181,7 +186,7 @@ function HomesBrowsePage() {
             search={session ? undefined : { callbackURL: '/homes/submit' }}
           >
             <Plus className="h-4 w-4" aria-hidden />
-            Post a listing
+            {t('homes-post-listing', { defaultValue: 'Post a listing' })}
           </Link>
         </Button>
       }
@@ -193,41 +198,40 @@ function HomesBrowsePage() {
       title="RMHHomes"
       wide
       headerRight={
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {/* One button to the whole personal side (/homes/manage), instead of
               the two that used to point at the separate Alerts and Saved
               pages — those are tabs there now. */}
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/homes/manage">
-              <Bookmark className="h-4 w-4" />
-              <span className="hidden sm:inline">Your homes</span>
+          <Button asChild variant="ghost" size="sm" className="min-h-11">
+            <Link to="/homes/manage" aria-label={t('homes-your-homes', { defaultValue: 'Your homes' })}>
+              <Bookmark className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">
+                {t('homes-your-homes', { defaultValue: 'Your homes' })}
+              </span>
             </Link>
           </Button>
-          {session ? (
-            <Button asChild size="sm">
-              <Link to="/homes/submit">
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Post a listing</span>
-              </Link>
-            </Button>
-          ) : (
-            <Button asChild size="sm">
-              <Link to="/login" search={{ callbackURL: '/homes/submit' }}>
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Post a listing</span>
-              </Link>
-            </Button>
-          )}
+          <Button asChild size="sm" className="min-h-11">
+            <Link
+              to={session ? '/homes/submit' : '/login'}
+              search={session ? undefined : { callbackURL: '/homes/submit' }}
+              aria-label={t('homes-post-listing', { defaultValue: 'Post a listing' })}
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">
+                {t('homes-post-listing', { defaultValue: 'Post a listing' })}
+              </span>
+            </Link>
+          </Button>
         </div>
       }
     >
-      <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-4 md:px-6 md:pb-10">
+      <div className="w-full px-4 pt-4 pb-12">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col gap-3"
         >
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex-1">
               <LocationSearch
                 value={locationQuery}
@@ -239,25 +243,35 @@ function HomesBrowsePage() {
                 onSubmit={submitLocation}
               />
             </div>
-            <Button size="lg" onClick={submitLocation} className="h-11 sm:w-auto">
-              <Search className="h-4 w-4" />
-              Search
+            <Button onClick={submitLocation} className="sm:w-auto">
+              <Search className="h-4 w-4" aria-hidden />
+              {t('homes-search', { defaultValue: 'Search' })}
             </Button>
           </div>
           <FiltersBar filters={filters} onChange={applyFilters} />
         </motion.div>
 
         {/* Results header */}
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm text-site-text-dim">
             {loading ? (
-              'Searching…'
+              t('homes-searching', { defaultValue: 'Searching…' })
             ) : (
               <>
                 <span className="font-semibold text-site-text">{total.toLocaleString()}</span>{' '}
-                {total === 1 ? 'home' : 'homes'}
+                {t('homes-count-noun', {
+                  defaultValue: '{{count}} homes',
+                  defaultValue_one: '{{count}} home',
+                  count: total,
+                })}
                 {center && (
-                  <span className="text-site-text-muted"> near {center.label.split(',')[0]}</span>
+                  <span className="text-site-text-muted">
+                    {' '}
+                    {t('homes-near', {
+                      defaultValue: 'near {{place}}',
+                      place: center.label.split(',')[0],
+                    })}
+                  </span>
                 )}
               </>
             )}
@@ -267,30 +281,34 @@ function HomesBrowsePage() {
             <Button
               variant="outline"
               size="sm"
-              className="lg:hidden"
+              className="min-h-11 lg:hidden"
               onClick={() => setMobileMap((v) => !v)}
             >
-              {mobileMap ? <List className="h-4 w-4" /> : <MapIcon className="h-4 w-4" />}
-              {mobileMap ? 'List' : 'Map'}
+              {mobileMap ? <List className="h-4 w-4" aria-hidden /> : <MapIcon className="h-4 w-4" aria-hidden />}
+              {mobileMap
+                ? t('homes-view-list', { defaultValue: 'List' })
+                : t('homes-view-map', { defaultValue: 'Map' })}
             </Button>
-            <div className="hidden rounded-site-sm border border-site-border p-0.5 lg:inline-flex">
-              <button
-                type="button"
-                onClick={() => setDesktopSplit(true)}
-                aria-label="Map + list view"
-                className={`rounded-[6px] p-1.5 ${desktopSplit ? 'bg-site-surface-hover text-site-text' : 'text-site-text-muted'}`}
-              >
-                <MapIcon className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setDesktopSplit(false)}
-                aria-label="Grid view"
-                className={`rounded-[6px] p-1.5 ${!desktopSplit ? 'bg-site-surface-hover text-site-text' : 'text-site-text-muted'}`}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-            </div>
+            <LiquidTabs
+              size="sm"
+              iconOnly
+              className="hidden w-auto lg:inline-flex"
+              aria-label={t('homes-view-mode', { defaultValue: 'View mode' })}
+              tabs={[
+                {
+                  id: 'split',
+                  label: t('homes-view-split', { defaultValue: 'Map + list view' }),
+                  icon: MapIcon,
+                },
+                {
+                  id: 'grid',
+                  label: t('homes-view-grid', { defaultValue: 'Grid view' }),
+                  icon: LayoutGrid,
+                },
+              ]}
+              value={desktopSplit ? 'split' : 'grid'}
+              onChange={(id) => setDesktopSplit(id === 'split')}
+            />
           </div>
         </div>
 
@@ -304,7 +322,7 @@ function HomesBrowsePage() {
                 activeId={activeId}
                 onActive={setActiveId}
                 onSelect={(id) => setActiveId(id)}
-                className="h-[70vh]"
+                className="h-[70dvh]"
               />
             ) : (
               renderGrid()
@@ -333,25 +351,31 @@ function HomesBrowsePage() {
 
         {/* Pagination */}
         {!loading && !mobileMap && total > filters.pageSize && (
-          <div className="mt-6 flex items-center justify-center gap-3">
+          <div className="mt-4 flex items-center justify-center gap-3">
             <Button
               variant="outline"
               size="sm"
+              className="min-h-11"
               disabled={filters.page <= 1}
               onClick={() => goToPage(filters.page - 1)}
             >
-              <ChevronLeft className="h-4 w-4" /> Prev
+              <ChevronLeft className="h-4 w-4" aria-hidden /> {t('homes-prev', { defaultValue: 'Prev' })}
             </Button>
             <span className="text-sm text-site-text-dim">
-              Page {filters.page} of {totalPages}
+              {t('homes-page-of', {
+                defaultValue: 'Page {{page}} of {{total}}',
+                page: filters.page,
+                total: totalPages,
+              })}
             </span>
             <Button
               variant="outline"
               size="sm"
+              className="min-h-11"
               disabled={filters.page >= totalPages}
               onClick={() => goToPage(filters.page + 1)}
             >
-              Next <ChevronRight className="h-4 w-4" />
+              {t('homes-next', { defaultValue: 'Next' })} <ChevronRight className="h-4 w-4" aria-hidden />
             </Button>
           </div>
         )}

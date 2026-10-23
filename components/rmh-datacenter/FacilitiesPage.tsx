@@ -83,8 +83,8 @@ export default function FacilitiesPage() {
     >
       <DatacenterTabs active="/rmh-datacenter/facilities" />
 
-      <div className="space-y-8 px-4 pb-12">
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+      <div className="space-y-6 px-4 pt-4 pb-12">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <p className="max-w-prose text-site-text-muted">
             {t('fac-lede', {
               defaultValue:
@@ -120,9 +120,9 @@ export default function FacilitiesPage() {
         {CAMPUSES.map((c) => {
           const copy = prose[c.id];
           return (
-            <section key={c.id} id={c.id} className="glass-pane rounded-site p-6 sm:p-8">
+            <section key={c.id} id={c.id} className="glass-pane rounded-site p-4 sm:p-6">
               <SectionHeading kicker={`${c.code} · ${c.region}`} heading={names[c.id]} />
-              <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_minmax(0,18rem)]">
+              <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_minmax(0,18rem)]">
                 <div className="min-w-0">
                   <p className="max-w-prose text-site-text-muted">{copy.desc}</p>
                 </div>
@@ -149,7 +149,7 @@ export default function FacilitiesPage() {
                   />
                 </div>
               </div>
-              <dl className="mt-6">
+              <dl className="mt-4">
                 <SpecRow term={t('spec-halls', { defaultValue: 'Halls' })}>{c.halls}</SpecRow>
                 <SpecRow term={t('spec-power', { defaultValue: 'Contracted power' })}>
                   {c.megawatts} MW
@@ -184,7 +184,7 @@ export default function FacilitiesPage() {
               defaultValue: 'Five layers between the road and your cage',
             })}
           />
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {[
               [
                 'L1 · L2',
@@ -211,8 +211,8 @@ export default function FacilitiesPage() {
                 }),
               ],
             ].map(([code, name, desc]) => (
-              <Card key={code} className="flex flex-col gap-2 p-5">
-                <span className="text-xs font-medium tracking-wide text-site-accent uppercase">
+              <Card key={code} className="flex flex-col gap-2 p-4">
+                <span className="text-xs font-medium text-site-accent">
                   {code}
                 </span>
                 <h3 className="font-display text-lg font-semibold text-site-text">{name}</h3>
@@ -222,7 +222,7 @@ export default function FacilitiesPage() {
           </div>
         </section>
 
-        <section className="glass-pane rounded-site p-6 sm:p-8">
+        <section className="glass-pane rounded-site p-4 sm:p-6">
           <SectionHeading
             kicker={t('fac-cta-kicker', { defaultValue: 'Site tour' })}
             heading={t('fac-cta-heading', { defaultValue: 'Walk the hall before you sign for it' })}
@@ -233,7 +233,7 @@ export default function FacilitiesPage() {
                 'Tours run on weekday mornings at every campus, escorted by the engineer who runs that floor rather than by a salesperson.',
             })}
           </p>
-          <div className="mt-6">
+          <div className="mt-4">
             <Button asChild variant="accent">
               <Link to="/rmh-datacenter/contact" search={{ intent: 'Site tour' }}>
                 {t('book-a-tour', { defaultValue: 'Book a tour' })}

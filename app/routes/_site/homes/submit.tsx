@@ -3,12 +3,13 @@
  */
 import { useEffect, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
 import { ListingForm } from '@/components/homes/ListingForm';
 import type { Listing } from '@/lib/homes/types';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const Route = createFileRoute('/_site/homes/submit')({
   head: () => ({ meta: [{ title: 'RMHHomes — Post a listing' }] }),
@@ -46,7 +47,7 @@ function HomesSubmitPage() {
     return (
       <PageLayout title={title} backTo="/homes" wide>
         <div className="grid place-items-center py-24 text-site-text-muted">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <Spinner />
         </div>
       </PageLayout>
     );
@@ -68,17 +69,17 @@ function HomesSubmitPage() {
 
   return (
     <PageLayout title={title} backTo="/homes" backLabel="Back to browse" wide>
-      <div className="mx-auto w-full max-w-2xl px-4 pb-16 pt-4 md:px-6">
+      <div className="w-full max-w-2xl px-4 pt-4 pb-12">
         {isEditing && loading ? (
           <div className="grid place-items-center py-20 text-site-text-muted">
-            <Loader2 className="h-8 w-8 animate-spin" />
+            <Spinner />
           </div>
         ) : isEditing && !listing ? (
-          <div className="py-20 text-center text-site-text-dim">
-            You can only edit your own listings.
-          </div>
+          <EmptyState title="You can only edit your own listings." />
         ) : (
-          <ListingForm listing={listing ?? undefined} />
+          <div className="glass-fill rounded-site p-4 sm:p-5">
+            <ListingForm listing={listing ?? undefined} />
+          </div>
         )}
       </div>
     </PageLayout>

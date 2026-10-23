@@ -101,7 +101,7 @@ export function PickemPanel({
           <>
             <div className="grid gap-2 sm:grid-cols-2">
               {SLOTS.map((s) => (
-                <label key={s.key} className="space-y-1 text-sm">
+                <label key={s.key} className="flex flex-col gap-2 text-sm">
                   <span className="text-xs text-site-text-dim">
                     {label(s.role, s.key)} · {PICK_ROLES[s.role].points}
                   </span>
@@ -125,7 +125,7 @@ export function PickemPanel({
           </>
         ) : (
           data.mine.length > 0 && (
-            <ul className="text-sm space-y-1">
+            <ul className="text-sm space-y-2">
               {data.mine.map((p, i) => (
                 <li key={i}>
                   <span className="text-site-text-dim">{label(p.role, String(i))}: </span>
@@ -136,7 +136,7 @@ export function PickemPanel({
           )
         )}
         {data.complete && data.leaderboard.length > 0 && (
-          <ol className="text-sm space-y-1 border-t border-site-border pt-3">
+          <ol className="text-sm space-y-2 border-t border-site-border pt-3">
             {data.leaderboard.map((r, i) => (
               <li key={i} className="flex justify-between">
                 <span>

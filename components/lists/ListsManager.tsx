@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { List as ListIcon, Plus, Pin } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,7 +60,7 @@ export function ListsManager({ initial }: { initial: ListView[] }) {
           </div>
         ) : (
           <Button variant="accent" size="sm" onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4" aria-hidden />
+            <Plus aria-hidden />
             {t('new-list', { defaultValue: 'New list' })}
           </Button>
         )}
@@ -69,25 +70,34 @@ export function ListsManager({ initial }: { initial: ListView[] }) {
         <EmptyState
           icon={ListIcon}
           title={t('empty-title', { defaultValue: 'No lists yet' })}
-          description={t('empty-desc', { defaultValue: 'Group accounts and read them as their own feed.' })}
+          description={t('empty-desc', {
+            defaultValue: 'Group accounts and read them as their own feed.',
+          })}
         />
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {lists.map((l) => (
             <li key={l.id}>
-              <Card interactive className="flex-row items-center gap-3 px-4 py-3">
-                <a href={`/lists/${l.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+              <Card interactive className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
+                <Link
+                  to="/lists/$id"
+                  params={{ id: l.id }}
+                  className="flex min-w-0 flex-1 items-center gap-3"
+                >
                   <ListIcon className="h-5 w-5 shrink-0 text-site-accent" aria-hidden />
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-2">
                       <span className="truncate text-sm font-medium text-site-text">{l.name}</span>
-                      {l.pinned ? <Pin className="h-3 w-3 shrink-0 text-site-text-dim" aria-hidden /> : null}
+                      {l.pinned ? (
+                        <Pin className="h-3 w-3 shrink-0 text-site-text-dim" aria-hidden />
+                      ) : null}
                     </span>
                     <span className="block text-xs text-site-text-muted">
-                      {l.memberCount} {t('members', { defaultValue: 'members' })} · {l.visibility.toLowerCase()}
+                      {l.memberCount} {t('members', { defaultValue: 'members' })} ·{' '}
+                      {l.visibility.toLowerCase()}
                     </span>
                   </span>
-                </a>
+                </Link>
               </Card>
             </li>
           ))}

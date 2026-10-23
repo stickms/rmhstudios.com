@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Gift, Loader2, Heart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Gift, Heart } from 'lucide-react';
 import {
   TIP_PERCENTS,
   suggestedTipCents,
@@ -56,7 +58,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
   }
 
   return (
-    <div className="glass-fill rounded-site p-5">
+    <div className="glass-fill rounded-site p-4">
       <div className="flex items-center gap-2">
         <Gift className="h-5 w-5 text-site-accent" />
         <h3 className="font-semibold text-site-text">{t("add-tip-header", { defaultValue: "Add a tip for your driver" })}</h3>
@@ -77,14 +79,14 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
                 setSelected(cents);
                 setCustom('');
               }}
-              className={`rounded-site-sm border px-2 py-2.5 text-center transition-colors ${
+              className={`min-h-11 rounded-site-sm border px-2 py-2 text-center transition-colors ${
                 active
                   ? 'border-site-accent bg-site-accent/10 text-site-accent'
                   : 'border-site-border bg-site-surface text-site-text hover:border-site-border-bright'
               }`}
             >
               <div className="text-sm font-semibold">{pct === 0 ? t("no-tip", { defaultValue: "No tip" }) : `${Math.round(pct * 100)}%`}</div>
-              {pct > 0 && <div className="text-[11px] text-site-text-dim">{formatUsd(cents)}</div>}
+              {pct > 0 && <div className="text-xs text-site-text-dim">{formatUsd(cents)}</div>}
             </button>
           );
         })}
@@ -93,7 +95,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
       <div className="mt-3 flex items-center gap-2">
         <div className="relative flex-1">
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-site-text-dim">$</span>
-          <input
+          <Input
             type="number"
             min={0}
             step="0.50"
@@ -104,17 +106,14 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
               setSelected(null);
             }}
             placeholder={t("custom-amount-placeholder", { defaultValue: "Custom amount" })}
-            className="w-full glass-inset rounded-site-sm py-2.5 pl-7 pr-3 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
+            aria-label={t("custom-amount-placeholder", { defaultValue: "Custom amount" })}
+            className="pl-7"
           />
         </div>
-        <button
-          onClick={submit}
-          disabled={!valid || submitting}
-          className="flex items-center justify-center gap-2 rounded-site-sm bg-site-accent px-5 py-2.5 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gift className="h-4 w-4" />}
+        <Button onClick={submit} disabled={!valid} loading={submitting}>
+          {!submitting && <Gift aria-hidden />}
           {amount > 0 ? t("tip-with-amount", { defaultValue: "Tip {{amount}}", amount: formatUsd(amount) }) : t("tip-label", { defaultValue: "Tip" })}
-        </button>
+        </Button>
       </div>
     </div>
   );

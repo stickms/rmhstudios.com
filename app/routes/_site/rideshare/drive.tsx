@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
 import { m as motion } from 'framer-motion';
 import {
-  Loader2,
   ShieldCheck,
   Clock,
   CheckCircle2,
@@ -21,7 +20,13 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Input } from '@/components/ui/input';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 import { useSession } from '@/components/Providers';
 import { ActiveRidePanel } from '@/components/rideshare/ActiveRidePanel';
 import { DriverEarnings } from '@/components/rideshare/DriverEarnings';
@@ -94,7 +99,7 @@ function DrivePage() {
 
   if (isPending || loading) {
     return (
-      <PageLayout title="Drive" wide>
+      <PageLayout title={t('drive-page-title', { defaultValue: 'Drive with RMH' })} wide>
         <div className="flex justify-center py-20">
           <Spinner className="text-site-text-muted" />
         </div>
@@ -104,7 +109,7 @@ function DrivePage() {
 
   if (!session) {
     return (
-      <PageLayout title="Drive" wide>
+      <PageLayout title={t('drive-page-title', { defaultValue: 'Drive with RMH' })} wide>
         <SignedOutPrompt
           icon={Car}
           callbackURL="/rideshare/drive"
@@ -118,8 +123,8 @@ function DrivePage() {
   }
 
   return (
-    <PageLayout title="Drive with RMH" wide>
-      <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8">
+    <PageLayout title={t('drive-page-title', { defaultValue: 'Drive with RMH' })} wide>
+      <div className="w-full max-w-4xl px-4 pt-4 pb-12">
         {driver?.status === 'APPROVED' ? (
           <DriverDashboard driver={driver} currentUserId={session.user.id} onDriverChange={loadDriver} />
         ) : driver?.status === 'PENDING' ? (
@@ -141,15 +146,16 @@ function PendingState() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-fill rounded-site p-8 text-center"
+      className="glass-fill rounded-site"
     >
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-site bg-site-warning/15 text-site-warning">
-        <Clock className="h-7 w-7" />
-      </div>
-      <h2 className="mt-4 text-xl font-bold text-site-text">{t('application-under-review', { defaultValue: 'Application under review' })}</h2>
-      <p className="mx-auto mt-2 max-w-md text-site-text-muted">
-        {t('application-review-desc', { defaultValue: "Thanks for applying! Our team is reviewing your details and license number. You'll be able to accept rides as soon as you're approved." })}
-      </p>
+      <EmptyState
+        icon={Clock}
+        title={t('application-under-review', { defaultValue: 'Application under review' })}
+        description={t('application-review-desc', {
+          defaultValue:
+            "Thanks for applying! Our team is reviewing your details and license number. You'll be able to accept rides as soon as you're approved.",
+        })}
+      />
     </motion.div>
   );
 }
@@ -207,98 +213,82 @@ function ApplicationForm({
     }
   }
 
-  const inputClass =
-    'w-full glass-inset rounded-site-sm px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm';
+  const field = (
+    id: string,
+    label: string,
+    input: React.ReactNode,
+  ) => (
+    <div>
+      <label htmlFor={id} className="mb-2 block text-sm font-medium text-site-text">
+        {label}
+      </label>
+      {input}
+    </div>
+  );
 
   return (
-    <form onSubmit={submit} className="space-y-6">
-      <div>
-        <div className="flex items-center gap-2 text-site-accent">
-          <ShieldCheck className="h-5 w-5" />
-          <span className="text-xs font-semibold uppercase tracking-wide">{t('driver-application', { defaultValue: 'Driver application' })}</span>
-        </div>
-        <h2 className="mt-1 text-2xl font-bold text-site-text font-display">
+    <form onSubmit={submit} className="space-y-4">
+      <div className="space-y-2">
+        <h2 className="site-section-label">
           {t('tell-us-about-your-ride', { defaultValue: 'Tell us about your ride' })}
         </h2>
-        <p className="mt-1 text-site-text-muted">
+        <p className="text-sm text-site-text-muted">
           {t('application-form-desc', { defaultValue: "We'll review your vehicle details and license number, then let you know once you're approved to drive." })}
         </p>
       </div>
 
       {rejected?.rejectionReason && (
-        <div className="flex items-start gap-3 rounded-site border border-site-danger/30 bg-site-danger/10 p-4 text-sm text-site-danger">
-          <XCircle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div>
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-site border border-site-danger/30 bg-site-danger/10 p-4 text-sm text-site-danger"
+        >
+          <XCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+          <div className="space-y-1">
             <p className="font-semibold">{t('previous-application-rejected', { defaultValue: "Your previous application wasn't approved" })}</p>
-            <p className="mt-0.5 text-site-danger/90">{rejected.rejectionReason}</p>
-            <p className="mt-1 text-site-danger/70">{t('reapply-hint', { defaultValue: 'You can update your details and re-apply below.' })}</p>
+            <p>{rejected.rejectionReason}</p>
+            <p>{t('reapply-hint', { defaultValue: 'You can update your details and re-apply below.' })}</p>
           </div>
         </div>
       )}
 
-      <div className="glass-fill rounded-site p-5">
-        <h3 className="mb-4 font-semibold text-site-text">{t('vehicle-details', { defaultValue: 'Vehicle details' })}</h3>
+      <div className="glass-fill rounded-site p-4">
+        <h3 className="site-section-label mb-3">{t('vehicle-details', { defaultValue: 'Vehicle details' })}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-make', { defaultValue: 'Make' })}</label>
-            <input required maxLength={60} value={form.vehicleMake} onChange={(e) => set('vehicleMake', e.target.value)} placeholder={t('placeholder-make', { defaultValue: 'Toyota' })} className={inputClass} />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-model', { defaultValue: 'Model' })}</label>
-            <input required maxLength={60} value={form.vehicleModel} onChange={(e) => set('vehicleModel', e.target.value)} placeholder={t('placeholder-model', { defaultValue: 'Camry' })} className={inputClass} />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-year', { defaultValue: 'Year' })}</label>
-            <input required type="number" min={1980} max={new Date().getFullYear() + 2} value={form.vehicleYear} onChange={(e) => set('vehicleYear', e.target.value)} placeholder={t('placeholder-year', { defaultValue: '2022' })} className={inputClass} />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-color', { defaultValue: 'Color' })}</label>
-            <input required maxLength={30} value={form.vehicleColor} onChange={(e) => set('vehicleColor', e.target.value)} placeholder={t('placeholder-color', { defaultValue: 'Silver' })} className={inputClass} />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-license-plate', { defaultValue: 'License plate' })}</label>
-            <input required maxLength={16} value={form.licensePlate} onChange={(e) => set('licensePlate', e.target.value.toUpperCase())} placeholder={t('placeholder-license-plate', { defaultValue: 'ABC-1234' })} className={inputClass} />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-drivers-license', { defaultValue: "Driver's license #" })}</label>
-            <input required maxLength={40} value={form.licenseNumber} onChange={(e) => set('licenseNumber', e.target.value.toUpperCase())} placeholder={t('placeholder-drivers-license', { defaultValue: 'D1234567' })} className={inputClass} />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-passenger-seats', { defaultValue: 'Passenger seats' })}</label>
-            <input required type="number" min={1} max={8} value={form.seats} onChange={(e) => set('seats', e.target.value)} className={inputClass} />
-          </div>
+          {field('drv-make', t('label-make', { defaultValue: 'Make' }),
+            <Input id="drv-make" required maxLength={60} value={form.vehicleMake} onChange={(e) => set('vehicleMake', e.target.value)} placeholder={t('placeholder-make', { defaultValue: 'Toyota' })} />)}
+          {field('drv-model', t('label-model', { defaultValue: 'Model' }),
+            <Input id="drv-model" required maxLength={60} value={form.vehicleModel} onChange={(e) => set('vehicleModel', e.target.value)} placeholder={t('placeholder-model', { defaultValue: 'Camry' })} />)}
+          {field('drv-year', t('label-year', { defaultValue: 'Year' }),
+            <Input id="drv-year" required type="number" min={1980} max={new Date().getFullYear() + 2} value={form.vehicleYear} onChange={(e) => set('vehicleYear', e.target.value)} placeholder={t('placeholder-year', { defaultValue: '2022' })} />)}
+          {field('drv-color', t('label-color', { defaultValue: 'Color' }),
+            <Input id="drv-color" required maxLength={30} value={form.vehicleColor} onChange={(e) => set('vehicleColor', e.target.value)} placeholder={t('placeholder-color', { defaultValue: 'Silver' })} />)}
+          {field('drv-plate', t('label-license-plate', { defaultValue: 'License plate' }),
+            <Input id="drv-plate" required maxLength={16} value={form.licensePlate} onChange={(e) => set('licensePlate', e.target.value.toUpperCase())} placeholder={t('placeholder-license-plate', { defaultValue: 'ABC-1234' })} />)}
+          {field('drv-license', t('label-drivers-license', { defaultValue: "Driver's license #" }),
+            <Input id="drv-license" required maxLength={40} value={form.licenseNumber} onChange={(e) => set('licenseNumber', e.target.value.toUpperCase())} placeholder={t('placeholder-drivers-license', { defaultValue: 'D1234567' })} />)}
+          {field('drv-seats', t('label-passenger-seats', { defaultValue: 'Passenger seats' }),
+            <Input id="drv-seats" required type="number" min={1} max={8} value={form.seats} onChange={(e) => set('seats', e.target.value)} />)}
         </div>
       </div>
 
-      <div className="glass-fill rounded-site p-5">
-        <h3 className="mb-1 font-semibold text-site-text">{t('which-class-drive', { defaultValue: 'Which class will you drive?' })}</h3>
-        <p className="mb-4 text-xs text-site-text-muted">{t('class-hint', { defaultValue: 'Pick the option that best matches your vehicle.' })}</p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {RIDE_CLASSES.map((cls) => (
-            <button
-              key={cls.id}
-              type="button"
-              onClick={() => setVehicleClass(cls.id)}
-              className={`rounded-site-sm border px-3 py-2 text-sm font-medium transition-colors ${
-                vehicleClass === cls.id
-                  ? 'border-site-accent bg-site-accent/10 text-site-accent'
-                  : 'border-site-border bg-site-surface text-site-text hover:border-site-border-bright'
-              }`}
-            >
-              {cls.name}
-            </button>
-          ))}
+      <div className="glass-fill space-y-3 rounded-site p-4">
+        <div>
+          <h3 className="site-section-label">{t('which-class-drive', { defaultValue: 'Which class will you drive?' })}</h3>
+          <p className="mt-2 text-xs text-site-text-muted">{t('class-hint', { defaultValue: 'Pick the option that best matches your vehicle.' })}</p>
         </div>
+        <LiquidTabs
+          size="sm"
+          tabs={RIDE_CLASSES.map((cls) => ({ id: cls.id, label: cls.name }))}
+          value={vehicleClass}
+          onChange={(id) => setVehicleClass(id as RideClassId)}
+          aria-label={t('which-class-drive', { defaultValue: 'Which class will you drive?' })}
+        />
       </div>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="flex w-full items-center justify-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+      <Button type="submit" size="lg" className="w-full" loading={submitting}>
+        <ShieldCheck aria-hidden />
         {t('submit-application', { defaultValue: 'Submit application' })}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -393,7 +383,7 @@ function DriverDashboard({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Approved banner + availability toggle */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-site border border-site-success/30 bg-site-success/10 p-4">
         <div className="flex items-center gap-3">
@@ -413,30 +403,33 @@ function DriverDashboard({
             </p>
           </div>
         </div>
-        <button
-          onClick={toggleOnline}
-          disabled={togglingOnline}
-          className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 ${
-            online
-              ? 'border-site-success/40 bg-site-success/15 text-site-success'
-              : 'border-site-border bg-site-surface text-site-text-muted'
-          }`}
-        >
-          <Power className="h-4 w-4" />
-          {online ? t('status-online', { defaultValue: 'Online' }) : t('status-offline', { defaultValue: 'Offline' })}
-        </button>
+        <div className="flex items-center gap-3">
+          <span
+            id="drv-online-label"
+            className={`flex items-center gap-2 text-sm font-semibold ${online ? 'text-site-success' : 'text-site-text-muted'}`}
+          >
+            <Power className="h-4 w-4" aria-hidden />
+            {online ? t('status-online', { defaultValue: 'Online' }) : t('status-offline', { defaultValue: 'Offline' })}
+          </span>
+          <Switch
+            checked={online}
+            disabled={togglingOnline}
+            onCheckedChange={() => void toggleOnline()}
+            aria-labelledby="drv-online-label"
+          />
+        </div>
       </div>
 
       {!online && (
-        <p className="rounded-site border border-dashed border-site-border px-4 py-3 text-center text-sm text-site-text-muted">
+        <p className="glass-inset rounded-site px-4 py-3 text-center text-sm text-site-text-muted">
           {t('offline-hint', { defaultValue: "You're offline. Go online to receive new ride requests." })}
         </p>
       )}
 
       {/* Active trip — full live panel */}
       {focusRideId && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-bold text-site-text">{t('your-active-trip', { defaultValue: 'Your active trip' })}</h2>
+        <section className="space-y-3">
+          <h2 className="site-section-label">{t('your-active-trip', { defaultValue: 'Your active trip' })}</h2>
           <ActiveRidePanel
             key={focusRideId}
             rideId={focusRideId}
@@ -452,24 +445,27 @@ function DriverDashboard({
 
       {/* Available requests */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-site-text">{t('open-ride-requests', { defaultValue: 'Open ride requests' })}</h2>
-          <button onClick={load} className="text-xs text-site-accent hover:underline">{t('refresh', { defaultValue: 'Refresh' })}</button>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="site-section-label">{t('open-ride-requests', { defaultValue: 'Open ride requests' })}</h2>
+          <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={load}>
+            {t('refresh', { defaultValue: 'Refresh' })}
+          </Button>
         </div>
         {loading ? (
           <div className="flex justify-center py-8"><Spinner size={20} className="text-site-text-muted" /></div>
         ) : available.length === 0 ? (
-          <p className="rounded-site border border-dashed border-site-border px-4 py-6 text-center text-sm text-site-text-muted">
-            {t('no-open-requests', { defaultValue: 'No open requests right now. Check back soon!' })}
-          </p>
+          <EmptyState
+            icon={Car}
+            title={t('no-open-requests', { defaultValue: 'No open requests right now. Check back soon!' })}
+          />
         ) : (
           <ul className="space-y-3">
             {available.map((ride) => (
               <RideCard key={ride.id} ride={ride} busy={busy === ride.id} showRider>
-                <button onClick={() => accept(ride.id)} disabled={busy === ride.id} className="flex items-center gap-1.5 rounded-site-sm bg-site-accent px-4 py-1.5 text-xs font-semibold text-(--site-accent-fg) disabled:opacity-50">
-                  {busy === ride.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Car className="h-3.5 w-3.5" />}
+                <Button size="sm" className="min-h-11" onClick={() => accept(ride.id)} loading={busy === ride.id}>
+                  {busy !== ride.id && <Car aria-hidden />}
                   {t('accept', { defaultValue: 'Accept' })}
-                </button>
+                </Button>
               </RideCard>
             ))}
           </ul>
@@ -504,9 +500,9 @@ function RideCard({
         <span className="flex items-center gap-2 text-sm font-semibold text-site-text">
           {rideClassName(ride.rideClass)}
           {ride.status === 'SCHEDULED' && ride.scheduledFor && (
-            <span className="flex items-center gap-1 rounded-full bg-site-accent/10 px-2 py-0.5 text-xs font-normal text-site-accent">
-              <CalendarClock className="h-3 w-3" /> {format(new Date(ride.scheduledFor), 'EEE h:mm a')}
-            </span>
+            <Badge variant="accent" icon={<CalendarClock aria-hidden />}>
+              {format(new Date(ride.scheduledFor), 'EEE h:mm a')}
+            </Badge>
           )}
         </span>
         {showRider && (
@@ -514,25 +510,25 @@ function RideCard({
         )}
       </div>
       <div className="mt-2 space-y-1 text-xs text-site-text-muted">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <MapPin className="h-3.5 w-3.5 shrink-0 text-site-success" />
           <span className="truncate" title={ride.pickupLabel}>{ride.pickupLabel}</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <MapPin className="h-3.5 w-3.5 shrink-0 text-site-accent" />
           <span className="truncate" title={ride.dropoffLabel}>{ride.dropoffLabel}</span>
         </div>
       </div>
       {ride.notes && (
-        <p className="mt-2 rounded-site-sm bg-site-surface px-3 py-2 text-xs text-site-text-muted">"{ride.notes}"</p>
+        <p className="glass-inset mt-3 rounded-site-sm px-3 py-2 text-xs text-site-text-muted">"{ride.notes}"</p>
       )}
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-site-border pt-3">
         <div className="min-w-0">
-          <div className="flex items-baseline gap-1.5">
+          <div className="flex items-baseline gap-2">
             <span className="text-sm font-bold text-site-success">
               {formatUsd(payoutBreakdown(ride.estimatedFareCents).driverEarningsCents)}
             </span>
-            <span className="text-[11px] text-site-text-dim">{t('est-pay', { defaultValue: 'est. pay' })}</span>
+            <span className="text-xs text-site-text-dim">{t('est-pay', { defaultValue: 'est. pay' })}</span>
           </div>
           <span className="mt-1 flex items-center gap-3 text-xs text-site-text-dim">
             {ride.distanceMeters != null && (

@@ -17,6 +17,7 @@ import { Link } from '@tanstack/react-router';
 import { Plus, Heart } from 'lucide-react';
 import type { CuratedBuild } from '@/lib/builds/curated';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
+import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import '@/components/builds/builds.css';
 import '@/components/creator-studio/storefront.css';
@@ -104,7 +105,7 @@ export function CuratedBuildsTab({
     <div className="builds-toolbar">
       <div className="builds-toolbar__right">
         <SearchField
-          containerClassName="ml-auto w-[min(320px,48vw)]"
+          containerClassName="min-w-0 flex-1 basis-56"
           value={query}
           onValueChange={setQuery}
           placeholder={
@@ -243,7 +244,7 @@ export function UserBuildsTab({ seed }: { seed: number }) {
     <div className="builds-toolbar">
       <div className="builds-toolbar__right">
         <SearchField
-          containerClassName="ml-auto w-[min(320px,48vw)]"
+          containerClassName="min-w-0 flex-1 basis-56"
           value={query}
           onValueChange={setQuery}
           placeholder={t('search-user-builds-placeholder', {
@@ -251,10 +252,12 @@ export function UserBuildsTab({ seed }: { seed: number }) {
           })}
           aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
         />
-        <Link to="/user-builds/submit" className="builds-submit">
-          <Plus size={15} />
-          <span>{t('submit', { defaultValue: 'Submit' })}</span>
-        </Link>
+        <Button asChild variant="outline">
+          <Link to="/user-builds/submit">
+            <Plus aria-hidden />
+            {t('submit', { defaultValue: 'Submit' })}
+          </Link>
+        </Button>
         <label className="builds-sort">
           <span className="sr-only">{t('sort-label', { defaultValue: 'Sort' })}</span>
           <Select

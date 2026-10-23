@@ -28,6 +28,7 @@ import {
   type ShopItemKind,
 } from '@/lib/shop/catalog';
 import { getPremiumTheme } from '@/lib/shop/themes';
+import { SettingsSection } from '@/components/settings/SettingsSection';
 
 interface CosmeticItem {
   id: string;
@@ -136,7 +137,7 @@ export function ProfileCosmetics() {
     return (
       <div className="space-y-4" aria-busy="true">
         {[0, 1].map((section) => (
-          <div key={section} className="space-y-2">
+          <div key={section} className="space-y-3">
             <Skeleton className="h-4 w-32" />
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Skeleton className="h-[76px] w-full" />
@@ -191,15 +192,9 @@ export function ProfileCosmetics() {
   })).filter((s) => s.items.length > 0);
 
   return (
-    <div className="space-y-6">
+    <>
       {sections.map(({ kind, items }) => (
-        <section key={kind} aria-labelledby={`cosmetics-${kind}-heading`}>
-          <h2
-            id={`cosmetics-${kind}-heading`}
-            className="site-section-label mb-2"
-          >
-            {KIND_LABELS[kind]}
-          </h2>
+        <SettingsSection key={kind} title={KIND_LABELS[kind]}>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {items.map((item) => {
               const busy = equipMutation.isPending && equipMutation.variables?.item.id === item.id;
@@ -219,7 +214,7 @@ export function ProfileCosmetics() {
                     <div className="flex items-center gap-2">
                       <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
                       <span
-                        className="text-[10px] font-bold uppercase"
+                        className="text-xs font-semibold uppercase"
                         style={{ color: RARITY_COLORS[item.rarity] }}
                       >
                         {item.rarity}
@@ -260,8 +255,8 @@ export function ProfileCosmetics() {
               );
             })}
           </div>
-        </section>
+        </SettingsSection>
       ))}
-    </div>
+    </>
   );
 }

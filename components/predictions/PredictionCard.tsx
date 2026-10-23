@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Sparkles, Zap, ArrowUpRight } from 'lucide-react';
+import { Sparkles, Zap, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import type { Market } from './types';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
@@ -89,39 +91,43 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-semibold text-site-text leading-snug">{market.title}</h3>
             {market.isAiGenerated && (
-              <span title={t('ai-seeded', { defaultValue: 'AI-seeded market' })}>
-                <Sparkles className="w-3.5 h-3.5 text-site-accent shrink-0" />
+              <span
+                title={t('ai-seeded', { defaultValue: 'AI-seeded market' })}
+                role="img"
+                aria-label={t('ai-seeded', { defaultValue: 'AI-seeded market' })}
+              >
+                <Sparkles className="size-3.5 shrink-0 text-site-accent" aria-hidden />
               </span>
             )}
             {market.isAuto && (
               <span
-                className="inline-flex items-center gap-1 rounded-full bg-site-accent-dim px-2 py-0.5 text-[10px] font-semibold text-site-accent shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]"
+                className="inline-flex items-center gap-2 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-semibold text-site-accent shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]"
                 title={t('auto-market-hint', {
                   defaultValue: 'Settles automatically from RMH data — no admin or AI judge',
                 })}
               >
-                <Zap className="w-3 h-3" aria-hidden />
+                <Zap className="size-3" aria-hidden />
                 {t('auto-market', { defaultValue: 'Auto' })}
               </span>
             )}
           </div>
           {market.description && (
-            <p className="text-sm text-site-text-dim mt-1 line-clamp-3">{market.description}</p>
+            <p className="mt-2 text-sm text-site-text-dim line-clamp-3">{market.description}</p>
           )}
           {market.subjectUrl && (
             <a
               href={market.subjectUrl}
-              className="inline-flex items-center gap-0.5 text-xs text-site-accent hover:underline mt-1"
+              className="mt-2 inline-flex items-center gap-2 text-xs text-site-accent hover:underline"
             >
               {t('view-subject', { defaultValue: 'View the subject' })}
-              <ArrowUpRight className="w-3 h-3" aria-hidden />
+              <ArrowUpRight className="size-3" aria-hidden />
             </a>
           )}
         </div>
         {/* Big probability */}
         <div className="text-right shrink-0">
           <div className="text-2xl font-bold text-site-success tabular-nums">{yes}%</div>
-          <div className="text-[11px] uppercase tracking-wide text-site-text-dim">
+          <div className="text-xs text-site-text-dim">
             {t('chance-yes', { defaultValue: 'chance' })}
           </div>
         </div>
@@ -147,54 +153,58 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {QUICK_AMOUNTS.map((a) => (
-              <button
+              <Button
                 key={a}
+                type="button"
+                size="xs"
+                variant={amount === a ? 'accent-outline' : 'outline'}
+                aria-pressed={amount === a}
                 onClick={() => setAmount(a)}
-                className={`px-2 py-1 rounded-site-sm text-xs font-medium border transition-colors ${
-                  amount === a
-                    ? 'border-site-accent text-site-accent bg-site-accent-dim'
-                    : 'border-site-border text-site-text-dim hover:text-site-text'
-                }`}
               >
                 {a}
-              </button>
+              </Button>
             ))}
-            <div className="flex items-center gap-1 ml-auto">
-              <CoinIcon className="w-4 h-4" />
-              <input
+            <div className="ml-auto flex items-center gap-2">
+              <CoinIcon className="size-4" />
+              <Input
                 type="number"
                 min={1}
                 value={amount}
+                aria-label={t('amount', { defaultValue: 'Amount in coins' })}
                 onChange={(e) => setAmount(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
-                className="w-20 bg-site-bg border border-site-border rounded-site-sm px-2 py-1 text-sm text-site-text text-right tabular-nums"
+                className="w-24 text-right tabular-nums"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <button
+            <Button
+              variant="outline"
               onClick={() => trade('YES')}
+              loading={pending === 'YES'}
               disabled={!!pending}
-              className="flex items-center justify-center gap-1.5 py-2 rounded-site-sm font-semibold text-sm bg-site-success/15 text-site-success border border-site-success/40 hover:bg-site-success/25 transition-colors disabled:opacity-50"
+              className="border-site-success/40 bg-site-success/15 text-site-success hover:bg-site-success/25"
             >
-              {pending === 'YES' ? <Loader2 className="w-4 h-4 animate-spin" /> : `${t('buy-yes', { defaultValue: 'Buy YES' })} · ${yes}%`}
-            </button>
-            <button
+              {`${t('buy-yes', { defaultValue: 'Buy YES' })} · ${yes}%`}
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => trade('NO')}
+              loading={pending === 'NO'}
               disabled={!!pending}
-              className="flex items-center justify-center gap-1.5 py-2 rounded-site-sm font-semibold text-sm bg-site-danger/15 text-site-danger border border-site-danger/40 hover:bg-site-danger/25 transition-colors disabled:opacity-50"
+              className="border-site-danger/40 bg-site-danger/15 text-site-danger hover:bg-site-danger/25"
             >
-              {pending === 'NO' ? <Loader2 className="w-4 h-4 animate-spin" /> : `${t('buy-no', { defaultValue: 'Buy NO' })} · ${no}%`}
-            </button>
+              {`${t('buy-no', { defaultValue: 'Buy NO' })} · ${no}%`}
+            </Button>
           </div>
         </div>
       )}
 
       {/* Footer: volume + your position */}
-      <div className="flex items-center justify-between text-[11px] text-site-text-dim">
-        <span className="flex items-center gap-1">
-          <CoinIcon className="w-3 h-3" />
+      <div className="flex items-center justify-between text-xs text-site-text-dim">
+        <span className="flex items-center gap-2">
+          <CoinIcon className="size-3" />
           {t('volume', { defaultValue: '{{n}} vol', n: market.volume })}
         </span>
         {hasPos && (
