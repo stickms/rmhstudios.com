@@ -453,8 +453,9 @@ playing.
 **Identity.** Silent, sleek, frontier AI: calm, never busy. One electric accent
 (`--site-accent`), which is also the plasma colour; no gradients on the ground, no neon or
 glowing type, no sci-fi illustration. Text is Geist, eyebrows and data Geist Mono, through
-the `--site-font-*` tokens (status 2026-10-23: the default stacks still lead with the
-system face / Inter and JetBrains Mono; the switch to Geist is a token change). **One signal action per view:** the primary action is
+the `--site-font-*` tokens (status 2026-10-23: Geist and Geist Mono are live, self-hosted, and
+lead the default stacks; the system face, Inter and JetBrains Mono stay after them as the
+non-Latin and fallback faces). **One signal action per view:** the primary action is
 `<Button variant="signal">`, ink gel (`--gel-ink` with `--on-ink` text); everything else
 on that view is a quieter variant.
 

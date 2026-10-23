@@ -1,0 +1,13 @@
+{
+  "surfaces": {},
+  "dialogs": {
+    "components/dunesday/os/apps/cards.tsx": 2,
+    "components/dunesday/os/apps/NotepadApp.tsx": 2,
+    "components/dunesday/os/apps/PaintApp.tsx": 2,
+    "components/dunesday/os/apps/PhotosApp.tsx": 1,
+    "components/dunesday/os/StartMenu7.tsx": 1,
+    "components/dunesday/os/Taskbar.tsx": 1,
+    "components/dunesday/os/Window.tsx": 1
+  },
+  "switches": {}
+}

@@ -17,7 +17,8 @@
  *      Likewise exactly ONE file, the pointer hub `lib/jelly/pointer.ts`, adds `pointer*` listeners: every service
  *      subscribes with `onJellyPointer(type, fn)` (one capture+passive listener per type, refcounted, proven in
  *      `lib/jelly/__tests__/pointer.test.ts`). Hooks that moved onto both services (`SHARED_FRAME_CLIENTS`, today
- *      `hooks/useFluidDrag.ts`) are held to the same two rules; that list only grows.
+ *      `hooks/useFluidDrag.ts` with its settle spring `hooks/fluid-drag-settle.ts`) are held to the same two rules;
+ *      that list only grows.
  *  (c) The degraded-root predicate (`.reduce-transparency,.style-high-contrast,.perf-lite`) is declared once, as
  *      `DEGRADED_ROOT_SELECTOR` in `lib/jelly/tiers.ts`. It used to be hand-copied into the engine and the runtime,
  *      and a theme added to one copy left the other drawing.
@@ -142,18 +143,31 @@ describe('N2 — the jelly services have one owner each', () => {
    */
   const SHARED_FRAME_CLIENTS = new Set([
     // #989 follow-up F2: the drag's settle spring is a driver (order 5) and its move/up/cancel come from the hub.
+    // The hook subscribes to the hub; its settle spring (`createSettle`) lives beside it and registers the driver.
     'hooks/useFluidDrag.ts',
+    'hooks/fluid-drag-settle.ts',
   ]);
+  /** A client split over several files: the frame import and the hub import may sit in different files of it. */
+  const SHARED_FRAME_CLIENT_GROUPS: string[][] = [['hooks/useFluidDrag.ts', 'hooks/fluid-drag-settle.ts']];
   const inJellyScope = (f: string) =>
     f.startsWith('lib/jelly/') || f.startsWith('lib/liquid/') || SHARED_FRAME_CLIENTS.has(f);
 
   it('(b) the shared-frame clients exist and use drive() + onJellyPointer', () => {
     for (const f of SHARED_FRAME_CLIENTS) {
       expect(SOURCES, `${f} moved — update SHARED_FRAME_CLIENTS`).toContain(f);
-      expect(code(f), `${f} registers a driver on lib/jelly/frame.ts`).toMatch(
+    }
+    const groups = [
+      ...SHARED_FRAME_CLIENT_GROUPS,
+      ...[...SHARED_FRAME_CLIENTS]
+        .filter((f) => !SHARED_FRAME_CLIENT_GROUPS.some((g) => g.includes(f)))
+        .map((f) => [f]),
+    ];
+    for (const group of groups) {
+      const all = group.map((f) => code(f)).join('\n');
+      expect(all, `${group.join(' + ')} registers a driver on lib/jelly/frame.ts`).toMatch(
         /from\s+['"]@\/lib\/jelly\/frame['"]/,
       );
-      expect(code(f), `${f} subscribes through lib/jelly/pointer.ts`).toMatch(
+      expect(all, `${group.join(' + ')} subscribes through lib/jelly/pointer.ts`).toMatch(
         /from\s+['"]@\/lib\/jelly\/pointer['"]/,
       );
     }

@@ -2,19 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  SPRINGS,
   VelocityTracker,
   rubberBandClamp,
   shouldDismiss,
-  springSettled,
-  springStep,
   type Spring,
   type SpringState,
 } from '@/lib/fluid';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
-import { reportJellyDrag } from '@/lib/jelly/physics';
-import { drive, type FrameDriver } from '@/lib/jelly/frame';
 import { onJellyPointer } from '@/lib/jelly/pointer';
+import { reportJellyDrag } from '@/lib/jelly/physics';
+import { createSettle, type Settle } from '@/hooks/fluid-drag-settle';
+
+export { FLUID_DRAG_FRAME_ORDER } from '@/hooks/fluid-drag-settle';
 
 /**
  * A single-axis drag that behaves the way a native one does — principles 2–5 of
@@ -34,8 +33,9 @@ import { onJellyPointer } from '@/lib/jelly/pointer';
  * `drag:end` reach the jelly bus. The hook still owns the drag position; jelly only
  * adds the deformation (scale or the slab's rim — never `translate`).
  *
- * Frames and pointers (CLAUDE.md "Design system: Plasmatic Jelly" → Performance): the settle spring is a driver on
- * the ONE jelly frame (`drive(fn, { order: FLUID_DRAG_FRAME_ORDER })` from `lib/jelly/frame.ts`) and the gesture's
+ * Frames and pointers (CLAUDE.md "Design system: Plasmatic Jelly" → Performance): the settle spring
+ * (`createSettle` in `hooks/fluid-drag-settle.ts`) is a driver on the ONE jelly frame
+ * (`drive(fn, { order: FLUID_DRAG_FRAME_ORDER })` from `lib/jelly/frame.ts`) and the gesture's
  * move/up/cancel come from the ONE pointer hub (`onJellyPointer` from `lib/jelly/pointer.ts`) — the hook owns no
  * `requestAnimationFrame` and adds no window listeners. The driver runs before physics (10) so a drag owner's
  * position for a frame is written before the soft body reads it; it is awake only between a release and the
@@ -96,9 +96,6 @@ export interface FluidDragHandle {
   reset: () => void;
 }
 
-/** Frame order of the settle driver: before physics (10), engine (20), runtime (25) and arcs (30). */
-export const FLUID_DRAG_FRAME_ORDER = 5;
-
 export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
   const opts = useRef(options);
   opts.current = options;
@@ -109,44 +106,29 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
   const origin = useRef(0);
   const startValue = useRef(0);
   const tracker = useRef(new VelocityTracker());
-  const driver = useRef<FrameDriver | null>(null);
-  const settling = useRef(false);
+  const settler = useRef<Settle | null>(null);
   const dismissing = useRef(false);
 
-  /** One spring step on the shared jelly frame; `true` keeps the driver awake for the next one. */
-  const step = useCallback((_now: number, dtMs: number): boolean => {
-    if (!settling.current) return false;
-    // Same 64ms cap the hook's own loop used: a long frame (tab switch) must not
-    // integrate the spring past stability.
-    const dt = Math.min(0.064, Math.max(0, dtMs) / 1000);
-    state.current = springStep(
-      state.current,
-      target.current,
-      opts.current.spring ?? SPRINGS.sheet,
-      dt,
-    );
-    opts.current.onUpdate(state.current.value);
-    if (springSettled(state.current, target.current, 0.2, 2)) {
-      state.current = { value: target.current, velocity: 0 };
-      opts.current.onUpdate(target.current);
-      settling.current = false;
-      if (!dismissing.current) opts.current.onSettle?.();
-      return false;
-    }
-    return true;
-  }, []);
-
   const stop = useCallback(() => {
-    settling.current = false;
+    settler.current?.cancel();
   }, []);
 
   const settle = useCallback(() => {
-    if (settling.current) return;
-    settling.current = true;
-    // Registered lazily so a caller's `reset()` in its own mount effect still finds a driver.
-    if (!driver.current) driver.current = drive(step, { order: FLUID_DRAG_FRAME_ORDER });
-    driver.current.wake();
-  }, [step]);
+    settler.current ??= createSettle();
+    settler.current.start(
+      state.current.value,
+      state.current.velocity,
+      target.current,
+      (value, velocity) => {
+        state.current = { value, velocity };
+        opts.current.onUpdate(value);
+      },
+      () => {
+        if (!dismissing.current) opts.current.onSettle?.();
+      },
+      opts.current.spring,
+    );
+  }, []);
 
   const reset = useCallback(() => {
     dismissing.current = false;
@@ -235,21 +217,21 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
     const onUp = (e: PointerEvent) => finish(e, true);
     const onCancel = (e: PointerEvent) => finish(e, false);
 
-    const off = [
+    const offs = [
       onJellyPointer('pointermove', onMove),
       onJellyPointer('pointerup', onUp),
       onJellyPointer('pointercancel', onCancel),
     ];
     return () => {
-      for (const fn of off) fn();
+      for (const off of offs) off();
     };
   }, [settle]);
 
+  // Unmount: stop the settle's frame driver (the pointer subscriptions are released above).
   useEffect(
     () => () => {
-      settling.current = false;
-      driver.current?.stop();
-      driver.current = null;
+      settler.current?.dispose();
+      settler.current = null;
     },
     [],
   );

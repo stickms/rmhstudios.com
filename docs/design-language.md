@@ -401,7 +401,7 @@ derives from and as a proof that the contract holds outside monochrome:
 parchment, amber accent), `nocturne` (deep-navy nightscape, sky-blue aurora),
 `ultra` (near-black spectral canvas, ice-cyan signal, restrained violet energy).
 Persisted-but-unknown ids (a retired decorative theme, or the old `liquid-glass`
-id) self-heal to `default` during hydration.
+id) self-heal to `graphite` during hydration.
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
 `GlassFilter` — the tab-capsule merge host, with no optical lenses) with a

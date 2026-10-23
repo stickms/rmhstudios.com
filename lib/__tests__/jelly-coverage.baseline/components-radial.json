@@ -1,0 +1,10 @@
+{
+  "surfaces": {},
+  "dialogs": {
+    "components/radial/QuickPanel.tsx": 1,
+    "components/radial/RadialHub.tsx": 1
+  },
+  "switches": {
+    "components/radial/QuickPanel.tsx": 1
+  }
+}

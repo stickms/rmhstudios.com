@@ -1,0 +1,8 @@
+{
+  "surfaces": {
+    "components/rmhcoins/RouletteControls.tsx": 1,
+    "components/rmhcoins/RouletteTable.tsx": 3
+  },
+  "dialogs": {},
+  "switches": {}
+}

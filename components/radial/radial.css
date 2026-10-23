@@ -796,7 +796,10 @@ body:has(.radial-shell) .call-banner {
   transition: opacity 0.28s ease;
 }
 .radial-globe__stage[data-skin='on'] .radial-globe__glass,
-.rad-globe-dock:has(.radial-globe__stage[data-skin='on']) .rad-globe-dock__shimmer {
+/* The shimmer ring sits outside the globe and cannot follow the surface the way
+   the glass body does (LiquidGlobe, `bodyTransform`), so it steps out for every
+   self-eversion, skin or not. */
+.rad-globe-dock:has(.radial-globe[data-self-evert]) .rad-globe-dock__shimmer {
   opacity: 0;
   transition-duration: 0.16s;
 }

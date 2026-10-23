@@ -105,6 +105,7 @@ describe('default theme before first paint', () => {
       ACCENT_MAP: {},
     });
     const stored = new Map(Object.entries(initial));
+    const setItemCalls: Array<[string, string]> = [];
     const classes = new Set<string>();
     const meta = { content: '' };
     const html = {
@@ -115,14 +116,17 @@ describe('default theme before first paint', () => {
     runInNewContext(script, {
       localStorage: {
         getItem: (key: string) => stored.get(key) ?? null,
-        setItem: (key: string, value: string) => stored.set(key, value),
+        setItem: (key: string, value: string) => {
+          setItemCalls.push([key, value]);
+          stored.set(key, value);
+        },
         removeItem: (key: string) => stored.delete(key),
       },
       document: { documentElement: html, querySelector: () => meta },
       location: { pathname: '/' },
       window: {},
     });
-    return { classes, html, meta, stored };
+    return { classes, html, meta, stored, setItemCalls };
   }
 
   it('the default is Midnight, listed first in the picker, and Daylight is still offered', () => {
@@ -133,13 +137,14 @@ describe('default theme before first paint', () => {
   });
 
   it('a new visitor paints the dark ground, class, colour scheme and theme-color pre-paint', () => {
-    const { classes, html, meta, stored } = runThemeScript({});
+    const { classes, html, meta, stored, setItemCalls } = runThemeScript({});
     expect(classes.has('style-graphite')).toBe(true);
     expect(html.style.backgroundColor).toBe('#000000');
     expect(html.style.colorScheme).toBe('dark');
     expect(meta.content).toBe('#000000');
     // Nothing is persisted for a visitor who never chose.
     expect(stored.has('rmh-style')).toBe(false);
+    expect(setItemCalls).toHaveLength(0);
   });
 
   it('a stored `default` keeps Daylight (an explicit choice is never flipped)', () => {

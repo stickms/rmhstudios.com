@@ -1,0 +1,8 @@
+{
+  "surfaces": {},
+  "dialogs": {
+    "components/cursed-logic/HowToPlayModal.tsx": 1,
+    "components/cursed-logic/ShopModal.tsx": 1
+  },
+  "switches": {}
+}

@@ -1,0 +1,9 @@
+{
+  "surfaces": {
+    "components/rmhtype/RmhTypeLanding.tsx": 3,
+    "components/rmhtype/RmhTypeRoomPage.tsx": 1,
+    "components/rmhtype/RmhTypeSoloPage.tsx": 1
+  },
+  "dialogs": {},
+  "switches": {}
+}
