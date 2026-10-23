@@ -97,12 +97,12 @@ export default function AppShell({
         .filter(Boolean)
         .join(' ')}
       data-app-theme={appearance}
-      // Claims the whole app subtree for the site's press layer (WWDC 2018 §803
-      // principle 1: a surface acknowledges the finger the instant it lands).
-      // The site tier gets this free because its controls all come from
-      // `ui/button.tsx`; the app tier ships its own buttons in every app, so the
-      // shell claims them collectively rather than each app remembering to.
-      // Individual gesture surfaces opt back out with `data-fluid-press="none"`.
+      // Historic claim on the app subtree for the old press layer. The jelly
+      // soft-body service (lib/jelly/physics.ts) now presses every button, tab
+      // and menu item everywhere by default, so the attribute is a no-op alias
+      // kept for readers. Gesture surfaces opt out with `data-jelly="off"` (or
+      // the alias `data-fluid-press="none"`), and held HUD regions with
+      // `data-jelly-scope="off"`.
       data-fluid-press-scope
     >
       {toaster && <AppToaster />}

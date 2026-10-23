@@ -20,9 +20,26 @@
  *
  * Output is premultiplied alpha. GLSL ES 3.00 (WebGL 2), no derivatives: anti-aliasing is one CSS pixel by
  * construction (`uPx`), so the look does not depend on an engine's `fwidth`.
+ *
+ * ## Plasmatic Jelly (01 §2.7, 02 §1.3)
+ *
+ * The slab is jelly now, not clear glass, and keeps everything above. Additions, all static per surface — the rim
+ * still never reads a clock (24 full-res slabs on a clock would be ~17M fragments per refresh; the motion lives in the
+ * low-res haze canvas under it):
+ *
+ * - **Haze veil.** The refracted band is veiled with the surface's haze colour (`uHaze`), and the dispersion spread
+ *   is softened to `uDispersion` (0.8) of crown glass's.
+ * - **Plasma inner edge.** The thin lit line takes a static per-surface hue between plasma A and B (`uSeed`), varying
+ *   along the perimeter, at `uPlasma` strength. `pulse(el, k)` raises `uPlasma` for ~300ms (a strike, a release).
+ * - **Plasma cursor bloom.** The soft light under the cursor is wider and takes the edge hue, added as colour rather
+ *   than as more white.
+ * - **Squish.** A woken Tier L lattice (`uJelly[8]`, `uJellyOn`) moves the edge along its normal, full at the rim and
+ *   zero `min(2·bevel, bevel + 8)` px inside, so the lit edge squishes and the interior — where text sits — does not.
+ *   The canvas may overdraw its host by `uMargin` (≤ 2px) so an outward bulge is not clipped; bulges never exceed it.
  */
 
 import { GLASS_OPTICS_GLSL } from '../optics';
+import { LATTICE_GLSL, SDF_GLSL } from './jelly-glsl';
 
 export const VERT = `#version 300 es
 in vec2 aPos;
@@ -52,20 +69,35 @@ uniform vec3 uLight;       // cursor light: x,y in surface CSS px, z = height ab
 uniform float uLightOn;    // 0..1
 uniform vec2 uTilt;        // smoothed unit-disc cursor pose; optical tilt only, no text transform
 
-${GLASS_OPTICS_GLSL}
+uniform float uMargin;     // canvas overdraw past the host on every side, CSS px (0..2)
+uniform float uSeed;       // per-surface 0..1: the static plasma hue phase
+uniform vec4 uHaze;        // haze colour rgb + the role's haze alpha
+uniform vec3 uPlasmaA;
+uniform vec3 uPlasmaB;
+uniform float uPlasma;     // role plasma strength x theme gain (+ a charge pulse)
+uniform float uDispersion; // 1.0 = crown glass, 0.8 = jelly
 
-float sdRoundRect(vec2 q, vec2 halfSize, float r) {
-  vec2 e = abs(q) - halfSize + vec2(r);
-  return min(max(e.x, e.y), 0.0) + length(max(e, 0.0)) - r;
-}
+${GLASS_OPTICS_GLSL}
+${SDF_GLSL}
+${LATTICE_GLSL}
 
 void main() {
-  vec2 P = vec2(gl_FragCoord.x, uSize.y / uPx - gl_FragCoord.y) * uPx;   // CSS px, y down, top-left origin
+  // CSS px, y down, origin at the HOST's top-left (the canvas starts uMargin px outside it).
+  vec2 P = vec2(gl_FragCoord.x, (uSize.y + 2.0 * uMargin) / uPx - gl_FragCoord.y) * uPx - uMargin;
   vec2 hs = uSize * 0.5;
   vec2 q = P - hs;
   float r = min(uRadius, min(hs.x, hs.y));
   float sd = sdRoundRect(q, hs, r);
-  float d = -sd;                                  // depth inside the edge, px
+  // Tier L squish: move the edge along its normal by the lattice offset there, only within the rim band.
+  if (uJellyOn > 0.5) {
+    float bz0 = max(uBezel, 2.0);
+    float fallJ = 1.0 - smoothstep(bz0, min(2.0 * bz0, bz0 + 8.0), -sd);
+    if (fallJ > 0.0) {
+      float push = dot(jellyOffset(P, uSize), sdGrad(q, hs, r));
+      sd -= min(push, uMargin) * fallJ;
+    }
+  }
+  float d = -sd;                                  // depth inside the (squished) edge, px
   if (d < -uPx) {
     outColor = vec4(0.0);
     return;
@@ -80,12 +112,7 @@ void main() {
   float inner = max(1.0 - pow(1.0 - tt, 3.0), 1e-4);
   float slope = t >= 1.0 ? 0.0 : min(pow(1.0 - tt, 2.0) / pow(inner, 2.0 / 3.0), 4.5);
   // Outward unit normal of the boundary, by central differences of the distance field.
-  float e = 0.75;
-  vec2 g = vec2(
-    sdRoundRect(q + vec2(e, 0.0), hs, r) - sdRoundRect(q - vec2(e, 0.0), hs, r),
-    sdRoundRect(q + vec2(0.0, e), hs, r) - sdRoundRect(q - vec2(0.0, e), hs, r)
-  );
-  g = dot(g, g) > 1e-8 ? normalize(g) : vec2(0.0, -1.0);
+  vec2 g = sdGrad(q, hs, r);
   // A gentle ~2.6 degree optical rock toward the cursor. It changes the rim's
   // refraction and reflections without shifting pixels of live text or the hit area.
   vec3 n = normalize(vec3(g * slope + uTilt * 0.045, 1.0));
@@ -95,9 +122,11 @@ void main() {
   float band = (1.0 - smoothstep(0.55, 1.0, t)) * uSceneOn;
   if (band > 0.001) {
     vec2 base = P + uSceneMap.xy;
-    vec2 uvR = (base + glassSlabOffset(n, GLASS_IOR_RGB.r, uThickness)) * uSceneMap.zw;
-    vec2 uvG = (base + glassSlabOffset(n, GLASS_IOR_RGB.g, uThickness)) * uSceneMap.zw;
-    vec2 uvB = (base + glassSlabOffset(n, GLASS_IOR_RGB.b, uThickness)) * uSceneMap.zw;
+    // Jelly disperses a little less than crown glass: the spread around green is scaled by uDispersion.
+    vec3 ior = GLASS_IOR_RGB.g + (GLASS_IOR_RGB - GLASS_IOR_RGB.g) * uDispersion;
+    vec2 uvR = (base + glassSlabOffset(n, ior.r, uThickness)) * uSceneMap.zw;
+    vec2 uvG = (base + glassSlabOffset(n, ior.g, uThickness)) * uSceneMap.zw;
+    vec2 uvB = (base + glassSlabOffset(n, ior.b, uThickness)) * uSceneMap.zw;
     vec4 sR = texture(uScene, uvR);
     vec4 sG = texture(uScene, uvG);
     vec4 sB = texture(uScene, uvB);
@@ -108,6 +137,8 @@ void main() {
     vec3 c = vec3(sR.r, sG.g, sB.b);
     // The slab's own tint, so the rim matches the interior it fades into.
     c = mix(c, uTint.rgb * sa, uTint.a);
+    // Jelly is slightly hazy, not perfectly clear: veil the refracted band with the haze.
+    c = mix(c, uHaze.rgb * sa, uHaze.a * 0.45);
     rim = vec4(c, sa) * band;
   }
 
@@ -128,7 +159,7 @@ void main() {
   float curSpec = pow(max(dot(n, normalize(Lc + V)), 0.0), 80.0) * 1.3 * fall;
   // The light also falls on the FACE, not only the rim: a soft bloom under the cursor across the whole surface, so a
   // hover lights the element it is over rather than just the thin bevel band at its edge.
-  float glowR = reach * 0.42;
+  float glowR = reach * 0.55;
   float curGlow = exp(-dot(uLight.xy - P, uLight.xy - P) / (2.0 * glowR * glowR)) * 0.055 * uLightOn;
 
   // The inner edge: a thin bright line, strongest on the edges that face a light.
@@ -151,12 +182,17 @@ void main() {
   float shadeA = clamp(shade * mix(1.0, 0.5, uDark), 0.0, 0.5);
 
   float k = mix(1.0, 0.82, uDark);
-  float lit = (keySpec + fillSpec + curSpec + counter + lineK + sheen + body + fres * 0.07 + curGlow) * k;
+  float lit = (keySpec + fillSpec + curSpec + counter + lineK + sheen + body + fres * 0.07) * k;
   float litA = clamp(lit, 0.0, 1.0);
-  vec3 glint = mix(vec3(1.0), uRim, 0.35);
+  // Plasma in the inner edge line: a STATIC per-surface hue, varying along the perimeter. No clock here.
+  vec3 edgeHue = mix(uPlasmaA, uPlasmaB, 0.5 + 0.5 * sin(uSeed * 6.28 + (P.x + P.y) * 0.004));
+  vec3 glint = mix(mix(vec3(1.0), uRim, 0.35), edgeHue, clamp(uPlasma * 3.0, 0.0, 0.35) * stroke);
+  // Subsurface under the cursor: the bloom takes the plasma colour and is added as colour, not as more white.
+  float bloom = clamp(curGlow * 1.3 * k, 0.0, 1.0);
+  vec3 curCol = mix(glint, edgeHue, 0.5) * bloom;
 
   // Composite, premultiplied: the refracted rim first, the light over it.
-  vec3 col = rim.rgb * (1.0 - shadeA) + uInk * shadeA * (0.5 + 0.5 * rim.a) + glint * litA * (1.0 - 0.15 * rim.a);
-  float a = clamp(rim.a + shadeA * (1.0 - rim.a) + litA * 0.9, 0.0, 1.0);
+  vec3 col = rim.rgb * (1.0 - shadeA) + uInk * shadeA * (0.5 + 0.5 * rim.a) + glint * litA * (1.0 - 0.15 * rim.a) + curCol;
+  float a = clamp(rim.a + shadeA * (1.0 - rim.a) + (litA + bloom) * 0.9, 0.0, 1.0);
   outColor = vec4(min(col, vec3(a)) * cover, a * cover);
 }`;

@@ -31,17 +31,17 @@ const js = await bundle({
     resolveDir: root,
     loader: 'tsx',
     contents: `
-      import React, {useState} from 'react';
+      import React, {useEffect, useState} from 'react';
       import {createRoot} from 'react-dom/client';
       import {LazyMotion, MotionConfig, domMax} from 'framer-motion';
       import {LiquidTabs} from './components/ui/liquid-tabs';
       import {Button} from './components/ui/button';
       import {Card} from './components/ui/card';
-      import {useFluidPressLayer} from './hooks/useFluidPress';
+      import {installJellyPhysics} from './lib/jelly/physics';
       const tabs = [{id:'latest',label:'Latest'}, {id:'following',label:'Following'},
         {id:'saved',label:'Saved'}, {id:'disabled',label:'Unavailable',disabled:true}];
       function Fixture() {
-        useFluidPressLayer();
+        useEffect(() => installJellyPhysics(document), []);
         const [value,setValue] = useState('latest');
         return <LazyMotion features={domMax}><MotionConfig reducedMotion="never">
           <main className="vibe-app" data-fluid-press-scope>

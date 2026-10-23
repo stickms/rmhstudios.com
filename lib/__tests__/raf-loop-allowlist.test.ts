@@ -52,16 +52,26 @@ import { join } from 'node:path';
  *                                       cleanup, and both effects only run while
  *                                       the menu is open — a page at rest has
  *                                       neither.
- *   - lib/liquid/glass/engine.ts    — the glass engine's frame. Event-driven, never a
- *                                       standing loop: a frame is requested only while
- *                                       the cursor light is easing, a tap's ripple is
- *                                       alive (a fixed ~1.2s), the refracted rim is
- *                                       fading in after a snapshot, or once for a
- *                                       surface whose size/theme/scroll changed. Every
- *                                       frame re-derives `again` from that state and
- *                                       reschedules ONLY if something is still moving,
- *                                       so a page at rest has no loop. Reads rects, writes
- *                                       canvases only; cancelled on teardown.
+ *   - lib/liquid/glass/engine.ts    — the jelly engine's ONE frame (Plasmatic Jelly
+ *                                       R7, 2026-10-23: deliberately reverses the
+ *                                       "no loop at rest" rule for the ambient haze).
+ *                                       Rim work stays event-driven (cursor light,
+ *                                       tilt, refraction fade, a woken Tier L lattice
+ *                                       until it sleeps or parks, a ~300ms charge
+ *                                       pulse). The ambient clock ticks only while a
+ *                                       haze canvas is on screen: 30 Hz engaged, the
+ *                                       tier's idle floor (12 Hz) after 20 s without
+ *                                       input, never faster under `calm` or a governor
+ *                                       step — and it is 0, with NO frame scheduled,
+ *                                       while the tab is hidden, the window unfocused,
+ *                                       a scroll is in flight, no haze surface is
+ *                                       visible, the tier is degraded or jellyMotion is
+ *                                       `still` (`policy.ts` `ambientHz`, unit-tested in
+ *                                       `jelly-policy.test.ts`). Between ticks it sleeps
+ *                                       on a timer, not a spinning rAF; ≤ 6 haze draws
+ *                                       per tick. Reads rects, writes canvases and
+ *                                       attributes only; rAF and timer cancelled on
+ *                                       teardown.
  *   - components/radial/LiquidGlobe.tsx — the navigation globe's spin/dwell loop.
  *                                       Bounded by MOUNT, like a game's: RadialHub
  *                                       renders it only while the hub is open, and
@@ -141,13 +151,15 @@ import { join } from 'node:path';
  *                                       stops the frame it arrives; the effect
  *                                       cancels it when motion is switched off,
  *                                       when the sensor is absent, and on unmount.
- *   - hooks/useFluidPress.ts          — the site-wide press layer's spring loop.
- *                                       Idle-at-rest by construction: the loop is
- *                                       started by a pointerdown on a
- *                                       [data-fluid-press] element and returns 0
- *                                       from its own rAF call the frame the last
- *                                       press finishes springing, so a page at
- *                                       rest runs no loop. Cancelled on unmount.
+ *   - lib/jelly/physics.ts            — the jelly soft-body service (absorbed the
+ *                                       old hooks/useFluidPress.ts press layer).
+ *                                       Idle-at-rest: frames only while a body is
+ *                                       awake — scheduled by input, an arc strike
+ *                                       or a drag report, re-scheduled only while a
+ *                                       body is short of its target, and the body
+ *                                       is cleared the frame it sleeps; hidden tab
+ *                                       and teardown cancel it. Settle proven in
+ *                                       lib/jelly/__tests__/physics.test.ts.
  *   - hooks/useFluidDrag.ts           — one settle-spring loop per mounted drag
  *                                       surface. Runs only between a release and
  *                                       the spring arriving; stops itself on
@@ -170,6 +182,14 @@ const ALLOW = new Set<string>([
   // cancel effects and restore the affected inline properties.
   'lib/liquid/runtime.ts',
   'lib/liquid/glass/engine.ts',
+  // Jelly soft bodies: idle at rest, settle proven in lib/jelly/__tests__/physics.test.ts.
+  'lib/jelly/physics.ts',
+  // Arc overlay frame (03-arcs.md §4.3). Requested only while an arc or its
+  // afterglow is alive (≤ ~410ms per request), reschedules only while live arcs
+  // remain, cancelled on hidden/off/teardown. The ambient scheduler uses
+  // setTimeout, never rAF, so a page at rest has no loop. Settle proven in
+  // lib/jelly/arcs/__tests__/renderer.test.ts. No other arc file may call rAF.
+  'lib/jelly/arcs/renderer.ts',
   // The globe cursor (owner, 2026-10-22: "a constantly everting globe"). The one
   // standing loop on a site page, and it is standing only while it IS the pointer:
   // a frame is scheduled while the mouse is over the document or a fade, sparkle,
@@ -320,7 +340,6 @@ const ALLOW = new Set<string>([
   'hooks/useCelebration.ts',
   'hooks/useDeviceAttitude.ts',
   'hooks/useFluidDrag.ts',
-  'hooks/useFluidPress.ts',
   'hooks/useLiquidBackground.ts',
   'hooks/useScrollRestoration.ts',
   'hooks/useSpatialParallax.ts',

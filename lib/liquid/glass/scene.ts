@@ -20,10 +20,18 @@
  */
 import { CAPTURE_EXCLUDE_SELECTORS } from '@/lib/eversion/constants';
 
-/** Removed from the picture outright: the engine's own canvases (a leaf, so layout cannot change). */
+/**
+ * Removed from the picture outright: the engine's own canvases and every jelly layer — the haze canvases, the CSS flow
+ * carriers and the arc overlay. Each is an absolutely/fixed positioned leaf, so removing it cannot change layout; each
+ * is also something that MOVES, so a picture holding one would show a frozen frame of it at the rim (and feed the
+ * previous haze back into the next refraction).
+ */
 export const SCENE_EXCLUDE: readonly string[] = [
   ...CAPTURE_EXCLUDE_SELECTORS,
   'canvas[data-liquid-glass]',
+  '.jelly-haze-canvas',
+  '.jelly-flow',
+  '.jelly-arc-layer',
 ];
 /**
  * Floating glass keeps its BOX but not its paint. It must not be removed: a sticky header taken out of layout makes

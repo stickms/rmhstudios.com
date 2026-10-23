@@ -25,7 +25,13 @@ import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { QuickPanel, QuickPanelMoreIcon, QuickPanelNote, QuickPanelSkeleton } from './QuickPanel';
+import {
+  QuickPanel,
+  QuickPanelMoreIcon,
+  QuickPanelMotionToggle,
+  QuickPanelNote,
+  QuickPanelSkeleton,
+} from './QuickPanel';
 import { useReservedRows } from '@/hooks/useReservedRows';
 import { AVATAR_KINDS, KIND_ICON, useKindLabel } from '@/components/search/SearchHitRow';
 import type { SearchHit, SearchResponse } from '@/lib/search/types';
@@ -487,6 +493,8 @@ export function ProfilePanel({ open, onClose, anchorRef }: PanelProps) {
             <strong>{t('settings', { defaultValue: 'Settings' })}</strong>
           </span>
         </Link>
+        {/* WCAG 2.2.2: one tap pauses ambient jelly motion (master plan R8). */}
+        <QuickPanelMotionToggle />
         <button type="button" className="rad-panel__row" onClick={signOut}>
           <LogOut aria-hidden />
           <span className="rad-panel__row-main">

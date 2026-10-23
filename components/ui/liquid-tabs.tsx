@@ -102,7 +102,7 @@ export interface LiquidTabRenderProps {
   id: string;
   /** `'page'` on the active item — link mode marks the current route this way. */
   'aria-current': 'page' | undefined;
-  /** Opt route tabs into the same delegated press spring as button tabs. */
+  /** Route tabs press like button tabs: a control-mode jelly body (`lib/jelly/physics.ts`; the attribute is its alias). */
   'data-fluid-press': string;
   /** Class string matching a tablist-mode tab (pad + accent-on-active). */
   className: string;

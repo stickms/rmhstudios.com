@@ -12,6 +12,7 @@ import {
   type SpringState,
 } from '@/lib/fluid';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
+import { reportJellyDrag } from '@/lib/jelly/physics';
 
 /**
  * A single-axis drag that behaves the way a native one does — principles 2–5 of
@@ -23,6 +24,13 @@ import { prefersReducedMotion } from '@/hooks/useReducedMotion';
  * Position is reported through `onUpdate` as a plain number (px along the axis)
  * so the caller decides what it means — a sheet translating, a drawer opening, a
  * card being swiped away. The hook never touches the DOM's layout.
+ *
+ * Jelly (docs/plans/plasmatic-jelly/02-soft-body.md §3.3): pass `jellyTarget` and
+ * the hook reports the surface's velocity to the soft-body service
+ * (`reportJellyDrag` in `lib/jelly/physics.ts`) on every move and at release, so
+ * the surface stretches along the motion and wobbles out of it, and `drag:start` /
+ * `drag:end` reach the jelly bus. The hook still owns the drag position; jelly only
+ * adds the deformation (scale or the slab's rim — never `translate`).
  *
  * ```tsx
  * const drag = useFluidDrag({
@@ -60,6 +68,8 @@ export interface FluidDragOptions {
   spring?: Spring;
   /** Ignore the gesture entirely (e.g. a desktop-only dialog). */
   disabled?: boolean;
+  /** The surface jelly should stretch while it is dragged (usually the element `onUpdate` moves). */
+  jellyTarget?: () => HTMLElement | null;
 }
 
 export interface FluidDragHandle {
@@ -164,6 +174,11 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
       state.current = { value: next, velocity: 0 };
       tracker.current.add(next, e.timeStamp);
       o.onUpdate(next);
+      const jelly = o.jellyTarget?.();
+      if (jelly) {
+        const v = tracker.current.get();
+        reportJellyDrag(jelly, axis === 'x' ? v : 0, axis === 'y' ? v : 0, 'move');
+      }
     };
 
     const finish = (e: PointerEvent, commit: boolean) => {
@@ -175,6 +190,11 @@ export function useFluidDrag(options: FluidDragOptions): FluidDragHandle {
       // web sheets give themselves away, by starting their exit animation from
       // rest no matter how hard they were thrown.
       state.current = { value: state.current.value, velocity };
+      const jelly = o.jellyTarget?.();
+      if (jelly) {
+        const axis = o.axis ?? 'y';
+        reportJellyDrag(jelly, axis === 'x' ? velocity : 0, axis === 'y' ? velocity : 0, 'end');
+      }
 
       const dimension = Math.max(1, o.dimension());
       const threshold = dimension * (o.dismissAt ?? 0.5);

@@ -163,6 +163,7 @@ export const MenuItem = React.forwardRef<HTMLElement, MenuItemProps>(function Me
     [MENU_ITEM_ATTR]: '',
     'data-slot': 'menu-item',
     'data-evert': '',
+    // Rows press as jelly controls (lib/jelly/physics.ts); the attribute is the kept alias.
     'data-fluid-press': '',
     'data-tone': tone,
     role: checked === undefined ? 'menuitem' : 'menuitemradio',

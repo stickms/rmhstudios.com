@@ -1,12 +1,15 @@
 /**
  * Shared cursor lighting for surfaces outside the shader budget. Only a
- * decorative leaf moves; clicks never translate or animate surface hosts.
- * Shader-backed surfaces own their lighting. Clicks and taps never emit waves.
+ * decorative leaf moves; this module never translates or animates surface hosts
+ * (the bounded soft-body motion is `lib/jelly/physics.ts`'s job). Shader-backed
+ * surfaces own their lighting. Clicks and taps never emit waves.
  */
+import { DEGRADED_ROOT_SELECTOR, OPT_OUT_SELECTOR } from '@/lib/jelly/tiers';
+
 const SURFACES =
   '.glass-fill,.glass-pane,.glass-chrome,.glass-overlay,.glass-interactive,.app-glass,[data-evert],[data-liquid-surface],.app-theme [class~="bg-(--app-surface)"]';
-const EXCLUDE =
-  '[data-liquid-motion="off"],[data-fluid-press="none"],[data-fluid-press="off"],.eversion-overlay,.evert-ghost,.radial-globe__stage,canvas,input,textarea,select,[contenteditable="true"],[disabled],[aria-disabled="true"]';
+/** The shared jelly opt-outs (`lib/jelly/tiers.ts`) plus what never takes a light: layers, fields, disabled controls. */
+const EXCLUDE = `${OPT_OUT_SELECTOR},.eversion-overlay,.evert-ghost,.radial-globe__stage,canvas,input,textarea,select,[contenteditable="true"],[disabled],[aria-disabled="true"]`;
 export function installLiquidInteractions(doc: Document = document): () => void {
   const win = doc.defaultView;
   if (!win) return () => {};
@@ -29,7 +32,7 @@ export function installLiquidInteractions(doc: Document = document): () => void 
   const disabled = () =>
     doc.hidden ||
     queries.some((q) => q.matches) ||
-    root.matches('.reduce-transparency,.style-high-contrast,.perf-lite') ||
+    root.matches(DEGRADED_ROOT_SELECTOR) ||
     appContrast;
 
   const clearLight = (smooth = false) => {

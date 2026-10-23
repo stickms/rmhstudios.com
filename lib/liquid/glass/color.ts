@@ -23,10 +23,27 @@ const alphaOf = (s: string | undefined) => {
   return clamp01(s.endsWith('%') ? parseFloat(s) / 100 : parseFloat(s));
 };
 
-/** Parse `rgb()`, `rgba()` and `color(srgb …)`. Returns null for anything else. */
+const HEX = /^#([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i;
+
+/**
+ * Parse `rgb()`, `rgba()`, `color(srgb …)` and hex (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa` — what a custom property
+ * holding a raw theme colour, such as `--site-jelly-haze`, computes to). Returns null for anything else.
+ */
 export function parseColor(css: string): RGBA | null {
   const s = css.trim();
   if (!s || s === 'transparent') return s === 'transparent' ? [0, 0, 0, 0] : null;
+  const hex = HEX.exec(s)?.[1];
+  if (hex) {
+    const full =
+      hex.length <= 4
+        ? hex
+            .split('')
+            .map((c) => c + c)
+            .join('')
+        : hex;
+    const byte = (i: number) => parseInt(full.slice(i * 2, i * 2 + 2), 16) / 255;
+    return [byte(0), byte(1), byte(2), full.length === 8 ? byte(3) : 1];
+  }
   let m = RGB.exec(s);
   if (m) {
     return [

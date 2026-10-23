@@ -15,8 +15,8 @@
  * (design-language §5.1.1), and everything is written on the control itself, never on <html> (design.md §4,
  * cost 3), and only when it changes.
  *
- * One delegated set of capture-phase, passive listeners for the whole document, like `useFluidPress`: a hook per
- * component reaches the components somebody remembered. It schedules no frames.
+ * One delegated set of capture-phase, passive listeners for the whole document, like the jelly soft-body service
+ * (`lib/jelly/physics.ts`): a hook per component reaches the components somebody remembered. It schedules no frames.
  *
  * It also reaches the components nobody remembered (amended 2026-10-21): a button, link, tab or field without
  * `data-evert` is adopted on first contact (`lib/evert-auto.ts`) - tagged for the same layer, or, where it cannot
@@ -33,12 +33,13 @@ import {
   pressGhost,
   showGhost,
 } from '@/lib/evert-auto';
+import { SOFT_BODY } from '@/lib/jelly/soft-policy';
 
 /** A tap held for less than this still shows its eversion for this long, or a quick tap would never be seen. */
 export const EVERT_MIN_PRESS_MS = 180;
 
-/** Pointer travel (px) past which a press is a scroll and lets go — the press layer's own slop. */
-const SCROLL_SLOP = 10;
+/** Pointer travel (px) past which a press is a scroll and lets go — the soft body's own slop, so both let go together. */
+const SCROLL_SLOP = SOFT_BODY.scrollSlopPx;
 
 /** Write the eversion point for `el` at client position (x, y). */
 export function placeEvert(el: HTMLElement, x: number, y: number): void {
@@ -164,7 +165,7 @@ export function useEvertPointLayer(): void {
       if (!press) return;
       const dx = e.clientX - press.x;
       const dy = e.clientY - press.y;
-      // The gesture became a scroll: let go at once, as the press layer does.
+      // The gesture became a scroll: let go at once, as the soft body does.
       if (dx * dx + dy * dy > SCROLL_SLOP * SCROLL_SLOP) release(e.pointerId, true);
     };
 

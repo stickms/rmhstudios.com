@@ -54,7 +54,6 @@ import {
   applyElectricArcs,
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
-import { useFluidPressLayer } from '@/hooks/useFluidPress';
 import { useLiquidInteractions } from '@/hooks/useLiquidInteractions';
 import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
@@ -352,13 +351,9 @@ export function Providers({
 
   // The backdrop stays still; bounded material responses live on surfaces.
   useLiquidBackground();
+  // Also mounts the jelly soft-body physics (press/hover/release on every jelly host, `data-fluid-press` included),
+  // the registry, the CSS flow carriers, the arcs and the glass engine — see hooks/useLiquidInteractions.ts.
   useLiquidInteractions();
-
-  // The fluid-interfaces press layer (WWDC 2018 §803 principle 1: instantaneous,
-  // interruptible response to touch). One delegated pointerdown listener springs
-  // any element carrying `data-fluid-press`; it is idle at rest, self-gates on
-  // reduced motion, and releases the press if the gesture turns into a scroll.
-  useFluidPressLayer();
 
   // The eversion state layer's input (globals.css §7.3): where each `data-evert` control turns inside out from
   // (the pointer's entry, the finger, the exit) and when a press is down. Delegated, passive, no frame loop.
