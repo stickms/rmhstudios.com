@@ -1,0 +1,6 @@
+{
+  "pack-meta_one": "{{author}} 的 {{count}} 个提示词",
+  "pack-meta_other": "{{author}} 的 {{count}} 个提示词",
+  "prompt-count_one": "{{count}} 个提示词（需要 {{min}} 到 {{max}} 个）",
+  "prompt-count_other": "{{count}} 个提示词（需要 {{min}} 到 {{max}} 个）"
+}

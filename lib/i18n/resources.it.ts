@@ -68,6 +68,24 @@ import itCVoidBreaker from "@/locales/it/c-void-breaker.json";
 import itCWager from "@/locales/it/c-wager.json";
 import itCWishlist from "@/locales/it/c-wishlist.json";
 import itCommon from "@/locales/it/common.json";
+import itFArcade from "@/locales/it/f-arcade.json";
+import itFCanvas from "@/locales/it/f-canvas.json";
+import itFCommunitiesPlus from "@/locales/it/f-communities-plus.json";
+import itFCreative from "@/locales/it/f-creative.json";
+import itFDelight from "@/locales/it/f-delight.json";
+import itFDevplatform from "@/locales/it/f-devplatform.json";
+import itFDiscovery from "@/locales/it/f-discovery.json";
+import itFGifting from "@/locales/it/f-gifting.json";
+import itFLadderHomes from "@/locales/it/f-ladder-homes.json";
+import itFMessaging from "@/locales/it/f-messaging.json";
+import itFOps from "@/locales/it/f-ops.json";
+import itFParty from "@/locales/it/f-party.json";
+import itFPostsPlus from "@/locales/it/f-posts-plus.json";
+import itFReading from "@/locales/it/f-reading.json";
+import itFSafety from "@/locales/it/f-safety.json";
+import itFTools from "@/locales/it/f-tools.json";
+import itFWatch from "@/locales/it/f-watch.json";
+import itFWorlds from "@/locales/it/f-worlds.json";
 import itFeed from "@/locales/it/feed.json";
 import itGamesHub from "@/locales/it/games-hub.json";
 import itGroups from "@/locales/it/groups.json";
@@ -165,6 +183,24 @@ const itResources = {
   "c-wager": itCWager,
   "c-wishlist": itCWishlist,
   "common": itCommon,
+  "f-arcade": itFArcade,
+  "f-canvas": itFCanvas,
+  "f-communities-plus": itFCommunitiesPlus,
+  "f-creative": itFCreative,
+  "f-delight": itFDelight,
+  "f-devplatform": itFDevplatform,
+  "f-discovery": itFDiscovery,
+  "f-gifting": itFGifting,
+  "f-ladder-homes": itFLadderHomes,
+  "f-messaging": itFMessaging,
+  "f-ops": itFOps,
+  "f-party": itFParty,
+  "f-posts-plus": itFPostsPlus,
+  "f-reading": itFReading,
+  "f-safety": itFSafety,
+  "f-tools": itFTools,
+  "f-watch": itFWatch,
+  "f-worlds": itFWorlds,
   "feed": itFeed,
   "games-hub": itGamesHub,
   "groups": itGroups,

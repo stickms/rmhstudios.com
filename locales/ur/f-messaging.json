@@ -1,0 +1,14 @@
+{
+  "folder-chat-count_one": "{{count}} چیٹس",
+  "folder-chat-count_other": "{{count}} چیٹس",
+  "forward-send_one": "{{count}} چیٹ میں بھیجیں",
+  "forward-send_other": "{{count}} چیٹ میں بھیجیں",
+  "pinned-bar-count_one": "{{count}} پن شدہ پیغامات",
+  "pinned-bar-count_other": "{{count}} پن شدہ پیغامات",
+  "poll-votes_one": "{{count}} ووٹ",
+  "poll-votes_other": "{{count}} ووٹ",
+  "thread-replies_one": "{{count}} جوابات",
+  "thread-replies_other": "{{count}} جوابات",
+  "thread-reply-count_one": "{{count}} جوابات",
+  "thread-reply-count_other": "{{count}} جوابات"
+}

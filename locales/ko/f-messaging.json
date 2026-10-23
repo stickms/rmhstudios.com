@@ -1,0 +1,14 @@
+{
+  "folder-chat-count_one": "{{count}}개 채팅",
+  "folder-chat-count_other": "{{count}}개 채팅",
+  "forward-send_one": "{{count}}개 채팅으로 보내기",
+  "forward-send_other": "{{count}}개 채팅으로 보내기",
+  "pinned-bar-count_one": "고정된 메시지 {{count}}개",
+  "pinned-bar-count_other": "고정된 메시지 {{count}}개",
+  "poll-votes_one": "{{count}}표",
+  "poll-votes_other": "{{count}}표",
+  "thread-replies_one": "답글 {{count}}개",
+  "thread-replies_other": "답글 {{count}}개",
+  "thread-reply-count_one": "답글 {{count}}개",
+  "thread-reply-count_other": "답글 {{count}}개"
+}

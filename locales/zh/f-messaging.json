@@ -1,0 +1,14 @@
+{
+  "folder-chat-count_one": "{{count}} 个聊天",
+  "folder-chat-count_other": "{{count}} 个聊天",
+  "forward-send_one": "发送到 {{count}} 个聊天",
+  "forward-send_other": "发送到 {{count}} 个聊天",
+  "pinned-bar-count_one": "{{count}} 条置顶消息",
+  "pinned-bar-count_other": "{{count}} 条置顶消息",
+  "poll-votes_one": "{{count}} 票",
+  "poll-votes_other": "{{count}} 票",
+  "thread-replies_one": "{{count}} 条回复",
+  "thread-replies_other": "{{count}} 条回复",
+  "thread-reply-count_one": "{{count}} 条回复",
+  "thread-reply-count_other": "{{count}} 条回复"
+}

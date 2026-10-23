@@ -1,0 +1,10 @@
+{
+  "advent-tally_one": "今年は{{total}}個のドアのうち{{count}}個を開けました",
+  "advent-tally_other": "今年は{{total}}個のドアのうち{{count}}個を開けました",
+  "list-members_one": "{{count}}人のメンバー",
+  "list-members_other": "{{count}}人のメンバー",
+  "members-title_one": "メンバー（{{count}}）",
+  "members-title_other": "メンバー（{{count}}）",
+  "mixtape-title_one": "あなたのミックステープ（{{count}}/{{max}}）",
+  "mixtape-title_other": "あなたのミックステープ（{{count}}/{{max}}）"
+}

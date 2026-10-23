@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} relatos · dificuldade média {{avg}}/5",
+  "ir-summary_other": "{{count}} relatos · dificuldade média {{avg}}/5",
+  "rb-spots_one": "{{count}} vagas restantes",
+  "rb-spots_other": "{{count}} vagas restantes"
+}

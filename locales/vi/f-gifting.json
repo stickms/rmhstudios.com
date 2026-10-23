@@ -1,0 +1,10 @@
+{
+  "advent-tally_one": "{{count}} trên {{total}} cánh cửa đã mở trong năm nay",
+  "advent-tally_other": "{{count}} trên {{total}} cánh cửa đã mở trong năm nay",
+  "list-members_one": "{{count}} thành viên",
+  "list-members_other": "{{count}} thành viên",
+  "members-title_one": "Thành viên ({{count}})",
+  "members-title_other": "Thành viên ({{count}})",
+  "mixtape-title_one": "Mixtape của bạn ({{count}}/{{max}})",
+  "mixtape-title_other": "Mixtape của bạn ({{count}}/{{max}})"
+}

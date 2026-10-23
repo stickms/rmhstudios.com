@@ -1,0 +1,6 @@
+{
+  "pack-meta_one": "{{author}} द्वारा {{count}} प्रॉम्प्ट",
+  "pack-meta_other": "{{author}} द्वारा {{count}} प्रॉम्प्ट",
+  "prompt-count_one": "{{count}} प्रॉम्प्ट ({{min}} से {{max}} आवश्यक)",
+  "prompt-count_other": "{{count}} प्रॉम्प्ट ({{min}} से {{max}} आवश्यक)"
+}

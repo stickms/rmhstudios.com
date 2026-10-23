@@ -69,6 +69,24 @@ import zhCVoidBreaker from "@/locales/zh/c-void-breaker.json";
 import zhCWager from "@/locales/zh/c-wager.json";
 import zhCWishlist from "@/locales/zh/c-wishlist.json";
 import zhCommon from "@/locales/zh/common.json";
+import zhFArcade from "@/locales/zh/f-arcade.json";
+import zhFCanvas from "@/locales/zh/f-canvas.json";
+import zhFCommunitiesPlus from "@/locales/zh/f-communities-plus.json";
+import zhFCreative from "@/locales/zh/f-creative.json";
+import zhFDelight from "@/locales/zh/f-delight.json";
+import zhFDevplatform from "@/locales/zh/f-devplatform.json";
+import zhFDiscovery from "@/locales/zh/f-discovery.json";
+import zhFGifting from "@/locales/zh/f-gifting.json";
+import zhFLadderHomes from "@/locales/zh/f-ladder-homes.json";
+import zhFMessaging from "@/locales/zh/f-messaging.json";
+import zhFOps from "@/locales/zh/f-ops.json";
+import zhFParty from "@/locales/zh/f-party.json";
+import zhFPostsPlus from "@/locales/zh/f-posts-plus.json";
+import zhFReading from "@/locales/zh/f-reading.json";
+import zhFSafety from "@/locales/zh/f-safety.json";
+import zhFTools from "@/locales/zh/f-tools.json";
+import zhFWatch from "@/locales/zh/f-watch.json";
+import zhFWorlds from "@/locales/zh/f-worlds.json";
 import zhFeed from "@/locales/zh/feed.json";
 import zhGamesHub from "@/locales/zh/games-hub.json";
 import zhGroups from "@/locales/zh/groups.json";
@@ -168,6 +186,24 @@ const zhResources = {
   "c-wager": zhCWager,
   "c-wishlist": zhCWishlist,
   "common": zhCommon,
+  "f-arcade": zhFArcade,
+  "f-canvas": zhFCanvas,
+  "f-communities-plus": zhFCommunitiesPlus,
+  "f-creative": zhFCreative,
+  "f-delight": zhFDelight,
+  "f-devplatform": zhFDevplatform,
+  "f-discovery": zhFDiscovery,
+  "f-gifting": zhFGifting,
+  "f-ladder-homes": zhFLadderHomes,
+  "f-messaging": zhFMessaging,
+  "f-ops": zhFOps,
+  "f-party": zhFParty,
+  "f-posts-plus": zhFPostsPlus,
+  "f-reading": zhFReading,
+  "f-safety": zhFSafety,
+  "f-tools": zhFTools,
+  "f-watch": zhFWatch,
+  "f-worlds": zhFWorlds,
   "feed": zhFeed,
   "games-hub": zhGamesHub,
   "groups": zhGroups,

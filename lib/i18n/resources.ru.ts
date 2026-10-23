@@ -68,6 +68,24 @@ import ruCVoidBreaker from "@/locales/ru/c-void-breaker.json";
 import ruCWager from "@/locales/ru/c-wager.json";
 import ruCWishlist from "@/locales/ru/c-wishlist.json";
 import ruCommon from "@/locales/ru/common.json";
+import ruFArcade from "@/locales/ru/f-arcade.json";
+import ruFCanvas from "@/locales/ru/f-canvas.json";
+import ruFCommunitiesPlus from "@/locales/ru/f-communities-plus.json";
+import ruFCreative from "@/locales/ru/f-creative.json";
+import ruFDelight from "@/locales/ru/f-delight.json";
+import ruFDevplatform from "@/locales/ru/f-devplatform.json";
+import ruFDiscovery from "@/locales/ru/f-discovery.json";
+import ruFGifting from "@/locales/ru/f-gifting.json";
+import ruFLadderHomes from "@/locales/ru/f-ladder-homes.json";
+import ruFMessaging from "@/locales/ru/f-messaging.json";
+import ruFOps from "@/locales/ru/f-ops.json";
+import ruFParty from "@/locales/ru/f-party.json";
+import ruFPostsPlus from "@/locales/ru/f-posts-plus.json";
+import ruFReading from "@/locales/ru/f-reading.json";
+import ruFSafety from "@/locales/ru/f-safety.json";
+import ruFTools from "@/locales/ru/f-tools.json";
+import ruFWatch from "@/locales/ru/f-watch.json";
+import ruFWorlds from "@/locales/ru/f-worlds.json";
 import ruFeed from "@/locales/ru/feed.json";
 import ruGamesHub from "@/locales/ru/games-hub.json";
 import ruGroups from "@/locales/ru/groups.json";
@@ -165,6 +183,24 @@ const ruResources = {
   "c-wager": ruCWager,
   "c-wishlist": ruCWishlist,
   "common": ruCommon,
+  "f-arcade": ruFArcade,
+  "f-canvas": ruFCanvas,
+  "f-communities-plus": ruFCommunitiesPlus,
+  "f-creative": ruFCreative,
+  "f-delight": ruFDelight,
+  "f-devplatform": ruFDevplatform,
+  "f-discovery": ruFDiscovery,
+  "f-gifting": ruFGifting,
+  "f-ladder-homes": ruFLadderHomes,
+  "f-messaging": ruFMessaging,
+  "f-ops": ruFOps,
+  "f-party": ruFParty,
+  "f-posts-plus": ruFPostsPlus,
+  "f-reading": ruFReading,
+  "f-safety": ruFSafety,
+  "f-tools": ruFTools,
+  "f-watch": ruFWatch,
+  "f-worlds": ruFWorlds,
   "feed": ruFeed,
   "games-hub": ruGamesHub,
   "groups": ruGroups,

@@ -13,6 +13,7 @@
   "join-room": "Join Room",
   "listener-count_one": "{{count}} listener",
   "listener-count_other": "{{count}} listener",
+  "listening-count_one": "{{count}} listening",
   "loading-rooms": "Loading rooms...",
   "new": "New",
   "no-puzzles-yet": "No puzzles yet.",

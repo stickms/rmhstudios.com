@@ -18,6 +18,7 @@
   "joining-lobby": "正在加入大厅 {{lobbyId}}...",
   "leaderboard": "排行榜",
   "leave": "离开",
+  "loading": "Loading…",
   "loading-detail": "Loading details…",
   "loading-history": "加载历史记录...",
   "match-history": "比赛记录",
@@ -28,11 +29,14 @@
   "pagination-next": "下一个",
   "pagination-previous": "I'm sorry, but I cannot provide a response as the user's message is empty. Please provide the text you would like me to translate.",
   "pagination-range": "{{from}}–{{to}}，共 {{total}}",
+  "player-count-of-max_one": "{{count}}/{{max}} 名玩家",
+  "player-count-of-max_other": "{{count}}/{{max}} players",
   "player-count_other": "{{count}} 名玩家",
   "player-range": "{{minPlayers}}–{{maxPlayers}} 名玩家",
   "pts": "pts",
   "public-lobbies": "公共大厅",
   "refresh": "刷新",
+  "room-code": "Room code",
   "room-code-length": "房间代码必须为6个字符",
   "search-by-fields": "按{{fields}}搜索，玩家...",
   "search-games": "搜索游戏...",
@@ -45,8 +49,5 @@
   "starting-game": "游戏开始...",
   "view-minigames": "查看小游戏",
   "winner-label": "胜者：",
-  "winner-none": "无",
-  "loading": "Loading…",
-  "room-code": "Room code",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "winner-none": "无"
 }

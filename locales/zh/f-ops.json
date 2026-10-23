@@ -1,0 +1,8 @@
+{
+  "dead-flagged_one": "合并候选（{{count}}）",
+  "dead-flagged_other": "合并候选（{{count}}）",
+  "errors-count_one": "{{count}} 个事件",
+  "errors-count_other": "{{count}} 个事件",
+  "notices-dismissed_one": "已忽略 {{count}} 条",
+  "notices-dismissed_other": "已忽略 {{count}} 条"
+}

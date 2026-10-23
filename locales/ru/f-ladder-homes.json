@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} отчёт · средняя сложность {{avg}}/5",
+  "ir-summary_other": "{{count}} отчётов · средняя сложность {{avg}}/5",
+  "rb-spots_one": "осталось {{count}} место",
+  "rb-spots_other": "осталось {{count}} мест"
+}

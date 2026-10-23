@@ -54,6 +54,8 @@
   "joystick-side": "조이스틱 방향",
   "keybinds": "키 설정",
   "keyboard-hint": "[Esc] 재개 · [W/S] 이동 · [Space] 선택",
+  "keyboard-hint-level-up-screen_one": "[A/D] 또는 [←/→] 탐색 · [Space] 선택 · [1-{{count}}] 빠른 선택",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
   "keyboard-hint_other": "[A/D] 또는 [←/→] 이동 · [Space] 선택 · [1-{{count}}] 빠른 선택",
   "kick-player": "플레이어 추방",
   "kill-milestones": "처치 이정표",
@@ -163,6 +165,5 @@
   "webgl-context-lost": "WebGL 컨텍스트가 손실되었습니다! 페이지를 새로고침하세요.",
   "you": "(당신)",
   "your-class": "당신의 클래스",
-  "zoom": "확대/축소",
-  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
+  "zoom": "확대/축소"
 }

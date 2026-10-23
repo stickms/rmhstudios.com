@@ -54,6 +54,8 @@
   "joystick-side": "Sisi Joystick",
   "keybinds": "Tombol pintas",
   "keyboard-hint": "[Esc] lanjutkan · [W/S] navigasi · [Space] pilih",
+  "keyboard-hint-level-up-screen_one": "[A/D] atau [←/→] navigasi · [Spasi] pilih · [1-{{count}}] pilih cepat",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
   "keyboard-hint_other": "[A/D] atau [←/→] navigasi · [Space] pilih · [1-{{count}}] pilih cepat",
   "kick-player": "Keluarkan pemain",
   "kill-milestones": "Pencapaian pembunuhan",
@@ -163,6 +165,5 @@
   "webgl-context-lost": "Konteks WebGL hilang! Harap muat ulang halaman.",
   "you": "(Anda)",
   "your-class": "Kelas Anda",
-  "zoom": "Zoom",
-  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
+  "zoom": "Zoom"
 }

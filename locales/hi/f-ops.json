@@ -1,0 +1,8 @@
+{
+  "dead-flagged_one": "समेकन के लिए उम्मीदवार ({{count}})",
+  "dead-flagged_other": "समेकन के लिए उम्मीदवार ({{count}})",
+  "errors-count_one": "{{count}} इवेंट",
+  "errors-count_other": "{{count}} इवेंट",
+  "notices-dismissed_one": "{{count}} खारिज किए गए",
+  "notices-dismissed_other": "{{count}} खारिज किए गए"
+}

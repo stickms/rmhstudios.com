@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} rapor · ortalama zorluk {{avg}}/5",
+  "ir-summary_other": "{{count}} rapor · ortalama zorluk {{avg}}/5",
+  "rb-spots_one": "{{count}} yer kaldı",
+  "rb-spots_other": "{{count}} yer kaldı"
+}

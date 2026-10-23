@@ -1,0 +1,5 @@
+{
+  "back-to-admin": "管理者に戻る",
+  "median-line_one": "完了までの中央値時間: {{time}}（{{count}}人のプレイヤー）",
+  "median-line_other": "完了までの中央値時間: {{time}}（{{count}}人のプレイヤー）"
+}

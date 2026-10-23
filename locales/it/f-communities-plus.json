@@ -1,0 +1,6 @@
+{
+  "automod-new_one": "Nuova regola ({{count}} di {{max}})",
+  "automod-new_other": "Nuova regola ({{count}} di {{max}})",
+  "flair-count_one": "{{count}} di {{max}} flair",
+  "flair-count_other": "{{count}} di {{max}} flair"
+}

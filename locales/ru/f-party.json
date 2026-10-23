@@ -1,0 +1,6 @@
+{
+  "pack-meta_one": "{{count}} промпт от {{author}}",
+  "pack-meta_other": "{{count}} промптов от {{author}}",
+  "prompt-count_one": "{{count}} промпт (нужно от {{min}} до {{max}})",
+  "prompt-count_other": "{{count}} промптов (нужно от {{min}} до {{max}})"
+}

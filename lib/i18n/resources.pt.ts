@@ -68,6 +68,24 @@ import ptCVoidBreaker from "@/locales/pt/c-void-breaker.json";
 import ptCWager from "@/locales/pt/c-wager.json";
 import ptCWishlist from "@/locales/pt/c-wishlist.json";
 import ptCommon from "@/locales/pt/common.json";
+import ptFArcade from "@/locales/pt/f-arcade.json";
+import ptFCanvas from "@/locales/pt/f-canvas.json";
+import ptFCommunitiesPlus from "@/locales/pt/f-communities-plus.json";
+import ptFCreative from "@/locales/pt/f-creative.json";
+import ptFDelight from "@/locales/pt/f-delight.json";
+import ptFDevplatform from "@/locales/pt/f-devplatform.json";
+import ptFDiscovery from "@/locales/pt/f-discovery.json";
+import ptFGifting from "@/locales/pt/f-gifting.json";
+import ptFLadderHomes from "@/locales/pt/f-ladder-homes.json";
+import ptFMessaging from "@/locales/pt/f-messaging.json";
+import ptFOps from "@/locales/pt/f-ops.json";
+import ptFParty from "@/locales/pt/f-party.json";
+import ptFPostsPlus from "@/locales/pt/f-posts-plus.json";
+import ptFReading from "@/locales/pt/f-reading.json";
+import ptFSafety from "@/locales/pt/f-safety.json";
+import ptFTools from "@/locales/pt/f-tools.json";
+import ptFWatch from "@/locales/pt/f-watch.json";
+import ptFWorlds from "@/locales/pt/f-worlds.json";
 import ptFeed from "@/locales/pt/feed.json";
 import ptGamesHub from "@/locales/pt/games-hub.json";
 import ptGroups from "@/locales/pt/groups.json";
@@ -165,6 +183,24 @@ const ptResources = {
   "c-wager": ptCWager,
   "c-wishlist": ptCWishlist,
   "common": ptCommon,
+  "f-arcade": ptFArcade,
+  "f-canvas": ptFCanvas,
+  "f-communities-plus": ptFCommunitiesPlus,
+  "f-creative": ptFCreative,
+  "f-delight": ptFDelight,
+  "f-devplatform": ptFDevplatform,
+  "f-discovery": ptFDiscovery,
+  "f-gifting": ptFGifting,
+  "f-ladder-homes": ptFLadderHomes,
+  "f-messaging": ptFMessaging,
+  "f-ops": ptFOps,
+  "f-party": ptFParty,
+  "f-posts-plus": ptFPostsPlus,
+  "f-reading": ptFReading,
+  "f-safety": ptFSafety,
+  "f-tools": ptFTools,
+  "f-watch": ptFWatch,
+  "f-worlds": ptFWorlds,
   "feed": ptFeed,
   "games-hub": ptGamesHub,
   "groups": ptGroups,

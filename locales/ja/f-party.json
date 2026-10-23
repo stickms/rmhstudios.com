@@ -1,0 +1,6 @@
+{
+  "pack-meta_one": "{{author}}による{{count}}件のプロンプト",
+  "pack-meta_other": "{{author}}による{{count}}件のプロンプト",
+  "prompt-count_one": "{{count}}件のプロンプト（{{min}}～{{max}}件必要）",
+  "prompt-count_other": "{{count}}件のプロンプト（{{min}}～{{max}}件必要）"
+}

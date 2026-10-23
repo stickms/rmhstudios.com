@@ -1,0 +1,8 @@
+{
+  "dead-flagged_one": "Birleştirme adayları ({{count}})",
+  "dead-flagged_other": "Birleştirme adayları ({{count}})",
+  "errors-count_one": "{{count}} olay",
+  "errors-count_other": "{{count}} olay",
+  "notices-dismissed_one": "{{count}} kapatıldı",
+  "notices-dismissed_other": "{{count}} kapatıldı"
+}

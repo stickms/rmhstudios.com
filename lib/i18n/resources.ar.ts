@@ -69,6 +69,24 @@ import arCVoidBreaker from "@/locales/ar/c-void-breaker.json";
 import arCWager from "@/locales/ar/c-wager.json";
 import arCWishlist from "@/locales/ar/c-wishlist.json";
 import arCommon from "@/locales/ar/common.json";
+import arFArcade from "@/locales/ar/f-arcade.json";
+import arFCanvas from "@/locales/ar/f-canvas.json";
+import arFCommunitiesPlus from "@/locales/ar/f-communities-plus.json";
+import arFCreative from "@/locales/ar/f-creative.json";
+import arFDelight from "@/locales/ar/f-delight.json";
+import arFDevplatform from "@/locales/ar/f-devplatform.json";
+import arFDiscovery from "@/locales/ar/f-discovery.json";
+import arFGifting from "@/locales/ar/f-gifting.json";
+import arFLadderHomes from "@/locales/ar/f-ladder-homes.json";
+import arFMessaging from "@/locales/ar/f-messaging.json";
+import arFOps from "@/locales/ar/f-ops.json";
+import arFParty from "@/locales/ar/f-party.json";
+import arFPostsPlus from "@/locales/ar/f-posts-plus.json";
+import arFReading from "@/locales/ar/f-reading.json";
+import arFSafety from "@/locales/ar/f-safety.json";
+import arFTools from "@/locales/ar/f-tools.json";
+import arFWatch from "@/locales/ar/f-watch.json";
+import arFWorlds from "@/locales/ar/f-worlds.json";
 import arFeed from "@/locales/ar/feed.json";
 import arGamesHub from "@/locales/ar/games-hub.json";
 import arGroups from "@/locales/ar/groups.json";
@@ -168,6 +186,24 @@ const arResources = {
   "c-wager": arCWager,
   "c-wishlist": arCWishlist,
   "common": arCommon,
+  "f-arcade": arFArcade,
+  "f-canvas": arFCanvas,
+  "f-communities-plus": arFCommunitiesPlus,
+  "f-creative": arFCreative,
+  "f-delight": arFDelight,
+  "f-devplatform": arFDevplatform,
+  "f-discovery": arFDiscovery,
+  "f-gifting": arFGifting,
+  "f-ladder-homes": arFLadderHomes,
+  "f-messaging": arFMessaging,
+  "f-ops": arFOps,
+  "f-party": arFParty,
+  "f-posts-plus": arFPostsPlus,
+  "f-reading": arFReading,
+  "f-safety": arFSafety,
+  "f-tools": arFTools,
+  "f-watch": arFWatch,
+  "f-worlds": arFWorlds,
   "feed": arFeed,
   "games-hub": arGamesHub,
   "groups": arGroups,

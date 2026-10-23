@@ -1,0 +1,6 @@
+{
+  "automod-new_one": "새 규칙 ({{max}}개 중 {{count}}개)",
+  "automod-new_other": "새 규칙 ({{max}}개 중 {{count}}개)",
+  "flair-count_one": "플레어 {{max}}개 중 {{count}}개",
+  "flair-count_other": "플레어 {{max}}개 중 {{count}}개"
+}

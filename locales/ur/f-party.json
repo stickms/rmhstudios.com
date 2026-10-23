@@ -1,0 +1,6 @@
+{
+  "pack-meta_one": "{{author}} کی جانب سے {{count}} پرامپٹس",
+  "pack-meta_other": "{{author}} کی جانب سے {{count}} پرامپٹس",
+  "prompt-count_one": "{{count}} پرامپٹس ({{min}} سے {{max}} تک درکار ہیں)",
+  "prompt-count_other": "{{count}} پرامپٹس ({{min}} سے {{max}} تک درکار ہیں)"
+}

@@ -1,0 +1,6 @@
+{
+  "pack-meta_one": "{{count}} prompt bởi {{author}}",
+  "pack-meta_other": "{{count}} prompt bởi {{author}}",
+  "prompt-count_one": "{{count}} prompt (cần {{min}} đến {{max}})",
+  "prompt-count_other": "{{count}} prompt (cần {{min}} đến {{max}})"
+}

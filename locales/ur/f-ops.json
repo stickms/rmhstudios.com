@@ -1,0 +1,8 @@
+{
+  "dead-flagged_one": "استحکام کے امیدوار ({{count}})",
+  "dead-flagged_other": "استحکام کے امیدوار ({{count}})",
+  "errors-count_one": "{{count}} واقعات",
+  "errors-count_other": "{{count}} واقعات",
+  "notices-dismissed_one": "{{count}} مسترد شدہ",
+  "notices-dismissed_other": "{{count}} مسترد شدہ"
+}

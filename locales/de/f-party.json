@@ -1,0 +1,6 @@
+{
+  "pack-meta_one": "{{count}} Prompts von {{author}}",
+  "pack-meta_other": "{{count}} Prompts von {{author}}",
+  "prompt-count_one": "{{count}} Prompts ({{min}} bis {{max}} erforderlich)",
+  "prompt-count_other": "{{count}} Prompts ({{min}} bis {{max}} erforderlich)"
+}

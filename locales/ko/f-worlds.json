@@ -1,0 +1,6 @@
+{
+  "fest-next_one": "다음 축제: {{count}}일 후 {{name}}",
+  "fest-next_other": "다음 축제: {{count}}일 후 {{name}}",
+  "garden-bonus_one": "{{count}}명의 친구가 당신의 정원에 물을 주었어요 - 식물이 조금 더 빨리 자랐어요.",
+  "garden-bonus_other": "{{count}}명의 친구가 당신의 정원에 물을 주었어요 - 식물이 조금 더 빨리 자랐어요."
+}

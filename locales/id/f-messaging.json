@@ -1,0 +1,14 @@
+{
+  "folder-chat-count_one": "{{count}} chat",
+  "folder-chat-count_other": "{{count}} chat",
+  "forward-send_one": "Kirim ke {{count}} chat",
+  "forward-send_other": "Kirim ke {{count}} chat",
+  "pinned-bar-count_one": "{{count}} pesan yang disematkan",
+  "pinned-bar-count_other": "{{count}} pesan yang disematkan",
+  "poll-votes_one": "{{count}} suara",
+  "poll-votes_other": "{{count}} suara",
+  "thread-replies_one": "{{count}} balasan",
+  "thread-replies_other": "{{count}} balasan",
+  "thread-reply-count_one": "{{count}} balasan",
+  "thread-reply-count_other": "{{count}} balasan"
+}

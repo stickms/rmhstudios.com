@@ -1,0 +1,14 @@
+{
+  "folder-chat-count_one": "{{count}} Chats",
+  "folder-chat-count_other": "{{count}} Chats",
+  "forward-send_one": "An {{count}} Chat(s) senden",
+  "forward-send_other": "An {{count}} Chat(s) senden",
+  "pinned-bar-count_one": "{{count}} angeheftete Nachricht",
+  "pinned-bar-count_other": "{{count}} angeheftete Nachrichten",
+  "poll-votes_one": "{{count}} Stimme",
+  "poll-votes_other": "{{count}} Stimmen",
+  "thread-replies_one": "{{count}} Antwort",
+  "thread-replies_other": "{{count}} Antworten",
+  "thread-reply-count_one": "{{count}} Antwort",
+  "thread-reply-count_other": "{{count}} Antworten"
+}

@@ -1,0 +1,10 @@
+{
+  "advent-tally_one": "今年已打开 {{count}}/{{total}} 扇门",
+  "advent-tally_other": "今年已打开 {{count}}/{{total}} 扇门",
+  "list-members_one": "{{count}} 位成员",
+  "list-members_other": "{{count}} 位成员",
+  "members-title_one": "成员（{{count}}）",
+  "members-title_other": "成员（{{count}}）",
+  "mixtape-title_one": "你的混音带（{{count}}/{{max}}）",
+  "mixtape-title_other": "你的混音带（{{count}}/{{max}}）"
+}

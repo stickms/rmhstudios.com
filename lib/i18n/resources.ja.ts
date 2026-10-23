@@ -68,6 +68,24 @@ import jaCVoidBreaker from "@/locales/ja/c-void-breaker.json";
 import jaCWager from "@/locales/ja/c-wager.json";
 import jaCWishlist from "@/locales/ja/c-wishlist.json";
 import jaCommon from "@/locales/ja/common.json";
+import jaFArcade from "@/locales/ja/f-arcade.json";
+import jaFCanvas from "@/locales/ja/f-canvas.json";
+import jaFCommunitiesPlus from "@/locales/ja/f-communities-plus.json";
+import jaFCreative from "@/locales/ja/f-creative.json";
+import jaFDelight from "@/locales/ja/f-delight.json";
+import jaFDevplatform from "@/locales/ja/f-devplatform.json";
+import jaFDiscovery from "@/locales/ja/f-discovery.json";
+import jaFGifting from "@/locales/ja/f-gifting.json";
+import jaFLadderHomes from "@/locales/ja/f-ladder-homes.json";
+import jaFMessaging from "@/locales/ja/f-messaging.json";
+import jaFOps from "@/locales/ja/f-ops.json";
+import jaFParty from "@/locales/ja/f-party.json";
+import jaFPostsPlus from "@/locales/ja/f-posts-plus.json";
+import jaFReading from "@/locales/ja/f-reading.json";
+import jaFSafety from "@/locales/ja/f-safety.json";
+import jaFTools from "@/locales/ja/f-tools.json";
+import jaFWatch from "@/locales/ja/f-watch.json";
+import jaFWorlds from "@/locales/ja/f-worlds.json";
 import jaFeed from "@/locales/ja/feed.json";
 import jaGamesHub from "@/locales/ja/games-hub.json";
 import jaGroups from "@/locales/ja/groups.json";
@@ -165,6 +183,24 @@ const jaResources = {
   "c-wager": jaCWager,
   "c-wishlist": jaCWishlist,
   "common": jaCommon,
+  "f-arcade": jaFArcade,
+  "f-canvas": jaFCanvas,
+  "f-communities-plus": jaFCommunitiesPlus,
+  "f-creative": jaFCreative,
+  "f-delight": jaFDelight,
+  "f-devplatform": jaFDevplatform,
+  "f-discovery": jaFDiscovery,
+  "f-gifting": jaFGifting,
+  "f-ladder-homes": jaFLadderHomes,
+  "f-messaging": jaFMessaging,
+  "f-ops": jaFOps,
+  "f-party": jaFParty,
+  "f-posts-plus": jaFPostsPlus,
+  "f-reading": jaFReading,
+  "f-safety": jaFSafety,
+  "f-tools": jaFTools,
+  "f-watch": jaFWatch,
+  "f-worlds": jaFWorlds,
   "feed": jaFeed,
   "games-hub": jaGamesHub,
   "groups": jaGroups,

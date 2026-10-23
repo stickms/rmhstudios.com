@@ -1,0 +1,6 @@
+{
+  "fest-next_one": "下一个节日：{{name}}，还有 {{count}} 天",
+  "fest-next_other": "下一个节日：{{name}}，还有 {{count}} 天",
+  "garden-bonus_one": "{{count}} 位好友给你的花园浇了水——你的植物长得更快了一些。",
+  "garden-bonus_other": "{{count}} 位好友给你的花园浇了水——你的植物长得更快了一些。"
+}

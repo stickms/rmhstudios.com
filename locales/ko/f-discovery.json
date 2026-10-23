@@ -1,0 +1,6 @@
+{
+  "feeds-people_one": "{{count}}명",
+  "feeds-people_other": "{{count}}명",
+  "feeds-subscribers_one": "구독자 {{count}}명",
+  "feeds-subscribers_other": "구독자 {{count}}명"
+}

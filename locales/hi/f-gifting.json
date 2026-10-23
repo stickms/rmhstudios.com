@@ -1,0 +1,10 @@
+{
+  "advent-tally_one": "इस वर्ष {{total}} में से {{count}} दरवाज़े खुले",
+  "advent-tally_other": "इस वर्ष {{total}} में से {{count}} दरवाज़े खुले",
+  "list-members_one": "{{count}} सदस्य",
+  "list-members_other": "{{count}} सदस्य",
+  "members-title_one": "सदस्य ({{count}})",
+  "members-title_other": "सदस्य ({{count}})",
+  "mixtape-title_one": "आपका मिक्सटेप ({{count}}/{{max}})",
+  "mixtape-title_other": "आपका मिक्सटेप ({{count}}/{{max}})"
+}

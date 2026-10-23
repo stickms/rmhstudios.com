@@ -1,0 +1,6 @@
+{
+  "pack-meta_one": "{{author}} tarafından {{count}} istem",
+  "pack-meta_other": "{{author}} tarafından {{count}} istem",
+  "prompt-count_one": "{{count}} istem ({{min}} ile {{max}} arasında olmalı)",
+  "prompt-count_other": "{{count}} istem ({{min}} ile {{max}} arasında olmalı)"
+}

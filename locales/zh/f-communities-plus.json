@@ -1,0 +1,6 @@
+{
+  "automod-new_one": "新规则（{{count}}/{{max}}）",
+  "automod-new_other": "新规则（{{count}}/{{max}}）",
+  "flair-count_one": "{{count}}/{{max}} 个标签",
+  "flair-count_other": "{{count}}/{{max}} 个标签"
+}

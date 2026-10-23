@@ -54,6 +54,8 @@
   "joystick-side": "ジョイスティックの位置",
   "keybinds": "キー設定",
   "keyboard-hint": "[Esc] 再開 · [W/S] 移動 · [Space] 選択",
+  "keyboard-hint-level-up-screen_one": "[A/D] または [←/→] で移動 · [Space] で選択 · [1-{{count}}] でクイック選択",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
   "keyboard-hint_other": "[A/D] または [←/→] 移動 · [Space] 選択 · [1-{{count}}] クイック選択",
   "kick-player": "プレイヤーをキック",
   "kill-milestones": "キルマイルストーン",
@@ -163,6 +165,5 @@
   "webgl-context-lost": "WebGLコンテキストが失われました。ページを再読み込みしてください。",
   "you": "(あなた)",
   "your-class": "あなたのクラス",
-  "zoom": "ズーム",
-  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
+  "zoom": "ズーム"
 }

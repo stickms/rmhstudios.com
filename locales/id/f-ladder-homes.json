@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} laporan · rata-rata kesulitan {{avg}}/5",
+  "ir-summary_other": "{{count}} laporan · rata-rata kesulitan {{avg}}/5",
+  "rb-spots_one": "{{count}} tempat tersisa",
+  "rb-spots_other": "{{count}} tempat tersisa"
+}

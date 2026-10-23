@@ -68,6 +68,24 @@ import deCVoidBreaker from "@/locales/de/c-void-breaker.json";
 import deCWager from "@/locales/de/c-wager.json";
 import deCWishlist from "@/locales/de/c-wishlist.json";
 import deCommon from "@/locales/de/common.json";
+import deFArcade from "@/locales/de/f-arcade.json";
+import deFCanvas from "@/locales/de/f-canvas.json";
+import deFCommunitiesPlus from "@/locales/de/f-communities-plus.json";
+import deFCreative from "@/locales/de/f-creative.json";
+import deFDelight from "@/locales/de/f-delight.json";
+import deFDevplatform from "@/locales/de/f-devplatform.json";
+import deFDiscovery from "@/locales/de/f-discovery.json";
+import deFGifting from "@/locales/de/f-gifting.json";
+import deFLadderHomes from "@/locales/de/f-ladder-homes.json";
+import deFMessaging from "@/locales/de/f-messaging.json";
+import deFOps from "@/locales/de/f-ops.json";
+import deFParty from "@/locales/de/f-party.json";
+import deFPostsPlus from "@/locales/de/f-posts-plus.json";
+import deFReading from "@/locales/de/f-reading.json";
+import deFSafety from "@/locales/de/f-safety.json";
+import deFTools from "@/locales/de/f-tools.json";
+import deFWatch from "@/locales/de/f-watch.json";
+import deFWorlds from "@/locales/de/f-worlds.json";
 import deFeed from "@/locales/de/feed.json";
 import deGamesHub from "@/locales/de/games-hub.json";
 import deGroups from "@/locales/de/groups.json";
@@ -165,6 +183,24 @@ const deResources = {
   "c-wager": deCWager,
   "c-wishlist": deCWishlist,
   "common": deCommon,
+  "f-arcade": deFArcade,
+  "f-canvas": deFCanvas,
+  "f-communities-plus": deFCommunitiesPlus,
+  "f-creative": deFCreative,
+  "f-delight": deFDelight,
+  "f-devplatform": deFDevplatform,
+  "f-discovery": deFDiscovery,
+  "f-gifting": deFGifting,
+  "f-ladder-homes": deFLadderHomes,
+  "f-messaging": deFMessaging,
+  "f-ops": deFOps,
+  "f-party": deFParty,
+  "f-posts-plus": deFPostsPlus,
+  "f-reading": deFReading,
+  "f-safety": deFSafety,
+  "f-tools": deFTools,
+  "f-watch": deFWatch,
+  "f-worlds": deFWorlds,
   "feed": deFeed,
   "games-hub": deGamesHub,
   "groups": deGroups,

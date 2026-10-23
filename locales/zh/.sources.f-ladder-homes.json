@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} reports · average difficulty {{avg}}/5",
+  "ir-summary_other": "{{count}} reports · average difficulty {{avg}}/5",
+  "rb-spots_one": "{{count}} spots left",
+  "rb-spots_other": "{{count}} spots left"
+}

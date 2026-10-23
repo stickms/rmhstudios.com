@@ -1,0 +1,6 @@
+{
+  "pack-meta_one": "{{count}} prompt oleh {{author}}",
+  "pack-meta_other": "{{count}} prompt oleh {{author}}",
+  "prompt-count_one": "{{count}} prompt (butuh {{min}} hingga {{max}})",
+  "prompt-count_other": "{{count}} prompt (butuh {{min}} hingga {{max}})"
+}

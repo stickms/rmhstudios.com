@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} 份报告 · 平均难度 {{avg}}/5",
+  "ir-summary_other": "{{count}} 份报告 · 平均难度 {{avg}}/5",
+  "rb-spots_one": "剩余 {{count}} 个名额",
+  "rb-spots_other": "剩余 {{count}} 个名额"
+}

@@ -18,6 +18,7 @@
   "joining-lobby": "로비 {{lobbyId}}에 참가 중...",
   "leaderboard": "리더보드",
   "leave": "나가기",
+  "loading": "Loading…",
   "loading-detail": "Loading details…",
   "loading-history": "기록 불러오는 중...",
   "match-history": "매치 기록",
@@ -28,11 +29,14 @@
   "pagination-next": "다음",
   "pagination-previous": "이전",
   "pagination-range": "{{from}}–{{to}} / {{total}}",
+  "player-count-of-max_one": "{{count}}/{{max}}명 플레이어",
+  "player-count-of-max_other": "{{count}}/{{max}} players",
   "player-count_other": "플레이어 {{count}}명",
   "player-range": "플레이어 {{minPlayers}}–{{maxPlayers}}명",
   "pts": "점",
   "public-lobbies": "공개 로비",
   "refresh": "새로고침",
+  "room-code": "Room code",
   "room-code-length": "방 코드는 6자여야 합니다",
   "search-by-fields": "{{fields}}, 플레이어로 검색...",
   "search-games": "게임 검색...",
@@ -45,8 +49,5 @@
   "starting-game": "게임 시작 중...",
   "view-minigames": "미니게임 보기",
   "winner-label": "승자:",
-  "winner-none": "없음",
-  "loading": "Loading…",
-  "room-code": "Room code",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "winner-none": "없음"
 }

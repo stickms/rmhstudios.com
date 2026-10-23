@@ -1,0 +1,10 @@
+{
+  "advent-tally_one": "{{count}} из {{total}} дверей открыто в этом году",
+  "advent-tally_other": "{{count}} из {{total}} дверей открыто в этом году",
+  "list-members_one": "{{count}} участник",
+  "list-members_other": "{{count}} участников",
+  "members-title_one": "Участники ({{count}})",
+  "members-title_other": "Участники ({{count}})",
+  "mixtape-title_one": "Ваш микс ({{count}}/{{max}})",
+  "mixtape-title_other": "Ваш микс ({{count}}/{{max}})"
+}

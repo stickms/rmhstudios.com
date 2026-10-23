@@ -1,0 +1,6 @@
+{
+  "ir-summary_one": "{{count}} تقرير · متوسط الصعوبة {{avg}}/5",
+  "ir-summary_other": "{{count}} تقرير · متوسط الصعوبة {{avg}}/5",
+  "rb-spots_one": "{{count}} مكان متبقٍ",
+  "rb-spots_other": "{{count}} مكان متبقٍ"
+}

@@ -1,0 +1,4 @@
+{
+  "admin-row_one": "{{size}}px, {{phase}}, {{count}}개 픽셀 배치됨",
+  "admin-row_other": "{{size}}px, {{phase}}, {{count}}개 픽셀 배치됨"
+}

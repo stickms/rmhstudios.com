@@ -1,0 +1,14 @@
+{
+  "folder-chat-count_one": "{{count}} 件のチャット",
+  "folder-chat-count_other": "{{count}} 件のチャット",
+  "forward-send_one": "{{count}} 件のチャットに送信",
+  "forward-send_other": "{{count}} 件のチャットに送信",
+  "pinned-bar-count_one": "{{count}} 件のピン留めメッセージ",
+  "pinned-bar-count_other": "{{count}} 件のピン留めメッセージ",
+  "poll-votes_one": "{{count}} 票",
+  "poll-votes_other": "{{count}} 票",
+  "thread-replies_one": "{{count}} 件の返信",
+  "thread-replies_other": "{{count}} 件の返信",
+  "thread-reply-count_one": "{{count}} 件の返信",
+  "thread-reply-count_other": "{{count}} 件の返信"
+}

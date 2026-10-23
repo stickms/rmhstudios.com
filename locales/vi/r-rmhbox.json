@@ -18,6 +18,7 @@
   "joining-lobby": "Đang tham gia sảnh {{lobbyId}}...",
   "leaderboard": "Bảng xếp hạng",
   "leave": "Rời đi",
+  "loading": "Loading…",
   "loading-detail": "Loading details…",
   "loading-history": "Đang tải lịch sử...",
   "match-history": "Lịch sử trận đấu",
@@ -28,11 +29,14 @@
   "pagination-next": "Tiếp theo",
   "pagination-previous": "Trước",
   "pagination-range": "{{from}}–{{to}} trong tổng số {{total}}",
+  "player-count-of-max_one": "{{count}}/{{max}} người chơi",
+  "player-count-of-max_other": "{{count}}/{{max}} players",
   "player-count_other": "{{count}} người chơi",
   "player-range": "{{minPlayers}}–{{maxPlayers}} người chơi",
   "pts": "điểm",
   "public-lobbies": "Sảnh Công khai",
   "refresh": "Làm mới",
+  "room-code": "Room code",
   "room-code-length": "Mã phòng phải gồm 6 ký tự",
   "search-by-fields": "Tìm kiếm theo {{fields}}, người chơi...",
   "search-games": "Tìm kiếm trò chơi...",
@@ -45,8 +49,5 @@
   "starting-game": "Đang bắt đầu trò chơi...",
   "view-minigames": "Xem Minigame",
   "winner-label": "Người thắng:",
-  "winner-none": "Không có",
-  "loading": "Loading…",
-  "room-code": "Room code",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "winner-none": "Không có"
 }

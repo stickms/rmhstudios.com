@@ -68,6 +68,24 @@ import trCVoidBreaker from "@/locales/tr/c-void-breaker.json";
 import trCWager from "@/locales/tr/c-wager.json";
 import trCWishlist from "@/locales/tr/c-wishlist.json";
 import trCommon from "@/locales/tr/common.json";
+import trFArcade from "@/locales/tr/f-arcade.json";
+import trFCanvas from "@/locales/tr/f-canvas.json";
+import trFCommunitiesPlus from "@/locales/tr/f-communities-plus.json";
+import trFCreative from "@/locales/tr/f-creative.json";
+import trFDelight from "@/locales/tr/f-delight.json";
+import trFDevplatform from "@/locales/tr/f-devplatform.json";
+import trFDiscovery from "@/locales/tr/f-discovery.json";
+import trFGifting from "@/locales/tr/f-gifting.json";
+import trFLadderHomes from "@/locales/tr/f-ladder-homes.json";
+import trFMessaging from "@/locales/tr/f-messaging.json";
+import trFOps from "@/locales/tr/f-ops.json";
+import trFParty from "@/locales/tr/f-party.json";
+import trFPostsPlus from "@/locales/tr/f-posts-plus.json";
+import trFReading from "@/locales/tr/f-reading.json";
+import trFSafety from "@/locales/tr/f-safety.json";
+import trFTools from "@/locales/tr/f-tools.json";
+import trFWatch from "@/locales/tr/f-watch.json";
+import trFWorlds from "@/locales/tr/f-worlds.json";
 import trFeed from "@/locales/tr/feed.json";
 import trGamesHub from "@/locales/tr/games-hub.json";
 import trGroups from "@/locales/tr/groups.json";
@@ -165,6 +183,24 @@ const trResources = {
   "c-wager": trCWager,
   "c-wishlist": trCWishlist,
   "common": trCommon,
+  "f-arcade": trFArcade,
+  "f-canvas": trFCanvas,
+  "f-communities-plus": trFCommunitiesPlus,
+  "f-creative": trFCreative,
+  "f-delight": trFDelight,
+  "f-devplatform": trFDevplatform,
+  "f-discovery": trFDiscovery,
+  "f-gifting": trFGifting,
+  "f-ladder-homes": trFLadderHomes,
+  "f-messaging": trFMessaging,
+  "f-ops": trFOps,
+  "f-party": trFParty,
+  "f-posts-plus": trFPostsPlus,
+  "f-reading": trFReading,
+  "f-safety": trFSafety,
+  "f-tools": trFTools,
+  "f-watch": trFWatch,
+  "f-worlds": trFWorlds,
   "feed": trFeed,
   "games-hub": trGamesHub,
   "groups": trGroups,

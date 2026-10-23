@@ -1,0 +1,5 @@
+{
+  "back-to-admin": "Back to admin",
+  "median-line_one": "Median time to finish: {{time}} ({{count}} players)",
+  "median-line_other": "Median time to finish: {{time}} ({{count}} players)"
+}

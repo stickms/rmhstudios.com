@@ -1,0 +1,14 @@
+{
+  "folder-chat-count_one": "{{count}} محادثة",
+  "folder-chat-count_other": "{{count}} محادثات",
+  "forward-send_one": "إرسال إلى {{count}} محادثة",
+  "forward-send_other": "إرسال إلى {{count}} محادثات",
+  "pinned-bar-count_one": "{{count}} رسالة مثبتة",
+  "pinned-bar-count_other": "{{count}} رسائل مثبتة",
+  "poll-votes_one": "{{count}} صوت",
+  "poll-votes_other": "{{count}} أصوات",
+  "thread-replies_one": "{{count}} رد",
+  "thread-replies_other": "{{count}} ردود",
+  "thread-reply-count_one": "{{count}} رد",
+  "thread-reply-count_other": "{{count}} ردود"
+}

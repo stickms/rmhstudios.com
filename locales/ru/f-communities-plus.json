@@ -1,0 +1,6 @@
+{
+  "automod-new_one": "Новое правило ({{count}} из {{max}})",
+  "automod-new_other": "Новое правило ({{count}} из {{max}})",
+  "flair-count_one": "{{count}} из {{max}} флаеров",
+  "flair-count_other": "{{count}} из {{max}} флаеров"
+}

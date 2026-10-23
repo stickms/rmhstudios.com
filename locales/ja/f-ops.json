@@ -1,0 +1,8 @@
+{
+  "dead-flagged_one": "統合候補 ({{count}})",
+  "dead-flagged_other": "統合候補 ({{count}})",
+  "errors-count_one": "{{count}} 件のイベント",
+  "errors-count_other": "{{count}} 件のイベント",
+  "notices-dismissed_one": "{{count}} 件を非表示",
+  "notices-dismissed_other": "{{count}} 件を非表示"
+}

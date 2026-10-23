@@ -58,6 +58,7 @@
   "joystick-side": "Joystick Side",
   "keybinds": "Keybinds",
   "keyboard-hint": "[Esc] resume · [W/S] navigate · [Space] select",
+  "keyboard-hint-level-up-screen_one": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
   "keyboard-hint_one": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
   "keyboard-hint_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
   "kick-player": "Kick player",

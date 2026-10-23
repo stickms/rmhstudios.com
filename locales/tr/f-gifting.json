@@ -1,0 +1,10 @@
+{
+  "advent-tally_one": "Bu yıl {{total}} kapıdan {{count}} tanesi açıldı",
+  "advent-tally_other": "Bu yıl {{total}} kapıdan {{count}} tanesi açıldı",
+  "list-members_one": "{{count}} üye",
+  "list-members_other": "{{count}} üye",
+  "members-title_one": "Üyeler ({{count}})",
+  "members-title_other": "Üyeler ({{count}})",
+  "mixtape-title_one": "Mixtape'in ({{count}}/{{max}})",
+  "mixtape-title_other": "Mixtape'in ({{count}}/{{max}})"
+}

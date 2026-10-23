@@ -1,0 +1,8 @@
+{
+  "dead-flagged_one": "Candidates for consolidation ({{count}})",
+  "dead-flagged_other": "Candidates for consolidation ({{count}})",
+  "errors-count_one": "{{count}} events",
+  "errors-count_other": "{{count}} events",
+  "notices-dismissed_one": "{{count}} dismissed",
+  "notices-dismissed_other": "{{count}} dismissed"
+}
