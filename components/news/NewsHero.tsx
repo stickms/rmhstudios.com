@@ -111,7 +111,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
         <div className="flex">
           {articles.map((article) => (
             <div key={article.slug} className="min-w-0 flex-[0_0_100%] px-3">
-              <article className="site-inverse relative flex min-h-64 flex-col justify-end overflow-hidden rounded-site border border-site-border bg-site-surface p-5 sm:min-h-80 sm:p-8 md:p-12">
+              <article className="glass-pane site-inverse relative flex min-h-64 flex-col justify-end overflow-hidden p-5 sm:min-h-80 sm:p-8 md:p-12">
                 <div
                   aria-hidden
                   className="absolute -right-20 -top-36 size-96 rounded-[44%_56%_62%_38%] bg-site-text opacity-8"
@@ -144,7 +144,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
           <button
             onClick={scrollPrev}
             data-slot="news-hero-control"
-            className="inline-flex size-11 shrink-0 touch-manipulation items-center justify-center rounded-site border border-site-border bg-site-surface text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg active:bg-site-surface-active"
+            className="glass-fill glass-interactive inline-flex size-11 shrink-0 touch-manipulation items-center justify-center text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg active:bg-site-surface-active"
             aria-label={t('prev-featured-article', {
               defaultValue: 'Previous featured article',
             })}
@@ -188,7 +188,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
           <button
             onClick={scrollNext}
             data-slot="news-hero-control"
-            className="inline-flex size-11 shrink-0 touch-manipulation items-center justify-center rounded-site border border-site-border bg-site-surface text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg active:bg-site-surface-active"
+            className="glass-fill glass-interactive inline-flex size-11 shrink-0 touch-manipulation items-center justify-center text-site-text transition-colors hover:bg-site-accent hover:text-site-accent-fg active:bg-site-surface-active"
             aria-label={t('next-featured-article', { defaultValue: 'Next featured article' })}
           >
             <ChevronRight className="size-4" aria-hidden />

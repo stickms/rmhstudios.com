@@ -314,7 +314,7 @@ export function AccountStandingPanel() {
                   )}
 
                   {s.appealText && (
-                    <div className="mt-3 rounded-site border border-site-border bg-site-bg/40 p-3">
+                    <div className="glass-fill mt-3 p-3">
                       <p className="text-xs font-semibold text-site-text-muted">
                         {t('your-appeal', { defaultValue: 'Your appeal' })}
                       </p>

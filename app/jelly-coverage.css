@@ -1,14 +1,418 @@
-/* Plasmatic Jelly — coverage adapters (docs/plans/plasmatic-jelly/04-coverage-a11y-perf.md §2.1; master plan §5,
-   wave 3 lane W3-A owns this file).
+/* Plasmatic Jelly — coverage adapters (docs/plans/plasmatic-jelly/04-coverage-a11y-perf.md §1 coverage map, §2.1
+   central first; 02-soft-body.md §3.2 modes; master plan §5, wave 3 lane W3-A).
 
-   Reserved for the central, selector-level adapters that bring surfaces the role classes do not reach onto the jelly
-   material without per-file edits: Radix popper content, sonner toasts, `[data-slot]` primitives, `[data-jelly]`
-   mode overrides (`off` | `lite` | `card` | `control`) and `[data-jelly-zone='playfield']` exclusions.
+   jelly-material.css gives the material to the ROLES (.glass-*, [data-slot=button|input|textarea]). This file brings
+   everything else onto it centrally, keyed on `data-slot` / `data-jelly` / library attributes, so no call site needs an
+   edit. Tier per element (04 §1: S shader · C CSS haze + carrier · L static haze/rim + press, no ambient · X none):
 
-   Rules for whoever fills it (same as app/jelly-material.css):
-   - tokens only (`--site-jelly-*`, `--site-glass-*`), no raw colours or radii;
-   - no backdrop-filter, no `url()` filters, no animated custom properties, no `infinite` animations;
-   - any handheld rule uses the exact query `(pointer: coarse) and (max-width: 1024px)` (handheld-tier.test.ts);
-   - jelly paint layers stay at a negative z-index inside an isolated host.
+     [data-jelly=card|pane|control|…] without a role   C   knobs + static floor + CSS rim (§1)
+     [data-jelly='lite']                               L   floor + rim, never a moving layer (§1)
+     [data-jelly='off'], playfield zones               X   no floor, no carrier, no haze canvas (§1, §8)
+     sonner toasts [data-sonner-toast]                 C   overlay knobs + floor + rim (§2; engine admission = S, 04 §1)
+     Switch: track inset, knob droplet                 C   (§3)
+     Slider: inset track, liquid range, droplet thumb  C   (§4)
+     Native input[type=range]                          L   rim on custom-drawn tracks/thumbs only (§5)
+     LiquidTabs selection thumb                        C   droplet (§6; the track is .glass-inset)
+     Badge, NotificationBadge                          L   static rim only, no press, no haze (§7)
+     UserAvatar                                        L   ring-only rim, nothing over the face (§7)
+     Skeleton                                          L   static haze + rim; its own drift is the only motion (§7)
+     Icon buttons                                      L   button material, no carrier (icon-button.tsx opts out)
 
-   Intentionally empty in wave 1: imported by globals.css so the import graph is final before W3 lands. */
+   Rules (same as app/jelly-material.css; gates: filter-cost-budget, design-consistency, handheld-tier):
+   - tokens only (`--site-jelly-*`, `--site-glass-*`), no raw colours, no radii other than `inherit`;
+   - no backdrop-filter, no filters, no animated custom properties, no transitions on box-shadow, no animations at all:
+     every moving layer is the shared `.jelly-flow` carrier from jelly-material.css;
+   - rims go through `--jelly-rim` so the degradation block (§9) can hand the theme's own `--site-shadow-sm` back
+     (high contrast draws its 1px ring with it) without an `!important` box-shadow that would also eat a `ring-*`;
+   - nothing here paints over a focus ring: rims are inset or a 1px ring, focus is a 2px outline outside the box. */
+
+@layer components {
+  /* ── 1. Generic opt-in: `data-jelly` on an element no role class reaches (02 §3.2) ──────────────────────────────────
+     Knobs per mode, so a CSS carrier the service attaches has the right palette, plus the static floor and the CSS
+     rim. A role class on the same element wins: these never restate a role's knobs. Utilities (a `bg-gradient-*`, a
+     `shadow-*`) still win on layer, so a host that paints its own image or shadow keeps it. */
+  :is([data-jelly='card'], [data-jelly='lift']):not(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      .glass-interactive,
+      .app-glass
+    ) {
+    --jelly-haze-a: var(--site-jelly-haze-fill);
+    --jelly-plasma-k: 0.05;
+    --jelly-flow-speed: 1;
+    --jelly-flow-axis-deg: 100deg;
+  }
+  [data-jelly='pane']:not(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      .glass-interactive,
+      .app-glass
+    ) {
+    --jelly-haze-a: var(--site-jelly-haze-pane);
+    --jelly-plasma-k: 0.06;
+    --jelly-flow-speed: 1;
+    --jelly-flow-axis-deg: 100deg;
+  }
+  /* Raw controls the migration tagged (`data-jelly` bare, or a press style): they have a surface of their own, so the
+     haze is the field-level whisper, not a card's. */
+  :is(
+      [data-jelly=''],
+      [data-jelly='control'],
+      [data-jelly='sink'],
+      [data-jelly='firm'],
+      [data-jelly='drag'],
+      [data-jelly='lite']
+    ):not(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      .glass-interactive,
+      .app-glass,
+      [data-slot]
+    ) {
+    --jelly-haze-a: var(--site-jelly-haze-inset);
+    --jelly-plasma-k: 0.04;
+    --jelly-flow-speed: 1.2;
+    --jelly-flow-axis-deg: 100deg;
+  }
+
+  /* Static floor + rim for every host this file owns. Declared on the host so `--jelly-haze-a` resolves there. */
+  :is(
+      [data-jelly]:not(
+          [data-jelly='off'],
+          [data-jelly='none'],
+          .glass-fill,
+          .glass-pane,
+          .glass-chrome,
+          .glass-overlay,
+          .glass-inset,
+          .glass-interactive,
+          .app-glass,
+          [data-slot]
+        ),
+      [data-slot='switch'],
+      [data-slot='skeleton']
+    ) {
+    --jelly-static-haze: radial-gradient(
+      120% 90% at 25% 15%,
+      color-mix(
+        in srgb,
+        var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 100%),
+        transparent
+      ),
+      color-mix(
+          in srgb,
+          var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
+          transparent
+        )
+        70%
+    );
+    --jelly-floor: var(--jelly-static-haze), var(--jelly-tile);
+    --jelly-floor-size: auto, var(--jelly-tile-size);
+    --jelly-rim:
+      inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 60%, transparent),
+      inset 0 0 14px -4px
+        color-mix(
+          in srgb,
+          var(--jelly-plasma-a, var(--site-jelly-plasma-a))
+            calc(
+              var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) *
+                220%
+            ),
+          transparent
+        );
+    background-image: var(--jelly-floor);
+    background-size: var(--jelly-floor-size);
+  }
+  :is(
+      [data-jelly]:not(
+          [data-jelly='off'],
+          [data-jelly='none'],
+          .glass-fill,
+          .glass-pane,
+          .glass-chrome,
+          .glass-overlay,
+          .glass-inset,
+          .glass-interactive,
+          .app-glass,
+          [data-slot]
+        ),
+      [data-slot='switch'],
+      [data-slot='skeleton']
+    ):not([data-liquid-canvas='on']) {
+    box-shadow: var(--jelly-rim, var(--site-shadow-sm));
+  }
+  /* A carrier draws the haze: the floor steps aside (perf-lite keeps the floor; no carrier runs there). */
+  html:not(.perf-lite)
+    :is([data-jelly], [data-slot='switch'], [data-slot='skeleton'])[data-jelly-flow='on'] {
+    --jelly-floor: none, none;
+  }
+
+  /* `lite` (04 C1 tier L): rim, static haze and press, never a moving layer. The carrier service is also told to
+     skip these (`data-jelly-flow="off"` at the call site); this is the backstop for a host that forgot. */
+  [data-jelly='lite'] > .jelly-flow {
+    display: none;
+  }
+
+  /* Opted out (02 §3.2): no floor and no carrier. Its own box-shadow is left alone — an opt-out removes jelly, it
+     does not restyle the element. */
+  :is([data-jelly='off'], [data-jelly='none']) {
+    --jelly-floor: none, none;
+  }
+  :is([data-jelly='off'], [data-jelly='none']) > .jelly-flow {
+    display: none;
+  }
+
+  /* ── 3. Switch (04 §1: C — the track is an inset, the knob a droplet) ───────────────────────────────────────────────
+     The track takes the field knobs; the accent `::before` that everts out of the knob (globals.css §7.3) paints over
+     the floor when on, so the haze shows only on the off surface. The knob is a lit drop: a specular cap high on the
+     left plus a lit rim, over whichever ink the state gives it (accent-fg on, text off). */
+  [data-slot='switch'] {
+    --jelly-haze-a: var(--site-jelly-haze-inset);
+    --jelly-plasma-k: 0.04;
+    --jelly-flow-speed: 0.6;
+    --jelly-flow-axis-deg: 90deg;
+  }
+  [data-slot='switch'] > [data-switch-knob] {
+    background-image: radial-gradient(
+      70% 60% at 35% 28%,
+      color-mix(in srgb, var(--site-glass-light) 70%, transparent),
+      transparent 72%
+    );
+    --jelly-rim:
+      inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 75%, transparent),
+      inset 0 -1px 2px
+        color-mix(
+          in srgb,
+          var(--site-jelly-plasma-a) calc(var(--site-jelly-plasma, 1) * 18%),
+          transparent
+        );
+    box-shadow: var(--jelly-rim, var(--site-shadow-sm));
+  }
+
+  /* ── 4. Slider primitive (04 §1: C — inset track, liquid range, droplet thumb) ───────────────────────────────────
+     The track stays a flush fill (slider.tsx: the field tier is never a deboss): only the faint plasma subsurface
+     glow. The range gets the liquid's top light; the thumb is the same droplet as the switch knob. */
+  [data-slot='slider-track'] {
+    --jelly-rim: inset 0 0 6px -2px
+      color-mix(
+        in srgb,
+        var(--site-jelly-plasma-a) calc(var(--site-jelly-plasma, 1) * 22%),
+        transparent
+      );
+    box-shadow: var(--jelly-rim, none);
+  }
+  [data-slot='slider-range'] {
+    background-image: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--site-glass-light) 45%, transparent),
+      transparent 65%
+    );
+  }
+  [data-slot='slider-thumb'] {
+    background-image: radial-gradient(
+      70% 60% at 35% 28%,
+      color-mix(in srgb, var(--site-glass-light) 70%, transparent),
+      transparent 72%
+    );
+    --jelly-rim:
+      inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 75%, transparent),
+      inset 0 0 6px -2px
+        color-mix(
+          in srgb,
+          var(--site-jelly-plasma-a) calc(var(--site-jelly-plasma, 1) * 30%),
+          transparent
+        );
+    box-shadow: var(--jelly-rim, var(--site-shadow-sm));
+  }
+
+  /* ── 5. Native range inputs (04 §1: L, centralised rather than migrated — 55 sites, mostly games and apps) ───────
+     Only a custom-drawn track or thumb (`appearance: none`) paints these; a native one ignores box-shadow, so the
+     rule is a no-op there by construction. Zero specificity, so a game's own thumb styling wins. One rule per vendor
+     pseudo-element: an unknown pseudo would invalidate a shared list. */
+  :where(input[type='range'])::-webkit-slider-thumb {
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 70%, transparent);
+  }
+  :where(input[type='range'])::-moz-range-thumb {
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 70%, transparent);
+  }
+  :where(input[type='range'])::-webkit-slider-runnable-track {
+    box-shadow: inset 0 0 6px -2px
+      color-mix(
+        in srgb,
+        var(--site-jelly-plasma-a) calc(var(--site-jelly-plasma, 1) * 22%),
+        transparent
+      );
+  }
+  :where(input[type='range'])::-moz-range-track {
+    box-shadow: inset 0 0 6px -2px
+      color-mix(
+        in srgb,
+        var(--site-jelly-plasma-a) calc(var(--site-jelly-plasma, 1) * 22%),
+        transparent
+      );
+  }
+
+  /* ── 7. Tier L primitives: static rim, no press of their own, nothing that moves ────────────────────────────────
+     Badges and counts: a pulsing count would be WCAG 2.2.2 motion that carries meaning (04 §1), so rim only. They are
+     deliberately NOT `[data-jelly]` hosts: they sit inside buttons and card links, and the soft body resolves the
+     nearest `[data-jelly]` ancestor of the pointer — a badge host would swallow its button's press. */
+  [data-slot='badge'] {
+    --jelly-rim: inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 45%, transparent);
+    box-shadow: var(--jelly-rim, none);
+  }
+  [data-slot='notification-badge'] {
+    --jelly-rim: inset 0 1px 0 var(--site-glass-rim-soft);
+    box-shadow: var(--jelly-rim, none);
+  }
+  /* Avatars: a ring-only rim (no haze over faces). An inset shadow on an <img> is painted under the image, so the
+     rim is a 1px ring just outside it. */
+  [data-slot='avatar'] {
+    --jelly-rim: 0 0 0 1px color-mix(in srgb, var(--site-glass-light) 40%, transparent);
+    box-shadow: var(--jelly-rim, none);
+  }
+  /* Skeletons: the static haze of a card at rest. Its own light drift (globals.css) is the only motion: a loading
+     shimmer must not stack on jelly motion (04 §1), so no carrier ever attaches (skeleton.tsx opts out). */
+  [data-slot='skeleton'] {
+    --jelly-haze-a: var(--site-jelly-haze-fill);
+    --jelly-plasma-k: 0.04;
+  }
+}
+
+/* ── 2. Sonner toasts (04 §1: overlay knobs; Providers.tsx explains why a toast cannot take `.glass-overlay`) ────────
+   Unlayered and one `[data-sonner-toaster]` deeper than sonner's own `[data-sonner-toast][data-styled='true']` rule,
+   which it injects unlayered after ours with a `background` shorthand and a drop shadow. The toast's fill colour is
+   inline (Providers.tsx `toastOptions.style.backgroundColor`); the floor and the rim come from here. */
+html [data-sonner-toaster] [data-sonner-toast] {
+  --jelly-haze-a: var(--site-jelly-haze-overlay);
+  --jelly-plasma-k: 0.07;
+  --jelly-flow-speed: 0.6;
+  --jelly-flow-axis-deg: 100deg;
+  --jelly-static-haze: radial-gradient(
+    120% 90% at 25% 15%,
+    color-mix(
+      in srgb,
+      var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 100%),
+      transparent
+    ),
+    color-mix(
+        in srgb,
+        var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
+        transparent
+      )
+      70%
+  );
+  --jelly-floor: var(--jelly-static-haze), var(--jelly-tile);
+  --jelly-floor-size: auto, var(--jelly-tile-size);
+  --jelly-rim:
+    inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 60%, transparent),
+    inset 0 0 14px -4px
+      color-mix(
+        in srgb,
+        var(--jelly-plasma-a, var(--site-jelly-plasma-a))
+          calc(
+            var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) * 220%
+          ),
+        transparent
+      );
+  background-image: var(--jelly-floor);
+  background-size: var(--jelly-floor-size);
+  box-shadow: var(--jelly-rim, var(--site-shadow-sm));
+}
+html:not(.perf-lite) [data-sonner-toaster] [data-sonner-toast][data-jelly-flow='on'] {
+  --jelly-floor: none, none;
+}
+
+/* ── 6. LiquidTabs selection thumb (04 §1: C — a droplet; the strip's track is `.glass-inset`) ─────────────────────
+   Unlayered and one `[data-slot]` deeper than globals.css's `[data-tab-thumb]`, whose `background` shorthand would
+   otherwise reset the image. The thumb's colour stays `--tab-thumb-bg` (themes and games re-skin it); the droplet is
+   a specular cap and a lit rim over it. */
+:is([data-slot='liquid-tabs'], [data-slot='liquid-tabs-sheet']) [data-tab-thumb] {
+  background-image: radial-gradient(
+    90% 70% at 30% 20%,
+    color-mix(in srgb, var(--site-glass-light) 45%, transparent),
+    transparent 70%
+  );
+  --jelly-rim:
+    inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 65%, transparent),
+    inset 0 0 10px -4px
+      color-mix(
+        in srgb,
+        var(--jelly-plasma-a, var(--site-jelly-plasma-a)) calc(var(--site-jelly-plasma, 1) * 14%),
+        transparent
+      );
+  box-shadow: var(--jelly-rim, none);
+}
+
+/* ── 8. Zones (04 §1, §3.2) ────────────────────────────────────────────────────────────────────────────────────────
+   A play-field is never jelly: no carrier, no haze canvas, no floor inside it — whatever role a board tile carries.
+   A HUD while the game is in play is tier L: its carriers already pause (jelly-material.css §6); here they go. */
+[data-jelly-zone='playfield'] :is(.jelly-flow, .jelly-haze-canvas),
+html[data-game-state='playing'] [data-jelly-zone='hud'] :is(.jelly-flow, .jelly-haze-canvas) {
+  display: none !important;
+}
+[data-jelly-zone='playfield'],
+[data-jelly-zone='playfield'] * {
+  --jelly-floor: none, none;
+}
+
+/* ── 9. Degradation (01 D8, 04 §4.7) ─────────────────────────────────────────────────────────────────────────────────
+   High contrast (site + app), reduced transparency (OS + setting), forced colours and print: none of this file's
+   material. The floor goes, the droplet caps go, and every rim goes back to what the element had before jelly: nothing,
+   or — on the three controls that used to carry `shadow-site-sm` — the theme's own `--site-shadow-sm` (high contrast
+   draws its 1px ring with it). `perf-lite` keeps all of it: it is static. `!important` because these are
+   accessibility contracts, not looks; only custom properties and images are forced, never `box-shadow` itself, so a
+   `ring-*` focus utility is untouched. */
+:is(.reduce-transparency, .style-high-contrast, .app-high-contrast)
+  :is(
+    [data-jelly],
+    [data-sonner-toast],
+    [data-slot='skeleton'],
+    [data-slot='slider-track'],
+    [data-slot='badge'],
+    [data-slot='notification-badge'],
+    [data-slot='avatar'],
+    [data-tab-thumb]
+  ) {
+  --jelly-floor: none, none !important;
+  --jelly-rim: none !important;
+}
+:is(.reduce-transparency, .style-high-contrast, .app-high-contrast)
+  :is([data-slot='switch'], [data-switch-knob], [data-slot='slider-thumb']) {
+  --jelly-floor: none, none !important;
+  --jelly-rim: var(--site-shadow-sm) !important;
+}
+:is(.reduce-transparency, .style-high-contrast, .app-high-contrast)
+  :is([data-switch-knob], [data-tab-thumb], [data-slot='slider-thumb'], [data-slot='slider-range']) {
+  background-image: none !important;
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active), print {
+  :is(
+    [data-jelly],
+    [data-sonner-toast],
+    [data-slot='skeleton'],
+    [data-slot='slider-track'],
+    [data-slot='badge'],
+    [data-slot='notification-badge'],
+    [data-slot='avatar'],
+    [data-tab-thumb]
+  ) {
+    --jelly-floor: none, none !important;
+    --jelly-rim: none !important;
+  }
+  :is([data-slot='switch'], [data-switch-knob], [data-slot='slider-thumb']) {
+    --jelly-floor: none, none !important;
+    --jelly-rim: var(--site-shadow-sm) !important;
+  }
+  :is([data-switch-knob], [data-tab-thumb], [data-slot='slider-thumb'], [data-slot='slider-range']) {
+    background-image: none !important;
+  }
+}

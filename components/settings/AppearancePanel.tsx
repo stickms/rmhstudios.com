@@ -216,10 +216,10 @@ export function AppearancePanel() {
               aria-checked={store.colorVision === mode}
               onClick={() => setColorVision(mode)}
               className={cn(
-                'rounded-site-sm px-3 py-2 text-left transition-colors',
+                'glass-fill glass-interactive rounded-site-sm px-3 py-2 text-left transition-colors',
                 store.colorVision === mode
-                  ? 'bg-site-accent text-site-accent-fg'
-                  : 'border border-site-border bg-site-surface text-site-text hover:border-site-text/40',
+                  ? 'border-site-accent bg-site-accent text-site-accent-fg'
+                  : 'text-site-text hover:border-site-text/40',
               )}
             >
               <span className="block text-sm font-medium">

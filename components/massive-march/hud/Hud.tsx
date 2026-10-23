@@ -99,6 +99,7 @@ export function Hud({
     <div
       className={cn('app-hud pointer-events-none z-10', largeText && 'text-[1.08em]')}
       data-mm-hud
+      data-jelly-zone="hud"
     >
       {/* ── Click to look ─────────────────────────────────────────────────── */}
       {!locked && !modal && !touch ? (

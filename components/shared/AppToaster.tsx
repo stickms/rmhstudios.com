@@ -22,10 +22,21 @@ const ICON: Record<ToastType, React.ReactNode> = {
 };
 
 const TONE: Record<ToastType, string> = {
-  success: 'border-s-(--app-success) text-(--app-success)',
-  error: 'border-s-(--app-danger) text-(--app-danger)',
-  warning: 'border-s-(--app-warning) text-(--app-warning)',
-  info: 'border-s-(--app-info) text-(--app-info)',
+  success: 'text-(--app-success)',
+  error: 'text-(--app-danger)',
+  warning: 'text-(--app-warning)',
+  info: 'text-(--app-info)',
+};
+
+/**
+ * The tone stripe. Inline because the toast is an `.app-glass` host (Plasmatic Jelly coverage, 04 §1 "App toasts"),
+ * whose unlayered `border` shorthand would otherwise beat a `border-s-*` utility and erase the stripe.
+ */
+const STRIPE: Record<ToastType, string> = {
+  success: 'var(--app-success)',
+  error: 'var(--app-danger)',
+  warning: 'var(--app-warning)',
+  info: 'var(--app-info)',
 };
 
 /**
@@ -51,6 +62,7 @@ export default function AppToaster() {
     <div
       className="pointer-events-none fixed inset-x-0 top-0 z-100 flex flex-col items-center gap-2 px-3 pt-[calc(var(--app-safe-top)+1rem)]"
       role="region"
+      data-jelly-arcs="off"
       aria-label={t('notifications', { defaultValue: 'Notifications' })}
     >
       {toasts.map((toast) => (
@@ -58,10 +70,17 @@ export default function AppToaster() {
           key={toast.id}
           role={LIVE[toast.type] === 'assertive' ? 'alert' : 'status'}
           aria-live={LIVE[toast.type]}
-          className={`pointer-events-auto flex w-full max-w-[420px] items-center gap-3 rounded-(--app-radius-sm) border-s-4 px-4 py-3 shadow-(--app-shadow) ${
+          // `.app-glass`: the toast is jelly like every other app surface (04 §1 "App toasts", tier S) — the engine
+          // draws its rim and haze, the static floor stands in without WebGL, and `relative` gives those layers their
+          // box. It keeps its opaque fill: it lands over a running game, where a translucent message would ghost.
+          className={`app-glass pointer-events-auto relative flex w-full max-w-[420px] items-center gap-3 rounded-(--app-radius-sm) px-4 py-3 ${
             toast.exiting ? 'app-toast-exit' : 'app-toast-enter'
           } ${TONE[toast.type]}`}
-          style={{ backgroundColor: 'var(--app-toast-bg)' }}
+          style={{
+            backgroundColor: 'var(--app-toast-bg)',
+            borderInlineStartWidth: 4,
+            borderInlineStartColor: STRIPE[toast.type],
+          }}
         >
           {ICON[toast.type]}
           {/* Server messages can carry a long unbroken token (a room code, a

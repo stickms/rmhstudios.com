@@ -79,7 +79,7 @@ export function MobileControls({ input, onReload, onAbility, onJump, onBuyToggle
     // dragged — the look surface, the joystick, the fire button under a thumb
     // that never lifts. Nothing in here is text, so nothing in here should
     // highlight, pop an iOS callout, or flash a tap highlight mid-fight.
-    <div className="bp-mobile" data-gesture="">
+    <div className="bp-mobile" data-gesture="" data-jelly-scope="off">
       {/* look layer */}
       <div
         className="bp-look-layer"

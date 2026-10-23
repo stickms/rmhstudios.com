@@ -71,8 +71,13 @@ export const arcFlashLedger: FlashLedger = createFlashLedger();
 /** The hub is open or an eversion is running: arcs are off (§2.3 global-off list). */
 export const HUB_OR_EVERSION_SELECTOR = '.radial-hub:not([data-phase="closed"]),.eversion-overlay';
 
-/** Candidates inside these never arc. */
-const CANDIDATE_BLOCK = '[aria-hidden="true"],[inert],[data-jelly-arcs="off"]';
+/**
+ * Never an arc endpoint (05 §2 N7, 04 §4.4): hidden or inert subtrees and explicit opt-outs; fields, where a bolt
+ * would cross the caret and the text being typed; and the text-bearing L4 tier — menus, popovers and toasts, which are
+ * read while they are open. Matched with `closest`, so anything inside them is excluded too.
+ */
+const CANDIDATE_BLOCK =
+  '[aria-hidden="true"],[inert],[data-jelly-arcs="off"],.glass-inset,[data-slot="input"],[data-slot="textarea"],input,textarea,select,.glass-overlay,[data-sonner-toaster],[data-sonner-toast]';
 
 /** Charge a soft-body release adds, per unit of release energy. */
 const RELEASE_CHARGE = 0.5;

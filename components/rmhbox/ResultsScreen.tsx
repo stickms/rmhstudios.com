@@ -113,7 +113,7 @@ export default function ResultsScreen({
 
       {/* Full rankings */}
       {rankings.length > 0 && (
-        <motion.div {...fadeInProps(0.3)} className="mb-6 rounded-(--app-radius) bg-(--app-surface) border border-(--app-border) p-4">
+        <motion.div {...fadeInProps(0.3)} className="mb-6 rounded-(--app-radius) app-glass p-4">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
             {t("all-players", { defaultValue: "All Players" })}
           </h3>
@@ -133,7 +133,7 @@ export default function ResultsScreen({
 
       {/* Awards */}
       {awards.length > 0 && (
-        <motion.div {...fadeInProps(0.45)} className="mb-6 rounded-(--app-radius) bg-(--app-surface) border border-(--app-border) p-4">
+        <motion.div {...fadeInProps(0.45)} className="mb-6 rounded-(--app-radius) app-glass p-4">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
             <AwardIcon className="h-4 w-4" /> {t("awards", { defaultValue: "Awards" })}
           </h3>
@@ -160,7 +160,7 @@ export default function ResultsScreen({
 
       {/* Session standings */}
       {sessionStandings.length > 0 && (
-        <motion.div {...fadeInProps(0.6)} className="mb-6 rounded-(--app-radius) bg-(--app-surface) border border-(--app-border) p-4">
+        <motion.div {...fadeInProps(0.6)} className="mb-6 rounded-(--app-radius) app-glass p-4">
           <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
             {t("session-standings", { defaultValue: "Session Standings" })}
           </h3>

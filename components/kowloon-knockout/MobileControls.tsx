@@ -53,7 +53,7 @@ export default function MobileControls({ input }: { input: LocalInputSource }) {
         // `right: 24` are on precisely the two edges a phone puts its sensor
         // housing and home indicator on — every offset below is now measured
         // from the first pixel the hardware leaves alone.
-        <div className="app-hud" style={{ pointerEvents: 'none', touchAction: 'none' }}>
+        <div className="app-hud" style={{ pointerEvents: 'none', touchAction: 'none' }} data-jelly-zone="hud" data-jelly-scope="off">
             {/* Movement thumbstick */}
             <div
                 ref={joyBase}

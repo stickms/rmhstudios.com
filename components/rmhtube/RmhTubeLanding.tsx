@@ -168,7 +168,7 @@ export default function RmhTubeLanding() {
           {/* Create & Join */}
           <div className="grid md:grid-cols-2 gap-6">
             {/* Create Room */}
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) app-glass p-6">
               <h2 className="text-xl font-semibold mb-4">{t("create-room", { defaultValue: "Create Room" })}</h2>
               <p className="text-sm mb-4 text-(--app-text-muted)">
                 {t("create-room-desc", { defaultValue: "Start a new watch session and invite friends." })}
@@ -183,7 +183,7 @@ export default function RmhTubeLanding() {
             </div>
 
             {/* Join Room */}
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) app-glass p-6">
               <h2 className="text-xl font-semibold mb-4">{t("join-room", { defaultValue: "Join Room" })}</h2>
               <p className="text-sm mb-4 text-(--app-text-muted)">
                 {t("join-room-desc", { defaultValue: "Enter a 6-character room code to join." })}
@@ -212,7 +212,7 @@ export default function RmhTubeLanding() {
 
           {/* Favorite Rooms (Phase 4) */}
           {favoriteRooms.length > 0 && (
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) app-glass p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Star className="h-5 w-5 text-(--app-warning)" />
                 <h2 className="text-xl font-semibold">{t("favorites", { defaultValue: "Favorites" })}</h2>
@@ -246,7 +246,7 @@ export default function RmhTubeLanding() {
           )}
 
           {/* Public Rooms */}
-          <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+          <div className="rounded-(--app-radius) app-glass p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">{t("public-rooms", { defaultValue: "Public Rooms" })}</h2>
               <button
@@ -301,7 +301,7 @@ export default function RmhTubeLanding() {
 
           {/* Recent Rooms — only shows rooms that are currently open */}
           {openRecentRooms.length > 0 && (
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) app-glass p-6">
               <div className="flex items-center gap-2 mb-4">
                 <History className="h-5 w-5 text-(--app-info)" />
                 <h2 className="text-xl font-semibold">{t("recent-rooms", { defaultValue: "Recent Rooms" })}</h2>

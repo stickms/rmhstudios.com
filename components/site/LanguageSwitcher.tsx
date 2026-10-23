@@ -136,7 +136,7 @@ export function LanguageSwitcher() {
         aria-label={label}
         title={label}
         className={cn(
-          "inline-flex items-center gap-2 rounded-site-sm border border-site-border bg-site-surface px-2.5 py-1.5",
+          "glass-inset inline-flex items-center gap-2 rounded-site-sm px-2.5 py-1.5",
           "text-sm text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-site-accent focus-visible:ring-offset-1 focus-visible:ring-offset-site-bg",
           open && "bg-site-surface-hover text-site-text",

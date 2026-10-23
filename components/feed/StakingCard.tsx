@@ -120,7 +120,7 @@ export function StakingCard() {
  onChange={(e) => setAmount(e.target.value)}
  placeholder={t("amount-placeholder", { defaultValue:"Amount"})}
  aria-label={t("coins-aria-label", { defaultValue:"Coins to stake or unstake"})}
- className="w-full rounded-site-sm border border-site-border bg-site-bg px-2.5 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
+ className="glass-inset border w-full rounded-site-sm px-2.5 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <Button
  size="sm"

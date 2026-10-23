@@ -103,7 +103,7 @@ import { clearScene, publishScene } from './scene-store';
  * full of them never starves a card or a menu.
  */
 const SELECTOR =
-  '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass],.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"]';
+  '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass],.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"],[data-sonner-toast]';
 const EXCLUDE =
   '[data-jelly="off"],[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,.radial-globe__stage,.radial-hub__orb,.eversion-overlay,canvas,input,textarea,select';
 /** Nodes this engine and the other jelly services insert: never surfaces, never "content changed". */

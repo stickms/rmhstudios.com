@@ -164,7 +164,7 @@ export function LineArrangePuzzle() {
       </div>
 
       {/* Sortable lines */}
-      <div className="flex-1 p-4 md:p-6">
+      <div className="flex-1 p-4 md:p-6" data-jelly-zone="playfield">
         <div className="max-w-2xl mx-auto">
           <DndContext
             sensors={sensors}

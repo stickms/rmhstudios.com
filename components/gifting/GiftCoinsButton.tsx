@@ -19,6 +19,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
 const QUICK_AMOUNTS = [10, 25, 50, 100, 250];
@@ -131,6 +133,7 @@ export function GiftCoinsButton({
                 type="button"
                 onClick={() => setAmount(a)}
                 aria-pressed={amount === a}
+                data-jelly
                 className={`rounded-site-sm border px-3 py-1.5 text-sm font-semibold transition-colors ${
                   amount === a
                     ? 'border-site-accent bg-site-accent-dim text-site-text'
@@ -144,7 +147,7 @@ export function GiftCoinsButton({
 
           <label className="block text-xs text-site-text-muted">
             {t('gift-coins-custom-amount', { defaultValue: 'Custom amount' })}
-            <input
+            <Input
               type="number"
               min={MIN}
               max={MAX}
@@ -152,11 +155,11 @@ export function GiftCoinsButton({
               onChange={(e) =>
                 setAmount(Math.min(MAX, Math.max(MIN, parseInt(e.target.value, 10) || MIN)))
               }
-              className="mt-1 w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text focus:border-site-accent focus:outline-none"
+              className="mt-1 h-auto px-3 py-2"
             />
           </label>
 
-          <textarea
+          <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={280}
@@ -164,7 +167,7 @@ export function GiftCoinsButton({
             placeholder={t('gift-coins-note-placeholder', {
               defaultValue: 'Add a message (optional)',
             })}
-            className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+            className="min-h-0 resize-none px-3 py-2"
           />
 
           <label className="flex items-center gap-2 text-sm text-site-text-muted">

@@ -2,7 +2,7 @@
 
 import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useRouterState } from '@tanstack/react-router';
-import { Bell, MessageCircle, Search } from 'lucide-react';
+import { Bell, MessageCircle, Search, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -19,7 +19,7 @@ import { TabBadge } from '@/components/site/TabBadge';
 import { openCommandPalette } from '@/components/site/command-palette-bus';
 
 /**
- * The four quick panels, behind a lazy boundary — same treatment, and the same
+ * The quick panels, behind a lazy boundary — same treatment, and the same
  * reasoning, as the nav globe in `RadialHub`.
  *
  * `TopBarPanels` was statically imported here, so every `_site` page shipped
@@ -30,8 +30,8 @@ import { openCommandPalette } from '@/components/site/command-palette-bus';
  * load regardless. That parse is main-thread time, which is the axis a phone
  * pays 4–6× on.
  *
- * All four `lazy()` calls name the SAME module, so they resolve to one chunk
- * fetched once — not four.
+ * All the `lazy()` calls name the SAME module, so they resolve to one chunk
+ * fetched once — not one each.
  */
 const NotificationsPanel = lazy(() =>
   import('./TopBarPanels').then((m) => ({ default: m.NotificationsPanel })),
@@ -41,6 +41,9 @@ const MessagesPanel = lazy(() =>
 );
 const ProfilePanel = lazy(() =>
   import('./TopBarPanels').then((m) => ({ default: m.ProfilePanel })),
+);
+const DisplayPanel = lazy(() =>
+  import('./TopBarPanels').then((m) => ({ default: m.DisplayPanel })),
 );
 
 let panelsPreloaded = false;
@@ -124,7 +127,7 @@ function RadialBackdrop() {
   );
 }
 
-type QuickPanelId = 'notifications' | 'messages' | 'profile';
+type QuickPanelId = 'notifications' | 'messages' | 'profile' | 'display';
 
 /**
  * Slim, quiet utility bar. Identity + search + inbox; the radial hub owns nav.
@@ -159,6 +162,7 @@ function RadialTopBar() {
   const messagesRef = useRef<HTMLButtonElement | null>(null);
   const bellRef = useRef<HTMLButtonElement | null>(null);
   const avatarRef = useRef<HTMLButtonElement | null>(null);
+  const displayRef = useRef<HTMLButtonElement | null>(null);
 
   const unread = useUnreadCount(signedIn);
   const { count: notifications } = useNotificationCount(signedIn);
@@ -299,15 +303,36 @@ function RadialTopBar() {
             role="status"
           />
         ) : (
-          <Link
-            to="/login"
-            search={{ callbackURL: undefined }}
-            className="radial-topbar__signin"
-            data-evert=""
-            data-fluid-press=""
-          >
-            {t('sign-in', { defaultValue: 'Sign in' })}
-          </Link>
+          <>
+            {/* Signed out there is no profile panel, so its "Pause ambient motion"
+                control (WCAG 2.2.2) gets a panel of its own — DisplayPanel. */}
+            <button
+              type="button"
+              ref={displayRef}
+              className="radial-topbar__btn"
+              data-evert=""
+              data-fluid-press=""
+              onClick={() => toggle('display')}
+              {...panelIntentProps}
+              aria-haspopup="dialog"
+              aria-expanded={panel === 'display'}
+              aria-label={t('display-settings', { defaultValue: 'Display settings' })}
+            >
+              <SlidersHorizontal aria-hidden />
+            </button>
+            <LazyPanel mounted={panelsMounted}>
+              <DisplayPanel open={panel === 'display'} onClose={close} anchorRef={displayRef} />
+            </LazyPanel>
+            <Link
+              to="/login"
+              search={{ callbackURL: undefined }}
+              className="radial-topbar__signin"
+              data-evert=""
+              data-fluid-press=""
+            >
+              {t('sign-in', { defaultValue: 'Sign in' })}
+            </Link>
+          </>
         )}
       </div>
     </header>

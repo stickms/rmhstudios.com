@@ -110,7 +110,7 @@ const VOID_TAGS = new Set([
 
 /** Per-host opt-outs on top of the registry's (which already drops `[data-jelly="off"]` and friends). */
 const CARRIER_EXCLUDE =
-  '[data-jelly-flow="off"],[contenteditable="true"],[contenteditable=""],[data-slot="button"][data-variant="ghost"],[data-slot="button"][data-variant="link"]';
+  '[data-jelly-flow="off"],[data-jelly="lite"],[contenteditable="true"],[contenteditable=""],[data-slot="button"][data-variant="ghost"],[data-slot="button"][data-variant="link"]';
 
 /** Fields: the carrier is a rim-only band so the caret's interior stays still (01 §5.5). */
 const FIELD_SELECTOR = '.glass-inset,[data-slot="input"],[data-slot="textarea"]';

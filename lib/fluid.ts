@@ -7,7 +7,8 @@
  * one has a formula:
  *
  * 1. **Instantaneous response.** A surface reacts on touch-DOWN, never on click
- *    or after a recognition delay. (Owned by `hooks/useFluidPress`.)
+ *    or after a recognition delay. (Owned by the soft-body service,
+ *    `lib/jelly/physics.ts`, which absorbed the old `useFluidPress` press layer.)
  * 2. **Interruptible, and redirectable mid-flight.** Motion is driven by a
  *    SPRING carrying position *and velocity*, so grabbing something already in
  *    motion retargets it from where it is and how fast it is going, instead of

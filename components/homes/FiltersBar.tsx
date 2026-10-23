@@ -208,6 +208,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                     key={t}
                     type="button"
                     onClick={() => togglePropertyType(t)}
+                    data-jelly
                     className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
                       active
                         ? 'border-site-accent bg-site-accent-dim text-site-accent'

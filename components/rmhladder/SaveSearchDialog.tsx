@@ -80,7 +80,7 @@ export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
               }}
             />
           </div>
-          <label className="flex min-h-11 items-center gap-3 rounded-site-sm border border-site-border p-3 text-sm text-site-text">
+          <label className="glass-fill flex min-h-11 items-center gap-3 rounded-site-sm p-3 text-sm text-site-text">
             <input
               type="checkbox"
               checked={alertsOn}

@@ -38,25 +38,36 @@ feature lives in that feature's directory; genuinely shared primitives live in
   toasts — CI-enforced, because L1 is not a slab and a menu on it ghosts),
   `.glass-inset` for fields. `bg-site-surface border border-site-border
 rounded-site shadow-site-sm` renders the same _box_ and none of the
-  _material_ — no bevel, no light, and nothing for high-contrast / reduced
-  transparency / `perf-lite` to switch off. Budget: at most 8 visible shader slabs
-  (`lib/liquid/glass/policy.ts`; roles first, cards, then controls). **No box-shadow
+  _material_ — no haze, no rim, no soft body, and nothing for high-contrast /
+  reduced transparency / `perf-lite` to switch off. Budget per tier
+  (`lib/jelly/tiers.ts`): at most 24 rim slabs, 8 animated haze canvases and 24 CSS
+  flow carriers on a desktop, fewer on phones (roles first, cards, then controls). **No box-shadow
   on any UI surface** — shadow tokens are zero; the refracting edge is the depth.
-- **Liquid material.** `pane`/`chrome`/`overlay` (and the app tier's `app-glass`)
-  are drawn by `lib/liquid/glass/engine.ts`: a canvas appended as the host's LAST
-  child, painted behind its content (`z-index: -2` in an isolated stacking
-  context, under the eversion hover layer at -1), transparent in the middle and refracting/lit at the rim. **There is no
-  `backdrop-filter` in any glass role, and you must not add one**: it is the one
-  primitive engines disagree on, and it is what made glass look frosted instead of
-  liquid. Floating glass (`chrome`, `overlay`) refracts a snapshot of the page; a
-  `pane` is lit only unless it opts in (`data-liquid-glass="refract"`, keep text
-  away from its edge). Opt out with `data-liquid-material="off"`; use
-  `data-liquid-motion="off"` on gesture subtrees. Do not put `:first-child` /
-  `:last-child` rules on the direct children of a glass role (the canvas is one).
-  Never add per-card pointer listeners, animate gradient positions, or write
-  inherited root variables in frames. `app/liquid-glass.css` is the complete
-  fallback tier. `lib/liquid/runtime.ts` provides fallback cursor lighting; clicks never push or bounce neighbouring surfaces. See
-  [`docs/liquid-glass-system.md`](../docs/liquid-glass-system.md).
+- **Plasmatic Jelly material.** Every role is a hazy translucent slab with
+  always-on internal motion, the refracting lit rim of liquid glass, a soft body
+  and electric arcs — all drawn by document services, never by a component.
+  `lib/liquid/glass/engine.ts` draws the rim (a canvas appended as the host's LAST
+  child, `z-index: -2` in an isolated stacking context) and, for the ambient slots,
+  a `.jelly-haze-canvas`; `lib/jelly/flow-carriers.ts` injects a `.jelly-flow` span
+  as the host's FIRST child elsewhere; `lib/jelly/physics.ts` squashes/wobbles
+  hosts through the CSS `translate`/`scale` properties; `lib/jelly/arcs/` draws
+  arcs on one body-level canvas. **There is no `backdrop-filter` in any glass role,
+  and you must not add one** — the haze is shader- or transform-drawn. Floating
+  glass (`chrome`, `overlay`) refracts a snapshot of the page; a `pane` is lit only
+  unless it opts in (`data-liquid-glass="refract"`, keep text away from its edge).
+  Opt an element out with `data-jelly="off"` (aliases `data-liquid-material="off"`,
+  `data-fluid-press="none"`); opt a gesture subtree out with
+  `data-jelly-scope="off"` (alias `data-liquid-motion="off"`) and a game
+  play-field with `data-jelly-zone="playfield"`. Do not put `:first-child` /
+  `:last-child` rules on the direct children of a glass role (the carrier and the
+  canvas are children). **Nothing `position: fixed` inside a jelly host** — a host that can
+  carry a transform is its containing block; portal it. Never add per-card pointer
+  listeners, CSS hover lifts, framer `whileHover`/`whileTap` scale, `infinite`
+  keyframes, arc drawing, gradient-position animation, or inherited root variable
+  writes in frames. `app/liquid-glass.css` + `app/jelly-material.css` are the
+  complete fallback tier. Layout never changes: hosts squash within 4px/3% and
+  neighbours nudge ≤1.5px. See
+  [`docs/plasmatic-jelly-system.md`](../docs/plasmatic-jelly-system.md).
 - **Variants:** use `class-variance-authority` for components with variant
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`
   attribute on new primitives — themes restyle components through
@@ -146,7 +157,7 @@ cannot see, and it is the half that decides whether the change looks native:
       namespace, `pnpm i18n:extract` run, key present in `locales/en/`. New
       namespace ⇒ also register it in `NAMESPACES` (`lib/i18n/config.ts`).
 - [ ] **Looked at in three themes × two widths** — Daylight, `.style-graphite`,
-      `.style-high-contrast`, phone and desktop, once with reduced motion.
+      `.style-high-contrast`, phone and desktop, once with jelly motion `still`.
       Nothing in CI can do this for you (design-language.md §0.9).
 - [ ] **Keyboard + screen reader**: icon-only controls named, decorative icons
       `aria-hidden`, focus ring visible against the surface it lands on, no new

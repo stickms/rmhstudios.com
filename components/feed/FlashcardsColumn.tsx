@@ -181,14 +181,14 @@ export function FlashcardsColumn({
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder={t('deck-title-placeholder', { defaultValue: 'Deck title' })}
               maxLength={100}
-              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <input
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder={t('description-placeholder', { defaultValue: 'Description (optional)' })}
               maxLength={500}
-              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <div className="rounded-site-sm border border-site-accent/30 bg-site-accent/5 p-2">
               <label className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-site-accent">
@@ -203,7 +203,7 @@ export function FlashcardsColumn({
                   defaultValue: "Topic, e.g.'French Revolution causes'(optional)",
                 })}
                 maxLength={200}
-                className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+                className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
             </div>
             <div className="flex items-center justify-between">

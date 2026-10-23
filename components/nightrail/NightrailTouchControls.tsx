@@ -111,6 +111,7 @@ export function NightrailTouchControls({ inputRef, visible }: Props) {
   return (
     <div
       className="pointer-events-none absolute inset-x-0 bottom-0 z-30"
+      data-jelly-scope="off"
       style={{
         touchAction: 'none',
         paddingBottom: 'calc(var(--safe-bottom) + 0.75rem)',

@@ -137,7 +137,7 @@ export default function BodyDoublePanel() {
   return (
     <section
       aria-labelledby="body-double-title"
-      className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6"
+      className="rounded-(--app-radius) app-glass p-6"
     >
       <h2 id="body-double-title" className="mb-1 flex items-center gap-2 text-xl font-semibold">
         <Users className="h-5 w-5 text-(--app-accent)" aria-hidden />

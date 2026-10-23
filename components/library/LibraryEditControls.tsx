@@ -165,7 +165,7 @@ export function LibraryEditModal({
 
   return (
     <LibraryDialogShell onClose={onClose} label={t('edit-metadata', { defaultValue: 'Edit metadata' })}>
-      <div className="lib-upload" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="glass-overlay lib-upload" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
           <h2 className="lib-upload__title">{t('edit-metadata', { defaultValue: 'Edit metadata' })}</h2>
           <button type="button" className="lib-upload__close" onClick={onClose} aria-label={t('close', { defaultValue: 'Close' })}>×</button>
@@ -173,11 +173,11 @@ export function LibraryEditModal({
         <div className="lib-upload__fields">
           <label className="lib-upload__label">
             {t('label-title', { defaultValue: 'Title' })}
-            <input className="lib-upload__input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
+            <input className="glass-inset lib-upload__input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
           </label>
           <label className="lib-upload__label">
             {t('label-description', { defaultValue: 'Description' })}
-            <textarea className="lib-upload__input lib-upload__textarea" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} />
+            <textarea className="glass-inset lib-upload__input lib-upload__textarea" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} />
           </label>
           <label className="lib-edit__check">
             <input type="checkbox" checked={curated} onChange={(e) => setCurated(e.target.checked)} />

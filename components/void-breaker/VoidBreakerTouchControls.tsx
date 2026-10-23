@@ -42,6 +42,7 @@ export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) 
           bottom-only padding this used to have left them half under the housing. */}
       <div
         className="app-hud-fixed z-30 pointer-events-none"
+        data-jelly-scope="off"
         style={{ touchAction: 'none' }}
       >
         <div className="absolute inset-x-0 bottom-0 flex justify-between items-end px-4 pb-4">

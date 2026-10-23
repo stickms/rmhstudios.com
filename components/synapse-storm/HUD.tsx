@@ -12,7 +12,7 @@ export const HUD: React.FC<HUDProps> = ({ state }) => {
     const intensity = (state.difficulty - 1) / 9;
 
     return (
-        <div className="hud">
+        <div className="hud" data-jelly-zone="hud">
             <div className="hud-section hud-score">
                 <span className="hud-label">{t("score", { defaultValue: "Score" })}</span>
                 <span className="hud-value score-value">{state.score.toLocaleString()}</span>

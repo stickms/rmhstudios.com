@@ -156,6 +156,7 @@ export function CityScene({ rigRef }: { rigRef: React.MutableRefObject<RigHandle
 
   return (
     <Canvas
+      data-jelly-zone="playfield"
       orthographic
       shadows={quality.quality.shadows}
       dpr={quality.dpr}

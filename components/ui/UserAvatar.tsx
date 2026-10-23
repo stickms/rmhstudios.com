@@ -18,6 +18,10 @@ const DEFAULT_AVATAR = '/images/social/default_avatar.png';
  * Optimized user avatar component.
  * Proxies external avatar URLs through the image optimizer for WebP conversion
  * and proper sizing. Falls back to initials or default avatar.
+ *
+ * `data-slot="avatar"` gives it the tier-L jelly rim (a 1px lit ring, app/jelly-coverage.css §7):
+ * no haze over faces, and no press of its own — when the avatar is a control, the button or link
+ * around it is the soft body.
  */
 export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }: UserAvatarProps) {
  // When the (possibly proxied) avatar fails to load — e.g. a 502 from the
@@ -36,6 +40,7 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
  alt={alt}
  width={size}
  height={size}
+ data-slot="avatar"
  className={`rounded-full shrink-0 object-cover ${className}`}
  style={{ width: size, height: size }}
  />
@@ -50,6 +55,7 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
  alt={alt}
  width={size}
  height={size}
+ data-slot="avatar"
  className={`rounded-full shrink-0 object-cover ${className}`}
  style={{ width: size, height: size }}
  onError={() => setImgError(true)}
@@ -64,6 +70,7 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
  width={size * 2}
  height={size * 2}
  quality={75}
+ data-slot="avatar"
  className={`rounded-full shrink-0 object-cover ${className}`}
  style={{ width: size, height: size }}
  onError={() => setImgError(true)}

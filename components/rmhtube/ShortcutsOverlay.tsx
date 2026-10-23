@@ -50,7 +50,7 @@ export default function ShortcutsOverlay({ onClose }: ShortcutsOverlayProps) {
     <div className="rmhtube-shortcuts-overlay" onClick={onClose}>
       <div className="absolute inset-0 app-scrim" />
       <div
-        className="relative w-full max-w-md rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)"
+        className="relative w-full max-w-md rounded-(--app-radius) app-glass p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">

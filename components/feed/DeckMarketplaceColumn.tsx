@@ -6,6 +6,7 @@ import { Link } from'@tanstack/react-router';
 import { toast } from'sonner';
 import { Library, Search, Plus, Check, Loader2 } from'lucide-react';
 import { EmptyState } from'@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
 import { StudyTabs } from'@/components/study/StudyTabs';
 
 interface MarketplaceDeck {
@@ -158,11 +159,12 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  {t('deck-added', { defaultValue:'Added'})}
  </span>
  ) : (
- <button
+ <Button
  type="button"
+ variant="secondary"
  onClick={() => clone(deck)}
  disabled={st ==='cloning'}
- className="inline-flex items-center gap-1.5 rounded-site-sm border border-site-border bg-site-bg px-3 py-1.5 text-xs font-semibold text-site-text transition-colors hover:border-site-accent hover:text-site-accent disabled:opacity-60"
+ className="h-auto gap-1.5 px-3 py-1.5 text-xs font-semibold hover:border-site-accent hover:text-site-accent has-[>svg]:px-3 disabled:opacity-60"
  >
  {st ==='cloning'? (
  <Loader2 className="h-4 w-4 animate-spin"aria-hidden />
@@ -170,7 +172,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  <Plus className="h-4 w-4"aria-hidden />
  )}
  {t('deck-add', { defaultValue:'Add to my decks'})}
- </button>
+ </Button>
  )}
  </div>
  </div>

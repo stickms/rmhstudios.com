@@ -83,7 +83,7 @@ export function MobileControls({ input }: { input: InputManager }) {
         // indicator lives and the button cluster reaches the right-hand inset
         // the moment anyone turns the phone. The 86px lift stays — it clears the
         // dialogue strip — and the device inset is added on top of it.
-        <div className="app-hud pointer-events-none z-20 select-none md:hidden">
+        <div className="app-hud pointer-events-none z-20 select-none md:hidden" data-jelly-zone="hud" data-jelly-scope="off">
             {/* stick */}
             <div
                 ref={stickRef}

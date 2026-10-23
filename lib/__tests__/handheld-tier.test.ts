@@ -54,6 +54,11 @@ const RADIAL = read('components/radial/radial.css');
 const HOOK = read('hooks/useLiquidBackground.ts');
 /** Plasmatic Jelly's shared policy: its `handheld` tier is this same device class, so it carries this same query. */
 const JELLY_TIERS = read('lib/jelly/tiers.ts');
+/**
+ * The jelly stylesheets: the material's one-span-per-carrier handheld rule lives in jelly-material.css, and the
+ * coverage adapters may add more. Any width-bounded coarse query in them must be THIS query, not a near-miss.
+ */
+const JELLY_SHEETS = ['app/jelly-material.css', 'app/jelly-arcs.css', 'app/jelly-coverage.css'].map(read);
 
 describe('the handheld query is identical everywhere it appears', () => {
   // radial.css used to carry it too, for a block that stopped the ring/blob
@@ -75,7 +80,7 @@ describe('the handheld query is identical everywhere it appears', () => {
     // Scoped to real `@media` preludes (`@media … {`) rather than scanning the
     // raw text: both stylesheets discuss `(pointer: coarse)` in prose, and a
     // comment is not a rule.
-    for (const source of [GLOBALS, RADIAL]) {
+    for (const source of [GLOBALS, RADIAL, ...JELLY_SHEETS]) {
       for (const [, prelude] of source.matchAll(/@media([^{]+)\{/g)) {
         // A prelude can be a comma-separated LIST (`(max-width: 640px),
         // (hover: none) and (pointer: coarse)` — a real rule in globals.css).

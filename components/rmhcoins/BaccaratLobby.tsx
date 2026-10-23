@@ -68,7 +68,7 @@ export function BaccaratLobby() {
           value={joinCodeInput}
           onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
           maxLength={5}
-          className="flex-1 bg-site-surface border border-site-border rounded-site-sm px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+          className="glass-inset border flex-1 rounded-site-sm px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-site-accent/40"
         />
         <Button
           onClick={handleJoinByCode}
@@ -81,14 +81,14 @@ export function BaccaratLobby() {
 
       {/* Create room toggle */}
       {showCreate ? (
-        <div className="flex flex-col gap-2 p-3 rounded-site-sm bg-site-surface border border-site-border">
+        <div className="glass-fill flex flex-col gap-2 p-3 rounded-site-sm">
           <input
             type="text"
             placeholder={t("room-name-placeholder", { defaultValue: "Room name (optional)" })}
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             maxLength={30}
-            className="w-full bg-site-bg border border-site-border rounded-site-sm px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+            className="glass-inset border w-full rounded-site-sm px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
           />
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
@@ -138,12 +138,14 @@ export function BaccaratLobby() {
             <Plus className="w-4 h-4 mr-1" />
             {t("create-room", { defaultValue: "Create Room" })}
           </Button>
-          <button
+          <Button
+            variant="secondary"
+            size="icon"
             onClick={handleRefresh}
-            className="p-2 rounded-site-sm border border-site-border bg-site-surface text-site-text-dim hover:text-site-text transition-colors"
+            className="text-site-text-dim hover:text-site-text"
           >
             <RefreshCw className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -159,7 +161,7 @@ export function BaccaratLobby() {
               key={room.roomId}
               onClick={() => handleJoin(room.roomId)}
               disabled={room.playerCount >= room.maxPlayers}
-              className="flex items-center justify-between p-3 rounded-site-sm bg-site-surface border border-site-border hover:bg-site-surface-hover transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+              className="glass-fill glass-interactive flex items-center justify-between p-3 rounded-site-sm transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-site-text">{room.name}</span>

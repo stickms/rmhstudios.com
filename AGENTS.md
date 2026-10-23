@@ -13,17 +13,22 @@
   `lib/i18n/resources.<locale>.ts` files.
 - **Server-only modules** are `lib/**/*.server.ts` — a Vite plugin strips
   them from the client bundle. Never import them from client code.
-- **Design language — Radial Avant-Garde Glass:** a radial shell (ring backdrop,
-  drifting aurora, top bar, and a central RMH hub that blooms into the **liquid
-  globe** you turn to navigate) wrapping content rendered in the Liquid Glass
-  material. All colors/radii/shadows/fonts via `--site-*` Tailwind utilities
+- **Design language — Radial Plasmatic Jelly:** a radial shell (still ring
+  backdrop and aurora, top bar, and a central RMH hub that blooms into the
+  **liquid globe** you turn to navigate) wrapping content rendered in the
+  Plasmatic Jelly material. All colors/radii/shadows/fonts via `--site-*` Tailwind utilities
   (`bg-site-surface`, `rounded-site`, …); surfaces take a **glass elevation
   class by role** (`.glass-fill` / `.glass-pane` / `.glass-chrome` /
   `.glass-overlay` / `.glass-inset`) rather than a hand-rolled equivalent box;
   use `components/ui/` primitives and `components/feed/PageLayout.tsx`.
-  **Liquid interaction:** use the bounded shared runtime in `lib/liquid/runtime.ts`
-  for cursor lighting and nearby tap waves; no component-level pointer loops
-  or animated custom properties on `<html>`. See `docs/liquid-glass-system.md`. Full-screen apps use the parallel
+  **Jelly:** the role classes keep their `glass-*` names; the haze and rim
+  (`lib/liquid/glass/engine.ts`, one ambient clock that idles to a floor and
+  stops when unseen), the soft body (`lib/jelly/physics.ts`) and the electric
+  arcs (`lib/jelly/arcs/`) are document services under one policy
+  (`lib/jelly/tiers.ts`). No `backdrop-filter`; no component-level pointer
+  loops, deformation, arc code, `infinite` keyframes or animated custom
+  properties on `<html>`; layout never changes (hosts squash ≤4px/3%,
+  neighbours nudge ≤1.5px). See `docs/plasmatic-jelly-system.md`. Full-screen apps use the parallel
   `--app-*` contract (`components/shared/app-theme.css` + `AppShell`). The
   statement of the language is `design.md` at the root; read
   `docs/design-language.md` §0 before a UI commit; checklist in

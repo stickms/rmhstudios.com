@@ -126,6 +126,7 @@ export default function GameCanvas() {
       {/* Canvas */}
       <canvas 
         ref={canvasRef}
+        data-jelly-zone="playfield"
         className="block w-full h-full"
         style={{ imageRendering: 'pixelated' }}
       />

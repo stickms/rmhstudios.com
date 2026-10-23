@@ -127,19 +127,20 @@ export function BlackjackControls({ coins }: Props) {
                   max={coins}
                   value={betInput}
                   onChange={(e) => setBetInput(e.target.value)}
-                  className="w-full bg-site-surface border border-site-border rounded-site-sm px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+                  className="glass-inset border w-full rounded-site-sm px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
                 />
                 <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
               </div>
               <div className="grid grid-cols-4 gap-1.5">
                 {[5, 25, 100, 500].map((amt) => (
-                  <button
+                  <Button
                     key={amt}
+                    variant="secondary"
                     onClick={() => setQuickBet(amt)}
-                    className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site-sm text-site-text-dim hover:text-site-text hover:bg-site-surface-hover active:scale-95 transition-colors"
+                    className="h-auto min-h-10 px-0 text-xs font-bold text-site-text-dim hover:text-site-text"
                   >
                     {amt}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

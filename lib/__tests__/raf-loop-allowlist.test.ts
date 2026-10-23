@@ -9,7 +9,15 @@ import { join } from 'node:path';
  * Every rAF loop in the repo must have a provable settle/stop condition — the
  * §16.4 idle-at-rest pattern for the shared motion tier (samplers idle when
  * nothing animates), or an unmount `cancelAnimationFrame` for the self-contained
- * games/apps (their loops run only while the game is mounted/active). This test
+ * games/apps (their loops run only while the game is mounted/active).
+ *
+ * Two standards since Plasmatic Jelly (master plan R7, 2026-10-23):
+ *   - IDLE-AT-REST — everything, including the jelly physics and the arc renderer.
+ *   - IDLE-WHEN-UNSEEN — exactly ONE exception, the engine's ambient haze clock in
+ *     `lib/liquid/glass/engine.ts`: it keeps ticking (12 Hz idle floor) while a haze
+ *     surface is visible and stops (0 Hz, no frame scheduled) when nobody can see it.
+ *     `jelly-ownership.test.ts` (N2b) pins the jelly frame owners; `jelly-contract.test.ts`
+ *     (N1) pins the clock's stop conditions. This test
  * enumerates every source that calls `requestAnimationFrame` and asserts the set
  * exactly matches {@link ALLOW}. When it fails:
  *   - a NEW file appears → prove it has a settle/stop condition (idle-at-rest for
@@ -419,7 +427,9 @@ describe('§17.3 requestAnimationFrame loop allowlist', () => {
         unlisted.map((f) => `  ${f}`).join('\n') +
         `\n\nProve each has a settle/stop condition (idle-at-rest for the shared ` +
         `motion tier, or an unmount cancelAnimationFrame for a game/app), then add ` +
-        `it to ALLOW in lib/__tests__/raf-loop-allowlist.test.ts.\n`,
+        `it to ALLOW in lib/__tests__/raf-loop-allowlist.test.ts. Idle-when-unseen ` +
+        `(a loop that keeps ticking while visible) is reserved for the jelly engine's ` +
+        `ambient clock (docs/plasmatic-jelly-system.md) — ambient motion goes through it.\n`,
     ).toEqual([]);
   });
 

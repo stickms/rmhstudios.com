@@ -287,7 +287,7 @@ export function RouletteTable({ coins }: Props) {
       )}
 
       {/* Roulette Board — horizontally scrollable on very small screens */}
-      <div className="w-full overflow-x-auto -mx-1 px-1">
+      <div className="w-full overflow-x-auto -mx-1 px-1" data-jelly-zone="playfield">
         <div className="inline-flex flex-col gap-0.5 min-w-70 w-full max-w-md mx-auto">
           {/* 0 and 00 row */}
           <div className="grid grid-cols-2 gap-0.5">

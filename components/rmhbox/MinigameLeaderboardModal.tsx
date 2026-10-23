@@ -70,7 +70,7 @@ export default function MinigameLeaderboardModal({
       data-testid="minigame-leaderboard-modal"
     >
       <div
-        className="w-full max-w-md mx-4 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-5 shadow-(--app-shadow)"
+        className="w-full max-w-md mx-4 rounded-(--app-radius) app-glass p-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

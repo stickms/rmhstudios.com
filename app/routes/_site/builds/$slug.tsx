@@ -139,7 +139,7 @@ function BuildPage() {
         </div>
 
         {build.imagePath && (
-          <div className="overflow-hidden rounded-site border border-site-border shadow-site">
+          <div className="glass-pane overflow-hidden">
             <BlurImage
               src={build.imagePath}
               alt={build.title}

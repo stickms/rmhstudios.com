@@ -263,6 +263,7 @@ export function WorldView() {
       style={{ background: LAND.waterDeep, touchAction: 'none' }}
     >
       <Canvas
+        data-jelly-zone="playfield"
         shadows={quality.shadows}
         dpr={dpr}
         gl={{ antialias: quality.antialias, powerPreference: 'high-performance' }}

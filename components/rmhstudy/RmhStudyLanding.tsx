@@ -168,7 +168,7 @@ export default function RmhStudyLanding() {
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Create Room */}
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) app-glass p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-(--app-accent)" />
                 {t('create-study-room', { defaultValue: 'Create Study Room' })}
@@ -273,7 +273,7 @@ export default function RmhStudyLanding() {
             </div>
 
             {/* Join Room */}
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+            <div className="rounded-(--app-radius) app-glass p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <Users className="h-5 w-5 text-(--app-accent)" />
                 {t('join-study-room', { defaultValue: 'Join Study Room' })}
@@ -329,7 +329,7 @@ export default function RmhStudyLanding() {
           </div>
 
           {/* Public Rooms */}
-          <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6">
+          <div className="rounded-(--app-radius) app-glass p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Globe className="h-5 w-5 text-(--app-accent)" />

@@ -43,7 +43,7 @@ function LeaderboardTable({ entries, loading }: { entries: LeaderboardEntry[]; l
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm" data-jelly-group="off">
         <thead>
           <tr className="text-(--app-text-muted) border-b border-(--app-border)">
             <th className="text-left py-2 pr-3 font-medium">{t("col-rank", { defaultValue: "#" })}</th>

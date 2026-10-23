@@ -1181,6 +1181,7 @@ export function TempleGlobes({ onStrike, onTilt, children }: TempleGlobesProps) 
     <div
       ref={stageRef}
       className="toj-globes"
+      data-jelly-zone="playfield"
       data-away={away ? 'true' : undefined}
       data-globes={globeCount}
       onPointerDown={onPointerDown}

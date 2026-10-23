@@ -127,7 +127,7 @@ export default function GameHUD() {
   }, [tooltip]);
 
   return (
-    <div className="absolute inset-0 z-30 pointer-events-none">
+    <div className="absolute inset-0 z-30 pointer-events-none" data-jelly-zone="hud">
       {/* Top bar */}
       <div
         className="flex items-center gap-3 px-3 py-2 bg-(--altair-hud-scrim)/40 pointer-events-auto"

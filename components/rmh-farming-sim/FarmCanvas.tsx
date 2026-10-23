@@ -9,6 +9,7 @@ import FarmWorld from './scene/FarmWorld';
 export default function FarmCanvas() {
     return (
         <Canvas
+            data-jelly-zone="playfield"
             shadows
             dpr={[0.75, 1]}
             gl={{ antialias: false, powerPreference: 'high-performance' }}

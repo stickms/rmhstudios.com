@@ -32,7 +32,7 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 | `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / jobs (pg-boss) workers.                  | [`server/CLAUDE.md`](server/CLAUDE.md)           |
 | `go-services/` | **Go** microservice fleet (Bazel + gazelle): `supervisor`, `status`, `assets` run in prod; the gateway + Go hubs were removed (rewrite §5.2).                            | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                           | `lib/CLAUDE.md`                                  |
-| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidPress`/`useFluidDrag`, `useLiquidBackground`, `useReveal`, …).                                | `lib/CLAUDE.md`                                  |
+| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLiquidInteractions`, `useLiquidBackground`, `useReveal`, …).                       | `lib/CLAUDE.md`                                  |
 | `prisma/`      | `schema.prisma` (323 models, 71 enums, ~8.9k lines) + migrations.                                                                                                        | `lib/CLAUDE.md`                                  |
 | `locales/`     | 16 shipped locales × 67 registered namespaces; `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                      | `lib/CLAUDE.md` §i18n                            |
 | `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                    | —                                                |
@@ -152,12 +152,20 @@ _why_.
    `.glass-pane` singular panels · `.glass-chrome` sticky chrome ·
    `.glass-overlay` floating UI · `.glass-inset` fields), not a hand-rolled
    `bg-site-surface border rounded-site` box — the class is what carries the
-   material and what the degradation tiers switch off. **Liquid glass** is shader-drawn: `lib/liquid/glass/engine.ts` paints
-   `glass-pane/chrome/overlay` (and `app-glass`) as clear slabs with a refracting,
-   lit rim and a cursor that is a light; `lib/liquid/runtime.ts` provides fallback
-   cursor lighting. Clicks never push or bounce neighbouring surfaces; the globe is a dough simulation (`lib/dough.ts`).
+   material and what the degradation tiers switch off. The material is
+   **Plasmatic Jelly**: hazy translucent slabs with always-on internal motion, a
+   retained refracting, lit rim, a soft body under hover/press/drag, and
+   electric arcs between nearby surfaces and on click. The role classes keep
+   their `glass-*` names ("glass" is the role, "jelly" the material). Haze and
+   rims are drawn by `lib/liquid/glass/engine.ts` (one ambient clock, idle floor
+   when untouched, 0 when unseen), the soft body by `lib/jelly/physics.ts`, arcs
+   by `lib/jelly/arcs/`, all under one policy, `lib/jelly/tiers.ts`.
    **No `backdrop-filter` in any glass role.** Never add per-component pointer
-   loops or animated root custom properties. See `docs/liquid-glass-system.md`. The statement of the language is
+   loops, deformation, arc code, `infinite` keyframes or animated root custom
+   properties — components take jelly through role classes and `data-jelly*`
+   attributes only. **Layout never changes**: hosts squash within 4px/3% and
+   neighbours nudge ≤1.5px. The globe stays a dough simulation (`lib/dough.ts`).
+   See `docs/plasmatic-jelly-system.md`. The statement of the language is
    [`design.md`](design.md) at the root; **before any UI commit** read
    [`docs/design-language.md`](docs/design-language.md) §0 (the definition of
    done) and the checklist in
@@ -188,8 +196,10 @@ _why_.
    [`docs/open-graph.md`](docs/open-graph.md).
 7. **Accessibility:** Radix/native primitives, focus-visible rings are
    global, skip link exists. Motion follows the shared token scheme; the retired
-   reduced-motion setting and OS overrides must not return. Test `light` and
-   `high-contrast` themes.
+   reduced-motion setting and OS overrides must not return. The jelly's ambient
+   motion and arcs have their own material switches (`jellyMotion`,
+   `electricArcs`; WCAG 2.2.2/2.3.1) read only by `lib/jelly/tiers.ts`. Test
+   `light` and `high-contrast` themes, and jelly motion `still`.
 8. **Security:** zod-validate all input; rate-limit writes/AI/uploads;
    user-supplied URL fetches through `lib/ssrf-guard.server`; CSP/security
    headers live in `deploy/apache/rmhstudios.conf` (the production front door;

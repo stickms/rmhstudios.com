@@ -125,7 +125,7 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
           <div
             data-motion="pop"
             data-state={state}
-            className="fixed z-50 min-w-27.5 origin-top-right rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) shadow-(--app-shadow) py-1"
+            className="fixed z-50 min-w-27.5 origin-top-right rounded-(--app-radius-sm) app-glass py-1"
             style={{ top: pos.top, right: pos.right }}
           >
             {STATUS_OPTIONS.map((opt) => (
@@ -193,7 +193,7 @@ function BanConfirmDialog({
       <div className="fixed inset-0 z-50 app-scrim" onClick={onCancel} />
       <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
         <div
-          className="pointer-events-auto w-80 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) p-4 shadow-(--app-shadow)"
+          className="pointer-events-auto w-80 rounded-(--app-radius-sm) app-glass p-4"
           onClick={(e) => e.stopPropagation()}
         >
           <h4 className="text-sm font-semibold text-(--app-text) mb-2">

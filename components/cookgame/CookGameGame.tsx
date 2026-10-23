@@ -162,6 +162,7 @@ export function CookGameGame() {
           only runs once this has been answered. */}
       {cloud.conflictDialog}
       <Canvas
+        data-jelly-zone="playfield"
         shadows={quality.shadows}
         dpr={dpr}
         frameloop="demand"

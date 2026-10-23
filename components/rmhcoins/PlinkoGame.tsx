@@ -447,28 +447,30 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               onChange={(e) => setBetInput(e.target.value)}
               onBlur={handleBetBlur}
               disabled={!isIdle}
-              className="w-full bg-site-surface border border-site-border rounded-site px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40 disabled:opacity-50"
+              className="glass-inset border w-full px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40 disabled:opacity-50"
             />
             <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
           </div>
           <div className="grid grid-cols-4 gap-1.5">
             {[1, 5, 10].map((amt) => (
-              <button
+              <Button
                 key={amt}
+                variant="secondary"
                 onClick={() => isIdle && setQuickBet(amt)}
                 disabled={!isIdle}
-                className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site text-site-text-dim hover:text-site-text hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-colors"
+                className="h-auto min-h-10 px-0 text-xs font-bold text-site-text-dim hover:text-site-text"
               >
                 {amt}
-              </button>
+              </Button>
             ))}
-            <button
+            <Button
+              variant="secondary"
               onClick={() => isIdle && setQuickBet(coins)}
               disabled={!isIdle}
-              className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-site text-site-accent hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-colors"
+              className="h-auto min-h-10 px-0 text-xs font-bold text-site-accent"
             >
               {t('bet-all', { defaultValue: 'All' })}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

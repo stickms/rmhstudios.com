@@ -67,7 +67,7 @@ export default function HUD({ hud }: { hud: HudState }) {
     const ordered = [...hud.fighters].sort((a, b) => (a.isLocal ? -1 : 0) - (b.isLocal ? -1 : 0));
 
     return (
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', fontFamily: '"Press Start 2P", monospace' }}>
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', fontFamily: '"Press Start 2P", monospace' }} data-jelly-zone="hud">
             {ordered.slice(0, 4).map((f, i) => (
                 <FighterPanel key={f.seat} f={f} corner={CORNERS[i]} mode={hud.mode} />
             ))}

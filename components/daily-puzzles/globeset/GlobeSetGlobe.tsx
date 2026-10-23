@@ -494,6 +494,7 @@ export function GlobeSetGlobe({
         })}
       >
         <canvas
+          data-jelly-zone="playfield"
           ref={canvasRef}
           width={size * 2}
           height={size * 2}

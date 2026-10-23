@@ -496,10 +496,10 @@ export function ChartToggle({
       title={title}
       onClick={() => onPressedChange(!pressed)}
       className={cn(
-        'flex min-h-8 items-center gap-1.5 rounded-site-sm border px-2 py-1 text-xs transition-colors pointer-coarse:min-h-11',
+        'glass-fill glass-interactive flex min-h-8 items-center gap-1.5 rounded-site-sm px-2 py-1 text-xs transition-colors pointer-coarse:min-h-11',
         pressed
           ? 'border-site-accent bg-site-accent text-site-accent-fg'
-          : 'border-site-border bg-site-surface text-site-text-muted hover:text-site-text',
+          : 'text-site-text-muted hover:text-site-text',
       )}
     >
       {children}

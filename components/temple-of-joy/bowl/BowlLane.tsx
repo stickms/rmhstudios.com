@@ -129,6 +129,7 @@ const DECK_HOLD_SECONDS = 2.6;
 export default function BowlLane(props: BowlLaneProps) {
   return (
     <Canvas
+      data-jelly-zone="playfield"
       // The scene is a lane, ten pins and a ball — trivial to draw. The cost
       // here is fill rate, so the ratio is clamped exactly as every other
       // full-screen surface on the site clamps it (design-language §12.1).

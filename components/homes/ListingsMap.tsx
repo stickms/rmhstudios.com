@@ -117,9 +117,7 @@ export function ListingsMap({
   const initialCenter = center ?? { lat: 39.5, lng: -98.35 };
 
   return (
-    <div
-      className={`homes-map relative overflow-hidden rounded-site border border-site-border bg-site-surface ${className ?? ''}`}
-    >
+    <div className={`glass-pane homes-map relative overflow-hidden ${className ?? ''}`}>
       {mounted ? (
         <Map
           ref={mapRef}

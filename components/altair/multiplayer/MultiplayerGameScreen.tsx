@@ -28,6 +28,7 @@ export default function MultiplayerGameScreen({ lobbyId }: MultiplayerGameScreen
   return (
     <div className="fixed inset-0 bg-(--altair-bg)">
       <canvas
+        data-jelly-zone="playfield"
         ref={canvasRef}
         className="w-full h-full"
       />

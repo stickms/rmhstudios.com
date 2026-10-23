@@ -5,6 +5,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { Button } from '@/components/ui/button';
 import {
   Hammer,
   Package,
@@ -100,9 +101,10 @@ function InviteFriendsCard() {
           defaultValue: 'Share your link — you both earn {{reward}} coins when they get going.',
         })}
       </p>
-      <button
+      <Button
+        variant="secondary"
         onClick={copyLink}
-        className="flex w-full items-center justify-center gap-2 rounded-site-sm border border-site-border bg-site-bg py-2 text-sm font-medium text-site-text transition-colors hover:bg-site-surface-hover"
+        className="h-auto w-full py-2"
       >
         {copied ? (
           <>
@@ -112,7 +114,7 @@ function InviteFriendsCard() {
         ) : (
           t('copy-invite-link', { defaultValue: 'Copy invite link' })
         )}
-      </button>
+      </Button>
     </section>
   );
 }
@@ -152,7 +154,7 @@ export function RightSidebar({
                 to={build.href}
                 className="-mx-2 px-2 flex items-center gap-2.5 rounded-site-sm py-1.5 hover:bg-site-surface-hover transition-colors group"
               >
-                <div className="relative w-10 h-10 rounded-site-sm overflow-hidden bg-site-bg shrink-0 border border-site-border">
+                <div className="glass-fill relative w-10 h-10 rounded-site-sm overflow-hidden shrink-0">
                   {build.thumbnailUrl ? (
                     <OptimizedImage
                       src={build.thumbnailUrl}
@@ -182,7 +184,7 @@ export function RightSidebar({
                 rel="noopener noreferrer"
                 className="-mx-2 px-2 flex items-center gap-2.5 rounded-site-sm py-1.5 hover:bg-site-surface-hover transition-colors group"
               >
-                <div className="relative w-10 h-10 rounded-site-sm overflow-hidden bg-site-bg shrink-0 border border-site-border">
+                <div className="glass-fill relative w-10 h-10 rounded-site-sm overflow-hidden shrink-0">
                   {build.thumbnailUrl ? (
                     <OptimizedImage
                       src={build.thumbnailUrl}
@@ -232,7 +234,7 @@ export function RightSidebar({
                 to={`/builds/${build.slug}` as string}
                 className="-mx-2 px-2 flex items-center gap-2.5 rounded-site-sm py-1.5 hover:bg-site-surface-hover transition-colors group"
               >
-                <div className="relative w-10 h-10 rounded-site-sm overflow-hidden bg-site-bg shrink-0 border border-site-border">
+                <div className="glass-fill relative w-10 h-10 rounded-site-sm overflow-hidden shrink-0">
                   {build.thumbnailUrl ? (
                     <OptimizedImage
                       src={build.thumbnailUrl}

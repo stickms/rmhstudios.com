@@ -1119,15 +1119,15 @@
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
+/* Surface comes from `.glass-overlay` on the element (the L4 floating-UI role), so
+   the dialog takes the shared material, its jelly body and every degradation tier.
+   It used to hand-roll a `--site-bg-subtle` fill, hairline, radius and a dark drop
+   shadow. Size and padding stay here. */
 .lib-upload {
   width: 100%;
   max-width: 560px;
-  background: var(--site-bg-subtle);
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-radius-sm);
   color: var(--site-text);
   padding: 20px;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
 }
 .lib-upload__head {
   display: flex;
@@ -1406,11 +1406,12 @@
   font-size: 12px;
   color: var(--site-text-muted);
 }
+/* Fill, edge colour and radius come from `.glass-inset` on the element (the field
+   role). The edge keeps its width here so the focus colour below has a line to tint. */
 .lib-upload__input {
   width: 100%;
-  background: var(--site-surface);
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-radius-sm);
+  border-width: 1px;
+  border-style: solid;
   color: var(--site-text);
   font-size: 14px;
   padding: 9px 11px;

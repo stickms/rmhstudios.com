@@ -194,7 +194,7 @@ export function KeyboardShortcuts() {
               ))}
             </ul>
 
-            <DialogPrimitive.Close className="mt-4 w-full rounded-site border border-site-border px-3 py-2 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text">
+            <DialogPrimitive.Close data-jelly className="mt-4 w-full rounded-site border border-site-border px-3 py-2 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text">
               {t('kbd-close', { defaultValue: 'Close' })}
             </DialogPrimitive.Close>
           </DialogPrimitive.Content>

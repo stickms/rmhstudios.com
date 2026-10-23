@@ -967,30 +967,19 @@ export function Providers({
                   right: '0.75rem',
                 }}
                 toastOptions={{
-                  // Toasts are L4 floating UI and get the matching material
-                  // inline. It is written out here rather than by adding
-                  // `.glass-overlay` because that class also sets position,
-                  // max sizes and overflow — all of which sonner owns for its
-                  // own stacking. A plain translucent --site-surface with no
-                  // blur would let the page ghost through the message.
+                  // Toasts are L4 floating UI and get the matching fill inline. It is written out here rather than by
+                  // adding `.glass-overlay` because that class also sets position, max sizes and overflow — all of
+                  // which sonner owns for its own stacking. The jelly material (haze floor, CSS rim, carrier) comes
+                  // from `[data-sonner-toast]` in app/jelly-coverage.css, so only longhands are set here: a
+                  // `background` / `box-shadow` inline would erase the floor and the rim. No backdrop-filter — no
+                  // glass role has one (docs/liquid-glass-system.md); the overlay fill is the legibility floor.
                   style: {
-                    // The SAME expression `.glass-overlay` uses (globals.css
-                    // §L4), not a third answer. This was a flat 82% of
-                    // `--site-surface-opaque`, which meant a toast was thinner
-                    // than every other floating surface, had no legibility
-                    // floor. A toast is the one L4 surface that
-                    // appears unbidden and is gone in four seconds, so it is the
-                    // last one that can afford to ghost.
-                    background: 'var(--site-glass-overlay-fill)',
-                    backdropFilter:
-                      'blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate))',
-                    WebkitBackdropFilter:
-                      'blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate))',
+                    // The SAME expression `.glass-overlay` uses (globals.css §L4), not a third answer.
+                    backgroundColor: 'var(--site-glass-overlay-fill)',
                     border: '1px solid var(--site-border)',
                     // A toast is a panel, not a control: `--site-radius`, the
                     // same curve every other floating panel takes.
                     borderRadius: 'var(--site-radius)',
-                    boxShadow: 'var(--site-shadow)',
                     color: 'var(--site-text)',
                   },
                 }}

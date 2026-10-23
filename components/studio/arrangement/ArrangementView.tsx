@@ -118,7 +118,7 @@ export function ArrangementView({ isMobile = false }: { isMobile?: boolean }) {
   const totalTimelineWidth = totalBeats * ppb;
 
   return (
-    <div ref={containerRef} className="relative flex h-full flex-col overflow-hidden" onWheel={handleWheel}>
+    <div ref={containerRef} className="relative flex h-full flex-col overflow-hidden" data-jelly-group="off" onWheel={handleWheel}>
       {/* Time ruler */}
       <TimeRuler width={containerWidth} trackHeaderWidth={headerWidth} />
 

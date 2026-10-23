@@ -3423,15 +3423,16 @@ textarea,
    shift, and it reads on both touch and mouse. Disabled controls stay inert.
    Material-press elements opt OUT (§5.3): the springy scale on Button
    ([data-slot='button']) and .glass-interactive is the press cue there — an
-   opacity flicker fights the squish. Links and legacy buttons keep the cue. */
-a:not(.glass-interactive):active,
+   opacity flicker fights the squish. Links and legacy buttons keep the cue — except while the jelly soft body
+   (lib/jelly/physics.ts) holds them: it stamps `data-jelly-active` for the press, and its squish is the cue. */
+a:not(.glass-interactive):not([data-jelly-active]):active,
 button:not(:disabled):not([aria-disabled='true']):not([data-slot='button']):not(
     .glass-interactive
-  ):active,
-[role='button']:not([aria-disabled='true']):not(.glass-interactive):active,
-[role='tab']:not(.glass-interactive):active,
-[role='menuitem']:not(.glass-interactive):active,
-summary:active {
+  ):not([data-jelly-active]):active,
+[role='button']:not([aria-disabled='true']):not(.glass-interactive):not([data-jelly-active]):active,
+[role='tab']:not(.glass-interactive):not([data-jelly-active]):active,
+[role='menuitem']:not(.glass-interactive):not([data-jelly-active]):active,
+summary:not([data-jelly-active]):active {
   opacity: 0.6;
   transition: opacity 60ms ease;
 }

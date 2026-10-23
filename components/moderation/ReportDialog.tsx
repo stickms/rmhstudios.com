@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import {
   REPORT_DETAILS_MAX,
@@ -106,6 +107,7 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
           {REPORT_REASONS.map((value) => (
             <label
               key={value}
+              data-jelly
               className={`flex cursor-pointer items-center gap-3 rounded-site-sm border px-3 py-2 text-sm transition-colors ${
                 reason === value
                   ? 'border-site-accent bg-site-accent-dim text-site-text'
@@ -125,13 +127,13 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
           ))}
         </fieldset>
 
-        <textarea
+        <Textarea
           value={details}
           onChange={(e) => setDetails(e.target.value)}
           maxLength={REPORT_DETAILS_MAX}
           placeholder={t("details-placeholder", { defaultValue: "Add any details (optional)" })}
           rows={3}
-          className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+          className="min-h-0 resize-none px-3 py-2"
         />
 
         <DialogFooter>

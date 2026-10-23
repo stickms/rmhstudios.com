@@ -83,7 +83,7 @@ export default function SpectatorBanner({
             <div
               data-motion="pop"
               data-state={playerMenu.state}
-              className="absolute top-full left-0 mt-1 min-w-40 origin-top-left rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) py-1 shadow-lg"
+              className="absolute top-full left-0 mt-1 min-w-40 origin-top-left rounded-(--app-radius-sm) app-glass py-1"
             >
               {spectatorTarget.availablePlayers.map((p) => (
                 <button

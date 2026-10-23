@@ -77,7 +77,7 @@ export function GameReplayPlayer({
   return (
     <div className="flex w-full flex-col items-center gap-6">
       {!versionMatch && (
-        <div className="w-full max-w-md rounded-site border border-site-border bg-site-surface px-4 py-3 text-center text-sm text-site-text-muted">
+        <div className="glass-fill w-full max-w-md px-4 py-3 text-center text-sm text-site-text-muted">
           {t('replay-version-mismatch', {
             defaultValue:
               'This replay was recorded on an older version of the game. Showing a simplified timeline.',
@@ -87,7 +87,7 @@ export function GameReplayPlayer({
       )}
 
       {/* Stage */}
-      <div className="flex min-h-[280px] w-full items-center justify-center rounded-site border border-site-border bg-site-surface p-6">
+      <div className="glass-pane flex min-h-[280px] w-full items-center justify-center p-6">
         {total === 0 ? (
           <p className="text-sm text-site-text-muted">
             {t('replay-empty', { defaultValue: 'This replay has no recorded moves.' })}
@@ -168,7 +168,7 @@ export function GameReplayPlayer({
           <SkipForward aria-hidden />
         </Button>
 
-        <div className="flex items-center gap-1 rounded-full border border-site-border bg-site-surface p-1">
+        <div className="glass-inset flex items-center gap-1 rounded-full p-1">
           {SPEEDS.map((s) => (
             <button
               key={s}
@@ -231,6 +231,7 @@ function LightsOutStage({ data, step }: { data: ReplayData; step: number }) {
   return (
     <div
       className="flex flex-col items-center gap-1.5"
+      data-jelly-zone="playfield"
       aria-label={t('replay-board', { defaultValue: 'Replay board' })}
     >
       {grid.map((row, r) => (
@@ -285,11 +286,11 @@ function GenericTimeline({ inputs, step }: { inputs: unknown[]; step: number }) 
             <li
               key={index}
               className={cn(
-                'flex items-center gap-2 rounded-site border px-3 py-1.5 font-mono text-xs',
+                'glass-fill flex items-center gap-2 px-3 py-1.5 font-mono text-xs',
                 active
                   ? 'border-site-accent bg-site-accent/10 text-site-text'
                   : played
-                    ? 'border-site-border bg-site-surface text-site-text-muted'
+                    ? 'text-site-text-muted'
                     : 'border-site-border/50 bg-transparent text-site-text-dim',
               )}
             >

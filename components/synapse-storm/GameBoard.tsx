@@ -17,7 +17,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onSolve, onSkipPhas
         <div className={`game-board ${state.isSaturated ? 'saturated' : ''}`}>
             <HUD state={state} />
 
-            <div className="playfield">
+            <div className="playfield" data-jelly-zone="playfield">
                 {state.activePuzzles.length === 0 && (
                     <div className="playfield-empty">
                         <span className="loading-pulse">🌩️</span>

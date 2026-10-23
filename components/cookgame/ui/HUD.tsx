@@ -36,7 +36,7 @@ export function HUD() {
     : Math.min(100, ((xp - rank.xpThreshold) / (nextRank.xpThreshold - rank.xpThreshold)) * 100);
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 select-none text-white">
+    <div className="pointer-events-none absolute inset-0 z-20 select-none text-white" data-jelly-zone="hud">
       {/* Top-left: cash + rank */}
       <div className="absolute left-[calc(1rem+var(--safe-left))] top-[calc(1rem+var(--safe-top))] flex flex-col gap-2">
         <div className="rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">

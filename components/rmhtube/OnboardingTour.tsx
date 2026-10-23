@@ -68,7 +68,7 @@ export default function OnboardingTour() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 app-scrim" onClick={handleClose} />
-      <div className="relative w-full max-w-sm rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 shadow-(--app-shadow)">
+      <div className="relative w-full max-w-sm rounded-(--app-radius) app-glass p-6">
         {/* Close */}
         <button
           onClick={handleClose}

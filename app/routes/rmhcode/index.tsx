@@ -120,7 +120,7 @@ function RmhCodePage() {
         <div className="relative max-w-4xl mx-auto px-4 py-16 md:py-24">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
             <div className="flex justify-center mb-8">
-              <div className="relative w-64 h-80 md:w-80 md:h-[28rem] rounded-site overflow-hidden border border-site-border">
+              <div className="glass-pane relative w-64 h-80 md:w-80 md:h-[28rem] overflow-hidden">
                 <img src="/images/games/rmhcode.webp" alt="rmhcode" className="object-cover w-full h-full" loading="lazy" />
               </div>
             </div>

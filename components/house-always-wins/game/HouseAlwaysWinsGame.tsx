@@ -136,6 +136,7 @@ export function HouseAlwaysWinsGame() {
     // the fit in container units, where there is nothing left to clamp.
     <div className="app-stage" style={{ "--app-stage-ar": `${CANVAS_W} / ${CANVAS_H}` } as CSSProperties}>
       <canvas
+        data-jelly-zone="playfield"
         ref={canvasRef}
         className="block h-full w-full"
         style={{ imageRendering: "pixelated" }}

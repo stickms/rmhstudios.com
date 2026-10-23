@@ -3027,11 +3027,11 @@ export function GameCanvas() {
                 }`
           }`}
         >
-          <canvas ref={canvasRef} className="w-full h-full cursor-pointer block" />
+          <canvas ref={canvasRef} className="w-full h-full cursor-pointer block" data-jelly-zone="playfield" />
 
           {/* Mobile Buttons — left/right split for portrait, top/bottom for landscape */}
           {showMobileButtons && status === 'PLAYING' && !isPaused && countdown === 0 && (
-            <div data-mobile-btn className="absolute inset-0 pointer-events-none flex flex-row">
+            <div data-mobile-btn className="absolute inset-0 pointer-events-none flex flex-row" data-jelly-scope="off">
               <button
                 data-mobile-btn
                 className="pointer-events-auto flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"

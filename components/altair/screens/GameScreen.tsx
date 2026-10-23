@@ -448,6 +448,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       style={{ width: '100vw', height: '100dvh' }}
     >
       <canvas
+        data-jelly-zone="playfield"
         ref={canvasRef}
         className="block"
         style={{

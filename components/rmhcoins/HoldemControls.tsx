@@ -161,18 +161,24 @@ export function HoldemControls() {
               <div className="flex flex-col items-center gap-1.5">
                 <p className="text-xs text-site-text-dim">{t("show-your-cards", { defaultValue: "Show your cards?" })}</p>
                 <div className="flex gap-2">
-                  <button onClick={() => toggleCard(0)}
-                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-site-sm border transition-colors active:scale-95 ${showingCards[0] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
+                  <Button onClick={() => toggleCard(0)}
+                    variant={showingCards[0] ? 'default' : 'secondary'}
+                    aria-pressed={showingCards[0]}
+                    className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[0] ? '' : 'text-site-text-dim hover:border-site-accent'}`}>
                     {t("card-1", { defaultValue: "Card 1" })}
-                  </button>
-                  <button onClick={() => toggleCard(1)}
-                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-site-sm border transition-colors active:scale-95 ${showingCards[1] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
+                  </Button>
+                  <Button onClick={() => toggleCard(1)}
+                    variant={showingCards[1] ? 'default' : 'secondary'}
+                    aria-pressed={showingCards[1]}
+                    className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[1] ? '' : 'text-site-text-dim hover:border-site-accent'}`}>
                     {t("card-2", { defaultValue: "Card 2" })}
-                  </button>
-                  <button onClick={toggleBoth}
-                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-site-sm border transition-colors active:scale-95 ${showingCards[0] && showingCards[1] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
+                  </Button>
+                  <Button onClick={toggleBoth}
+                    variant={showingCards[0] && showingCards[1] ? 'default' : 'secondary'}
+                    aria-pressed={showingCards[0] && showingCards[1]}
+                    className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[0] && showingCards[1] ? '' : 'text-site-text-dim hover:border-site-accent'}`}>
                     {t("both", { defaultValue: "Both" })}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -275,15 +281,17 @@ export function HoldemControls() {
             ]
               .filter((p) => p.value >= minRaiseTotal && p.value < myChips + (myPlayer?.currentBet ?? 0))
               .map((p) => (
-                <button key={p.label} onClick={() => setRaiseAmount(String(p.value))}
-                  className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-site-sm bg-site-surface border border-site-border hover:border-site-accent hover:text-site-accent text-site-text-dim transition-colors active:scale-95">
+                <Button key={p.label} onClick={() => setRaiseAmount(String(p.value))}
+                  variant="secondary"
+                  className="h-auto min-h-9 px-2.5 py-1 text-xs font-semibold text-site-text-dim hover:border-site-accent hover:text-site-accent">
                   {p.label}
-                </button>
+                </Button>
               ))}
-            <button onClick={() => setRaiseAmount(String(minRaiseTotal))}
-              className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-site-sm bg-site-surface border border-site-border hover:border-site-accent hover:text-site-accent text-site-text-dim transition-colors active:scale-95">
+            <Button onClick={() => setRaiseAmount(String(minRaiseTotal))}
+              variant="secondary"
+              className="h-auto min-h-9 px-2.5 py-1 text-xs font-semibold text-site-text-dim hover:border-site-accent hover:text-site-accent">
               Min
-            </button>
+            </Button>
           </div>
 
           <div className="flex gap-2">
@@ -292,7 +300,7 @@ export function HoldemControls() {
                 placeholder={t("min-raise-placeholder", { defaultValue: "Min {{min}}", min: minRaiseTotal })}
                 value={raiseAmount}
                 onChange={(e) => setRaiseAmount(e.target.value)}
-                className="w-full bg-site-surface border border-site-border rounded-site-sm px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40" />
+                className="glass-inset border w-full rounded-site-sm px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40" />
               <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
             </div>
             <Button onClick={handleRaise} variant="accent"

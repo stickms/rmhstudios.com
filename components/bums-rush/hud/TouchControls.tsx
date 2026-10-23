@@ -224,6 +224,7 @@ export function TouchControls({ scheme, seat, stateRef, buttonsRef, active }: To
         // selection the same press anchors. This layer is the full screen, so
         // that selection lands on whatever hint or score text it covers.
         data-gesture=""
+        data-jelly-scope="off"
         className="absolute inset-0 z-10"
         style={{ touchAction: 'none' }}
         onPointerDown={handleDown}
@@ -298,6 +299,7 @@ export function TouchControls({ scheme, seat, stateRef, buttonsRef, active }: To
           so a tap here can never also claim an arm. */}
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center-safe"
+        data-jelly-scope="off"
         style={{
           paddingBottom: 'calc(var(--safe-bottom) + clamp(0.4rem, 2vmin, 1rem))',
           paddingLeft: 'var(--safe-left)',

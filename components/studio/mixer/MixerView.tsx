@@ -24,7 +24,7 @@ export function MixerView({ compact = false }: MixerViewProps) {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" data-jelly-group="off">
       {/* Channel strips (scrollable) */}
       <div className="flex flex-1 overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-site-border">
         {tracks.map((track) => (

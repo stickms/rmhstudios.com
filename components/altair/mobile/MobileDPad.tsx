@@ -62,6 +62,7 @@ export default function MobileDPad({ onChange, side = 'left' }: MobileDPadProps)
   return (
     <div
       className="absolute z-40 pointer-events-auto"
+      data-jelly-scope="off"
       style={{
         bottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)',
         left: side === 'left' ? 'calc(env(safe-area-inset-left, 0px) + 32px)' : undefined,

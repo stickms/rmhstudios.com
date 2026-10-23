@@ -312,6 +312,43 @@ function viewportUnitViolations(): Violation[] {
   return out;
 }
 
+// ── Rule 4 ──────────────────────────────────────────────────────────────────
+
+/**
+ * Every catalog game declares its play-field to the jelly material.
+ *
+ * The site's surfaces are a soft, moving material (Plasmatic Jelly,
+ * docs/plans/plasmatic-jelly/00-master-plan.md R16). A game's play-field is the
+ * one place it must never reach: a haze, a carrier or an arc over a canvas, a
+ * WebGL scene or a DOM board is drawn over the thing the player is reading at
+ * sixty frames a second, and a soft-body squish on a board cell moves the
+ * target under the finger. `data-jelly-zone="playfield"` on the stage (or the
+ * canvas itself) is the subtree opt-out every jelly service honours
+ * (`OPT_OUT_SCOPE_SELECTOR` in lib/jelly/tiers.ts). HUDs and menus stay jelly;
+ * held-control regions add `data-jelly-scope="off"`.
+ *
+ * Keyed by the catalog (`lib/catalog/games/<id>.ts`), so a new game cannot ship
+ * without one. A game's runtime lives in `components/<id>` unless listed here.
+ */
+const GAME_DIRS: Record<string, string[]> = {
+  'rochester-offensive': ['components/breakpoint'],
+};
+
+function catalogGameIds(): string[] {
+  return readdirSync(join(ROOT, 'lib', 'catalog', 'games'))
+    .filter((f) => f.endsWith('.ts'))
+    .map((f) => f.replace(/\.ts$/, ''));
+}
+
+function gamesWithoutPlayfield(): string[] {
+  return catalogGameIds().filter((id) => {
+    const files = (GAME_DIRS[id] ?? [join('components', id)]).flatMap((d) => collect(d, ['.tsx']));
+    return !files.some((file) =>
+      /data-jelly-zone=["']playfield["']/.test(readFileSync(join(ROOT, file), 'utf8')),
+    );
+  });
+}
+
 describe('full-screen viewport contract — games and apps', () => {
   it('scans a non-trivial set of full-screen sources', () => {
     // Guards the walkers themselves: a bad path would make every rule below
@@ -334,6 +371,15 @@ describe('full-screen viewport contract — games and apps', () => {
   it('every 100vh game surface offers a dvh/svh reading too', () => {
     const v = viewportUnitViolations();
     expect(v, report('Raw 100vh with no live-viewport fallback', v)).toEqual([]);
+  });
+
+  it('every catalog game declares a jelly play-field zone', () => {
+    // Guard the walker: an empty catalog would pass vacuously.
+    expect(catalogGameIds().length).toBeGreaterThan(15);
+    expect(
+      gamesWithoutPlayfield(),
+      'add data-jelly-zone="playfield" to these games\' stage or canvas (Rule 4)',
+    ).toEqual([]);
   });
 });
 

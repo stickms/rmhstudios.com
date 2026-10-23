@@ -145,7 +145,7 @@ export function GlobeSetRoom(props: GlobeSetRoomProps) {
         aria-hidden
       />
 
-      <div className="app-hud flex flex-col justify-between p-4">
+      <div className="app-hud flex flex-col justify-between p-4" data-jelly-zone="hud">
         <div className="glass-overlay flex items-center justify-between gap-4 rounded-site px-4 py-2">
           <dl className="flex items-center gap-5 text-site-text">
             <Figure label={t('globeset-stat-time', { defaultValue: 'Time' })}>

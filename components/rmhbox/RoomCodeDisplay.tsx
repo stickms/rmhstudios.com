@@ -39,7 +39,7 @@ export default function RoomCodeDisplay({ code, onLeave }: RoomCodeDisplayProps)
   }, [code]);
 
   return (
-    <div className="flex items-center gap-3 rounded-(--app-radius) bg-(--app-surface) border border-(--app-border) px-6 py-4">
+    <div className="flex items-center gap-3 rounded-(--app-radius) app-glass px-6 py-4">
       {/* Leave button — left side, icon flipped to point left */}
       {onLeave && (
         <button

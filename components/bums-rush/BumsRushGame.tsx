@@ -633,7 +633,7 @@ function LevelStage({
       <ConnectionBanner status={connection} onRetry={reconnectBumsRushNow} />
 
       <div className="relative min-h-0 flex-1">
-        <div className="app-stage-fit absolute inset-0">
+        <div className="app-stage-fit absolute inset-0" data-jelly-zone="playfield">
           <div className="app-stage" style={{ '--app-stage-ar': '16 / 9' } as React.CSSProperties}>
             <canvas
               ref={canvasRef}

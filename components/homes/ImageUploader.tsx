@@ -126,7 +126,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
           return (
             <div
               key={url}
-              className="group relative aspect-square overflow-hidden rounded-site-sm border border-site-border bg-site-bg"
+              className="glass-fill group relative aspect-square overflow-hidden rounded-site-sm"
             >
               <img src={url} alt="" className="h-full w-full object-cover" />
               {i === 0 && (

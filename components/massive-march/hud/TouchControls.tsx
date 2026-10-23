@@ -105,6 +105,7 @@ export function TouchControls({ onInteract }: { onInteract: () => void }) {
         // of the screen and its whole job is to be dragged. Without it a look
         // sweep anchors a selection in whatever HUD text sits under the thumb.
         data-gesture=""
+        data-jelly-scope="off"
         className="absolute top-0 right-0 bottom-0 left-1/3 z-0"
         onPointerDown={onLookDown}
         onPointerMove={onLookMove}
@@ -114,6 +115,7 @@ export function TouchControls({ onInteract }: { onInteract: () => void }) {
 
       <div
         data-gesture=""
+        data-jelly-scope="off"
         className="absolute bottom-[calc(5.5rem+var(--safe-bottom))] left-[calc(1.5rem+var(--safe-left))] z-20 grid place-items-center rounded-full border-[3px] touch-none"
         style={{
           width: STICK_RADIUS * 2.2,
@@ -139,7 +141,7 @@ export function TouchControls({ onInteract }: { onInteract: () => void }) {
         />
       </div>
 
-      <div className="absolute right-[calc(1rem+var(--safe-right))] bottom-[calc(5.5rem+var(--safe-bottom))] z-20 flex flex-col gap-2">
+      <div className="absolute right-[calc(1rem+var(--safe-right))] bottom-[calc(5.5rem+var(--safe-bottom))] z-20 flex flex-col gap-2" data-jelly-scope="off">
         <TouchButton label={t('touch-interact', { defaultValue: 'Take' })} onPress={onInteract}>
           <Hand aria-hidden className="size-5" />
         </TouchButton>
