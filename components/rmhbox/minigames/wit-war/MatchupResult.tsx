@@ -52,7 +52,7 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
         </motion.div>
       )}
 
-      <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4 text-center">
+      <div className="app-glass rounded-(--app-radius) p-4 text-center">
         <div className="text-xs font-medium text-(--app-text-muted) mb-1">{t("the-prompt", { defaultValue: "The prompt:" })}</div>
         <div className="text-lg font-bold text-(--app-text)">{promptText}</div>
       </div>
@@ -63,10 +63,10 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className={`rounded-(--app-radius) border-2 p-4 ${
+          className={`glass-fill rounded-(--app-radius) border-2 p-4 ${
             winnerIsA && !isDraw
               ? 'border-(--app-success)/60 bg-(--app-success)/10'
-              : 'border-(--app-border) bg-(--app-surface)'
+              : 'border-(--app-border)'
           }`}
         >
           {winnerIsA && !isDraw && (
@@ -85,10 +85,10 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className={`rounded-(--app-radius) border-2 p-4 ${
+          className={`glass-fill rounded-(--app-radius) border-2 p-4 ${
             !winnerIsA && !isDraw
               ? 'border-(--app-success)/60 bg-(--app-success)/10'
-              : 'border-(--app-border) bg-(--app-surface)'
+              : 'border-(--app-border)'
           }`}
         >
           {!winnerIsA && !isDraw && (

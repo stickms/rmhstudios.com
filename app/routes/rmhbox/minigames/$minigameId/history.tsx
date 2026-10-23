@@ -364,7 +364,7 @@ function MinigameHistoryPage() {
                 return (
                   <div
                     key={match.id}
-                    className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) overflow-hidden"
+                    className="glass-fill rounded-(--app-radius-sm) overflow-hidden"
                     data-testid={`history-entry-${match.id}`}
                   >
                     {/* Summary row */}

@@ -189,7 +189,7 @@ export default function CategoryInput({
                   disabled={isLocked}
                   maxLength={50}
                   placeholder={`${letter.toUpperCase()}...`}
-                  className={`w-full rounded-(--app-radius-sm) border bg-(--app-surface) px-3 py-2 pl-9 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-(--app-accent)/50 disabled:opacity-50 ${
+                  className={`glass-inset w-full rounded-(--app-radius-sm) border px-3 py-2 pl-9 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-(--app-accent)/50 disabled:opacity-50 ${
                     !startsCorrectly
                       ? 'border-(--app-danger)/50 ring-1 ring-(--app-danger)/30'
                       : 'border-(--app-border)'

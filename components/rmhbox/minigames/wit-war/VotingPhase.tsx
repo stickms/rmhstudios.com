@@ -49,7 +49,7 @@ export default function VotingPhase({
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4 text-center"
+        className="app-glass rounded-(--app-radius) p-4 text-center"
       >
         <div className="text-xs font-medium text-(--app-text-muted) mb-1">{t("the-prompt", { defaultValue: "The prompt:" })}</div>
         <div className="text-lg font-bold text-(--app-text)">{matchup.promptText}</div>
@@ -73,12 +73,12 @@ export default function VotingPhase({
               whileTap={{ scale: 0.98 }}
               onClick={() => onVote(matchup.playerA)}
               disabled={myVote !== null}
-              className={`rounded-(--app-radius) border-2 p-5 text-left transition-colors ${
+              className={`glass-fill rounded-(--app-radius) border-2 p-5 text-left transition-colors ${
                 myVote === matchup.playerA
                   ? 'border-(--app-accent) bg-(--app-accent)/10'
                   : myVote !== null
                     ? 'border-(--app-border) opacity-50'
-                    : 'border-(--app-border) bg-(--app-surface) hover:border-(--app-accent)/50'
+                    : 'border-(--app-border) hover:border-(--app-accent)/50'
               }`}
             >
               <div className="text-base font-medium text-(--app-text)">
@@ -91,12 +91,12 @@ export default function VotingPhase({
               whileTap={{ scale: 0.98 }}
               onClick={() => onVote(matchup.playerB)}
               disabled={myVote !== null}
-              className={`rounded-(--app-radius) border-2 p-5 text-left transition-colors ${
+              className={`glass-fill rounded-(--app-radius) border-2 p-5 text-left transition-colors ${
                 myVote === matchup.playerB
                   ? 'border-(--app-accent) bg-(--app-accent)/10'
                   : myVote !== null
                     ? 'border-(--app-border) opacity-50'
-                    : 'border-(--app-border) bg-(--app-surface) hover:border-(--app-accent)/50'
+                    : 'border-(--app-border) hover:border-(--app-accent)/50'
               }`}
             >
               <div className="text-base font-medium text-(--app-text)">

@@ -57,7 +57,7 @@ export default function TurnIndicator({
   return (
     <motion.div
       layout
-      className="flex items-center justify-between rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) px-4 py-2 text-sm"
+      className="glass-fill flex items-center justify-between rounded-(--app-radius-sm) px-4 py-2 text-sm"
     >
       {/* Left: team + phase */}
       <div className="flex items-center gap-2">

@@ -122,7 +122,7 @@ export default function RhymeTimeInput({
             onKeyDown={handleKeyDown}
             disabled={atLimit}
             placeholder={atLimit ? t("max-submissions-reached", { defaultValue: "Max submissions reached" }) : t("type-a-rhyming-word", { defaultValue: "Type a rhyming word..." })}
-            className="flex-1 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface) px-4 py-2 text-sm text-(--app-text) placeholder:text-(--app-text-muted) focus:outline-none focus:ring-2 focus:ring-(--app-accent) disabled:opacity-50"
+            className="glass-inset flex-1 rounded-(--app-radius-sm) border border-(--app-border) px-4 py-2 text-sm text-(--app-text) placeholder:text-(--app-text-muted) focus:outline-none focus:ring-2 focus:ring-(--app-accent) disabled:opacity-50"
           />
           <button
             onClick={handleSubmit}
@@ -154,7 +154,7 @@ export default function RhymeTimeInput({
       </div>
 
       {/* Sidebar — live leaderboard */}
-      <aside className="hidden w-52 shrink-0 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4 md:block">
+      <aside className="app-glass hidden w-52 shrink-0 rounded-(--app-radius) p-4 md:block">
         <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
           <Users className="h-3.5 w-3.5" /> {t("submissions", { defaultValue: "Submissions" })}
         </h3>

@@ -54,7 +54,7 @@ export default function GameLog({ redTeam, blueTeam, logEntries }: GameLogProps)
   const { containerRef, contentRef } = useStickToBottom<HTMLDivElement, HTMLDivElement>();
 
   return (
-    <div className="flex flex-col rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) overflow-hidden">
+    <div className="app-glass flex flex-col rounded-(--app-radius) overflow-hidden">
       {/* Score header */}
       <div className="flex items-stretch border-b border-(--app-border)">
         {/* Red score */}

@@ -71,7 +71,7 @@ export default function ArticleReveal({
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="flex-1 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-4"
+          className="app-glass flex-1 rounded-(--app-radius) p-4"
         >
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-(--app-text-muted)">
             <BookOpen size={12} />
