@@ -37,6 +37,8 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
 import type { JellyFrame, JellyGlass } from './jelly-glass';
+import type { SelfEvertSkin } from './self-evert-skin';
+import { luminance, resolveColor } from '@/lib/liquid/glass/color';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
 import { evert } from '@/lib/eversion/thurston';
 import {
@@ -128,6 +130,8 @@ const AMBIENT_RESUME_MS = 4000;
  * (`lib/eversion/mini.ts`). At `e = 1` the surface is the antipodal sphere, and
  * this cage — meridians every 30°, parallels symmetric about the equator — is its
  * own antipode, so the last frame is the ordinary globe again: nothing jumps.
+ * The glass body everts with it: `./self-evert-skin` draws the same surface as
+ * lit glass while the resting disc fades out (see `prepareSkin`).
  */
 const SELF_EVERT_MS = 1500;
 /** The eversion proper, as a fraction of the run: the turn and tip span the whole. */
@@ -438,6 +442,8 @@ const DEFORM_OUT = new Float64Array(2);
 
 /** Concurrent ripples. Older ones are evicted, so a mash cannot grow the work. */
 const MAX_RIPPLES = 3;
+/** Scratch matrix for un-rotating a strike; module-level so a poke allocates nothing. */
+const strikeM = new Float64Array(9);
 /**
  * How brightly the crest is drawn. The wave is a specular travelling over glass,
  * so it has to read as brighter than the structure it passes over — the cage's
@@ -1174,8 +1180,83 @@ export function LiquidGlobe({
     if (!ambient || reduced || quiet.current) return;
     selfEvert.current = performance.now();
     stageRef.current?.closest('.radial-globe')?.setAttribute('data-self-evert', '');
+    skinOn.current = prepareSkin();
+    if (skinOn.current) stageRef.current?.setAttribute('data-skin', 'on');
     dirty.current = true;
   }, [ambient, reduced]);
+
+  /* ── The self-eversion's surface ──────────────────────────────────────────
+     The cage alone turned inside out in front of a glass disc that stayed a
+     disc. `./self-evert-skin` draws the everting sphere itself as lit glass,
+     through the cage's own projection, and radial.css fades the resting glass
+     out under it while `data-skin="on"` (and back as the run lands on the round
+     sphere again). The module is fetched with the docked globe; its WebGL
+     context is made on the first run. Where the shader material is not eligible
+     (`jellyEligible`), or WebGL2 will not start, the run is the wireframe over
+     the resting glass, as before. */
+  const skin = useRef<SelfEvertSkin | null>(null);
+  const skinModule = useRef<typeof import('./self-evert-skin') | null>(null);
+  /** Whether the playing run is drawn by the skin. Read by the frame loop. */
+  const skinOn = useRef(false);
+  useEffect(() => {
+    if (!ambient) return;
+    let cancelled = false;
+    void import('./self-evert-skin')
+      .then((m) => {
+        if (!cancelled) skinModule.current = m;
+      })
+      .catch(() => {
+        /* The run keeps its wireframe-only form. */
+      });
+    return () => {
+      cancelled = true;
+      skin.current?.canvas.remove();
+      skin.current = null;
+      skinOn.current = false;
+    };
+  }, [ambient]);
+
+  /** Mount, size and colour the skin for a run. False when the run should go without it. */
+  function prepareSkin(): boolean {
+    const stage = stageRef.current;
+    const mod = skinModule.current;
+    if (!stage || !mod || !jellyEligible()) return false;
+    let s = skin.current;
+    if (!s) {
+      s = mod.SelfEvertSkin.create();
+      if (!s) {
+        skinModule.current = null; // no WebGL2 here: do not try again
+        return false;
+      }
+      skin.current = s;
+    }
+    if (!s.ready) return false;
+    if (s.canvas.parentElement !== stage) stage.insertBefore(s.canvas, cageRef.current);
+    // Once per run, not per frame: a computed-style read is a style flush.
+    s.resize(cageSpan.current, sizeRef.current / 2, window.devicePixelRatio || 1);
+    const cs = getComputedStyle(stage);
+    const ink = resolveColor(cs.color || 'rgb(0 0 0)', [0, 0, 0, 1], document);
+    const accent = resolveColor(
+      cs.getPropertyValue('--site-accent').trim() || cs.color,
+      [0.4, 0.5, 1, 1],
+      document,
+    );
+    const bg = resolveColor(
+      cs.getPropertyValue('--site-bg').trim() || 'rgb(255 255 255)',
+      [1, 1, 1, 1],
+      document,
+    );
+    s.palette(
+      {
+        ink: [ink[0], ink[1], ink[2]],
+        accent: [accent[0], accent[1], accent[2]],
+        light: luminance(bg) > 0.5 ? 1 : 0,
+      },
+      PERSP,
+      LENS,
+    );
+    return true;
+  }
 
   const go = useCallback(
     (node: GlobeNode, entry: Exclude<EntryPoint, 'preview'> = 'release') => {
@@ -1791,6 +1872,7 @@ export function LiquidGlobe({
       }
 
       drawCage(now);
+      if (skinOn.current && selfRun.e >= 0) skin.current?.render(selfRun.e, DM, selfRun.fit);
     };
 
     /**
@@ -2020,6 +2102,9 @@ export function LiquidGlobe({
           selfEvert.current = 0;
           selfRun.e = -1;
           stageRef.current?.closest('.radial-globe')?.removeAttribute('data-self-evert');
+          // The skin keeps its last frame, the round sphere, while radial.css fades it out.
+          skinOn.current = false;
+          stageRef.current?.removeAttribute('data-skin');
         } else {
           const [a, b] = SELF_EVERT_WINDOW;
           selfRun.e = smoother01((u - a) / (b - a));
@@ -2209,6 +2294,23 @@ export function LiquidGlobe({
       w.vPitch += hit.y * WOBBLE_DEG * WOBBLE_KICK;
       jelly.nudge(-hit.x * 8, hit.y * 8, 1.1);
 
+      // Un-rotate the impact into the globe's own frame: screen = M·body for the
+      // trackball's matrix M, which is orthonormal, so body = Mᵀ·screen. This is
+      // what makes the ripple a mark on the BALL: everything the renderer samples
+      // (cage points, pin directions) lives in this space, so the wave turns with
+      // the surface instead of hanging in front of the screen.
+      const m = matrixOf(rot.current.q, strikeM);
+      const impact: Ripple = {
+        bx: m[0]! * hit.x + m[3]! * hit.y + m[6]! * hit.z,
+        by: m[1]! * hit.x + m[4]! * hit.y + m[7]! * hit.z,
+        bz: m[2]! * hit.x + m[5]! * hit.y + m[8]! * hit.z,
+        t0: performance.now(),
+      };
+
+      // Newest wins: a mash drops the oldest wave rather than accumulating work.
+      const live = ripples.current;
+      if (live.length >= MAX_RIPPLES) live.splice(0, live.length - MAX_RIPPLES + 1);
+      live.push(impact);
       dirty.current = true;
     },
     [reduced, jelly],

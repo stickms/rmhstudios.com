@@ -98,7 +98,8 @@ Search and filters sit directly below their tab group, before summaries or cards
 Controls use `--site-control-radius` (the small radius), panels use `--site-radius`;
 avatars, circular icon controls, badges and the globe keep their explicit shape.
 Clicks squash the jelly and discharge arcs through the shared services; they never
-change layout, and neighbours move at most the bounded nudge.
+change layout, and neighbours move at most the bounded nudge. The navigator globe is the one
+surface whose (dough) jelly ripples where it is pressed.
 Loading buttons reserve both label states before interaction.
 The navigator and its flattening/eversion share the liquid-glass studio material
 in `lib/liquid/globe-material.ts`; captured pages transmit through the surface

@@ -40,8 +40,9 @@ second image. Content panes do not sample their own captured text.
 
 ## Interaction and layout
 
-Clicks and taps never emit ripples, propagate waves to nearby UI, or change surrounding
-layout. A fine pointer can move a restrained reflected light and optically tilt the
+Clicks and taps never emit ripples on glass surfaces, propagate waves to nearby UI, or
+change surrounding layout. The navigator globe is the one exception: a press ripples its
+own jelly material (`components/radial/README.md` §Ripples), and nothing around it. A fine pointer can move a restrained reflected light and optically tilt the
 bevel; text and hit areas remain fixed. Coarse pointers disable that movement.
 The fallback runtime moves a decorative leaf below the content.
 No component installs its own cursor loop, animates root properties or reads geometry

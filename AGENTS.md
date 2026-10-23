@@ -32,7 +32,11 @@
   neighbours nudge ≤1.5px). Ambient motion and arcs have their own material
   switches (`jellyMotion`, `electricArcs`; WCAG 2.2.2/2.3.1) read only by
   `lib/jelly/tiers.ts`; the retired reduced-motion setting does not return. See
-  `docs/plasmatic-jelly-system.md`. Full-screen apps use the parallel
+  `docs/plasmatic-jelly-system.md`. On top of that, the owner's #989 layers add
+  dormant plasma that wakes on hover and brightens on press, an RGB-led edge with a
+  Fresnel line, a liquid-glass lens dent with a light dot that slides with the
+  pointer on press, and Coulomb-law charge between neighbours; the full rules are
+  the "Design system: Plasmatic Jelly" section of `CLAUDE.md`. Full-screen apps use the parallel
   `--app-*` contract (`components/shared/app-theme.css` + `AppShell`). The
   statement of the language is `design.md` at the root; read
   `docs/design-language.md` §0 before a UI commit; checklist in

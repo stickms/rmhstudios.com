@@ -157,7 +157,7 @@ paints a replacement cursor, moves a gradient centre, or animates a root variabl
 and no component adds its own pointer loop, deformation or arc code. **The
 background remains still**: jelly moves, the room does not. Reduced transparency,
 high contrast, forced colours and `perf-lite` remove the ambient motion and arcs
-live. See [the implementation contract](docs/plasmatic-jelly-system.md).
+live. The navigator globe keeps its own dough jelly, which ripples where it is pressed. See [the implementation contract](docs/plasmatic-jelly-system.md).
 
 **A tier class is not decoration you can inline.** `bg-site-surface border
 border-site-border rounded-site shadow-site-sm` renders the same _box_ as
