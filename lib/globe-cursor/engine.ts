@@ -129,12 +129,6 @@ interface Particle {
   size: number;
 }
 
-interface Ripple {
-  x: number;
-  y: number;
-  age: number;
-}
-
 export class GlobeCursorEngine {
   private s: GlobeCursorSettings;
   private reduced = false;
@@ -193,7 +187,6 @@ export class GlobeCursorEngine {
 
   // Effects.
   private particles: Particle[] = [];
-  private ripples: Ripple[] = [];
   /** Follower history, newest first, stamped with `time`. */
   private trail: { x: number; y: number; t: number }[] = [];
 
@@ -237,7 +230,6 @@ export class GlobeCursorEngine {
     if (detailChanged) this.buildMesh();
     if (settings.trail === 0) this.trail.length = 0;
     if (!settings.sparkles) this.particles.length = 0;
-    if (!settings.ripples) this.ripples.length = 0;
   }
 
   setReduced(reduced: boolean): void {
@@ -277,7 +269,6 @@ export class GlobeCursorEngine {
     this.pressed = true;
     if (this.reduced) return;
     this.wobbleV += 6 * (0.3 + this.s.jelly);
-    if (this.s.ripples) this.ripples.push({ x: this.tx, y: this.ty, age: 0 });
     if (this.s.sparkles) this.burst(this.tx, this.ty, 14, 260);
   }
 
@@ -287,13 +278,7 @@ export class GlobeCursorEngine {
 
   /** True while anything is still visibly changing — the caller stops its frame when this is false. */
   busy(): boolean {
-    return (
-      this.visible ||
-      this.alpha > 0.01 ||
-      this.particles.length > 0 ||
-      this.ripples.length > 0 ||
-      this.trail.length > 0
-    );
+    return this.visible || this.alpha > 0.01 || this.particles.length > 0 || this.trail.length > 0;
   }
 
   /* ── Simulation ────────────────────────────────────────────────────────── */
@@ -429,10 +414,6 @@ export class GlobeCursorEngine {
       p.vy *= 1 - dt * 1.8;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-    }
-    for (let i = this.ripples.length - 1; i >= 0; i--) {
-      this.ripples[i]!.age += dt;
-      if (this.ripples[i]!.age > 0.7) this.ripples.splice(i, 1);
     }
   }
 
@@ -936,7 +917,7 @@ export class GlobeCursorEngine {
     const alpha = this.alpha * s.opacity;
     this.bx0 = this.by0 = Infinity;
     this.bx1 = this.by1 = -Infinity;
-    if (alpha < 0.005 && this.particles.length === 0 && this.ripples.length === 0) return null;
+    if (alpha < 0.005 && this.particles.length === 0) return null;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const css = this.paintSprite();
@@ -945,17 +926,6 @@ export class GlobeCursorEngine {
     const ox = textMode ? 16 : 0;
     const oy = textMode ? 16 : 0;
     const R = (s.size / 2) * this.scale;
-
-    // Ripples.
-    for (const r of this.ripples) {
-      const t = r.age / 0.7;
-      this.grow(r.x, r.y, R * (0.8 + t * 3) + 4);
-      ctx.beginPath();
-      ctx.arc(r.x, r.y, R * (0.8 + t * 3), 0, TWO_PI);
-      ctx.strokeStyle = this.glowCss((1 - t) * 0.7 * this.alpha);
-      ctx.lineWidth = 2.5 * (1 - t) + 0.5;
-      ctx.stroke();
-    }
 
     // Sparkles.
     if (this.particles.length) {

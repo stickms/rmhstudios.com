@@ -1139,7 +1139,7 @@ class TimelineEngine {
     s.radius = r;
     s.centreX = cx;
     s.centreY = cy;
-    s.rippleAge = this.started ? t / 1000 : -1;
+    s.rippleAge = -1;
     // The clear colour dissolves with the page (`pageAlpha` is 1 until `reveal`): nothing outside the page quad
     // is left to pop out at the end.
     s.bgAlpha = s.pageAlpha;

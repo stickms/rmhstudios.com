@@ -11,9 +11,11 @@ import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { RadialHub } from './RadialHub';
 import { RadialNavRail } from './RadialNavRail';
+import { RadialQuickNav } from './RadialQuickNav';
 import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
 import { TabBadge } from '@/components/site/TabBadge';
+import { openCommandPalette } from '@/components/site/command-palette-bus';
 
 /**
  * The four quick panels, behind a lazy boundary — same treatment, and the same
@@ -30,7 +32,6 @@ import { TabBadge } from '@/components/site/TabBadge';
  * All four `lazy()` calls name the SAME module, so they resolve to one chunk
  * fetched once — not four.
  */
-const SearchPanel = lazy(() => import('./TopBarPanels').then((m) => ({ default: m.SearchPanel })));
 const NotificationsPanel = lazy(() =>
   import('./TopBarPanels').then((m) => ({ default: m.NotificationsPanel })),
 );
@@ -122,7 +123,7 @@ function RadialBackdrop() {
   );
 }
 
-type QuickPanelId = 'search' | 'notifications' | 'messages' | 'profile';
+type QuickPanelId = 'notifications' | 'messages' | 'profile';
 
 /**
  * Slim, quiet utility bar. Identity + search + inbox; the radial hub owns nav.
@@ -154,7 +155,6 @@ function RadialTopBar() {
    * downloads it.
    */
   const [panelsMounted, setPanelsMounted] = useState(false);
-  const searchRef = useRef<HTMLButtonElement | null>(null);
   const messagesRef = useRef<HTMLButtonElement | null>(null);
   const bellRef = useRef<HTMLButtonElement | null>(null);
   const avatarRef = useRef<HTMLButtonElement | null>(null);
@@ -206,21 +206,19 @@ function RadialTopBar() {
       <div className="radial-topbar__actions">
         <button
           type="button"
-          ref={searchRef}
-          className="radial-topbar__btn"
+          className="radial-topbar__btn radial-topbar__search"
           data-evert=""
           data-fluid-press=""
-          onClick={() => toggle('search')}
+          onClick={openCommandPalette}
           {...panelIntentProps}
           aria-haspopup="dialog"
-          aria-expanded={panel === 'search'}
           aria-label={t('search', { defaultValue: 'Search' })}
+          aria-keyshortcuts="/"
         >
           <Search aria-hidden />
+          <span>{t('search-site', { defaultValue: 'Search RMH Studios' })}</span>
+          <kbd aria-hidden>/</kbd>
         </button>
-        <LazyPanel mounted={panelsMounted}>
-          <SearchPanel open={panel === 'search'} onClose={close} anchorRef={searchRef} />
-        </LazyPanel>
 
         {session ? (
           <>
@@ -339,7 +337,7 @@ interface RadialShellProps {
  * column to 3000px.
  */
 export function RadialShell({ children, overlays }: RadialShellProps) {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation('feed');
   // The home layout follows the page actually ON SCREEN, not the URL. The URL
   // changes the instant a navigation starts, while the outgoing page stays
   // rendered until the incoming one (or its pending skeleton) commits — so
@@ -351,6 +349,14 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
     select: (s) => (s.resolvedLocation ?? s.location).pathname,
   });
   const isHome = renderedPathname === '/';
+  const layout = /^\/(store|games|apps|create|library)(\/|$)/.test(renderedPathname)
+    ? 'catalog'
+    : /^\/(messages|settings|admin|developer)(\/|$)/.test(renderedPathname)
+      ? 'workspace'
+      : /^\/(blog|news)(\/|$)/.test(renderedPathname)
+        ? 'editorial'
+        : 'social';
+  const shellRef = useRef<HTMLDivElement | null>(null);
   const [railSlot, setRailSlot] = useState<HTMLElement | null>(null);
   const railSlotRef = useRef<HTMLDivElement | null>(null);
 
@@ -358,10 +364,26 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
   // route's `rightSidebar` into it (see components/radial/rail-slot.tsx).
   useEffect(() => setRailSlot(railSlotRef.current), []);
 
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry?.contentRect.width)
+        shell.style.setProperty('--rad-viewport-width', `${entry.contentRect.width}px`);
+    });
+    observer.observe(shell);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="vibe-app site-shell radial-shell" data-home={isHome || undefined}>
+    <div
+      ref={shellRef}
+      className="vibe-app site-shell radial-shell"
+      data-layout={layout}
+      data-home={isHome || undefined}
+    >
       <a href="#main-content" className="radial-skip">
-        {t('skipToContent', { defaultValue: 'Skip to content' })}
+        {t('common:skipToContent', { defaultValue: 'Skip to content' })}
       </a>
 
       <RadialBackdrop />
@@ -381,6 +403,7 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
         </div>
       </RailSlotContext.Provider>
 
+      <RadialQuickNav />
       <RadialHub />
 
       {overlays}

@@ -87,7 +87,8 @@ function Store() {
   const { t } = useTranslation('site');
   const { t: te } = useTranslation('f-economy-plus');
   const { tier: currentTier, shop, listings, viewerId } = Route.useLoaderData();
-  const { tab = 'membership', feature } = Route.useSearch();
+  const { tab: requestedTab, feature } = Route.useSearch();
+  const tab = requestedTab ?? (feature ? 'membership' : 'shop');
   const navigate = useNavigate();
 
   const setTab = useCallback(
@@ -98,18 +99,19 @@ function Store() {
   );
 
   const tabs: LiquidTab[] = [
+    { id: 'shop', label: t('store-tab-shop', { defaultValue: 'Shop' }), icon: ShoppingBag },
+    { id: 'market', label: t('store-tab-market', { defaultValue: 'Market' }), icon: StoreIcon },
+    { id: 'daily', label: te('store-tab-daily', { defaultValue: 'Daily' }), icon: CalendarClock },
     {
       id: 'membership',
       label: t('store-tab-membership', { defaultValue: 'Membership' }),
       icon: Sparkles,
     },
-    { id: 'shop', label: t('store-tab-shop', { defaultValue: 'Shop' }), icon: ShoppingBag },
-    { id: 'daily', label: te('store-tab-daily', { defaultValue: 'Daily' }), icon: CalendarClock },
-    { id: 'market', label: t('store-tab-market', { defaultValue: 'Market' }), icon: StoreIcon },
   ];
 
   return (
     <PageLayout
+      wide
       title={t('store-title', { defaultValue: 'Store' })}
       description={t('store-subtitle', {
         defaultValue: 'Membership, cosmetics you can buy with coins, and the player marketplace.',

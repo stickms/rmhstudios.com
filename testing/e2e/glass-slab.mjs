@@ -6,7 +6,7 @@
  * A loud scene (text, stripes, circles) is both the page background and the snapshot texture; glass surfaces of several
  * shapes are drawn over it by `GlassRenderer`. Asserts that the shader compiles, that the interior is transparent (the
  * live DOM must show through), that the rim is opaque and genuinely differs from the unrefracted page, that the cursor
- * light moves the highlight, that a ripple changes the surface, and that with no scene only lighting is drawn. Writes a
+ * light moves the highlight, that repeated draws stay stable, and that with no scene only lighting is drawn. Writes a
  * labelled contact sheet to the OS temp dir for a human to look at.
  */
 import assert from 'node:assert/strict';
@@ -48,19 +48,15 @@ const bundle = await build({
           state.items.push({ ...s, c });
         }
       }
-      const ripples = () => { const a = new Float32Array(12); for (let i = 3; i < 12; i += 4) a[i - 1] = -1; return a; };
       window.draw = (name, over = {}) => {
         const it = state.items.find((i) => i.name === name);
-        const rip = over.ripples ?? ripples();
         return r.draw({
           width: it.w, height: it.h, dpr: 2, radius: it.r, bezel: it.bz, thickness: it.bz * 0.85,
           sceneX: it.x, sceneY: it.y, sceneW: W, sceneH: H, sceneOn: over.sceneOn ?? 1,
           tint: [0.96, 0.97, 1, 0.1], rim: [1, 1, 1], ink: over.ink ?? [0.05, 0.07, 0.12], dark: 0,
           lightX: over.lightX ?? -999, lightY: over.lightY ?? -999, lightZ: 90, lightOn: over.lightOn ?? 0,
-          ripples: rip, press: 0,
         }, it.c);
       };
-      window.ripplesAt = (x, y, age, amp = 1) => { const a = ripples(); a[0] = x; a[1] = y; a[2] = age; a[3] = amp; return a; };
       window.alphaAt = (name, x, y) => {
         const it = state.items.find((i) => i.name === name);
         const ctx = it.c.getContext('2d', { willReadFrequently: true });
@@ -96,7 +92,7 @@ const SPECS = [
   { name: 'wide', x: 570, y: 150, w: 280, h: 100, r: 18, bz: 18 },
   { name: 'tall', x: 60, y: 350, w: 150, h: 240, r: 30, bz: 26 },
   { name: 'light', x: 250, y: 360, w: 360, h: 220, r: 28, bz: 22 },
-  { name: 'ripple', x: 640, y: 360, w: 240, h: 220, r: 28, bz: 22 },
+  { name: 'stable', x: 640, y: 360, w: 240, h: 220, r: 28, bz: 22 },
 ];
 
 const slabHtml = `<style>body{margin:0}#stage{position:absolute;inset:0}#page{position:absolute;left:0;top:0}</style>
@@ -187,24 +183,21 @@ try {
   const dLight = await page.evaluate((a) => window.meanAbsDiff('light', a), a);
   check(`the cursor light moves the highlights (mean Δ ${dLight.toFixed(2)})`, dLight > 0.6);
 
-  // Ripple: the surface changes while a wave crosses it and returns to rest after its life.
-  const restRip = await page.evaluate(() => (window.draw('ripple'), window.snapshot('ripple')));
-  await page.evaluate(() => window.draw('ripple', { ripples: window.ripplesAt(120, 110, 0.25) }));
-  const dRip = await page.evaluate((a) => window.meanAbsDiff('ripple', a), restRip);
-  check(`a tap ripple visibly moves the glass surface (mean Δ ${dRip.toFixed(2)})`, dRip > 0.4);
-  await page.evaluate(() => window.draw('ripple', { ripples: window.ripplesAt(120, 110, 2.0) }));
+  // A resting material is deterministic; it never needs a click animation to settle.
+  const rest = await page.evaluate(() => (window.draw('stable'), window.snapshot('stable')));
+  await page.evaluate(() => window.draw('stable'));
   check(
-    'and the surface is exactly at rest once the ripple has gone',
-    (await page.evaluate((a) => window.meanAbsDiff('ripple', a), restRip)) < 0.01,
+    'repainting resting glass leaves every pixel unchanged',
+    (await page.evaluate((a) => window.meanAbsDiff('stable', a), rest)) < 0.01,
   );
 
-  // Final contact sheet: light + a mid-flight ripple on the demo surfaces.
+  // Final contact sheet: reflections on on the demo surfaces.
   await page.evaluate(() => {
     window.draw('light', { lightX: 90, lightY: 60, lightOn: 1 });
-    window.draw('ripple', { ripples: window.ripplesAt(70, 100, 0.3) });
+    window.draw('stable');
     window.draw('card', { lightX: 280, lightY: 60, lightOn: 1 });
   });
-  await page.screenshot({ path: join(out, '3-light-ripple.png') });
+  await page.screenshot({ path: join(out, '3-reflections.png') });
   // A realistic backdrop: an aurora ground with content cards, the way the site actually looks behind its glass.
   await page.evaluate(() => {
     const page = document.getElementById('page');

@@ -37,6 +37,7 @@
 
 import { CONTACT, DOUGH_EXTENT, DOUGH_N } from '@/lib/dough';
 import { GLASS_OPTICS_GLSL } from '@/lib/liquid/optics';
+import { LIQUID_GLOBE_MATERIAL_GLSL } from '@/lib/liquid/globe-material';
 import type { SharedScene } from '@/lib/liquid/glass/scene-store';
 
 /** Everything the material needs for one frame. All coordinates are in radii of the sphere, y DOWN. */
@@ -56,7 +57,6 @@ export interface JellyFrame {
 /** Colours resolved from the theme, 0–1 sRGB. */
 export interface JellyPalette {
   ink: [number, number, number];
-  accent: [number, number, number];
   /** 1 on a light ground, 0 on a dark one. */
   light: number;
   /** The page ground, so the image refracted through the ball is washed toward what actually surrounds it. */
@@ -111,7 +111,6 @@ in vec2 vP;
 out vec4 outColor;
 uniform float uPx;
 uniform vec3 uInk;
-uniform vec3 uAccent;
 uniform float uLight;
 uniform vec4 uRip[${JELLY_RIPPLES}];
 uniform vec4 uShape;
@@ -133,6 +132,7 @@ const float CONTACT_R = ${CONTACT.toFixed(4)};
 const float CELL = ${((2 * DOUGH_EXTENT) / (DOUGH_N - 1)).toFixed(5)};
 
 ${GLASS_OPTICS_GLSL}
+${LIQUID_GLOBE_MATERIAL_GLSL}
 
 vec3 field(vec2 q) {
   return texture(uField, q / (2.0 * EXTENT) + 0.5).xyz;
@@ -144,13 +144,6 @@ float wave(float age, float dist) {
   if (abs(q) > 4.0) return 0.0;
   float d = 1.0 - age / uShape.w;
   return uShape.z * (1.0 - q * q) * exp(-0.5 * q * q) * d * d;
-}
-
-// A rounded, feathered rectangle in direction space — the studio's softbox.
-float box(vec2 q, vec2 c, vec2 halfSize, float feather) {
-  vec2 e = abs(q - c) - halfSize;
-  float sd = length(max(e, 0.0)) + min(max(e.x, e.y), 0.0);
-  return 1.0 - smoothstep(-feather, feather, sd);
 }
 
 void main() {
@@ -206,17 +199,14 @@ void main() {
 
   // ── Reflection: the studio, mirrored, weighted by Fresnel ──
   float fres = glassFresnel(nz).g;
-  float sky = 1.0 - smoothstep(-0.9, 0.3, rf.y);
-  float win = box(rf.xy, vec2(-0.56, -0.66), vec2(0.13, 0.055), 0.035);
+  vec3 environment = globeEnvironment(rf, vec3(0.0), vec3(1.0));
   float floorDark = smoothstep(-0.1, 0.8, rf.y);
-  float refl = win * (0.34 + 0.5 * fres) + sky * 0.3 * fres;
+  float refl = environment.g * (0.4 + 0.6 * fres);
 
   // ── Specular: a small hard glint at the window's hot spot, and a kicker ──
   vec3 L1 = normalize(vec3(-0.5, -0.62, 0.6));
   float k1 = max(dot(n, normalize(L1 + v)), 0.0);
-  float spec = pow(k1, 1400.0) * 1.1 + pow(k1, 90.0) * 0.08;
-  vec3 L2 = normalize(vec3(0.62, 0.5, 0.6));
-  float spec2 = pow(max(dot(n, normalize(L2 + v)), 0.0), 220.0) * 0.28;
+  float spec = globeSpecular(n, v);
 
   // ── The rim: thick glass is brightest in a hairline right at the limb, and darkest just inside it ──
   float rimLine = smoothstep(0.935, 0.99, r) * (1.0 - smoothstep(0.99, 1.0, r));
@@ -258,8 +248,8 @@ void main() {
   edge += darkWall * 0.15;
 
   // Composite, premultiplied. Body and edge are a tinted medium (over); the light is added on top of it.
-  vec3 hi = mix(vec3(1.0), uAccent, 0.08);
-  vec3 col = uAccent * body + mix(uInk, uAccent, step(0.0001, darkWall) * 0.55) * edge * (1.0 - body);
+  vec3 hi = vec3(1.0);
+  vec3 col = uBg * body + uInk * edge * (1.0 - body);
   float a = body + edge * (1.0 - body);
   col *= 1.0 - floorDark * 0.25 * fres;
 
@@ -292,8 +282,8 @@ void main() {
     a = a * (1.0 - la * sa) + la * sa;
   }
 
-  vec3 glow = mix(hi, uAccent, 0.55);
-  float lightA = refl * 0.7 + spec + spec2 + rimLine * 0.38 + crest * 3.2 * (0.4 + fres) + stress * 0.06;
+  vec3 glow = hi;
+  float lightA = refl * 0.7 + spec + rimLine * 0.38 + crest * 3.2 * (0.4 + fres) + stress * 0.06;
   lightA += litWall * 0.42 + sheen + lip * 0.22;
   float transA = (tband + caustic) * (1.0 - fres * 0.5);
   col += hi * lightA + glow * transA;
@@ -310,7 +300,6 @@ interface Uniforms {
   e: WebGLUniformLocation | null;
   px: WebGLUniformLocation | null;
   ink: WebGLUniformLocation | null;
-  accent: WebGLUniformLocation | null;
   light: WebGLUniformLocation | null;
   rip: WebGLUniformLocation | null;
   shape: WebGLUniformLocation | null;
@@ -451,7 +440,6 @@ export class JellyGlass {
       e: loc('uE'),
       px: loc('uPx'),
       ink: loc('uInk'),
-      accent: loc('uAccent'),
       light: loc('uLight'),
       rip: loc('uRip'),
       shape: loc('uShape'),
@@ -502,7 +490,6 @@ export class JellyGlass {
     const u = this.u;
     if (!gl || !u) return;
     gl.uniform3f(u.ink, p.ink[0], p.ink[1], p.ink[2]);
-    gl.uniform3f(u.accent, p.accent[0], p.accent[1], p.accent[2]);
     gl.uniform3f(u.bg, p.bg[0], p.bg[1], p.bg[2]);
     gl.uniform1f(u.light, p.light);
     gl.uniform4f(u.shape, shape.speed, shape.width, shape.amplitude, shape.life);

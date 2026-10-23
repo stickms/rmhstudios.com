@@ -122,7 +122,7 @@
 
   /* The engine's slab. The canvas is the host's last child, painted BEHIND its content: `isolation` makes the host the
      stacking context the negative z-index is resolved in, so the canvas sits above the host's own tint and below every
-     in-flow child, positioned or not. The shader draws the bevel, rim light and ripples, so the static CSS edge and coat
+     in-flow child, positioned or not. The shader draws the bevel and rim light, so the static CSS edge and coat
      step aside; the host keeps its tint (the interior shows through it) and its hairline border. There is no drop shadow anywhere. */
   .liquid-glass-canvas {
     position: absolute;
@@ -151,9 +151,6 @@
   }
 
   /* The shader's tilt/light is the hover state on every admitted control. */
-  [data-liquid-canvas='on'][data-evert]::before {
-    background: none;
-  }
   .evert-ghost[data-kind='hover'][data-liquid-canvas='on'] {
     background: none;
   }
@@ -177,7 +174,7 @@
     border-radius: inherit;
     pointer-events: none;
     contain: strict;
-    z-index: 1;
+    z-index: -1;
   }
   .liquid-light > span {
     position: absolute;
@@ -188,7 +185,7 @@
     border-radius: 50%;
     background: radial-gradient(
       closest-side,
-      color-mix(in srgb, var(--site-glass-light, white) 36%, transparent),
+      color-mix(in srgb, var(--site-glass-light, white) 18%, transparent),
       transparent
     );
     opacity: 0.55;

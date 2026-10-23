@@ -75,14 +75,16 @@
   --app-rare: #b58ad9;
 
   /* Type */
-  --app-font-display: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --app-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --app-font-display:
+    -apple-system, BlinkMacSystemFont, var(--font-inter), 'Segoe UI', system-ui, sans-serif;
+  --app-font-body:
+    -apple-system, BlinkMacSystemFont, var(--font-inter), 'Segoe UI', system-ui, sans-serif;
   --app-font-mono: 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
 
   /* Shape */
-  --app-radius: 12px;
-  --app-radius-sm: 8px;
-  --app-radius-lg: 18px;
+  --app-radius: 16px;
+  --app-radius-sm: 12px;
+  --app-radius-lg: 24px;
 
   /* Depth */
   --app-shadow: 0 0 0 0 transparent;
@@ -90,8 +92,8 @@
 
   /* Motion — one duration scale, so every app eases alike */
   --app-duration-fast: 120ms;
-  --app-duration: 200ms;
-  --app-duration-slow: 320ms;
+  --app-duration: 160ms;
+  --app-duration-slow: 220ms;
   --app-ease: cubic-bezier(0.32, 0.72, 0, 1);
 
   /* Density — `.app-compact` / `.app-spacious` shift these */
@@ -484,7 +486,7 @@
     150deg,
     color-mix(in srgb, var(--app-text) 7%, transparent),
     transparent 45%,
-    color-mix(in srgb, var(--app-accent) 5%, transparent)
+    color-mix(in srgb, var(--app-text) 3%, transparent)
   );
   border: 1px solid var(--app-border-bright);
   box-shadow: none;

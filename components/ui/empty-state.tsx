@@ -4,11 +4,11 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
- icon?: LucideIcon;
- title?: React.ReactNode;
- description?: React.ReactNode;
- action?: React.ReactNode;
- className?: string;
+  icon?: LucideIcon;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: React.ReactNode;
+  className?: string;
 }
 
 /**
@@ -17,27 +17,25 @@ interface EmptyStateProps {
  * with one consistently-spaced component.
  */
 export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
- return (
- <div
- data-slot="empty-state"
- className={cn(
- 'flex flex-col items-center justify-center gap-3 px-5 py-[clamp(2.5rem,7vw,4rem)] text-center',
- className,
- )}
- >
- {Icon ? (
- // Glass medallion — the icon rests on a small L1 .glass-fill disc (§7.2).
- <div className="glass-fill flex h-12 w-12 items-center justify-center rounded-full">
- <Icon className="h-5 w-5 text-site-text-dim" aria-hidden />
- </div>
- ) : null}
- {title ? (
- <p className="font-display text-xl font-medium text-site-text">
- {title}
- </p>
- ) : null}
- {description ? <p className="max-w-sm text-sm text-site-text-muted">{description}</p> : null}
- {action ? <div className="mt-1">{action}</div> : null}
- </div>
- );
+  return (
+    <div
+      data-slot="empty-state"
+      className={cn(
+        'flex flex-col items-center justify-center gap-3 px-5 py-[clamp(2.5rem,7vw,4rem)] text-center',
+        className,
+      )}
+    >
+      {Icon ? (
+        // Glass medallion — the icon rests on a small L1 .glass-fill disc (§7.2).
+        <div className="glass-fill flex h-12 w-12 items-center justify-center rounded-full">
+          <Icon className="h-5 w-5 text-site-text-muted" aria-hidden />
+        </div>
+      ) : null}
+      {title ? <p className="font-display text-xl font-medium text-site-text">{title}</p> : null}
+      {description ? (
+        <p className="max-w-sm text-sm leading-relaxed text-site-text-muted">{description}</p>
+      ) : null}
+      {action ? <div className="mt-1">{action}</div> : null}
+    </div>
+  );
 }

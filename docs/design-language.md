@@ -20,7 +20,7 @@ architecture. Two ideas, one language:
   inline compose box; navigation lives in a fixed **RMH
   hub** that, when tapped, sends the orb to the middle of the screen and swells
   it into a **liquid globe** — the destinations pinned to a glass sphere you
-  turn, hold and let go of to travel — and that **ripples when you poke it**. A
+  turn, hold and let go of to travel — with no tap waves. A
   fixed **ring backdrop**, a soft blob field and the aurora keep the whole
   surface feeling continuous — and **still**: nothing in the backdrop animates,
   on any tier, so a page at rest goes idle (§5.5 Living backdrop;
@@ -30,7 +30,7 @@ architecture. Two ideas, one language:
   directional rim and clear coat. Singular panes/chrome/overlays use native
   backdrop frost; repeated cards use a cheaper tint/rim tier. The public role
   classes are `.glass-fill`, `.glass-pane`, `.glass-chrome`, `.glass-overlay`
-  and `.glass-inset`. Nearby tap waves and cursor lighting are owned by one
+  and `.glass-inset`. Cursor lighting is owned by one
   bounded document runtime; the globe adds a dielectric coat and contact dent.
 
 **Everything rests on one contract:** a single set of CSS custom properties
@@ -45,7 +45,7 @@ without a single component change.
 > [`liquid-glass-system.md`](liquid-glass-system.md)). Everywhere below that speaks
 > of a tier's "backdrop blur", its "≤8 backdrop-filters" budget, or an
 > `@supports not (backdrop-filter)` fallback, read it as: the budget is **≤8 shader
-> slabs per viewport**, `glass-fill` and solid controls are slabs too (budget 24 visible, roles first), there are **no box-shadows** on UI surfaces (the shadow tokens are zero), and the CSS material is the
+> slabs per viewport**, `glass-fill`, fields and small controls use the CSS reflection material, there are **no box-shadows** on UI surfaces (the shadow tokens are zero), and the CSS material is the
 > fallback in every engine. The role-by-purpose rules are unchanged.
 >
 > **Current implementation (2026-10-21).** The radial shell and navigator live
@@ -57,7 +57,7 @@ without a single component change.
 > lens, sheen and blanket cursor-retirement implementation notes below. The old
 > SVG lens filters and `lib/glass-lens.ts` were removed. Historical modifier names
 > are compatibility aliases; they do not restore the old optics. Ordinary HTML
-> uses native frost and an approximate clear coat. The independent globe coat
+> uses a clear CSS reflection coat. The independent globe coat
 > models dielectric lighting; eversion refracts existing captured page textures.
 > The contract documents optical limits, preference fallbacks and finite motion.
 >
@@ -81,6 +81,21 @@ has since been deleted).
 ---
 
 ## 0. Definition of done for a UI commit
+
+**Current interaction contract (2026-10-22).** Everyday navigation is immediate;
+only destinations selected through the open liquid globe use eversion. A legacy
+`all` transition preference resolves to `globe`. The mobile shortcut bar and
+grouped desktop rail supplement the globe. Controls use short colour/opacity
+changes; floating surfaces use reversible transitions that preserve their current
+frame when interrupted. System and account reduced-motion preferences both apply.
+Page titles wrap by default, and search/filter rows must fit a 320px viewport.
+Search and filters sit directly below their tab group, before summaries or cards.
+Controls use `--site-control-radius` (the small radius), panels use `--site-radius`;
+avatars, circular icon controls, badges and the globe keep their explicit shape.
+Taps never emit ripples. Loading buttons reserve both label states before interaction.
+The navigator and its flattening/eversion share the liquid-glass studio material
+in `lib/liquid/globe-material.ts`; captured pages transmit through the surface
+instead of becoming a matte, diffuse globe.
 
 Read this before touching pixels; it is the short version of everything below,
 and the thing to re-read at the end of the change. A UI commit is done when all

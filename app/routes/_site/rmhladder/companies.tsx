@@ -40,8 +40,12 @@ const fetchCompanies = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/companies' } });
-    const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
+    if (!session?.user)
+      throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/companies' } });
+    const admin = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isAdmin: true },
+    });
     if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
     const [companies, settings] = await Promise.all([
       listCompanies(queriesPrisma, { q: data.q }),
@@ -55,11 +59,17 @@ const doCompanyAction = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/companies' } });
-    const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
+    if (!session?.user)
+      throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/companies' } });
+    const admin = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isAdmin: true },
+    });
     if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
-    if (data.kind === 'enabled') return setCompanyEnabled(actionsPrisma, data.companyId, data.enabled);
-    if (data.kind === 'priority') return setCompanyPriority(actionsPrisma, data.companyId, data.priorityLevel);
+    if (data.kind === 'enabled')
+      return setCompanyEnabled(actionsPrisma, data.companyId, data.enabled);
+    if (data.kind === 'priority')
+      return setCompanyPriority(actionsPrisma, data.companyId, data.priorityLevel);
     return toggleWatchlist(actionsPrisma, session.user.id, data.companyId, data.on);
   });
 
@@ -76,7 +86,14 @@ export const Route = createFileRoute('/_site/rmhladder/companies')({
   component: CompaniesPage,
 });
 
-const API_PLATFORMS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'workday', 'manual'] as const;
+const API_PLATFORMS = [
+  'greenhouse',
+  'lever',
+  'ashby',
+  'smartrecruiters',
+  'workday',
+  'manual',
+] as const;
 
 function CompaniesPage() {
   const { t } = useTranslation('site');
@@ -106,7 +123,6 @@ function CompaniesPage() {
       setRows(companies as AnyRow[]);
       setWatchlist(new Set(watchlistCompanyIds));
       setLimit(PAGE); // a new result set starts at the top again
-
     }
   }, [companies, watchlistCompanyIds]);
 
@@ -178,7 +194,7 @@ function CompaniesPage() {
         </p>
       )}
 
-      <div className="rl-filter-bar">
+      <div data-slot="page-controls" className="rl-filter-bar">
         <Input
           type="search"
           className="sm:max-w-xs"
@@ -272,7 +288,13 @@ function CompaniesPage() {
                         <Badge
                           key={p}
                           size="sm"
-                          variant={status === 'active' ? 'success' : status === 'error' || status === 'blocked' ? 'danger' : 'outline'}
+                          variant={
+                            status === 'active'
+                              ? 'success'
+                              : status === 'error' || status === 'blocked'
+                                ? 'danger'
+                                : 'outline'
+                          }
                           title={label}
                         >
                           {label}

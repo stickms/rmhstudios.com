@@ -124,5 +124,6 @@
   "tilt-denied": "Motion access was declined. You can enable it in Safari settings.",
   "tilt-effects": "Tilt effects",
   "tilt-effects-desc": "Let the glass catch light as you tilt your device.",
-  "tilt-enabled": "Tilt effects on"
+  "tilt-enabled": "Tilt effects on",
+  "globe-navigation-only-hint": "The liquid globe flattens and turns inside out when you choose a destination. Other links open immediately."
 }

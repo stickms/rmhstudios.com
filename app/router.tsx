@@ -57,7 +57,7 @@ export function getRouter() {
     // §Instant navigation).
     defaultPendingComponent: RoutePending,
     defaultPendingMs: 400,
-    defaultPendingMinMs: 200,
+    defaultPendingMinMs: 0,
   });
 
   // A 404 thrown by a nested loader: the server builds <head> only up to the

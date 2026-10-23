@@ -35,5 +35,16 @@
   "select-all": "Select all",
   "selection-actions": "Selection actions",
   "selection-count_one": "{{count}} selected",
-  "selection-count_other": "{{count}} selected"
+  "selection-count_other": "{{count}} selected",
+  "page-error-description": "We could not load this page. Try again, or head back home.",
+  "page-error-home": "Go home",
+  "page-error-retry": "Try again",
+  "page-error-title": "Something went wrong",
+  "glass-intro": "Clear glass catches light along its bevel and gently refracts the page at its edge. Move your cursor to explore the reflections; tapping keeps the surface still.",
+  "glass-stable-taps": "Stable tap feedback",
+  "glass-cursor-title": "Light and reflections",
+  "glass-cursor-description": "On a fine pointer, the cursor moves a soft reflection along the bevel. Text and hit areas stay fixed. Touch and reduced motion keep the material still, with no tap ripples.",
+  "glass-clear-edge": "Clear edges",
+  "glass-stable-surface": "Stable surfaces",
+  "loading": "Loading…"
 }

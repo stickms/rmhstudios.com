@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 // Hover is the shared optical glass response (tilted reflections and rim light).
 // Resting variant colours stay stable; focus keeps the site-wide ring (§8).
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-[0.78rem] font-semibold tracking-[-0.01em] transition-[scale,color,background-color,border-color,opacity] duration-site-fast ease-out active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
+  "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-sm font-medium tracking-[-0.01em] transition-[scale,color,background-color,border-color,opacity] duration-site-fast ease-out active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
   {
     variants: {
       variant: {
@@ -22,9 +22,10 @@ const buttonVariants = cva(
         // Hover was border-brighten-only, which on a transparent fill is close
         // to imperceptible — the outline button reads as inert until clicked.
         // A surface tint gives it the same feedback every other variant has.
-        outline: 'border-site-border bg-transparent text-site-text hover:border-site-border-bright',
-        secondary: 'border-site-border bg-site-surface text-site-text',
-        ghost: 'text-site-text',
+        outline:
+          'border-site-border bg-transparent text-site-text hover:bg-site-surface-hover hover:border-site-border-bright',
+        secondary: 'border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover',
+        ghost: 'text-site-text hover:bg-site-surface-hover',
         link: 'text-site-accent underline-offset-4 hover:underline',
         accent: 'bg-site-accent text-site-accent-fg',
         'accent-outline': 'border border-site-accent text-site-accent',
@@ -53,7 +54,7 @@ function Button({
   variant = 'default',
   size = 'default',
   asChild = false,
-  loading = false,
+  loading,
   loadingText,
   disabled,
   children,
@@ -68,13 +69,13 @@ function Button({
      * must wrap a single child, so no spinner is injected).
      */
     loading?: boolean;
-    /** Optional label to swap in while loading (e.g. "Saving…"). Falls back to the button's children. */
+    /** Optional loading label. Both states reserve their width so in-flight feedback never shifts nearby controls. */
     loadingText?: React.ReactNode;
   }) {
   const Comp = asChild ? Slot : 'button';
   // The spinner can only be injected into a real <button>; a Slot must receive a
   // single child, so for asChild we only carry the busy/disabled semantics.
-  const showSpinner = loading && !asChild;
+  const hasLoadingState = loading !== undefined && !asChild;
 
   return (
     <Comp
@@ -89,18 +90,36 @@ function Button({
       // reduced motion and for the frame before the spring's first tick — the
       // inline `scale` the layer writes wins over it while a finger is down.
       data-fluid-press=""
-      // The state layer (globals.css §7.3). A link-styled button has no surface to turn over.
-      data-evert={variant === 'link' ? undefined : ''}
       className={cn(buttonVariants({ variant, size, className }))}
       disabled={asChild ? disabled : disabled || loading}
       aria-busy={loading || undefined}
       {...props}
     >
-      {showSpinner ? (
-        <>
-          <Loader2 className="animate-spin" aria-hidden />
-          {loadingText ?? children}
-        </>
+      {hasLoadingState ? (
+        <span
+          data-slot="button-content"
+          className="inline-grid min-w-0 items-center justify-items-center gap-[inherit]"
+        >
+          <span
+            className={cn(
+              'col-start-1 row-start-1 inline-flex items-center justify-center gap-[inherit]',
+              loading && 'opacity-0',
+            )}
+            aria-hidden={loading && loadingText ? true : undefined}
+          >
+            {children}
+          </span>
+          <span
+            className={cn(
+              'col-start-1 row-start-1 inline-flex items-center justify-center gap-[inherit]',
+              !loading && 'invisible',
+            )}
+            aria-hidden={!loading || !loadingText ? true : undefined}
+          >
+            <Loader2 className={loading ? 'animate-spin' : undefined} aria-hidden />
+            {loadingText}
+          </span>
+        </span>
       ) : (
         children
       )}

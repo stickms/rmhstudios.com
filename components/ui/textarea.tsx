@@ -32,7 +32,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       <textarea
         data-slot="textarea"
         className={cn(
-          'glass-inset flex min-h-24 w-full rounded-site-sm text-site-text px-4 py-3 text-sm leading-relaxed transition duration-site ease-out placeholder:text-site-text-dim hover:border-site-text/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent focus-visible:border-site-accent disabled:cursor-not-allowed disabled:opacity-50',
+          'glass-inset flex min-h-28 w-full rounded-site-sm text-site-text px-4 py-3 text-base sm:text-sm leading-relaxed transition-[color,border-color,background-color] duration-site-fast placeholder:text-site-text-muted hover:border-site-border-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/30 focus-visible:border-site-accent aria-invalid:border-site-danger disabled:cursor-not-allowed disabled:opacity-50',
           autosize && 'textarea-autosize',
           className,
         )}

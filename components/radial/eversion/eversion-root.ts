@@ -1,15 +1,7 @@
-/**
- * The Globe Eversion's root-level state: one controller per page, owned above every layout (amended 2026-10-21).
- *
- * It used to be the hub's: `RadialHub` warmed the runtime, mounted the lazy `EversionBridge` and kept the controller
- * it handed up. That tied the effect to the `_site` shell, which only some routes wear. Every page transition now
- * runs the effect ("not a single page transition should be without eversion"), including the ones that leave the
- * shell (the feed to a full-screen game unmounts the hub, and the controller with it, in the middle of the run) and
- * the ones that start outside it. So the warm-up, the bridge and the controller live at the root (`EversionRoot`),
- * and the hub, the navigation interceptor (`eversion-nav.ts`) and the Settings preview all reach them here.
- *
- * Plain module, TYPES-only imports: it is in the root's static closure, so nothing of the runtime may hang off it
- * (`pnpm check:bundle-budget`, S#39). The runtime itself arrives through the dynamic imports below.
+/** One controller outlives the site shell so a globe journey into a full-screen
+ * destination can finish. It warms only while a site shell exists. Ordinary
+ * links never use the runtime; the hub and optional Settings preview reach it
+ * through this types-only leaf to keep the eager bundle small.
  */
 
 import type { PrefetchResult } from '@/lib/eversion/prefetch';

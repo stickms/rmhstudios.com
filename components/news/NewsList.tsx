@@ -170,7 +170,11 @@ export function NewsList({
       {/* Filter Controls - collapsible */}
       {filtersOpen && (
         /* id is the target of the header's Filters button's aria-controls. */
-        <div id="news-filters" className="mb-[var(--site-section-gap)] space-y-3">
+        <div
+          id="news-filters"
+          data-slot="page-controls"
+          className="mb-4 space-y-3 border-b border-(--site-border) pb-4"
+        >
           {/* Category Tabs */}
           <NewsCategoryTabs
             activeCategory={selectedCategory}

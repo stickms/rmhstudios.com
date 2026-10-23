@@ -4,7 +4,7 @@
  * across in the same task, so no frame is ever shown half-drawn and the browser never holds more than one GL context
  * for all of it (they are capped at ~16 per page, and the globe uses one too).
  */
-import { FRAG, GLASS_RIPPLES, VERT } from './shader';
+import { FRAG, VERT } from './shader';
 
 export interface GlassDraw {
   /** Surface size in CSS px, and the backing-store scale it is drawn at. */
@@ -32,18 +32,7 @@ export interface GlassDraw {
   lightOn: number;
   /** Optical tilt on a unit disc. Only the glass normal changes; content stays in normal flow. */
   tilt?: [number, number];
-  /** Up to GLASS_RIPPLES × (x, y, age, amplitude); age < 0 = empty. */
-  ripples: Float32Array;
-  press: number;
 }
-
-export interface RippleShape {
-  speed: number;
-  width: number;
-  life: number;
-  gain: number;
-}
-export const RIPPLE_SHAPE: RippleShape = { speed: 560, width: 64, life: 1.15, gain: 0.9 };
 
 type GL = WebGL2RenderingContext;
 
@@ -75,9 +64,6 @@ const NAMES = [
   'uLight',
   'uLightOn',
   'uTilt',
-  'uRip',
-  'uRipShape',
-  'uPress',
 ] as const;
 type UName = (typeof NAMES)[number];
 
@@ -223,15 +209,6 @@ export class GlassRenderer {
     gl.uniform3f(u.uLight, o.lightX, o.lightY, o.lightZ);
     gl.uniform1f(u.uLightOn, o.lightOn);
     gl.uniform2f(u.uTilt, o.tilt?.[0] ?? 0, o.tilt?.[1] ?? 0);
-    gl.uniform4fv(u.uRip, o.ripples);
-    gl.uniform4f(
-      u.uRipShape,
-      RIPPLE_SHAPE.speed,
-      RIPPLE_SHAPE.width,
-      RIPPLE_SHAPE.life,
-      RIPPLE_SHAPE.gain,
-    );
-    gl.uniform1f(u.uPress, o.press);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     const ctx = target.getContext('2d');
@@ -251,5 +228,3 @@ export class GlassRenderer {
     this.canvas.width = this.canvas.height = 1;
   }
 }
-
-export { GLASS_RIPPLES };

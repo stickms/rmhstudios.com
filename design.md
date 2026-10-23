@@ -131,7 +131,7 @@ rests at an ambient glint strength that hover raises to full. Glass that does no
 answer the light is just tinted paper.
 
 **Light and pressure belong to the material.** The shared runtime carries a
-small cursor light on a transform-only leaf; the shader carries optical tap waves.
+small cursor light on a transform-only leaf; the shader carries neutral reflections. Clicks and taps never emit waves.
 Neither moves neighbouring cards or their text. It never paints a replacement cursor, moves a
 gradient centre, or animates a root variable. The background remains still.
 Reduced motion, reduced transparency and high contrast remove decorative

@@ -17,13 +17,13 @@ describe('spatial redesign — responsive layout contract', () => {
 
     // The title span must keep `min-w-0` on BOTH paths so it can shrink inside
     // the header's flex row instead of forcing the column wider than the
-    // viewport. The default still truncates (a page name is one line); article
-    // pages opt into `wrapTitle`, because a headline that cannot wrap does not
+    // viewport. Titles now wrap by default; explicitly compact headers can
+    // opt into truncation, because a headline that cannot wrap does not
     // ellipsize on an inline span — `white-space: nowrap` applies but
     // `overflow: hidden` does not — it overflows, which is the exact failure
     // this test guards.
     expect(pageLayout).toContain(
-      "<span className={wrapTitle ? 'block min-w-0' : 'min-w-0 truncate'}>{title}</span>",
+      "wrapTitle === false ? 'block min-w-0 truncate' : 'block min-w-0 break-words'",
     );
     expect(pageLayout).toContain('data-slot="page-header-action"');
     expect(mobileHeader).toContain('max-[419px]:hidden');

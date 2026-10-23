@@ -1,6 +1,6 @@
-/** Compile-time hover policy for both site and app CSS, including Tailwind's nested variants.
- * Material lighting owns hover feedback. Preserve focus, pressed and selected colours, and
- * content-reveal behavior; discard hover colour swaps and movement of the hovered control.
+/** Compile-time hover policy for site and app CSS, including nested Tailwind variants.
+ * Quiet colour feedback complements the glass. Keep controls stationary and prevent
+ * expensive hover shadows/filters; content reveals and focus states remain intact.
  */
 import type { Declaration, Plugin, Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
@@ -52,13 +52,8 @@ function hoverSelector(selector: string): { quiet: string; hover: boolean; own: 
   return { quiet, hover, own };
 }
 
-function colour(decl: Declaration): boolean {
-  return (
-    /^(?:color|background(?:-color|-image)?|border(?:-(?:top|right|bottom|left|inline|block)(?:-(?:start|end))?)?(?:-color)?|outline(?:-color)?|fill|stroke|box-shadow|text-shadow|text-decoration-color|-webkit-text-fill-color|filter)$/.test(
-      decl.prop,
-    ) ||
-    (decl.prop.startsWith('--') && /(?:color|tint|shadow|glow|(?:^|-)bg(?:-|$))/.test(decl.prop))
-  );
+function expensivePaint(decl: Declaration): boolean {
+  return /^(?:box-shadow|text-shadow|filter)$/.test(decl.prop);
 }
 
 export function materialHover(): Plugin {
@@ -83,7 +78,10 @@ export function materialHover(): Plugin {
           declarations.push(decl);
           const owner = decl.parent;
           const own = owner?.type === 'rule' && hoverSelector(owner.selector).own;
-          if (colour(decl) || (own && /^(?:transform|translate|rotate|scale)$/.test(decl.prop)))
+          if (
+            expensivePaint(decl) ||
+            (own && /^(?:transform|translate|rotate|scale)$/.test(decl.prop))
+          )
             removed.push(decl);
         });
         if (!removed.length) continue;

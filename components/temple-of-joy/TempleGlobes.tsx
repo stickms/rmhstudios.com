@@ -44,15 +44,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useDeviceAttitude } from '@/hooks/useDeviceAttitude';
-import {
-  RIPPLE,
-  rippleFront,
-  rippleWave,
-  spring,
-  springStep,
-  unprojectSphere,
-  unrotateSphere,
-} from '@/lib/fluid';
+import { RIPPLE, rippleFront, rippleWave, spring, springStep, unprojectSphere } from '@/lib/fluid';
 import { fmtCount } from '@/lib/temple-of-joy/numbers';
 import { SOURCE_MAP } from '@/lib/temple-of-joy/data/sources';
 import { MAX_GLOBES } from '@/lib/temple-of-joy/data/globes';
@@ -1037,15 +1029,6 @@ export function TempleGlobes({ onStrike, onTilt, children }: TempleGlobesProps) 
     const w = (m.wobble ??= { yaw: 0, vYaw: 0, pitch: 0, vPitch: 0 });
     w.vYaw -= hit.x * WOBBLE_DEG * WOBBLE_KICK;
     w.vPitch += hit.y * WOBBLE_DEG * WOBBLE_KICK;
-
-    // Un-rotate the impact into the globe's own frame — the exact inverse of
-    // the yaw-then-pitch the renderer applies. This is what makes the ripple a
-    // mark on the BALL: every sample the renderer takes lives in this space,
-    // so the wave turns with the surface instead of hanging in front of it.
-    const body = unrotateSphere(hit, m.yaw, m.pitch);
-    const live = m.ripples;
-    if (live.length >= MAX_RIPPLES) live.splice(0, live.length - MAX_RIPPLES + 1);
-    live.push({ bx: body.x, by: body.y, bz: body.z, t0: performance.now() });
   }, []);
 
   const onPointerDown = useCallback(

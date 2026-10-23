@@ -27,6 +27,7 @@ import {
   CAPTURE_DPR_CAP,
   CAPTURE_EXCLUDE_SELECTORS,
   TIERS,
+  WRAP_MS,
 } from '@/lib/eversion/constants';
 import type {
   CaptureApi,
@@ -530,7 +531,7 @@ function createHostPort(): HostPort & {
 /** What a caller may pass to `start`. */
 export interface StartOptions extends Pick<
   RunOptions,
-  'onCommit' | 'onFirstFrame' | 'globe' | 'navigate' | 'traverses' | 'ready'
+  'onCommit' | 'onFirstFrame' | 'globe' | 'navigate' | 'traverses' | 'ready' | 'before'
 > {
   /**
    * Where the run's layers go. `shell` (the default): inside the hub, under its globe, which is handed over on
@@ -868,7 +869,18 @@ export function createEversionController(
       if (phase === 'idle' || phase === 'done') {
         activeOverlay = layer === 'body' ? bodyOverlay : shellOverlay;
       }
-      return runner.run(node, state, entry, run);
+      let hurry: ReturnType<typeof setTimeout> | undefined;
+      return runner
+        .run(node, state, entry, {
+          ...run,
+          onFirstFrame: () => {
+            run.onFirstFrame?.();
+            // Finish the globe's physical handoff first, then re-plan the remaining
+            // motion from its current position, velocity and acceleration.
+            hurry = setTimeout(() => runner.fastForward(), WRAP_MS);
+          },
+        })
+        .finally(() => clearTimeout(hurry));
     },
 
     warmHost: () => hostPort.whenReady(detectTier()),
@@ -878,7 +890,7 @@ export function createEversionController(
       // for it (within the cold-init budget) rather than fall back on a cold click.
       if (!(await hostPort.whenReady(detectTier()))) return { fallback: 'host-error' };
       const before = () => captureBeforeNow();
-      return runner.run(previewNode(), centredGlobe(), 'preview', {
+      return handle.start(previewNode(), centredGlobe(), 'preview', {
         // The capture is its own work, not the hub's 250 ms grace: give it room.
         before: async () =>
           withTimeout(before(), BEFORE_GRACE_MS * 4, 'preview capture').catch(() => null),

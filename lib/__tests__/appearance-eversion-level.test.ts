@@ -65,7 +65,7 @@ beforeEach(() => {
 describe('PUT /api/preferences/appearance eversionLevel', () => {
   it('has exactly the two values, all first', () => {
     expect([...EVERSION_LEVELS]).toEqual(['all', 'globe']);
-    expect(DEFAULT_EVERSION_LEVEL).toBe('all');
+    expect(DEFAULT_EVERSION_LEVEL).toBe('globe');
   });
 
   it.each([...EVERSION_LEVELS])('accepts %s and stores it', async (value) => {
@@ -112,17 +112,18 @@ describe('PUT /api/preferences/appearance eversionLevel', () => {
 });
 
 describe('eversionLevel defaults and store', () => {
-  it('an absent or unknown value resolves to all', () => {
-    expect(resolveEversionLevel(null)).toBe('all');
-    expect(resolveEversionLevel(undefined)).toBe('all');
-    expect(resolveEversionLevel('wobble')).toBe('all');
+  it('absent, unknown and legacy values resolve to globe', () => {
+    expect(resolveEversionLevel(null)).toBe('globe');
+    expect(resolveEversionLevel(undefined)).toBe('globe');
+    expect(resolveEversionLevel('wobble')).toBe('globe');
+    expect(resolveEversionLevel('all')).toBe('globe');
     expect(resolveEversionLevel('globe')).toBe('globe');
     expect(isEversionLevel('globe')).toBe(true);
     expect(isEversionLevel('nope')).toBe(false);
   });
 
-  it('the store starts at all and holds what is set', () => {
-    expect(useThemeStore.getState().eversionLevel).toBe('all');
+  it('the store starts at globe and normalizes legacy values', () => {
+    expect(useThemeStore.getState().eversionLevel).toBe('globe');
     useThemeStore.getState().setEversionLevel('globe');
     expect(useThemeStore.getState().eversionLevel).toBe('globe');
     useThemeStore.getState().setEversionLevel('all');
@@ -142,8 +143,9 @@ describe('eversionLevel defaults and store', () => {
     write('globe');
     expect(EVERSION_LEVEL_KEY).toBe('rmh-eversion-level');
     expect(resolveEversionLevel(ls.getItem(EVERSION_LEVEL_KEY))).toBe('globe');
-    write('all');
     expect(ls.getItem(EVERSION_LEVEL_KEY)).toBeNull();
-    expect(resolveEversionLevel(ls.getItem(EVERSION_LEVEL_KEY))).toBe('all');
+    write('all');
+    expect(ls.getItem(EVERSION_LEVEL_KEY)).toBe('all');
+    expect(resolveEversionLevel(ls.getItem(EVERSION_LEVEL_KEY))).toBe('globe');
   });
 });

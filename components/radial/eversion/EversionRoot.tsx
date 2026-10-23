@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { isEversionEnabled } from '@/lib/eversion/flags';
 import type { EversionNode } from '@/lib/eversion/types';
-import { useThemeStore } from '@/stores/themeStore';
 import {
   awaitController,
   eversionRoot,
@@ -24,54 +23,14 @@ import {
   type HeldNavigation,
   type NavRouter,
 } from './eversion-nav';
-import { showPopup } from './popup';
+import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import type { EversionControllerHandle } from './useEversionController';
 import './eversion.css';
 
-/**
- * The Globe Eversion at the root of every page (amended 2026-10-21; see `eversion-root.ts` for why it moved out of
- * the hub). Mounted once by `__root.tsx`, it:
- *
- * - warms the runtime after `load` and an idle slot (it used to be the hub's warm-up) and mounts the lazy
- *   `EversionBridge`, which builds the page's one controller;
- * - installs the navigation interceptor (`eversion-nav.ts`), so (at the default eversion level, `all`; at `globe`
- *   it stands aside unless the hub is open) every page transition, wherever it starts and
- *   wherever it goes, plays an eversion: the full-screen run from the open hub's globe if the hub is up, else
- *   the button-sized one on the control that was pressed (`mini-globe.ts`), with the navigation never held;
- *   the pop-up globe (`popup.ts`) remains only for a held navigation that finds no hub to hand over to;
- * - answers the Settings "Preview" button.
- *
- * Its static imports are the flag, the theme store and three small leaves; the runtime hangs off the lazy bridge
- * (`pnpm check:bundle-budget`, S#39).
+/** One lazy controller shared by globe navigation, including destinations outside the site shell.
+ * Everyday links never load a mini globe or wait for this controller.
  */
 const EversionBridge = lazy(() => import('./EversionBridge'));
-
-/**
- * The button-sized eversion's renderer, its own lazy chunk (the root's static closure stays small, S#39). Warmed
- * with the runtime, so it is normally in before the first press; a press that beats it still plays if the chunk
- * lands within `MINI_LATE_MS`, else that one navigation plays nothing (it is never held either way).
- */
-type MiniModule = typeof import('./mini-globe');
-let miniModule: MiniModule | null = null;
-let miniLoad: Promise<MiniModule> | null = null;
-const loadMini = () =>
-  (miniLoad ??= import('./mini-globe').then((m) => (miniModule = m)).catch((err) => {
-    miniLoad = null;
-    throw err;
-  }));
-const MINI_LATE_MS = 150;
-function playMini(control: Element): void {
-  if (miniModule) {
-    miniModule.playMiniEversion(control);
-    return;
-  }
-  const asked = performance.now();
-  void loadMini()
-    .then((m) => {
-      if (performance.now() - asked <= MINI_LATE_MS) m.playMiniEversion(control);
-    })
-    .catch(() => {});
-}
 
 /** The Settings "Preview" button's event (AppearancePanel.tsx; spec §9.3). */
 const EVERSION_PREVIEW_EVENT = 'rmh:eversion-preview';
@@ -103,7 +62,7 @@ export function EversionRoot() {
   // The warm-up: idle if it comes, a short timer regardless, whichever lands first; never before `load`
   // (`startEversion`). A device that reports no WebGL2 never mounts the bridge (R6 m5).
   useEffect(() => {
-    if (!isEversionEnabled()) return;
+    if (!isEversionEnabled() || root.shells === 0) return;
     const w = window as typeof window & {
       requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
       cancelIdleCallback?: (h: number) => void;
@@ -113,7 +72,6 @@ export function EversionRoot() {
       if (ran) return;
       ran = true;
       void warmEversion();
-      void loadMini().catch(() => {});
     };
     const timer = setTimeout(warm, 800);
     const handle = w.requestIdleCallback?.(warm, { timeout: 800 });
@@ -121,11 +79,11 @@ export function EversionRoot() {
       clearTimeout(timer);
       if (handle !== undefined) w.cancelIdleCallback?.(handle);
     };
-  }, []);
+  }, [root.shells]);
 
-  // Every page transition plays an eversion: the hub's full-screen run, or the pressed control's mini.
+  // Only navigation from the open globe can hand the screen to the effect.
   useEffect(() => {
-    if (!isEversionEnabled()) return;
+    if (!isEversionEnabled() || !root.hubOpen) return;
     const navRouter = router as unknown as NavRouter;
     const evert = (held: HeldNavigation) => {
       const fromShell = inShell(navRouter, navRouter.state.location.pathname);
@@ -137,56 +95,22 @@ export function EversionRoot() {
         hub.navigate(node, { go: held.go, traverses: held.traverses, layer });
         return;
       }
-      const popup = showPopup(held.origin);
-      const run = async () => {
-        const controller = getController() ?? (hasNoEffect() ? null : await awaitController());
-        if (!controller || !controller.isEligible()) {
-          popup.dismiss();
-          held.go();
-          return;
-        }
-        const outcome = await controller.start(node, popup.pose(), 'click', {
-          navigate: held.go,
-          traverses: held.traverses,
-          layer: 'body',
-          ready: popup.ready,
-          onCommit: popup.everting,
-          onFirstFrame: popup.swelling,
-        });
-        if (outcome.fallback === 'traversal') {
-          popup.dismiss();
-          return;
-        }
-        if (outcome.fallback) {
-          // Nothing was navigated yet: the visitor still goes where they asked.
-          popup.dismiss();
-          held.go();
-          return;
-        }
-        popup.closed();
-      };
-      void run().catch(() => {
-        popup.dismiss();
-        held.go();
-      });
+      // The globe may have closed between the history decision and this microtask.
+      // Continue immediately; there is no replacement globe for ordinary navigation.
+      held.go();
     };
     return installNavigationEversion({
       router: navRouter,
       enabled: () =>
-        !useThemeStore.getState().reduceMotion &&
-        !hasNoEffect() &&
-        document.visibilityState === 'visible',
-      // Read from the store on each navigation (not captured here): a change in Settings applies to the next one.
-      level: () => useThemeStore.getState().eversionLevel,
+        !prefersReducedMotion() && !hasNoEffect() && document.visibilityState === 'visible',
       hubOpen: () => !!getHub()?.isOpen(),
       busy: () => {
         const phase = getController()?.state().phase;
         return (phase !== undefined && phase !== 'idle' && phase !== 'done') || !!getHub()?.busy();
       },
       evert,
-      mini: playMini,
     });
-  }, [router]);
+  }, [router, root.hubOpen]);
 
   // The Settings "Preview" button.
   useEffect(() => {

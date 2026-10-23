@@ -106,17 +106,12 @@ export function resolveNavTransition(v: unknown): NavTransition {
 }
 
 // ── Eversion level (amended 2026-10-21) ─────────────────────────────────────
-// How much of the site the Globe Eversion carries: `all` (default) = every
-// page transition (full-screen from the liquid-globe hub; anywhere else the
-// pressed control plays a button-sized eversion and the navigation is never
-// held); `globe` = only a navigation confirmed through the liquid-globe hub
-// (hold-release, pin click, Enter). Page navigations only: the per-control
-// "evert every button/input" state animation is a different thing and not
-// governed by this. Defined here (not in lib/eversion) so the root's static
-// closure and the settings panel get it without touching the effect's runtime.
+// Eversion belongs to the liquid-globe navigator. Keep `all` valid for older
+// persisted accounts and clients; resolving it migrates it to `globe`. Ordinary
+// controls use short colour/opacity changes and never create a mini globe.
 export const EVERSION_LEVELS = ['all', 'globe'] as const;
 export type EversionLevel = (typeof EVERSION_LEVELS)[number];
-export const DEFAULT_EVERSION_LEVEL: EversionLevel = 'all';
+export const DEFAULT_EVERSION_LEVEL: EversionLevel = 'globe';
 
 export function isEversionLevel(v: unknown): v is EversionLevel {
   return typeof v === 'string' && (EVERSION_LEVELS as readonly string[]).includes(v);
@@ -124,7 +119,8 @@ export function isEversionLevel(v: unknown): v is EversionLevel {
 
 /** An absent or unknown stored value means the default, never an error. */
 export function resolveEversionLevel(v: unknown): EversionLevel {
-  return isEversionLevel(v) ? v : DEFAULT_EVERSION_LEVEL;
+  // Keep accepting legacy persisted values, but ordinary navigation is always immediate.
+  return v === 'globe' ? v : DEFAULT_EVERSION_LEVEL;
 }
 
 export const FONT_SCALE_KEY = 'rmh-font-scale';

@@ -10,21 +10,20 @@
  * ## What runs when
  *
  * Nothing runs at rest. There is no permanent frame loop: a frame is requested only while something is moving — the
- * cursor light easing toward a surface or away from it, a tap's ripple crossing it, the refracted rim fading in after
+ * cursor light easing toward a surface or away from it, the refracted rim fading in after
  * a new snapshot — or once, for a surface whose size, theme, tint, snapshot or (if it is anchored to the viewport) scroll
  * position changed. The loop is the one `requestAnimationFrame` here, allow-listed in `raf-loop-allowlist.test.ts`.
  *
  * ## What it never does
  *
  * - Touch layout: it reads rects in observer callbacks and frames, and writes only canvases and attributes.
- * - Move or animate a host element: taps ripple the SURFACE OF THE GLASS, while its text and layout stay fixed.
+ * - Move or animate a host element: text, hit areas and layout stay fixed. Taps never emit waves.
  * - Depend on `backdrop-filter`, WebGL extensions, or `fwidth`: the look is the same in Chromium, WebKit and Gecko.
  * - Draw when it must not: reduced transparency, forced colours, high contrast, `perf-lite` and print all remove every
  *   canvas and leave the CSS material, which is the fallback tier and is always complete without this file.
  */
 import { luminance, resolveColor, type RGBA } from './color';
 import {
-  RIPPLE_REACH,
   admit,
   approach,
   bevelFor,
@@ -32,26 +31,18 @@ import {
   dprFor,
   innerRadius,
   lightTarget,
-  rippleAmplitude,
   sceneCoverage,
   thicknessFor,
   type GlassRole,
 } from './policy';
-import { GlassRenderer, RIPPLE_SHAPE, GLASS_RIPPLES, type GlassDraw } from './renderer';
+import { GlassRenderer, type GlassDraw } from './renderer';
 import { createSceneProvider, type SceneProvider, type SceneShot } from './scene';
 import { clearScene, publishScene } from './scene-store';
 
-/**
- * What becomes a slab. The five glass roles, plus the CONTROLS that carry the material without a role class: solid
- * buttons (ghost and link buttons have no body to give an edge to) and fields. Controls are admitted last, so a screen
- * full of them never starves a card or a menu.
- */
-const SELECTOR =
-  '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass],.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"]';
+/** Prominent panes and floating UI share a bounded renderer. Repeated fills and controls use the CSS material. */
+const SELECTOR = '.glass-pane,.glass-chrome,.glass-overlay,.app-glass,[data-liquid-glass]';
 const EXCLUDE =
-  '[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,.radial-globe__stage,.radial-hub__orb,.eversion-overlay,input,textarea,select';
-const TAP_EXCLUDE =
-  'input,textarea,select,[contenteditable="true"],[data-liquid-motion="off"],[disabled],[aria-disabled="true"]';
+  '[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,.radial-globe__stage,.radial-hub__orb,.eversion-overlay,canvas,input,textarea,select';
 const LIGHT_HEIGHT = 96;
 /**
  * How far past a surface's own edge the rim may read the snapshot, px. Refraction samples INWARD from the edge, so the
@@ -60,13 +51,6 @@ const LIGHT_HEIGHT = 96;
  */
 const SCENE_EDGE_MARGIN = 3;
 const MUTATION_SETTLE_MS = 1600;
-
-interface Ripple {
-  x: number;
-  y: number;
-  at: number;
-  amp: number;
-}
 
 interface Surface {
   el: HTMLElement;
@@ -84,7 +68,6 @@ interface Surface {
   light: number;
   tiltX: number;
   tiltY: number;
-  ripples: Ripple[];
 }
 
 /** Content must stay live. Sampling a card's own text/hover paints a stale second copy over it. */
@@ -103,7 +86,7 @@ const roleOf = (el: Element): GlassRole =>
         : el.classList.contains('glass-fill')
           ? 'fill'
           : el.matches(
-                '.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"]',
+                '.glass-inset,[data-slot="button"],[data-slot="input"],[data-slot="textarea"]',
               )
             ? 'control'
             : 'other';
@@ -159,7 +142,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
   let scrolling = false;
   let scrollTimer = 0;
   let pointerMoved = false;
-  const rippleBuffer = new Float32Array(GLASS_RIPPLES * 4);
 
   const off = () =>
     queries.transparency.matches ||
@@ -296,7 +278,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
       light: 0,
       tiltX: 0,
       tiltY: 0,
-      ripples: [],
     });
     visibility.observe(el);
     sizes.observe(el);
@@ -350,7 +331,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.canvas = null;
     s.el.removeAttribute('data-liquid-canvas');
     s.el.removeAttribute('data-liquid-static');
-    s.ripples.length = 0;
     s.light = 0;
     s.tiltX = s.tiltY = 0;
   };
@@ -392,7 +372,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
   };
 
   // ── Drawing ───────────────────────────────────────────────────────────────
-  const drawSurface = (s: Surface, rect: DOMRect, now: number): boolean => {
+  const drawSurface = (s: Surface, rect: DOMRect): boolean => {
     const r = renderer;
     if (!r?.ready || !s.canvas || !s.el.isConnected) return false;
     const padLeft = s.el.clientLeft;
@@ -419,20 +399,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
     // The cursor light, in this surface's pixels.
     const ox = rect.left + padLeft;
     const oy = rect.top + padTop;
-    const ripples = rippleBuffer;
-    ripples.fill(0);
-    for (let i = 0; i < GLASS_RIPPLES; i++) ripples[i * 4 + 2] = -1;
-    let n = 0;
-    for (const rp of s.ripples) {
-      const age = (now - rp.at) / 1000;
-      if (age < 0 || age >= RIPPLE_SHAPE.life || n >= GLASS_RIPPLES) continue;
-      ripples[n * 4] = rp.x;
-      ripples[n * 4 + 1] = rp.y;
-      ripples[n * 4 + 2] = age;
-      ripples[n * 4 + 3] = rp.amp;
-      n++;
-    }
-
     const o: GlassDraw = {
       width: w,
       height: h,
@@ -454,8 +420,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
       lightZ: LIGHT_HEIGHT,
       lightOn: s.light,
       tilt: [s.tiltX, s.tiltY],
-      ripples,
-      press: 0,
     };
     return r.draw(o, s.canvas);
   };
@@ -512,15 +476,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
         again = true;
       }
 
-      // Ripples live for a fixed time; drop the dead ones and keep drawing while any is alive.
-      if (s.ripples.length) {
-        s.ripples = s.ripples.filter((rp) => now - rp.at < RIPPLE_SHAPE.life * 1000);
-        render = true;
-        if (s.ripples.length) again = true;
-      }
-
       if (render) {
-        drawSurface(s, rect, now);
+        drawSurface(s, rect);
         s.dirty = false;
       }
     }
@@ -551,30 +508,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
     pointerLive = false;
     requestFrame();
   };
-  const onDown = (e: PointerEvent) => {
-    if (e.button !== 0 || !e.isPrimary || off() || !motionOk()) return;
-    const target = e.target instanceof win.Element ? e.target : null;
-    if (!target || target.closest(TAP_EXCLUDE)) return;
-    const now = win.performance.now();
-    let any = false;
-    for (const s of surfaces.values()) {
-      if (!s.canvas || !s.visible) continue;
-      const rect = s.el.getBoundingClientRect();
-      const dx = Math.max(rect.left - e.clientX, 0, e.clientX - rect.right);
-      const dy = Math.max(rect.top - e.clientY, 0, e.clientY - rect.bottom);
-      const amp = rippleAmplitude(Math.hypot(dx, dy), e.pointerType === 'touch' ? 0.8 : 1);
-      if (amp < 0.03 || Math.hypot(dx, dy) >= RIPPLE_REACH) continue;
-      s.ripples.push({
-        x: e.clientX - (rect.left + s.el.clientLeft),
-        y: e.clientY - (rect.top + s.el.clientTop),
-        at: now,
-        amp,
-      });
-      if (s.ripples.length > GLASS_RIPPLES) s.ripples.shift();
-      any = true;
-    }
-    if (any) requestFrame();
-  };
   const onScroll = () => {
     if (!scrolling) {
       scrolling = true;
@@ -583,10 +516,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
       sceneFade = sceneFadeTarget = 0;
       root.removeAttribute('data-liquid-scene');
       for (const s of surfaces.values()) {
-        if (refracts(s) || s.light > 0 || s.ripples.length || s.tiltX || s.tiltY) s.dirty = true;
+        if (refracts(s) || s.light > 0 || s.tiltX || s.tiltY) s.dirty = true;
         s.light = 0;
         s.tiltX = s.tiltY = 0;
-        s.ripples.length = 0;
       }
       requestFrame();
     }
@@ -680,7 +612,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
   });
   Object.values(queries).forEach((q) => q.addEventListener('change', onPreference));
   doc.addEventListener('pointermove', onMove, { passive: true });
-  doc.addEventListener('pointerdown', onDown, { passive: true, capture: true });
   doc.addEventListener('pointerout', onLeave, { passive: true });
   doc.addEventListener('scroll', onScroll, { passive: true, capture: true });
   doc.addEventListener('visibilitychange', onVisibility);
@@ -700,7 +631,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
     sizes.disconnect();
     Object.values(queries).forEach((q) => q.removeEventListener('change', onPreference));
     doc.removeEventListener('pointermove', onMove);
-    doc.removeEventListener('pointerdown', onDown, true);
     doc.removeEventListener('pointerout', onLeave);
     doc.removeEventListener('scroll', onScroll, true);
     doc.removeEventListener('visibilitychange', onVisibility);

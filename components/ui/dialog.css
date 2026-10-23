@@ -1,64 +1,36 @@
-/* Dialog enter/exit, driven by Radix's data-state.
- *
- * `tailwindcss-animate` is not installed here, so `animate-in` and friends are
- * inert — this is hand-rolled instead. Transform/opacity only. Centring uses
- * Tailwind v4's `translate` longhand, which the animated `transform` composes
- * with rather than overrides. Gated on no-preference (the global reduce rule
- * also neutralises it).
- *
- * The timings come from the shared `--motion-*` tokens (globals.css §7.1), which
- * mirror `lib/motion.ts`. They used to be hardcoded here — 0.3s ease-out and
- * 0.32s cubic-bezier(0.22,1,0.36,1) — while sheet.css hardcoded a third set, so
- * the two canonical surfaces of the site disagreed about how a modal enters.
- * The shapes stay per-surface; only the clock is shared. */
+/* One reversible path for dialogs and their scrim. Longhand scale leaves the
+   positioning transform intact. A reopen during exit continues from its current
+   opacity and scale; Radix retains the node for the presence animation. */
 @media (prefers-reduced-motion: no-preference) {
-  [data-slot='dialog-overlay'][data-state='open'] {
-    animation: ui-dialog-overlay-in var(--motion-in) var(--motion-ease-in);
+  :is([data-slot='dialog-overlay'], [data-slot='dialog-content']) {
+    opacity: 1;
+    scale: 1;
+    transition:
+      opacity var(--motion-out) var(--motion-ease-out),
+      scale var(--motion-in) var(--motion-ease-in);
   }
-  [data-slot='dialog-overlay'][data-state='closed'] {
-    animation: ui-dialog-overlay-out var(--motion-out) var(--motion-ease-out) forwards;
-  }
-  /* Readable on the quick opacity ramp (0.92 by 80ms); the 12px of travel
-     lands on the smooth spring (`--spring-smooth`, globals.css §7.1 —
-     APPLE_SPRING.smooth sampled), so the panel settles instead of braking on a
-     fixed clock. `smooth`, not `sheet`: a dialog is a state change in place,
-     and the sheet spring's longer travel read as hesitation on a centred panel. */
-  [data-slot='dialog-content'][data-state='open'] {
-    animation:
-      ui-dialog-fade-in var(--motion-in) var(--motion-ease-in),
-      ui-dialog-content-in var(--spring-smooth-duration) var(--spring-smooth);
+  :is([data-slot='dialog-overlay'], [data-slot='dialog-content'])[data-state='closed'] {
+    opacity: 0;
+    transition-duration: var(--motion-out);
+    animation: ui-dialog-presence var(--motion-out) linear;
   }
   [data-slot='dialog-content'][data-state='closed'] {
-    animation: ui-dialog-content-out var(--motion-out) var(--motion-ease-out) forwards;
+    scale: 0.98;
+  }
+  @starting-style {
+    :is([data-slot='dialog-overlay'], [data-slot='dialog-content'])[data-state='open'] {
+      opacity: 0;
+    }
+    [data-slot='dialog-content'][data-state='open'] {
+      scale: 0.98;
+    }
   }
 }
-
-@keyframes ui-dialog-overlay-in {
+@keyframes ui-dialog-presence {
   from {
-    opacity: 0;
+    visibility: visible;
   }
-}
-@keyframes ui-dialog-overlay-out {
   to {
-    opacity: 0;
-  }
-}
-@keyframes ui-dialog-fade-in {
-  from {
-    opacity: 0;
-  }
-}
-/* Open and close are ONE path run both ways: the exit ends on exactly the frame
-   the enter starts from. They used to disagree (in from 14px/0.985, out to
-   8px/0.96), so a dialog arrived from one place and left for another. */
-@keyframes ui-dialog-content-in {
-  from {
-    transform: translateY(12px) scale(0.97);
-  }
-}
-@keyframes ui-dialog-content-out {
-  to {
-    opacity: 0;
-    transform: translateY(12px) scale(0.97);
+    visibility: visible;
   }
 }

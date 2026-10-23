@@ -15,7 +15,7 @@ import { LogOut, Settings, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
-import { useThemeStore } from '@/stores/themeStore';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';
 import { isEversionEnabled } from '@/lib/eversion/flags';
@@ -134,7 +134,7 @@ export function RadialHub() {
   const router = useRouter();
   // The site's own Reduce motion switch, never the OS query (amended 2026-10-21): the hub's motion is the globe's
   // hand-over too, and it plays by default.
-  const reduced = useThemeStore((s) => s.reduceMotion);
+  const reduced = useReducedMotion();
   const { data: session } = useSession();
   const { resolved } = useResolvedUser();
   const user = session?.user as HubUser | undefined;
@@ -373,14 +373,39 @@ export function RadialHub() {
       // listens in the capture phase); it must not also dismiss the hub.
       if (e.key === 'Escape' && phaseRef.current !== 'everting' && !handOffMachine.busy())
         dismiss();
+      if (e.key !== 'Tab' || phaseRef.current !== 'open') return;
+      const overlay = overlayRef.current;
+      if (!overlay) return;
+      const controls = Array.from(
+        overlay.querySelectorAll<HTMLElement>('a[href], button, [tabindex]'),
+      ).filter(
+        (el) =>
+          el.tabIndex >= 0 &&
+          !el.matches(':disabled') &&
+          el.getClientRects().length > 0 &&
+          getComputedStyle(el).visibility !== 'hidden',
+      );
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (!first || !last) return;
+      const active = document.activeElement;
+      if (!overlay.contains(active) || (e.shiftKey ? active === first : active === last)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus({ preventScroll: true });
+      }
     };
     const onWheel = (e: WheelEvent) => {
       if (e.cancelable) e.preventDefault();
     };
     const overlay = overlayRef.current;
+    const background = Array.from(hubRef.current?.parentElement?.children ?? []).filter(
+      (el): el is HTMLElement => el instanceof HTMLElement && el !== hubRef.current && !el.inert,
+    );
+    for (const el of background) el.inert = true;
     window.addEventListener('keydown', onKey);
     overlay?.addEventListener('wheel', onWheel, { passive: false });
     return () => {
+      for (const el of background) el.inert = false;
       window.removeEventListener('keydown', onKey);
       overlay?.removeEventListener('wheel', onWheel);
     };
@@ -557,7 +582,8 @@ export function RadialHub() {
         // this row but is shorter).
         data-floating="hub"
         data-fluid-press=""
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
+        aria-controls="site-globe-navigation"
         aria-expanded={phase !== 'closed'}
         aria-label={t('open-menu', { defaultValue: 'Open navigation' })}
         // While the menu is up the orb has swelled into the globe and is an
@@ -577,9 +603,12 @@ export function RadialHub() {
       </button>
 
       <div
+        id="site-globe-navigation"
         ref={overlayRef}
         className="radial-hub__overlay"
-        role="presentation"
+        role="dialog"
+        aria-modal={menuVisible || undefined}
+        aria-label={t('globe-navigation-title', { defaultValue: 'Explore with the globe' })}
         aria-hidden={!menuVisible}
       >
         <button

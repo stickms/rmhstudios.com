@@ -74,6 +74,7 @@
 import { GLOBE_PERSP } from '../../globe';
 import { RIPPLE } from '../../fluid';
 import { GLASS_OPTICS_GLSL } from '../../liquid/optics';
+import { LIQUID_GLOBE_MATERIAL_GLSL } from '../../liquid/globe-material';
 import {
   EVERSION_STRIPS,
   LAMBERT_BASE,
@@ -595,6 +596,7 @@ const MATERIAL_GLSL = /* glsl */ `
 ${MATERIAL_DEFINES}
 ${NOISE_GLSL}
 ${GLASS_OPTICS_GLSL}
+${LIQUID_GLOBE_MATERIAL_GLSL}
 float fresnelSchlick(float c) {
   return glassFresnel(c).g;
 }
@@ -627,25 +629,10 @@ vec3 liquidNormal(vec3 n, vec3 body, float w) {
 /* A studio, not a sky: a soft vertical gradient from the background toward the light's colour, the key light's
    reflection, and two tall softboxes either side of the viewer. y is DOWN in view space. */
 vec3 envLight(vec3 r, vec3 l, vec3 bg) {
-  float up = clamp(0.5 - 0.5 * r.y, 0.0, 1.0);
-  vec3 sky = mix(bg * 0.55, mix(bg, u_lightCol.rgb, 0.5), up);
-  float key = pow(max(dot(r, l), 0.0), 18.0);
-  float ax = abs(r.x);
-  float strip = smoothstep(0.55, 0.72, ax) * (1.0 - smoothstep(0.86, 0.95, ax)) *
-                smoothstep(-0.2, 0.5, 0.3 - r.y);
-  return sky + u_lightCol.rgb * (key * 1.6 + strip * 0.32);
+  return globeEnvironment(r, bg, u_lightCol.rgb);
 }
-/* GGX (Trowbridge-Reitz) highlight with Schlick Fresnel on the half vector. */
 vec3 specularLight(vec3 n, vec3 v, vec3 l) {
-  vec3 h = normalize(l + v);
-  float nh = max(dot(n, h), 0.0);
-  float nl = max(dot(n, l), 0.0);
-  float a = ROUGHNESS * ROUGHNESS;
-  float a2 = a * a;
-  float d = nh * nh * (a2 - 1.0) + 1.0;
-  float D = a2 / (PI * d * d);
-  float spec = D * nl * 0.25 * fresnelSchlick(max(dot(h, v), 0.0));
-  return vec3(min(spec, 8.0) * SPEC_GAIN);
+  return vec3(globeSpecular(n, v));
 }
 /* High: interference colours of a thin film, zero-mean so it shimmers without tinting. */
 vec3 thinFilm(float nv, float t) {
@@ -1120,7 +1107,7 @@ uniform vec4 u_cosmos;
 out vec4 outColor;
 ${LUT_GUARDED_GLSL}
 ${WEDGE_GLSL}
-${quality >= 1 ? MATERIAL_GLSL : ''}
+${MATERIAL_GLSL}
 /* A dark page is a WHITE planet (owner, 2026-10-18: on a dark theme the page wrapped on the globe was a black ball
    lost against the dark sky). Its lightness is inverted with the hue kept (c + 1 - 2 L): the dark ground goes near
    white, light text goes dark, mid-tone accents barely move, so the page stays legible. u_whiten is how dark the
@@ -1128,12 +1115,6 @@ ${quality >= 1 ? MATERIAL_GLSL : ''}
    through WRAP, out through the first half of UNWRAP, uniformly, so no part of the surface is left white as it
    lands). The quick ramp on the morph weight keeps any vertex still on the page plane untouched, so the flat first
    and last frames are the captures to the bit. */
-vec3 planetTone(vec3 c) {
-  float k = u_whiten * u_planet * clamp(v_morph * 6.0, 0.0, 1.0);
-  if (k <= 0.0) return c;
-  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-  return mix(c, clamp(c + 1.0 - 2.0 * l, 0.0, 1.0), k);
-}
 vec3 transmittedPage(sampler2D page, vec2 uv, mat3x2 offsets, vec2 gx, vec2 gy) {
 #if QUALITY >= 2
   return vec3(
@@ -1214,17 +1195,15 @@ void main() {
      screen pixels, vanishes at both flat endpoints and never crosses a cut.
      Existing captures are reused; there is no additional texture or pass. */
   mat3x2 transmission = mat3x2(vec2(0.0), vec2(0.0), vec2(0.0));
-#if QUALITY >= 1
   if (!cut) {
     vec3 surfaceNormal = gl_FrontFacing ? nn : -nn;
-    vec2 reach = (6.0 / u_viewport) * v_morph * (1.0 - flatness);
+    vec2 reach = (26.0 / u_viewport) * v_morph * (1.0 - flatness);
     transmission[1] = glassSlabOffset(surfaceNormal, GLASS_IOR_RGB.g, 1.0) * reach;
 #if QUALITY >= 2
     transmission[0] = glassSlabOffset(surfaceNormal, GLASS_IOR_RGB.r, 1.0) * reach;
     transmission[2] = glassSlabOffset(surfaceNormal, GLASS_IOR_RGB.b, 1.0) * reach;
 #endif
   }
-#endif
 #if QUALITY >= 1
   vec3 L = normalize(u_lightDir);
   /* The background the glass sits against: the veil, deepened toward space while the cosmos is present. */
@@ -1233,19 +1212,17 @@ void main() {
   vec3 L = normalize(LIGHT_DIR);
   vec3 veil = u_colVeil.rgb;
 #endif
-  float litF = LAMBERT_BASE + LAMBERT_GAIN * max(dot(nn, L), 0.0);
-  float litB = LAMBERT_BASE + LAMBERT_GAIN * max(dot(-nn, L), 0.0);
   vec3 page = vec3(0.0);
   if (side > 0.0) {
-    vec3 pg = planetTone(transmittedPage(u_before, uvF, transmission, gx, gy));
-    page += side * mix(pg, pg * litF, v_morph);
+    vec2 lensUv = mix(uvF, pageUv, v_morph);
+    vec3 pg = transmittedPage(u_before, lensUv, transmission, gx, gy);
+    page += side * pg;
   }
   if (side < 1.0) {
-    vec3 pg = planetTone(
-      mix(transmittedPage(u_placeholder, uvB, transmission, gx, gy),
-          transmittedPage(u_after, uvB, transmission, gx, gy), u_afterMix));
-    vec3 shaded = mix(pg * litB * SIDE_DARKEN, u_colAccent.rgb, SIDE_TINT);
-    page += (1.0 - side) * mix(pg, shaded, v_morph);
+    vec2 lensUv = mix(uvB, pageUv, v_morph);
+    vec3 pg = mix(transmittedPage(u_placeholder, lensUv, transmission, gx, gy),
+                  transmittedPage(u_after, lensUv, transmission, gx, gy), u_afterMix);
+    page += (1.0 - side) * pg;
   }
 
   /* Glass is "the UV lies outside [0,1]^2"; antialias the page edge with fwidth (hard across a cut). */
@@ -1262,7 +1239,6 @@ void main() {
   float glassA = clamp(GLASS_FILL * lift + glassRim * GLASS_RIM_ALPHA, 0.0, 1.0);
   vec3 glassRgb = mix(veil, u_colCageMajor.rgb, glassRim);
 
-#if QUALITY >= 1
   /* The liquid-glass material (MATERIAL_GLSL): a clear coat over the page and a dielectric where there is no
      page, lit by the scene's light and a procedural studio environment. Every term is scaled by the morph weight
      (and the glass by its lift), so at the flat endpoints it is exactly zero and the page is the capture. */
@@ -1276,7 +1252,8 @@ void main() {
   vec3 spec = specularLight(N, V, L) * u_lightCol.rgb;
 
   /* Page: a thin lacquer. Reflection strongest at grazing angles, where the page is least readable anyway. */
-  vec3 coat = mix(page, env, F * COAT_REFLECT) + spec * COAT_SPEC;
+  vec3 transmitted = mix(page, veil, 0.28);
+  vec3 coat = mix(transmitted, env, clamp(F * GLASS_REFLECT, 0.0, 1.0)) + spec;
   page = mix(page, coat, v_morph);
 
   /* Glass: what is behind it (the veil, or the starfield seen through it, refracted), the environment at Fresnel
@@ -1288,14 +1265,12 @@ void main() {
 #endif
   vec3 glass = mix(behind, env, clamp(F * GLASS_REFLECT + 0.06, 0.0, 1.0)) + spec;
 #if QUALITY >= 2
-  glass += thinFilm(nv, u_time) * F * THIN_FILM;
   glass += dielectricRim(facing) * u_colCageMajor.rgb * lift;
 #else
   glass = mix(glass, u_colCageMajor.rgb, glassRim * 0.8);
 #endif
   glassA = clamp(glassA + F * 0.5 * lift, 0.0, 1.0);
   glassRgb = glass;
-#endif
 
   vec3 rgb = mix(veil, page, onPage);
 

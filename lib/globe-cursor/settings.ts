@@ -73,7 +73,6 @@ export interface GlobeCursorSettings {
   /** Ghost echoes behind the globe, 0–10. */
   trail: number;
   sparkles: boolean;
-  ripples: boolean;
   /** A crisp dot at the exact hotspot, so precision never depends on the lag. */
   hotspot: boolean;
   hideNative: boolean;
@@ -114,7 +113,6 @@ export const DEFAULT_GLOBE_CURSOR: GlobeCursorSettings = {
   shine: 0.6,
   trail: 0,
   sparkles: false,
-  ripples: true,
   hotspot: true,
   hideNative: true,
   nativeOverText: true,
@@ -169,7 +167,6 @@ export function sanitizeGlobeCursor(raw: unknown): GlobeCursorSettings {
     'roll',
     'clickSquish',
     'sparkles',
-    'ripples',
     'hotspot',
     'hideNative',
     'nativeOverText',
@@ -229,7 +226,6 @@ export const PRESET_PATCHES: Record<GlobeCursorPreset, Partial<GlobeCursorSettin
     shine: 0.6,
     trail: 0,
     sparkles: false,
-    ripples: true,
     blend: 'normal',
   },
   neon: {
@@ -256,7 +252,6 @@ export const PRESET_PATCHES: Record<GlobeCursorPreset, Partial<GlobeCursorSettin
     shine: 0.9,
     trail: 4,
     sparkles: true,
-    ripples: true,
     blend: 'normal',
   },
   jelly: {
@@ -283,7 +278,6 @@ export const PRESET_PATCHES: Record<GlobeCursorPreset, Partial<GlobeCursorSettin
     shine: 1,
     trail: 0,
     sparkles: false,
-    ripples: true,
     blend: 'normal',
   },
   ghost: {
@@ -310,7 +304,6 @@ export const PRESET_PATCHES: Record<GlobeCursorPreset, Partial<GlobeCursorSettin
     shine: 0.4,
     trail: 8,
     sparkles: false,
-    ripples: false,
     blend: 'screen',
   },
   prism: {
@@ -337,7 +330,6 @@ export const PRESET_PATCHES: Record<GlobeCursorPreset, Partial<GlobeCursorSettin
     shine: 0.7,
     trail: 2,
     sparkles: true,
-    ripples: true,
     blend: 'normal',
   },
   minimal: {
@@ -364,7 +356,6 @@ export const PRESET_PATCHES: Record<GlobeCursorPreset, Partial<GlobeCursorSettin
     shine: 0.2,
     trail: 0,
     sparkles: false,
-    ripples: false,
     blend: 'difference',
   },
 };
@@ -410,6 +401,5 @@ export function randomGlobeCursor(
     shine: rnd(),
     trail: Math.floor(rnd() * 6),
     sparkles: rnd() > 0.5,
-    ripples: rnd() > 0.3,
   });
 }
