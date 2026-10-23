@@ -12,7 +12,9 @@
  */
 
 import { useTranslation } from 'react-i18next';
+import { X } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useDialogHost } from '@/components/shared/useDialogHost';
 import {
   COLORS,
   MAX_PLAYERS,
@@ -43,20 +45,36 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function RulesSheet({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation('c-gabriels-horn');
 
-  // Mounted inside the game root so the `--app-*` / `--gh-*` tokens (scoped on the theme class) still
-  // apply. Radix owns Escape, the focus trap and focus return to the "Rules" control; the game's
-  // own state (`rulesOpen`) stays the only source of truth, set back to false by `onClose`.
-  const host =
-    typeof document === 'undefined'
-      ? undefined
-      : (document.querySelector<HTMLElement>('.gabriels-horn-theme') ?? undefined);
+  // Mounted inside the game root (nearest theme element to this component) so the `--app-*` /
+  // `--gh-*` tokens still apply. Radix owns Escape, the focus trap and focus return; the game's own
+  // state (`rulesOpen`) stays the only source of truth, set back to false by `onClose`. A scrim
+  // click does not close it, as before. The shell is invisible: the game's own `.gh-overlay` panel
+  // inside it is the surface, so the text stays on the game's palette in every site theme.
+  const { host, sentinel } = useDialogHost('.gabriels-horn-theme');
 
   return (
+    <>
+    {sentinel}
+    {host ? (
     <Dialog open onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent container={host} aria-describedby={undefined} className="max-w-xl text-(--app-text)">
+      <DialogContent
+        container={host}
+        aria-describedby={undefined}
+        data-jelly="off"
+        className="max-w-xl gap-0 border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
+        onInteractOutside={(event) => event.preventDefault()}
+      >
+      <div className="gh-overlay w-full p-5 text-(--app-text)">
+        <div className="mb-4 flex items-start justify-between gap-3">
         <DialogTitle className="text-lg font-bold text-(--app-text)">
           {t('rules-title', { defaultValue: 'How Gabriel’s Horn works' })}
         </DialogTitle>
+        <DialogClose asChild>
+          <HornButton variant="ghost" size="sm" aria-label={t('rules-close', { defaultValue: 'Close the rules' })}>
+            <X className="size-4" aria-hidden="true" />
+          </HornButton>
+        </DialogClose>
+        </div>
 
         <div className="space-y-4">
           <Section title={t('rules-turn-title', { defaultValue: 'Your turn' })}>
@@ -257,7 +275,10 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
             <HornButton variant="primary">{t('rules-got-it', { defaultValue: 'Got it' })}</HornButton>
           </DialogClose>
         </div>
+      </div>
       </DialogContent>
     </Dialog>
+    ) : null}
+    </>
   );
 }

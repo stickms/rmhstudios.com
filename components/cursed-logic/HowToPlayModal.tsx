@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslation } from "react-i18next";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { X } from "lucide-react";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 interface HowToPlayModalProps {
   open: boolean;
@@ -13,8 +14,15 @@ export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent className="max-w-md">
-        <DialogTitle className="font-mono text-lg font-bold text-cyan-400">{t("how-to-play-title", { defaultValue: "How to Play" })}</DialogTitle>
+      <DialogContent data-jelly="off" className="max-w-md gap-0 border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
+       {/* The game's own dark panel is the surface: light-on-dark text in every site theme. */}
+       <div className="space-y-4 rounded-xl border border-cyan-500/30 bg-[#0f0f14] p-4 text-white">
+        <div className="flex items-center justify-between">
+          <DialogTitle className="font-mono text-lg font-bold text-cyan-400">{t("how-to-play-title", { defaultValue: "How to Play" })}</DialogTitle>
+          <DialogClose className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white" aria-label={t("close", { defaultValue: "Close" })}>
+            <X className="h-5 w-5" aria-hidden />
+          </DialogClose>
+        </div>
         <DialogDescription className="sr-only">{t("how-to-play-aria", { defaultValue: "How to play" })}</DialogDescription>
         <div className="space-y-4 text-sm text-white/90">
           <p className="text-white/70">
@@ -99,6 +107,7 @@ export function HowToPlayModal({ open, onClose }: HowToPlayModalProps) {
             </p>
           </div>
         </div>
+       </div>
       </DialogContent>
     </Dialog>
   );

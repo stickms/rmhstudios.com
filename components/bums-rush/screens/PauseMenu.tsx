@@ -19,6 +19,7 @@
 import { useTranslation } from 'react-i18next';
 import { LogOut, Play, RotateCcw, Sliders } from 'lucide-react';
 import { PaperCard } from '../paper/PaperSurface';
+import { useDialogHost } from '@/components/shared/useDialogHost';
 import { InkButton } from '../paper/InkControls';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
@@ -42,18 +43,23 @@ export function PauseMenu({
 }: PauseMenuProps) {
   const { t } = useTranslation('c-bums-rush');
 
-  // The dialog mounts inside the game root so the paper tokens (`--bum-*`, scoped on
-  // `.bums-theme`) still apply. Escape is NOT handled by the dialog: the game's own input
-  // poll owns the pause key (bindings.ts `pause` -> useLevelSession), and a second handler here
-  // would resume and immediately re-pause. Focus lands on Resume (the first control) on open.
-  const host = typeof document === 'undefined' ? undefined : (document.querySelector<HTMLElement>('.bums-theme') ?? undefined);
+  // The dialog mounts inside the game root (nearest `.bums-theme` to this component, which
+  // carries `data-world` and the world paper overrides), so the paper tokens still apply. Escape
+  // is NOT handled by the dialog: the game's own input poll owns the pause key (bindings.ts
+  // `pause` -> useLevelSession), and a second handler would resume and immediately re-pause.
+  // Focus lands on Resume (the first control) on open. The shell is invisible and its built-in
+  // close button hidden: the PaperCard is the only thing drawn and Resume is the one way out.
+  const { host, sentinel } = useDialogHost('.bums-theme');
 
   return (
+    <>
+    {sentinel}
+    {host ? (
     <Dialog open onOpenChange={(next) => { if (!next) onResume(); }}>
       <DialogContent
         container={host}
         data-jelly="off"
-        className="w-auto max-w-sm gap-0 overflow-visible border-0 bg-transparent p-0"
+        className="w-auto max-w-sm gap-0 overflow-visible border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
         onEscapeKeyDown={(event) => event.preventDefault()}
         onInteractOutside={(event) => event.preventDefault()}
       >
@@ -99,5 +105,7 @@ export function PauseMenu({
       </PaperCard>
       </DialogContent>
     </Dialog>
+    ) : null}
+    </>
   );
 }

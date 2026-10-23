@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { X } from 'lucide-react';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import {
   useShopStore,
   RUN_MODIFIERS,
@@ -27,10 +28,17 @@ export function ShopModal({ open, onClose }: ShopModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent className="max-w-sm">
-        <div className="flex items-center gap-2">
-          <DialogTitle className="font-mono text-lg font-bold text-amber-400">{t("shop", { defaultValue: "Shop" })}</DialogTitle>
-          <span className="text-amber-200/90 font-mono text-sm">({fragments} F)</span>
+      <DialogContent data-jelly="off" className="max-w-sm gap-0 border-0 bg-transparent p-0 shadow-none [&>button]:hidden">
+       {/* The game's own dark panel is the surface: light-on-dark text in every site theme. */}
+       <div className="space-y-4 rounded-xl border border-amber-500/30 bg-[#0f0f14] p-4 text-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <DialogTitle className="font-mono text-lg font-bold text-amber-400">{t("shop", { defaultValue: "Shop" })}</DialogTitle>
+            <span className="text-amber-200/90 font-mono text-sm">({fragments} F)</span>
+          </div>
+          <DialogClose className="rounded p-1 text-white/60 hover:bg-white/10 hover:text-white" aria-label={t("close", { defaultValue: "Close" })}>
+            <X className="h-5 w-5" aria-hidden />
+          </DialogClose>
         </div>
         <DialogDescription className="text-xs text-white/60">{t("shop-description", { defaultValue: "Run modifiers apply to your next run only. Unlocks add Protocol types to the random pool." })}</DialogDescription>
         <div className="space-y-4">
@@ -99,6 +107,7 @@ export function ShopModal({ open, onClose }: ShopModalProps) {
             </div>
           </div>
         </div>
+       </div>
       </DialogContent>
     </Dialog>
   );
