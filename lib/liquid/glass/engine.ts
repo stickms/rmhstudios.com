@@ -1026,14 +1026,18 @@ export function installLiquidGlass(doc: Document = document): () => void {
   const scheduleAmbient = (now: number, hz: number): boolean => {
     if (hz <= 0 || hazeSet.size === 0 || disposed) return false;
     // Wake on the shared grid (lib/jelly/ambient-tick.ts), not this clock's own phase, so the haze ticks in the same
-    // frame as the globe and the globe cursor instead of adding frames of its own.
+    // frame as the globe and the globe cursor instead of adding frames of its own. The timer fires just PAST the
+    // boundary (`msToAmbientTick` already adds 1 ms), exactly as the globe's and the cursor's do: waking early (the
+    // old `wait - 8`, from when the clock kept its own phase) put the frame before the boundary about half the time,
+    // so that frame did nothing and `wait <= 12` asked for a second one: up to two driver frames per tick (the CI
+    // fixture counted 23.7 a second against a 12 Hz floor).
     const wait = msToAmbientTick(now, hz);
     if (wait <= 12) return true;
     win.clearTimeout(ambientTimer);
     ambientTimer = win.setTimeout(() => {
       ambientTimer = 0;
       if (!disposed && renderer?.ready) wakeDriver();
-    }, wait - 8);
+    }, wait);
     return false;
   };
 

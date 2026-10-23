@@ -8,9 +8,9 @@
  * It asserts what the contract promises, and what the unit gates cannot see:
  * - **Haze:** once the registry and the engine are installed, an ambient slot gets a `.jelly-haze-canvas` and its host
  *   `data-jelly-haze="on"`.
- * - **Carriers vs React:** a `<Button>` re-rendered between text-only and element children never keeps a stray
- *   `.jelly-flow` (React's `textContent` path would orphan or wipe it), never holds two, and `data-jelly-flow="on"`
- *   is set exactly on hosts whose carrier is shown.
+ * - **Carriers vs React:** a `<Button>` and a bare jelly host re-rendered between text-only and element children
+ *   never keep a stray `.jelly-flow` (React's `textContent` path would orphan or wipe it), never hold two, and
+ *   `data-jelly-flow="on"` is set exactly on hosts whose carrier is shown.
  * - **Bounded neighbour motion (R12):** a strong press/release nudges neighbours by ≤ `MOTION_BOUNDS.nudgePx`,
  *   translate only (no size change), at most `nudgeMax` of them, and every one returns to identity. A click on the
  *   page background moves nothing.
@@ -312,22 +312,35 @@ try {
     check('carrier invariant holds before any re-render', stray.length + stale.length === 0);
   }
 
+  // Two hosts get the same children. `<Button>` wraps a plain-string label in its own `data-slot="button-label"`
+  // element (components/ui/button.tsx), so it is never text-only to React and legitimately keeps ONE carrier through
+  // every render. `#rerender-raw` is a bare jelly host with the children as given: it really does go text-only, so it
+  // is the one that exercises React's `textContent` path and must end with no carrier.
   await page.evaluate(() => {
     window.__root = ReactDOM.createRoot(document.getElementById('react-root'));
+    const kids = (kind) =>
+      kind === 'text'
+        ? 'Text'
+        : kind === 'icon'
+          ? [React.createElement('span', { key: 'i', 'aria-hidden': true }, '★'), 'Text']
+          : kind === 'other'
+            ? 'Other text'
+            : [React.createElement('span', { key: 'w' }, 'Wrapped')];
     window.__render = (kind) =>
-      window.__root.render(
+      window.__root.render([
+        React.createElement(window.Button, { id: 'rerender', key: 'b' }, kids(kind)),
         React.createElement(
-          window.Button,
-          { id: 'rerender' },
-          kind === 'text'
-            ? 'Text'
-            : kind === 'icon'
-              ? [React.createElement('span', { key: 'i', 'aria-hidden': true }, '★'), 'Text']
-              : kind === 'other'
-                ? 'Other text'
-                : [React.createElement('span', { key: 'w' }, 'Wrapped')],
+          'button',
+          {
+            id: 'rerender-raw',
+            key: 'r',
+            type: 'button',
+            className: 'glass-fill',
+            'data-fluid-press': '',
+          },
+          kids(kind),
         ),
-      );
+      ]);
   });
   // No resize or scroll nudge between renders: that is what a real click on a "Save" → "Saved" button looks like, and a
   // nudge (a registry refresh) would hide a host whose carrier React wiped.
@@ -340,16 +353,25 @@ try {
     const { stray, stale } = await invariant();
     strays.push(...stray.map((p) => `render ${i + 1} (${kind}): ${p}`));
     stales.push(...stale.map((p) => `render ${i + 1} (${kind}): ${p}`));
+    const want = kind === 'wrapped' ? 'Wrapped' : kind === 'other' ? 'Other' : 'Text';
     const text = await page.$eval('#rerender', (b) => b.textContent);
+    const raw = await page.$eval('#rerender-raw', (b) => b.textContent);
     check(
       `<Button> re-render ${i + 1} (${kind}) renders its own content`,
-      text.includes(kind === 'wrapped' ? 'Wrapped' : kind === 'other' ? 'Other' : 'Text'),
+      text.includes(want) && raw.includes(want),
     );
   }
   check(
-    `a <Button> re-render never leaves a stray .jelly-flow${strays.length ? ` — ${strays.join('; ')}` : ''}`,
-    // The sequence ends text-only: no carrier may remain in it.
-    strays.length === 0 && (await count('#rerender > .jelly-flow')) === 0,
+    'a plain-text <Button> label sits in its own element, so React never rewrites the host with textContent',
+    (await count('#rerender > [data-slot="button-label"]')) === 1,
+  );
+  const buttonCarriers = await count('#rerender > .jelly-flow');
+  const rawCarriers = await count('#rerender-raw > .jelly-flow');
+  check(
+    `a re-render never leaves a stray .jelly-flow${strays.length ? ` — ${strays.join('; ')}` : ''}${rawCarriers ? ` — ${rawCarriers} carrier(s) left in the text-only #rerender-raw` : ''}${buttonCarriers > 1 ? ` — ${buttonCarriers} carriers in #rerender` : ''}`,
+    // The sequence ends with string children: the bare host is text-only and may hold no carrier; the <Button> keeps
+    // its label element and at most one.
+    strays.length === 0 && rawCarriers === 0 && buttonCarriers <= 1,
   );
   check(
     `data-jelly-flow="on" (and data-liquid-canvas="on") match carrier / rim presence after every re-render${stales.length ? ` — ${stales.join('; ')}` : ''}`,

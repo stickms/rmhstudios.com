@@ -433,7 +433,7 @@ unit-tested in `lib/jelly/__tests__/{frame,pointer}.test.ts`.
 | legibility over haze                     | `lib/__tests__/jelly-legibility.test.ts`                                                                                                                                                         |
 | preferences pipeline                     | `lib/__tests__/appearance-jelly-motion.test.ts`, `appearance-electric-arcs.test.ts`, `fouc-contract.test.ts`                                                                                     |
 | frame loops, filters, stacking, backdrop | `lib/__tests__/{raf-loop-allowlist,filter-cost-budget,stacking-consistency,static-backdrop,handheld-tier}.test.ts` and the jelly gates listed in `scripts/check-consistency.sh`                  |
-| rest and engaged frame rates             | `testing/e2e/frame-budget.mjs` (rest ≤ 13 fps after the idle threshold)                                                                                                                          |
+| rest and engaged frame rates             | `testing/e2e/frame-budget.mjs` (clock ≤ 13 fps after the idle threshold, ambient arcs isolated)                                                                                                  |
 
 Browser review (the part no script checks): `/`, a feed page, settings, an app and a
 game; Daylight, Midnight and high contrast; phone and desktop width; `jellyMotion`

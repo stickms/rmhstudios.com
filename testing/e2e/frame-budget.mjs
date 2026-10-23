@@ -19,6 +19,7 @@
 //   … frame-budget.mjs --gate --engaged         # same, but with a pointer moving: the engaged ceiling
 //   … frame-budget.mjs --settle 15000           # wait this long after load before measuring
 //   … frame-budget.mjs --jelly-motion still     # store a jellyMotion preference (lively | calm | still) first
+//   … frame-budget.mjs --electric-arcs off      # store an electricArcs preference (full | clicks | off) first
 //   FRAME_GPU=1 … frame-budget.mjs              # real GPU, not SwiftShader (3D routes need it)
 //
 // ## What it measures, per route
@@ -32,6 +33,10 @@
 //    measurement that showed the site backdrop costing a full core while idle,
 //    with the main thread essentially asleep. From /proc on Linux; elsewhere
 //    from CDP `SystemInfo.getProcessInfo` (this browser's processes only).
+//    Split by source: `arcFrames` is how many of those frames the ambient arc
+//    layer drew in (a Canvas2D hook, not a frame probe), and `clockFrames` is
+//    the same trace taken again with `html[data-electric-arcs="clicks"]` —
+//    the jelly clock and everything else, with ambient arcs isolated.
 // 3. **Perpetual animations** (`infinite`). `document.getAnimations()` with
 //    `iterations === Infinity`, named in the report so a regression points at
 //    its selector.
@@ -53,8 +58,9 @@
 //
 // ## What `--gate` fails, and what it SKIPs (GPU-less runners)
 //
-// Deterministic, failed everywhere: a site-shell page above the rest (or
-// engaged) cadence, an unsanctioned perpetual animation, and a route that could
+// Deterministic, failed everywhere: a site-shell page whose CLOCK frames
+// (ambient arcs isolated, see below) are above the rest (or engaged) cadence,
+// an unsanctioned perpetual animation, and a route that could
 // not be measured at all (navigation error or a 5xx) — an unmeasured page is
 // never a pass. GPU-only, judged only on hardware GL: R7 "never freezes" (a
 // site-shell page with visible haze must draw > 0 frames at rest). Under
@@ -62,6 +68,19 @@
 // legitimately steps the clock to 0, so that check prints `SKIP` per route and
 // in the summary instead of passing silently. `JELLY_ASSUME_GPU=1|0` overrides
 // the detection.
+//
+// ## Why the cadence gate isolates ambient arcs
+//
+// Ambient arcs are a separate, separately budgeted ambient source (≤ 1 per 2 s,
+// `ARC_BUDGET` in lib/jelly/arcs/rate.ts, gated by N1 in
+// lib/__tests__/jelly-contract.test.ts). They keep striking at rest, by design,
+// and each one is drawn at the display rate for its ~120–380 ms life: up to ~11
+// frames a second on a page dense with close cards (/games, /apps), on top of
+// the 12 Hz clock. The R7 rest limit (idle floor + 1) is the CLOCK's budget, so
+// the gate judges `clockFrames` (the same isolation jelly-interaction.mjs uses
+// for its frame checks) and reports `arcFrames` next to it. CI run 39954731013
+// failed 8 routes at 14–21 frames/s on the undivided count. `--electric-arcs`
+// on the command line measures that preference as stored and skips the split.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /* global innerHeight, performance, requestAnimationFrame -- referenced only inside
@@ -156,6 +175,8 @@ const profiles = profileArg === 'both' ? ['desktop', 'mobile'] : [profileArg];
 const jsonOut = values('--json')[0];
 /** `--jelly-motion <lively|calm|still>`: stored in `rmh-jelly-motion` before load, as the settings row would. */
 const jellyMotion = values('--jelly-motion')[0];
+/** `--electric-arcs <full|clicks|off>`: stored in `rmh-electric-arcs` before load; turns off the arcs/clock split. */
+const electricArcs = values('--electric-arcs')[0];
 const gate = flag('--gate');
 const engaged = flag('--engaged');
 const FRAME_LIMIT = engaged ? ENGAGED_FRAME_LIMIT : REST_FRAME_LIMIT;
@@ -219,8 +240,35 @@ async function measure(browser, cdp, binary, route, profile) {
         /* storage blocked: measured as the default */
       }
     }, jellyMotion);
+  if (electricArcs)
+    await context.addInitScript((v) => {
+      try {
+        window.localStorage.setItem('rmh-electric-arcs', v);
+      } catch {
+        /* storage blocked: measured as the default */
+      }
+    }, electricArcs);
+  // Which frames the ambient arc layer drew in: a hook on its Canvas2D clear (the renderer clears its dirty box on
+  // every frame an arc is alive), keyed by the frame's timeline time. Off until `__arcCount` is set; it never
+  // requests a frame.
+  await context.addInitScript(() => {
+    const proto = window.CanvasRenderingContext2D?.prototype;
+    if (!proto) return;
+    const clear = proto.clearRect;
+    window.__arcFrames = new Set();
+    proto.clearRect = function (...args) {
+      if (window.__arcCount && this.canvas?.classList?.contains('jelly-arc-layer'))
+        window.__arcFrames.add(document.timeline.currentTime);
+      return clear.apply(this, args);
+    };
+  });
   const page = await context.newPage();
-  const result = { route, profile, ...(jellyMotion ? { jellyMotion } : {}) };
+  const result = {
+    route,
+    profile,
+    ...(jellyMotion ? { jellyMotion } : {}),
+    ...(electricArcs ? { electricArcs } : {}),
+  };
   try {
     const response = await page.goto(BASE_URL + route, { waitUntil: 'load', timeout: 45_000 });
     result.status = response?.status();
@@ -271,11 +319,30 @@ async function measure(browser, cdp, binary, route, profile) {
     const cpu1 = chromiumCpuMs(binary) ?? (await cdpCpuMs(cdp));
     if (cpu0 !== null && cpu1 !== null) result.restCpuMsPerSec = Math.round((cpu1 - cpu0) / (REST_MS / 1000));
 
-    await browser.startTracing(page, { categories: ['disabled-by-default-devtools.timeline.frame'] });
-    await page.waitForTimeout(TRACE_MS);
-    const trace = JSON.parse((await browser.stopTracing()).toString());
-    const events = trace.traceEvents ?? trace;
-    result.restFramesPerSec = events.filter((e) => e.name === 'DrawFrame').length / (TRACE_MS / 1000);
+    const drawFramesPerSec = async () => {
+      await browser.startTracing(page, { categories: ['disabled-by-default-devtools.timeline.frame'] });
+      await page.waitForTimeout(TRACE_MS);
+      const trace = JSON.parse((await browser.stopTracing()).toString());
+      const events = trace.traceEvents ?? trace;
+      return events.filter((e) => e.name === 'DrawFrame').length / (TRACE_MS / 1000);
+    };
+    await page.evaluate(() => {
+      window.__arcFrames.clear();
+      window.__arcCount = true;
+    });
+    result.restFramesPerSec = await drawFramesPerSec();
+    const arcFrames = await page.evaluate(() => {
+      window.__arcCount = false;
+      return window.__arcFrames.size;
+    });
+    result.arcFramesPerSec = arcFrames / (TRACE_MS / 1000);
+    // The clock alone: ambient arcs isolated exactly as the setting does it (click arcs stay; nobody clicks).
+    if (!electricArcs && result.siteShell) {
+      await page.evaluate(() => document.documentElement.setAttribute('data-electric-arcs', 'clicks'));
+      await page.waitForTimeout(500);
+      result.clockFramesPerSec = await drawFramesPerSec();
+      await page.evaluate(() => document.documentElement.removeAttribute('data-electric-arcs'));
+    }
     await stopSweep();
 
     const probe = await page.evaluate(
@@ -353,13 +420,16 @@ for (const profile of profiles) {
     // Never a silent pass: a page that did not load (or answered 5xx) was not measured at all.
     if (r.error || r.status === undefined || r.status >= 500)
       reasons.push(`not measured (${r.error ? 'navigation error' : `HTTP ${r.status ?? '—'}`})`);
-    if (r.siteShell && r.restFramesPerSec > FRAME_LIMIT) reasons.push(`${r.restFramesPerSec} frames/s > ${FRAME_LIMIT}`);
+    // The cadence gate judges the clock (ambient arcs isolated; see "Why the cadence gate isolates ambient arcs").
+    const cadence = r.clockFramesPerSec ?? r.restFramesPerSec;
+    const what = r.clockFramesPerSec === undefined ? 'frames/s' : 'clock frames/s';
+    if (r.siteShell && cadence > FRAME_LIMIT) reasons.push(`${cadence} ${what} > ${FRAME_LIMIT}`);
     if (r.siteShell && (r.infinite?.length ?? 0) > 0) reasons.push('unsanctioned perpetual animation');
     // R7 "never freezes": GPU-only. At rest (not --engaged) a site-shell page with visible haze must keep drawing.
     const r7Applies = !engaged && r.siteShell && (r.hazeCanvases ?? 0) > 0 && !r.error;
     if (r7Applies && gpu.software) {
       skips.push(`${profile} ${route}: R7 never-freezes (software GL)`);
-    } else if (r7Applies && r.restFramesPerSec === 0) {
+    } else if (r7Applies && (r.clockFramesPerSec ?? r.restFramesPerSec) === 0) {
       reasons.push('R7: frozen at rest with haze visible (0 frames/s on hardware GL)');
     }
     r.gateFailures = reasons;
@@ -367,7 +437,11 @@ for (const profile of profiles) {
     if (idleFail) failures.push(r);
     console.log(
       `${idleFail ? '✗' : ' '} ${profile.padEnd(7)} ${route.padEnd(28)} ` +
-        `rest ${String(r.restFramesPerSec ?? '—').padStart(5)} frames/s ${String(r.restCpuMsPerSec ?? '—').padStart(5)} cpu-ms/s · ` +
+        `rest ${String(r.restFramesPerSec ?? '—').padStart(5)} frames/s ` +
+        (r.clockFramesPerSec !== undefined
+          ? `(clock ${String(r.clockFramesPerSec).padStart(4)}, arcs in ${String(r.arcFramesPerSec ?? 0).padStart(4)}) `
+          : '') +
+        `${String(r.restCpuMsPerSec ?? '—').padStart(5)} cpu-ms/s · ` +
         `idle ${r.idle?.fps ?? '—'}fps · scroll ${r.scroll?.fps ?? '—'}fps p95 ${r.scroll?.p95 ?? '—'}ms` +
         (r.jellyCarriers || r.hazeCanvases ? ` · jelly ${r.jellyCarriers ?? 0} carrier anims, ${r.hazeCanvases ?? 0} haze` : '') +
         (route === '/' && !engaged && (r.restCpuMsPerSec ?? 0) > REST_CPU_TARGET_MS ? ` · cpu > ${REST_CPU_TARGET_MS} target` : '') +
@@ -391,7 +465,7 @@ if (skips.length) {
 if (gate && failures.length > 0) {
   console.error(
     `\n${failures.length} route(s) failed the gate: ${failures.map((f) => `${f.profile} ${f.route} (${f.gateFailures.join('; ')})`).join(', ')}.` +
-      `\nRest/engaged limit ${FRAME_LIMIT} frames/s; no unsanctioned perpetual animation; every route must load.` +
+      `\nRest/engaged limit ${FRAME_LIMIT} clock frames/s (ambient arcs isolated); no unsanctioned perpetual animation; every route must load.` +
       `\nAt rest the jelly runs on its ${IDLE_FLOOR_HZ} Hz idle floor (R7) and nothing else may tick; anything faster re-renders on every vsync —` +
       `\nsee docs/plasmatic-jelly-system.md and docs/performance-audit-2026-10-08.md.`,
   );

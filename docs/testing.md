@@ -263,6 +263,16 @@ Both limits are read from `JELLY_BUDGETS` in `lib/jelly/tiers.ts`, never
 restated in the script. CPU at rest on `/` is reported against the ≤ 250 ms/s
 target but not gated.
 
+The limits are the **clock's**, so the gate judges a second trace taken with
+ambient arcs isolated (`html[data-electric-arcs="clicks"]`, as
+`jelly-interaction.mjs` does). Ambient arcs are their own budgeted source
+(≤ 1 per 2 s, `ARC_BUDGET`, gated by N1) and keep striking at rest by design;
+each is drawn at the display rate for its ~120–380 ms life, which on a page
+dense with close cards adds up to ~11 frames a second. Every route prints the
+total, the clock-only trace and how many of the total's frames the arc layer
+drew in — `rest 19.5 frames/s (clock 12, arcs in 8)`. `--electric-arcs
+<full|clicks|off>` measures a stored preference instead and skips the split.
+
 ```bash
 pnpm build && PORT=7005 node .output/server/index.mjs &
 BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs                   # default route set
@@ -549,11 +559,13 @@ material — a filter step matches `lib/jelly/`, `lib/liquid/`,
   deterministic check: budgets, neighbour bounds, the flash ledger, return to
   rest, teardown, zero frames under `still`, rest cadence, perpetual animations.
 - **Non-blocking: `testing/e2e/frame-budget.mjs --gate`** against the built app
-  (`continue-on-error`, but still a red summary row and an `::error::`
-  annotation). It drives ~50 routes and is red today for real reasons — the CSS
-  flow carriers keep the compositor at vsync rate, and the dock globe has
-  infinite keyframes — so it becomes blocking once those are fixed and a few
-  nightlies are green.
+  (step-level `continue-on-error`: the step still shows its exit code, a red
+  summary row and an `::error::` annotation, but the job's conclusion ignores
+  it — a red `jelly-e2e` job always means `jelly-interaction` failed). It drives
+  ~50 routes. Its last red runs (e.g. run 39954731013: 8 routes at 14–21
+  frames/s) counted ambient arcs against the clock's 13 fps limit; the gate
+  now judges the clock with arcs isolated (§6). It becomes blocking once a
+  few nightlies are green.
 - **GPU-only checks SKIP, never silently pass.** The runner has no GPU;
   `testing/e2e/lib/gpu.mjs` detects SwiftShader from the WebGL renderer string,
   and a check that needs real GPU frames is reported as `SKIP` in the log, as a
