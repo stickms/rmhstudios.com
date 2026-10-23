@@ -61,6 +61,7 @@ const GROUPS: Group[] = [
       'app/globals.css (@import) — the --font-* tokens and the themes whose display/mono stacks name these families',
     sources: [
       { pkg: '@fontsource-variable/jetbrains-mono', css: ['wght.css'], family: 'JetBrains Mono' },
+      { pkg: '@fontsource-variable/geist-mono', css: ['wght.css'], family: 'Geist Mono' },
       {
         pkg: '@fontsource-variable/playfair-display',
         css: ['wght.css'],
