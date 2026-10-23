@@ -94,5 +94,7 @@
   "waiting-for-host": "بانتظار المضيف لبدء الجولة التالية...",
   "waiting-for-players": "في انتظار اللاعبين",
   "welcome-user": "مرحبًا، {{name}}!",
-  "your-moves": "تحركاتك"
+  "your-moves": "تحركاتك",
+  "lights-out-title": "Lights Out",
+  "rating-tiers": "Rating tiers"
 }

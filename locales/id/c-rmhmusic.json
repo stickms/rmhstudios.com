@@ -46,5 +46,6 @@
   "sign-in-to-guess": "Masuk untuk menebak.",
   "solves-plays": "{{solves}} terpecahkan · {{plays}} pemutaran",
   "song-title-placeholder": "Judul lagu...",
-  "your-playlists": "Your playlists"
+  "your-playlists": "Your playlists",
+  "listening-count_other": "{{count}} listening"
 }

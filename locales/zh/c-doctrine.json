@@ -34,5 +34,10 @@
   "upgrade-operator": "升级至操作员（每月15美元）以解锁。",
   "view-arrow": "查看 →",
   "xp-progress": "{{current}} / {{max}} 经验值",
-  "xp-to-next-rank": "{{xp}} XP 到 {{badge}} {{name}}"
+  "xp-to-next-rank": "{{xp}} XP 到 {{badge}} {{name}}",
+  "back-to-puzzles": "Back to Puzzles",
+  "copy-link": "Copy link",
+  "link-copied": "Link copied",
+  "recruitment-message-label": "Recruitment message",
+  "target-skills-label": "Target skills"
 }

@@ -84,5 +84,7 @@
   "waiting-for-host": "Menunggu tuan rumah memulai babak berikutnya...",
   "waiting-for-players": "Menunggu pemain",
   "welcome-user": "Selamat datang, {{name}}!",
-  "your-moves": "Langkah Anda"
+  "your-moves": "Langkah Anda",
+  "lights-out-title": "Lights Out",
+  "rating-tiers": "Rating tiers"
 }

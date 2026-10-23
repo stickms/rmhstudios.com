@@ -89,5 +89,8 @@
   "write-reply": "Scrivi una risposta...",
   "years-ago_one": "{{count}} anno fa",
   "years-ago_many": "{{count}}y ago",
-  "years-ago_other": "{{count}} anni fa"
+  "years-ago_other": "{{count}} anni fa",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

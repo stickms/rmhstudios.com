@@ -4,6 +4,8 @@
   "bingo-card": "Your bingo card",
   "bingo-claim": "Bingo!",
   "bingo-count": "{{count}} squares",
+  "bingo-count_one": "{{count}} squares",
+  "bingo-count_other": "{{count}} squares",
   "bingo-end": "End game",
   "bingo-free": "FREE",
   "bingo-pool-hint": "One square per line, at least {{min}}. Everyone gets their own card.",

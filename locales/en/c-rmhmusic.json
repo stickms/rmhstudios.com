@@ -16,6 +16,8 @@
   "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} listener",
   "listener-count_other": "{{count}} listener",
+  "listening-count_one": "{{count}} listening",
+  "listening-count_other": "{{count}} listening",
   "loading": "Loading…",
   "loading-rooms": "Loading rooms...",
   "mini-close": "Stop and close",
@@ -23,6 +25,8 @@
   "mini-pause": "Pause",
   "mini-play": "Play",
   "mini-player": "Music mini-player",
+  "mini-pop-in": "Return to page",
+  "mini-pop-out": "Pop out player",
   "new": "New",
   "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "No puzzles yet.",
@@ -48,7 +52,5 @@
   "sign-in-to-guess": "Sign in to guess.",
   "solves-plays": "{{solves}} solved · {{plays}} plays",
   "song-title-placeholder": "Song title...",
-  "your-playlists": "Your playlists",
-  "mini-pop-in": "Return to page",
-  "mini-pop-out": "Pop out player"
+  "your-playlists": "Your playlists"
 }

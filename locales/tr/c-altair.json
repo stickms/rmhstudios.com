@@ -176,5 +176,7 @@
   "webgl-context-lost": "WebGL bağlamı kayboldu! Lütfen sayfayı yenileyin.",
   "you": "(sen)",
   "your-class": "Sınıfın",
-  "zoom": "Yakınlaştır"
+  "zoom": "Yakınlaştır",
+  "keyboard-hint-level-up-screen_one": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
 }

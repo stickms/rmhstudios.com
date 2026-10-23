@@ -120,5 +120,7 @@
   "worst-title": "Worst keys",
   "wpm": "WPM",
   "writing-passage": "Writing your passage...",
-  "you": "(du)"
+  "you": "(du)",
+  "apps": "Apps",
+  "room-of-host": "{{name}}'s room"
 }

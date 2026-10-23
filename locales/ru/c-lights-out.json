@@ -90,5 +90,7 @@
   "waiting-for-host": "Ожидание, пока ведущий начнет следующий раунд...",
   "waiting-for-players": "Ожидание игроков",
   "welcome-user": "Добро пожаловать, {{name}}!",
-  "your-moves": "Ваши ходы"
+  "your-moves": "Ваши ходы",
+  "lights-out-title": "Lights Out",
+  "rating-tiers": "Rating tiers"
 }

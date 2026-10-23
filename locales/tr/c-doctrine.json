@@ -35,5 +35,10 @@
   "upgrade-operator": "Kilidi açmak için Operator'e yükseltin ($15/ay).",
   "view-arrow": "Görüntüle →",
   "xp-progress": "{{current}} / {{max}} XP",
-  "xp-to-next-rank": "{{badge}} {{name}} için {{xp}} XP"
+  "xp-to-next-rank": "{{badge}} {{name}} için {{xp}} XP",
+  "back-to-puzzles": "Back to Puzzles",
+  "copy-link": "Copy link",
+  "link-copied": "Link copied",
+  "recruitment-message-label": "Recruitment message",
+  "target-skills-label": "Target skills"
 }

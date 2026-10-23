@@ -253,5 +253,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "Yanlış — bu şüpheli temizlendi. 1 tahmin hakkınız kaldı.",
   "wrong-outcast-was": "❌ Yanlış — dışlanan {{name}} idi",
-  "youre-the-first": "İlk sensin!"
+  "youre-the-first": "İlk sensin!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

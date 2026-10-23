@@ -64,5 +64,6 @@
   "view-arrangement": "배열",
   "view-mixer": "믹서",
   "view-pattern": "패턴",
-  "view-piano-roll": "피아노 롤"
+  "view-piano-roll": "피아노 롤",
+  "sample-source": "Sample source"
 }

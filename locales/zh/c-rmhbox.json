@@ -451,5 +451,9 @@
   "your-prompts": "您的提示",
   "your-rank": "你的等级：",
   "youre-the-producer": "你是制作人！",
-  "yours-label": "(你的)"
+  "yours-label": "(你的)",
+  "close": "Close",
+  "guesses-remaining-guess-input_other": "{{count}} guesses remaining",
+  "players-count-host-control-modal_other": "Players ({{count}})",
+  "score-pts-rmhbox-discord-activity_other": "{{count}} pts"
 }

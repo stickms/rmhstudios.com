@@ -86,5 +86,7 @@
   "waiting-for-host": "Bir sonraki turun başlaması için ev sahibi bekleniyor...",
   "waiting-for-players": "Oyuncular bekleniyor",
   "welcome-user": "Hoş geldin, {{name}}!",
-  "your-moves": "Hamlelerin"
+  "your-moves": "Hamlelerin",
+  "lights-out-title": "Lights Out",
+  "rating-tiers": "Rating tiers"
 }

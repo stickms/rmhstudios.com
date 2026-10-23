@@ -480,5 +480,12 @@
   "your-prompts": "आपके संकेत",
   "your-rank": "आपकी रैंक:",
   "youre-the-producer": "आप निर्माता हैं!",
-  "yours-label": "(आपका)"
+  "yours-label": "(आपका)",
+  "close": "Close",
+  "guesses-remaining-guess-input_one": "{{count}} guess remaining",
+  "guesses-remaining-guess-input_other": "{{count}} guesses remaining",
+  "players-count-host-control-modal_one": "Players ({{count}})",
+  "players-count-host-control-modal_other": "Players ({{count}})",
+  "score-pts-rmhbox-discord-activity_one": "{{count}} pts",
+  "score-pts-rmhbox-discord-activity_other": "{{count}} pts"
 }

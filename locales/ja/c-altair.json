@@ -163,5 +163,6 @@
   "webgl-context-lost": "WebGLコンテキストが失われました。ページを再読み込みしてください。",
   "you": "(あなた)",
   "your-class": "あなたのクラス",
-  "zoom": "ズーム"
+  "zoom": "ズーム",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
 }

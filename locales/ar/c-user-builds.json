@@ -116,5 +116,8 @@
   "years-ago_two": "{{count}}y ago",
   "years-ago_few": "{{count}}y ago",
   "years-ago_many": "{{count}}y ago",
-  "years-ago_other": "منذ {{count}} سنة"
+  "years-ago_other": "منذ {{count}} سنة",
+  "add-tag": "Add tag",
+  "add-technology": "Add technology",
+  "post-comment": "Post comment"
 }

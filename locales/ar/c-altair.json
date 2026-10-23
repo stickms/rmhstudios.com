@@ -228,5 +228,11 @@
   "webgl-context-lost": "WebGL context lost! Please reload the page.",
   "you": "(أنت)",
   "your-class": "صفك",
-  "zoom": "تكبير"
+  "zoom": "تكبير",
+  "keyboard-hint-level-up-screen_few": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_many": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_one": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_two": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_zero": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
 }

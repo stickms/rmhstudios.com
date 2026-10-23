@@ -1,5 +1,6 @@
 {
   "accuracy": "Accuracy",
+  "apps": "Apps",
   "back": "Back",
   "ban": "Ban",
   "ban-confirm-body": "This player will be removed and cannot rejoin this room.",
@@ -86,6 +87,7 @@
   "refresh": "Refresh",
   "results": "Results",
   "room-code-length": "Room code must be 6 characters",
+  "room-of-host": "{{name}}'s room",
   "round": "round",
   "round-of": "Round {{current}} of {{total}}",
   "round-results": "Round {{round}} Results",

@@ -86,5 +86,7 @@
   "waiting-for-host": "Warten auf den Host, um die nächste Runde zu starten...",
   "waiting-for-players": "Warten auf Spieler",
   "welcome-user": "Willkommen, {{name}}!",
-  "your-moves": "Deine Züge"
+  "your-moves": "Deine Züge",
+  "lights-out-title": "Lights Out",
+  "rating-tiers": "Rating tiers"
 }

@@ -111,5 +111,8 @@
   "walk": "идти",
   "ward-seal-instruction-v2": "Rotate each ring until its glowing ward glyph rests beneath the marker",
   "watch-the-pattern": "Смотрите на узор...",
-  "wrong-watch-again": "Неверно! Смотрите снова..."
+  "wrong-watch-again": "Неверно! Смотрите снова...",
+  "close-overlay": "Close",
+  "mute": "Mute",
+  "unmute": "Unmute"
 }

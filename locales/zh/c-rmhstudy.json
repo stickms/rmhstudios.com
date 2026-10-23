@@ -89,5 +89,6 @@
   "tap-to-reveal": "点击以显示",
   "unban": "解封",
   "unban-user": "解封用户",
-  "work-duration": "工作时长：{{minutes}} 分钟"
+  "work-duration": "工作时长：{{minutes}} 分钟",
+  "apps": "Apps"
 }

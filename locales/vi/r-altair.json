@@ -34,5 +34,7 @@
   "settings": "Cài đặt",
   "visibility-label": "Hiển thị",
   "visibility-private": "Riêng tư",
-  "visibility-public": "Công khai"
+  "visibility-public": "Công khai",
+  "loading": "Loading…",
+  "lobby-title": "Lobby {{lobbyId}}"
 }

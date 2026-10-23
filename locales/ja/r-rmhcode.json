@@ -115,5 +115,6 @@
   "usage-heading": "使い方",
   "user": "ユーザー",
   "user-builds-link": "ユーザービルド",
-  "view-on-github": "GitHubで見る"
+  "view-on-github": "GitHubで見る",
+  "install-method": "Install method"
 }

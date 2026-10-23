@@ -34,5 +34,7 @@
   "settings": "Ayarlar",
   "visibility-label": "Görünürlük",
   "visibility-private": "Özel",
-  "visibility-public": "Herkese Açık"
+  "visibility-public": "Herkese Açık",
+  "loading": "Loading…",
+  "lobby-title": "Lobby {{lobbyId}}"
 }

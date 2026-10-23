@@ -11,12 +11,6 @@
   "load-error": "Couldn't load your saves",
   "load-more": "Load more",
   "new-folder": "New folder",
-  "remove": "Remove",
-  "save": "Save",
-  "saved": "Saved",
-  "unavailable": "This item is no longer available",
-  "unfiled": "Saved",
-  "unsave": "Remove from saves",
   "remind-cancel": "Cancel reminder",
   "remind-cancel-error": "Couldn't cancel the reminder",
   "remind-error": "Couldn't set the reminder",
@@ -31,5 +25,11 @@
   "remind-week": "Next week",
   "reminders": "Reminders",
   "reminders-empty-desc": "Use \"Remind me\" on a post or notification to bring it back later.",
-  "reminders-empty-title": "No reminders"
+  "reminders-empty-title": "No reminders",
+  "remove": "Remove",
+  "save": "Save",
+  "saved": "Saved",
+  "unavailable": "This item is no longer available",
+  "unfiled": "Saved",
+  "unsave": "Remove from saves"
 }

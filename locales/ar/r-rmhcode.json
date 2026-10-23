@@ -115,5 +115,6 @@
   "usage-heading": "استخدام",
   "user": "مرحبًا! كيف يمكنني مساعدتك اليوم؟",
   "user-builds-link": "يبني",
-  "view-on-github": "عرض على GitHub"
+  "view-on-github": "عرض على GitHub",
+  "install-method": "Install method"
 }

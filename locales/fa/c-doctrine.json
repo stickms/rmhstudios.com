@@ -35,5 +35,10 @@
   "upgrade-operator": "Upgrade to Operator ($15/mo) to unlock.",
   "view-arrow": "View →",
   "xp-progress": "{{current}} / {{max}} XP",
-  "xp-to-next-rank": "{{xp}} XP to {{badge}} {{name}}"
+  "xp-to-next-rank": "{{xp}} XP to {{badge}} {{name}}",
+  "back-to-puzzles": "Back to Puzzles",
+  "copy-link": "Copy link",
+  "link-copied": "Link copied",
+  "recruitment-message-label": "Recruitment message",
+  "target-skills-label": "Target skills"
 }

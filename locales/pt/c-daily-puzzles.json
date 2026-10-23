@@ -255,5 +255,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "Errado — esse suspeito foi eliminado. Você tem 1 palpite restante.",
   "wrong-outcast-was": "❌ Errado — o excluído era {{name}}",
-  "youre-the-first": "Você é o primeiro!"
+  "youre-the-first": "Você é o primeiro!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

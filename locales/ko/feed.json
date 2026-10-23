@@ -1441,5 +1441,19 @@
   "your-personas": "내 페르소나",
   "your-ratings": "내 평점",
   "your-top-post": "내 인기 게시물",
-  "your-year-on-rmh": "RMH에서의 회원님의 한 해"
+  "your-year-on-rmh": "RMH에서의 회원님의 한 해",
+  "account-status-signed-out": "Sign in to view your account status.",
+  "decline-challenge": "Decline challenge",
+  "emoji-label": "Emoji",
+  "privacy-signed-out": "Sign in to manage your privacy settings.",
+  "profile-cosmetics-signed-out": "Sign in to customize your profile.",
+  "security-signed-out": "Sign in to manage your security settings.",
+  "send-message": "Send message",
+  "settings-circle-title": "Close Friends",
+  "settings-content-title": "Content preferences",
+  "store-details": "Details",
+  "store-empty": "Nothing here yet.",
+  "store-featured": "Featured",
+  "system-prompt-label": "Personality and instructions",
+  "you-label": "You"
 }

@@ -34,5 +34,7 @@
   "settings": "Einstellungen",
   "visibility-label": "Sichtbarkeit",
   "visibility-private": "Privat",
-  "visibility-public": "Öffentlich"
+  "visibility-public": "Öffentlich",
+  "loading": "Loading…",
+  "lobby-title": "Lobby {{lobbyId}}"
 }

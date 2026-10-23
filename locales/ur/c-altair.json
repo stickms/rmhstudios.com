@@ -176,5 +176,7 @@
   "webgl-context-lost": "WebGL سیاق و سباق ختم ہو گیا! براہ کرم صفحہ دوبارہ لوڈ کریں۔",
   "you": "(آپ)",
   "your-class": "آپ کی کلاس",
-  "zoom": "زوم"
+  "zoom": "زوم",
+  "keyboard-hint-level-up-screen_one": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
 }

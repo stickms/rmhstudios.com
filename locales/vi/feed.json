@@ -1441,5 +1441,19 @@
   "your-personas": "Nhân vật của bạn",
   "your-ratings": "Đánh giá của bạn",
   "your-top-post": "Bài viết hàng đầu của bạn",
-  "your-year-on-rmh": "Năm của bạn trên RMH"
+  "your-year-on-rmh": "Năm của bạn trên RMH",
+  "account-status-signed-out": "Sign in to view your account status.",
+  "decline-challenge": "Decline challenge",
+  "emoji-label": "Emoji",
+  "privacy-signed-out": "Sign in to manage your privacy settings.",
+  "profile-cosmetics-signed-out": "Sign in to customize your profile.",
+  "security-signed-out": "Sign in to manage your security settings.",
+  "send-message": "Send message",
+  "settings-circle-title": "Close Friends",
+  "settings-content-title": "Content preferences",
+  "store-details": "Details",
+  "store-empty": "Nothing here yet.",
+  "store-featured": "Featured",
+  "system-prompt-label": "Personality and instructions",
+  "you-label": "You"
 }

@@ -48,5 +48,7 @@
   "sign-in-to-guess": "Tahmin etmek için giriş yap.",
   "solves-plays": "{{solves}} çözüldü · {{plays}} oynandı",
   "song-title-placeholder": "Şarkı adı...",
-  "your-playlists": "Your playlists"
+  "your-playlists": "Your playlists",
+  "listening-count_one": "{{count}} listening",
+  "listening-count_other": "{{count}} listening"
 }

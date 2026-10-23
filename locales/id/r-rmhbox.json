@@ -45,5 +45,8 @@
   "starting-game": "Memulai permainan...",
   "view-minigames": "Lihat Minigames",
   "winner-label": "Pemenang:",
-  "winner-none": "Tidak ada"
+  "winner-none": "Tidak ada",
+  "loading": "Loading…",
+  "room-code": "Room code",
+  "player-count-of-max_other": "{{count}}/{{max}} players"
 }

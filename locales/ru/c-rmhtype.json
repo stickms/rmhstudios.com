@@ -128,5 +128,7 @@
   "worst-title": "Worst keys",
   "wpm": "З/М",
   "writing-passage": "Writing your passage...",
-  "you": "(вы)"
+  "you": "(вы)",
+  "apps": "Apps",
+  "room-of-host": "{{name}}'s room"
 }

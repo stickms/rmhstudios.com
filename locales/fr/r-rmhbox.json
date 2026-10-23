@@ -47,5 +47,10 @@
   "starting-game": "Lancement du jeu...",
   "view-minigames": "Voir les mini-jeux",
   "winner-label": "Gagnant :",
-  "winner-none": "Aucun"
+  "winner-none": "Aucun",
+  "loading": "Loading…",
+  "room-code": "Room code",
+  "player-count-of-max_many": "{{count}}/{{max}} players",
+  "player-count-of-max_one": "{{count}}/{{max}} players",
+  "player-count-of-max_other": "{{count}}/{{max}} players"
 }

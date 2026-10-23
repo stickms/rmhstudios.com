@@ -45,5 +45,8 @@
   "starting-game": "Đang bắt đầu trò chơi...",
   "view-minigames": "Xem Minigame",
   "winner-label": "Người thắng:",
-  "winner-none": "Không có"
+  "winner-none": "Không có",
+  "loading": "Loading…",
+  "room-code": "Room code",
+  "player-count-of-max_other": "{{count}}/{{max}} players"
 }

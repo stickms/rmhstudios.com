@@ -70,5 +70,6 @@
   "view-arrangement": "Аранжировка",
   "view-mixer": "Микшер",
   "view-pattern": "Паттерн",
-  "view-piano-roll": "Пианоролл"
+  "view-piano-roll": "Пианоролл",
+  "sample-source": "Sample source"
 }

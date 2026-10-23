@@ -1,5 +1,6 @@
 {
   "ai-seeded": "AI-seeded market",
+  "amount": "Amount in coins",
   "auto-market": "Auto",
   "auto-market-hint": "Settles automatically from RMH data — no admin or AI judge",
   "bought": "Bought {{shares}} {{side}} shares",
@@ -16,6 +17,7 @@
   "empty-open": "No open markets right now. Create the first one!",
   "empty-resolved": "No resolved markets yet.",
   "enter-amount": "Enter an amount first",
+  "filter-aria-label": "Filter markets",
   "filter-mine": "Mine",
   "filter-open": "Open",
   "filter-resolved": "Resolved",
@@ -35,6 +37,5 @@
   "trading-closed": "Trading closed — awaiting resolution.",
   "view-subject": "View the subject",
   "volume": "{{n}} vol",
-  "your-position": "You: {{yes}} YES / {{no}} NO",
-  "filter-aria-label": "Filter markets"
+  "your-position": "You: {{yes}} YES / {{no}} NO"
 }

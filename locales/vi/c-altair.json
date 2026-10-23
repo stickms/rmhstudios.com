@@ -163,5 +163,6 @@
   "webgl-context-lost": "Mất ngữ cảnh WebGL! Vui lòng tải lại trang.",
   "you": "(bạn)",
   "your-class": "Lớp của bạn",
-  "zoom": "Thu phóng"
+  "zoom": "Thu phóng",
+  "keyboard-hint-level-up-screen_other": "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick"
 }

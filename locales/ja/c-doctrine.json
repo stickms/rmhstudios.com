@@ -34,5 +34,10 @@
   "upgrade-operator": "アンロックするにはOperator（$15/月）にアップグレードしてください。",
   "view-arrow": "表示 →",
   "xp-progress": "{{current}} / {{max}} XP",
-  "xp-to-next-rank": "{{badge}} {{name}}まであと{{xp}} XP"
+  "xp-to-next-rank": "{{badge}} {{name}}まであと{{xp}} XP",
+  "back-to-puzzles": "Back to Puzzles",
+  "copy-link": "Copy link",
+  "link-copied": "Link copied",
+  "recruitment-message-label": "Recruitment message",
+  "target-skills-label": "Target skills"
 }

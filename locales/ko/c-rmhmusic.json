@@ -46,5 +46,6 @@
   "sign-in-to-guess": "추측하려면 로그인하세요.",
   "solves-plays": "{{solves}}회 해결 · {{plays}}회 재생",
   "song-title-placeholder": "노래 제목...",
-  "your-playlists": "Your playlists"
+  "your-playlists": "Your playlists",
+  "listening-count_other": "{{count}} listening"
 }

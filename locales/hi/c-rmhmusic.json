@@ -48,5 +48,7 @@
   "sign-in-to-guess": "अनुमान लगाने के लिए साइन इन करें।",
   "solves-plays": "{{solves}} हल · {{plays}} बार चला",
   "song-title-placeholder": "गीत का शीर्षक...",
-  "your-playlists": "Your playlists"
+  "your-playlists": "Your playlists",
+  "listening-count_one": "{{count}} listening",
+  "listening-count_other": "{{count}} listening"
 }

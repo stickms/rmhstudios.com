@@ -253,5 +253,11 @@
   "view-results-short": "View",
   "wrong-guess-hint": "Falsch – dieser Verdächtige wurde entlastet. Du hast noch 1 Versuch.",
   "wrong-outcast-was": "❌ Falsch – der Außenseiter war {{name}}",
-  "youre-the-first": "Du bist der Erste!"
+  "youre-the-first": "Du bist der Erste!",
+  "chainlink-title": "Chainlink",
+  "how-it-works": "How it works",
+  "impostor-title": "Impostor",
+  "link-word-label": "Link {{n}}",
+  "outcast-title": "Outcast",
+  "spectrum-title": "Spectrum"
 }

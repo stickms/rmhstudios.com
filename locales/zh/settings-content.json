@@ -69,5 +69,7 @@
   "trash-sign-in": "Sign in",
   "trash-signed-out": "Sign in to see your deleted content",
   "trash-view-thread": "View thread",
-  "trash-window-note_other": "Posts and comments you delete stay here for {{count}} days, then go for good."
+  "trash-window-note_other": "Posts and comments you delete stay here for {{count}} days, then go for good.",
+  "remove-tag": "Remove",
+  "trash-crumb-settings": "Settings"
 }

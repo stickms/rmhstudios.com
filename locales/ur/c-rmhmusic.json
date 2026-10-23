@@ -48,5 +48,7 @@
   "sign-in-to-guess": "اندازہ لگانے کے لیے سائن ان کریں۔",
   "solves-plays": "{{solves}} حل ہوئے · {{plays}} پلے",
   "song-title-placeholder": "گانے کا عنوان...",
-  "your-playlists": "Your playlists"
+  "your-playlists": "Your playlists",
+  "listening-count_one": "{{count}} listening",
+  "listening-count_other": "{{count}} listening"
 }
