@@ -121,5 +121,19 @@
   "tilt-effects": "Tilt effects",
   "tilt-effects-desc": "Let the glass catch light as you tilt your device.",
   "tilt-enabled": "Tilt effects on",
-  "globe-navigation-only-hint": "The liquid globe flattens and turns inside out when you choose a destination. Other links open immediately."
+  "globe-navigation-only-hint": "The liquid globe flattens and turns inside out when you choose a destination. Other links open immediately.",
+  "electric-arcs": "Electric arcs",
+  "electric-arcs-clicks": "Clicks only",
+  "electric-arcs-desc": "Small sparks between surfaces and where you click. Turn them off if flicker bothers you.",
+  "electric-arcs-full": "Full",
+  "electric-arcs-off": "Off",
+  "electric-arcs-still-note": "Jelly motion is set to Still, so arcs stay off for now.",
+  "jelly-motion": "Jelly motion",
+  "jelly-motion-calm": "Calm",
+  "jelly-motion-desc": "How much the jelly surfaces move on their own. Still pauses all ambient motion and turns electric arcs off.",
+  "jelly-motion-lively": "Lively",
+  "jelly-motion-still": "Still",
+  "pause-ambient-motion": "Pause ambient motion",
+  "pause-ambient-motion-off": "Stops the jelly surfaces moving on their own.",
+  "pause-ambient-motion-on": "Paused. Tap to resume."
 }

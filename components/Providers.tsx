@@ -44,6 +44,14 @@ import {
   isNavTransition,
   isColorVisionMode,
   applyColorVision,
+  JELLY_MOTION_KEY,
+  DEFAULT_JELLY_MOTION,
+  isJellyMotion,
+  applyJellyMotion,
+  ELECTRIC_ARCS_KEY,
+  DEFAULT_ELECTRIC_ARCS,
+  isElectricArcs,
+  applyElectricArcs,
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
 import { useFluidPressLayer } from '@/hooks/useFluidPress';
@@ -319,6 +327,8 @@ export function Providers({
   const navTransition = useThemeStore((s) => s.navTransition);
   const alwaysEvertGlobe = useThemeStore((s) => s.alwaysEvertGlobe);
   const eversionLevel = useThemeStore((s) => s.eversionLevel);
+  const jellyMotion = useThemeStore((s) => s.jellyMotion);
+  const electricArcs = useThemeStore((s) => s.electricArcs);
   const userTheme = useThemeStore((s) => s.userTheme);
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
@@ -587,6 +597,10 @@ export function Providers({
     if (localStorage.getItem(ALWAYS_EVERT_GLOBE_KEY) === '1') st.setAlwaysEvertGlobe(true);
     const el = localStorage.getItem(EVERSION_LEVEL_KEY);
     if (isEversionLevel(el)) st.setEversionLevel(el);
+    const jm = localStorage.getItem(JELLY_MOTION_KEY);
+    if (isJellyMotion(jm)) st.setJellyMotion(jm);
+    const ea = localStorage.getItem(ELECTRIC_ARCS_KEY);
+    if (isElectricArcs(ea)) st.setElectricArcs(ea);
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
     try {
@@ -702,6 +716,15 @@ export function Providers({
     if (eversionLevel !== DEFAULT_EVERSION_LEVEL)
       localStorage.setItem(EVERSION_LEVEL_KEY, eversionLevel);
     else localStorage.removeItem(EVERSION_LEVEL_KEY);
+    // Plasmatic Jelly (R8/R9): stamped on <html> for the jelly/arc runtimes and
+    // cached for the pre-paint script; both express the default by absence.
+    applyJellyMotion(html, jellyMotion);
+    if (jellyMotion !== DEFAULT_JELLY_MOTION) localStorage.setItem(JELLY_MOTION_KEY, jellyMotion);
+    else localStorage.removeItem(JELLY_MOTION_KEY);
+    applyElectricArcs(html, electricArcs);
+    if (electricArcs !== DEFAULT_ELECTRIC_ARCS)
+      localStorage.setItem(ELECTRIC_ARCS_KEY, electricArcs);
+    else localStorage.removeItem(ELECTRIC_ARCS_KEY);
     // Custom accent (raw hex) overrides the preset accent applied just above.
     if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
       const { hex, fg } = ensureReadableAccent(customAccent);
@@ -754,6 +777,8 @@ export function Providers({
     navTransition,
     alwaysEvertGlobe,
     eversionLevel,
+    jellyMotion,
+    electricArcs,
     userTheme,
     userThemePreview,
   ]);
@@ -848,6 +873,8 @@ export function Providers({
             navTransition?: string | null;
             alwaysEvertGlobe?: boolean | null;
             eversionLevel?: string | null;
+            jellyMotion?: string | null;
+            electricArcs?: string | null;
           };
           if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
             store.setFontScale(Number(r.fontScale));
@@ -860,6 +887,8 @@ export function Providers({
           if (typeof r.alwaysEvertGlobe === 'boolean')
             store.setAlwaysEvertGlobe(r.alwaysEvertGlobe);
           if (isEversionLevel(r.eversionLevel)) store.setEversionLevel(r.eversionLevel);
+          if (isJellyMotion(r.jellyMotion)) store.setJellyMotion(r.jellyMotion);
+          if (isElectricArcs(r.electricArcs)) store.setElectricArcs(r.electricArcs);
           appearanceSyncedRef.current = true;
         },
       )

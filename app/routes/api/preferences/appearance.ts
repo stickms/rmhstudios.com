@@ -55,6 +55,8 @@ export const Route = createFileRoute('/api/preferences/appearance')({
           navTransition: row?.navTransition ?? null,
           alwaysEvertGlobe: row?.alwaysEvertGlobe ?? false,
           eversionLevel: row?.eversionLevel ?? null,
+          jellyMotion: row?.jellyMotion ?? null,
+          electricArcs: row?.electricArcs ?? null,
         });
       }),
 
@@ -71,6 +73,8 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             navTransition,
             alwaysEvertGlobe,
             eversionLevel,
+            jellyMotion,
+            electricArcs,
           } = body;
           // Custom accent is normalized/nudged through the contrast guard so the
           // stored value is guaranteed to carry a legible label (AA).
@@ -85,6 +89,8 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             ...(navTransition !== undefined ? { navTransition } : {}),
             ...(alwaysEvertGlobe !== undefined ? { alwaysEvertGlobe } : {}),
             ...(eversionLevel !== undefined ? { eversionLevel } : {}),
+            ...(jellyMotion !== undefined ? { jellyMotion } : {}),
+            ...(electricArcs !== undefined ? { electricArcs } : {}),
             // 'none' is stored as null so the column means "no override".
             ...(colorVision !== undefined
               ? { colorVision: colorVision === 'none' ? null : colorVision }
@@ -114,6 +120,8 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             navTransition: row.navTransition ?? null,
             alwaysEvertGlobe: row.alwaysEvertGlobe ?? false,
             eversionLevel: row.eversionLevel ?? null,
+            jellyMotion: row.jellyMotion ?? null,
+            electricArcs: row.electricArcs ?? null,
           });
         },
       ),

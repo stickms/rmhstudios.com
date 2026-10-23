@@ -8,6 +8,12 @@ import {
   type EversionLevel,
   DEFAULT_EVERSION_LEVEL,
   resolveEversionLevel,
+  DEFAULT_JELLY_MOTION,
+  DEFAULT_ELECTRIC_ARCS,
+  resolveJellyMotion,
+  resolveElectricArcs,
+  type JellyMotion,
+  type ElectricArcs,
 } from '@/lib/appearance/prefs';
 import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 
@@ -332,6 +338,21 @@ interface ThemeStore {
    */
   eversionLevel: EversionLevel;
   setEversionLevel: (value: EversionLevel) => void;
+  /**
+   * Jelly motion (Plasmatic Jelly R8, WCAG 2.2.2): `lively` (default) | `calm` |
+   * `still`. Stamped on `html[data-jelly-motion]` (absent when `lively`) by the
+   * pre-paint script and Providers; cached in localStorage (`rmh-jelly-motion`)
+   * and synced to the account like `navTransition`.
+   */
+  jellyMotion: JellyMotion;
+  setJellyMotion: (value: JellyMotion) => void;
+  /**
+   * Electric arcs (Plasmatic Jelly R9): `full` (default) | `clicks` | `off`.
+   * Stamped on `html[data-electric-arcs]` (absent when `full`); cached in
+   * localStorage (`rmh-electric-arcs`) and synced to the account.
+   */
+  electricArcs: ElectricArcs;
+  setElectricArcs: (value: ElectricArcs) => void;
 
   // ── Marketplace user themes (§14) ────────────────────────────────────────
   /**
@@ -376,6 +397,10 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   setAlwaysEvertGlobe: (alwaysEvertGlobe) => set({ alwaysEvertGlobe }),
   eversionLevel: DEFAULT_EVERSION_LEVEL,
   setEversionLevel: (eversionLevel) => set({ eversionLevel: resolveEversionLevel(eversionLevel) }),
+  jellyMotion: DEFAULT_JELLY_MOTION,
+  setJellyMotion: (jellyMotion) => set({ jellyMotion: resolveJellyMotion(jellyMotion) }),
+  electricArcs: DEFAULT_ELECTRIC_ARCS,
+  setElectricArcs: (electricArcs) => set({ electricArcs: resolveElectricArcs(electricArcs) }),
   userTheme: null,
   // Applying/removing an owned theme also clears any transient preview.
   setUserTheme: (userTheme) => set({ userTheme, userThemePreview: null }),

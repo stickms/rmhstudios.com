@@ -133,3 +133,65 @@ export const NAV_TRANSITION_KEY = 'rmh-nav-transition';
 export const EVERSION_LEVEL_KEY = 'rmh-eversion-level';
 /** "Always evert globe": cached as '1' when on, absent when off (the default). */
 export const ALWAYS_EVERT_GLOBE_KEY = 'rmh-always-evert-globe';
+
+// ── Jelly motion (Plasmatic Jelly R8, plan 04 §4.2) ─────────────────────────
+// The WCAG 2.2.2 control for the jelly material's ambient motion. It is a
+// MATERIAL setting, not the retired reduce-motion: it reads no OS media query
+// and never touches navigation transitions or framer-motion. `still` stops all
+// ambient motion (and forces electric arcs off, whatever `electricArcs` says);
+// `calm` damps it. Consumers read `html[data-jelly-motion]` (see
+// `jellyMotionLevel()` in `lib/jelly/tiers.ts`).
+//
+// Contract: the attribute is present ONLY when the value is not the default
+// (`lively`), the same as `data-color-vision` / `data-density`; the
+// localStorage key is likewise written only for a non-default value.
+export const JELLY_MOTION_LEVELS = ['lively', 'calm', 'still'] as const;
+export type JellyMotion = (typeof JELLY_MOTION_LEVELS)[number];
+export const DEFAULT_JELLY_MOTION: JellyMotion = 'lively';
+
+export function isJellyMotion(v: unknown): v is JellyMotion {
+  return typeof v === 'string' && (JELLY_MOTION_LEVELS as readonly string[]).includes(v);
+}
+
+/** An absent or unknown stored value means the default, never an error. */
+export function resolveJellyMotion(v: unknown): JellyMotion {
+  return isJellyMotion(v) ? v : DEFAULT_JELLY_MOTION;
+}
+
+/** Stamp the level on <html> (pre-paint safe; DOM only). Default removes it. */
+export function applyJellyMotion(html: HTMLElement, value: JellyMotion) {
+  if (value === DEFAULT_JELLY_MOTION) html.removeAttribute('data-jelly-motion');
+  else html.setAttribute('data-jelly-motion', value);
+}
+
+// ── Electric arcs (Plasmatic Jelly R9, plan 03 §5) ──────────────────────────
+// `full` (default): ambient + click arcs; `clicks`: click arcs only; `off`:
+// none. The settings copy says plainly that `off` is the choice for anyone
+// sensitive to flicker. `jellyMotion = still` forces arcs off at the runtime
+// regardless of this value — the attribute records only the user's choice.
+//
+// Contract: `html[data-electric-arcs]` is present only when not `full`; the
+// localStorage key is written only for a non-default value.
+export const ELECTRIC_ARC_MODES = ['full', 'clicks', 'off'] as const;
+export type ElectricArcs = (typeof ELECTRIC_ARC_MODES)[number];
+export const DEFAULT_ELECTRIC_ARCS: ElectricArcs = 'full';
+
+export function isElectricArcs(v: unknown): v is ElectricArcs {
+  return typeof v === 'string' && (ELECTRIC_ARC_MODES as readonly string[]).includes(v);
+}
+
+/** An absent or unknown stored value means the default, never an error. */
+export function resolveElectricArcs(v: unknown): ElectricArcs {
+  return isElectricArcs(v) ? v : DEFAULT_ELECTRIC_ARCS;
+}
+
+/** Stamp the mode on <html> (pre-paint safe; DOM only). Default removes it. */
+export function applyElectricArcs(html: HTMLElement, value: ElectricArcs) {
+  if (value === DEFAULT_ELECTRIC_ARCS) html.removeAttribute('data-electric-arcs');
+  else html.setAttribute('data-electric-arcs', value);
+}
+
+/** Jelly motion: cached only when not 'lively' (the default). */
+export const JELLY_MOTION_KEY = 'rmh-jelly-motion';
+/** Electric arcs: cached only when not 'full' (the default). */
+export const ELECTRIC_ARCS_KEY = 'rmh-electric-arcs';
