@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: rmhstudios.com 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-29 21:28+0000\n"
+"POT-Creation-Date: 2026-10-23 06:17+0000\n"
 "PO-Revision-Date: 2026-07-29 00:00+0000\n"
 "Last-Translator: RMH Studios docs pipeline\n"
 "Language: pt\n"
@@ -19,31 +19,31 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: ../../index.md:47
+#: ../../index.md:49
 msgid "Reference"
 msgstr "Referência"
 
-#: ../../index.md:65
+#: ../../index.md:73
 msgid "Operations"
 msgstr "Operações"
 
-#: ../../index.md:78
+#: ../../index.md:86
 msgid "Audits"
 msgstr "Auditorias"
 
-#: ../../index.md:92
+#: ../../index.md:129
 msgid "Plans & design snapshots"
 msgstr "Planos e instantâneos de design"
 
-#: ../../index.md:105
+#: ../../index.md:143
 msgid "Apps & games"
 msgstr "Aplicativos e jogos"
 
-#: ../../index.md:1 c4fa284a68854784b06c751bb936ca1d
+#: ../../index.md:1 47ee159bcb934dbda58ad92b5e6fd66f
 msgid "rmhstudios.com"
 msgstr "rmhstudios.com"
 
-#: ../../index.md:3 2d5bdbfa4f6f42268542de887f4f85a2
+#: ../../index.md:3 35e83c28e134413e83d177ae7847e24c
 msgid ""
 "A single web platform: a social feed (RMHarks), ~20 browser games "
 "(several multiplayer/3D), full apps (RMHTube, RMHMusic, RMHType, "
@@ -59,7 +59,7 @@ msgstr ""
 "React com hubs de tempo real em Node e uma frota de workers em Go por "
 "trás dela."
 
-#: ../../index.md:9 30addd9572e643458b57e1f9cf5df03c
+#: ../../index.md:9 3a77957d047b4422913ae2f6438682af
 msgid ""
 "This site is the rendered form of the repository's `docs/` tree. The "
 "Markdown files are the source of truth and are written for both humans "
@@ -70,11 +70,11 @@ msgstr ""
 "humanos quanto para agentes de codificação; nada aqui é gerado a partir "
 "do código."
 
-#: ../../index.md:13 c21f80ba4a6b43f1a69e0fd4f6ac3c83
+#: ../../index.md:13 c09e25985da44e38931719c51fe25530
 msgid "Stack of record"
 msgstr "Stack oficial"
 
-#: ../../index.md:15 3d1d083e7f084320ab149d9b5adc914b
+#: ../../index.md:15 2e69fd56167e47dfac788dd8d6147f5a
 msgid ""
 "**TanStack Start + Vite 8 + React 19 + Nitro SSR.** This is **not** "
 "Next.js — some older design docs say otherwise and are flagged as stale "
@@ -91,11 +91,11 @@ msgstr ""
 "Socket.io, microsserviços Go construídos com Bazel, i18next (16 idiomas, "
 "RTL para `ar`/`ur`)."
 
-#: ../../index.md:22 d89ddf195e2b4e349579dee35f88223a
+#: ../../index.md:22 a5692fc54e004a92bcddd58a2f78e7e0
 msgid "Start here"
 msgstr "Comece aqui"
 
-#: ../../index.md:24 4b0c87d0aa3f46b090d14298e40bb99f
+#: ../../index.md:24 5da696c5afe04f0eb84a1f9a2662c9ea
 #, python-brace-format
 msgid ""
 "{doc}`site-reference/index` — what the platform consists of, area by "
@@ -104,7 +104,7 @@ msgstr ""
 "{doc}`site-reference/index` — do que a plataforma é composta, área por "
 "área, além de um inventário gerado de cada rota, jogo e aplicativo."
 
-#: ../../index.md:26 bfcf4e6e39b249368063d755651dd805
+#: ../../index.md:26 183eb670e87a42f9a6d764fe0e9eb489
 #, python-brace-format
 msgid ""
 "{doc}`developer-api/index` — the public REST API: guides and a generated "
@@ -113,16 +113,16 @@ msgstr ""
 "{doc}`developer-api/index` — a API REST pública: guias e uma referência "
 "de endpoints gerada."
 
-#: ../../index.md:28 443b6aa82673403e90e7f484159c2cc3
+#: ../../index.md:28 ba9862a10ec84be8a086514e391fc8f9
 #, python-brace-format
 msgid ""
 "{doc}`codebase-overview` — canonical code-layout overview: stack, repo "
 "layout, conventions, and where to look first."
 msgstr ""
-"{doc}`codebase-overview` — visão geral canônica da organização do "
-"código: stack, layout do repositório, convenções e por onde começar."
+"{doc}`codebase-overview` — visão geral canônica da organização do código:"
+" stack, layout do repositório, convenções e por onde começar."
 
-#: ../../index.md:30 02760732a983427ba5c7c830715293aa
+#: ../../index.md:30 593c04bd54294be69c090ad17f45886b
 #, python-brace-format
 msgid ""
 "{doc}`architecture` — runtime topology and the deploy pipeline: what runs"
@@ -131,18 +131,17 @@ msgstr ""
 "{doc}`architecture` — topologia de runtime e o pipeline de deploy: o que "
 "roda onde em produção, imagens, CI, portas, autenticação entre camadas."
 
-#: ../../index.md:32 dc750e01738c4729b28ba6e7f77e5604
+#: ../../index.md:32 30251bb37e5349b4a06b78ff38ce8316
 #, python-brace-format
 msgid ""
-"{doc}`design-language` — the visual system (**Radial Avant-Garde "
-"Glass**): the `--site-*` token contract, themes, primitives, motion, "
-"accessibility."
+"{doc}`design-language` — the visual system (**Radial Plasmatic Jelly**): "
+"the `--site-*` token contract, themes, primitives, motion, accessibility."
 msgstr ""
-"{doc}`design-language` — o sistema visual (**Radial Avant-Garde "
-"Glass**): o contrato de tokens `--site-*`, temas, primitivos, movimento, "
+"{doc}`design-language` — o sistema visual (**Radial Plasmatic Jelly**): o"
+" contrato de tokens `--site-*`, temas, primitivos, movimento, "
 "acessibilidade."
 
-#: ../../index.md:34 5a975a7d5c2d4e219782a07426192ce9
+#: ../../index.md:34 603880f7e4da46879ca01315c5ed0bea
 #, python-brace-format
 msgid ""
 "{doc}`testing` — the test suites (Vitest main + epic, Go Bazel) and which"
@@ -151,20 +150,31 @@ msgstr ""
 "{doc}`testing` — as suítes de teste (Vitest principal + epic, Go Bazel) e"
 " quais workflows de CI as controlam."
 
-#: ../../index.md:36 a746af2827ff44d19ffc73b066853bb8
+#: ../../index.md:36 f65b46bf20f3430da84e7a00cc40957b
+#, python-brace-format
+msgid ""
+"{doc}`frontend-webassembly` — globe numerical kernels, build and "
+"benchmark commands, JavaScript fallbacks, and the Apache policy required "
+"for deployment."
+msgstr ""
+"{doc}`frontend-webassembly` — kernels numéricos do globo, comandos de "
+"build e benchmark, fallbacks em JavaScript e a política do Apache "
+"necessária para o deploy."
+
+#: ../../index.md:38 2b74717d60c64c79bbbcec04c2d2d85d
 #, python-brace-format
 msgid ""
 "{doc}`README` — the full annotated map of `docs/`, including freshness "
 "flags for every directory."
 msgstr ""
-"{doc}`README` — o mapa anotado completo de `docs/`, incluindo "
-"indicadores de atualidade para cada diretório."
+"{doc}`README` — o mapa anotado completo de `docs/`, incluindo indicadores"
+" de atualidade para cada diretório."
 
-#: ../../index.md:39 a8d93fb8f6be4d0d8bb0a60c61154e5e
+#: ../../index.md:41 38367f518bcb4a4fa7e3c289ba9402d9
 msgid "Trust order for conflicting information"
 msgstr "Ordem de confiança para informações conflitantes"
 
-#: ../../index.md:41 cff4b228f55148298403b9ffc2a3c086
+#: ../../index.md:43 f07046e2ec2e43f79e8ab246c754509e
 msgid ""
 "Code > `docker-compose.yml` + `deploy.sh` (runtime truth) > root "
 "`CLAUDE.md` and the per-directory `CLAUDE.md` files > the reference docs "
@@ -178,3 +188,4 @@ msgstr ""
 "documentos datados são instantâneos históricos: descrevem a intenção no "
 "momento em que foram escritos, não necessariamente o código atual. "
 "Qualquer coisa que afirme usar Next.js ou PM2 está desatualizada."
+
