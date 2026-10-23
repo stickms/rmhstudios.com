@@ -121,14 +121,15 @@ export function CookieConsent() {
     setVisible(false);
   };
 
+  // A non-modal notice, so a labelled region rather than a dialog: it must never trap
+  // focus or block the page behind it (Radix Dialog would do both).
   return (
-    <div
-      role="dialog"
+    <section
       aria-label={t('cookie-consent-label', { defaultValue: 'Cookie notice' })}
       // §5.5x A.1: bottom-most member of the mobile floating stack — its presence
       // lifts the mini-player / back-to-top clear of it (globals.css :has() rules).
       data-floating="cookie"
-      // `.glass-overlay`, not `.glass-chrome`. This is `role="dialog"`, it is
+      // `.glass-overlay`, not `.glass-chrome`. It is a floating notice, it is
       // `fixed`, it floats over live content, and it is the one surface a
       // first-time visitor MUST read before they can dismiss it — which is the
       // definition of the L4 tier. `.glass-chrome` is the sticky-header tier: a
@@ -175,6 +176,6 @@ export function CookieConsent() {
           </Button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

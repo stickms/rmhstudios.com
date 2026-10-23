@@ -7,8 +7,7 @@
  * popover combination is cramped and the full page is one tap away).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useCallback, useRef, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Bell, CheckCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +17,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useReservedRows } from '@/hooks/useReservedRows';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 import { timeAgoShort } from '@/lib/utils';
-import { usePopPresence } from '@/hooks/usePopPresence';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { MENU_ITEM_ATTR } from '@/components/ui/menu';
 
 /**
  * Rows the popover asks for — and what the loading skeleton reserves, which only
@@ -70,8 +70,6 @@ function resolveLink(n: NotificationItem): string | null {
   }
 }
 
-const PANEL_WIDTH = 352;
-
 export function NotificationsPopover({
   count,
   refreshCount,
@@ -89,12 +87,7 @@ export function NotificationsPopover({
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[] | null>(null);
-  const [pos, setPos] = useState({ left: 0, top: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  // §15.6 liquid pop — the panel buds out of the bell trigger. z above the
-  // portaled panel's z-[80] so the reabsorb reads over the page, not under it.
-  const { present, state } = usePopPresence(open);
   // Reserve the height of the list that is coming. The popover used to open on a
   // centred spinner and then jump to ten rows the moment the fetch landed — the
   // bud animation was fine, the BOX moved out from under it.
@@ -117,37 +110,10 @@ export function NotificationsPopover({
       navigate({ to: '/messages', search: { tab: 'notifications' } });
       return;
     }
-    const rect = btnRef.current?.getBoundingClientRect();
-    if (rect) {
-      const margin = 8;
-      const vw = window.visualViewport?.width ?? window.innerWidth;
-      const vh = window.visualViewport?.height ?? window.innerHeight;
-      const left = Math.min(rect.right + margin, vw - PANEL_WIDTH - margin);
-      const top = Math.min(Math.max(rect.top - 8, margin), Math.max(vh - 440, margin));
-      setPos({ left, top });
-    }
     setItems(null);
     setOpen(true);
     void load();
   };
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (panelRef.current?.contains(e.target as Node)) return;
-      if (btnRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
 
   const markAllRead = async () => {
     try {
@@ -194,7 +160,7 @@ export function NotificationsPopover({
         type="button"
         onClick={() => (open ? setOpen(false) : openPanel())}
         aria-expanded={open}
-        aria-haspopup="dialog"
+        aria-haspopup="menu"
         className={className}
         title={label}
       >
@@ -206,22 +172,23 @@ export function NotificationsPopover({
       </button>
 
 
-      {present &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            ref={panelRef}
- data-motion="pop"
- data-state={state}
-            role="dialog"
-            aria-label={label}
-            style={{ position: 'fixed', left: pos.left, top: pos.top, width: PANEL_WIDTH }}
-            className="glass-overlay z-[80] origin-top-left overflow-hidden"
-          >
+      {/* AnchoredMenu owns placement (flips and caps to the room there is), the portal,
+          Escape, outside press and focus return. The panel is the L4 overlay it supplies. */}
+      <AnchoredMenu
+        open={open}
+        onClose={() => setOpen(false)}
+        anchorRef={btnRef}
+        label={label}
+        side="bottom"
+        align="start"
+        className="w-[352px] max-w-[calc(100vw-1.5rem)] overflow-hidden p-0"
+      >
             <div className="flex items-center justify-between border-b border-site-border px-3 py-2">
               <p className="text-sm font-bold text-site-text">{label}</p>
               <button
                 type="button"
+                role="menuitem"
+                {...{ [MENU_ITEM_ATTR]: '' }}
                 onClick={markAllRead}
                 className="flex items-center gap-1 rounded-site-sm px-2 py-1 text-xs text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
               >
@@ -269,6 +236,8 @@ export function NotificationsPopover({
                       <li key={n.id}>
                         <button
                           type="button"
+                          role="menuitem"
+                          {...{ [MENU_ITEM_ATTR]: '' }}
                           onClick={() => onItemClick(n)}
                           className="glass-interactive flex w-full items-start gap-2.5 px-3 py-2.5 text-left"
                         >
@@ -311,14 +280,14 @@ export function NotificationsPopover({
             <Link
               to="/messages"
               search={{ tab: 'notifications' }}
+              role="menuitem"
+              {...{ [MENU_ITEM_ATTR]: '' }}
               onClick={() => setOpen(false)}
               className="block border-t border-site-border px-3 py-2 text-center text-sm font-medium text-site-accent transition-colors hover:bg-site-surface-hover"
             >
               {t('notif-pop-see-all', { defaultValue: 'See all notifications' })}
             </Link>
-          </div>,
-          document.body
-        )}
+      </AnchoredMenu>
     </>
   );
 }
