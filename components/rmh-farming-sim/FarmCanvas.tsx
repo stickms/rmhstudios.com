@@ -3,10 +3,14 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
+import { markGamePlaying } from '@/lib/game-capabilities';
 import FarmWorld from './scene/FarmWorld';
 
 export default function FarmCanvas() {
+    // The farm runs for as long as its canvas is mounted: quiet the jelly
+    // material's ambient motion and arcs (R16).
+    useEffect(() => markGamePlaying(), []);
     return (
         <Canvas
             data-jelly-zone="playfield"

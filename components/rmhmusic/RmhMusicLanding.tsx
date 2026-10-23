@@ -120,6 +120,7 @@ export default function RmhMusicPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8"
+          data-jelly-group
         >
           {/* Create */}
           <div

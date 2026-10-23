@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { markGamePlaying } from '@/lib/game-capabilities';
 import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
@@ -347,6 +348,13 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       canvas.removeEventListener('webglcontextlost', handleContextLost);
     };
   }, [selectedClassId, spritesReady]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // `html[data-game-state="playing"]` while the run is live (not paused or
+  // levelling up): the jelly material's ambient motion and arcs stop (R16).
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    return markGamePlaying();
+  }, [phase]);
 
   // Pause/unpause the game loop based on phase
   useEffect(() => {

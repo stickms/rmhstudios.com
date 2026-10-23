@@ -137,6 +137,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
             <button
                 type="button"
                 role="switch"
+                data-jelly="control"
                 aria-checked={checked}
                 onClick={() => onChange(!checked)}
                 className="relative h-6 w-11 rounded-full transition"

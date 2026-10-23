@@ -195,7 +195,7 @@ export default function BodyDoublePanel() {
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2" data-jelly-group>
           <div>
             <p className="mb-2 text-xs font-medium text-(--app-text-muted)">
               {t('bd-length', { defaultValue: 'Length' })}

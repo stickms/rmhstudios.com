@@ -8,6 +8,7 @@ import { useForestAudio } from '../audio/useForestAudio';
 import { useGardenStore } from '@/lib/forest-explorer/gardenStore';
 import { stageOf } from '@/lib/forest-explorer/garden';
 import { useRenderQuality } from '@/lib/render/useRenderQuality';
+import { markGamePlaying } from '@/lib/game-capabilities';
 import AdaptiveQuality from '@/components/render/AdaptiveQuality';
 import { ExploreScene } from './ExploreScene';
 import { GardenWorldsCard, GardenWorldsLoader } from './GardenWorlds';
@@ -31,6 +32,9 @@ export function ExploreGame() {
     const lockedRef = useRef(locked);
     useEffect(() => { nightRef.current  = night;  }, [night]);
     useEffect(() => { lockedRef.current = locked; }, [locked]);
+    // Pointer locked = walking the forest: quiet the jelly material's ambient
+    // motion and arcs until the player releases the pointer (R16).
+    useEffect(() => (locked ? markGamePlaying() : undefined), [locked]);
 
     useEffect(() => {
         const fn = (e: KeyboardEvent) => {

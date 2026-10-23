@@ -102,9 +102,7 @@
     "components/shared/SignInRequiredDialog.tsx": 1,
     "components/site/CookieConsent.tsx": 2,
     "components/site/NotificationsPopover.tsx": 1,
-    "components/temple-of-joy/bowl/BowlOverlay.tsx": 1,
-    "components/temple-of-joy/TempleDialogs.tsx": 1,
-    "components/temple-of-joy/TempleTabs.tsx": 1
+    "components/temple-of-joy/bowl/BowlOverlay.tsx": 1
   },
   "switches": {
     "components/dream-rift/SettingsScreen.tsx": 1,

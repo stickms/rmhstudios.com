@@ -137,7 +137,7 @@ export default function ResultsScreen({
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--app-text-muted)">
             <AwardIcon className="h-4 w-4" /> {t("awards", { defaultValue: "Awards" })}
           </h3>
-          <ul className="space-y-2">
+          <ul className="space-y-2" data-jelly-group>
             {awards.map((award, i) => {
               const recipientName = rankings.find((r) => r.userId === award.userId)?.userName
                 ?? sessionStandings.find((s) => s.userId === award.userId)?.userName

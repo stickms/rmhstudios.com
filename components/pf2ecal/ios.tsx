@@ -121,6 +121,7 @@ export function Switch({
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      data-jelly="control"
       className="pf2e-switch"
       disabled={disabled}
       onClick={() => onChange(!checked)}

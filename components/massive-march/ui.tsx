@@ -196,6 +196,7 @@ export function Toggle({
     <button
       type="button"
       role="switch"
+      data-jelly="control"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className="flex w-full cursor-pointer items-start gap-3 border-[3px] px-3 py-2 text-left transition-colors duration-150"

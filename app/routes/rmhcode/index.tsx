@@ -40,7 +40,7 @@ function CodeBlock({ code, className = '' }: { code: string; className?: string 
   const { t } = useTranslation("r-rmhcode");
   return (
     <div className={`relative ${className}`}>
-      <pre className="glass-inset overflow-x-auto rounded-site-sm p-4 pr-14 font-mono text-sm text-site-text-muted">
+      <pre className="glass-inset overflow-x-auto rounded-site-sm p-4 pr-14 font-mono text-sm text-site-text-muted" data-jelly-group="off">
         <code>{code}</code>
       </pre>
       <CopyButton
@@ -292,7 +292,7 @@ function RmhCodePage() {
           <div className="glass-fill rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Layout className="w-5 h-5 text-site-accent" />{t("tmux-heading", { defaultValue: "Tmux Workspace" })}</h2>
             <p className="text-sm text-site-text-muted mb-4">{t("tmux-desc", { defaultValue: "Launch a ready-made 3-pane tmux session:" })}</p>
-            <pre className="p-4 glass-inset rounded-site-sm font-mono text-xs text-site-accent mb-4 overflow-x-auto">{`+──────────────+──────────────+\n|              |   rmhcode    |\n|   rmhcode    |   (top-R)    |\n|   (left)     +--------------+\n|              |   shell      |\n|              |   (bot-R)    |\n+──────────────+──────────────+`}</pre>
+            <pre className="p-4 glass-inset rounded-site-sm font-mono text-xs text-site-accent mb-4 overflow-x-auto" data-jelly-group="off">{`+──────────────+──────────────+\n|              |   rmhcode    |\n|   rmhcode    |   (top-R)    |\n|   (left)     +--------------+\n|              |   shell      |\n|              |   (bot-R)    |\n+──────────────+──────────────+`}</pre>
             <CodeBlock code={`rmhcode --tmux                    # launch workspace\nrmhcode --tmux --provider gemini  # all panes use Gemini`} />
           </div>
         </motion.div>

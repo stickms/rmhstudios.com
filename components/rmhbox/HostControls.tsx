@@ -143,6 +143,7 @@ export default function HostControls({
             <button
               type="button"
               role="switch"
+              data-jelly="control"
               aria-checked={settings.isPublic}
               onClick={() => handleUpdateSettings({ isPublic: !settings.isPublic })}
               className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.isPublic ? 'bg-(--app-accent)' : 'bg-(--app-border)'}`}
@@ -178,6 +179,7 @@ export default function HostControls({
             <button
               type="button"
               role="switch"
+              data-jelly="control"
               aria-checked={settings.allowMidGameJoin}
               onClick={() => handleUpdateSettings({ allowMidGameJoin: !settings.allowMidGameJoin })}
               className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${settings.allowMidGameJoin ? 'bg-(--app-accent)' : 'bg-(--app-border)'}`}
@@ -194,6 +196,7 @@ export default function HostControls({
             <button
               type="button"
               role="switch"
+              data-jelly="control"
               aria-checked={settings.allowSpectatorPromotion}
               onClick={() =>
                 handleUpdateSettings({ allowSpectatorPromotion: !settings.allowSpectatorPromotion })

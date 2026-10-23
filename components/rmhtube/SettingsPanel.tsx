@@ -403,6 +403,7 @@ function ToggleOption({
         <button
           type="button"
           role="switch"
+          data-jelly="control"
           aria-checked={value}
           aria-label={label}
           onClick={() => onChange(!value)}

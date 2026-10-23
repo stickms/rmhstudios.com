@@ -142,7 +142,7 @@ export function HUD({ engine }: HUDProps) {
   const healthRatio = Math.max(0, Math.min(1, sample.health / HEALTH_MAX));
 
   return (
-    <div className="absolute top-0 left-0 right-0 pointer-events-none z-40 p-2 sm:p-4 flex flex-col gap-2 font-outfit">
+    <div className="absolute top-0 left-0 right-0 pointer-events-none z-40 p-2 sm:p-4 flex flex-col gap-2 font-outfit" data-jelly-zone="hud">
       {/* Score + Speed row */}
       <div className="flex justify-between items-start relative px-1">
         <div className="flex flex-col gap-2 items-start">

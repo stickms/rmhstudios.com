@@ -257,6 +257,7 @@ export function TempleSwitch({
     <button
       type="button"
       role="switch"
+      data-jelly="control"
       aria-checked={checked}
       aria-label={label}
       className="toj-switch"

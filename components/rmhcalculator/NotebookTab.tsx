@@ -142,7 +142,7 @@ export default function NotebookTab() {
         )}
       </div>
 
-      <div className="glass-pane grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-0 overflow-hidden rounded-site font-mono text-sm leading-6">
+      <div className="glass-pane grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-0 overflow-hidden rounded-site font-mono text-sm leading-6" data-jelly-group="off">
         <textarea
           value={nb.body}
           onChange={(e) => edit({ body: e.target.value })}

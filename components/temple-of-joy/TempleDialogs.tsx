@@ -8,6 +8,7 @@
  */
 'use client';
 
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
@@ -60,9 +61,9 @@ function VigilDialog() {
   return (
     <Scrim onClose={() => useTempleStore.getState().setShowVigilDialog(false)}>
       <div className="toj-dialog-body">
-        <h2 className="toj-dialog-title">
+        <DialogPrimitive.Title className="toj-dialog-title">
           {t('vigil-title', { defaultValue: 'The night office' })}
-        </h2>
+        </DialogPrimitive.Title>
         <p className="toj-dialog-text">
           {t('vigil-away', {
             time: formatDuration(vigil.seconds),
@@ -145,7 +146,9 @@ function AscendDialog() {
   return (
     <Scrim onClose={() => useTempleStore.getState().setShowAscendDialog(false)}>
       <div className="toj-dialog-body">
-        <h2 className="toj-dialog-title">{t('ascend-title', { defaultValue: 'Let it go' })}</h2>
+        <DialogPrimitive.Title className="toj-dialog-title">
+          {t('ascend-title', { defaultValue: 'Let it go' })}
+        </DialogPrimitive.Title>
         <p className="toj-dialog-text">
           {t('ascend-text', {
             defaultValue:
@@ -246,7 +249,9 @@ function MannaDialog() {
   return (
     <Scrim onClose={() => useTempleStore.getState().setShowMannaDialog(false)}>
       <div className="toj-dialog-body">
-        <h2 className="toj-dialog-title">{t('manna-title', { defaultValue: 'Manna' })}</h2>
+        <DialogPrimitive.Title className="toj-dialog-title">
+          {t('manna-title', { defaultValue: 'Manna' })}
+        </DialogPrimitive.Title>
         <p className="toj-dialog-text">
           {t('manna-text', {
             defaultValue:
@@ -322,38 +327,25 @@ function MannaDialog() {
 /* ─── Shared scrim ──────────────────────────────────────────────────────── */
 
 /**
- * Escape closes, the first button takes focus, and focus returns where it came
- * from. Three lines each, and the difference between a dialog and a div.
+ * The Radix dialog primitive, kept in the temple's own clothes: it owns Escape,
+ * the outside-press dismissal, the focus trap (first button first), focus
+ * return and the background scroll lock. No portal: the scrim stays inside the
+ * temple root so its `--toj-*` palette and stacking still apply.
  */
 function Scrim({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const returnTo = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    returnTo.current = document.activeElement as HTMLElement | null;
-    ref.current?.querySelector<HTMLButtonElement>('button')?.focus();
-
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      returnTo.current?.focus?.();
-    };
-  }, [onClose]);
-
   return (
-    <div
-      className="toj-scrim"
-      onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
+    <DialogPrimitive.Root
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
     >
-      <div className="toj-dialog" role="dialog" aria-modal="true" ref={ref}>
-        {children}
-      </div>
-    </div>
+      <DialogPrimitive.Overlay className="toj-scrim">
+        <DialogPrimitive.Content className="toj-dialog" aria-describedby={undefined}>
+          {children}
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Overlay>
+    </DialogPrimitive.Root>
   );
 }
 
@@ -379,9 +371,9 @@ function ResetDialog() {
   return (
     <Scrim onClose={working ? () => {} : close}>
       <div className="toj-dialog-body">
-        <h2 className="toj-dialog-title">
+        <DialogPrimitive.Title className="toj-dialog-title">
           {t('reset-title', { defaultValue: 'Empty the temple' })}
-        </h2>
+        </DialogPrimitive.Title>
         <p className="toj-dialog-text">
           {t('reset-text-anywhere', {
             defaultValue:

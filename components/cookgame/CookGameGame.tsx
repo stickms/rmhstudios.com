@@ -1,5 +1,6 @@
 "use client";
 import { Suspense, useEffect, useRef } from 'react';
+import { markGamePlaying } from '@/lib/game-capabilities';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { useCookgameStore } from '@/lib/cookgame/store';
@@ -75,6 +76,13 @@ export function CookGameGame() {
   // No `summarize` override: nothing in this game is translated yet, so the
   // store's own English summary is already the right one.
   const cloud = useCloudSave(cookgameSave, { gameName: 'Cookgame' });
+
+  // In town with no station overlay up, the run is live: quiet the jelly
+  // material's ambient motion and arcs (R16). An overlay is a menu — it keeps them.
+  useEffect(() => {
+    if (overlayOpen) return;
+    return markGamePlaying();
+  }, [overlayOpen]);
 
   useEffect(() => {
     if (cloud.status !== 'ready') return;

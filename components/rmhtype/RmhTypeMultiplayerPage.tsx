@@ -100,7 +100,7 @@ export default function RmhTypeMultiplayer() {
       <div className="flex-1 p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-8">
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-6" data-jelly-group>
             {/* Create Room */}
             <div className="rounded-(--app-radius) app-glass p-6">
               <h2 className="text-xl font-semibold mb-4">{t("create-room", { defaultValue: "Create Room" })}</h2>

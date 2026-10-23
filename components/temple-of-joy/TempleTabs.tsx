@@ -20,7 +20,8 @@
  */
 'use client';
 
-import { useEffect, useRef } from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
@@ -264,56 +265,45 @@ function MoreSheet({
   label: string;
 }) {
   const { t } = useTranslation('c-temple-of-joy');
-  const ref = useRef<HTMLDivElement>(null);
-  const returnTo = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    returnTo.current = document.activeElement as HTMLElement | null;
-    ref.current?.querySelector<HTMLButtonElement>('button')?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      returnTo.current?.focus?.();
-    };
-  }, [onClose]);
-
+  // The Radix dialog primitive in the temple's clothes (see TempleDialogs'
+  // Scrim): Escape, outside press, focus trap, focus return and scroll lock.
   return (
-    <div
-      className="toj-scrim"
-      data-sheet="true"
-      onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
+    <DialogPrimitive.Root
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
     >
-      <div className="toj-sheet" role="dialog" aria-modal="true" aria-label={label} ref={ref}>
-        <span className="toj-sheet-grip" aria-hidden />
-        <div className="toj-sheet-grid">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className="toj-sheet-tab"
-              aria-current={tab.id === active ? 'page' : undefined}
-              onClick={() => {
-                templeAudio.play('tab');
-                useTempleStore.getState().setTab(tab.id);
-                onClose();
-              }}
-            >
-              <span className="toj-sheet-glyph">
-                <Glyph>{tab.glyph}</Glyph>
-              </span>
-              <span>{t(`tab-${tab.id}`, { defaultValue: tab.label })}</span>
-              {alerts.has(tab.id) && tab.id !== active && (
-                <span className="toj-tab-dot" aria-hidden />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
+      <DialogPrimitive.Overlay className="toj-scrim" data-sheet="true">
+        <DialogPrimitive.Content className="toj-sheet" aria-describedby={undefined}>
+          <DialogPrimitive.Title className="sr-only">{label}</DialogPrimitive.Title>
+          <span className="toj-sheet-grip" aria-hidden />
+          <div className="toj-sheet-grid">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className="toj-sheet-tab"
+                aria-current={tab.id === active ? 'page' : undefined}
+                onClick={() => {
+                  templeAudio.play('tab');
+                  useTempleStore.getState().setTab(tab.id);
+                  onClose();
+                }}
+              >
+                <span className="toj-sheet-glyph">
+                  <Glyph>{tab.glyph}</Glyph>
+                </span>
+                <span>{t(`tab-${tab.id}`, { defaultValue: tab.label })}</span>
+                {alerts.has(tab.id) && tab.id !== active && (
+                  <span className="toj-tab-dot" aria-hidden />
+                )}
+              </button>
+            ))}
+          </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Overlay>
+    </DialogPrimitive.Root>
   );
 }

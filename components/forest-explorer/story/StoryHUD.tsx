@@ -48,7 +48,7 @@ export function StoryHUD() {
         <>
             {/* Act indicator + objective. The `left-14` clears the back link;
                 the inset clears the hardware. */}
-            <div className="absolute top-[calc(0.75rem+var(--safe-top))] left-[calc(3.5rem+var(--safe-left))] z-40 flex items-center gap-3">
+            <div className="absolute top-[calc(0.75rem+var(--safe-top))] left-[calc(3.5rem+var(--safe-left))] z-40 flex items-center gap-3" data-jelly-zone="hud">
                 <div className="px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10">
                     <p className="text-white/70 text-xs font-medium">{actConfig.name}</p>
                     <p className="text-white/40 text-[10px]">

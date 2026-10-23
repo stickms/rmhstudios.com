@@ -172,7 +172,7 @@ export default function RmhTypeLanding() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-6" data-jelly-group>
             <Link to="/rmhtype/solo"
               className="rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) p-6 text-left transition-colors hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
             >
