@@ -374,10 +374,10 @@ theme mechanism.
 Theme = a `.style-<id>` class on `<html>`; the catalog lives in
 `stores/themeStore.ts` (`SITE_STYLES`, with id/label/icon/group) and the CSS for
 each in `app/globals.css`. Visitors with no saved preference get `DEFAULT_STYLE`
-(`default`), and persisted-but-unknown prefs self-heal in `Providers.tsx`.
+(`graphite`, Midnight), and persisted-but-unknown prefs self-heal in `Providers.tsx`.
 
-The **default** (`default` = the bare `:root`, no class) is the **Radial Liquid
-Glass baseline**: strict **monochrome** — a white aurora canvas, ink text, an ink
+**Daylight** (`default` = the bare `:root`, no class, kept for visitors who chose
+it) is the **Radial Liquid Glass baseline**: strict **monochrome** — a white aurora canvas, ink text, an ink
 accent, hairline black borders — rendered as glass, not paper: its surfaces are
 translucent white tints over the drifting canvas. Every other theme is the same
 material in its own palette over its own `--site-canvas` aurora. (The old
@@ -386,11 +386,11 @@ material in its own palette over its own `--site-canvas` aurora. (The old
 **The picker ships three**, and they are one system in three accessibility
 modes rather than a gallery of moods — light, dark, and the no-glass fallback:
 
-| Shipped in `SITE_STYLES` | Label               | What it is                                                                                                                                                      |
-| ------------------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `default` (no class)     | **Daylight** ☀      | The site default. Strict black-&-white, ink accent, translucent white frost over a white aurora. `color-scheme: light`, document bg `#ffffff`.                  |
-| `graphite`               | **Midnight** ◐      | The dark twin: OLED-black ground, near-white ink, graphite elevated surfaces, hairline light borders, one calm blue signal. `color-scheme: dark`, bg `#000000`. |
-| `high-contrast`          | **High contrast** ◑ | WCAG AAA, and **the absence of the material**: opaque surfaces, no blur, no glint, no aurora, 2px borders, yellow accent. Everything must survive it.           |
+| Shipped in `SITE_STYLES` | Label               | What it is                                                                                                                                                                                         |
+| ------------------------ | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `default` (no class)     | **Daylight** ☀      | Daylight stays the default for anyone who chose it. Strict black-&-white, ink accent, translucent white frost over a white aurora. `color-scheme: light`, document bg `#ffffff`.                   |
+| `graphite`               | **Midnight** ◐      | The site default for new visitors. The dark twin: OLED-black ground, near-white ink, graphite elevated surfaces, hairline light borders, one calm blue signal. `color-scheme: dark`, bg `#000000`. |
+| `high-contrast`          | **High contrast** ◑ | WCAG AAA, and **the absence of the material**: opaque surfaces, no blur, no glint, no aurora, 2px borders, yellow accent. Everything must survive it.                                              |
 
 Four more palettes stay in `globals.css` as complete, ready token sets — they
 are not in the picker, and they exist as the reference every **user theme**
@@ -399,7 +399,7 @@ derives from and as a proof that the contract holds outside monochrome:
 parchment, amber accent), `nocturne` (deep-navy nightscape, sky-blue aurora),
 `ultra` (near-black spectral canvas, ice-cyan signal, restrained violet energy).
 Persisted-but-unknown ids (a retired decorative theme, or the old `liquid-glass`
-id) self-heal to `default` during hydration.
+id) self-heal to `graphite` during hydration.
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
 `GlassFilter` — the tab-capsule merge host, with no optical lenses) with a
