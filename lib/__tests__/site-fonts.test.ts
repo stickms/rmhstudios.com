@@ -34,6 +34,34 @@ describe('site font tokens', () => {
     expect(firstToken('--font-geist-mono')).toContain("'Geist Mono'");
   });
 
+  it('family tokens end in a named face, never a generic (a generic makes the rest of the stack unreachable)', () => {
+    const generics = /(^|,)\s*(sans-serif|serif|monospace|system-ui|ui-[a-z-]+|cursive|fantasy)\s*$/;
+    expect(firstToken('--font-geist')).not.toMatch(generics);
+    expect(firstToken('--font-geist-mono')).not.toMatch(generics);
+  });
+
+  it('fallbacks follow Geist in order', () => {
+    const order = (v: string, names: string[]) => {
+      const idx = names.map((n) => v.indexOf(n));
+      expect(idx.every((i) => i >= 0)).toBe(true);
+      expect([...idx].sort((a, b) => a - b)).toEqual(idx);
+    };
+    for (const token of ['--site-font-display', '--site-font-body']) {
+      order(firstToken(token), [
+        'var(--font-geist)',
+        '-apple-system',
+        'var(--font-inter)',
+        'system-ui',
+      ]);
+    }
+    order(firstToken('--site-font-mono'), [
+      'var(--font-geist-mono)',
+      'var(--font-jetbrains-mono)',
+      "'SF Mono'",
+      'monospace',
+    ]);
+  });
+
   it('preloads the Latin Geist woff2', () => {
     expect(rootTsx).toMatch(/geist-latin-wght-normal\.woff2\?url/);
     expect(rootTsx).toMatch(/href:\s*geistLatinWoff2/);

@@ -119,8 +119,8 @@
      cost nothing and are not this change's business). Inside the token is the
      one place a fallback can sit AFTER Inter and still be reached. */
   --font-inter: 'Inter Variable', 'Inter', 'Inter Fallback', sans-serif;
-  --font-geist: 'Geist Variable', 'Geist', sans-serif;
-  --font-geist-mono: 'Geist Mono', monospace;
+  --font-geist: 'Geist Variable', 'Geist';
+  --font-geist-mono: 'Geist Mono';
   --font-jetbrains-mono: 'JetBrains Mono', monospace;
   --font-playfair: 'Playfair Display', serif;
   --font-bangers: 'Bangers', cursive;
