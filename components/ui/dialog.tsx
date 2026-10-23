@@ -57,6 +57,14 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const SHEET_DISMISS_AT = 0.5;
 /** Only phone-width touch sheets get the gesture; see `useFluidDragEnabled`. */
 const SHEET_QUERY = '(max-width: 639px) and (pointer: coarse)';
+/**
+ * Height of the sheet's grab-handle strip, safe area included. The content is
+ * padded by exactly this much while the handle shows, so the strip never sits
+ * on top of a control: it is `z-10` and swallows the press to start a drag, and
+ * a dialog whose header row runs to the top edge (the composer: Post, emoji,
+ * GIF) had every one of those buttons covered at its centre on a phone.
+ */
+const SHEET_HANDLE_H = 'calc(max(0.5rem, env(safe-area-inset-top)) + 1.75rem)';
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
@@ -72,7 +80,11 @@ const DialogContent = React.forwardRef<
      */
     container?: HTMLElement | null;
   }
->(({ className, children, mobileFullscreen = false, overlayClassName, container, ...props }, ref) => {
+>(
+  (
+    { className, children, mobileFullscreen = false, overlayClassName, container, style, ...props },
+    ref,
+  ) => {
   const { t } = useTranslation('c-ui');
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const overlayRef = React.useRef<HTMLDivElement | null>(null);
@@ -127,16 +139,20 @@ const DialogContent = React.forwardRef<
             'inset-0 left-0 top-0 h-dvh max-h-none w-dvw max-w-none translate-x-0 translate-y-0 content-start rounded-none px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[85dvh] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:content-normal sm:rounded-site sm:p-6',
           className,
         )}
+        // Inline, so it wins over a caller's `p-0` as well as the default padding.
+        style={sheet ? { ...style, paddingTop: SHEET_HANDLE_H } : style}
         {...props}
       >
         {sheet && (
           // The grab handle. Decorative and pointer-only — the close button below
           // is the accessible, keyboard-operable way out, and this never becomes
-          // the only route to dismissal.
+          // the only route to dismissal. Inset from both sides so it stops short
+          // of the close button, which shares its row.
           <div
-            className="absolute inset-x-0 top-0 z-10 flex h-9 cursor-grab items-end justify-center pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] active:cursor-grabbing"
+            className="absolute inset-x-14 top-0 z-10 flex cursor-grab items-end justify-center pb-2 active:cursor-grabbing"
             aria-hidden
             {...drag.handleProps}
+            style={{ ...drag.handleProps.style, height: SHEET_HANDLE_H }}
           >
             <span className="h-1 w-9 rounded-full bg-site-text-muted/45" />
           </div>
