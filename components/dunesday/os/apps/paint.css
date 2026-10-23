@@ -701,16 +701,15 @@
   opacity: 1;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-photos-showimg {
+.ds-photos-showimg {
     animation: ds-photos-fade 0.6s ease-out;
   }
 
-  .ds-photos-img {
+.ds-photos-img {
     transition: box-shadow 0.15s ease;
   }
 
-  .ds-paint-tool,
+.ds-paint-tool,
   .ds-paint-size,
   .ds-paint-slot,
   .ds-photos-cbtn,
@@ -720,11 +719,11 @@
       border-color 0.12s ease;
   }
 
-  .ds-os--still .ds-photos-showimg {
+.ds-os--still .ds-photos-showimg {
     animation: none;
   }
 
-  .ds-os--still .ds-photos-img,
+.ds-os--still .ds-photos-img,
   .ds-os--still .ds-paint-tool,
   .ds-os--still .ds-paint-size,
   .ds-os--still .ds-paint-slot,
@@ -732,7 +731,6 @@
   .ds-os--still .ds-photos-tbtn {
     transition: none;
   }
-}
 
 @keyframes ds-photos-fade {
   from {

@@ -18,6 +18,16 @@
       rgb(255 255 255 / 0.025) 76%,
       rgb(255 255 255 / 0.08)
     );
+    /* Repeated cards have no shader bevel. Give their CSS material a visible
+       face in both light and dark themes, without blur or another canvas. */
+    --liquid-fill-coat:
+      linear-gradient(
+        145deg,
+        color-mix(in srgb, var(--site-surface-opaque) 58%, transparent),
+        transparent 48%,
+        color-mix(in srgb, var(--site-text) 5%, transparent)
+      ),
+      var(--liquid-coat);
     /* No shadows, no inset highlights: glass is not lifted off the page by a drop shadow, it is SEEN by what its edge
        does to the light, and the shader draws that (refracted rim, lit edge) on every surface the engine admits.
        `--liquid-edge` is kept as a name (a zero shadow, valid inside any box-shadow list) so no consumer breaks. The CSS
@@ -46,7 +56,10 @@
   }
   .glass-fill:not([data-liquid-material='off']) {
     position: relative;
-    background-color: color-mix(in srgb, var(--site-bg) 14%, transparent);
+    background-color: var(--site-glass-tint);
+    background-image: var(--liquid-fill-coat);
+    border-color: var(--site-border);
+    border-top-color: color-mix(in srgb, var(--site-border) 65%, var(--site-glass-light));
   }
   .glass-overlay:not([data-liquid-material='off']) {
     /* Floating labels must remain readable over arbitrary content. */
@@ -57,13 +70,13 @@
     border-color: color-mix(in srgb, var(--site-border) 85%, var(--site-glass-light));
     box-shadow: none;
     background-color: color-mix(in srgb, var(--site-text) 3%, transparent);
-    border-radius: var(--site-radius-sm);
+    border-radius: var(--site-control-radius);
   }
   .glass-interactive {
     position: relative;
     transition:
-      background-color 160ms ease,
-      box-shadow 160ms ease;
+      background-color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
+      border-color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out);
   }
   /* The eversion hover/press layer (`[data-evert]::before`, globals.css §7.3) pours out of the pointer INSIDE the host.
      Over glass the NEUTRAL hover must be translucent so the slab still reads through it, and it must reach the whole
@@ -98,7 +111,7 @@
     content: none;
   }
   @media (max-width: 767.98px) {
-    :is(.glass-fill, .glass-pane, .glass-chrome) {
+    :is(.glass-pane, .glass-chrome) {
       background-color: color-mix(in srgb, var(--site-bg) 26%, transparent);
     }
   }
@@ -199,7 +212,7 @@
 :is(.reduce-transparency, .style-high-contrast) [data-slot='button'] {
   background-image: none !important;
 }
-:is(.reduce-motion, .reduce-transparency, .style-high-contrast, .perf-lite) .liquid-light,
+:is(.reduce-transparency, .style-high-contrast, .perf-lite) .liquid-light,
 .app-high-contrast .liquid-light {
   display: none !important;
 }
@@ -207,10 +220,7 @@
 .app-high-contrast .liquid-glass-canvas {
   display: none !important;
 }
-@media (prefers-reduced-motion: reduce),
-  (prefers-reduced-transparency: reduce),
-  (forced-colors: active),
-  print {
+@media (prefers-reduced-transparency: reduce), (forced-colors: active), print {
   .liquid-light {
     display: none !important;
   }

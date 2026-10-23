@@ -36,14 +36,6 @@ export function setMuted(next: boolean): void {
   }
 }
 
-function prefersQuiet(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
-}
-
 interface Tone {
   freq: number;
   to?: number;
@@ -54,7 +46,7 @@ interface Tone {
 }
 
 function play(tones: Tone[]): void {
-  if (isMuted() || prefersQuiet()) return;
+  if (isMuted()) return;
   const ctx = getAudioContext();
   if (!ctx) return;
   resumeAudioContext();

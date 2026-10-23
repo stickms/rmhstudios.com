@@ -57,7 +57,7 @@ export function InkButton({
         'disabled:pointer-events-none disabled:opacity-45',
         // `motion-reduce` rather than a JS check: this is presentation only, and
         // the media query is the cheapest correct answer.
-        'motion-reduce:transition-none motion-reduce:hover:translate-y-0',
+        '',
         SIZES[size],
         variant === 'primary' && 'bg-bum-highlight text-bum-ink',
         variant === 'ghost' && 'bg-bum-surface text-bum-ink hover:bg-bum-paper-2',

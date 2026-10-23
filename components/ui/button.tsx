@@ -12,13 +12,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-site-accent text-site-accent-fg',
-        destructive: 'bg-site-danger text-site-danger-fg',
-        danger: 'bg-site-danger text-site-danger-fg',
+        default: 'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover',
+        destructive: 'bg-site-danger text-site-danger-fg hover:opacity-85',
+        danger: 'bg-site-danger text-site-danger-fg hover:opacity-85',
         // The featured-tier fill (/pricing, /store). Existed only as an inline
         // `style={{ background: 'var(--site-warning)' }}` on a hand-rolled
         // button, which is exactly the local copy §5.2 exists to prevent.
-        warning: 'bg-site-warning text-site-warning-fg',
+        warning: 'bg-site-warning text-site-warning-fg hover:opacity-85',
         // Hover was border-brighten-only, which on a transparent fill is close
         // to imperceptible — the outline button reads as inert until clicked.
         // A surface tint gives it the same feedback every other variant has.
@@ -27,9 +27,9 @@ const buttonVariants = cva(
         secondary: 'border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover',
         ghost: 'text-site-text hover:bg-site-surface-hover',
         link: 'text-site-accent underline-offset-4 hover:underline',
-        accent: 'bg-site-accent text-site-accent-fg',
-        'accent-outline': 'border border-site-accent text-site-accent',
-        'accent-ghost': 'text-site-accent',
+        accent: 'bg-site-accent text-site-accent-fg hover:bg-site-accent-hover',
+        'accent-outline': 'border border-site-accent text-site-accent hover:bg-site-accent-dim',
+        'accent-ghost': 'text-site-accent hover:bg-site-accent-dim',
       },
       size: {
         default: 'h-11 px-5 py-2.5 has-[>svg]:px-4',

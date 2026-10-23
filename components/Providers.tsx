@@ -34,7 +34,6 @@ import {
   DENSITY_KEY,
   READABLE_FONT_KEY,
   CUSTOM_ACCENT_KEY,
-  REDUCE_MOTION_KEY,
   COLOR_VISION_KEY,
   NAV_TRANSITION_KEY,
   DEFAULT_NAV_TRANSITION,
@@ -316,7 +315,6 @@ export function Providers({
   const density = useThemeStore((s) => s.density);
   const readableFont = useThemeStore((s) => s.readableFont);
   const customAccent = useThemeStore((s) => s.customAccent);
-  const reduceMotion = useThemeStore((s) => s.reduceMotion);
   const colorVision = useThemeStore((s) => s.colorVision);
   const navTransition = useThemeStore((s) => s.navTransition);
   const alwaysEvertGlobe = useThemeStore((s) => s.alwaysEvertGlobe);
@@ -580,7 +578,6 @@ export function Providers({
     if ([875, 1000, 1125, 1250].includes(fs)) st.setFontScale(fs);
     if (localStorage.getItem(DENSITY_KEY) === 'compact') st.setDensity('compact');
     if (localStorage.getItem(READABLE_FONT_KEY) === '1') st.setReadableFont(true);
-    if (localStorage.getItem(REDUCE_MOTION_KEY) === '1') st.setReduceMotion(true);
     const ca = localStorage.getItem(CUSTOM_ACCENT_KEY);
     if (ca && HEX_RE.test(ca)) st.setCustomAccent(ca);
     const cv = localStorage.getItem(COLOR_VISION_KEY);
@@ -660,6 +657,7 @@ export function Providers({
     html.style.removeProperty('--glass-user-tint');
     localStorage.removeItem('rmh-glass-level');
     localStorage.removeItem('rmh-reduce-transparency');
+    localStorage.removeItem('rmh-reduce-motion');
 
     // Accent override: apply on content pages; clear on app/game routes (they own
     // their palette) and when no accent is chosen. applyAccent no-ops safely for a
@@ -686,9 +684,6 @@ export function Providers({
     html.classList.toggle('readable-font', readableFont);
     if (readableFont) localStorage.setItem(READABLE_FONT_KEY, '1');
     else localStorage.removeItem(READABLE_FONT_KEY);
-    html.classList.toggle('reduce-motion', reduceMotion);
-    if (reduceMotion) localStorage.setItem(REDUCE_MOTION_KEY, '1');
-    else localStorage.removeItem(REDUCE_MOTION_KEY);
     // Colour-vision mode retints the semantic tokens via a data attribute the
     // theme cascade reads (see globals.css). Cached in localStorage so the
     // no-flash script in __root.tsx can apply it before first paint — without
@@ -755,7 +750,6 @@ export function Providers({
     density,
     readableFont,
     customAccent,
-    reduceMotion,
     colorVision,
     navTransition,
     alwaysEvertGlobe,
@@ -850,7 +844,6 @@ export function Providers({
             density?: string | null;
             readableFont?: boolean | null;
             customAccent?: string | null;
-            reduceMotion?: boolean | null;
             colorVision?: string | null;
             navTransition?: string | null;
             alwaysEvertGlobe?: boolean | null;
@@ -860,7 +853,6 @@ export function Providers({
             store.setFontScale(Number(r.fontScale));
           if (r.density === 'compact' || r.density === 'cozy') store.setDensity(r.density);
           if (typeof r.readableFont === 'boolean') store.setReadableFont(r.readableFont);
-          if (typeof r.reduceMotion === 'boolean') store.setReduceMotion(r.reduceMotion);
           if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
             store.setCustomAccent(r.customAccent);
           if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
@@ -892,8 +884,8 @@ export function Providers({
       <AppI18nProvider locale={locale} resources={i18nResources}>
         {/* Load framer-motion features lazily so they're off the initial bundle. */}
         <LazyMotion features={loadMotionFeatures}>
-          {/* Honor OS reduce-motion, and the account-level toggle (§13) when set. */}
-          <MotionConfig reducedMotion={reduceMotion ? 'always' : 'user'}>
+          {/* One shared animation scheme for every account and device. */}
+          <MotionConfig reducedMotion="never">
             <SessionCtx.Provider value={effectiveSession}>
               <ResolvedUserCtx.Provider
                 value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}

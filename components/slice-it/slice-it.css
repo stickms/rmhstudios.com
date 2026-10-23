@@ -220,13 +220,6 @@
     inset -4px -4px 8px var(--slice-shadow-light);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .neumorphic,
-  .neumorphic-sm {
-    transition: none;
-  }
-}
-
 /*
  * The shared `ui/slider` primitive, in the game's own palette.
  *
@@ -310,12 +303,6 @@
  * as a placeholder — it is inset where real content is raised — so nothing is
  * lost but the movement.
  */
-@media (prefers-reduced-motion: reduce) {
-  .slice-skeleton::after {
-    animation: none;
-    opacity: 0;
-  }
-}
 
 /*
  * LiquidTabs' selected segment in Slice It!'s own accent.
@@ -407,14 +394,6 @@
     box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1),
     background-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
     color 160ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .neumorphic-chip,
-  .neumorphic-inset,
-  .neumorphic-active {
-    transition: none;
-  }
 }
 
 /*

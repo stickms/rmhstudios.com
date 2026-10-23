@@ -1577,20 +1577,6 @@
 
 /* ── Reduced motion ───────────────────────────────────────────────────────── */
 
-@media (prefers-reduced-motion: reduce) {
-  .stk-pulse {
-    animation: none;
-  }
-
-  .stk-day,
-  .stk-segment,
-  .stk-btn,
-  .stk-punch__cell,
-  .stk-period-day {
-    transition: none;
-  }
-}
-
 /* ── Stream state ─────────────────────────────────────────────────────────
    The connection indicator in the header. Colour AND word, never colour
    alone — a green dot that has quietly gone grey is exactly the kind of
@@ -1631,12 +1617,5 @@
 @keyframes stk-spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .stk-spin[data-spinning='true'] {
-    animation: none;
-    opacity: 0.5;
   }
 }

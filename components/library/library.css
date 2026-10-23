@@ -208,14 +208,6 @@
 }
 
 /* Respect reduced motion: keep the 3D thickness but don't spin. */
-@media (prefers-reduced-motion: reduce) {
-  .lib-book:hover .lib-book__cover,
-  .lib-book:focus-visible .lib-book__cover,
-  .lib-coll-tile__btn:hover .lib-book__cover,
-  .lib-coll-tile__btn:focus-visible .lib-book__cover {
-    transform: translateY(-6px) scale(1.01);
-  }
-}
 
 /* Cover image (rendered first page). Fills the cover, clipped to its rounded
    shape; the spine band + page badge sit on top. */
@@ -1072,42 +1064,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .lib-book,
-  .lib-book__cover {
-    transition: none;
-    animation: none;
-  }
-  /* Show items immediately instead of animating them in. */
-  .lib-reveal {
-    opacity: 1;
-  }
-  .lib-reveal[data-revealed='true'] {
-    animation: none;
-  }
-  .lib-book:hover .lib-book__cover,
-  .lib-book:focus-visible .lib-book__cover {
-    transform: translateY(-6px);
-  }
-  /* Drop the tactile press-scale feedback when reduced motion is requested. */
-  .lib-book:active .lib-book__cover,
-  .lib-coll-tile__btn:active .lib-book__cover,
-  .lib-upload__btn:active:not(:disabled),
-  .lib-upload__open:active,
-  .lib-upload__close:active,
-  .lib-upload__row-remove:active:not(:disabled),
-  .lib-upload__addmore:active:not(:disabled),
-  .lib-collections__picker-btn:active,
-  .lib-marks__del:active,
-  .lib-marks__add:active:not(:disabled),
-  .lib-epub__theme:active {
-    transform: none;
-  }
-  .lib-reader__nav:active:not(:disabled) {
-    transform: translateY(-50%);
-  }
-}
-
 /* ── Upload: header button + modal ─────────────────────────────────────── */
 .lib-upload__open {
   display: inline-flex;
@@ -1665,11 +1621,6 @@
 .lib-book__inspect:active {
   transform: scale(0.92);
 }
-@media (prefers-reduced-motion: reduce) {
-  .lib-book__inspect:active {
-    transform: none;
-  }
-}
 .lib-book__wrap.is-hidden-book {
   opacity: 0.45;
 }
@@ -1811,11 +1762,6 @@
 .lib-ctx__text {
   flex: 1;
   min-width: 0;
-}
-@media (prefers-reduced-motion: reduce) {
-  .lib-ctx {
-    animation: none;
-  }
 }
 
 /* Toggleable Edit button in the header. */
@@ -2599,20 +2545,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .lib-reader__details {
-    animation: none;
-  }
-  .lib-volume .lib-book__cover,
-  .lib-volume .lib-book__3d {
-    transition: none;
-  }
-  .lib-volume:hover .lib-book__cover,
-  .lib-volume .lib-book:focus-visible .lib-book__cover {
-    transform: none;
-  }
-}
-
 /* ─── Library glass playground ───────────────────────────────────────────────
    The index route opts into this layer with `.lib--glass-playground`; reader,
    upload, and admin routes keep their purpose-built layouts above. All repeated
@@ -2908,23 +2840,6 @@
     min-height: 174px;
     padding-top: 11px;
   }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lib-playground [data-library-orbit],
-  .lib-playground [data-library-orbit][data-orbit-active] {
-    --lib-orbit-x: 0deg !important;
-    --lib-orbit-y: 0deg !important;
-    transform: translateY(var(--lib-orbit-lift));
-    transition: none;
-  }
-}
-
-html.reduce-motion .lib-playground [data-library-orbit] {
-  --lib-orbit-x: 0deg !important;
-  --lib-orbit-y: 0deg !important;
-  transform: translateY(var(--lib-orbit-lift));
-  transition: none;
 }
 
 /* `.lib-section-shell` is not in this list any more: it keeps `.glass-fill`'s

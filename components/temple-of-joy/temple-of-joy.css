@@ -4016,21 +4016,6 @@ button.toj-row:active:not(:disabled) {
  * halo still disappears, an affordable row still shows its spine — and remove
  * only the ambient, looping and decorative motion.
  */
-@media (prefers-reduced-motion: reduce) {
-  .toj *,
-  .toj *::before,
-  .toj *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-
-  /* The offering still needs acknowledging — a "+N" that appears and fades
-     carries the same information without the travel. */
-  .toj-burst {
-    animation: toj-burst-still 700ms linear forwards !important;
-  }
-}
 
 .toj[data-flourish='off'] .toj-sanctum::before,
 .toj[data-flourish='off'] .toj-halo,
@@ -4107,11 +4092,6 @@ button.toj-row:active:not(:disabled) {
  * preference and watches the whole lane from the approach instead) and the
  * rack's pins tip without the transition.
  */
-@media (prefers-reduced-motion: reduce) {
-  .toj-bowl-pin {
-    transition: none;
-  }
-}
 
 /* The two ways to let go of the ball, side by side. Roll takes the room it
    needs and the swing sits beside it; on a narrow phone they stack, because a

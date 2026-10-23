@@ -196,7 +196,7 @@ export function PeerWaitOverlay({ waiting, onSkip, skipLabel }: PeerWaitOverlayP
             style={{ background: 'var(--app-surface-active, #3a3b42)' }}
           >
             <div
-              className="h-full rounded-full transition-[width] duration-250 ease-linear motion-reduce:transition-none"
+              className="h-full rounded-full transition-[width] duration-250 ease-linear "
               style={{
                 width: `${Math.min(100, (remaining / (PEER_GRACE_MS / 1000)) * 100)}%`,
                 background: 'var(--app-warning, #d9c36e)',

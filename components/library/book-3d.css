@@ -347,9 +347,3 @@
   background: var(--site-accent-dim);
   color: var(--site-accent);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .b3d__body.is-stepping {
-    transition: none;
-  }
-}

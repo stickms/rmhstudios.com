@@ -72,7 +72,6 @@ export interface Prefs {
   screensaverMin: number;
   textScale: 1 | 1.25 | 1.5;
   highContrast: boolean;
-  reduceMotion: boolean;
   showGadgets: boolean;
   autoArrange: boolean;
 }
@@ -85,7 +84,6 @@ export const DEFAULT_PREFS: Prefs = {
   screensaverMin: 0,
   textScale: 1,
   highContrast: false,
-  reduceMotion: false,
   showGadgets: true,
   autoArrange: false,
 };

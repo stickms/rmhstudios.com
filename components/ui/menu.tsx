@@ -163,6 +163,7 @@ export const MenuItem = React.forwardRef<HTMLElement, MenuItemProps>(function Me
     [MENU_ITEM_ATTR]: '',
     'data-slot': 'menu-item',
     'data-evert': '',
+    'data-fluid-press': '',
     'data-tone': tone,
     role: checked === undefined ? 'menuitem' : 'menuitemradio',
     ...(checked === undefined ? {} : { 'aria-checked': checked }),

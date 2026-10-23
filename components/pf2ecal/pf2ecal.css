@@ -867,14 +867,6 @@ html[data-app-dark='1'] .pf2e-segmented-thumb {
   transform: translateY(-50%);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .pf2e-segmented-thumb,
-  .pf2e-switch,
-  .pf2e-switch::after {
-    transition: none;
-  }
-}
-
 /* ── Availability ──────────────────────────────────────────────────────────
    Three states, three visual treatments, no hue:
      going       solid ink fill
@@ -1255,17 +1247,6 @@ html[data-app-dark='1'] .pf2e-scrim {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .pf2e-skeleton::after {
-    animation: none;
-  }
-
-  .pf2e-btn:not(:disabled):active,
-  .pf2e-avail:not(:disabled):active {
-    transform: none;
-  }
-}
-
 /* ── Offline / pending affordances ────────────────────────────────────────
    A row whose write has not landed yet is dimmed rather than replaced, so the
    value the user chose stays on screen and legible while it is in flight. */
@@ -1507,12 +1488,5 @@ textarea.pf2e-ask {
   }
   30% {
     opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pf2e-typing span {
-    animation: none;
-    opacity: 0.6;
   }
 }

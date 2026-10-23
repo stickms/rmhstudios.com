@@ -62,10 +62,13 @@ describe('eligibility: the host row (amended 2026-10-18)', () => {
     expect(evaluateEligibility(ok)).toBeNull();
   });
 
-  it('never bypasses reduced motion (accessibility wins)', () => {
-    for (const hostState of ['idle', 'initialising', 'ready', 'failed'] as HostLifeState[]) {
-      expect(evaluateEligibility({ ...ok, hostState, reducedMotion: true })).toBe('reduced-motion');
+  it('ignores the retired motion preference without bypassing host failures', () => {
+    for (const hostState of ['idle', 'initialising', 'ready'] as HostLifeState[]) {
+      expect(evaluateEligibility({ ...ok, hostState, reducedMotion: true })).toBeNull();
     }
+    expect(evaluateEligibility({ ...ok, hostState: 'failed', reducedMotion: true })).toBe(
+      'host-error',
+    );
   });
 
   it.each([false, null] as const)('never bypasses missing WebGL2 (%s)', (webgl2) => {
@@ -79,7 +82,7 @@ describe('eligibility: the host row (amended 2026-10-18)', () => {
     expect(evaluateEligibility({ ...ok, chunkReady: false })).toBe('chunk-not-ready');
   });
 
-  it('reduced motion still outranks everything else in the documented order', () => {
+  it('capability checks still apply when a retired motion preference is supplied', () => {
     expect(
       evaluateEligibility({
         flagEnabled: true,
@@ -88,7 +91,7 @@ describe('eligibility: the host row (amended 2026-10-18)', () => {
         chunkReady: false,
         hostState: 'initialising',
       }),
-    ).toBe('reduced-motion');
+    ).toBe('no-webgl2');
   });
 
   it('callers that only decide the hub-side rows (no hostState) are unchanged', () => {

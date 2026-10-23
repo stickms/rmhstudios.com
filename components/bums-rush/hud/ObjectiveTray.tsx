@@ -64,7 +64,7 @@ export function ObjectiveTray({ objectives, completed, open, onToggle }: Objecti
                   aria-hidden="true"
                   className={cn(
                     'absolute inset-0 origin-left bg-bum-highlight transition-transform duration-300 ease-out',
-                    'motion-reduce:transition-none',
+                    '',
                   )}
                   style={{ transform: complete ? 'scaleX(1)' : 'scaleX(0)' }}
                 />

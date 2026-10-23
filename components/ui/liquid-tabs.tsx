@@ -23,13 +23,12 @@
  *    share a capsule and morph into each other.
  *  - Roving arrow-key nav (WAI-ARIA tabs pattern): ←/→/↑/↓ move, Home/End jump,
  *    focus follows selection (tablist mode only).
- *  - Under reduced motion the capsule jumps (no spring) — the `layoutId`
- *    element stays so the active state is still visible.
+ *  - The capsule uses the shared spring on every account and device.
  *  - No i18n here: labels/aria-label come from callers (already translated).
  *  - `sheet` (default true, §5.45): the tablist rides its own flush track so
  *    a tab strip reads as a standalone control placed BELOW a hero/title (never
  *    buried in header chrome). Pass `sheet={false}` where the caller supplies
- *    its own container.
+ *    its own container. Track and segments share the control-radius contract.
  *
  * ## Selection reads as selection, not as a button (2026-10-09)
  *
@@ -69,7 +68,6 @@ import type { LucideIcon } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { SPRING } from '@/lib/motion';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 
 /**
@@ -104,6 +102,8 @@ export interface LiquidTabRenderProps {
   id: string;
   /** `'page'` on the active item — link mode marks the current route this way. */
   'aria-current': 'page' | undefined;
+  /** Opt route tabs into the same delegated press spring as button tabs. */
+  'data-fluid-press': string;
   /** Class string matching a tablist-mode tab (pad + accent-on-active). */
   className: string;
   /** Hover tooltip — set to the label in `iconOnly` mode; spread it onto the link. */
@@ -176,7 +176,6 @@ export function LiquidTabs({
   'aria-label': ariaLabel,
 }: LiquidTabsProps) {
   const uid = useId();
-  const reduced = useReducedMotion();
   const listRef = useRef<HTMLElement>(null);
   // useId scopes the capsule's layoutId so multiple LiquidTabs never collide.
   const layoutId = `liquid-tab-${uid}`;
@@ -207,7 +206,7 @@ export function LiquidTabs({
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const idx = tabs.findIndex((t) => t.id === value);
     if (idx < 0) return;
-    let next = idx;
+    let next: number;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = step(idx, 1);
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = step(idx, -1);
     else if (e.key === 'Home') next = edge(1);
@@ -242,7 +241,7 @@ export function LiquidTabs({
       // `min-w-max` + `shrink-0` pair, with the basis set per mode in
       // globals.css). That is the whole truncation fix: the row scrolls before
       // a label is ever ellipsed.
-      'relative flex min-w-max shrink-0 items-center justify-center gap-1.5 rounded-[var(--site-control-radius)] font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+      'relative flex min-w-max shrink-0 items-center justify-center gap-1.5 rounded-[var(--tab-radius,var(--site-control-radius))] font-medium whitespace-nowrap transition-colors duration-site-fast disabled:cursor-not-allowed disabled:opacity-40',
       pad,
       // Tighter, more square padding while the strip is glyph-only; it relaxes
       // at md, where the labels come back (see globals.css).
@@ -269,9 +268,12 @@ export function LiquidTabs({
         // The hook globals.css uses to decide whether the thumb ink is safe.
         data-tab-capsule=""
         className="absolute inset-0"
-        transition={reduced ? { duration: 0 } : SPRING.snappy}
+        transition={SPRING.snappy}
       >
-        <span data-tab-thumb="" className="absolute inset-0 rounded-[var(--site-control-radius)]" />
+        <span
+          data-tab-thumb=""
+          className="absolute inset-0 rounded-[var(--tab-radius,var(--site-control-radius))]"
+        />
       </motion.span>
     ) : null;
 
@@ -344,23 +346,20 @@ export function LiquidTabs({
   // scroll offset directly. `scrollIntoView()` would also scroll the document
   // to reach a strip below the fold, yanking the page on first paint.
   // `smooth` only once the strip is on screen: the first reveal jumps.
-  const revealActive = useCallback(
-    (smooth: boolean) => {
-      const el = listRef.current;
-      if (!el || el.scrollWidth <= el.clientWidth) return;
-      const active = el.querySelector<HTMLElement>('[data-tab-active="true"]');
-      if (!active) return;
-      const inset = 24; // clear the edge fade
-      const left = active.offsetLeft;
-      const right = left + active.offsetWidth;
-      const view = el.scrollLeft;
-      const behavior = smooth && !reduced ? 'smooth' : 'auto';
-      if (left - inset < view) el.scrollTo({ left: Math.max(0, left - inset), behavior });
-      else if (right + inset > view + el.clientWidth)
-        el.scrollTo({ left: right + inset - el.clientWidth, behavior });
-    },
-    [reduced],
-  );
+  const revealActive = useCallback((smooth: boolean) => {
+    const el = listRef.current;
+    if (!el || el.scrollWidth <= el.clientWidth) return;
+    const active = el.querySelector<HTMLElement>('[data-tab-active="true"]');
+    if (!active) return;
+    const inset = 24; // clear the edge fade
+    const left = active.offsetLeft;
+    const right = left + active.offsetWidth;
+    const view = el.scrollLeft;
+    const behavior = smooth ? 'smooth' : 'auto';
+    if (left - inset < view) el.scrollTo({ left: Math.max(0, left - inset), behavior });
+    else if (right + inset > view + el.clientWidth)
+      el.scrollTo({ left: right + inset - el.clientWidth, behavior });
+  }, []);
 
   const revealRef = useRef(revealActive);
   revealRef.current = revealActive;
@@ -429,13 +428,14 @@ export function LiquidTabs({
           data-tab-active={active ? 'true' : 'false'}
           // The eversion layer sits on the wrapper so it stays under the thumb (globals.css §7.3).
           data-evert=""
-          className="relative flex min-w-max shrink-0"
+          className="relative flex min-w-max shrink-0 rounded-[var(--tab-radius,var(--site-control-radius))]"
         >
           {capsule(active)}
           {renderTab!(tab, {
             active,
             id: tabId(tab.id),
             'aria-current': active ? 'page' : undefined,
+            'data-fluid-press': '',
             className: cn(itemClass(active), 'flex-1'),
             title: tab.icon ? tab.label : undefined,
             children: content(tab),
@@ -462,6 +462,7 @@ export function LiquidTabs({
         data-tab-active={active ? 'true' : 'false'}
         // Hover and press turn a tint out of the tab, under the thumb (globals.css §7.3).
         data-evert=""
+        data-fluid-press=""
         className={itemClass(active)}
       >
         {capsule(active)}
@@ -514,10 +515,9 @@ export function LiquidTabs({
         // (high contrast, reduced transparency, print) for free. globals.css
         // tints the track neutrally so a white thumb reads on a white page.
         //
-        // `--site-radius` (22px on the default theme), NOT `--site-control-radius`
-        // (9999px): on one row the track is ~44px tall, so 22px IS the pill, and
-        // it tracks each theme's own radius scale.
-        'glass-inset w-full min-w-0 max-w-full rounded-[var(--site-radius)]',
+        // Like buttons and fields, the track uses the control radius. Its
+        // segments subtract the track padding to keep the corners concentric.
+        'glass-inset w-full min-w-0 max-w-full rounded-[var(--site-control-radius)]',
         className,
       )}
     >

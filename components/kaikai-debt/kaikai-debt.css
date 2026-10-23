@@ -383,27 +383,6 @@ html.style-sepia .kd-root {
    to remove it — unlike the charts below, which are data and only ever lose
    motion. */
 
-@media (prefers-reduced-motion: reduce) {
-  .kd-atmos__aura,
-  .kd-atmos__globe,
-  .kd-atmos__sweep {
-    animation: none;
-  }
-  /* A frozen sweep is a bright diagonal line across the page for as long as
-     anyone looks at it, which is worse than no sweep. */
-  .kd-atmos__sweep {
-    display: none;
-  }
-}
-html.reduce-motion .kd-atmos__aura,
-html.reduce-motion .kd-atmos__globe,
-html.reduce-motion .kd-atmos__sweep {
-  animation: none;
-}
-html.reduce-motion .kd-atmos__sweep {
-  display: none;
-}
-
 /* Low-end tier: one static wash and nothing that moves. A full-bleed animated
    layer is the single most expensive thing on this page, and `perf-lite` exists
    precisely to not pay for it. */
@@ -499,15 +478,6 @@ html.reduce-transparency .kd-atmos {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .kd-root .kd-flash {
-    animation: none;
-  }
-}
-html.reduce-motion .kd-root .kd-flash {
-  animation: none;
-}
-
 /* ==========================================================================
    The credit-score band
    ==========================================================================
@@ -563,15 +533,6 @@ html.reduce-motion .kd-root .kd-flash {
 .kd-dial[data-band='good'] .kd-dial__arc--good,
 .kd-dial[data-band='exceptional'] .kd-dial__arc--exceptional {
   opacity: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .kd-root .kd-dial__arc {
-    transition: none;
-  }
-}
-html.reduce-motion .kd-root .kd-dial__arc {
-  transition: none;
 }
 
 /* ==========================================================================
@@ -789,15 +750,6 @@ html.reduce-motion .kd-root .kd-dial__arc {
    takes away MOTION and EXPENSE, never information: a reduced-motion reader
    still gets the whole heatmap, and a high-contrast reader still gets the eight
    series that are the only thing distinguishing one category from another. */
-
-@media (prefers-reduced-motion: reduce) {
-  .kd-root .kd-heat__cell {
-    transition: none;
-  }
-}
-html.reduce-motion .kd-root .kd-heat__cell {
-  transition: none;
-}
 
 /* High contrast keeps the palette — it is the only thing distinguishing eight
    series, and a legibility mode that erases the legend has not delivered

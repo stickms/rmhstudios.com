@@ -281,7 +281,6 @@ export function fanOffsets(
 /** True when animations should run: the OS allows them and Dunesday isn't "still". */
 export function motionOK(el: Element | null): boolean {
   if (typeof window === 'undefined' || !window.matchMedia) return false;
-  if (!window.matchMedia('(prefers-reduced-motion: no-preference)').matches) return false;
   return !el?.closest('.ds-os--still');
 }
 

@@ -85,11 +85,6 @@ export function Login({
       onSelect: () => setPrefs({ highContrast: !prefs.highContrast }),
     },
     {
-      label: t('ease-motion', { defaultValue: 'Reduce motion' }),
-      checked: prefs.reduceMotion,
-      onSelect: () => setPrefs({ reduceMotion: !prefs.reduceMotion }),
-    },
-    {
       label: t('ease-sounds', { defaultValue: 'Play sounds' }),
       checked: !muted,
       onSelect: onToggleMuted,

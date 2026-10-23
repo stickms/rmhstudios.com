@@ -87,12 +87,6 @@
   -webkit-overflow-scrolling: touch;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .rmhtype-passage-scroll {
-    scroll-behavior: auto;
-  }
-}
-
 .rmhtype-char-correct {
   color: var(--rmhtype-correct);
 }
@@ -120,11 +114,6 @@
 
 /* A caret that never blinks is easy to lose, so keep it visible rather than
    freezing it mid-cycle when the blink is suppressed. */
-@media (prefers-reduced-motion: reduce) {
-  .rmhtype-cursor {
-    animation: none;
-  }
-}
 
 /* ─── Progress ───────────────────────────────────────────────────── */
 

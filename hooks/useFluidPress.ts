@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { SPRINGS, springSettled, springStep, type Spring, type SpringState } from '@/lib/fluid';
-import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 
 /**
  * The site-wide **press layer** — principle 1 of Apple's *Designing Fluid
@@ -21,8 +20,8 @@ import { prefersReducedMotion } from '@/hooks/useReducedMotion';
  *
  * ## …and how a whole surface opts in at once
  *
- * The site tier gets this free because its controls all come from
- * `components/ui/button.tsx`. The full-screen tier does not: eighteen games and
+ * The radial site shell claims its controls, including legacy buttons. Shared
+ * primitives also opt in explicitly so portalled controls work. Eighteen games and
  * twelve apps each ship their own buttons — `.rmhbox-btn`, `.ls-btn`, a hundred
  * bespoke `<button className="…">` — and tagging every one of them is both a
  * large diff and a standing invitation to forget the next one.
@@ -96,7 +95,8 @@ const SCROLL_SLOP = 10;
  * the explicit attribute alone — the nearest match wins either way, which is
  * also the right answer when a tagged card contains an untagged button.
  */
-const PRESSABLE = '[data-fluid-press],button,[role="button"],summary';
+const PRESSABLE =
+  '[data-fluid-press],button,[role="button"],summary,a[href],input,textarea,select,[contenteditable="true"]';
 
 interface Press {
   el: HTMLElement;
@@ -157,18 +157,29 @@ export function useFluidPressLayer(): void {
       const target = e.target as Element | null;
       const el = target?.closest?.<HTMLElement>(PRESSABLE);
       if (!el) return;
+      // Links and editable children stop a press from reaching an enclosing
+      // interactive card. Only explicitly tagged links get a spring; prose
+      // links keep their colour transition, and fields keep native editing.
+      if (el.matches('input,textarea,select,[contenteditable="true"]')) return;
+      if (el.matches('a[href]') && el.dataset.fluidPress === undefined) return;
       // Tagged elements always press. Untagged ones (a plain <button> in a
       // game's menu) press only inside a container that claimed its subtree —
       // otherwise this would silently animate every button on the site,
       // including the ones deliberately left alone.
       if (el.dataset.fluidPress === undefined && !el.closest('[data-fluid-press-scope]')) return;
+      // Scope defaults must leave embedded drag/hold surfaces alone. Explicit
+      // opt-ins can still supply feedback for controls within those surfaces.
+      if (
+        el.dataset.fluidPress === undefined &&
+        el.closest(
+          '[data-liquid-motion="off"],[data-gesture]:not([data-gesture="hold"]),[draggable="true"]',
+        )
+      )
+        return;
       // A disabled control must not appear to respond. `aria-disabled` counts:
       // plenty of controls here stay focusable and mark themselves that way
       // instead of using the `disabled` attribute.
       if (el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true') return;
-      // Reduced motion is checked per press, not once at install: it is a live
-      // preference (OS-level *or* the account toggle) and can change mid-session.
-      if (prefersReducedMotion()) return;
 
       const mode = el.dataset.fluidPress ?? '';
       // The escape hatch a scope needs: gestures (joysticks, drag handles,

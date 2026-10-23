@@ -187,24 +187,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ls-popup {
-    animation: ls-fade 900ms linear forwards;
-  }
-
-  @keyframes ls-fade {
-    0%,
-    70% {
-      opacity: 1;
-      transform: translate(-50%, 0);
-    }
-    100% {
-      opacity: 0;
-      transform: translate(-50%, 0);
-    }
-  }
-}
-
 /**
  * Landscape phones. A handset turned sideways is ~340px tall, and the front
  * screen's full content is taller than that, so the primary action ends up

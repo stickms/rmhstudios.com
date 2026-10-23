@@ -303,9 +303,6 @@ interface ThemeStore {
   /** Custom accent hex (#rrggbb); wins over the `accent` preset. null = none. */
   customAccent: string | null;
   setCustomAccent: (value: string | null) => void;
-  /** Account-level reduce-motion, OR-ed with the OS media query. */
-  reduceMotion: boolean;
-  setReduceMotion: (value: boolean) => void;
   /**
    * Colour-vision deficiency mode. Retints the three semantic tokens
    * (success/danger/warning) to a palette that stays separable under that
@@ -317,13 +314,13 @@ interface ThemeStore {
   /**
    * Globe-eversion navigation transition (spec §9.3). `DEFAULT_NAV_TRANSITION`
    * (Mercator) is the default and what an absent account row means. Cached in localStorage like
-   * `reduceMotion` and synced to the account.
+   * `readableFont` and synced to the account.
    */
   navTransition: NavTransition;
   setNavTransition: (value: NavTransition) => void;
   /**
    * "Always evert globe": run the eversion even on devices where it is skipped
-   * to keep navigation fast. Default off. Does NOT override reduced motion.
+   * to keep navigation fast. Default off.
    * Cached in localStorage and synced to the account like `navTransition`.
    */
   alwaysEvertGlobe: boolean;
@@ -371,8 +368,6 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   setReadableFont: (readableFont) => set({ readableFont }),
   customAccent: null,
   setCustomAccent: (customAccent) => set({ customAccent }),
-  reduceMotion: false,
-  setReduceMotion: (reduceMotion) => set({ reduceMotion }),
   colorVision: DEFAULT_COLOR_VISION,
   setColorVision: (colorVision) => set({ colorVision }),
   navTransition: DEFAULT_NAV_TRANSITION,

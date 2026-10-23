@@ -392,11 +392,9 @@ body:has(.radial-shell) .call-banner {
   border-radius: 999px;
   background: var(--site-surface-hover);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .radial-topbar__avatar-placeholder {
+.radial-topbar__avatar-placeholder {
     animation: radial-pulse-soft 1.6s ease-in-out infinite;
   }
-}
 
 .radial-topbar__avatar {
   display: inline-grid;
@@ -735,11 +733,9 @@ body:has(.radial-shell) .call-banner {
 .rad-live__ambient[data-ready='false'] {
   visibility: hidden;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .rad-live__ambient[data-ready='true'] > * {
+.rad-live__ambient[data-ready='true'] > * {
     animation: rad-live-reveal var(--motion-in, 0.22s) var(--motion-ease-in, ease-out) both;
   }
-}
 @keyframes rad-live-reveal {
   from {
     opacity: 0;
@@ -759,8 +755,7 @@ body:has(.radial-shell) .call-banner {
   border-radius: 999px;
   background: var(--site-success);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .rad-live__dot::after {
+.rad-live__dot::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -768,7 +763,6 @@ body:has(.radial-shell) .call-banner {
     background: inherit;
     animation: radial-pulse-soft 1.8s ease-in-out infinite;
   }
-}
 .rad-live__card {
   padding: var(--rad-4);
   border-radius: var(--site-radius, 22px);
@@ -999,14 +993,12 @@ body:has(.radial-shell) .call-banner {
 }
 /* On mount the mark blooms open — scaling + rotating out of the core while its
    stroke draws itself (pathLength-normalised), leaning into the SVG. */
-@media (prefers-reduced-motion: no-preference) {
-  .radial-hub__logo {
+.radial-hub__logo {
     animation: rmh-logo-bloom 1.05s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
   }
-  .radial-hub__logo path {
+.radial-hub__logo path {
     animation: rmh-logo-draw 1.3s ease both;
   }
-}
 @keyframes rmh-logo-bloom {
   from {
     transform: scale(0.15) rotate(-50deg);
@@ -1618,14 +1610,12 @@ html.ios-webkit .radial-hub__veil {
     );
   pointer-events: none;
 }
-html.reduce-motion .radial-globe__contact,
+
 html.reduce-transparency .radial-globe__contact,
 .style-high-contrast .radial-globe__contact {
   display: none;
 }
-@media (prefers-reduced-motion: reduce),
-  (prefers-reduced-transparency: reduce),
-  (forced-colors: active) {
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
   .radial-globe__contact {
     display: none;
   }
@@ -1739,13 +1729,11 @@ html.reduce-transparency .radial-globe__contact,
   -webkit-user-select: none;
   user-select: none;
 }
-@media (prefers-reduced-motion: no-preference) {
-  /* Pins arrive after the sphere, one after another, so the globe reads as
+/* Pins arrive after the sphere, one after another, so the globe reads as
      something that assembles rather than something that pops. */
-  .radial-hub[data-phase='open'] .radial-globe__pin {
+.radial-hub[data-phase='open'] .radial-globe__pin {
     animation: globe-pin-in 0.42s ease both calc(140ms + var(--i, 0) * 26ms);
   }
-}
 @keyframes globe-pin-in {
   from {
     opacity: 0;
@@ -1921,11 +1909,9 @@ html.reduce-transparency .radial-globe__contact,
   mask: radial-gradient(circle closest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
 }
 /* Armed — the ring is full, and letting go opens the page. */
-@media (prefers-reduced-motion: no-preference) {
-  .radial-globe[data-ready='true'] .radial-globe__reticle {
+.radial-globe[data-ready='true'] .radial-globe__reticle {
     animation: globe-armed 0.9s ease-in-out infinite alternate;
   }
-}
 @keyframes globe-armed {
   from {
     transform: translate(-50%, -50%) scale(1);
@@ -2556,11 +2542,9 @@ html.reduce-transparency .radial-globe__contact,
   pointer-events: none;
 }
 /* The error/empty state still shows the RMH disc, which breathes gently. */
-@media (prefers-reduced-motion: no-preference) {
-  .radial-feed__empty .radial-core {
+.radial-feed__empty .radial-core {
     animation: radial-pulse-soft 1.6s ease-in-out infinite;
   }
-}
 @keyframes radial-pulse-soft {
   0%,
   100% {
@@ -3004,33 +2988,6 @@ html.reduce-transparency .radial-globe__contact,
    animates as plain discs everywhere — same motion, no per-frame filter. */
 
 /* ── Reduced motion: kill all continuous / decorative animation ───────── */
-@media (prefers-reduced-motion: reduce) {
-  .radial-feed__empty .radial-core {
-    animation: none !important;
-  }
-  /* The hub open/close is now transition-driven — collapse every layer's
-     duration so it snaps instantly under reduced motion. */
-  .radial-skip,
-  .radial-topbar__btn,
-  .radial-hub__orb,
-  .radial-hub__veil,
-  .radial-hub__foot,
-  .radial-globe__pin-dot,
-  .radial-globe__reticle::before,
-  .rmhark,
-  .radial-feed__compose {
-    transition-duration: 0.001ms;
-  }
-  /* The globe blooms on KEYFRAMES (it is mounted only while the menu is up, so
-     there is no previous style for a transition to run from), which a
-     `transition-duration` override cannot reach. Collapse the animations too, so
-     the hub still snaps open and shut rather than fading. The decorative ones —
-     the travelling sheen, the pin stagger, the armed pulse — are already inside
-     `prefers-reduced-motion: no-preference` blocks and never start here. */
-  .radial-globe {
-    animation-duration: 0.001ms !important;
-  }
-}
 
 /* ==========================================================================
    Radial content pages
@@ -3067,11 +3024,9 @@ html.reduce-transparency .radial-globe__contact,
    A gentle rise as each page's title mounts — a fresh element on every client
    nav, so it re-runs — carrying the home's flowy feel to every page. The
    no-preference gate turns it off under reduced-motion. */
-@media (prefers-reduced-motion: no-preference) {
-  .radial-shell:not([data-home]) .page-heading {
+.radial-shell:not([data-home]) .page-heading {
     animation: radial-page-rise 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
   }
-}
 @keyframes radial-page-rise {
   from {
     opacity: 0;
@@ -3200,19 +3155,6 @@ html.reduce-transparency .radial-globe__contact,
 
 /* A.6 — Reduced motion: the panels and rails are chrome, not decoration, so they
    stay — only their transitions collapse. */
-@media (prefers-reduced-motion: reduce) {
-  .rad-rail__item,
-  .rad-live__row,
-  .rad-deck__row,
-  .rad-panel__row,
-  .rad-panel__identity,
-  .rad-panel__more {
-    transition-duration: 0.001ms;
-  }
-  .rad-live__dot::after {
-    animation: none;
-  }
-}
 
 /* Deck loading skeletons — same geometry as `.rad-deck__row`, so the panel does
    not resize when the real rows arrive (the deck used to swap a bare

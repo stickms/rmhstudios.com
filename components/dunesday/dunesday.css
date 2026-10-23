@@ -1163,29 +1163,6 @@
 
 /* ── Reduced motion: no drift, no bubbles, no parallax ──────────────────── */
 
-@media (prefers-reduced-motion: reduce) {
-  .ds *,
-  .ds *::before,
-  .ds *::after {
-    animation: none !important;
-    transition: none !important;
-  }
-  .ds-bubble {
-    display: none;
-  }
-}
-
-html.reduce-motion .ds *,
-html.reduce-motion .ds *::before,
-html.reduce-motion .ds *::after {
-  animation: none !important;
-  transition: none !important;
-}
-
-html.reduce-motion .ds-bubble {
-  display: none;
-}
-
 /* ── Fixes for the global reset and narrow screens ──────────────────────── */
 
 /* The site reset makes every svg a block, which wraps inline icons (the
@@ -2082,15 +2059,6 @@ html:has(.ds)::-webkit-scrollbar-thumb {
 }
 
 /* Reduced motion: none of the above moves. */
-@media (prefers-reduced-motion: reduce) {
-  .ds-sparkle {
-    display: none;
-  }
-}
-
-html.reduce-motion .ds-sparkle {
-  display: none;
-}
 
 /* ── Touch targets ─────────────────────────────────────────────────────────
    Drawn sizes stay what the Aero art direction wants on a mouse; on a coarse

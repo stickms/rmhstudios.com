@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -69,10 +68,6 @@ export function AppearancePanel() {
   function setReadableFont(value: boolean) {
     store.setReadableFont(value);
     void persist({ readableFont: value });
-  }
-  function setReduceMotion(value: boolean) {
-    store.setReduceMotion(value);
-    void persist({ reduceMotion: value });
   }
   function setColorVision(value: ColorVisionMode) {
     store.setColorVision(value);
@@ -242,14 +237,6 @@ export function AppearancePanel() {
           checked={store.readableFont}
           onChange={setReadableFont}
         />
-        <ToggleRow
-          label={t('reduce-motion', { defaultValue: 'Reduce motion' })}
-          description={t('reduce-motion-desc', {
-            defaultValue: 'Minimize animations and transitions.',
-          })}
-          checked={store.reduceMotion}
-          onChange={setReduceMotion}
-        />
         <NavTransitionRow value={store.navTransition} onChange={setNavTransition} />
         <p className="py-3 text-sm leading-relaxed text-site-text-muted">
           {t('globe-navigation-only-hint', {
@@ -337,9 +324,8 @@ const EVERSION_PREVIEW_EVENT = 'rmh:eversion-preview';
 
 /**
  * "Navigation transition" (spec §9.3): which projection the globe eversion uses
- * between pages, or `random`. Reduced motion replaces the effect with a plain
- * crossfade, so the row is disabled with a hint rather than hidden — hiding it
- * would make the setting undiscoverable the day reduced motion is switched off.
+ * between pages, or `random`. Every account and device uses the shared motion
+ * scheme, so this choice and its preview are always available during rollout.
  *
  * Descriptions sit under the select for the CURRENT choice instead of inside
  * the option rows: the closed control must stay one line on a phone, and the
@@ -353,9 +339,6 @@ function NavTransitionRow({
   onChange: (v: NavTransition) => void;
 }) {
   const { t } = useTranslation('settings-appearance');
-  // The site's own Reduce motion switch, never the OS query: the transition plays by default (owner, 2026-10-21),
-  // so a system-wide animation preference must not grey this out while the switch above is off.
-  const reduced = useReducedMotion();
   // The flag reads `location`, which does not exist during SSR; resolve after
   // mount so the server and first client render agree (no row, no Preview). While
   // the rollout flag is off the whole row is hidden: a control that changes
@@ -404,7 +387,6 @@ function NavTransitionRow({
           id="nav-transition"
           containerClassName="w-48 shrink-0"
           value={value}
-          disabled={reduced}
           aria-describedby="nav-transition-hint"
           onChange={(e) => {
             if (isNavTransition(e.target.value)) onChange(e.target.value);
@@ -418,12 +400,7 @@ function NavTransitionRow({
         </Select>
       </div>
       <p id="nav-transition-hint" className="mt-1 text-xs text-site-text-muted">
-        {reduced
-          ? t('nav-transition-reduced-off', {
-              defaultValue:
-                'Reduced motion is on, so this transition is switched off and pages change as usual.',
-            })
-          : descriptions[value]}
+        {descriptions[value]}
       </p>
       {enabled ? (
         <Button
@@ -431,7 +408,6 @@ function NavTransitionRow({
           variant="outline"
           size="sm"
           className="mt-2"
-          disabled={reduced}
           onClick={() => window.dispatchEvent(new CustomEvent(EVERSION_PREVIEW_EVENT))}
         >
           {t('nav-transition-preview', { defaultValue: 'Preview' })}

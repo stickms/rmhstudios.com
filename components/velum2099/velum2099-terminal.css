@@ -95,12 +95,6 @@
 
 /* A whole-screen flicker is a flash, and a crawling overlay is motion: neither
    belongs on a reduced-motion screen. */
-@media (prefers-reduced-motion: reduce) {
-    .velum2099-root #terminal-screen,
-    .velum2099-root #terminal-screen::before {
-        animation: none;
-    }
-}
 
 /* Terminal text glow */
 .velum2099-root .term-line {

@@ -316,17 +316,15 @@
    state lives only where a scroll timeline can undo it, so a page that cannot
    animate has never hidden anything. */
 @supports (animation-timeline: view()) {
-  @media not (prefers-reduced-motion: reduce) {
-    html:not(.reduce-motion) .rmhc-root .reveal {
+    html .rmhc-root .reveal {
       animation: rmhc-reveal-in linear both;
       animation-timeline: view();
       animation-range: entry 0% entry 46%;
     }
     /* Range shift, not `animation-delay` — a scroll timeline has no clock. */
-    html:not(.reduce-motion) .rmhc-root .reveal.d1 { animation-range: entry 7% entry 53%; }
-    html:not(.reduce-motion) .rmhc-root .reveal.d2 { animation-range: entry 14% entry 60%; }
-    html:not(.reduce-motion) .rmhc-root .reveal.d3 { animation-range: entry 21% entry 67%; }
-  }
+    html .rmhc-root .reveal.d1 { animation-range: entry 7% entry 53%; }
+    html .rmhc-root .reveal.d2 { animation-range: entry 14% entry 60%; }
+    html .rmhc-root .reveal.d3 { animation-range: entry 21% entry 67%; }
 }
 @keyframes rmhc-reveal-in {
   from { opacity: 0; transform: translateY(24px); }
@@ -338,12 +336,3 @@
 @keyframes rmhc-draw{to{stroke-dashoffset:0}}
 .rmhc-root .spin-slow{transform-box:fill-box;transform-origin:center;animation:rmhc-spin 120s linear infinite}
 @keyframes rmhc-spin{to{transform:rotate(360deg)}}
-
-@media(prefers-reduced-motion:reduce){
-  .rmhc-root .hero-bg,.rmhc-root .pagehead::before{transform:none;will-change:auto}
-  /* Belt and braces — the rule above is already reduced-motion gated. */
-  .rmhc-root .reveal{opacity:1;transform:none;animation:none}
-  .rmhc-root .arc-draw{animation:none;stroke-dashoffset:0}
-  .rmhc-root .spin-slow,.rmhc-root .ticker-track{animation:none}
-  .rmhc-root *{animation-duration:.001ms!important;animation-iteration-count:1!important}
-}

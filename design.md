@@ -2,6 +2,10 @@
 
 **Radial Avant-Garde Glass.**
 
+Current motion contract (2026-10-22): every account and device uses the shared
+animation scheme. The website reduced-motion setting and browser/OS motion
+overrides are retired; older reduced-motion guidance below is superseded.
+
 This document is the _statement of the language_ — what the design is, why it is
 that way, and the laws that hold it together. It is written to be read start to
 finish by anyone deciding how something should look or behave.

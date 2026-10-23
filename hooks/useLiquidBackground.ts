@@ -107,8 +107,6 @@ export function useLiquidBackground(): void {
     // keeping this hook detached preserves ordinary component animations.
     if (root.classList.contains('ios-webkit')) return;
     if (root.classList.contains('perf-lite')) return;
-    if (root.classList.contains('reduce-motion')) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     // Handheld tier. `app/globals.css` pins the aurora layers' `translate` to
     // `none` under exactly this query, so every offset this hook computed there
     // was written to a property nothing read — a pointer/tilt listener, a rAF

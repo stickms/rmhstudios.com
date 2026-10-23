@@ -4,7 +4,6 @@
    2. Scroll reveals + capabilities stagger + manifesto words
    3. Grid scaffold toggle (button / 'g')
    4. Spec-sheet readouts (scroll coord + pointer)
-   All guarded by prefers-reduced-motion.
    Browser globals are addressed via `window.` so this file lints clean
    under the repo's public-microsite ESLint config.
    ============================================================ */
@@ -13,7 +12,6 @@
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------------------------------------------------------------
      1. HERO — pixels assemble, then resolve into matter
@@ -27,7 +25,7 @@
       headline.classList.add("revealed");
       if (canvas) canvas.remove();
     };
-    if (!canvas || reduce || !canvas.getContext) return revealText();
+    if (!canvas || !canvas.getContext) return revealText();
 
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -146,11 +144,6 @@
      2. REVEALS — work, capabilities, manifesto words
      --------------------------------------------------------------- */
   function reveals() {
-    if (reduce) {
-      $$(".cap").forEach((c) => c.classList.add("in"));
-      $$(".creed").forEach((c) => c.classList.add("in"));
-      return;
-    }
     const io = new window.IntersectionObserver((entries, obs) => {
       entries.forEach((en) => {
         if (!en.isIntersecting) return;

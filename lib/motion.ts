@@ -8,10 +8,9 @@
  * tokens/variants so enters, exits, dialogs, and lists all feel like one
  * system: **smooth and quick**.
  *
- * Reduced motion is handled globally — `<MotionConfig reducedMotion="user">`
- * wraps the app in `components/Providers.tsx`, so framer-motion automatically
- * neutralises transforms/opacity for users who ask for it. You do not need to
- * branch on `useReducedMotion()` when consuming these variants.
+ * `<MotionConfig reducedMotion="never">` wraps the app in Providers: every
+ * account and device uses this same scheme. Do not add preference branches
+ * when consuming these variants.
  *
  * Usage:
  * ```tsx

@@ -100,15 +100,6 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom 
       holdDelay.current = null;
     }
   }, []);
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const apply = () => setReducedMotion(media.matches);
-    apply();
-    media.addEventListener('change', apply);
-    return () => media.removeEventListener('change', apply);
-  }, []);
 
   // ─── Zoom-aware resolution ───────────────────────────────────────────────────
   // Whatever the browser is doing to magnify the page has to reach the drawing buffer,
@@ -288,19 +279,11 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom 
       }
       turnRef.current = t;
       progress.current = 0;
-      if (reducedMotion) {
-        kRef.current = target;
-        setK(target);
-        turnRef.current = null;
-        setTurn(null);
-        anim.current = { active: false, target: 0 };
-        return true;
-      }
       anim.current = viaDrag ? { active: false, target: 0 } : { active: true, target: 1 };
       setTurn(t);
       return true;
     },
-    [maxK, view, single, ensurePage, reducedMotion],
+    [maxK, view, single, ensurePage],
   );
 
   // Called by the scene when progress settles at 0 (cancelled) or 1 (completed).
@@ -344,10 +327,6 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom 
     if (!rect) return;
     const rightHalf = e.clientX - rect.left > rect.width / 2;
     const dir: Dir = rightHalf ? 'next' : 'prev';
-    if (reducedMotion) {
-      beginTurn(dir, false);
-      return;
-    }
     if (!beginTurn(dir, true)) return;
     dragging.current = true;
     moved.current = false;

@@ -410,28 +410,23 @@
 }
 
 /* ── Motion (opt-in only) ─────────────────────────────────────────────── */
-@media (prefers-reduced-motion: no-preference) {
-  .ds-ms .ds-ms__cell {
+.ds-ms .ds-ms__cell {
     transition:
       background-color 120ms ease,
       box-shadow 120ms ease;
   }
-
-  .ds-ms .ds-ms__cell--boom {
+.ds-ms .ds-ms__cell--boom {
     animation: ds-ms-boom 420ms ease-out;
   }
-
-  .ds-ms .ds-ms__dialog {
+.ds-ms .ds-ms__dialog {
     animation: ds-ms-pop 180ms ease-out;
   }
-
-  .ds-ms:is(.ds-os--still *) .ds-ms__cell,
+.ds-ms:is(.ds-os--still *) .ds-ms__cell,
   .ds-ms:is(.ds-os--still *) .ds-ms__cell--boom,
   .ds-ms:is(.ds-os--still *) .ds-ms__dialog {
     transition: none;
     animation: none;
   }
-}
 
 @keyframes ds-ms-boom {
   0% {

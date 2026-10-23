@@ -22,7 +22,6 @@ describe('evaluateEligibility', () => {
 
   it.each([
     ['flag-off', { flagEnabled: false }],
-    ['reduced-motion', { reducedMotion: true }],
     ['no-webgl2', { webgl2: false }],
     ['no-webgl2', { webgl2: null }],
     ['chunk-not-ready', { chunkReady: false }],
@@ -40,16 +39,11 @@ describe('evaluateEligibility', () => {
       chunkReady: false,
     };
     expect(evaluateEligibility(allBad)).toBe('flag-off');
-    expect(evaluateEligibility({ ...allBad, flagEnabled: true })).toBe('reduced-motion');
+    expect(evaluateEligibility({ ...allBad, flagEnabled: true })).toBe('no-webgl2');
     expect(evaluateEligibility({ ...allBad, flagEnabled: true, reducedMotion: false })).toBe(
       'no-webgl2',
     );
-    expect(INELIGIBILITY_ORDER).toEqual([
-      'flag-off',
-      'reduced-motion',
-      'no-webgl2',
-      'chunk-not-ready',
-    ]);
+    expect(INELIGIBILITY_ORDER).toEqual(['flag-off', 'no-webgl2', 'chunk-not-ready']);
   });
 });
 
@@ -60,7 +54,7 @@ describe('shouldCaptureBefore', () => {
   });
   it('does not capture for any other reason', () => {
     expect(shouldCaptureBefore({ ...ok, flagEnabled: false })).toBe(false);
-    expect(shouldCaptureBefore({ ...ok, reducedMotion: true })).toBe(false);
+    expect(shouldCaptureBefore({ ...ok, reducedMotion: true })).toBe(true);
     expect(shouldCaptureBefore({ ...ok, webgl2: null })).toBe(false);
   });
 });

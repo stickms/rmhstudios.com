@@ -12,7 +12,6 @@ export function installLiquidInteractions(doc: Document = document): () => void 
   if (!win) return () => {};
   const root = doc.documentElement;
   const queries = [
-    win.matchMedia('(prefers-reduced-motion: reduce)'),
     win.matchMedia('(prefers-reduced-transparency: reduce)'),
     win.matchMedia('(forced-colors: active)'),
   ];
@@ -30,7 +29,7 @@ export function installLiquidInteractions(doc: Document = document): () => void 
   const disabled = () =>
     doc.hidden ||
     queries.some((q) => q.matches) ||
-    root.matches('.reduce-motion,.reduce-transparency,.style-high-contrast,.perf-lite') ||
+    root.matches('.reduce-transparency,.style-high-contrast,.perf-lite') ||
     appContrast;
 
   const clearLight = (smooth = false) => {

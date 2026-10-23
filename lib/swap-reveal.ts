@@ -38,15 +38,6 @@ const DURATION_MS = 260;
 const EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const MAX_PER_BATCH = 24;
 
-function reducedMotion(): boolean {
-  if (document.documentElement.classList.contains('reduce-motion')) return true;
-  try {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  } catch {
-    return false;
-  }
-}
-
 /** Was this removed node (or anything inside it) a loading placeholder? */
 function heldPlaceholder(node: Node): boolean {
   if (!(node instanceof Element)) return false;
@@ -75,7 +66,7 @@ export function installSwapReveal(): () => void {
         if (heldPlaceholder(removed)) (parents ??= new Set()).add(record.target);
       }
     }
-    if (!parents || reducedMotion()) return;
+    if (!parents) return;
 
     let budget = MAX_PER_BATCH;
     for (const record of records) {

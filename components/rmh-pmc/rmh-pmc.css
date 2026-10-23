@@ -408,8 +408,7 @@
    never hidden anything, and there is nothing left to undo. No observer, no
    rAF, no layout read — the compositor drives it off the scroller. */
 @supports (animation-timeline: view()) {
-  @media not (prefers-reduced-motion: reduce) {
-    html:not(.reduce-motion) .rmhp-root .reveal {
+    html .rmhp-root .reveal {
       animation: rmhp-reveal-in linear both;
       animation-timeline: view();
       animation-range: entry 0% entry 46%;
@@ -418,22 +417,11 @@
        no clock for `animation-delay` to delay against, so a delay is silently
        ignored. Shifting where in its own entry each sibling starts is what
        reproduces the d1..d4 cascade for items sharing a row. */
-    html:not(.reduce-motion) .rmhp-root .reveal.d1 { animation-range: entry 6% entry 52%; }
-    html:not(.reduce-motion) .rmhp-root .reveal.d2 { animation-range: entry 12% entry 58%; }
-    html:not(.reduce-motion) .rmhp-root .reveal.d3 { animation-range: entry 18% entry 64%; }
-  }
+    html .rmhp-root .reveal.d1 { animation-range: entry 6% entry 52%; }
+    html .rmhp-root .reveal.d2 { animation-range: entry 12% entry 58%; }
+    html .rmhp-root .reveal.d3 { animation-range: entry 18% entry 64%; }
 }
 @keyframes rmhp-reveal-in {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: none; }
-}
-
-@media(prefers-reduced-motion:reduce){
-  .rmhp-root .brief-schematic,.rmhp-root .pagehead::before{transform:none;will-change:auto}
-  /* Belt and braces: the rule above is already gated on `not (prefers-reduced-motion)`,
-     so nothing is hidden here in the first place. This keeps the guarantee local. */
-  .rmhp-root .reveal{opacity:1;transform:none;animation:none}
-  .rmhp-root .redactln::after{animation:none;transform:scaleX(0)}
-  .rmhp-root .spin-slow,.rmhp-root .ping,.rmhp-root .transmit-track,.rmhp-root .lineage-track{animation:none}
-  .rmhp-root *{animation-duration:.001ms!important;animation-iteration-count:1!important}
 }

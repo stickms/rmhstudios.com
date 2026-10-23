@@ -429,11 +429,3 @@ body::before {
 /* ============================================================
    MOTION PREFERENCES
    ============================================================ */
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
-  .hero-headline.materializing { opacity: 1; }
-  .hero-coord, .hero-lead, .hero-cue { opacity: 1 !important; transform: none !important; }
-  .cap, .creed .word { opacity: 1 !important; transform: none !important; }
-  .hero-pixels { display: none; }
-}

@@ -116,13 +116,6 @@
   will-change: transform, opacity;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .rmhtube-reaction-float {
-    animation: none !important;
-    opacity: 0;
-  }
-}
-
 /* ─── Chat ───────────────────────────────────────────────────────── */
 
 /* ─── Shortcut sheet ─────────────────────────────────────────────── */

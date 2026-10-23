@@ -69,7 +69,6 @@ export function useSpatialParallax(pathname?: string) {
     const host = document.querySelector<HTMLElement>(CONSUMERS);
     if (!host) return;
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     let scrollFrame = 0;
 
     const resetScroll = () => {
@@ -77,10 +76,6 @@ export function useSpatialParallax(pathname?: string) {
     };
 
     const onScroll = (event?: Event) => {
-      if (reduced.matches) {
-        resetScroll();
-        return;
-      }
       // Measured HERE, while the layout the browser has just scrolled is still
       // clean. The frame below only writes.
       const target = event?.target;
@@ -94,22 +89,12 @@ export function useSpatialParallax(pathname?: string) {
       });
     };
 
-    const onPreferenceChange = () => {
-      if (reduced.matches) {
-        resetScroll();
-        return;
-      }
-      onScroll();
-    };
-
     window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-    reduced.addEventListener('change', onPreferenceChange);
     onScroll();
 
     return () => {
       if (scrollFrame) cancelAnimationFrame(scrollFrame);
       window.removeEventListener('scroll', onScroll, { capture: true });
-      reduced.removeEventListener('change', onPreferenceChange);
       resetScroll();
     };
   }, [pathname]);
