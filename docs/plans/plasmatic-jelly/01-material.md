@@ -6,7 +6,8 @@ here, owned by sibling plans: soft-body response (02), electric arcs (03),
 coverage/a11y/perf audit (04), gates and docs migration (05). Where this plan
 touches their ground, it names the interface and stops.
 
-Baseline studied: `docs/liquid-glass-system.md`, `docs/design-language.md` §0/§5.1,
+Baseline: main at 4893ea5e ("put the shader liquid glass back on cards and controls"): the engine admits all roles plus `[data-evert]`, solid buttons and fields, **24 slabs** ordered overlay → chrome → pane → fill → control → other, bevel 3–24 px, thickness 0.95 × bevel.
+Studied: `docs/liquid-glass-system.md`, `docs/design-language.md` §0/§5.1,
 `lib/liquid/glass/{engine,shader,renderer,policy,color}.ts`, `lib/liquid/runtime.ts`,
 `app/liquid-glass.css`, `app/globals.css` (theme blocks), `components/shared/app-theme.css`,
 `lib/__tests__/{filter-cost-budget,raf-loop-allowlist}.test.ts`.
@@ -19,9 +20,9 @@ Baseline studied: `docs/liquid-glass-system.md`, `docs/design-language.md` §0/�
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | D1  | **Class names stay `glass-*`.** The material behind them changes. 494 files reference the roles, CI gates key on them, and the role names describe elevation, not optics. "Jelly" is the material name in tokens, docs and new modules.                                                                                                                      |
 | D2  | **New `--site-jelly-*` / `--app-jelly-*` tokens** for haze, plasma and flow. `--site-glass-tint/rim/light/ink` keep their meaning (body tint, hairline, light colour, shaded side) and are reused unchanged. Dead blur tokens (`--site-glass-blur-*`, `--site-glass-saturate`) are retired by 05.                                                             |
-| D3  | **Two canvases per shader surface.** The existing full-res rim canvas stays event-driven. A new low-res **haze canvas** (≤ 0.25 CSS scale) is redrawn on an ambient clock. The rim never redraws just because the haze moves.                                                                                                                                 |
+| D3  | **Rim and haze are separate canvases, separate budgets.** The full-res rim canvas (admission cap 24, unchanged) stays event-driven. Motion lives on a low-res **haze canvas** (≤ 256 px long side), and only a smaller **animated cap** of admitted surfaces gets one: 6 tier-A (overlay/chrome/pane) + 10 tier-B (fill) = 16 max. Controls never get a haze canvas. The rim never redraws because the haze moved.                                                                                                                                 |
 | D4  | **The ambient clock is a bounded continuous loop:** 30 Hz with recent input, 12 Hz after 20 s idle, 0 Hz when hidden / no haze surfaces / degraded. This amends the "no resting loop" rule and the `raf-loop-allowlist` justification for `engine.ts` (05 owns the text).                                                                                    |
-| D5  | **Outside the 8-surface budget, motion is CSS on the compositor:** an injected clipped carrier (`.jelly-flow`) with 1–2 transform-animated gradient spans, attached only while visible, capped by count and area. No `@property` animation, no SVG turbulence, no `backdrop-filter`, no animated gradient positions.                                          |
+| D5  | **Everything without a haze canvas (controls, fills past tier B, roles past 24) moves with CSS on the compositor:** an injected clipped carrier (`.jelly-flow`) with 1–2 transform-animated gradient spans, attached only while visible, capped by count and area. No `@property` animation, no SVG turbulence, no `backdrop-filter`, no animated gradient positions.                                          |
 | D6  | **Colour lives in the light, never in the ink.** Each theme gets a two-hue plasma pair (`--site-jelly-plasma-a/-b`) at low strength. Plasma appears in the rim zone, the subsurface glow and the current crests. The interior haze is near-neutral. Text and hairlines stay monochrome tokens.                                                              |
 | D7  | **Haze sits behind content, never over it.** Both canvases and the carrier paint under in-flow children (negative z-index in an isolated host). Haze can lower text contrast only through the ground, and a test bounds it (§5).                                                                                                                                |
 | D8  | **High contrast, forced colours, reduced transparency and print get no jelly.** `perf-lite` keeps a static haze and the CSS rim but no motion. Handheld keeps motion at reduced rate and cap.                                                                                                                                                               |
@@ -40,14 +41,14 @@ Vocabulary:
 
 | Role                                      | Renderer                                  | Haze α light / dark | Flow                                                                    | Plasma strength       | Rim                                                                                     |
 | ----------------------------------------- | ----------------------------------------- | ------------------- | ----------------------------------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------- |
-| `.glass-fill` (cards, rows, tiles)        | CSS carrier                               | 0.10 / 0.07         | drift ×1 + current ×1, speed 1.0                                        | 0.05                  | CSS: hairline + lit top edge + static inset glow (§3.4)                                 |
-| `.glass-inset`, `input`, `textarea`       | CSS carrier, rim-band mask only           | 0.04 / 0.04         | current only, confined to an 8 px edge band, speed 0.6; interior static | 0.04, rises to 0.08 on `:focus-visible` | CSS: half-strength hairline; focus ring unchanged                                       |
-| `.glass-pane`                             | shader (haze + rim), else CSS carrier     | 0.14 / 0.10         | eddies + drift, speed 1.0                                               | 0.06                  | shader bevel + plasma inner edge + subsurface glow                                      |
-| `.glass-chrome`                           | shader, else CSS carrier                  | 0.18 / 0.14         | horizontal current along the long axis, speed 0.7; no eddies           | 0.05, biased to the bottom edge | shader bevel; denser haze carries legibility over scrolling text                        |
-| `.glass-overlay`                          | shader (priority 0), else CSS carrier     | 0.06 / 0.05 (on top of the 86% fill) | drift only, speed 0.6                                                  | 0.07 at rim, 0.02 interior | shader bevel; strongest subsurface glow, so floating UI reads as lit from inside         |
-| `.app-glass`                              | shader, else CSS carrier                  | from `--app-jelly-*`, same as pane | as pane                                                                 | as pane, plasma from `--app-accent` | as pane                                                                                 |
-| Buttons: `default` / `accent` (filled)    | CSS carrier, 1 span                       | 0 (solid fill keeps its colour) | current ×1 as a ±4% luminance band across the fill, speed 1.2           | uses own fill as the light; no extra hue | existing coat + 1 px inner top light                                                     |
-| Buttons: `secondary` / `outline`          | CSS carrier, 1 span                       | as fill             | drift ×1                                                                | 0.04                  | as fill                                                                                 |
+| `.glass-fill` (cards, rows, tiles)        | rim: shader (admission); haze: tier-B canvas (first 10), else CSS carrier | 0.10 / 0.07         | drift ×1 + current ×1, speed 1.0                                        | 0.05                  | CSS: hairline + lit top edge + static inset glow (§3.4)                                 |
+| `.glass-inset`, `input`, `textarea`       | rim: shader (control priority); haze: CSS carrier, rim-band mask only | 0.04 / 0.04         | current only, confined to an 8 px edge band, speed 0.6; interior static | 0.04, rises to 0.08 on `:focus-visible` | CSS: half-strength hairline; focus ring unchanged                                       |
+| `.glass-pane`                             | rim + tier-A haze canvas, else CSS carrier | 0.14 / 0.10         | eddies + drift, speed 1.0                                               | 0.06                  | shader bevel + plasma inner edge + subsurface glow                                      |
+| `.glass-chrome`                           | rim + tier-A haze, else CSS carrier       | 0.18 / 0.14         | horizontal current along the long axis, speed 0.7; no eddies           | 0.05, biased to the bottom edge | shader bevel; denser haze carries legibility over scrolling text                        |
+| `.glass-overlay`                          | rim + tier-A haze (first in line), else CSS carrier | 0.06 / 0.05 (on top of the 86% fill) | drift only, speed 0.6                                                  | 0.07 at rim, 0.02 interior | shader bevel; strongest subsurface glow, so floating UI reads as lit from inside         |
+| `.app-glass`                              | as pane                                   | from `--app-jelly-*`, same as pane | as pane                                                                 | as pane, plasma from `--app-accent` | as pane                                                                                 |
+| Buttons: `default` / `accent` (filled)    | rim: shader (control); haze: CSS carrier, 1 span | 0 (solid fill keeps its colour) | current ×1 as a ±4% luminance band across the fill, speed 1.2           | uses own fill as the light; no extra hue | existing coat + 1 px inner top light                                                     |
+| Buttons: `secondary` / `outline`          | rim: shader (control); haze: CSS carrier, 1 span | as fill             | drift ×1                                                                | 0.04                  | as fill                                                                                 |
 | Buttons: `ghost` / `link`                 | none at rest; the evert hover layer gets a 1-span carrier while hovered | 0                   | while hovered only                                                      | 0.04 in hover layer   | none                                                                                    |
 | Tab tracks, segmented thumbs (`.glass-bevel-sm`) | as inset; thumb as filled button     | as inset            | as inset                                                                | as inset              | as today                                                                                |
 | `.glass-scrim`                            | none                                      | n/a                 | none                                                                    | none                  | none                                                                                    |
@@ -66,17 +67,42 @@ Rules that apply to every role:
 ### 2.1 Pipeline
 
 ```
-admitted surface (≤ 8, same admission as today)
- ├─ .jelly-haze-canvas  z:-3  low-res, redrawn on the ambient clock   ← NEW program HAZE_FRAG
- ├─ .liquid-glass-canvas z:-2 full-res, redrawn on events (as today)   ← FRAG + jelly terms
+admitted surface (≤ 24, admission unchanged)
+ ├─ .jelly-flow (CSS carrier)   z:-3  when the surface has NO haze canvas
+ ├─ .jelly-haze-canvas          z:-3  tier A/B only (≤ 16), low-res, ambient clock  ← NEW program HAZE_FRAG
+ ├─ .liquid-glass-canvas        z:-2  full-res, event-driven (as today)           ← FRAG + jelly terms
  └─ evert hover ::before z:-1, then live content
 ```
 
 - One `GlassRenderer`, one WebGL2 context, **two programs**. `drawHaze(o, target)` renders into the shared framebuffer at haze resolution and copies with `drawImage`, exactly as `draw()` does.
-- Haze resolution: `hazeScaleFor(w, h)` in `policy.ts` returns `min(0.25, 256 / max(w, h))` CSS→device scale, so no haze canvas exceeds 256 px on its long side. The canvas is CSS-stretched (`image-rendering: auto`); the field is low-frequency, so bilinear upscale is invisible. Cost ceiling: 8 × 256 × 256 = 524k fragments per tick, against roughly 8 × 1.3M today for one full-res rim redraw.
-- The rim program stays event-driven. It reads `uTime` only for the slow plasma tint of the inner edge, quantised so it redraws at most every 500 ms. That is the one jelly cost on the rim canvas.
+- Haze resolution: `hazeScaleFor(w, h)` in `policy.ts` returns `min(0.25, 256 / max(w, h))` CSS→device scale, so no haze canvas exceeds 256 px on its long side. The canvas is CSS-stretched (`image-rendering: auto`); the field is low-frequency, so bilinear upscale is invisible. Tier B uses `min(0.2, 128 / max(w, h))`, at most 128 px.
+- The rim program stays strictly event-driven and **does not read `uTime`**. A time-varying rim over 24 full-res slabs would cost about 17M fragments per refresh. The rim's plasma hue is static per surface (from `uSeed`). The moving colour at the edge comes from the haze canvas's subsurface term, or from the carrier.
 
-### 2.2 Ambient clock (`engine.ts` + `policy.ts`)
+### 2.2 Animated cap and per-frame cost
+
+Admission (24 rims) answers "who gets an edge". The **animated cap** answers "who gets a moving shader interior". They are separate decisions in `policy.ts`:
+
+```ts
+export const JELLY_ANIMATED = {
+  tierA: { roles: ['overlay', 'chrome', 'pane'], max: 6, maxSide: 256, hzDivisor: 1 },
+  tierB: { roles: ['fill'], max: 10, maxSide: 128, hzDivisor: 2 },   // half rate
+  maxDrawsPerFrame: 6,          // haze draws issued in any one rAF callback
+  maxFragmentsPerSecond: 12e6,  // hard ceiling; the scheduler lowers Hz to fit
+} as const;
+/** From the ADMITTED list (already role-ordered): who animates, at what rate. Controls never. */
+export function animate<T extends Candidate>(admitted: readonly T[]): { s: T; tier: 'A' | 'B' }[];
+```
+
+Per-second worst case at 30 Hz active: tier A 6 × 256² × 30 = 11.8M; tier B 10 × 128² × 15 = 2.5M. Together that is about 14M fragments/s, so the `maxFragmentsPerSecond` clamp brings the clock to about 25 Hz when every slot is full. For scale, one full-res rim redraw of a 600 × 300 card at dpr 2 is 0.72M fragments, and today the rim redraws on every pointer move near it. The haze is cheap relative to that because it is low-res and does no texture reads.
+
+Scheduling:
+
+- **One shared `uTime`.** Per frame: `useProgram(haze)` once, set `uTime` once, set the theme uniforms (`uHaze` rgb, plasma pair) only when the theme changes, then loop the due surfaces setting only per-surface uniforms (size, radius, seed, role knobs). All haze draws are batched before rim draws, so there are at most two program switches per frame.
+- **Round-robin staggering.** Each animated surface has `nextDue = phase + k / hz`, with phase spread by `seedFor(order)`. A frame draws only due surfaces, up to `maxDrawsPerFrame`, oldest first. Twenty-four slabs therefore never cost 24 draws in one frame. The worst frame is 6 haze draws plus whatever rim redraws events caused.
+- **Copy cost.** Each haze draw ends in one `drawImage` of ≤ 256 × 256 px. At 6 per frame that is ≤ 0.4M px of 2D copies.
+- **Demotion.** If a frame's measured GL+copy time (`performance.now()` around the haze batch) exceeds 4 ms for 30 consecutive frames, `animate()` gets `pressure = true`: tier B drops to the CSS carrier, then tier A max drops to 3. Pressure resets on route change. This is a one-way, per-route step. It never flips back mid-page, because restyling under the user for reasons they can't see is what the perf-tier docs warn against.
+
+### 2.3 Ambient clock (`engine.ts` + `policy.ts`)
 
 ```ts
 // policy.ts (pure, unit-tested)
@@ -89,15 +115,15 @@ export function ambientHz(s: { hidden: boolean; hazeSurfaces: number; degraded: 
 }
 ```
 
-- The existing `frame()` gains a `hazeDue(now)` check. When due, it redraws every admitted haze canvas, using geometry already read in the same frame. `again` is also true while `ambientHz > 0`. The loop therefore stops on exactly the conditions above, which gives the allowlist entry a provable stop.
+- The existing `frame()` gains the §2.2 scheduler. It draws the due haze surfaces, using geometry already read in the same frame. `again` is also true while `ambientHz > 0`. The loop therefore stops on exactly the conditions above, which gives the allowlist entry a provable stop.
 - `uTime = (performance.now() / 1000) % 3600`. The time is continuous across rate changes, so going idle never makes the field jump.
 - No haze redraws during an active scroll. The canvases scroll with their hosts, so a frozen field is correct, and the next tick resumes the field.
 
-### 2.3 New uniforms
+### 2.4 New uniforms
 
 | Uniform       | Type  | Source                                                                       | Program     |
 | ------------- | ----- | ---------------------------------------------------------------------------- | ----------- |
-| `uTime`       | float | ambient clock, seconds                                                       | haze, rim   |
+| `uTime`       | float | ambient clock, seconds; set once per frame                                   | haze only   |
 | `uSeed`       | float | per-surface hash, 0..1                                                       | haze, rim   |
 | `uHaze`       | vec4  | `--site-jelly-haze` rgb + role haze α                                         | haze, rim   |
 | `uPlasmaA/B`  | vec3  | `--site-jelly-plasma-a/-b`                                                   | haze, rim   |
@@ -109,7 +135,7 @@ export function ambientHz(s: { hidden: boolean; hazeSurfaces: number; degraded: 
 
 `engine.ts` reads the tokens with the same computed-style path and `resolveColor` cache it uses for `uTint`/`uRim`. Role values for haze α, plasma strength and flow come from custom properties on the host (`--jelly-haze-a`, `--jelly-plasma-k`, `--jelly-flow-speed`, `--jelly-flow-axis`), which the CSS sets per role (§3.3). The engine therefore holds no per-role table.
 
-### 2.4 Shared GLSL chunk (`lib/liquid/glass/noise-glsl.ts`)
+### 2.5 Shared GLSL chunk (`lib/liquid/glass/noise-glsl.ts`)
 
 The noise is cheap value noise, not simplex. It runs at quarter resolution and nobody can see the difference.
 
@@ -137,7 +163,7 @@ vec2 jCurl(vec2 p) {
 }
 ```
 
-### 2.5 Haze program (`lib/liquid/glass/haze-shader.ts`, `HAZE_FRAG`)
+### 2.6 Haze program (`lib/liquid/glass/haze-shader.ts`, `HAZE_FRAG`)
 
 The haze uses flow-map advection with a two-phase crossfade (the standard water flow-map technique). It gives a continuous current without the stretching that pure advection accumulates. Domain warping on top gives the eddies.
 
@@ -195,7 +221,7 @@ Notes:
 - Alpha is capped at 0.6 in the shader, and the legibility test (§5) caps the token values well below that.
 - On chrome (`uFlow.y = 0`) the eddies vanish and the current runs along `uFlow.z = 0` (horizontal).
 
-### 2.6 Rim program changes (`shader.ts`, additive)
+### 2.7 Rim program changes (`shader.ts`, additive)
 
 The rim keeps everything it has. Three additions:
 
@@ -204,8 +230,9 @@ The rim keeps everything it has. Three additions:
 c = mix(c, uHaze.rgb * sa, uHaze.a * 0.45);            // after the uTint mix
 // GLASS_IOR_RGB spread scaled by 0.8 via a new uniform uDispersion (1.0 = glass, 0.8 = jelly)
 
-// (b) Plasma in the inner edge line: the lit stroke takes a slow hue between A and B.
-vec3 edgeHue = mix(uPlasmaA, uPlasmaB, 0.5 + 0.5 * sin(uTime * 0.21 + uSeed * 6.28 + P.x * 0.004));
+// (b) Plasma in the inner edge line: a STATIC per-surface hue between A and B, varying along the perimeter.
+//     No uTime here: the rim must not redraw on a clock (24 full-res slabs). Motion at the edge comes from the haze.
+vec3 edgeHue = mix(uPlasmaA, uPlasmaB, 0.5 + 0.5 * sin(uSeed * 6.28 + (P.x + P.y) * 0.004));
 vec3 glint = mix(mix(vec3(1.0), uRim, 0.35), edgeHue, clamp(uPlasma * 3.0, 0.0, 0.35) * stroke);
 
 // (c) Subsurface under the cursor: the existing curGlow takes the plasma colour, and is a bit wider.
@@ -213,18 +240,19 @@ float glowR = reach * 0.55;
 vec3 curCol = mix(glint, edgeHue, 0.5) * curGlow * 1.3;   // added into col, not into litA's white
 ```
 
-`uTime` in the rim program is quantised to 0.5 s steps by the engine, so the rim redraws at most at 2 Hz for (b). Hover, cursor and tilt redraws are unchanged.
+Hover, cursor and tilt redraws are unchanged. The rim gains no new redraw triggers apart from a theme or token change.
 
-### 2.7 Budget and what draws motion outside it
+### 2.8 Budget and what draws motion outside it
 
 | Surface                                   | Haze/motion                                   | Rim                     |
 | ----------------------------------------- | --------------------------------------------- | ----------------------- |
-| Admitted (≤ 8; overlay → chrome → pane → other) | haze canvas                                   | rim canvas              |
-| Visible eligible role beyond the 8        | CSS carrier (`.jelly-flow`), counted in the carrier cap | CSS rim (§3.4)          |
-| `.glass-fill`, controls, fields           | CSS carrier                                   | CSS rim                 |
-| Over the carrier cap, or `perf-lite`      | static CSS haze (no motion)                   | CSS rim                 |
+| Admitted + tier A (≤ 6 overlay/chrome/pane) | haze canvas, full ambient rate              | rim canvas              |
+| Admitted + tier B (≤ 10 fills)            | haze canvas, half rate                        | rim canvas              |
+| Admitted, not animated (other fills, all controls) | CSS carrier                          | rim canvas              |
+| Not admitted (past 24 / too large / too small) | CSS carrier                              | CSS rim (§3.4)          |
+| Over the carrier cap, or `perf-lite`      | static CSS haze (no motion)                   | CSS or shader rim       |
 
-When a surface gains a shader slot, the engine sets `data-liquid-canvas="on"` (existing). The CSS removes the carrier's visibility through that attribute, so a host never shows both. The carrier service also skips hosts that carry the attribute. The two never fight over an element.
+The engine sets `data-jelly-haze="on"` only on surfaces that hold a haze canvas. That attribute, not `data-liquid-canvas`, is what hides the carrier, because a rim-only control needs both a shader rim and a CSS carrier. The carrier service skips hosts with `data-jelly-haze="on"` and is told through a `jelly:haze` event when the attribute flips, so the two never fight over an element.
 
 ---
 
@@ -285,7 +313,7 @@ The carrier follows the `.liquid-light` pattern already in `liquid-glass.css`: a
   to   { transform: translate3d(35%, 0, 0); }
 }
 .jelly-flow--rim-only { mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); padding: 8px; } /* fields */
-[data-liquid-canvas='on'] > .jelly-flow { display: none; }
+[data-jelly-haze='on'] > .jelly-flow { display: none; }
 ```
 
 Raw rgba and hex values appear only in the token blocks (§4). The rules above use tokens only, so they pass the palette gate.
@@ -307,7 +335,7 @@ Hover boost: `.glass-interactive:hover > .jelly-flow { opacity: 1 }` against a r
 The existing hairline and `--liquid-coat` stay. Jelly adds one static inset glow, which reads as subsurface scattering and costs nothing at rest:
 
 ```css
-[data-material='jelly'] :is(.glass-fill,.glass-pane,.glass-chrome,.glass-overlay):not([data-liquid-canvas='on']) {
+[data-material='jelly'] :is(.glass-fill,.glass-pane,.glass-chrome,.glass-overlay,.glass-inset,[data-slot='button']):not([data-liquid-canvas='on']) {
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 60%, transparent),
               inset 0 0 14px -4px color-mix(in srgb, var(--site-jelly-plasma-a) calc(var(--jelly-plasma-k) * 220%), transparent);
 }
@@ -319,7 +347,7 @@ This reverses the "no inset highlights" line in the glass contract for the CSS t
 
 - **Discovery.** A selector of all roles plus `[data-slot='button']:not([data-variant='ghost'],[data-variant='link'])`, minus the existing `EXCLUDE` list from `runtime.ts` plus `[data-jelly-flow='off']`. A `MutationObserver` (childList, subtree, debounced 200 ms) feeds an `IntersectionObserver` with `rootMargin: 200px`.
 - **Attach on intersect, detach on leave.** A 2,000-row feed therefore never holds more than the visible carriers. The carrier is created once per host, kept in a `WeakMap`, and toggled with `hidden` rather than rebuilt.
-- **Caps** (`policy.ts`, pure): `carrierCap = { desktop: 40, handheld: 16 }`. The total carrier area may not exceed 1.5 × the viewport area. Priority is overlay → chrome → pane → fill → inset → control, then document order. Hosts over the cap keep the static haze and get no carrier.
+- **Caps** (`policy.ts`, pure): `carrierCap = { desktop: 40, handheld: 16 }`. These are independent of the 24 rims and 16 haze canvases. Worst case on screen: 16 shader interiors + 40 compositor carriers. The total carrier area may not exceed 1.5 × the viewport area. Priority is overlay → chrome → pane → fill → inset → control, then document order. Hosts over the cap keep the static haze and get no carrier.
 - **Phase.** `--jelly-phase = -(hash(order) * 29)s` is written once at attach. Nothing runs per frame and nothing reads geometry per pointer event.
 - **Degraded** (`reduce-transparency`, `style-high-contrast`, `perf-lite`, `forced-colors`, `app-high-contrast`, print): the service does not install, and CSS hides any carrier as a second line.
 - **No JS** (SSR first paint, chunk failure): roles show the static haze from §3.6. That is a complete material.
@@ -401,13 +429,13 @@ Work splits into four parallel lanes (M1–M4) with one-way interfaces. Interfac
 | File                                          | Change                                                                                                                                                             |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `lib/liquid/glass/jelly-glsl.ts` **(new)**    | `jHash/jNoise/jFbm/jCurl`, plus `sdRoundRect`/`sdGrad` lifted from `shader.ts`                                                                                      |
-| `lib/liquid/glass/haze-shader.ts` **(new)**   | `HAZE_FRAG` (§2.5); reuses `VERT`                                                                                                                                   |
-| `lib/liquid/glass/shader.ts`                  | import the shared SDF; add `uTime, uSeed, uHaze, uPlasmaA/B, uPlasma, uDispersion, uDeform`; rim additions (§2.6)                                                  |
+| `lib/liquid/glass/haze-shader.ts` **(new)**   | `HAZE_FRAG` (§2.6); reuses `VERT`                                                                                                                                   |
+| `lib/liquid/glass/shader.ts`                  | import the shared SDF; add `uTime, uSeed, uHaze, uPlasmaA/B, uPlasma, uDispersion, uDeform`; rim additions (§2.7)                                                  |
 | `lib/liquid/glass/renderer.ts`                | second program + uniform table; `drawHaze(o, target)`; `GlassDraw` gains jelly fields                                                                             |
-| `lib/liquid/glass/policy.ts` (M1a, first)     | `JELLY_CLOCK`, `ambientHz()`, `hazeScaleFor()`, `CARRIER_CAP`, `carrierAdmit()` (priority + area cap), `seedFor(order)`                                            |
-| `lib/liquid/glass/engine.ts`                  | create and remove `.jelly-haze-canvas` alongside the rim canvas; ambient clock in `frame()`; read `--site-jelly-*` and host `--jelly-*` knobs; honour `--site-jelly-on`; quantise rim `uTime` |
+| `lib/liquid/glass/policy.ts` (M1a, first)     | `JELLY_CLOCK`, `ambientHz()`, `JELLY_ANIMATED` + `animate()` (tiers, pressure demotion), `nextDue()` scheduler math, `hazeScaleFor()`, `CARRIER_CAP`, `carrierAdmit()` (priority + area cap), `seedFor(order)`                                            |
+| `lib/liquid/glass/engine.ts`                  | create and remove `.jelly-haze-canvas` for animated surfaces only; set `data-jelly-haze` + dispatch `jelly:haze`; staggered scheduler + ambient clock in `frame()`; haze batch timing for pressure; read `--site-jelly-*` and host `--jelly-*` knobs; honour `--site-jelly-on` |
 | `lib/liquid/glass/scene.ts`                   | make sure `.jelly-haze-canvas` and `.jelly-flow` are excluded from snapshot capture (canvases already are; verify the carrier spans)                                  |
-| `lib/liquid/glass/__tests__/jelly-policy.test.ts` **(new)** | clock stop conditions, haze scale ≤ 256 px, carrier cap, area cap, priority order                                                                                 |
+| `lib/liquid/glass/__tests__/jelly-policy.test.ts` **(new)** | clock stop conditions, tier caps (controls never animate), ≤ 6 haze draws/frame, fragment-rate clamp, pressure demotion is one-way, haze scale ≤ 256/128 px, carrier cap, area cap, priority order                                                                                 |
 
 ### M2: tokens and CSS material (owner: CSS implementer)
 
@@ -440,7 +468,7 @@ Work splits into four parallel lanes (M1–M4) with one-way interfaces. Interfac
 
 - **02 soft-body:** owns `uDeform` and any host transform. It may scale the carrier's `--jelly-flow-speed` during a press. It must not touch `.jelly-flow` internals.
 - **03 arcs:** consumes `--site-jelly-arc` and `--site-jelly-plasma-a/-b`. A click-arc may raise `uPlasma` for 300 ms through an engine hook `pulse(el, k)`. M1 exposes that hook as a no-op stub.
-- **04 coverage/perf:** final caps (8 shader / 40 carriers / 1.5 viewports), the handheld numbers, browser review on default, graphite and high contrast at phone and desktop widths.
+- **04 coverage/perf:** final caps (24 rims / 6 + 10 haze / 6 draws per frame / 40 carriers / 1.5 viewports), the handheld numbers, browser review on default, graphite and high contrast at phone and desktop widths.
 - **05 gates/docs:** rewrite `docs/liquid-glass-system.md` → `docs/jelly-system.md`; amend design-language §5.1 and the "no resting loop" / "no inset highlights" lines; update the `raf-loop-allowlist` justification for `engine.ts` to the D4 stop conditions; retire the blur tokens; remove the `data-material` flag.
 
 ### Order
@@ -448,6 +476,6 @@ Work splits into four parallel lanes (M1–M4) with one-way interfaces. Interfac
 1. M1a policy + M2 tokens (one commit, no visual change: values unused).
 2. M2 CSS + M4 tile + legibility test (CSS tier visible behind the flag).
 3. M3 carriers (motion on cards).
-4. M1 shader (haze canvases and rim changes on the 8 prominent surfaces).
+4. M1 shader (haze canvases on tier A/B, rim changes on all 24 slabs).
 
 Each step is independently shippable and passes `pnpm check:consistency`.

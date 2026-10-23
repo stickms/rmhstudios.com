@@ -1,6 +1,9 @@
 # Plasmatic Jelly 02: soft-body hover, press, release and drag
 
-Status: plan, 2026-10-23. Scope: how every UI element deforms under the pointer.
+Status: plan, 2026-10-23, revised against main `4893ea5e`. At that commit the glass engine again admits
+`.glass-fill` cards, `.glass-inset`, `[data-evert]`, solid buttons and fields as shader slabs, with a budget of 24
+and bevels of 3–24px, and `lib/liquid/runtime.ts` covers `[data-evert]`. Tier L therefore now reaches most visible
+cards and controls, not only panes. Scope: how every UI element deforms under the pointer.
 Sibling plans cover the hazy material and interior motion (01), electric arcs (03),
 coverage, accessibility and performance policy, and the gates and docs migration. Where
 this plan needs something from a sibling, it says so under **Dependencies**.
@@ -18,13 +21,13 @@ reads for each pointer event, no rAF loop at rest, compositor-only writes, and n
 
 | #   | Decision                                                                                                                                                                                                                                                                                                 |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | **Two tiers.** **Tier E (envelope)** applies to every eligible element: a 4-DOF affine soft body written to the CSS `translate` and `scale` properties. **Tier L (lattice)** applies only to shader-admitted surfaces: an 8-node perimeter spring lattice that warps the slab's SDF in the shader. The host stays still. |
+| D1  | **Two tiers.** **Tier E (envelope)** applies to every eligible element: a 4-DOF affine soft body written to the CSS `translate` and `scale` properties. **Tier L (lattice)** applies to shader-admitted surfaces (up to 24: panes, chrome, overlays, cards, insets, `[data-evert]`, buttons and fields): an 8-node perimeter spring lattice that warps the slab's SDF in the shader. Admitted cards and controls get **both** tiers: Tier E for the body and Tier L for the rim. Panes, chrome and overlays get Tier L only, so their hosts stay still. |
 | D2  | One document service, `installJellyPhysics()` in `lib/jelly/physics.ts`, mounted by `useJellyPhysics()`. It **replaces** `useFluidPressLayer` (the radial shell's delegated press spring). The `data-fluid-press*` attributes stay as aliases.                                                          |
 | D3  | Amplitude is capped by **both** a percentage and a pixel distance: `≤3%` and `≤4px` of travel at any edge. Large elements therefore deform proportionally less. Panes (Tier L) never get a host affine, so their text never moves.                                                                    |
 | D4  | Volume (area) is preserved: a squash on one axis bulges the other (`sx·sy ≈ s0²`). A release overshoots and wobbles 2 to 3 visible cycles, then sleeps.                                                                                                                                                  |
 | D5  | Neighbours get a **bounded nudge**: at most 4 siblings, at most 1.5px, applied through `translate` only. Layout never changes. It fires only above an energy threshold and never while scrolling.                                                                                                       |
 | D6  | framer-motion stays compatible because the service writes only the independent `translate`/`scale` properties, composed with a base read once at activation. An element whose inline `transform` is changing (framer is animating it) is set to rest for those frames.                                |
-| D7  | The service holds at most 12 Tier E bodies (6 on coarse pointers) and at most 8 Tier L bodies, which is the engine's existing budget. The rAF stops when every body sleeps. Rects are read only at activation or after a scroll, in a batched read phase.                                                |
+| D7  | The service holds at most 12 Tier E bodies (6 on coarse pointers) and at most 12 **awake** Tier L lattices. Up to 24 surfaces may be admitted, but a lattice exists only while awake. The rAF stops when every body sleeps. Rects are read only at activation or after a scroll, in a batched read phase.                                                |
 | D8  | The Wasm dough kernel is **not** reused. The lattice is about 100 flops per step and a JS-to-Wasm crossing costs more than that. We reuse dough's **ideas**: elastic plus a small plastic layer, a saturating ceiling, sleep at REST, and capped substeps.                                                 |
 | D9  | The Tier L lattice is **stepped inside the glass engine's frame**, using the pure solver in `lib/jelly/lattice.ts`. Inputs arrive through `lib/jelly/bridge.ts`, so the warp is never a frame behind the draw.                                                                                           |
 | D10 | Touch gets press, release and drag jelly but no hover. On every device, hover hysteresis uses the **rest** rect plus a 4px margin, so a bulging element can't cause enter/leave flicker.                                                                                                                  |
@@ -144,10 +147,23 @@ sleep threshold in about 1.1s.
 
 ### 1.3 Tier L: lattice body (shader-admitted surfaces only)
 
-Tier L runs on surfaces the glass engine has already admitted (`glass-pane`, `-chrome`,
-`-overlay`, `app-glass`, `[data-liquid-glass]`, at most 8 visible). These are large
-panels, dialogs and sticky chrome, where a 3% host scale would be 30px. **The host
-never moves.** Only the slab's rim deforms.
+Tier L runs on surfaces the glass engine has admitted. At `4893ea5e` that is
+`glass-pane`, `-fill`, `-chrome`, `-overlay`, `app-glass`, `[data-liquid-glass]`,
+`.glass-inset`, `[data-evert]`, `[data-slot=button|input|textarea]`, with up to 24
+visible, prioritised overlay → chrome → pane → fill → control (`policy.ts` `admit`).
+
+- **Pane, chrome and overlay roles:** large panels, dialogs and sticky chrome, where a
+  3% host scale would be 30px. **The host never moves.** Only the slab's rim deforms.
+- **Fill and control roles** (cards, buttons, insets, evert targets): Tier L adds the rim
+  squish on top of Tier E's body affine. The lattice is expressed in the slab's local
+  (pre-transform) px, so the two compose without double-counting. Fields
+  (`[data-slot=input|textarea]`, `.glass-inset`) get Tier L only, never a host affine.
+- **Admission is dynamic.** A surface can lose its canvas mid-wobble when it scrolls
+  out of budget. In that case its lattice is dropped, Tier E (if any) continues, and
+  nothing snaps visibly because the rim falls back to the CSS edge. A surface that gains
+  a canvas starts with a sleeping lattice.
+- **Awake cap.** At most 12 lattices are awake at once, using Tier E's eviction order
+  (§4). Sleeping admitted surfaces cost nothing beyond today's draw.
 
 **Nodes.** There are 8 perimeter nodes at the four corners and four edge midpoints,
 stored in slab-local CSS px. Each node has a 2D offset `o_i` and velocity `v_i`.
@@ -171,7 +187,8 @@ normalised by perimeter.
 
 - Hover: a Gaussian-weighted outward pull (σ = 0.18 of the perimeter) on the nodes
   nearest the cursor, up to **+3px**. The slab reaches toward the cursor.
-- Press: an inward push at the contact up to **−min(bevel, 8px)**, which is the dent.
+- Press: an inward push at the contact up to **−min(0.6·bevel, 10px)**, which is the dent.
+  Bevels now span 3–24px, so a 3px button bevel dents by about 2px and a 24px pane by 10px.
   The area term then bulges the far sides.
 - Drag (a panel dragged by a `useFluidDrag` sheet): the pseudo-force `−m·a_host` from the
   host's acceleration, read through the bridge. The trailing edge lags and the leading
@@ -191,7 +208,7 @@ nodes, and offsets the signed distance along the outward normal:
 
 ```
 float push = dot(off(θ), n̂(q)) * uJellyOn;
-float fall = 1.0 - smoothstep(bz, 2.0 * bz, d);   // full at the rim, zero two bevels in
+float fall = 1.0 - smoothstep(bz, min(2.0 * bz, bz + 8.0), d);   // full at the rim, zero ≤8px inside the bevel
 sd -= push * fall;
 ```
 
@@ -204,9 +221,12 @@ offsets are ignored; only normal displacement is visible on an SDF.
 `--jelly-margin: 6px`, set **statically** on `[data-liquid-canvas='on']`, not animated.
 `uSize` and the SDF origin are offset by the margin.
 
-### 1.4 Corner flex (Tier E add-on, small controls only)
+### 1.4 Corner flex (Tier E add-on, small controls not admitted as slabs)
 
-Pills and buttons no larger than 160×64 px may additionally morph their per-corner
+Admitted controls get their corner squish from the lattice. Corner flex is only the
+fallback for the rest: buttons outside the 24-slab budget, legacy `<button>`s with no
+`data-slot`, and every control under `perf-lite`. Pills and buttons no larger than
+160×64 px may additionally morph their per-corner
 `border-radius` by ±25% of the rest radius. The corners nearest the contact tighten
 and the far corners round out, which sells "jelly" on small controls better than any
 affine. `border-radius` costs paint but no layout, and only on a ≤10k px² surface. The
@@ -281,8 +301,8 @@ element becomes jelly" is incompatible with the current scope gating.
 | Attribute / selector                                                                                                              | Meaning                                                                                                           |
 | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `data-jelly="control"` (default for `button`, `[role=button\|tab\|menuitem\|switch\|option]`, `summary`, `[data-slot=button]`)    | Hover dent, sink press, corner flex if small                                                                      |
-| `data-jelly="card"` (default for `.glass-fill`, `.glass-interactive`, `[data-liquid-surface]`, `a[href]` that wraps a card)       | Hover plump/lean, lift press                                                                                      |
-| `data-jelly="pane"` (default for engine-admitted roles)                                                                           | Tier L only, no host affine                                                                                       |
+| `data-jelly="card"` (default for `.glass-fill`, `.glass-interactive`, `[data-evert]`, `[data-liquid-surface]`, `a[href]` that wraps a card) | Hover plump/lean, lift press; plus the Tier L rim when admitted                                                                                    |
+| `data-jelly="pane"` (default for `glass-pane/-chrome/-overlay`, `app-glass`; fields and `.glass-inset` behave the same) | Tier L only, no host affine                                                                                      |
 | `data-jelly="drag"`                                                                                                               | Drag stretch; the slop starts a drag instead of cancelling                                                        |
 | `data-jelly="firm" \| "lift" \| "sink"`, `data-jelly-scale="0.97"`                                                                | Mode and base overrides                                                                                           |
 | `data-jelly="off"` on an element, or `data-jelly-scope="off"` on a subtree                                                        | Opt out                                                                                                           |
@@ -389,8 +409,8 @@ globe does.
 - **Active-set bounds.** Tier E allows 12 bodies on fine pointers and 6 on coarse.
   Eviction removes the lowest energy first, with order nudge < hover < released < pressed.
   Pressed and dragged bodies are never evicted. An evicted body snaps to rest by
-  clearing its inline styles. Corner flex allows 3 bodies, and Tier L is capped by the
-  engine's 8.
+  clearing its inline styles. Corner flex allows 3 bodies. Tier L allows 12 awake lattices out of up to 24
+  admitted surfaces.
 - **Compositor-only.** `translate` and `scale` with `will-change: transform` (which
   covers the individual properties) are set only while awake. Corner flex is the single
   paint-cost exception, bounded in size and count.
@@ -431,7 +451,8 @@ globe does.
     NaN and bounded energy.
   - Area conservation: a held dent changes the polygon area by <3%, and the sides bulge.
   - Symmetry: a press at the top midpoint produces a left-right mirror-symmetric response.
-  - Caps: outward ≤3px and inward ≤ min(bevel, 8px).
+  - Caps: outward ≤3px and inward ≤ min(0.6·bevel, 10px) across bevels from 3 to 24px.
+    The warp falloff reaches zero ≤8px inside the bevel.
   - `latticeAsleep` agrees with the zeroed state.
 - `lib/jelly/__tests__/policy.test.ts`: selector-to-mode resolution, every alias
   (`data-fluid-press*`), the exclusion list, eviction order, the coarse-pointer cap and
