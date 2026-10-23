@@ -263,15 +263,14 @@ Both limits are read from `JELLY_BUDGETS` in `lib/jelly/tiers.ts`, never
 restated in the script. CPU at rest on `/` is reported against the ≤ 250 ms/s
 target but not gated.
 
-The limits are the **clock's**, so the gate judges a second trace taken with
-ambient arcs isolated (`html[data-electric-arcs="clicks"]`, as
-`jelly-interaction.mjs` does). Ambient arcs are their own budgeted source
-(≤ 1 per 2 s, `ARC_BUDGET`, gated by N1) and keep striking at rest by design;
-each is drawn at the display rate for its ~120–380 ms life, which on a page
-dense with close cards adds up to ~11 frames a second. Every route prints the
-total, the clock-only trace and how many of the total's frames the arc layer
-drew in — `rest 19.5 frames/s (clock 12, arcs in 8)`. `--electric-arcs
-<full|clicks|off>` measures a stored preference instead and skips the split.
+Each route also says **what drew** its rest frames: during the same trace,
+hooks on Canvas2D/WebGL draw calls and a MutationObserver record which frames
+each source touched — `haze`, `rim`, `arcs`, `globe` (the dock globe's canvases
+and pin DOM), `cursor`, `offscreen` (the shared WebGL canvas), `canvas`, `dom`
+(with its top three targets) — and `any`, the frames at least one touched, e.g.
+`drew in: globe 16.5, haze 8.5, offscreen 8.5 (any 23)`. Hooks only, never a
+frame request. When `any` exceeds the busiest single source, two sources are
+drawing on different frames.
 
 ```bash
 pnpm build && PORT=7005 node .output/server/index.mjs &
@@ -562,10 +561,15 @@ material — a filter step matches `lib/jelly/`, `lib/liquid/`,
   (step-level `continue-on-error`: the step still shows its exit code, a red
   summary row and an `::error::` annotation, but the job's conclusion ignores
   it — a red `jelly-e2e` job always means `jelly-interaction` failed). It drives
-  ~50 routes. Its last red runs (e.g. run 39954731013: 8 routes at 14–21
-  frames/s) counted ambient arcs against the clock's 13 fps limit; the gate
-  now judges the clock with arcs isolated (§6). It becomes blocking once a
-  few nightlies are green.
+  ~50 routes. It is red today at 13–21 frames/s on most site routes
+  (run-to-run noise is ±5): the haze engine ticks from the shared jelly frame
+  driver while the dock globe (`components/radial/LiquidGlobe.tsx`) runs its
+  own rAF loop and timer on the same tick grid, so a tick of each often lands
+  on a different vsync (the per-route attribution in §6 shows it). Pages that
+  render `PinnedHero` (e.g. /pricing) also carry its scroll cue, a
+  framer-motion `repeat: Infinity` animation that writes inline styles from JS,
+  which `getAnimations()` cannot see. It becomes blocking once those are fixed
+  and a few nightlies are green.
 - **GPU-only checks SKIP, never silently pass.** The runner has no GPU;
   `testing/e2e/lib/gpu.mjs` detects SwiftShader from the WebGL renderer string,
   and a check that needs real GPU frames is reported as `SKIP` in the log, as a
