@@ -25,8 +25,21 @@
  * ## Ownership
  *
  * This module owns no loop and no listener. `components/globe-cursor/GlobeCursor.tsx`
- * feeds it pointer events, calls `step` + `draw` from its frame, and asks
- * `busy()` whether anything is still moving so the frame can stop.
+ * feeds it pointer events, calls `step` + `draw` from its frame, and asks two
+ * questions to schedule the next one: `busy()` — is anything the HAND set in
+ * motion still settling (springs, fade, sparkles, trail), which needs every
+ * vsync — and `everting()` — is the eversion itself running, which needs only the
+ * jelly ambient tick. With the pointer resting and the springs at rest only the
+ * second is true, and the caller draws on the shared ambient grid
+ * (`./ambient-tick.ts`) instead of every vsync.
+ *
+ * ## Ambient
+ *
+ * The eversion and the spin are ambient motion: nobody is moving them. So
+ * `setAmbient(false)` — the caller's reading of `jellyMode().ambient`, false under
+ * jellyMotion `still` (WCAG 2.2.2), the degraded tiers, a game in play or a hidden
+ * tab — holds them where they are. The cursor still follows, squashes and rolls
+ * with the pointer (that is the user's own motion) and then comes to rest.
  */
 
 import { evert, stageParams } from '@/lib/eversion/thurston';
@@ -41,6 +54,10 @@ const EXTENT = 1.35;
 const MAX_PARTICLES = 160;
 /** Seconds between trail echoes. Time, not frames, so the trail is the same length at 30 Hz and 144 Hz. */
 const TRAIL_SPACING = 0.05;
+/** At rest (`busy()`): within this many CSS px of the pointer, at most this many px/s, springs within this. */
+const REST_PX = 0.1;
+const REST_V = 2;
+const REST_EPS = 0.002;
 
 /** CPU fallback grid (no WebGL 2). The GPU path's own, much finer grid is in `gl.ts`. */
 const GRID: Record<CursorDetail, [number, number]> = {
@@ -132,6 +149,7 @@ interface Particle {
 export class GlobeCursorEngine {
   private s: GlobeCursorSettings;
   private reduced = false;
+  private ambient = true;
 
   // Pointer + follower (CSS px).
   private tx = -1e4;
@@ -240,6 +258,11 @@ export class GlobeCursorEngine {
     }
   }
 
+  /** Whether the eversion and the spin may run on their own (see "Ambient" above). */
+  setAmbient(ambient: boolean): void {
+    this.ambient = ambient;
+  }
+
   setDpr(dpr: number): void {
     this.dpr = dpr;
   }
@@ -276,9 +299,30 @@ export class GlobeCursorEngine {
     this.pressed = false;
   }
 
-  /** True while anything is still visibly changing — the caller stops its frame when this is false. */
+  /**
+   * True while anything the pointer set in motion is still visibly settling: the fade, the follower, a spring, a
+   * sparkle, the trail catching up. The caller runs every vsync while this holds. The eversion is NOT counted — see
+   * {@link everting}.
+   */
   busy(): boolean {
-    return this.visible || this.alpha > 0.01 || this.particles.length > 0 || this.trail.length > 0;
+    if (this.particles.length > 0) return true;
+    if (Math.abs((this.visible ? 1 : 0) - this.alpha) > REST_EPS) return true;
+    if (!this.visible) return false;
+    if (Math.abs(this.x - this.tx) > REST_PX || Math.abs(this.y - this.ty) > REST_PX) return true;
+    if (Math.abs(this.vx) > REST_V || Math.abs(this.vy) > REST_V) return true;
+    if (Math.abs(this.stretch) > REST_EPS || Math.abs(this.stretchV) > REST_EPS) return true;
+    if (Math.abs(this.squish - this.squishTarget()) > REST_EPS || Math.abs(this.squishV) > REST_EPS) return true;
+    if (Math.abs(this.wobble) > REST_EPS || Math.abs(this.wobbleV) > REST_EPS) return true;
+    if (Math.abs(this.scale - this.hoverTarget()) > REST_EPS || Math.abs(this.scaleV) > REST_EPS) return true;
+    for (const p of this.trail) {
+      if (Math.abs(p.x - this.x) > REST_PX || Math.abs(p.y - this.y) > REST_PX) return true;
+    }
+    return false;
+  }
+
+  /** True while the eversion itself is running: visible and ambient. It needs the ambient tick, not every vsync. */
+  everting(): boolean {
+    return this.visible && this.ambient && !this.reduced;
   }
 
   /* ── Simulation ────────────────────────────────────────────────────────── */
@@ -292,8 +336,10 @@ export class GlobeCursorEngine {
     const j = s.jelly;
     this.time += dt;
 
-    // Fade in/out.
-    this.alpha += ((this.visible ? 1 : 0) - this.alpha) * (1 - Math.exp(-dt * 14));
+    // Fade in/out. Lands exactly, so a resting cursor is at rest (`busy()`).
+    const fadeTo = this.visible ? 1 : 0;
+    this.alpha += (fadeTo - this.alpha) * (1 - Math.exp(-dt * 14));
+    if (Math.abs(fadeTo - this.alpha) < REST_EPS / 2) this.alpha = fadeTo;
 
     if (this.reduced) {
       this.x = this.tx;
@@ -349,7 +395,7 @@ export class GlobeCursorEngine {
     this.stretch = clamp(this.stretch, -0.45, 0.9);
 
     // Click squish.
-    const squishTarget = this.pressed && s.clickSquish ? 0.18 + 0.14 * j : 0;
+    const squishTarget = this.squishTarget();
     [this.squish, this.squishV] = spring(
       this.squish,
       this.squishV,
@@ -375,12 +421,14 @@ export class GlobeCursorEngine {
       dt,
     );
 
-    // Eversion clock.
-    const boost = 1 + s.motionBoost * Math.min(speed / 700, 3);
-    this.tau += (dt * s.speed * boost) / BASE_EVERT_SECONDS;
+    // Eversion clock and spin: ambient motion, held where they are when ambient motion is off.
+    if (this.ambient) {
+      const boost = 1 + s.motionBoost * Math.min(speed / 700, 3);
+      this.tau += (dt * s.speed * boost) / BASE_EVERT_SECONDS;
+    }
 
     // Orientation: spin about the screen vertical, then roll with travel.
-    this.rotate(0, 1, 0, s.spin * DEG * dt);
+    if (this.ambient) this.rotate(0, 1, 0, s.spin * DEG * dt);
     if (s.roll && speed > 1) {
       const r = (s.size / 2) * this.scale;
       this.rotate(-mvy / speed, mvx / speed, 0, (speed * dt) / r);
@@ -415,6 +463,10 @@ export class GlobeCursorEngine {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
     }
+  }
+
+  private squishTarget(): number {
+    return this.pressed && this.s.clickSquish ? 0.18 + 0.14 * this.s.jelly : 0;
   }
 
   private hoverTarget(): number {

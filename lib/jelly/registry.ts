@@ -27,11 +27,16 @@
  * re-check their own nodes there (a `parentNode` comparison — no layout read). A service removing its own node costs
  * one extra no-op pass.
  */
-import { JELLY_LAYER_SELECTOR, JELLY_SELECTOR, jellyOptedOut, type JellyBudget } from './tiers';
+import {
+  GLOBE_SELECTOR,
+  JELLY_LAYER_SELECTOR,
+  JELLY_SELECTOR,
+  jellyOptedOut,
+  type JellyBudget,
+} from './tiers';
 
 /** Elements that match a role but are never jelly hosts (they draw themselves, or are the globe / eversion layers). */
-export const REGISTRY_EXCLUDE =
-  '.radial-globe__stage,.radial-hub__orb,.eversion-overlay,.evert-ghost,canvas,video,iframe';
+export const REGISTRY_EXCLUDE = `${GLOBE_SELECTOR},.radial-hub__orb,.eversion-overlay,.evert-ghost,canvas,video,iframe`;
 
 /** Attributes whose change can make an element (or its subtree) join or leave the registry. */
 const WATCHED_ATTRIBUTES = [
@@ -111,6 +116,15 @@ export interface JellyRegistry {
   /** One batched rect read for every visible entry. Called for you at scroll end and on resize. */
   refresh(): void;
   dispose(): void;
+}
+
+/**
+ * Whether `el` is a jelly host: matches {@link JELLY_SELECTOR}, is not one of the {@link REGISTRY_EXCLUDE} layers, and
+ * is not opted out (which includes the liquid globe's own elements, `GLOBE_SELECTOR`). The registry's whole admission
+ * rule — every service that walks the registry (carriers, arcs, physics neighbours) inherits it.
+ */
+export function isJellyHost(el: Element): boolean {
+  return el.matches(JELLY_SELECTOR) && !el.matches(REGISTRY_EXCLUDE) && !jellyOptedOut(el);
 }
 
 const roleOf = (el: Element): JellyRole =>
@@ -221,8 +235,7 @@ export function createJellyRegistry(doc: Document = document): JellyRegistry {
     : null;
   const sizes = win ? new win.ResizeObserver(() => scheduleRefresh()) : null;
 
-  const eligible = (el: Element) =>
-    el.matches(JELLY_SELECTOR) && !el.matches(REGISTRY_EXCLUDE) && !jellyOptedOut(el);
+  const eligible = isJellyHost;
 
   /** Returns true when membership changed. */
   const track = (el: Element): boolean => {

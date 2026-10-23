@@ -18,6 +18,7 @@
 //   … frame-budget.mjs --gate                   # exit 1 if a site-shell page is not at its resting cadence
 //   … frame-budget.mjs --gate --engaged         # same, but with a pointer moving: the engaged ceiling
 //   … frame-budget.mjs --settle 15000           # wait this long after load before measuring
+//   … frame-budget.mjs --jelly-motion still     # store a jellyMotion preference (lively | calm | still) first
 //   FRAME_GPU=1 … frame-budget.mjs              # real GPU, not SwiftShader (3D routes need it)
 //
 // ## What it measures, per route
@@ -49,6 +50,18 @@
 // perpetual-animation counts are hardware-independent and are what `--gate`
 // checks. Findings and the measured before/after of the pass that introduced
 // this tool: docs/performance-audit-2026-10-08.md.
+//
+// ## What `--gate` fails, and what it SKIPs (GPU-less runners)
+//
+// Deterministic, failed everywhere: a site-shell page above the rest (or
+// engaged) cadence, an unsanctioned perpetual animation, and a route that could
+// not be measured at all (navigation error or a 5xx) — an unmeasured page is
+// never a pass. GPU-only, judged only on hardware GL: R7 "never freezes" (a
+// site-shell page with visible haze must draw > 0 frames at rest). Under
+// SwiftShader / llvmpipe (testing/e2e/lib/gpu.mjs) the jelly governor
+// legitimately steps the clock to 0, so that check prints `SKIP` per route and
+// in the summary instead of passing silently. `JELLY_ASSUME_GPU=1|0` overrides
+// the detection.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /* global innerHeight, performance, requestAnimationFrame -- referenced only inside
@@ -56,6 +69,7 @@
 import { chromium } from 'playwright';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { collectRoutes } from './fouc-routes.mjs';
+import { annotateSkip, describeRenderer, probeRenderer } from './lib/gpu.mjs';
 import { IDLE_AFTER_MS, JELLY_BUDGETS } from '../../lib/jelly/tiers.ts';
 
 const BASE_URL = (process.env.BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
@@ -140,6 +154,8 @@ const values = (name) => argv.flatMap((a, i) => (a === name && argv[i + 1] ? [ar
 const profileArg = values('--profile')[0] ?? 'desktop';
 const profiles = profileArg === 'both' ? ['desktop', 'mobile'] : [profileArg];
 const jsonOut = values('--json')[0];
+/** `--jelly-motion <lively|calm|still>`: stored in `rmh-jelly-motion` before load, as the settings row would. */
+const jellyMotion = values('--jelly-motion')[0];
 const gate = flag('--gate');
 const engaged = flag('--engaged');
 const FRAME_LIMIT = engaged ? ENGAGED_FRAME_LIMIT : REST_FRAME_LIMIT;
@@ -195,8 +211,16 @@ function cadence(deltas) {
 
 async function measure(browser, cdp, binary, route, profile) {
   const context = await browser.newContext({ ...PROFILES[profile], reducedMotion: 'no-preference' });
+  if (jellyMotion)
+    await context.addInitScript((v) => {
+      try {
+        window.localStorage.setItem('rmh-jelly-motion', v);
+      } catch {
+        /* storage blocked: measured as the default */
+      }
+    }, jellyMotion);
   const page = await context.newPage();
-  const result = { route, profile };
+  const result = { route, profile, ...(jellyMotion ? { jellyMotion } : {}) };
   try {
     const response = await page.goto(BASE_URL + route, { waitUntil: 'load', timeout: 45_000 });
     result.status = response?.status();
@@ -308,15 +332,38 @@ const browser = await chromium.launch({ executablePath: CHROMIUM_PATH, args: ['-
 // The /proc filter needs a string that appears in every child's command line.
 const binary = CHROMIUM_PATH ?? chromium.executablePath();
 const cdp = await browser.newBrowserCDPSession();
+const gpu = await (async () => {
+  const p = await browser.newPage();
+  try {
+    return await probeRenderer(p);
+  } finally {
+    await p.close();
+  }
+})();
+console.log(describeRenderer(gpu));
 
 const results = [];
 const failures = [];
+const skips = [];
 for (const profile of profiles) {
   for (const route of routes) {
     const r = await measure(browser, cdp, binary, route, profile);
     results.push(r);
-    const idleFail =
-      r.siteShell && (r.restFramesPerSec > FRAME_LIMIT || (r.infinite?.length ?? 0) > 0);
+    const reasons = [];
+    // Never a silent pass: a page that did not load (or answered 5xx) was not measured at all.
+    if (r.error || r.status === undefined || r.status >= 500)
+      reasons.push(`not measured (${r.error ? 'navigation error' : `HTTP ${r.status ?? '—'}`})`);
+    if (r.siteShell && r.restFramesPerSec > FRAME_LIMIT) reasons.push(`${r.restFramesPerSec} frames/s > ${FRAME_LIMIT}`);
+    if (r.siteShell && (r.infinite?.length ?? 0) > 0) reasons.push('unsanctioned perpetual animation');
+    // R7 "never freezes": GPU-only. At rest (not --engaged) a site-shell page with visible haze must keep drawing.
+    const r7Applies = !engaged && r.siteShell && (r.hazeCanvases ?? 0) > 0 && !r.error;
+    if (r7Applies && gpu.software) {
+      skips.push(`${profile} ${route}: R7 never-freezes (software GL)`);
+    } else if (r7Applies && r.restFramesPerSec === 0) {
+      reasons.push('R7: frozen at rest with haze visible (0 frames/s on hardware GL)');
+    }
+    r.gateFailures = reasons;
+    const idleFail = reasons.length > 0;
     if (idleFail) failures.push(r);
     console.log(
       `${idleFail ? '✗' : ' '} ${profile.padEnd(7)} ${route.padEnd(28)} ` +
@@ -325,16 +372,26 @@ for (const profile of profiles) {
         (r.jellyCarriers || r.hazeCanvases ? ` · jelly ${r.jellyCarriers ?? 0} carrier anims, ${r.hazeCanvases ?? 0} haze` : '') +
         (route === '/' && !engaged && (r.restCpuMsPerSec ?? 0) > REST_CPU_TARGET_MS ? ` · cpu > ${REST_CPU_TARGET_MS} target` : '') +
         (r.infinite?.length ? ` · ∞ ${r.infinite.slice(0, 3).join(', ')}${r.infinite.length > 3 ? ', …' : ''}` : '') +
-        (r.error ? ` · ERROR ${r.error}` : ''),
+        (r.error ? ` · ERROR ${r.error}` : '') +
+        (r7Applies && gpu.software ? ' · SKIP R7 (software GL)' : '') +
+        (idleFail ? ` · FAIL ${reasons.join('; ')}` : ''),
     );
   }
 }
 await browser.close();
 
-if (jsonOut) writeFileSync(jsonOut, JSON.stringify(results, null, 2));
+if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ gpu, results }, null, 2));
+console.log(
+  `\n${results.length - failures.length}/${results.length} route(s) passed, ${skips.length} GPU-only check(s) skipped, ${failures.length} failed — ${describeRenderer(gpu)}`,
+);
+if (skips.length) {
+  console.log(`SKIP R7 never-freezes on ${skips.length} route(s): software GL (${gpu.renderer || 'no WebGL'}) — run with FRAME_GPU=1 on a real GPU to judge it.`);
+  annotateSkip('frame-budget SKIP', `R7 never-freezes not judged on ${skips.length} route(s): software GL`);
+}
 if (gate && failures.length > 0) {
   console.error(
-    `\n${failures.length} site-shell page(s) exceed the ${engaged ? 'engaged' : 'resting'} cadence (> ${FRAME_LIMIT} frames/s) or hold an unsanctioned perpetual animation.` +
+    `\n${failures.length} route(s) failed the gate: ${failures.map((f) => `${f.profile} ${f.route} (${f.gateFailures.join('; ')})`).join(', ')}.` +
+      `\nRest/engaged limit ${FRAME_LIMIT} frames/s; no unsanctioned perpetual animation; every route must load.` +
       `\nAt rest the jelly runs on its ${IDLE_FLOOR_HZ} Hz idle floor (R7) and nothing else may tick; anything faster re-renders on every vsync —` +
       `\nsee docs/plasmatic-jelly-system.md and docs/performance-audit-2026-10-08.md.`,
   );

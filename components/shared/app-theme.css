@@ -161,7 +161,7 @@
   --app-jelly-plasma-b: color-mix(in oklch, var(--app-accent), #9b6bff 45%);
   --app-jelly-plasma: 0.8;
   --app-jelly-flow-speed: 1;
-  --app-jelly-quiet: 0.35;
+  --app-jelly-quiet: 0.75;
   --app-jelly-on: 1;
   /* #989 gel colours, mirroring the site's `--gel-*` (app/globals.css :root explains each): a translucent body that
      darkens toward its base, the ink-gel primary action, the RGB-led edge tints and the 1px Fresnel line. The px
