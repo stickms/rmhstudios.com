@@ -630,11 +630,12 @@ jobs:
   # under heavy CPU contention; ~75 s).
   # NON-BLOCKING for now: frame-budget.mjs --gate (`continue-on-error` on its
   # step; still a red row + ::error:: annotation, never a red job). It drives
-  # ~50 routes of the built app. Its red runs so far (e.g. run 39954731013,
-  # 8 routes at 14-21 frames/s) were ambient arcs counted against the clock's
-  # 13 fps rest limit; it now judges the clock with ambient arcs isolated and
-  # prints both (docs/testing.md §6) — make it blocking once a few nightlies
-  # are green.
+  # ~50 routes of the built app and is RED today at 13-21 frames/s on most
+  # site routes for real reasons, which its per-route "drew in:" attribution
+  # names (docs/testing.md §6): the dock globe's own rAF loop draws on other
+  # vsyncs than the haze engine's driver, and PinnedHero's framer-motion
+  # scroll cue (e.g. /pricing) repeats forever — make it blocking once those
+  # are fixed and a few nightlies are green.
   jelly-e2e:
     if: ${{ !inputs.update-baselines }}
     runs-on: ubuntu-latest
