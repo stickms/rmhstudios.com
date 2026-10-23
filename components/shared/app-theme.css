@@ -698,6 +698,52 @@ html:not(.perf-lite)
     position: relative;
   }
 }
+/* Site roles in the app palette. `.glass-fill` / `-pane` / `-chrome` / `-overlay` / `-inset` and the `Switch`
+   primitive are written against the `--site-*` contract (app/liquid-glass.css, app/jelly-material.css,
+   app/jelly-coverage.css). An app route carries no site theme class, and `html.app-route` resolves the site glass
+   tint to the opaque Daylight surface (app/globals.css), so a bare `.glass-fill` in an app painted a WHITE card under
+   the app's ink, and a `Switch` took the site's accent. This points that contract at the app palette on the role host
+   itself (the way §1 points `--gel-*` at `--app-gel-*`), ink included, because the app tiers use `text-site-*`
+   inside their roles; every role rule then resolves to the app's colours with none restated.
+
+   In `@layer components` on purpose: unlike the unlayered `.app-glass`, a state utility on the same element
+   (`bg-(--app-accent)/5`, `border-(--app-success)/60`) still wins, so selection and result highlights keep their
+   state. First written for RMHbox (components/rmhbox/rmhbox.css, c5ca7bf); shared here so every app tier gets it. */
+@layer components {
+  .app-theme
+    :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset, [data-slot='switch']) {
+    --site-bg: var(--app-bg);
+    --site-surface: var(--app-surface);
+    --site-surface-opaque: var(--app-surface);
+    --site-surface-hover: var(--app-surface-hover);
+    --site-surface-active: var(--app-surface-active);
+    --site-glass-tint: var(--app-glass-bg);
+    --site-glass-light: color-mix(in srgb, var(--app-text) 12%, transparent);
+    --site-border: var(--app-border);
+    --site-text: var(--app-text);
+    --site-text-muted: var(--app-text-muted);
+    --site-text-dim: var(--app-text-dim);
+    --site-accent: var(--app-accent);
+    --site-accent-fg: var(--app-accent-fg);
+    /* The palette knobs, as `.app-glass` sets them: haze and plasma in the app's colours. */
+    --jelly-haze-color: var(--app-jelly-haze);
+    --jelly-plasma-a: var(--app-jelly-plasma-a);
+    --jelly-plasma-b: var(--app-jelly-plasma-b);
+    --jelly-plasma-gain: var(--app-jelly-plasma);
+    --jelly-flow-gain: var(--app-jelly-flow-speed);
+  }
+  .app-theme.app-high-contrast
+    :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset, [data-slot='switch']) {
+    --site-glass-tint: var(--app-surface);
+    --site-glass-light: transparent;
+    --site-border: var(--app-border-bright);
+  }
+  @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+    .app-theme :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset) {
+      --site-glass-tint: var(--app-surface);
+    }
+  }
+}
 .app-theme .liquid-light > span {
   background: radial-gradient(
     closest-side,
