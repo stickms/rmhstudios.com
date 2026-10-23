@@ -155,10 +155,6 @@ import { join } from 'node:path';
  *                                       stops the frame it arrives; the effect
  *                                       cancels it when motion is switched off,
  *                                       when the sensor is absent, and on unmount.
- *   - hooks/useFluidDrag.ts           — one settle-spring loop per mounted drag
- *                                       surface. Runs only between a release and
- *                                       the spring arriving; stops itself on
- *                                       settle and cancels on unmount.
  *   - hooks/useSpatialParallax.ts     — pointer-event throttle; cancels on unmount.
  *   - hooks/useScrollRestoration.ts, hooks/useCelebration.ts,
  *     components/ui/AnimatedCount.tsx,
@@ -326,10 +322,6 @@ const ALLOW = new Set<string>([
   'components/void-breaker/VoidBreakerGame.tsx',
   'hooks/useCelebration.ts',
   'hooks/useDeviceAttitude.ts',
-  // Known #989 follow-up: still owns its rAF (and window pointer listeners) rather
-  // than driving lib/jelly/frame.ts. Idle at rest: one settle spring per mounted drag
-  // surface, between a release and arrival only; cancels on settle and unmount.
-  'hooks/useFluidDrag.ts',
   'hooks/useLiquidBackground.ts',
   'hooks/useScrollRestoration.ts',
   'hooks/useSpatialParallax.ts',
