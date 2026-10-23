@@ -26,6 +26,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CloudDownload, HardDrive } from 'lucide-react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { SaveOrigin, SaveSummary } from '@/lib/game-saves/conflict';
 
@@ -77,13 +79,13 @@ export function SaveConflictDialog({ local, cloud, onChoose, gameName }: SaveCon
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="save-conflict-title"
-      className="app-overlay fixed inset-0 z-50 flex items-center-safe justify-center-safe p-3 sm:p-4"
-      style={{ background: 'var(--app-scrim, rgb(0 0 0 / 0.72))' }}
-    >
+    <DialogPrimitive.Root open>
+      <DialogPortal>
+        {/* The scrim is inert on purpose: this dialog cannot be dismissed. */}
+        <DialogOverlay
+          className="app-overlay"
+          style={{ background: 'var(--app-scrim, rgb(0 0 0 / 0.72))' }}
+        />
       {/*
         A column with a fixed head and a scrolling body, capped to the viewport.
         It used to be one block inside a scrolling scrim, and on a phone that put
@@ -96,9 +98,19 @@ export function SaveConflictDialog({ local, cloud, onChoose, gameName }: SaveCon
         `dvh`, so the box does not jump when mobile Safari rolls its toolbar
         away mid-scroll.
       */}
-      <div
+      <DialogPrimitive.Content
         ref={ref}
-        className="app-modal flex w-full max-w-2xl flex-col overflow-hidden"
+        aria-labelledby="save-conflict-title"
+        aria-describedby={undefined}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+        onOpenAutoFocus={(e) => {
+          // First button, without scrolling (see the note on the effect above).
+          e.preventDefault();
+          ref.current?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
+        }}
+        className="app-modal fixed left-1/2 top-1/2 z-50 flex w-[calc(100dvw-1.5rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden outline-none"
         style={{
           maxHeight: 'calc(100dvh - 1.5rem)',
           background: 'var(--app-surface, #27282c)',
@@ -114,7 +126,7 @@ export function SaveConflictDialog({ local, cloud, onChoose, gameName }: SaveCon
             wide ? 'shrink-0 p-4 pb-3 sm:p-6 sm:pb-4' : 'shrink-0 px-3 pt-3 pb-2 sm:px-4'
           }
         >
-          <h2
+          <DialogPrimitive.Title
             id="save-conflict-title"
             className={wide ? 'text-base font-semibold sm:text-xl' : 'text-sm font-semibold'}
             style={{ fontFamily: 'var(--app-font-display, inherit)' }}
@@ -123,7 +135,7 @@ export function SaveConflictDialog({ local, cloud, onChoose, gameName }: SaveCon
                 game on the site, and the game's own name is in the sentence
                 below where it can be interpolated. */}
             {t('save-conflict-title', { defaultValue: 'You have two saves' })}
-          </h2>
+          </DialogPrimitive.Title>
 
           <p
             className={
@@ -197,8 +209,9 @@ export function SaveConflictDialog({ local, cloud, onChoose, gameName }: SaveCon
             />
           )}
         </div>
-      </div>
-    </div>
+      </DialogPrimitive.Content>
+      </DialogPortal>
+    </DialogPrimitive.Root>
   );
 }
 

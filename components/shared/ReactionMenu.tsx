@@ -58,7 +58,7 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
         <div data-no-twemoji>
           <Suspense
             fallback={
-              <div className="w-[300px] h-[360px] rounded-site border border-site-border bg-site-bg animate-pulse" />
+              <div className="w-[300px] h-[360px] rounded-site glass-inset border border-site-border bg-site-bg animate-pulse" />
             }
           >
             <EmojiPickerPanel

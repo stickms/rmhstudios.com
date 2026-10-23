@@ -270,7 +270,7 @@ export default function EmojiPickerPanel({
   return (
     <div
       // No glass tier here: the popover that owns this panel is already L4.
-      className="flex flex-col overflow-hidden rounded-site border border-site-border bg-site-bg"
+      className="flex flex-col overflow-hidden rounded-site"
       style={{ width, height, maxWidth: 'calc(100vw - 1.5rem)' }}
     >
       {/* Search */}
