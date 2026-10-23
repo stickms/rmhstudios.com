@@ -27,7 +27,6 @@ import {
   CAPTURE_DPR_CAP,
   CAPTURE_EXCLUDE_SELECTORS,
   TIERS,
-  WRAP_MS,
 } from '@/lib/eversion/constants';
 import type {
   CaptureApi,
@@ -869,18 +868,7 @@ export function createEversionController(
       if (phase === 'idle' || phase === 'done') {
         activeOverlay = layer === 'body' ? bodyOverlay : shellOverlay;
       }
-      let hurry: ReturnType<typeof setTimeout> | undefined;
-      return runner
-        .run(node, state, entry, {
-          ...run,
-          onFirstFrame: () => {
-            run.onFirstFrame?.();
-            // Finish the globe's physical handoff first, then re-plan the remaining
-            // motion from its current position, velocity and acceleration.
-            hurry = setTimeout(() => runner.fastForward(), WRAP_MS);
-          },
-        })
-        .finally(() => clearTimeout(hurry));
+      return runner.run(node, state, entry, run);
     },
 
     warmHost: () => hostPort.whenReady(detectTier()),
