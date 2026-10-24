@@ -19,6 +19,7 @@ const BRANCH_ENV_MAP = {
 };
 
 const fs = require('fs');
+const acceptedReleases = new Set();
 
 function logMsg(msg) {
   const line = `[${new Date().toISOString()}] ${msg}\n`;
@@ -34,8 +35,11 @@ http
     }
 
     let body = '';
-    req.on('data', (chunk) => (body += chunk));
-    req.on('end', () => {
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 65536) req.destroy();
+    });
+    req.on('end', async () => {
       const sig = req.headers['x-hub-signature-256'];
       const expected = 'sha256=' + crypto.createHmac('sha256', SECRET).update(body).digest('hex');
 
@@ -61,6 +65,23 @@ http
         return res.end('Bad JSON');
       }
 
+      const releaseId = payload.release_id;
+      if (typeof releaseId !== 'string' || !/^release-[a-zA-Z0-9_-]{1,80}$/.test(releaseId)) {
+        res.writeHead(400);
+        return res.end('A valid release_id is required');
+      }
+      if (payload.action === 'status') {
+        try {
+          const { readState } = await import('./deploy/release-state.mjs');
+          const state = readState(process.env.DEPLOY_STATE_DIR || `${PROJECT_DIR}/.deploy/releases`, releaseId);
+          res.writeHead(state ? 200 : 404, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+          return res.end(JSON.stringify(state || { phase: 'not-found' }));
+        } catch {
+          res.writeHead(503);
+          return res.end('Release status unavailable');
+        }
+      }
+
       const environment = BRANCH_ENV_MAP[payload.ref];
       if (!environment) {
         logMsg(`Ignored push to ${payload.ref} (no matching environment)`);
@@ -77,8 +98,35 @@ http
              fall back to the branch tip. (The body is already HMAC-authenticated;
              this is just hygiene before it becomes a process argument.) */
       const rawSha = typeof payload.after === 'string' ? payload.after : '';
-      const sha = /^[0-9a-f]{7,40}$/i.test(rawSha) ? rawSha : '';
-      const deployArgs = sha ? [DEPLOY_SCRIPT, environment, sha] : [DEPLOY_SCRIPT, environment];
+      if (!/^[0-9a-f]{40}$/.test(rawSha)) {
+        res.writeHead(400);
+        return res.end('An exact commit SHA is required');
+      }
+      const sha = rawSha;
+      const images = payload.images;
+      if (!images || !/^sha256:[0-9a-f]{64}$/.test(images.web || '') || !/^sha256:[0-9a-f]{64}$/.test(images.full || '')) {
+        res.writeHead(400);
+        return res.end('Approved candidate image digests are required');
+      }
+      const deployArgs = [DEPLOY_SCRIPT, environment, sha];
+      try {
+        const { readState } = await import('./deploy/release-state.mjs');
+        const previousRequest = readState(process.env.DEPLOY_STATE_DIR || `${PROJECT_DIR}/.deploy/releases`, releaseId);
+        if (previousRequest) {
+          res.writeHead(previousRequest.sha === sha ? 202 : 409);
+          return res.end('Release identity already recorded');
+        }
+      } catch {
+        res.writeHead(503);
+        return res.end('Release journal unavailable');
+      }
+      if (acceptedReleases.has(releaseId)) {
+        res.writeHead(202);
+        return res.end('Release already accepted');
+      }
+      acceptedReleases.add(releaseId);
+      // Bound process-local replay memory; durable release files retain history.
+      if (acceptedReleases.size > 1024) acceptedReleases.delete(acceptedReleases.values().next().value);
 
       /* Discord message id from the CI build phase. Passing it to deploy.sh
              (via DEPLOY_DISCORD_MSG_ID) lets it EDIT the same message through the
@@ -108,8 +156,13 @@ http
           ...process.env,
           PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
           DEPLOY_DISCORD_MSG_ID: discordMsgId,
+          DEPLOY_RELEASE_ID: releaseId,
+          DEPLOY_REQUESTED_AT: String(Math.floor(Date.now() / 1000)),
+          RELEASE_EXPECT_WEB_DIGEST: images.web,
+          RELEASE_EXPECT_FULL_DIGEST: images.full,
         },
       });
+      child.on('error', (error) => logMsg(`Release process failed to start: ${error.message}`));
       child.unref();
     });
   })

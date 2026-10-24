@@ -26,6 +26,7 @@ import {
 import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { staticAssetVersions, parseAssetVersions } from './static-asset-versions.mjs';
 
 // Docker's --env-file passes values literally, INCLUDING surrounding quotes
 // (unlike a shell, which strips them). Strip one matching pair so a quoted
@@ -55,6 +56,7 @@ const S3_BUCKET = clean(process.env.S3_BUCKET);
 const S3_FORCE_PATH_STYLE = clean(process.env.S3_FORCE_PATH_STYLE);
 
 if (!S3_ENDPOINT || !S3_ACCESS_KEY_ID || !S3_SECRET_ACCESS_KEY || !S3_BUCKET) {
+  if (process.env.STATIC_ASSET_VERSIONS) throw new Error('S3 credentials are required to publish candidate assets');
   console.log(
     "[r2-sync] S3_* not fully configured (need S3_ENDPOINT / S3_ACCESS_KEY_ID / " +
       "S3_SECRET_ACCESS_KEY / S3_BUCKET) — skipping static asset sync."
@@ -65,6 +67,12 @@ if (!S3_ENDPOINT || !S3_ACCESS_KEY_ID || !S3_SECRET_ACCESS_KEY || !S3_BUCKET) {
 // Resolve relative to the mounted public/ dir. The app image deliberately omits
 // these heavy dirs, so deploy.sh bind-mounts the host checkout at /app/public.
 const PUBLIC_DIR = path.resolve(process.env.PUBLIC_DIR || "public");
+const versions = process.env.STATIC_ASSET_VERSIONS
+  ? parseAssetVersions(process.env.STATIC_ASSET_VERSIONS)
+  : {};
+if (process.env.STATIC_ASSET_VERSIONS && JSON.stringify(staticAssetVersions(PUBLIC_DIR)) !== JSON.stringify(versions)) {
+  throw new Error('Host assets do not match the candidate image; refusing publication');
+}
 
 // Dirs that moved off the Apache self-hosted CDN into R2.
 //
@@ -78,7 +86,9 @@ const ASSET_DIRS = ["music", "models", "sprites"];
 
 // Long-lived, content-addressed media: cache hard at the edge. Matches the
 // Cache-Control the old Apache vhost set for public/.
-const CACHE_CONTROL = "public, max-age=86400, stale-while-revalidate=604800";
+const CACHE_CONTROL = process.env.STATIC_ASSET_VERSIONS
+  ? 'public, max-age=31536000, immutable'
+  : 'public, max-age=86400, stale-while-revalidate=604800';
 
 // How many uploads to run at once (first full sync is large; later runs tiny).
 const CONCURRENCY = 12;
@@ -167,8 +177,10 @@ let deleted = 0;
 let unchanged = 0;
 
 for (const dir of ASSET_DIRS) {
+  if (process.env.STATIC_ASSET_VERSIONS && !versions[dir]) continue;
+  const prefix = versions[dir] ? `static/${versions[dir]}/${dir}/` : `${dir}/`;
   const root = path.join(PUBLIC_DIR, dir);
-  const remote = await listRemote(`${dir}/`);
+  const remote = await listRemote(prefix);
   const localKeys = new Set();
 
   // Collect local files first so we know the full key set for this dir.
@@ -176,7 +188,8 @@ for (const dir of ASSET_DIRS) {
   for await (const file of walk(root)) files.push(file);
 
   await pool(files, CONCURRENCY, async (file) => {
-    const key = path.relative(PUBLIC_DIR, file).split(path.sep).join("/");
+    const relative = path.relative(PUBLIC_DIR, file).split(path.sep).join("/");
+    const key = versions[dir] ? `static/${versions[dir]}/${relative}` : relative;
     localKeys.add(key);
     const body = await readFile(file);
     const existing = remote.get(key);
@@ -198,7 +211,10 @@ for (const dir of ASSET_DIRS) {
   });
 
   // Delete objects that no longer exist locally (makes the bucket mirror disk).
-  const stale = [...remote.keys()].filter((k) => !localKeys.has(k));
+  // Previous versions remain available to old tabs and rollback images.
+  // Deletion is a separate maintenance operation after the retention window.
+  const stale = process.env.STATIC_ASSET_GC === '1' && !process.env.STATIC_ASSET_VERSIONS
+    ? [...remote.keys()].filter((k) => !localKeys.has(k)) : [];
   for (let i = 0; i < stale.length; i += 1000) {
     const batch = stale.slice(i, i + 1000);
     await client.send(

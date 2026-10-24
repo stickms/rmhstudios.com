@@ -7,6 +7,7 @@ import react from '@vitejs/plugin-react';
 import { nitro } from 'nitro/vite';
 import { materialHover } from './lib/liquid/hover-css';
 import { buildWasm } from './scripts/build-wasm.mjs';
+import { parseAssetVersions, staticAssetVersions } from './scripts/static-asset-versions.mjs';
 
 /**
  * Vite plugin that replaces *.server.{ts,tsx,js,jsx} imports with empty
@@ -216,6 +217,11 @@ export default defineConfig({
   // build-time env var (Dockerfile ARG→ENV), so process.env carries it here.
   define: {
     __CDN_BASE__: JSON.stringify(process.env.VITE_CDN_BASE_URL ?? ''),
+    __STATIC_ASSET_VERSIONS__: JSON.stringify(
+      process.env.STATIC_ASSET_VERSIONS
+        ? parseAssetVersions(process.env.STATIC_ASSET_VERSIONS)
+        : staticAssetVersions(fileURLToPath(new URL('./public', import.meta.url))),
+    ),
   },
   css: { postcss: { plugins: [materialHover()] } },
   plugins: [

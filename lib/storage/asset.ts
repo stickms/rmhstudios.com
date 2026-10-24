@@ -17,6 +17,8 @@
  * the CommonJS server tsconfig, where `import.meta` is a syntax error.
  */
 declare const __CDN_BASE__: string | undefined;
+declare const __STATIC_ASSET_VERSIONS__: Readonly<Record<string, string>> | undefined;
+const versions = typeof __STATIC_ASSET_VERSIONS__ === 'undefined' ? {} : __STATIC_ASSET_VERSIONS__;
 
 export const CDN_BASE = (typeof __CDN_BASE__ !== 'undefined' ? __CDN_BASE__ : '').replace(
   /\/+$/,
@@ -30,5 +32,8 @@ export const CDN_BASE = (typeof __CDN_BASE__ !== 'undefined' ? __CDN_BASE__ : ''
  */
 export function asset(path: string): string {
   const p = path.startsWith('/') ? path : `/${path}`;
-  return CDN_BASE ? CDN_BASE + p : p;
+  if (!CDN_BASE) return p;
+  const dir = p.split('/')[1];
+  const version = versions[dir];
+  return CDN_BASE + (version ? `/static/${version}${p}` : p);
 }
