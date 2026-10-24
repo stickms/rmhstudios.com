@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Await, Link } from '@tanstack/react-router';
+import { Await } from '@tanstack/react-router';
 import { PenLine } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFeedStore } from '@/stores/feedStore';
@@ -16,7 +16,6 @@ import { useSession } from '@/components/Providers';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { RadialLoader } from '@/components/ui/radial-loader';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
 import { useDeferOnNavigate } from '@/components/ui/defer-on-navigate';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { WheelCard } from './WheelCard';
@@ -299,25 +298,45 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   });
   const [composeOpen, setComposeOpen] = useState(false);
   const openCompose = useCallback(() => setComposeOpen(true), []);
+  const composeRef = useRef<HTMLButtonElement | null>(null);
+
+  // Publish the compose button's footprint so back-to-top can sit on the row
+  // BESIDE it rather than floating above it (globals.css §5.5x A.1,
+  // `.floating-fab-lane`). CSS cannot derive this number: the FAB is icon-only
+  // below 560px, gains a label above it, and that label is translated — so the
+  // width depends on the active locale. Measured instead, on the element that
+  // knows: one ResizeObserver, which fires on breakpoint and locale changes and
+  // at no other time. Cleared on unmount, so every page without a compose FAB
+  // falls back to the `0px` default and back-to-top keeps the right edge.
+  //
+  // No synchronous first `publish()`: reading `offsetWidth` in a mount effect
+  // laid out the whole incoming page in the middle of a page switch (~25ms at
+  // 4× CPU, docs/performance-audit-2026-10-21.md §Navigation commit). An
+  // observer always reports an element's initial size, after the frame's own
+  // layout, where the read is free.
+  useEffect(() => {
+    const el = composeRef.current;
+    const root = document.documentElement;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const publish = () => {
+      root.style.setProperty(
+        '--float-fab-lane',
+        `calc(${el.offsetWidth}px + var(--site-fab-row-gap))`,
+      );
+    };
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty('--float-fab-lane');
+    };
+  }, []);
 
   return (
     <section className="radial-feed" aria-label={t('feed', { defaultValue: 'Feed' })}>
-      <header className="radial-feed__heading">
-        <h1 className="site-display-3">{t('feed', { defaultValue: 'Feed' })}</h1>
-        {session ? (
-          <Button variant="signal" onClick={openCompose} aria-haspopup="dialog">
-            <PenLine aria-hidden />
-            {t('compose', { defaultValue: 'Compose' })}
-          </Button>
-        ) : (
-          <Button asChild variant="signal">
-            <Link to="/login" search={{ callbackURL: '/' }}>
-              <PenLine aria-hidden />
-              {t('compose', { defaultValue: 'Compose' })}
-            </Link>
-          </Button>
-        )}
-      </header>
+      {/* The home page's heading outline used to start at a 10px rail caption
+          (an h2), because nothing on the feed is a visible page title. */}
+      <h1 className="sr-only">{t('feed', { defaultValue: 'Feed' })}</h1>
       <PageTabs
         tabs={[
           { id: 'all', label: t('feed-for-you', { defaultValue: 'For you' }) },
@@ -342,6 +361,21 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
           )}
         </div>
       </div>
+
+      <button
+        ref={composeRef}
+        type="button"
+        className="radial-feed__compose"
+        data-evert=""
+        onClick={openCompose}
+        aria-label={t('compose', { defaultValue: 'Compose' })}
+        aria-haspopup="dialog"
+      >
+        <PenLine aria-hidden />
+        <span className="radial-feed__compose-label">
+          {t('compose', { defaultValue: 'Compose' })}
+        </span>
+      </button>
 
       {composeOpen && (
         <Suspense fallback={null}>

@@ -1,7 +1,5 @@
 'use client';
 
-import { SignedOutComposer } from './SignedOutComposer';
-
 import { lazy, Suspense, useState, useRef, useEffect, useCallback } from 'react';
 // `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
 // is the component that honours it — `motion` bundles its own full feature
@@ -565,7 +563,18 @@ export function ComposeBox({
   };
 
   if (!session) {
-    return <SignedOutComposer />;
+    return (
+      <div className="glass-fill rounded-site mx-3 px-4 py-6 text-center">
+        <p className="text-sm text-site-text-muted mb-2">
+          {t('sign-in-prompt', { defaultValue: 'Sign in to post RMHarks' })}
+        </p>
+        <Link to="/login" search={{ callbackURL: undefined }}>
+          <Button variant="accent" size="sm">
+            {t('sign-in', { defaultValue: 'Sign in' })}
+          </Button>
+        </Link>
+      </div>
+    );
   }
 
   const audienceOptions = [

@@ -8,9 +8,9 @@
  * tokens/variants so enters, exits, dialogs, and lists all feel like one
  * system: **smooth and quick**.
  *
- * `<MotionConfig reducedMotion="user">` wraps the app in Providers. Shared
- * variants retain the same timing; MotionConfig suppresses spatial animation
- * for the OS accessibility preference.
+ * `<MotionConfig reducedMotion="never">` wraps the app in Providers: every
+ * account and device uses this same scheme. Do not add preference branches
+ * when consuming these variants.
  *
  * Usage:
  * ```tsx
@@ -33,7 +33,7 @@ type Bezier = [number, number, number, number];
  */
 export const DURATION = {
   /** Micro-feedback: hovers, taps, tiny state flips. */
-  fast: 0.12,
+  fast: 0.1,
   /** The default for most enters/exits. */
   base: 0.16,
   /** Larger surfaces (dialogs, sheets) that need a touch more travel. */

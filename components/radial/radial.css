@@ -42,8 +42,8 @@
   --rad-col-wide: 52rem;
   /* Card interior padding + the gap between stacked cards — same reasoning as
      the gutters: compact on phones, roomy once there is space to spend. */
-  --rad-card-pad: clamp(1rem, 2vw, 1.25rem);
-  --rad-card-gap: 1rem;
+  --rad-card-pad: clamp(0.9rem, 3.5vw, 1.6rem);
+  --rad-card-gap: clamp(0.875rem, 2vw, 1.25rem);
 
   /* ── The desktop frame ──────────────────────────────────────────────────
      Mobile is one column and none of this applies (both rails are display:none,
@@ -59,7 +59,7 @@
        --rad-measure     the MINIMUM the content column is allowed to grow to on
                          a wide screen. A page that asks for more (targetWidth)
                          keeps its own number; nothing exceeds the track. */
-  --rad-frame-max: 82rem;
+  --rad-frame-max: 90rem;
   --rad-frame-gap: clamp(1rem, 2vw, 2rem);
   --rad-rail-nav: 0px;
   --rad-rail-live: 0px;
@@ -194,7 +194,6 @@
   position: absolute;
   inset: -10%;
   z-index: -1;
-  opacity: 0.4;
 }
 .radial-backdrop__blob {
   position: absolute;
@@ -310,7 +309,7 @@ body:has(.radial-shell) .call-banner {
   gap: var(--rad-3);
   height: var(--rad-topbar-h);
   /* Line the bar's edges up with the content gutter below it. */
-  padding: 0 max(var(--rad-gutter), calc((100% - var(--rad-frame-max)) / 2 + var(--rad-gutter)));
+  padding: 0 var(--rad-gutter);
   /* The bar is `.glass-chrome`: the glass role owns its fill (app/liquid-glass.css), so no background is set here. A
      local `background` is unlayered and would beat the role, which is how this bar stayed an opaque white strip over
      the page. No backdrop-filter, at any width: the engine draws the slab. */
@@ -394,8 +393,8 @@ body:has(.radial-shell) .call-banner {
   background: var(--site-surface-hover);
 }
 .radial-topbar__avatar-placeholder {
-  opacity: 0.55;
-}
+    animation: radial-pulse-soft 1.6s ease-in-out infinite;
+  }
 
 .radial-topbar__avatar {
   display: inline-grid;
@@ -552,7 +551,7 @@ body:has(.radial-shell) .call-banner {
 
 @media (min-width: 1120px) {
   .radial-shell {
-    --rad-frame-max: min(100%, 82rem);
+    --rad-frame-max: min(100%, 90rem);
     --rad-rail-nav: 13.5rem;
     --rad-measure: 44rem;
   }
@@ -571,8 +570,8 @@ body:has(.radial-shell) .call-banner {
 }
 @media (min-width: 1440px) {
   .radial-shell {
-    --rad-rail-nav: 13.5rem;
-    --rad-rail-live: 16rem;
+    --rad-rail-nav: 14rem;
+    --rad-rail-live: 18rem;
     --rad-measure: 44rem;
   }
   .radial-frame {
@@ -589,7 +588,6 @@ body:has(.radial-shell) .call-banner {
 
 /* ── Navigation rail ──────────────────────────────────────────────────── */
 .rad-rail__item {
-  --evert-selection-surface: var(--site-selection-surface);
   display: flex;
   align-items: center;
   gap: var(--rad-3);
@@ -610,8 +608,7 @@ body:has(.radial-shell) .call-banner {
   background: var(--site-surface-hover);
 }
 .rad-rail__item.is-active {
-  color: var(--site-selection-ink);
-  font-weight: 600;
+  color: var(--site-accent-fg);
 }
 .rad-rail__item svg {
   width: 1.15rem;
@@ -701,10 +698,27 @@ body:has(.radial-shell) .call-banner {
   color: var(--site-text-muted);
 }
 
-/* A single desktop navigation column: the optional compact globe and the
-   conventional links share one track. Changing the preference no longer
-   widens the rail or shifts the content. Links never wait for WebGL. */
+/* ── Docked globe (desktop navigation, the default) ───────────────────────
+   Settings → Layout → Desktop navigation picks what fills the left track at
+   ≥1120px: the liquid globe, docked and always up (the default), or the text
+   rail above. The choice is a pre-paint attribute on <html>
+   (`data-desktop-nav="rail"`, set by the theme script in __root.tsx), so the
+   right aside is in the grid from the first frame and nothing reflows on
+   hydration. The other one stays `display: none`, which takes it out of the
+   grid entirely — the track count and the visible column still agree.
+
+   In globe mode the orb is retired at this width: it opened a globe that is
+   already on screen. Below 1120px nothing here applies, and the orb is the
+   navigator exactly as before. */
 @media (min-width: 1120px) {
+  :root:not([data-desktop-nav='rail']) .radial-shell {
+    /* A globe needs more room than a column of labels: its pins carry their
+       names beside them, so the sphere is sized well inside the track. */
+    --rad-rail-nav: 19.5rem;
+  }
+  :root:not([data-desktop-nav='rail']) .rad-rail--nav {
+    display: none;
+  }
   :root:not([data-desktop-nav='rail']) .rad-rail--globe {
     display: flex;
   }
@@ -717,11 +731,16 @@ body:has(.radial-shell) .call-banner {
     --float-lift-hub: 0px;
   }
 }
+@media (min-width: 1440px) {
+  :root:not([data-desktop-nav='rail']) .radial-shell {
+    --rad-rail-nav: 21rem;
+  }
+}
+/* Sticky like the rail, and the full height it is allowed, with the globe held
+   in the middle of it — so it sits at eye level beside the reading column
+   instead of hugging the top bar. */
 .rad-rail--globe {
-  display: none;
-  flex: none;
-  height: 11rem;
-  margin-bottom: var(--rad-4);
+  height: calc(100dvh - var(--rad-rail-top) - var(--rad-4));
   justify-content: center;
   align-items: center;
 }
@@ -731,7 +750,10 @@ body:has(.radial-shell) .call-banner {
   place-items: center;
   /* The one number the docked globe is drawn against: inside the track with
      room for the side pins' labels, and never taller than the rail. */
-  --dock-globe: 9rem;
+  --dock-globe: min(
+    calc(var(--rad-rail-nav) - 3rem),
+    calc(100dvh - var(--rad-rail-top) - var(--rad-4) - 2rem)
+  );
   width: 100%;
   min-height: var(--dock-globe);
 }
@@ -790,19 +812,6 @@ body:has(.radial-shell) .call-banner {
    the sphere is the whole of it. */
 .rad-globe-dock .radial-globe__title {
   display: none;
-}
-/* The neighbouring links provide every label. Keep compact pins legible
-   without wrapping long names over the sphere or adjacent destinations. */
-.rad-globe-dock .radial-globe__pin-name {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-.rad-globe-dock .radial-globe__pin {
-  gap: 0;
 }
 /* Shimmer: a soft band of light that sweeps across the glass when a pointer
    arrives on it. A clipped disc over the sphere with ONE gradient band inside it,
@@ -876,14 +885,6 @@ html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
     transform: translateX(80%);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .rad-globe-dock__shimmer::before,
-  .rad-globe-dock__shimmer::after,
-  .radial-hub .radial-globe,
-  .radial-hub .radial-globe__pin {
-    animation: none;
-  }
-}
 @keyframes dock-globe-glint {
   0%,
   100% {
@@ -935,8 +936,8 @@ html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
   visibility: hidden;
 }
 .rad-live__ambient[data-ready='true'] > * {
-  animation: rad-live-reveal var(--motion-in, 0.22s) var(--motion-ease-in, ease-out) both;
-}
+    animation: rad-live-reveal var(--motion-in, 0.22s) var(--motion-ease-in, ease-out) both;
+  }
 @keyframes rad-live-reveal {
   from {
     opacity: 0;
@@ -957,13 +958,13 @@ html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
   background: var(--site-success);
 }
 .rad-live__dot::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: inherit;
-  opacity: 0.55;
-}
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: inherit;
+    animation: radial-pulse-soft 1.8s ease-in-out infinite;
+  }
 /* A live dot is a state signal, but its pulse is decoration: `still` holds it
    steady (WCAG 2.2.2), as it does the empty feed's breathing disc below. */
 html[data-jelly-motion='still'] .rad-live__dot::after,
@@ -1201,11 +1202,11 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
 /* On mount the mark blooms open — scaling + rotating out of the core while its
    stroke draws itself (pathLength-normalised), leaning into the SVG. */
 .radial-hub__logo {
-  animation: rmh-logo-bloom 1.05s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
-}
+    animation: rmh-logo-bloom 1.05s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  }
 .radial-hub__logo path {
-  animation: rmh-logo-draw 1.3s ease both;
-}
+    animation: rmh-logo-draw 1.3s ease both;
+  }
 @keyframes rmh-logo-bloom {
   from {
     transform: scale(0.15) rotate(-50deg);
@@ -1487,7 +1488,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    field that animated forever, so this block once had to pause them while the
    menu was open. The backdrop is static now on every tier (see the note above
    `.radial-backdrop__field`), so there is nothing left to pause. */
-.radial-shell:has(.radial-hub:not([data-phase='closed'])) .radial-feed__heading {
+.radial-shell:has(.radial-hub:not([data-phase='closed'])) .radial-feed__compose {
   visibility: hidden;
 }
 .radial-backdrop,
@@ -1942,8 +1943,8 @@ html.reduce-transparency .radial-globe__contact,
 /* Pins arrive after the sphere, one after another, so the globe reads as
      something that assembles rather than something that pops. */
 .radial-hub[data-phase='open'] .radial-globe__pin {
-  animation: globe-pin-in 0.42s ease both calc(140ms + var(--i, 0) * 26ms);
-}
+    animation: globe-pin-in 0.42s ease both calc(140ms + var(--i, 0) * 26ms);
+  }
 @keyframes globe-pin-in {
   from {
     opacity: 0;
@@ -2050,9 +2051,7 @@ html.reduce-transparency .radial-globe__contact,
   opacity: 0;
   animation: globe-current-halo 2.4s ease-out 3;
 }
-html[data-jelly-motion='still']
-  .radial-globe__pin[aria-current='page']
-  .radial-globe__pin-dot::before,
+html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-globe__pin-dot::before,
 :root:is(.reduce-transparency, .style-high-contrast, .perf-lite)
   .radial-globe__pin[aria-current='page']
   .radial-globe__pin-dot::before {
@@ -2162,6 +2161,18 @@ html[data-jelly-motion='still']
     #000 calc(100% - 3px)
   );
   mask: radial-gradient(circle closest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+}
+/* Armed — the ring is full, and letting go opens the page. */
+.radial-globe[data-ready='true'] .radial-globe__reticle {
+    animation: globe-armed 0.9s ease-in-out infinite alternate;
+  }
+@keyframes globe-armed {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1.06);
+  }
 }
 
 /* ── Title ────────────────────────────────────────────────────────────────
@@ -2422,6 +2433,62 @@ html[data-jelly-motion='still']
   text-align: center;
   color: var(--site-text-muted);
 }
+/* Floating compose button — opens the new-rmhark modal. Bottom-RIGHT, clear of
+   the centre RMH orb, lifted above the mobile safe area. */
+.radial-feed__compose {
+  position: fixed;
+  /* The shared bottom-right lane (globals.css §5.5x A.1). Same numbers this rule
+     always used, now expressed once so back-to-top can sit on the row beside it
+     without a second copy of the clamps to keep in step. */
+  right: var(--site-fab-row-right);
+  bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom));
+  z-index: var(--z-floating);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rad-2);
+  padding: var(--rad-3) var(--rad-4);
+  border: none;
+  border-radius: 999px;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    transform 0.2s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    box-shadow 0.2s ease;
+}
+.radial-feed__compose:hover {
+  transform: translateY(-2px);
+}
+.radial-feed__compose:active {
+  transform: scale(0.96);
+}
+.radial-feed__compose svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+/* Icon-only on phones so it never crowds the orb; the label returns ≥560px. */
+.radial-feed__compose-label {
+  display: none;
+}
+@media (min-width: 560px) {
+  .radial-feed__compose-label {
+    display: inline;
+  }
+}
+.radial-feed__compose-btn {
+  padding: var(--rad-2) var(--rad-4);
+  border: none;
+  border-radius: 999px;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* ── The wheel ────────────────────────────────────────────────────────── */
 /* Native document scrolling keeps the glass and its content on the same layer. */
 .radial-wheel {
@@ -2506,14 +2573,14 @@ html[data-jelly-motion='still']
      on the site, so it takes the cheap tier — tint + rim, no backdrop blur —
      and lets the ring backdrop read through. */
   border: var(--site-border-width, 1px) solid var(--site-border);
-  transition: border-color var(--site-transition-speed) var(--ease-glass);
+  transition: border-color 0.2s ease;
 }
 .rmhark:has(.rmhark__link:focus-visible) {
   border-color: var(--site-border-bright);
 }
 @media (hover: hover) and (pointer: fine) {
   .rmhark:has(.rmhark__link:hover) {
-    border-color: color-mix(in srgb, var(--site-border-bright) 30%, var(--site-border));
+    border-color: var(--site-border-bright);
   }
 }
 .rmhark__head {
@@ -2721,13 +2788,29 @@ html[data-jelly-motion='still']
   width: 100%;
   /* Matches .radial-wheel__lead / __track, so the skeleton column is exactly
      as wide as the feed that replaces it. */
-  max-width: 100%;
+  max-width: 34rem;
   margin-top: 1.25rem;
 }
 /* Same material and geometry as a real card, minus the hover affordances. */
 .rmhark--skeleton {
   pointer-events: none;
 }
+/* The error/empty state still shows the RMH disc, which breathes gently. */
+.radial-feed__empty .radial-core {
+    animation: radial-pulse-soft 1.6s ease-in-out infinite;
+  }
+@keyframes radial-pulse-soft {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.7;
+  }
+}
+
 /* ── Desktop refinements ──────────────────────────────────────────────── */
 @media (min-width: 768px) {
   .radial-wheel__slot,
@@ -3196,8 +3279,8 @@ html[data-jelly-motion='still']
    nav, so it re-runs — carrying the home's flowy feel to every page. The
    no-preference gate turns it off under reduced-motion. */
 .radial-shell:not([data-home]) .page-heading {
-  animation: radial-page-rise 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
-}
+    animation: radial-page-rise 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  }
 @keyframes radial-page-rise {
   from {
     opacity: 0;
@@ -3251,6 +3334,36 @@ html[data-jelly-motion='still']
    Every rule below is one such guarantee, each derived from a token rather than
    a measured number, so moving a control moves its clearance with it.
    ========================================================================== */
+
+/* A.1 — The bottom-right corner holds two floating controls on a feed page: the
+   compose button and back-to-top. They now share ONE ROW at every width — the
+   FAB lane in globals.css §5.5x A.1 — with back-to-top stepping left by the
+   measured width of the compose button (`--float-fab-lane`, published by
+   RadialFeed) instead of floating above it. So there is no breakpoint-specific
+   lift left to declare here: the old `bottom: 1.5rem + --rad-compose-lift` rule
+   solved the ≥768px half of a stacking problem that no longer exists. */
+
+/* A.2 — The compose FAB (bottom-right) and the hub orb (bottom-centre) share a
+   row. They cannot meet at any real viewport width, but bound it anyway: the FAB
+   may never grow past the gap between the screen edge and the orb's half-width. */
+.radial-feed__compose {
+  max-width: calc(50vw - var(--site-hub-orb-size) / 2 - 1rem);
+  overflow: hidden;
+  /* 0.7rem of padding around a 1.1rem glyph is a 40px button, and this is the
+     primary compose action on a phone — the one control on the feed that has to
+     be hittable one-handed. Grown here rather than via the ::after trick used on
+     the top bar, because the FAB clips its own overflow (the label ellipsis
+     above) and would swallow the overlay exactly like the brand did. */
+  min-height: var(--site-touch-target);
+  min-width: var(--site-touch-target);
+  justify-content: center;
+}
+.radial-feed__compose-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* A.3 — The top bar is a two-item flex row whose right half grows with the
    number of signed-in controls. Without this the brand is the one that gives
@@ -3512,23 +3625,13 @@ html[data-jelly-motion='still']
 .radial-feed .page-controls {
   margin-top: 0;
 }
-.radial-feed__heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--rad-4);
-  padding: var(--rad-5) var(--rad-4) 0;
-}
 .radial-feed .radial-wheel__track {
-  gap: var(--rad-4);
+  gap: var(--rad-2);
   padding-top: var(--rad-3);
 }
 .radial-feed .radial-wheel__slot,
 .radial-feed .radial-wheel__lead {
   max-width: 100%;
-}
-.radial-feed .signed-out-composer {
-  margin-inline: 0;
 }
 .radial-shell:is([data-layout='catalog'], [data-layout='workspace']) .rad-rail--live {
   display: none;

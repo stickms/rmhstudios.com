@@ -32,14 +32,6 @@ other. **Text, hit areas and layout never move beyond the bounded squash.**
 
 ## 1. Material and roles
 
-The October 23 refinement keeps the role services and their budgets, with
-quieter, denser surfaces: fill/pane/chrome/overlay use the theme's opaque surface
-at 94/90/96/98%, respectively. `.glass-opaque` notices use 100%. The shared
-`--site-material-rim-*` tokens attenuate the WebGL rim and the CSS fallback;
-`--site-material-bevel` gives both a 2px band. Haze alpha is tuned by theme and
-role, and the raster grain is disabled. No new shadow, blur, pointer listener or
-frame driver is introduced.
-
 The `glass-*` classes keep their names (R1): "glass" names the **elevation role**,
 "jelly" names the **material** that renders every role. There are no `jelly-*` alias
 classes and no `data-material` flag (R5).
@@ -351,10 +343,8 @@ WCAG 2.2.2 (Pause, Stop, Hide) needs a mechanism on every page:
   `html[data-electric-arcs]`. `still` forces arcs off whatever this says.
 
 Both are account fields (one Prisma migration) with a localStorage cache for signed-out
-visitors. The OS `prefers-reduced-motion` preference takes precedence through
-`jellyMode`: ambient motion, arcs and deformation stop. The existing compatibility
-hook and MotionConfig respect the same preference for the globe and other UI.
-The retired account-wide motion setting stays retired; these are **material** controls. `still` also
+visitors. Neither reads the OS `prefers-reduced-motion`: the retired site-wide motion
+setting stays retired (CLAUDE.md §7); these are **material** controls. `still` also
 satisfies WCAG 2.3.3 at no extra cost. Every jelly layer is `aria-hidden`,
 `pointer-events: none`, never focusable and never announced. Tab order and hit areas
 never change, and the focus ring is drawn by the host, so the envelope carries it along.

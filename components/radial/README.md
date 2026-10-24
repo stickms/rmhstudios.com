@@ -12,16 +12,13 @@ in `app/globals.css`).
 
 ## Current material contract
 
-The main UI provides grouped desktop navigation alongside a compact optional
-globe in one 13.5rem track. Links render before the globe initializes and stay
-visible in both desktop navigation modes. The mobile quick-navigation bar wraps
-the full-screen globe trigger. Compose is the feed heading's primary action,
-rather than another fixed control above content.
+The main UI now provides grouped desktop navigation and a mobile quick-navigation
+bar around the existing globe trigger. The globe remains the complete navigator.
 Eversion runs only from the open globe; ordinary links never spawn a mini globe.
 Its surface shares `lib/liquid/globe-material.ts` with the navigator, including
 while it flattens. After the handoff, the remaining motion is shortened through
-the timeline's continuous re-planning path. OS reduced motion and the material's
-Still mode apply. These rules supersede historical notes below about eversion on every
+the timeline's continuous re-planning path. OS and account reduced motion both
+apply. These rules supersede historical notes below about eversion on every
 navigation or on individual controls.
 
 The site material is **Plasmatic Jelly** (2026-10-23), documented in
@@ -82,12 +79,12 @@ Mobile is, and stays, one column. Wide screens get a three-track CSS grid —
 `.radial-frame`, with the tracks appearing at the width that actually affords
 them:
 
-| Width    | Frame                           | Content column           |
-| -------- | ------------------------------- | ------------------------ |
-| < 1120px | one track                       | page's own `targetWidth` |
-| ≥ 1120px | nav rail + content              | grows to ≥ 44rem         |
-| ≥ 1440px | nav rail + content + live rail  | bounded reading measure  |
-| ≥ 1800px | the same, frame capped at 82rem | same measure             |
+| Width    | Frame                                   | Content column           |
+| -------- | --------------------------------------- | ------------------------ |
+| < 1120px | one track                               | page's own `targetWidth` |
+| ≥ 1120px | nav rail + content                      | grows to ≥ 44rem         |
+| ≥ 1440px | nav rail + content + live rail          | grows to ≥ 50rem         |
+| ≥ 1800px | the same, wider rails, frame cap 116rem | grows to ≥ 58rem         |
 
 Three rules keep it honest:
 

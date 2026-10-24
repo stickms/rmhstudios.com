@@ -1,18 +1,26 @@
 'use client';
 
 /**
- * A compact globe above the desktop navigation links. Both use SIDEBAR_NAV;
- * the links remain available before the lazy globe loads and at every motion
- * tier. The desktop-navigation setting can hide the globe without changing
- * the reading column's position. Drag, pin selection and in-place eversion
- * retain the same implementation as the full-screen navigator.
+ * The docked globe — the desktop shell's default navigation.
+ *
+ * On a wide screen the text rail (`RadialNavRail`) and the orb's globe were two
+ * maps of the same `SIDEBAR_NAV`, one of them always on screen and the other a
+ * click away. So by default (Settings → Layout → Desktop navigation) the left
+ * track holds the globe itself, always up: it drifts on its own (on the jelly
+ * ambient clock — never under jellyMotion `still`), a sheen sweeps across the
+ * glass when you point at it, and it is driven exactly like the hub's — drag
+ * to spin, hold a destination in the reticle, let go to land there, or click a
+ * pin outright. The orb is retired at this width (radial.css), since the globe
+ * it would open is already here. The page you are on is marked on it, and it
+ * turns to show it after every navigation.
  *
  * A destination chosen on it does NOT hand the screen to the full-screen Globe
  * Eversion (the hub's globe does). The page changes at once and the docked globe
  * turns itself inside out in place while it does (`ambient` in LiquidGlobe).
  *
- * The dock is always rendered (CSS reserves its space before hydration).
- * The globe inside it is mounted only once the
+ * The aside is always rendered (radial.css decides from the pre-paint
+ * `data-desktop-nav` attribute whether it or the rail takes the track, so the
+ * grid never reflows on hydration). The globe inside it is mounted only once the
  * client knows it is docked — a phone, or a visitor who chose the rail, never
  * downloads it from here.
  */
@@ -34,9 +42,8 @@ export function RadialGlobeDock() {
   const items = useGlobeDestinations();
 
   return (
-    <div
-      className="rad-rail--globe"
-      role="navigation"
+    <nav
+      className="rad-rail rad-rail--globe"
       aria-label={t('globe-navigation-title', { defaultValue: 'Explore with the globe' })}
     >
       <div className="rad-globe-dock">
@@ -47,6 +54,6 @@ export function RadialGlobeDock() {
         )}
         <span className="rad-globe-dock__shimmer" aria-hidden />
       </div>
-    </div>
+    </nav>
   );
 }

@@ -3,7 +3,6 @@
 import { useTranslation } from 'react-i18next';
 import type { FeedFilter } from '@/lib/feed-types';
 import { useFeedStore } from '@/stores/feedStore';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
 
 interface FeedTabsProps {
   mode: 'feed' | 'friends';
@@ -32,22 +31,40 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
       className="feed-tabs"
       aria-label={t('feed-view-heading-rewrite', { defaultValue: 'Choose your feed' })}
     >
-      <LiquidTabs
+      <div
         className="feed-tabs__timeline"
-        tabs={[...timelines]}
-        value={mode}
-        onChange={(id) => onModeChange(id === 'friends' ? 'friends' : 'feed')}
         aria-label={t('feed-view-heading-rewrite', { defaultValue: 'Choose your feed' })}
-      />
+      >
+        {timelines.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            aria-pressed={mode === tab.id}
+            data-active={mode === tab.id || undefined}
+            onClick={() => onModeChange(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {mode === 'feed' && (
-        <LiquidTabs
+        <div
           className="feed-tabs__filters"
-          tabs={filters}
-          value={filter}
-          onChange={(id) => setFilter(id as FeedFilter)}
           aria-label={t('feed-content-filter-label', { defaultValue: 'Content type' })}
-        />
+        >
+          {filters.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={filter === tab.id}
+              data-active={filter === tab.id || undefined}
+              onClick={() => setFilter(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       )}
     </section>
   );
