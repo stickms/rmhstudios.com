@@ -197,8 +197,9 @@ _why_.
    `ogCardPath(kind, id)`; cards are rendered by `lib/og/` and documented in
    [`docs/open-graph.md`](docs/open-graph.md).
 7. **Accessibility:** Radix/native primitives, focus-visible rings are
-   global, skip link exists. Motion follows the shared token scheme; the retired
-   reduced-motion setting and OS overrides must not return. The jelly's ambient
+   global, skip link exists. Motion follows the shared token scheme and respects
+   OS reduced motion through the shared hook, MotionConfig and jelly policy.
+   The retired account reduced-motion setting stays retired. The jelly's ambient
    motion and arcs have their own material switches (`jellyMotion`,
    `electricArcs`; WCAG 2.2.2/2.3.1) read only by `lib/jelly/tiers.ts`. Test
    `light` and `high-contrast` themes, and jelly motion `still`.
@@ -295,7 +296,8 @@ off and render opaque `--site-surface-opaque` with a solid edge (press feedback
 stays); components never branch on them. Users control the material with
 `jellyMotion` (Lively / Calm / Still — Still stops all ambient motion, WCAG
 2.2.2; also one tap from the top bar) and `electricArcs` (Full / Clicks / Off).
-The retired reduced-motion setting and OS overrides do not return. Text holds
+The retired account reduced-motion setting stays retired; OS reduced motion
+disables ambient motion, arcs and deformation through the central policy. Text holds
 4.5:1 on gel, over haze and over plasma in every theme; the focus ring is
 `--focus-ring`, solid 2px, never the plasma glow. Plasma, haze, arcs and the lens
 are `aria-hidden` decoration, never the only signal of state. Where a browser

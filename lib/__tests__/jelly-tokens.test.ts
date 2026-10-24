@@ -195,14 +195,22 @@ describe('#989 CSS gel layers (the non-shader tier)', () => {
   });
 
   it('the RGB-led edge and the Fresnel line are built from the tokens', () => {
-    const flat = flatten(MATERIAL);
+    const flat = flatten(MATERIAL).replace(/\s/g, '');
     for (const ch of ['r', 'g', 'b']) {
       expect(flat).toContain(
-        `inset calc(-1 * var(--gel-disperse-${ch}, 0px)) calc(-1 * var(--gel-disperse-${ch}, 0px)) var(--gel-bevel, 6px) 0 var(--gel-edge-${ch}, transparent)`,
+        `inset calc(-1 * var(--gel-disperse-${ch}, 0px)) calc(-1 * var(--gel-disperse-${ch}, 0px)) var(--gel-bevel, 6px) 0 color-mix(in srgb, var(--gel-edge-${ch}, transparent) calc(var(--jelly-rim-opacity, 0.24) * 100%), transparent)`.replace(
+          /\s/g,
+          '',
+        ),
       );
     }
-    expect(flat).toContain('inset 0 0 0 1px var(--gel-fresnel, transparent)');
-    expect(flat).toContain('var(--gel-edge, 0 0 0 0 transparent)');
+    expect(flat).toContain(
+      'inset 0 0 0 1px color-mix(in srgb, var(--gel-fresnel, transparent) calc(var(--jelly-rim-opacity, 0.24) * 100%), transparent)'.replace(
+        /\s/g,
+        '',
+      ),
+    );
+    expect(flat).toContain('var(--gel-edge,0000transparent)');
   });
 });
 

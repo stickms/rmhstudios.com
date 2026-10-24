@@ -328,10 +328,10 @@
      Values are bounded by lib/__tests__/jelly-legibility.test.ts. */
   --site-jelly-haze: #ccd4e4;
   --site-jelly-haze-strong: #dce1ec;
-  --site-jelly-haze-fill: 0.12;
+  --site-jelly-haze-fill: 0.03;
   --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.13;
-  --site-jelly-haze-chrome: 0.16;
+  --site-jelly-haze-pane: 0.052;
+  --site-jelly-haze-chrome: 0.04;
   --site-jelly-haze-overlay: 0.06;
   --site-jelly-plasma-a: #b4a9ff;
   --site-jelly-plasma-b: #8fe0ee;
@@ -421,9 +421,19 @@
   /* Elevation tokens — feather-soft Apple depth layering */
   --site-shadow: 0 0 0 0 transparent;
   --site-shadow-sm: 0 0 0 0 transparent;
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  --site-radius: 18px;
+  --site-radius-sm: 10px;
   --site-control-radius: var(--site-radius-sm);
+  /* Material hierarchy: reading surfaces recede; floating UI keeps more optics.
+     Shared by the WebGL rim and its CSS fallback, independent of palette. */
+  --site-material-bevel: 2px;
+  --site-material-rim-fill: 0.08;
+  --site-material-rim-pane: 0.14;
+  --site-material-rim-chrome: 0.06;
+  --site-material-rim-overlay: 0.22;
+  --site-material-haze-opacity: 0.24;
+  --site-selection-surface: color-mix(in srgb, var(--site-text) 8%, transparent);
+  --site-selection-ink: var(--site-text);
   /* Geist for everything, Geist Mono for eyebrows and data (CLAUDE.md
      "Identity"). After them, the system face and Inter cover the scripts
      Geist does not (non-Latin locales), then the generic. */
@@ -932,8 +942,8 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.52);
   --site-glass-rim: rgba(0, 0, 0, 0.12);
   --site-glass-rim-soft: rgba(0, 0, 0, 0.05);
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  --site-radius: 18px;
+  --site-radius-sm: 10px;
   /* Every layer must be a real <image>: this token is consumed as
      `background-image` by the aurora layer, where a bare colour would make the
      whole declaration invalid (and the canvas silently vanish). The flat white
@@ -955,10 +965,10 @@
      Daylight: white haze is invisible on white, so the veil is a cool milky grey. */
   --site-jelly-haze: #ccd4e4;
   --site-jelly-haze-strong: #dce1ec;
-  --site-jelly-haze-fill: 0.12;
+  --site-jelly-haze-fill: 0.03;
   --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.13;
-  --site-jelly-haze-chrome: 0.16;
+  --site-jelly-haze-pane: 0.052;
+  --site-jelly-haze-chrome: 0.04;
   --site-jelly-haze-overlay: 0.06;
   --site-jelly-plasma-a: #b4a9ff;
   --site-jelly-plasma-b: #8fe0ee;
@@ -1038,10 +1048,10 @@
   /* Plasmatic Jelly material + arcs (meanings: the :root block). */
   --site-jelly-haze: #f4f7fd;
   --site-jelly-haze-strong: #ffffff;
-  --site-jelly-haze-fill: 0.1;
+  --site-jelly-haze-fill: 0.025;
   --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.14;
-  --site-jelly-haze-chrome: 0.18;
+  --site-jelly-haze-pane: 0.056;
+  --site-jelly-haze-chrome: 0.045;
   --site-jelly-haze-overlay: 0.06;
   --site-jelly-plasma-a: color-mix(in srgb, var(--site-accent) 45%, white);
   --site-jelly-plasma-b: #9fdcf4;
@@ -1069,6 +1079,8 @@
 /* High Contrast — maximal legibility (WCAG AAA): pure black, pure white text,
    yellow accent, bright white borders. For low-vision / high-glare users. */
 .style-high-contrast {
+  --site-selection-surface: var(--site-accent);
+  --site-selection-ink: var(--site-accent-fg);
   color-scheme: dark;
   --site-bg: #000000;
   --site-bg-subtle: #000000;
@@ -1208,8 +1220,8 @@
   --site-glass-depth: 0 0 0 0 transparent;
   --site-glass-depth-sm: 0 0 0 0 transparent;
   --site-glass-saturate: 180%;
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  --site-radius: 18px;
+  --site-radius-sm: 10px;
   --site-shadow: 0 0 0 0 transparent;
   --site-shadow-sm: 0 0 0 0 transparent;
   --site-canvas:
@@ -1225,10 +1237,10 @@
   /* Plasmatic Jelly material + arcs (meanings: the :root block). */
   --site-jelly-haze: #c9d2e3;
   --site-jelly-haze-strong: #dfe6f2;
-  --site-jelly-haze-fill: 0.11;
+  --site-jelly-haze-fill: 0.0275;
   --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.15;
-  --site-jelly-haze-chrome: 0.14;
+  --site-jelly-haze-pane: 0.06;
+  --site-jelly-haze-chrome: 0.035;
   --site-jelly-haze-overlay: 0.05;
   --site-jelly-plasma-a: var(--site-accent);
   --site-jelly-plasma-b: #9b6bff;
@@ -1306,10 +1318,10 @@
   /* Plasmatic Jelly material + arcs (meanings: the :root block). */
   --site-jelly-haze: #fff6e6;
   --site-jelly-haze-strong: #fffaf0;
-  --site-jelly-haze-fill: 0.1;
+  --site-jelly-haze-fill: 0.025;
   --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.14;
-  --site-jelly-haze-chrome: 0.18;
+  --site-jelly-haze-pane: 0.056;
+  --site-jelly-haze-chrome: 0.045;
   --site-jelly-haze-overlay: 0.06;
   --site-jelly-plasma-a: #f0c48c;
   --site-jelly-plasma-b: #eaa79e;
@@ -1389,10 +1401,10 @@
   /* Plasmatic Jelly material + arcs (meanings: the :root block). */
   --site-jelly-haze: #b4c8ff;
   --site-jelly-haze-strong: #cbd9ff;
-  --site-jelly-haze-fill: 0.07;
+  --site-jelly-haze-fill: 0.0175;
   --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.1;
-  --site-jelly-haze-chrome: 0.14;
+  --site-jelly-haze-pane: 0.04;
+  --site-jelly-haze-chrome: 0.035;
   --site-jelly-haze-overlay: 0.05;
   --site-jelly-plasma-a: #6f9bff;
   --site-jelly-plasma-b: #47d1c4;
@@ -1515,10 +1527,10 @@
   /* Plasmatic Jelly material + arcs (meanings: the :root block). */
   --site-jelly-haze: #bff4ff;
   --site-jelly-haze-strong: #d6f9ff;
-  --site-jelly-haze-fill: 0.06;
+  --site-jelly-haze-fill: 0.015;
   --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.09;
-  --site-jelly-haze-chrome: 0.13;
+  --site-jelly-haze-pane: 0.036;
+  --site-jelly-haze-chrome: 0.0325;
   --site-jelly-haze-overlay: 0.05;
   --site-jelly-plasma-a: #76f7ff;
   --site-jelly-plasma-b: #c86bff;
@@ -4867,7 +4879,7 @@ html.nav-pop .page-root > * {
     opacity: 0;
   }
   [data-evert~='select']::after {
-    background: var(--site-accent);
+    background: var(--evert-selection-surface, var(--site-accent));
   }
   [data-evert~='select']:is([aria-current='page'], .is-active)::after {
     opacity: 1;
@@ -4952,13 +4964,9 @@ html.nav-pop .page-root > * {
     --evert-tint: var(--site-surface-hover);
     --evert-rest-opacity: 1;
   }
-  .radial-topbar__signin,
-  .radial-feed__compose {
+  .radial-topbar__signin {
     --evert-tint: var(--site-accent);
     --evert-rest-opacity: 1;
-  }
-  .radial-feed__compose {
-    --evert-tint: var(--site-accent-hover);
   }
   .cstudio-ranked__link {
     --evert-tint: color-mix(in srgb, var(--site-accent) 22%, transparent);

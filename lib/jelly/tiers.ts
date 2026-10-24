@@ -299,6 +299,7 @@ export const FINE_POINTER_QUERY = '(hover: hover) and (pointer: fine)';
 const FORCED_QUERY = '(forced-colors: active)';
 const TRANSPARENCY_QUERY = '(prefers-reduced-transparency: reduce)';
 const PRINT_QUERY = 'print';
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 /** The media queries {@link onJellyEnvChange} watches: everything the tier and the off predicate read. */
 export const JELLY_ENV_QUERIES = [
@@ -307,6 +308,7 @@ export const JELLY_ENV_QUERIES = [
   FORCED_QUERY,
   TRANSPARENCY_QUERY,
   PRINT_QUERY,
+  REDUCED_MOTION_QUERY,
 ] as const;
 
 /** The `<html>` attributes {@link onJellyEnvChange} watches. `data-scrolling` is left out on purpose: it flips per fling. */
@@ -418,6 +420,8 @@ export function jellyMode(env?: JellyEnv): JellyModeState {
   const none: JellyModeState = { ambient: false, arcs: 'off', deform: 'off' };
   if (!doc || doc.hidden) return none;
   if (matches(win, PRINT_QUERY) || matches(win, FORCED_QUERY)) return none;
+  // Central policy supplies a complete static experience for the OS preference.
+  if (matches(win, REDUCED_MOTION_QUERY)) return none;
   if (gamePlaying(doc)) return none;
   const press: JellyModeState = { ambient: false, arcs: 'off', deform: 'press' };
   if (jellyOff(doc)) return press;

@@ -87,9 +87,7 @@ function perpetual(file: string): Perpetual[] {
   const out: Perpetual[] = [];
   for (const { selector, body } of rules(read(file))) {
     const decls = body.split(';');
-    const named = decls
-      .map((d) => /^\s*animation-name\s*:\s*([\w-]+)/.exec(d)?.[1])
-      .find(Boolean);
+    const named = decls.map((d) => /^\s*animation-name\s*:\s*([\w-]+)/.exec(d)?.[1]).find(Boolean);
     for (const d of decls) {
       const shorthand = /^\s*(?:animation|--animate-[\w-]+)\s*:\s*([\s\S]+)$/.exec(d);
       if (shorthand && /\binfinite\b/.test(shorthand[1])) {
@@ -118,23 +116,36 @@ function perpetual(file: string): Perpetual[] {
  * the page at ≈58 frames/s (`testing/e2e/frame-budget.mjs --gate`).
  */
 const BASELINE = new Map<string, string>([
-  ['app/globals.css :: pulse', 'Tailwind `animate-pulse-slow` theme token: loading placeholders only'],
-  ['app/globals.css :: rainbow-shift', 'cosmetic name-colour effect on a purchased username, text-sized'],
+  [
+    'app/globals.css :: pulse',
+    'Tailwind `animate-pulse-slow` theme token: loading placeholders only',
+  ],
+  [
+    'app/globals.css :: rainbow-shift',
+    'cosmetic name-colour effect on a purchased username, text-sized',
+  ],
   ['app/globals.css :: glitch', 'cosmetic name effect on a purchased username, text-sized'],
   ['app/globals.css :: shake', 'cosmetic name effect on a purchased username, text-sized'],
-  ['app/globals.css :: dr-float', 'Dream Rift landing title float (its game landing, not a surface)'],
-  ['app/globals.css :: dr-title-glow', 'Dream Rift landing title glow (its game landing, not a surface)'],
+  [
+    'app/globals.css :: dr-float',
+    'Dream Rift landing title float (its game landing, not a surface)',
+  ],
+  [
+    'app/globals.css :: dr-title-glow',
+    'Dream Rift landing title glow (its game landing, not a surface)',
+  ],
   ['app/globals.css :: shimmer', 'skeleton shimmer — exists only until content arrives'],
-  ['app/globals.css :: liquid-skeleton-drift', 'skeleton drift — exists only until content arrives'],
+  [
+    'app/globals.css :: liquid-skeleton-drift',
+    'skeleton drift — exists only until content arrives',
+  ],
   ['app/globals.css :: rad-loader-pulse', 'route loader — exists only while a route loads'],
   ['app/globals.css :: rad-loader-orbit', 'route loader — exists only while a route loads'],
   ['app/globals.css :: delight-ribbon', 'celebration ribbon, mounted only for the celebration'],
-  ['components/radial/radial.css :: radial-pulse-soft', 'unread / live dots, a few px'],
   [
-    'components/radial/radial.css :: globe-armed',
-    'the reticle while a hold is armed (hub or docked globe) — only while the pointer is down on a full ring',
+    'components/radial/eversion/eversion.css :: evert-popup-turn',
+    'eversion popup spinner, while a navigation runs',
   ],
-  ['components/radial/eversion/eversion.css :: evert-popup-turn', 'eversion popup spinner, while a navigation runs'],
   ['components/feed/feed.css :: feed-live-pulse', 'the live indicator dot on a live item'],
 ]);
 
@@ -147,7 +158,12 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
 
   it('scans the site-tier sheets, including the jelly material', () => {
     expect(SHEETS.length).toBeGreaterThan(8);
-    for (const f of ['app/globals.css', MATERIAL, 'app/jelly-arcs.css', 'components/radial/radial.css']) {
+    for (const f of [
+      'app/globals.css',
+      MATERIAL,
+      'app/jelly-arcs.css',
+      'components/radial/radial.css',
+    ]) {
       expect(SHEETS).toContain(f);
     }
     expect(found.length).toBeGreaterThan(10);
@@ -192,12 +208,12 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
           root.test(selector) && /\.jelly-flow\b/.test(selector) && /display\s*:\s*none/.test(body),
       );
 
-    it.each([
-      ...DEGRADED_ROOT_SELECTOR.split(',').map((s) => s.trim()),
-      '.app-high-contrast',
-    ])('killed under %s', (root) => {
-      expect(hides(new RegExp(root.replace(/[.[\]]/g, '\\$&')))).toBe(true);
-    });
+    it.each([...DEGRADED_ROOT_SELECTOR.split(',').map((s) => s.trim()), '.app-high-contrast'])(
+      'killed under %s',
+      (root) => {
+        expect(hides(new RegExp(root.replace(/[.[\]]/g, '\\$&')))).toBe(true);
+      },
+    );
 
     it('killed under reduced transparency, forced colours and print', () => {
       for (const q of ['prefers-reduced-transparency: reduce', 'forced-colors: active', 'print']) {
@@ -252,12 +268,17 @@ describe('N12 — nothing jelly paints at z ≥ 0 inside a host', () => {
       "[data-jelly-flow='on']",
       "[data-jelly-haze='on']",
     ]) {
-      expect(iso.some((s) => s.includes(host)), `${host} must be isolated`).toBe(true);
+      expect(
+        iso.some((s) => s.includes(host)),
+        `${host} must be isolated`,
+      ).toBe(true);
     }
   });
 
   it('the arc layer is the one body-level exception: click-through, on the named token', () => {
-    const arc = rules(read('app/jelly-arcs.css')).find(({ selector }) => selector === '.jelly-arc-layer');
+    const arc = rules(read('app/jelly-arcs.css')).find(
+      ({ selector }) => selector === '.jelly-arc-layer',
+    );
     expect(arc).toBeDefined();
     expect(arc!.body).toMatch(/pointer-events\s*:\s*none/);
     expect(arc!.body).toMatch(/z-index\s*:\s*var\(--z-arcs\)/);

@@ -1,10 +1,19 @@
 'use client';
 
-/** Compatibility exports for feature modules that still accept motion flags.
- * The site uses one animation scheme, with no preference listeners or store.
- */
+import { useSyncExternalStore } from 'react';
+
+const QUERY = '(prefers-reduced-motion: reduce)';
+const media = () => (typeof window === 'undefined' ? undefined : window.matchMedia?.(QUERY));
+const subscribe = (onChange: () => void) => {
+  const query = media();
+  query?.addEventListener('change', onChange);
+  return () => query?.removeEventListener('change', onChange);
+};
+const serverSnapshot = () => false;
+
+/** OS accessibility preference only; no separate application motion setting. */
 export function useReducedMotion(): boolean {
-  return false;
+  return useSyncExternalStore(subscribe, prefersReducedMotion, serverSnapshot);
 }
 
 /**
@@ -12,5 +21,5 @@ export function useReducedMotion(): boolean {
  * functions). Prefer the hook inside components.
  */
 export function prefersReducedMotion(): boolean {
-  return false;
+  return media()?.matches ?? false;
 }

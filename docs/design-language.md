@@ -84,6 +84,23 @@ without a single component change.
 > still explain why viewport blur, root writes and blanket capture loops must not
 > return.
 
+**Material refinement (2026-10-23):** reading surfaces now use the opaque surface
+palette at 94% (fill), 90% (pane), 96% (chrome), and 98% (overlay), with a fully
+opaque option for notices. Haze remains subtle; raster grain is retired. The
+`--site-material-rim-*` tokens distinguish the optical intensity of each role,
+and `--site-material-bevel` sets the shared 2px band. Standard cards/controls use
+18px/10px radii in Daylight and Midnight. Shadows remain zero; there is no new
+blur layer or animation service.
+
+Desktop navigation combines a compact globe with persistent grouped links in
+one stable track. Compose sits beside the feed title, single-choice page
+controls become plain labels, and the signed-out composer uses one compact
+shared component before and after lazy loading. The OS reduced-motion
+preference is respected by the existing hook, MotionConfig and the central
+jelly policy; it disables ambient motion, arcs and deformation. There is no
+additional account motion setting. This supersedes historical statements below
+about ignoring the OS preference.
+
 **Current companions:** [radial UI + the globe](../components/radial/README.md) ·
 [the per-page checklist](./page-consistency.md) ·
 [UI audit 2026-10-09](./ui-audit-2026-10-09.md) (the most recent site-tier pass) ·
