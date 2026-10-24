@@ -10,6 +10,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Link, useLocation, useNavigate, useRouter } from '@tanstack/react-router';
 import { LogOut, Settings, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -348,7 +349,9 @@ export function RadialHub() {
     return () => clearTimeout(timer);
   }, [rehearsing, phase]);
 
-  // Block background scroll + wire Escape while the menu is active.
+  // Block background scroll + trap Tab while the menu is active. Escape is the
+  // dialog's (Radix, below); the trap stays here because the dialog is
+  // non-modal — see the note on `DialogPrimitive.Root`.
   //
   // Deliberately NOT a CSS scroll-lock on the document. Both `overflow: hidden`
   // and the position:fixed body technique clip the document to the visual
@@ -362,10 +365,6 @@ export function RadialHub() {
   useEffect(() => {
     if (phase === 'closed') return;
     const onKey = (e: KeyboardEvent) => {
-      // While everting a key press is the effect's fast-forward (the controller
-      // listens in the capture phase); it must not also dismiss the hub.
-      if (e.key === 'Escape' && phaseRef.current !== 'everting' && !handOffMachine.busy())
-        dismiss();
       if (e.key !== 'Tab' || phaseRef.current !== 'open') return;
       const overlay = overlayRef.current;
       if (!overlay) return;
@@ -402,7 +401,7 @@ export function RadialHub() {
       window.removeEventListener('keydown', onKey);
       overlay?.removeEventListener('wheel', onWheel);
     };
-  }, [phase, dismiss, handOffMachine]);
+  }, [phase]);
 
   // Focus lands on the GLOBE itself, not on its first pin: focusing a pin turns
   // the globe to face it, which would immediately discard the "you are here"
@@ -576,7 +575,7 @@ export function RadialHub() {
         data-floating="hub"
         data-fluid-press=""
         aria-haspopup="dialog"
-        aria-controls="site-globe-navigation"
+        aria-controls={menuVisible ? 'site-globe-navigation' : undefined}
         aria-expanded={phase !== 'closed'}
         aria-label={t('open-menu', { defaultValue: 'Open navigation' })}
         // While the menu is up the orb has swelled into the globe and is an
@@ -595,15 +594,50 @@ export function RadialHub() {
         <RmhLogo className="radial-hub__logo" />
       </button>
 
+      {/* Non-modal on purpose: a modal Radix dialog locks scroll with `overflow:
+          hidden` on the body (the iOS band described above) and takes pointer
+          events off the body, which the eversion's layers beside the overlay
+          need. The background goes `inert` instead (the effect above), so the
+          overlay is still modal in fact and says so with `aria-modal`.
+
+          `open` is the `open` phase only; `forceMount` keeps the overlay up
+          through `closing` and `everting`, so every layer animates out. It is
+          mounted only while the menu is visible: a closed dialog left mounted
+          would still be Radix's top layer and swallow every Escape on the page.
+          The veil and the foot animate in from `@starting-style` (radial.css). */}
+      <DialogPrimitive.Root
+        modal={false}
+        open={phase === 'open'}
+        onOpenChange={(next) => {
+          if (!next) dismiss();
+        }}
+      >
+      {menuVisible && (
+      <DialogPrimitive.Content
+        asChild
+        forceMount
+        aria-describedby={undefined}
+        // Focus lands on the globe (`attachGlobe`) and goes back to the orb only
+        // after a dismissal (the `restoreFocus` effect), never on Radix's terms.
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onCloseAutoFocus={(event) => event.preventDefault()}
+        // While everting a key press is the effect's fast-forward (the controller
+        // listens in the capture phase); it must not also dismiss the hub.
+        onEscapeKeyDown={(event) => {
+          if (phaseRef.current === 'everting' || handOffMachine.busy()) event.preventDefault();
+        }}
+        // The overlay covers the viewport; its catcher is the outside tap.
+        onInteractOutside={(event) => event.preventDefault()}
+      >
       <div
         id="site-globe-navigation"
         ref={overlayRef}
         className="radial-hub__overlay"
-        role="dialog"
-        aria-modal={menuVisible || undefined}
-        aria-label={t('globe-navigation-title', { defaultValue: 'Explore with the globe' })}
-        aria-hidden={!menuVisible}
+        aria-modal="true"
       >
+        <DialogPrimitive.Title className="sr-only">
+          {t('globe-navigation-title', { defaultValue: 'Explore with the globe' })}
+        </DialogPrimitive.Title>
         <button
           type="button"
           className="radial-hub__catcher"
@@ -621,27 +655,25 @@ export function RadialHub() {
 
         <div className="radial-hub__veil" aria-hidden />
 
-        {/* Mounted only while the menu is up — that is what bounds the globe's
-            frame loop, and it means a closed hub costs a page nothing. */}
-        {menuVisible && (
-          // `null` fallback: the orb, veil and foot are already animating, so on
-          // the rare cold open the overlay simply completes its morph and the
-          // globe lands into it. Anything else here would be a second visual
-          // state competing with the one motion.
-          <Suspense fallback={null}>
-            <LiquidGlobe
-              rootRef={attachGlobe}
-              items={leaves}
-              pathname={pathname}
-              onDismiss={dismissForNavigation}
-              onNavigate={eversionOn ? handOff : undefined}
-              tabIndex={tab}
-              // The globe's gesture is not confined to the sphere: the whole
-              // overlay turns it, except where a real control lives.
-              surfaceRef={overlayRef}
-            />
-          </Suspense>
-        )}
+        {/* Mounted only while the menu is up, with the overlay — that is what
+            bounds the globe's frame loop, and it means a closed hub costs a
+            page nothing. `null` fallback: the orb, veil and foot are already
+            animating, so on the rare cold open the overlay simply completes its
+            morph and the globe lands into it. Anything else here would be a
+            second visual state competing with the one motion. */}
+        <Suspense fallback={null}>
+          <LiquidGlobe
+            rootRef={attachGlobe}
+            items={leaves}
+            pathname={pathname}
+            onDismiss={dismissForNavigation}
+            onNavigate={eversionOn ? handOff : undefined}
+            tabIndex={tab}
+            // The globe's gesture is not confined to the sphere: the whole
+            // overlay turns it, except where a real control lives.
+            surfaceRef={overlayRef}
+          />
+        </Suspense>
 
         <div className="radial-hub__foot">
           {session && user ? (
@@ -705,6 +737,9 @@ export function RadialHub() {
           </button>
         </div>
       </div>
+      </DialogPrimitive.Content>
+      )}
+      </DialogPrimitive.Root>
 
       {/* The run's layers, in the shell's stacking context and under the globe, which is handed over on top of
           them. The controller itself is the root's (`EversionRoot`). */}
