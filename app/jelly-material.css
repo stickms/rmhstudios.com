@@ -39,8 +39,7 @@
   :root {
     --jelly-tempo: 1;
     --jelly-amp: 1;
-    /* Smooth tint replaces the cloudy raster grain on reading surfaces. */
-    --jelly-tile: none;
+    --jelly-tile: url('/jelly/haze-tile.webp');
     --jelly-tile-size: 192px 192px;
   }
   html[data-jelly-motion='calm'] {
@@ -53,35 +52,30 @@
      haze. `--jelly-flow-axis-deg` is the current's gradient angle: 90deg = a band sliding along a horizontal axis. */
   .glass-fill {
     --jelly-haze-a: var(--site-jelly-haze-fill);
-    --jelly-rim-opacity: var(--site-material-rim-fill);
     --jelly-plasma-k: 0.05;
     --jelly-flow-speed: 1;
     --jelly-flow-axis-deg: 100deg;
   }
   .glass-pane {
     --jelly-haze-a: var(--site-jelly-haze-pane);
-    --jelly-rim-opacity: var(--site-material-rim-pane);
     --jelly-plasma-k: 0.06;
     --jelly-flow-speed: 1;
     --jelly-flow-axis-deg: 100deg;
   }
   .glass-chrome {
     --jelly-haze-a: var(--site-jelly-haze-chrome);
-    --jelly-rim-opacity: var(--site-material-rim-chrome);
     --jelly-plasma-k: 0.05;
     --jelly-flow-speed: 0.7;
     --jelly-flow-axis-deg: 90deg;
   }
   .glass-overlay {
     --jelly-haze-a: var(--site-jelly-haze-overlay);
-    --jelly-rim-opacity: var(--site-material-rim-overlay);
     --jelly-plasma-k: 0.07;
     --jelly-flow-speed: 0.6;
     --jelly-flow-axis-deg: 100deg;
   }
   :is(.glass-inset, [data-slot='input'], [data-slot='textarea']) {
     --jelly-haze-a: var(--site-jelly-haze-inset);
-    --jelly-rim-opacity: var(--site-material-rim-fill);
     --jelly-plasma-k: 0.04;
     --jelly-flow-speed: 0.6;
     --jelly-flow-axis-deg: 90deg;
@@ -93,7 +87,6 @@
   /* Buttons: no haze on solid fills (a solid fill keeps its colour); the current is a ±4% luminance band of the
      button's own ink on filled variants, the fill role's haze plus a faint plasma drift on the clear ones (below). */
   [data-slot='button'] {
-    --jelly-rim-opacity: var(--site-material-rim-pane);
     --jelly-haze-a: 0;
     --jelly-plasma-k: 0.04;
     --jelly-flow-speed: 1.2;
@@ -177,7 +170,6 @@
     [data-tab-thumb],
     [data-sonner-toast]
   ) {
-    --gel-bevel: var(--site-material-bevel);
     --liquid-coat: linear-gradient(
       180deg,
       var(--gel-body, transparent),
@@ -186,32 +178,12 @@
     --liquid-fill-coat: var(--liquid-coat);
     --gel-edge:
       inset calc(-1 * var(--gel-disperse-r, 0px)) calc(-1 * var(--gel-disperse-r, 0px))
-        var(--gel-bevel, 6px) 0
-        color-mix(
-          in srgb,
-          var(--gel-edge-r, transparent) calc(var(--jelly-rim-opacity, 0.24) * 100%),
-          transparent
-        ),
+        var(--gel-bevel, 6px) 0 var(--gel-edge-r, transparent),
       inset calc(-1 * var(--gel-disperse-g, 0px)) calc(-1 * var(--gel-disperse-g, 0px))
-        var(--gel-bevel, 6px) 0
-        color-mix(
-          in srgb,
-          var(--gel-edge-g, transparent) calc(var(--jelly-rim-opacity, 0.24) * 100%),
-          transparent
-        ),
+        var(--gel-bevel, 6px) 0 var(--gel-edge-g, transparent),
       inset calc(-1 * var(--gel-disperse-b, 0px)) calc(-1 * var(--gel-disperse-b, 0px))
-        var(--gel-bevel, 6px) 0
-        color-mix(
-          in srgb,
-          var(--gel-edge-b, transparent) calc(var(--jelly-rim-opacity, 0.24) * 100%),
-          transparent
-        ),
-      inset 0 0 0 1px
-        color-mix(
-          in srgb,
-          var(--gel-fresnel, transparent) calc(var(--jelly-rim-opacity, 0.24) * 100%),
-          transparent
-        );
+        var(--gel-bevel, 6px) 0 var(--gel-edge-b, transparent),
+      inset 0 0 0 1px var(--gel-fresnel, transparent);
   }
   /* Something better draws the haze: a haze canvas (engine) or a CSS carrier. Under perf-lite neither may run, so
      the floor stays whatever the attributes say. */
@@ -254,7 +226,7 @@
     contain: strict;
     pointer-events: none;
     user-select: none;
-    opacity: calc(var(--site-material-haze-opacity) * var(--jelly-amp, 1));
+    opacity: calc(0.75 * var(--jelly-amp, 1));
     transition: opacity calc(var(--site-transition-speed, 200ms) * 1.5) var(--ease-out);
   }
   .jelly-flow > span {
@@ -411,13 +383,14 @@
       [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
     ):not([data-liquid-canvas='on']):not([data-liquid-material='off']) {
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 12%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 60%, transparent),
       inset 0 0 14px -4px
         color-mix(
           in srgb,
           var(--jelly-plasma-a, var(--site-jelly-plasma-a))
             calc(
-              var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) * 60%
+              var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) *
+                220%
             ),
           transparent
         ),
@@ -437,7 +410,6 @@
     pointer-events: none;
     user-select: none;
     image-rendering: auto;
-    opacity: var(--site-material-haze-opacity);
   }
 }
 
@@ -455,12 +427,6 @@ html[data-game-state='playing'] .jelly-flow > span,
 :focus-visible > .jelly-flow > span,
 :is(.glass-inset, [data-slot='textarea'], [data-slot='input']):focus-within > .jelly-flow > span {
   animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .jelly-flow > span {
-    animation-play-state: paused;
-  }
 }
 
 /* Handheld (the exact query from handheld-tier.test.ts): one span per carrier (01 §3.2) — the drift alone. */

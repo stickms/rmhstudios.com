@@ -76,18 +76,14 @@ export function PageTabs({
   return (
     <div data-slot="page-controls" className="page-controls">
       <div className={`mt-3 ${search ? 'mb-2' : 'mb-3'} ${GUTTER}`}>
-        {tabs.length === 1 ? (
-          <p className="px-1 py-2 text-sm font-medium text-site-text-muted">{tabs[0].label}</p>
-        ) : (
-          <LiquidTabs
-            tabs={tabs}
-            value={value}
-            onChange={onChange}
-            idBase={idBase}
-            renderTab={renderTab}
-            aria-label={ariaLabel}
-          />
-        )}
+        <LiquidTabs
+          tabs={tabs}
+          value={value}
+          onChange={onChange}
+          idBase={idBase}
+          renderTab={renderTab}
+          aria-label={ariaLabel}
+        />
       </div>
       {search && <div className={`mb-3 ${GUTTER}`}>{search}</div>}
     </div>

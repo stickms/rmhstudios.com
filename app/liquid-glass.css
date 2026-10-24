@@ -36,29 +36,30 @@
     position: relative;
     background-image: var(--liquid-coat);
     box-shadow: none;
-    border: var(--site-border-width, 1px) solid var(--site-border);
+    border: var(--site-border-width, 1px) solid color-mix(in srgb, var(--site-border) 75%, white);
     border-radius: var(--site-radius);
   }
-  /* Reading surfaces carry their own contrast. Chrome and overlays must hide
-     scrolling text without a blur; optical depth belongs at their fine edge. */
+  /* The tints are LOW on purpose. Liquid glass is clear: the page has to read through it, bent at the rim. Each role
+     carries only as much body as it needs to stay legible with no blur behind it (a blur is exactly what is not wanted),
+     and the shader's shaded bevel and lit edge, not an opaque fill, are what make the surface visible. */
   .glass-pane:not([data-liquid-material='off']) {
-    background-color: color-mix(in srgb, var(--site-surface-opaque) 90%, transparent);
+    background-color: color-mix(in srgb, var(--site-bg) 18%, transparent);
   }
   /* Sticky chrome floats over scrolling text with no blur to soften it, so it is a little denser than a pane. */
   .glass-chrome:not([data-liquid-material='off']) {
-    background-color: color-mix(in srgb, var(--site-surface-opaque) 96%, transparent);
+    background-color: color-mix(in srgb, var(--site-bg) 42%, transparent);
   }
   .glass-fill:not([data-liquid-material='off']) {
     position: relative;
-    background-color: color-mix(in srgb, var(--site-surface-opaque) 94%, transparent);
+    background-color: var(--site-glass-tint);
     background-image: var(--liquid-fill-coat);
     border-color: var(--site-border);
-    border-top-color: var(--site-border);
+    border-top-color: color-mix(in srgb, var(--site-border) 65%, var(--site-glass-light));
   }
   .glass-overlay:not([data-liquid-material='off']) {
     /* Floating labels must remain readable over arbitrary content. */
     max-inline-size: calc(100dvw - var(--safe-left, 0px) - var(--safe-right, 0px) - 1rem);
-    background-color: color-mix(in srgb, var(--site-surface-opaque) 98%, transparent);
+    background-color: color-mix(in srgb, var(--site-bg) 86%, transparent);
   }
   :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):not([data-liquid-material='off']) {
     border-color: color-mix(in srgb, var(--site-border) 85%, var(--site-glass-light));
@@ -92,9 +93,6 @@
   .glass-opaque {
     background: var(--site-surface-opaque, var(--site-bg));
   }
-  .glass-overlay.glass-opaque {
-    background-color: var(--site-surface-opaque);
-  }
   /* Fixed descendants keep the viewport as their containing block. */
   .glass-chrome--aside {
     position: relative;
@@ -106,6 +104,11 @@
   .glass-refract::before,
   .glass-liquid::after {
     content: none;
+  }
+  @media (max-width: 767.98px) {
+    :is(.glass-pane, .glass-chrome) {
+      background-color: color-mix(in srgb, var(--site-bg) 26%, transparent);
+    }
   }
   [data-slot='button']:not([data-variant='link']):not([data-liquid-material='off']) {
     background-image: var(--liquid-coat);
@@ -143,7 +146,6 @@
     z-index: -2;
     pointer-events: none;
     user-select: none;
-    opacity: var(--jelly-rim-opacity, var(--site-material-rim-pane));
   }
   /* A CSS jelly carrier (`.jelly-flow`, z -3) or a haze canvas needs the same isolated stacking context the rim slab
      does, or its negative z-index resolves against the nearest ancestor context and paints under the host's tint. */

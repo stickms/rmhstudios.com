@@ -1,14 +1,14 @@
 'use client';
 
-import { Suspense, lazy, useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useTranslation } from 'react-i18next';
-import { useSession, useResolvedUser } from '@/components/Providers';
-import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
-import { useIdleReady } from '@/hooks/useIdleReady';
-import { readComposeDraft } from '@/hooks/useComposeDraft';
+import { Suspense, lazy, useEffect, useState } from'react';
+import { Link } from'@tanstack/react-router';
+import { Button } from'@/components/ui/button';
+import { useTranslation } from'react-i18next';
+import { useSession, useResolvedUser } from'@/components/Providers';
+import { buildOptimizedUrl } from'@/components/ui/OptimizedImage';
+import { useIdleReady } from'@/hooks/useIdleReady';
+import { readComposeDraft } from'@/hooks/useComposeDraft';
 import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-limits';
-import { SignedOutComposer } from './SignedOutComposer';
 
 /**
  * Deferred wrapper around {@link ComposeBox}.
@@ -33,33 +33,33 @@ import { SignedOutComposer } from './SignedOutComposer';
 const ComposeBox = lazy(() => import('./ComposeBox').then((m) => ({ default: m.ComposeBox })));
 
 interface ComposeBoxLazyProps {
-  communityId?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onPosted?: (item: any) => void;
+ communityId?: string;
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ onPosted?: (item: any) => void;
 }
 
 export function ComposeBoxLazy(props: ComposeBoxLazyProps) {
-  const [activated, setActivated] = useState(false);
-  const idle = useIdleReady();
+ const [activated, setActivated] = useState(false);
+ const idle = useIdleReady();
 
-  // A waiting draft must surface its restore prompt without a click, so mount the
-  // real composer right away when one exists.
-  useEffect(() => {
-    try {
-      if (readComposeDraft()?.content) setActivated(true);
-    } catch {
-      /* localStorage unavailable — fall through to idle/interaction mount */
-    }
-  }, []);
+ // A waiting draft must surface its restore prompt without a click, so mount the
+ // real composer right away when one exists.
+ useEffect(() => {
+ try {
+ if (readComposeDraft()?.content) setActivated(true);
+ } catch {
+ /* localStorage unavailable — fall through to idle/interaction mount */
+ }
+ }, []);
 
-  if (activated || idle) {
-    return (
-      <Suspense fallback={<ComposePlaceholder />}>
-        <ComposeBox {...props} />
-      </Suspense>
-    );
-  }
-  return <ComposePlaceholder onActivate={() => setActivated(true)} />;
+ if (activated || idle) {
+ return (
+ <Suspense fallback={<ComposePlaceholder />}>
+ <ComposeBox {...props} />
+ </Suspense>
+ );
+ }
+ return <ComposePlaceholder onActivate={() => setActivated(true)} />;
 }
 
 /**
@@ -68,70 +68,86 @@ export function ComposeBoxLazy(props: ComposeBoxLazyProps) {
  * in the real composer causes no layout shift. Purely presentational.
  */
 function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
-  const { t } = useTranslation('feed');
-  const { data: session, isPending } = useSession();
-  const { resolved } = useResolvedUser();
+ const { t } = useTranslation('feed');
+ const { data: session, isPending } = useSession();
+ const { resolved } = useResolvedUser();
 
-  const image = resolved?.image || session?.user?.image || null;
-  const name = resolved?.name || session?.user?.name || null;
-  const activate = onActivate ?? (() => {});
+ const image = resolved?.image || session?.user?.image || null;
+ const name = resolved?.name || session?.user?.name || null;
+ const activate = onActivate ?? (() => {});
 
-  // Signed-out visitors used to see a working-looking composer — "What's on your
-  // mind?" over a fabricated "U" avatar — which then visibly morphed into the
-  // sign-in card once the real composer's chunk mounted. Show the honest
-  // affordance from the first frame, matching ComposeBox's own signed-out branch.
-  // `isPending` guards the moment before the session resolves, so a signed-in
-  // visitor never flashes a sign-in prompt either.
-  if (!session && !isPending) {
-    return <SignedOutComposer />;
-  }
+ // Signed-out visitors used to see a working-looking composer — "What's on your
+ // mind?" over a fabricated "U" avatar — which then visibly morphed into the
+ // sign-in card once the real composer's chunk mounted. Show the honest
+ // affordance from the first frame, matching ComposeBox's own signed-out branch.
+ // `isPending` guards the moment before the session resolves, so a signed-in
+ // visitor never flashes a sign-in prompt either.
+ if (!session && !isPending) {
+ return (
+ <div className="glass-fill rounded-site mx-3 px-4 py-6 text-center">
+ <p className="text-sm text-site-text-muted mb-2">
+ {t('sign-in-prompt', { defaultValue:'Sign in to post RMHarks'})}
+ </p>
+ <Link to="/login"search={{ callbackURL: undefined }}>
+ {/* `size="sm"` is load-bearing, not decoration: ComposeBox's own
+ signed-out branch (the thing that replaces this once the chunk
+ lands) renders `size="sm"`, and omitting it here meant the button
+ painted at the default size and visibly shrank a moment later.
+ The two cards are otherwise identical — keep them that way. */}
+ <Button variant="accent"size="sm">
+ {t('sign-in', { defaultValue:'Sign in'})}
+ </Button>
+ </Link>
+ </div>
+ );
+ }
 
-  return (
-    <div className="glass-pane social-composer relative px-4 py-3">
-      <div className="flex gap-3">
-        {/* Avatar — the same box and classes as ComposeBox's, so the swap cannot
+ return (
+ <div className="glass-pane social-composer relative px-4 py-3">
+ <div className="flex gap-3">
+ {/* Avatar — the same box and classes as ComposeBox's, so the swap cannot
  move or re-ring it. `eager`: it is above the fold, and `lazy` here
  painted an empty circle for a frame between the initial and the image. */}
-        <div className="w-10 h-10 rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0">
-          {image ? (
-            <img
-              src={buildOptimizedUrl(image, 80, 80)}
-              alt={name || t('user-alt', { defaultValue: 'User' })}
-              loading="eager"
-              decoding="async"
-              width={40}
-              height={40}
-              className="w-full h-full rounded-full object-cover"
-            />
-          ) : (
-            (name?.[0] || 'U').toUpperCase()
-          )}
-        </div>
+ <div className="w-10 h-10 rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0">
+ {image ? (
+ <img
+ src={buildOptimizedUrl(image, 80, 80)}
+ alt={name || t('user-alt', { defaultValue:'User'})}
+ loading="eager"
+ decoding="async"
+ width={40}
+ height={40}
+ className="w-full h-full rounded-full object-cover"
+ />
+ ) : (
+ (name?.[0] ||'U').toUpperCase()
+ )}
+ </div>
 
-        {/* The composer's own well and toolbar row, rendered inert. This used to
+ {/* The composer's own well and toolbar row, rendered inert. This used to
  be bare placeholder text over four grey dots, ~40px shorter than the
  real composer and laid out differently, so every signed-in feed load
  shifted the whole wheel down when the chunk mounted (CLS 0.033 on a
  phone) and visibly swapped one composer for another. Same element,
  same classes, same rows: the swap is now a no-op to layout. */}
-        <div className="flex-1 min-w-0">
-          <textarea
-            readOnly
-            rows={3}
-            onClick={activate}
-            onFocus={activate}
-            placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
-            aria-label={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
-            className="block w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none cursor-text"
-          />
-          <div className="flex items-center justify-between mt-2" aria-hidden>
-            <span className="text-xs font-mono text-site-text-dim">{MAX_RMHARK_LENGTH}</span>
-            <Button variant="accent" size="sm" disabled tabIndex={-1}>
-              {t('post-button', { defaultValue: 'Post' })}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+ <div className="flex-1 min-w-0">
+ <textarea
+ readOnly
+ rows={3}
+ onClick={activate}
+ onFocus={activate}
+ placeholder={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
+ aria-label={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
+ className="block w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none cursor-text"
+ />
+ <div className="flex items-center justify-between mt-2"aria-hidden>
+ <span className="text-xs font-mono text-site-text-dim">{MAX_RMHARK_LENGTH}</span>
+ <Button variant="accent"size="sm"disabled tabIndex={-1}>
+ {t('post-button', { defaultValue:'Post'})}
+ </Button>
+ </div>
+ </div>
+ </div>
+ </div>
+ );
 }

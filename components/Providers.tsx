@@ -908,8 +908,8 @@ export function Providers({
       <AppI18nProvider locale={locale} resources={i18nResources}>
         {/* Load framer-motion features lazily so they're off the initial bundle. */}
         <LazyMotion features={loadMotionFeatures}>
-          {/* Shared timings, with spatial motion following the OS preference. */}
-          <MotionConfig reducedMotion="user">
+          {/* One shared animation scheme for every account and device. */}
+          <MotionConfig reducedMotion="never">
             <SessionCtx.Provider value={effectiveSession}>
               <ResolvedUserCtx.Provider
                 value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}

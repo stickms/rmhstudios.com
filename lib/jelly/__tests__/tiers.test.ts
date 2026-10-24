@@ -323,7 +323,6 @@ describe('jellyMode', () => {
 
   it.each([
     [{ media: ['(forced-colors: active)'] }],
-    [{ media: ['(prefers-reduced-motion: reduce)'] }],
     [{ media: ['print'] }],
     [{ hidden: true }],
     [{ attrs: { 'data-game-state': 'playing' } }],
