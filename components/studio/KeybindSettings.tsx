@@ -58,11 +58,11 @@ export function KeybindSettings() {
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-site-border px-4 py-2">
-        <span className="text-sm font-medium text-site-text">{t("keyboard-shortcuts", { defaultValue: "Keyboard Shortcuts" })}</span>
+      <div className="flex items-center justify-between border-b border-(--app-border) px-4 py-2">
+        <span className="text-sm font-medium text-(--app-text)">{t("keyboard-shortcuts", { defaultValue: "Keyboard Shortcuts" })}</span>
         <button
           onClick={resetKeybinds}
-          className="flex items-center gap-1.5 rounded-site-sm px-2 py-1 text-xs text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
+          className="flex items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1 text-xs text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)"
         >
           <RotateCcw className="h-3 w-3" />
           {t("reset-all", { defaultValue: "Reset All" })}
@@ -71,17 +71,17 @@ export function KeybindSettings() {
 
       {/* Conflict warning */}
       {conflict && (
-        <div className="flex items-center gap-2 bg-site-warning/15 px-4 py-1.5 text-xs text-site-warning">
+        <div className="flex items-center gap-2 bg-(--app-warning)/15 px-4 py-1.5 text-xs text-(--app-warning)">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           {conflict}
         </div>
       )}
 
       {/* Keybind list */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-site-border">
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-(--app-border)">
         {Object.entries(categories).map(([category, actions]) => (
           <div key={category}>
-            <div className="sticky top-0 bg-site-surface px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-site-text-muted">
+            <div className="sticky top-0 bg-(--app-surface) px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
               {category}
             </div>
             {actions.map((action) => {
@@ -92,17 +92,17 @@ export function KeybindSettings() {
               return (
                 <div
                   key={action.id}
-                  className="flex items-center justify-between px-4 py-1.5 hover:bg-site-surface-hover"
+                  className="flex items-center justify-between px-4 py-1.5 hover:bg-(--app-surface-hover)"
                 >
-                  <span className="text-xs text-site-text">{action.label}</span>
+                  <span className="text-xs text-(--app-text)">{action.label}</span>
                   <button
                     onClick={() => setRebindingAction(isRebinding ? null : action.id)}
-                    className={`min-w-[80px] rounded-site-sm px-2 py-0.5 text-right font-mono text-xs ${
+                    className={`min-w-[80px] rounded-(--app-radius-sm) px-2 py-0.5 text-right font-mono text-xs ${
                       isRebinding
-                        ? 'animate-pulse bg-site-accent-dim text-site-accent'
+                        ? 'animate-pulse bg-(--app-accent-dim) text-(--app-accent)'
                         : isOverridden
-                        ? 'bg-site-accent-dim text-site-accent hover:bg-site-accent-dim'
-                        : 'bg-site-surface-hover text-site-text-muted hover:bg-site-surface-hover'
+                        ? 'bg-(--app-accent-dim) text-(--app-accent) hover:bg-(--app-accent-dim)'
+                        : 'bg-(--app-surface-hover) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
                     }`}
                   >
                     {isRebinding ? t("press-a-key", { defaultValue: "Press a key..." }) : keys.join(', ')}
@@ -115,7 +115,7 @@ export function KeybindSettings() {
       </div>
 
       {/* Footer hint */}
-      <div className="border-t border-site-border px-4 py-2 text-xs text-site-text-muted">
+      <div className="border-t border-(--app-border) px-4 py-2 text-xs text-(--app-text-muted)">
         {t("footer-hint", { defaultValue: "Click a shortcut to rebind. Press Escape to cancel. Purple = customized." })}
       </div>
     </div>

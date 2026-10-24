@@ -708,10 +708,19 @@ html:not(.perf-lite)
 
    In `@layer components` on purpose: unlike the unlayered `.app-glass`, a state utility on the same element
    (`bg-(--app-accent)/5`, `border-(--app-success)/60`) still wins, so selection and result highlights keep their
-   state. First written for RMHbox (components/rmhbox/rmhbox.css, c5ca7bf); shared here so every app tier gets it. */
+   state. First written for RMHbox (components/rmhbox/rmhbox.css, c5ca7bf); shared here so every app tier gets it.
+   The `ResizableHandle` primitive (hairline + grip) is a site-token control like `Switch`, first needed by RMH Studio. */
 @layer components {
   .app-theme
-    :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset, [data-slot='switch']) {
+    :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      [data-slot='switch'],
+      [data-slot='resizable-handle']
+    ) {
     --site-bg: var(--app-bg);
     --site-surface: var(--app-surface);
     --site-surface-opaque: var(--app-surface);
