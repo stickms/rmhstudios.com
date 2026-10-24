@@ -292,65 +292,19 @@
 }
 
 .feed-tabs {
-  overflow: hidden;
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-control-radius);
-  background: var(--site-surface);
-  box-shadow: var(--site-shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.feed-tabs__timeline,
-.feed-tabs__filters {
+.signed-out-composer {
   display: flex;
   align-items: center;
-}
-
-.feed-tabs__timeline {
-  gap: 0.25rem;
-  padding: 0.25rem;
-}
-
-.feed-tabs__timeline button {
-  min-height: 2.75rem;
-  flex: 1;
-  border-radius: var(--site-control-radius);
-  color: var(--site-text-muted);
-  font-size: 0.8rem;
-  font-weight: 740;
-}
-
-.feed-tabs__timeline button[data-active] {
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
-}
-
-.feed-tabs__filters {
-  gap: 0.25rem;
-  overflow-x: auto;
-  padding: 0.5rem;
-  border-top: 1px solid var(--site-border);
-  scrollbar-width: none;
-  scroll-padding-inline: 0.5rem;
-}
-
-.feed-tabs__filters::-webkit-scrollbar {
-  display: none;
-}
-
-.feed-tabs__filters button {
-  min-height: 2.5rem;
-  flex: 0 0 auto;
-  padding-inline: 0.75rem;
-  border-radius: var(--site-control-radius);
-  color: var(--site-text-dim);
-  font-size: 0.72rem;
-  font-weight: 680;
-  white-space: nowrap;
-}
-
-.feed-tabs__filters button[data-active] {
-  background: var(--site-accent-dim);
-  color: var(--site-accent);
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-inline: 0.75rem;
+  padding: 0.875rem 1rem;
 }
 
 /* The two most-seen surfaces on the whole site, and the two that were still
@@ -410,9 +364,6 @@
    now, and that rule presses it with the independent `scale` property. Leaving
    it here would apply BOTH, and a `transform: scale()` multiplied by a `scale`
    is a 0.94 double-squish (globals.css §glass-interactive:active). */
-.feed-tabs button:active {
-  transform: scale(0.97);
-}
 
 /* Release modal, kept compact on phones. */
 

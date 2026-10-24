@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
+import { RadialGlobeDock } from './RadialGlobeDock';
 import {
   SIDEBAR_NAV,
   isNavGroup,
@@ -113,6 +114,7 @@ export function RadialNavRail() {
       className="rad-rail rad-rail--nav"
       aria-label={t('section-navigation', { defaultValue: 'Browse RMH Studios' })}
     >
+      <RadialGlobeDock />
       <nav className="rad-rail__scroll">
         <div className="rad-rail__group">
           {entries
