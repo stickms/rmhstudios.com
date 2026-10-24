@@ -1,67 +1,8 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Frontend CI gate — the standard local checks on every PR and push, so a broken
-# frontend change can't land silently. No secrets/env required.
-#
-# Split into PARALLEL jobs (typecheck / test / build / audit) that each do their
-# own frozen install off the shared pnpm store cache (~10s warm). This means:
-#   • the full production Build runs on EVERY PR regardless of the test result —
-#     it used to sit AFTER the test step in one job, so a red test (once, a
-#     long-lived i18n-catalogs drift) skipped it and pre-merge build breakage
-#     slipped through to the deploy. That separation is also what let the test
-#     step go back to being a hard gate in the 2026-08-08 testing audit;
-#   • wall-clock ≈ the slowest single job (~the build), not the sum of all four.
-#
-# `typecheck` was split out of the old combined `check` job on 2026-08-08. It was
-# 54s of that job's 2m07s and ran SERIALLY ahead of lint/docs/test, which made
-# `check` the PR gate's long pole — longer than the production build (1m38s) it
-# is supposed to be cheaper than. The split is worth a whole extra runner here
-# and NOT in deploy.yml (see the note on that job) because on a PR this is the
-# critical path, and on a deploy it is not.
-#
-# The typecheck cost is real work, not a cold cache — measured locally against
-# this tree: 91s cold, 8s warm with no changes, 34s warm after editing one
-# widely-imported module (`lib/utils.ts`). CI's ~54s is a merge commit's genuine
-# downstream cone, so there is no cache bug to fix and parallelism is the only
-# remaining lever.
-# ─────────────────────────────────────────────────────────────────────────────
+# Required checks report on every PR, including changes with no frontend artifact.
 name: web-ci
 
 on:
   pull_request:
-    paths-ignore:
-      - 'go-services/**'
-      - 'deploy/**'
-      - 'docs/**'
-      - '**/*.md'
-      # Nothing web-ci runs reads these. Other workflows' files are linted by
-      # actionlint locally and exercised by their own triggers; web-ci.yml itself
-      # and .github/actions/** (its setup) are deliberately NOT listed.
-      - '.claude/**'
-      - '.vscode/**'
-      - '.github/dependabot.yml'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '.github/workflows/build-vibe-packages.yml'
-      - '.github/workflows/compose-validate.yml'
-      - '.github/workflows/epic-tests.yml'
-      - '.github/workflows/go-microservices.yml'
-      - '.github/workflows/i18n-translate.yml'
-      - '.github/workflows/prisma-migrate-status.yml'
-      - '.github/workflows/prisma-validate.yml'
-      - '.github/workflows/senior-review.yml'
-      - '.github/workflows/synthetic-perf.yml'
-  # NOTE: intentionally NO `push:` trigger. On a push to main, deploy.yml already
-  # runs the SAME typecheck/lint/test as its in-workflow `ci` job AND builds the
-  # real Docker image (which catches any build-time breakage) — so a push-run of
-  # web-ci here was a pure duplicate of ~3 jobs. Under the account-wide concurrent
-  # runner cap that duplicate could queue AHEAD of deploy's `build`, delaying the
-  # release. PRs are still fully gated below; main is reached only via PR, so the
-  # checks have already run on the PR head. (`audit` likewise ran on the PR.)
-  # Nightly on main: only the `eversion-e2e` job below is MEANT for this (it
-  # catches drift in a rendering effect no PR touched — a Chromium/SwiftShader
-  # bump, a theme-token change). The other jobs run too, because a `schedule`
-  # trigger is workflow-wide and `eversion-e2e` needs `build`; a nightly full
-  # check of main is cheap and a useful canary in its own right. `schedule`
-  # always runs the default branch.
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
@@ -77,41 +18,40 @@ on:
         type: boolean
         default: false
 
-# Newer pushes to the same ref cancel older in-progress runs.
 concurrency:
   group: web-ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Least privilege: CI only reads the repo (checkout) to typecheck/lint/test/build.
 permissions:
   contents: read
 
 jobs:
-  # Typecheck + lint + docs freshness. tsc exceeds Node's default ~4 GB heap, so
-  # the larger heap is set job-wide.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      checks: ${{ steps.classify.outputs.checks }}
+      frontend: ${{ steps.classify.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Classify the complete PR change
+        id: classify
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node .github/scripts/classify-change.mjs
+
   typecheck:
+    needs: changes
+    if: needs.changes.outputs.checks == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
       - uses: ./.github/actions/setup-deps
-      # Persist tsc's incremental program graph (.tsbuildinfo) across runs so warm
-      # runs only re-check files that actually changed. Keyed per-commit with a
-      # prefix restore-key, so each run restores the most recent cache and saves a
-      # fresh one. tsc invalidates entries by file CONTENT (it hashes), so a
-      # restored cache can only ever make the check FASTER, never wrong.
-      #
-      # The tsc and eslint caches are SEPARATE entries (they used to share one
-      # `tsc-eslint-*` key holding both dirs) because they are now claimed by
-      # different jobs — two jobs writing one key just race, and one job
-      # restoring a 2-in-1 entry downloads a cache it half-ignores. deploy.yml's
-      # `ci` job takes both, so `main` keeps publishing both prefixes and a PR's
-      # first run still restores warm off the base branch. The old combined
-      # entries age out on their own; expect one cold run per prefix after this
-      # lands.
       - name: Restore typecheck cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -119,24 +59,10 @@ jobs:
           key: tsc-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
             tsc-${{ runner.os }}-
-      # `mkdir -p` so a cold cache (miss on the restore above) still has the dir
-      # tsc writes its cache file into.
-      # `pnpm run typecheck` runs the NATIVE (Go) TypeScript compiler, which
-      # typechecks this repo in ~91s cold / ~8s warm / ~34s after a change to a
-      # widely-imported module (all measured 2026-08-08), against ~218s / ~17s
-      # for the JavaScript compiler, with identical results. It is invoked by
-      # explicit path in the script because `typescript` and `typescript-native`
-      # both ship a `tsc` bin. `typescript` 5.9 stays installed — typescript-eslint
-      # imports the compiler API from it, and TS 7 does not expose one.
       - name: Typecheck
         run: |
           mkdir -p .cache/tsc
           pnpm run typecheck
-      # Lint + docs freshness live here (moved from `test` when the unit suite was
-      # sharded): this job's own work is seconds, so they ride along for free.
-      # eslint's result cache — its own entry, see the note in `typecheck`.
-      # `--cache-strategy content` means a restored cache invalidates by file
-      # content, so it can only make the run faster, never wrong.
       - name: Restore lint cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -148,23 +74,15 @@ jobs:
         run: |
           mkdir -p .cache/eslint
           pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache --cache-strategy content
-      # The developer-API reference and the site inventory under docs/ are
-      # generated from lib/api/registry.ts, lib/games.ts, lib/apps.ts and the
-      # route tree. Regenerating and diffing is the only way a registry change
-      # can't ship with a stale published reference.
       - name: Docs freshness
         run: |
           pnpm run docs:api:check
           pnpm run docs:site:check
           pnpm run sdk:check
 
-  # The unit suite, SHARDED across two parallel jobs (vitest --shard) — it was
-  # the single biggest step on the PR path (~55 s), and each shard runs about
-  # half the files. Lint and docs freshness moved to `typecheck` (2026-10-21),
-  # whose own work is seconds, so the shards run nothing but tests. vitest
-  # also wants the larger heap. Required-check names are `test (1/2)` and
-  # `test (2/2)`.
   test:
+    needs: changes
+    if: needs.changes.outputs.checks == 'true'
     name: test (${{ matrix.shard }}/2)
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -176,45 +94,20 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
       - uses: ./.github/actions/setup-deps
-      # A HARD GATE again, as of the 2026-08-08 testing audit.
-      #
-      # This step was `continue-on-error: true` because `i18n-catalogs` was
-      # permanently red and a blocking test step meant the `build` job never
-      # ran on a PR. Both halves of that are gone: the catalogs test passes,
-      # `build` is its own job so a red test cannot hide a build failure, and
-      # the suite is green (248 files / ~6k tests after the 2026-08-08 testing
-      # audit narrowed it to mission-critical scope). An advisory test step is
-      # a suite nobody has to keep green — which is how the permanently-red
-      # test got to stay permanently red. If this goes red, fix the test.
       - name: Test
         run: pnpm test --shard=${{ matrix.shard }}/2
 
-  # Full frontend build (vibe packages → vite). Catches build-time breakage that
-  # typecheck alone misses. Runs independently of `check` so a red test never
-  # hides a build failure. No runtime env is read at build time.
-  #
-  # The two size gates below (OPT-01/OPT-02, docs/optimization-ideas-2026-08-05.md)
-  # measure THIS job's output — deliberately no second build, since CI wall-clock
-  # is a tracked concern (docs/ci-speed-audit-2026-07-17.md §3).
   build:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
       - uses: ./.github/actions/setup-deps
-      # The responsive image variants `build:frontend:sourcemap` generates are
-      # gitignored, so every run used to re-encode all ~290 AVIF/WebP files from
-      # scratch before Vite could start. Their filenames carry a hash of the
-      # source image and the generator skips any file that already exists, so a
-      # restored set is only ever topped up with what changed — never wrong. (A
-      # stale encode from an older script version could survive a restore-keys
-      # hit, but these files are only built here, never shipped: the Docker build
-      # generates its own in the `image-variants` stage.)
       - name: Restore image variants
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -222,50 +115,41 @@ jobs:
           key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
           restore-keys: |
             image-variants-${{ runner.os }}-
-      # `--sourcemap` (vs the plain `build:frontend`) is what lets the
-      # entry-composition gate attribute chunk bytes back to a package: the
-      # client build is minified with no module boundaries left in it, so
-      # `<chunk>.js.map` is the only way to know what is inside a chunk. Same
-      # single build otherwise; the maps are never uploaded or deployed.
       - name: Build with Vite 8
         run: pnpm run build:frontend:sourcemap
       - name: Validate WebAssembly assets
         run: node scripts/check-wasm-output.mjs
-      # OPT-01 — the critical path (transitive STATIC closure of the client
-      # entry) must stay inside its budget. Sourcemap comments are stripped
-      # before measuring, so these numbers match a production build.
       - name: Bundle budget
         run: pnpm run check:bundle-budget
-      # OPT-02 — catches the CAUSE rather than the bytes: a package that must
-      # never be in the entry closure. `--strict` makes a missing sourcemap a
-      # failure rather than a skip, so this can never silently no-op in CI.
       - name: Entry-chunk composition
         run: pnpm exec tsx scripts/check-entry-composition.ts --strict
 
-  # Production dependency vulnerability audit. Fast; kept separate so it never
-  # gates (or is gated by) the build/test.
+      - name: Archive checked frontend for nightly browser checks
+        if: github.event_name != 'pull_request'
+        run: tar -cf checked-frontend.tar .output
+      - name: Retain checked frontend
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: checked-frontend
+          path: checked-frontend.tar
+          compression-level: 0
+          retention-days: 1
+
   audit:
+    needs: changes
+    if: needs.changes.outputs.checks == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
       - uses: ./.github/actions/setup-deps
       - name: Production dependency audit
         run: pnpm audit --prod --audit-level=high
 
-  # Integration suite (`pnpm test:integration`, testing/integration/): real user
-  # flows — sign-up/sign-in/sign-out, posting, likes/comments/deletes, coin
-  # tips, the developer API's paywall/auth/revocation/scopes — against the BUILT
-  # app on a throwaway Postgres. BLOCKING: this is the layer `pnpm test` never
-  # touches (its files are environment-agnostic by design), and the one that
-  # proves the pieces work together before a change reaches production.
-  #
-  # It builds for itself rather than waiting on `build`: an artefact round-trip
-  # of .output costs about what a rebuild does, and running in parallel keeps
-  # the PR's wall-clock at max(job), not build + integration. No sourcemaps —
-  # nothing here reads them. Rate limits stay ON (see vitest.integration.config.ts).
   integration:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -277,17 +161,11 @@ jobs:
       INTEGRATION_BASE_URL: http://localhost:7005
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # Postgres boots IN THE BACKGROUND while deps restore and the app builds,
-      # instead of as a `services:` container — those start (pull + init, ~16 s)
-      # before the first step, on the job's critical path. pgvector's image: the
-      # migration history needs the extension to replay. Published on loopback
-      # only. "Wait for Postgres" below gates the first step that needs it.
       - name: Start Postgres (background)
         run: |
           nohup sh -c 'docker run -d --name pg -p 127.0.0.1:5432:5432 \
             -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=rmh \
             pgvector/pgvector:pg16' > "$RUNNER_TEMP/pg-start.log" 2>&1 &
-      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
       - uses: ./.github/actions/setup-deps
       - name: Restore image variants
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
@@ -322,38 +200,12 @@ jobs:
       - name: Integration tests
         run: pnpm test:integration
       - name: Server log (on failure)
-        # failure() alone never sees the frame-budget step: continue-on-error turns its failure into success.
-        if: ${{ failure() || steps.frame-budget.outcome == 'failure' }}
+        if: failure()
         run: tail -200 "$RUNNER_TEMP/server.log" || true
       - name: Stop the server
         if: always()
         run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
 
-  # ── eversion-e2e (globe eversion, spec §11.4; tasks T16) ──────────────────
-  #
-  # The rendering/integration/perf gates (S#25-S#46) run in a real browser
-  # against the BUILT app, so they cannot live in `pnpm test`. This is the one
-  # place they run. Two jobs:
-  #
-  #   • `eversion-changes` decides whether this PR touches anything the effect
-  #     depends on. It is a job, not a `paths:` filter, because the workflow
-  #     already uses `paths-ignore` and GitHub does not allow both; and a
-  #     job-level `if` is what makes the e2e job genuinely SKIPPED (no runner,
-  #     no Chromium download) on an unrelated PR.
-  #   • `eversion-e2e` builds, serves, and runs every
-  #     `testing/e2e/eversion-*.mjs`.
-  #
-  # NON-BLOCKING for now (`continue-on-error`): a brand-new browser gate on
-  # SwiftShader needs a few weeks of runs before its thresholds are trusted.
-  # T37 removes that line and makes it blocking.
-  #
-  # NIGHTLY + MANUAL ONLY — not on PRs. On PRs it never once produced a verdict:
-  # 22 of 23 runs hit the timeout inside `eversion-behaviour.mjs` (every S#25
-  # profile/theme case fails after 1.5–3 min), each holding a runner for ~40 min
-  # under the account-wide concurrency cap to report nothing. The nightly gets a
-  # longer timeout so it can actually finish and say what is red. To run it
-  # against a branch: `gh workflow run web-ci.yml --ref <branch>`. Restore the
-  # PR trigger (drop the `if:` below) once the suite finishes inside ~15 min.
   eversion-changes:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -361,8 +213,6 @@ jobs:
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
-      # depth 2: on a PR the checkout is the merge commit, whose first parent is
-      # the base — `HEAD^1..HEAD` is exactly the PR's change.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
@@ -372,23 +222,12 @@ jobs:
           EVENT: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          # Nightly and manual runs always go.
           if [ "$EVENT" != "pull_request" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           changed=$(git diff --name-only HEAD^1 HEAD)
           echo "$changed"
-          # Only what the effect actually depends on. Deliberately NOT all of
-          # `app/routes/`, `stores/` or `locales/en/` (a 40-minute job for every
-          # route, store or English-string change); the specific files are listed.
-          #   • code and styles: the effect, the hub/shell it lives in, the settings row
-          #     and the preference API/schema that persist its setting, the theme
-          #     store, the perf tier and render governor it reads, the glass layer;
-          #   • tests and baselines: this job's own scripts and committed baselines;
-          #   • build inputs: the lockfile and package.json (modern-screenshot,
-          #     playwright, vite bumps), the Vite config, the bundle-budget script;
-          #   • strings: the two namespaces the effect's UI uses.
           if echo "$changed" | grep -Eq '^(lib/eversion/|components/radial/|app/globals\.css$|app/routes/eversion-lab\.tsx$|app/routes/api/preferences/appearance\.ts$|testing/e2e/eversion|testing/e2e/lib/|testing/e2e/baselines/|stores/themeStore|lib/appearance/|lib/perf-tier|lib/render/|components/settings/AppearancePanel|components/ui/liquid-|lib/jelly/|lib/liquid/|app/jelly-[a-z-]+\.css$|app/liquid-glass\.css$|testing/e2e/(frame-budget|jelly-interaction)\.mjs$|locales/en/(feed|settings-appearance)\.json$|prisma/schema\.prisma$|package\.json$|pnpm-lock\.yaml$|vite\.config\.[cm]?[jt]s$|scripts/check-bundle-budget|\.github/workflows/web-ci\.yml$)'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
@@ -403,20 +242,14 @@ jobs:
     continue-on-error: true
     env:
       NODE_OPTIONS: --max-old-space-size=8192
-      # What a RUNNING server reads and the build/test jobs get away without:
-      # the Prisma pool and the Better Auth secret.
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
       BETTER_AUTH_SECRET: ci-eversion-e2e-not-a-real-secret-0000000000
       BETTER_AUTH_URL: http://localhost:7005
       PORT: '7005'
       BASE_URL: http://localhost:7005
-      # Screencasts, diffs and the server log land here
-      # (testing/e2e/lib/eversion-session.mjs#ARTIFACT_DIR).
       EVERSION_ARTIFACT_DIR: ${{ github.workspace }}/eversion-artifacts
     services:
       postgres:
-        # pgvector's image for the same reason as prisma-migrate-status.yml: the
-        # migration history needs the extension to replay.
         image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: postgres
@@ -428,29 +261,15 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
       - uses: ./.github/actions/setup-deps
-      # `needs: build` orders and short-circuits (a broken build skips this) but
-      # does not hand over its output — the build job uploads nothing, and an
-      # artefact round-trip of .output would tax EVERY PR to benefit the few that
-      # run this. So build here. WITH sourcemaps: the bundle-attribution checks
-      # (S#39's static-closure scan) read `.map` files to name the modules in a
-      # chunk, and without them they pass vacuously; the maps do not change the
-      # emitted code, so the e2e still runs the shipped shape.
-      - name: Restore image variants
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      - name: Restore the checked build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          path: public/images/_variants
-          key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
-          restore-keys: |
-            image-variants-${{ runner.os }}-
-      - name: Build
-        run: pnpm run build:frontend:sourcemap
+          name: checked-frontend
+      - name: Extract the checked build
+        run: tar -xf checked-frontend.tar
       - name: Migrate database
         run: pnpm exec prisma migrate deploy
-      # Chromium for the harness. Sandbox images that pin a browser forbid this;
-      # a runner needs it (`resolveChromiumPath` falls back to Playwright's own
-      # when /opt/pw-browsers is absent).
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
       - name: Start the built server
@@ -465,26 +284,6 @@ jobs:
           echo "server did not come up"
           tail -50 "$EVERSION_ARTIFACT_DIR/server.log"
           exit 1
-      # Every eversion-*.mjs, in name order, each to completion — a failure in
-      # one must not hide the others — then a single verdict. `nullglob` plus the
-      # length check is the empty-glob guard: with no script yet the pattern
-      # would otherwise reach `node` as a literal and fail for the wrong reason.
-      #
-      # Two exclusions from the glob, both on purpose:
-      #   • `eversion-lab.mjs` needs the dev-only `EVERSION_LAB_OPEN` route, which a
-      #     production build ignores - against this server it can only fail.
-      #   • `eversion-hub.mjs` runs below, once per profile x theme, because the
-      #     hub's chrome is what differs between them.
-      #   • `eversion-smoothness*.mjs` renders deterministic stills in the lab, so it
-      #     needs the same dev-only route; it has its own step below, against a dev server.
-      # S#40's and S#43's baselines must already be committed: a missing one FAILS
-      # here (`CI=true`). They are never written by an ordinary run; the manual
-      # `update-baselines` dispatch is the one way to produce them (below).
-      #
-      # `continue-on-error` hides a red job from the PR's checks, so every script's
-      # verdict is also written to the job summary (GITHUB_STEP_SUMMARY) and each
-      # failure raised as an `::error::` annotation. Nobody should learn that the
-      # nightly went red by accident.
       - name: Run eversion e2e scripts
         env:
           CI: 'true'
@@ -503,8 +302,6 @@ jobs:
             echo "no testing/e2e/eversion-*.mjs scripts yet — nothing to run"
             exit 0
           fi
-          # Only these two accept --update-baselines; passing it to the rest is harmless
-          # but would hide what a refresh run is for.
           if [ -n "$UPDATE_BASELINES" ]; then
             scripts=(testing/e2e/eversion-load.mjs testing/e2e/eversion-perf.mjs)
             echo "update-baselines: refreshing baselines on this runner"
@@ -555,11 +352,6 @@ jobs:
             echo "::error::failed: ${failed[*]}"
             exit 1
           fi
-      # S#31/S#32 (smoothness, photosensitivity): deterministic stills of the timeline
-      # scrubbed in the lab, so the verdict does not depend on how fast this runner draws.
-      # The lab route is dev-only (a production build ignores EVERSION_LAB_OPEN), hence
-      # a throwaway dev server on its own port. The dummy keys exist because the homes
-      # image module constructs a client at import time.
       - name: Eversion smoothness (deterministic stills)
         if: ${{ !inputs.update-baselines }}
         env:
@@ -582,8 +374,6 @@ jobs:
             exit 1
           fi
           kill "$(cat "$RUNNER_TEMP/vite-dev.pid")" 2>/dev/null || true
-      # The refreshed baselines, for committing. Runs even when a script failed
-      # (a refresh run on a dev branch may fail other gates); only with the input.
       - name: Upload refreshed baselines
         if: always() && inputs.update-baselines
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -595,8 +385,6 @@ jobs:
       - name: Stop the server
         if: always()
         run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
-      # Only on failure: the screencast frames and diff images a human needs to
-      # see WHY a smoothness or parity gate tripped, plus the server log.
       - name: Upload artefacts
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -606,64 +394,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  # ── jelly-e2e (Plasmatic Jelly in a real browser; plan 05 N10) ──────────────
-  # Its own job, NOT a step of eversion-e2e. It used to be the last step there,
-  # behind the eversion scripts, which alone outlast that job's 75-minute
-  # timeout: every nightly since was cancelled mid-"Run eversion e2e scripts"
-  # (e.g. run 39748734182), and eversion-e2e never runs on a PR, so neither jelly
-  # script had produced a single verdict in CI. Here it runs on its own clock,
-  # on PRs that touch the material and on every nightly / manual run.
-  #
-  # GPU-less runner (SwiftShader, detected from the WebGL renderer string by
-  # testing/e2e/lib/gpu.mjs): a check that needs real GPU frames is reported as
-  # SKIP — in the log, as a ::notice and in the job summary — never as a silent
-  # pass. Today that is frame-budget's R7 "a hazy page never draws 0 frames at
-  # rest" (compositor throughput); jelly-interaction judges R7 on the governor's
-  # clock, whose last step keeps a 6 Hz floor, so it is a real check here (it
-  # SKIPs only if a governor ever reaches 0 Hz on software GL). Every
-  # deterministic check (budgets, neighbour bounds, flash ledger, return to
-  # rest, teardown, zero frames under `still`, rest cadence, perpetual
-  # animations, every route loads) fails for real.
-  #
-  # BLOCKING: jelly-interaction.mjs — a fixture with no server, deterministic on
-  # SwiftShader (green on 5 consecutive runs pinned to 2 cores, one of them
-  # under heavy CPU contention; ~75 s).
-  # NON-BLOCKING for now: frame-budget.mjs --gate (`continue-on-error` on its
-  # step; still a red row + ::error:: annotation, never a red job). It drives
-  # ~50 routes of the built app and is RED today at 13-21 frames/s on most
-  # site routes for real reasons, which its per-route "drew in:" attribution
-  # names (docs/testing.md §6): the dock globe's own rAF loop draws on other
-  # vsyncs than the haze engine's driver, and PinnedHero's framer-motion
-  # scroll cue (e.g. /pricing) repeats forever — make it blocking once those
-  # are fixed and a few nightlies are green.
   jelly-e2e:
-    if: ${{ !inputs.update-baselines }}
+    needs: changes
+    if: needs.changes.outputs.checks == 'true' && !inputs.update-baselines
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    env:
-      NODE_OPTIONS: --max-old-space-size=8192
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
-      BETTER_AUTH_SECRET: ci-jelly-e2e-not-a-real-secret-00000000000000
-      BETTER_AUTH_URL: http://localhost:7005
-      PORT: '7005'
-      BASE_URL: http://localhost:7005
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: rmh
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s --health-timeout 5s --health-retries 10
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
-      # A step, not a job-level `paths:` (the workflow already uses paths-ignore).
-      # Nightly and manual runs always go; a PR only when it touches the material.
       - name: Does this change touch the jelly?
         id: filter
         env:
@@ -705,22 +444,44 @@ jobs:
             grep '^FAIL ' "$RUNNER_TEMP/jelly-interaction.log" | sed 's/^/::error title=jelly-interaction::/' || true
           fi
           exit "$status"
-      - name: Restore image variants
-        if: ${{ !cancelled() && steps.filter.outputs.run == 'true' }}
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+
+  frame-budget:
+    needs: build
+    if: github.event_name != 'pull_request' && !inputs.update-baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
+      BETTER_AUTH_SECRET: ci-jelly-e2e-not-a-real-secret-00000000000000
+      BETTER_AUTH_URL: http://localhost:7005
+      PORT: '7005'
+      BASE_URL: http://localhost:7005
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rmh
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-deps
+      - name: Restore the checked build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          path: public/images/_variants
-          key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
-          restore-keys: |
-            image-variants-${{ runner.os }}-
-      - name: Build
-        if: ${{ !cancelled() && steps.filter.outputs.run == 'true' }}
-        run: pnpm run build:frontend
+          name: checked-frontend
+      - name: Extract the checked build
+        run: tar -xf checked-frontend.tar
       - name: Migrate database
-        if: ${{ !cancelled() && steps.filter.outputs.run == 'true' }}
+        if: ${{ !cancelled() }}
         run: pnpm exec prisma migrate deploy
       - name: Start the built server
-        if: ${{ !cancelled() && steps.filter.outputs.run == 'true' }}
+        if: ${{ !cancelled() }}
         run: |
           nohup node .output/server/index.mjs > "$RUNNER_TEMP/jelly-server.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/jelly-server.pid"
@@ -729,13 +490,9 @@ jobs:
             sleep 1
           done
           echo "server did not come up"; tail -50 "$RUNNER_TEMP/jelly-server.log"; exit 1
-      # `continue-on-error` on the STEP is what keeps this non-blocking: its `exit "$status"` still marks the step
-      # failed (the "Process completed with exit code 1" line and the ::error:: below are the visible signal), but
-      # the job's conclusion ignores it. A red jelly-e2e job therefore always means the blocking
-      # jelly-interaction step failed — read its FAIL lines first (run 39954731013 was that, not this step).
       - name: Frame budget (built app, non-blocking)
         id: frame-budget
-        if: ${{ !cancelled() && steps.filter.outputs.run == 'true' }}
+        if: ${{ !cancelled() }}
         continue-on-error: true
         run: |
           set -o pipefail
@@ -750,9 +507,28 @@ jobs:
           fi
           exit "$status"
       - name: Server log (on failure)
-        # failure() alone never sees the frame-budget step: continue-on-error turns its failure into success.
         if: ${{ failure() || steps.frame-budget.outcome == 'failure' }}
         run: tail -100 "$RUNNER_TEMP/jelly-server.log" 2>/dev/null || true
       - name: Stop the server
         if: always()
         run: kill "$(cat "$RUNNER_TEMP/jelly-server.pid" 2>/dev/null)" 2>/dev/null || true
+
+  required-checks:
+    needs: [changes, typecheck, test, build, audit, integration, jelly-e2e]
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify every applicable prerequisite
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          node --input-type=module <<'NODE'
+          const needs = JSON.parse(process.env.RESULTS);
+          if (needs.changes.result !== 'success') throw new Error('Change classification failed');
+          for (const name of ['typecheck', 'test', 'audit', 'jelly-e2e', 'build', 'integration']) {
+            const kind = ['build', 'integration'].includes(name) ? 'frontend' : 'checks';
+            const expected = needs.changes.outputs[kind] === 'true' ? 'success' : 'skipped';
+            if (needs[name].result !== expected) throw new Error(name + ': ' + needs[name].result + ' (expected ' + expected + ')');
+          }
+          NODE

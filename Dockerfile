@@ -48,7 +48,7 @@ RUN corepack enable && corepack prepare pnpm@10.34.6 --activate
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 
 # Skip postinstall (prisma generate) — prisma schema isn't here yet.
 # It runs in the prisma-generate stage below where the schema is available.
@@ -60,7 +60,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharin
 # (~3s) instead of invalidating the entire pnpm install layer (~70s).
 FROM deps AS prisma-generate
 
-COPY prisma ./prisma/
+COPY prisma/schema.prisma ./prisma/schema.prisma
 COPY prisma.config.ts ./
 
 RUN pnpm exec prisma generate
@@ -179,7 +179,14 @@ RUN pnpm run build-vibe-packages \
 # It also emits lib/images/variants.gen.ts. vite-builder takes that regenerated
 # manifest along with the files, exactly as the in-RUN step used to overwrite the
 # committed one, so the manifest and the files can never disagree in the image.
-FROM deps AS image-variants
+FROM node:24.21.0-alpine AS media-deps
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@10.34.6 --activate
+COPY scripts/media/package.json scripts/media/pnpm-lock.yaml ./
+RUN --mount=type=cache,id=media-pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
+    pnpm install --frozen-lockfile --ignore-scripts --prefer-offline
+
+FROM media-deps AS image-variants
 
 COPY scripts/gen-image-variants.ts ./scripts/gen-image-variants.ts
 COPY public/images ./public/images/
@@ -255,6 +262,7 @@ ARG VITE_RMHBOX_SOCKET_URL
 ARG VITE_RMHTUBE_SOCKET_URL
 ARG VITE_DISCORD_ACTIVITY_CLIENT_ID
 ARG VITE_CDN_BASE_URL
+ARG STATIC_ASSET_VERSIONS={}
 # Google AdSense (optional). Empty = ads fully off; see docs/adsense.md.
 ARG VITE_ADSENSE_CLIENT_ID
 ARG VITE_ADSENSE_SLOTS
@@ -277,6 +285,7 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL} \
     VITE_DISCORD_ACTIVITY_CLIENT_ID=${VITE_DISCORD_ACTIVITY_CLIENT_ID} \
     VITE_CDN_BASE_URL=${VITE_CDN_BASE_URL} \
+    STATIC_ASSET_VERSIONS=${STATIC_ASSET_VERSIONS} \
     VITE_ADSENSE_CLIENT_ID=${VITE_ADSENSE_CLIENT_ID} \
     VITE_ADSENSE_SLOTS=${VITE_ADSENSE_SLOTS} \
     DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY} \
@@ -336,7 +345,7 @@ RUN rm -rf .output \
     # before `vite build`, and why the COPY above is not removable.
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
-    && pnpm exec tsx scripts/ci/bundle-budget.ts \
+    && pnpm run check:bundle-budget \
     && node scripts/check-wasm-output.mjs
 
 # Validate, prune, and COPY straight from /app/.output. This stage has no cache
@@ -451,6 +460,8 @@ RUN addgroup --system --gid 1001 nodejs && \
 # `--chown` is numeric because a `--link` copy cannot read this image's
 # /etc/passwd: 1001:1001 is app:nodejs from runtime-base above.
 FROM runtime-base AS runner
+ARG STATIC_ASSET_VERSIONS={}
+LABEL io.rmh.static-asset-versions=${STATIC_ASSET_VERSIONS}
 
 # ─── Production-only node_modules ───────────────────────────────────────
 # Sourced from prod-deps (not prisma-generate) — excludes devDependencies

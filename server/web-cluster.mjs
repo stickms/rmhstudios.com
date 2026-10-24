@@ -26,7 +26,7 @@
 // Plain ESM, no dependencies: it is copied into the runtime image as-is.
 
 import cluster from 'node:cluster';
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync, renameSync } from 'node:fs';
 import os from 'node:os';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -54,6 +54,14 @@ if (!existsSync(workerEntry)) {
   /** WORKER_ID → { startedAt, failures } */
   const slots = new Map();
   let shuttingDown = false;
+  const listening = new Set();
+  const stateFile = process.env.WEB_WORKER_STATE_FILE || '/tmp/rmh-web-workers.json';
+  const reportWorkers = () => {
+    const temporary = `${stateFile}.${process.pid}.tmp`;
+    writeFileSync(temporary, JSON.stringify({ expected: count, listening: listening.size }));
+    renameSync(temporary, stateFile);
+  };
+  reportWorkers();
 
   const fork = (id) => {
     const worker = cluster.fork({ WORKER_ID: String(id) });
@@ -61,7 +69,10 @@ if (!existsSync(workerEntry)) {
     slot.startedAt = Date.now();
     slot.worker = worker;
     slots.set(id, slot);
+    worker.on('listening', () => { listening.add(id); reportWorkers(); });
     worker.on('exit', (code, signal) => {
+      listening.delete(id);
+      reportWorkers();
       if (shuttingDown) return;
       const lived = Date.now() - slot.startedAt;
       slot.failures = lived < EARLY_DEATH_MS ? slot.failures + 1 : 0;

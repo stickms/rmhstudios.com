@@ -183,6 +183,7 @@ if "$DOCKER_BIN" inspect "$old_container" >/dev/null 2>&1; then
     new_img=$("$DOCKER_BIN" image inspect -f '{{.Id}}' "$image" 2>/dev/null || echo "")
     if [ "$live_running" = "true" ] && [ -n "$new_img" ] && [ "$live_img" = "$new_img" ]; then
         log "Live ${old_color} container already runs ${image} — web unchanged, skipping hotswap."
+        echo '::deploy-event::traffic-moved'
         exit 0
     fi
 fi
@@ -206,6 +207,8 @@ fi
 "$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
     run -d --no-deps \
     --name "$new_container" \
+    --label "io.rmh.release-id=${DEPLOY_RELEASE_ID:-manual}" \
+    --label "io.rmh.source-sha=${GIT_SHA_FULL:-unknown}" \
     -p "127.0.0.1:${target_port}:${target_port}" \
     -e "PORT=${target_port}" \
     -e "HOSTNAME=0.0.0.0" \
@@ -215,7 +218,9 @@ fi
 log "Waiting up to ${HEALTH_TIMEOUT}s for ${new_container} to become healthy..."
 healthy=false
 for _ in $(seq 1 "$HEALTH_TIMEOUT"); do
-    if curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:${target_port}/"; then
+    if curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:${target_port}/api/ready" \
+        && curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:${target_port}/" \
+        && "$DOCKER_BIN" exec "$new_container" node scripts/check-web-workers.mjs; then
         healthy=true; break
     fi
     # Bail early if the container died.
@@ -304,6 +309,8 @@ if "$DOCKER_BIN" inspect "$old_container" >/dev/null 2>&1; then
     fi
 fi
 
+echo '::deploy-event::traffic-moved'
+
 # ── Smoke gate + bake, with automatic rollback ──────────────────────────────
 # The checks above prove the new container ANSWERS. This proves it WORKS for a
 # user — SSR renders, the DB-backed paths serve, readiness is green — first once,
@@ -362,6 +369,7 @@ rollback() {
     sleep "$DRAIN_SECONDS"
     "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true
     log "Rolled back: ${old_color} live again on ${current_port}; ${new_container} removed."
+    echo '::deploy-event::rolledback'
     exit "$EXIT_ROLLED_BACK"
 }
 

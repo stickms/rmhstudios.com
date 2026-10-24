@@ -68,6 +68,9 @@ variable "VITE_DISCORD_ACTIVITY_CLIENT_ID" {
 variable "VITE_CDN_BASE_URL" {
   default = ""
 }
+variable "STATIC_ASSET_VERSIONS" {
+  default = "{}"
+}
 
 # Google AdSense. Empty in CI and by default — ads stay off unless a deploy
 # supplies real values (see docs/adsense.md).
@@ -177,6 +180,7 @@ function "frontend_args" {
     VITE_RMHTUBE_SOCKET_URL         = VITE_RMHTUBE_SOCKET_URL
     VITE_DISCORD_ACTIVITY_CLIENT_ID = VITE_DISCORD_ACTIVITY_CLIENT_ID
     VITE_CDN_BASE_URL               = VITE_CDN_BASE_URL
+    STATIC_ASSET_VERSIONS           = STATIC_ASSET_VERSIONS
     VITE_ADSENSE_CLIENT_ID          = VITE_ADSENSE_CLIENT_ID
     VITE_ADSENSE_SLOTS              = VITE_ADSENSE_SLOTS
     DEEPSEEK_API_KEY                = DEEPSEEK_API_KEY
@@ -218,11 +222,11 @@ target "web" {
   # With ignore-error the export failure is logged as a warning and the build stays
   # green; the only cost is a colder layer cache on the next run. The image PUSH is
   # unaffected — a genuine push failure still fails the build, as it must.
-  cache-from = ["type=registry,ref=${IMAGE_WEB}:buildcache"]
+  cache-from = reusable_caches()
   # Exported only when EXPORT_CACHE=true — see that variable for why this is not
   # unconditional (it is a ~62s tail on the deploy critical path that the common
   # deploy gets nothing back from).
-  cache-to = EXPORT_CACHE == "true" ? ["type=registry,ref=${IMAGE_WEB}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true"] : []
+  cache-to = []
 }
 
 # ── Full image (runner-full): supervisor, status, assets — Go bins + Chromium ─
@@ -267,6 +271,58 @@ target "full" {
   # image (same config digest). runtime-base is a ~1s rebuild when it does miss.
   # A missing or stale cache is fail-soft by construction: it costs a cold apk +
   # Go build, both in parallel with vite, never a wrong image.
-  cache-from = ["type=registry,ref=${IMAGE_FULL}:latest"]
+  cache-from = ["type=registry,ref=${IMAGE_FULL}:latest", "type=registry,ref=${IMAGE_FULL}:cache-go"]
   cache-to   = ["type=inline"]
+}
+
+# Narrow reusable-stage exports run in build-cache.yml, after the release gate.
+# Separate refs prevent concurrent targets from replacing each other's records.
+function "reusable_caches" {
+  params = []
+  result = [
+    "type=registry,ref=${IMAGE_WEB}:buildcache",
+    "type=registry,ref=${IMAGE_WEB}:cache-deps",
+    "type=registry,ref=${IMAGE_WEB}:cache-prisma",
+    "type=registry,ref=${IMAGE_WEB}:cache-prod",
+    "type=registry,ref=${IMAGE_WEB}:cache-media",
+    "type=registry,ref=${IMAGE_WEB}:cache-vibe",
+  ]
+}
+target "_cache" {
+  context = "."
+  dockerfile = "Dockerfile"
+  platforms = ["linux/arm64"]
+  cache-from = reusable_caches()
+  output = ["type=cacheonly"]
+}
+target "cache-deps" {
+  inherits = ["_cache"]
+  target = "deps"
+  cache-to = ["type=registry,ref=${IMAGE_WEB}:cache-deps,mode=max,image-manifest=true,oci-mediatypes=true"]
+}
+target "cache-prisma" {
+  inherits = ["_cache"]
+  target = "prisma-generate"
+  cache-to = ["type=registry,ref=${IMAGE_WEB}:cache-prisma,mode=max,image-manifest=true,oci-mediatypes=true"]
+}
+target "cache-prod" {
+  inherits = ["_cache"]
+  target = "prod-deps"
+  cache-to = ["type=registry,ref=${IMAGE_WEB}:cache-prod,mode=max,image-manifest=true,oci-mediatypes=true"]
+}
+target "cache-media" {
+  inherits = ["_cache"]
+  target = "image-variants"
+  cache-to = ["type=registry,ref=${IMAGE_WEB}:cache-media,mode=max,image-manifest=true,oci-mediatypes=true"]
+}
+target "cache-vibe" {
+  inherits = ["_cache"]
+  target = "vibe-builder"
+  cache-to = ["type=registry,ref=${IMAGE_WEB}:cache-vibe,mode=max,image-manifest=true,oci-mediatypes=true"]
+}
+target "cache-go" {
+  inherits = ["_cache"]
+  target = "go-builder"
+  cache-from = ["type=registry,ref=${IMAGE_FULL}:cache-go", "type=registry,ref=${IMAGE_FULL}:latest"]
+  cache-to = ["type=registry,ref=${IMAGE_FULL}:cache-go,mode=max,image-manifest=true,oci-mediatypes=true"]
 }

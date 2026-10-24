@@ -5,6 +5,11 @@ know what to trust. Agent-facing guides live at the repo root
 ([`CLAUDE.md`](../CLAUDE.md), [`AGENTS.md`](../AGENTS.md)) and in each major
 directory's `CLAUDE.md`.
 
+Latest build and deployment review:
+[`build-deploy-audit-2026-10-23.md`](./build-deploy-audit-2026-10-23.md)
+measures 30 recent deployment runs, separates CI handoff from production readiness,
+and ranks speed improvements with runtime-performance acceptance criteria.
+
 This tree also builds as a Sphinx/MyST site for Read the Docs — `conf.py`,
 `requirements.txt` and `index.md` (the landing page + nav) here, with
 `.readthedocs.yaml` at the repo root. Build it locally with:

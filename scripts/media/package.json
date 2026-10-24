@@ -1,0 +1,10 @@
+{
+  "name": "rmh-build-media",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.6",
+  "dependencies": {
+    "sharp": "0.35.5",
+    "tsx": "4.23.15"
+  }
+}
