@@ -441,6 +441,15 @@ export default defineConfig({
         warmup: ['app/router.tsx', 'app/routes/__root.tsx'],
       },
       build: {
+        // The browser bundle is lowered to Vite's `baseline-widely-available`
+        // floor (Chrome/Edge 111, Firefox 114, Safari 16.4 — also Tailwind v4's
+        // own minimum) instead of the root `esnext`, which ships whatever syntax
+        // the source uses untouched: one construct newer than a browser's parser
+        // is a blank page there, not a degraded one. Measured on the 2,493-file
+        // client build: +353 bytes of JS (0.001%), CSS byte-identical, entry and
+        // critical path inside their budgets. The server (Node 24) bundles keep
+        // `esnext`: one known runtime, so lowering them is pure cost.
+        target: 'baseline-widely-available',
         rolldownOptions: {
           onwarn,
           checks: rolldownChecks,

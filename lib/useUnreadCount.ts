@@ -51,7 +51,7 @@ let eventSource: EventSource | null = null;
 let fallbackInterval: ReturnType<typeof setInterval> | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let retryCount = 0;
-let beforeUnloadBound = false;
+let pageLifecycleBound = false;
 let count = 0;
 
 function hasSubscribers() {
@@ -128,9 +128,13 @@ function connectSSE() {
 
 function ensureStarted() {
   if (typeof window === 'undefined') return;
-  if (!beforeUnloadBound) {
-    window.addEventListener('beforeunload', stop);
-    beforeUnloadBound = true;
+  if (!pageLifecycleBound) {
+    // `pagehide`/`pageshow`, not `beforeunload`: that listener blocks the
+    // back/forward cache in Firefox, and an open EventSource blocks it
+    // everywhere. Close as the page is hidden, reopen if it is restored.
+    window.addEventListener('pagehide', suspend);
+    window.addEventListener('pageshow', resume);
+    pageLifecycleBound = true;
   }
   if (!eventSource && !fallbackInterval) connectSSE();
 }
@@ -145,6 +149,17 @@ function stop() {
   }
   retryCount = 0;
   count = 0;
+}
+
+/** Close the stream as the page is hidden, keeping the badge count for a restore. */
+function suspend() {
+  const kept = count;
+  stop();
+  count = kept;
+}
+
+function resume(e: PageTransitionEvent) {
+  if (e.persisted && hasSubscribers() && !eventSource && !fallbackInterval) connectSSE();
 }
 
 /** Tear the shared connection down only once nobody is listening. */
