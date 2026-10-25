@@ -8,18 +8,20 @@
  *
  * ## Handing a frame over
  *
- Two ways, one per thread:
+ * Two ways, one per thread:
  *
- * - **copy** (the page): render into the bottom-left of a high-water backing store and `drawImage` that region onto
- *   the surface's 2D canvas. It makes the main thread wait for the GPU — and onto a CPU-backed 2D canvas it is a pixel
- *   readback — but surfaces of every size share ONE allocation.
- * - **transfer** (the haze worker, `haze.worker.ts`): the context lives on an `OffscreenCanvas` sized to the surface,
- *   and `transferToImageBitmap()` hands the drawing buffer itself to the target's `bitmaprenderer` context — no copy,
- *   no readback. The price is that the buffer must be exactly the surface, so a surface of a different size from the
- *   last reallocates it. Haze canvases are small (≤ 256 px) and off the main thread, so that is cheap there. It was
- *   tried for the page's rims too and reverted: rims come in every size, a re-render redraws all of them, and the
- *   per-draw reallocation held software-GL frames for 100–400 ms where the copy path held none
- *   (`testing/e2e/jelly-interaction.mjs`, the React re-render pass).
+ * - **transfer** (the glass worker, `glass.worker.ts` — the normal path): the context lives on an `OffscreenCanvas`
+ *   sized to the surface, and `transferToImageBitmap()` hands the drawing buffer itself to the target's
+ *   `bitmaprenderer` context — no copy, no readback. The price is that the buffer must be exactly the surface, so a
+ *   surface of a different size from the last reallocates it, and the transfer waits for the GPU to finish. Both are
+ *   paid on the worker's thread, never the page's.
+ * - **copy** (the page, where no worker can render WebGL): render into the bottom-left of a high-water backing store
+ *   and `drawImage` that region onto the surface's 2D canvas. Surfaces of every size share ONE allocation, but the
+ *   main thread waits for the GPU on every surface — onto a CPU-backed 2D canvas it is a pixel readback, and in Gecko
+ *   a round trip to the GPU process (Firefox 136: 24 ms of main thread per hover frame across eight cards). The
+ *   transfer was tried on the page too and reverted: there its reallocations and waits land on the main thread, and a
+ *   React re-render that redraws every rim held software-GL frames for 100–400 ms
+ *   (`testing/e2e/jelly-interaction.mjs`, the re-render pass).
  */
 import { HAZE_FRAG } from './haze-shader';
 import { FRAG, VERT } from './shader';
@@ -240,7 +242,7 @@ function link(gl: GL, vs: WebGLShader, fsSrc: string): WebGLProgram | null {
 /** `transfer`: zero-copy ImageBitmap handoff into `bitmaprenderer` targets. `copy`: `drawImage` into 2D targets. */
 export type GlassHandoff = 'transfer' | 'copy';
 
-/** A surface canvas: in the page, or (the haze worker) one transferred with `transferControlToOffscreen`. */
+/** A surface canvas: in the page, or (the glass worker) one transferred with `transferControlToOffscreen`. */
 export type GlassTarget = HTMLCanvasElement | OffscreenCanvas;
 type Target = GlassTarget;
 type TargetCtx =

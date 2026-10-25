@@ -309,9 +309,11 @@ pointer listener fan-out, one overlay canvas (arcs only). The ambient clock runs
 unfocused, nothing is on screen, the tier is degraded, or Jelly motion is Still.
 Budgets per tier in `JELLY_BUDGETS` (desktop: 24 rims, 8 haze slots, 24 carriers,
 12 bodies — never above `--jelly-body-budget` (24)), with a downscale-only
-governor. Haze draws in a worker (`lib/liquid/glass/haze.worker.ts`), which hands
-each frame to its canvas without a copy (`transferToImageBitmap` →
-`bitmaprenderer`); the globe cursor is its own GPU canvas moved by `transform`.
+governor. Rims and haze draw in a worker (`lib/liquid/glass/glass.worker.ts`), which
+hands each frame to its canvas without a copy (`transferToImageBitmap` →
+`bitmaprenderer`), so the main thread never waits for the GPU — in Firefox a
+GPU-process round trip per surface; the globe cursor is its own GPU canvas moved
+by `transform`.
 Rects are read in scroll/resize/activation, never per frame or pointer
 event; nothing writes custom properties to `<html>` per frame. The only filters
 are the lens and refraction blurs inside a moving body's own SVG, active only

@@ -137,14 +137,16 @@ engine's driver on the shared frame loop (§8.1), which draws at most six due su
 one shared `uTime` and then lets the driver sleep again.
 
 **2026-10-25: the clock doubled (30/12 → 60/30 Hz, 15/8 → 30/15 handheld).** The owner asked
-for "zero lag and as much fps as possible". What made it affordable: the haze draws in a
-worker (`lib/liquid/glass/haze.worker.ts`; the engine still makes every scheduling decision
-and posts each tick's draws), and there each frame reaches its canvas by
-`transferToImageBitmap()` → `bitmaprenderer` instead of a `drawImage` that made the main
-thread wait for (and, onto a CPU-backed 2D canvas, read back from) the GPU. Engines without a
-worker-capable `OffscreenCanvas` keep the main-thread path. Rims stay on the page's copy path:
-the transfer needs a buffer the exact size of each surface, and reallocating it for every rim
-of a re-render held software-GL frames for 100–400 ms (`renderer.ts` "Handing a frame over").
+for "zero lag and as much fps as possible". What made it affordable: rims and haze draw in a
+worker (`lib/liquid/glass/glass.worker.ts`; the engine still makes every decision — which
+surfaces, when, light, dent, lattice, plasma — and posts each frame's draws, which the worker
+coalesces per canvas so a slow GPU drops stale frames instead of queueing them), and there each
+frame reaches its canvas by `transferToImageBitmap()` → `bitmaprenderer` instead of a
+`drawImage` that made the main thread wait for the GPU. That wait was worst in Firefox, where
+WebGL runs in a separate GPU process: hovering across eight cards cost 26 ms of main thread a
+frame (37 fps, governor at its last step) and costs 0.7 ms (59 fps) from the worker. Engines
+without a worker-capable `OffscreenCanvas` keep the main-thread copy path
+(`renderer.ts` "Handing a frame over").
 The governor walks the clock back to 30 Hz at its first step, so a
 machine that cannot hold 60 — software GL, Safari Low Power Mode, Chrome Energy Saver (both
 cap rendering at 30 fps) — settles where it can instead of missing every other tick.
