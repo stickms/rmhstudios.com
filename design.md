@@ -273,7 +273,7 @@ it is written — none of which looked like a performance bug in the source:
    moved by `transform`.
 6. **Ambient motion is one capped loop that stops when nobody can see it** —
    never a CSS `infinite` keyframe of your own. The jelly's haze ticks on the
-   engine's clock (30 Hz engaged, a 12 Hz floor when idle, 0 when the tab is
+   engine's clock (60 Hz engaged, a 30 Hz floor when idle, 0 when the tab is
    hidden, nothing hazy is on screen, or the tier is degraded), behind a governor
    that only ever turns it down. A backdrop that never rests was the
    [2026-10-08](docs/performance-audit-2026-10-08.md) failure; the jelly's floor is

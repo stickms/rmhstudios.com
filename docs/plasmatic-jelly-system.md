@@ -125,21 +125,34 @@ never as UI colour.
 The owner's brief is that jelly **always** has underlying motion. The engine's ambient
 clock therefore never freezes while someone could be looking:
 
-| State                                                                                                              | Clock                                        |
-| ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
-| engaged (input within the last 20 s)                                                                               | tier clock: 30 Hz (15 Hz handheld)           |
-| idle (`IDLE_AFTER_MS` = 20 s without input)                                                                        | floor: 12 Hz (8 Hz handheld) — **no freeze** |
-| `jellyMotion = calm`                                                                                               | ≤ 12 Hz, amplitude × 0.4, slots halved       |
-| hidden tab · unfocused window · scroll in flight · nothing hazy on screen · degraded tier · `still` · game playing | **0** — no loop at all                       |
+| State                                                                                                              | Clock                                         |
+| ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| engaged (input within the last 20 s)                                                                               | tier clock: 60 Hz (30 Hz handheld)            |
+| idle (`IDLE_AFTER_MS` = 20 s without input)                                                                        | floor: 30 Hz (15 Hz handheld) — **no freeze** |
+| `jellyMotion = calm`                                                                                               | ≤ 12 Hz, amplitude × 0.4, slots halved        |
+| hidden tab · unfocused window · scroll in flight · nothing hazy on screen · degraded tier · `still` · game playing | **0** — no loop at all                        |
 
 Between ticks the engine sleeps on a timer, not on a spinning rAF: the timer wakes the
 engine's driver on the shared frame loop (§8.1), which draws at most six due surfaces with
 one shared `uTime` and then lets the driver sleep again.
 
+**2026-10-25: the clock doubled (30/12 → 60/30 Hz, 15/8 → 30/15 handheld).** The owner asked
+for "zero lag and as much fps as possible". What made it affordable: the haze draws in a
+worker (`lib/liquid/glass/haze.worker.ts`; the engine still makes every scheduling decision
+and posts each tick's draws), and there each frame reaches its canvas by
+`transferToImageBitmap()` → `bitmaprenderer` instead of a `drawImage` that made the main
+thread wait for (and, onto a CPU-backed 2D canvas, read back from) the GPU. Engines without a
+worker-capable `OffscreenCanvas` keep the main-thread path. Rims stay on the page's copy path:
+the transfer needs a buffer the exact size of each surface, and reallocating it for every rim
+of a re-render held software-GL frames for 100–400 ms (`renderer.ts` "Handing a frame over").
+The governor walks the clock back to 30 Hz at its first step, so a
+machine that cannot hold 60 — software GL, Safari Low Power Mode, Chrome Energy Saver (both
+cap rendering at 30 fps) — settles where it can instead of missing every other tick.
+
 **Audit reversal, recorded deliberately.** The 2026-10-08 performance audit set the
 "page at rest" frame limit to 2 fps and the backdrop went fully still because of it.
 R7 reverses that limit for the jelly material: the rest limit in `frame-budget.mjs`
-becomes **13 fps** (the 12 Hz floor + 1). The CPU target at rest stays **≤ 250 ms/s** on
+becomes **31 fps** (the 30 Hz floor + 1; it was 13 fps over the original 12 Hz floor). The CPU target at rest stays **≤ 250 ms/s** on
 `/` (desktop; ≤ 200 ms/s handheld; the 2026-10-08 failure was 1020 ms/s). What did
 **not** change: the backdrop (aurora, ring field) stays completely still
 (`static-backdrop.test.ts`) — jelly moves, the room does not — and no site CSS may add a
@@ -147,9 +160,9 @@ free-standing `infinite` animation outside `.jelly-flow`.
 
 **The governor** (`lib/jelly/governor.ts`) is the battery and thermal answer. The engine
 feeds it each tick's cost, interval and the clock that tick ran at; after a 30-tick warm-up,
-a 2 s window whose p90 cost exceeds 6 ms (8 ms handheld; the cost includes the WebGL → 2D copies) or whose p90 interval exceeds 1.5×
-the period of the clock actually running (the 12 Hz idle floor is on time at 83 ms) takes one
-step down: clock 30 → 20 Hz · slots halved · carriers halved · ambient arcs off · haze at
+a 2 s window whose p90 cost exceeds 4 ms (8 ms handheld) or whose p90 interval exceeds 1.5×
+the period of the clock actually running (the 30 Hz idle floor is on time at 33 ms) takes one
+step down: clock 60 → 30 Hz · slots halved · carriers halved · ambient arcs off · haze at
 0.125 scale · floor clock 6 Hz (the ladder never freezes the haze). Downscale only, one step per window, reset on route change. The
 tier itself never flips on a frame-rate reading.
 
@@ -293,9 +306,9 @@ table):
 
 | Tier                                   | Rims | Haze slots | Carriers | Clock / idle | Bodies    | Lattices | Ambient arcs | Click bolts |
 | -------------------------------------- | ---- | ---------- | -------- | ------------ | --------- | -------- | ------------ | ----------- |
-| `full` (fine pointer)                  | 24   | 8          | 24       | 30 / 12 Hz   | 12        | 8        | ≥ 2 s apart  | 3           |
-| `coarse`                               | 16   | 6          | 16       | 30 / 12 Hz   | 8         | 6        | ≥ 2 s apart  | 2           |
-| `handheld` (coarse, ≤ 1024 px)         | 10   | 4          | 8        | 15 / 8 Hz    | 6         | 4        | ≥ 4 s apart  | 1           |
+| `full` (fine pointer)                  | 24   | 8          | 24       | 60 / 30 Hz   | 12        | 8        | ≥ 2 s apart  | 3           |
+| `coarse`                               | 16   | 6          | 16       | 60 / 30 Hz   | 8         | 6        | ≥ 2 s apart  | 2           |
+| `handheld` (coarse, ≤ 1024 px)         | 10   | 4          | 8        | 30 / 15 Hz   | 6         | 4        | ≥ 4 s apart  | 1           |
 | `lite` (`perf-lite`)                   | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
 | `off` (degraded)                       | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
 | game playing (`html[data-game-state]`) | 2    | 0          | 0        | 0            | 0         | 0        | off          | 0           |

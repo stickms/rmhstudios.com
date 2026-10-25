@@ -592,12 +592,13 @@ describe('idle cadence (R7: ≤ the idle clock at rest, never vsync)', () => {
       },
     });
     // The engine ticks at the same rate; the carriers step on its frames and their own timer stands down.
-    for (let i = 0; i < 12; i++) {
-      vi.advanceTimersByTime(1000 / 12);
+    const hz = JELLY_BUDGETS.full.idleClockHz;
+    for (let i = 0; i < hz; i++) {
+      vi.advanceTimersByTime(1000 / hz);
       bus.emit('ambient:tick', {});
     }
-    expect(writes).toBeGreaterThanOrEqual(12);
-    expect(writes).toBeLessThanOrEqual(13);
+    expect(writes).toBeGreaterThanOrEqual(hz);
+    expect(writes).toBeLessThanOrEqual(hz + 1);
   });
 
   it('any input clears the stamp and stops the steps; teardown removes it', () => {

@@ -4,7 +4,12 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { msToAmbientTick } from '@/lib/jelly/ambient-tick';
-import { GlobeCursorEngine, type HoverKind } from '@/lib/globe-cursor/engine';
+import {
+  GlobeCursorEngine,
+  HOTSPOT_CSS,
+  HOTSPOT_SIZE_PX,
+  type HoverKind,
+} from '@/lib/globe-cursor/engine';
 import { IDLE_AFTER_MS, jellyBudget, jellyMode, onJellyEnvChange } from '@/lib/jelly/tiers';
 import type { GlobeCursorSettings } from '@/lib/globe-cursor/settings';
 import { useGlobeCursorStore } from '@/stores/globeCursorStore';
@@ -17,6 +22,27 @@ import { useGlobeCursorStore } from '@/stores/globeCursorStore';
  * listeners rather than riding `lib/liquid/runtime.ts`, and it is mounted once
  * per document (by `GlobeCursorRoot`), never per element.
  *
+ * ## Latency and paint
+ *
+ * - **The GPU canvas itself, moved by the compositor.** With no trail and no
+ *   sparkles (the defaults) and a WebGL 2 globe, the canvas the globe is
+ *   rendered into IS what is on screen (`engine.directCanvas()`): a
+ *   sprite-sized layer that follows the pointer with a `translate3d`, a
+ *   compositor-only move. Nothing is copied into a 2D canvas — onto a small 2D
+ *   canvas that copy is a GPU readback, measured at 5–7 ms a frame in Chromium
+ *   — and no full-viewport layer is repainted or, under a blend mode,
+ *   re-blended. The halo is a gradient element and the hotspot a dot element,
+ *   both moved the same way, and the silhouette glow is a CSS `drop-shadow` on
+ *   the globe's layer (GPU in every engine) instead of a canvas `shadowBlur` (a
+ *   per-frame CPU blur in WebKit and Gecko). A trail or sparkles fly far from
+ *   the globe, and the CPU fallback has no GPU canvas, so either keeps the
+ *   full-viewport 2D canvas.
+ * - **Drawn where the pointer will be.** A drawn cursor is at least a frame
+ *   behind the hardware one. Where the browser predicts pointer motion
+ *   (`getPredictedEvents()`, Chromium) the globe aims at the prediction for the
+ *   frame it is drawn in; the hotspot dot stays on the real pointer. The
+ *   follower spring is off by default (`lag` 0).
+ *
  * ## When the frame runs
  *
  * Every vsync only while something the hand did is still settling — the pointer
@@ -28,7 +54,7 @@ import { useGlobeCursorStore } from '@/stores/globeCursorStore';
  * next tick of the shared grid (`lib/jelly/ambient-tick.ts`) at the tier's
  * engaged rate for `IDLE_AFTER_MS` after the last input, then the idle floor —
  * the same ticks the docked globe draws on, so the two land in one frame
- * (R7: ≤ 13 frames/s at rest).
+ * (R7: ≤ 31 frames/s at rest).
  *
  * Under jellyMotion `still` (WCAG 2.2.2), the degraded tiers, a game in play or a
  * hidden tab (`jellyMode().ambient` false) the eversion and spin hold still and,
@@ -39,6 +65,11 @@ import { useGlobeCursorStore } from '@/stores/globeCursorStore';
  */
 
 const STYLE_ID = 'rmh-globe-cursor-style';
+/** A predicted point further than this (CSS px) from the real pointer is a misprediction and is ignored. */
+const MAX_LEAD_PX = 48;
+/** The fixed, click-through, compositor-moved layer every direct-mode element is. */
+const LAYER_CSS =
+  'position:fixed;left:0;top:0;pointer-events:none;z-index:var(--z-cursor);will-change:transform,opacity;';
 const HTML_CLASS = 'rmh-globe-cursor';
 
 const INTERACTIVE =
@@ -53,6 +84,36 @@ function cursorCss(s: GlobeCursorSettings): string {
   if (s.honourCanvas) keep.push('canvas');
   if (s.nativeOverText) keep.push(TEXT_FIELD);
   return `html.${HTML_CLASS}, html.${HTML_CLASS} *:not(${keep.join(', ')}) { cursor: none !important; }`;
+}
+
+/** The browser's predicted pointer position for the coming frame, or the real one. */
+function lead(e: PointerEvent): [number, number] {
+  const predicted = typeof e.getPredictedEvents === 'function' ? e.getPredictedEvents() : null;
+  const p = predicted && predicted.length > 0 ? predicted[predicted.length - 1] : null;
+  if (!p || Math.hypot(p.clientX - e.clientX, p.clientY - e.clientY) > MAX_LEAD_PX) {
+    return [e.clientX, e.clientY];
+  }
+  return [p.clientX, p.clientY];
+}
+
+/** Whether everything the cursor paints stays near the globe (no trail, no sparkles): direct mode can draw it. */
+const isLocal = (s: GlobeCursorSettings) => s.trail === 0 && !s.sparkles;
+
+/** A direct-mode layer element with its last-written styles, so a frame writes only what changed. */
+class Layer<E extends HTMLElement> {
+  private last: Record<string, string> = {};
+  constructor(readonly el: E) {
+    el.setAttribute('aria-hidden', 'true');
+    el.style.cssText = LAYER_CSS;
+  }
+  set(
+    prop: 'transform' | 'opacity' | 'width' | 'height' | 'filter' | 'background' | 'mixBlendMode',
+    v: string,
+  ) {
+    if (this.last[prop] === v) return;
+    this.last[prop] = v;
+    this.el.style[prop] = v;
+  }
 }
 
 function classify(target: EventTarget | null, s: GlobeCursorSettings): HoverKind | 'native' {
@@ -72,6 +133,8 @@ export default function GlobeCursor() {
   const settingsRef = useRef(settings);
   const reducedRef = useRef(reduced);
   const kickRef = useRef<() => void>(() => {});
+  /** Re-lay the canvas out for the current settings (small moving box vs full viewport). */
+  const layoutRef = useRef<() => void>(() => {});
 
   // Settings → engine + stylesheet.
   useEffect(() => {
@@ -79,6 +142,8 @@ export default function GlobeCursor() {
     engineRef.current?.setSettings(settings);
     const canvas = canvasRef.current;
     if (canvas) canvas.style.mixBlendMode = settings.blend;
+    // Re-lay out (direct vs full-viewport), which also carries the blend mode to the direct layers.
+    layoutRef.current();
     let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
     if (settings.hideNative) {
       if (!style) {
@@ -116,13 +181,76 @@ export default function GlobeCursor() {
     engineRef.current = engine;
     engine.setReduced(reducedRef.current);
 
+    // Direct mode: the engine's GPU canvas, a halo and a hotspot dot are on screen, each moved with a transform, and
+    // the 2D canvas is parked. Otherwise the 2D canvas covers the viewport and the engine draws everything into it.
+    let direct = false;
+    let globe: Layer<HTMLCanvasElement> | null = null;
+    const halo = new Layer(document.createElement('div'));
+    const dot = new Layer(document.createElement('div'));
+    dot.set('width', `${HOTSPOT_SIZE_PX}px`);
+    dot.set('height', `${HOTSPOT_SIZE_PX}px`);
+    dot.set('background', HOTSPOT_CSS);
+    const layers = () => (globe ? [halo, globe, dot] : [halo, dot]);
+    const unmountLayers = () => {
+      for (const l of layers()) l.el.remove();
+    };
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       engine.setDpr(dpr);
-      canvas.width = Math.round(window.innerWidth * dpr);
-      canvas.height = Math.round(window.innerHeight * dpr);
+      const surface = isLocal(settingsRef.current) ? engine.directCanvas() : null;
+      direct = !!surface;
+      if (direct && surface) {
+        if (globe?.el !== surface) globe = new Layer(surface);
+        canvas.style.display = 'none';
+        canvas.width = canvas.height = 0;
+        // Halo under the globe, dot over it; all just after the parked 2D canvas, in the same portal.
+        canvas.after(halo.el, globe.el, dot.el);
+        for (const l of layers()) l.set('mixBlendMode', settingsRef.current.blend);
+      } else {
+        unmountLayers();
+        canvas.style.display = '';
+        canvas.width = Math.round(window.innerWidth * dpr);
+        canvas.height = Math.round(window.innerHeight * dpr);
+      }
       dirty = null; // resizing cleared the canvas
       kick();
+    };
+    layoutRef.current = resize;
+
+    /** One direct-mode frame: render the globe on the GPU, then move three layers. False if the GPU path is gone. */
+    const drawDirect = (): boolean => {
+      const f = engine.frameDirect();
+      if (!f || !globe) return false;
+      if (!f.visible) {
+        for (const l of layers()) l.set('opacity', '0');
+        return true;
+      }
+      globe.set('width', `${f.size}px`);
+      globe.set('height', `${f.size}px`);
+      globe.set('transform', `translate3d(${f.x}px, ${f.y}px, 0)`);
+      globe.set('opacity', f.opacity.toFixed(3));
+      globe.set('filter', engine.glowFilter());
+      if (f.halo) {
+        const r = Math.ceil(f.halo.r * 2) / 2;
+        halo.set('width', `${2 * r}px`);
+        halo.set('height', `${2 * r}px`);
+        halo.set(
+          'background',
+          `radial-gradient(circle closest-side, ${f.halo.color} ${(f.halo.inner * 100).toFixed(1)}%, ${f.halo.clear} 100%)`,
+        );
+        halo.set('transform', `translate3d(${f.halo.x - r}px, ${f.halo.y - r}px, 0)`);
+        halo.set('opacity', f.halo.opacity.toFixed(3));
+      } else {
+        halo.set('opacity', '0');
+      }
+      if (f.hotspot) {
+        const h = HOTSPOT_SIZE_PX / 2;
+        dot.set('transform', `translate3d(${f.hotspot.x - h}px, ${f.hotspot.y - h}px, 0)`);
+        dot.set('opacity', f.hotspot.opacity.toFixed(3));
+      } else {
+        dot.set('opacity', '0');
+      }
+      return true;
     };
 
     let raf = 0;
@@ -150,19 +278,23 @@ export default function GlobeCursor() {
       const dt = last ? (now - last) / 1000 : 1 / 60;
       last = now;
       engine.step(dt);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      // Clear only what the last frame painted: the globe covers a few hundred
-      // pixels of a full-viewport canvas, and a full clear is a full raster.
-      if (dirty) {
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        ctx.clearRect(
-          Math.floor(dirty.x * dpr) - 2,
-          Math.floor(dirty.y * dpr) - 2,
-          Math.ceil(dirty.w * dpr) + 4,
-          Math.ceil(dirty.h * dpr) + 4,
-        );
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // The GPU context can be lost under us: fall back to the 2D canvas for good.
+      if (direct && !drawDirect()) resize();
+      if (!direct) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        // Clear only what the last frame painted: the globe covers a few hundred
+        // pixels of a full-viewport canvas, and a full clear is a full raster.
+        if (dirty) {
+          ctx.clearRect(
+            Math.floor(dirty.x * dpr) - 2,
+            Math.floor(dirty.y * dpr) - 2,
+            Math.ceil(dirty.w * dpr) + 4,
+            Math.ceil(dirty.h * dpr) + 4,
+          );
+        }
+        dirty = engine.draw(ctx);
       }
-      dirty = engine.draw(ctx);
       // Reduced motion draws one still frame per event. Otherwise: every vsync while anything settles, the ambient
       // tick while only the eversion runs, and nothing at all once it rests (ambient motion off, or no pointer).
       if (reducedRef.current) {
@@ -211,7 +343,8 @@ export default function GlobeCursor() {
       if (lastHover === 'native') {
         engine.leave();
       } else {
-        engine.move(e.clientX, e.clientY);
+        const [lx, ly] = lead(e);
+        engine.move(e.clientX, e.clientY, lx, ly);
         setNativeHidden(true);
       }
       kick();
@@ -263,6 +396,8 @@ export default function GlobeCursor() {
       if (timer) clearTimeout(timer);
       stopEnv();
       kickRef.current = () => {};
+      layoutRef.current = () => {};
+      unmountLayers();
       engine.dispose();
       engineRef.current = null;
       window.removeEventListener('resize', resize);

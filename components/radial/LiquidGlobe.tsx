@@ -52,6 +52,7 @@ import {
   onJellyEnvChange,
 } from '@/lib/jelly/tiers';
 import { evert } from '@/lib/eversion/thurston';
+import { governedDprCap } from '@/lib/jelly/governor';
 import { ambientTickDue, msToAmbientTick } from '@/lib/jelly/ambient-tick';
 import {
   copyQuat,
@@ -125,7 +126,7 @@ const DEG = Math.PI / 180;
 const SETTLE_SPRING = spring(0.62, 0.1);
 /**
  * Idle drift (deg/s) — only until the visitor first takes hold. It advances on the jelly ambient tick (step 2b), not
- * per vsync: 30 Hz while someone is there, the 12 Hz idle floor after `IDLE_AFTER_MS`, and not at all under `still`,
+ * per vsync: 60 Hz while someone is there, the 30 Hz idle floor after `IDLE_AFTER_MS`, and not at all under `still`,
  * the degraded tiers, a hidden or unfocused tab, or off screen (CLAUDE.md "Plasmatic Jelly" → Performance, R7).
  */
 const IDLE_SPIN = 5.5;
@@ -426,6 +427,15 @@ for (let s = 0; s <= RING_SAMPLES; s++) {
  * nothing visible from a 3x buffer that costs 2.25x the pixels of a 2x one.
  */
 const CAGE_MAX_DPR = 2;
+/**
+ * The device pixel ratio a globe backing store is sized at: the display's, under
+ * the store's own ceiling and under the jelly governor's (`governedDprCap`, which
+ * drops to 1 once the page is struggling). Read when a store is sized, never per
+ * frame; the globe is mounted afresh each time the menu opens, so it picks up the
+ * governor's current step then.
+ */
+const storeDpr = (ceiling = Infinity) =>
+  Math.min(window.devicePixelRatio || 1, ceiling, governedDprCap());
 /**
  * How far the cage canvas is grown BEYOND the stage box, on every side, as a
  * fraction of the stage.
@@ -934,7 +944,7 @@ export function LiquidGlobe({
       cageSpan.current = span;
       const canvas = cageRef.current;
       if (canvas) {
-        const dpr = Math.min(window.devicePixelRatio || 1, CAGE_MAX_DPR);
+        const dpr = storeDpr(CAGE_MAX_DPR);
         const px = Math.round(span * dpr);
         if (canvas.width !== px) {
           canvas.width = px;
@@ -980,7 +990,7 @@ export function LiquidGlobe({
       // The material's backing store tracks the stage the same way (its own,
       // lower DPR ceiling — see JELLY_MAX_DPR).
       if (jellyGlass.current) {
-        jellyGlass.current.resize(size, window.devicePixelRatio || 1);
+        jellyGlass.current.resize(size, storeDpr());
         jellyDirty.current = true;
       }
       dirty.current = true;
@@ -1113,7 +1123,7 @@ export function LiquidGlobe({
       const lum = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2];
       const rgba = factory.resolveRgba;
       const haze = factory.resolveColor(hazeCss, [0.9, 0.9, 0.95]);
-      g.resize(sizeRef.current, window.devicePixelRatio || 1);
+      g.resize(sizeRef.current, storeDpr());
       g.palette(
         {
           ink,
@@ -1389,7 +1399,7 @@ export function LiquidGlobe({
     if (!s.ready) return false;
     if (s.canvas.parentElement !== stage) stage.insertBefore(s.canvas, cageRef.current);
     // Once per run, not per frame: a computed-style read is a style flush.
-    s.resize(cageSpan.current, sizeRef.current / 2, window.devicePixelRatio || 1);
+    s.resize(cageSpan.current, sizeRef.current / 2, storeDpr());
     const cs = getComputedStyle(stage);
     const ink = resolveColor(cs.color || 'rgb(0 0 0)', [0, 0, 0, 1], document);
     const accent = resolveColor(

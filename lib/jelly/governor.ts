@@ -5,10 +5,10 @@
  * feeds it), **downscale-only**, with a warm-up so a route's first frames (shader compiles, decodes) never read as
  * load. Each window is {@link GOVERNOR_WINDOW_MS} of ticks; if its p90 jelly frame cost exceeds the tier's target, or
  * its p90 tick interval exceeds 1.5× the period of the clock that was actually RUNNING for that tick (the engine drops
- * to the 12 Hz idle floor after `IDLE_AFTER_MS` without input — an idle tick 83 ms apart is on time, not late), it takes
+ * to the 30 Hz idle floor after `IDLE_AFTER_MS` without input — an idle tick 33 ms apart is on time, not late), it takes
  * ONE step down this ladder:
  *
- *   1. clock 30 → 20 Hz · 2. ambient slots halved · 3. carriers halved · 4. ambient arcs off ·
+ *   1. clock 60 → 30 Hz · 2. ambient slots halved · 3. carriers halved · 4. ambient arcs off ·
  *   5. haze canvases at 0.125 scale · 6. clock 0 (static haze).
  *
  * At most one step per window, never back up within a route ({@link JellyGovernor.reset} on navigation). It turns
@@ -32,19 +32,20 @@ export const GOVERNOR_DT_FACTOR = 1.5;
 export const GOVERNOR_MAX_INTERVAL_MS = 1000;
 /**
  * Main-thread jelly work per ambient tick. The measured cost includes each haze canvas's WebGL → 2D `drawImage` copy,
- * which synchronises with the GPU, so a healthy desktop routinely spends 2–4 ms on a 6-draw tick; the original 2 ms
- * target (04 §3.5) stepped real desktops down to a frozen haze within seconds. 6 ms at the 30 Hz engaged clock is
- * ≤ 180 ms/s of main thread — inside the 250 ms/s rest-CPU target.
+ * which synchronised with the GPU, so a healthy desktop routinely spent 2–4 ms on a 6-draw tick; the original 2 ms
+ * target (04 §3.5) stepped real desktops down to a frozen haze within seconds. Haze now draws in a worker where one can
+ * render WebGL, so a tick costs the main thread a fraction of that, and 4 ms at the 60 Hz
+ * engaged clock is ≤ 240 ms/s of main thread — still inside the 250 ms/s rest-CPU target.
  */
 export const GOVERNOR_COST_TARGET_MS: Readonly<Record<JellyTier, number>> = {
-  full: 6,
-  coarse: 6,
+  full: 4,
+  coarse: 4,
   handheld: 8,
   lite: 8,
   off: 8,
 };
-/** Step 1's clock ceiling. */
-export const GOVERNED_CLOCK_HZ = 20;
+/** Step 1's clock ceiling: the original engaged clock, so the first step down is gentle at the 60 Hz one. */
+export const GOVERNED_CLOCK_HZ = 30;
 /**
  * The clock the last step keeps. The ladder sheds detail and rate but never freezes the haze: the material always has
  * underlying motion while it is visible (master plan R7). Only hidden/unfocused/unseen/degraded/Still stop the clock.
@@ -54,6 +55,30 @@ export const GOVERNED_FLOOR_HZ = 6;
 export const GOVERNED_HAZE_SCALE = 0.125;
 /** The number of steps on the ladder. */
 export const GOVERNOR_MAX_STEP = 6;
+/**
+ * From this step on, the page is struggling enough that the globe's backing stores (its cage canvas and its material)
+ * are drawn at {@link GOVERNED_MAX_DPR} instead of their own ceilings: on a 2× display that is a quarter of the pixels.
+ * The globe reads it when it sizes them (mount, resize), never per frame.
+ */
+export const GOVERNED_DPR_STEP = 5;
+export const GOVERNED_MAX_DPR = 1;
+
+/**
+ * The installed glass engine's current step, published here (not in the engine) so readers outside the jelly services
+ * — the globe — need not import the engine to ask. 0 when no engine is installed.
+ */
+let liveStep = 0;
+export function liveGovernorStep(): number {
+  return liveStep;
+}
+/** The engine's write side of {@link liveGovernorStep}. */
+export function publishGovernorStep(step: number): void {
+  liveStep = step;
+}
+/** The device-pixel-ratio ceiling the governor allows a backing store right now (`Infinity` = its own ceiling). */
+export function governedDprCap(step: number = liveStep): number {
+  return step >= GOVERNED_DPR_STEP ? GOVERNED_MAX_DPR : Infinity;
+}
 
 export interface GovernorKnobs {
   /** 0 (untouched) … {@link GOVERNOR_MAX_STEP}. */
