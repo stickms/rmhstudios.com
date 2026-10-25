@@ -3,7 +3,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createHmac } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { once } from 'node:events';
 import { recordRelease } from '../../deploy/release-state.mjs';
 
@@ -18,7 +18,7 @@ beforeAll(async () => {
   const script = join(directory, 'deploy.sh');
   writeFileSync(
     script,
-    '#!/bin/bash\nprintf "%s|%s|%s\\n" "$DEPLOY_RELEASE_ID" "$2" "$RELEASE_EXPECT_WEB_DIGEST" >> "$(dirname "$0")/requests"\n',
+    '#!/bin/bash\nprintf "%s|%s|%s\\n" "$DEPLOY_RELEASE_ID" "$2" "$RELEASE_EXPECT_WEB_DIGEST" >> "$(dirname "$0")/requests"\nprintf "%s" "$PATH" > "$(dirname "$0")/path"\n',
   );
   mkdirSync(join(directory, 'releases'));
   child = spawn(process.execPath, [resolve('webhook-server.cjs')], {
@@ -88,6 +88,16 @@ describe('signed release handoff', () => {
     for (let i = 0; i < 50 && !existsSync(file); i++)
       await new Promise((done) => setTimeout(done, 20));
     expect(readFileSync(file, 'utf8').trim().split('\n')).toEqual([`release-once|${sha}|${web}`]);
+  });
+  // deploy.sh shells out to `node` for the release journal. The listener used to
+  // hand it a fixed PATH without node, so on a host with node outside /usr/bin
+  // every release died at its first journal write ("node: command not found").
+  it('runs the deployment with the listener\'s own node on PATH', async () => {
+    expect((await post(release('release-path'))).status).toBe(202);
+    const file = join(directory, 'path');
+    for (let i = 0; i < 50 && !existsSync(file); i++)
+      await new Promise((done) => setTimeout(done, 20));
+    expect(readFileSync(file, 'utf8').split(delimiter)[0]).toBe(dirname(process.execPath));
   });
   it('reports durable host completion and does not replay a release after listener state was lost', async () => {
     recordRelease(join(directory, 'releases'), 'release-durable', sha, 'success');

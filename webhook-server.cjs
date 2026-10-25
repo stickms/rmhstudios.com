@@ -19,7 +19,24 @@ const BRANCH_ENV_MAP = {
 };
 
 const fs = require('fs');
+const path = require('path');
 const acceptedReleases = new Map();
+
+/* A fixed PATH for the deploy (no inherited surprises), plus the directory of
+   the node running THIS listener first: deploy.sh runs node for the release
+   journal, and node is often not in the system directories (nvm/fnm/volta/tarball
+   installs). The listener is itself a node process, so it always knows where. */
+const DEPLOY_PATH = [
+  path.dirname(process.execPath),
+  '/usr/local/sbin',
+  '/usr/local/bin',
+  '/usr/sbin',
+  '/usr/bin',
+  '/sbin',
+  '/bin',
+]
+  .filter((dir, index, all) => all.indexOf(dir) === index)
+  .join(path.delimiter);
 
 function logMsg(msg) {
   const line = `[${new Date().toISOString()}] ${msg}\n`;
@@ -169,7 +186,7 @@ http
         cwd: PROJECT_DIR,
         env: {
           ...process.env,
-          PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+          PATH: DEPLOY_PATH,
           DEPLOY_DISCORD_MSG_ID: discordMsgId,
           DEPLOY_RELEASE_ID: releaseId,
           DEPLOY_REQUESTED_AT: String(Math.floor(Date.now() / 1000)),

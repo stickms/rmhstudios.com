@@ -24,6 +24,15 @@
 
 set -euo pipefail
 
+# The release journal (deploy/release-state.mjs) runs on node, and every release
+# writes to it before it does anything else. Fail here, loudly, rather than part-way
+# through with a bare "node: command not found" and nothing recorded. The webhook
+# listener puts its own node first on PATH; a manual run needs node on PATH too.
+command -v node >/dev/null 2>&1 || {
+    echo "FATAL: node is not on PATH ($PATH). deploy.sh needs it for the release journal." >&2
+    exit 1
+}
+
 # ── Determine environment ────────────────────────────────────────────────────
 ENVIRONMENT="${1:-production}"
 # Optional: the exact commit CI built + pushed to GHCR. Passed by the webhook
