@@ -145,6 +145,19 @@ esac
 }
 
 describe('production deploy orchestration', () => {
+  // Every journal write goes through node. Without it the release used to die
+  // part-way through with only "node: command not found" in the listener log.
+  it.skipIf(process.platform === 'win32')('refuses to start when node is not on PATH', () => {
+    const empty = mkdtempSync(join(tmpdir(), 'rmh-deploy-nonode-'));
+    dirs.push(empty);
+    const result = spawnSync('/bin/bash', [resolve('deploy.sh'), 'production', shaB], {
+      env: { PATH: empty },
+      encoding: 'utf8',
+      timeout: 10_000,
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('node is not on PATH');
+  });
   // Needs the real flock(1): a detached child that inherits the lock descriptor
   // keeps the lock after the deploy exits, so the next push queued behind it.
   it.skipIf(process.platform === 'win32' || spawnSync('flock', ['-V']).error !== undefined)(
