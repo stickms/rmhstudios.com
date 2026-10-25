@@ -112,9 +112,9 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: public/images/_variants
-          key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
+          key: image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-${{ hashFiles('public/images/**') }}
           restore-keys: |
-            image-variants-${{ runner.os }}-
+            image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-
       - name: Build with Vite 8
         run: pnpm run build:frontend:sourcemap
       - name: Validate WebAssembly assets
@@ -171,9 +171,9 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: public/images/_variants
-          key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
+          key: image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-${{ hashFiles('public/images/**') }}
           restore-keys: |
-            image-variants-${{ runner.os }}-
+            image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-
       - name: Build
         run: pnpm run build:frontend
       - name: Wait for Postgres
@@ -532,3 +532,18 @@ jobs:
             if (needs[name].result !== expected) throw new Error(name + ': ' + needs[name].result + ' (expected ' + expected + ')');
           }
           NODE
+
+  payload-diagnostics:
+    needs: build
+    if: github.event_name != 'pull_request' && !inputs.update-baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-deps
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: checked-frontend
+      - run: tar -xf checked-frontend.tar
+      - name: Report the whole lazy JavaScript surface (outside the release gate)
+        run: pnpm exec tsx scripts/ci/bundle-budget.ts

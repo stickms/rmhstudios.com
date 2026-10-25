@@ -268,7 +268,6 @@ ARG VITE_ADSENSE_CLIENT_ID
 ARG VITE_ADSENSE_SLOTS
 # Optional: only used to title/describe NEW library PDFs. Cover rendering itself
 # needs no key — titles fall back to the humanized filename when it's absent.
-ARG DEEPSEEK_API_KEY
 # Nitro server preset (perf audit §1.1). Defaults to `node-server` (single
 # process — current behavior). Build with `--build-arg NITRO_PRESET=node-cluster`
 # to emit a multi-worker cluster entry that uses more than one core; workers are
@@ -288,7 +287,6 @@ ENV DATABASE_URL=${DATABASE_URL} \
     STATIC_ASSET_VERSIONS=${STATIC_ASSET_VERSIONS} \
     VITE_ADSENSE_CLIENT_ID=${VITE_ADSENSE_CLIENT_ID} \
     VITE_ADSENSE_SLOTS=${VITE_ADSENSE_SLOTS} \
-    DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY} \
     NITRO_PRESET=${NITRO_PRESET}
 
 # NOTE: library cover/metadata generation is NOT run here. The library PDFs are
@@ -461,7 +459,9 @@ RUN addgroup --system --gid 1001 nodejs && \
 # /etc/passwd: 1001:1001 is app:nodejs from runtime-base above.
 FROM runtime-base AS runner
 ARG STATIC_ASSET_VERSIONS={}
+ARG PUBLIC_BUILD_CONFIG_HASH
 LABEL io.rmh.static-asset-versions=${STATIC_ASSET_VERSIONS}
+LABEL io.rmh.public-config-hash=${PUBLIC_BUILD_CONFIG_HASH}
 
 # ─── Production-only node_modules ───────────────────────────────────────
 # Sourced from prod-deps (not prisma-generate) — excludes devDependencies

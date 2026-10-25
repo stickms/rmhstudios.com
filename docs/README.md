@@ -9,6 +9,8 @@ Latest build and deployment review:
 [`build-deploy-audit-2026-10-23.md`](./build-deploy-audit-2026-10-23.md)
 measures 30 recent deployment runs, separates CI handoff from production readiness,
 and ranks speed improvements with runtime-performance acceptance criteria.
+Implementation and post-merge activation:
+[`deployment-speed-implementation-2026-10-24.md`](./deployment-speed-implementation-2026-10-24.md).
 
 This tree also builds as a Sphinx/MyST site for Read the Docs — `conf.py`,
 `requirements.txt` and `index.md` (the landing page + nav) here, with

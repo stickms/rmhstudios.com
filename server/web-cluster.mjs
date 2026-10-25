@@ -55,7 +55,7 @@ if (!existsSync(workerEntry)) {
   const slots = new Map();
   let shuttingDown = false;
   const listening = new Set();
-  const stateFile = process.env.WEB_WORKER_STATE_FILE || '/tmp/rmh-web-workers.json';
+  const stateFile = process.env.WEB_WORKER_STATE_FILE || resolve(os.tmpdir(), 'rmh-web-workers.json');
   const reportWorkers = () => {
     const temporary = `${stateFile}.${process.pid}.tmp`;
     writeFileSync(temporary, JSON.stringify({ expected: count, listening: listening.size }));
@@ -69,7 +69,10 @@ if (!existsSync(workerEntry)) {
     slot.startedAt = Date.now();
     slot.worker = worker;
     slots.set(id, slot);
-    worker.on('listening', () => { listening.add(id); reportWorkers(); });
+    worker.on('listening', () => {
+      listening.add(id);
+      reportWorkers();
+    });
     worker.on('exit', (code, signal) => {
       listening.delete(id);
       reportWorkers();
@@ -77,8 +80,12 @@ if (!existsSync(workerEntry)) {
       const lived = Date.now() - slot.startedAt;
       slot.failures = lived < EARLY_DEATH_MS ? slot.failures + 1 : 0;
       const delay =
-        slot.failures === 0 ? 0 : Math.min(BACKOFF_MAX_MS, BACKOFF_START_MS * 2 ** (slot.failures - 1));
-      const how = signal ? `signal ${signal}${signal === 'SIGKILL' ? ' (likely the OOM killer)' : ''}` : `code ${code}`;
+        slot.failures === 0
+          ? 0
+          : Math.min(BACKOFF_MAX_MS, BACKOFF_START_MS * 2 ** (slot.failures - 1));
+      const how = signal
+        ? `signal ${signal}${signal === 'SIGKILL' ? ' (likely the OOM killer)' : ''}`
+        : `code ${code}`;
       log(
         `worker ${id} (pid ${worker.process.pid}) exited with ${how} after ${Math.round(lived / 1000)}s — ` +
           `replacing it${delay ? ` in ${delay}ms (failed boot #${slot.failures})` : ''}`,

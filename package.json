@@ -188,12 +188,12 @@
     "tailwind-merge": "^3.7.0",
     "three": "^0.186.1",
     "tone": "^15.1.22",
-    "undici": "^8.11.2",
+    "undici": "^8.12.2",
     "uuid": "^14.0.2",
     "web-push": "^3.6.7",
     "web-vitals": "^6.2.3",
     "ws": "^8.22.0",
-    "zod": "^4.6.5",
+    "zod": "^4.6.6",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
@@ -249,7 +249,7 @@
       "shell-quote": ">=1.8.4",
       "@xmldom/xmldom": ">=0.9.12",
       "music-metadata": ">=11.12.3",
-      "undici": ">=8.10.2",
+      "undici": ">=8.12.2 <9",
       "ws": ">=8.21.3",
       "srvx": ">=0.11.13",
       "@hono/node-server": ">=1.19.13",
