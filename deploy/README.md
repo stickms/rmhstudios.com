@@ -22,10 +22,11 @@ Terraform DNS config.
 | `docker/`                        | Docker daemon config / helpers                                      |
 | `postgres/`                      | Postgres tuning + host setup (DB runs on the host, reached via `host.docker.internal`) |
 | `backup/`                        | DB backup scripts (driven by the systemd timer)                    |
-| `systemd/`                       | units: `rmh-db-backup.{service,timer}`, `rmhstudios-perf-tuning.service` |
+| `systemd/`                       | units: `rmh-db-backup.{service,timer}`, `rmh-disk-cleanup.{service,timer}`, `rmh-host-check.{service,timer}`, `rmhstudios-perf-tuning.service` |
 | `terraform/`                     | Cloudflare **DNS** as code — see [`terraform/README.md`](./terraform/README.md) |
 | `apply-cloudflare-cache-rules.sh`, `apply-perf-tuning.sh` | idempotent host/CDN tuning helpers with `VERIFY_ONLY=1` drift checks |
 | `disk-report.sh`, `move-docker-storage.sh` | disk diagnostics + moving Docker's data-root onto a separate volume |
+| `disk-cleanup.sh`                | host-side cleanup between deploys, run by `rmh-disk-cleanup.timer` every 6h (see *Disk space*) |
 
 ## The deploy pipeline (push → production)
 
@@ -145,6 +146,24 @@ sudo du -xh --max-depth=1 / | sort -h     # where the space is
 docker system df                          # Docker's own split: images vs cache
 ./deploy/disk-report.sh                   # read-only summary
 ```
+
+**Automatic cleanup between deploys.** `deploy.sh` can only clean Docker's data (the
+webhook is sandboxed) and only runs on a push, so a root timer covers the rest:
+
+```bash
+sudo cp deploy/systemd/rmh-disk-cleanup.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now rmh-disk-cleanup.timer
+sudo DRY_RUN=1 bash deploy/disk-cleanup.sh      # preview what it would remove
+```
+
+Every 6 hours it removes only what no release reads again (stopped containers older than
+24h, dangling images, BuildKit cache older than 72h, crash core dumps older than a day,
+stale deploy temp files). Past 80% used it also drops all BuildKit cache, every core dump,
+journald overflow, and SHA-tagged release images beyond the newest two per repository. It
+never touches `:latest`, `:rollback`, a running container's image or anything in a home
+directory, and does nothing while a deploy holds the lock. Builds happen on GitHub's runners
+with a registry cache, so none of this slows a build or a pull. Anything it cannot safely
+automate is listed in the journal (`journalctl -u rmh-disk-cleanup.service`).
 
 The usual real culprit is non-Docker cruft in `/home` (dev-tool caches like
 `~/.vscode-server`, `~/.cache`, `~/.npm`, `~/go`) that `docker system df` won't

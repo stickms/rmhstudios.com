@@ -29,7 +29,10 @@ const posix = (value: string) =>
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 const bash = process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' : 'bash';
 
-function fixture(extra: Record<string, string> = {}, options: { realFlock?: boolean } = {}) {
+function fixture(
+  extra: Record<string, string> = {},
+  options: { realFlock?: boolean; fakeDisk?: boolean } = {},
+) {
   const dir = mkdtempSync(join(tmpdir(), 'rmh-deploy-orchestration-'));
   dirs.push(dir);
   mkdirSync(join(dir, 'deploy'));
@@ -81,7 +84,15 @@ esac
     join(dir, 'bin/docker'),
     `#!/bin/bash
 printf '%s\\n' "$*" >> "$MOCK_ROOT/docker.log"
+if [ "$1" = pull ]; then
+  # no-space: fails until the deploy has reclaimed (builder prune -af), or always
+  if [ "\${MOCK_PULL_NOSPACE:-}" = always ] || { [ "\${MOCK_PULL_NOSPACE:-}" = 1 ] && [ ! -f "$MOCK_ROOT/reclaimed" ]; }; then
+    echo 'write /var/lib/docker/tmp/layer: no space left on device' >&2; exit 1
+  fi
+  if [ "\${MOCK_PULL_FAIL:-0}" = 1 ]; then echo 'manifest unknown' >&2; exit 1; fi
+fi
 case "$*" in
+  *'builder prune -af'*) touch "$MOCK_ROOT/reclaimed" ;;
   *'migrate status'*)
     if [ "\${MOCK_MIGRATION_FAIL:-0}" = 1 ]; then echo 'Pending migration'; exit 1; fi ;;
   *'migrate deploy'*)
@@ -100,6 +111,17 @@ esac
   // must still check serving identity inside that critical section.
   if (!options.realFlock)
     writeFileSync(join(dir, 'bin/flock'), '#!/bin/bash\nexit 0\n', { mode: 0o755 });
+  // Disk is the one thing the host really controls: report 1G free until the deploy
+  // has cleared the BuildKit cache, then 50G, so the reclaim ladder can be observed.
+  if (options.fakeDisk)
+    writeFileSync(
+      join(dir, 'bin/df'),
+      `#!/bin/bash
+if [ -f "$MOCK_ROOT/reclaimed" ]; then n=50; else n=1; fi
+case "$*" in *--output=size*) printf 'Size\\n100G\\n' ;; *) printf 'Avail\\n%sG\\n' "$n" ;; esac
+`,
+      { mode: 0o755 },
+    );
   // A stand-in for the 15-minute watcher: it outlives the deploy, as the real one does.
   writeFileSync(
     join(dir, 'deploy/post-deploy-guard.sh'),
@@ -145,6 +167,41 @@ esac
 }
 
 describe('production deploy orchestration', () => {
+  const pulls = (docker: string) => docker.split('\n').filter((line) => line.startsWith('pull '));
+  // A pull can outgrow the up-front estimate and die mid-transfer. That is fixable
+  // by freeing space, so reclaim and retry once instead of failing the release.
+  it('reclaims and retries once when a pull runs out of disk', () => {
+    const { result, docker } = fixture({ MOCK_PULL_NOSPACE: '1' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(result.stdout).toContain('Pull ran out of disk');
+    expect(pulls(docker)).toHaveLength(4);
+    expect(docker.indexOf('builder prune -af')).toBeLessThan(docker.lastIndexOf('pull '));
+  }, 25_000);
+  // Freeing the build cache is cheap and enough here; deleting every unused image
+  // would also remove the :rollback image the post-deploy rollback depends on.
+  it('stops reclaiming once there is enough room and keeps the rollback images', () => {
+    const { result, docker } = fixture(
+      { DEPLOY_PULL_RESERVE_GB: '6', DEPLOY_HEADROOM_GB: '2' },
+      { fakeDisk: true },
+    );
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(docker).toContain('builder prune -af');
+    expect(docker).not.toContain('image prune -af');
+    expect(result.stdout).toContain('After reclaim: 50G free');
+  }, 25_000);
+  it('retries a no-space pull only once', () => {
+    const { result, docker, stateDir } = fixture({ MOCK_PULL_NOSPACE: 'always' });
+    expect(result.status, result.stdout + result.stderr).not.toBe(0);
+    expect(pulls(docker)).toHaveLength(4);
+    expect(readState(stateDir, 'live')?.sha).toBe(shaA);
+  }, 25_000);
+  it('does not reclaim or retry when a pull fails for another reason', () => {
+    const { result, docker } = fixture({ MOCK_PULL_FAIL: '1' });
+    expect(result.status, result.stdout + result.stderr).not.toBe(0);
+    expect(pulls(docker)).toHaveLength(2);
+    expect(docker).not.toContain('builder prune -af');
+    expect(result.stdout).not.toContain('Pull ran out of disk');
+  }, 25_000);
   // 2026-10-25: the disk filled mid-deploy, took Postgres down, and left containers
   // unable to start. The guard must reclaim the (otherwise never-cleaned) BuildKit
   // cache first and, if there is still not enough room, refuse BEFORE pulling.
