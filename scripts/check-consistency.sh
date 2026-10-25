@@ -413,6 +413,7 @@ else
     lib/__tests__/raf-loop-allowlist.test.ts
     lib/__tests__/performance-guardrails.test.ts
     lib/__tests__/api-handler-adoption.test.ts
+    lib/__tests__/discord-sdk-security.test.ts
     lib/__tests__/i18n-catalogs.test.ts
     lib/__tests__/i18n-config.test.ts
     lib/__tests__/i18n-default-drift.test.ts

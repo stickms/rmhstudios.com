@@ -6,11 +6,20 @@ import { removeItem } from '@/lib/playlists.server';
 export const Route = createFileRoute('/api/playlists/$id/items/$itemId')({
   server: {
     handlers: {
-      DELETE: defineHandler({}, async ({ params, session }) => {
-        const ok = await removeItem(params.id, params.itemId, session.user.id);
-        if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
-        return Response.json({ success: true });
-      }),
+      DELETE: defineHandler(
+        {
+          rateLimit: {
+            policy: 'write',
+            scope: 'user',
+            prefix: 'mutation:playlists/:id/items/:itemId',
+          },
+        },
+        async ({ params, session }) => {
+          const ok = await removeItem(params.id, params.itemId, session.user.id);
+          if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
+          return Response.json({ success: true });
+        },
+      ),
     },
   },
 });

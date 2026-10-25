@@ -90,7 +90,7 @@
     "@codemirror/language": "^6.13.1",
     "@codemirror/state": "^6.7.6",
     "@codemirror/view": "^6.43.14",
-    "@discord/embedded-app-sdk": "^2.5.0",
+    "@discord/embedded-app-sdk": "2.5.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -246,6 +246,7 @@
   },
   "pnpm": {
     "overrides": {
+      "@discord/embedded-app-sdk@2.5.0>zod": "4.6.7",
       "shell-quote": ">=1.8.4",
       "@xmldom/xmldom": ">=0.9.12",
       "music-metadata": ">=11.12.3",
@@ -267,6 +268,9 @@
       "engine.io@<6.6.10": ">=6.6.10",
       "seroval@<=1.6.2": ">=1.6.3",
       "source-map-js@<1.2.2": ">=1.2.2"
+    },
+    "patchedDependencies": {
+      "@discord/embedded-app-sdk@2.5.0": "patches/@discord__embedded-app-sdk@2.5.0.patch"
     }
   }
 }

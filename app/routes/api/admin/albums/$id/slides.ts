@@ -48,11 +48,7 @@ function publicSlide(s: SlideRecord) {
 export const Route = createFileRoute('/api/admin/albums/$id/slides')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
-        if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
+      POST: defineHandler({ auth: 'admin' }, async ({ request, params, session }) => {
         // Liberal backstop only (admin-gated): guards against runaway loops, not
         // normal bulk usage.
         const ip = getClientIp(request);

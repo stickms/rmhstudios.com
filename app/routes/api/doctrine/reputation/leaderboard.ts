@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { getReputationLeaderboard } from '@/lib/doctrine/reputation';
@@ -18,7 +19,7 @@ export const Route = createFileRoute('/api/doctrine/reputation/leaderboard')({
         async ({ request }) => {
           try {
             const url = new URL(request.url);
-            const limit = Math.min(parseInt(url.searchParams.get('limit') ?? '50'), 100);
+            const limit = pageSize(url.searchParams.get('limit'), 50, 100);
             const leaderboard = await getReputationLeaderboard(limit);
             return Response.json(leaderboard);
           } catch (e) {

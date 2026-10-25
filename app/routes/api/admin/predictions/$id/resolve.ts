@@ -8,33 +8,33 @@ import { resolvePrediction, PredictionError } from '@/lib/predictions/prediction
 export const Route = createFileRoute('/api/admin/predictions/$id/resolve')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
-        if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
-        try {
-          const parsed = resolveSchema.safeParse(await request.json().catch(() => null));
-          if (!parsed.success) {
-            return Response.json({ error: 'Invalid input' }, { status: 400 });
+      POST: defineHandler(
+        { auth: 'admin', rateLimit: { policy: 'write', scope: 'user' } },
+        async ({ request, params, session }) => {
+          try {
+            const parsed = resolveSchema.safeParse(await request.json().catch(() => null));
+            if (!parsed.success) {
+              return Response.json({ error: 'Invalid input' }, { status: 400 });
+            }
+            const result = await resolvePrediction({
+              predictionId: params.id,
+              outcome: parsed.data.outcome,
+            });
+            await logAdminAction(session.user.id, 'prediction.resolve', {
+              targetType: 'prediction',
+              targetId: params.id,
+              detail: `${parsed.data.outcome} (paid ${result.payouts} coins)`,
+            });
+            return Response.json({ ok: true, ...result });
+          } catch (error) {
+            if (error instanceof PredictionError) {
+              return Response.json({ error: error.message }, { status: error.status });
+            }
+            console.error('Prediction resolve error:', error);
+            return Response.json({ error: 'Internal Server Error' }, { status: 500 });
           }
-          const result = await resolvePrediction({
-            predictionId: params.id,
-            outcome: parsed.data.outcome,
-          });
-          await logAdminAction(session.user.id, 'prediction.resolve', {
-            targetType: 'prediction',
-            targetId: params.id,
-            detail: `${parsed.data.outcome} (paid ${result.payouts} coins)`,
-          });
-          return Response.json({ ok: true, ...result });
-        } catch (error) {
-          if (error instanceof PredictionError) {
-            return Response.json({ error: error.message }, { status: error.status });
-          }
-          console.error('Prediction resolve error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      }),
+        },
+      ),
     },
   },
 });

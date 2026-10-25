@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 /**
  * The public request board (F22) — service layer.
  *
@@ -119,7 +120,7 @@ export interface ListRequestsOptions {
  * exactly the confusion the merge existed to remove. They stay reachable by id.
  */
 export async function listRequests(options: ListRequestsOptions = {}): Promise<RequestBoardPage> {
-  const limit = Math.min(Math.max(options.limit ?? 20, 1), 50);
+  const limit = pageSize(options.limit);
   const skip = Number.parseInt(options.cursor ?? '0', 10) || 0;
   const sort = options.sort ?? 'top';
 

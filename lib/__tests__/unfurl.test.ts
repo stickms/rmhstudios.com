@@ -56,6 +56,12 @@ afterEach(() => {
 });
 
 describe('parseOpenGraph precedence', () => {
+  it('keeps malformed numeric entities from failing an entire preview', () => {
+    const result = parseOpenGraph(
+      '<meta property="og:title" content="&#128640; &#x1F680; &#99999999; &#xD800; &#12abc; &#38;amp;">',
+    );
+    expect(result.title).toBe('🚀 🚀 &#99999999; &#xD800; &#12abc; &amp;');
+  });
   it('prefers og:* over twitter:* over <title>', () => {
     const meta = parseOpenGraph(`
       <html><head>

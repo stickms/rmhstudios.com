@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
@@ -17,7 +18,7 @@ export const Route = createFileRoute('/api/profile/$id/likes')({
         const profileUserId = resolvedUser?.id ?? idOrHandle;
         const { searchParams } = new URL(request.url);
         const cursor = searchParams.get('cursor');
-        const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
+        const limit = pageSize(searchParams.get('limit'), 20, 50);
 
         // Fetch liked posts via RMHarkLike join. The post behind each like gets the
         // full visibility check (not deleted, audience, blocks, community) IN the

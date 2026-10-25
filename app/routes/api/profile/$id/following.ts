@@ -1,8 +1,14 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
-import { encodeFollowCursor, followCursorWhere, parseFollowCursor, FOLLOW_ORDER_BY } from '@/lib/api/follow-cursor';
+import {
+  encodeFollowCursor,
+  followCursorWhere,
+  parseFollowCursor,
+  FOLLOW_ORDER_BY,
+} from '@/lib/api/follow-cursor';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
 export const Route = createFileRoute('/api/profile/$id/following')({
@@ -17,7 +23,7 @@ export const Route = createFileRoute('/api/profile/$id/following')({
         const id = resolvedUser?.id ?? idOrHandle;
         const { searchParams } = new URL(request.url);
         const cursor = searchParams.get('cursor');
-        const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
+        const limit = pageSize(searchParams.get('limit'), 20, 50);
 
         // Get current viewer session for isFollowing status
         let viewerId: string | null = null;

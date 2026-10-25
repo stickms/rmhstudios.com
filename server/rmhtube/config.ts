@@ -5,12 +5,7 @@
  * Environment variables override defaults for production flexibility.
  */
 
-function envInt(key: string, fallback: number): number {
-  const raw = process.env[key];
-  if (raw === undefined) return fallback;
-  const parsed = parseInt(raw, 10);
-  return Number.isNaN(parsed) ? fallback : parsed;
-}
+import { envInt } from '../shared/config';
 
 function envString(key: string, fallback: string): string {
   return process.env[key] ?? fallback;
@@ -18,7 +13,7 @@ function envString(key: string, fallback: string): string {
 
 export const config = {
   // ─── Network ───
-  PORT: envInt('RMHTUBE_PORT', 7003),
+  PORT: envInt('RMHTUBE_PORT', 7003, 1, 65_535),
   SOCKET_PATH: envString('RMHTUBE_SOCKET_PATH', '/rmhtube-ws/'),
   CORS_ORIGIN: envString('RMHTUBE_CORS_ORIGIN', process.env.SOCKET_CORS_ORIGIN || ''),
 
@@ -70,60 +65,60 @@ export const config = {
   // rate limiter whenever anything fired an extra report.
   SOCKET_RATE_LIMITS: {
     // Room lifecycle
-    'rmhtube:room:create':        { max: 3,   windowMs: 60_000 },
-    'rmhtube:room:join':          { max: 10,  windowMs: 60_000 },
-    'rmhtube:room:leave':         { max: 20,  windowMs: 60_000 },
-    'rmhtube:room:kick':          { max: 20,  windowMs: 60_000 },
-    'rmhtube:room:transfer_host': { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:create': { max: 3, windowMs: 60_000 },
+    'rmhtube:room:join': { max: 10, windowMs: 60_000 },
+    'rmhtube:room:leave': { max: 20, windowMs: 60_000 },
+    'rmhtube:room:kick': { max: 20, windowMs: 60_000 },
+    'rmhtube:room:transfer_host': { max: 10, windowMs: 60_000 },
     'rmhtube:room:update_settings': { max: 30, windowMs: 60_000 },
-    'rmhtube:room:browse':        { max: 30,  windowMs: 60_000 },
-    'rmhtube:room:set_leader':    { max: 10,  windowMs: 60_000 },
-    'rmhtube:room:ban':           { max: 10,  windowMs: 60_000 },
-    'rmhtube:room:unban':         { max: 10,  windowMs: 60_000 },
-    'rmhtube:room:create_invite': { max: 5,   windowMs: 3_600_000 },
-    'rmhtube:room:set_status':    { max: 10,  windowMs: 60_000 },
-    'rmhtube:room:check_history': { max: 10,  windowMs: 60_000 },
+    'rmhtube:room:browse': { max: 30, windowMs: 60_000 },
+    'rmhtube:room:set_leader': { max: 10, windowMs: 60_000 },
+    'rmhtube:room:ban': { max: 10, windowMs: 60_000 },
+    'rmhtube:room:unban': { max: 10, windowMs: 60_000 },
+    'rmhtube:room:create_invite': { max: 5, windowMs: 3_600_000 },
+    'rmhtube:room:set_status': { max: 10, windowMs: 60_000 },
+    'rmhtube:room:check_history': { max: 10, windowMs: 60_000 },
     'rmhtube:room:request_control': { max: 3, windowMs: 60_000 },
 
     // Watch-party extras
-    'rmhtube:party:sync':             { max: 30, windowMs: 60_000 },
-    'rmhtube:party:predict_open':     { max: 10, windowMs: 60_000 },
-    'rmhtube:party:predict_pick':     { max: 20, windowMs: 60_000 },
-    'rmhtube:party:predict_resolve':  { max: 10, windowMs: 60_000 },
-    'rmhtube:party:bingo_start':      { max: 5,  windowMs: 60_000 },
-    'rmhtube:party:bingo_call':       { max: 60, windowMs: 60_000 },
-    'rmhtube:party:bingo_claim':      { max: 10, windowMs: 60_000 },
-    'rmhtube:party:bingo_end':        { max: 10, windowMs: 60_000 },
+    'rmhtube:party:sync': { max: 30, windowMs: 60_000 },
+    'rmhtube:party:predict_open': { max: 10, windowMs: 60_000 },
+    'rmhtube:party:predict_pick': { max: 20, windowMs: 60_000 },
+    'rmhtube:party:predict_resolve': { max: 10, windowMs: 60_000 },
+    'rmhtube:party:bingo_start': { max: 5, windowMs: 60_000 },
+    'rmhtube:party:bingo_call': { max: 60, windowMs: 60_000 },
+    'rmhtube:party:bingo_claim': { max: 10, windowMs: 60_000 },
+    'rmhtube:party:bingo_end': { max: 10, windowMs: 60_000 },
 
     // Sync. The leader reports every 2 s (30/min) and both sides fire extra on
     // tab-return, so the ceiling sits at four times the steady rate.
-    'rmhtube:sync:host_state':    { max: 120, windowMs: 60_000 },
-    'rmhtube:sync:play':          { max: 60,  windowMs: 60_000 },
-    'rmhtube:sync:pause':         { max: 60,  windowMs: 60_000 },
-    'rmhtube:sync:seek':          { max: 60,  windowMs: 60_000 },
-    'rmhtube:sync:set_speed':     { max: 20,  windowMs: 60_000 },
-    'rmhtube:sync:ping':          { max: 120, windowMs: 60_000 },
-    'rmhtube:sync:request':       { max: 60,  windowMs: 60_000 },
-    'rmhtube:sync:stall':         { max: 60,  windowMs: 60_000 },
+    'rmhtube:sync:host_state': { max: 120, windowMs: 60_000 },
+    'rmhtube:sync:play': { max: 60, windowMs: 60_000 },
+    'rmhtube:sync:pause': { max: 60, windowMs: 60_000 },
+    'rmhtube:sync:seek': { max: 60, windowMs: 60_000 },
+    'rmhtube:sync:set_speed': { max: 20, windowMs: 60_000 },
+    'rmhtube:sync:ping': { max: 120, windowMs: 60_000 },
+    'rmhtube:sync:request': { max: 60, windowMs: 60_000 },
+    'rmhtube:sync:stall': { max: 60, windowMs: 60_000 },
 
     // Queue
-    'rmhtube:queue:add':          { max: 20,  windowMs: 60_000 },
-    'rmhtube:queue:remove':       { max: 30,  windowMs: 60_000 },
-    'rmhtube:queue:reorder':      { max: 60,  windowMs: 60_000 },
-    'rmhtube:queue:play_item':    { max: 30,  windowMs: 60_000 },
-    'rmhtube:queue:skip':         { max: 30,  windowMs: 60_000 },
-    'rmhtube:queue:vote_skip':    { max: 10,  windowMs: 60_000 },
-    'rmhtube:queue:vote':         { max: 20,  windowMs: 60_000 },
-    'rmhtube:queue:shuffle':      { max: 5,   windowMs: 60_000 },
-    'rmhtube:queue:meta':         { max: 30,  windowMs: 60_000 },
+    'rmhtube:queue:add': { max: 20, windowMs: 60_000 },
+    'rmhtube:queue:remove': { max: 30, windowMs: 60_000 },
+    'rmhtube:queue:reorder': { max: 60, windowMs: 60_000 },
+    'rmhtube:queue:play_item': { max: 30, windowMs: 60_000 },
+    'rmhtube:queue:skip': { max: 30, windowMs: 60_000 },
+    'rmhtube:queue:vote_skip': { max: 10, windowMs: 60_000 },
+    'rmhtube:queue:vote': { max: 20, windowMs: 60_000 },
+    'rmhtube:queue:shuffle': { max: 5, windowMs: 60_000 },
+    'rmhtube:queue:meta': { max: 30, windowMs: 60_000 },
 
     // Chat + reactions
-    'rmhtube:room:chat':          { max: 30,  windowMs: 60_000 },
-    'rmhtube:chat:typing':        { max: 30,  windowMs: 60_000 },
-    'rmhtube:chat:react':         { max: 30,  windowMs: 60_000 },
-    'rmhtube:chat:pin':           { max: 10,  windowMs: 60_000 },
-    'safety:slowmode:tube:set':   { max: 20,  windowMs: 60_000 },
-    'rmhtube:reaction:send':      { max: 30,  windowMs: 60_000 },
+    'rmhtube:room:chat': { max: 30, windowMs: 60_000 },
+    'rmhtube:chat:typing': { max: 30, windowMs: 60_000 },
+    'rmhtube:chat:react': { max: 30, windowMs: 60_000 },
+    'rmhtube:chat:pin': { max: 10, windowMs: 60_000 },
+    'safety:slowmode:tube:set': { max: 20, windowMs: 60_000 },
+    'rmhtube:reaction:send': { max: 30, windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 
   // ─── Shutdown ───

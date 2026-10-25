@@ -117,23 +117,26 @@ export const Route = createFileRoute('/api/profile/banner')({
         },
       ),
 
-      DELETE: defineHandler({}, async ({ session }) => {
-        const profile = await prisma.userProfile.findUnique({
-          where: { userId: session.user.id },
-          select: { bannerUrl: true },
-        });
-        if (!profile?.bannerUrl) {
+      DELETE: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:profile/banner' } },
+        async ({ session }) => {
+          const profile = await prisma.userProfile.findUnique({
+            where: { userId: session.user.id },
+            select: { bannerUrl: true },
+          });
+          if (!profile?.bannerUrl) {
+            return Response.json({ bannerUrl: null });
+          }
+
+          await removeStoredBanner(profile.bannerUrl);
+          await prisma.userProfile.update({
+            where: { userId: session.user.id },
+            data: { bannerUrl: null, bannerSizeBytes: null },
+          });
+
           return Response.json({ bannerUrl: null });
-        }
-
-        await removeStoredBanner(profile.bannerUrl);
-        await prisma.userProfile.update({
-          where: { userId: session.user.id },
-          data: { bannerUrl: null, bannerSizeBytes: null },
-        });
-
-        return Response.json({ bannerUrl: null });
-      }),
+        },
+      ),
     },
   },
 });

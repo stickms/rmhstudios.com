@@ -49,6 +49,7 @@ RUN corepack enable && corepack prepare pnpm@10.34.6 --activate
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY patches ./patches/
 
 # Skip postinstall (prisma generate) — prisma schema isn't here yet.
 # It runs in the prisma-generate stage below where the schema is available.

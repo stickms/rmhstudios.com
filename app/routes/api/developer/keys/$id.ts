@@ -21,7 +21,12 @@ export const Route = createFileRoute('/api/developer/keys/$id')({
   server: {
     handlers: {
       PATCH: defineHandler(
-        { body: patchSchema, allowEmptyBody: true, verboseValidationErrors: true },
+        {
+          rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:developer/keys/:id' },
+          body: patchSchema,
+          allowEmptyBody: true,
+          verboseValidationErrors: true,
+        },
         async ({ params, session, body }) => {
           const key = await prisma.developerApiKey.findUnique({
             where: { id: params.id },
@@ -69,21 +74,24 @@ export const Route = createFileRoute('/api/developer/keys/$id')({
         },
       ),
 
-      DELETE: defineHandler({}, async ({ params, session }) => {
-        const key = await prisma.developerApiKey.findUnique({
-          where: { id: params.id },
-          select: { userId: true, revokedAt: true },
-        });
-        if (!key || key.userId !== session.user.id)
-          return Response.json({ error: 'Not found' }, { status: 404 });
-        if (key.revokedAt) return Response.json({ success: true });
+      DELETE: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:developer/keys/:id' } },
+        async ({ params, session }) => {
+          const key = await prisma.developerApiKey.findUnique({
+            where: { id: params.id },
+            select: { userId: true, revokedAt: true },
+          });
+          if (!key || key.userId !== session.user.id)
+            return Response.json({ error: 'Not found' }, { status: 404 });
+          if (key.revokedAt) return Response.json({ success: true });
 
-        await prisma.developerApiKey.update({
-          where: { id: params.id },
-          data: { revokedAt: new Date() },
-        });
-        return Response.json({ success: true });
-      }),
+          await prisma.developerApiKey.update({
+            where: { id: params.id },
+            data: { revokedAt: new Date() },
+          });
+          return Response.json({ success: true });
+        },
+      ),
     },
   },
 });

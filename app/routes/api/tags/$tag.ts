@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { listTagFeed } from '@/lib/tags.server';
@@ -11,7 +12,7 @@ export const Route = createFileRoute('/api/tags/$tag')({
 
         const url = new URL(request.url);
         const cursor = url.searchParams.get('cursor');
-        const limit = parseInt(url.searchParams.get('limit') || '20');
+        const limit = pageSize(url.searchParams.get('limit'), 20, 50);
 
         const result = await listTagFeed(params.tag, { viewerId, cursor, limit });
         return Response.json(result);

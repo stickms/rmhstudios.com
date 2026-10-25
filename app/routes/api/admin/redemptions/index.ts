@@ -5,10 +5,7 @@ import { listPendingRedemptions } from '@/lib/creator/earnings.server';
 export const Route = createFileRoute('/api/admin/redemptions/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
-        if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
+      GET: defineHandler({ auth: 'admin' }, async () => {
         try {
           const requests = await listPendingRedemptions({});
           return Response.json({ requests });

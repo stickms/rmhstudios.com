@@ -16,7 +16,12 @@ export const Route = createFileRoute('/api/scheduled/$id')({
     handlers: {
       // Edit a draft/scheduled post.
       PATCH: defineHandler(
-        { body: patchSchema, allowEmptyBody: true, verboseValidationErrors: true },
+        {
+          rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:scheduled/:id' },
+          body: patchSchema,
+          allowEmptyBody: true,
+          verboseValidationErrors: true,
+        },
         async ({ params, session, body }) => {
           const existing = await prisma.scheduledPost.findUnique({ where: { id: params.id } });
           if (!existing || existing.userId !== session.user.id) {
@@ -65,15 +70,18 @@ export const Route = createFileRoute('/api/scheduled/$id')({
       ),
 
       // Discard a draft/scheduled post.
-      DELETE: defineHandler({}, async ({ params, session }) => {
-        const existing = await prisma.scheduledPost.findUnique({ where: { id: params.id } });
-        if (!existing || existing.userId !== session.user.id) {
-          return Response.json({ error: 'Not found' }, { status: 404 });
-        }
+      DELETE: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:scheduled/:id' } },
+        async ({ params, session }) => {
+          const existing = await prisma.scheduledPost.findUnique({ where: { id: params.id } });
+          if (!existing || existing.userId !== session.user.id) {
+            return Response.json({ error: 'Not found' }, { status: 404 });
+          }
 
-        await prisma.scheduledPost.delete({ where: { id: params.id } });
-        return Response.json({ success: true });
-      }),
+          await prisma.scheduledPost.delete({ where: { id: params.id } });
+          return Response.json({ success: true });
+        },
+      ),
     },
   },
 });

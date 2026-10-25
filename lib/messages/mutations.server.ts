@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 /**
  * Server half of H1 — edit, unsend, and delete-for-me on direct messages.
  *
@@ -157,7 +158,7 @@ export async function loadThreadPage(args: {
   const conversation = await loadParticipantConversation(args.conversationId, args.userId);
   if (!conversation) return null;
 
-  const limit = Math.min(Math.max(args.limit ?? 50, 1), 100);
+  const limit = pageSize(args.limit, 50, 100);
   const rows = await prisma.directMessage.findMany({
     // Expired disappearing messages do not exist (M3) — enforced here at read
     // time, so they vanish on the dot whether or not the sweep has run.

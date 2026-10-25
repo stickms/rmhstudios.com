@@ -33,15 +33,18 @@ export const Route = createFileRoute('/api/lists/$id')({
           return Response.json({ ok: true });
         },
       ),
-      DELETE: defineHandler({}, async ({ params, session }) => {
-        try {
-          await deleteList(session.user.id, params.id);
-        } catch (e) {
-          if (e instanceof ListError) return Response.json({ error: e.message }, { status: 404 });
-          throw e;
-        }
-        return Response.json({ ok: true });
-      }),
+      DELETE: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:lists/:id' } },
+        async ({ params, session }) => {
+          try {
+            await deleteList(session.user.id, params.id);
+          } catch (e) {
+            if (e instanceof ListError) return Response.json({ error: e.message }, { status: 404 });
+            throw e;
+          }
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });
