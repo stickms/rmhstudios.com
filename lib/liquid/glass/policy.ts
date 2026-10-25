@@ -24,11 +24,19 @@ export const GLASS_BUDGET = {
   largeArea: 250_000,
 } as const;
 
-/** Bevel width for a surface: wide enough to refract visibly, never so wide that content sits inside it. */
-export function bevelFor(width: number, height: number, radius: number): number {
+/**
+ * Bevel width for a surface: wide enough to refract visibly, never so wide that content sits inside it. `shoulder`
+ * (`--gel-shoulder`, 0.5..2) widens it for the molded rim's rounded shoulder; the ceiling grows with it, and the molded
+ * shading stays in the bevel's outer 60%, so text in a card's padding is still clear of it.
+ */
+export function bevelFor(width: number, height: number, radius: number, shoulder = 1): number {
   const short = Math.min(width, height);
-  const wanted = Math.min(short * 0.26, Math.max(radius * 0.9, 16));
-  return Math.max(3, Math.min(24, Math.round(wanted), Math.floor(short / 2) - 1));
+  const k = Math.max(0.5, Math.min(2, shoulder));
+  const wanted = Math.min(short * 0.26, Math.max(radius * 0.9, 16)) * k;
+  return Math.max(
+    3,
+    Math.min(Math.round(24 * Math.max(1, k)), Math.round(wanted), Math.floor(short / 2) - 1),
+  );
 }
 
 /** How far behind the surface the page appears to be: the reach of refraction. Shorter than the bevel by design. */

@@ -185,6 +185,10 @@ const GEL_FALLBACK = {
   fresnel: [1, 1, 1, 0.55] as RGBA,
   specular: [1, 1, 1, 0.95] as RGBA,
   accent: [0.42, 0.31, 0.82, 1] as RGBA,
+  /** The molded rim (`--gel-mold`, `--gel-feather`, `--gel-shoulder`); 0 / 0 / 1 is the outlined rim. */
+  mold: 0,
+  featherPx: 0,
+  shoulder: 1,
 } as const;
 const LIGHT_HEIGHT = 96;
 /**
@@ -257,6 +261,8 @@ interface Surface {
   // ── #989 ──
   /** Gel tokens, read with the look. */
   gel: GelLook;
+  /** Bevel width multiplier for the molded shoulder (`--gel-shoulder`), read with the look. */
+  shoulder: number;
   /** Target and eased plasma wake level (bus `plasma:level`). */
   plasmaTarget: number;
   plasmaLevel: number;
@@ -318,6 +324,8 @@ const defaultGel = (): GelLook => ({
   specular: [...GEL_FALLBACK.specular],
   accent: [GEL_FALLBACK.accent[0], GEL_FALLBACK.accent[1], GEL_FALLBACK.accent[2]],
   plasmaPeak: PLASMA_LOOK.peakDark,
+  mold: GEL_FALLBACK.mold,
+  feather: GEL_FALLBACK.featherPx,
 });
 
 const NO_LOOK: JellyLook = {
@@ -615,6 +623,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       latticeParked: false,
       latticeBuf: new Float32Array(16),
       gel: defaultGel(),
+      shoulder: GEL_FALLBACK.shoulder,
       plasmaTarget: 0,
       plasmaLevel: 0,
       plasmaAt: 0,
@@ -705,7 +714,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
       specular: rgba('--gel-specular', GEL_FALLBACK.specular),
       accent: rgb('--site-accent', '--site-accent', GEL_FALLBACK.accent),
       plasmaPeak: dark ? PLASMA_LOOK.peakDark : PLASMA_LOOK.peakLight,
+      mold: Math.max(0, Math.min(1.5, num('--gel-mold', GEL_FALLBACK.mold))),
+      feather: Math.max(0, Math.min(8, cssPx(raw('--gel-feather'), GEL_FALLBACK.featherPx))),
     };
+    s.shoulder = Math.max(0.5, Math.min(2, num('--gel-shoulder', GEL_FALLBACK.shoulder)));
     s.jellyOn = num('--site-jelly-on', 1) > 0;
     s.still = jellyOptedOut(s.el);
     s.hazeFresh = true;
@@ -1056,7 +1068,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     const w = s.width;
     const h = s.height;
     if (w < 1 || h < 1) return false;
-    const bezel = bevelFor(w, h, s.radius);
+    const bezel = bevelFor(w, h, s.radius, s.shoulder);
     const thickness = thicknessFor(bezel);
     const dpr = dprFor(win.devicePixelRatio || 1, w, h);
 
@@ -1151,7 +1163,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       height: h,
       scale: hazeScaleFor(w, h, s.role, knobsAt(governor.step).hazeScale),
       radius: s.radius,
-      bezel: bevelFor(w, h, s.radius),
+      bezel: bevelFor(w, h, s.radius, s.shoulder),
       look: s.look,
       flow: s.flow,
       quiet: s.quiet,
@@ -1258,7 +1270,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
         s.lattice = createLattice({
           w: s.width,
           h: s.height,
-          bevel: bevelFor(s.width, s.height, s.radius),
+          bevel: bevelFor(s.width, s.height, s.radius, s.shoulder),
           amplitude: latticeAmplitude(s.width, s.height),
         });
         s.latticeInput = null;

@@ -42,6 +42,14 @@
  *   (`--gel-edge-r/-g/-b`), so the fringes separate along the lit and the shaded edges and merge along the others.
  *   White is secondary (a weak core where all three overlap). Refracting slabs also split their snapshot samples the
  *   same way. Plus a 1 CSS px Fresnel edge (`uFresnel`, `--gel-fresnel`).
+ * - **Molded shoulder** (2026-10-25, `uMold` = `--gel-mold`, `--gel-feather`). The slab rises out of the ground instead
+ *   of being outlined on it: the outermost pixels dissolve into the ground over `uMold.y` px, the shoulder that faces
+ *   the key light catches a broad soft sheen, and the far shoulder rolls down into shadow — darkened toward black,
+ *   never drawn in the theme's ink, which on a dark ground is light and would draw a line. With the mould on, nothing
+ *   bright may sit on the outermost pixels where the bevel is steepest (every specular, the inner stroke, the near-edge
+ *   shade and the Fresnel line fade out there), and the RGB band moves inward onto the shoulder, so the dispersion reads
+ *   as light inside the jelly, not as a coloured outline: it widens to a soft tint across the shoulder. All of it stays inside the outer 60% of the bevel, clear of
+ *   the padding text sits in. `uMold.x` 0 is the pre-2026-10-25 outlined rim, exactly.
  * - **Gel depth** (`--gel-body` → `--gel-depth`) is the host's CSS coat (`--liquid-coat`); the shader does not draw it
  *   again.
  * - **No gloss across the face.** Every specular term is masked to the bevel band (`edgeOnly`); there is no sheen
@@ -102,6 +110,7 @@ uniform vec4 uDent;        // dent x, y (host px), depth 0..1, sigma px
 uniform vec2 uDentStretch; // rubber-band stretch, px
 uniform float uDentOn;
 uniform vec4 uSpecular;    // dent light dot colour + alpha (--gel-specular)
+uniform vec2 uMold;        // x = shoulder depth 0..1.5 (--gel-mold), y = edge feather px (--gel-feather)
 
 ${GLASS_OPTICS_GLSL}
 ${SDF_GLSL}
@@ -142,7 +151,9 @@ void main() {
     outColor = vec4(0.0);
     return;
   }
-  float cover = smoothstep(-uPx, uPx * 0.5, d);
+  float mold = clamp(uMold.x, 0.0, 1.5);
+  float moldOn = min(mold, 1.0);
+  float cover = smoothstep(-uPx, uPx * 0.5 + max(uMold.y, 0.0), d);
 
   // ── Bevel geometry ──
   float bz = max(uBezel, 2.0);
@@ -209,11 +220,17 @@ void main() {
   float stroke = (1.0 - smoothstep(0.0, uPx * 1.8, d - uPx * 0.5)) * smoothstep(-uPx, 0.0, d);
   float facing = 0.5 + 0.5 * sh;
   float facingC = 0.5 + 0.5 * dot(g, normalize(uLight.xy - P + 1e-3)) * uLightOn;
-  float lineK = stroke * (0.18 + 0.55 * facing + 0.5 * facingC * uLightOn);
+  float lineK = stroke * (0.18 + 0.55 * facing + 0.5 * facingC * uLightOn) * (1.0 - moldOn);
 
   // A dimmer glint on the far edge: light bouncing inside the slab.
   float counter = pow(max(dot(n, normalize(vec3(-key.xy, 0.55) + V)), 0.0), 70.0) * 0.24 * edgeOnly;
   float body = (1.0 - t) * 0.035 * max(dot(n, key), 0.0);
+  // The molded shoulder (see the header). \`rise\` keeps every bright term off the outermost, steepest pixels.
+  float rise = smoothstep(0.0, 0.3, t);
+  float lift = mix(1.0, rise, moldOn);
+  float moldHi = rise * (1.0 - smoothstep(0.25, 0.6, t)) * pow(0.5 + 0.5 * sh, 1.5) * mold;
+  // The shadow peaks a little inside the edge and fades toward it, so the outermost pixels meet the ground, not a stroke.
+  float moldLo = smoothstep(0.0, 0.22, t) * (1.0 - smoothstep(0.22, 0.62, t)) * mix(0.3, 1.0, 0.5 - 0.5 * sh) * mold;
 
   // The shaded half. Glass on a pale ground reads through its DARK edge — refraction throws a thin shadow right at the
   // rim, and the side turned away from the light is denser — not through white highlights, which vanish on white.
@@ -221,29 +238,33 @@ void main() {
   float bevelW = 1.0 - smoothstep(0.0, 1.0, t);
   float away = 0.5 - 0.5 * sh;
   float shade = bevelW * (0.01 + 0.055 * away * away) + (1.0 - smoothstep(0.0, uPx * 2.6, d)) * 0.045;
-  float shadeA = clamp(shade * mix(1.0, 0.5, uDark), 0.0, 0.5);
+  // The molded shoulder's own shadow replaces the ink shade: in ink it would draw a light line on a dark ground.
+  float shadeA = clamp(shade * mix(1.0, 0.5, uDark), 0.0, 0.5) * (1.0 - moldOn);
 
   float k = mix(1.0, 0.82, uDark);
   // White is secondary: the lit terms are kept under the RGB band below.
-  float lit = (keySpec + fillSpec + curSpec + counter + lineK + body + fres * 0.07 * edgeOnly) * k * 0.8;
+  float lit =
+    ((keySpec + fillSpec + curSpec + counter + body + fres * 0.07 * edgeOnly) * lift + lineK + moldHi * 0.32) * k * 0.8;
   float litA = clamp(lit, 0.0, 1.0);
   vec3 glint = mix(vec3(1.0), uRim, 0.35);
 
   // ── The RGB-led refraction band (--gel-bevel, --gel-disperse-*) ──
-  float bw = max(1.2, uBand.x * 0.45);
-  float d0 = min(uBand.x, bz);
+  // Molded: the band spreads across the shoulder as a soft iridescent tint (a wide, lower Gaussian), never a line.
+  float bw = mix(max(1.2, uBand.x * 0.45), max(2.0, bz * 0.3), moldOn);
+  // Molded: the band sits on the shoulder, a third of the way in, not on the outline.
+  float d0 = mix(min(uBand.x, bz), max(uBand.x, bz * 0.3), moldOn);
   // A channel displaced by v = -Ld·disperse sits where d(P - v) = d - sh·disperse reaches the band depth.
   float fR = jBand(d - sh * uDisperse.r - d0, bw) * uEdgeR.a;
   float fG = jBand(d - sh * uDisperse.g - d0, bw) * uEdgeG.a;
   float fB = jBand(d - sh * uDisperse.b - d0, bw) * uEdgeB.a;
-  float bandK = uBand.y * (0.55 + 0.45 * abs(sh)) * smoothstep(-uPx, uPx, d);
+  float bandK = uBand.y * (0.55 + 0.45 * abs(sh)) * smoothstep(-uPx, uPx, d) * lift * mix(1.0, 0.42 * (0.25 + 0.75 * facing), moldOn);
   // White is secondary: a weak core only where all three channels overlap.
   vec3 rgbBand = (uEdgeR.rgb * fR + uEdgeG.rgb * fG + uEdgeB.rgb * fB + vec3(0.25 * min(fR, min(fG, fB)))) * bandK;
   float rgbA = clamp((fR + fG + fB) * bandK, 0.0, 1.0);
 
   // ── The 1px Fresnel edge (--gel-fresnel) ──
   float fresEdge = (1.0 - smoothstep(uPx * 0.5, 1.0 + uPx * 0.5, d)) * smoothstep(-uPx, 0.0, d);
-  float fresA = fresEdge * uFresnel.a * (0.75 + 0.25 * facing);
+  float fresA = fresEdge * uFresnel.a * (0.75 + 0.25 * facing) * (1.0 - moldOn);
 
   // Composite, premultiplied: plasma at the back, then the refracted rim, shade, band, light and edge.
   vec3 col = vec3(0.0);
@@ -257,6 +278,10 @@ void main() {
   a = a + rim.a * (1.0 - a);
   col = col * (1.0 - shadeA) + uInk * shadeA * (0.5 + 0.5 * rim.a);
   a = a + shadeA * (1.0 - a);
+  // The far shoulder rolls into shadow: darkened toward black (premultiplied: colour scales, alpha grows).
+  float moldA = clamp(moldLo * 0.62, 0.0, 0.78);
+  col *= 1.0 - moldA;
+  a = a + moldA * (1.0 - a);
   col += rgbBand + glint * litA * (1.0 - 0.15 * rim.a) + uFresnel.rgb * fresA;
   a = a + (rgbA + litA * 0.9 + fresA) * (1.0 - a);
 

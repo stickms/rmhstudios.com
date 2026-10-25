@@ -38,7 +38,7 @@ language:
   `lib/jelly/` + `lib/liquid/glass/`; the globe keeps its own dielectric coat and
   dough body. On top sit the owner's #989 layers: a gel body that darkens toward
   its base, **dormant plasma** inside it that hover wakes and press brightens, an
-  **RGB-led edge** with a 1px Fresnel line and no gloss band across the face, a
+  **molded RGB-led edge** (a lit shoulder rising from the ground, no hairline) and no gloss band across the face, a
   press **lens dent** with a light dot that slides with a drag (and rubber-bands
   off the edge), and **charge** — click charge that hops to a neighbour, small
   gaps that break down, Coulomb attraction within the nudge bound.

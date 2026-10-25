@@ -101,6 +101,10 @@ export interface GelLook {
   accent: RGB;
   /** Plasma alpha at level 1. */
   plasmaPeak: number;
+  /** Molded shoulder depth, 0 = the outlined rim (`--gel-mold`). */
+  mold: number;
+  /** Edge feather, px: how far the outermost pixels dissolve into the ground (`--gel-feather`). */
+  feather: number;
 }
 
 /** The dormant plasma's per-draw state. */
@@ -224,6 +228,7 @@ const NAMES = [
   'uAccent',
   'uPlasmaPeak',
   'uRings',
+  'uMold',
 ] as const;
 type UName = (typeof NAMES)[number];
 
@@ -550,6 +555,7 @@ export class GlassRenderer {
     gl.uniform1f(u.uDentOn, dent ? 1 : 0);
     gl.uniform4f(u.uDent, dent?.x ?? 0, dent?.y ?? 0, dent?.depth ?? 0, dent?.radius ?? 1);
     gl.uniform2f(u.uDentStretch, dent?.stretchX ?? 0, dent?.stretchY ?? 0);
+    gl.uniform2f(u.uMold, gel?.mold ?? 0, gel?.feather ?? 0);
     return this.blit(pw, ph, target);
   }
 

@@ -249,7 +249,12 @@ and data are Geist Mono, everything else Geist. One ink-gel primary action
 4. **Edge refraction, smooth and RGB-led:** the refracting, lit rim, with a soft
    band just inside it (`--gel-bevel`) carrying a distinct red/green/blue split
    (`--gel-disperse-r/-g/-b`, red toward the top-left light, blue away). The RGB
-   split leads; white is secondary. Plus a 1px Fresnel edge (`--gel-fresnel`).
+   split leads; white is secondary. The rim is **molded**, not drawn: the slab
+   rises out of the ground over a widened shoulder (`--gel-shoulder`), lit on
+   the light side and falling into soft shadow on the far side (`--gel-mold`),
+   with a feathered silhouette (`--gel-feather`) — no hairline, no border. The
+   1px Fresnel edge (`--gel-fresnel`) returns only where the mold is off (high
+   contrast, the CSS fallback).
 5. **No broad gloss band or glint across the face.** Shine lives at the edges
    and in the dent.
 
