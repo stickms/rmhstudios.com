@@ -145,6 +145,22 @@ esac
 }
 
 describe('production deploy orchestration', () => {
+  // 2026-10-25: the disk filled mid-deploy, took Postgres down, and left containers
+  // unable to start. The guard must reclaim the (otherwise never-cleaned) BuildKit
+  // cache first and, if there is still not enough room, refuse BEFORE pulling.
+  it('reclaims the build cache and refuses to pull when it cannot make room', () => {
+    const { result, docker } = fixture({ DEPLOY_PULL_RESERVE_GB: '999999' });
+    expect(result.status, result.stdout + result.stderr).not.toBe(0);
+    expect(docker).toContain('builder prune -af');
+    expect(result.stdout).toContain('need ≥');
+    expect(docker).not.toContain('pull ');
+  }, 25_000);
+  it('trims only old build cache, and nothing hard, when there is room', () => {
+    const { result, docker } = fixture();
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(docker).toMatch(/builder prune -f --filter until=72h/);
+    expect(docker).not.toContain('builder prune -af');
+  }, 25_000);
   // Every journal write goes through node. Without it the release used to die
   // part-way through with only "node: command not found" in the listener log.
   it.skipIf(process.platform === 'win32')('refuses to start when node is not on PATH', () => {
