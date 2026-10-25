@@ -29,7 +29,11 @@ ENVIRONMENT="${1:-production}"
 # Optional: the exact commit CI built + pushed to GHCR. Passed by the webhook
 # listener as $2; empty on a manual run (falls back to the branch tip).
 DEPLOY_TARGET_SHA="${2:-}"
-export DEPLOY_RELEASE_ID="${DEPLOY_RELEASE_ID:-release-$(date +%s)-$}"
+if [ -n "$DEPLOY_TARGET_SHA" ] && ! [[ "$DEPLOY_TARGET_SHA" =~ ^[0-9a-f]{7,40}$ ]]; then
+    echo 'FATAL: the deployment target must be a commit SHA' >&2
+    exit 1
+fi
+export DEPLOY_RELEASE_ID="${DEPLOY_RELEASE_ID:-release-$(date +%s)-$$}"
 export DEPLOY_REQUESTED_AT="${DEPLOY_REQUESTED_AT:-$(date +%s)}"
 
 case "$ENVIRONMENT" in
@@ -255,7 +259,7 @@ oncall_deploy() {
 record_deploy_event() {
     local status="$1" reason="$2" secret url
     secret="${INTERNAL_API_SECRET:-}"
-    [ -n "$secret" ] || secret=$(grep -E '^INTERNAL_API_SECRET=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+    [ -n "$secret" ] || secret=$(grep -E '^INTERNAL_API_SECRET=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' || true)
     [ -n "$secret" ] || return 0
     url="${DEPLOY_EVENT_URL:-https://rmhstudios.com/api/internal/ops/deploy-event}"
     local body
@@ -401,7 +405,7 @@ cleanup() {
     local rc=$?
     if [ "$rc" -ne 0 ] && [ "$DEPLOY_REPORTED" = 0 ]; then release_event fail || true; fi
     if [ -n "${BG_HEALTH_PID:-}" ]; then kill "$BG_HEALTH_PID" 2>/dev/null || true; wait "$BG_HEALTH_PID" 2>/dev/null || true; fi
-    [ -z "${HEALTH_RESULT_FILE:-}" ] || rm -f "$HEALTH_RESULT_FILE"
+    [ -z "${HEALTH_RESULT_FILE:-}" ] || rm -f "$HEALTH_RESULT_FILE" "${HEALTH_RESULT_FILE}.workers"
     # A deploy that announced itself but exits without a final status (an
     # unexpected `set -e` failure, a kill) would otherwise sit at "deploying"
     # forever with nobody told.
@@ -604,10 +608,10 @@ step_start "Fetching latest code..."
 
 # The release live before this deploy — the post-deploy guard's rollback
 # target. Exported so the self-restart below (HEAD already moved) keeps it.
-export PREV_DEPLOYED_SHA="${PREV_DEPLOYED_SHA:-$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" live sha)}"
+export PREV_DEPLOYED_SHA="${PREV_DEPLOYED_SHA:-$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" last-successful sha)}"
 export PREV_RELEASE_ID="${PREV_RELEASE_ID:-$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" live id)}"
-export PREV_WEB_REF="${PREV_WEB_REF:-$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" live webDigest)}"
-export PREV_FULL_REF="${PREV_FULL_REF:-$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" live fullDigest)}"
+export PREV_WEB_REF="${PREV_WEB_REF:-$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" last-successful webDigest)}"
+export PREV_FULL_REF="${PREV_FULL_REF:-$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" last-successful fullDigest)}"
 
 # Snapshot deploy.sh hash before pulling so we can detect self-updates.
 DEPLOY_SCRIPT_PATH="${REPO_DIR}/deploy.sh"
@@ -807,8 +811,9 @@ fi
 
 "$DOCKER_BIN" tag "$WEB_PULL_REF" "${GHCR_IMAGE}:${GIT_SHA_FULL}"
 "$DOCKER_BIN" tag "$FULL_PULL_REF" "${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}"
-export RELEASE_WEB_DIGEST="$WEB_PULL_REF"
-export RELEASE_FULL_DIGEST="$FULL_PULL_REF"
+export RELEASE_WEB_DIGEST=$("$DOCKER_BIN" image inspect -f '{{index .RepoDigests 0}}' "$WEB_PULL_REF")
+export RELEASE_FULL_DIGEST=$("$DOCKER_BIN" image inspect -f '{{index .RepoDigests 0}}' "$FULL_PULL_REF")
+export RELEASE_CONFIG_HASH=$("$DOCKER_BIN" image inspect -f '{{index .Config.Labels "io.rmh.public-config-hash"}}' "$WEB_PULL_REF")
 release_event pulled
 
 # Before :latest moves, keep what it pointed at as :rollback — the release the
@@ -829,23 +834,9 @@ done
 "$DOCKER_BIN" tag "${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}" "${FULL_IMAGE_NAME}:${GIT_SHA}"
 step_done
 
-# ── Step 2a: Sync static assets to Cloudflare R2 (incremental) ───────────────
-# library/music/models/sprites are served from R2 behind cdn.rmhstudios.com,
-# not off disk. scripts/sync-static-assets-to-r2.mjs uses the AWS SDK (already a
-# dependency) to diff local public/ against the bucket and upload only NEW or
-# CHANGED files while removing ones deleted locally — so an unchanged deploy
-# transfers nothing. It runs INSIDE the freshly built image (which carries
-# node_modules + scripts/), with the host public/ bind-mounted read-only (the
-# image deliberately omits these heavy dirs). No rclone or host tooling needed.
-# Best-effort: a sync hiccup must never block shipping the app (a short
-# Cache-Control TTL + the next deploy are the safety net). Skips itself when
-# VITE_CDN_BASE_URL isn't set (assets then served from the local origin).
-# Launched in the BACKGROUND so the (potentially long) upload overlaps the
-# avatar backfill, DB migrations, container bring-up, hotswap and health checks
-# below instead of serializing the deploy behind it. It is best-effort and
-# touches only R2 (read-only public/ mount, no DB or containers), so nothing
-# downstream depends on it — we join the job at the very end (Step 6) before
-# reporting success. BG_R2_PID stays empty when the sync is skipped.
+# ── Step 2a: Publish immutable candidate assets while migrations run ────────
+# Required uploads finish before service replacement or traffic flip. Older
+# namespaces are retained for existing tabs and rollback images.
 BG_R2_PID=""
 BG_AVATAR_PID=""
 BG_MEDIA_PID=""
@@ -930,7 +921,7 @@ for i in $(seq 1 $MIGRATION_RETRIES); do
     # failures AND pending/failed migrations. We need to inspect the output to
     # tell them apart, so we must capture the exit code manually.
     set +e
-    MIGRATE_OUTPUT=$(dc run --rm --no-deps web sh -c 'npx prisma migrate status 2>&1')
+    MIGRATE_OUTPUT=$(dc run --rm --no-deps web sh -c 'node node_modules/prisma/build/index.js migrate status 2>&1')
     MIGRATE_EXIT=$?
     set -e
 
@@ -953,29 +944,8 @@ for i in $(seq 1 $MIGRATION_RETRIES); do
     sleep "$MIGRATION_DELAY"
 done
 
-# Run baseline-resolve and `migrate deploy` in a SINGLE container rather than
-# separate `dc run --rm` invocations. Each run on this image boots node + prisma
-# (~5–10s of pure overhead), so collapsing them shaves real time off every deploy.
-#
-#   - resolve --applied 0_baseline: on first run the _prisma_migrations table or
-#     baseline may not be recorded; mark it applied so Prisma doesn't try to
-#     re-create existing tables. Idempotent + ignored on later runs.
-#
-# `prisma migrate status` exits 0 ONLY when the schema is already up to date, so
-# a zero exit means there is nothing to apply and the whole container boot can be
-# skipped — the common case on a deploy that adds no migration. A non-zero exit
-# means the loop above confirmed the DB is reachable but there is work to do.
-#
-# Failed-migration recovery is driven off `migrate deploy`, NOT off the
-# `migrate status` output. It used to be the other way round: deploy.sh scraped
-# status for the `prisma migrate resolve --rolled-back "<name>"` hint that older
-# Prisma printed. Prisma 7's `migrate status` does not report failed migrations
-# at ALL — it lists only unapplied ones — so that scrape could never match and
-# the recovery path was dead code. The first migration to actually fail in
-# production proved it: status reported one pending migration and said nothing
-# about the failure, deploy then died P3009, and every subsequent deploy died the
-# same way until someone resolved it by hand. `migrate deploy`'s own P3009 names
-# the migration, so that is what we parse now.
+# An up-to-date status avoids another Prisma container startup. Pending work
+# runs migrate deploy; failed/partial migrations require deliberate recovery.
 if [ "${MIGRATE_EXIT:-1}" -eq 0 ]; then
     log "  Schema already up to date — skipping migrate deploy (no pending migrations)."
 else
@@ -996,8 +966,7 @@ else
             web sh -c "$1" 2>&1
     }
 
-    # Captured rather than streamed, because the P3009 recovery below has to read
-    # it. Echoed straight back out so the deploy log is unchanged.
+    # Preserve the complete failure output for the release log.
     set +e
     MIGRATE_DEPLOY_OUTPUT=$(run_migrate_container \
         'node node_modules/prisma/build/index.js migrate deploy')
@@ -1170,8 +1139,13 @@ worker_state() { # → "<running> <restartCount>" or "missing"
 }
 check_workers() {
     local svc before after failed="" base=""
-    for svc in $WORKER_SERVICES; do base="${base}${svc}|$(worker_state "$svc")"$'\n'; done
-    sleep "${WORKER_SETTLE_SECONDS:-30}"
+    if [ -f "${HEALTH_RESULT_FILE}.workers" ]; then
+        base=$(cat "${HEALTH_RESULT_FILE}.workers")
+    else
+        for svc in $WORKER_SERVICES; do base="${base}${svc}|$(worker_state "$svc")"$'\n'; done
+        printf '%s' "$base" > "${HEALTH_RESULT_FILE}.workers"
+    fi
+    sleep "${1:-${WORKER_SETTLE_SECONDS:-30}}"
     for svc in $WORKER_SERVICES; do
         before=$(printf '%s' "$base" | grep "^${svc}|" | cut -d'|' -f2-); after=$(worker_state "$svc")
         case "$after" in
@@ -1190,7 +1164,7 @@ run_health_checks() {
     check_http "$PORT_RMHTUBE" & local p_rmhtube=$!
     check_http "$PORT_STATUS"  & local p_status=$!
     check_supervisor           & local p_sup=$!
-    wf=$(mktemp); check_workers > "$wf" & local p_workers=$!
+    wf=$(mktemp); check_workers "${1:-${WORKER_SETTLE_SECONDS:-30}}" > "$wf" & local p_workers=$!
     for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status" "supervisor:$p_sup"; do
         wait "${job#*:}" || failed="$failed ${job%%:*}"
     done
@@ -1213,11 +1187,12 @@ rollback_non_web() {
     done
     dc up -d --no-build --remove-orphans --scale web=0 || return 1
     local still
+    rm -f "${HEALTH_RESULT_FILE}.workers"
     still=$(run_health_checks)
     [ -z "$still" ] || { log "Still unhealthy after rollback: $still"; return 1; }
 }
 
-HEALTH_RESULT_FILE=$(mktemp)
+export HEALTH_RESULT_FILE=$(mktemp)
 (exec 200>&-; run_health_checks > "$HEALTH_RESULT_FILE") & BG_HEALTH_PID=$!
 
 # ── Step 4b: Zero-downtime hotswap of the web container ─────────────────────
@@ -1249,7 +1224,7 @@ while IFS= read -r line; do
             node "$REPO_DIR/deploy/release-state.mjs" promote "$DEPLOY_STATE_DIR" "$DEPLOY_RELEASE_ID" "$PREV_RELEASE_ID"
             release_event traffic-moved ;;
         ::deploy-event::rolledback)
-            node "$REPO_DIR/deploy/release-state.mjs" restore "$DEPLOY_STATE_DIR" "$DEPLOY_RELEASE_ID" || true
+            node "$REPO_DIR/deploy/release-state.mjs" restore "$DEPLOY_STATE_DIR" "$DEPLOY_RELEASE_ID"
             release_event rolledback ;;
         ::deploy-rc::*)    hotswap_rc="${line#::deploy-rc::}" ;;
         *)                 printf '%s\n' "$line" ;;
@@ -1306,6 +1281,10 @@ step_start "Joining service health checks (observed during web bake)..."
 wait "$BG_HEALTH_PID"
 BG_HEALTH_PID=''
 failed_services=$(cat "$HEALTH_RESULT_FILE")
+# Re-probe readiness and compare against the original worker snapshot after bake.
+# This catches failures anywhere in the observation window without another sleep.
+late_failures=$(run_health_checks 0)
+failed_services=$(printf '%s %s' "$failed_services" "$late_failures" | xargs)
 if [ -n "$failed_services" ]; then
     log "ERROR: health checks failed for: ${failed_services}"
     log "--- Container logs (${failed_services}) ---"

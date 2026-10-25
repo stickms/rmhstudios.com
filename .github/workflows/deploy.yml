@@ -76,6 +76,7 @@ jobs:
         run: pnpm test --shard=${{ matrix.shard }}/2
 
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ${{ vars.ARM64_BUILD_RUNNER || 'ubuntu-24.04-arm' }}
     timeout-minutes: 90
     permissions:
@@ -174,6 +175,11 @@ jobs:
           set -euo pipefail
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
+      - name: Prepare candidate database alongside image compilation
+        env:
+          GIT_SHA: ${{ github.sha }}
+        run: nohup bash scripts/ci/candidate-smoke.sh prepare > "$RUNNER_TEMP/candidate-pg.log" 2>&1 &
+
       - name: Build + push both images (bake, single graph)
         id: images
         env:
@@ -188,8 +194,6 @@ jobs:
           VITE_RMHTUBE_SOCKET_URL: ${{ vars.PROD_VITE_RMHTUBE_SOCKET_URL }}
           VITE_DISCORD_ACTIVITY_CLIENT_ID: ${{ vars.PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID }}
           VITE_CDN_BASE_URL: ${{ vars.PROD_VITE_CDN_BASE_URL }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          EXPORT_CACHE: false
           IMAGE_COMPRESSION: ${{ vars.DEPLOY_IMAGE_COMPRESSION || 'gzip' }}
         run: |
           set -euo pipefail
@@ -250,9 +254,9 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: public/images/_variants
-          key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
+          key: image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-${{ hashFiles('public/images/**') }}
           restore-keys: |
-            image-variants-${{ runner.os }}-
+            image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-
       - name: Build
         run: pnpm run build:frontend
       - name: Wait for Postgres
@@ -335,7 +339,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      actions: read  # final render of the Discord CI checklist
+      actions: read # render the Discord CI checklist on a rejected release
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

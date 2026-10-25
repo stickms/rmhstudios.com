@@ -228,7 +228,9 @@ export default defineConfig({
     {
       name: 'build-numeric-wasm',
       // Also covers direct `vite dev/build` and Docker's pnpm exec invocation.
-      async config() { await buildWasm(); },
+      async config() {
+        await buildWasm();
+      },
     },
     stubServerFiles(),
     tailwindcss(),

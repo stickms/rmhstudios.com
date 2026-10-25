@@ -491,9 +491,14 @@ async function main(): Promise<number> {
     brotli += brotliCompressSync(buf).length;
   }
   const entryRaw = readChunk(OUT_DIR, entry).length;
-  const siteSheets = readdirSync(path.join(OUT_DIR, 'assets')).filter((file) => /^site-tier-[\w-]+\.css$/.test(file));
-  if (siteSheets.length !== 1) throw new Error('Expected exactly one render-blocking site stylesheet');
-  const siteCssBrotli = brotliCompressSync(readFileSync(path.join(OUT_DIR, 'assets', siteSheets[0]))).length;
+  const siteSheets = readdirSync(path.join(OUT_DIR, 'assets')).filter((file) =>
+    /^site-tier-[\w-]+\.css$/.test(file),
+  );
+  if (siteSheets.length !== 1)
+    throw new Error('Expected exactly one render-blocking site stylesheet');
+  const siteCssBrotli = brotliCompressSync(
+    readFileSync(path.join(OUT_DIR, 'assets', siteSheets[0])),
+  ).length;
 
   const rows: Array<[string, number, number]> = [
     ['entry, raw', entryRaw, BUDGETS.entryRaw],

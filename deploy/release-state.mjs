@@ -20,6 +20,10 @@ function atomicWrite(dir, name, value) {
     fsyncSync(fd);
   } finally { closeSync(fd); }
   renameSync(temporary, file);
+  if (process.platform !== 'win32') {
+    const directory = openSync(dir, 'r');
+    try { fsyncSync(directory); } finally { closeSync(directory); }
+  }
 }
 export function recordRelease(dir, id, sha, phase, now = Date.now()) {
   if (!releaseIdPattern.test(id) || !id.startsWith('release-') || !shaPattern.test(sha)) throw new Error('Invalid release identity');
@@ -38,6 +42,10 @@ export function recordRelease(dir, id, sha, phase, now = Date.now()) {
     if (value && /^[a-zA-Z0-9/_.:@-]{1,256}$/.test(value)) state[key] = value;
   }
   atomicWrite(dir, id, state);
+  if (phase === 'success') {
+    const live = readState(dir, 'live');
+    if (live?.id === id) atomicWrite(dir, 'last-successful', live);
+  }
   return state;
 }
 export function promoteRelease(dir, id, expectedLiveId) {
@@ -50,8 +58,9 @@ export function promoteRelease(dir, id, expectedLiveId) {
 export function restoreRelease(dir, id) {
   if (readState(dir, 'live')?.id !== id) throw new Error('A newer release is serving; refusing stale rollback');
   const state = readState(dir, id);
-  if (!state?.previous) throw new Error('No previous serving release');
-  atomicWrite(dir, 'live', state.previous);
+  // First adoption can restore an older container whose SHA was never journaled.
+  // Record unknown identity rather than claiming the failed candidate is live.
+  atomicWrite(dir, 'live', state?.previous ?? { id: 'release-unknown', sha: null, at: Date.now() });
 }
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   try {

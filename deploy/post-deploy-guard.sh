@@ -34,6 +34,8 @@ MINUTES="${GUARD_MINUTES:-15}"
 MIN_MINUTES="${GUARD_MIN_MINUTES:-3}"
 INTERVAL="${GUARD_INTERVAL_SECONDS:-60}"
 GIT_BIN="${GIT_BIN:-git}"
+PREV_WEB_REF="${PREV_WEB_REF:-}"
+PREV_FULL_REF="${PREV_FULL_REF:-}"
 
 log() { echo "[post-deploy-guard $(date -u +%H:%M:%S)] $*"; }
 

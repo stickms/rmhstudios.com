@@ -9,9 +9,13 @@ full_ref="${IMAGE_FULL}:${GIT_SHA}"
 [ -z "${FULL_DIGEST:-}" ] || full_ref="${IMAGE_FULL}@${FULL_DIGEST}"
 pg="${name}-pg"
 cleanup() { docker rm -f "$name" "$pg" >/dev/null 2>&1 || true; }
+start_postgres() {
+  docker run -d --name "$pg" -p 127.0.0.1:5432:5432 \
+    -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=rmh pgvector/pgvector:pg16 >/dev/null
+}
+if [ "${1:-}" = prepare ]; then start_postgres; exit 0; fi
 trap cleanup EXIT
-docker run -d --name "$pg" -p 127.0.0.1:5432:5432 \
-  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=rmh pgvector/pgvector:pg16 >/dev/null
+docker inspect "$pg" >/dev/null 2>&1 || start_postgres
 for _ in $(seq 1 60); do
   docker exec "$pg" pg_isready -U postgres >/dev/null 2>&1 && break
   sleep 1

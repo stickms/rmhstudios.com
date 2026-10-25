@@ -279,7 +279,7 @@ and data are Geist Mono, everything else Geist. One ink-gel primary action
   One flash ledger caps every flash at ≤3 onsets/s site-wide (WCAG 2.3.1); arcs
   never land on fields, overlays or toasts.
 - **Never fake a law:** no keyframe wobble, `@keyframes` glow, `transition:
-  transform` on a body, untriggered flicker, ripple, or a second spring formula.
+transform` on a body, untriggered flicker, ripple, or a second spring formula.
   The only sanctioned keyframes are the `.jelly-flow` haze drift. A new behaviour
   is a new force in the services with a constant for every number.
 
@@ -329,10 +329,11 @@ from one Dockerfile + pushes them to GHCR → an HMAC-signed request wakes the V
 webhook listener (`webhook-server.cjs`) → `./deploy.sh production <sha>` pulls
 those images → prisma migrate → blue/green web hotswap (port 7005/7015 flip).
 
-CI is 11 workflows: `web-ci.yml` (typecheck, lint, tests, build, production
+Core CI workflows include `web-ci.yml` (typecheck, lint, tests, build, production
 dependency audit, integration suite — **all blocking**), `epic-tests.yml` (the epic content-build
 suite, path-filtered to `scripts/epic/**`), `go-microservices.yml` (Bazel test),
-`senior-review.yml` (LLM review gate), `deploy.yml`, `synthetic-perf.yml`,
+`senior-review.yml` (LLM review gate), `deploy.yml`, `synthetic-perf.yml`, `candidate-image.yml` (native image smoke),
+`build-cache.yml` (independent reusable-stage maintenance),
 `i18n-translate.yml`, and the build/deploy guards `build-vibe-packages`,
 `compose-validate`, `prisma-validate`, `prisma-migrate-status`. Run the core
 checks locally before opening a pull request. Which suite runs where, and what
