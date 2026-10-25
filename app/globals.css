@@ -5087,6 +5087,27 @@ html.nav-pop .page-root > * {
   }
 }
 
+/* WebKit cannot run a `linear()` timing function on the compositor: an animation
+   or transition on one is ticked on the main thread and capped at 30 fps even on
+   a 120 Hz display (WebKit bug 281429, "as designed" until bug 250970). So in
+   WebKit only — `font: -apple-system-body` is a WebKit-only value — the sampled
+   springs fall back to the closest cubic-bezier, which WebKit accelerates. The
+   durations stay the springs' settle times, so the curves front-load the travel
+   the way the springs do (their last third is sub-pixel); `snappy` and `pop`
+   keep their overshoot through a y > 1 control point. Chromium and Gecko
+   accelerate `linear()` and keep the exact springs. After every token it
+   overrides (the evert springs are declared above), before `perf-lite`, which
+   still wins. */
+@supports (font: -apple-system-body) {
+  :root {
+    --spring-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+    --spring-snappy: cubic-bezier(0.34, 1.4, 0.64, 1);
+    --spring-sheet: cubic-bezier(0.16, 1, 0.3, 1);
+    --evert-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --evert-ease-pop: cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+}
+
 /* perf-lite: one short tween instead of the sampled settle; the focus ring simply lands. */
 html.perf-lite {
   --evert-in: 0.16s;

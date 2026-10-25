@@ -85,9 +85,9 @@ describe('budgets (R6, R10, 04 §3.1)', () => {
         b.clickBolts,
       ];
     };
-    expect(row('full')).toEqual([24, 8, 24, 12, 8, 30, 12, 3]);
-    expect(row('coarse')).toEqual([16, 6, 16, 8, 6, 30, 12, 2]);
-    expect(row('handheld')).toEqual([10, 4, 8, 6, 4, 15, 8, 1]);
+    expect(row('full')).toEqual([24, 8, 24, 12, 8, 60, 30, 3]);
+    expect(row('coarse')).toEqual([16, 6, 16, 8, 6, 60, 30, 2]);
+    expect(row('handheld')).toEqual([10, 4, 8, 6, 4, 30, 15, 1]);
     expect(row('lite')).toEqual([0, 0, 0, 3, 0, 0, 0, 0]);
     expect(JELLY_BUDGETS.full.animatedViewports).toBe(1.5);
     expect(JELLY_BUDGETS.coarse.animatedViewports).toBe(1.25);
@@ -121,9 +121,9 @@ describe('budgets (R6, R10, 04 §3.1)', () => {
       expect(b.hazeSlots).toBeLessThanOrEqual(b.rims);
       expect(b.idleClockHz).toBeLessThanOrEqual(b.clockHz);
     }
-    // R7: always moving while someone is there — a 12 Hz floor, never a freeze, on the desktop tiers.
-    expect(JELLY_BUDGETS.full.idleClockHz).toBe(12);
-    expect(JELLY_BUDGETS.coarse.idleClockHz).toBe(12);
+    // R7: always moving while someone is there — a 30 Hz floor, never a freeze, on the desktop tiers.
+    expect(JELLY_BUDGETS.full.idleClockHz).toBe(30);
+    expect(JELLY_BUDGETS.coarse.idleClockHz).toBe(30);
     const off = JELLY_BUDGETS.off;
     expect([off.rims, off.hazeSlots, off.carriers, off.clockHz, off.clickBolts]).toEqual([
       0, 0, 0, 0, 0,

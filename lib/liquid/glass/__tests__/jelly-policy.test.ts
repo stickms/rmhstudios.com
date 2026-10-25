@@ -68,7 +68,7 @@ describe('ambient clock (R7)', () => {
     const governed = governBudget(JELLY_BUDGETS.full, 1);
     expect(
       ambientHz({ ...engaged, clockHz: governed.clockHz, idleClockHz: governed.idleClockHz }),
-    ).toBe(20);
+    ).toBe(30);
     const ladderEnd = governBudget(JELLY_BUDGETS.full, 6);
     expect(
       ambientHz({ ...engaged, clockHz: ladderEnd.clockHz, idleClockHz: ladderEnd.idleClockHz }),
@@ -78,9 +78,9 @@ describe('ambient clock (R7)', () => {
     ).toBe(12);
   });
 
-  it('handheld runs 15 Hz engaged and 8 Hz idle; lite and off have no clock', () => {
+  it('handheld runs 30 Hz engaged and 15 Hz idle; lite and off have no clock', () => {
     const h = JELLY_BUDGETS.handheld;
-    expect(ambientHz({ ...engaged, clockHz: h.clockHz, idleClockHz: h.idleClockHz })).toBe(15);
+    expect(ambientHz({ ...engaged, clockHz: h.clockHz, idleClockHz: h.idleClockHz })).toBe(30);
     expect(
       ambientHz({
         ...engaged,
@@ -88,7 +88,7 @@ describe('ambient clock (R7)', () => {
         idleClockHz: h.idleClockHz,
         msSinceInput: IDLE_AFTER_MS + 1,
       }),
-    ).toBe(8);
+    ).toBe(15);
     for (const t of ['lite', 'off'] as const) {
       const b = JELLY_BUDGETS[t];
       expect(ambientHz({ ...engaged, clockHz: b.clockHz, idleClockHz: b.idleClockHz })).toBe(0);

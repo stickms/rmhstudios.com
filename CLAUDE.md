@@ -305,11 +305,14 @@ indent remain.
 **Performance:** one frame driver (`lib/jelly/frame.ts` — one
 `requestAnimationFrame`; services register through `drive(fn)`), one window
 pointer listener fan-out, one overlay canvas (arcs only). The ambient clock runs
-30 Hz engaged, a 12 Hz floor when idle, and 0 when the tab is hidden or
+60 Hz engaged, a 30 Hz floor when idle (30 / 15 on handhelds), and 0 when the tab is hidden or
 unfocused, nothing is on screen, the tier is degraded, or Jelly motion is Still.
 Budgets per tier in `JELLY_BUDGETS` (desktop: 24 rims, 8 haze slots, 24 carriers,
 12 bodies — never above `--jelly-body-budget` (24)), with a downscale-only
-governor. Rects are read in scroll/resize/activation, never per frame or pointer
+governor. Haze draws in a worker (`lib/liquid/glass/haze.worker.ts`), which hands
+each frame to its canvas without a copy (`transferToImageBitmap` →
+`bitmaprenderer`); the globe cursor is its own GPU canvas moved by `transform`.
+Rects are read in scroll/resize/activation, never per frame or pointer
 event; nothing writes custom properties to `<html>` per frame. The only filters
 are the lens and refraction blurs inside a moving body's own SVG, active only
 while it moves; never a filter or `backdrop-filter` on a full-viewport layer.

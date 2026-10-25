@@ -893,10 +893,10 @@ gated off there too, via `html.app-route`).
 - **Jelly motion states (the material layer).** The material is the one thing
   on a page that moves on its own, and only through its owners
   ([`plasmatic-jelly-system.md`](plasmatic-jelly-system.md) §2–§4). _Engaged_
-  (input in the last 20 s): the engine's haze clock ticks at 30 Hz (15 Hz
-  handheld). _Idle_: it drops to a 12 Hz floor and **does not freeze** — this
+  (input in the last 20 s): the engine's haze clock ticks at 60 Hz (30 Hz
+  handheld). _Idle_: it drops to a 30 Hz floor and **does not freeze** — this
   deliberately reverses the 2026-10-08 audit's 2 fps rest limit (the rest limit is
-  now 13 fps; CPU at rest stays ≤ 250 ms/s on `/`). _Unseen or degraded_ (hidden
+  now 31 fps; CPU at rest stays ≤ 250 ms/s on `/`). _Unseen or degraded_ (hidden
   tab, unfocused window, scroll in flight, nothing hazy on screen, a degraded tier,
   `jellyMotion = still`, a game playing): 0 Hz, no loop. The soft body and the
   arcs run frames only while a body or an arc is moving. Never add a CSS
