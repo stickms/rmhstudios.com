@@ -38,6 +38,7 @@ function runDeploy(options: {
   staging?: boolean;
   migration?: 'pending' | 'current' | 'fail';
   failJob?: 'avatars' | 'media';
+  hangJob?: 'avatars' | 'media';
 } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'r2-deploy-'));
   dirs.push(dir);
@@ -103,6 +104,9 @@ const job = cmd.includes('scripts/migrate-avatars-to-r2.ts') ? 'avatars'
   : cmd.includes('scripts/migrate-media-to-r2.ts') ? 'media' : undefined;
 if (job) {
   event(job + '-started');
+  // The deploy lock rides on fd 200; a background job holding it blocks the next deploy.
+  if (fs.existsSync('/proc/self/fd/200')) event(job + '-holds-lock');
+  if (process.env.TEST_HANG_JOB === job) for (;;) pause();
   for (let i = 0; i < 200 && !exists('foreground-complete'); i++) pause();
   event(job + (exists('foreground-complete') ? '-background' : '-blocked-foreground'));
   // Stay in flight after foreground work, so dropping the real wait is observable.
@@ -119,6 +123,7 @@ console.error('Unexpected Docker invocation:', args); process.exit(97);
   const harnessScript = join(dir, 'harness.sh');
   writeFileSync(harnessScript, `
 set -euo pipefail
+exec 200>>"$TEST_ROOT/lock"
 REPO_DIR=${quote(shellPath(repo))}
 ENV_FILE=${quote(shellPath(envFile))}
 DOCKER_BIN=${quote(shellPath(dockerWrapper))}
@@ -158,6 +163,8 @@ printf 'deploy-complete\\n' >> "$TEST_ROOT/events"
       TEST_CDN: options.cdn === false ? '0' : '1',
       TEST_MIGRATION: options.migration ?? 'pending',
       TEST_FAIL_JOB: options.failJob ?? '',
+      TEST_HANG_JOB: options.hangJob ?? '',
+      ...(options.hangJob ? { BACKFILL_TIMEOUT_SECONDS: '1' } : {}),
     },
     encoding: 'utf8',
     timeout: 5000,
@@ -254,6 +261,30 @@ describe('deployment R2 backfills', () => {
 
   // Removing '&' blocks later deployment; removing a wait reports completion
   // too soon. A controlled job holds until foreground work reaches its end.
+  // The jobs are children of the deploy shell; if they inherit the flock
+  // descriptor, a hung one keeps every later deploy queued.
+  it.skipIf(process.platform === 'win32')('does not leave the deployment lock open in a backfill', () => {
+    const result = runDeploy();
+    expect(result.status, result.output).toBe(0);
+    expect(result.events).toContain('avatars-started');
+    expect(result.events).toContain('media-started');
+    expect(result.events).not.toContain('avatars-holds-lock');
+    expect(result.events).not.toContain('media-holds-lock');
+  });
+
+  // An unbounded join is what let one wedged container hold the deploy open
+  // (and its lock) indefinitely.
+  it.skipIf(process.platform === 'win32').each(['avatars', 'media'] as const)(
+    'bounds a hung %s backfill so the deploy still completes',
+    (hangJob) => {
+      const result = runDeploy({ hangJob });
+      expect(result.status, result.output).toBe(0);
+      expect(result.output).toContain(`WARNING: ${hangJob === 'avatars' ? 'avatar' : 'media'} R2 backfill failed`);
+      expect(result.events).not.toContain(`${hangJob}-finished`);
+      expect(result.events).toContain('deploy-complete');
+    },
+  );
+
   it.each(['avatars', 'media'] as const)('joins background work and warns when %s fails', (failJob) => {
     const result = runDeploy({ failJob });
     expect(result.status, result.output).toBe(0);

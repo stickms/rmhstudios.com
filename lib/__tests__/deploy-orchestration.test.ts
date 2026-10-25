@@ -29,7 +29,7 @@ const posix = (value: string) =>
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 const bash = process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' : 'bash';
 
-function fixture(extra: Record<string, string> = {}) {
+function fixture(extra: Record<string, string> = {}, options: { realFlock?: boolean } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'rmh-deploy-orchestration-'));
   dirs.push(dir);
   mkdirSync(join(dir, 'deploy'));
@@ -98,7 +98,14 @@ esac
   writeFileSync(join(dir, 'bin/curl'), '#!/bin/bash\nexit 0\n', { mode: 0o755 });
   // These cases enter with the deployment lock acquired. The stale observer
   // must still check serving identity inside that critical section.
-  writeFileSync(join(dir, 'bin/flock'), '#!/bin/bash\nexit 0\n', { mode: 0o755 });
+  if (!options.realFlock)
+    writeFileSync(join(dir, 'bin/flock'), '#!/bin/bash\nexit 0\n', { mode: 0o755 });
+  // A stand-in for the 15-minute watcher: it outlives the deploy, as the real one does.
+  writeFileSync(
+    join(dir, 'deploy/post-deploy-guard.sh'),
+    '#!/bin/bash\necho $$ > "$MOCK_ROOT/guard.pid"\nexec sleep 30\n',
+    { mode: 0o755 },
+  );
   const stateDir = join(dir, '.deploy/releases');
   recordRelease(stateDir, 'release-previous', shaA, 'queued');
   promoteRelease(stateDir, 'release-previous', '');
@@ -118,6 +125,7 @@ esac
     DEPLOY_HEADROOM_GB: '0',
     WORKER_SETTLE_SECONDS: '0',
     POST_DEPLOY_GUARD: '0',
+    GUARD_LOG: posix(join(dir, 'guard.log')),
     ...extra,
   };
   const command = `PATH=${quote(posix(join(dir, 'bin')))}:${quote(posix(dirname(process.execPath)))}:"$PATH"; export PATH; exec bash ${quote(posix(join(dir, 'deploy.sh')))} production ${shaB}`;
@@ -137,6 +145,30 @@ esac
 }
 
 describe('production deploy orchestration', () => {
+  // Needs the real flock(1): a detached child that inherits the lock descriptor
+  // keeps the lock after the deploy exits, so the next push queued behind it.
+  it.skipIf(process.platform === 'win32' || spawnSync('flock', ['-V']).error !== undefined)(
+    'releases the deployment lock when it hands off to the post-deploy guard',
+    () => {
+      const { dir, result } = fixture({ POST_DEPLOY_GUARD: '1' }, { realFlock: true });
+      const pidFile = join(dir, 'guard.pid');
+      try {
+        expect(result.status, result.stdout + result.stderr).toBe(0);
+        expect(existsSync(pidFile), 'the guard must have been started').toBe(true);
+        const next = spawnSync('flock', ['-n', join(dir, 'lock'), 'true']);
+        expect(next.status, 'a following deploy must be able to take the lock').toBe(0);
+      } finally {
+        if (existsSync(pidFile)) {
+          try {
+            process.kill(Number(readFileSync(pidFile, 'utf8')));
+          } catch {
+            /* already gone */
+          }
+        }
+      }
+    },
+    25_000,
+  );
   it('assigns a valid release identity to a manual deployment', () => {
     const { result, stateDir } = fixture({ DEPLOY_RELEASE_ID: '' });
     expect(result.status, result.stdout + result.stderr).toBe(0);

@@ -306,6 +306,9 @@ jobs:
             scripts=(testing/e2e/eversion-load.mjs testing/e2e/eversion-perf.mjs)
             echo "update-baselines: refreshing baselines on this runner"
           fi
+          # One wedged script must not run out the whole job's clock and hide every
+          # result behind it (nightly runs were being cancelled at the 75-minute cap).
+          cap() { timeout --foreground -k 30 "${EVERSION_SCRIPT_TIMEOUT_SECONDS:-900}" "$@"; }
           failed=()
           passed=()
           {
@@ -321,7 +324,7 @@ jobs:
             echo "::group::$s"
             extra=()
             [ -n "$UPDATE_BASELINES" ] && extra=(--update-baselines)
-            if node "$s" "${extra[@]}"; then
+            if cap node "$s" "${extra[@]}"; then
               echo "PASS $s"; passed+=("$s"); record "$s" "PASS"
             else
               echo "FAIL $s"; failed+=("$s"); record "$s" "**FAIL**"
@@ -333,7 +336,7 @@ jobs:
             for profile in desktop mobile; do
               for theme in dark light high-contrast; do
                 echo "::group::eversion-hub.mjs $profile/$theme"
-                if PROFILE="$profile" THEME="$theme" node testing/e2e/eversion-hub.mjs; then
+                if PROFILE="$profile" THEME="$theme" cap node testing/e2e/eversion-hub.mjs; then
                   echo "PASS eversion-hub $profile/$theme"; record "eversion-hub $profile/$theme" "PASS"
                 else
                   echo "FAIL eversion-hub $profile/$theme"; failed+=("eversion-hub:$profile/$theme")
@@ -365,7 +368,7 @@ jobs:
             if curl -fsS -o /dev/null "http://127.0.0.1:7371/eversion-lab"; then echo "dev server up after ${i}s"; break; fi
             sleep 1
           done
-          if BASE_URL=http://127.0.0.1:7371 node testing/e2e/eversion-smoothness.mjs --quick; then
+          if BASE_URL=http://127.0.0.1:7371 cap node testing/e2e/eversion-smoothness.mjs --quick; then
             echo "| \`eversion-smoothness.mjs --quick\` | PASS |" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "| \`eversion-smoothness.mjs --quick\` | **FAIL** |" >> "$GITHUB_STEP_SUMMARY"

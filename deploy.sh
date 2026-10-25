@@ -565,9 +565,11 @@ if ! flock -n 200; then
     log "Deploy already in progress. Queuing for redeploy after current deploy finishes."
     printf '%s\n' "$$" > "${QUEUE_FILE}.$$" && mv -f "${QUEUE_FILE}.$$" "$QUEUE_FILE"
 
-    # Block until the running deploy releases the lock
-    if ! flock 200; then
-        log "FATAL: Failed to acquire deploy lock."
+    # Block until the running deploy releases the lock. A healthy deploy holds it
+    # for ~10-15 min; bound the wait so a wedged holder fails this release loudly
+    # (the exit trap reports it) instead of leaving it "queued" forever.
+    if ! flock -w "${DEPLOY_LOCK_WAIT_SECONDS:-2700}" 200; then
+        log "FATAL: Failed to acquire deploy lock within ${DEPLOY_LOCK_WAIT_SECONDS:-2700}s — another deploy is wedged (see 'fuser $LOCKFILE')."
         rm -f "${QUEUE_FILE}.$$"
         exit 1
     fi
@@ -1011,7 +1013,10 @@ if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
         # node+Prisma container boot. Joined at Step 6 before we report success.
         log "Backfilling existing avatars to R2 (idempotent, in background)..."
         (
-            dc -f docker-compose.yml -f deploy/docker-compose.backfill.yml run --rm --no-deps -T \
+            exec 200>&-
+            timeout -k 30 "${BACKFILL_TIMEOUT_SECONDS:-600}" \
+            "$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+                -f docker-compose.yml -f deploy/docker-compose.backfill.yml run --rm --no-deps -T \
                 -e STORAGE_PATH=/app/db \
                 --entrypoint node \
                 web \
@@ -1035,7 +1040,10 @@ if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
     if [ -d "$STORAGE_PATH_HOST/music" ] || [ -d "$STORAGE_PATH_HOST/builds" ]; then
         log "Backfilling local media (songs, covers, build thumbnails) to R2 (idempotent, in background)..."
         (
-            dc -f docker-compose.yml -f deploy/docker-compose.backfill.yml run --rm --no-deps -T \
+            exec 200>&-
+            timeout -k 30 "${BACKFILL_TIMEOUT_SECONDS:-600}" \
+            "$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+                -f docker-compose.yml -f deploy/docker-compose.backfill.yml run --rm --no-deps -T \
                 -e STORAGE_PATH=/app/db \
                 --entrypoint node \
                 web \
@@ -1432,10 +1440,17 @@ update_deploy_status success
 # latency alarms fire on its traffic (deploy/post-deploy-guard.sh). Detached,
 # so the deploy lock is released now; the guard stands down on a newer deploy.
 # Off for the redeploy the guard itself starts (POST_DEPLOY_GUARD=0).
+# `200>&-` is what actually releases the lock: a detached child inherits fd 200,
+# and the flock lives as long as any holder of that open file does — without it
+# the guard pinned the lock for its whole 15 minutes and every deploy pushed in
+# that window queued behind it (the guard only stands down once a newer release
+# is live, which it could not become while waiting for the lock).
+# DEPLOY_SHORT_HASH is only set when the Discord announcer ran; GIT_SHA is the same value.
+GUARD_SHA="${DEPLOY_SHORT_HASH:-$GIT_SHA}"
 if [ "${POST_DEPLOY_GUARD:-1}" = 1 ] && [ -x "${REPO_DIR}/deploy/post-deploy-guard.sh" ] \
-   && [ -n "${PREV_DEPLOYED_SHA:-}" ] && [ "${PREV_DEPLOYED_SHA:0:7}" != "${DEPLOY_SHORT_HASH:0:7}" ]; then
-    DEPLOY_EXPECT_LIVE_ID="$DEPLOY_RELEASE_ID" setsid nohup bash "${REPO_DIR}/deploy/post-deploy-guard.sh" "$DEPLOY_SHORT_HASH" "$PREV_DEPLOYED_SHA" "$(date +%s)" \
-        >> "${GUARD_LOG:-/home/rmhstudios/post-deploy-guard.log}" 2>&1 < /dev/null &
+   && [ -n "${PREV_DEPLOYED_SHA:-}" ] && [ "${PREV_DEPLOYED_SHA:0:7}" != "${GUARD_SHA:0:7}" ]; then
+    DEPLOY_EXPECT_LIVE_ID="$DEPLOY_RELEASE_ID" setsid nohup bash "${REPO_DIR}/deploy/post-deploy-guard.sh" "$GUARD_SHA" "$PREV_DEPLOYED_SHA" "$(date +%s)" \
+        >> "${GUARD_LOG:-/home/rmhstudios/post-deploy-guard.log}" 2>&1 < /dev/null 200>&- &
     log "Post-deploy guard started (15 min, rollback target ${PREV_DEPLOYED_SHA:0:12})."
 fi
 
