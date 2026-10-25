@@ -183,3 +183,23 @@ Validation on the Windows development host:
 - `git diff --check`: passed.
 
 The host runs Node 24.13.0; the repository requests >=24.18.0 <25. A production build, database-backed integration tests, Go/Bazel tests and browser checks were not run.
+
+## PR CI follow-up
+
+The initial Linux CI run for PR #1016 confirmed both test shards, frontend build,
+integration tests, typecheck/lint/docs and jelly browser checks pass. The remaining
+failure matched the previous merged PR #1014: the production audit found
+GHSA-mrhx-c7xc-m3w5 through the Discord embedded SDK's Zod dependency.
+
+The follow-up applies a reproducible pnpm patch to the SDK's bundled ESM and CJS
+validators, preserving its API while rejecting oversized constrained collections
+before visiting elements. Declarations use `zod/v3` from the patched Zod package
+through a scoped resolution. The SDK version is pinned while the backport is
+needed. [Patch details and removal procedure](../patches/README.md) document the
+runtime/declaration distinction. Docker copies the patch before installation and
+the dependency cache includes patch content. The production audit threshold and
+advisory handling are unchanged.
+
+The production audit now reports zero high/critical findings locally, and all ten
+installed-runtime security regression cases pass. Final GitHub CI results are
+recorded in the PR.
