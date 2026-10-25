@@ -162,11 +162,15 @@ describe('production deploy orchestration', () => {
   // keeps the lock after the deploy exits, so the next push queued behind it.
   it.skipIf(process.platform === 'win32' || spawnSync('flock', ['-V']).error !== undefined)(
     'releases the deployment lock when it hands off to the post-deploy guard',
-    () => {
+    async () => {
       const { dir, result } = fixture({ POST_DEPLOY_GUARD: '1' }, { realFlock: true });
       const pidFile = join(dir, 'guard.pid');
       try {
         expect(result.status, result.stdout + result.stderr).toBe(0);
+        // The guard is launched in the background and deploy.sh exits straight
+        // away, so on a loaded runner it may not have written its pid yet.
+        for (let i = 0; i < 250 && !existsSync(pidFile); i++)
+          await new Promise((done) => setTimeout(done, 20));
         expect(existsSync(pidFile), 'the guard must have been started').toBe(true);
         const next = spawnSync('flock', ['-n', join(dir, 'lock'), 'true']);
         expect(next.status, 'a following deploy must be able to take the lock').toBe(0);
