@@ -391,6 +391,28 @@ prune_rollback_images() {
     done
 }
 
+# ── Helper: reclaim disk in tiers ───────────────────────────────────────────
+# The host no longer builds (images are pulled from GHCR), so nothing here is
+# needed for the next deploy except the running containers and one rollback image.
+#   gentle — stopped containers, dangling images, BuildKit cache older than
+#            DEPLOY_BUILD_CACHE_KEEP_HOURS (default 72). Always safe, runs every deploy.
+#   hard   — also ALL BuildKit cache, every unused image, rollback trimmed to 1.
+# The BuildKit cache is the one thing no deploy step ever cleaned: it was left by
+# the old build-on-host era and sat at 11.6 GB on a 45 GB disk.
+reclaim_disk() {
+    local tier="${1:-gentle}"
+    "$DOCKER_BIN" container prune -f > /dev/null 2>&1 || true
+    "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
+    if [ "$tier" = hard ]; then
+        "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
+        prune_rollback_images 1
+        "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
+    else
+        "$DOCKER_BIN" builder prune -f --filter "until=${DEPLOY_BUILD_CACHE_KEEP_HOURS:-72}h" > /dev/null 2>&1 || true
+        prune_rollback_images
+    fi
+}
+
 # ── Helper: free space (whole GB) on the filesystem backing Docker's data dir ─
 # Falls back to / if the Docker root can't be determined.
 free_disk_gb() {
@@ -721,9 +743,7 @@ DEPLOY_IN_PROGRESS=1  # from here on, exiting without update_deploy_status is a 
 #   DEPLOY_PULL_RESERVE_GB — transient space the incoming image layers need (default 6)
 stage pull
 step_start "Pre-pull disk cleanup..."
-"$DOCKER_BIN" container prune -f > /dev/null 2>&1 || true
-"$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
-prune_rollback_images
+reclaim_disk gentle
 
 DEPLOY_HEADROOM_GB="${DEPLOY_HEADROOM_GB:-2}"
 DEPLOY_PULL_RESERVE_GB="${DEPLOY_PULL_RESERVE_GB:-6}"
@@ -732,16 +752,19 @@ NEED_FREE_GB=$(( DEPLOY_HEADROOM_GB + DEPLOY_PULL_RESERVE_GB ))
 DISK_FREE_GB=$(free_disk_gb)
 log "Disk: ${DISK_FREE_GB}G free of ${DISK_TOTAL_GB}G (need ≥ ${NEED_FREE_GB}G to pull and keep ${DEPLOY_HEADROOM_GB}G headroom)."
 if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
-    log "Low disk — trimming rollback images to 1 and pruning all unused images."
-    prune_rollback_images 1
-    "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
+    log "Low disk — reclaiming all BuildKit cache and unused images, trimming rollback to 1."
+    reclaim_disk hard
     DISK_FREE_GB=$(free_disk_gb)
-    if [ "${DISK_FREE_GB:-0}" -lt "$DEPLOY_HEADROOM_GB" ]; then
-        log "ERROR: only ${DISK_FREE_GB}G free after pruning — refusing to pull (would breach the ${DEPLOY_HEADROOM_GB}G headroom)."
+    # Fail closed on the full requirement, not just the headroom: pulling into less
+    # than the incoming layers need fills the disk MID-pull, which takes down
+    # Postgres and every container's writable layer with it (2026-10-25).
+    if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
+        log "ERROR: only ${DISK_FREE_GB}G free after reclaiming — need ≥ ${NEED_FREE_GB}G to pull safely. Refusing; nothing was changed."
+        log "  Find the space: bash deploy/disk-report.sh; sudo du -xh / --max-depth=2 | sort -h | tail -25"
         update_deploy_status fail "insufficient disk to pull safely"
         exit 1
     fi
-    log "After prune: ${DISK_FREE_GB}G free."
+    log "After reclaim: ${DISK_FREE_GB}G free."
 else
     log "Disk healthy."
 fi
@@ -1333,15 +1356,13 @@ log "Pruning dangling images..."
 
 # Keep at most 2 SHA-tagged images per environment for rollback.
 prune_rollback_images 2
+"$DOCKER_BIN" builder prune -f --filter "until=${DEPLOY_BUILD_CACHE_KEEP_HOURS:-72}h" > /dev/null 2>&1 || true
 
-# Headroom enforcement. With the build now off-host there is no BuildKit cache to
-# cap or wipe — the SHA-tagged rollback images are the only heavy, reclaimable
-# thing left. If disk is still under the headroom after the prune above, drop to
-# a single rollback image and prune all unused images.
+# Headroom enforcement: if disk is still under the headroom, take everything that
+# is not running or the one rollback image (all BuildKit cache, unused images).
 if [ "$(free_disk_gb)" -lt "$DEPLOY_HEADROOM_GB" ]; then
-    log "Only $(free_disk_gb)G free (< ${DEPLOY_HEADROOM_GB}G headroom) — trimming rollback images to 1."
-    prune_rollback_images 1
-    "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
+    log "Only $(free_disk_gb)G free (< ${DEPLOY_HEADROOM_GB}G headroom) — reclaiming everything not running."
+    reclaim_disk hard
     log "After reclaim: $(free_disk_gb)G disk free."
 fi
 
