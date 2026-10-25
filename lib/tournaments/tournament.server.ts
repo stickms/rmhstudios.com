@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import type { Prisma, PrismaClient, Tournament, TournamentMatch } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
@@ -7,7 +8,11 @@ import { getWagerGame } from '@/lib/wager/eligible-games';
 import { TOURNAMENT_RAKE_BPS } from '@/lib/wager/constants';
 import { generateBracket, resolveBracketRows } from './bracket';
 import { pairRound, recommendedRounds, type Pairing } from './swiss';
-import { computePayouts, resultsFromMatches as resultsFromRows, swissSettlement } from './swiss-flow';
+import {
+  computePayouts,
+  resultsFromMatches as resultsFromRows,
+  swissSettlement,
+} from './swiss-flow';
 import { randomUUID } from 'node:crypto';
 
 type Db = PrismaClient;
@@ -322,8 +327,7 @@ async function advanceSwiss(tournamentId: string, db: Db): Promise<boolean> {
     select: { id: true },
   });
   const ids = entrants.map((e) => e.id);
-  const pairs =
-    current < (t.swissRounds ?? 1) ? pairRound(ids, resultsFromRows(matches)) : null;
+  const pairs = current < (t.swissRounds ?? 1) ? pairRound(ids, resultsFromRows(matches)) : null;
   if (pairs) {
     try {
       await db.$transaction((tx) => createSwissRound(tx, tournamentId, current + 1, pairs));
@@ -375,8 +379,12 @@ export async function settleMatch(
     }
     const loserId = validEntrants.find((e) => e !== opts.winnerEntrantId) ?? null;
     const swiss =
-      (await tx.tournament.findUnique({ where: { id: opts.tournamentId }, select: { format: true } }))
-        ?.format === 'SWISS';
+      (
+        await tx.tournament.findUnique({
+          where: { id: opts.tournamentId },
+          select: { format: true },
+        })
+      )?.format === 'SWISS';
 
     await tx.tournamentMatch.update({
       where: { id: match.id },
@@ -699,7 +707,7 @@ export async function listTournaments(
   opts: { status?: 'REGISTRATION' | 'LIVE' | 'COMPLETE'; take?: number },
   db: Db = prisma,
 ): Promise<SerializedTournament[]> {
-  const take = Math.min(Math.max(opts.take ?? 30, 1), 60);
+  const take = pageSize(opts.take, 30, 60);
   const rows = await db.tournament.findMany({
     where: opts.status ? { status: opts.status } : { status: { not: 'CANCELLED' } },
     include: LIST_INCLUDE,

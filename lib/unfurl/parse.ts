@@ -17,6 +17,8 @@
  *    image into an https page.
  */
 
+import { decodeNumericEntities } from '../html-entities';
+
 /** The shape stored in the cache and returned to the client. */
 export interface Unfurled {
   /** The canonical URL the metadata belongs to. */
@@ -122,16 +124,9 @@ const NAMED_ENTITIES: Record<string, string> = {
 
 /** Decode the handful of entities that actually appear in meta content. */
 function decodeEntities(value: string): string {
-  return value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (match, body: string) => {
+  return value.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, body: string) => {
     const key = body.toLowerCase();
-    if (key.startsWith('#x')) {
-      const code = parseInt(body.slice(2), 16);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : match;
-    }
-    if (key.startsWith('#')) {
-      const code = parseInt(body.slice(1), 10);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : match;
-    }
+    if (key.startsWith('#')) return decodeNumericEntities(match);
     return NAMED_ENTITIES[key] ?? match;
   });
 }

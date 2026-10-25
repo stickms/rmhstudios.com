@@ -12,17 +12,17 @@ const schema = z.object({ ids: z.array(z.string()).max(5000) });
 export const Route = createFileRoute('/api/admin/albums/$id/reorder')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
-        if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-        const body = await request.json().catch(() => null);
-        const parsed = schema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid order.' }, { status: 400 });
+      POST: defineHandler(
+        { auth: 'admin', rateLimit: { policy: 'write', scope: 'user' } },
+        async ({ request, params }) => {
+          const body = await request.json().catch(() => null);
+          const parsed = schema.safeParse(body);
+          if (!parsed.success) return Response.json({ error: 'Invalid order.' }, { status: 400 });
 
-        await reorderSlides(params.id, parsed.data.ids);
-        return Response.json({ success: true });
-      }),
+          await reorderSlides(params.id, parsed.data.ids);
+          return Response.json({ success: true });
+        },
+      ),
     },
   },
 });

@@ -73,19 +73,25 @@ export const Route = createFileRoute('/api/homes/watches')({
         },
       ),
 
-      PATCH: defineHandler({}, async ({ request, session }) => {
-        const parsed = patchSchema.safeParse(await request.json());
-        if (!parsed.success) return Response.json({ error: 'Invalid request' }, { status: 400 });
-        await setWatchActive(session.user.id, parsed.data.id, parsed.data.active);
-        return Response.json({ ok: true });
-      }),
+      PATCH: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:homes/watches' } },
+        async ({ request, session }) => {
+          const parsed = patchSchema.safeParse(await request.json());
+          if (!parsed.success) return Response.json({ error: 'Invalid request' }, { status: 400 });
+          await setWatchActive(session.user.id, parsed.data.id, parsed.data.active);
+          return Response.json({ ok: true });
+        },
+      ),
 
-      DELETE: defineHandler({}, async ({ request, session }) => {
-        const id = new URL(request.url).searchParams.get('id')?.trim();
-        if (!id) return Response.json({ error: 'Missing id' }, { status: 400 });
-        await deleteWatch(session.user.id, id);
-        return Response.json({ ok: true });
-      }),
+      DELETE: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:homes/watches' } },
+        async ({ request, session }) => {
+          const id = new URL(request.url).searchParams.get('id')?.trim();
+          if (!id) return Response.json({ error: 'Missing id' }, { status: 400 });
+          await deleteWatch(session.user.id, id);
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });

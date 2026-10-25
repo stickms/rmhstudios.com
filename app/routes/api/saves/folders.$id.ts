@@ -28,17 +28,20 @@ export const Route = createFileRoute('/api/saves/folders/$id')({
         },
       ),
 
-      DELETE: defineHandler({}, async ({ params, session }) => {
-        try {
-          await deleteFolder(session.user.id, params.id);
-        } catch (e) {
-          if (e instanceof Error && e.message === 'folder-not-found') {
-            return Response.json({ error: 'Folder not found' }, { status: 404 });
+      DELETE: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:saves/folders.:id' } },
+        async ({ params, session }) => {
+          try {
+            await deleteFolder(session.user.id, params.id);
+          } catch (e) {
+            if (e instanceof Error && e.message === 'folder-not-found') {
+              return Response.json({ error: 'Folder not found' }, { status: 404 });
+            }
+            throw e;
           }
-          throw e;
-        }
-        return Response.json({ ok: true });
-      }),
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });

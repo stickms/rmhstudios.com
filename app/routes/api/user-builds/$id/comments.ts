@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 /**
@@ -22,7 +23,7 @@ export const Route = createFileRoute('/api/user-builds/$id/comments')({
         const { id } = params;
         const { searchParams } = new URL(request.url);
         const cursor = searchParams.get('cursor');
-        const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
+        const limit = pageSize(searchParams.get('limit'), 20, 50);
 
         // Find build
         const build = await prisma.userBuild.findUnique({

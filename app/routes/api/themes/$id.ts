@@ -42,20 +42,23 @@ export const Route = createFileRoute('/api/themes/$id')({
           return Response.json({ ok: true });
         },
       ),
-      DELETE: defineHandler({}, async ({ params, session }) => {
-        try {
-          await deleteOrDelistTheme(session.user.id, params.id);
-        } catch (e) {
-          if (e instanceof ThemeError) {
-            return Response.json(
-              { error: e.message },
-              { status: e.message === 'FORBIDDEN' ? 403 : 404 },
-            );
+      DELETE: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:themes/:id' } },
+        async ({ params, session }) => {
+          try {
+            await deleteOrDelistTheme(session.user.id, params.id);
+          } catch (e) {
+            if (e instanceof ThemeError) {
+              return Response.json(
+                { error: e.message },
+                { status: e.message === 'FORBIDDEN' ? 403 : 404 },
+              );
+            }
+            throw e;
           }
-          throw e;
-        }
-        return Response.json({ ok: true });
-      }),
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });

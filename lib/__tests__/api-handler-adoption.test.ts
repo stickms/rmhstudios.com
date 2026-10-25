@@ -314,6 +314,16 @@ function report(label: string, files: string[], extra = ''): string {
 }
 
 describe('every API route rides the shared handler wrapper (D2)', () => {
+  it('declares admin authorization in the wrapper before body validation', () => {
+    const offenders = ROUTES.filter(
+      (r) =>
+        r.file.startsWith('app/routes/api/admin/') &&
+        /defineHandler\(\s*\{[^}]*\bauth:\s*['"]optional['"]/.test(r.src),
+    ).map((r) => r.file);
+    expect(offenders, 'Use auth: admin instead of authorizing inside an optional handler.').toEqual(
+      [],
+    );
+  });
   it('finds the API route tree at all', () => {
     // Guards the walker: a moved directory or a broken filter would make every
     // rule below pass vacuously against an empty set, and the allowlist

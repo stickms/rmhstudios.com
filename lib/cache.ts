@@ -73,6 +73,7 @@ export function estimateBytes(value: unknown): number {
   let bytes = 0;
   let visited = 0;
   const stack: unknown[] = [value];
+  const seen = new WeakSet<object>();
   while (stack.length > 0) {
     const v = stack.pop();
     visited++;
@@ -81,6 +82,8 @@ export function estimateBytes(value: unknown): number {
     } else if (typeof v === 'number') {
       if (!Number.isInteger(v) || Math.abs(v) >= SMI_MAX) bytes += HEAP_NUMBER;
     } else if (v !== null && typeof v === 'object') {
+      if (seen.has(v)) continue;
+      seen.add(v);
       if (visited >= ESTIMATE_NODE_BUDGET) {
         // Each node still on the stack heads a subtree we have not seen; assume they are like the ones we have.
         bytes += (bytes / visited) * stack.length * 2;
@@ -88,12 +91,22 @@ export function estimateBytes(value: unknown): number {
       }
       if (v instanceof Date) {
         bytes += DATE_BYTES;
+      } else if (ArrayBuffer.isView(v)) {
+        bytes += OBJECT_HEADER;
+        // Views can share a backing allocation; count it once, including bytes
+        // retained outside the visible slice of a Buffer or typed array.
+        stack.push(v.buffer);
+      } else if (
+        v instanceof ArrayBuffer ||
+        (typeof SharedArrayBuffer !== 'undefined' && v instanceof SharedArrayBuffer)
+      ) {
+        bytes += OBJECT_HEADER + v.byteLength;
       } else if (Array.isArray(v)) {
         bytes += ARRAY_HEADER + SLOT * v.length;
         for (let i = 0; i < v.length; i++) stack.push(v[i]);
       } else {
         bytes += OBJECT_HEADER;
-        for (const k in v as Record<string, unknown>) {
+        for (const k of Object.keys(v)) {
           bytes += SLOT;
           stack.push((v as Record<string, unknown>)[k]);
         }
@@ -125,6 +138,16 @@ export class ApiCache {
     const o = typeof opts === 'number' ? { maxEntries: opts } : opts;
     this.maxEntries = o.maxEntries ?? 5000;
     this.maxBytes = o.maxBytes ?? 64 * 1024 * 1024;
+    if (
+      !Number.isSafeInteger(this.maxEntries) ||
+      this.maxEntries < 0 ||
+      !Number.isFinite(this.maxBytes) ||
+      this.maxBytes < 0
+    ) {
+      throw new RangeError(
+        'Cache budgets must be finite and non-negative; maxEntries must be an integer',
+      );
+    }
     // Sweep expired entries every 60s
     this.gcTimer = setInterval(() => this.sweep(), 60_000);
     // Don't block process shutdown
@@ -136,7 +159,7 @@ export class ApiCache {
   get<T>(key: string): T | undefined {
     const entry = this.store.get(key);
     if (!entry) return undefined;
-    if (Date.now() > entry.expiresAt) {
+    if (Date.now() >= entry.expiresAt) {
       this.remove(key, entry);
       return undefined;
     }
@@ -156,7 +179,16 @@ export class ApiCache {
       this.remove(key, existing);
     }
     // A single value larger than the whole budget is not worth caching.
-    if (bytes > this.maxBytes) return;
+    if (
+      this.maxEntries === 0 ||
+      this.maxBytes === 0 ||
+      !Number.isFinite(ttlMs) ||
+      ttlMs <= 0 ||
+      !Number.isFinite(bytes) ||
+      bytes < 0 ||
+      bytes > this.maxBytes
+    )
+      return;
     this.store.set(key, { value, expiresAt: Date.now() + ttlMs, bytes });
     this.totalBytes += bytes;
     // Evict least-recently-used until within both caps (never the new key).
@@ -190,7 +222,7 @@ export class ApiCache {
   private sweep(): void {
     const now = Date.now();
     for (const [key, entry] of this.store) {
-      if (now > entry.expiresAt) this.remove(key, entry);
+      if (now >= entry.expiresAt) this.remove(key, entry);
     }
   }
 
@@ -211,10 +243,10 @@ export class ApiCache {
  */
 function heapLimitBytes(): number | null {
   try {
-    const proc = (globalThis as { process?: { getBuiltinModule?: (id: string) => unknown } }).process;
+    const proc = (globalThis as { process?: { getBuiltinModule?: (id: string) => unknown } })
+      .process;
     const v8 = proc?.getBuiltinModule?.('node:v8') as
-      | { getHeapStatistics(): { heap_size_limit: number } }
-      | undefined;
+      { getHeapStatistics(): { heap_size_limit: number } } | undefined;
     return v8?.getHeapStatistics().heap_size_limit ?? null;
   } catch {
     return null;

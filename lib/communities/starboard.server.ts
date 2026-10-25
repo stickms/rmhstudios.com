@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 /**
  * N2 — starboard (server-only).
  *
@@ -84,7 +85,7 @@ export async function getHallOfFame(
   viewerId: string | null,
   opts: { cursor?: string | null; limit?: number } = {},
 ): Promise<HallOfFamePage> {
-  const limit = Math.min(opts.limit ?? 20, 40);
+  const limit = pageSize(opts.limit, 20, 40);
   const settings = await getCommunitySettings(communityId);
   const threshold = settings?.starThreshold ?? 5;
   const visible = await viewerVisiblePostWhere(viewerId, { hideMuted: true });

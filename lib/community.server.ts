@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { viewerVisiblePostWhere } from '@/lib/feed/audience.server';
@@ -158,7 +159,7 @@ export async function getCommunityFeed(
   });
   if (!community) return null;
 
-  const limit = Math.min(opts.limit ?? 20, 50);
+  const limit = pageSize(opts.limit);
   // The viewer's membership rides the same round trip as the visibility lookup; it only supplies the followed flairs (N3) for the first page.
   const [visible, member] = await Promise.all([
     // The post's OWN audience still applies inside a community: a FOLLOWERS /

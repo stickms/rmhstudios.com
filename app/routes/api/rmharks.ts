@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
@@ -42,7 +43,7 @@ export const Route = createFileRoute('/api/rmharks')({
       GET: defineHandler({ auth: 'none' }, async ({ request }) => {
         const { searchParams } = new URL(request.url);
         const cursor = searchParams.get('cursor');
-        const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
+        const limit = pageSize(searchParams.get('limit'), 20, 50);
         const filter = (searchParams.get('filter') || 'all') as FeedFilter;
         const search = searchParams.get('search');
         const feedParam = searchParams.get('feed');
@@ -249,7 +250,10 @@ export const Route = createFileRoute('/api/rmharks')({
                 session.user.id,
               );
               if (challengeError) {
-                return Response.json({ error: challengeError, code: 'challenge_closed' }, { status: 409 });
+                return Response.json(
+                  { error: challengeError, code: 'challenge_closed' },
+                  { status: 409 },
+                );
               }
             }
             // A challenge entry is never invisible: a hold becomes a flag so the

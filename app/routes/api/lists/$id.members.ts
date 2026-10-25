@@ -30,20 +30,26 @@ export const Route = createFileRoute('/api/lists/$id/members')({
           return Response.json({ ok: true });
         },
       ),
-      DELETE: defineHandler({ body: listMemberSchema }, async ({ params, session, body }) => {
-        try {
-          await removeMember(session.user.id, params.id, body.userId);
-        } catch (e) {
-          if (e instanceof ListError) {
-            return Response.json(
-              { error: e.message },
-              { status: e.message === 'FORBIDDEN' ? 403 : 404 },
-            );
+      DELETE: defineHandler(
+        {
+          rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:lists/:id.members' },
+          body: listMemberSchema,
+        },
+        async ({ params, session, body }) => {
+          try {
+            await removeMember(session.user.id, params.id, body.userId);
+          } catch (e) {
+            if (e instanceof ListError) {
+              return Response.json(
+                { error: e.message },
+                { status: e.message === 'FORBIDDEN' ? 403 : 404 },
+              );
+            }
+            throw e;
           }
-          throw e;
-        }
-        return Response.json({ ok: true });
-      }),
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });
