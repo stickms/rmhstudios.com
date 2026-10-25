@@ -396,21 +396,27 @@ prune_rollback_images() {
 # needed for the next deploy except the running containers and one rollback image.
 #   gentle — stopped containers, dangling images, BuildKit cache older than
 #            DEPLOY_BUILD_CACHE_KEEP_HOURS (default 72). Always safe, runs every deploy.
-#   hard   — also ALL BuildKit cache, every unused image, rollback trimmed to 1.
+#   hard [target_gb] — escalates one step at a time and STOPS as soon as free space
+#            reaches target_gb: all BuildKit cache, then rollback trimmed to 1, and
+#            only last every unused image — which also removes the :rollback image
+#            the post-deploy rollback depends on, so it is the last resort.
 # The BuildKit cache is the one thing no deploy step ever cleaned: it was left by
 # the old build-on-host era and sat at 11.6 GB on a 45 GB disk.
 reclaim_disk() {
-    local tier="${1:-gentle}"
+    local tier="${1:-gentle}" target="${2:-0}"
     "$DOCKER_BIN" container prune -f > /dev/null 2>&1 || true
     "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
     if [ "$tier" = hard ]; then
         "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
+        [ "$target" -gt 0 ] && [ "$(free_disk_gb)" -ge "$target" ] && return 0
         prune_rollback_images 1
+        [ "$target" -gt 0 ] && [ "$(free_disk_gb)" -ge "$target" ] && return 0
         "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
     else
         "$DOCKER_BIN" builder prune -f --filter "until=${DEPLOY_BUILD_CACHE_KEEP_HOURS:-72}h" > /dev/null 2>&1 || true
         prune_rollback_images
     fi
+    return 0
 }
 
 # ── Helper: free space (whole GB) on the filesystem backing Docker's data dir ─
@@ -752,8 +758,8 @@ NEED_FREE_GB=$(( DEPLOY_HEADROOM_GB + DEPLOY_PULL_RESERVE_GB ))
 DISK_FREE_GB=$(free_disk_gb)
 log "Disk: ${DISK_FREE_GB}G free of ${DISK_TOTAL_GB}G (need ≥ ${NEED_FREE_GB}G to pull and keep ${DEPLOY_HEADROOM_GB}G headroom)."
 if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
-    log "Low disk — reclaiming all BuildKit cache and unused images, trimming rollback to 1."
-    reclaim_disk hard
+    log "Low disk — reclaiming BuildKit cache, then rollback images, then unused images, until ${NEED_FREE_GB}G is free."
+    reclaim_disk hard "$NEED_FREE_GB"
     DISK_FREE_GB=$(free_disk_gb)
     # Fail closed on the full requirement, not just the headroom: pulling into less
     # than the incoming layers need fills the disk MID-pull, which takes down
@@ -813,8 +819,6 @@ fi
 # per-layer locking makes shared-layer pulls safe to overlap. Each pull's log is
 # captured to its own file so a failure still reports WHICH image and why, exactly
 # as the old serial version did.
-WEB_PULL_LOG=$(mktemp /tmp/pull-web.XXXXXX)
-FULL_PULL_LOG=$(mktemp /tmp/pull-full.XXXXXX)
 WEB_PULL_REF="${GHCR_IMAGE}:${GIT_SHA_FULL}"
 FULL_PULL_REF="${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}"
 if [ -n "${RELEASE_EXPECT_WEB_DIGEST:-}" ] || [ -n "${RELEASE_EXPECT_FULL_DIGEST:-}" ]; then
@@ -823,14 +827,33 @@ if [ -n "${RELEASE_EXPECT_WEB_DIGEST:-}" ] || [ -n "${RELEASE_EXPECT_FULL_DIGEST
     WEB_PULL_REF="${GHCR_IMAGE}@${RELEASE_EXPECT_WEB_DIGEST}"
     FULL_PULL_REF="${GHCR_IMAGE_FULL}@${RELEASE_EXPECT_FULL_DIGEST}"
 fi
-"$DOCKER_BIN" pull "$WEB_PULL_REF"  > "$WEB_PULL_LOG" 2>&1 & pull_web=$!
-"$DOCKER_BIN" pull "$FULL_PULL_REF" > "$FULL_PULL_LOG" 2>&1 & pull_full=$!
-
-web_pull_ok=0; full_pull_ok=0
-wait "$pull_web"  || web_pull_ok=1
-wait "$pull_full" || full_pull_ok=1
-cat "$WEB_PULL_LOG" "$FULL_PULL_LOG"
-rm -f "$WEB_PULL_LOG" "$FULL_PULL_LOG"
+# Sets web_pull_ok / full_pull_ok (0 = pulled) and PULL_NO_SPACE (1 = a pull died
+# because the disk filled, which reclaiming space can fix; anything else cannot).
+pull_images() {
+    local web_log full_log
+    web_log=$(mktemp /tmp/pull-web.XXXXXX)
+    full_log=$(mktemp /tmp/pull-full.XXXXXX)
+    "$DOCKER_BIN" pull "$WEB_PULL_REF"  > "$web_log" 2>&1 & local pull_web=$!
+    "$DOCKER_BIN" pull "$FULL_PULL_REF" > "$full_log" 2>&1 & local pull_full=$!
+    web_pull_ok=0; full_pull_ok=0; PULL_NO_SPACE=0
+    wait "$pull_web"  || web_pull_ok=1
+    wait "$pull_full" || full_pull_ok=1
+    cat "$web_log" "$full_log"
+    if [ "$web_pull_ok" -ne 0 ] || [ "$full_pull_ok" -ne 0 ]; then
+        if grep -qi 'no space left' "$web_log" "$full_log" 2>/dev/null; then PULL_NO_SPACE=1; fi
+    fi
+    rm -f "$web_log" "$full_log"
+}
+pull_images
+# The up-front check estimates what a pull needs; layers can still outgrow it. A pull
+# that dies on "no space left" is retried ONCE after reclaiming everything not needed
+# (layers already downloaded are kept, so the retry is cheap). Other failures are not.
+if [ "$PULL_NO_SPACE" = 1 ]; then
+    log "Pull ran out of disk (${DISK_FREE_GB:-?}G free beforehand) — reclaiming and retrying once..."
+    reclaim_disk hard "${NEED_FREE_GB:-0}"
+    log "$(free_disk_gb)G free after reclaim."
+    pull_images
+fi
 
 if [ "$web_pull_ok" -ne 0 ]; then
     log "ERROR: failed to pull ${GHCR_IMAGE}:${GIT_SHA_FULL}."
@@ -1362,7 +1385,7 @@ prune_rollback_images 2
 # is not running or the one rollback image (all BuildKit cache, unused images).
 if [ "$(free_disk_gb)" -lt "$DEPLOY_HEADROOM_GB" ]; then
     log "Only $(free_disk_gb)G free (< ${DEPLOY_HEADROOM_GB}G headroom) — reclaiming everything not running."
-    reclaim_disk hard
+    reclaim_disk hard "$DEPLOY_HEADROOM_GB"
     log "After reclaim: $(free_disk_gb)G disk free."
 fi
 
