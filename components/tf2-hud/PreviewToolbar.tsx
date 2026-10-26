@@ -29,6 +29,7 @@ import {
   virtualSize,
   widthForAspect,
 } from '@/lib/tf2-hud/view';
+import LanguageControl from './LanguageControl';
 import { IconBtn, SelectField } from './ui';
 
 const ENV_LABELS: Record<CondEnvName, string> = {
@@ -204,6 +205,7 @@ export default function PreviewToolbar() {
       </div>
 
       <div className="ms-auto flex items-center gap-1">
+        <LanguageControl />
         <IconBtn
           icon={view.showHidden ? Eye : EyeOff}
           label={t('show-hidden', { defaultValue: 'Show hidden panels' })}

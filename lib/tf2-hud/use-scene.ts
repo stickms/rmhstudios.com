@@ -13,6 +13,8 @@ import type { Scene } from './scene/types';
 import { varsFromState } from './fixtures';
 import { resolvePage, type HudPage } from './pages';
 import { gateFor, progressFor } from './game-state';
+import { buildTokens, languageFilePath } from './localisation';
+import { useTf2HudPrefs } from './prefs';
 import { CORE_FILES, useEditor } from './store';
 import { screenOf } from './view';
 
@@ -26,6 +28,32 @@ export interface SceneResult {
 
 const EMPTY_SET: ReadonlySet<string> = new Set();
 
+/**
+ * `#Token` strings for the chosen language (English by default), from the project's own
+ * `resource/tf_<language>.txt`, an imported game file, or the base. Loads what it needs on demand.
+ */
+export function useLocalisation(): ReadonlyMap<string, string> {
+  const language = useTf2HudPrefs((s) => s.language);
+  const overlay = useEditor((s) => s.overlay);
+  const baseVersion = useEditor((s) => s.baseVersion);
+  const tfVersion = useEditor((s) => s.tfVersion);
+  const baseStatus = useEditor((s) => s.baseStatus);
+  const ensureFiles = useEditor((s) => s.ensureFiles);
+  const readBytes = useEditor((s) => s.readBytes);
+
+  useEffect(() => {
+    if (baseStatus !== 'ready') return;
+    void ensureFiles([languageFilePath('english'), languageFilePath(language)]);
+  }, [baseStatus, language, ensureFiles]);
+
+  return useMemo(
+    () => buildTokens(language, readBytes),
+    // `overlay`, `baseVersion` and `tfVersion` are the real inputs behind `readBytes`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [language, overlay, baseVersion, tfVersion, readBytes],
+  );
+}
+
 export function useScene(): SceneResult {
   const pageId = useEditor((s) => s.pageId);
   const overlay = useEditor((s) => s.overlay);
@@ -35,7 +63,7 @@ export function useScene(): SceneResult {
   const view = useEditor((s) => s.view);
   const forceShown = useEditor((s) => s.forceShown);
   const forceHidden = useEditor((s) => s.forceHidden);
-  const strings = useEditor((s) => s.localisation);
+  const strings = useLocalisation();
   const ensureFiles = useEditor((s) => s.ensureFiles);
   const readText = useEditor((s) => s.readText);
   const hasFile = useEditor((s) => s.hasFile);

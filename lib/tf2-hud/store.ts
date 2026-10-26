@@ -91,9 +91,6 @@ export interface EditorState {
   baseVersion: number;
   tfAssets: Map<string, Uint8Array>;
   tfVersion: number;
-  /** `#Token` → text, from an imported `tf_english.txt`. */
-  localisation: ReadonlyMap<string, string>;
-
   activePath: string | null;
   openPaths: string[];
   pageId: string;
@@ -209,7 +206,6 @@ export const useEditor = create<EditorState>((set, get) => {
     baseVersion: 0,
     tfAssets: new Map(),
     tfVersion: 0,
-    localisation: new Map(),
 
     activePath: null,
     openPaths: [],

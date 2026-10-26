@@ -20,6 +20,7 @@ import { explainDim } from '@/lib/tf2-hud/scheme/inspect';
 import { COND_ENVS } from '@/lib/tf2-hud/scheme/cond';
 import { borderOf } from '@/lib/tf2-hud/scheme/scheme';
 import { useEditor } from '@/lib/tf2-hud/store';
+import { useLocalisation } from '@/lib/tf2-hud/use-scene';
 import { BorderSwatch } from './border-swatch';
 import { ColorField } from './ColorPicker';
 import { FontField } from './FontPicker';
@@ -64,7 +65,7 @@ export default function Inspector() {
   const toggleForce = useEditor((s) => s.toggleForce);
   const forceHidden = useEditor((s) => s.forceHidden);
   const test = useEditor((s) => s.test);
-  const strings = useEditor((s) => s.localisation);
+  const strings = useLocalisation();
   const setFocusProp = useEditor((s) => s.setFocusProp);
   const node = scene?.nodes.find((n) => n.id === selectedId);
   const [adding, setAdding] = useState('');
