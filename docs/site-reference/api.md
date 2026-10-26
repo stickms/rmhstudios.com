@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 917 files across 194 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 919 files across 195 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/admin`
 
-88 routes.
+89 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -85,6 +85,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/admin/delight/translations/:id` | `POST` | `app/routes/api/admin/delight/translations/$id/index.ts` |
 | `/api/admin/delight/translations/export` | `GET` | `app/routes/api/admin/delight/translations/export/index.ts` |
 | `/api/admin/economy` | `GET` | `app/routes/api/admin/economy.ts` |
+| `/api/admin/flags` | `DELETE` `GET` `PUT` | `app/routes/api/admin/flags.ts` |
 | `/api/admin/forecasting/seasons` | `POST` | `app/routes/api/admin/forecasting/seasons.ts` |
 | `/api/admin/gift-exchanges/:id/verify` | `GET` | `app/routes/api/admin/gift-exchanges/$id/verify.ts` |
 | `/api/admin/insights/cohorts` | `GET` `POST` | `app/routes/api/admin/insights/cohorts.ts` |
@@ -734,6 +735,14 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/feeds` | `GET` `POST` | `app/routes/api/feeds/index.ts` |
 | `/api/feeds/:id` | `DELETE` `GET` `PATCH` | `app/routes/api/feeds/$id.ts` |
 | `/api/feeds/:id/subscribe` | `DELETE` `POST` | `app/routes/api/feeds/$id/subscribe.ts` |
+
+## `/api/flags`
+
+1 route.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/flags` | `GET` | `app/routes/api/flags.ts` |
 
 ## `/api/forecasting`
 
