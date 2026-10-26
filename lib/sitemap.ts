@@ -81,6 +81,8 @@ export const STATIC_ROUTES: SitemapEntry[] = [
   // sitemap twice, which Search Console reports as a warning.
   { loc: '/rmhladder/jobs', changefreq: 'daily', priority: 0.8 },
   { loc: '/homes/rent-split', changefreq: 'monthly', priority: 0.4 },
+  // The TF2 HUD workshop is a public, regularly changing listing. (`/tf2-hud` itself is the app root, so `catalogRoutes()` emits it.)
+  { loc: '/tf2-hud/workshop', changefreq: 'daily', priority: 0.6 },
 
   // Secondary site surfaces.
   //
@@ -408,6 +410,8 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/altair/multiplayer': 'ephemeral',
   '/rmhmusic/player': 'ephemeral',
   '/rmhtype/multiplayer': 'ephemeral',
+  '/tf2-hud/editor': 'noindex', // the workspace itself; its content is the viewer's own HUD
+  '/tf2-hud/mine': 'personal', // a member's own HUDs and local drafts
   '/rmhtype/solo': 'duplicate', // same content as `/rmhtype`
 
   // ── strategies: an in-game meta layer, all of it behind a save ──
@@ -545,6 +549,8 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/rmhstudy/$roomId': null,
   '/rmhtube/$roomId': null,
   '/rmhtype/$roomId': null,
+  '/tf2-hud/h/$slug': null, // one HUD; listed through the workshop, not enumerated here
+  '/tf2-hud/s/$token': null, // private share link (noindex)
   '/strategies/puzzles/$mode': null,
   '/ref/$code': null, // referral link; redirects and is noindex
 };

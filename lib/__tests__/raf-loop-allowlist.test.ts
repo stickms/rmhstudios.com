@@ -183,6 +183,10 @@ const ALLOW = new Set<string>([
   // no rAF themselves. No frame is requested while no driver is awake; `stop()`
   // cancels. Settle proven in lib/jelly/__tests__/frame.test.ts.
   'lib/jelly/frame.ts',
+  // The TF2 HUD editor's preview canvas. Not a loop: it requests ONE frame per
+  // change (scene, zoom, selection) to coalesce redraws, and the effect's cleanup
+  // cancels any pending frame on re-run and on unmount. Nothing is scheduled at rest.
+  'components/tf2-hud/Preview.tsx',
   // The globe cursor (owner, 2026-10-22: "a constantly everting globe"). Every
   // vsync only while something the pointer did is still settling — movement, a
   // spring, the fade, sparkles, the trail (`GlobeCursorEngine.busy()`). With the
