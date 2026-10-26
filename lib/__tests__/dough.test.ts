@@ -165,6 +165,39 @@ describe('dough body: a field with memory, not a stretchy ball', () => {
     expect(b.active()).toBe(false);
   });
 
+  it('a stretched limb closes inside the painted canvas (1.22 radii), however hard and far it is dragged', () => {
+    const N = DOUGH_N;
+    const E = 1.3;
+    const h = (2 * E) / (N - 1);
+    for (const [dx, dy] of [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0.7, 0.7],
+    ] as const) {
+      const b = new DoughBody();
+      b.grab(dx * 0.8, dy * 0.8);
+      for (let i = 0; i < 240; i++) {
+        b.drag(dx * (0.8 + i * 0.01), dy * (0.8 + i * 0.01), dx * 9, dy * 9);
+        b.step(1 / 60);
+      }
+      // The shader paints a pixel at p from the material at p - u(p); a pixel is empty when that is outside the disc.
+      let reach = 0;
+      for (let j = 0; j < N; j++) {
+        for (let i = 0; i < N; i++) {
+          const px = -E + i * h;
+          const py = -E + j * h;
+          const o = (j * N + i) * 4;
+          const ux = b.field[o]!;
+          const uy = b.field[o + 1]!;
+          if (Math.hypot(px - ux, py - uy) < 1) reach = Math.max(reach, Math.hypot(px, py));
+        }
+      }
+      // Leaves the rim, its shoulder and anti-aliasing a clear margin before the canvas edge.
+      expect(reach).toBeLessThan(1.17);
+    }
+  });
+
   it('is deterministic and exposes a versioned field for the shader', () => {
     const a = new DoughBody();
     const c = new DoughBody();

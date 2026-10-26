@@ -260,3 +260,12 @@
     background-image: none !important;
   }
 }
+
+/* The molded rim, for utilities: a component that spells its edge `border border-site-border` (the neutral hairline) keeps
+   that edge through the components layer above, because utilities outrank it, and the shader's lit rim then sits on top of
+   a hairline — two edges where the slab should dissolve into the ground. Unlayered, so it beats the utility; matches the
+   exact neutral token only, so a border that MEANS something (danger, accent, a selection) stays, and the degraded tiers,
+   which remove `data-liquid-canvas`, keep their solid edge. */
+[data-liquid-canvas='on']:not([data-liquid-material='off'])[class~='border-site-border'] {
+  border-color: transparent;
+}

@@ -3647,3 +3647,11 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
     grid-template-columns: var(--rad-rail-nav) minmax(0, 1fr);
   }
 }
+
+/* The molded rim: these three spell their own hairline in this sheet, so the shader's lit rim would sit on top of it —
+   two edges where the slab should dissolve into the ground. While the engine draws the rim (`data-liquid-canvas`) the
+   hairline goes clear; the degraded tiers remove that attribute and keep it. Width stays: layout never changes. */
+.radial-topbar__signin[data-liquid-canvas='on'],
+.radial-topbar__search[data-liquid-canvas='on'] {
+  border-color: transparent;
+}

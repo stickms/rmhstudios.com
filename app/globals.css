@@ -387,6 +387,9 @@
      border, and a soft `--gel-well-shade` falls inside its top lip, so it reads as pressed into the ground rather
      than outlined on it. */
   --gel-field-line: 40%;
+  /* The same for a role's hairline where the shader draws no rim (past the budget, before admission): the share of
+     `--site-border` it keeps, so an unadmitted slab fades into the ground instead of snapping to an outline. */
+  --gel-edge-line: 55%;
   --gel-well-shade: rgba(16, 20, 36, 0.1);
   /* How strong a dropdown row's hover glow is: the accent at this share, fading to nothing at the row's edges. Light
      grounds (this :root default, light, sepia) take 10%: their accent is ink, and 20% of ink reads as a smudge, not a
@@ -1186,6 +1189,7 @@
   --gel-lens: 1;
   --gel-reflect: 0;
   --gel-field-line: 100%;
+  --gel-edge-line: 100%;
   --gel-well-shade: transparent;
   --row-glow-strength: 34%;
   --gel-feather: 0px;

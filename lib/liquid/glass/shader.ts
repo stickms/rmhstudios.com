@@ -332,7 +332,9 @@ void main() {
   col = col * (1.0 - shadeA) + uInk * shadeA * (0.5 + 0.5 * rim.a);
   a = a + shadeA * (1.0 - a);
   // The far shoulder rolls into shadow: darkened toward black (premultiplied: colour scales, alpha grows).
-  float moldA = clamp(moldLo * 0.62, 0.0, 0.78) * (1.0 - 0.65 * rim.a);
+  // On a pale ground a near-black shoulder reads as a drawn outline, the opposite of molded: it is lighter there, and
+  // never above half opacity anywhere, so the far edge falls away into the ground instead of closing on it.
+  float moldA = clamp(moldLo * 0.5 * mix(0.6, 1.0, uDark), 0.0, 0.5) * (1.0 - 0.65 * rim.a);
   col *= 1.0 - moldA;
   a = a + moldA * (1.0 - a);
   col += rgbBand + glint * litA * (1.0 - 0.15 * rim.a) + uFresnel.rgb * fresA + refl;
