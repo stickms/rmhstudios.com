@@ -16,6 +16,7 @@ Generated from `lib/apps.ts`, the single source of truth every card on the site 
 | **RMH Type** | [`/rmhtype`](https://rmhstudios.com/rmhtype) | — | required | `Typing` `Multiplayer` `Competitive` `Beta` |
 | **RMHMusic** | [`/rmhmusic`](https://rmhstudios.com/rmhmusic) | Beta | required | `Music` `Spotify` `Real-time` `Beta` |
 | **RMH Study** | [`/rmhstudy`](https://rmhstudios.com/rmhstudy) | — | required | `Pomodoro` `Study` `Productivity` `Beta` |
+| **RMH TF2 HUD Editor** | [`/tf2-hud`](https://rmhstudios.com/tf2-hud) | — | — | `TF2` `HUD` `Editor` `Beta` |
 | **RMH Studio** | [`/studio`](https://rmhstudios.com/studio) | — | required | `DAW` `Music Production` `Beta` |
 | **rmhcode** | [`/rmhcode`](https://rmhstudios.com/rmhcode) | Beta | required | `AI` `CLI` `Developer Tools` `Beta` |
 | **RMH Strategies** | [`/strategies`](https://rmhstudios.com/strategies) | Beta | required | `Puzzles` `Community` `Reputation` `Beta` |
@@ -58,6 +59,12 @@ RMHMusic is a social music player powered by Spotify. Connect your Premium accou
 RMH Study brings the Pomodoro technique to a social setting. Create a study room, invite friends, and stay focused together with synced timers. Track your focus time, set session goals, climb the study leaderboard, and drill solo with flashcard decks and an AI tutor.
 
 **Route:** `/rmhstudy` · **Catalog id:** `rmhstudy` · **Sign-in:** required
+
+### RMH TF2 HUD Editor
+
+RMH TF2 HUD Editor is a full custom-HUD workshop for Team Fortress 2. Start from the TF2 Default HUD, fork a community HUD or upload a zip, then edit every .res file with a code editor and a visual inspector while a resolution-accurate canvas shows exactly where each panel lands. Test any page with adjustable health, ammo, class, team and round state, compare against your own screenshot, see only the files you changed, validate fonts, colours and textures, then save to your account, share a link or download a ready-to-install zip.
+
+**Route:** `/tf2-hud` · **Catalog id:** `rmh-tf2-hud` · **Sign-in:** not required
 
 ### RMH Studio
 

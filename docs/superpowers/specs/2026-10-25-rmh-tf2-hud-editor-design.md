@@ -1,6 +1,8 @@
 # RMH TF2 HUD Editor — design
 
-Status: **draft for approval** · Date: 2026-10-25 · Owner: stickms
+Status: **approved and implemented** · Date: 2026-10-25 · Owner: stickms
+
+> **As built** (see [`../../tf2-hud-editor.md`](../../tf2-hud-editor.md)): the preview paints with a small Canvas2D scene renderer instead of Konva (lighter, exact text control, no extra bundle); the base is the filtered TF2 default HUD the owner supplied on 2026-10-26 (real `hudlayout.res` and `.vmt` materials — so §6's placeholder layout is not needed); missing textures render as the engine's pink/black checkerboard.
 
 ## 1. Intent
 

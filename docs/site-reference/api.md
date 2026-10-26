@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 904 files across 193 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 917 files across 194 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -2007,6 +2007,26 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | ----- | ------- | ------ |
 | `/api/temple-of-joy/efficiency` | `GET` `POST` | `app/routes/api/temple-of-joy/efficiency.ts` |
 | `/api/temple-of-joy/save` | `DELETE` `GET` `POST` | `app/routes/api/temple-of-joy/save.ts` |
+
+## `/api/tf2-hud`
+
+13 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/tf2-hud/blobs/:sha1` | `PUT` | `app/routes/api/tf2-hud/blobs/$sha1.ts` |
+| `/api/tf2-hud/blobs/check` | `POST` | `app/routes/api/tf2-hud/blobs/check.ts` |
+| `/api/tf2-hud/huds` | `GET` `POST` | `app/routes/api/tf2-hud/huds/index.ts` |
+| `/api/tf2-hud/huds/:id` | `DELETE` `GET` `PUT` | `app/routes/api/tf2-hud/huds/$id.ts` |
+| `/api/tf2-hud/huds/:id/download` | `POST` | `app/routes/api/tf2-hud/huds/$id.download.ts` |
+| `/api/tf2-hud/huds/:id/file` | `GET` | `app/routes/api/tf2-hud/huds/$id.file.ts` |
+| `/api/tf2-hud/huds/:id/fork` | `POST` | `app/routes/api/tf2-hud/huds/$id.fork.ts` |
+| `/api/tf2-hud/huds/:id/like` | `POST` | `app/routes/api/tf2-hud/huds/$id.like.ts` |
+| `/api/tf2-hud/huds/:id/share` | `DELETE` `POST` | `app/routes/api/tf2-hud/huds/$id.share.ts` |
+| `/api/tf2-hud/huds/:id/versions` | `GET` | `app/routes/api/tf2-hud/huds/$id.versions.ts` |
+| `/api/tf2-hud/huds/:id/versions/:n` | `POST` | `app/routes/api/tf2-hud/huds/$id.versions.$n.ts` |
+| `/api/tf2-hud/share/:token` | `GET` | `app/routes/api/tf2-hud/share/$token.ts` |
+| `/api/tf2-hud/share/:token/file` | `GET` | `app/routes/api/tf2-hud/share/$token.file.ts` |
 
 ## `/api/themes`
 
