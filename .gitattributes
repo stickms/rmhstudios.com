@@ -1,0 +1,5 @@
+# Dependency patch hashes must be stable across Windows and Linux checkouts.
+patches/*.patch text eol=lf
+
+# TF2 HUD base files: keep original (CRLF) bytes so the editor round-trips them exactly.
+public/tf2-hud/base/** -text

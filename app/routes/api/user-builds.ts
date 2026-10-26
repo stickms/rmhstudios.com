@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 /**
@@ -53,7 +54,7 @@ export const Route = createFileRoute('/api/user-builds')({
       GET: defineHandler({ auth: 'none' }, async ({ request }) => {
         const { searchParams } = new URL(request.url);
         const cursor = searchParams.get('cursor');
-        const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
+        const limit = pageSize(searchParams.get('limit'), 20, 50);
         const category = searchParams.get('category');
         const technology = searchParams.get('technology');
         const search = searchParams.get('search');

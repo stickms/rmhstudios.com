@@ -751,7 +751,9 @@ const SCHEMA = readFileSync(
 );
 
 function prismaEnumMembers(name: string): string[] {
-  const block = new RegExp(`\\benum ${name} \\{\\n([\\s\\S]*?)\\n\\}`).exec(SCHEMA);
+  const block = new RegExp(`\\benum ${name} \\{\\n([\\s\\S]*?)\\n\\}`).exec(
+    SCHEMA.replaceAll('\r\n', '\n'),
+  );
   if (!block) throw new Error(`enum ${name} not found in prisma/schema.prisma`);
   return block[1]
     .split('\n')

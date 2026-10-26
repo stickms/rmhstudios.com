@@ -28,7 +28,7 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
 
   return (
     <section
-      className="feed-tabs"
+      className="feed-tabs glass-fill"
       aria-label={t('feed-view-heading-rewrite', { defaultValue: 'Choose your feed' })}
     >
       <div

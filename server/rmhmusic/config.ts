@@ -1,7 +1,4 @@
-function envInt(key: string, fallback: number): number {
-  const v = process.env[key];
-  return v ? parseInt(v, 10) : fallback;
-}
+import { envInt } from '../shared/config';
 
 export const config = {
   syncHeartbeatMs: envInt('RMHMUSIC_SYNC_HEARTBEAT_MS', 5_000),

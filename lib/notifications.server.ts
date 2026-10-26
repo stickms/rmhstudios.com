@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 /**
  * Server-side helpers for creating in-app notifications.
  *
@@ -80,7 +81,7 @@ export async function listNotifications(
   userId: string,
   opts: { cursor?: string | null; limit?: number } = {},
 ): Promise<{ items: NotificationListItem[]; nextCursor: string | null }> {
-  const limit = Math.min(Math.max(opts.limit ?? 20, 1), 50);
+  const limit = pageSize(opts.limit);
   const rows = await prisma.notification.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },

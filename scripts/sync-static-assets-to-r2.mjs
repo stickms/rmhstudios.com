@@ -22,18 +22,18 @@ import {
   ListObjectsV2Command,
   PutObjectCommand,
   DeleteObjectsCommand,
-} from "@aws-sdk/client-s3";
-import { createHash } from "node:crypto";
-import { readdir, readFile } from "node:fs/promises";
-import path from "node:path";
+} from '@aws-sdk/client-s3';
+import { createHash } from 'node:crypto';
+import { readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { staticAssetVersions, parseAssetVersions } from './static-asset-versions.mjs';
 
 // Docker's --env-file passes values literally, INCLUDING surrounding quotes
 // (unlike a shell, which strips them). Strip one matching pair so a quoted
 // env file (S3_REGION="auto") doesn't yield the literal '"auto"'. Also trim a
 // trailing slash + bucket segment some people paste from the R2 "S3 API" field
 // — the endpoint must be the bare account host; the SDK appends the bucket.
-const clean = (v) =>
-  v == null ? v : v.trim().replace(/^(['"])([\s\S]*)\1$/, "$2");
+const clean = (v) => (v == null ? v : v.trim().replace(/^(['"])([\s\S]*)\1$/, '$2'));
 
 // The R2 dashboard's "S3 API" field includes the bucket (…cloudflarestorage.com
 // /rmh-media), but the SDK endpoint must be the bare account host — it appends
@@ -48,23 +48,34 @@ if (endpoint) {
 }
 
 const S3_ENDPOINT = endpoint;
-const S3_REGION = clean(process.env.S3_REGION) || "auto";
+const S3_REGION = clean(process.env.S3_REGION) || 'auto';
 const S3_ACCESS_KEY_ID = clean(process.env.S3_ACCESS_KEY_ID);
 const S3_SECRET_ACCESS_KEY = clean(process.env.S3_SECRET_ACCESS_KEY);
 const S3_BUCKET = clean(process.env.S3_BUCKET);
 const S3_FORCE_PATH_STYLE = clean(process.env.S3_FORCE_PATH_STYLE);
 
 if (!S3_ENDPOINT || !S3_ACCESS_KEY_ID || !S3_SECRET_ACCESS_KEY || !S3_BUCKET) {
+  if (process.env.STATIC_ASSET_VERSIONS)
+    throw new Error('S3 credentials are required to publish candidate assets');
   console.log(
-    "[r2-sync] S3_* not fully configured (need S3_ENDPOINT / S3_ACCESS_KEY_ID / " +
-      "S3_SECRET_ACCESS_KEY / S3_BUCKET) — skipping static asset sync."
+    '[r2-sync] S3_* not fully configured (need S3_ENDPOINT / S3_ACCESS_KEY_ID / ' +
+      'S3_SECRET_ACCESS_KEY / S3_BUCKET) — skipping static asset sync.',
   );
   process.exit(0);
 }
 
 // Resolve relative to the mounted public/ dir. The app image deliberately omits
 // these heavy dirs, so deploy.sh bind-mounts the host checkout at /app/public.
-const PUBLIC_DIR = path.resolve(process.env.PUBLIC_DIR || "public");
+const PUBLIC_DIR = path.resolve(process.env.PUBLIC_DIR || 'public');
+const versions = process.env.STATIC_ASSET_VERSIONS
+  ? parseAssetVersions(process.env.STATIC_ASSET_VERSIONS)
+  : {};
+if (
+  process.env.STATIC_ASSET_VERSIONS &&
+  JSON.stringify(staticAssetVersions(PUBLIC_DIR)) !== JSON.stringify(versions)
+) {
+  throw new Error('Host assets do not match the candidate image; refusing publication');
+}
 
 // Dirs that moved off the Apache self-hosted CDN into R2.
 //
@@ -74,43 +85,43 @@ const PUBLIC_DIR = path.resolve(process.env.PUBLIC_DIR || "public");
 // object under a managed prefix that isn't on local disk, so including "library"
 // would wipe every uploaded book on each deploy. The library/ prefix is owned by
 // the app, not mirrored from public/.
-const ASSET_DIRS = ["music", "models", "sprites"];
+const ASSET_DIRS = ['music', 'models', 'sprites'];
 
 // Long-lived, content-addressed media: cache hard at the edge. Matches the
 // Cache-Control the old Apache vhost set for public/.
-const CACHE_CONTROL = "public, max-age=86400, stale-while-revalidate=604800";
+const CACHE_CONTROL = process.env.STATIC_ASSET_VERSIONS
+  ? 'public, max-age=31536000, immutable'
+  : 'public, max-age=86400, stale-while-revalidate=604800';
 
 // How many uploads to run at once (first full sync is large; later runs tiny).
 const CONCURRENCY = 12;
 
 const CONTENT_TYPES = {
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".webp": "image/webp",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".mp3": "audio/mpeg",
-  ".wav": "audio/wav",
-  ".ogg": "audio/ogg",
-  ".pdf": "application/pdf",
-  ".glb": "model/gltf-binary",
-  ".gltf": "model/gltf+json",
-  ".json": "application/json",
-  ".txt": "text/plain; charset=utf-8",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.pdf': 'application/pdf',
+  '.glb': 'model/gltf-binary',
+  '.gltf': 'model/gltf+json',
+  '.json': 'application/json',
+  '.txt': 'text/plain; charset=utf-8',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
 };
 const contentType = (file) =>
-  CONTENT_TYPES[path.extname(file).toLowerCase()] || "application/octet-stream";
+  CONTENT_TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream';
 
 const client = new S3Client({
   endpoint: S3_ENDPOINT,
   region: S3_REGION,
   // R2 uses virtual-hosted-style addressing (set S3_FORCE_PATH_STYLE=false).
-  forcePathStyle: S3_FORCE_PATH_STYLE
-    ? S3_FORCE_PATH_STYLE !== "false"
-    : false,
+  forcePathStyle: S3_FORCE_PATH_STYLE ? S3_FORCE_PATH_STYLE !== 'false' : false,
   credentials: {
     accessKeyId: S3_ACCESS_KEY_ID,
     secretAccessKey: S3_SECRET_ACCESS_KEY,
@@ -141,17 +152,17 @@ async function listRemote(prefix) {
         Bucket: S3_BUCKET,
         Prefix: prefix,
         ContinuationToken: token,
-      })
+      }),
     );
     for (const obj of res.Contents || []) {
-      map.set(obj.Key, { size: obj.Size, etag: (obj.ETag || "").replace(/"/g, "") });
+      map.set(obj.Key, { size: obj.Size, etag: (obj.ETag || '').replace(/"/g, '') });
     }
     token = res.IsTruncated ? res.NextContinuationToken : undefined;
   } while (token);
   return map;
 }
 
-const md5 = (buf) => createHash("md5").update(buf).digest("hex");
+const md5 = (buf) => createHash('md5').update(buf).digest('hex');
 
 /** Run tasks with a bounded concurrency pool. */
 async function pool(items, limit, worker) {
@@ -167,8 +178,10 @@ let deleted = 0;
 let unchanged = 0;
 
 for (const dir of ASSET_DIRS) {
+  if (process.env.STATIC_ASSET_VERSIONS && !versions[dir]) continue;
+  const prefix = versions[dir] ? `static/${versions[dir]}/${dir}/` : `${dir}/`;
   const root = path.join(PUBLIC_DIR, dir);
-  const remote = await listRemote(`${dir}/`);
+  const remote = await listRemote(prefix);
   const localKeys = new Set();
 
   // Collect local files first so we know the full key set for this dir.
@@ -176,7 +189,8 @@ for (const dir of ASSET_DIRS) {
   for await (const file of walk(root)) files.push(file);
 
   await pool(files, CONCURRENCY, async (file) => {
-    const key = path.relative(PUBLIC_DIR, file).split(path.sep).join("/");
+    const relative = path.relative(PUBLIC_DIR, file).split(path.sep).join('/');
+    const key = versions[dir] ? `static/${versions[dir]}/${relative}` : relative;
     localKeys.add(key);
     const body = await readFile(file);
     const existing = remote.get(key);
@@ -191,27 +205,30 @@ for (const dir of ASSET_DIRS) {
         Body: body,
         ContentType: contentType(file),
         CacheControl: CACHE_CONTROL,
-      })
+      }),
     );
     uploaded++;
     console.log(`[r2-sync] ↑ ${key}`);
   });
 
   // Delete objects that no longer exist locally (makes the bucket mirror disk).
-  const stale = [...remote.keys()].filter((k) => !localKeys.has(k));
+  // Previous versions remain available to old tabs and rollback images.
+  // Deletion is a separate maintenance operation after the retention window.
+  const stale =
+    process.env.STATIC_ASSET_GC === '1' && !process.env.STATIC_ASSET_VERSIONS
+      ? [...remote.keys()].filter((k) => !localKeys.has(k))
+      : [];
   for (let i = 0; i < stale.length; i += 1000) {
     const batch = stale.slice(i, i + 1000);
     await client.send(
       new DeleteObjectsCommand({
         Bucket: S3_BUCKET,
         Delete: { Objects: batch.map((Key) => ({ Key })), Quiet: true },
-      })
+      }),
     );
     deleted += batch.length;
     for (const k of batch) console.log(`[r2-sync] ✗ ${k}`);
   }
 }
 
-console.log(
-  `[r2-sync] done — uploaded ${uploaded}, deleted ${deleted}, unchanged ${unchanged}.`
-);
+console.log(`[r2-sync] done — uploaded ${uploaded}, deleted ${deleted}, unchanged ${unchanged}.`);

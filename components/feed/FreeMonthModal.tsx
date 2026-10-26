@@ -82,7 +82,7 @@ export function FreeMonthModal() {
  <Dialog open={open} onOpenChange={(o) => { if (!o) snooze(); }}>
  <DialogContent className="max-w-sm gap-0 text-center">
  <div className="mb-4 flex justify-center">
- <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-3">
+ <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-4">
  {claimed ? <Check className="h-7 w-7 text-site-success"/> : <Gift className="h-7 w-7 text-site-accent"/>}
  </div>
  </div>

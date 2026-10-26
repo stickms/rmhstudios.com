@@ -10,23 +10,29 @@ const schema = z.object({ priceCoins: z.number().int().min(THEME_PRICE_MIN).max(
 export const Route = createFileRoute('/api/themes/$id/publish')({
   server: {
     handlers: {
-      POST: defineHandler({ body: schema }, async ({ params, session, body }) => {
-        try {
-          await publishTheme(session.user.id, params.id, body.priceCoins);
-        } catch (e) {
-          if (e instanceof ThemeError) {
-            const status =
-              e.message === 'FORBIDDEN' || e.message === 'MEMBERS_ONLY'
-                ? 403
-                : e.message === 'NOT_FOUND'
-                  ? 404
-                  : 400;
-            return Response.json({ error: e.message }, { status });
+      POST: defineHandler(
+        {
+          rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:themes/:id.publish' },
+          body: schema,
+        },
+        async ({ params, session, body }) => {
+          try {
+            await publishTheme(session.user.id, params.id, body.priceCoins);
+          } catch (e) {
+            if (e instanceof ThemeError) {
+              const status =
+                e.message === 'FORBIDDEN' || e.message === 'MEMBERS_ONLY'
+                  ? 403
+                  : e.message === 'NOT_FOUND'
+                    ? 404
+                    : 400;
+              return Response.json({ error: e.message }, { status });
+            }
+            throw e;
           }
-          throw e;
-        }
-        return Response.json({ ok: true });
-      }),
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });

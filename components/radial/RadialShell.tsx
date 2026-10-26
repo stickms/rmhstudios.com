@@ -195,7 +195,7 @@ function RadialTopBar() {
   const close = () => setPanel(null);
 
   return (
-    <header className="radial-topbar glass-chrome rounded-none border-x-0 border-t-0">
+    <header className="radial-topbar glass-chrome">
       <TabBadge count={unread + notifications} />
       <Link
         to="/"

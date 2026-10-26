@@ -5,6 +5,23 @@
  * holds more than one GL context for all of it (they are capped at ~16 per page, and the globe uses one too).
  * `drawHaze` does the same for a surface's low-res haze canvas with the haze program; the engine batches every haze
  * draw of a frame before its rim draws, so a frame switches program at most twice.
+ *
+ * ## Handing a frame over
+ *
+ * Two ways, one per thread:
+ *
+ * - **transfer** (the glass worker, `glass.worker.ts` — the normal path): the context lives on an `OffscreenCanvas`
+ *   sized to the surface, and `transferToImageBitmap()` hands the drawing buffer itself to the target's
+ *   `bitmaprenderer` context — no copy, no readback. The price is that the buffer must be exactly the surface, so a
+ *   surface of a different size from the last reallocates it, and the transfer waits for the GPU to finish. Both are
+ *   paid on the worker's thread, never the page's.
+ * - **copy** (the page, where no worker can render WebGL): render into the bottom-left of a high-water backing store
+ *   and `drawImage` that region onto the surface's 2D canvas. Surfaces of every size share ONE allocation, but the
+ *   main thread waits for the GPU on every surface — onto a CPU-backed 2D canvas it is a pixel readback, and in Gecko
+ *   a round trip to the GPU process (Firefox 136: 24 ms of main thread per hover frame across eight cards). The
+ *   transfer was tried on the page too and reverted: there its reallocations and waits land on the main thread, and a
+ *   React re-render that redraws every rim held software-GL frames for 100–400 ms
+ *   (`testing/e2e/jelly-interaction.mjs`, the re-render pass).
  */
 import { HAZE_FRAG } from './haze-shader';
 import { FRAG, VERT } from './shader';
@@ -84,6 +101,14 @@ export interface GelLook {
   accent: RGB;
   /** Plasma alpha at level 1. */
   plasmaPeak: number;
+  /** Molded shoulder depth, 0 = the outlined rim (`--gel-mold`). */
+  mold: number;
+  /** Edge feather, px: how far the outermost pixels dissolve into the ground (`--gel-feather`). */
+  feather: number;
+  /** Wavelength spread × crown glass (`--gel-dispersion`), slab thickness multiplier (`--gel-lens`), environment reflection strength (`--gel-reflect`). */
+  dispersion: number;
+  lens: number;
+  reflect: number;
 }
 
 /** The dormant plasma's per-draw state. */
@@ -207,6 +232,8 @@ const NAMES = [
   'uAccent',
   'uPlasmaPeak',
   'uRings',
+  'uMold',
+  'uLens',
 ] as const;
 type UName = (typeof NAMES)[number];
 
@@ -222,8 +249,19 @@ function link(gl: GL, vs: WebGLShader, fsSrc: string): WebGLProgram | null {
   return gl.getProgramParameter(prog, gl.LINK_STATUS) ? prog : null;
 }
 
+/** `transfer`: zero-copy ImageBitmap handoff into `bitmaprenderer` targets. `copy`: `drawImage` into 2D targets. */
+export type GlassHandoff = 'transfer' | 'copy';
+
+/** A surface canvas: in the page, or (the glass worker) one transferred with `transferControlToOffscreen`. */
+export type GlassTarget = HTMLCanvasElement | OffscreenCanvas;
+type Target = GlassTarget;
+type TargetCtx =
+  ImageBitmapRenderingContext | CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
 export class GlassRenderer {
-  readonly canvas: HTMLCanvasElement;
+  readonly canvas: HTMLCanvasElement | OffscreenCanvas;
+  readonly handoff: GlassHandoff;
+  private targets = new WeakMap<Target, TargetCtx>();
   private gl: GL | null = null;
   private u = {} as Record<UName, WebGLUniformLocation | null>;
   private h = {} as Record<HName, WebGLUniformLocation | null>;
@@ -239,8 +277,9 @@ export class GlassRenderer {
   /** Called after the context is lost or restored so the owner can fall back / redraw. */
   onChange: (() => void) | null = null;
 
-  private constructor(canvas: HTMLCanvasElement) {
+  private constructor(canvas: HTMLCanvasElement | OffscreenCanvas, handoff: GlassHandoff) {
     this.canvas = canvas;
+    this.handoff = handoff;
     canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
       this.lost = true;
@@ -257,9 +296,24 @@ export class GlassRenderer {
     });
   }
 
+  /** The page's renderer: the copy handoff, onto a high-water backing store (see "Handing a frame over"). */
   static create(doc: Document = document): GlassRenderer | null {
-    const r = new GlassRenderer(doc.createElement('canvas'));
+    const r = new GlassRenderer(doc.createElement('canvas'), 'copy');
     return r.init() ? r : null;
+  }
+
+  /**
+   * A renderer for a worker (no document): always the transfer handoff, into targets the page handed over with
+   * `transferControlToOffscreen()`. Null where the worker cannot run WebGL 2 on an `OffscreenCanvas`.
+   */
+  static createOffscreen(): GlassRenderer | null {
+    if (typeof OffscreenCanvas === 'undefined') return null;
+    try {
+      const r = new GlassRenderer(new OffscreenCanvas(1, 1), 'transfer');
+      return r.init() ? r : null;
+    } catch {
+      return null;
+    }
   }
 
   get ready(): boolean {
@@ -343,8 +397,17 @@ export class GlassRenderer {
     this.current = prog;
   }
 
-  /** Grow the shared backing store (high-water) and size the target. */
-  private prepare(pw: number, ph: number, target: HTMLCanvasElement): void {
+  /** Size the shared drawing buffer (and, on the copy path, the target). */
+  private prepare(pw: number, ph: number, target: Target): void {
+    if (this.handoff === 'transfer') {
+      // The transferred bitmap IS the drawing buffer, so it must be exactly the surface. Each transfer detaches the
+      // buffer anyway and the next draw gets a fresh one, so there is no high-water store to keep.
+      if (this.cw !== pw || this.ch !== ph) {
+        this.canvas.width = this.cw = pw;
+        this.canvas.height = this.ch = ph;
+      }
+      return;
+    }
     // Retain a high-water backing store. Resizing this shared canvas to EVERY
     // surface reallocated the GPU buffer repeatedly within a single frame.
     if (pw > this.cw || ph > this.ch) {
@@ -357,13 +420,37 @@ export class GlassRenderer {
     }
   }
 
-  /** Draw the bound program's full-screen triangle and copy the bottom-left `pw × ph` into `target`. */
-  private blit(pw: number, ph: number, target: HTMLCanvasElement): boolean {
+  /** The target's context for this renderer's handoff; null if the canvas already holds another kind. */
+  private targetCtx(target: Target): TargetCtx | null {
+    let ctx = this.targets.get(target);
+    if (ctx) return ctx;
+    ctx =
+      (this.handoff === 'transfer'
+        ? target.getContext('bitmaprenderer')
+        : target.getContext('2d')) ?? undefined;
+    if (!ctx) return null;
+    this.targets.set(target, ctx);
+    return ctx;
+  }
+
+  /** Draw the bound program's full-screen triangle and hand the bottom-left `pw × ph` to `target`. */
+  private blit(pw: number, ph: number, target: Target): boolean {
     const gl = this.gl!;
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    const ctx = target.getContext('2d');
-    if (!ctx) return false;
+    const tctx = this.targetCtx(target);
+    if (!tctx) return false;
+    if (this.handoff === 'transfer') {
+      try {
+        (tctx as ImageBitmapRenderingContext).transferFromImageBitmap(
+          (this.canvas as OffscreenCanvas).transferToImageBitmap(),
+        );
+      } catch {
+        return false;
+      }
+      return true;
+    }
+    const ctx = tctx as CanvasRenderingContext2D;
     ctx.clearRect(0, 0, pw, ph);
     // The GL viewport starts at the bottom-left; Canvas2D's source rect starts
     // at the top-left. Copy just the current surface from the retained buffer.
@@ -375,7 +462,7 @@ export class GlassRenderer {
    * Render one surface's haze into `target` (its `.jelly-haze-canvas`). `time` is the ambient clock in seconds: the
    * same value for every surface in a frame, so it is uploaded once per frame, not per surface.
    */
-  drawHaze(o: HazeDraw, time: number, target: HTMLCanvasElement): boolean {
+  drawHaze(o: HazeDraw, time: number, target: Target): boolean {
     const gl = this.gl;
     const prog = this.hazeProg;
     if (!gl || this.lost || !prog) return false;
@@ -412,7 +499,7 @@ export class GlassRenderer {
   }
 
   /** Render one surface and copy it into `target`. Returns false if nothing could be drawn. */
-  draw(o: GlassDraw, target: HTMLCanvasElement): boolean {
+  draw(o: GlassDraw, target: Target): boolean {
     const gl = this.gl;
     if (!gl || this.lost || !this.rimProg) return false;
     const margin = Math.max(0, o.margin ?? 0);
@@ -473,6 +560,8 @@ export class GlassRenderer {
     gl.uniform1f(u.uDentOn, dent ? 1 : 0);
     gl.uniform4f(u.uDent, dent?.x ?? 0, dent?.y ?? 0, dent?.depth ?? 0, dent?.radius ?? 1);
     gl.uniform2f(u.uDentStretch, dent?.stretchX ?? 0, dent?.stretchY ?? 0);
+    gl.uniform2f(u.uMold, gel?.mold ?? 0, gel?.feather ?? 0);
+    gl.uniform3f(u.uLens, gel?.dispersion ?? 1, gel?.lens ?? 1, gel?.reflect ?? 0);
     return this.blit(pw, ph, target);
   }
 
@@ -483,5 +572,6 @@ export class GlassRenderer {
     this.tex = null;
     this.rimProg = this.hazeProg = this.current = null;
     this.canvas.width = this.canvas.height = 1;
+    this.cw = this.ch = 0;
   }
 }

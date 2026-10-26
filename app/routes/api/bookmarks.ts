@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { listBookmarks } from '@/lib/bookmarks.server';
@@ -9,7 +10,7 @@ export const Route = createFileRoute('/api/bookmarks')({
       GET: defineHandler({}, async ({ request, session }) => {
         const url = new URL(request.url);
         const cursor = url.searchParams.get('cursor');
-        const limit = parseInt(url.searchParams.get('limit') || '20');
+        const limit = pageSize(url.searchParams.get('limit'), 20, 50);
         const result = await listBookmarks(session.user.id, { cursor, limit });
         return Response.json(result);
       }),

@@ -1,0 +1,40 @@
+name: candidate-image
+on:
+  pull_request: {}
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: candidate-image-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  candidate-image:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Determine whether an image can change
+        id: classify
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node .github/scripts/classify-change.mjs
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        if: steps.classify.outputs.candidate == 'true'
+        with:
+          cleanup: false
+      - name: Build production-shaped images locally (never push a PR image)
+        if: steps.classify.outputs.candidate == 'true'
+        env:
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          export STATIC_ASSET_VERSIONS=$(node scripts/static-asset-versions.mjs)
+          docker buildx bake -f docker-bake.hcl --load web full
+      - name: Boot the ARM64 Alpine candidate through its production primary
+        if: steps.classify.outputs.candidate == 'true'
+        env:
+          GIT_SHA: ${{ github.sha }}
+          IMAGE_WEB: ghcr.io/stickms/rmhstudios-app
+          IMAGE_FULL: ghcr.io/stickms/rmhstudios-app-full
+        run: bash scripts/ci/candidate-smoke.sh

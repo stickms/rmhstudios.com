@@ -29,7 +29,7 @@ function RedisCard({ title, report }: { title: string; report: RedisPlaneReport 
   const hits = Number(get('keyspace_hits') ?? 0);
   const misses = Number(get('keyspace_misses') ?? 0);
   return (
-    <article className="glass-fill space-y-3 rounded-site p-4">
+    <article className="glass-fill space-y-3 rounded-site p-5">
       <h3 className="text-base font-bold text-site-text">{title}</h3>
       {!report || !i ? (
         <p className="text-sm text-site-text-muted">
@@ -104,7 +104,7 @@ function HeapSection() {
       {loading && !data ? (
         <Spinner />
       ) : failed || !data ? (
-        <p className="glass-fill rounded-site p-4 text-sm text-site-text-muted">
+        <p className="glass-fill rounded-site p-5 text-sm text-site-text-muted">
           {t('heap-failed', { defaultValue: 'Could not load heap statistics.' })}
         </p>
       ) : (
@@ -187,7 +187,7 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
       <section className="space-y-3">
         <h2 className="site-section-label">{t('redis-title', { defaultValue: 'Redis' })}</h2>
         {!overview.redis.enabled ? (
-          <p className="glass-fill rounded-site p-4 text-sm text-site-text-muted">
+          <p className="glass-fill rounded-site p-5 text-sm text-site-text-muted">
             {t('redis-off', {
               defaultValue:
                 'Redis is not configured (REDIS_URL unset); caches and rate limits are per-process.',
@@ -218,7 +218,7 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
           {t('cgroup-title', { defaultValue: 'Container limits (cgroup)' })}
         </h2>
         {cgroups.length === 0 ? (
-          <p className="glass-fill rounded-site p-4 text-sm text-site-text-muted">
+          <p className="glass-fill rounded-site p-5 text-sm text-site-text-muted">
             {t('cgroup-none', {
               defaultValue: 'No cgroup information (not running in a Linux container).',
             })}
@@ -228,7 +228,7 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
             {cgroups.map((s) => {
               const c = s.cgroup!;
               return (
-                <article key={s.service} className="glass-fill space-y-3 rounded-site p-4">
+                <article key={s.service} className="glass-fill space-y-3 rounded-site p-5">
                   <h3 className="text-base font-bold text-site-text">
                     {s.service} · cgroup v{c.version}
                   </h3>
@@ -348,7 +348,7 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
       {os && (
         <section className="space-y-3">
           <h2 className="site-section-label">{t('os-title', { defaultValue: 'Host' })}</h2>
-          <div className="glass-fill rounded-site p-4">
+          <div className="glass-fill rounded-site p-5">
             <Pairs
               rows={[
                 [

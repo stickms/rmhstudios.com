@@ -70,7 +70,9 @@ the inside out: a **gel** body that darkens slightly toward its base; a low-cont
 crests — calm behind text and livelier at the rim; a **plasma** core that sleeps
 invisibly until the hand wakes it (hover wakes it, press and focus brighten it, a
 click's charge rings through it); and the 3D refracting, lit **edge** of liquid glass,
-its light split into red, green and blue, with a one-pixel Fresnel line. There is no
+its light split into red, green and blue. The edge is **molded**, not outlined: each slab
+rises out of the ground over a soft shoulder, lit on the side facing the light and
+falling into shadow on the other, with a feathered silhouette instead of a hairline. There is no
 gloss band across the face — shine lives at the edges and in the dent.
 
 The jelly is soft: hover plumps and leans it toward the cursor, and press sinks a
@@ -273,7 +275,7 @@ it is written — none of which looked like a performance bug in the source:
    moved by `transform`.
 6. **Ambient motion is one capped loop that stops when nobody can see it** —
    never a CSS `infinite` keyframe of your own. The jelly's haze ticks on the
-   engine's clock (30 Hz engaged, a 12 Hz floor when idle, 0 when the tab is
+   engine's clock (60 Hz engaged, a 30 Hz floor when idle, 0 when the tab is
    hidden, nothing hazy is on screen, or the tier is degraded), behind a governor
    that only ever turns it down. A backdrop that never rests was the
    [2026-10-08](docs/performance-audit-2026-10-08.md) failure; the jelly's floor is

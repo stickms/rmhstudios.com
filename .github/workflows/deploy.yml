@@ -1,56 +1,4 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Continuous deployment — build the two Docker images in CI and hand off to the
-# VPS for the release.
-#
-# Flow (every push to main):
-#   1. `ci` (typecheck/lint/test), `integration` (the integration suite against
-#      the built app + a throwaway Postgres) and `build` (images) run IN
-#      PARALLEL. The checks no longer serialize in front of the build — they run
-#      in its shadow, so a green deploy costs ~max(ci, integration, build).
-#   2. `build` builds BOTH images from ONE shared BuildKit graph via
-#      `docker buildx bake` (see docker-bake.hcl): the slim web image (`runner`)
-#      and the full supervisor/status image (`runner-full`: Go binaries +
-#      Chromium on the shared runtime base). Only the web image needs the
-#      expensive Vite build; runner-full builds in parallel with it and, on a
-#      web-only commit, gets no new layers at all. Both are pushed to GHCR
-#      tagged with the commit SHA (+ :latest).
-#   3. `deploy-gate` waits for ci + integration + build, then POSTs the
-#      HMAC-signed request to the VPS listener — but ONLY when all are green. The listener runs
-#      `deploy.sh production <sha>`, which PULLS these images, migrates, and
-#      blue/green-swaps — see deploy.sh.
-#
-# Gating the *webhook trigger* (not the image build) preserves the exact safety
-# of the old serial gate — red CI ⇒ no webhook ⇒ nothing ships — while letting
-# the build run concurrently. A build that ran while CI turned out red just
-# leaves an inert SHA-tagged image in GHCR that no deploy ever pulls.
-#
-# The heavy build (vibe-packages → vite build → esbuild → Go → Chromium) runs
-# here instead of on the VPS; deploy.sh no longer builds anything.
-#
-# One-time setup (see deploy/README.md "Automated deploys — CI build → GHCR"):
-#   • Repo VARIABLES (Settings → Secrets and variables → Actions → Variables) —
-#     these are baked into the client bundle by `vite build`, so they must be the
-#     PRODUCTION values (they are public, not secrets):
-#       PROD_BETTER_AUTH_URL, PROD_VITE_BETTER_AUTH_URL, PROD_VITE_SOCKET_URL,
-#       PROD_VITE_RMHBOX_SOCKET_URL, PROD_VITE_RMHTUBE_SOCKET_URL,
-#       PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID, PROD_VITE_CDN_BASE_URL
-#   • Repo SECRETS:
-#       DEPLOY_WEBHOOK_URL  — public URL that proxies to the listener (127.0.0.1:7002)
-#       WEBHOOK_SECRET      — same value as the listener's WEBHOOK_SECRET env
-#       DEEPSEEK_API_KEY    — optional (library cover titles); may be unset
-#       DISCORD_WEBHOOK_URL — optional; enables the push → build → deploy embed
-#                             that Actions posts and deploy.sh edits (same URL the
-#                             VPS listener's DISCORD_WEBHOOK_URL env uses). Unset =
-#                             no CI-side Discord messages (deploy.sh still posts).
-#   • On the VPS: give deploy.sh a token that can pull the GHCR packages
-#     (GHCR_TOKEN / GITHUB_TOKEN with read:packages) OR make the two packages
-#     public. Remove GitHub's old push webhook so only THIS workflow drives the
-#     listener (a raw push webhook would fire before the image exists).
-#   • GHCR layer cache: the build refreshes ${IMAGE_WEB}:buildcache (the full
-#     shared Node/Vite graph) and can read the older ${IMAGE_FULL}:buildcache as
-#     a best-effort warm start. Cache misses only cause cold stages; they never
-#     block image production or deploy. See docker-bake.hcl.
-# ─────────────────────────────────────────────────────────────────────────────
+# Builds and required checks overlap. Cache maintenance runs in build-cache.yml.
 name: deploy
 
 on:
@@ -58,19 +6,10 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
-# One build per ref at a time. A newer commit to the same ref CANCELS the
-# in-progress run and starts fresh — no point finishing a build that's already
-# superseded. Keyed by ref so a branch test-dispatch never cancels a production
-# (main) build, and vice-versa.
-#
-# NOTE: this cancels the BUILD only. The VPS deploy phase has its own flock+queue
-# in deploy.sh — a running deploy is never interrupted mid-migration/hotswap; a
-# newer deploy queues and supersedes older queued ones once the current finishes.
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
-# GITHUB_TOKEN needs packages:write to push the images to GHCR; nothing else.
 permissions:
   contents: read
   packages: write
@@ -80,50 +19,18 @@ env:
   IMAGE_FULL: ghcr.io/stickms/rmhstudios-app-full
 
 jobs:
-  # ── CI gate (audit §5.4) ────────────────────────────────────────────────────
-  # Runs the same fast, high-signal web checks as web-ci.yml. `deploy-gate`
-  # `needs:` this AND `build` — so a red CI can no longer ship, but CI is no
-  # longer in the deploy's critical path (it runs concurrently with the build).
-  #
-  # Why an in-workflow gate rather than a `workflow_run:` trigger keyed on
-  # web-ci: web-ci.yml has `paths-ignore` (go-services/**, deploy/**, docs/**,
-  # **/*.md), so a go-only, deploy-config-only, or docs-only push to main does
-  # NOT run web-ci. A `workflow_run` gate on it would then never fire for those
-  # pushes, and legitimate changes could never deploy — and deploy.sh itself
-  # lives under deploy/**. A same-workflow gate runs on EVERY push to main
-  # regardless of paths. Note: build-TIME breakage (web or Go) is ALREADY
-  # blocking, because the image build in `build` fails before anything usable is
-  # deployed; this job adds the typecheck/lint/test coverage the build doesn't.
   ci:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
-    # tsc/vitest on this codebase exceed Node's default ~4 GB heap (matches
-    # web-ci.yml); set the larger heap for every step.
     env:
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
       - uses: ./.github/actions/setup-deps
 
-      # Persist tsc's incremental program graph + eslint's result cache across
-      # runs so warm runs only re-check changed files. Both tools invalidate by
-      # file content, so a restored cache can only be faster, never wrong.
-      #
-      # TWO ENTRIES, not one combined `tsc-eslint-*`: web-ci.yml now runs
-      # typecheck and lint in SEPARATE jobs, and each restores only the prefix it
-      # needs. This job (on `main`) still writes both, which is what keeps a PR's
-      # first run warm — a PR restores from the base branch's cache scope, so if
-      # `main` stopped publishing these prefixes every new PR would pay a ~91s
-      # cold typecheck.
-      #
-      # NOTE: this `ci` job is deliberately NOT split the way web-ci's is. There,
-      # `check` was the PR gate's critical path; here `build` is (~3m18s vs this
-      # job's ~2m21s), so splitting would buy a second runner's checkout+install
-      # for zero deploy latency. Revisit if `build` ever drops below ~2m30s.
       - name: Restore typecheck cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -139,23 +46,6 @@ jobs:
           restore-keys: |
             eslint-${{ runner.os }}-
 
-      # Keeps web-ci's `image-variants-*` cache warm for PRs, the same way the two
-      # caches above are: web-ci has no push trigger, so without a writer on
-      # `main` every PR's first build would re-encode all ~290 variants cold. A
-      # hit costs ~1s; a miss (art or the generator changed) is ~1 min of encode
-      # that runs in `build`'s shadow, well inside this job's slack. Same key as
-      # web-ci.yml's "Restore image variants" step — keep the two in sync.
-      - name: Restore image variants
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: public/images/_variants
-          key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
-          restore-keys: |
-            image-variants-${{ runner.os }}-
-      - name: Warm image variants (for web-ci's cache)
-        run: pnpm run images:variants
-
-      # Native (Go) TypeScript compiler — see the same step in web-ci.yml.
       - name: Typecheck
         run: |
           mkdir -p .cache/tsc
@@ -166,38 +56,41 @@ jobs:
           mkdir -p .cache/eslint
           pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache --cache-strategy content
 
-      # A HARD GATE. This used to be advisory on the premise that `main` is
-      # reached only through a PR whose web-ci Test step already gated it — but
-      # nothing enforced that premise (no branch protection on `main`), so a
-      # direct push or a merge over a red PR shipped untested code. It is also
-      # free in wall-clock: `ci` runs in parallel with the ~3 min image build, and
-      # the suite takes ~2 min, so blocking on it does not delay a green deploy.
-      # A red test here means the merge result is broken — fix it, don't ship it.
+      - name: Production dependency audit
+        run: pnpm audit --prod --audit-level=high
+
+  test:
+    name: unit (${{ matrix.shard }}/2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-deps
       - name: Test
-        run: pnpm test
+        run: pnpm test --shard=${{ matrix.shard }}/2
 
   build:
-    # NO `needs:` — runs concurrently with `ci`; `deploy-gate` waits on both.
-    # The Dockerfile still reports the candidate bundle budget from this shared
-    # BuildKit graph, but performance budgets are advisory.
-    # Native ARM64 hosted runner (free on public repos) — builds arm64 images for
-    # the Oracle ARM VPS without slow QEMU emulation.
-    runs-on: ubuntu-24.04-arm
+    if: github.ref == 'refs/heads/main'
+    runs-on: ${{ vars.ARM64_BUILD_RUNNER || 'ubuntu-24.04-arm' }}
     timeout-minutes: 90
     permissions:
       contents: read
       packages: write
-      # The Discord CI checklist reads this run's job/step states.
       actions: read
     outputs:
       commit_short: ${{ steps.commit.outputs.short }}
       commit_msg: ${{ steps.commit.outputs.msg }}
       commit_author: ${{ steps.commit.outputs.author }}
       discord_msg_id: ${{ steps.discord_out.outputs.id }}
+      web_digest: ${{ steps.images.outputs.web }}
+      full_digest: ${{ steps.images.outputs.full }}
     steps:
-      # fetch-depth: 2 so the layer-cache gate below can diff this push against
-      # the previous tip (`HEAD^1`). Depth 1 would leave HEAD parentless and the
-      # gate would fall back to exporting on every build.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
@@ -207,7 +100,6 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           set -uo pipefail
-          # %s is the single-line subject (no newlines → safe for outputs).
           {
             echo "short=$(git rev-parse --short HEAD)"
             echo "msg=$(git log -1 --pretty=%s)"
@@ -255,14 +147,8 @@ jobs:
           bash .github/scripts/discord-notify.sh post 16776960 \
             "🟡 [PRODUCTION] Commit ${COMMIT_SHORT:-} — build started" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
-          # Stamp the build start so the "images pushed" edit can show how long the
-          # build took. Runs even when Discord is off (the step is only ref-gated).
           echo "BUILD_START_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
 
-      # The embed's CI checklist (Typecheck · Lint · Unit tests · Integration
-      # tests · Images), rendered from the GitHub API's view of this run and
-      # edited by ONE writer — this background watcher — so the parallel jobs
-      # can't overwrite each other's partial state. See .github/scripts/ci-checklist.sh.
       - name: Discord — start the CI checklist
         if: github.ref == 'refs/heads/main'
         env:
@@ -273,20 +159,11 @@ jobs:
           nohup bash .github/scripts/ci-checklist.sh watch > "$RUNNER_TEMP/ci-checklist.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/ci-checklist.pid"
 
-      # Export the Discord message id (set into $GITHUB_ENV by discord-notify.sh
-      # `post`) as a JOB OUTPUT so deploy-gate can EDIT the same embed after the
-      # gate resolves. Empty on non-main / when Discord is off — the edit no-ops.
       - name: Export Discord message id
         id: discord_out
         if: always()
         run: echo "id=${DISCORD_MSG_ID:-}" >> "$GITHUB_OUTPUT"
 
-      # cleanup: false — skip the action's post-step teardown of the builder.
-      # That post step runs AFTER both images are pushed and deletes the
-      # BuildKit container and its multi-GB state volume: 44s in deploy run
-      # 37999110833 (22:29:13 → 22:29:57), during which `build` cannot finish,
-      # so `deploy-gate` cannot fire the VPS webhook. Hosted runners are
-      # discarded at job end, so the teardown bought nothing but that delay.
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
         with:
           cleanup: false
@@ -298,109 +175,13 @@ jobs:
           set -euo pipefail
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      # ── Should this build re-export the GHCR layer cache? ────────────────────
-      # The export is a ~62s tail AFTER both images are pushed, and `deploy-gate`
-      # (which fires the VPS webhook) cannot start until this job ends — so it is
-      # ~62s of the new code not being live. See EXPORT_CACHE in docker-bake.hcl
-      # for the full argument; the short version is that the export only pays for
-      # itself when an input to a CACHED, EXPENSIVE, CROSS-COMMIT-REUSABLE stage
-      # moved. Everything else is either already in `:buildcache` unchanged, or
-      # keyed to this commit's source and unusable by any later build.
-      #
-      # In the path list below:
-      #   package.json / pnpm-lock.yaml / pnpm-workspace.yaml / .npmrc
-      #                          → `deps` + `prod-deps` (pnpm install, ~70s each)
-      #   prisma/ + prisma.config.ts               → `prisma-generate`
-      #   tsconfig{,.server}.json                  → base of server-/vibe-builder
-      #   scripts/build-vibe-packages.ts,
-      #   lib/rmhvibe/vibe-packages.ts             → `vibe-builder` (~35s esbuild)
-      #   public/images/,
-      #   scripts/gen-image-variants.ts            → `image-variants` (AVIF/WebP
-      #                                              encode, ~1 min cold; it gates
-      #                                              vite, so it IS critical path)
-      #   go-services/go.{mod,sum}                 → `go mod download` (network)
-      #   Dockerfile / docker-bake.hcl             → the whole graph's shape
-      #
-      # DELIBERATELY ABSENT, and this is the interesting half: `server/**`,
-      # `lib/**` and the rest of `go-services/**`. They do invalidate stages
-      # (`server-builder`, `go-builder`), but those stages are a ~3s esbuild and a
-      # ~25s Go build that BuildKit runs CONCURRENTLY with the ~90s+ vite-builder.
-      # Caching work that finishes inside someone else's critical path saves zero
-      # wall-clock, so paying 62s of serial export to preserve it is strictly a
-      # loss. Only stages that would otherwise extend the critical path are here.
-      #
-      # Force an export by hand any time with a `workflow_dispatch` run (the
-      # `github.event_name != 'push'` branch below always exports).
-      - name: Decide whether to refresh the BuildKit layer cache
-        id: cachegate
-        run: |
-          set -uo pipefail
+      - name: Prepare candidate database alongside image compilation
+        env:
+          GIT_SHA: ${{ github.sha }}
+        run: nohup bash scripts/ci/candidate-smoke.sh prepare > "$RUNNER_TEMP/candidate-pg.log" 2>&1 &
 
-          # Anything that is not an ordinary push (workflow_dispatch, re-run of a
-          # first commit, …) exports unconditionally — it is either a manual
-          # "rebuild the cache" run or a case where the diff below is unreliable.
-          if [ "${{ github.event_name }}" != "push" ]; then
-            echo "Not a push event — exporting cache."
-            echo "export=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # HEAD^1 is the previous tip of this branch (for a PR merge commit, the
-          # main tip it merged into) — so this diff is exactly "what this push
-          # introduced". If it is unavailable (shallow fetch too shallow, root
-          # commit), fail OPEN and export: a needless 62s beats silently letting
-          # the cache rot.
-          if ! git rev-parse --verify --quiet HEAD^1 >/dev/null; then
-            echo "No HEAD^1 (root commit or shallow checkout) — exporting cache."
-            echo "export=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # `|| diff_failed=1` rather than `set -e`: a git failure here must fail
-          # OPEN too. An empty `$changed` is the SKIP signal, so a diff that
-          # errored out would otherwise read as "nothing changed" and quietly
-          # stop refreshing the cache forever — the one failure mode of this gate
-          # that would not announce itself.
-          diff_failed=0
-          changed=$(git diff --name-only HEAD^1 HEAD -- \
-            package.json \
-            pnpm-lock.yaml \
-            pnpm-workspace.yaml \
-            .npmrc \
-            prisma \
-            prisma.config.ts \
-            tsconfig.json \
-            tsconfig.server.json \
-            scripts/build-vibe-packages.ts \
-            lib/rmhvibe/vibe-packages.ts \
-            public/images \
-            scripts/gen-image-variants.ts \
-            go-services/go.mod \
-            go-services/go.sum \
-            Dockerfile \
-            docker-bake.hcl) || diff_failed=1
-
-          if [ "$diff_failed" -ne 0 ]; then
-            echo "git diff failed — exporting cache (fail-open)."
-            echo "export=true" >> "$GITHUB_OUTPUT"
-          elif [ -n "$changed" ]; then
-            echo "Cached-stage inputs changed — exporting cache:"
-            # Intentional word splitting: $changed is a newline-separated path list.
-            # shellcheck disable=SC2086
-            printf '  %s\n' $changed
-            echo "export=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No cached-stage inputs changed — skipping the cache export (saves ~62s of deploy latency)."
-            echo "export=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      # Build + push BOTH images in a single BuildKit graph (docker-bake.hcl).
-      # Vite is the long pole and only the web image needs it; runner-full (Go
-      # binaries + Chromium on the shared runtime base) builds and pushes in
-      # parallel with it. Registry-backed layer cache on GHCR (no 10 GB GHA-cache
-      # eviction cap) for the web graph, read every build and rewritten only when
-      # the gate above says it would buy something; inline cache for the full image.
       - name: Build + push both images (bake, single graph)
+        id: images
         env:
           GIT_SHA: ${{ github.sha }}
           COMPOSE_PROJECT_NAME: rmhstudios-prod
@@ -413,50 +194,42 @@ jobs:
           VITE_RMHTUBE_SOCKET_URL: ${{ vars.PROD_VITE_RMHTUBE_SOCKET_URL }}
           VITE_DISCORD_ACTIVITY_CLIENT_ID: ${{ vars.PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID }}
           VITE_CDN_BASE_URL: ${{ vars.PROD_VITE_CDN_BASE_URL }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          # Read by the EXPORT_CACHE bake variable — "true" keeps the cache-to
-          # export, anything else drops it from the graph entirely.
-          EXPORT_CACHE: ${{ steps.cachegate.outputs.export }}
-          # Image layer compression. `zstd` would cut the ~42s "exporting layers"
-          # phase and speed the VPS pull, but the pulling daemon must be Docker
-          # Engine >= 23.0. Verify with `docker version --format
-          # '{{.Server.Version}}'` on the VPS, then change this one word — see the
-          # IMAGE_COMPRESSION block in docker-bake.hcl for the full rationale and
-          # the rollback path.
-          IMAGE_COMPRESSION: gzip
+          IMAGE_COMPRESSION: ${{ vars.DEPLOY_IMAGE_COMPRESSION || 'gzip' }}
         run: |
           set -euo pipefail
-          docker buildx bake -f docker-bake.hcl --push web full
+          export STATIC_ASSET_VERSIONS=$(node scripts/static-asset-versions.mjs)
+          docker buildx bake -f docker-bake.hcl --metadata-file "$RUNNER_TEMP/images.json" --push web full
+          jq '{web: .web["containerimage.digest"], full: .full["containerimage.digest"]}' "$RUNNER_TEMP/images.json" > "$RUNNER_TEMP/release-images.json"
+          jq -er '"web=" + .web, "full=" + .full' "$RUNNER_TEMP/release-images.json" >> "$GITHUB_OUTPUT"
 
-      # Keep the job (and so the watcher) alive until every check has finished,
-      # so the checklist reaches its final ✅/❌ state. This adds no deploy latency:
-      # `deploy-gate` waits on `ci` and `integration` anyway.
-      - name: Discord — CI checklist (wait for every check)
-        if: github.ref == 'refs/heads/main'
+      - name: Stop checklist observer (release gate renders the final state)
+        if: always()
         run: |
-          pidfile="$RUNNER_TEMP/ci-checklist.pid"
-          [ -f "$pidfile" ] || exit 0
-          pid=$(cat "$pidfile")
-          for _ in $(seq 1 180); do kill -0 "$pid" 2>/dev/null || break; sleep 10; done
-          cat "$RUNNER_TEMP/ci-checklist.log" 2>/dev/null || true
+          if [ -f "$RUNNER_TEMP/ci-checklist.pid" ]; then kill "$(cat "$RUNNER_TEMP/ci-checklist.pid")" 2>/dev/null || true; fi
+
+      - name: Smoke the published production images
+        env:
+          GIT_SHA: ${{ github.sha }}
+          WEB_DIGEST: ${{ steps.images.outputs.web }}
+          FULL_DIGEST: ${{ steps.images.outputs.full }}
+        run: bash scripts/ci/candidate-smoke.sh
+
+      - name: Retain candidate image digests
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-images
+          path: ${{ runner.temp }}/release-images.json
+          retention-days: 30
 
       - name: Discord — build superseded (cancelled)
         if: cancelled() && github.ref == 'refs/heads/main'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          # A newer commit cancelled this build (cancel-in-progress). Close out its
-          # embed so it doesn't sit orphaned at 🟡; the newer commit posts its own.
           bash .github/scripts/discord-notify.sh edit 9807270 \
             "⏹️ [PRODUCTION] Commit ${COMMIT_SHORT:-} — build superseded by a newer commit" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
 
-  # ── Integration gate ────────────────────────────────────────────────────────
-  # The integration suite (testing/integration/, docs/testing.md §8) on the
-  # MERGED commit. The PR already ran it against its own branch, but `main` after
-  # a merge is a different tree whenever two PRs land close together — the same
-  # reason `ci` re-runs the unit suite here. Same job as web-ci.yml's
-  # `integration`; runs in parallel with `build`, so it costs no wall-clock.
   integration:
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -471,25 +244,19 @@ jobs:
       INTEGRATION_BASE_URL: http://localhost:7005
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # Postgres boots IN THE BACKGROUND while deps restore and the app builds,
-      # instead of as a `services:` container — those start (pull + init, ~16 s)
-      # before the first step, on the job's critical path. pgvector's image: the
-      # migration history needs the extension to replay. Published on loopback
-      # only. "Wait for Postgres" below gates the first step that needs it.
       - name: Start Postgres (background)
         run: |
           nohup sh -c 'docker run -d --name pg -p 127.0.0.1:5432:5432 \
             -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=rmh \
             pgvector/pgvector:pg16' > "$RUNNER_TEMP/pg-start.log" 2>&1 &
-      # pnpm + Node + node_modules (cached by lockfile + schema) — see the action.
       - uses: ./.github/actions/setup-deps
       - name: Restore image variants
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: public/images/_variants
-          key: image-variants-${{ runner.os }}-${{ hashFiles('public/images/**', 'scripts/gen-image-variants.ts', 'pnpm-lock.yaml') }}
+          key: image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-${{ hashFiles('public/images/**') }}
           restore-keys: |
-            image-variants-${{ runner.os }}-
+            image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-
       - name: Build
         run: pnpm run build:frontend
       - name: Wait for Postgres
@@ -522,12 +289,6 @@ jobs:
         if: always()
         run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
 
-  # ── Deploy gate: fire the VPS webhook ONLY when CI + build are green ──────────
-  # The Go fleet's Bazel tests (same as go-microservices.yml) on the merged
-  # commit. go-microservices runs on PRs, but nothing stopped a Go change from
-  # shipping when it was skipped, red, or raced by another merge. Runs only when
-  # the pushed commits touch Go (a web-only deploy passes in seconds); parallel
-  # to `build`, so it adds no wall-clock when it does run.
   go-test:
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -545,8 +306,6 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: |
           set -uo pipefail
-          # workflow_dispatch has no `before`; a new branch has all zeros; a base we
-          # can't fetch (force-push) — all mean "can't tell", so test.
           if [ -z "${BEFORE:-}" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
              || ! git fetch --quiet --depth=1 origin "$BEFORE"; then
             echo "go=true" >> "$GITHUB_OUTPUT"; exit 0
@@ -573,39 +332,21 @@ jobs:
         if: steps.changed.outputs.go == 'true'
         run: bazelisk test --build_tests_only //go-services/...
 
-  # `if: always()` so this runs even when `ci` fails (so it can mark the embed
-  # red). The trigger step is guarded on BOTH jobs succeeding; the failure step
-  # fires when either genuinely failed. Cancellation (superseded) is handled by
-  # `build` above, so neither step runs then.
   deploy-gate:
-    needs: [ci, integration, build, go-test]
-    if: always()
+    needs: [ci, test, build, go-test]
+    if: always() && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
-      actions: read  # final render of the Discord CI checklist
+      actions: read # render the Discord CI checklist on a rejected release
     steps:
-      # deploy-gate runs .github/scripts/discord-notify.sh, so it needs the repo on
-      # disk. WITHOUT this checkout the gate-failed / trigger-failed alerts silently
-      # no-op with "discord-notify.sh: No such file or directory" (the `|| true`
-      # masks it) — so a BLOCKED deploy never turns the pipeline embed 🔴 and no
-      # Discord alert is sent, which is exactly the failure this job exists to report.
-      #
-      # Sparse-checkout ONLY .github/scripts (all this job touches — discord-notify.sh
-      # is self-contained) instead of the full tree. This job sits on the deploy's
-      # critical path (it fires the VPS webhook), so trimming its checkout from the
-      # whole repo to one dir shaves several seconds off time-to-webhook.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: .github/scripts
 
       - name: Gate failed — CI/build or a stall blocked the deploy
-        # `!= 'success'` (not `== 'failure'`) so a CANCELLED or TIMED-OUT job — i.e. a
-        # stalled run that hit its timeout-minutes — also alerts, not just a clean
-        # lint/test failure. This exactly complements the trigger step's
-        # `success && success` guard, so precisely one of the two steps runs.
-        if: needs.ci.result != 'success' || needs.integration.result != 'success' || needs.build.result != 'success' || needs.go-test.result != 'success'
+        if: needs.ci.result != 'success' || needs.test.result != 'success' || needs.build.result != 'success' || needs.go-test.result != 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -617,59 +358,28 @@ jobs:
         run: |
           set -uo pipefail
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            # edit-or-post: if `build` died before posting the 🟡 embed there is no
-            # id to edit, so post a fresh red alert instead of silently no-opping.
-            # Fall back to the raw SHA for the label if the build never exported one.
-            # Final render of the CI checklist, so the red embed shows WHICH check failed.
             DISCORD_FIELDS=$(bash .github/scripts/ci-checklist.sh fields | jq -c '.fields' 2>/dev/null || echo '[]') \
             bash .github/scripts/discord-notify.sh edit-or-post 15158332 \
-              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-${GIT_SHA:0:7}} — deploy BLOCKED (CI=${{ needs.ci.result }}, integration=${{ needs.integration.result }}, go=${{ needs.go-test.result }}, build=${{ needs.build.result }}); nothing shipped" \
+              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-${GIT_SHA:0:7}} — deploy BLOCKED (CI=${{ needs.ci.result }}, go=${{ needs.go-test.result }}, build=${{ needs.build.result }}); nothing shipped" \
               "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}" || true
           fi
-          echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, integration=${{ needs.integration.result }}, go=${{ needs.go-test.result }}, build=${{ needs.build.result }}. Images (if any) are inert; nothing shipped."
+          echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, go=${{ needs.go-test.result }}, build=${{ needs.build.result }}. Images (if any) are inert; nothing shipped."
           exit 1
 
       - name: Trigger VPS deploy (webhook listener)
-        if: needs.ci.result == 'success' && needs.integration.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success'
+        if: needs.ci.result == 'success' && needs.test.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success'
         env:
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
           COMMIT_REF: ${{ github.ref }}
           COMMIT_SHA: ${{ github.sha }}
+          WEB_DIGEST: ${{ needs.build.outputs.web_digest }}
+          FULL_DIGEST: ${{ needs.build.outputs.full_digest }}
           DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}
-        run: |
-          set -euo pipefail
-          # Body carries ONLY {ref, after} — the fields the listener maps + the SHA
-          # deploy.sh pulls. The Discord message id rides in the X-Discord-Msg-Id
-          # HEADER (keeping the body minimal). The body HMAC authenticates the
-          # request, computed exactly like webhook-server.cjs (crypto.createHmac
-          # 'sha256' over the raw body, hex), the secret read from the environment.
-          body="$(jq -nc \
-            --arg ref "$COMMIT_REF" \
-            --arg after "$COMMIT_SHA" \
-            '{ref:$ref, after:$after}')"
-          sig="sha256=$(printf '%s' "$body" | node -e 'const c=require("crypto");let d="";process.stdin.on("data",x=>d+=x).on("end",()=>process.stdout.write(c.createHmac("sha256",process.env.WEBHOOK_SECRET).update(d).digest("hex")))')"
-          echo "Triggering deploy for ${COMMIT_SHA}"
-          # Capture the status + response body so a failure shows WHO rejected it and
-          # why (e.g. the listener's 'Unauthorized', or a proxy/Discord error page),
-          # instead of curl -f hiding it.
-          code=$(curl -sS -o /tmp/webhook-resp.txt -w '%{http_code}' --max-time 30 -X POST "$DEPLOY_WEBHOOK_URL" \
-            -H "Content-Type: application/json" \
-            -H "X-Hub-Signature-256: $sig" \
-            -H "X-Discord-Msg-Id: ${DISCORD_MSG_ID:-}" \
-            --data-raw "$body" || echo "000")
-          case "$code" in
-            2*) echo "Trigger accepted (HTTP $code)." ;;
-            *)
-              echo "::error::Webhook trigger returned HTTP $code:"
-              cat /tmp/webhook-resp.txt 2>/dev/null || true
-              echo
-              exit 1
-              ;;
-          esac
+        run: node .github/scripts/release-webhook.mjs trigger
 
       - name: Discord — trigger failed (post-build handoff)
-        if: failure() && needs.ci.result == 'success' && needs.integration.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success' && github.ref == 'refs/heads/main'
+        if: failure() && needs.ci.result == 'success' && needs.test.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success' && github.ref == 'refs/heads/main'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}
@@ -677,8 +387,69 @@ jobs:
           COMMIT_MSG: ${{ needs.build.outputs.commit_msg }}
           COMMIT_AUTHOR: ${{ needs.build.outputs.commit_author }}
         run: |
-          # Only fires when the webhook handoff itself failed (build + CI were
-          # green). Once deploy.sh is triggered it owns the message's final state.
           bash .github/scripts/discord-notify.sh edit 15158332 \
             "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-} — CI green + images pushed, but the VPS deploy trigger failed (see Actions logs)" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
+
+  # The slow suite (real flows vs a throwaway Postgres + the built app) no longer
+  # holds the release: the fast gate above (typecheck, lint, unit, build, image
+  # smoke) ships, and this job decides afterwards. A failure puts the previous
+  # release back through the same journaled rollback path the post-deploy guard
+  # uses (webhook-server.cjs `rollback`). Safe because migrations are additive
+  # (scripts/check-migrations-additive.mjs gates them in web-ci).
+  post-deploy-verify:
+    needs: [integration, deploy-gate]
+    if: always() && github.ref == 'refs/heads/main' && needs.deploy-gate.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+      - name: Integration passed — release stands
+        if: needs.integration.result == 'success'
+        run: echo "Post-deploy verification passed; nothing to roll back."
+      - name: Integration cancelled — superseded by a newer commit
+        if: needs.integration.result == 'cancelled' || needs.integration.result == 'skipped'
+        run: echo "Verification did not complete (${{ needs.integration.result }}); the newer run owns the decision."
+      - name: Integration failed — roll the release back
+        if: needs.integration.result == 'failure'
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ROLLBACK_REASON: integration suite failed after deploy (run ${{ github.run_id }})
+        run: |
+          echo "::error::Post-deploy integration suite failed — rolling production back to the previous release."
+          node .github/scripts/release-webhook.mjs rollback
+          bash .github/scripts/discord-notify.sh post 15158332 \
+            "↩️ [PRODUCTION] ${GITHUB_SHA:0:7} — post-deploy integration FAILED; rolled back to the previous release" \
+            "$ROLLBACK_REASON" "ci" || true
+          exit 1
+
+  cache-maintenance:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/build-cache.yml
+    permissions:
+      contents: read
+      packages: write
+
+  release-completion:
+    needs: deploy-gate
+    if: vars.DEPLOY_WAIT_FOR_RELEASE == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+      - name: Wait for validated host release
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: node .github/scripts/release-webhook.mjs wait

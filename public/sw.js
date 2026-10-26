@@ -101,6 +101,17 @@ self.addEventListener('activate', (event) => {
       const keep = new Set([STATIC_CACHE, IMAGE_CACHE]);
       const keys = await caches.keys();
       await Promise.all(keys.filter((k) => k.startsWith('rmh-') && !keep.has(k)).map((k) => caches.delete(k)));
+      // Navigation preload: start the document request in parallel with the
+      // worker's own boot, so a navigation that wakes a sleeping worker no longer
+      // waits on that start-up (tens of ms on a phone) before the network fetch.
+      // The fetch handler MUST then answer every GET navigation with
+      // `preloadResponse` — a navigation the worker declines is requested a
+      // second time, which would replay a one-time `/api/auth/*` link.
+      try {
+        await self.registration.navigationPreload?.enable();
+      } catch (_) {
+        /* unsupported (older Safari): navigations simply fetch after boot */
+      }
       await self.clients.claim();
     })()
   );
@@ -473,6 +484,16 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  // A navigation to an API/auth URL (OAuth callback, magic link, a file
+  // download) is passed straight through — but through `respondWith`, consuming
+  // the preload, not by returning: declining a navigation with preload enabled
+  // makes the browser request it again. No offline fallback: the offline page is
+  // not a meaningful answer to an API URL.
+  if (request.mode === 'navigate' && url.pathname.startsWith('/api/')) {
+    event.respondWith((async () => (await event.preloadResponse) || fetch(request))());
+    return;
+  }
+
   // Never intercept API, auth, or streaming endpoints.
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io')) return;
 
@@ -481,7 +502,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       (async () => {
         try {
-          const response = await fetch(request);
+          const response = (await event.preloadResponse) || (await fetch(request));
           // Keep the offline page itself fresh whenever it loads normally.
           if (url.pathname === OFFLINE_URL && response.ok) {
             const cache = await caches.open(STATIC_CACHE);

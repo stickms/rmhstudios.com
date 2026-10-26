@@ -1,0 +1,15 @@
+# rmhstudios — run rmh-disk-cleanup.service every six hours. Install instructions
+# live in rmh-disk-cleanup.service.
+[Unit]
+Description=rmhstudios disk cleanup every six hours
+
+[Timer]
+# 00:23, 06:23, 12:23, 18:23 — off the hour, and spread so it never lines up with
+# a deploy's pull. The unit also skips itself while a deploy holds the lock.
+OnCalendar=*-*-* 00/6:23:00
+RandomizedDelaySec=10min
+# Run a missed cleanup after downtime instead of waiting for the next slot.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

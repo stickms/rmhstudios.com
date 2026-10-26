@@ -11,6 +11,8 @@
  * tests next to this file) than a general parser wrestling with namespaces.
  */
 
+import { decodeNumericEntities } from '../../html-entities';
+
 /** One parsed feed entry: leaf field text keyed by lower-cased tag name. */
 export interface FeedItem {
   /** e.g. { title, link, description, 'dc:date', 'geo:lat', 'geo:long' } */
@@ -26,9 +28,7 @@ function decode(raw: string): string {
   let s = raw.trim();
   // Unwrap one or more CDATA sections, keeping their contents.
   s = s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, (_m, inner) => inner);
-  s = s
-    .replace(/&#(\d+);/g, (_m, code) => String.fromCharCode(parseInt(code, 10)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_m, code) => String.fromCharCode(parseInt(code, 16)))
+  s = decodeNumericEntities(s)
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')

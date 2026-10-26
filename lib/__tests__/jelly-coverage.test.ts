@@ -97,6 +97,26 @@ const JELLY_OFF_ALLOW = new Map<string, string>([
     'app/routes/jelly.tsx',
     'the /jelly material lab DEMONSTRATES the opt-out: one specimen is deliberately rendered with the material off, beside the live ones',
   ],
+  [
+    'components/ui/select.tsx',
+    'a dropdown ROW is text inside one rounded panel, not a surface: it must not be a rim slab or a soft body (it would draw its own bevel and squash inside the panel); only its hover glow (data-evert) wakes',
+  ],
+  [
+    'components/site/LanguageSwitcher.tsx',
+    'a dropdown ROW is text inside one rounded panel, not a surface: it must not be a rim slab or a soft body (it would draw its own bevel and squash inside the panel); only its hover glow (data-evert) wakes',
+  ],
+  [
+    'components/calendar/PersonPicker.tsx',
+    'a dropdown ROW is text inside one rounded panel, not a surface: it must not be a rim slab or a soft body (it would draw its own bevel and squash inside the panel); only its hover glow (data-evert) wakes',
+  ],
+  [
+    'components/homes/LocationSearch.tsx',
+    'a dropdown ROW is text inside one rounded panel, not a surface: it must not be a rim slab or a soft body (it would draw its own bevel and squash inside the panel); only its hover glow (data-evert) wakes',
+  ],
+  [
+    'components/rideshare/LocationSearch.tsx',
+    'a dropdown ROW is text inside one rounded panel, not a surface: it must not be a rim slab or a soft body (it would draw its own bevel and squash inside the panel); only its hover glow (data-evert) wakes',
+  ],
 ]);
 
 type Counts = Record<string, number>;

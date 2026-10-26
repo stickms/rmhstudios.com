@@ -46,7 +46,7 @@ export function LiveNowRail({ className }: { className?: string }) {
     <AsyncReveal
       show={spaces.length > 0}
       as="section"
-      className={cn('glass-fill mx-3 mt-3 rounded-site p-3', className)}
+      className={cn('glass-fill mx-3 mt-3 rounded-site p-4', className)}
       aria-label={t('live-now', { defaultValue: 'Live now' })}
     >
       <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-danger">

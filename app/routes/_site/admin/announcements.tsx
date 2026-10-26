@@ -240,7 +240,7 @@ function AdminAnnouncementsPage() {
     >
       <AdminBody width="narrow">
         {/* Create form — a singular composer panel gets the L2 pane. */}
-        <div className="glass-pane space-y-3 rounded-site p-4">
+        <div className="glass-pane space-y-3 rounded-site p-5">
           <div className="relative">
             <Input
               className="pr-12"
@@ -289,7 +289,7 @@ function AdminAnnouncementsPage() {
 
           {/* Poll creator */}
           {attachment === 'poll' && (
-            <div className="glass-fill space-y-2 rounded-site p-3">
+            <div className="glass-fill space-y-2 rounded-site p-4">
               <div className="flex items-center justify-between gap-2">
                 <span className="site-section-label">
                   {t('poll-button', { defaultValue: 'Poll' })}
@@ -392,7 +392,7 @@ function AdminAnnouncementsPage() {
 
           {/* GIF input */}
           {attachment === 'gif' && (
-            <div className="glass-fill space-y-2 rounded-site p-3">
+            <div className="glass-fill space-y-2 rounded-site p-4">
               <div className="flex items-center justify-between gap-2">
                 <span className="site-section-label">
                   {t('image-gif-label', { defaultValue: 'Image / GIF' })}

@@ -402,7 +402,7 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-ladder-worker
     # Resource limits — starting point (audit §5.2). Also hosts the data-lifecycle
     # cleanup cron (lib/cleanup.server.ts). No inbound sockets, so no nofile bump.
-    mem_limit: 512m
+    mem_limit: 768m
     mem_reservation: 128m
     cpus: 0.75
     # Batch cron — deprioritized below web so a 12h pipeline run can't starve SSR
@@ -415,6 +415,10 @@ services:
       # silently opened a SECOND 20-connection pool. Alerts run a few queries per
       # cycle, so 3 is plenty. Set after env_file so it wins over a shared value.
       - DATABASE_POOL_SIZE=3
+      # Node's default heap cap is ~half the cgroup (~256 MB at 512m). The pipeline
+      # the worker runs at every boot with a stale scrape outgrew it and the worker
+      # crash-looped on "JavaScript heap out of memory". Same 75% rule as socket.
+      - NODE_OPTIONS=--max-old-space-size=576
     command: ['node', 'dist-server/server/ladder-worker/index.cjs']
 
   # ─── Homes Worker (RMHHomes external-listing scraper cron) ─────────────────

@@ -19,6 +19,7 @@
  * "keeps its box", never "removed": removing a sticky header reflows the whole page up by its height.
  */
 import { CAPTURE_EXCLUDE_SELECTORS } from '@/lib/eversion/constants';
+import type { JellyTier } from '@/lib/jelly/tiers';
 
 /**
  * Removed from the picture outright: the engine's own canvases and every jelly layer — the haze canvases, the CSS flow
@@ -56,6 +57,8 @@ export interface SceneOptions {
   onShot: (shot: SceneShot) => void;
   /** Return false to refuse a capture right now (hidden, reduced effects, hub open…). */
   canCapture: () => boolean;
+  /** The capture budget in force (re-read before every capture); omitted = the `full` tier's. */
+  policy?: () => ScenePolicy | null;
   /** Test seam: a capture function with the shape of `createCapture().captureViewport`. */
   capture?: (
     exclude: readonly string[],
@@ -74,6 +77,25 @@ export interface CaptureOutcome {
 
 /** Never capture more often than this. */
 export const MIN_INTERVAL_MS = 1500;
+
+/** How often, and how sharply, a tier may take a picture. */
+export interface ScenePolicy {
+  minIntervalMs: number;
+  scaleCap: number;
+}
+/**
+ * The capture budget per jelly tier. A picture is ~100–300 ms of time-sliced main-thread work on a desktop and several
+ * times that on a phone, and only the BEVEL samples it, so lower tiers take fewer, softer pictures: a coarse pointer
+ * (a tablet, a touch laptop) half as often at device-independent scale, and a handheld none at all — its rims keep the
+ * lit edge, the RGB band and the dent, and simply do not refract (the same look as before the first picture lands).
+ */
+export const SCENE_POLICY: Readonly<Record<JellyTier, ScenePolicy | null>> = {
+  full: { minIntervalMs: MIN_INTERVAL_MS, scaleCap: 1.25 },
+  coarse: { minIntervalMs: 2 * MIN_INTERVAL_MS, scaleCap: 1 },
+  handheld: null,
+  lite: null,
+  off: null,
+};
 /** A request waits this long for more requests before it runs (a scroll or a burst of mutations settles first). */
 export const SETTLE_MS = 260;
 const CAPTURE_TIMEOUT_MS = 4000;
@@ -137,8 +159,10 @@ export function createSceneProvider(options: SceneOptions): SceneProvider {
       return;
     }
     if (failures >= MAX_FAILURES || !options.canCapture()) return;
+    const policy = options.policy ? options.policy() : SCENE_POLICY.full;
+    if (!policy) return;
     const wait =
-      Math.max(lastAt + MIN_INTERVAL_MS, requestedAt + SETTLE_MS) - win.performance.now();
+      Math.max(lastAt + policy.minIntervalMs, requestedAt + SETTLE_MS) - win.performance.now();
     if (wait > 0) {
       schedule(wait);
       return;
@@ -150,7 +174,12 @@ export function createSceneProvider(options: SceneOptions): SceneProvider {
     const height = win.innerHeight;
     const startedRevision = revision;
     try {
-      const out = await capture(SCENE_EXCLUDE, SCENE_HIDE, SCALE_CAP, CAPTURE_TIMEOUT_MS);
+      const out = await capture(
+        SCENE_EXCLUDE,
+        SCENE_HIDE,
+        Math.min(SCALE_CAP, policy.scaleCap),
+        CAPTURE_TIMEOUT_MS,
+      );
       if (
         disposed ||
         startedRevision !== revision ||

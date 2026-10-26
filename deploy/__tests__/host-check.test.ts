@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -9,11 +9,13 @@ import { describe, expect, it } from 'vitest';
 // flock and a fake /proc/meminfo, and records what it would send on-call.
 
 const SCRIPT = resolve(__dirname, '../host-check.sh');
+const shellPath = (path: string) => path.replaceAll('\\', '/').replace(/^([A-Za-z]):/, (_, drive: string) => `/${drive.toLowerCase()}`);
 
 function harness() {
   const dir = mkdtempSync(join(tmpdir(), 'host-check-'));
   const bin = join(dir, 'bin');
-  execFileSync('mkdir', ['-p', bin, join(dir, 'state')]);
+  mkdirSync(bin);
+  mkdirSync(join(dir, 'state'));
   const stub = (name: string, body: string) => {
     writeFileSync(join(bin, name), `#!/usr/bin/env bash\n${body}\n`);
     chmodSync(join(bin, name), 0o755);
@@ -30,7 +32,7 @@ function harness() {
   stub('journalctl', 'printf "%s" "${FAKE_KERNEL:-}"');
   stub('flock', '[ "${FAKE_DEPLOYING:-0}" = 1 ] && exit 1 || exit 0');
   const sent = join(dir, 'sent.log');
-  stub('send', `echo "$*" >> ${sent}`);
+  stub('send', 'echo "$*" >> "$HOST_CHECK_SENT"');
   const meminfo = join(dir, 'meminfo');
   const lock = join(dir, 'autodeploy-production.lock');
   writeFileSync(lock, '');
@@ -38,13 +40,16 @@ function harness() {
   const run = (over: { disk?: number; availPct?: number; health?: string; restarts?: number; kernel?: string; deploying?: boolean } = {}) => {
     writeFileSync(meminfo, `MemTotal: 1000000 kB\nMemAvailable: ${(over.availPct ?? 50) * 10000} kB\n`);
     writeFileSync(sent, '');
-    execFileSync('bash', [SCRIPT], {
+    execFileSync(process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' : '/bin/bash', ['--noprofile', '--norc', '-c', 'PATH="$HOST_CHECK_BIN:/usr/bin:/bin"; export PATH; exec bash "$HOST_CHECK_SCRIPT"'], {
       env: {
-        PATH: `${bin}:/usr/bin:/bin`,
-        STATE_DIR: join(dir, 'state'),
-        HOST_CHECK_SEND: join(bin, 'send'),
-        MEMINFO: meminfo,
-        DEPLOY_LOCKS: lock,
+        ...process.env,
+        HOST_CHECK_BIN: shellPath(bin),
+        HOST_CHECK_SCRIPT: shellPath(SCRIPT),
+        HOST_CHECK_SENT: shellPath(sent),
+        STATE_DIR: shellPath(join(dir, 'state')),
+        HOST_CHECK_SEND: shellPath(join(bin, 'send')),
+        MEMINFO: shellPath(meminfo),
+        DEPLOY_LOCKS: shellPath(lock),
         FAKE_DISK: String(over.disk ?? 40),
         FAKE_HEALTH: over.health ?? 'healthy',
         FAKE_RESTARTS: String(over.restarts ?? 0),

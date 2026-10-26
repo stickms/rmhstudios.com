@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { prisma } from '@/lib/prisma.server';
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
@@ -65,7 +66,7 @@ export async function listBookmarks(
   viewerId: string,
   opts: { cursor?: string | null; limit?: number } = {},
 ): Promise<{ items: FeedItem[]; nextCursor: string | null; hasMore: boolean }> {
-  const limit = Math.min(opts.limit ?? 20, 50);
+  const limit = pageSize(opts.limit);
   // Bookmarks live in `saved_item` (entityType 'rmhark') since the
   // 20260803210000 migration folded the old `rmheet_bookmark` table in. That
   // table is polymorphic, so there is no Prisma relation to `include` — the
@@ -78,7 +79,8 @@ export async function listBookmarks(
   // past the bound the page returns short with a cursor at the last save scanned.
   const visible = await viewerVisiblePostWhere(viewerId);
   const batch = (limit + 1) * 2;
-  const live: { id: string; rmhark: Awaited<ReturnType<typeof prisma.rMHark.findMany>>[number] }[] = [];
+  const live: { id: string; rmhark: Awaited<ReturnType<typeof prisma.rMHark.findMany>>[number] }[] =
+    [];
   let cursor = opts.cursor ?? null;
   let exhausted = false;
   for (let round = 0; round < BOOKMARK_SCAN_ROUNDS && live.length <= limit; round++) {

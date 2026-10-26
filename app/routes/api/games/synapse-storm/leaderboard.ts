@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
@@ -17,7 +18,7 @@ export const Route = createFileRoute('/api/games/synapse-storm/leaderboard')({
         async ({ request }) => {
           const { searchParams } = new URL(request.url);
           const limitParam = searchParams.get('limit');
-          const limit = Math.min(50, Math.max(1, parseInt(limitParam || '20', 10)));
+          const limit = pageSize(limitParam, 20, 50);
 
           const entries = await prisma.synapseStormPlayer.findMany({
             orderBy: { highScore: 'desc' },

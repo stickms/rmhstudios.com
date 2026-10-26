@@ -2,6 +2,7 @@ import { classifyUSLocation } from '../classifiers/us-location';
 import type { VerificationEvidence } from '../verification';
 import { politeFetch } from './http';
 import type { AdapterContext, DiscoverResult, NormalizedJob, SourceAdapter } from './types';
+import { decodeNumericEntities } from '../../html-entities';
 
 export const greenhouseBoardUrl = (slug: string) =>
   `https://boards-api.greenhouse.io/v1/boards/${slug}/jobs?content=true`;
@@ -9,10 +10,7 @@ export const greenhouseBoardUrl = (slug: string) =>
 function decodeEntities(s: string): string {
   if (!s) return s;
   // Decode numeric entities first (both decimal &#123; and hex &#x123;)
-  let result = s.replace(/&#(\d+);/g, (match, code) => String.fromCharCode(parseInt(code, 10)));
-  result = result.replace(/&#x([0-9a-fA-F]+);/g, (match, code) =>
-    String.fromCharCode(parseInt(code, 16)),
-  );
+  let result = decodeNumericEntities(s);
   // Decode standard HTML entities
   result = result.replace(/&lt;/g, '<');
   result = result.replace(/&gt;/g, '>');

@@ -93,14 +93,36 @@ export function substep(dt: f64, held: i32, gx: f64, gy: f64, vx: f64, vy: f64, 
   return pinch;
 }
 
+// Bilinear sample of a scalar grid at rest position (x, y), clamped to the grid; same as `DoughBody` in lib/dough.ts.
+@inline function sample(grid: i32, x: f64, y: f64): f64 {
+  const fx = (x + EXTENT) / H;
+  const fy = (y + EXTENT) / H;
+  const i0 = max(0, min(N - 2, i32(Math.floor(fx))));
+  const j0 = max(0, min(N - 2, i32(Math.floor(fy))));
+  const tx = Math.min(1, Math.max(0, fx - f64(i0)));
+  const ty = Math.min(1, Math.max(0, fy - f64(j0)));
+  const c = j0 * N + i0;
+  return (1 - tx) * (1 - ty) * get(grid, c) + tx * (1 - ty) * get(grid, c + 1) + (1 - tx) * ty * get(grid, c + N) + tx * ty * get(grid, c + N + 1);
+}
+
+// Same displacement, per-cell reach cap and pull-back inversion as `DoughBody.derive` in lib/dough.ts (LIMB_REACH 0.14,
+// 16 passes damped by 0.8). Grids 6/7/8 stay indexed by rest position; the shader field is the inverse on the screen.
 export function derive(): void {
   for (let c = 0; c < CELLS; c++) {
     let x = get(0, c) + get(4, c), y = get(1, c) + get(5, c);
     const m = Math.sqrt(x * x + y * y);
     if (m > 1e-9) {
-      const q = m / 0.36;
-      const q2 = q * q;
-      const s = 1 / Math.sqrt(Math.sqrt(1 + q2 * q2));
+      const gx = -EXTENT + f64(c % N) * H;
+      const gy = -EXTENT + f64(c / N) * H;
+      const r0 = Math.sqrt(gx * gx + gy * gy);
+      // reachFor(r0): soft-min(0.36, 1.14 - r0), floored at 0.
+      const reach = Math.max(0.0, -Math.log(Math.exp(-24 * 0.36) + Math.exp(-24 * (1.14 - r0))) / 24);
+      let s = 0.0;
+      if (reach > 1e-6) {
+        const q = m / reach;
+        const q2 = q * q;
+        s = 1 / Math.sqrt(Math.sqrt(1 + q2 * q2));
+      }
       x *= s;
       y *= s;
     }
@@ -116,11 +138,27 @@ export function derive(): void {
       put(8, c, -0.12 * div);
     }
   }
-  for (let c = 0; c < CELLS; c++) {
-    const address = state.dataStart + usize((12 * CELLS + 4 * c) * 4);
-    store<f32>(address, f32(get(6, c)));
-    store<f32>(address + 4, f32(get(7, c)));
-    store<f32>(address + 8, f32(get(8, c)));
-    store<f32>(address + 12, 0);
+  for (let j = 0; j < N; j++) {
+    const gy = -EXTENT + f64(j) * H;
+    for (let i = 0; i < N; i++) {
+      const gx = -EXTENT + f64(i) * H;
+      let X = gx, Y = gy, vx = 0.0, vy = 0.0;
+      if (gx * gx + gy * gy <= 1.26 * 1.26) {
+        for (let pass = 0; pass < 16; pass++) {
+          vx = sample(6, X, Y);
+          vy = sample(7, X, Y);
+          const dx = 0.8 * (gx - vx - X);
+          const dy = 0.8 * (gy - vy - Y);
+          X += dx;
+          Y += dy;
+          if (Math.abs(dx) < 2e-4 && Math.abs(dy) < 2e-4) break;
+        }
+      }
+      const address = state.dataStart + usize((12 * CELLS + 4 * (j * N + i)) * 4);
+      store<f32>(address, f32(vx));
+      store<f32>(address + 4, f32(vy));
+      store<f32>(address + 8, f32(sample(8, X, Y)));
+      store<f32>(address + 12, 0);
+    }
   }
 }

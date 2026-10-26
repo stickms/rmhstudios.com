@@ -207,7 +207,7 @@ function ManageAlbumPage() {
     >
       <AdminBody width="narrow">
         {/* Album details — a singular editing panel gets the L2 glass pane. */}
-        <div className="glass-pane flex flex-col gap-3 rounded-site p-4">
+        <div className="glass-pane flex flex-col gap-3 rounded-site p-5">
           <Input
             type="text"
             value={title}

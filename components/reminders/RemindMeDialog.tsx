@@ -110,6 +110,8 @@ export default function RemindMeDialog({
           {presets.map((p) => (
             <MenuItem
               key={p.id}
+              // A list in a dialog, not a dropdown panel that clips its rows: keep the row's own shape.
+              className="rounded-site-sm"
               icon={p.icon}
               disabled={saving}
               hint={resolvePreset(p.id).toLocaleString(undefined, {

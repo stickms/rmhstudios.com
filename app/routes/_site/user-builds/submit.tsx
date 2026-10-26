@@ -140,7 +140,7 @@ function SubmitBuildContent() {
       wide
     >
       <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
-        <Reveal className="glass-pane rounded-site p-4 sm:p-6">
+        <Reveal className="glass-pane rounded-site p-5 sm:p-6">
           <BuildForm key={build?.id} build={build ?? undefined} />
         </Reveal>
         {!isEditing && (

@@ -230,8 +230,8 @@ export function LiquidTabs({
   // distributed, and `pointer-coarse:min-h-11` keeps the 44px touch floor.
   const pad =
     size === 'sm'
-      ? 'min-h-9 pointer-coarse:min-h-11 px-3 py-2 text-xs'
-      : 'min-h-10 pointer-coarse:min-h-11 px-3.5 py-2.5 text-sm';
+      ? 'min-h-9 pointer-coarse:min-h-11 px-3.5 py-2 text-xs'
+      : 'min-h-10 pointer-coarse:min-h-11 px-4.5 py-2.5 text-sm';
 
   const equal = tabs.length <= EQUAL_SEGMENT_MAX;
 

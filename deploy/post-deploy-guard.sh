@@ -34,6 +34,8 @@ MINUTES="${GUARD_MINUTES:-15}"
 MIN_MINUTES="${GUARD_MIN_MINUTES:-3}"
 INTERVAL="${GUARD_INTERVAL_SECONDS:-60}"
 GIT_BIN="${GIT_BIN:-git}"
+PREV_WEB_REF="${PREV_WEB_REF:-}"
+PREV_FULL_REF="${PREV_FULL_REF:-}"
 
 log() { echo "[post-deploy-guard $(date -u +%H:%M:%S)] $*"; }
 
@@ -46,8 +48,8 @@ log "watching ${DEPLOYED} for ${MINUTES} min (rollback target ${PREVIOUS:0:12})"
 bad=0
 for minute in $(seq 1 "$MINUTES"); do
     sleep "$INTERVAL"
-    live=$("$GIT_BIN" -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || echo "")
-    if [ -n "$live" ] && [ "${live:0:7}" != "${DEPLOYED:0:7}" ]; then
+    live=$(node "$REPO_DIR/deploy/release-state.mjs" read "${DEPLOY_STATE_DIR:-$REPO_DIR/.deploy/releases}" live id) || exit 1
+    if [ -z "${DEPLOY_EXPECT_LIVE_ID:-}" ] || [ "$live" != "$DEPLOY_EXPECT_LIVE_ID" ]; then
         log "a newer deploy (${live}) took over — standing down"; exit 0
     fi
     verdict=$(curl -fsS --max-time 15 -H @<(printf 'x-internal-secret: %s\n' "$secret") "${URL}?since=${SINCE}" 2>/dev/null) \
@@ -63,7 +65,12 @@ for minute in $(seq 1 "$MINUTES"); do
         bash "$REPO_DIR/deploy/oncall-send.sh" alert firing D05 2 \
             "Release ${DEPLOYED} auto-rolled back on alarms" \
             "Within ${minute} min of deploy: ${reasons}. Redeploying ${PREVIOUS:0:12}." || true
-        POST_DEPLOY_GUARD=0 ALLOW_OLDER_DEPLOY=1 exec bash "$REPO_DIR/deploy.sh" production "$PREVIOUS"
+        # Re-check the serving release after acquiring the deployment lock.
+        POST_DEPLOY_GUARD=0 ALLOW_OLDER_DEPLOY=1 exec env \
+            -u DEPLOY_RELEASE_ID -u DEPLOY_REQUESTED_AT -u PREV_DEPLOYED_SHA -u PREV_RELEASE_ID \
+            -u PREV_WEB_REF -u PREV_FULL_REF -u RELEASE_EXPECT_WEB_DIGEST -u RELEASE_EXPECT_FULL_DIGEST \
+            RELEASE_EXPECT_WEB_DIGEST="${PREV_WEB_REF##*@}" RELEASE_EXPECT_FULL_DIGEST="${PREV_FULL_REF##*@}" \
+            bash "$REPO_DIR/deploy.sh" production "$PREVIOUS"
     fi
 done
 log "window over, ${DEPLOYED} looks healthy"

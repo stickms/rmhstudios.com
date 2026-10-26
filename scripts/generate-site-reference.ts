@@ -40,7 +40,7 @@ const GENERATED_HEADER = [
 
 function emit(path: string, content: string): void {
   const previous = existsSync(path) ? readFileSync(path, 'utf8') : null;
-  if (previous === content) return;
+  if (previous?.replaceAll('\r\n', '\n') === content) return;
   if (CHECK) {
     stale.push(relative(ROOT, path));
     return;

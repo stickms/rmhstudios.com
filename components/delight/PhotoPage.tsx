@@ -148,7 +148,7 @@ export function PhotoPage() {
           ) : (
             <ul className="grid gap-3 sm:grid-cols-2">
               {d.nominations.map((n) => (
-                <li key={n.id} className="glass-fill space-y-3 rounded-site p-3">
+                <li key={n.id} className="glass-fill space-y-3 rounded-site p-4">
                   <img
                     src={n.imageUrl}
                     alt={n.caption}
@@ -210,7 +210,7 @@ export function PhotoPage() {
             </h2>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {older.map((w) => (
-                <li key={w.id} className="glass-fill space-y-2 rounded-site p-3">
+                <li key={w.id} className="glass-fill space-y-2 rounded-site p-4">
                   <img
                     src={w.imageUrl}
                     alt={w.caption}

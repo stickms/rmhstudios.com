@@ -91,7 +91,7 @@ function QuickList({
   renderMeta: (row: JobRow) => React.ReactNode;
 }) {
   return (
-    <section className="rl-quicklist glass-fill rounded-site p-4 sm:p-5">
+    <section className="rl-quicklist glass-fill rounded-site p-5 sm:p-5">
       <h2 className="site-section-label">{title}</h2>
       {rows.length === 0 ? (
         // Canonical EmptyState, as /messages already uses — this was a bare

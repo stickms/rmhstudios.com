@@ -18,6 +18,7 @@ import { Pool } from 'pg';
 import { recordQuery, setGauge } from '../../lib/perf/process-metrics';
 import { guardPool } from '../../lib/perf/process-guards';
 import type { Logger } from './logger';
+import { envInt } from './config';
 
 /**
  * Times every query for the hub's `/internal/metrics` (the same idea as the web
@@ -50,7 +51,7 @@ export function createServerPrismaClient(logger: Logger): PrismaClient {
     throw new Error('DATABASE_URL environment variable is required');
   }
 
-  const max = parseInt(process.env.SERVER_DB_POOL_SIZE || '5', 10);
+  const max = envInt('SERVER_DB_POOL_SIZE', 5);
   const poolConfig = {
     connectionString,
     max,

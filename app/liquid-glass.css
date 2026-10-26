@@ -131,7 +131,8 @@
   /* The engine's slab. The canvas is the host's last child, painted BEHIND its content: `isolation` makes the host the
      stacking context the negative z-index is resolved in, so the canvas sits above the host's own tint and below every
      in-flow child, positioned or not. The shader draws the bevel and rim light, so the static CSS edge and coat
-     step aside; the host keeps its tint (the interior shows through it) and its hairline border. There is no drop shadow anywhere. */
+     step aside; the host keeps its tint (the interior shows through it), and its hairline border turns transparent (the
+     molded rim, below). There is no drop shadow anywhere. */
   .liquid-glass-canvas {
     position: absolute;
     left: 0;
@@ -182,6 +183,13 @@
     ) {
     background-image: var(--jelly-floor, none);
     background-size: var(--jelly-floor-size, auto);
+  }
+  /* The molded rim (2026-10-25): while the shader draws a surface's edge, the static hairline would outline the slab the
+     rim dissolves into the ground, so it goes transparent. Its width stays (layout never changes). The degraded tiers
+     remove the canvas and this attribute with it, so their solid edge stays; a Tailwind border colour (utilities layer)
+     still wins where a component's border means something (an error, a selection). */
+  [data-liquid-canvas='on']:not([data-liquid-material='off']) {
+    border-color: transparent;
   }
 
   /* A separate clipped carrier owns the moving light. No pseudo collisions,
@@ -251,4 +259,13 @@
   :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset) {
     background-image: none !important;
   }
+}
+
+/* The molded rim, for utilities: a component that spells its edge `border border-site-border` (the neutral hairline) keeps
+   that edge through the components layer above, because utilities outrank it, and the shader's lit rim then sits on top of
+   a hairline — two edges where the slab should dissolve into the ground. Unlayered, so it beats the utility; matches the
+   exact neutral token only, so a border that MEANS something (danger, accent, a selection) stays, and the degraded tiers,
+   which remove `data-liquid-canvas`, keep their solid edge. */
+[data-liquid-canvas='on']:not([data-liquid-material='off'])[class~='border-site-border'] {
+  border-color: transparent;
 }

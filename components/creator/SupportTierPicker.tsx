@@ -105,7 +105,7 @@ export function SupportTierPicker({
         ) : (
           <div className="space-y-3">
             {tiers.map((tier) => (
-              <div key={tier.id} className="rounded-site glass-fill p-4 space-y-3">
+              <div key={tier.id} className="rounded-site glass-fill p-5 space-y-3">
                 <div className="flex items-baseline justify-between gap-3">
                   <h3 className="font-semibold text-site-text">{tier.name}</h3>
                   <span className="flex items-center gap-1 text-sm font-semibold text-site-text tabular-nums">

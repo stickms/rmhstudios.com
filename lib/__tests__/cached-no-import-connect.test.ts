@@ -88,10 +88,14 @@ describe('cached.server import is connection-free', () => {
 describe('a script that imports cached.server and does nothing exits', () => {
   it('exits on its own even with REDIS_URL set to an unreachable host', () => {
     const root = path.resolve(__dirname, '../..');
-    const tsx = path.join(root, 'node_modules/.bin/tsx');
     const res = spawnSync(
-      tsx,
-      ['-e', "import('./lib/cached.server.ts').then(() => console.log('imported'))"],
+      process.execPath,
+      [
+        '--import',
+        'tsx',
+        '-e',
+        "import('./lib/cached.server.ts').then(() => console.log('imported'))",
+      ],
       {
         cwd: root,
         env: { ...process.env, REDIS_URL: 'redis://127.0.0.1:1', REDIS_STATE_URL: '' },

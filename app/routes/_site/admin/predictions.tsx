@@ -125,7 +125,7 @@ function AdminPredictionsPage() {
                 <EmptyState title={t('none-pending', { defaultValue: 'Nothing waiting for review.' })} />
               ) : (
                 pending.map((m) => (
-                  <div key={m.id} className="glass-fill flex flex-col gap-3 rounded-site p-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div key={m.id} className="glass-fill flex flex-col gap-3 rounded-site p-5 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <h3 className="text-base font-semibold text-site-text">{m.title}</h3>
                       {m.description && <p className="mt-1 text-sm text-site-text-muted">{m.description}</p>}
@@ -156,7 +156,7 @@ function AdminPredictionsPage() {
                 <EmptyState title={t('none-open', { defaultValue: 'No open markets.' })} />
               ) : (
                 open.map((m) => (
-                  <div key={m.id} className="glass-fill flex flex-col gap-3 rounded-site p-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div key={m.id} className="glass-fill flex flex-col gap-3 rounded-site p-5 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <h3 className="flex items-center gap-2 text-base font-semibold text-site-text">
                         {m.title}

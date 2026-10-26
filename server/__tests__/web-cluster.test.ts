@@ -86,6 +86,7 @@ function start(files: Record<string, string>, port: number, workers = 2) {
     env: {
       ...process.env,
       WEB_SERVER_DIR: dir,
+      WEB_WORKER_STATE_FILE: join(dir, 'worker-state.json'),
       FIXTURE_DIR: dir,
       PORT: String(port),
       NITRO_CLUSTER_WORKERS: String(workers),

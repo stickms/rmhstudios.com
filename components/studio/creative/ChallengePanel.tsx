@@ -75,7 +75,7 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
           <button
             type="button"
             onClick={() => onOpen(c.id)}
-            className="glass-fill glass-interactive w-full rounded-(--app-radius) p-3 text-left"
+            className="glass-fill glass-interactive w-full rounded-(--app-radius) p-4 text-left"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium text-(--app-text)">{c.title}</span>
@@ -166,7 +166,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
       </div>
 
       {c.phase === 'open' && (
-        <div className="glass-pane space-y-2 rounded-(--app-radius) p-3">
+        <div className="glass-pane space-y-2 rounded-(--app-radius) p-4">
           <p className="text-sm font-medium text-(--app-text)">
             {c.myEntryId
               ? t('entry-replace', { defaultValue: 'Replace your entry' })
@@ -220,7 +220,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
 
       <ul className="space-y-2">
         {c.entries.map((e) => (
-          <li key={e.id} className="glass-fill rounded-(--app-radius) p-3">
+          <li key={e.id} className="glass-fill rounded-(--app-radius) p-4">
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-center gap-1.5 font-medium text-(--app-text)">
                 {e.isWinner && (

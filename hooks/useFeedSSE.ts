@@ -79,8 +79,22 @@ function closeConnection() {
   }
 }
 
-function handleBeforeUnload() {
+// `pagehide`, not `beforeunload`: a `beforeunload` listener makes the page
+// ineligible for the back/forward cache in Firefox, and an open EventSource does
+// the same everywhere — so the stream is closed as the page is hidden and
+// reopened if the browser restores it from the cache (`pageshow.persisted`),
+// which is what makes back/forward instant instead of a full reload.
+function handlePageHide() {
   closeConnection();
+}
+
+function handlePageShow(e: PageTransitionEvent) {
+  if (!e.persisted) return;
+  const s = getState();
+  if (s.refCount > 0 && !s.es) {
+    s.retries = 0;
+    openConnection();
+  }
 }
 
 function openConnection() {
@@ -92,9 +106,11 @@ function openConnection() {
   const es = new EventSource(SSE_URL);
   s.es = es;
 
-  // Clean up on page unload to avoid "connection interrupted" errors
-  window.removeEventListener("beforeunload", handleBeforeUnload);
-  window.addEventListener("beforeunload", handleBeforeUnload);
+  // Close on page hide to avoid "connection interrupted" errors (and keep bfcache eligibility)
+  window.removeEventListener("pagehide", handlePageHide);
+  window.addEventListener("pagehide", handlePageHide);
+  window.removeEventListener("pageshow", handlePageShow);
+  window.addEventListener("pageshow", handlePageShow);
 
   es.addEventListener("connected", () => {
     getState().retries = 0;
@@ -131,7 +147,8 @@ function unsubscribe() {
   s.refCount = Math.max(0, s.refCount - 1);
   if (s.refCount === 0) {
     closeConnection();
-    window.removeEventListener("beforeunload", handleBeforeUnload);
+    window.removeEventListener("pagehide", handlePageHide);
+    window.removeEventListener("pageshow", handlePageShow);
     s.retries = 0;
   }
 }

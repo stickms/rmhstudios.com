@@ -273,7 +273,7 @@ export function CommunityColumn({
  {community.announcements.map((a) => (
  <li
  key={a.id}
- className="rounded-site glass-fill p-3"
+ className="rounded-site glass-fill p-4"
  >
  <div className="flex items-start gap-2">
  <UserAvatar

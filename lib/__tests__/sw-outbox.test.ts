@@ -173,6 +173,7 @@ interface Harness {
   setAppBadge: ReturnType<typeof vi.fn>;
   clearAppBadge: ReturnType<typeof vi.fn>;
   showNotification: ReturnType<typeof vi.fn>;
+  enableNavigationPreload: ReturnType<typeof vi.fn>;
   dispatch: (type: string, event: Record<string, unknown>) => Promise<PromiseSettledResult<unknown>[]>;
   entries: () => Promise<OutboxEntry[]>;
   seed: (entry: Partial<OutboxEntry>) => Promise<void>;
@@ -187,6 +188,7 @@ function loadWorker(options: { badging?: boolean } = {}): Harness {
   const setAppBadge = vi.fn(() => Promise.resolve());
   const clearAppBadge = vi.fn(() => Promise.resolve());
   const showNotification = vi.fn(() => Promise.resolve());
+  const enableNavigationPreload = vi.fn(() => Promise.resolve());
 
   const self = {
     addEventListener(type: string, listener: Listener) {
@@ -199,6 +201,7 @@ function loadWorker(options: { badging?: boolean } = {}): Harness {
       showNotification,
       unregister: () => Promise.resolve(true),
       sync: { register: () => Promise.resolve() },
+      navigationPreload: { enable: enableNavigationPreload },
     },
     clients: {
       claim: () => Promise.resolve(),
@@ -254,6 +257,7 @@ function loadWorker(options: { badging?: boolean } = {}): Harness {
     setAppBadge,
     clearAppBadge,
     showNotification,
+    enableNavigationPreload,
     dispatch,
     entries: async () => [...(await store()).rows.values()] as OutboxEntry[],
     seed: async (entry) => {
@@ -500,5 +504,60 @@ describe('sw.js — app badge', () => {
     await harness.dispatch('push', push({ title: 'Hi', badgeCount: 3 }));
     expect(harness.showNotification).toHaveBeenCalled();
     expect(harness.setAppBadge).not.toHaveBeenCalled();
+  });
+});
+
+describe('sw.js — navigation preload', () => {
+  let sw: Harness;
+
+  beforeEach(() => {
+    sw = loadWorker();
+  });
+
+  // A navigation is not a `Request` the test can construct (`mode: 'navigate'`
+  // is forbidden), so it is the shape the worker reads.
+  function navigation(url: string, preloaded?: Response) {
+    let responded: Promise<Response> | undefined;
+    const event = {
+      request: { method: 'GET', url, mode: 'navigate', headers: new Headers() },
+      preloadResponse: Promise.resolve(preloaded),
+      respondWith: (p: Promise<Response>) => {
+        responded = p;
+      },
+    };
+    return { event, responded: () => responded };
+  }
+
+  it('turns navigation preload on when it activates', async () => {
+    await sw.dispatch('activate', {});
+    expect(sw.enableNavigationPreload).toHaveBeenCalledTimes(1);
+  });
+
+  it('answers a page navigation with the preloaded response, without a second fetch', async () => {
+    const preloaded = new Response('page');
+    const nav = navigation('https://rmhstudios.com/explore', preloaded);
+    await sw.dispatch('fetch', nav.event);
+    expect(await nav.responded()).toBe(preloaded);
+    expect(sw.fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('falls back to a network fetch when nothing was preloaded', async () => {
+    const network = new Response('page');
+    sw.fetchMock.mockResolvedValueOnce(network);
+    const nav = navigation('https://rmhstudios.com/explore');
+    await sw.dispatch('fetch', nav.event);
+    expect(await nav.responded()).toBe(network);
+  });
+
+  // The regression this guards: a navigation the worker DECLINES (returns from
+  // without `respondWith`) is requested a second time once preload is on —
+  // measured in Chromium — and `/api/auth/*` links are single-use.
+  it('never declines an /api/ navigation — it consumes the preload instead', async () => {
+    const preloaded = new Response('callback');
+    const nav = navigation('https://rmhstudios.com/api/auth/callback/discord?code=once', preloaded);
+    await sw.dispatch('fetch', nav.event);
+    expect(nav.responded()).toBeDefined();
+    expect(await nav.responded()).toBe(preloaded);
+    expect(sw.fetchMock).not.toHaveBeenCalled();
   });
 });

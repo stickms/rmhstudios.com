@@ -86,6 +86,7 @@ import voidBreaker from './games/void-breaker';
 // ── Apps ──────────────────────────────────────────────────────────────────
 import dunesday from './apps/dunesday';
 import rmhConnections from './apps/rmh-connections';
+import rmhTf2Hud from './apps/rmh-tf2-hud';
 import rmhStrategies from './apps/rmh-strategies';
 import rmhcalculator from './apps/rmhcalculator';
 import rmhcode from './apps/rmhcode';
@@ -127,6 +128,7 @@ const GAME_MODULES: readonly GameInfo[] = [
 const APP_MODULES: readonly AppInfo[] = [
   dunesday,
   rmhConnections,
+  rmhTf2Hud,
   rmhStrategies,
   rmhcalculator,
   rmhcode,

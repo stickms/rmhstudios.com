@@ -87,7 +87,7 @@ export function AdminChallengePage() {
       backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
     >
       <AdminBody width="narrow">
-        <div className="glass-pane space-y-3 rounded-site p-4">
+        <div className="glass-pane space-y-3 rounded-site p-5">
           <Input
             placeholder={t('admin-title', { defaultValue: 'Challenge title' })}
             maxLength={120}

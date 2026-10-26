@@ -68,6 +68,33 @@ const GRID: Record<CursorDetail, [number, number]> = {
 
 export type HoverKind = 'none' | 'interactive' | 'text';
 
+/** What `frameDirect` asks the caller to put on screen (CSS px, viewport). */
+export interface DirectFrame {
+  visible: boolean;
+  /** The globe canvas's top-left and CSS size. */
+  x: number;
+  y: number;
+  size: number;
+  opacity: number;
+  /** The soft halo: centre, radius, where the solid core ends (0..1 of the radius), its colours and opacity. */
+  halo: {
+    x: number;
+    y: number;
+    r: number;
+    inner: number;
+    color: string;
+    clear: string;
+    opacity: number;
+  } | null;
+  /** The exact-pointer dot. */
+  hotspot: { x: number; y: number; opacity: number } | null;
+}
+
+/** The hotspot dot as CSS: the same 1.6 px white core in a 2.6 px dark ring that `draw` paints. */
+export const HOTSPOT_SIZE_PX = 6;
+export const HOTSPOT_CSS =
+  'radial-gradient(circle, rgba(255,255,255,0.95) 0 1.6px, rgba(0,0,0,0.55) 1.6px 2.6px, transparent 2.6px)';
+
 interface Hsl {
   h: number;
   s: number;
@@ -154,6 +181,9 @@ export class GlobeCursorEngine {
   // Pointer + follower (CSS px).
   private tx = -1e4;
   private ty = -1e4;
+  /** Where the follower aims: the pointer, or the browser's prediction of where it is about to be (`move`). */
+  private lx = -1e4;
+  private ly = -1e4;
   private x = -1e4;
   private y = -1e4;
   private vx = 0;
@@ -269,9 +299,16 @@ export class GlobeCursorEngine {
 
   /* ── Input ─────────────────────────────────────────────────────────────── */
 
-  move(x: number, y: number): void {
+  /**
+   * The pointer moved to (`x`, `y`). The globe is centred on the real pointer: it is the hotspot, so it is never drawn
+   * ahead of it. `leadX`/`leadY` (a predicted position) remain for callers that want to aim elsewhere, but the cursor
+   * component no longer passes them — a prediction that overshoots on a stop or a turn leaves the globe off the mouse.
+   */
+  move(x: number, y: number, leadX = x, leadY = y): void {
     this.tx = x;
     this.ty = y;
+    this.lx = leadX;
+    this.ly = leadY;
     if (!this.placed || this.reduced) {
       this.x = x;
       this.y = y;
@@ -308,12 +345,14 @@ export class GlobeCursorEngine {
     if (this.particles.length > 0) return true;
     if (Math.abs((this.visible ? 1 : 0) - this.alpha) > REST_EPS) return true;
     if (!this.visible) return false;
-    if (Math.abs(this.x - this.tx) > REST_PX || Math.abs(this.y - this.ty) > REST_PX) return true;
+    if (Math.abs(this.x - this.lx) > REST_PX || Math.abs(this.y - this.ly) > REST_PX) return true;
     if (Math.abs(this.vx) > REST_V || Math.abs(this.vy) > REST_V) return true;
     if (Math.abs(this.stretch) > REST_EPS || Math.abs(this.stretchV) > REST_EPS) return true;
-    if (Math.abs(this.squish - this.squishTarget()) > REST_EPS || Math.abs(this.squishV) > REST_EPS) return true;
+    if (Math.abs(this.squish - this.squishTarget()) > REST_EPS || Math.abs(this.squishV) > REST_EPS)
+      return true;
     if (Math.abs(this.wobble) > REST_EPS || Math.abs(this.wobbleV) > REST_EPS) return true;
-    if (Math.abs(this.scale - this.hoverTarget()) > REST_EPS || Math.abs(this.scaleV) > REST_EPS) return true;
+    if (Math.abs(this.scale - this.hoverTarget()) > REST_EPS || Math.abs(this.scaleV) > REST_EPS)
+      return true;
     for (const p of this.trail) {
       if (Math.abs(p.x - this.x) > REST_PX || Math.abs(p.y - this.y) > REST_PX) return true;
     }
@@ -354,16 +393,16 @@ export class GlobeCursorEngine {
     const px = this.x;
     const py = this.y;
     if (s.lag <= 0.001) {
-      this.x = this.tx;
-      this.y = this.ty;
+      this.x = this.lx;
+      this.y = this.ly;
     } else {
       const omega = lerp(70, 7, s.lag);
       const zeta = lerp(1, 0.45, j);
-      [this.x, this.vx] = spring(this.x, this.vx, this.tx, omega, zeta, dt);
-      [this.y, this.vy] = spring(this.y, this.vy, this.ty, omega, zeta, dt);
+      [this.x, this.vx] = spring(this.x, this.vx, this.lx, omega, zeta, dt);
+      [this.y, this.vy] = spring(this.y, this.vy, this.ly, omega, zeta, dt);
       if (!Number.isFinite(this.x) || !Number.isFinite(this.y)) {
-        this.x = this.tx;
-        this.y = this.ty;
+        this.x = this.lx;
+        this.y = this.ly;
         this.vx = this.vy = 0;
       }
     }
@@ -938,11 +977,11 @@ export class GlobeCursorEngine {
     });
   }
 
-  private glowCss(alpha: number): string {
+  private glowCss(alpha: number, digits = 1): string {
     const g = this.glowHsl ?? (this.progress().flipped ? this.insideHsl : this.outsideHsl);
     const h = (((g.h + this.time * this.s.hueDrift) % 360) + 360) % 360;
     const sat = clamp(g.s * Math.max(this.s.vibrance, 0.2), 0, 100);
-    return `hsl(${h.toFixed(1)} ${sat.toFixed(1)}% ${clamp(g.l + 8, 30, 80).toFixed(1)}% / ${alpha.toFixed(3)})`;
+    return `hsl(${h.toFixed(digits)} ${sat.toFixed(digits)}% ${clamp(g.l + 8, 30, 80).toFixed(digits)}% / ${alpha.toFixed(3)})`;
   }
 
   private bx0 = 0;
@@ -963,7 +1002,81 @@ export class GlobeCursorEngine {
    * Returns what it painted, in CSS px, so the caller clears only that region
    * next frame instead of the whole viewport — or null if nothing was painted.
    */
-  draw(ctx: CanvasRenderingContext2D): { x: number; y: number; w: number; h: number } | null {
+  /**
+   * The canvas the GPU path renders the globe into, when there is one. The caller can put it on screen directly and
+   * move it with a transform (`frameDirect`), so the globe is never copied into a 2D canvas: on a small 2D canvas
+   * that copy is a GPU readback (Chromium keeps small canvases on the CPU), several ms a frame.
+   */
+  directCanvas(): HTMLCanvasElement | null {
+    return this.gpu?.ok ? this.gpu.canvas : null;
+  }
+
+  /**
+   * Render the globe into {@link directCanvas} and say where everything goes, instead of drawing onto a 2D context.
+   * Only meaningful with no trail and no sparkles (they draw far from the globe). Null when there is nothing to show
+   * or the GPU path is gone (the caller falls back to {@link draw}).
+   */
+  frameDirect(): DirectFrame | null {
+    const s = this.s;
+    if (!this.gpu?.ok) return null;
+    const alpha = this.alpha * s.opacity;
+    const textMode = this.hover === 'text' && s.nativeOverText && s.hideNative;
+    // Always centred on the pointer, text fields included: the OS I-beam is drawn above the page, so it reads on top
+    // of the (smaller, dimmer) globe instead of the globe having to sit beside it.
+    const cx = this.x;
+    const cy = this.y;
+    if (alpha < 0.005) {
+      return { visible: false, x: cx, y: cy, size: 0, opacity: 0, halo: null, hotspot: null };
+    }
+    const css = this.paintSprite();
+    const R = (s.size / 2) * this.scale;
+    const gr = R * (1.6 + s.glow * 1.6);
+    return {
+      visible: true,
+      x: cx - css / 2,
+      y: cy - css / 2,
+      size: css,
+      opacity: textMode ? alpha * 0.75 : alpha,
+      halo:
+        s.glow > 0
+          ? {
+              x: cx,
+              y: cy,
+              r: gr,
+              inner: (R * 0.4) / gr,
+              color: this.glowCss(0.38 * s.glow, 0),
+              clear: this.glowCss(0, 0),
+              opacity: alpha,
+            }
+          : null,
+      hotspot: s.hotspot && !textMode ? { x: this.tx, y: this.ty, opacity: this.alpha } : null,
+    };
+  }
+
+  /**
+   * The silhouette glow as a CSS `drop-shadow()` for a small cursor canvas, or `none`. The compositor draws it on the
+   * GPU in every engine; the canvas `shadowBlur` it replaces is a per-frame blur on the CPU in WebKit and Gecko.
+   * Quantised so a steady colour never rewrites the style.
+   */
+  glowFilter(): string {
+    const s = this.s;
+    if (s.glow <= 0) return 'none';
+    const R = (s.size / 2) * this.scale;
+    // `shadowBlur` and a CSS blur radius are both 2σ; the canvas one was in device px, this one is CSS px.
+    const blur = Math.round(s.glow * R * 1.1 * 2) / 2;
+    return `drop-shadow(0 0 ${blur}px ${this.glowCss(Math.min(1, 0.4 + s.glow * 0.6), 0)})`;
+  }
+
+  /**
+   * Draw one frame. `originX`/`originY` (CSS px) is where the canvas's top-left sits in the viewport — 0 for a
+   * full-viewport canvas. With `cssGlow` the silhouette glow is left to {@link glowFilter} instead of `shadowBlur`.
+   */
+  draw(
+    ctx: CanvasRenderingContext2D,
+    originX = 0,
+    originY = 0,
+    cssGlow = false,
+  ): { x: number; y: number; w: number; h: number } | null {
     const s = this.s;
     const dpr = this.dpr;
     const alpha = this.alpha * s.opacity;
@@ -971,12 +1084,10 @@ export class GlobeCursorEngine {
     this.bx1 = this.by1 = -Infinity;
     if (alpha < 0.005 && this.particles.length === 0) return null;
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, -originX * dpr, -originY * dpr);
     const css = this.paintSprite();
     const half = css / 2;
     const textMode = this.hover === 'text' && s.nativeOverText && s.hideNative;
-    const ox = textMode ? 16 : 0;
-    const oy = textMode ? 16 : 0;
     const R = (s.size / 2) * this.scale;
 
     // Sparkles.
@@ -1004,45 +1115,32 @@ export class GlobeCursorEngine {
         const t = 1 - k / (s.trail + 1);
         const sc = 0.45 + 0.55 * t;
         ctx.globalAlpha = alpha * t * 0.45;
-        this.grow(p.x + ox, p.y + oy, half * sc + 1);
-        ctx.drawImage(
-          this.spriteSource,
-          p.x + ox - half * sc,
-          p.y + oy - half * sc,
-          css * sc,
-          css * sc,
-        );
+        this.grow(p.x, p.y, half * sc + 1);
+        ctx.drawImage(this.spriteSource, p.x - half * sc, p.y - half * sc, css * sc, css * sc);
       }
     }
 
     // Halo.
     if (s.glow > 0) {
       const gr = R * (1.6 + s.glow * 1.6);
-      const g = ctx.createRadialGradient(
-        this.x + ox,
-        this.y + oy,
-        R * 0.4,
-        this.x + ox,
-        this.y + oy,
-        gr,
-      );
+      const g = ctx.createRadialGradient(this.x, this.y, R * 0.4, this.x, this.y, gr);
       g.addColorStop(0, this.glowCss(0.38 * s.glow * alpha));
       g.addColorStop(1, this.glowCss(0));
       ctx.globalAlpha = 1;
-      this.grow(this.x + ox, this.y + oy, gr + 1);
+      this.grow(this.x, this.y, gr + 1);
       ctx.fillStyle = g;
-      ctx.fillRect(this.x + ox - gr, this.y + oy - gr, gr * 2, gr * 2);
+      ctx.fillRect(this.x - gr, this.y - gr, gr * 2, gr * 2);
     }
 
     // The globe, with its silhouette glow.
     ctx.globalAlpha = textMode ? alpha * 0.75 : alpha;
-    if (s.glow > 0) {
+    if (s.glow > 0 && !cssGlow) {
       ctx.shadowColor = this.glowCss(Math.min(1, 0.4 + s.glow * 0.6));
       ctx.shadowBlur = s.glow * R * 1.1 * dpr;
     }
     // The sprite's square plus twice the shadow blur, which spreads past the silhouette.
-    this.grow(this.x + ox, this.y + oy, half * Math.SQRT2 + s.glow * R * 2.2 + 2);
-    ctx.drawImage(this.spriteSource, this.x + ox - half, this.y + oy - half, css, css);
+    this.grow(this.x, this.y, half * Math.SQRT2 + s.glow * R * 2.2 + 2);
+    ctx.drawImage(this.spriteSource, this.x - half, this.y - half, css, css);
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';
 

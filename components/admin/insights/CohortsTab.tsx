@@ -61,7 +61,7 @@ export function CohortsTab() {
           })}
         />
       ) : (
-        <div className="glass-pane overflow-x-auto rounded-site p-3">
+        <div className="glass-pane overflow-x-auto rounded-site p-4">
           <table className="w-full min-w-[40rem] border-separate border-spacing-1 text-center text-xs">
             <thead>
               <tr className="text-site-text-dim">

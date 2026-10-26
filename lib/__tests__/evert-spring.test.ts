@@ -118,7 +118,9 @@ describe('§7.3 — the layer costs what the design language allows', () => {
   });
 
   it('perf-lite swaps the springs for a tween, and forced colors drop the layer', () => {
-    expect(SECTION).toMatch(/html\.perf-lite\s*\{[^}]*--evert-ease:\s*cubic-bezier/);
+    expect(SECTION).toMatch(
+      /html\.perf-lite\s*\{[^}]*--evert-ease:\s*(cubic-bezier|var\(--ease-smooth\))/,
+    );
     expect(SECTION).toMatch(/@media \(forced-colors: active\)\s*\{[^}]*\[data-evert\]::before/);
   });
 

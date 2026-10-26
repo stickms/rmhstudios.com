@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
@@ -28,7 +29,7 @@ export const Route = createFileRoute('/api/doctrine/incidents/')({
         async ({ request }) => {
           try {
             const url = new URL(request.url);
-            const limit = Math.min(parseInt(url.searchParams.get('limit') ?? '10'), 50);
+            const limit = pageSize(url.searchParams.get('limit'), 10, 50);
             const incidents = await getRecentIncidents(limit);
             return Response.json(incidents);
           } catch (e) {

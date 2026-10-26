@@ -130,7 +130,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  return (
  <div
  key={deck.id}
- className="flex flex-col rounded-site glass-fill p-4"
+ className="flex flex-col rounded-site glass-fill p-5"
  >
  <Link to="/study/$deckId"params={{ deckId: deck.id }} className="min-w-0">
  <h2 className="truncate text-sm font-bold text-site-text hover:text-site-accent">

@@ -206,7 +206,7 @@ function SettingsPage() {
   const cities = ((prefs.preferredCities as string[]) ?? []).join(', ');
   const programTypes = (prefs.preferredProgramTypes as string[]) ?? [];
 
-  const sectionCls = 'glass-fill flex flex-col gap-4 rounded-site p-4 sm:p-5';
+  const sectionCls = 'glass-fill flex flex-col gap-4 rounded-site p-5 sm:p-5';
   const fieldCls = 'flex flex-col gap-2 border-0 p-0 m-0';
   const labelCls = 'text-sm font-medium text-site-text';
   const hintCls = 'text-sm text-site-text-muted';

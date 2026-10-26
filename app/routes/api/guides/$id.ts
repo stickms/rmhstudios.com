@@ -33,16 +33,19 @@ export const Route = createFileRoute('/api/guides/$id')({
           return Response.json({ ok: true });
         },
       ),
-      DELETE: defineHandler({}, async ({ params, session }) => {
-        try {
-          await deleteGuide(session.user.id, params.id);
-        } catch (e) {
-          if (e instanceof GameMetaError)
-            return Response.json({ error: e.message }, { status: 404 });
-          throw e;
-        }
-        return Response.json({ ok: true });
-      }),
+      DELETE: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:guides/:id' } },
+        async ({ params, session }) => {
+          try {
+            await deleteGuide(session.user.id, params.id);
+          } catch (e) {
+            if (e instanceof GameMetaError)
+              return Response.json({ error: e.message }, { status: 404 });
+            throw e;
+          }
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });

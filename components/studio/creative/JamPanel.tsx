@@ -63,7 +63,7 @@ export default function JamPanel({
             <Button variant="accent" disabled={busy} onClick={() => void run(startJam)}>
               {t('jam-start', { defaultValue: 'Start a jam from this project' })}
             </Button>
-            <div className="glass-pane space-y-2 rounded-(--app-radius) p-3">
+            <div className="glass-pane space-y-2 rounded-(--app-radius) p-4">
               <p className="text-xs text-(--app-text-muted)">
                 {t('jam-join-hint', {
                   defaultValue:

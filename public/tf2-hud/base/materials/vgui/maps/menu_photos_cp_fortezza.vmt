@@ -1,0 +1,9 @@
+"UnlitGeneric"
+{
+	"$basetexture" "vgui/maps/menu_photos_cp_fortezza"
+	"$translucent" 1
+	"$ignorerez" 1
+	"$vertexcolor" 1
+}
+
+

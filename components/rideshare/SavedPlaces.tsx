@@ -58,7 +58,7 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
   }
 
   return (
-    <div className="glass-fill rounded-site p-4">
+    <div className="glass-fill rounded-site p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="site-section-label flex items-center gap-2">
           <Star className="h-4 w-4 text-site-warning" /> {t("saved-places", { defaultValue: "Saved places" })}
