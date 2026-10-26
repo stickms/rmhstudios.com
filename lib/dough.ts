@@ -83,6 +83,11 @@ export function reachFor(r0: number): number {
  */
 const INVERT_PASSES = 16;
 const INVERT_RELAX = 0.8;
+/** A pass that moves the estimate less than this (radii, ~0.03 px) ends the loop: at rest, and over most of a drag, one to
+ * four passes are enough, so the cost follows how much of the field is actually displaced. */
+const INVERT_TOL = 2e-4;
+/** Cells farther out than this are never painted (the canvases end at 1.22), so they are not inverted. */
+const INVERT_RADIUS = 1.26;
 /** Press pressure: 1/s toward 1 while held, toward 0 after. */
 const PRESS_RATE = 16;
 const RELEASE_RATE = 9;
@@ -510,22 +515,27 @@ export class DoughBody {
         let Y = gy;
         let vx = 0;
         let vy = 0;
-        for (let pass = 0; pass < INVERT_PASSES; pass++) {
-          const fx = (X + DOUGH_EXTENT) / h;
-          const fy = (Y + DOUGH_EXTENT) / h;
-          const i0 = Math.max(0, Math.min(last, Math.floor(fx)));
-          const j0 = Math.max(0, Math.min(last, Math.floor(fy)));
-          const tx = Math.min(1, Math.max(0, fx - i0));
-          const ty = Math.min(1, Math.max(0, fy - j0));
-          const c = j0 * N + i0;
-          const w00 = (1 - tx) * (1 - ty);
-          const w10 = tx * (1 - ty);
-          const w01 = (1 - tx) * ty;
-          const w11 = tx * ty;
-          vx = w00 * ux[c]! + w10 * ux[c + 1]! + w01 * ux[c + N]! + w11 * ux[c + N + 1]!;
-          vy = w00 * uy[c]! + w10 * uy[c + 1]! + w01 * uy[c + N]! + w11 * uy[c + N + 1]!;
-          X += INVERT_RELAX * (gx - vx - X);
-          Y += INVERT_RELAX * (gy - vy - Y);
+        if (gx * gx + gy * gy <= INVERT_RADIUS * INVERT_RADIUS) {
+          for (let pass = 0; pass < INVERT_PASSES; pass++) {
+            const fx = (X + DOUGH_EXTENT) / h;
+            const fy = (Y + DOUGH_EXTENT) / h;
+            const i0 = Math.max(0, Math.min(last, Math.floor(fx)));
+            const j0 = Math.max(0, Math.min(last, Math.floor(fy)));
+            const tx = Math.min(1, Math.max(0, fx - i0));
+            const ty = Math.min(1, Math.max(0, fy - j0));
+            const c = j0 * N + i0;
+            const w00 = (1 - tx) * (1 - ty);
+            const w10 = tx * (1 - ty);
+            const w01 = (1 - tx) * ty;
+            const w11 = tx * ty;
+            vx = w00 * ux[c]! + w10 * ux[c + 1]! + w01 * ux[c + N]! + w11 * ux[c + N + 1]!;
+            vy = w00 * uy[c]! + w10 * uy[c + 1]! + w01 * uy[c + N]! + w11 * uy[c + N + 1]!;
+            const dx = INVERT_RELAX * (gx - vx - X);
+            const dy = INVERT_RELAX * (gy - vy - Y);
+            X += dx;
+            Y += dy;
+            if (Math.abs(dx) < INVERT_TOL && Math.abs(dy) < INVERT_TOL) break;
+          }
         }
         // The height rides to the same place: sampled where the material for this pixel rests.
         const hx = (X + DOUGH_EXTENT) / h;

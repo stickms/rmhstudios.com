@@ -143,11 +143,16 @@ export function derive(): void {
     for (let i = 0; i < N; i++) {
       const gx = -EXTENT + f64(i) * H;
       let X = gx, Y = gy, vx = 0.0, vy = 0.0;
-      for (let pass = 0; pass < 16; pass++) {
-        vx = sample(6, X, Y);
-        vy = sample(7, X, Y);
-        X += 0.8 * (gx - vx - X);
-        Y += 0.8 * (gy - vy - Y);
+      if (gx * gx + gy * gy <= 1.26 * 1.26) {
+        for (let pass = 0; pass < 16; pass++) {
+          vx = sample(6, X, Y);
+          vy = sample(7, X, Y);
+          const dx = 0.8 * (gx - vx - X);
+          const dy = 0.8 * (gy - vy - Y);
+          X += dx;
+          Y += dy;
+          if (Math.abs(dx) < 2e-4 && Math.abs(dy) < 2e-4) break;
+        }
       }
       const address = state.dataStart + usize((12 * CELLS + 4 * (j * N + i)) * 4);
       store<f32>(address, f32(vx));
