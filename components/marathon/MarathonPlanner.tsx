@@ -147,7 +147,7 @@ export default function MarathonPlanner() {
         )}
       </div>
 
-      <section className="glass-pane space-y-4 rounded-site p-4">
+      <section className="glass-pane space-y-4 rounded-site p-5">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-2 text-sm">
             <span className="text-site-text-muted">

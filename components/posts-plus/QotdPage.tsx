@@ -128,7 +128,7 @@ export function QotdPage({ day }: { day?: string }) {
         {!archive || !selected ? (
           <Skeleton className="h-28 w-full rounded-site" />
         ) : (
-          <section className="glass-pane rounded-site p-4">
+          <section className="glass-pane rounded-site p-5">
             <p className="flex items-center gap-2 text-xs font-semibold text-site-text-muted">
               <MessageCircleQuestion className="h-4 w-4 text-site-accent" aria-hidden />
               {isToday

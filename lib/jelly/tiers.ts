@@ -55,7 +55,10 @@ export interface JellyBudget {
 }
 
 /**
- * The budgets, final per R6/R10 and 04 §3.1. Ambient slots stay at 8 (not 24) because every animated haze canvas is a
+ * The budgets, final per R6/R10 and 04 §3.1. The ambient clock (2026-10-25, "zero lag, as much fps as possible") runs
+ * at 60 Hz engaged and 30 Hz idle on the desktop tiers, 30/15 on handhelds — twice the original 30/12 and 15/8. It
+ * could only double once rims and haze left the main thread (`lib/liquid/glass/glass.worker.ts`), where they stopped paying a
+ * GPU readback per canvas (`renderer.ts` "Handing a frame over"); the governor still walks it back down under load. Ambient slots stay at 8 (not 24) because every animated haze canvas is a
  * compositor layer re-rastered on every tick; 24 of them is the 2026-10-08 never-idle failure in a new form.
  *
  * `off` keeps 3 press-only bodies: reduced transparency and high contrast remove the material, not the press (04
@@ -67,8 +70,8 @@ export const JELLY_BUDGETS: Readonly<Record<JellyTier, Readonly<JellyBudget>>> =
     hazeSlots: 8,
     carriers: 24,
     animatedViewports: 1.5,
-    clockHz: 30,
-    idleClockHz: 12,
+    clockHz: 60,
+    idleClockHz: 30,
     bodies: 12,
     lattices: 8,
     ambientArcMinIntervalMs: 2000,
@@ -79,8 +82,8 @@ export const JELLY_BUDGETS: Readonly<Record<JellyTier, Readonly<JellyBudget>>> =
     hazeSlots: 6,
     carriers: 16,
     animatedViewports: 1.25,
-    clockHz: 30,
-    idleClockHz: 12,
+    clockHz: 60,
+    idleClockHz: 30,
     bodies: 8,
     lattices: 6,
     ambientArcMinIntervalMs: 2000,
@@ -91,8 +94,8 @@ export const JELLY_BUDGETS: Readonly<Record<JellyTier, Readonly<JellyBudget>>> =
     hazeSlots: 4,
     carriers: 8,
     animatedViewports: 1,
-    clockHz: 15,
-    idleClockHz: 8,
+    clockHz: 30,
+    idleClockHz: 15,
     bodies: 6,
     lattices: 4,
     // R10: half the desktop rate, not 04's zero — the owner wants phones charged too.
@@ -196,6 +199,13 @@ export const DENT = {
   lensStrength: 0.6,
   /** R/G/B split of the lens, px at full depth (`--jelly-lens-dispersion`). */
   lensDispersionPx: 1.5,
+  /**
+   * Largest host (CSS px², border box) the lens refracts. The lens is an SVG filter on the whole host, so every pressed
+   * frame re-rasterises the host's content into a filter surface — on the CPU in Gecko, and for `feDisplacementMap` in
+   * Chromium too — and that cost grows with area, not with the bowl. Above this a press keeps the rim, indent and light
+   * dot (the engine draws them from the same dent), which is the contract's own no-refraction fallback.
+   */
+  lensMaxAreaPx: 600 * 600,
   /** Content follows the gel by at most this strain (`--jelly-content-strain`). */
   contentStrain: 0.04,
   /** Max rubber-band stretch when a drag leaves the element, CSS px. */

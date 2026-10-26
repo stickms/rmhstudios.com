@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import type { PrismaClient, WagerMatch } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
@@ -506,7 +507,7 @@ export async function listWagers(
   opts: { viewerId?: string | null; filter: 'open' | 'mine'; gameId?: string; take?: number },
   db: Db = prisma,
 ): Promise<SerializedWager[]> {
-  const take = Math.min(Math.max(opts.take ?? 30, 1), 60);
+  const take = pageSize(opts.take, 30, 60);
   const where =
     opts.filter === 'mine' && opts.viewerId
       ? {

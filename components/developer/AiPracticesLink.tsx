@@ -8,7 +8,7 @@ export function AiPracticesLink() {
   return (
     <Link
       to="/developer/ai-practices"
-      className="glass-fill glass-interactive group flex items-start gap-3 rounded-site p-4"
+      className="glass-fill glass-interactive group flex items-start gap-3 rounded-site p-5"
     >
       <Sparkles className="mt-0.5 size-5 shrink-0 text-site-accent" aria-hidden />
       <span>

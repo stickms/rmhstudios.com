@@ -34,6 +34,8 @@ interface RateLimitOptions {
   windowMs: number;
   /** Key prefix to namespace different limiters */
   prefix?: string;
+  /** Security limits can explicitly bypass the global generosity multiplier. */
+  applyMultiplier?: boolean;
 }
 
 /**
@@ -82,7 +84,9 @@ function makeRoom(now: number): void {
 
 export function rateLimit(ip: string, opts: RateLimitOptions): RateLimitResult {
   const key = `${opts.prefix ?? 'rl'}:${ip}`;
-  const limit = Math.ceil(opts.limit * RATE_LIMIT_MULTIPLIER);
+  const limit = Math.ceil(
+    opts.limit * (opts.applyMultiplier === false ? 1 : RATE_LIMIT_MULTIPLIER),
+  );
   const now = Date.now();
   const entry = store.get(key);
 

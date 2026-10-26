@@ -30,8 +30,10 @@ import { installLiquidInteractions } from '@/lib/liquid/runtime';
  *
  * Every optional chunk fails soft: the CSS material is the fallback for each.
  */
-export function useLiquidInteractions(): void {
+export function useLiquidInteractions(enabled = true): void {
   useEffect(() => {
+    // Some full-screen apps (the TF2 HUD Editor) carry their own material and install none of the jelly.
+    if (!enabled) return;
     const stops: (() => void)[] = [];
     let cancelled = false;
     const keep = (stop: () => void) => {
@@ -107,5 +109,5 @@ export function useLiquidInteractions(): void {
       for (const stop of stops.reverse()) stop();
       stops.length = 0;
     };
-  }, []);
+  }, [enabled]);
 }

@@ -93,6 +93,46 @@ describe('resolveAnchoredPlacement', () => {
     expect(p.inset).toBe(12);
   });
 
+  it('pulls a wide end-aligned panel back inside the far edge', () => {
+    // The composer's emoji picker on a 390px phone: a 300px panel right-aligned to a
+    // trigger whose right edge is at 222 would start at x = -78.
+    const p = resolveAnchoredPlacement(
+      input({
+        viewport: { width: 390, height: 900 },
+        bounds: { top: 12, bottom: 888, left: 12, right: 378 },
+        anchor: { top: 300, bottom: 328, left: 190, right: 222 },
+        panelWidth: 300,
+      }),
+    );
+    // right = 390 - 12 - 300 = 78, so the left edge lands on the 12px bound.
+    expect(p.inset).toBe(78);
+  });
+
+  it('pulls a wide start-aligned panel back inside the far edge', () => {
+    const p = resolveAnchoredPlacement(
+      input({
+        align: 'start',
+        viewport: { width: 390, height: 900 },
+        bounds: { top: 12, bottom: 888, left: 12, right: 378 },
+        anchor: { top: 300, bottom: 328, left: 200, right: 232 },
+        panelWidth: 300,
+      }),
+    );
+    expect(p.inset).toBe(78);
+  });
+
+  it('keeps the near edge in when the panel is wider than the bounds', () => {
+    const p = resolveAnchoredPlacement(
+      input({
+        viewport: { width: 320, height: 900 },
+        bounds: { top: 12, bottom: 888, left: 12, right: 308 },
+        anchor: { top: 300, bottom: 328, left: 190, right: 222 },
+        panelWidth: 400,
+      }),
+    );
+    expect(p.inset).toBe(12);
+  });
+
   it('does not return a negative height for an off-screen trigger', () => {
     const p = resolveAnchoredPlacement(
       input({ anchor: { top: -200, bottom: -172, left: 600, right: 628 } }),

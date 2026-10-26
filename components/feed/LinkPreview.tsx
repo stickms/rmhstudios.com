@@ -68,7 +68,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  // The ref lives on the skeleton so the observer has a target to watch while
  // the preview is still deferred; the skeleton also reserves layout (no CLS).
  return (
- <div ref={ref} className={`rounded-site overflow-hidden border border-site-border ${className}`}>
+ <div ref={ref} className={`rounded-site overflow-hidden ${className}`}>
  <div className="w-full h-24 bg-site-surface animate-pulse"/>
  </div>
  );
@@ -82,7 +82,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  target="_blank"
  rel="noopener noreferrer"
  onClick={(e) => e.stopPropagation()}
- className={`block rounded-site overflow-hidden border border-site-border hover:bg-site-surface/40 transition-colors ${className}`}
+ className={`block rounded-site overflow-hidden hover:bg-site-surface/40 transition-colors ${className}`}
  >
  {data.image && !imgError && (
  <div className="w-full h-36 bg-site-surface overflow-hidden">

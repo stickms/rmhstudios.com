@@ -1,9 +1,14 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { audienceWhere, communityVisibleWhere, viewerVisiblePostWhere } from '@/lib/feed/audience.server';
+import {
+  audienceWhere,
+  communityVisibleWhere,
+  viewerVisiblePostWhere,
+} from '@/lib/feed/audience.server';
 import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { mapQuotedOriginal, type QuotedOriginalRow } from '@/lib/feed/quoted-original';
 import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
@@ -79,7 +84,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
         const userId = resolvedUser?.id ?? idOrHandle;
         const { searchParams } = new URL(request.url);
         const cursor = searchParams.get('cursor');
-        const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
+        const limit = pageSize(searchParams.get('limit'), 20, 50);
 
         const cursorDate = cursor ? new Date(cursor) : undefined;
 
@@ -91,8 +96,9 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
           return Response.json({ items: [], nextCursor: null, hasMore: false });
         }
         // Quote cards: one shared rule (lib/feed/quoted-original.ts).
-        const quote = (o: (QuotedOriginalRow & { user: Parameters<typeof resolveUser>[0] }) | null) =>
-          o ? mapQuotedOriginal(o, resolveUser(o.user), viewerId, blocked) : undefined;
+        const quote = (
+          o: (QuotedOriginalRow & { user: Parameters<typeof resolveUser>[0] }) | null,
+        ) => (o ? mapQuotedOriginal(o, resolveUser(o.user), viewerId, blocked) : undefined);
 
         // Audience: owner sees all; a follower also sees FOLLOWERS posts; others PUBLIC.
         let viewerFollowsOwner = false;

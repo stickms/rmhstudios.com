@@ -133,7 +133,7 @@ export function SeedGalleryButton() {
           ) : (
             <ul className="max-h-[55dvh] space-y-2 overflow-y-auto">
               {rows.map((row) => (
-                <li key={row.id} className="glass-fill space-y-2 rounded-site p-3">
+                <li key={row.id} className="glass-fill space-y-2 rounded-site p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-site-text">{row.title}</p>

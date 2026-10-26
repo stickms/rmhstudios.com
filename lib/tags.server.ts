@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
@@ -33,7 +34,7 @@ export async function listTagFeed(
 
   const viewerId = opts.viewerId ?? null;
   const cursor = opts.cursor ?? null;
-  const limit = Math.min(opts.limit ?? 20, 50);
+  const limit = pageSize(opts.limit);
 
   const hidden = await getHiddenAuthorIds(viewerId);
 

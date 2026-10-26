@@ -23,7 +23,7 @@ export function DebtDesks() {
 
   return (
     <section
-      className="glass-pane flex flex-col gap-3 rounded-site p-4"
+      className="glass-pane flex flex-col gap-3 rounded-site p-5"
       aria-labelledby="kd-desks-title"
     >
       <div className="flex flex-col gap-1">
@@ -93,7 +93,7 @@ function Desk({
   body: string;
 }) {
   return (
-    <article className="glass-fill flex flex-col gap-1.5 rounded-site p-3">
+    <article className="glass-fill flex flex-col gap-1.5 rounded-site p-4">
       <p className="flex items-center gap-1.5 text-xs text-site-text-muted">
         <Icon className="size-3.5 shrink-0" aria-hidden />
         {role}

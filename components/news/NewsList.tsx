@@ -183,7 +183,7 @@ export function NewsList({
           />
 
           {/* Search + Sort Row */}
-          <div className="glass-fill flex flex-col gap-3 rounded-site p-3">
+          <div className="glass-fill flex flex-col gap-3 rounded-site p-4">
             <SearchField
               value={searchInput}
               onValueChange={setSearchInput}

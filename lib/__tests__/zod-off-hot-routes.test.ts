@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * zod stays off the routes people actually land on.
@@ -25,7 +26,7 @@ import { dirname, join, relative, resolve } from 'node:path';
  * zod-free half. Do not add the route to an allowlist — there isn't one.
  */
 
-const REPO = resolve(dirname(new URL(import.meta.url).pathname), '../..');
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 const HOT_ROUTES = [
   'app/routes/__root.tsx',
@@ -116,7 +117,8 @@ function zodCarriers(roots: string[]): string[] {
   }
   return found.map((f) => {
     const chain: string[] = [];
-    for (let c: string | null | undefined = f; c; c = parent.get(c)) chain.unshift(relative(REPO, c));
+    for (let c: string | null | undefined = f; c; c = parent.get(c))
+      chain.unshift(relative(REPO, c).replaceAll('\\', '/'));
     return chain.join(' → ');
   });
 }

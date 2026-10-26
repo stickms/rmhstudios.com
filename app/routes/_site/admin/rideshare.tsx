@@ -242,7 +242,7 @@ function AdminRidesharePage() {
         ) : (
           <ul className="space-y-3">
             {items.map((app) => (
-              <li key={app.id} className="glass-fill rounded-site p-4">
+              <li key={app.id} className="glass-fill rounded-site p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={app.user.image} alt={app.user.name ?? t('user-alt', { defaultValue: 'User' })} size={40} />
@@ -390,7 +390,7 @@ function RideHistory({
         <ul className="space-y-3">
           {rides.map((ride) => {
                         return (
-              <li key={ride.id} className="glass-fill rounded-site p-4">
+              <li key={ride.id} className="glass-fill rounded-site p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={ride.rider?.image ?? null} alt={ride.rider?.name ?? t('rider-alt', { defaultValue: 'Rider' })} size={36} />

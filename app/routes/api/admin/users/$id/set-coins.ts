@@ -16,12 +16,13 @@ export const Route = createFileRoute('/api/admin/users/$id/set-coins')({
   server: {
     handlers: {
       POST: defineHandler(
-        { auth: 'optional', body: schema, allowEmptyBody: true },
+        {
+          auth: 'admin',
+          rateLimit: { policy: 'write', scope: 'user' },
+          body: schema,
+          allowEmptyBody: true,
+        },
         async ({ params, session, body }) => {
-          if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-            return Response.json({ error: 'Forbidden' }, { status: 403 });
-          }
-
           const target = await prisma.user.findUnique({
             where: { id: params.id },
             select: { id: true },

@@ -13,13 +13,15 @@ float sdRoundRect(vec2 q, vec2 halfSize, float r) {
   vec2 e = abs(q) - halfSize + vec2(r);
   return min(max(e.x, e.y), 0.0) + length(max(e, 0.0)) - r;
 }
+// The gradient of sdRoundRect, exactly: the corner arc's radial direction, else the axis of the nearest straight
+// edge. It replaces a four-evaluation central difference (≈4× the distance maths per pixel, and quantised where an
+// arc meets a straight edge), so the surface normal is both cheaper and smooth to the last pixel of a curve.
 vec2 sdGrad(vec2 q, vec2 halfSize, float r) {
-  const float e = 0.75;
-  vec2 g = vec2(
-    sdRoundRect(q + vec2(e, 0.0), halfSize, r) - sdRoundRect(q - vec2(e, 0.0), halfSize, r),
-    sdRoundRect(q + vec2(0.0, e), halfSize, r) - sdRoundRect(q - vec2(0.0, e), halfSize, r)
-  );
-  return dot(g, g) > 1e-8 ? normalize(g) : vec2(0.0, -1.0);
+  vec2 e = abs(q) - halfSize + vec2(r);
+  vec2 ep = max(e, vec2(0.0));
+  float l = length(ep);
+  vec2 g = l > 1e-4 ? ep / l : (e.x > e.y ? vec2(1.0, 0.0) : vec2(0.0, 1.0));
+  return g * vec2(q.x < 0.0 ? -1.0 : 1.0, q.y < 0.0 ? -1.0 : 1.0);
 }
 `;
 

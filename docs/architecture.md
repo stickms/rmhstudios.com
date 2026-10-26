@@ -354,3 +354,7 @@ realtime topology.)
   permanent 404 outage for hubs that were serving traffic normally.
 - **Deploy telemetry:** Discord webhooks + GitHub commit statuses from
   `deploy.sh`.
+
+## Feature flags
+
+`feature_flag` (Prisma `FeatureFlag`) holds runtime flags so deploy and release are separate: code ships dark, an admin turns it on (optionally for a percentage of users), and turning it off is a row update, not a rollback or a migration question. Server code asks `isFeatureEnabled(key, userId)` (`lib/flags/flags.server.ts`, 15 s per-process cache, fails closed); clients read `GET /api/flags`. Admins manage flags with `GET/PUT/DELETE /api/admin/flags`. Percentage rollouts bucket per `(key, userId)` and are monotonic (raising 10% → 50% never switches anyone off); anonymous callers only see fully rolled-out flags.

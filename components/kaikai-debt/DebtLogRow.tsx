@@ -93,7 +93,7 @@ export function DebtLogRow({ entry, nowMs, fresh }: DebtLogRowProps) {
   const grown = nowCents > entry.amountCents * 1.01;
 
   return (
-    <li className={cn('glass-fill flex items-start gap-3 rounded-site p-4', fresh && 'kd-flash')}>
+    <li className={cn('glass-fill flex items-start gap-3 rounded-site p-5', fresh && 'kd-flash')}>
       <span className="text-xl leading-none" aria-hidden>
         {CATEGORY_GLYPH[entry.category]}
       </span>

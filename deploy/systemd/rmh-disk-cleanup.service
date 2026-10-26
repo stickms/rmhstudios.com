@@ -1,0 +1,34 @@
+# rmhstudios — disk cleanup between deploys (one-shot, driven by the timer).
+#
+# Removes only what no release, rollback or build reads again: stopped containers,
+# dangling images, old BuildKit cache, crash core dumps and stale deploy temp
+# files; and, once the disk passes 80%, old SHA-tagged release images beyond the
+# newest two plus journald overflow. It skips the run while a deploy holds the
+# lock and never deletes in home directories. Details: deploy/disk-cleanup.sh.
+#
+# Why a host unit and not part of the deploy: the webhook runs sandboxed
+# (ProtectSystem=strict), so deploy.sh can clean Docker's data but not host files
+# such as /var/lib/apport/coredump, and it only runs when someone pushes.
+#
+# ── Install (once, as root) ──────────────────────────────────────────────────
+#   sudo cp deploy/systemd/rmh-disk-cleanup.{service,timer} /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now rmh-disk-cleanup.timer
+#   Preview:   sudo DRY_RUN=1 bash deploy/disk-cleanup.sh
+#   Run now:   sudo systemctl start rmh-disk-cleanup.service
+#              journalctl -u rmh-disk-cleanup.service -n 30
+# ─────────────────────────────────────────────────────────────────────────────
+[Unit]
+Description=rmhstudios disk cleanup (between deploys)
+After=docker.service
+
+[Service]
+Type=oneshot
+# Repo checkout path on the VPS (deploy.sh REPO_DIR).
+WorkingDirectory=/home/rmhstudios/rmhstudios.com
+ExecStart=/usr/bin/env bash deploy/disk-cleanup.sh
+# Root: reads Docker's data dir and removes core dumps under /var/lib.
+TimeoutStartSec=15min
+# Stay out of the way of the site and of deploys.
+Nice=19
+IOSchedulingClass=idle

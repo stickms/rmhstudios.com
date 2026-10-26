@@ -240,7 +240,7 @@ function ApplicationForm({
       {rejected?.rejectionReason && (
         <div
           role="alert"
-          className="flex items-start gap-3 rounded-site border border-site-danger/30 bg-site-danger/10 p-4 text-sm text-site-danger"
+          className="flex items-start gap-3 rounded-site border border-site-danger/30 bg-site-danger/10 p-5 text-sm text-site-danger"
         >
           <XCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
           <div className="space-y-1">
@@ -251,7 +251,7 @@ function ApplicationForm({
         </div>
       )}
 
-      <div className="glass-fill rounded-site p-4">
+      <div className="glass-fill rounded-site p-5">
         <h3 className="site-section-label mb-3">{t('vehicle-details', { defaultValue: 'Vehicle details' })}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {field('drv-make', t('label-make', { defaultValue: 'Make' }),
@@ -271,7 +271,7 @@ function ApplicationForm({
         </div>
       </div>
 
-      <div className="glass-fill space-y-3 rounded-site p-4">
+      <div className="glass-fill space-y-3 rounded-site p-5">
         <div>
           <h3 className="site-section-label">{t('which-class-drive', { defaultValue: 'Which class will you drive?' })}</h3>
           <p className="mt-2 text-xs text-site-text-muted">{t('class-hint', { defaultValue: 'Pick the option that best matches your vehicle.' })}</p>
@@ -385,7 +385,7 @@ function DriverDashboard({
   return (
     <div className="space-y-4">
       {/* Approved banner + availability toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-site border border-site-success/30 bg-site-success/10 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-site border border-site-success/30 bg-site-success/10 p-5">
         <div className="flex items-center gap-3">
           <CheckCircle2 className="h-6 w-6 shrink-0 text-site-success" />
           <div className="min-w-0">
@@ -494,7 +494,7 @@ function RideCard({
     <motion.li
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`glass-fill rounded-site p-4 ${busy ? 'opacity-70' : ''}`}
+      className={`glass-fill rounded-site p-5 ${busy ? 'opacity-70' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-sm font-semibold text-site-text">

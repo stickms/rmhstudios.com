@@ -218,7 +218,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setMenuOpen(false);
  }
  }}
- className="gap-0 overflow-y-auto overscroll-contain p-0 text-site-text sm:top-[10vh] sm:max-h-[80dvh] sm:translate-y-0 sm:p-0"
+ className="gap-0 overflow-y-auto overscroll-contain p-0 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] text-site-text sm:top-[10vh] sm:max-h-[80dvh] sm:translate-y-0 sm:p-0"
  >
  {/* Header */}
  <div className="flex items-center justify-between border-b border-site-border py-3 pl-4 pr-14">
@@ -296,7 +296,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  data-state={menuState}
  role="menu"
  aria-label={t('add-to-post-aria', { defaultValue:'Add to post'})}
- className="absolute top-full right-0 mt-1 w-52 origin-top-right glass-overlay p-1 z-50"
+ className="absolute top-full right-0 mt-1 w-52 origin-top-right glass-overlay overflow-hidden py-1.5 z-50"
  >
  <MenuItem
  icon={BarChart3}

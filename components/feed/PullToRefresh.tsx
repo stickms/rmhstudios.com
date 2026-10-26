@@ -160,7 +160,7 @@ export function PullToRefresh({
  className={
  dragging
  ?''
- :'transition-transform duration-site-slow ease-[cubic-bezier(0.22,1,0.36,1)] '
+ :'transition-transform duration-site-slow ease-[var(--ease-smooth)] '
  }
  style={{ transform: pull ? `translateY(${pull}px)`: undefined }}
  >

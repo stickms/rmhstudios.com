@@ -77,7 +77,7 @@ function HomesSubmitPage() {
         ) : isEditing && !listing ? (
           <EmptyState title="You can only edit your own listings." />
         ) : (
-          <div className="glass-fill rounded-site p-4 sm:p-5">
+          <div className="glass-fill rounded-site p-5 sm:p-5">
             <ListingForm listing={listing ?? undefined} />
           </div>
         )}

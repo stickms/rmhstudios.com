@@ -90,7 +90,7 @@ export function DocEditor({
       />
 
       {preview ? (
-        <div className="glass-inset rounded-site p-4">
+        <div className="glass-inset rounded-site p-5">
           <DocBody body={body} />
         </div>
       ) : (

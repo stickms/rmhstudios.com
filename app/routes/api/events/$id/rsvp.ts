@@ -66,21 +66,27 @@ export const Route = createFileRoute('/api/events/$id/rsvp')({
         }
       },
 
-      DELETE: defineHandler({ query: withdrawQuery }, async ({ params, session, query }) => {
-        try {
-          const result = await unrsvp(params.id, session.user.id, {
-            scope: query.scope,
-            occurrenceAt: query.occurrenceAt,
-          });
-          return Response.json(result);
-        } catch (error) {
-          if (error instanceof EventError) {
-            const [message, status] = mapEventError(error);
-            return Response.json({ error: message }, { status });
+      DELETE: defineHandler(
+        {
+          rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:events/:id/rsvp' },
+          query: withdrawQuery,
+        },
+        async ({ params, session, query }) => {
+          try {
+            const result = await unrsvp(params.id, session.user.id, {
+              scope: query.scope,
+              occurrenceAt: query.occurrenceAt,
+            });
+            return Response.json(result);
+          } catch (error) {
+            if (error instanceof EventError) {
+              const [message, status] = mapEventError(error);
+              return Response.json({ error: message }, { status });
+            }
+            throw error;
           }
-          throw error;
-        }
-      }),
+        },
+      ),
     },
   },
 });

@@ -1,92 +1,82 @@
-/* Sheet enter/exit, driven by Radix's data-state — the same hand-rolled
- * approach as dialog.css (tailwindcss-animate is not installed here), on the
- * shared `--motion-*` clock (globals.css §7.1, mirroring lib/motion.ts).
+/* Sheet enter/exit, driven by Radix's data-state on the shared `--motion-*`
+ * clock (globals.css §7.1, mirroring lib/motion.ts) — the same pattern as
+ * dialog.css: TRANSITIONS, not keyframes, so the motion is interruptible.
+ * Close a sheet while it is still rising (or reopen it while it is leaving) and
+ * it turns around from the frame it is on instead of jumping to the end of one
+ * animation and starting the other. `@starting-style` gives the open its first
+ * frame; the closed state IS that frame, so open and close are one path run
+ * both ways. Radix keeps the node mounted while `ui-sheet-presence` runs (it
+ * waits for `animationend`), which is what lets the exit transition play.
  *
- * Mobile (< md): a bottom sheet that slides up from the bottom edge.
- * Desktop (>= md): a centered dialog that scales in, identical to Dialog.
- * Transform/opacity only; the glass blur is never animated (janky). Gated on
- * no-preference so reduced-motion users get an instant appearance.
+ * Mobile (< md): a bottom sheet that slides up from the bottom edge, whole — no
+ * fade, as on iOS. Desktop (>= md): a centred dialog that scales in, like
+ * Dialog, composing with the -50%/-50% `translate` longhand Tailwind sets.
+ * Transform/opacity only; the glass is never animated.
  *
  * The present rides the sheet spring (`--spring-sheet`, globals.css §7.1 —
- * APPLE_SPRING.sheet sampled), the way a UIKit sheet comes up. A phone dismiss
- * crosses the whole screen height, so it takes the travel exit
- * (`--motion-out-travel`, accelerating) instead of the 0.1s fade-in-place
- * clock: 0.1s across ~800px read as the sheet vanishing, not leaving. */
-[data-slot="sheet-overlay"][data-state="open"] {
- animation: ui-sheet-overlay-in var(--motion-in) var(--motion-ease-in);
- }
+ * APPLE_SPRING.sheet sampled), the way a UIKit sheet comes up; a desktop sheet
+ * rides the smooth spring. A phone dismiss crosses the whole screen height, so
+ * it takes the travel exit (`--motion-out-travel`) instead of the quick clock. */
+[data-slot="sheet-overlay"] {
+  opacity: 1;
+  transition: opacity var(--motion-in) var(--motion-ease-in);
+}
 [data-slot="sheet-overlay"][data-state="closed"] {
- animation: ui-sheet-overlay-out var(--motion-out) var(--motion-ease-out) forwards;
- }
+  opacity: 0;
+  transition: opacity var(--motion-out) var(--motion-ease-out);
+  animation: ui-sheet-presence var(--motion-out) linear;
+}
+[data-slot="sheet-content"] {
+  transform: none;
+}
 [data-slot="sheet-content"][data-state="open"] {
- animation:
- ui-sheet-fade-in var(--motion-in) var(--motion-ease-in),
- ui-sheet-content-in var(--spring-sheet-duration) var(--spring-sheet);
- }
+  transition:
+    opacity var(--motion-in) var(--motion-ease-in),
+    transform var(--spring-sheet-duration) var(--spring-sheet);
+}
 [data-slot="sheet-content"][data-state="closed"] {
- animation: ui-sheet-content-out var(--motion-out-travel) var(--motion-ease-out-travel) forwards;
- }
-/* Desktop: the sheet is a centred dialog, so it moves like one — the smooth
- * spring, not the sheet spring's longer travel (see dialog.css). */
+  transform: translateY(100%);
+  pointer-events: none;
+  transition: transform var(--motion-out-travel) var(--motion-ease-out-travel);
+  animation: ui-sheet-presence var(--motion-out-travel) linear;
+}
+@starting-style {
+  [data-slot="sheet-overlay"][data-state="open"] {
+    opacity: 0;
+  }
+  [data-slot="sheet-content"][data-state="open"] {
+    transform: translateY(100%);
+  }
+}
+
 @media (min-width: 768px) {
- [data-slot="sheet-content"][data-state="open"] {
- animation:
- ui-sheet-fade-in var(--motion-in) var(--motion-ease-in),
- ui-sheet-content-in var(--spring-smooth-duration) var(--spring-smooth);
- }
- [data-slot="sheet-content"][data-state="closed"] {
- animation: ui-sheet-content-out var(--motion-out) var(--motion-ease-out) forwards;
- }
+  [data-slot="sheet-content"][data-state="open"] {
+    transition:
+      opacity var(--motion-in) var(--motion-ease-in),
+      transform var(--spring-smooth-duration) var(--spring-smooth);
+  }
+  [data-slot="sheet-content"][data-state="closed"] {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+    transition:
+      opacity var(--motion-out) var(--motion-ease-out),
+      transform var(--motion-out) var(--motion-ease-out);
+    animation: ui-sheet-presence var(--motion-out) linear;
+  }
+  @starting-style {
+    [data-slot="sheet-content"][data-state="open"] {
+      opacity: 0;
+      transform: translateY(12px) scale(0.96);
+    }
+  }
 }
 
-@keyframes ui-sheet-overlay-in {
- from {
- opacity: 0;
- }
-}
-@keyframes ui-sheet-overlay-out {
- to {
- opacity: 0;
- }
-}
-
-/* Mobile: slide up from the bottom edge, whole — no fade, as on iOS (the
- * fade-in is a no-op here and real on desktop). */
-@keyframes ui-sheet-fade-in {
- from {
- opacity: 1;
- }
-}
-@keyframes ui-sheet-content-in {
- from {
- transform: translateY(100%);
- }
-}
-@keyframes ui-sheet-content-out {
- to {
- transform: translateY(100%);
- }
-}
-
-/* Desktop: centered scale-in (composes with the -50%/-50% translate set via
- * Tailwind's native `translate` property, exactly like Dialog). One path both
- * ways: the exit ends on the enter's start frame (they used to be 12px in,
- * 8px out). */
-@media (min-width: 768px) {
- @keyframes ui-sheet-fade-in {
- from {
- opacity: 0;
- }
- }
- @keyframes ui-sheet-content-in {
- from {
- transform: translateY(12px) scale(0.96);
- }
- }
- @keyframes ui-sheet-content-out {
- to {
- opacity: 0;
- transform: translateY(12px) scale(0.96);
- }
- }
+/* Holds the node for Radix Presence while the exit transition runs; changes nothing visible. */
+@keyframes ui-sheet-presence {
+  from {
+    visibility: visible;
+  }
+  to {
+    visibility: visible;
+  }
 }

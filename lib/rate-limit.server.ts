@@ -63,15 +63,12 @@ export async function checkRateLimit(
   const viaRedis = await redisRateLimit(key, effectiveLimit, opts.windowMs);
   if (viaRedis) return viaRedis;
 
-  // Redis unavailable → in-process. Pass the raw limit; `rateLimit` applies the
-  // multiplier itself, so only pass through when applyMultiplier is on.
-  if (applyMult) {
-    return rateLimit(identity, { limit: opts.limit, windowMs: opts.windowMs, prefix: opts.prefix });
-  }
-  // No multiplier wanted: emulate by passing a limit that, after rateLimit's
-  // internal ×MULTIPLIER, yields opts.limit.
-  const raw = Math.max(1, Math.round(opts.limit / RATE_LIMIT_MULTIPLIER));
-  return rateLimit(identity, { limit: raw, windowMs: opts.windowMs, prefix: opts.prefix });
+  return rateLimit(identity, {
+    limit: opts.limit,
+    windowMs: opts.windowMs,
+    prefix: opts.prefix,
+    applyMultiplier: applyMult,
+  });
 }
 
 /**

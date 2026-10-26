@@ -176,7 +176,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
                   })}
                 </p>
               </div>
-              <span className="feed-hero__live">
+              <span className="feed-hero__live glass-fill">
                 <span aria-hidden />
                 {t('live-now', { defaultValue: 'Live' })}
               </span>
@@ -184,7 +184,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
           </section>
         )}
 
-        <header data-slot="feed-header" className="feed-search">
+        <header data-slot="feed-header" className="feed-search glass-inset">
           <label htmlFor="feed-search" className="sr-only">
             {t('search-placeholder', { defaultValue: 'Search people, posts, builds…' })}
           </label>
@@ -224,9 +224,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
           aria-label={t('people', { defaultValue: 'People' })}
         >
           <div className="px-4 py-2">
-            <p className="site-section-label mb-1">
-              {t('people', { defaultValue: 'People' })}
-            </p>
+            <p className="site-section-label mb-1">{t('people', { defaultValue: 'People' })}</p>
           </div>
           {userResults.map((user) => (
             <Link

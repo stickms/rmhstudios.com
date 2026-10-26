@@ -39,9 +39,13 @@ probe() {
     # this runs inside the sandboxed webhook unit (ProtectSystem=strict) where a
     # writable /tmp is not guaranteed, and a failed mktemp would read as a failed
     # probe and roll back every deploy.
+    # `tr -d '\0'`: bash drops NUL bytes from a command substitution with a
+    # "ignored null byte in input" warning on every probe attempt, which floods the
+    # deploy log. Strip them first; the markers we match are text. pipefail keeps
+    # a curl failure failing the pipeline.
     resp=$(curl -sS -w '\n%{http_code}' --max-time "$SMOKE_TIMEOUT" \
         ${host_hdr[@]+"${host_hdr[@]}"} -H 'User-Agent: rmh-deploy-smoke/1' \
-        "${BASE_URL}${path}" 2>/dev/null) || resp=$'\n000'
+        "${BASE_URL}${path}" 2>/dev/null | tr -d '\0') || resp=$'\n000'
     code="${resp##*$'\n'}"
     body="${resp%$'\n'*}"
     if [ "$code" != "200" ]; then

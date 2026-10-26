@@ -1,0 +1,355 @@
+/**
+ * RMH TF2 HUD Editor — palette + editor-specific chrome.
+ *
+ * Structure comes from the shared app chrome (`components/shared/app-theme.css`);
+ * this file contributes the Team Fortress 2 look: warm paper-and-ink panels like
+ * the game's own menus, one rust-orange accent, RED/BLU team colours, and hard
+ * corners. The display and body faces below are open PLACEHOLDERS for TF2's own
+ * type — swap the two `--app-font-*` lines (and the @font-face blocks) when the
+ * real faces are sourced.
+ */
+
+@import '../shared/app-theme.css';
+
+/* The TF2 faces, under their exact internal names so a scheme `"name" "TF2 Build"` and this
+   stylesheet resolve to the same file. Single-weight faces declare the whole weight range so the
+   browser never fakes a bold. Preview/UI assets only — never part of an exported HUD. */
+@font-face {
+  font-family: 'TF2';
+  src: url('/tf2-hud/fonts/tf2.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TF2 Build';
+  src: url('/tf2-hud/fonts/tf2build.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TF2 Secondary';
+  src: url('/tf2-hud/fonts/tf2secondary.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TF2 Professor';
+  src: url('/tf2-hud/fonts/tf2professor.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'tfd';
+  src: url('/tf2-hud/fonts/tfd.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Team Fortress Logo';
+  src: url('/tf2-hud/fonts/tflogo.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Plain Team Fortress 2: the system cursor, flat controls ─────── */
+
+.tf2hud-theme,
+.tf2hud-theme * {
+  cursor: default;
+}
+.tf2hud-theme
+  :is(
+    button,
+    a,
+    [role='tab'],
+    summary,
+    select,
+    input[type='checkbox'],
+    input[type='radio'],
+    input[type='range']
+  ):not(:disabled) {
+  cursor: pointer;
+}
+.tf2hud-theme
+  :is(input[type='text'], input[type='search'], input[type='number'], textarea, .cm-content) {
+  cursor: text;
+}
+.tf2hud-theme :is(button, a, [role='tab']) {
+  transition: none;
+}
+
+/* The active tab's orange underline (an inset line, so tabs never change size). */
+.tf2hud-tab[aria-selected='true'] {
+  box-shadow: inset 0 -2px 0 var(--app-accent);
+}
+
+/* The menu tick-box: a square with an orange check, no pill, no slide. */
+.tf2hud-check {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+  border: 1px solid var(--app-border-bright);
+  border-radius: var(--app-radius-sm);
+  background: var(--app-bg);
+}
+.tf2hud-check::before {
+  content: '';
+  width: 0.55rem;
+  height: 0.55rem;
+  background: var(--app-accent);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+  transform: scale(0);
+}
+.tf2hud-check:checked::before {
+  transform: scale(1);
+}
+.tf2hud-check:checked {
+  border-color: var(--app-accent);
+}
+.tf2hud-check:disabled {
+  opacity: 0.45;
+}
+
+/* ─── Dark (default): the in-game menu palette ───────────────────── */
+
+.tf2hud-theme {
+  --app-bg: #231f1c;
+  --app-bg-subtle: #2b2623;
+  --app-surface: #38312c;
+  --app-surface-hover: #453d36;
+  --app-surface-active: #52483f;
+  --app-border: #4a4038;
+  --app-border-bright: #6a5b4d;
+  --app-text: #ebe3cb;
+  --app-text-muted: #b9ab8d;
+  --app-text-dim: #857a66;
+
+  --app-accent: #cf6a1c;
+  --app-accent-fg: #1c0f04;
+  --app-accent-hover: #e07a2a;
+  --app-success: #8fb05a;
+  --app-danger: #d4585b;
+  --app-warning: #e2b24a;
+  --app-info: #6d9bb5;
+  --app-rare: #b8738f;
+
+  --app-font-display: 'TF2 Build', Impact, 'Arial Narrow', sans-serif;
+  --app-font-body: 'TF2 Secondary', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+  --tf2-font-flourish: 'TF2 Professor', 'TF2 Secondary', Georgia, serif;
+  --app-font-mono: 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
+
+  /* TF2's panels are blocky: tight corners everywhere. */
+  --app-radius: 6px;
+  --app-radius-sm: 4px;
+  --app-radius-lg: 8px;
+
+  --app-shadow: 0 3px 0 rgb(0 0 0 / 0.35);
+
+  /* Controls and panels sit on this; it is the app surface, named so no jelly adapter claims it. */
+  --tf2-panel: #38312c;
+  /* No jelly anywhere in this app (the same kill switch high contrast uses). */
+  --app-jelly-on: 0;
+  --tf2-red: #b8383b;
+  --tf2-blu: #5885a2;
+  --tf2-paper: #ebe3cb;
+  --tf2-ink: #2b2623;
+  --tf2-checker-a: #2d2825;
+  --tf2-checker-b: #35302c;
+}
+
+/* ─── Light: tan paper ───────────────────────────────────────────── */
+
+.tf2hud-theme.app-light {
+  --app-bg: #e4dac0;
+  --app-bg-subtle: #ece3cb;
+  --app-surface: #f6f0dd;
+  --app-surface-hover: #efe7cf;
+  --app-surface-active: #e5dbbf;
+  --app-border: #cbbf9f;
+  --app-border-bright: #a99a76;
+  --app-text: #2b2623;
+  --app-text-muted: #65594a;
+  --app-text-dim: #8c7f69;
+
+  --app-accent: #a8470d;
+  --app-accent-fg: #fff8ec;
+  --app-accent-hover: #8f3a08;
+  --app-success: #4d6e1f;
+  --app-danger: #a82c30;
+  --app-warning: #8a5d00;
+  --app-info: #2f5f7e;
+  --app-shadow: 0 3px 0 rgb(60 40 20 / 0.18);
+
+  --tf2-panel: #f6f0dd;
+  --tf2-checker-a: #d9cfb3;
+  --tf2-checker-b: #e0d6bb;
+}
+
+/* ══ Editor chrome ═══════════════════════════════════════════════════ */
+
+/* The title strip: a flat orange band with the display face, like a TF2 menu header. */
+.tf2hud-title {
+  font-family: var(--app-font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tf2hud-flourish {
+  font-family: var(--tf2-font-flourish);
+}
+
+.tf2hud-panel-head {
+  font-family: var(--app-font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+}
+
+/* Transparent-pixel checkerboard behind the preview canvas. */
+.tf2hud-checker {
+  background-color: var(--tf2-checker-a);
+  background-image:
+    linear-gradient(
+      45deg,
+      var(--tf2-checker-b) 25%,
+      transparent 25%,
+      transparent 75%,
+      var(--tf2-checker-b) 75%
+    ),
+    linear-gradient(
+      45deg,
+      var(--tf2-checker-b) 25%,
+      transparent 25%,
+      transparent 75%,
+      var(--tf2-checker-b) 75%
+    );
+  background-size: 24px 24px;
+  background-position:
+    0 0,
+    12px 12px;
+}
+
+/* Fake arena backdrop for in-game pages: dusk sky into a rust floor. */
+.tf2hud-backdrop-game {
+  background: linear-gradient(180deg, #4b5b68 0%, #6f7a7c 42%, #8a7a62 43%, #5a4a3a 100%);
+}
+
+.tf2hud-backdrop-menu {
+  background: linear-gradient(135deg, #1d1a18 0%, #342c26 60%, #2a2320 100%);
+}
+
+.tf2hud-canvas {
+  image-rendering: auto;
+  touch-action: none;
+  cursor: default;
+}
+
+.tf2hud-tree-row[data-active='true'] {
+  background: var(--app-accent-dim);
+  box-shadow: inset 2px 0 0 var(--app-accent);
+}
+
+.tf2hud-badge-modified {
+  color: var(--app-warning);
+}
+.tf2hud-badge-added {
+  color: var(--app-success);
+}
+.tf2hud-badge-deleted {
+  color: var(--app-danger);
+}
+
+.tf2hud-team-red {
+  color: var(--tf2-red);
+}
+.tf2hud-team-blu {
+  color: var(--tf2-blu);
+}
+
+/* CodeMirror inherits the app palette so the editor is part of the page. */
+.tf2hud-cm .cm-editor {
+  height: 100%;
+  background: var(--app-bg-subtle);
+  color: var(--app-text);
+  font-family: var(--app-font-mono);
+  font-size: 12.5px;
+}
+.tf2hud-cm .cm-editor.cm-focused {
+  outline: none;
+}
+.tf2hud-cm .cm-gutters {
+  background: var(--app-bg);
+  color: var(--app-text-dim);
+  border-right: 1px solid var(--app-border);
+}
+.tf2hud-cm .cm-activeLine,
+.tf2hud-cm .cm-activeLineGutter {
+  background: var(--app-accent-dim);
+}
+.tf2hud-cm .cm-selectionBackground,
+.tf2hud-cm .cm-editor.cm-focused .cm-selectionBackground {
+  background: color-mix(in srgb, var(--app-accent) 32%, transparent) !important;
+}
+.tf2hud-cm .cm-cursor {
+  border-left-color: var(--app-text);
+}
+.tf2hud-cm .cm-tooltip {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-bright);
+  color: var(--app-text);
+}
+.tf2hud-cm .cm-panels {
+  background: var(--app-surface);
+  color: var(--app-text);
+  border-color: var(--app-border);
+}
+.tf2hud-cm .cm-diagnostic-error {
+  border-left-color: var(--app-danger);
+}
+.tf2hud-cm .cm-diagnostic-warning {
+  border-left-color: var(--app-warning);
+}
+
+/* Token colours, drawn from the palette so every theme stays readable. */
+.tf2hud-cm .tok-key {
+  color: var(--app-accent-hover);
+}
+.tf2hud-cm .tok-string {
+  color: var(--app-text);
+}
+.tf2hud-cm .tok-comment {
+  color: var(--app-text-dim);
+  font-style: italic;
+}
+.tf2hud-cm .tok-cond {
+  color: var(--app-info);
+}
+.tf2hud-cm .tok-directive {
+  color: var(--app-rare);
+}
+.tf2hud-cm .tok-brace {
+  color: var(--app-text-muted);
+}
+
+/* Diff rows */
+.tf2hud-diff-add {
+  background: color-mix(in srgb, var(--app-success) 16%, transparent);
+}
+.tf2hud-diff-del {
+  background: color-mix(in srgb, var(--app-danger) 16%, transparent);
+}

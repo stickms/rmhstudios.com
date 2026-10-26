@@ -178,7 +178,7 @@ export function PersonasTab({ seed }: { seed: number }) {
       )}
 
       {showForm && (
-        <div className="glass-pane mb-6 space-y-3 rounded-site p-4">
+        <div className="glass-pane mb-6 space-y-3 rounded-site p-5">
           <div className="flex items-center justify-between gap-2">
             <h2 className="site-section-label">
               {t('new-persona', { defaultValue: 'New persona' })}

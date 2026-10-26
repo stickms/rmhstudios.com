@@ -58,6 +58,36 @@ const GRIP_PLASTIC = 0.5;
 const GRIP_ELASTIC = 0.28;
 /** Soft ceiling on |u| (radii). A saturating curve, not a hard clamp, so nothing pops. */
 const U_MAX = 0.36;
+/**
+ * The canvases the globe is painted on reach 1.22 radii (`CAGE_BLEED` / `JELLY_BLEED`), so the stretched silhouette has
+ * to close inside them or it is cut flat. A piece of material that rests at radius r0 may be carried at most
+ * `reachFor(r0)` = soft-min(U_MAX, 1 + LIMB_REACH − r0): the full U_MAX deep inside, shrinking linearly toward the limb,
+ * so nothing can land past 1 + LIMB_REACH. The cap bites on |u| (a saturating curve, not a clamp, so a harder drag still
+ * moves the surface, ever more slowly) and not on the landing radius, so the rim moves as one round piece — capping the
+ * landing radius flattened the whole stretched side into a plateau. LIMB_REACH leaves the rim's shoulder, the
+ * antialiasing and a ripple's swell the rest of the margin.
+ */
+const LIMB_REACH = 0.14;
+const REACH_SHARP = 24;
+export function reachFor(r0: number): number {
+  const a = 1 + LIMB_REACH - r0;
+  const k = REACH_SHARP;
+  // Soft-min of U_MAX and a; exactly 0 once nothing may move.
+  const m = -Math.log(Math.exp(-k * U_MAX) + Math.exp(-k * a)) / k;
+  return Math.max(0, m);
+}
+/**
+ * Damped fixed-point passes that invert the field for the shader (see `derive`). Undamped, the limb — where the cap
+ * squeezes the material and |∇u| nears 1 — converges too slowly (5 passes leave ~0.06 radii, a ragged edge); 0.8 × 16
+ * leaves under 0.01 (about a pixel) at the worst drags measured.
+ */
+const INVERT_PASSES = 16;
+const INVERT_RELAX = 0.8;
+/** A pass that moves the estimate less than this (radii, ~0.03 px) ends the loop: at rest, and over most of a drag, one to
+ * four passes are enough, so the cost follows how much of the field is actually displaced. */
+const INVERT_TOL = 2e-4;
+/** Cells farther out than this are never painted (the canvases end at 1.22), so they are not inverted. */
+const INVERT_RADIUS = 1.26;
 /** Press pressure: 1/s toward 1 while held, toward 0 after. */
 const PRESS_RATE = 16;
 const RELEASE_RATE = 9;
@@ -99,7 +129,8 @@ export class DoughBody {
   /** Current press pressure, 0..1. */
   pinch = 0;
   /**
-   * RGBA32F-ready snapshot of the field for the shader: R,G = total in-plane displacement, B = height, A = 0.
+   * RGBA32F-ready snapshot for the shader, indexed by SCREEN position (the pull-back, see `derive`): R,G = displacement of
+   * the material that lands there, B = its height, A = 0.
    * Row 0 is y = -EXTENT (top). Rewritten by every `step` that changes anything; `version` increments with it.
    */
   private _field = new Float32Array(DOUGH_N * DOUGH_N * 4);
@@ -120,6 +151,8 @@ export class DoughBody {
   private lapX = new Float32Array(DOUGH_N * DOUGH_N);
   private lapY = new Float32Array(DOUGH_N * DOUGH_N);
   private mask = new Float32Array(DOUGH_N * DOUGH_N);
+  /** The most a cell's material may be carried (see `reachFor`), radii. */
+  private reach = new Float32Array(DOUGH_N * DOUGH_N);
   private wasm: DoughKernel | null = null;
   private wasmLoading: Promise<boolean> | undefined;
   private held = false;
@@ -136,6 +169,7 @@ export class DoughBody {
         const y = -e + j * this.h;
         // Material exists on the disc; the field fades out past the limb so the border is exactly still.
         this.mask[j * DOUGH_N + i] = 1 - smooth(1.02, 1.27, Math.hypot(x, y));
+        this.reach[j * DOUGH_N + i] = reachFor(Math.hypot(x, y));
       }
     }
   }
@@ -431,28 +465,39 @@ export class DoughBody {
     }
   }
 
-  /** Total displacement, derived height, and the shader's snapshot. */
+  /**
+   * Total displacement, derived height, and the shader's snapshot.
+   *
+   * `ux`/`uy`/`hh` are indexed by REST position (the material's address): that is what `deform` and `depth` read to
+   * draw the wireframe and the pins. The shader asks the opposite question — which material is at this PIXEL — so what
+   * it is sent is the field inverted onto the screen: `v(p) = u(X)` where `X + u(X) = p`, found per cell by a few
+   * fixed-point passes, with the height carried to the same place. Inverted here once per step (2304 cells, only while
+   * the dough is awake) rather than per pixel, the pull-back is exact at any displacement, so the silhouette follows
+   * the limb all the way out instead of stopping where the shader's own two-pass guess ran out of field.
+   */
   private derive(): void {
     if (this.wasm) {
       this.wasm.derive();
       return;
     }
     const N = DOUGH_N;
-    const { ex, ey, px, py, ux, uy, hh, field } = this;
+    const { ex, ey, px, py, ux, uy, hh, field, reach } = this;
+    const h = this.h;
     for (let c = 0; c < N * N; c++) {
       let x = ex[c]! + px[c]!;
       let y = ey[c]! + py[c]!;
-      // Saturate smoothly: |u| → U_MAX asymptotically.
+      // Saturate smoothly: |u| → reach asymptotically.
       const m = Math.hypot(x, y);
       if (m > 1e-9) {
-        const s = 1 / Math.pow(1 + Math.pow(m / U_MAX, 4), 0.25);
+        const d = reach[c]!;
+        const s = d > 1e-6 ? 1 / Math.pow(1 + Math.pow(m / d, 4), 0.25) : 0;
         x *= s;
         y *= s;
       }
       ux[c] = x;
       uy[c] = y;
     }
-    const inv2h = 1 / (2 * this.h);
+    const inv2h = 1 / (2 * h);
     hh.fill(0);
     for (let j = 1; j < N - 1; j++) {
       for (let i = 1; i < N - 1; i++) {
@@ -461,12 +506,56 @@ export class DoughBody {
         hh[c] = -HEIGHT_GAIN * div;
       }
     }
-    for (let c = 0; c < N * N; c++) {
-      const o = c * 4;
-      field[o] = ux[c]!;
-      field[o + 1] = uy[c]!;
-      field[o + 2] = hh[c]!;
-      field[o + 3] = 0;
+    const last = N - 2;
+    for (let j = 0; j < N; j++) {
+      const gy = -DOUGH_EXTENT + j * h;
+      for (let i = 0; i < N; i++) {
+        const gx = -DOUGH_EXTENT + i * h;
+        let X = gx;
+        let Y = gy;
+        let vx = 0;
+        let vy = 0;
+        if (gx * gx + gy * gy <= INVERT_RADIUS * INVERT_RADIUS) {
+          for (let pass = 0; pass < INVERT_PASSES; pass++) {
+            const fx = (X + DOUGH_EXTENT) / h;
+            const fy = (Y + DOUGH_EXTENT) / h;
+            const i0 = Math.max(0, Math.min(last, Math.floor(fx)));
+            const j0 = Math.max(0, Math.min(last, Math.floor(fy)));
+            const tx = Math.min(1, Math.max(0, fx - i0));
+            const ty = Math.min(1, Math.max(0, fy - j0));
+            const c = j0 * N + i0;
+            const w00 = (1 - tx) * (1 - ty);
+            const w10 = tx * (1 - ty);
+            const w01 = (1 - tx) * ty;
+            const w11 = tx * ty;
+            vx = w00 * ux[c]! + w10 * ux[c + 1]! + w01 * ux[c + N]! + w11 * ux[c + N + 1]!;
+            vy = w00 * uy[c]! + w10 * uy[c + 1]! + w01 * uy[c + N]! + w11 * uy[c + N + 1]!;
+            const dx = INVERT_RELAX * (gx - vx - X);
+            const dy = INVERT_RELAX * (gy - vy - Y);
+            X += dx;
+            Y += dy;
+            if (Math.abs(dx) < INVERT_TOL && Math.abs(dy) < INVERT_TOL) break;
+          }
+        }
+        // The height rides to the same place: sampled where the material for this pixel rests.
+        const hx = (X + DOUGH_EXTENT) / h;
+        const hy = (Y + DOUGH_EXTENT) / h;
+        const hi = Math.max(0, Math.min(last, Math.floor(hx)));
+        const hj = Math.max(0, Math.min(last, Math.floor(hy)));
+        const ht = Math.min(1, Math.max(0, hx - hi));
+        const hu = Math.min(1, Math.max(0, hy - hj));
+        const hc = hj * N + hi;
+        const hv =
+          (1 - ht) * (1 - hu) * hh[hc]! +
+          ht * (1 - hu) * hh[hc + 1]! +
+          (1 - ht) * hu * hh[hc + N]! +
+          ht * hu * hh[hc + N + 1]!;
+        const o = (j * N + i) * 4;
+        field[o] = vx;
+        field[o + 1] = vy;
+        field[o + 2] = hv;
+        field[o + 3] = 0;
+      }
     }
   }
 

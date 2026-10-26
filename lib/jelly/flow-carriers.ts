@@ -59,7 +59,7 @@
  *
  * A running CSS animation keeps the compositor producing a frame on every vsync for as long as it runs: with carriers
  * on screen a page at rest drew 60 frames/s (more on a high-refresh panel), against the idle floor of
- * `jellyBudget().idleClockHz` (12 Hz). After `IDLE_AFTER_MS` without input (pointer, key, wheel, scroll) this service
+ * `jellyBudget().idleClockHz` (30 Hz). After `IDLE_AFTER_MS` without input (pointer, key, wheel, scroll) this service
  * stamps `html[data-jelly-idle]`; the CSS pauses every carrier under it, and the service advances their animations'
  * `currentTime` in steps instead — on the engine's ambient haze tick (`ambient:tick` on the bus) when there is one,
  * so haze and carriers share a frame, else on its own timer at the idle clock's rate. No `requestAnimationFrame`, no

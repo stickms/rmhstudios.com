@@ -97,7 +97,7 @@ function AdminRedemptionsPage() {
             {rows.map((r) => {
               const Icon = KIND_ICON[r.kind];
               return (
-                <div key={r.id} className="glass-fill space-y-3 rounded-site p-4">
+                <div key={r.id} className="glass-fill space-y-3 rounded-site p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <Icon className="size-5 shrink-0 text-site-accent" aria-hidden />

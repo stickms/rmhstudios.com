@@ -275,7 +275,7 @@ export function AlbumUploader({
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   return (
-    <div className="glass-pane space-y-3 rounded-site p-4">
+    <div className="glass-pane space-y-3 rounded-site p-5">
       <div
         className={cn(
           'flex w-full cursor-pointer flex-col items-center gap-2 rounded-site border-2 border-dashed px-5 py-8 text-center text-site-text-muted transition-colors duration-site-fast',

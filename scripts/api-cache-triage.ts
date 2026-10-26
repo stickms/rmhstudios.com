@@ -460,7 +460,7 @@ function followCall(
   if (!found || found === 'unresolved') return;
   // The cache layer itself publishes invalidations and memoises; that is not a
   // viewer-visible side effect of the GET that reads through it.
-  if (/lib\/(cache|cached\.server)\.ts$/.test(found.file)) return;
+  if (/lib[\\/](cache|cached\.server)\.ts$/.test(found.file)) return;
   const key = `${found.file}#${name}`;
   if (visited.has(key)) return;
   visited.add(key);
@@ -490,7 +490,10 @@ function walk(dir: string, acc: string[] = []): string[] {
 
 /** `app/routes/api/users/$id.wishlist.ts` -> `/api/users/$id/wishlist` */
 function routeUrl(file: string): string {
-  let rel = path.relative(path.join(ROOT, 'app/routes'), file).replace(/\.tsx?$/, '');
+  let rel = path
+    .relative(path.join(ROOT, 'app/routes'), file)
+    .replaceAll('\\', '/')
+    .replace(/\.tsx?$/, '');
   // `[.]` is an escaped literal dot, keep it; bare `.` is a path separator.
   rel = rel
     .replace(/\[\.\]/g, '\uE000')
@@ -618,7 +621,7 @@ function scanRoute(file: string): Omit<Row, 'clientRefs'>[] {
         !featureNode &&
         fn !== null;
       rows.push({
-        file: path.relative(ROOT, file),
+        file: path.relative(ROOT, file).replaceAll('\\', '/'),
         url,
         method: nm as 'GET' | 'HEAD',
         wrapper,
@@ -829,7 +832,7 @@ function apiCacheReport(): ApiCacheRow[] {
 
   const rows: ApiCacheRow[] = [];
   for (const [f, text] of texts) {
-    if (f.endsWith('lib/cache.ts') || f.endsWith('lib/cached.server.ts')) continue;
+    if (/lib[\\/](cache|cached\.server)\.ts$/.test(f)) continue;
     if (!/\bapiCache\./.test(text)) continue;
     const keys = new Set<string>();
     for (const m of text.matchAll(
@@ -837,12 +840,17 @@ function apiCacheReport(): ApiCacheRow[] {
     )) {
       keys.add(m[1].replace(/\s+/g, ' ').slice(0, 48));
     }
-    const spec = '@/' + path.relative(ROOT, f).replace(/\.tsx?$/, '');
+    const spec =
+      '@/' +
+      path
+        .relative(ROOT, f)
+        .replaceAll('\\', '/')
+        .replace(/\.tsx?$/, '');
     const importers = serverTier
       .filter(([, t]) => t.includes(`'${spec}'`) || t.includes(`"${spec}"`))
-      .map(([sf]) => path.relative(ROOT, sf));
+      .map(([sf]) => path.relative(ROOT, sf).replaceAll('\\', '/'));
     rows.push({
-      file: path.relative(ROOT, f),
+      file: path.relative(ROOT, f).replaceAll('\\', '/'),
       onCached: /from\s+['"]@\/lib\/cached\.server['"]/.test(text),
       gets: (text.match(/apiCache\.get\b/g) ?? []).length,
       sets: (text.match(/apiCache\.set\b/g) ?? []).length,

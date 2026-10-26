@@ -119,44 +119,47 @@ export const Route = createFileRoute('/api/profile/avatar')({
           return Response.json({ image: imageUrl });
         },
       ),
-      DELETE: defineHandler({}, async ({ session }) => {
-        const profile = await prisma.userProfile.findUnique({
-          where: { userId: session.user.id },
-          select: { customImage: true },
-        });
-
-        if (!profile?.customImage) {
-          return Response.json({ image: null });
-        }
-
-        // Delete the avatar object from storage + purge the CDN edge.
-        await removeStoredAvatar(profile.customImage);
-
-        // Clear custom image in DB
-        await prisma.userProfile.update({
-          where: { userId: session.user.id },
-          data: { customImage: null, customImageSizeBytes: null },
-        });
-
-        // Refresh the cached feed author display so the reverted avatar shows now.
-        invalidateUserDisplay(session.user.id);
-
-        // If User.image was corrupted by old code (overwritten with custom avatar URL),
-        // clear it so it doesn't 404
-        const user = await prisma.user.findUnique({
-          where: { id: session.user.id },
-          select: { image: true },
-        });
-        if (user?.image && userAvatarFilename(user.image) !== null) {
-          await prisma.user.update({
-            where: { id: session.user.id },
-            data: { image: null },
+      DELETE: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:profile/avatar' } },
+        async ({ session }) => {
+          const profile = await prisma.userProfile.findUnique({
+            where: { userId: session.user.id },
+            select: { customImage: true },
           });
-          return Response.json({ image: '/images/social/default_avatar.png' });
-        }
 
-        return Response.json({ image: user?.image || '/images/social/default_avatar.png' });
-      }),
+          if (!profile?.customImage) {
+            return Response.json({ image: null });
+          }
+
+          // Delete the avatar object from storage + purge the CDN edge.
+          await removeStoredAvatar(profile.customImage);
+
+          // Clear custom image in DB
+          await prisma.userProfile.update({
+            where: { userId: session.user.id },
+            data: { customImage: null, customImageSizeBytes: null },
+          });
+
+          // Refresh the cached feed author display so the reverted avatar shows now.
+          invalidateUserDisplay(session.user.id);
+
+          // If User.image was corrupted by old code (overwritten with custom avatar URL),
+          // clear it so it doesn't 404
+          const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { image: true },
+          });
+          if (user?.image && userAvatarFilename(user.image) !== null) {
+            await prisma.user.update({
+              where: { id: session.user.id },
+              data: { image: null },
+            });
+            return Response.json({ image: '/images/social/default_avatar.png' });
+          }
+
+          return Response.json({ image: user?.image || '/images/social/default_avatar.png' });
+        },
+      ),
     },
   },
 });

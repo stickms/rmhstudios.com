@@ -69,7 +69,7 @@ export function SettingsSection({
     <section
       id={id}
       className={cn(
-        'rounded-site p-4',
+        'rounded-site p-5',
         surface === 'pane' && tone === 'default' ? 'glass-pane' : 'glass-fill',
         tone === 'danger' && 'border border-site-danger/40',
         className,

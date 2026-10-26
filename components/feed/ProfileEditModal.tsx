@@ -965,7 +965,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
  {section ==='creator'? (
  <div role="tabpanel"className="space-y-5">
- <section className="glass-fill rounded-site p-4">
+ <section className="glass-fill rounded-site p-5">
  <div className="mb-4 flex items-start gap-3">
  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-warning/10 text-site-warning">
  <Coins className="size-4"aria-hidden />
@@ -1033,7 +1033,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  </div>
  </section>
 
- <section className="glass-fill rounded-site p-4">
+ <section className="glass-fill rounded-site p-5">
  <div className="mb-4 flex items-start gap-3">
  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
  <Music2 className="size-4"aria-hidden />
@@ -1052,7 +1052,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  <SpotifySongSearch selected={selectedSong} onSelect={setSelectedSong} />
  </section>
 
- <section className="glass-fill rounded-site p-4">
+ <section className="glass-fill rounded-site p-5">
  <div className="flex items-start gap-3">
  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
  <Palette className="size-4"aria-hidden />
@@ -1105,7 +1105,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
  {section ==='privacy'? (
  <div role="tabpanel"className="space-y-4">
- <section className="glass-fill rounded-site p-4">
+ <section className="glass-fill rounded-site p-5">
  <div className="flex items-center justify-between gap-4">
  <div className="flex min-w-0 items-start gap-3">
  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
@@ -1134,7 +1134,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  </div>
  </section>
 
- <section className="glass-fill rounded-site p-4">
+ <section className="glass-fill rounded-site p-5">
  <div className="mb-4 flex items-start gap-3">
  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
  <LockKeyhole className="size-4"aria-hidden />

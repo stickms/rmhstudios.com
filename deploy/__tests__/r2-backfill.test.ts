@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const deploy = readFileSync(resolve(import.meta.dirname, '../../deploy.sh'), 'utf8');
@@ -18,6 +18,7 @@ const joins = section('# ── Join background best-effort jobs', '# ── Clo
 const compose = section('dc() {', '# ── Helper: prune');
 const dirs: string[] = [];
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
+const shellPath = (value: string) => value.replaceAll('\\', '/').replace(/^([A-Za-z]):/, (_, drive: string) => '/' + drive.toLowerCase());
 
 afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
@@ -37,12 +38,13 @@ function runDeploy(options: {
   staging?: boolean;
   migration?: 'pending' | 'current' | 'fail';
   failJob?: 'avatars' | 'media';
+  hangJob?: 'avatars' | 'media';
 } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'r2-deploy-'));
   dirs.push(dir);
   const repo = join(dir, 'repo with spaces');
   const storage = options.absoluteStorage ? join(dir, 'absolute media') : options.storage ?? './db';
-  const storageHost = storage.startsWith('/') ? storage : join(repo, storage);
+  const storageHost = isAbsolute(storage) ? storage : join(repo, storage);
   mkdirSync(repo, { recursive: true });
   mkdirSync(join(repo, 'deploy'));
   const sourceRoot = resolve(import.meta.dirname, '../..');
@@ -56,7 +58,7 @@ function runDeploy(options: {
   writeFileSync(envFile, [
     'DATABASE_URL=postgresql://test:test@base:5432/test',
     ...(options.cdn === false ? [] : ['VITE_CDN_BASE_URL=https://cdn.example.test']),
-    options.storage === undefined && !options.absoluteStorage ? 'STORAGE_PATH=' : `STORAGE_PATH="${storage}"`,
+    options.storage === undefined && !options.absoluteStorage ? 'STORAGE_PATH=' : `STORAGE_PATH="${isAbsolute(storage) ? shellPath(storage) : storage}"`,
   ].join('\n') + '\n');
   writeFileSync(join(dir, 'calls'), '');
   writeFileSync(join(dir, 'events'), '');
@@ -77,6 +79,7 @@ const args = process.argv.slice(2);
 fs.appendFileSync(file('calls'), JSON.stringify({ args, migrated: exists('migrated'), attached: exists('attached') }) + '\\n');
 const cmd = args.join(' ');
 if (args[0] === 'inspect') { console.log('true'); process.exit(0); }
+if (args[0] === 'image' && args[1] === 'inspect') { console.log('{}'); process.exit(0); }
 if (args[0] === 'network') {
   if (args[1] === 'connect') { mark('attached'); event('network-attached'); }
   process.exit(0);
@@ -84,7 +87,7 @@ if (args[0] === 'network') {
 if (cmd.includes('scripts/sync-static-assets-to-r2.mjs')) {
   mark('static-started'); event('static-started'); process.exit(0);
 }
-if (cmd.includes('prisma migrate status')) {
+if (cmd.includes('migrate status')) {
   if (process.env.TEST_CDN === '1') {
     for (let i = 0; i < 200 && !exists('static-started'); i++) pause();
   }
@@ -92,7 +95,7 @@ if (cmd.includes('prisma migrate status')) {
   if (process.env.TEST_MIGRATION === 'current') { mark('migrated'); process.exit(0); }
   console.log('1 pending migration'); process.exit(1);
 }
-if (cmd.includes('prisma migrate deploy')) {
+if (cmd.includes('migrate deploy')) {
   event('migration-started'); pause();
   if (process.env.TEST_MIGRATION === 'fail') { console.log('P3018: migration failed'); process.exit(1); }
   mark('migrated'); event('migration-finished'); process.exit(0);
@@ -101,6 +104,9 @@ const job = cmd.includes('scripts/migrate-avatars-to-r2.ts') ? 'avatars'
   : cmd.includes('scripts/migrate-media-to-r2.ts') ? 'media' : undefined;
 if (job) {
   event(job + '-started');
+  // The deploy lock rides on fd 200; a background job holding it blocks the next deploy.
+  if (fs.existsSync('/proc/self/fd/200')) event(job + '-holds-lock');
+  if (process.env.TEST_HANG_JOB === job) for (;;) pause();
   for (let i = 0; i < 200 && !exists('foreground-complete'); i++) pause();
   event(job + (exists('foreground-complete') ? '-background' : '-blocked-foreground'));
   // Stay in flight after foreground work, so dropping the real wait is observable.
@@ -111,12 +117,16 @@ if (job) {
 console.error('Unexpected Docker invocation:', args); process.exit(97);
 `);
   chmodSync(docker, 0o755);
+  const dockerWrapper = join(dir, 'docker-wrapper');
+  writeFileSync(dockerWrapper, `#!/bin/bash\nexec ${quote(shellPath(process.execPath))} ${quote(shellPath(docker))} "$@"\n`, { mode: 0o755 });
 
-  const result = spawnSync('/bin/bash', ['-c', `
+  const harnessScript = join(dir, 'harness.sh');
+  writeFileSync(harnessScript, `
 set -euo pipefail
-REPO_DIR=${quote(repo)}
-ENV_FILE=${quote(envFile)}
-DOCKER_BIN=${quote(docker)}
+exec 200>>"$TEST_ROOT/lock"
+REPO_DIR=${quote(shellPath(repo))}
+ENV_FILE=${quote(shellPath(envFile))}
+DOCKER_BIN=${quote(shellPath(dockerWrapper))}
 PROJECT_NAME=rmhstudios-test
 IMAGE_NAME=rmhstudios-test-app
 ENVIRONMENT=${options.staging ? 'staging' : 'production'}
@@ -124,6 +134,7 @@ log() { printf '%s\\n' "$1"; }
 step_start() { :; }
 step_done() { :; }
 stage() { :; }
+release_event() { :; }
 update_deploy_status() { printf 'status: %s %s\\n' "$1" "$2"; }
 # The production diagnostic uses GNU grep -P; keep this harness portable on
 # macOS by substituting only those diagnostics, leaving real gates untouched.
@@ -141,14 +152,19 @@ ${launch}
 printf 'foreground-complete\\n' >> "$TEST_ROOT/events"
 ${joins}
 printf 'deploy-complete\\n' >> "$TEST_ROOT/events"
-`], {
+`);
+  const result = spawnSync(process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' : '/bin/bash', [harnessScript], {
     cwd: repo,
     env: {
+      ...process.env,
       PATH: '/usr/bin:/bin',
-      TEST_ROOT: dir,
+      TEST_ROOT: dir.replaceAll('\\', '/'),
+      MSYS2_ARG_CONV_EXCL: 'STORAGE_PATH=',
       TEST_CDN: options.cdn === false ? '0' : '1',
       TEST_MIGRATION: options.migration ?? 'pending',
       TEST_FAIL_JOB: options.failJob ?? '',
+      TEST_HANG_JOB: options.hangJob ?? '',
+      ...(options.hangJob ? { BACKFILL_TIMEOUT_SECONDS: '1' } : {}),
     },
     encoding: 'utf8',
     timeout: 5000,
@@ -161,7 +177,7 @@ printf 'deploy-complete\\n' >> "$TEST_ROOT/events"
       .map((line) => JSON.parse(line) as Invocation),
     events: readFileSync(join(dir, 'events'), 'utf8').trim().split('\n').filter(Boolean),
     storageHost,
-    envFile,
+    envFile: envFile.replaceAll('\\', '/'),
   };
 }
 
@@ -245,6 +261,30 @@ describe('deployment R2 backfills', () => {
 
   // Removing '&' blocks later deployment; removing a wait reports completion
   // too soon. A controlled job holds until foreground work reaches its end.
+  // The jobs are children of the deploy shell; if they inherit the flock
+  // descriptor, a hung one keeps every later deploy queued.
+  it.skipIf(process.platform === 'win32')('does not leave the deployment lock open in a backfill', () => {
+    const result = runDeploy();
+    expect(result.status, result.output).toBe(0);
+    expect(result.events).toContain('avatars-started');
+    expect(result.events).toContain('media-started');
+    expect(result.events).not.toContain('avatars-holds-lock');
+    expect(result.events).not.toContain('media-holds-lock');
+  });
+
+  // An unbounded join is what let one wedged container hold the deploy open
+  // (and its lock) indefinitely.
+  it.skipIf(process.platform === 'win32').each(['avatars', 'media'] as const)(
+    'bounds a hung %s backfill so the deploy still completes',
+    (hangJob) => {
+      const result = runDeploy({ hangJob });
+      expect(result.status, result.output).toBe(0);
+      expect(result.output).toContain(`WARNING: ${hangJob === 'avatars' ? 'avatar' : 'media'} R2 backfill failed`);
+      expect(result.events).not.toContain(`${hangJob}-finished`);
+      expect(result.events).toContain('deploy-complete');
+    },
+  );
+
   it.each(['avatars', 'media'] as const)('joins background work and warns when %s fails', (failJob) => {
     const result = runDeploy({ failJob });
     expect(result.status, result.output).toBe(0);

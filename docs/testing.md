@@ -254,24 +254,23 @@ and scrolling.
 
 "At rest" means the Plasmatic Jelly idle floor, not zero: once the page has gone
 `IDLE_AFTER_MS` (20 s) without input, the material's ambient clock keeps ticking
-at `idleClockHz` (12 Hz desktop) and never freezes while someone could be
-looking (master plan R7). The `--gate` limit is that floor + 1 (13 fps) — a
+at `idleClockHz` (30 Hz desktop) and never freezes while someone could be
+looking (master plan R7). The `--gate` limit is that floor + 1 (31 fps) — a
 deliberate reversal of the 2026-10-08 audit's 2 fps rest limit, recorded in
 [`plasmatic-jelly-system.md`](./plasmatic-jelly-system.md) §2. `--engaged` sweeps
-a pointer for the whole window and holds pages to the engaged clock (30 Hz) + 5.
+a pointer for the whole window and holds pages to the engaged clock (60 Hz) + 5.
 Both limits are read from `JELLY_BUDGETS` in `lib/jelly/tiers.ts`, never
 restated in the script. CPU at rest on `/` is reported against the ≤ 250 ms/s
 target but not gated.
 
-The limits are the **clock's**, so the gate judges a second trace taken with
-ambient arcs isolated (`html[data-electric-arcs="clicks"]`, as
-`jelly-interaction.mjs` does). Ambient arcs are their own budgeted source
-(≤ 1 per 2 s, `ARC_BUDGET`, gated by N1) and keep striking at rest by design;
-each is drawn at the display rate for its ~120–380 ms life, which on a page
-dense with close cards adds up to ~11 frames a second. Every route prints the
-total, the clock-only trace and how many of the total's frames the arc layer
-drew in — `rest 19.5 frames/s (clock 12, arcs in 8)`. `--electric-arcs
-<full|clicks|off>` measures a stored preference instead and skips the split.
+Each route also says **what drew** its rest frames: during the same trace,
+hooks on Canvas2D/WebGL draw calls and a MutationObserver record which frames
+each source touched — `haze`, `rim`, `arcs`, `globe` (the dock globe's canvases
+and pin DOM), `cursor`, `offscreen` (the shared WebGL canvas), `canvas`, `dom`
+(with its top three targets) — and `any`, the frames at least one touched, e.g.
+`drew in: globe 16.5, haze 8.5, offscreen 8.5 (any 23)`. Hooks only, never a
+frame request. When `any` exceeds the busiest single source, two sources are
+drawing on different frames.
 
 ```bash
 pnpm build && PORT=7005 node .output/server/index.mjs &
@@ -443,13 +442,13 @@ also written to the job summary (`GITHUB_STEP_SUMMARY`) and every failure is an
 built** app and a **real** Postgres — the layer the main suite deliberately never
 touches. Blocking on every PR (the `integration` job in `web-ci.yml`).
 
-| File | Covers |
-| --- | --- |
-| `auth.test.ts` | email sign-up → session → handle assigned; sign-out revokes the session; wrong password sets no session; writes need a session |
-| `posts.test.ts` | create + read back; invalid body → 400 and nothing written; another user's like (toggle) and comment; only the author can delete (soft delete → tombstone) |
-| `coins.test.ts` | a tip moves exactly the amount and writes one ledger row; overdraft and self-tip are refused with every balance unchanged |
+| File                    | Covers                                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `auth.test.ts`          | email sign-up → session → handle assigned; sign-out revokes the session; wrong password sets no session; writes need a session                               |
+| `posts.test.ts`         | create + read back; invalid body → 400 and nothing written; another user's like (toggle) and comment; only the author can delete (soft delete → tombstone)   |
+| `coins.test.ts`         | a tip moves exactly the amount and writes one ledger row; overdraft and self-tip are refused with every balance unchanged                                    |
 | `developer-api.test.ts` | free accounts cannot mint keys; a paid key authenticates `/api/v1/me`; revoked and made-up keys → 401; scopes (read-only key cannot post, `write:posts` can) |
-| `public.test.ts` | `/api/ready`, the OpenAPI 3.1 spec, `/` SSR and the sitemap — the deploy smoke probes, run before merge |
+| `public.test.ts`        | `/api/ready`, the OpenAPI 3.1 spec, `/` SSR and the sitemap — the deploy smoke probes, run before merge                                                      |
 
 How it works: `global-setup.ts` waits for `/api/ready`, then signs up the shared
 cast (`alice`, `bob`, `carol`) once and hands their cookies to the files via
@@ -478,7 +477,7 @@ counters are in memory.
 for up to 5 minutes, because `session.cookieCache` let `getSession` trust the
 signed cookie without reading the (deleted) session row. Fixed by forcing
 `disableCookieCache` on non-GET requests (the wrapper at the bottom of
-`lib/auth.ts`); `auth.test.ts` › *a revoked session cookie cannot write* pins it.
+`lib/auth.ts`); `auth.test.ts` › _a revoked session cookie cannot write_ pins it.
 
 Out of scope (each needs external services): Stripe checkout/webhooks, OAuth
 providers, the Socket.IO hubs, email delivery.
@@ -526,21 +525,23 @@ a target to farm.
 
 ## CI
 
-Twelve workflows live in `.github/workflows/`. The ones that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from a cache keyed on the lockfile + Prisma schema and only installs on a miss):
+Quality workflows live in `.github/workflows/`. The release graph and operator activation are documented in [deployment-speed-implementation-2026-10-24.md](./deployment-speed-implementation-2026-10-24.md). The ones that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from a cache keyed on the lockfile + Prisma schema and only installs on a miss):
 
-| Workflow                      | Runs                                                                                    | Gate?                                                                                    |
-| ----------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `web-ci.yml` (`typecheck`)    | `tsc --noEmit` → `eslint` → docs freshness                                              | **all block**                                                                            |
-| `web-ci.yml` (`test (1/2)`, `test (2/2)`) | `pnpm test --shard=N/2` — the unit suite split across two parallel jobs     | **blocks**, tests included (as of 2026-08-08)                                            |
-| `web-ci.yml` (`build` job)    | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                            |
-| `web-ci.yml` (`audit` job)    | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                  |
-| `web-ci.yml` (`integration`)  | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`    | **blocks**; see §8                                                                       |
-| `epic-tests.yml`              | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                           |
-| `deploy.yml` (`ci` job)       | `tsc --noEmit` → `eslint` → `pnpm test`                                                 | blocks — typecheck, lint and test all gate the deploy; see below                         |
-| `deploy.yml` (`integration`)  | same as web-ci's `integration`, on the **merged** commit                                | **blocks the deploy**; runs in parallel with the image build                             |
-| `web-ci.yml` (`eversion-e2e`) | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7          |
-| `web-ci.yml` (`jelly-e2e`)    | `jelly-interaction.mjs` (fixture, no server) → `build:frontend` → Postgres + migrate → serve → `frame-budget.mjs --gate` | `jelly-interaction` **blocks**; `frame-budget --gate` non-blocking (`continue-on-error`); nightly + manual + PRs touching the jelly paths; see below |
-| `go-microservices.yml`        | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                   |
+| Workflow                                  | Runs                                                                                    | Gate?                                                                           |
+| ----------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `web-ci.yml` (`typecheck`)                | `tsc --noEmit` → `eslint` → docs freshness                                              | **all block**                                                                   |
+| `web-ci.yml` (`test (1/2)`, `test (2/2)`) | `pnpm test --shard=N/2` — the unit suite split across two parallel jobs                 | **blocks**, tests included (as of 2026-08-08)                                   |
+| `web-ci.yml` (`build` job)                | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                   |
+| `web-ci.yml` (`audit` job)                | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                         |
+| `web-ci.yml` (`integration`)              | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`    | **blocks**; see §8                                                              |
+| `epic-tests.yml`                          | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                  |
+| `deploy.yml` (`ci` job)                   | typecheck → lint → production dependency audit                                          | all block the deployment                                                        |
+| `deploy.yml` (`integration`)              | same as web-ci's `integration`, on the **merged** commit                                | **verifies after the deploy**: a failure triggers `post-deploy-verify`, which rolls production back via the webhook `rollback` action |
+| `web-ci.yml` (`eversion-e2e`)             | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7 |
+| `web-ci.yml` (`jelly-e2e`)                | `jelly-interaction.mjs` fixture, without a database or frontend build                   | blocks on relevant PRs and scheduled/manual runs                                |
+| `go-microservices.yml`                    | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                          |
+
+The deploy `test` job runs two isolated unit-suite shards in parallel with `ci`. The ARM64 `build` job enforces critical JS/CSS budgets and smoke-tests both production image digests. `candidate-image.yml` checks production-shaped containers on PRs; `required-checks` aggregates every applicable web check. `build-cache.yml` maintains reusable stages outside the trigger prerequisites.
 
 **The `jelly-e2e` job** (Plasmatic Jelly in a real browser) is its own job,
 not a step of `eversion-e2e`: as that job's last step it never ran, because the
@@ -561,11 +562,16 @@ material — a filter step matches `lib/jelly/`, `lib/liquid/`,
 - **Non-blocking: `testing/e2e/frame-budget.mjs --gate`** against the built app
   (step-level `continue-on-error`: the step still shows its exit code, a red
   summary row and an `::error::` annotation, but the job's conclusion ignores
-  it — a red `jelly-e2e` job always means `jelly-interaction` failed). It drives
-  ~50 routes. Its last red runs (e.g. run 39954731013: 8 routes at 14–21
-  frames/s) counted ambient arcs against the clock's 13 fps limit; the gate
-  now judges the clock with arcs isolated (§6). It becomes blocking once a
-  few nightlies are green.
+  it — the deterministic `jelly-e2e` result is independent). It drives
+  ~50 routes. It is red today at 13–21 frames/s on most site routes
+  (run-to-run noise is ±5): the haze engine ticks from the shared jelly frame
+  driver while the dock globe (`components/radial/LiquidGlobe.tsx`) runs its
+  own rAF loop and timer on the same tick grid, so a tick of each often lands
+  on a different vsync (the per-route attribution in §6 shows it). Pages that
+  render `PinnedHero` (e.g. /pricing) also carry its scroll cue, a
+  framer-motion `repeat: Infinity` animation that writes inline styles from JS,
+  which `getAnimations()` cannot see. It becomes blocking once those are fixed
+  and a few nightlies are green.
 - **GPU-only checks SKIP, never silently pass.** The runner has no GPU;
   `testing/e2e/lib/gpu.mjs` detects SwiftShader from the WebGL renderer string,
   and a check that needs real GPU frames is reported as `SKIP` in the log, as a
@@ -575,7 +581,7 @@ material — a filter step matches `lib/jelly/`, `lib/liquid/`,
   a real check there and SKIPs only if a governor ever reaches 0 Hz on software GL.
 
 **Where enforcement lives.** web-ci's Test step is a hard gate on the PR, and
-the deploy's own `ci` job re-runs the suite on the merge result as a hard gate
+the deploy's own `test` matrix re-runs the suite on the merge result as a hard gate
 too. It used to be advisory on the premise that `main` is reached only through a
 PR — but nothing enforced that (no branch protection), so a direct push or a
 merge over a red PR could ship untested code. It costs no wall-clock: `ci` runs
@@ -624,3 +630,13 @@ Plus SAST/quality gates that aren't tests but run on PRs: `senior-review.yml`
   today and will make it an error. Shared factories belong in a sibling module
   imported _inside_ the factory (`testing/rmhbox/phase-5/wiki-race-mocks.ts`).
 - **Go:** add `*_test.go` beside the code and `make gazelle` before `make test`.
+
+### Migration rollback-compatibility gate
+
+`web-ci.yml` job `migrations` runs `.github/scripts/check-migrations-additive.mjs` over migrations **added** in the PR. Production rollbacks (post-deploy guard, `post-deploy-verify`) redeploy the previous image on the already-migrated database, so a new migration must not drop, rename, retype or tighten (`SET NOT NULL`, `NOT NULL` without `DEFAULT`, `DROP DEFAULT`) anything the previous release uses. Do it as expand → ship → contract. A deliberate contract step opts in with `-- rmh:contract-ok <why it is safe>` in the migration file.
+
+### Merge queue and delivery metrics
+
+`web-ci.yml` also runs on `merge_group`, treated exactly like a PR (same classifier, same `required-checks`, no nightly-only jobs), so GitHub's merge queue tests the real merge result before it reaches `main`. **Turning it on is a repo setting** (Settings → Rules → branch protection for `main` → "Require merge queue"); the workflow is ready either way.
+
+`dora-metrics.yml` posts deploy frequency, merge→deployed lead time, change-failure rate and time-to-restore to the run summary every Monday (and on demand), computed from the deploy workflow's own run history.

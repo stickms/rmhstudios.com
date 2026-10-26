@@ -64,9 +64,10 @@ export function EmojiPickerButton({
           right-anchored: most of the emoji grid was cut off at the dialog border
           with no way to scroll to it.
 
-          z-60 at body level, not the old local z-50, because it has to clear the
-          z-50 dialog it was opened from — the same band `Select` uses for
-          exactly that reason. `focusOnOpen={false}`: the panel has its own
+          Opened from inside a dialog, AnchoredMenu lifts it to
+          `--z-menu-in-dialog` so it clears the z-50 dialog and its scrim, and
+          registers it with the dialog's focus trap and scroll lock (see
+          components/ui/anchored-menu.tsx). `focusOnOpen={false}`: the panel has its own
           search field and grid, and pulling focus to the first cell would skip
           it. AnchoredMenu also supplies the collision flip that `direction` was
           approximating by hand, so the caller's preference is now a hint that

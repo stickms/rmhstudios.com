@@ -17,15 +17,16 @@
  * adjacent buttons in the same toolbar did not look like the same control. So
  * the row is a primitive now, and the four decisions above are made once.
  *
- * ## The grammar is inset-and-rounded, not full-bleed
+ * ## The grammar is text rows in one rounded panel
  *
- * Of the two shapes in the codebase, this takes the one `Select` already used:
- * the panel carries `p-1` and each row is `rounded-site-sm`, so the highlight is
- * a rounded pill inset from the panel's edge rather than a square band running
- * wall to wall. That is what AppKit and UIKit both draw, and it is the shape the
- * panel's own corner radius implies — a square highlight in a rounded panel
- * collides with the curve on the first and last rows, which is exactly the
- * "sliced corner" the `Select` comment describes one level up.
+ * A dropdown is ONE rounded slab, not a stack of pills and not a stack of bands.
+ * A row has no fill, edge or radius of its own — it is its text (and icon) —
+ * and hovering it, or moving the keyboard highlight onto it, wakes a gentle
+ * glow behind the text: a soft accent wash that fades to nothing at the row's
+ * own edges (globals.css §7.3, `[data-slot='menu-item']::before`). The panel
+ * clips its contents (`overflow`, `py-1.5`, no side padding), and row text is
+ * inset `px-4` so it clears the panel's curve. A row that sits OUTSIDE a clipping
+ * panel (a list inside a dialog) opts back in with its own `rounded-site-sm`.
  *
  * ## Height is a touch target, not a font size
  *
@@ -92,14 +93,14 @@ export const MENU_ITEM_ATTR = 'data-menu-item';
 
 const ROW_BASE = cn(
   'relative flex w-full min-h-9 pointer-coarse:min-h-11 cursor-pointer select-none items-center gap-2.5',
-  'rounded-site-sm px-3 py-2 text-left text-sm outline-none',
+  'rounded-none px-4 py-2 text-left text-sm outline-none',
   'transition-colors duration-site',
   // Focus is the highlight here. The menu moves real DOM focus between rows
   // (that is what `role="menu"` requires), so the focused row must read as the
   // highlighted one — otherwise a keyboard user is navigating an invisible
-  // cursor. The global focus ring still lands on top of it. The fill is the row's
+  // cursor. The global focus ring still lands on top of it. The glow is the row's
   // eversion layer (`data-evert`, globals.css §7.3): hover, press and keyboard
-  // focus turn it out of the row.
+  // focus wake it.
   'disabled:pointer-events-none disabled:opacity-50',
   // A disabled <a> is not a thing, so links opt out through the attribute the
   // menu's roving focus and the pointer both read.
@@ -163,8 +164,8 @@ export const MenuItem = React.forwardRef<HTMLElement, MenuItemProps>(function Me
     [MENU_ITEM_ATTR]: '',
     'data-slot': 'menu-item',
     'data-evert': '',
-    // Rows press as jelly controls (lib/jelly/physics.ts); the attribute is the kept alias.
-    'data-fluid-press': '',
+    // A row is text, not a body: no rim slab, no soft body, no haze floor. Only the hover glow (`data-evert`) wakes.
+    'data-jelly': 'off',
     'data-tone': tone,
     role: checked === undefined ? 'menuitem' : 'menuitemradio',
     ...(checked === undefined ? {} : { 'aria-checked': checked }),
@@ -213,16 +214,16 @@ export const MenuItem = React.forwardRef<HTMLElement, MenuItemProps>(function Me
 /**
  * A hairline between groups of rows.
  *
- * Negative horizontal margin against the panel's `p-1`, so the rule spans the
- * panel's full width while the rows stay inset — a separator that stops where
- * the rows stop reads as a broken border rather than as a division.
+ * Inset to the rows' text and softened, so it divides the groups without
+ * becoming a hairline that runs into the panel's rounded corners: the panel is
+ * a 32px slab, a full-bleed 1px rule meets its curve at a point.
  */
 export function MenuSeparator({ className }: { className?: string }) {
   return (
     <div
       role="separator"
       aria-orientation="horizontal"
-      className={cn('-mx-1 my-1 h-px bg-site-border', className)}
+      className={cn('mx-4 my-1.5 h-px bg-site-border/50', className)}
     />
   );
 }
@@ -238,7 +239,7 @@ export function MenuLabel({
   return (
     <div
       className={cn(
-        'px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-site-text-dim',
+        'px-4 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-site-text-dim',
         className,
       )}
     >

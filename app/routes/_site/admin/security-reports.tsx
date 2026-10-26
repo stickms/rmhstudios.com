@@ -190,7 +190,7 @@ function ReportCard({
   const [notes, setNotes] = useState(report.adminNotes ?? '');
 
   return (
-    <li className="glass-fill space-y-3 rounded-site p-4">
+    <li className="glass-fill space-y-3 rounded-site p-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">

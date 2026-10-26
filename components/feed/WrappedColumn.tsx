@@ -122,7 +122,7 @@ export function WrappedColumn({
  <RevealGroup as="div"className="grid grid-cols-2 gap-3 sm:grid-cols-3">
  {tiles.map((tile) => (
  <RevealItem key={tile.label}>
- <div className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}>
+ <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <tile.icon className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{tile.value}</p>
  <p className="text-xs text-site-text-dim">{tile.label}</p>
@@ -130,7 +130,7 @@ export function WrappedColumn({
  </RevealItem>
  ))}
  <RevealItem>
- <div className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}>
+ <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <CoinIcon className="h-5 w-5"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.coinsEarned)}</p>
  <p className="text-xs text-site-text-dim">{t('tile-coins-earned', { defaultValue:'Coins earned'})}</p>
@@ -138,7 +138,7 @@ export function WrappedColumn({
  </RevealItem>
  {data.busiestMonth && (
  <RevealItem>
- <div className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}>
+ <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <CalendarDays className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{data.busiestMonth}</p>
  <p className="text-xs text-site-text-dim">{t('tile-busiest-month', { defaultValue:'Busiest month'})}</p>
@@ -156,7 +156,7 @@ export function WrappedColumn({
  </h2>
  <Link
  to={`/u/me/post/${data.topPost.id}`as string}
- className={`block rounded-site glass-fill p-4 ${LIFT_CARD}`}
+ className={`block rounded-site glass-fill p-5 ${LIFT_CARD}`}
  >
  <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-site-text">
  {data.topPost.content || t('media-post-fallback', { defaultValue:'(media post)'})}

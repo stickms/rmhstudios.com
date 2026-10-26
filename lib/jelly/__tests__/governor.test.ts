@@ -44,11 +44,11 @@ describe('ladder', () => {
       ambientArcs: true,
       hazeScale: 1,
     });
-    expect(knobsAt(1)).toMatchObject({ maxClockHz: 20, slotScale: 1 });
+    expect(knobsAt(1)).toMatchObject({ maxClockHz: 30, slotScale: 1 });
     expect(knobsAt(2)).toMatchObject({ slotScale: 0.5, carrierScale: 1 });
     expect(knobsAt(3)).toMatchObject({ carrierScale: 0.5, ambientArcs: true });
     expect(knobsAt(4)).toMatchObject({ ambientArcs: false, hazeScale: 1 });
-    expect(knobsAt(5)).toMatchObject({ hazeScale: 0.125, maxClockHz: 20 });
+    expect(knobsAt(5)).toMatchObject({ hazeScale: 0.125, maxClockHz: 30 });
     expect(knobsAt(6)).toMatchObject({ maxClockHz: GOVERNED_FLOOR_HZ });
     expect(knobsAt(99).step).toBe(GOVERNOR_MAX_STEP);
   });
@@ -68,7 +68,7 @@ describe('ladder', () => {
   it('applies the knobs to the desktop budget', () => {
     const full = JELLY_BUDGETS.full;
     expect(governBudget(full, 0)).toEqual(full);
-    expect(governBudget(full, 1).clockHz).toBe(20);
+    expect(governBudget(full, 1).clockHz).toBe(30);
     expect(governBudget(full, 2).hazeSlots).toBe(4);
     expect(governBudget(full, 3).carriers).toBe(12);
     expect(governBudget(full, 4).ambientArcMinIntervalMs).toBe(Infinity);
@@ -100,11 +100,11 @@ describe('JellyGovernor', () => {
   });
 
   it('steps once per 2 s window on cost, never faster', () => {
-    const g = new JellyGovernor('full', 30);
+    const g = new JellyGovernor('full', 60);
     warm(g);
     const steps = feed(g, GOVERNOR_WINDOW_MS * 3 + 200, 9);
     expect(steps).toEqual([1, 2, 3]);
-    expect(g.clockHz).toBe(20);
+    expect(g.clockHz).toBe(30);
   });
 
   it('uses the handheld cost target', () => {
@@ -117,12 +117,12 @@ describe('JellyGovernor', () => {
   });
 
   it('steps on late ticks (p90 interval > 1.5 × the clock period)', () => {
-    const g = new JellyGovernor('full', 30);
+    const g = new JellyGovernor('full', 60);
     warm(g);
-    // 30 Hz asked, 18 Hz delivered: 55 ms > 50 ms.
-    expect(feed(g, GOVERNOR_WINDOW_MS + 100, 0.5, 55)).toEqual([1]);
-    // Now at 20 Hz the same 55 ms is on time (≤ 75 ms).
-    expect(feed(g, GOVERNOR_WINDOW_MS * 3, 0.5, 55)).toEqual([]);
+    // 60 Hz asked, 25 Hz delivered: 40 ms > 25 ms.
+    expect(feed(g, GOVERNOR_WINDOW_MS + 100, 0.5, 40)).toEqual([1]);
+    // Now at 30 Hz the same 40 ms is on time (≤ 50 ms).
+    expect(feed(g, GOVERNOR_WINDOW_MS * 3, 0.5, 40)).toEqual([]);
   });
 
   // Regression (G1, "the eddies and currents are not present"): the engine's clock drops to the 12 Hz idle floor after

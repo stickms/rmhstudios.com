@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
@@ -21,7 +22,7 @@ export const Route = createFileRoute('/api/doctrine/puzzles/leaderboard')({
             const url = new URL(request.url);
             const mode = url.searchParams.get('mode') ?? 'ALIBI';
             const date = url.searchParams.get('date') ?? new Date().toISOString().slice(0, 10);
-            const limit = Math.min(parseInt(url.searchParams.get('limit') ?? '50'), 100);
+            const limit = pageSize(url.searchParams.get('limit'), 50, 100);
 
             const cacheKey = `doctrine:leaderboard:${mode}:${date}:${limit}`;
             const cached = apiCache.get(cacheKey);

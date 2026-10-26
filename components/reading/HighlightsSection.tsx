@@ -71,7 +71,7 @@ export function HighlightsSection({
     <section
       data-rf-skip=""
       aria-label={t('highlights-section', { defaultValue: 'Highlights and notes' })}
-      className={className ?? 'glass-fill mt-10 space-y-5 rounded-site p-4 text-sm'}
+      className={className ?? 'glass-fill mt-10 space-y-5 rounded-site p-5 text-sm'}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-site-text">

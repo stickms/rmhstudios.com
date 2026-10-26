@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 /**
  * GET /api/admin/appeals — the strike-appeal review queue. Admin only.
  * Query: ?status=PENDING|UPHELD|OVERTURNED (default PENDING), ?cursor, ?limit.
@@ -18,18 +19,14 @@ type AppealView = (typeof VALID)[number];
 export const Route = createFileRoute('/api/admin/appeals')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
-        if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
-
+      GET: defineHandler({ auth: 'admin' }, async ({ request }) => {
         const url = new URL(request.url);
         const raw = url.searchParams.get('status') ?? 'PENDING';
         const status: AppealView = (VALID as readonly string[]).includes(raw)
           ? (raw as AppealView)
           : 'PENDING';
         const cursor = url.searchParams.get('cursor');
-        const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 25, 1), 50);
+        const limit = pageSize(url.searchParams.get('limit'), 25, 50);
 
         const rows = await prisma.userStrike.findMany({
           where: { appealStatus: status },

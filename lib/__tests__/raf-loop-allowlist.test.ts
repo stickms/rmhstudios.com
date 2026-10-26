@@ -14,7 +14,7 @@ import { join } from 'node:path';
  * Two standards since Plasmatic Jelly (master plan R7, 2026-10-23):
  *   - IDLE-AT-REST — everything, including every jelly driver.
  *   - IDLE-WHEN-UNSEEN — exactly ONE exception, the engine's ambient haze clock: it keeps
- *     waking its driver (12 Hz idle floor) while a haze surface is visible and stops
+ *     waking its driver (30 Hz idle floor) while a haze surface is visible and stops
  *     (0 Hz, no wake) when nobody can see it.
  *   Since #989 the jelly has ONE rAF, `lib/jelly/frame.ts`; the engine, physics, arc
  *   renderer and fallback light are drivers on it and call no rAF of their own.
@@ -71,7 +71,7 @@ import { join } from 'node:path';
  *                                       from its frame, so when every driver has settled
  *                                       NO frame is requested; `stop()` cancels a pending
  *                                       frame nobody else needs. The ambient clock wakes
- *                                       its driver from a timer (30 Hz engaged, 12 Hz
+ *                                       its driver from a timer (60 Hz engaged, 30 Hz
  *                                       idle floor, 0 when unseen — `policy.ts`
  *                                       `ambientHz`), never by spinning; physics and arcs
  *                                       wake only on input, a strike or a live arc.
@@ -86,7 +86,7 @@ import { join } from 'node:path';
  *                                       soft body, an eversion); otherwise it
  *                                       sleeps on a timer to the next jelly
  *                                       ambient tick (drift + coat haze: engaged
- *                                       rate, then the 12 Hz idle floor after
+ *                                       rate, then the 30 Hz idle floor after
  *                                       IDLE_AFTER_MS, on the grid it shares with
  *                                       the globe cursor) — and with NOTHING
  *                                       scheduled under jellyMotion `still`, the
@@ -183,6 +183,10 @@ const ALLOW = new Set<string>([
   // no rAF themselves. No frame is requested while no driver is awake; `stop()`
   // cancels. Settle proven in lib/jelly/__tests__/frame.test.ts.
   'lib/jelly/frame.ts',
+  // The TF2 HUD editor's preview canvas. Not a loop: it requests ONE frame per
+  // change (scene, zoom, selection) to coalesce redraws, and the effect's cleanup
+  // cancels any pending frame on re-run and on unmount. Nothing is scheduled at rest.
+  'components/tf2-hud/Preview.tsx',
   // The globe cursor (owner, 2026-10-22: "a constantly everting globe"). Every
   // vsync only while something the pointer did is still settling — movement, a
   // spring, the fade, sparkles, the trail (`GlobeCursorEngine.busy()`). With the

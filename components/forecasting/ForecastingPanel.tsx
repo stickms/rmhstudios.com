@@ -83,7 +83,7 @@ function CalibrationCard() {
       .catch(() => setCal(null));
   }, []);
   return (
-    <section className="rounded-site glass-pane p-4 flex flex-col gap-3">
+    <section className="rounded-site glass-pane p-5 flex flex-col gap-3">
       <h2 className="site-section-label">
         {t('calibration', { defaultValue: 'Your calibration' })}
       </h2>
@@ -127,7 +127,7 @@ function SeasonCard({ isAdmin }: { isAdmin: boolean }) {
   }, []);
   const board = data?.board;
   return (
-    <section className="rounded-site glass-pane p-4 flex flex-col gap-3">
+    <section className="rounded-site glass-pane p-5 flex flex-col gap-3">
       <h2 className="site-section-label">
         {t('season', { defaultValue: 'Forecasting season' })}
       </h2>

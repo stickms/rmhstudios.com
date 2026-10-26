@@ -38,7 +38,7 @@ function ProcessCard({ p }: { p: ProcessSnapshot }) {
     .slice(0, 12);
 
   return (
-    <article className="glass-fill space-y-3 rounded-site p-4">
+    <article className="glass-fill space-y-3 rounded-site p-5">
       <header className="flex flex-wrap items-center gap-2">
         <h3 className="text-base font-bold text-site-text">{p.service}</h3>
         <Badge variant="default" size="sm">
@@ -184,7 +184,7 @@ export function ProcessesTab({ overview }: { overview: PerfOverview }) {
           {down.map((h) => (
             <div
               key={h.service}
-              className="glass-fill flex items-center gap-2 rounded-site p-4 text-sm text-site-danger"
+              className="glass-fill flex items-center gap-2 rounded-site p-5 text-sm text-site-danger"
             >
               <OctagonAlert className="size-4 shrink-0" aria-hidden />
               <span>

@@ -66,7 +66,7 @@ export default function ResultMoment({
         initial={{ opacity: 0, y: -16, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={SPRING.snappy}
-        className="glass-overlay pointer-events-auto fixed left-1/2 top-[calc(var(--safe-top,0px)+1rem)] z-50 flex w-[min(92vw,22rem)] -translate-x-1/2 items-center gap-3 rounded-site p-3"
+        className="glass-overlay pointer-events-auto fixed left-1/2 top-[calc(var(--safe-top,0px)+1rem)] z-50 flex w-[min(92vw,22rem)] -translate-x-1/2 items-center gap-3 rounded-site p-4"
         data-slot="result-moment"
       >
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-site-accent text-site-accent-fg">

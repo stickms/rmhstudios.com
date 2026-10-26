@@ -105,7 +105,7 @@ export function RunPanel({
   }
 
   return (
-    <div className="glass-fill space-y-2 rounded-site p-3 text-sm text-site-text">
+    <div className="glass-fill space-y-2 rounded-site p-4 text-sm text-site-text">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 text-site-text-muted">
           <Trophy className="h-4 w-4" aria-hidden />

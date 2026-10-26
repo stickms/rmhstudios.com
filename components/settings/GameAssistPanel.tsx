@@ -109,7 +109,7 @@ export function GameAssistPanel() {
         defaultValue: 'Settings games apply so they stay playable.',
       })}
     >
-      <p className="glass-inset rounded-site p-3 text-sm text-site-text">
+      <p className="glass-inset rounded-site p-4 text-sm text-site-text">
         {t('assists-ranked-warning', {
           defaultValue:
             'A run with any assist on does not count towards leaderboards or ranked play. A board that mixed assisted and unassisted runs would measure nothing.',

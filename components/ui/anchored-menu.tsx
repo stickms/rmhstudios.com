@@ -50,6 +50,7 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusScopeBranch } from '@radix-ui/react-focus-scope';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import {
   resolveAnchoredPlacement,
@@ -148,6 +149,23 @@ export function AnchoredMenu({
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [placement, setPlacement] = useState<Placement | null>(null);
 
+  // Opened from inside a modal Radix dialog (the composer, edit-post), the panel portals to
+  // <body>, OUTSIDE the dialog's DOM, so to the dialog it is "outside" in three ways.
+  // Registering it as a focus-scope BRANCH of the enclosing dialog answers two: the focus
+  // trap lets focus into the panel (the picker's search field, the roving rows) instead of
+  // snapping it back to the textarea, and the scroll lock takes the panel as a shard, so the
+  // picker's grid scrolls under the wheel and a finger. Outside a dialog there is no branch
+  // registry in context and this is a no-op. The third (stacking above the z-50 dialog and
+  // its scrim, with pointer events back on the body Radix made inert) is `data-in-dialog`
+  // below, styled in anchored-menu.css.
+  const [panelNode, setPanelNode] = useState<HTMLDivElement | null>(null);
+  const setPanel = useCallback((node: HTMLDivElement | null) => {
+    panelRef.current = node;
+    setPanelNode(node);
+  }, []);
+  useFocusScopeBranch(panelNode);
+  const [inDialog, setInDialog] = useState(false);
+
   const measure = useCallback(() => {
     const panel = panelRef.current;
     const anchor = anchorRef.current;
@@ -181,6 +199,7 @@ export function AnchoredMenu({
     const next = resolveAnchoredPlacement({
       anchor: rect,
       panelHeight: natural,
+      panelWidth: panel.offsetWidth,
       bounds,
       viewport: { width: window.innerWidth, height: window.innerHeight },
       side,
@@ -197,8 +216,9 @@ export function AnchoredMenu({
   // its own close. The next open re-measures here before paint anyway.
   useIsoLayoutEffect(() => {
     if (!open) return;
+    setInDialog(!!anchorRef.current?.closest('[role="dialog"]'));
     measure();
-  }, [open, measure]);
+  }, [open, measure, anchorRef]);
 
   // Re-anchor while open. The trigger scrolls with the page and the panel does
   // not, so a page scroll has to move it; a scroll INSIDE the panel must not.
@@ -217,13 +237,22 @@ export function AnchoredMenu({
     window.addEventListener('scroll', schedule, { passive: true, capture: true });
     window.addEventListener('resize', schedule);
     window.visualViewport?.addEventListener('resize', schedule);
+    // And when the panel itself changes size. A lazy panel (the emoji picker)
+    // opens on a Skeleton and swaps its real content in a moment later; measured
+    // only on open, it kept the skeleton's width for the edge clamp and the
+    // skeleton's height as its cap. The re-measure is stable: it restores the cap
+    // it reads past, and an unchanged placement does not re-render.
+    const resize =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => schedule());
+    if (resize && panelNode) resize.observe(panelNode);
     return () => {
       if (frame) cancelAnimationFrame(frame);
+      resize?.disconnect();
       window.removeEventListener('scroll', schedule, { capture: true });
       window.removeEventListener('resize', schedule);
       window.visualViewport?.removeEventListener('resize', schedule);
     };
-  }, [open, measure]);
+  }, [open, measure, panelNode]);
 
   // The shared bloom (globals.css §7.1) plays on mount and on `data-state`, so
   // all this needs is to stay mounted long enough for the close — and to say
@@ -292,6 +321,13 @@ export function AnchoredMenu({
   // Escape closes and hands focus back; an outside press closes. `pointerdown`
   // (not click) so the panel dismisses before the press lands on what is under
   // it, and capture phase so a panel that stops propagation cannot swallow it.
+  //
+  // Inside a dialog, Escape must back out this menu and nothing else. A Radix
+  // dialog listens for Escape on the document in the capture phase too, and it
+  // registered first (the dialog opened before the menu inside it), so it runs
+  // before `onKey` and would close the whole composer along with its emoji
+  // picker. Radix dismisses only when the event is not `defaultPrevented`, so a
+  // WINDOW capture listener (the first stop of any key event) marks it.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -306,23 +342,40 @@ export function AnchoredMenu({
       if (anchorRef.current?.contains(target)) return;
       onClose();
     };
+    // Inside a dialog, claim Escape before the dialog sees it (see above). Only
+    // `preventDefault`: the event still travels on, so the field the menu belongs
+    // to (an @mention list's textarea) still gets its own Escape.
+    const claimEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') e.preventDefault();
+    };
+    if (inDialog) window.addEventListener('keydown', claimEscape, true);
     document.addEventListener('keydown', onKey, true);
     document.addEventListener('pointerdown', onDown, true);
     return () => {
+      window.removeEventListener('keydown', claimEscape, true);
       document.removeEventListener('keydown', onKey, true);
       document.removeEventListener('pointerdown', onDown, true);
     };
-  }, [open, onClose, anchorRef]);
+  }, [open, onClose, anchorRef, inDialog]);
 
   // The panel lives at the end of <body>, so it is nowhere near its trigger in
   // the tab order — move focus in on open and hand it back on close, or a
-  // keyboard user is dropped at the bottom of the document.
+  // keyboard user is dropped at the bottom of the document. The hand-back runs
+  // for `focusOnOpen={false}` panels too: the emoji picker opens without taking
+  // focus, but once the user has clicked into its search field, Escape removed
+  // the field and left focus on <body> (inside a dialog, outside its trap).
   useEffect(() => {
-    if (!open || !focusOnOpen) return;
+    if (!open) return;
     const trigger = anchorRef.current;
     // Captured now: by cleanup time React may already have detached the node.
     const panel = panelRef.current;
-    const raf = requestAnimationFrame(() => {
+    // A few frames of retry, for a menu inside a dialog: the dialog's focus trap
+    // learns about the panel (the branch registered above) on its own next
+    // render, and until then it snaps focus straight back out. The trap acts
+    // synchronously in `focusin`, so "did it stick" is known right after focus().
+    let tries = 4;
+    let raf = 0;
+    const focusIn = () => {
       const el = panelRef.current;
       if (!el) return;
       // `preventScroll` because the panel is position:fixed — it is in view by
@@ -333,7 +386,11 @@ export function AnchoredMenu({
       (enabledItems(el)[0] ??
         el.querySelector<HTMLElement>('input, button:not(:disabled), a[href]') ??
         el).focus({ preventScroll: true });
-    });
+      if (!el.contains(document.activeElement) && --tries > 0) {
+        raf = requestAnimationFrame(focusIn);
+      }
+    };
+    if (focusOnOpen) raf = requestAnimationFrame(focusIn);
     return () => {
       cancelAnimationFrame(raf);
       // Reclaim focus only if the closing menu is what held it. Two shapes of
@@ -372,7 +429,7 @@ export function AnchoredMenu({
           // and the union type is what stops a caller passing anything else.
           // eslint-disable-next-line jsx-a11y/no-static-element-interactions
           <div
-            ref={panelRef}
+            ref={setPanel}
             role={role}
             aria-label={label}
             tabIndex={-1}
@@ -385,14 +442,14 @@ export function AnchoredMenu({
             // check above settled on, so a menu that flipped to open upward also
             // grows upward out of its trigger.
             data-align={align}
+            data-in-dialog={inDialog ? '' : undefined}
             data-motion="pop"
             data-state={state}
             onKeyDown={onPanelKeyDown}
-            // `p-1`, not `py-1`: rows are `rounded-site-sm` and inset from the
-            // panel edge (components/ui/menu.tsx), so the highlight is a pill
-            // inside the panel rather than a square band that collides with the
-            // panel's own corner radius on the first and last row.
-            className={cn('anchored-menu glass-overlay p-1', className)}
+            // `py-1.5`, no side padding: the rows are plain text with a hover
+            // glow (components/ui/menu.tsx), and this panel (`overflow-y: auto`,
+            // anchored-menu.css) supplies the only curve.
+            className={cn('anchored-menu glass-overlay py-1.5', className)}
             style={style}
           >
             {children}

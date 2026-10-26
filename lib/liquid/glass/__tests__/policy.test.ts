@@ -4,7 +4,10 @@ import {
   LIGHT_REACH,
   admit,
   approach,
+  BEVEL_MIN,
+  NEST_GAP,
   bevelFor,
+  roomFor,
   cursorTilt,
   dprFor,
   innerRadius,
@@ -22,6 +25,18 @@ describe('bevel and thickness', () => {
     expect(bevelFor(400, 300, 24)).toBeLessThanOrEqual(24);
     expect(bevelFor(30, 30, 15)).toBeLessThan(15);
     expect(bevelFor(2000, 2000, 80)).toBe(24);
+  });
+  it('keeps the shoulder in the padding and off nested bodies', () => {
+    // A 70px card with 16px padding: the shoulder (~21px wide) would run under its text.
+    expect(bevelFor(800, 70, 16, 1.2)).toBeGreaterThan(16);
+    expect(bevelFor(800, 70, 16, 1.2, roomFor(16, Infinity))).toBe(16);
+    // A tab track whose thumb sits 4px in: the track's shoulder stops short of the thumb.
+    expect(bevelFor(900, 48, 12, 1.2, roomFor(4, 4))).toBe(BEVEL_MIN);
+    expect(roomFor(4, 9)).toBe(4);
+    expect(roomFor(0, 30)).toBe(30 - NEST_GAP);
+    // Full bleed (no padding, nothing nested): the shoulder is the size's own.
+    expect(roomFor(0, Infinity)).toBe(Infinity);
+    expect(bevelFor(800, 70, 16, 1.2, roomFor(0, Infinity))).toBe(bevelFor(800, 70, 16, 1.2));
   });
   it('refracts less deep than the bevel is wide, so rim content is not sampled from past the band', () => {
     for (const b of [8, 12, 18]) expect(thicknessFor(b)).toBeLessThan(b);

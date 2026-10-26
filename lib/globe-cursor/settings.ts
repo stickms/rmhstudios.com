@@ -76,7 +76,7 @@ export interface GlobeCursorSettings {
   /** A crisp dot at the exact hotspot, so precision never depends on the lag. */
   hotspot: boolean;
   hideNative: boolean;
-  /** Keep the I-beam over text fields (the globe shrinks beside it). */
+  /** Keep the I-beam over text fields (the globe shrinks and dims under it, still centred on the pointer). */
   nativeOverText: boolean;
   /** Over a <canvas> (games draw their own cursors) show the native one instead. */
   honourCanvas: boolean;
@@ -97,7 +97,7 @@ export const DEFAULT_GLOBE_CURSOR: GlobeCursorSettings = {
   tilt: 18,
   roll: true,
   jelly: 0.55,
-  lag: 0.12,
+  lag: 0,
   clickSquish: true,
   hoverGrow: 1.35,
   palette: 'duo',
@@ -212,7 +212,7 @@ export const PRESET_PATCHES: Record<GlobeCursorPreset, Partial<GlobeCursorSettin
     tilt: 18,
     roll: true,
     jelly: 0.55,
-    lag: 0.12,
+    lag: 0,
     hoverGrow: 1.35,
     palette: 'duo',
     outside: '#4f8cff',

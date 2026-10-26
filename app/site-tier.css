@@ -73,6 +73,7 @@
 @source not "../components/rmhtech";
 @source not "../components/rmhtube";
 @source not "../components/rmhtype";
+@source not "../components/tf2-hud";
 @source not "../components/security";
 @source not "../components/share";
 @source not "../components/signal-forge";
@@ -118,6 +119,7 @@
 @source not "../lib/rmhstudy";
 @source not "../lib/rmhtube";
 @source not "../lib/rmhtype";
+@source not "../lib/tf2-hud";
 @source not "../lib/shortcuts";
 @source not "../lib/signal-forge";
 @source not "../lib/sohumtracker";

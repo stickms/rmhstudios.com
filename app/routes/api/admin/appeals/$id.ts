@@ -31,12 +31,13 @@ export const Route = createFileRoute('/api/admin/appeals/$id')({
   server: {
     handlers: {
       POST: defineHandler(
-        { auth: 'optional', body: schema, allowEmptyBody: true },
+        {
+          auth: 'admin',
+          rateLimit: { policy: 'write', scope: 'user' },
+          body: schema,
+          allowEmptyBody: true,
+        },
         async ({ params, session, body }) => {
-          if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-            return Response.json({ error: 'Forbidden' }, { status: 403 });
-          }
-
           const { action, note } = body;
 
           const strike = await prisma.userStrike.findUnique({

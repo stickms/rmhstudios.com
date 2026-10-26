@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
@@ -21,7 +22,7 @@ export const Route = createFileRoute('/api/doctrine/safehouse/content')({
             const userTier = await getUserTier(session.user.id);
             const url = new URL(request.url);
             const cursor = url.searchParams.get('cursor') ?? undefined;
-            const limit = Math.min(parseInt(url.searchParams.get('limit') ?? '20'), 50);
+            const limit = pageSize(url.searchParams.get('limit'), 20, 50);
 
             // Get content the user has access to
             const tierFilter: TierId[] = [];

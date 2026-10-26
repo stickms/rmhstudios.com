@@ -175,7 +175,7 @@ export function LanguageSwitcher() {
               maxHeight: rect.maxHeight,
               "--motion-origin": rect.openUp ? "bottom center" : "top center",
             } as CSSProperties}
-            className="z-[100] overflow-y-auto overscroll-contain glass-overlay p-1"
+            className="z-[100] overflow-y-auto overscroll-contain glass-overlay py-1.5"
           >
             {LOCALES.map((l) => {
               const active = l === locale;
@@ -187,12 +187,15 @@ export function LanguageSwitcher() {
                   aria-selected={active}
                   data-active={active}
                   onClick={() => choose(l)}
+                  data-evert=""
+                  data-row-glow=""
+                  data-jelly="off"
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-site-sm px-2.5 py-2 text-left text-sm transition-colors",
-                    "focus:outline-none focus-visible:bg-site-surface-hover",
+                    "flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition-colors",
+                    "focus:outline-none",
                     active
-                      ? "bg-site-accent-dim text-site-text"
-                      : "text-site-text-muted hover:bg-site-surface-hover hover:text-site-text",
+                      ? "text-site-accent"
+                      : "text-site-text-muted hover:text-site-text focus-visible:text-site-text",
                   )}
                 >
                   <span className="min-w-0 flex-1 truncate">{LOCALE_LABELS[l]}</span>
