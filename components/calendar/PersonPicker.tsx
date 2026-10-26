@@ -68,7 +68,7 @@ export function PersonPicker({
         />
       </label>
       {shown.length > 0 && (
-        <ul className="glass-overlay rounded-site p-1">
+        <ul className="glass-overlay rounded-site p-2">
           {shown.map((u) => (
             <li key={u.id}>
               <button

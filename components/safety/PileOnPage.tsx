@@ -57,7 +57,7 @@ export default function PileOnPage({ postId }: { postId: string }) {
             description={t('pileon-missing', { defaultValue: 'We could not find that notice.' })}
           />
         ) : (
-          <div className="glass-pane flex flex-col gap-4 rounded-site p-4 sm:p-5">
+          <div className="glass-pane flex flex-col gap-4 rounded-site p-5 sm:p-5">
             <div className="flex items-center gap-2 text-site-text">
               <ShieldCheck className="size-5 shrink-0 text-site-accent" aria-hidden />
               <h2 className="font-display text-lg font-medium">

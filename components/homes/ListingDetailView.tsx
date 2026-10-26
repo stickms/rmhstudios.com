@@ -319,7 +319,7 @@ export function ListingDetailView({ id }: { id: string }) {
 
         {/* Poster / source card */}
         {isExternal ? (
-          <div className="mt-4 flex flex-wrap items-center gap-3 glass-fill rounded-site p-4">
+          <div className="mt-4 flex flex-wrap items-center gap-3 glass-fill rounded-site p-5">
             <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
               <Globe className="h-5 w-5" />
             </span>
@@ -344,7 +344,7 @@ export function ListingDetailView({ id }: { id: string }) {
             )}
           </div>
         ) : (
-          <div className="mt-4 flex flex-wrap items-center gap-3 glass-fill rounded-site p-4">
+          <div className="mt-4 flex flex-wrap items-center gap-3 glass-fill rounded-site p-5">
             <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
               {listing.author?.image ? (
                 <img src={listing.author.image} alt="" className="h-full w-full object-cover" />

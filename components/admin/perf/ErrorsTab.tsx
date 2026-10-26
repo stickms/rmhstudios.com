@@ -37,7 +37,7 @@ export function ErrorsTab({ overview }: { overview: PerfOverview }) {
         {errors.map((e) => (
           <li
             key={`${e.service}:${e.pid}:${e.at}:${e.message}`}
-            className="glass-fill space-y-2 rounded-site p-4"
+            className="glass-fill space-y-2 rounded-site p-5"
           >
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="danger" size="sm">

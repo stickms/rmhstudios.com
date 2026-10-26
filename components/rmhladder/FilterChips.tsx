@@ -103,7 +103,7 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
 
   return (
     <div
-      className="glass-fill space-y-3 rounded-site p-4"
+      className="glass-fill space-y-3 rounded-site p-5"
       role="search"
       aria-label={t('ladder.jobFilters', { defaultValue: 'Job filters' })}
     >

@@ -107,7 +107,7 @@ export function AdminQotdPanel() {
     >
       <AdminBody width="narrow">
         {data && (
-          <section className="glass-fill rounded-site p-4">
+          <section className="glass-fill rounded-site p-5">
             <p className="text-xs font-semibold text-site-text-muted">
               {t('admin-today', { defaultValue: 'Running today' })}
               {data.today.source === 'builtin' && (
@@ -121,7 +121,7 @@ export function AdminQotdPanel() {
         )}
 
         <form
-          className="glass-pane space-y-3 rounded-site p-4"
+          className="glass-pane space-y-3 rounded-site p-5"
           onSubmit={(e) => {
             e.preventDefault();
             void add();

@@ -57,7 +57,7 @@ export default function FortuneCard() {
 
   return (
     <aside
-      className="glass-fill rounded-site p-4"
+      className="glass-fill rounded-site p-5"
       aria-label={t('fortune-title', { defaultValue: 'Fortune cookie' })}
     >
       <div className="flex items-start gap-3">

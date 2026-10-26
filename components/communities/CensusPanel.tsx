@@ -98,7 +98,7 @@ function CreateCensus({ slug, onCreated }: { slug: string; onCreated: () => void
         />
       </label>
       {questions.map((q, i) => (
-        <fieldset key={i} className="glass-inset flex flex-col gap-2 rounded-site p-3">
+        <fieldset key={i} className="glass-inset flex flex-col gap-2 rounded-site p-4">
           <div className="flex items-center gap-2">
             <Input
               value={q.prompt}

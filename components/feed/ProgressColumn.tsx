@@ -184,7 +184,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
 
  <div className="space-y-6 px-4 pt-4 pb-12">
  {/* Level card */}
- <section className="rounded-site glass-fill p-4">
+ <section className="rounded-site glass-fill p-5">
  <div className="flex items-center justify-between gap-3">
  <div className="flex items-center gap-3">
  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">

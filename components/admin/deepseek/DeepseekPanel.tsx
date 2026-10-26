@@ -77,7 +77,7 @@ export function DeepseekPanel() {
   if (state?.error === 'not_configured') {
     return (
       <div className="space-y-[var(--site-section-gap)]">
-        <section className="glass-pane rounded-site p-4">
+        <section className="glass-pane rounded-site p-5">
           <h2 className="site-section-label">
             {t('not-configured-title', { defaultValue: 'DeepSeek is not configured' })}
           </h2>
@@ -154,7 +154,7 @@ export function DeepseekPanel() {
 
       <div className="grid gap-3 md:grid-cols-2">
         {cardsFor.map((b) => (
-          <section key={b.currency} className="glass-pane rounded-site p-4">
+          <section key={b.currency} className="glass-pane rounded-site p-5">
             <h2 className="text-xs text-site-text-muted">
               {t('balance-heading', { defaultValue: '{{currency}} balance', currency: b.currency })}
             </h2>

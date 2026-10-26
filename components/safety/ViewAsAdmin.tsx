@@ -50,7 +50,7 @@ export function ViewAsAdmin() {
   };
 
   const list = (title: string, users: Brief[]) => (
-    <section className="glass-fill rounded-site p-4">
+    <section className="glass-fill rounded-site p-5">
       <h3 className="mb-2 text-sm font-semibold text-site-text">
         {title} ({users.length})
       </h3>
@@ -95,7 +95,7 @@ export function ViewAsAdmin() {
       {error && <p className="text-sm text-site-danger">{error}</p>}
       {data && (
         <div className="flex flex-col gap-3">
-          <section className="glass-pane rounded-site p-4">
+          <section className="glass-pane rounded-site p-5">
             <h3 className="text-base font-semibold text-site-text">{label(data.member)}</h3>
             <p className="text-xs text-site-text-muted">
               {t('viewas-meta', {
@@ -110,7 +110,7 @@ export function ViewAsAdmin() {
           {list(t('viewas-mutes', { defaultValue: 'Muted accounts' }), data.mutes)}
           {list(t('viewas-blocks', { defaultValue: 'Blocked accounts' }), data.blocks)}
           {list(t('viewas-blocked-by', { defaultValue: 'Blocked by' }), data.blockedBy)}
-          <section className="glass-fill rounded-site p-4">
+          <section className="glass-fill rounded-site p-5">
             <h3 className="mb-2 text-sm font-semibold text-site-text">
               {t('viewas-words', { defaultValue: 'Muted words' })} ({data.mutedWords.length})
             </h3>
@@ -118,7 +118,7 @@ export function ViewAsAdmin() {
               {data.mutedWords.join(', ') || '—'}
             </p>
           </section>
-          <section className="glass-fill rounded-site p-4">
+          <section className="glass-fill rounded-site p-5">
             <h3 className="mb-2 text-sm font-semibold text-site-text">
               {t('viewas-feed', { defaultValue: 'Top of their For You feed' })}
             </h3>

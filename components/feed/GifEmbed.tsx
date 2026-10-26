@@ -153,7 +153,7 @@ export function GifEmbed({ url, className ='', linked = true }: GifEmbedProps) {
  if (!src || error) {
  if (error) {
  return (
- <div className={`rounded-site overflow-hidden border border-site-border p-4 flex items-center justify-center gap-2 ${className}`}>
+ <div className={`rounded-site overflow-hidden border border-site-border p-5 flex items-center justify-center gap-2 ${className}`}>
  <ImageOff className="h-4 w-4 text-site-text-dim"/>
  <span className="text-xs text-site-text-dim">{t("failed-to-load-image", { defaultValue:"Failed to load image"})}</span>
  </div>

@@ -439,8 +439,14 @@
   /* Elevation tokens — feather-soft Apple depth layering */
   --site-shadow: 0 0 0 0 transparent;
   --site-shadow-sm: 0 0 0 0 transparent;
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  /* The corner scale is concentric, in 8px steps: a card is 32px, and anything sitting 8px inside one (a button,
+     a field, a row, a menu item) is 24px, so the inner corner follows the outer one instead of fighting it. 24px is
+     a full pill up to 48px tall (every button, field and tab), and a softly rounded rectangle above that, so a tall
+     box never turns into a lozenge. Controls ARE the small radius: one number, so a field beside a button matches.
+     Panels and popups take the card radius, never the control's. A control's inline padding is about half its height
+     (button.tsx, input.tsx, badge.tsx, liquid-tabs.tsx), which keeps the text optically centred in its rounded ends. */
+  --site-radius: 32px;
+  --site-radius-sm: 24px;
   --site-control-radius: var(--site-radius-sm);
   /* Geist for everything, Geist Mono for eyebrows and data (CLAUDE.md
      "Identity"). After them, the system face and Inter cover the scripts
@@ -950,8 +956,8 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.52);
   --site-glass-rim: rgba(0, 0, 0, 0.12);
   --site-glass-rim-soft: rgba(0, 0, 0, 0.05);
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  --site-radius: 32px;
+  --site-radius-sm: 24px;
   /* Every layer must be a real <image>: this token is consumed as
      `background-image` by the aurora layer, where a bare colour would make the
      whole declaration invalid (and the canvas silently vanish). The flat white
@@ -1038,8 +1044,8 @@
   --site-glass-saturate: 150%;
   /* §4.35: bright rims on bright frost need less light to read as an edge. */
   --glass-glint-opacity: 0.5;
-  --site-radius: 16px;
-  --site-radius-sm: 10px;
+  --site-radius: 26px;
+  --site-radius-sm: 20px;
   --site-canvas:
     radial-gradient(110% 85% at 8% -5%, rgba(120, 165, 255, 0.28), transparent 60%),
     radial-gradient(95% 75% at 95% 2%, rgba(185, 150, 255, 0.24), transparent 60%),
@@ -1124,9 +1130,9 @@
   --site-glass-depth-sm: none;
   --site-canvas: none;
   --site-border-width: 2px;
-  --site-radius: 12px;
-  --site-radius-sm: 8px;
-  --site-control-radius: 8px;
+  --site-radius: 20px;
+  --site-radius-sm: 14px;
+  --site-control-radius: 14px;
   --background: #000000;
   --foreground: #ffffff;
 
@@ -1231,8 +1237,8 @@
   --site-glass-depth: 0 0 0 0 transparent;
   --site-glass-depth-sm: 0 0 0 0 transparent;
   --site-glass-saturate: 180%;
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  --site-radius: 32px;
+  --site-radius-sm: 24px;
   --site-shadow: 0 0 0 0 transparent;
   --site-shadow-sm: 0 0 0 0 transparent;
   --site-canvas:
@@ -1313,8 +1319,8 @@
   --site-glass-saturate: 150%;
   /* §4.35: bright rims on bright frost need less light to read as an edge. */
   --glass-glint-opacity: 0.5;
-  --site-radius: 16px;
-  --site-radius-sm: 10px;
+  --site-radius: 26px;
+  --site-radius-sm: 20px;
   --site-canvas:
     radial-gradient(110% 85% at 10% -5%, rgba(220, 180, 120, 0.32), transparent 60%),
     radial-gradient(95% 78% at 94% 4%, rgba(210, 160, 90, 0.22), transparent 60%),
@@ -1398,8 +1404,8 @@
   --site-glass-light: rgba(180, 210, 255, 0.14);
   --site-glass-depth: 0 0 0 0 transparent;
   --site-glass-depth-sm: 0 0 0 0 transparent;
-  --site-radius: 16px;
-  --site-radius-sm: 10px;
+  --site-radius: 26px;
+  --site-radius-sm: 20px;
   --site-canvas:
     radial-gradient(110% 85% at 12% -6%, rgba(70, 120, 220, 0.32), transparent 62%),
     radial-gradient(95% 78% at 94% 2%, rgba(90, 150, 255, 0.24), transparent 60%),
@@ -1494,9 +1500,9 @@
 
   /* Tighter geometry and faster response give every tokenized primitive the
      same technical silhouette without coupling the theme to data-slot rules. */
-  --site-radius: 14px;
-  --site-radius-sm: 9px;
-  --site-control-radius: 9px;
+  --site-radius: 24px;
+  --site-radius-sm: 18px;
+  --site-control-radius: 18px;
   --site-font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
   --site-font-body:
     var(--font-geist), -apple-system, BlinkMacSystemFont, 'SF Pro Text', var(--font-inter),

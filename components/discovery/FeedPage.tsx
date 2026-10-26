@@ -122,7 +122,7 @@ export function FeedPage({ id }: { id: string }) {
       description={feed.description ?? undefined}
     >
       <div className="space-y-4 px-4 pt-4 pb-12">
-        <section className="glass-pane flex flex-wrap items-center gap-3 rounded-site p-4">
+        <section className="glass-pane flex flex-wrap items-center gap-3 rounded-site p-5">
           <p className="min-w-0 flex-1 text-sm text-site-text-muted">
             {[...feed.tags.map((x) => `#${x}`), ...feed.keywords].join(' · ')}
             {feed.peopleCount

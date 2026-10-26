@@ -53,7 +53,7 @@ export default function HuntPanel() {
   return (
     <div className="space-y-[var(--site-section-gap)]">
       <form
-        className="glass-pane space-y-3 rounded-site p-4"
+        className="glass-pane space-y-3 rounded-site p-5"
         onSubmit={(e) => {
           e.preventDefault();
           void run(async () => {
@@ -76,7 +76,7 @@ export default function HuntPanel() {
           aria-label={t('hunt-admin-name', { defaultValue: 'Hunt title' })}
         />
         {clues.map((c, i) => (
-          <fieldset key={i} className="glass-inset space-y-2 rounded-site p-3">
+          <fieldset key={i} className="glass-inset space-y-2 rounded-site p-4">
             <legend className="px-1 text-xs text-site-text-dim">
               {t('hunt-admin-clue', { defaultValue: 'Clue {{n}}', n: i + 1 })}
             </legend>

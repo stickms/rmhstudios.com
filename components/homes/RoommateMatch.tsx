@@ -53,7 +53,7 @@ export function RoommateMatch({
 
   if (!isSignedIn) {
     return (
-      <section className="glass-fill mt-4 rounded-site p-4">
+      <section className="glass-fill mt-4 rounded-site p-5">
         {heading}
         <p className="text-sm text-site-text-muted">
           {t('rm-signed-out', {
@@ -73,7 +73,7 @@ export function RoommateMatch({
   if (!data || data.status === 'not-applicable') return null;
 
   return (
-    <section className="glass-fill mt-4 rounded-site p-4">
+    <section className="glass-fill mt-4 rounded-site p-5">
       {heading}
       {data.status === 'match' && (
         <p className="text-sm text-site-text">
@@ -195,7 +195,7 @@ function Quiz({ onSaved }: { onSaved: () => void }) {
 
   return (
     <form
-      className="glass-pane mt-3 space-y-3 rounded-site p-4"
+      className="glass-pane mt-3 space-y-3 rounded-site p-5"
       onSubmit={(e) => {
         e.preventDefault();
         save.mutate();

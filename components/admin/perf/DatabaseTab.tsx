@@ -31,7 +31,7 @@ function RowsTable({
   const { t } = useTranslation('f-perf');
   if (rows === null || rows === undefined) {
     return (
-      <p className="glass-fill rounded-site p-4 text-sm text-site-text-muted">
+      <p className="glass-fill rounded-site p-5 text-sm text-site-text-muted">
         {t('diag-unavailable', { defaultValue: 'Unavailable (the query failed or timed out).' })}
       </p>
     );
@@ -76,7 +76,7 @@ function DiagnosticsSection() {
     return (
       <section className="space-y-3">
         {header}
-        <p className="glass-fill rounded-site p-4 text-sm text-site-text-muted">
+        <p className="glass-fill rounded-site p-5 text-sm text-site-text-muted">
           {t('diag-failed', { defaultValue: 'Could not load Postgres diagnostics.' })}
         </p>
       </section>
@@ -211,7 +211,7 @@ function DiagnosticsSection() {
           ]}
         />
       ) : (
-        <p className="glass-fill rounded-site p-4 text-sm text-site-text-muted">
+        <p className="glass-fill rounded-site p-5 text-sm text-site-text-muted">
           {t('diag-no-pgss', {
             defaultValue: 'The pg_stat_statements extension is not installed on this database.',
           })}

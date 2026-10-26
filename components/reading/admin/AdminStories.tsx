@@ -68,7 +68,7 @@ export default function AdminStories() {
   return (
     <div className="space-y-6">
       <form
-        className="glass-pane space-y-3 rounded-site p-4"
+        className="glass-pane space-y-3 rounded-site p-5"
         onSubmit={(e) => {
           e.preventDefault();
           create.mutate();
@@ -180,7 +180,7 @@ function StoryCard({
   const linked = new Set(story.articles.map((a) => a.slug));
 
   return (
-    <section className="glass-fill space-y-3 rounded-site p-4" aria-label={story.title}>
+    <section className="glass-fill space-y-3 rounded-site p-5" aria-label={story.title}>
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <h3 className="text-base font-semibold text-site-text">{story.title}</h3>

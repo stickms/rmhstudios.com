@@ -45,7 +45,7 @@ export function GlobeSetHud({
   const reduced = useReducedMotion();
 
   return (
-    <div className="glass-pane rounded-site p-4">
+    <div className="glass-pane rounded-site p-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <dl className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <Stat

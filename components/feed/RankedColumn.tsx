@@ -208,7 +208,7 @@ export function RankedColumn({
  {/* Issue a challenge */}
  <Reveal
  as="section"
- className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}
+ className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
  >
  <h2 id="ranked-challenge-heading"className="site-section-label mb-3">
  {t('challenge-a-player', { defaultValue:'Challenge a player'})}

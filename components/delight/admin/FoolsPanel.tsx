@@ -27,7 +27,7 @@ export default function FoolsPanel() {
     }
   };
   return (
-    <section className="glass-pane flex items-center justify-between gap-4 rounded-site p-4">
+    <section className="glass-pane flex items-center justify-between gap-4 rounded-site p-5">
       <div>
         <h2 className="font-semibold text-site-text" id="fools-label">
           {t('fools-admin-title', { defaultValue: 'April Fools mode' })}

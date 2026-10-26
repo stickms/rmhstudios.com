@@ -99,7 +99,7 @@ export function HuntPage() {
           />
         ) : (
           <>
-            <section className="glass-pane space-y-3 rounded-site p-4">
+            <section className="glass-pane space-y-3 rounded-site p-5">
               <h2 className="text-lg font-semibold text-site-text">{s.title}</h2>
               <p className="text-sm text-site-text-muted">
                 {t('hunt-progress', {

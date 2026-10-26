@@ -125,7 +125,7 @@ export function MusicGuessColumn({
  />
 
  {showForm && (
- <div className="glass-pane mx-4 mt-4 rounded-site p-4">
+ <div className="glass-pane mx-4 mt-4 rounded-site p-5">
  <div className="flex items-center justify-between gap-2">
  <h2 className="site-section-label">
  {t('new-puzzle', { defaultValue:'New puzzle'})}

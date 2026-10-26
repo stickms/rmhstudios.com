@@ -17,7 +17,7 @@ function SparkCard({ label, values, format, inkClass }: SparkCardProps) {
   const { t } = useTranslation('f-perf');
   const latest = values.length ? values[values.length - 1] : null;
   return (
-    <div className="glass-fill rounded-site p-4">
+    <div className="glass-fill rounded-site p-5">
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-xs text-site-text-muted">{label}</p>
         <p className="text-sm font-semibold tabular-nums text-site-text">

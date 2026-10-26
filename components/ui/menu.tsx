@@ -20,9 +20,10 @@
  * ## The grammar is inset-and-rounded, not full-bleed
  *
  * Of the two shapes in the codebase, this takes the one `Select` already used:
- * the panel carries `p-1` and each row is `rounded-site-sm`, so the highlight is
+ * the panel carries `p-2` and each row is `rounded-site-sm`, so the highlight is
  * a rounded pill inset from the panel's edge rather than a square band running
- * wall to wall. That is what AppKit and UIKit both draw, and it is the shape the
+ * wall to wall. The numbers are concentric: a 24px row inside an 8px inset sits
+ * in a 32px panel (`--site-radius`), so the row's corner follows the panel's. That is what AppKit and UIKit both draw, and it is the shape the
  * panel's own corner radius implies — a square highlight in a rounded panel
  * collides with the curve on the first and last rows, which is exactly the
  * "sliced corner" the `Select` comment describes one level up.
@@ -213,16 +214,16 @@ export const MenuItem = React.forwardRef<HTMLElement, MenuItemProps>(function Me
 /**
  * A hairline between groups of rows.
  *
- * Negative horizontal margin against the panel's `p-1`, so the rule spans the
- * panel's full width while the rows stay inset — a separator that stops where
- * the rows stop reads as a broken border rather than as a division.
+ * Inset from the panel's curved edge and softened, so it divides the groups
+ * without becoming a hairline that runs into the panel's rounded corners: the
+ * panel is a 32px slab, a full-bleed 1px rule meets its curve at a point.
  */
 export function MenuSeparator({ className }: { className?: string }) {
   return (
     <div
       role="separator"
       aria-orientation="horizontal"
-      className={cn('-mx-1 my-1 h-px bg-site-border', className)}
+      className={cn('mx-3 my-1.5 h-px bg-site-border/50', className)}
     />
   );
 }

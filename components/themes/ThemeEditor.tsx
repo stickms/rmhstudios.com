@@ -173,7 +173,7 @@ export function ThemeEditor({
 
           {/* Contrast guardrails */}
           {issues.length > 0 ? (
-            <ul className="rounded-site border border-site-warning/40 bg-site-warning/5 p-3 text-xs text-site-warning">
+            <ul className="rounded-site border border-site-warning/40 bg-site-warning/5 p-4 text-xs text-site-warning">
               {issues.map((i) => (
                 <li key={i.pair}>
                   {t(`contrast-${i.pair}`, { defaultValue: CONTRAST_LABEL[i.pair] ?? i.pair })}:{' '}

@@ -277,7 +277,7 @@ export function ReferralBoard() {
             ) : (
               <ul className="space-y-3">
                 {data.offers.map((o) => (
-                  <li key={o.id} className="glass-fill rounded-site p-4">
+                  <li key={o.id} className="glass-fill rounded-site p-5">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-site-text">{o.companyName}</span>
                       <span className="text-sm text-site-text-muted">{o.roles}</span>
@@ -355,7 +355,7 @@ function OfferForm({ onDone }: { onDone: () => void }) {
   });
   return (
     <form
-      className="glass-pane mt-3 space-y-3 rounded-site p-4"
+      className="glass-pane mt-3 space-y-3 rounded-site p-5"
       onSubmit={(e) => {
         e.preventDefault();
         create.mutate();

@@ -88,7 +88,7 @@ export function PickemPanel({
   return (
     <div>
       <h2 className="site-section-label mb-2">{t('pk-title', { defaultValue: 'Pick’em' })}</h2>
-      <div className="glass-fill rounded-site p-4 space-y-3">
+      <div className="glass-fill rounded-site p-5 space-y-3">
         <p className="text-sm text-site-text-dim">
           {t('pk-blurb', {
             defaultValue:

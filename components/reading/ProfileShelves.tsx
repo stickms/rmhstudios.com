@@ -45,7 +45,7 @@ export default function ProfileShelvesPanel({ ownerId }: { ownerId: string }) {
             shelf === 'want' ? 'wantPublic' : shelf === 'reading' ? 'readingPublic' : 'readPublic'
           ];
         return (
-          <section key={shelf} className="glass-fill rounded-site p-4">
+          <section key={shelf} className="glass-fill rounded-site p-5">
             <h3 className="font-display font-semibold text-site-text">
               {labels[shelf]} <span className="text-site-text-dim">({items.length})</span>
               {data?.isOwner && !pub ? (

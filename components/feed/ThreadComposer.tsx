@@ -92,7 +92,7 @@ export function ThreadComposer() {
  {segments.map((seg, i) => (
  <div
  key={i}
- className="relative rounded-site glass-fill p-3"
+ className="relative rounded-site glass-fill p-4"
  >
  <div className="flex items-start gap-2">
  <span className="mt-2 text-xs font-bold text-site-text-dim">{i + 1}</span>

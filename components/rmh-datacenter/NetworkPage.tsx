@@ -60,7 +60,7 @@ export default function NetworkPage() {
       <DatacenterTabs active="/rmh-datacenter/network" />
 
       <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <p className="max-w-prose text-site-text-muted">
             {t('net-lede', {
               defaultValue:
@@ -93,7 +93,7 @@ export default function NetworkPage() {
           />
         </div>
 
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('net-s1-kicker', { defaultValue: 'Latency' })}
             heading={t('net-s1-heading', {
@@ -216,7 +216,7 @@ export default function NetworkPage() {
           </div>
         </section>
 
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('net-s3-kicker', { defaultValue: 'Under attack' })}
             heading={t('net-s3-heading', {
@@ -257,7 +257,7 @@ export default function NetworkPage() {
           </dl>
         </section>
 
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('net-cta-kicker', { defaultValue: 'Peering' })}
             heading={t('net-cta-heading', { defaultValue: 'Open peering policy' })}

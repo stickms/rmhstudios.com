@@ -450,7 +450,7 @@ export function AnchoredMenu({
             // panel edge (components/ui/menu.tsx), so the highlight is a pill
             // inside the panel rather than a square band that collides with the
             // panel's own corner radius on the first and last row.
-            className={cn('anchored-menu glass-overlay p-1', className)}
+            className={cn('anchored-menu glass-overlay p-2', className)}
             style={style}
           >
             {children}

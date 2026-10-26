@@ -112,7 +112,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  <RevealGroup as="div"className="grid grid-cols-2 gap-3">
  <RevealItem>
  <div
- className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}
+ className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
  >
  <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
  <Trophy className="h-3.5 w-3.5"/>{''}
@@ -128,7 +128,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  </RevealItem>
  <RevealItem>
  <div
- className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}
+ className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
  >
  <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
  <CalendarCheck className="h-3.5 w-3.5"/>{''}
@@ -146,7 +146,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  {/* Next milestone */}
  {next && (
  <Reveal>
- <section className="rounded-site glass-fill p-4">
+ <section className="rounded-site glass-fill p-5">
  <div className="mb-2 flex items-center justify-between">
  <h2 className="text-sm font-semibold text-site-text">
  {t('next-milestone', { defaultValue:'Next milestone'})}

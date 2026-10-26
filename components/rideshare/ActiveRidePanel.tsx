@@ -235,7 +235,7 @@ export function ActiveRidePanel({
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
       {/* Status timeline */}
-      <div className="glass-fill rounded-site p-4">
+      <div className="glass-fill rounded-site p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-site-text">{rideClassName(ride.rideClass)}</h2>
           {status === 'CANCELLED' ? (
@@ -286,7 +286,7 @@ export function ActiveRidePanel({
 
       {/* Other party */}
       {other && (
-        <div className="flex items-center gap-3 glass-fill rounded-site p-4">
+        <div className="flex items-center gap-3 glass-fill rounded-site p-5">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-site-accent/15 text-site-accent">
             <Car className="h-5 w-5" />
           </div>
@@ -355,7 +355,7 @@ export function ActiveRidePanel({
 
       {/* Completed → rate */}
       {status === 'COMPLETED' && (
-        <div className="glass-fill rounded-site p-4 text-center">
+        <div className="glass-fill rounded-site p-5 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-site-success" />
           <h3 className="mt-2 font-semibold text-site-text">
             {myRatingGiven ? t("thanks-for-riding", { defaultValue: "Thanks for riding with RMH!" }) : (isDriver ? t("rate-your-rider", { defaultValue: "Rate your rider" }) : t("rate-your-driver", { defaultValue: "Rate your driver" }))}

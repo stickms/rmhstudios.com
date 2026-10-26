@@ -89,7 +89,7 @@ export default function HomePage() {
       <DatacenterTabs active="/rmh-datacenter" />
 
       <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <div className="grid items-center gap-6 lg:grid-cols-[1.1fr_1fr]">
             <div className="min-w-0">
               <h2 className="font-display text-3xl leading-tight font-semibold tracking-tight text-site-text sm:text-4xl">
@@ -163,7 +163,7 @@ export default function HomePage() {
           />
         </div>
 
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('s01-kicker', { defaultValue: 'The floor' })}
             heading={t('s01-heading', {
@@ -266,7 +266,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('cta-kicker', { defaultValue: 'Next step' })}
             heading={t('cta-heading', { defaultValue: 'Tell us the load, not the product name' })}

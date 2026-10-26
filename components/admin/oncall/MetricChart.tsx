@@ -53,7 +53,7 @@ export function MetricChart({
 
   if (pts.length < 2) {
     return (
-      <div className="glass-fill rounded-site p-4">
+      <div className="glass-fill rounded-site p-5">
         <h3 className="text-sm font-semibold text-site-text">{title}</h3>
         <p className="my-6 text-center text-sm text-site-text-muted">
           {t('chart-empty-2', {
@@ -104,7 +104,7 @@ export function MetricChart({
   };
 
   return (
-    <div className="glass-fill min-w-0 rounded-site p-4">
+    <div className="glass-fill min-w-0 rounded-site p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h3 className="min-w-0 text-sm font-semibold text-site-text">{title}</h3>
         <p className="text-xs tabular-nums text-site-text-muted" aria-live="polite">

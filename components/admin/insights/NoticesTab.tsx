@@ -73,7 +73,7 @@ export function NoticesTab() {
 
   return (
     <section className="space-y-[var(--site-section-gap)]">
-      <form onSubmit={publish} className="glass-pane space-y-3 rounded-site p-4">
+      <form onSubmit={publish} className="glass-pane space-y-3 rounded-site p-5">
         <div className="space-y-1">
           <Label htmlFor="notice-title">{t('notices-title', { defaultValue: 'Title' })}</Label>
           <Input
