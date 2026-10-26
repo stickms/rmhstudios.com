@@ -391,7 +391,8 @@
       [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
     ):not([data-liquid-canvas='on']):not([data-liquid-material='off']) {
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--site-glass-light) 60%, transparent),
+      inset 0 1px calc(var(--gel-feather, 0px) + 1px) -0.5px
+        color-mix(in srgb, var(--site-glass-light) 60%, transparent),
       inset 0 0 14px -4px
         color-mix(
           in srgb,
@@ -404,6 +405,21 @@
         ),
       inset 0 1.5px 4px -1px var(--jelly-well, transparent),
       var(--gel-edge, 0 0 0 0 transparent);
+  }
+  /* A role's hairline where the shader draws no rim keeps only `--gel-edge-line` of its colour (a lit top edge keeps its
+     ratio), so a slab outside the budget is molded out of the ground like its neighbours, not outlined. The degraded
+     tiers keep the full edge: it is their only one. A border utility (danger, accent, selection) is in a later layer and
+     still wins. */
+  html:not(.reduce-transparency):not(.perf-lite):not(.style-high-contrast):not(.app-high-contrast)
+    :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay):not([data-liquid-canvas='on']):not(
+      [data-liquid-material='off']
+    ) {
+    border-color: color-mix(in srgb, var(--site-border) var(--gel-edge-line, 100%), transparent);
+    border-top-color: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--site-border) 65%, var(--site-glass-light)) var(--gel-edge-line, 100%),
+      transparent
+    );
   }
   :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):not([data-liquid-canvas='on']):not(
       [data-liquid-material='off']

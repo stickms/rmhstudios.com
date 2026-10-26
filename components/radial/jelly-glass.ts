@@ -259,12 +259,13 @@ float wave(float age, float dist) {
 void main() {
   vec2 p = vP;
 
-  // Which material is at this pixel? The field says where each piece of material went (p = X + u(X)), so invert it:
-  // two fixed-point passes are exact for the small, smooth displacements the dough allows. Where the field pushed the
-  // limb outward, X falls inside the disc and the silhouette bulges.
-  vec2 X = p - field(p).xy;
-  X = p - field(X).xy;
-  float h = field(p).z;
+  // Which material is at this pixel? The field is already the pull-back (lib/dough.ts derive() inverts it per cell), so
+  // the material that landed here is exactly X = p - v(p), at any displacement: a limb dragged far out keeps its
+  // silhouette instead of being cut where a two-step guess ran out of field. Where the dough pushed the limb outward, X
+  // falls inside the disc and the silhouette bulges.
+  vec3 f = field(p);
+  vec2 X = p - f.xy;
+  float h = f.z;
 
   float r2 = dot(X, X);
   float r = sqrt(r2);
