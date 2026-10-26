@@ -630,3 +630,7 @@ Plus SAST/quality gates that aren't tests but run on PRs: `senior-review.yml`
   today and will make it an error. Shared factories belong in a sibling module
   imported _inside_ the factory (`testing/rmhbox/phase-5/wiki-race-mocks.ts`).
 - **Go:** add `*_test.go` beside the code and `make gazelle` before `make test`.
+
+### Migration rollback-compatibility gate
+
+`web-ci.yml` job `migrations` runs `.github/scripts/check-migrations-additive.mjs` over migrations **added** in the PR. Production rollbacks (post-deploy guard, `post-deploy-verify`) redeploy the previous image on the already-migrated database, so a new migration must not drop, rename, retype or tighten (`SET NOT NULL`, `NOT NULL` without `DEFAULT`, `DROP DEFAULT`) anything the previous release uses. Do it as expand → ship → contract. A deliberate contract step opts in with `-- rmh:contract-ok <why it is safe>` in the migration file.
