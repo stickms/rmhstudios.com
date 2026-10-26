@@ -156,9 +156,6 @@
   margin: 8px 0 22px;
   border-radius: var(--site-radius);
   overflow: hidden;
-  border: 0.5px solid var(--site-border);
-  box-shadow: var(--site-shadow);
-  background: var(--site-surface);
   opacity: 0;
   animation: store-rise 0.6s var(--ease-smooth) both;
 }
@@ -665,4 +662,9 @@
      piece of site chrome beside it. */
   padding: 14px var(--site-panel-padding, 1.25rem);
   border-radius: var(--site-radius, 14px);
+}
+
+/* The molded rim: while the shader draws this card's edge, its own hairline would outline what the rim dissolves. */
+.store-spot__link[data-liquid-canvas='on'] {
+  border-color: transparent;
 }

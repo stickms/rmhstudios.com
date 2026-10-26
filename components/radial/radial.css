@@ -301,19 +301,28 @@ body:has(.radial-shell) .call-banner {
 
 .radial-topbar {
   position: sticky;
-  top: 0;
+  /* A capsule floating a quarter-rem off the top and sides, not a strip bolted to the viewport: its shoulder, shadow and
+     lens then have page on every side to refract and fall into, so it is molded out of the ground instead of framed by
+     the window edge. The margins and the shorter height add up to `--rad-topbar-h` exactly, so nothing below it (rails,
+     banners, sticky offsets) moves. */
+  top: 0.25rem;
+  margin: 0.25rem 0.75rem;
   z-index: var(--z-topbar);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--rad-3);
-  height: var(--rad-topbar-h);
-  /* Line the bar's edges up with the content gutter below it. */
-  padding: 0 var(--rad-gutter);
-  /* The bar is `.glass-chrome`: the glass role owns its fill (app/liquid-glass.css), so no background is set here. A
-     local `background` is unlayered and would beat the role, which is how this bar stayed an opaque white strip over
-     the page. No backdrop-filter, at any width: the engine draws the slab. */
-  border-bottom: 1px solid var(--site-border);
+  height: calc(var(--rad-topbar-h) - 0.5rem);
+  /* Text keeps clear of the capsule's curve and still lines up with the content gutter below (the margin is 0.75rem). */
+  padding: 0 max(1.25rem, calc(var(--rad-gutter) - 0.75rem));
+  /* A thicker, more refractive shoulder than a card: the bar is the one surface that always has moving page under it. */
+  --gel-bevel: 9px;
+  --gel-lens: 1.3;
+  --gel-reflect: 1.2;
+  /* The bar is `.glass-chrome`: the glass role owns its fill and its shape (app/liquid-glass.css), so no background or
+     radius is set here. A local `background` is unlayered and would beat the role, which is how this bar stayed an
+     opaque white strip over the page. No border: the shader draws the edge; the degraded tiers get the role's own. No
+     backdrop-filter, at any width: the engine draws the slab. */
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
@@ -3646,4 +3655,12 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   .radial-shell:is([data-layout='catalog'], [data-layout='workspace']) .radial-frame {
     grid-template-columns: var(--rad-rail-nav) minmax(0, 1fr);
   }
+}
+
+/* The molded rim: these three spell their own hairline in this sheet, so the shader's lit rim would sit on top of it —
+   two edges where the slab should dissolve into the ground. While the engine draws the rim (`data-liquid-canvas`) the
+   hairline goes clear; the degraded tiers remove that attribute and keep it. Width stays: layout never changes. */
+.radial-topbar__signin[data-liquid-canvas='on'],
+.radial-topbar__search[data-liquid-canvas='on'] {
+  border-color: transparent;
 }

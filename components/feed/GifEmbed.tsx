@@ -144,7 +144,7 @@ export function GifEmbed({ url, className ='', linked = true }: GifEmbedProps) {
  // its resolution is in flight. The ref lives here so the observer has a target.
  if (info.needsResolve && !src && !error) {
  return (
- <div ref={ref} className={`rounded-site overflow-hidden border border-site-border ${className}`}>
+ <div ref={ref} className={`rounded-site overflow-hidden ${className}`}>
  <div className="w-full h-48 bg-site-surface animate-pulse"/>
  </div>
  );
@@ -153,7 +153,7 @@ export function GifEmbed({ url, className ='', linked = true }: GifEmbedProps) {
  if (!src || error) {
  if (error) {
  return (
- <div className={`rounded-site overflow-hidden border border-site-border p-5 flex items-center justify-center gap-2 ${className}`}>
+ <div className={`rounded-site overflow-hidden p-5 flex items-center justify-center gap-2 ${className}`}>
  <ImageOff className="h-4 w-4 text-site-text-dim"/>
  <span className="text-xs text-site-text-dim">{t("failed-to-load-image", { defaultValue:"Failed to load image"})}</span>
  </div>
@@ -171,7 +171,7 @@ export function GifEmbed({ url, className ='', linked = true }: GifEmbedProps) {
  className="w-full max-h-72 object-contain"
  />
  );
- const wrapperClass = `block rounded-site overflow-hidden border border-site-border ${className}`;
+ const wrapperClass = `block rounded-site overflow-hidden ${className}`;
 
  return linked ? (
  <a

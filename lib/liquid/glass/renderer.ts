@@ -105,6 +105,10 @@ export interface GelLook {
   mold: number;
   /** Edge feather, px: how far the outermost pixels dissolve into the ground (`--gel-feather`). */
   feather: number;
+  /** Wavelength spread × crown glass (`--gel-dispersion`), slab thickness multiplier (`--gel-lens`), environment reflection strength (`--gel-reflect`). */
+  dispersion: number;
+  lens: number;
+  reflect: number;
 }
 
 /** The dormant plasma's per-draw state. */
@@ -229,6 +233,7 @@ const NAMES = [
   'uPlasmaPeak',
   'uRings',
   'uMold',
+  'uLens',
 ] as const;
 type UName = (typeof NAMES)[number];
 
@@ -556,6 +561,7 @@ export class GlassRenderer {
     gl.uniform4f(u.uDent, dent?.x ?? 0, dent?.y ?? 0, dent?.depth ?? 0, dent?.radius ?? 1);
     gl.uniform2f(u.uDentStretch, dent?.stretchX ?? 0, dent?.stretchY ?? 0);
     gl.uniform2f(u.uMold, gel?.mold ?? 0, gel?.feather ?? 0);
+    gl.uniform3f(u.uLens, gel?.dispersion ?? 1, gel?.lens ?? 1, gel?.reflect ?? 0);
     return this.blit(pw, ph, target);
   }
 

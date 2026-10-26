@@ -211,9 +211,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.7rem;
-  border: 1px solid var(--site-border);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--site-surface) 88%, transparent);
   color: var(--site-text-muted);
   font-size: 0.66rem;
   font-weight: 600;
@@ -246,10 +244,7 @@
   align-items: center;
   margin-inline: 0.75rem;
   padding-inline: 1rem 0.5rem;
-  border: 1px solid var(--site-border);
   border-radius: var(--site-control-radius);
-  background: var(--site-surface);
-  box-shadow: var(--site-shadow-sm);
 }
 
 .feed-search > svg {
@@ -293,10 +288,7 @@
 
 .feed-tabs {
   overflow: hidden;
-  border: 1px solid var(--site-border);
   border-radius: var(--site-control-radius);
-  background: var(--site-surface);
-  box-shadow: var(--site-shadow-sm);
 }
 
 .feed-tabs__timeline,
@@ -398,7 +390,6 @@
 
 @media (hover: hover) and (pointer: fine) {
   .social-post:hover {
-    border-color: var(--site-border-bright);
     /* background-COLOR, not the shorthand: a post is `.glass-fill` now, and the
        shorthand would drop its noise + glint layers for as long as the pointer
        was on it — the one moment the surface should look MORE like glass. */

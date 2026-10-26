@@ -165,8 +165,8 @@ const SELECTOR =
 const EXCLUDE = `[data-jelly="off"],[data-liquid-material="off"],[data-liquid-glass="off"],.glass-chrome--aside,${GLOBE_SELECTOR},.radial-hub__orb,.eversion-overlay,canvas,input,textarea,select`;
 /** Nodes this engine and the other jelly services insert: never surfaces, never "content changed". */
 const OWN_LAYERS = JELLY_LAYER_SELECTOR;
-/** Rim dispersion relative to crown glass (01 §2.7). */
-const JELLY_DISPERSION = 0.8;
+/** The rim's base dispersion relative to crown glass; the look's `--gel-dispersion` scales it (01 §2.7). */
+const JELLY_DISPERSION = 1;
 /** Release energy → ring charge. Strikes ring at their full energy. */
 const RELEASE_PULSE = 0.6;
 /**
@@ -190,6 +190,10 @@ const GEL_FALLBACK = {
   mold: 0,
   featherPx: 0,
   shoulder: 1,
+  /** The lens (`--gel-dispersion`, `--gel-lens`, `--gel-reflect`): 1 / 1 / 0 is the plain pre-lens refraction. */
+  dispersion: 1,
+  lens: 1,
+  reflect: 0,
 } as const;
 const LIGHT_HEIGHT = 96;
 /**
@@ -337,6 +341,9 @@ const defaultGel = (): GelLook => ({
   plasmaPeak: PLASMA_LOOK.peakDark,
   mold: GEL_FALLBACK.mold,
   feather: GEL_FALLBACK.featherPx,
+  dispersion: GEL_FALLBACK.dispersion,
+  lens: GEL_FALLBACK.lens,
+  reflect: GEL_FALLBACK.reflect,
 });
 
 const NO_LOOK: JellyLook = {
@@ -730,6 +737,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
       plasmaPeak: dark ? PLASMA_LOOK.peakDark : PLASMA_LOOK.peakLight,
       mold: Math.max(0, Math.min(1.5, num('--gel-mold', GEL_FALLBACK.mold))),
       feather: Math.max(0, Math.min(8, cssPx(raw('--gel-feather'), GEL_FALLBACK.featherPx))),
+      dispersion: Math.max(0, Math.min(16, num('--gel-dispersion', GEL_FALLBACK.dispersion))),
+      lens: Math.max(0.25, Math.min(2.5, num('--gel-lens', GEL_FALLBACK.lens))),
+      reflect: Math.max(0, Math.min(4, num('--gel-reflect', GEL_FALLBACK.reflect))),
     };
     s.shoulder = Math.max(0.5, Math.min(2, num('--gel-shoulder', GEL_FALLBACK.shoulder)));
     s.jellyOn = num('--site-jelly-on', 1) > 0;
