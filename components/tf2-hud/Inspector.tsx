@@ -14,7 +14,12 @@ import { propsOf, activeEntries } from '@/lib/tf2-hud/kv/props';
 import { kvAt } from '@/lib/tf2-hud/kv/query';
 import { varsFromState } from '@/lib/tf2-hud/fixtures';
 import { pinOf } from '@/lib/tf2-hud/layout/geometry';
-import { HUD_LAYOUT_FILE, parseCached, substituteLabel } from '@/lib/tf2-hud/scene/build';
+import {
+  HUD_LAYOUT_FILE,
+  parseCached,
+  substituteLabel,
+  TEXT_KEYS,
+} from '@/lib/tf2-hud/scene/build';
 import { setSchemeColor } from '@/lib/tf2-hud/scheme/edit';
 import { explainDim } from '@/lib/tf2-hud/scheme/inspect';
 import { COND_ENVS } from '@/lib/tf2-hud/scheme/cond';
@@ -236,7 +241,7 @@ export default function Inspector() {
           pin && (lower === 'xpos' || lower === 'ypos') ? { sibling: pin.sibling } : undefined,
         );
         detail = e.text;
-      } else if (lower === 'labeltext' && value) {
+      } else if (TEXT_KEYS.has(lower.replace(/_(lodef|minmode)$/, '')) && value) {
         const shown = substituteLabel(value, varsFromState(test), strings);
         if (shown !== value) detail = `→ ${shown}`;
       } else if (lower === 'image' && value) {

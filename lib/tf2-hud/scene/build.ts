@@ -118,6 +118,23 @@ export function imagePath(raw: string): string {
 /** Class names as they appear in `class_<name>red` material files. */
 const CLASS_FILE: Record<string, string> = { demoman: 'demo', engineer: 'engi' };
 
+/** Properties whose value is user-visible text, so a `#Token` or `%var%` in them is resolved. */
+export const TEXT_KEYS: ReadonlySet<string> = new Set([
+  'labeltext',
+  'text',
+  'title',
+  'subtitle',
+  'header',
+  'description',
+  'tooltiptext',
+  'tooltip',
+  'explanation_title',
+  'explanation_body',
+  'trainingtitle',
+  'label',
+  'string',
+]);
+
 /** `TF_IndividualUberCharges` → `Individual Uber Charges`: a readable stand-in for a localisation token with no string. */
 export function humanizeToken(token: string): string {
   return token
@@ -285,7 +302,7 @@ function opsFor(
     case 'button':
     case 'label': {
       if (kind === 'button') addImage(props.get('image') ?? props.get('image_default'));
-      const raw = props.get('labeltext');
+      const raw = props.get('labeltext') ?? props.get('text');
       if (raw !== undefined && raw !== '') {
         const color =
           colorProp(ctx, props, 'defaultfgcolor_override', 'fgcolor_override', 'fgcolor') ??
@@ -305,7 +322,7 @@ function opsFor(
         color: { r: 200, g: 187, b: 161, a: 255 },
         dashed: false,
       });
-      const raw = props.get('labeltext');
+      const raw = props.get('labeltext') ?? props.get('text');
       if (raw) {
         const color = colorProp(ctx, props, 'fgcolor_override', 'fgcolor') ?? WHITE;
         ops.push(

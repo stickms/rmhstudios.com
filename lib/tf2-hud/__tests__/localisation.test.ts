@@ -63,3 +63,12 @@ describe('TF2 localisation files', () => {
     ).toBe('Some Token');
   });
 });
+
+describe('#strings outside labelText', () => {
+  it('lists the text properties and resolves a label’s `text` too', async () => {
+    const { TEXT_KEYS } = await import('../scene/build');
+    for (const k of ['labeltext', 'text', 'title', 'header', 'tooltiptext'])
+      expect(TEXT_KEYS.has(k)).toBe(true);
+    expect(TEXT_KEYS.has('xpos')).toBe(false);
+  });
+});
