@@ -291,7 +291,8 @@ transform` on a body, untriggered flicker, ripple, or a second spring formula.
 **Layout:** bodies sit at least `--space-4` (16px) apart. Leave `--jelly-margin`
 (16px) unclipped round every body; no `overflow: hidden` directly around one.
 Cards `--site-radius` (32px), controls `--site-radius-sm` (24px — a pill up to 48px tall;
-the scale is concentric in 8px steps, so a popup insets its rows `p-2`). Game play-fields are
+the scale is concentric in 8px steps). A dropdown is one rounded slab: its rows are flush
+bands with no radius of their own and the panel clips them. Game play-fields are
 `data-jelly-zone="playfield"` (excluded); ambient motion and arcs stop while a
 game is playing. **Nested bodies mold, never stack:** a body's shoulder stays
 inside its own padding and stops `NEST_GAP` (2px) short of any body nested in

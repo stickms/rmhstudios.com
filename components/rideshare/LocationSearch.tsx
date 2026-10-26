@@ -250,7 +250,7 @@ export function LocationSearch({
             role="option"
             aria-selected={false}
             onClick={() => choose(r)}
-            className="flex w-full min-h-9 pointer-coarse:min-h-11 items-start gap-2 rounded-site-sm px-3 py-2 text-left text-sm text-site-text transition-colors duration-site hover:bg-site-surface-hover focus-visible:bg-site-surface-hover"
+            className="flex w-full min-h-9 pointer-coarse:min-h-11 items-start gap-2 px-4 py-2 text-left text-sm text-site-text transition-colors duration-site hover:bg-site-surface-hover focus-visible:bg-site-surface-hover"
           >
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
             <span className="min-w-0 flex-1">{r.label}</span>

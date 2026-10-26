@@ -186,12 +186,14 @@ const TIER_CLASSES = {
     // takes the small radius; the POPUP is a panel — a stack of rows — and a 9999px
     // radius on it does not read as "very rounded", it reads as a lozenge, with
     // the first and last rows sliced by the curve and a bulge of empty material
-    // at each end. Same mistake one level down: the items were a pill inside a
-    // pill. Panel takes the panel radius, rows take the small one.
+    // at each end. The panel takes the panel radius and CLIPS its rows (the
+    // base class carries `overflow-hidden py-1.5`): the rows are flush bands with
+    // no radius of their own, so the first and last highlight follows the
+    // panel's curve instead of repeating a pill inside it.
     content: 'glass-overlay rounded-[var(--site-radius)] text-site-text',
     // Rows match the trigger, so the value you pick looks like the value you
     // then see sitting in the control.
-    item: 'rounded-[var(--site-radius-sm)] text-sm text-site-text data-[state=checked]:text-site-accent',
+    item: 'rounded-none text-sm text-site-text data-[state=checked]:text-site-accent',
     label: 'text-site-text-dim',
     scrollButton: 'text-site-text-dim',
     chevron: 'text-site-text-dim',
@@ -205,7 +207,7 @@ const TIER_CLASSES = {
     // outward pair — the mirror of the trigger it came out of.
     content:
       'rounded-2xl border-0 bg-(--slice-bg) text-(--slice-text) shadow-[6px_6px_14px_var(--slice-shadow-dark),-6px_-6px_14px_var(--slice-shadow-light)]',
-    item: 'rounded-lg text-sm text-(--slice-text) [--evert-tint:color-mix(in_srgb,var(--slice-shadow-dark)_30%,transparent)] data-[state=checked]:text-(--slice-primary) data-[state=checked]:font-bold',
+    item: 'rounded-none text-sm text-(--slice-text) [--evert-tint:color-mix(in_srgb,var(--slice-shadow-dark)_30%,transparent)] data-[state=checked]:text-(--slice-primary) data-[state=checked]:font-bold',
     label: 'text-(--slice-text-light)',
     scrollButton: 'text-(--slice-text-muted)',
     chevron: 'text-(--slice-text-muted)',
@@ -215,7 +217,7 @@ const TIER_CLASSES = {
       'rounded-[var(--app-radius-sm)] border border-(--app-border) bg-(--app-surface) text-(--app-text) text-sm hover:border-(--app-border-bright) focus-visible:border-(--app-accent) focus-visible:ring-2 focus-visible:ring-(--app-accent)',
     content:
       'rounded-[var(--app-radius-sm)] border border-(--app-border) bg-(--app-surface) text-(--app-text) shadow-[var(--app-shadow)]',
-    item: 'rounded-[var(--app-radius-sm)] text-sm text-(--app-text) [--evert-tint:var(--app-surface-hover)] [--evert-rest-opacity:1] data-[state=checked]:text-(--app-accent)',
+    item: 'rounded-none text-sm text-(--app-text) [--evert-tint:var(--app-surface-hover)] [--evert-rest-opacity:1] data-[state=checked]:text-(--app-accent)',
     label: 'text-(--app-text-dim)',
     scrollButton: 'text-(--app-text-dim)',
     chevron: 'text-(--app-text-dim)',
@@ -358,7 +360,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                 // in the theme's own material. `glass-overlay` is the shared
                 // floating-panel tier (globals.css §5.1). z-60 clears the z-50
                 // dialogs a select can be opened from inside.
-                'z-[60] max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden p-2',
+                'z-[60] max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden py-1.5',
                 styles.content,
               )}
             >
