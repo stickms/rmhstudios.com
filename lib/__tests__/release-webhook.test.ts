@@ -92,7 +92,7 @@ describe('signed release handoff', () => {
   // deploy.sh shells out to `node` for the release journal. The listener used to
   // hand it a fixed PATH without node, so on a host with node outside /usr/bin
   // every release died at its first journal write ("node: command not found").
-  it('runs the deployment with the listener\'s own node on PATH', async () => {
+  it("runs the deployment with the listener's own node on PATH", async () => {
     expect((await post(release('release-path'))).status).toBe(202);
     const file = join(directory, 'path');
     for (let i = 0; i < 50 && !existsSync(file); i++)
@@ -107,5 +107,60 @@ describe('signed release handoff', () => {
     expect((await post(release('release-durable'))).status).toBe(202);
     expect((await post({ ...release('release-durable'), after: 'c'.repeat(40) })).status).toBe(409);
     expect((await post({ action: 'status', release_id: 'release-missing' })).status).toBe(404);
+  });
+
+  describe('rollback after a failed post-deploy verification', () => {
+    const prevSha = 'd'.repeat(40);
+    const prevWeb = `sha256:${'1'.repeat(64)}`;
+    const prevFull = `sha256:${'2'.repeat(64)}`;
+    function journal(id: string, previous: unknown) {
+      const dir = join(directory, 'releases');
+      recordRelease(dir, id, sha, 'success');
+      if (previous) {
+        const file = join(dir, `${id}.json`);
+        const state = JSON.parse(readFileSync(file, 'utf8'));
+        writeFileSync(file, JSON.stringify({ ...state, previous }));
+      }
+    }
+    // The shared requests file already exists from earlier tests, so wait for
+    // this test's own line rather than for the file.
+    async function requests(needle: string) {
+      const file = join(directory, 'requests');
+      for (let i = 0; i < 100; i++) {
+        const lines = existsSync(file) ? readFileSync(file, 'utf8').trim().split('\n') : [];
+        if (lines.some((line) => line.includes(needle))) return lines;
+        await new Promise((done) => setTimeout(done, 20));
+      }
+      return [];
+    }
+    it('rejects an unsigned or unknown rollback and one with nothing to restore', async () => {
+      expect((await post({ action: 'rollback', release_id: 'release-rb-x' }, false)).status).toBe(
+        401,
+      );
+      expect((await post({ action: 'rollback', release_id: 'release-rb-unknown' })).status).toBe(
+        409,
+      );
+      journal('release-rb-first', null);
+      expect((await post({ action: 'rollback', release_id: 'release-rb-first' })).status).toBe(409);
+    });
+    it('redeploys the journaled previous SHA and digests, once, fenced to the bad release', async () => {
+      journal('release-rb-bad', {
+        id: 'release-rb-prev',
+        sha: prevSha,
+        webDigest: `ghcr.io/x/app@${prevWeb}`,
+        fullDigest: `ghcr.io/x/app-full@${prevFull}`,
+      });
+      const body = {
+        action: 'rollback',
+        release_id: 'release-rb-bad',
+        reason: 'integration failed',
+      };
+      expect((await post(body)).status).toBe(202);
+      expect((await post(body)).status).toBe(202);
+      const lines = await requests(prevSha);
+      expect(lines.filter((line) => line.includes(prevSha))).toEqual([
+        `release-rollback-rb-bad|${prevSha}|${prevWeb}`,
+      ]);
+    });
   });
 });
