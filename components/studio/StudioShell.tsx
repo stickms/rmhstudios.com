@@ -87,21 +87,21 @@ function TransportBar({
         onClick={() => {
           setIsPlaying(false);
         }}
-        className="rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
+        className="rounded-(--app-radius-sm) p-1.5 text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)"
         title={t('stop', { defaultValue: 'Stop' })}
       >
         <Square className="h-4 w-4" />
       </button>
       <button
         onClick={() => setIsPlaying(!isPlaying)}
-        className={`rounded-site-sm p-1.5 ${isPlaying ? 'bg-site-accent-dim text-site-accent' : 'text-site-text-muted hover:bg-site-surface-hover hover:text-site-text'}`}
+        className={`rounded-(--app-radius-sm) p-1.5 ${isPlaying ? 'bg-(--app-accent-dim) text-(--app-accent)' : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)'}`}
         title={t('play-pause', { defaultValue: 'Play/Pause' })}
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </button>
       <button
         onClick={() => setIsRecording(!isRecording)}
-        className={`rounded-site-sm p-1.5 ${isRecording ? 'bg-site-danger/15 text-site-danger' : 'text-site-text-muted hover:bg-site-surface-hover hover:text-site-text'}`}
+        className={`rounded-(--app-radius-sm) p-1.5 ${isRecording ? 'bg-(--app-danger)/15 text-(--app-danger)' : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)'}`}
         title={t('record', { defaultValue: 'Record' })}
       >
         <Circle className="h-4 w-4" fill={isRecording ? 'currentColor' : 'none'} />
@@ -111,28 +111,28 @@ function TransportBar({
 
   if (compact) {
     return (
-      <div className="flex flex-col border-b border-site-border bg-site-surface pt-[var(--safe-top)] pl-[var(--safe-left)] pr-[var(--safe-right)]">
+      <div className="flex flex-col border-b border-(--app-border) bg-(--app-surface) pt-[var(--safe-top)] pl-[var(--safe-left)] pr-[var(--safe-right)]">
         <div className="flex items-center justify-between px-3 py-2">
           {transportButtons}
 
-          <div className="font-mono text-sm font-semibold text-site-text">
+          <div className="font-mono text-sm font-semibold text-(--app-text)">
             {formatPosition(currentBeat)}
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-site-text-muted">BPM</span>
+            <span className="text-xs text-(--app-text-muted)">BPM</span>
             <input
               type="number"
               inputMode="numeric"
               value={bpm}
               onChange={handleBpmChange}
-              className="w-14 rounded-site-sm bg-site-bg-subtle px-1.5 py-0.5 text-center text-sm text-site-text outline-none focus:ring-1 focus:ring-site-accent"
+              className="w-14 rounded-(--app-radius-sm) bg-(--app-bg-subtle) px-1.5 py-0.5 text-center text-sm text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent)"
               min={MIN_BPM}
               max={MAX_BPM}
             />
             <button
               onClick={() => setExpandedMobile(!expandedMobile)}
-              className="rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover"
+              className="rounded-(--app-radius-sm) p-1 text-(--app-text-muted) hover:bg-(--app-surface-hover)"
             >
               {expandedMobile ? (
                 <ChevronUp className="h-4 w-4" />
@@ -144,29 +144,29 @@ function TransportBar({
         </div>
 
         {expandedMobile && (
-          <div className="flex items-center gap-3 border-t border-site-border px-3 py-2">
+          <div className="flex items-center gap-3 border-t border-(--app-border) px-3 py-2">
             <button
               onClick={() => setLoopEnabled(!loopEnabled)}
-              className={`rounded-site-sm p-1.5 ${loopEnabled ? 'bg-site-accent-dim text-site-accent' : 'text-site-text-muted'}`}
+              className={`rounded-(--app-radius-sm) p-1.5 ${loopEnabled ? 'bg-(--app-accent-dim) text-(--app-accent)' : 'text-(--app-text-muted)'}`}
               title={t('loop', { defaultValue: 'Loop' })}
             >
               <Repeat className="h-4 w-4" />
             </button>
             <button
               onClick={() => setMetronomeEnabled(!metronomeEnabled)}
-              className={`rounded-site-sm p-1.5 ${metronomeEnabled ? 'bg-site-accent-dim text-site-accent' : 'text-site-text-muted'}`}
+              className={`rounded-(--app-radius-sm) p-1.5 ${metronomeEnabled ? 'bg-(--app-accent-dim) text-(--app-accent)' : 'text-(--app-text-muted)'}`}
               title={t('metronome', { defaultValue: 'Metronome' })}
             >
               <AudioLines className="h-4 w-4" />
             </button>
             <button
               onClick={() => setTypingKeyboardEnabled(!typingKeyboardEnabled)}
-              className={`rounded-site-sm p-1.5 ${typingKeyboardEnabled ? 'bg-site-accent-dim text-site-accent' : 'text-site-text-muted'}`}
+              className={`rounded-(--app-radius-sm) p-1.5 ${typingKeyboardEnabled ? 'bg-(--app-accent-dim) text-(--app-accent)' : 'text-(--app-text-muted)'}`}
               title={t('typing-keyboard', { defaultValue: 'Typing Keyboard' })}
             >
               <Keyboard className="h-4 w-4" />
             </button>
-            <div className="ml-auto text-xs text-site-text-muted">
+            <div className="ml-auto text-xs text-(--app-text-muted)">
               {timeSignature[0]}/{timeSignature[1]}
             </div>
           </div>
@@ -177,41 +177,41 @@ function TransportBar({
 
   // Desktop transport
   return (
-    <div className="flex h-12 items-center gap-4 border-b border-site-border bg-site-surface px-4">
+    <div className="flex h-12 items-center gap-4 border-b border-(--app-border) bg-(--app-surface) px-4">
       {/* Transport controls */}
       {transportButtons}
 
       {/* Position display */}
-      <div className="min-w-[100px] rounded-site-sm bg-site-bg-subtle px-3 py-1 text-center font-mono text-sm font-semibold text-site-text">
+      <div className="min-w-[100px] rounded-(--app-radius-sm) bg-(--app-bg-subtle) px-3 py-1 text-center font-mono text-sm font-semibold text-(--app-text)">
         {formatPosition(currentBeat)}
       </div>
 
       {/* BPM */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-site-text-muted">BPM</span>
+        <span className="text-xs text-(--app-text-muted)">BPM</span>
         <input
           type="number"
           inputMode="numeric"
           value={bpm}
           onChange={handleBpmChange}
-          className="w-16 rounded-site-sm bg-site-bg-subtle px-2 py-1 text-center text-sm text-site-text outline-none focus:ring-1 focus:ring-site-accent"
+          className="w-16 rounded-(--app-radius-sm) bg-(--app-bg-subtle) px-2 py-1 text-center text-sm text-(--app-text) outline-none focus:ring-1 focus:ring-(--app-accent)"
           min={MIN_BPM}
           max={MAX_BPM}
         />
       </div>
 
       {/* Time signature */}
-      <div className="text-sm text-site-text-muted">
+      <div className="text-sm text-(--app-text-muted)">
         {timeSignature[0]}/{timeSignature[1]}
       </div>
 
       {/* Divider */}
-      <div className="h-6 w-px bg-site-border" />
+      <div className="h-6 w-px bg-(--app-border)" />
 
       {/* Loop */}
       <button
         onClick={() => setLoopEnabled(!loopEnabled)}
-        className={`rounded-site-sm p-1.5 ${loopEnabled ? 'bg-site-accent-dim text-site-accent' : 'text-site-text-muted hover:bg-site-surface-hover hover:text-site-text'}`}
+        className={`rounded-(--app-radius-sm) p-1.5 ${loopEnabled ? 'bg-(--app-accent-dim) text-(--app-accent)' : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)'}`}
         title={t('loop-shortcut', { defaultValue: 'Loop (Ctrl+L)' })}
       >
         <Repeat className="h-4 w-4" />
@@ -220,22 +220,22 @@ function TransportBar({
       {/* Metronome */}
       <button
         onClick={() => setMetronomeEnabled(!metronomeEnabled)}
-        className={`rounded-site-sm p-1.5 ${metronomeEnabled ? 'bg-site-accent-dim text-site-accent' : 'text-site-text-muted hover:bg-site-surface-hover hover:text-site-text'}`}
+        className={`rounded-(--app-radius-sm) p-1.5 ${metronomeEnabled ? 'bg-(--app-accent-dim) text-(--app-accent)' : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)'}`}
         title={t('metronome-shortcut', { defaultValue: 'Metronome (Ctrl+M)' })}
       >
         <AudioLines className="h-4 w-4" />
       </button>
 
       {/* Divider */}
-      <div className="h-6 w-px bg-site-border" />
+      <div className="h-6 w-px bg-(--app-border)" />
 
       {/* Typing keyboard toggle */}
       <button
         onClick={() => setTypingKeyboardEnabled(!typingKeyboardEnabled)}
-        className={`flex items-center gap-1.5 rounded-site-sm px-2 py-1 text-xs ${
+        className={`flex items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1 text-xs ${
           typingKeyboardEnabled
-            ? 'bg-site-accent-dim text-site-accent'
-            : 'text-site-text-muted hover:bg-site-surface-hover hover:text-site-text'
+            ? 'bg-(--app-accent-dim) text-(--app-accent)'
+            : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)'
         }`}
         title={t('typing-keyboard-shortcut', { defaultValue: 'Typing Keyboard (\\)' })}
       >
@@ -253,10 +253,10 @@ function TransportBar({
         {/* Sample browser toggle */}
         <button
           onClick={() => useStudioStore.getState().toggleSampleBrowser()}
-          className={`rounded-site-sm p-1.5 ${
+          className={`rounded-(--app-radius-sm) p-1.5 ${
             useStudioStore.getState().sampleBrowserOpen
-              ? 'bg-site-accent-dim text-site-accent'
-              : 'text-site-text-muted hover:bg-site-surface-hover hover:text-site-text'
+              ? 'bg-(--app-accent-dim) text-(--app-accent)'
+              : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)'
           }`}
           title={t('sample-browser', { defaultValue: 'Sample Browser' })}
         >
@@ -265,7 +265,7 @@ function TransportBar({
 
         {/* Save */}
         <button
-          className="rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
+          className="rounded-(--app-radius-sm) p-1.5 text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)"
           title={t('save-project', { defaultValue: 'Save Project (Ctrl+S)' })}
         >
           <Save className="h-4 w-4" />
@@ -274,7 +274,7 @@ function TransportBar({
         {/* Settings */}
         <button
           onClick={onSettingsToggle}
-          className="rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
+          className="rounded-(--app-radius-sm) p-1.5 text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)"
           title={t('settings-keybinds', { defaultValue: 'Settings & Keybinds' })}
         >
           <Settings className="h-4 w-4" />
@@ -355,16 +355,16 @@ function Toolbar() {
   ];
 
   return (
-    <div className="flex items-center gap-1 border-b border-site-border bg-site-surface px-3 py-1.5">
+    <div className="flex items-center gap-1 border-b border-(--app-border) bg-(--app-surface) px-3 py-1.5">
       {/* View switcher */}
       {views.map(({ id, icon: Icon, label, shortcut }) => (
         <button
           key={id}
           onClick={() => setActiveView(id)}
-          className={`rounded-site-sm px-2 py-1 text-xs ${
+          className={`rounded-(--app-radius-sm) px-2 py-1 text-xs ${
             activeView === id
-              ? 'bg-site-surface-hover font-medium text-site-text'
-              : 'text-site-text-muted hover:bg-site-surface-hover hover:text-site-text'
+              ? 'bg-(--app-surface-hover) font-medium text-(--app-text)'
+              : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)'
           }`}
           title={`${label} (${shortcut})`}
         >
@@ -373,17 +373,17 @@ function Toolbar() {
         </button>
       ))}
 
-      <div className="mx-2 h-5 w-px bg-site-border" />
+      <div className="mx-2 h-5 w-px bg-(--app-border)" />
 
       {/* Tools */}
       {tools.map(({ id, icon: Icon, label, shortcut }) => (
         <button
           key={id}
           onClick={() => setSelectedTool(id)}
-          className={`rounded-site-sm p-1.5 ${
+          className={`rounded-(--app-radius-sm) p-1.5 ${
             selectedTool === id
-              ? 'bg-site-accent-dim text-site-accent'
-              : 'text-site-text-muted hover:bg-site-surface-hover hover:text-site-text'
+              ? 'bg-(--app-accent-dim) text-(--app-accent)'
+              : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)'
           }`}
           title={`${label} (${shortcut})`}
         >
@@ -391,15 +391,15 @@ function Toolbar() {
         </button>
       ))}
 
-      <div className="mx-2 h-5 w-px bg-site-border" />
+      <div className="mx-2 h-5 w-px bg-(--app-border)" />
 
       {/* Snap toggle */}
       <button
         onClick={() => setSnapEnabled(!snapEnabled)}
-        className={`rounded-site-sm px-2 py-1 text-xs ${
+        className={`rounded-(--app-radius-sm) px-2 py-1 text-xs ${
           snapEnabled
-            ? 'bg-site-accent-dim text-site-accent'
-            : 'text-site-text-muted hover:bg-site-surface-hover'
+            ? 'bg-(--app-accent-dim) text-(--app-accent)'
+            : 'text-(--app-text-muted) hover:bg-(--app-surface-hover)'
         }`}
       >
         {t('snap', { defaultValue: 'Snap' })}
@@ -407,6 +407,7 @@ function Toolbar() {
 
       {/* Snap value */}
       <Select
+        tier="app"
         controlSize="sm"
         containerClassName="inline-block"
         className="w-auto"
@@ -454,7 +455,7 @@ function MobileTabBar({
   return (
     // The bar's surface reaches the physical bottom; its padding keeps the six
     // targets above the home indicator, which otherwise sits across the labels.
-    <div className="flex border-t border-site-border bg-site-surface pb-[var(--safe-bottom)] pl-[var(--safe-left)] pr-[var(--safe-right)]">
+    <div className="flex border-t border-(--app-border) bg-(--app-surface) pb-[var(--safe-bottom)] pl-[var(--safe-left)] pr-[var(--safe-right)]">
       {tabs.map(({ id, icon: Icon, label }) => {
         const isActive =
           id === 'samples'
@@ -478,7 +479,7 @@ function MobileTabBar({
               }
             }}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2 ${
-              isActive ? 'text-site-accent' : 'text-site-text-muted'
+              isActive ? 'text-(--app-accent)' : 'text-(--app-text-muted)'
             }`}
           >
             <Icon className="h-5 w-5" />
@@ -556,7 +557,7 @@ export default function StudioShell() {
   // ─── Mobile Layout ──────────────────────────────────────────────────────
   if (isMobile) {
     return (
-      <div className="app-viewport bg-site-bg" data-fluid-press-scope>
+      <div className="app-viewport bg-(--app-bg)" data-fluid-press-scope>
         <TransportBar compact onSettingsToggle={() => setSettingsOpen(!settingsOpen)} />
 
         <div className="relative flex-1 overflow-hidden">
@@ -579,7 +580,7 @@ export default function StudioShell() {
 
   // ─── Desktop Layout ─────────────────────────────────────────────────────
   return (
-    <div className="app-viewport app-safe-x bg-site-bg" data-fluid-press-scope>
+    <div className="app-viewport app-safe-x bg-(--app-bg)" data-fluid-press-scope>
       <TransportBar onSettingsToggle={() => setSettingsOpen(!settingsOpen)} />
       <Toolbar />
 
@@ -615,15 +616,15 @@ export default function StudioShell() {
       </div>
 
       {/* Status bar */}
-      <div className="flex h-6 items-center justify-between border-t border-site-border bg-site-surface px-3">
-        <div className="flex items-center gap-3 text-xs text-site-text-muted">
-          <span className={engineReady ? 'text-site-success' : 'text-site-warning'}>
+      <div className="flex h-6 items-center justify-between border-t border-(--app-border) bg-(--app-surface) px-3">
+        <div className="flex items-center gap-3 text-xs text-(--app-text-muted)">
+          <span className={engineReady ? 'text-(--app-success)' : 'text-(--app-warning)'}>
             {engineReady
               ? t('audio-ready', { defaultValue: 'Audio Ready' })
               : t('click-to-init-audio', { defaultValue: 'Click to initialize audio' })}
           </span>
         </div>
-        <div className="text-xs text-site-text-muted">RMH Studio</div>
+        <div className="text-xs text-(--app-text-muted)">RMH Studio</div>
       </div>
     </div>
   );

@@ -1,0 +1,38 @@
+/**
+ * RMH Studio — palette.
+ *
+ * Structure comes from the shared app chrome (see
+ * `components/shared/app-theme.css`). Studio contributes a cyan accent on a
+ * near-black ramp. It is dark in every site theme on purpose: the arrangement,
+ * ruler, lanes and meters are canvases drawn in white ink for a dark ground
+ * (the playhead is this accent), and the document under an app route is
+ * `APP_THEME_BG` (#0b0b0b), which `--app-bg` matches so nothing flashes on load.
+ *
+ * High contrast is the shared `.app-high-contrast` ramp, picked by
+ * `StudioShell` when the site style is High contrast; it outranks this block,
+ * so only the accent carries over.
+ */
+
+@import '../shared/app-theme.css';
+
+.studio-theme {
+  --app-bg: #0b0b0b;
+  --app-bg-subtle: #111214;
+  --app-surface: #17181b;
+  --app-surface-hover: #202226;
+  --app-surface-active: #2a2c31;
+  --app-border: #2a2c31;
+  --app-border-bright: #3c3f46;
+  --app-text: #f1f2f4;
+  --app-text-muted: #a6a9b1;
+  --app-text-dim: #82868f;
+
+  /* The playhead's colour (components/studio/arrangement/PlayheadCursor.tsx). */
+  --app-accent: #22d3ee;
+  /* Near-black ink on the cyan fill (≈10:1); white would be 1.8:1. */
+  --app-accent-fg: #04161a;
+  --app-accent-hover: #06b6d4;
+  --app-success: #34d399;
+  --app-danger: #f87171;
+  --app-warning: #fbbf24;
+}
