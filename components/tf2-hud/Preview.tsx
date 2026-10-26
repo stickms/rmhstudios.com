@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { syncCustomFonts } from '@/lib/tf2-hud/assets/font-sync';
 import { ensureBundledFonts } from '@/lib/tf2-hud/assets/fonts';
-import { ImageStore } from '@/lib/tf2-hud/assets/images';
+import { ImageStore, materialsChanged } from '@/lib/tf2-hud/assets/images';
 import { kvSet } from '@/lib/tf2-hud/kv/edit';
 import { propsOf } from '@/lib/tf2-hud/kv/props';
 import { parseCached, hitTest } from '@/lib/tf2-hud/scene/build';
@@ -52,7 +52,6 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
   const writeText = useEditor((s) => s.writeText);
   const overlay = useEditor((s) => s.overlay);
   const tfVersion = useEditor((s) => s.tfVersion);
-  const baseVersion = useEditor((s) => s.baseVersion);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -62,14 +61,30 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
   const [tick, setTick] = useState(0);
   const redraw = useCallback(() => setTick((n) => n + 1), []);
 
-  const images = useMemo(() => new ImageStore(() => undefined, redraw), [redraw]);
+  const ensureBytes = useEditor((s) => s.ensureBytes);
+  const images = useMemo(
+    () =>
+      new ImageStore(
+        () => undefined,
+        redraw,
+        (p) => ensureBytes(p),
+      ),
+    [redraw, ensureBytes],
+  );
   useEffect(() => () => images.dispose(), [images]);
+  // Textures change only when a material/texture file in the project, or the imported game files, do —
+  // not on every keystroke in a panel file.
+  const lastOverlay = useRef(overlay);
+  const lastTf = useRef(tfVersion);
   useEffect(() => {
     images.setLookup((p) => readBytes(p));
-    images.invalidate();
+    if (materialsChanged(lastOverlay.current, overlay) || lastTf.current !== tfVersion) {
+      images.invalidate();
+    }
+    lastOverlay.current = overlay;
+    lastTf.current = tfVersion;
     redraw();
-    // Textures change when project files, the base or imported game files do.
-  }, [images, readBytes, overlay, tfVersion, baseVersion, redraw]);
+  }, [images, readBytes, overlay, tfVersion, redraw]);
 
   // The bundled TF2 faces must be loaded before the canvas paints with them.
   useEffect(() => {

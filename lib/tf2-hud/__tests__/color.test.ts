@@ -119,16 +119,19 @@ describe('scheme edits', () => {
 });
 
 describe('label substitution', () => {
-  it('resolves %vars% and #tokens, leaving unknown ones visible', async () => {
+  it('resolves %vars% and #tokens, giving unknown ones a readable placeholder', async () => {
     const { substituteLabel } = await import('../scene/build');
     const vars = new Map([['health', '125']]);
     const strings = new Map([['tf_hud_ok', 'Okay']]);
     expect(substituteLabel('%Health%', vars, strings)).toBe('125');
-    expect(substituteLabel('HP: %health% / %MaxHealth%', vars, strings)).toBe(
-      'HP: 125 / %MaxHealth%',
+    expect(substituteLabel('HP: %health% / %Mystery_Value%', vars, strings)).toBe(
+      'HP: 125 / Mystery Value',
     );
     expect(substituteLabel('#TF_Hud_Ok', vars, strings)).toBe('Okay');
-    expect(substituteLabel('#Missing_Token', vars, strings)).toBe('Missing_Token');
+    expect(substituteLabel('#Missing_Token', vars, strings)).toBe('Missing Token');
+    expect(substituteLabel('#TF_IndividualUberCharges', vars, strings)).toBe(
+      'Individual Uber Charges',
+    );
   });
 });
 

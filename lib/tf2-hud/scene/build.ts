@@ -20,6 +20,7 @@ import {
   type Rect,
   type Screen,
 } from '../layout/geometry';
+import { placeholderFor } from '../placeholders';
 import type { CondEnv } from '../scheme/cond';
 import { borderOf, pickFont, resolveColor, type Rgba, type Scheme } from '../scheme/scheme';
 import type { DrawOp, HAlign, ImageOp, PanelNode, Scene, TextOp, VAlign } from './types';
@@ -41,6 +42,12 @@ export interface SceneContext {
   strings: ReadonlyMap<string, string>;
   /** Fill fraction for progress bars, 0–1. */
   progress: number;
+  /** Forces a panel on (`true`) or off (`false`) for the current class/weapon/situation; `undefined` = its own `visible`. */
+  gate?: (file: string, name: string) => boolean | undefined;
+  /** Fill (0–1) for a specific progress bar, or `undefined` for `progress`. */
+  progressFor?: (file: string, name: string) => number | undefined;
+  /** Who is playing, for team-coloured backgrounds and class images. */
+  player?: { playerClass: string; team: 'red' | 'blue' };
 }
 
 /* ───────────────────────── parse cache ───────────────────────── */
@@ -86,6 +93,7 @@ export function kindOf(control: string): Kind {
     c === 'ctfimagepanel' ||
     c === 'ciconpanel' ||
     c === 'scalableimagepanel' ||
+    c === 'ctfclassimage' ||
     c === 'cschinticon'
   )
     return 'image';
@@ -107,6 +115,35 @@ export function imagePath(raw: string): string {
   return out.join('/').replace(/\.(vtf|vmt|png|tga|jpg)$/i, '');
 }
 
+/** Class names as they appear in `class_<name>red` material files. */
+const CLASS_FILE: Record<string, string> = { demoman: 'demo', engineer: 'engi' };
+
+/** Properties whose value is user-visible text, so a `#Token` or `%var%` in them is resolved. */
+export const TEXT_KEYS: ReadonlySet<string> = new Set([
+  'labeltext',
+  'text',
+  'title',
+  'subtitle',
+  'header',
+  'description',
+  'tooltiptext',
+  'tooltip',
+  'explanation_title',
+  'explanation_body',
+  'trainingtitle',
+  'label',
+  'string',
+]);
+
+/** `TF_IndividualUberCharges` → `Individual Uber Charges`: a readable stand-in for a localisation token with no string. */
+export function humanizeToken(token: string): string {
+  return token
+    .replace(/^(TF|Hud|HUD|Tf)_/, '')
+    .replace(/_+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .trim();
+}
+
 /** Resolve `#Token` localisation and `%var%` substitution the way a label does. */
 export function substituteLabel(
   raw: string,
@@ -116,9 +153,12 @@ export function substituteLabel(
   let text = raw;
   if (text.startsWith('#')) {
     const key = text.slice(1).toLowerCase();
-    text = strings.get(key) ?? text.slice(1);
+    text = strings.get(key) ?? humanizeToken(text.slice(1));
   }
-  return text.replace(/%([A-Za-z0-9_]+)%/g, (m, name: string) => vars.get(name.toLowerCase()) ?? m);
+  return text.replace(
+    /%([A-Za-z0-9_]+)%/g,
+    (_m, name: string) => vars.get(name.toLowerCase()) ?? placeholderFor(name),
+  );
 }
 
 function substitute(ctx: SceneContext, raw: string): string {
@@ -178,6 +218,7 @@ function opsFor(
   rect: Rect,
   isFrame: boolean,
   images: Set<string>,
+  progress: number,
 ): DrawOp[] {
   const ops: DrawOp[] = [];
   const scale = screenScale(ctx.screen);
@@ -231,14 +272,22 @@ function opsFor(
     case 'image': {
       const fill = colorProp(ctx, props, 'fillcolor');
       if (fill) ops.push({ t: 'rect', rect, fill, radius: 0 });
-      addImage(props.get('image') ?? props.get('icon'), {
+      // CTFImagePanel swaps in `teambg_<n>` (2 = RED, 3 = BLU); CTFClassImage shows the player's class.
+      const team = ctx.player?.team;
+      const teamImage = team ? props.get(team === 'red' ? 'teambg_2' : 'teambg_3') : undefined;
+      const classImage =
+        control.toLowerCase() === 'ctfclassimage' && ctx.player
+          ? `../hud/class_${CLASS_FILE[ctx.player.playerClass] ?? ctx.player.playerClass}${ctx.player.team === 'red' ? 'red' : 'blue'}`
+          : undefined;
+      addImage(classImage ?? teamImage ?? props.get('image') ?? props.get('icon'), {
         tint: colorProp(ctx, props, 'drawcolor'),
+        native: !props.bool('scaleimage', false),
       });
       break;
     }
     case 'progress': {
       addImage(props.get('bg_image'));
-      const frac = Math.max(0, Math.min(1, ctx.progress));
+      const frac = Math.max(0, Math.min(1, progress));
       const fg = props.get('fg_image');
       if (fg) {
         const path = imagePath(fg);
@@ -253,7 +302,7 @@ function opsFor(
     case 'button':
     case 'label': {
       if (kind === 'button') addImage(props.get('image') ?? props.get('image_default'));
-      const raw = props.get('labeltext');
+      const raw = props.get('labeltext') ?? props.get('text');
       if (raw !== undefined && raw !== '') {
         const color =
           colorProp(ctx, props, 'defaultfgcolor_override', 'fgcolor_override', 'fgcolor') ??
@@ -273,7 +322,7 @@ function opsFor(
         color: { r: 200, g: 187, b: 161, a: 255 },
         dashed: false,
       });
-      const raw = props.get('labeltext');
+      const raw = props.get('labeltext') ?? props.get('text');
       if (raw) {
         const color = colorProp(ctx, props, 'fgcolor_override', 'fgcolor') ?? WHITE;
         ops.push(
@@ -327,6 +376,17 @@ const LAYOUT_FILE_OVERRIDES: Record<string, string> = {
 function layoutFileFor(blockName: string): string {
   const k = blockName.toLowerCase();
   return LAYOUT_FILE_OVERRIDES[k] ?? k.replace(/^c(?=hud)/, '');
+}
+
+function intersect(a: Rect, b: Rect): Rect {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  return {
+    x,
+    y,
+    w: Math.max(0, Math.min(a.x + a.w, b.x + b.w) - x),
+    h: Math.max(0, Math.min(a.y + a.h, b.y + b.h) - y),
+  };
 }
 
 export const HUD_LAYOUT_FILE = 'scripts/hudlayout.res';
@@ -410,42 +470,32 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       : [top.key.text, frameName];
     const frameSource = kvRange(layoutBlock ?? frameEntry ?? first);
 
-    // Children are positioned inside the frame (sizes only; origin handled below).
-    const frameParent: Rect = { x: 0, y: 0, w: frameLocal.w, h: frameLocal.h };
-    const byName = new Map<string, KvNode>();
-    for (const e of children) {
-      const k = e.key.text.toLowerCase();
-      if (!byName.has(k)) byName.set(k, e);
-    }
-    const memo = new Map<KvNode, Rect>();
-    const resolving = new Set<KvNode>();
-    const localRect = (e: KvNode): Rect => {
-      const cached = memo.get(e);
-      if (cached) return cached;
-      const props = propsFor(e);
-      let sibling: Rect | undefined;
-      const pin = pinOf(props);
-      if (pin && !resolving.has(e)) {
-        const target = byName.get(pin.sibling.toLowerCase());
-        if (target && target !== e) {
-          resolving.add(e);
-          sibling = localRect(target);
-          resolving.delete(e);
-        }
-      }
-      const r = layoutRect({ props, parent: frameParent, scale, sibling });
-      memo.set(e, r);
-      return r;
-    };
-
     const seen = new Map<string, number>();
-    const nodes: PanelNode[] = [];
     const frameId = hasFrame ? `${file}#${frameName}` : null;
-    let frameShown = true;
     const originX = hasFrame ? frameLocal.x : 0;
     const originY = hasFrame ? frameLocal.y : 0;
 
-    const push = (e: KvNode | null, props: Props, rect: Rect, isFrame: boolean) => {
+    /** What a panel needs to know about the panel it sits in. */
+    interface Host {
+      id: string | null;
+      shown: boolean;
+      keyPath: string[];
+      /** Ancestors' bounds the panel is clipped to (VGUI clips children to their parent). */
+      clip?: Rect;
+    }
+    interface Placed {
+      node: PanelNode;
+      order: number;
+      kids: Placed[];
+    }
+
+    const make = (
+      e: KvNode | null,
+      props: Props,
+      rect: Rect,
+      isFrame: boolean,
+      host: Host,
+    ): PanelNode => {
       const name = e ? e.key.text : frameName;
       const control = props.get('controlname') ?? (e ? 'Panel' : 'HudElement');
       const baseId = `${file}#${name}`;
@@ -454,16 +504,22 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
       const id = dup ? `${baseId}~${dup}` : baseId;
       const visible = props.bool('visible', true);
       let shown = visible || ctx.showHidden;
+      // The game decides what is on screen for this class/weapon (unless the author asked to see everything).
+      const gated = ctx.gate?.(file, name);
+      if (gated !== undefined && !ctx.showHidden) shown = gated;
       if (ctx.forceShown.has(id)) shown = true;
       if (ctx.forceHidden.has(id)) shown = false;
-      if (isFrame) frameShown = shown;
-      else if (!frameShown && hasFrame) shown = false;
+      // A hidden panel hides everything inside it.
+      if (!isFrame && !host.shown && (hasFrame || host.id !== null)) shown = false;
       const kind = kindOf(control);
-      const ops = shown ? opsFor(ctx, kind, control, name, props, rect, isFrame, images) : [];
-      nodes.push({
+      const progress = ctx.progressFor?.(file, name) ?? ctx.progress;
+      const ops = shown
+        ? opsFor(ctx, kind, control, name, props, rect, isFrame, images, progress)
+        : [];
+      return {
         id,
         file: isFrame ? frameFile : file,
-        keyPath: isFrame ? frameKeyPath : [top.key.text, name],
+        keyPath: isFrame ? frameKeyPath : [...host.keyPath, name],
         name: props.get('fieldname') ?? name,
         control,
         rect,
@@ -471,31 +527,103 @@ export function buildScene(ctx: SceneContext, files: readonly string[]): Scene {
         visible,
         shown,
         isFrame,
-        parentId: isFrame ? null : frameId,
+        parentId: isFrame ? null : host.id,
+        clip: isFrame ? undefined : host.clip,
         source: isFrame ? frameSource : kvRange(e!),
         ops,
+      };
+    };
+
+    /** Lay out `siblings` inside a parent of `parentSize` whose top-left is `origin`. */
+    const place = (
+      siblings: KvNode[],
+      origin: { x: number; y: number },
+      parentSize: Rect,
+      host: Host,
+    ): Placed[] => {
+      const byName = new Map<string, KvNode>();
+      for (const e of siblings) {
+        const k = e.key.text.toLowerCase();
+        if (!byName.has(k)) byName.set(k, e);
+      }
+      const memo = new Map<KvNode, Rect>();
+      const resolving = new Set<KvNode>();
+      const localRect = (e: KvNode): Rect => {
+        const cached = memo.get(e);
+        if (cached) return cached;
+        const props = propsFor(e);
+        let sibling: Rect | undefined;
+        const pin = pinOf(props);
+        if (pin && !resolving.has(e)) {
+          const target = byName.get(pin.sibling.toLowerCase());
+          if (target && target !== e) {
+            resolving.add(e);
+            sibling = localRect(target);
+            resolving.delete(e);
+          }
+        }
+        const r = layoutRect({ props, parent: parentSize, scale, sibling });
+        memo.set(e, r);
+        return r;
+      };
+
+      return siblings.map((e, order) => {
+        const local = localRect(e);
+        const abs = translate(local, origin.x, origin.y);
+        const node = make(e, propsFor(e), abs, false, host);
+        // Nested blocks that name a control are child panels; others (`if_vr`, …) are conditionals.
+        const nested = activeEntries(e, ctx.env).filter(
+          (c) => c.children && propsFor(c).has('controlname'),
+        );
+        const kids = nested.length
+          ? place(
+              nested,
+              { x: abs.x, y: abs.y },
+              { x: 0, y: 0, w: local.w, h: local.h },
+              {
+                id: node.id,
+                shown: node.shown,
+                keyPath: node.keyPath,
+                clip: host.clip ? intersect(host.clip, abs) : abs,
+              },
+            )
+          : [];
+        return { node, order, kids };
       });
     };
 
-    if (frameProps) push(frameEntry, frameProps, frameLocal, true);
-    for (const e of children) {
-      push(e, propsFor(e), translate(localRect(e), originX, originY), false);
+    // Siblings paint lowest `zpos` first, ties in file order; a panel's children paint after it.
+    const flatten = (placed: Placed[], into: PanelNode[]) => {
+      [...placed]
+        .sort((a, b) => a.node.z - b.node.z || a.order - b.order)
+        .forEach((p) => {
+          into.push(p.node);
+          flatten(p.kids, into);
+        });
+    };
+
+    const frameHost: Host = { id: frameId, shown: true, keyPath: [top.key.text] };
+    const nodes: PanelNode[] = [];
+    if (frameProps) {
+      const frame = make(frameEntry, frameProps, frameLocal, true, frameHost);
+      nodes.push(frame);
+      frameHost.shown = frame.shown;
     }
+    flatten(
+      place(
+        children,
+        { x: originX, y: originY },
+        { x: 0, y: 0, w: frameLocal.w, h: frameLocal.h },
+        frameHost,
+      ),
+      nodes,
+    );
 
     groups.push({ z: frameProps ? frameProps.num('zpos', 0) : 0, order, nodes });
   });
 
   groups.sort((a, b) => a.z - b.z || a.order - b.order);
-  const out: PanelNode[] = [];
-  for (const g of groups) {
-    const frame = g.nodes.filter((n) => n.isFrame);
-    const rest = g.nodes
-      .map((n, i) => ({ n, i }))
-      .filter(({ n }) => !n.isFrame)
-      .sort((a, b) => a.n.z - b.n.z || a.i - b.i)
-      .map(({ n }) => n);
-    out.push(...frame, ...rest);
-  }
+  const out: PanelNode[] = groups.flatMap((g) => g.nodes);
   return { screen: ctx.screen, nodes: out, images: [...images] };
 }
 

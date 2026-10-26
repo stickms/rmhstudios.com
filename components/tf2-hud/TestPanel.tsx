@@ -7,6 +7,7 @@
 import { ImageUp, RotateCcw, X } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { DEFAULT_WEAPON, EVENTS, SITUATIONS, weaponsFor } from '@/lib/tf2-hud/game-state';
 import {
   CLASS_MAX_HEALTH,
   DEFAULT_TEST_STATE,
@@ -17,7 +18,7 @@ import {
 } from '@/lib/tf2-hud/fixtures';
 import { useEditor } from '@/lib/tf2-hud/store';
 import type { BackdropKind } from '@/lib/tf2-hud/view';
-import { Btn, NumberField, PanelHead, RangeField, Row, SelectField, TextField } from './ui';
+import { Btn, NumberField, Toggle, PanelHead, RangeField, Row, SelectField, TextField } from './ui';
 
 const BACKDROPS: BackdropKind[] = ['auto', 'checker', 'game', 'menu', 'image'];
 
@@ -78,6 +79,7 @@ export default function TestPanel() {
               const c = e.target.value as Tf2Class;
               setTest({
                 playerClass: c,
+                weapon: 'auto',
                 maxHealth: CLASS_MAX_HEALTH[c],
                 health: CLASS_MAX_HEALTH[c],
               });
@@ -87,6 +89,20 @@ export default function TestPanel() {
             {TF2_CLASSES.map((c) => (
               <option key={c} value={c} className="capitalize">
                 {c}
+              </option>
+            ))}
+          </SelectField>
+        </Row>
+        <Row label={t('weapon', { defaultValue: 'Weapon' })}>
+          <SelectField
+            aria-label={t('weapon', { defaultValue: 'Weapon' })}
+            value={test.weapon === 'auto' ? DEFAULT_WEAPON[test.playerClass] : test.weapon}
+            onChange={(e) => setTest({ weapon: e.target.value })}
+            className="w-44"
+          >
+            {weaponsFor(test.playerClass).map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.label}
               </option>
             ))}
           </SelectField>
@@ -160,6 +176,37 @@ export default function TestPanel() {
             />
           </div>
         </Row>
+        <Row label={t('meter', { defaultValue: 'Weapon meter %' })}>
+          <div className="w-32">
+            <RangeField
+              label={t('meter', { defaultValue: 'Weapon meter %' })}
+              value={test.meter}
+              min={0}
+              max={100}
+              onChange={(meter) => setTest({ meter })}
+            />
+          </div>
+        </Row>
+        <Row label={t('pipes', { defaultValue: 'Active stickies' })}>
+          <NumberField
+            label={t('pipes', { defaultValue: 'Active stickies' })}
+            value={test.pipes}
+            min={0}
+            max={14}
+            onChange={(pipes) => setTest({ pipes })}
+            className="w-20"
+          />
+        </Row>
+        <Row label={t('sentry', { defaultValue: 'Sentry level (0 = none)' })}>
+          <NumberField
+            label={t('sentry', { defaultValue: 'Sentry level (0 = none)' })}
+            value={test.sentryLevel}
+            min={0}
+            max={3}
+            onChange={(sentryLevel) => setTest({ sentryLevel })}
+            className="w-20"
+          />
+        </Row>
         <Row label={t('progress', { defaultValue: 'Progress bars %' })}>
           <div className="w-32">
             <RangeField
@@ -208,6 +255,24 @@ export default function TestPanel() {
             className="w-32"
           />
         </Row>
+
+        <h3 className="tf2hud-panel-head pt-3">
+          {t('events', { defaultValue: 'On-screen events' })}
+        </h3>
+        {[...EVENTS, ...SITUATIONS].map((e) => (
+          <div key={e.id} className="flex items-center justify-between gap-3 py-0.5 text-xs">
+            <span className="text-(--app-text-muted)">{e.label}</span>
+            <Toggle
+              label={e.label}
+              checked={test.events.includes(e.id)}
+              onChange={(on) =>
+                setTest({
+                  events: on ? [...test.events, e.id] : test.events.filter((x) => x !== e.id),
+                })
+              }
+            />
+          </div>
+        ))}
 
         <h3 className="tf2hud-panel-head pt-3">{t('backdrop', { defaultValue: 'Backdrop' })}</h3>
         <Row label={t('backdrop-style', { defaultValue: 'Behind the HUD' })}>

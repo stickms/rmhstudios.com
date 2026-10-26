@@ -43,7 +43,12 @@ import { decodeUtf8, encodeUtf8 } from './util/sha1';
 export const baseCache = new BaseCache();
 
 /** Files every preview needs regardless of page. */
-export const CORE_FILES = ['resource/clientscheme.res', 'resource/sourcescheme.res'] as const;
+export const CORE_FILES = [
+  'resource/clientscheme.res',
+  'resource/sourcescheme.res',
+  // Where every HUD element sits: without it frames are missing and panels lay out against the screen.
+  'scripts/hudlayout.res',
+] as const;
 
 const HISTORY_LIMIT = 200;
 const COALESCE_MS = 900;
@@ -86,9 +91,6 @@ export interface EditorState {
   baseVersion: number;
   tfAssets: Map<string, Uint8Array>;
   tfVersion: number;
-  /** `#Token` → text, from an imported `tf_english.txt`. */
-  localisation: ReadonlyMap<string, string>;
-
   activePath: string | null;
   openPaths: string[];
   pageId: string;
@@ -109,6 +111,8 @@ export interface EditorState {
 
   boot(): Promise<void>;
   ensureFiles(paths: readonly string[]): Promise<void>;
+  /** Fetch base files without announcing a change (textures: the image store awaits them itself). */
+  ensureBytes(paths: readonly string[]): Promise<void>;
 
   readText(path: string): string | undefined;
   readBytes(path: string): Uint8Array | undefined;
@@ -202,7 +206,6 @@ export const useEditor = create<EditorState>((set, get) => {
     baseVersion: 0,
     tfAssets: new Map(),
     tfVersion: 0,
-    localisation: new Map(),
 
     activePath: null,
     openPaths: [],
@@ -238,6 +241,10 @@ export const useEditor = create<EditorState>((set, get) => {
     async ensureFiles(paths) {
       await baseCache.ensure(paths);
       set((s) => ({ baseVersion: s.baseVersion + 1 }));
+    },
+
+    async ensureBytes(paths) {
+      await baseCache.ensure(paths);
     },
 
     readText(path) {
@@ -459,8 +466,11 @@ export const useEditor = create<EditorState>((set, get) => {
     },
 
     setPage(id) {
-      if (!resolvePage(id)) return;
+      const page = resolvePage(id);
+      if (!page) return;
       set({
+        // A page can set the class/weapon/meters it exists to show.
+        test: page.state ? { ...get().test, ...page.state } : get().test,
         pageId: id,
         selectedId: null,
         hoverId: null,

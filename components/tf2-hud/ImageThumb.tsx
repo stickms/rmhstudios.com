@@ -12,6 +12,7 @@ import { useEditor } from '@/lib/tf2-hud/store';
 export default function ImageThumb({ value, size = 56 }: { value: string; size?: number }) {
   const readBytes = useEditor((s) => s.readBytes);
   const overlay = useEditor((s) => s.overlay);
+  const ensureBytes = useEditor((s) => s.ensureBytes);
   const tfVersion = useEditor((s) => s.tfVersion);
   const baseVersion = useEditor((s) => s.baseVersion);
   const [, bump] = useState(0);
@@ -21,8 +22,9 @@ export default function ImageThumb({ value, size = 56 }: { value: string; size?:
       new ImageStore(
         () => undefined,
         () => bump((n) => n + 1),
+        (p) => ensureBytes(p),
       ),
-    [],
+    [ensureBytes],
   );
   const ref = useRef<HTMLCanvasElement>(null);
 
@@ -42,7 +44,7 @@ export default function ImageThumb({ value, size = 56 }: { value: string; size?:
     if (img) {
       const k = Math.min(size / img.width, size / img.height);
       g.drawImage(
-        img,
+        img.bitmap,
         (size - img.width * k) / 2,
         (size - img.height * k) / 2,
         img.width * k,

@@ -13,6 +13,9 @@ export interface DecodedImage {
   height: number;
   /** RGBA, row-major, top row first. */
   data: Uint8ClampedArray;
+  /** Animation frames in the file (the decoded one is `frame`). */
+  frames: number;
+  frame: number;
 }
 
 const FORMAT = {
@@ -23,12 +26,19 @@ const FORMAT = {
   RGB565: 4,
   I8: 5,
   IA88: 6,
+  A8: 8,
   ARGB8888: 11,
   BGRA8888: 12,
   DXT1: 13,
   DXT3: 14,
   DXT5: 15,
   BGRX8888: 16,
+  BGR565: 17,
+  BGRX5551: 18,
+  BGRA4444: 19,
+  DXT1_ONEBITALPHA: 20,
+  BGRA5551: 21,
+  UV88: 22,
 } as const;
 
 /** Bytes per pixel for the non-block formats; 0 for block-compressed. */
@@ -44,9 +54,15 @@ function bytesPerPixel(fmt: number): number {
     case FORMAT.BGR888:
       return 3;
     case FORMAT.RGB565:
+    case FORMAT.BGR565:
+    case FORMAT.BGRX5551:
+    case FORMAT.BGRA4444:
+    case FORMAT.BGRA5551:
     case FORMAT.IA88:
+    case FORMAT.UV88:
       return 2;
     case FORMAT.I8:
+    case FORMAT.A8:
       return 1;
     default:
       return 0;
@@ -54,7 +70,9 @@ function bytesPerPixel(fmt: number): number {
 }
 
 function imageSize(fmt: number, w: number, h: number): number {
-  if (fmt === FORMAT.DXT1) return Math.max(1, Math.ceil(w / 4)) * Math.max(1, Math.ceil(h / 4)) * 8;
+  if (fmt === FORMAT.DXT1 || fmt === FORMAT.DXT1_ONEBITALPHA) {
+    return Math.max(1, Math.ceil(w / 4)) * Math.max(1, Math.ceil(h / 4)) * 8;
+  }
   if (fmt === FORMAT.DXT3 || fmt === FORMAT.DXT5) {
     return Math.max(1, Math.ceil(w / 4)) * Math.max(1, Math.ceil(h / 4)) * 16;
   }
@@ -79,18 +97,19 @@ function decodeBlocks(
   const out = new Uint8ClampedArray(w * h * 4);
   const bw = Math.ceil(w / 4);
   const bh = Math.ceil(h / 4);
-  const blockBytes = fmt === FORMAT.DXT1 ? 8 : 16;
+  const isDxt1 = fmt === FORMAT.DXT1 || fmt === FORMAT.DXT1_ONEBITALPHA;
+  const blockBytes = isDxt1 ? 8 : 16;
   const colors = new Uint8ClampedArray(16);
   for (let by = 0; by < bh; by++) {
     for (let bx = 0; bx < bw; bx++) {
       const b = offset + (by * bw + bx) * blockBytes;
-      const cOff = fmt === FORMAT.DXT1 ? b : b + 8;
+      const cOff = isDxt1 ? b : b + 8;
       const c0 = src[cOff] | (src[cOff + 1] << 8);
       const c1 = src[cOff + 2] | (src[cOff + 3] << 8);
       const [r0, g0, b0] = rgb565(c0);
       const [r1, g1, b1] = rgb565(c1);
       colors.set([r0, g0, b0, 255, r1, g1, b1, 255]);
-      if (c0 > c1 || fmt !== FORMAT.DXT1) {
+      if (c0 > c1 || !isDxt1) {
         colors.set([(2 * r0 + r1) / 3, (2 * g0 + g1) / 3, (2 * b0 + b1) / 3, 255], 8);
         colors.set([(r0 + 2 * r1) / 3, (g0 + 2 * g1) / 3, (b0 + 2 * b1) / 3, 255], 12);
       } else {
@@ -192,6 +211,42 @@ function decodeRaw(
       case FORMAT.I8:
         out.set([src[s], src[s], src[s], 255], o);
         break;
+      case FORMAT.A8:
+        out.set([255, 255, 255, src[s]], o);
+        break;
+      case FORMAT.BGR565: {
+        const v = src[s] | (src[s + 1] << 8);
+        const [b, g, r] = rgb565(v);
+        out.set([r, g, b, 255], o);
+        break;
+      }
+      case FORMAT.BGRX5551:
+      case FORMAT.BGRA5551: {
+        const v = src[s] | (src[s + 1] << 8);
+        const e5 = (n: number) => (n << 3) | (n >> 2);
+        out.set(
+          [
+            e5((v >> 10) & 31),
+            e5((v >> 5) & 31),
+            e5(v & 31),
+            fmt === FORMAT.BGRA5551 && !(v & 0x8000) ? 0 : 255,
+          ],
+          o,
+        );
+        break;
+      }
+      case FORMAT.BGRA4444: {
+        const v = src[s] | (src[s + 1] << 8);
+        out.set(
+          [((v >> 8) & 15) * 17, ((v >> 4) & 15) * 17, (v & 15) * 17, ((v >> 12) & 15) * 17],
+          o,
+        );
+        break;
+      }
+      case FORMAT.UV88:
+        // Normal-map style two-channel data: shown as red/green so it is at least inspectable.
+        out.set([src[s], src[s + 1], 128, 255], o);
+        break;
       case FORMAT.IA88:
         out.set([src[s], src[s], src[s], src[s + 1]], o);
         break;
@@ -202,7 +257,12 @@ function decodeRaw(
   return out;
 }
 
-export function decodeVtf(bytes: Uint8Array): DecodedImage | null {
+export interface VtfOptions {
+  /** Animation frame to decode (clamped to the file's range). Default 0. */
+  frame?: number;
+}
+
+export function decodeVtf(bytes: Uint8Array, opts: VtfOptions = {}): DecodedImage | null {
   if (bytes.length < 64) return null;
   if (bytes[0] !== 0x56 || bytes[1] !== 0x54 || bytes[2] !== 0x46 || bytes[3] !== 0) return null;
   const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -218,35 +278,43 @@ export function decodeVtf(bytes: Uint8Array): DecodedImage | null {
   const lowH = v.getUint8(62);
   if (width === 0 || height === 0 || width > 8192 || height > 8192) return null;
   if (hiFormat < 0) return null;
+  const frame = Math.max(0, Math.min(frames - 1, Math.floor(opts.frame ?? 0)));
 
-  let offset: number | undefined;
+  // Where the image data starts. 7.3+ lists it as a resource entry (tag 0x30); older files put it
+  // right after the header and the low-resolution thumbnail. Either way the mips follow
+  // smallest-first, each holding every frame, so the top mip is reached by skipping the rest.
+  let dataStart: number | undefined;
   if (minor >= 3 && bytes.length >= 80) {
     const count = v.getUint32(68, true);
     for (let i = 0; i < Math.min(count, 32); i++) {
       const at = 80 + i * 8;
       if (at + 8 > bytes.length) break;
       if (bytes[at] === 0x30 && bytes[at + 1] === 0 && bytes[at + 2] === 0) {
-        offset = v.getUint32(at + 4, true);
+        dataStart = v.getUint32(at + 4, true);
         break;
       }
     }
   }
-  if (offset === undefined) {
-    offset = headerSize;
-    if (lowFormat >= 0 && lowW && lowH) offset += imageSize(lowFormat, lowW, lowH);
-    // Mips are stored smallest first; skip every mip below the top one.
-    for (let m = mips - 1; m >= 1; m--) {
-      const mw = Math.max(1, width >> m);
-      const mh = Math.max(1, height >> m);
-      offset += imageSize(hiFormat, mw, mh) * frames;
-    }
+  if (dataStart === undefined) {
+    dataStart = headerSize;
+    if (lowFormat >= 0 && lowW && lowH) dataStart += imageSize(lowFormat, lowW, lowH);
+  }
+  let offset = dataStart;
+  for (let m = mips - 1; m >= 1; m--) {
+    const mw = Math.max(1, width >> m);
+    const mh = Math.max(1, height >> m);
+    offset += imageSize(hiFormat, mw, mh) * frames;
   }
   const need = imageSize(hiFormat, width, height);
+  offset += need * frame;
   if (need === 0 || offset + need > bytes.length) return null;
 
   const data =
-    hiFormat === FORMAT.DXT1 || hiFormat === FORMAT.DXT3 || hiFormat === FORMAT.DXT5
+    hiFormat === FORMAT.DXT1 ||
+    hiFormat === FORMAT.DXT1_ONEBITALPHA ||
+    hiFormat === FORMAT.DXT3 ||
+    hiFormat === FORMAT.DXT5
       ? decodeBlocks(bytes, offset, width, height, hiFormat)
       : decodeRaw(bytes, offset, width, height, hiFormat);
-  return data ? { width, height, data } : null;
+  return data ? { width, height, data, frames, frame } : null;
 }

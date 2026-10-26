@@ -14,12 +14,18 @@ import { propsOf, activeEntries } from '@/lib/tf2-hud/kv/props';
 import { kvAt } from '@/lib/tf2-hud/kv/query';
 import { varsFromState } from '@/lib/tf2-hud/fixtures';
 import { pinOf } from '@/lib/tf2-hud/layout/geometry';
-import { HUD_LAYOUT_FILE, parseCached, substituteLabel } from '@/lib/tf2-hud/scene/build';
+import {
+  HUD_LAYOUT_FILE,
+  parseCached,
+  substituteLabel,
+  TEXT_KEYS,
+} from '@/lib/tf2-hud/scene/build';
 import { setSchemeColor } from '@/lib/tf2-hud/scheme/edit';
 import { explainDim } from '@/lib/tf2-hud/scheme/inspect';
 import { COND_ENVS } from '@/lib/tf2-hud/scheme/cond';
 import { borderOf } from '@/lib/tf2-hud/scheme/scheme';
 import { useEditor } from '@/lib/tf2-hud/store';
+import { useLocalisation } from '@/lib/tf2-hud/use-scene';
 import { BorderSwatch } from './border-swatch';
 import { ColorField } from './ColorPicker';
 import { FontField } from './FontPicker';
@@ -64,7 +70,7 @@ export default function Inspector() {
   const toggleForce = useEditor((s) => s.toggleForce);
   const forceHidden = useEditor((s) => s.forceHidden);
   const test = useEditor((s) => s.test);
-  const strings = useEditor((s) => s.localisation);
+  const strings = useLocalisation();
   const setFocusProp = useEditor((s) => s.setFocusProp);
   const node = scene?.nodes.find((n) => n.id === selectedId);
   const [adding, setAdding] = useState('');
@@ -235,7 +241,7 @@ export default function Inspector() {
           pin && (lower === 'xpos' || lower === 'ypos') ? { sibling: pin.sibling } : undefined,
         );
         detail = e.text;
-      } else if (lower === 'labeltext' && value) {
+      } else if (TEXT_KEYS.has(lower.replace(/_(lodef|minmode)$/, '')) && value) {
         const shown = substituteLabel(value, varsFromState(test), strings);
         if (shown !== value) detail = `→ ${shown}`;
       } else if (lower === 'image' && value) {

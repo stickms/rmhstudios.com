@@ -5,7 +5,17 @@
  * on its own (`singleFilePage`), so nothing is unreachable.
  */
 
+import { CLASS_MAX_HEALTH, type TestState, type Tf2Class } from './fixtures';
+
 const ui = (...names: string[]) => names.map((n) => `resource/ui/${n}.res`);
+
+/** A class (with its full health) plus whatever else the page needs to show off. */
+const as = (c: Tf2Class, extra: Partial<TestState> = {}): Partial<TestState> => ({
+  playerClass: c,
+  maxHealth: CLASS_MAX_HEALTH[c],
+  health: CLASS_MAX_HEALTH[c],
+  ...extra,
+});
 
 export type PageBackdrop = 'game' | 'menu';
 
@@ -15,10 +25,13 @@ export interface HudPage {
   group: string;
   backdrop: PageBackdrop;
   files: readonly string[];
+  /** Test state applied when the page is chosen (class, weapon, meters) so it shows what it is for. */
+  state?: Partial<TestState>;
 }
 
 export const PAGE_GROUPS = [
   'In-game',
+  'Weapons & classes',
   'Objectives',
   'Menus',
   'Scoreboard & spectate',
@@ -105,6 +118,166 @@ export const PAGES: readonly HudPage[] = [
       'huditemeffectmeter_heavy',
       'huditemeffectmeter_engineer',
     ),
+  },
+  {
+    id: 'w-uber',
+    label: 'Medic: Medi Gun & Über',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui('hudmediccharge', 'hudplayerhealth', 'hudplayerclass', 'hudammoweapons'),
+    state: as('medic', { weapon: 'medigun', charge: 100 }),
+  },
+  {
+    id: 'w-vaccinator',
+    label: 'Medic: Vaccinator (4 charges)',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui('hudmediccharge', 'hudplayerhealth', 'hudplayerclass', 'hudammoweapons'),
+    state: as('medic', { weapon: 'vaccinator', charge: 62 }),
+  },
+  {
+    id: 'w-stickies',
+    label: 'Demoman: stickies & charge',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui('huddemomanpipes', 'hudplayerhealth', 'hudplayerclass', 'hudammoweapons'),
+    state: as('demoman', { weapon: 'stickies', pipes: 6, meter: 55 }),
+  },
+  {
+    id: 'w-shield',
+    label: 'Demoman: shield charge',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui('huddemomancharge', 'hudplayerhealth', 'hudplayerclass', 'hudammoweapons'),
+    state: as('demoman', { weapon: 'shield', meter: 70 }),
+  },
+  {
+    id: 'w-bow',
+    label: 'Sniper: Huntsman bow charge',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui('hudbowcharge', 'hudplayerhealth', 'hudplayerclass', 'hudammoweapons'),
+    state: as('sniper', { weapon: 'huntsman', meter: 65 }),
+  },
+  {
+    id: 'w-sniper',
+    label: 'Sniper: rifle focus & Jarate',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui(
+      'huditemeffectmeter_sniperfocus',
+      'huditemeffectmeter_sniper',
+      'hudplayerhealth',
+      'hudplayerclass',
+      'hudammoweapons',
+    ),
+    state: as('sniper', { weapon: 'sniper-rifle', meter: 60 }),
+  },
+  {
+    id: 'w-engineer',
+    label: 'Engineer: buildings & metal',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui(
+      'hud_obj_sentrygun',
+      'hud_obj_dispenser',
+      'hud_obj_tele_entrance',
+      'hud_obj_tele_exit',
+      'hud_obj_sapper',
+      'hudaccountpanel',
+      'hudplayerhealth',
+      'hudplayerclass',
+      'hudammoweapons',
+    ),
+    state: as('engineer', { weapon: 'shotgun', sentryLevel: 2, metal: 200 }),
+  },
+  {
+    id: 'w-pda-build',
+    label: 'Engineer PDA: build',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui(
+      'build_menu/hudmenuengybuild',
+      'build_menu/sentry_selectable',
+      'build_menu/dispenser_selectable',
+      'build_menu/tele_entrance_active',
+      'build_menu/tele_exit_active',
+    ),
+    state: as('engineer', { weapon: 'shotgun', metal: 200 }),
+  },
+  {
+    id: 'w-pda-destroy',
+    label: 'Engineer PDA: destroy',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui(
+      'destroy_menu/hudmenuengydestroy',
+      'destroy_menu/sentry_active',
+      'destroy_menu/dispenser_active',
+      'destroy_menu/tele_entrance_active',
+    ),
+    state: as('engineer', { weapon: 'shotgun' }),
+  },
+  {
+    id: 'w-spy',
+    label: 'Spy: cloak, disguise & knife',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui(
+      'disguisestatuspanel',
+      'huditemeffectmeter_spy',
+      'huditemeffectmeter_spyknife',
+      'hudplayerhealth',
+      'hudplayerclass',
+      'hudammoweapons',
+    ),
+    state: as('spy', { weapon: 'cloak', meter: 60 }),
+  },
+  {
+    id: 'w-scout',
+    label: 'Scout: Bonk!, Hype & Cleaver',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui(
+      'huditemeffectmeter_scout',
+      'huditemeffectmeter_sodapopper',
+      'huditemeffectmeter_cleaver',
+      'hudplayerhealth',
+      'hudplayerclass',
+      'hudammoweapons',
+    ),
+    state: as('scout', { weapon: 'sodapopper', meter: 75 }),
+  },
+  {
+    id: 'w-pyro',
+    label: 'Pyro: Thermal Thruster, Gas & Bison',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui(
+      'hudrocketpack',
+      'huditemeffectmeter_pyro',
+      'huditemeffectmeter_raygun',
+      'hudplayerhealth',
+      'hudplayerclass',
+      'hudammoweapons',
+    ),
+    state: as('pyro', { weapon: 'thermal-thruster', meter: 80 }),
+  },
+  {
+    id: 'w-soldier',
+    label: 'Soldier: banner rage',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui('huditemeffectmeter', 'hudplayerhealth', 'hudplayerclass', 'hudammoweapons'),
+    state: as('soldier', { weapon: 'buff-banner', meter: 90 }),
+  },
+  {
+    id: 'w-heavy',
+    label: 'Heavy: Sandvich & minigun',
+    group: 'Weapons & classes',
+    backdrop: 'game',
+    files: ui('huditemeffectmeter_heavy', 'hudplayerhealth', 'hudplayerclass', 'hudammoweapons'),
+    state: as('heavy', { weapon: 'sandvich', meter: 100 }),
   },
   {
     id: 'killfeed',

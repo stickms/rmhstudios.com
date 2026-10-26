@@ -181,20 +181,30 @@ function missingTexture(g: CanvasRenderingContext2D, r: ImageOp['rect']) {
 }
 
 function drawImage(g: CanvasRenderingContext2D, op: ImageOp, images: ImageStore) {
-  const img = images.get(op.path);
-  if (img === undefined) return; // still loading: draw nothing this frame
-  if (img === null) {
+  const tex = images.get(op.path);
+  if (tex === undefined) return; // still loading: draw nothing this frame
+  if (tex === null) {
     missingTexture(g, op.rect);
     return;
   }
   const { x, y, w, h } = op.rect;
   const frac = op.clipX === undefined ? 1 : Math.max(0, Math.min(1, op.clipX));
   if (frac <= 0) return;
+  const img = tex.bitmap;
   const src = op.tint ? tinted(img, op.tint) : img;
   g.save();
   g.imageSmoothingEnabled = true;
-  if (op.tint && op.tint.a < 255) g.globalAlpha = op.tint.a / 255;
-  g.drawImage(src, 0, 0, img.width * frac, img.height, x, y, w * frac, h);
+  g.globalAlpha = tex.alpha * (op.tint && op.tint.a < 255 ? op.tint.a / 255 : 1);
+  if (tex.additive) g.globalCompositeOperation = 'lighter';
+  if (op.native) {
+    // Natural size, anchored top-left, clipped to the panel — an ImagePanel without `scaleImage`.
+    g.beginPath();
+    g.rect(x, y, w, h);
+    g.clip();
+    g.drawImage(src, 0, 0, img.width * frac, img.height, x, y, img.width * frac, img.height);
+  } else {
+    g.drawImage(src, 0, 0, img.width * frac, img.height, x, y, w * frac, h);
+  }
   g.restore();
 }
 
@@ -256,7 +266,16 @@ function drawOp(g: CanvasRenderingContext2D, op: DrawOp, opts: PaintOptions) {
 export function paintScene(g: CanvasRenderingContext2D, scene: Scene, opts: PaintOptions): void {
   for (const node of scene.nodes) {
     if (!node.shown) continue;
-    for (const op of node.ops) drawOp(g, op, opts);
+    if (node.clip) {
+      g.save();
+      g.beginPath();
+      g.rect(node.clip.x, node.clip.y, node.clip.w, node.clip.h);
+      g.clip();
+      for (const op of node.ops) drawOp(g, op, opts);
+      g.restore();
+    } else {
+      for (const op of node.ops) drawOp(g, op, opts);
+    }
     if (opts.showBounds) {
       g.save();
       g.strokeStyle = 'rgba(120,200,255,0.35)';
