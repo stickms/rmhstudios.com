@@ -79,7 +79,7 @@ export default function TopBar({
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-(--app-border) bg-(--app-bg-subtle) px-2 sm:px-3">
       <Link
-        to="/tf2-hud"
+        to="/tf2/hud-editor"
         className="flex shrink-0 items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1 text-sm font-medium text-(--app-text-muted) hover:text-(--app-text)"
       >
         <ArrowLeft className="size-4 rtl-flip" aria-hidden />

@@ -7,7 +7,7 @@
 'use client';
 
 import { ChevronDown } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   BUNDLED_FACES,
@@ -17,6 +17,7 @@ import {
   fontStatus,
   type FontStatus,
 } from '@/lib/tf2-hud/assets/fonts';
+import { useSentinel } from '@/hooks/useSentinel';
 import { describeFont, fontInstalled } from '@/lib/tf2-hud/scheme/inspect';
 import type { FontDef, Scheme } from '@/lib/tf2-hud/scheme/scheme';
 import { cn } from '@/lib/utils';
@@ -130,10 +131,18 @@ export function FontField({
     () => [...scheme.fontNames.values()].sort((a, b) => a.localeCompare(b)),
     [scheme],
   );
-  const shown = useMemo(() => {
+  const [limit, setLimit] = useState(40);
+  const matching = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (q ? names.filter((n) => n.toLowerCase().includes(q)) : names).slice(0, 80);
+    return q ? names.filter((n) => n.toLowerCase().includes(q)) : names;
   }, [names, query]);
+  const shown = useMemo(() => matching.slice(0, limit), [matching, limit]);
+  useEffect(() => setLimit(40), [query]);
+  const moreFonts = useSentinel(() => setLimit((n) => n + 40), {
+    enabled: open && limit < matching.length,
+    watch: limit,
+    rootMargin: '80px 0px',
+  });
 
   return (
     <div className="min-w-0 space-y-1">
@@ -198,6 +207,7 @@ export function FontField({
               </li>
             );
           })}
+          {limit < matching.length ? <li ref={moreFonts} aria-hidden className="h-px" /> : null}
         </ul>
       </Popover>
     </div>

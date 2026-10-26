@@ -6,7 +6,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import Tf2HudDetail from '@/components/tf2-hud/Tf2HudDetail';
 
-export const Route = createFileRoute('/tf2-hud/h/$slug')({
+export const Route = createFileRoute('/tf2/hud-editor/h/$slug')({
   component: DetailRoute,
 });
 

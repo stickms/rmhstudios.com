@@ -17,7 +17,7 @@ interface EditorSearch {
 const str = (v: unknown): string | undefined =>
   typeof v === 'string' && v.length > 0 && v.length <= 128 ? v : undefined;
 
-export const Route = createFileRoute('/tf2-hud/editor')({
+export const Route = createFileRoute('/tf2/hud-editor/editor')({
   validateSearch: (search: Record<string, unknown>): EditorSearch => ({
     draft: str(search.draft),
     hud: str(search.hud),

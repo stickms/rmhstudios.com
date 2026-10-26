@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 919 files across 195 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 926 files across 196 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -2036,6 +2036,20 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 | `/api/tf2-hud/huds/:id/versions/:n` | `POST` | `app/routes/api/tf2-hud/huds/$id.versions.$n.ts` |
 | `/api/tf2-hud/share/:token` | `GET` | `app/routes/api/tf2-hud/share/$token.ts` |
 | `/api/tf2-hud/share/:token/file` | `GET` | `app/routes/api/tf2-hud/share/$token.file.ts` |
+
+## `/api/tf2-loadout`
+
+7 routes.
+
+| Route | Methods | Source |
+| ----- | ------- | ------ |
+| `/api/tf2-loadout/catalog` | `GET` | `app/routes/api/tf2-loadout/catalog.ts` |
+| `/api/tf2-loadout/loadouts` | `GET` `POST` | `app/routes/api/tf2-loadout/loadouts/index.ts` |
+| `/api/tf2-loadout/loadouts/:id` | `DELETE` `GET` `PUT` | `app/routes/api/tf2-loadout/loadouts/$id.ts` |
+| `/api/tf2-loadout/loadouts/:id/fork` | `POST` | `app/routes/api/tf2-loadout/loadouts/$id.fork.ts` |
+| `/api/tf2-loadout/loadouts/:id/like` | `POST` | `app/routes/api/tf2-loadout/loadouts/$id.like.ts` |
+| `/api/tf2-loadout/models` | `GET` | `app/routes/api/tf2-loadout/models/index.ts` |
+| `/api/tf2-loadout/models/:id` | `GET` | `app/routes/api/tf2-loadout/models/$id.ts` |
 
 ## `/api/themes`
 

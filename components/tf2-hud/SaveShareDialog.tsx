@@ -118,9 +118,9 @@ export default function SaveShareDialog({
     }
   };
 
-  const shareLink = shareToken ? `${SITE()}/tf2-hud/s/${shareToken}` : null;
+  const shareLink = shareToken ? `${SITE()}/tf2/hud-editor/s/${shareToken}` : null;
   const publicLink =
-    remoteId && slug && visibility !== 'PRIVATE' ? `${SITE()}/tf2-hud/h/${slug}` : null;
+    remoteId && slug && visibility !== 'PRIVATE' ? `${SITE()}/tf2/hud-editor/h/${slug}` : null;
 
   const visLabels: Record<Visibility, string> = {
     PRIVATE: t('vis-private', { defaultValue: 'Private — only you' }),

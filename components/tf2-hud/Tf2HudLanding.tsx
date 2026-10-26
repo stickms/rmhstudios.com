@@ -31,7 +31,7 @@ export default function Tf2HudLanding() {
 
   const start = () => {
     newProject();
-    void navigate({ to: '/tf2-hud/editor', search: {} });
+    void navigate({ to: '/tf2/hud-editor/editor', search: {} });
   };
 
   const importFile = async (file: File) => {
@@ -39,7 +39,7 @@ export default function Tf2HudLanding() {
     try {
       const r = await importZipFile(file);
       for (const w of r.warnings) toast.warning(w);
-      void navigate({ to: '/tf2-hud/editor', search: {} });
+      void navigate({ to: '/tf2/hud-editor/editor', search: {} });
     } catch (e) {
       toast.error(
         e instanceof ImportError
@@ -89,8 +89,8 @@ export default function Tf2HudLanding() {
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
       <AppHeader
         title="RMH TF2 HUD Editor"
-        backLabel={t('apps', { defaultValue: 'Apps' })}
-        backHref="/apps"
+        backLabel={t('tf2-hub', { defaultValue: 'TF2 Hub' })}
+        backHref="/tf2"
       />
       <main className="mx-auto w-full max-w-5xl px-4 pb-16">
         <section className="py-10 text-center sm:py-16">
@@ -123,7 +123,8 @@ export default function Tf2HudLanding() {
                 : t('upload-zip', { defaultValue: 'Upload a zip' })}
             </Btn>
             <Link
-              to="/tf2-hud/workshop"
+              to="/tf2/workshop"
+              search={{ type: 'huds' }}
               className="inline-flex h-10 items-center gap-1.5 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg-subtle) px-4 text-sm font-semibold text-(--app-text) hover:bg-(--app-surface-hover)"
             >
               <Globe className="size-4" aria-hidden />
@@ -152,7 +153,7 @@ export default function Tf2HudLanding() {
                 {t('drafts', { defaultValue: 'Continue editing' })}
               </h2>
               <Link
-                to="/tf2-hud/mine"
+                to="/tf2/hud-editor/mine"
                 className="text-xs font-semibold text-(--app-accent) hover:underline"
               >
                 {t('my-saved-huds', { defaultValue: 'My saved HUDs' })}
@@ -163,7 +164,7 @@ export default function Tf2HudLanding() {
                 <li key={d.id} className="flex items-center gap-3 px-3 py-2">
                   <FolderOpen className="size-4 shrink-0 text-(--app-text-dim)" aria-hidden />
                   <Link
-                    to="/tf2-hud/editor"
+                    to="/tf2/hud-editor/editor"
                     search={{ draft: d.id }}
                     className="min-w-0 flex-1 truncate text-sm font-medium text-(--app-text) hover:underline"
                   >

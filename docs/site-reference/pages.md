@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 345 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 146 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 349 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 150 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -358,12 +358,16 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/tag/:tag/rss.xml` | — | public | `app/routes/tag.$tag.rss[.]xml.ts` |
 | `/temple-of-joy` | — | public | `app/routes/temple-of-joy/index.tsx` |
 | `/terms` | Terms of Use | public | `app/routes/terms.tsx` |
-| `/tf2-hud` | — | public | `app/routes/tf2-hud/index.tsx` |
-| `/tf2-hud/editor` | — | public | `app/routes/tf2-hud/editor.tsx` |
-| `/tf2-hud/h/:slug` | — | public | `app/routes/tf2-hud/h.$slug.tsx` |
-| `/tf2-hud/mine` | — | public | `app/routes/tf2-hud/mine.tsx` |
-| `/tf2-hud/s/:token` | — | public | `app/routes/tf2-hud/s.$token.tsx` |
-| `/tf2-hud/workshop` | TF2 HUD Workshop — community Team Fortress 2 HUDs | public | `app/routes/tf2-hud/workshop.tsx` |
+| `/tf2` | — | public | `app/routes/tf2/index.tsx` |
+| `/tf2/hud-editor` | TF2 HUD Editor — build and preview custom Team Fortress 2 HUDs | public | `app/routes/tf2/hud-editor/index.tsx` |
+| `/tf2/hud-editor/editor` | — | public | `app/routes/tf2/hud-editor/editor.tsx` |
+| `/tf2/hud-editor/h/:slug` | — | public | `app/routes/tf2/hud-editor/h.$slug.tsx` |
+| `/tf2/hud-editor/mine` | — | public | `app/routes/tf2/hud-editor/mine.tsx` |
+| `/tf2/hud-editor/s/:token` | — | public | `app/routes/tf2/hud-editor/s.$token.tsx` |
+| `/tf2/loadout` | TF2 Loadout Builder — plan every class | public | `app/routes/tf2/loadout/index.tsx` |
+| `/tf2/loadout/l/:slug` | — | public | `app/routes/tf2/loadout/l.$slug.tsx` |
+| `/tf2/loadout/mine` | — | public | `app/routes/tf2/loadout/mine.tsx` |
+| `/tf2/workshop` | TF2 Workshop — community HUDs and loadouts | public | `app/routes/tf2/workshop.tsx` |
 | `/u/:handle/rss.xml` | — | public | `app/routes/u.$handle.rss[.]xml.ts` |
 | `/v/:slug` | — | public | `app/routes/v.$slug.tsx` |
 | `/v/new` | redirects to `/v` | public | `app/routes/v.new.tsx` |

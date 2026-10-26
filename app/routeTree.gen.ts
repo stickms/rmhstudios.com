@@ -67,7 +67,7 @@ import { Route as StudioRouteImport } from './routes/studio'
 import { Route as SynapseStormRouteImport } from './routes/synapse-storm'
 import { Route as TempleOfJoyRouteImport } from './routes/temple-of-joy'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as Tf2HudRouteImport } from './routes/tf2-hud'
+import { Route as Tf2RouteImport } from './routes/tf2'
 import { Route as Velum2099RouteImport } from './routes/velum2099'
 import { Route as VersecraftRouteImport } from './routes/versecraft'
 import { Route as VoidBreakerRouteImport } from './routes/void-breaker'
@@ -225,10 +225,8 @@ import { Route as StrategiesIncidentsRouteImport } from './routes/strategies/inc
 import { Route as StrategiesSahurRouteImport } from './routes/strategies/sahur'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
 import { Route as TempleOfJoyIndexRouteImport } from './routes/temple-of-joy/index'
-import { Route as Tf2HudIndexRouteImport } from './routes/tf2-hud/index'
-import { Route as Tf2HudEditorRouteImport } from './routes/tf2-hud/editor'
-import { Route as Tf2HudMineRouteImport } from './routes/tf2-hud/mine'
-import { Route as Tf2HudWorkshopRouteImport } from './routes/tf2-hud/workshop'
+import { Route as Tf2IndexRouteImport } from './routes/tf2/index'
+import { Route as Tf2WorkshopRouteImport } from './routes/tf2/workshop'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as VNewRouteImport } from './routes/v.new'
 import { Route as VersecraftIndexRouteImport } from './routes/versecraft/index'
@@ -741,6 +739,7 @@ import { Route as ApiStudyTutorRouteImport } from './routes/api/study/tutor'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
 import { Route as ApiTempleOfJoyEfficiencyRouteImport } from './routes/api/temple-of-joy/efficiency'
 import { Route as ApiTempleOfJoySaveRouteImport } from './routes/api/temple-of-joy/save'
+import { Route as ApiTf2LoadoutCatalogRouteImport } from './routes/api/tf2-loadout/catalog'
 import { Route as ApiThemesIndexRouteImport } from './routes/api/themes/index'
 import { Route as ApiThemesIdRouteImport } from './routes/api/themes/$id'
 import { Route as ApiThemesShopRouteImport } from './routes/api/themes/shop'
@@ -808,8 +807,11 @@ import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategie
 import { Route as StrategiesSafehouseDropsRouteImport } from './routes/strategies/safehouse/drops'
 import { Route as StrategiesSafehouseRecruitRouteImport } from './routes/strategies/safehouse/recruit'
 import { Route as TagTagRssDotxmlRouteImport } from './routes/tag.$tag.rss[.]xml'
-import { Route as Tf2HudHSlugRouteImport } from './routes/tf2-hud/h.$slug'
-import { Route as Tf2HudSTokenRouteImport } from './routes/tf2-hud/s.$token'
+import { Route as Tf2HudEditorIndexRouteImport } from './routes/tf2/hud-editor/index'
+import { Route as Tf2HudEditorEditorRouteImport } from './routes/tf2/hud-editor/editor'
+import { Route as Tf2HudEditorMineRouteImport } from './routes/tf2/hud-editor/mine'
+import { Route as Tf2LoadoutIndexRouteImport } from './routes/tf2/loadout/index'
+import { Route as Tf2LoadoutMineRouteImport } from './routes/tf2/loadout/mine'
 import { Route as UHandleRssDotxmlRouteImport } from './routes/u.$handle.rss[.]xml'
 import { Route as SiteAdminAlbumsIndexRouteImport } from './routes/_site/admin/albums/index'
 import { Route as SiteAdminAlbumsIdRouteImport } from './routes/_site/admin/albums/$id'
@@ -1118,6 +1120,10 @@ import { Route as ApiTf2HudBlobsCheckRouteImport } from './routes/api/tf2-hud/bl
 import { Route as ApiTf2HudHudsIndexRouteImport } from './routes/api/tf2-hud/huds/index'
 import { Route as ApiTf2HudHudsIdRouteImport } from './routes/api/tf2-hud/huds/$id'
 import { Route as ApiTf2HudShareTokenRouteImport } from './routes/api/tf2-hud/share/$token'
+import { Route as ApiTf2LoadoutLoadoutsIndexRouteImport } from './routes/api/tf2-loadout/loadouts/index'
+import { Route as ApiTf2LoadoutLoadoutsIdRouteImport } from './routes/api/tf2-loadout/loadouts/$id'
+import { Route as ApiTf2LoadoutModelsIndexRouteImport } from './routes/api/tf2-loadout/models/index'
+import { Route as ApiTf2LoadoutModelsIdRouteImport } from './routes/api/tf2-loadout/models/$id'
 import { Route as ApiThemesIdBuyRouteImport } from './routes/api/themes/$id.buy'
 import { Route as ApiThemesIdPublishRouteImport } from './routes/api/themes/$id.publish'
 import { Route as ApiTournamentsIdCancelRouteImport } from './routes/api/tournaments/$id/cancel'
@@ -1162,6 +1168,9 @@ import { Route as ApiWhenIdLockRouteImport } from './routes/api/when/$id/lock'
 import { Route as ApiWhenIdRespondRouteImport } from './routes/api/when/$id/respond'
 import { Route as ApiWorldsVisitCodeRouteImport } from './routes/api/worlds/visit.$code'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
+import { Route as Tf2HudEditorHSlugRouteImport } from './routes/tf2/hud-editor/h.$slug'
+import { Route as Tf2HudEditorSTokenRouteImport } from './routes/tf2/hud-editor/s.$token'
+import { Route as Tf2LoadoutLSlugRouteImport } from './routes/tf2/loadout/l.$slug'
 import { Route as SiteAdminBlogSlugEditRouteImport } from './routes/_site/admin/blog/$slug/edit'
 import { Route as SiteCSlugInviteCodeRouteImport } from './routes/_site/c.$slug_.invite.$code'
 import { Route as SiteGamesGameIdGuidesGuideIdRouteImport } from './routes/_site/games/$gameId_.guides.$guideId'
@@ -1274,6 +1283,8 @@ import { Route as ApiTf2HudHudsIdLikeRouteImport } from './routes/api/tf2-hud/hu
 import { Route as ApiTf2HudHudsIdShareRouteImport } from './routes/api/tf2-hud/huds/$id.share'
 import { Route as ApiTf2HudHudsIdVersionsRouteImport } from './routes/api/tf2-hud/huds/$id.versions'
 import { Route as ApiTf2HudShareTokenFileRouteImport } from './routes/api/tf2-hud/share/$token.file'
+import { Route as ApiTf2LoadoutLoadoutsIdForkRouteImport } from './routes/api/tf2-loadout/loadouts/$id.fork'
+import { Route as ApiTf2LoadoutLoadoutsIdLikeRouteImport } from './routes/api/tf2-loadout/loadouts/$id.like'
 import { Route as ApiV1PostsIdBookmarkRouteImport } from './routes/api/v1/posts/$id/bookmark'
 import { Route as ApiV1PostsIdCommentsRouteImport } from './routes/api/v1/posts/$id/comments'
 import { Route as ApiV1PostsIdLikeRouteImport } from './routes/api/v1/posts/$id/like'
@@ -1592,9 +1603,9 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Tf2HudRoute = Tf2HudRouteImport.update({
-  id: '/tf2-hud',
-  path: '/tf2-hud',
+const Tf2Route = Tf2RouteImport.update({
+  id: '/tf2',
+  path: '/tf2',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Velum2099Route = Velum2099RouteImport.update({
@@ -2384,25 +2395,15 @@ const TempleOfJoyIndexRoute = TempleOfJoyIndexRouteImport.update({
   path: '/',
   getParentRoute: () => TempleOfJoyRoute,
 } as any)
-const Tf2HudIndexRoute = Tf2HudIndexRouteImport.update({
+const Tf2IndexRoute = Tf2IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => Tf2HudRoute,
+  getParentRoute: () => Tf2Route,
 } as any)
-const Tf2HudEditorRoute = Tf2HudEditorRouteImport.update({
-  id: '/editor',
-  path: '/editor',
-  getParentRoute: () => Tf2HudRoute,
-} as any)
-const Tf2HudMineRoute = Tf2HudMineRouteImport.update({
-  id: '/mine',
-  path: '/mine',
-  getParentRoute: () => Tf2HudRoute,
-} as any)
-const Tf2HudWorkshopRoute = Tf2HudWorkshopRouteImport.update({
+const Tf2WorkshopRoute = Tf2WorkshopRouteImport.update({
   id: '/workshop',
   path: '/workshop',
-  getParentRoute: () => Tf2HudRoute,
+  getParentRoute: () => Tf2Route,
 } as any)
 const VSlugRoute = VSlugRouteImport.update({
   id: '/v/$slug',
@@ -4997,6 +4998,11 @@ const ApiTempleOfJoySaveRoute = ApiTempleOfJoySaveRouteImport.update({
   path: '/api/temple-of-joy/save',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTf2LoadoutCatalogRoute = ApiTf2LoadoutCatalogRouteImport.update({
+  id: '/api/tf2-loadout/catalog',
+  path: '/api/tf2-loadout/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiThemesIndexRoute = ApiThemesIndexRouteImport.update({
   id: '/api/themes/',
   path: '/api/themes/',
@@ -5340,15 +5346,30 @@ const TagTagRssDotxmlRoute = TagTagRssDotxmlRouteImport.update({
   path: '/tag/$tag/rss.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Tf2HudHSlugRoute = Tf2HudHSlugRouteImport.update({
-  id: '/h/$slug',
-  path: '/h/$slug',
-  getParentRoute: () => Tf2HudRoute,
+const Tf2HudEditorIndexRoute = Tf2HudEditorIndexRouteImport.update({
+  id: '/hud-editor/',
+  path: '/hud-editor/',
+  getParentRoute: () => Tf2Route,
 } as any)
-const Tf2HudSTokenRoute = Tf2HudSTokenRouteImport.update({
-  id: '/s/$token',
-  path: '/s/$token',
-  getParentRoute: () => Tf2HudRoute,
+const Tf2HudEditorEditorRoute = Tf2HudEditorEditorRouteImport.update({
+  id: '/hud-editor/editor',
+  path: '/hud-editor/editor',
+  getParentRoute: () => Tf2Route,
+} as any)
+const Tf2HudEditorMineRoute = Tf2HudEditorMineRouteImport.update({
+  id: '/hud-editor/mine',
+  path: '/hud-editor/mine',
+  getParentRoute: () => Tf2Route,
+} as any)
+const Tf2LoadoutIndexRoute = Tf2LoadoutIndexRouteImport.update({
+  id: '/loadout/',
+  path: '/loadout/',
+  getParentRoute: () => Tf2Route,
+} as any)
+const Tf2LoadoutMineRoute = Tf2LoadoutMineRouteImport.update({
+  id: '/loadout/mine',
+  path: '/loadout/mine',
+  getParentRoute: () => Tf2Route,
 } as any)
 const UHandleRssDotxmlRoute = UHandleRssDotxmlRouteImport.update({
   id: '/u/$handle/rss.xml',
@@ -6985,6 +7006,28 @@ const ApiTf2HudShareTokenRoute = ApiTf2HudShareTokenRouteImport.update({
   path: '/api/tf2-hud/share/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTf2LoadoutLoadoutsIndexRoute =
+  ApiTf2LoadoutLoadoutsIndexRouteImport.update({
+    id: '/api/tf2-loadout/loadouts/',
+    path: '/api/tf2-loadout/loadouts/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiTf2LoadoutLoadoutsIdRoute = ApiTf2LoadoutLoadoutsIdRouteImport.update({
+  id: '/api/tf2-loadout/loadouts/$id',
+  path: '/api/tf2-loadout/loadouts/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTf2LoadoutModelsIndexRoute =
+  ApiTf2LoadoutModelsIndexRouteImport.update({
+    id: '/api/tf2-loadout/models/',
+    path: '/api/tf2-loadout/models/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiTf2LoadoutModelsIdRoute = ApiTf2LoadoutModelsIdRouteImport.update({
+  id: '/api/tf2-loadout/models/$id',
+  path: '/api/tf2-loadout/models/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiThemesIdBuyRoute = ApiThemesIdBuyRouteImport.update({
   id: '/buy',
   path: '/buy',
@@ -7210,6 +7253,21 @@ const RmhboxMinigamesMinigameIdHistoryRoute =
     path: '/minigames/$minigameId/history',
     getParentRoute: () => RmhboxRoute,
   } as any)
+const Tf2HudEditorHSlugRoute = Tf2HudEditorHSlugRouteImport.update({
+  id: '/hud-editor/h/$slug',
+  path: '/hud-editor/h/$slug',
+  getParentRoute: () => Tf2Route,
+} as any)
+const Tf2HudEditorSTokenRoute = Tf2HudEditorSTokenRouteImport.update({
+  id: '/hud-editor/s/$token',
+  path: '/hud-editor/s/$token',
+  getParentRoute: () => Tf2Route,
+} as any)
+const Tf2LoadoutLSlugRoute = Tf2LoadoutLSlugRouteImport.update({
+  id: '/loadout/l/$slug',
+  path: '/loadout/l/$slug',
+  getParentRoute: () => Tf2Route,
+} as any)
 const SiteAdminBlogSlugEditRoute = SiteAdminBlogSlugEditRouteImport.update({
   id: '/blog/$slug/edit',
   path: '/blog/$slug/edit',
@@ -7839,6 +7897,18 @@ const ApiTf2HudShareTokenFileRoute = ApiTf2HudShareTokenFileRouteImport.update({
   path: '/file',
   getParentRoute: () => ApiTf2HudShareTokenRoute,
 } as any)
+const ApiTf2LoadoutLoadoutsIdForkRoute =
+  ApiTf2LoadoutLoadoutsIdForkRouteImport.update({
+    id: '/fork',
+    path: '/fork',
+    getParentRoute: () => ApiTf2LoadoutLoadoutsIdRoute,
+  } as any)
+const ApiTf2LoadoutLoadoutsIdLikeRoute =
+  ApiTf2LoadoutLoadoutsIdLikeRouteImport.update({
+    id: '/like',
+    path: '/like',
+    getParentRoute: () => ApiTf2LoadoutLoadoutsIdRoute,
+  } as any)
 const ApiV1PostsIdBookmarkRoute = ApiV1PostsIdBookmarkRouteImport.update({
   id: '/bookmark',
   path: '/bookmark',
@@ -8061,7 +8131,7 @@ export interface FileRoutesByFullPath {
   '/synapse-storm': typeof SynapseStormRoute
   '/temple-of-joy': typeof TempleOfJoyRouteWithChildren
   '/terms': typeof TermsRoute
-  '/tf2-hud': typeof Tf2HudRouteWithChildren
+  '/tf2': typeof Tf2RouteWithChildren
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
@@ -8197,9 +8267,7 @@ export interface FileRoutesByFullPath {
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
-  '/tf2-hud/editor': typeof Tf2HudEditorRoute
-  '/tf2-hud/mine': typeof Tf2HudMineRoute
-  '/tf2-hud/workshop': typeof Tf2HudWorkshopRoute
+  '/tf2/workshop': typeof Tf2WorkshopRoute
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
   '/altair/': typeof AltairIndexRoute
@@ -8223,7 +8291,7 @@ export interface FileRoutesByFullPath {
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
-  '/tf2-hud/': typeof Tf2HudIndexRoute
+  '/tf2/': typeof Tf2IndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
   '/admin/alarms': typeof SiteAdminAlarmsRoute
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
@@ -8635,6 +8703,7 @@ export interface FileRoutesByFullPath {
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/efficiency': typeof ApiTempleOfJoyEfficiencyRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/tf2-loadout/catalog': typeof ApiTf2LoadoutCatalogRoute
   '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
   '/api/themes/shop': typeof ApiThemesShopRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
@@ -8688,8 +8757,9 @@ export interface FileRoutesByFullPath {
   '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/tag/$tag/rss.xml': typeof TagTagRssDotxmlRoute
-  '/tf2-hud/h/$slug': typeof Tf2HudHSlugRoute
-  '/tf2-hud/s/$token': typeof Tf2HudSTokenRoute
+  '/tf2/hud-editor/editor': typeof Tf2HudEditorEditorRoute
+  '/tf2/hud-editor/mine': typeof Tf2HudEditorMineRoute
+  '/tf2/loadout/mine': typeof Tf2LoadoutMineRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/admin/': typeof SiteAdminIndexRoute
   '/apps/': typeof SiteAppsIndexRoute
@@ -8804,6 +8874,8 @@ export interface FileRoutesByFullPath {
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
+  '/tf2/hud-editor/': typeof Tf2HudEditorIndexRoute
+  '/tf2/loadout/': typeof Tf2LoadoutIndexRoute
   '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/connections/u/$id': typeof SiteConnectionsUIdRoute
@@ -9052,6 +9124,8 @@ export interface FileRoutesByFullPath {
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
   '/api/tf2-hud/huds/$id': typeof ApiTf2HudHudsIdRouteWithChildren
   '/api/tf2-hud/share/$token': typeof ApiTf2HudShareTokenRouteWithChildren
+  '/api/tf2-loadout/loadouts/$id': typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
+  '/api/tf2-loadout/models/$id': typeof ApiTf2LoadoutModelsIdRoute
   '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
   '/api/themes/$id/publish': typeof ApiThemesIdPublishRoute
   '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
@@ -9092,6 +9166,9 @@ export interface FileRoutesByFullPath {
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
   '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
+  '/tf2/hud-editor/h/$slug': typeof Tf2HudEditorHSlugRoute
+  '/tf2/hud-editor/s/$token': typeof Tf2HudEditorSTokenRoute
+  '/tf2/loadout/l/$slug': typeof Tf2LoadoutLSlugRoute
   '/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/u/$userid/': typeof SiteUUseridIndexRoute
@@ -9151,6 +9228,8 @@ export interface FileRoutesByFullPath {
   '/api/studio/challenges/': typeof ApiStudioChallengesIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/api/tf2-hud/huds/': typeof ApiTf2HudHudsIndexRoute
+  '/api/tf2-loadout/loadouts/': typeof ApiTf2LoadoutLoadoutsIndexRoute
+  '/api/tf2-loadout/models/': typeof ApiTf2LoadoutModelsIndexRoute
   '/api/translate/suggest/': typeof ApiTranslateSuggestIndexRoute
   '/api/translate/vote/': typeof ApiTranslateVoteIndexRoute
   '/api/versecraft/seeds/': typeof ApiVersecraftSeedsIndexRoute
@@ -9249,6 +9328,8 @@ export interface FileRoutesByFullPath {
   '/api/tf2-hud/huds/$id/share': typeof ApiTf2HudHudsIdShareRoute
   '/api/tf2-hud/huds/$id/versions': typeof ApiTf2HudHudsIdVersionsRouteWithChildren
   '/api/tf2-hud/share/$token/file': typeof ApiTf2HudShareTokenFileRoute
+  '/api/tf2-loadout/loadouts/$id/fork': typeof ApiTf2LoadoutLoadoutsIdForkRoute
+  '/api/tf2-loadout/loadouts/$id/like': typeof ApiTf2LoadoutLoadoutsIdLikeRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
   '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
@@ -9463,9 +9544,7 @@ export interface FileRoutesByTo {
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
-  '/tf2-hud/editor': typeof Tf2HudEditorRoute
-  '/tf2-hud/mine': typeof Tf2HudMineRoute
-  '/tf2-hud/workshop': typeof Tf2HudWorkshopRoute
+  '/tf2/workshop': typeof Tf2WorkshopRoute
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
   '/': typeof SiteIndexRoute
@@ -9490,7 +9569,7 @@ export interface FileRoutesByTo {
   '/strategies': typeof StrategiesIndexRoute
   '/studio': typeof StudioIndexRoute
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
-  '/tf2-hud': typeof Tf2HudIndexRoute
+  '/tf2': typeof Tf2IndexRoute
   '/versecraft': typeof VersecraftIndexRoute
   '/admin/alarms': typeof SiteAdminAlarmsRoute
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
@@ -9902,6 +9981,7 @@ export interface FileRoutesByTo {
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/efficiency': typeof ApiTempleOfJoyEfficiencyRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/tf2-loadout/catalog': typeof ApiTf2LoadoutCatalogRoute
   '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
   '/api/themes/shop': typeof ApiThemesShopRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
@@ -9955,8 +10035,9 @@ export interface FileRoutesByTo {
   '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/tag/$tag/rss.xml': typeof TagTagRssDotxmlRoute
-  '/tf2-hud/h/$slug': typeof Tf2HudHSlugRoute
-  '/tf2-hud/s/$token': typeof Tf2HudSTokenRoute
+  '/tf2/hud-editor/editor': typeof Tf2HudEditorEditorRoute
+  '/tf2/hud-editor/mine': typeof Tf2HudEditorMineRoute
+  '/tf2/loadout/mine': typeof Tf2LoadoutMineRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/admin': typeof SiteAdminIndexRoute
   '/apps': typeof SiteAppsIndexRoute
@@ -10071,6 +10152,8 @@ export interface FileRoutesByTo {
   '/strategies/profile': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse': typeof StrategiesSafehouseIndexRoute
+  '/tf2/hud-editor': typeof Tf2HudEditorIndexRoute
+  '/tf2/loadout': typeof Tf2LoadoutIndexRoute
   '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/connections/u/$id': typeof SiteConnectionsUIdRoute
@@ -10319,6 +10402,8 @@ export interface FileRoutesByTo {
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
   '/api/tf2-hud/huds/$id': typeof ApiTf2HudHudsIdRouteWithChildren
   '/api/tf2-hud/share/$token': typeof ApiTf2HudShareTokenRouteWithChildren
+  '/api/tf2-loadout/loadouts/$id': typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
+  '/api/tf2-loadout/models/$id': typeof ApiTf2LoadoutModelsIdRoute
   '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
   '/api/themes/$id/publish': typeof ApiThemesIdPublishRoute
   '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
@@ -10359,6 +10444,9 @@ export interface FileRoutesByTo {
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
   '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
+  '/tf2/hud-editor/h/$slug': typeof Tf2HudEditorHSlugRoute
+  '/tf2/hud-editor/s/$token': typeof Tf2HudEditorSTokenRoute
+  '/tf2/loadout/l/$slug': typeof Tf2LoadoutLSlugRoute
   '/admin/albums': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
   '/u/$userid': typeof SiteUUseridIndexRoute
@@ -10418,6 +10506,8 @@ export interface FileRoutesByTo {
   '/api/studio/challenges': typeof ApiStudioChallengesIndexRoute
   '/api/study/decks': typeof ApiStudyDecksIndexRoute
   '/api/tf2-hud/huds': typeof ApiTf2HudHudsIndexRoute
+  '/api/tf2-loadout/loadouts': typeof ApiTf2LoadoutLoadoutsIndexRoute
+  '/api/tf2-loadout/models': typeof ApiTf2LoadoutModelsIndexRoute
   '/api/translate/suggest': typeof ApiTranslateSuggestIndexRoute
   '/api/translate/vote': typeof ApiTranslateVoteIndexRoute
   '/api/versecraft/seeds': typeof ApiVersecraftSeedsIndexRoute
@@ -10516,6 +10606,8 @@ export interface FileRoutesByTo {
   '/api/tf2-hud/huds/$id/share': typeof ApiTf2HudHudsIdShareRoute
   '/api/tf2-hud/huds/$id/versions': typeof ApiTf2HudHudsIdVersionsRouteWithChildren
   '/api/tf2-hud/share/$token/file': typeof ApiTf2HudShareTokenFileRoute
+  '/api/tf2-loadout/loadouts/$id/fork': typeof ApiTf2LoadoutLoadoutsIdForkRoute
+  '/api/tf2-loadout/loadouts/$id/like': typeof ApiTf2LoadoutLoadoutsIdLikeRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
   '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
@@ -10623,7 +10715,7 @@ export interface FileRoutesById {
   '/synapse-storm': typeof SynapseStormRoute
   '/temple-of-joy': typeof TempleOfJoyRouteWithChildren
   '/terms': typeof TermsRoute
-  '/tf2-hud': typeof Tf2HudRouteWithChildren
+  '/tf2': typeof Tf2RouteWithChildren
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
@@ -10759,9 +10851,7 @@ export interface FileRoutesById {
   '/sohumtracker/$date': typeof SohumtrackerDateRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
-  '/tf2-hud/editor': typeof Tf2HudEditorRoute
-  '/tf2-hud/mine': typeof Tf2HudMineRoute
-  '/tf2-hud/workshop': typeof Tf2HudWorkshopRoute
+  '/tf2/workshop': typeof Tf2WorkshopRoute
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
   '/_site/': typeof SiteIndexRoute
@@ -10786,7 +10876,7 @@ export interface FileRoutesById {
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
-  '/tf2-hud/': typeof Tf2HudIndexRoute
+  '/tf2/': typeof Tf2IndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
   '/_site/admin/alarms': typeof SiteAdminAlarmsRoute
   '/_site/admin/analytics': typeof SiteAdminAnalyticsRoute
@@ -11198,6 +11288,7 @@ export interface FileRoutesById {
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/efficiency': typeof ApiTempleOfJoyEfficiencyRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/tf2-loadout/catalog': typeof ApiTf2LoadoutCatalogRoute
   '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
   '/api/themes/shop': typeof ApiThemesShopRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
@@ -11251,8 +11342,9 @@ export interface FileRoutesById {
   '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/tag/$tag/rss.xml': typeof TagTagRssDotxmlRoute
-  '/tf2-hud/h/$slug': typeof Tf2HudHSlugRoute
-  '/tf2-hud/s/$token': typeof Tf2HudSTokenRoute
+  '/tf2/hud-editor/editor': typeof Tf2HudEditorEditorRoute
+  '/tf2/hud-editor/mine': typeof Tf2HudEditorMineRoute
+  '/tf2/loadout/mine': typeof Tf2LoadoutMineRoute
   '/u/$handle/rss.xml': typeof UHandleRssDotxmlRoute
   '/_site/admin/': typeof SiteAdminIndexRoute
   '/_site/apps/': typeof SiteAppsIndexRoute
@@ -11367,6 +11459,8 @@ export interface FileRoutesById {
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
+  '/tf2/hud-editor/': typeof Tf2HudEditorIndexRoute
+  '/tf2/loadout/': typeof Tf2LoadoutIndexRoute
   '/_site/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/_site/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/_site/connections/u/$id': typeof SiteConnectionsUIdRoute
@@ -11615,6 +11709,8 @@ export interface FileRoutesById {
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
   '/api/tf2-hud/huds/$id': typeof ApiTf2HudHudsIdRouteWithChildren
   '/api/tf2-hud/share/$token': typeof ApiTf2HudShareTokenRouteWithChildren
+  '/api/tf2-loadout/loadouts/$id': typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
+  '/api/tf2-loadout/models/$id': typeof ApiTf2LoadoutModelsIdRoute
   '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
   '/api/themes/$id/publish': typeof ApiThemesIdPublishRoute
   '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
@@ -11655,6 +11751,9 @@ export interface FileRoutesById {
   '/api/when/$id/respond': typeof ApiWhenIdRespondRoute
   '/api/worlds/visit/$code': typeof ApiWorldsVisitCodeRouteWithChildren
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
+  '/tf2/hud-editor/h/$slug': typeof Tf2HudEditorHSlugRoute
+  '/tf2/hud-editor/s/$token': typeof Tf2HudEditorSTokenRoute
+  '/tf2/loadout/l/$slug': typeof Tf2LoadoutLSlugRoute
   '/_site/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/_site/u/$userid/': typeof SiteUUseridIndexRoute
@@ -11714,6 +11813,8 @@ export interface FileRoutesById {
   '/api/studio/challenges/': typeof ApiStudioChallengesIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/api/tf2-hud/huds/': typeof ApiTf2HudHudsIndexRoute
+  '/api/tf2-loadout/loadouts/': typeof ApiTf2LoadoutLoadoutsIndexRoute
+  '/api/tf2-loadout/models/': typeof ApiTf2LoadoutModelsIndexRoute
   '/api/translate/suggest/': typeof ApiTranslateSuggestIndexRoute
   '/api/translate/vote/': typeof ApiTranslateVoteIndexRoute
   '/api/versecraft/seeds/': typeof ApiVersecraftSeedsIndexRoute
@@ -11812,6 +11913,8 @@ export interface FileRoutesById {
   '/api/tf2-hud/huds/$id/share': typeof ApiTf2HudHudsIdShareRoute
   '/api/tf2-hud/huds/$id/versions': typeof ApiTf2HudHudsIdVersionsRouteWithChildren
   '/api/tf2-hud/share/$token/file': typeof ApiTf2HudShareTokenFileRoute
+  '/api/tf2-loadout/loadouts/$id/fork': typeof ApiTf2LoadoutLoadoutsIdForkRoute
+  '/api/tf2-loadout/loadouts/$id/like': typeof ApiTf2LoadoutLoadoutsIdLikeRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
   '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
@@ -11920,7 +12023,7 @@ export interface FileRouteTypes {
     | '/synapse-storm'
     | '/temple-of-joy'
     | '/terms'
-    | '/tf2-hud'
+    | '/tf2'
     | '/velum2099'
     | '/versecraft'
     | '/void-breaker'
@@ -12056,9 +12159,7 @@ export interface FileRouteTypes {
     | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
-    | '/tf2-hud/editor'
-    | '/tf2-hud/mine'
-    | '/tf2-hud/workshop'
+    | '/tf2/workshop'
     | '/v/$slug'
     | '/v/new'
     | '/altair/'
@@ -12082,7 +12183,7 @@ export interface FileRouteTypes {
     | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
-    | '/tf2-hud/'
+    | '/tf2/'
     | '/versecraft/'
     | '/admin/alarms'
     | '/admin/analytics'
@@ -12494,6 +12595,7 @@ export interface FileRouteTypes {
     | '/api/tags/$tag'
     | '/api/temple-of-joy/efficiency'
     | '/api/temple-of-joy/save'
+    | '/api/tf2-loadout/catalog'
     | '/api/themes/$id'
     | '/api/themes/shop'
     | '/api/tips/leaderboard'
@@ -12547,8 +12649,9 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/drops'
     | '/strategies/safehouse/recruit'
     | '/tag/$tag/rss.xml'
-    | '/tf2-hud/h/$slug'
-    | '/tf2-hud/s/$token'
+    | '/tf2/hud-editor/editor'
+    | '/tf2/hud-editor/mine'
+    | '/tf2/loadout/mine'
     | '/u/$handle/rss.xml'
     | '/admin/'
     | '/apps/'
@@ -12663,6 +12766,8 @@ export interface FileRouteTypes {
     | '/strategies/profile/'
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
+    | '/tf2/hud-editor/'
+    | '/tf2/loadout/'
     | '/admin/albums/$id'
     | '/admin/blog/new'
     | '/connections/u/$id'
@@ -12911,6 +13016,8 @@ export interface FileRouteTypes {
     | '/api/tf2-hud/blobs/check'
     | '/api/tf2-hud/huds/$id'
     | '/api/tf2-hud/share/$token'
+    | '/api/tf2-loadout/loadouts/$id'
+    | '/api/tf2-loadout/models/$id'
     | '/api/themes/$id/buy'
     | '/api/themes/$id/publish'
     | '/api/tournaments/$id/cancel'
@@ -12951,6 +13058,9 @@ export interface FileRouteTypes {
     | '/api/when/$id/respond'
     | '/api/worlds/visit/$code'
     | '/rmhbox/minigames/$minigameId/history'
+    | '/tf2/hud-editor/h/$slug'
+    | '/tf2/hud-editor/s/$token'
+    | '/tf2/loadout/l/$slug'
     | '/admin/albums/'
     | '/admin/blog/'
     | '/u/$userid/'
@@ -13010,6 +13120,8 @@ export interface FileRouteTypes {
     | '/api/studio/challenges/'
     | '/api/study/decks/'
     | '/api/tf2-hud/huds/'
+    | '/api/tf2-loadout/loadouts/'
+    | '/api/tf2-loadout/models/'
     | '/api/translate/suggest/'
     | '/api/translate/vote/'
     | '/api/versecraft/seeds/'
@@ -13108,6 +13220,8 @@ export interface FileRouteTypes {
     | '/api/tf2-hud/huds/$id/share'
     | '/api/tf2-hud/huds/$id/versions'
     | '/api/tf2-hud/share/$token/file'
+    | '/api/tf2-loadout/loadouts/$id/fork'
+    | '/api/tf2-loadout/loadouts/$id/like'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
     | '/api/v1/posts/$id/like'
@@ -13322,9 +13436,7 @@ export interface FileRouteTypes {
     | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
-    | '/tf2-hud/editor'
-    | '/tf2-hud/mine'
-    | '/tf2-hud/workshop'
+    | '/tf2/workshop'
     | '/v/$slug'
     | '/v/new'
     | '/'
@@ -13349,7 +13461,7 @@ export interface FileRouteTypes {
     | '/strategies'
     | '/studio'
     | '/temple-of-joy'
-    | '/tf2-hud'
+    | '/tf2'
     | '/versecraft'
     | '/admin/alarms'
     | '/admin/analytics'
@@ -13761,6 +13873,7 @@ export interface FileRouteTypes {
     | '/api/tags/$tag'
     | '/api/temple-of-joy/efficiency'
     | '/api/temple-of-joy/save'
+    | '/api/tf2-loadout/catalog'
     | '/api/themes/$id'
     | '/api/themes/shop'
     | '/api/tips/leaderboard'
@@ -13814,8 +13927,9 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/drops'
     | '/strategies/safehouse/recruit'
     | '/tag/$tag/rss.xml'
-    | '/tf2-hud/h/$slug'
-    | '/tf2-hud/s/$token'
+    | '/tf2/hud-editor/editor'
+    | '/tf2/hud-editor/mine'
+    | '/tf2/loadout/mine'
     | '/u/$handle/rss.xml'
     | '/admin'
     | '/apps'
@@ -13930,6 +14044,8 @@ export interface FileRouteTypes {
     | '/strategies/profile'
     | '/strategies/puzzles'
     | '/strategies/safehouse'
+    | '/tf2/hud-editor'
+    | '/tf2/loadout'
     | '/admin/albums/$id'
     | '/admin/blog/new'
     | '/connections/u/$id'
@@ -14178,6 +14294,8 @@ export interface FileRouteTypes {
     | '/api/tf2-hud/blobs/check'
     | '/api/tf2-hud/huds/$id'
     | '/api/tf2-hud/share/$token'
+    | '/api/tf2-loadout/loadouts/$id'
+    | '/api/tf2-loadout/models/$id'
     | '/api/themes/$id/buy'
     | '/api/themes/$id/publish'
     | '/api/tournaments/$id/cancel'
@@ -14218,6 +14336,9 @@ export interface FileRouteTypes {
     | '/api/when/$id/respond'
     | '/api/worlds/visit/$code'
     | '/rmhbox/minigames/$minigameId/history'
+    | '/tf2/hud-editor/h/$slug'
+    | '/tf2/hud-editor/s/$token'
+    | '/tf2/loadout/l/$slug'
     | '/admin/albums'
     | '/admin/blog'
     | '/u/$userid'
@@ -14277,6 +14398,8 @@ export interface FileRouteTypes {
     | '/api/studio/challenges'
     | '/api/study/decks'
     | '/api/tf2-hud/huds'
+    | '/api/tf2-loadout/loadouts'
+    | '/api/tf2-loadout/models'
     | '/api/translate/suggest'
     | '/api/translate/vote'
     | '/api/versecraft/seeds'
@@ -14375,6 +14498,8 @@ export interface FileRouteTypes {
     | '/api/tf2-hud/huds/$id/share'
     | '/api/tf2-hud/huds/$id/versions'
     | '/api/tf2-hud/share/$token/file'
+    | '/api/tf2-loadout/loadouts/$id/fork'
+    | '/api/tf2-loadout/loadouts/$id/like'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
     | '/api/v1/posts/$id/like'
@@ -14481,7 +14606,7 @@ export interface FileRouteTypes {
     | '/synapse-storm'
     | '/temple-of-joy'
     | '/terms'
-    | '/tf2-hud'
+    | '/tf2'
     | '/velum2099'
     | '/versecraft'
     | '/void-breaker'
@@ -14617,9 +14742,7 @@ export interface FileRouteTypes {
     | '/sohumtracker/$date'
     | '/strategies/incidents'
     | '/strategies/sahur'
-    | '/tf2-hud/editor'
-    | '/tf2-hud/mine'
-    | '/tf2-hud/workshop'
+    | '/tf2/workshop'
     | '/v/$slug'
     | '/v/new'
     | '/_site/'
@@ -14644,7 +14767,7 @@ export interface FileRouteTypes {
     | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
-    | '/tf2-hud/'
+    | '/tf2/'
     | '/versecraft/'
     | '/_site/admin/alarms'
     | '/_site/admin/analytics'
@@ -15056,6 +15179,7 @@ export interface FileRouteTypes {
     | '/api/tags/$tag'
     | '/api/temple-of-joy/efficiency'
     | '/api/temple-of-joy/save'
+    | '/api/tf2-loadout/catalog'
     | '/api/themes/$id'
     | '/api/themes/shop'
     | '/api/tips/leaderboard'
@@ -15109,8 +15233,9 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/drops'
     | '/strategies/safehouse/recruit'
     | '/tag/$tag/rss.xml'
-    | '/tf2-hud/h/$slug'
-    | '/tf2-hud/s/$token'
+    | '/tf2/hud-editor/editor'
+    | '/tf2/hud-editor/mine'
+    | '/tf2/loadout/mine'
     | '/u/$handle/rss.xml'
     | '/_site/admin/'
     | '/_site/apps/'
@@ -15225,6 +15350,8 @@ export interface FileRouteTypes {
     | '/strategies/profile/'
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
+    | '/tf2/hud-editor/'
+    | '/tf2/loadout/'
     | '/_site/admin/albums/$id'
     | '/_site/admin/blog/new'
     | '/_site/connections/u/$id'
@@ -15473,6 +15600,8 @@ export interface FileRouteTypes {
     | '/api/tf2-hud/blobs/check'
     | '/api/tf2-hud/huds/$id'
     | '/api/tf2-hud/share/$token'
+    | '/api/tf2-loadout/loadouts/$id'
+    | '/api/tf2-loadout/models/$id'
     | '/api/themes/$id/buy'
     | '/api/themes/$id/publish'
     | '/api/tournaments/$id/cancel'
@@ -15513,6 +15642,9 @@ export interface FileRouteTypes {
     | '/api/when/$id/respond'
     | '/api/worlds/visit/$code'
     | '/rmhbox/minigames/$minigameId/history'
+    | '/tf2/hud-editor/h/$slug'
+    | '/tf2/hud-editor/s/$token'
+    | '/tf2/loadout/l/$slug'
     | '/_site/admin/albums/'
     | '/_site/admin/blog/'
     | '/_site/u/$userid/'
@@ -15572,6 +15704,8 @@ export interface FileRouteTypes {
     | '/api/studio/challenges/'
     | '/api/study/decks/'
     | '/api/tf2-hud/huds/'
+    | '/api/tf2-loadout/loadouts/'
+    | '/api/tf2-loadout/models/'
     | '/api/translate/suggest/'
     | '/api/translate/vote/'
     | '/api/versecraft/seeds/'
@@ -15670,6 +15804,8 @@ export interface FileRouteTypes {
     | '/api/tf2-hud/huds/$id/share'
     | '/api/tf2-hud/huds/$id/versions'
     | '/api/tf2-hud/share/$token/file'
+    | '/api/tf2-loadout/loadouts/$id/fork'
+    | '/api/tf2-loadout/loadouts/$id/like'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
     | '/api/v1/posts/$id/like'
@@ -15777,7 +15913,7 @@ export interface RootRouteChildren {
   SynapseStormRoute: typeof SynapseStormRoute
   TempleOfJoyRoute: typeof TempleOfJoyRouteWithChildren
   TermsRoute: typeof TermsRoute
-  Tf2HudRoute: typeof Tf2HudRouteWithChildren
+  Tf2Route: typeof Tf2RouteWithChildren
   Velum2099Route: typeof Velum2099Route
   VersecraftRoute: typeof VersecraftRouteWithChildren
   VoidBreakerRoute: typeof VoidBreakerRoute
@@ -16112,6 +16248,7 @@ export interface RootRouteChildren {
   ApiTagsTagRoute: typeof ApiTagsTagRoute
   ApiTempleOfJoyEfficiencyRoute: typeof ApiTempleOfJoyEfficiencyRoute
   ApiTempleOfJoySaveRoute: typeof ApiTempleOfJoySaveRoute
+  ApiTf2LoadoutCatalogRoute: typeof ApiTf2LoadoutCatalogRoute
   ApiThemesIdRoute: typeof ApiThemesIdRouteWithChildren
   ApiThemesShopRoute: typeof ApiThemesShopRoute
   ApiTipsLeaderboardRoute: typeof ApiTipsLeaderboardRoute
@@ -16382,6 +16519,8 @@ export interface RootRouteChildren {
   ApiTf2HudBlobsCheckRoute: typeof ApiTf2HudBlobsCheckRoute
   ApiTf2HudHudsIdRoute: typeof ApiTf2HudHudsIdRouteWithChildren
   ApiTf2HudShareTokenRoute: typeof ApiTf2HudShareTokenRouteWithChildren
+  ApiTf2LoadoutLoadoutsIdRoute: typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
+  ApiTf2LoadoutModelsIdRoute: typeof ApiTf2LoadoutModelsIdRoute
   ApiTrashKindIdRoute: typeof ApiTrashKindIdRoute
   ApiUsersIdWishlistRoute: typeof ApiUsersIdWishlistRoute
   ApiV1LeaderboardsGameRoute: typeof ApiV1LeaderboardsGameRoute
@@ -16452,6 +16591,8 @@ export interface RootRouteChildren {
   ApiStudioChallengesIndexRoute: typeof ApiStudioChallengesIndexRoute
   ApiStudyDecksIndexRoute: typeof ApiStudyDecksIndexRoute
   ApiTf2HudHudsIndexRoute: typeof ApiTf2HudHudsIndexRoute
+  ApiTf2LoadoutLoadoutsIndexRoute: typeof ApiTf2LoadoutLoadoutsIndexRoute
+  ApiTf2LoadoutModelsIndexRoute: typeof ApiTf2LoadoutModelsIndexRoute
   ApiTranslateSuggestIndexRoute: typeof ApiTranslateSuggestIndexRoute
   ApiTranslateVoteIndexRoute: typeof ApiTranslateVoteIndexRoute
   ApiVersecraftSeedsIndexRoute: typeof ApiVersecraftSeedsIndexRoute
@@ -16922,11 +17063,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tf2-hud': {
-      id: '/tf2-hud'
-      path: '/tf2-hud'
-      fullPath: '/tf2-hud'
-      preLoaderRoute: typeof Tf2HudRouteImport
+    '/tf2': {
+      id: '/tf2'
+      path: '/tf2'
+      fullPath: '/tf2'
+      preLoaderRoute: typeof Tf2RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/velum2099': {
@@ -18028,33 +18169,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TempleOfJoyIndexRouteImport
       parentRoute: typeof TempleOfJoyRoute
     }
-    '/tf2-hud/': {
-      id: '/tf2-hud/'
+    '/tf2/': {
+      id: '/tf2/'
       path: '/'
-      fullPath: '/tf2-hud/'
-      preLoaderRoute: typeof Tf2HudIndexRouteImport
-      parentRoute: typeof Tf2HudRoute
+      fullPath: '/tf2/'
+      preLoaderRoute: typeof Tf2IndexRouteImport
+      parentRoute: typeof Tf2Route
     }
-    '/tf2-hud/editor': {
-      id: '/tf2-hud/editor'
-      path: '/editor'
-      fullPath: '/tf2-hud/editor'
-      preLoaderRoute: typeof Tf2HudEditorRouteImport
-      parentRoute: typeof Tf2HudRoute
-    }
-    '/tf2-hud/mine': {
-      id: '/tf2-hud/mine'
-      path: '/mine'
-      fullPath: '/tf2-hud/mine'
-      preLoaderRoute: typeof Tf2HudMineRouteImport
-      parentRoute: typeof Tf2HudRoute
-    }
-    '/tf2-hud/workshop': {
-      id: '/tf2-hud/workshop'
+    '/tf2/workshop': {
+      id: '/tf2/workshop'
       path: '/workshop'
-      fullPath: '/tf2-hud/workshop'
-      preLoaderRoute: typeof Tf2HudWorkshopRouteImport
-      parentRoute: typeof Tf2HudRoute
+      fullPath: '/tf2/workshop'
+      preLoaderRoute: typeof Tf2WorkshopRouteImport
+      parentRoute: typeof Tf2Route
     }
     '/v/$slug': {
       id: '/v/$slug'
@@ -21640,6 +21767,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTempleOfJoySaveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tf2-loadout/catalog': {
+      id: '/api/tf2-loadout/catalog'
+      path: '/api/tf2-loadout/catalog'
+      fullPath: '/api/tf2-loadout/catalog'
+      preLoaderRoute: typeof ApiTf2LoadoutCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/themes/': {
       id: '/api/themes/'
       path: '/api/themes'
@@ -22109,19 +22243,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TagTagRssDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tf2-hud/h/$slug': {
-      id: '/tf2-hud/h/$slug'
-      path: '/h/$slug'
-      fullPath: '/tf2-hud/h/$slug'
-      preLoaderRoute: typeof Tf2HudHSlugRouteImport
-      parentRoute: typeof Tf2HudRoute
+    '/tf2/hud-editor/': {
+      id: '/tf2/hud-editor/'
+      path: '/hud-editor'
+      fullPath: '/tf2/hud-editor/'
+      preLoaderRoute: typeof Tf2HudEditorIndexRouteImport
+      parentRoute: typeof Tf2Route
     }
-    '/tf2-hud/s/$token': {
-      id: '/tf2-hud/s/$token'
-      path: '/s/$token'
-      fullPath: '/tf2-hud/s/$token'
-      preLoaderRoute: typeof Tf2HudSTokenRouteImport
-      parentRoute: typeof Tf2HudRoute
+    '/tf2/hud-editor/editor': {
+      id: '/tf2/hud-editor/editor'
+      path: '/hud-editor/editor'
+      fullPath: '/tf2/hud-editor/editor'
+      preLoaderRoute: typeof Tf2HudEditorEditorRouteImport
+      parentRoute: typeof Tf2Route
+    }
+    '/tf2/hud-editor/mine': {
+      id: '/tf2/hud-editor/mine'
+      path: '/hud-editor/mine'
+      fullPath: '/tf2/hud-editor/mine'
+      preLoaderRoute: typeof Tf2HudEditorMineRouteImport
+      parentRoute: typeof Tf2Route
+    }
+    '/tf2/loadout/': {
+      id: '/tf2/loadout/'
+      path: '/loadout'
+      fullPath: '/tf2/loadout/'
+      preLoaderRoute: typeof Tf2LoadoutIndexRouteImport
+      parentRoute: typeof Tf2Route
+    }
+    '/tf2/loadout/mine': {
+      id: '/tf2/loadout/mine'
+      path: '/loadout/mine'
+      fullPath: '/tf2/loadout/mine'
+      preLoaderRoute: typeof Tf2LoadoutMineRouteImport
+      parentRoute: typeof Tf2Route
     }
     '/u/$handle/rss.xml': {
       id: '/u/$handle/rss.xml'
@@ -24279,6 +24434,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTf2HudShareTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tf2-loadout/loadouts/': {
+      id: '/api/tf2-loadout/loadouts/'
+      path: '/api/tf2-loadout/loadouts'
+      fullPath: '/api/tf2-loadout/loadouts/'
+      preLoaderRoute: typeof ApiTf2LoadoutLoadoutsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tf2-loadout/loadouts/$id': {
+      id: '/api/tf2-loadout/loadouts/$id'
+      path: '/api/tf2-loadout/loadouts/$id'
+      fullPath: '/api/tf2-loadout/loadouts/$id'
+      preLoaderRoute: typeof ApiTf2LoadoutLoadoutsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tf2-loadout/models/': {
+      id: '/api/tf2-loadout/models/'
+      path: '/api/tf2-loadout/models'
+      fullPath: '/api/tf2-loadout/models/'
+      preLoaderRoute: typeof ApiTf2LoadoutModelsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tf2-loadout/models/$id': {
+      id: '/api/tf2-loadout/models/$id'
+      path: '/api/tf2-loadout/models/$id'
+      fullPath: '/api/tf2-loadout/models/$id'
+      preLoaderRoute: typeof ApiTf2LoadoutModelsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/themes/$id/buy': {
       id: '/api/themes/$id/buy'
       path: '/buy'
@@ -24586,6 +24769,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhbox/minigames/$minigameId/history'
       preLoaderRoute: typeof RmhboxMinigamesMinigameIdHistoryRouteImport
       parentRoute: typeof RmhboxRoute
+    }
+    '/tf2/hud-editor/h/$slug': {
+      id: '/tf2/hud-editor/h/$slug'
+      path: '/hud-editor/h/$slug'
+      fullPath: '/tf2/hud-editor/h/$slug'
+      preLoaderRoute: typeof Tf2HudEditorHSlugRouteImport
+      parentRoute: typeof Tf2Route
+    }
+    '/tf2/hud-editor/s/$token': {
+      id: '/tf2/hud-editor/s/$token'
+      path: '/hud-editor/s/$token'
+      fullPath: '/tf2/hud-editor/s/$token'
+      preLoaderRoute: typeof Tf2HudEditorSTokenRouteImport
+      parentRoute: typeof Tf2Route
+    }
+    '/tf2/loadout/l/$slug': {
+      id: '/tf2/loadout/l/$slug'
+      path: '/loadout/l/$slug'
+      fullPath: '/tf2/loadout/l/$slug'
+      preLoaderRoute: typeof Tf2LoadoutLSlugRouteImport
+      parentRoute: typeof Tf2Route
     }
     '/_site/admin/blog/$slug/edit': {
       id: '/_site/admin/blog/$slug/edit'
@@ -25370,6 +25574,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/tf2-hud/share/$token/file'
       preLoaderRoute: typeof ApiTf2HudShareTokenFileRouteImport
       parentRoute: typeof ApiTf2HudShareTokenRoute
+    }
+    '/api/tf2-loadout/loadouts/$id/fork': {
+      id: '/api/tf2-loadout/loadouts/$id/fork'
+      path: '/fork'
+      fullPath: '/api/tf2-loadout/loadouts/$id/fork'
+      preLoaderRoute: typeof ApiTf2LoadoutLoadoutsIdForkRouteImport
+      parentRoute: typeof ApiTf2LoadoutLoadoutsIdRoute
+    }
+    '/api/tf2-loadout/loadouts/$id/like': {
+      id: '/api/tf2-loadout/loadouts/$id/like'
+      path: '/like'
+      fullPath: '/api/tf2-loadout/loadouts/$id/like'
+      preLoaderRoute: typeof ApiTf2LoadoutLoadoutsIdLikeRouteImport
+      parentRoute: typeof ApiTf2LoadoutLoadoutsIdRoute
     }
     '/api/v1/posts/$id/bookmark': {
       id: '/api/v1/posts/$id/bookmark'
@@ -26398,26 +26616,33 @@ const TempleOfJoyRouteWithChildren = TempleOfJoyRoute._addFileChildren(
   TempleOfJoyRouteChildren,
 )
 
-interface Tf2HudRouteChildren {
-  Tf2HudEditorRoute: typeof Tf2HudEditorRoute
-  Tf2HudMineRoute: typeof Tf2HudMineRoute
-  Tf2HudWorkshopRoute: typeof Tf2HudWorkshopRoute
-  Tf2HudIndexRoute: typeof Tf2HudIndexRoute
-  Tf2HudHSlugRoute: typeof Tf2HudHSlugRoute
-  Tf2HudSTokenRoute: typeof Tf2HudSTokenRoute
+interface Tf2RouteChildren {
+  Tf2WorkshopRoute: typeof Tf2WorkshopRoute
+  Tf2IndexRoute: typeof Tf2IndexRoute
+  Tf2HudEditorEditorRoute: typeof Tf2HudEditorEditorRoute
+  Tf2HudEditorMineRoute: typeof Tf2HudEditorMineRoute
+  Tf2LoadoutMineRoute: typeof Tf2LoadoutMineRoute
+  Tf2HudEditorIndexRoute: typeof Tf2HudEditorIndexRoute
+  Tf2LoadoutIndexRoute: typeof Tf2LoadoutIndexRoute
+  Tf2HudEditorHSlugRoute: typeof Tf2HudEditorHSlugRoute
+  Tf2HudEditorSTokenRoute: typeof Tf2HudEditorSTokenRoute
+  Tf2LoadoutLSlugRoute: typeof Tf2LoadoutLSlugRoute
 }
 
-const Tf2HudRouteChildren: Tf2HudRouteChildren = {
-  Tf2HudEditorRoute: Tf2HudEditorRoute,
-  Tf2HudMineRoute: Tf2HudMineRoute,
-  Tf2HudWorkshopRoute: Tf2HudWorkshopRoute,
-  Tf2HudIndexRoute: Tf2HudIndexRoute,
-  Tf2HudHSlugRoute: Tf2HudHSlugRoute,
-  Tf2HudSTokenRoute: Tf2HudSTokenRoute,
+const Tf2RouteChildren: Tf2RouteChildren = {
+  Tf2WorkshopRoute: Tf2WorkshopRoute,
+  Tf2IndexRoute: Tf2IndexRoute,
+  Tf2HudEditorEditorRoute: Tf2HudEditorEditorRoute,
+  Tf2HudEditorMineRoute: Tf2HudEditorMineRoute,
+  Tf2LoadoutMineRoute: Tf2LoadoutMineRoute,
+  Tf2HudEditorIndexRoute: Tf2HudEditorIndexRoute,
+  Tf2LoadoutIndexRoute: Tf2LoadoutIndexRoute,
+  Tf2HudEditorHSlugRoute: Tf2HudEditorHSlugRoute,
+  Tf2HudEditorSTokenRoute: Tf2HudEditorSTokenRoute,
+  Tf2LoadoutLSlugRoute: Tf2LoadoutLSlugRoute,
 }
 
-const Tf2HudRouteWithChildren =
-  Tf2HudRoute._addFileChildren(Tf2HudRouteChildren)
+const Tf2RouteWithChildren = Tf2Route._addFileChildren(Tf2RouteChildren)
 
 interface VersecraftRouteChildren {
   VersecraftIndexRoute: typeof VersecraftIndexRoute
@@ -27759,6 +27984,22 @@ const ApiTf2HudShareTokenRouteChildren: ApiTf2HudShareTokenRouteChildren = {
 const ApiTf2HudShareTokenRouteWithChildren =
   ApiTf2HudShareTokenRoute._addFileChildren(ApiTf2HudShareTokenRouteChildren)
 
+interface ApiTf2LoadoutLoadoutsIdRouteChildren {
+  ApiTf2LoadoutLoadoutsIdForkRoute: typeof ApiTf2LoadoutLoadoutsIdForkRoute
+  ApiTf2LoadoutLoadoutsIdLikeRoute: typeof ApiTf2LoadoutLoadoutsIdLikeRoute
+}
+
+const ApiTf2LoadoutLoadoutsIdRouteChildren: ApiTf2LoadoutLoadoutsIdRouteChildren =
+  {
+    ApiTf2LoadoutLoadoutsIdForkRoute: ApiTf2LoadoutLoadoutsIdForkRoute,
+    ApiTf2LoadoutLoadoutsIdLikeRoute: ApiTf2LoadoutLoadoutsIdLikeRoute,
+  }
+
+const ApiTf2LoadoutLoadoutsIdRouteWithChildren =
+  ApiTf2LoadoutLoadoutsIdRoute._addFileChildren(
+    ApiTf2LoadoutLoadoutsIdRouteChildren,
+  )
+
 interface ApiV1UsersHandleRouteChildren {
   ApiV1UsersHandleFollowRoute: typeof ApiV1UsersHandleFollowRoute
   ApiV1UsersHandleFollowersRoute: typeof ApiV1UsersHandleFollowersRoute
@@ -27848,7 +28089,7 @@ const rootRouteChildren: RootRouteChildren = {
   SynapseStormRoute: SynapseStormRoute,
   TempleOfJoyRoute: TempleOfJoyRouteWithChildren,
   TermsRoute: TermsRoute,
-  Tf2HudRoute: Tf2HudRouteWithChildren,
+  Tf2Route: Tf2RouteWithChildren,
   Velum2099Route: Velum2099Route,
   VersecraftRoute: VersecraftRouteWithChildren,
   VoidBreakerRoute: VoidBreakerRoute,
@@ -28184,6 +28425,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTagsTagRoute: ApiTagsTagRoute,
   ApiTempleOfJoyEfficiencyRoute: ApiTempleOfJoyEfficiencyRoute,
   ApiTempleOfJoySaveRoute: ApiTempleOfJoySaveRoute,
+  ApiTf2LoadoutCatalogRoute: ApiTf2LoadoutCatalogRoute,
   ApiThemesIdRoute: ApiThemesIdRouteWithChildren,
   ApiThemesShopRoute: ApiThemesShopRoute,
   ApiTipsLeaderboardRoute: ApiTipsLeaderboardRoute,
@@ -28457,6 +28699,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTf2HudBlobsCheckRoute: ApiTf2HudBlobsCheckRoute,
   ApiTf2HudHudsIdRoute: ApiTf2HudHudsIdRouteWithChildren,
   ApiTf2HudShareTokenRoute: ApiTf2HudShareTokenRouteWithChildren,
+  ApiTf2LoadoutLoadoutsIdRoute: ApiTf2LoadoutLoadoutsIdRouteWithChildren,
+  ApiTf2LoadoutModelsIdRoute: ApiTf2LoadoutModelsIdRoute,
   ApiTrashKindIdRoute: ApiTrashKindIdRoute,
   ApiUsersIdWishlistRoute: ApiUsersIdWishlistRoute,
   ApiV1LeaderboardsGameRoute: ApiV1LeaderboardsGameRoute,
@@ -28527,6 +28771,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudioChallengesIndexRoute: ApiStudioChallengesIndexRoute,
   ApiStudyDecksIndexRoute: ApiStudyDecksIndexRoute,
   ApiTf2HudHudsIndexRoute: ApiTf2HudHudsIndexRoute,
+  ApiTf2LoadoutLoadoutsIndexRoute: ApiTf2LoadoutLoadoutsIndexRoute,
+  ApiTf2LoadoutModelsIndexRoute: ApiTf2LoadoutModelsIndexRoute,
   ApiTranslateSuggestIndexRoute: ApiTranslateSuggestIndexRoute,
   ApiTranslateVoteIndexRoute: ApiTranslateVoteIndexRoute,
   ApiVersecraftSeedsIndexRoute: ApiVersecraftSeedsIndexRoute,
@@ -28594,7 +28840,6 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
 
 import type { getRouter } from './router.tsx'
 import type { createStart } from '@tanstack/react-start'

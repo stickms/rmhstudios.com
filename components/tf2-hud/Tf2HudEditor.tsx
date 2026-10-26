@@ -200,7 +200,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
   useEffect(() => prefetchHeavyPanels(), []);
   useEffect(() => {
     if (draft || hud || (overlaySize === 0 && metaName === 'My HUD')) return;
-    void navigate({ to: '/tf2-hud/editor', search: { draft: draftId }, replace: true });
+    void navigate({ to: '/tf2/hud-editor/editor', search: { draft: draftId }, replace: true });
   }, [draft, hud, overlaySize, metaName, draftId, navigate]);
 
   useEffect(() => {
@@ -445,7 +445,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
       <div className="app-page flex min-h-dvh flex-col items-center justify-center gap-4 bg-(--app-bg) p-6 text-center text-(--app-text)">
         <p className="max-w-md text-sm text-(--app-text-muted)">{error}</p>
         <a
-          href="/tf2-hud"
+          href="/tf2/hud-editor"
           className="rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2 text-sm font-semibold text-(--app-accent-fg)"
         >
           {t('back-to-start', { defaultValue: 'Back to start' })}
