@@ -60,10 +60,11 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
     {host ? (
     <Dialog open onOpenChange={(next) => { if (!next) onClose(); }}>
       <DialogContent
+        hideClose
         container={host}
         aria-describedby={undefined}
         data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
-        className="max-w-xl gap-0 rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
+        className="max-w-xl gap-0 rounded-none border-0 bg-transparent p-0 shadow-none"
         onInteractOutside={(event) => event.preventDefault()}
         onCloseAutoFocus={returnFocus}
         overlayClassName="bg-(--app-scrim)"

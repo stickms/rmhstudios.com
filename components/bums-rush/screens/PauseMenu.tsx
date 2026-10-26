@@ -74,10 +74,11 @@ export function PauseMenu({
     {host ? (
     <Dialog open onOpenChange={(next) => { if (!next) onResume(); }}>
       <DialogContent
+        hideClose
         container={host}
         overlayClassName="bg-bum-paper/78"
         data-jelly="off" data-liquid-material="off" data-dialog-shell="bare"
-        className="w-auto max-w-sm gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none [&>button]:hidden"
+        className="w-auto max-w-sm gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none"
         onEscapeKeyDown={(event) => {
           event.preventDefault();
           if (!event.repeat) escapeArmed.current = true;
