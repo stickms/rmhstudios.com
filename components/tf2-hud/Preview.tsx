@@ -43,6 +43,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
   const view = useEditor((s) => s.view);
   const selectedId = useEditor((s) => s.selectedId);
   const hoverId = useEditor((s) => s.hoverId);
+  const focusProp = useEditor((s) => s.focusProp);
   const select = useEditor((s) => s.select);
   const hover = useEditor((s) => s.hover);
   const readBytes = useEditor((s) => s.readBytes);
@@ -107,6 +108,26 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
     [scene, selectedId],
   );
   const hovered = useMemo(() => scene?.nodes.find((n) => n.id === hoverId), [scene, hoverId]);
+  // The measurement for the layout property being edited in the inspector.
+  const guide = useMemo(() => {
+    if (!scene || !focusProp) return undefined;
+    const node = scene.nodes.find((n) => n.id === focusProp.nodeId);
+    if (!node) return undefined;
+    const parent = (node.parentId && scene.nodes.find((n) => n.id === node.parentId)?.rect) || {
+      x: 0,
+      y: 0,
+      w: scene.screen.w,
+      h: scene.screen.h,
+    };
+    const text = readText(node.file);
+    const entry = text === undefined ? undefined : kvAt(parseCached(text), node.keyPath);
+    const raw = entry
+      ? propsOf(entry, { env: COND_ENVS[view.env], minmode: view.minmode }).get(focusProp.key)
+      : undefined;
+    const prefix = (raw ?? '').trim()[0]?.toLowerCase();
+    const align = prefix === 'r' ? 'end' : prefix === 'c' ? 'center' : 'start';
+    return { node, parent, key: focusProp.key, align } as const;
+  }, [scene, focusProp, readText, view.env, view.minmode]);
 
   /* ── painting ── */
   useEffect(() => {
@@ -127,10 +148,22 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
       g.globalAlpha = view.hudOpacity;
       paintScene(g, scene, { images, showBounds: view.showBounds });
       g.globalAlpha = 1;
-      paintOverlay(g, { selected, hover: hovered, pxPerCss: 1 / zoom });
+      paintOverlay(g, { selected, hover: hovered, guide, pxPerCss: 1 / zoom });
     });
     return () => cancelAnimationFrame(rafRef.current);
-  }, [scene, zoom, sw, sh, view.hudOpacity, view.showBounds, images, selected, hovered, tick]);
+  }, [
+    scene,
+    zoom,
+    sw,
+    sh,
+    view.hudOpacity,
+    view.showBounds,
+    images,
+    selected,
+    hovered,
+    guide,
+    tick,
+  ]);
 
   /* ── pointer interaction ── */
   const toScene = useCallback(

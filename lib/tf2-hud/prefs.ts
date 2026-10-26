@@ -13,12 +13,18 @@ export interface Tf2HudPrefs {
   /** Left/right panel widths, as percentages of the workspace. */
   treeOpen: boolean;
   rightOpen: boolean;
-  rightTab: 'inspector' | 'code' | 'test' | 'history' | 'diff' | 'problems' | 'assets';
+  rightTab: 'inspector' | 'code' | 'scheme' | 'test' | 'history' | 'diff' | 'problems' | 'assets';
   treeFilter: 'all' | 'modified' | 'problems';
   /** Save signed-in HUDs to the account in the background. */
   cloudAutosave: boolean;
+  /** Most recently picked colours (VGUI `r g b a` literals), newest first. */
+  recentColors: string[];
+  pushRecentColor(literal: string): void;
   setTheme(theme: Tf2HudTheme): void;
-  set<K extends keyof Omit<Tf2HudPrefs, 'set' | 'setTheme'>>(key: K, value: Tf2HudPrefs[K]): void;
+  set<K extends keyof Omit<Tf2HudPrefs, 'set' | 'setTheme' | 'pushRecentColor'>>(
+    key: K,
+    value: Tf2HudPrefs[K],
+  ): void;
 }
 
 const safeStorage = createJSONStorage(() => {
@@ -44,6 +50,11 @@ export const useTf2HudPrefs = create<Tf2HudPrefs>()(
       rightTab: 'inspector',
       treeFilter: 'all',
       cloudAutosave: true,
+      recentColors: [],
+      pushRecentColor: (literal) =>
+        set((s) => ({
+          recentColors: [literal, ...s.recentColors.filter((c) => c !== literal)].slice(0, 12),
+        })),
       setTheme: (theme) => set({ theme }),
       set: (key, value) => set({ [key]: value } as Partial<Tf2HudPrefs>),
     }),

@@ -54,6 +54,8 @@ export interface CustomFontFile {
 
 export interface Scheme {
   colors: Map<string, string>;
+  /** Lower-case colour name → the name as written (for pickers). */
+  colorNames: Map<string, string>;
   base: Map<string, string>;
   fonts: Map<string, FontDef[]>;
   /** Lower-case scheme font name → the name as written (for pickers). */
@@ -64,6 +66,7 @@ export interface Scheme {
 
 export const EMPTY_SCHEME: Scheme = {
   colors: new Map(),
+  colorNames: new Map(),
   base: new Map(),
   fonts: new Map(),
   fontNames: new Map(),
@@ -119,6 +122,7 @@ export function parseScheme(text: string, env: CondEnv): Scheme {
 
   const scheme: Scheme = {
     colors: new Map(),
+    colorNames: new Map(),
     base: new Map(),
     fonts: new Map(),
     fontNames: new Map(),
@@ -130,7 +134,10 @@ export function parseScheme(text: string, env: CondEnv): Scheme {
 
   for (const c of kvChildren(section('Colors') ?? root)) {
     if (section('Colors') && c.value && evalCond(c.cond?.text, env)) {
-      if (!scheme.colors.has(lower(c.key.text))) scheme.colors.set(lower(c.key.text), c.value.text);
+      if (!scheme.colors.has(lower(c.key.text))) {
+        scheme.colors.set(lower(c.key.text), c.value.text);
+        scheme.colorNames.set(lower(c.key.text), c.key.text);
+      }
     }
   }
   for (const c of kvChildren(section('BaseSettings') ?? root)) {

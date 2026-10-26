@@ -32,13 +32,15 @@ import OutlinePanel from './OutlinePanel';
 import Preview from './Preview';
 import PreviewToolbar from './PreviewToolbar';
 import ProblemsPanel from './ProblemsPanel';
+import SchemePanel from './SchemePanel';
 import SaveShareDialog from './SaveShareDialog';
 import { SceneProvider } from './scene-context';
 import TestPanel from './TestPanel';
 import TopBar from './TopBar';
 import { ValidationProvider } from './validation-context';
 
-type RightTab = 'inspector' | 'code' | 'test' | 'history' | 'diff' | 'problems' | 'assets';
+type RightTab =
+  'inspector' | 'code' | 'scheme' | 'test' | 'history' | 'diff' | 'problems' | 'assets';
 type MobileView = 'files' | 'preview' | 'edit';
 
 interface Props {
@@ -336,6 +338,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
   const rightTabs: LiquidTab[] = [
     { id: 'inspector', label: t('inspector', { defaultValue: 'Inspector' }) },
     { id: 'code', label: t('code', { defaultValue: 'Code' }) },
+    { id: 'scheme', label: t('scheme', { defaultValue: 'Scheme' }) },
     { id: 'test', label: t('test', { defaultValue: 'Test' }) },
     { id: 'history', label: t('history', { defaultValue: 'History' }) },
     { id: 'diff', label: t('changes', { defaultValue: 'Changes' }) },
@@ -362,6 +365,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
       <div className="min-h-0 flex-1">
         {rightTab === 'inspector' ? <Inspector /> : null}
         {rightTab === 'code' ? <CodePane /> : null}
+        {rightTab === 'scheme' ? <SchemePanel /> : null}
         {rightTab === 'test' ? <TestPanel /> : null}
         {rightTab === 'history' ? <HistoryPanel /> : null}
         {rightTab === 'diff' ? <DiffView /> : null}

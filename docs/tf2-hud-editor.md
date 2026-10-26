@@ -38,6 +38,15 @@ lib/tf2-hud/
 - Fonts: TF2's faces are placeholders until sourced (`lib/tf2-hud/assets/fonts.ts`). Fonts a HUD ships (`.ttf`/`.otf`) register under their internal family name and any `CustomFontFiles` name.
 - Not yet: animation playback (`hudanimations_tf.txt` is editable as text), localisation tokens (`#Token` shows its name), 3D model panels (drawn as labelled boxes).
 
+## Colour, font and scheme tools
+
+Panels refer to colours, fonts and borders by **name**, and those names live in `clientscheme.res` — so the editor shows what a value really resolves to and lets you change it at either level.
+
+- **Colour picker** (`ColorPicker.tsx`): saturation/brightness square, hue and opacity, hex / `rgb()` / VGUI `r g b a` entry, eyedropper, recent colours and a searchable swatch grid of scheme colours. Dragging writes numbers; choosing a swatch writes the _name_. The field always shows the chain (`TanDark → 117 107 94 255`) and warns when a value is neither a colour nor a scheme name. "Save" turns the current colour into a new scheme colour.
+- **Font picker** (`FontPicker.tsx`): every scheme font rendered in the face that is active at the current resolution (screen-height windows vs. proportional faces), with size and weight, and a status — _custom file_, _placeholder_ (a stand-in for a Valve face), _system font_ or _not installed_.
+- **Scheme tab** (`SchemePanel.tsx`): all colours and `BaseSettings`, all fonts (with a face editor: name, size, weight, flags, screen-height window, add a face) and all borders drawn with the preview's own border painter. Editing a scheme entry updates every panel that names it, live. Entries used by the selected panel are highlighted.
+- **Inspector previews**: each position/size value is explained at the current resolution ("120 units from the bottom edge → 810 px from the top"), focusing one draws its measurement in the preview, `labelText` shows the substituted text (`%Health%` → `125`), `image` shows the texture or the missing-texture checkerboard, borders show a swatch, and elements positioned by `hudlayout.res` say so.
+
 ## Editing, history and saving
 
 - **History:** every edit is an undo step; typing and drags coalesce. `Ctrl/⌘+Z`, `Ctrl/⌘+Shift+Z` / `Ctrl+Y`, and a History tab to jump to any step. `?` lists all shortcuts.

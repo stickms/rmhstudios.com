@@ -10,6 +10,7 @@
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X, type LucideIcon } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import {
   forwardRef,
   useEffect,
@@ -460,5 +461,88 @@ export function ContextMenu({
         </button>
       ))}
     </div>
+  );
+}
+
+/* ─────────────────────────────── popover ─────────────────────────────── */
+
+/**
+ * A panel anchored to an element (a swatch, a field), flipped above when there is
+ * no room below and clamped into the viewport. Portaled into the app root so it
+ * keeps the `--app-*` palette. Closes on Escape and on a press outside.
+ */
+export function Popover({
+  anchor,
+  open,
+  onClose,
+  label,
+  width = 288,
+  children,
+}: {
+  anchor: HTMLElement | null;
+  open: boolean;
+  onClose: () => void;
+  label: string;
+  width?: number;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    setRoot(document.querySelector<HTMLElement>('.tf2hud-theme'));
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open || !anchor || !ref.current) return;
+    const a = anchor.getBoundingClientRect();
+    const h = ref.current.offsetHeight;
+    const w = Math.min(width, window.innerWidth - 16);
+    const below = a.bottom + 6;
+    const top = below + h > window.innerHeight - 8 ? Math.max(8, a.top - h - 6) : below;
+    const left = Math.max(8, Math.min(a.left, window.innerWidth - w - 8));
+    setPos({ left, top });
+  }, [open, anchor, width, children, root]);
+
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (!ref.current?.contains(t) && !anchor?.contains(t)) onClose();
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+        anchor?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', away, true);
+    document.addEventListener('keydown', key, true);
+    return () => {
+      document.removeEventListener('pointerdown', away, true);
+      document.removeEventListener('keydown', key, true);
+    };
+  }, [open, anchor, onClose]);
+
+  if (!open || !root) return null;
+  return createPortal(
+    <div
+      ref={ref}
+      // A non-modal panel: a labelled group, not a dialog (no focus trap, page stays live).
+      role="group"
+      aria-label={label}
+      style={{
+        left: pos?.left ?? -9999,
+        top: pos?.top ?? -9999,
+        width: Math.min(width, window.innerWidth - 16),
+      }}
+      className="fixed z-60 rounded-(--app-radius) border border-(--app-border-bright) bg-(--app-bg-subtle) p-3 text-(--app-text) shadow-(--app-shadow)"
+    >
+      {children}
+    </div>,
+    root,
   );
 }

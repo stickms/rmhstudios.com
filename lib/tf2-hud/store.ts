@@ -94,6 +94,8 @@ export interface EditorState {
   pageId: string;
   selectedId: string | null;
   hoverId: string | null;
+  /** The layout property being edited, so the preview can draw its measurement. */
+  focusProp: { nodeId: string; key: 'xpos' | 'ypos' | 'wide' | 'tall' } | null;
   forceShown: ReadonlySet<string>;
   forceHidden: ReadonlySet<string>;
   test: TestState;
@@ -146,6 +148,7 @@ export interface EditorState {
   setPage(id: string): void;
   select(id: string | null): void;
   hover(id: string | null): void;
+  setFocusProp(p: EditorState['focusProp']): void;
   toggleForce(id: string, shown: boolean): void;
   resetForce(): void;
   openFile(path: string): void;
@@ -206,6 +209,7 @@ export const useEditor = create<EditorState>((set, get) => {
     pageId: DEFAULT_PAGE_ID,
     selectedId: null,
     hoverId: null,
+    focusProp: null,
     forceShown: new Set(),
     forceHidden: new Set(),
     test: { ...DEFAULT_TEST_STATE },
@@ -470,6 +474,10 @@ export const useEditor = create<EditorState>((set, get) => {
     },
     hover(id) {
       if (get().hoverId !== id) set({ hoverId: id });
+    },
+
+    setFocusProp(p) {
+      set({ focusProp: p });
     },
 
     toggleForce(id, shown) {

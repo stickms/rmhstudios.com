@@ -51,6 +51,21 @@ export function fontCss(name: string, px: number, weight: number, italic: boolea
   return `${italic ? 'italic ' : ''}${cssWeight(weight)} ${px.toFixed(2)}px ${fontFamilyFor(name)}`;
 }
 
+export type FontStatus = 'custom' | 'placeholder' | 'system' | 'missing';
+
+/**
+ * Where a scheme face's glyphs will come from: a file the HUD ships, one of our
+ * stand-ins for Valve's faces, a font the browser has, or nothing (it will fall
+ * back, so the preview will not match the game).
+ */
+export function fontStatus(name: string, installed: (family: string) => boolean): FontStatus {
+  const k = key(name);
+  if (custom.has(k)) return 'custom';
+  if (k.startsWith('tf2')) return 'placeholder';
+  if (k in BUILT_IN && installed(name)) return 'system';
+  return installed(name) ? 'system' : 'missing';
+}
+
 let counter = 0;
 
 /**

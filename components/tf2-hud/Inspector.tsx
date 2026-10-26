@@ -12,10 +12,18 @@ import { kvRemove, kvSet } from '@/lib/tf2-hud/kv/edit';
 import { PROPERTY_NAMES, ALIGNMENTS } from '@/lib/tf2-hud/kv/completions';
 import { propsOf, activeEntries } from '@/lib/tf2-hud/kv/props';
 import { kvAt } from '@/lib/tf2-hud/kv/query';
-import { parseCached } from '@/lib/tf2-hud/scene/build';
+import { varsFromState } from '@/lib/tf2-hud/fixtures';
+import { pinOf } from '@/lib/tf2-hud/layout/geometry';
+import { HUD_LAYOUT_FILE, parseCached, substituteLabel } from '@/lib/tf2-hud/scene/build';
+import { setSchemeColor } from '@/lib/tf2-hud/scheme/edit';
+import { explainDim } from '@/lib/tf2-hud/scheme/inspect';
 import { COND_ENVS } from '@/lib/tf2-hud/scheme/cond';
-import { resolveColor, rgbaCss, type Rgba } from '@/lib/tf2-hud/scheme/scheme';
+import { borderOf } from '@/lib/tf2-hud/scheme/scheme';
 import { useEditor } from '@/lib/tf2-hud/store';
+import { BorderSwatch } from './border-swatch';
+import { ColorField } from './ColorPicker';
+import { FontField } from './FontPicker';
+import ImageThumb from './ImageThumb';
 import { useSceneContext } from './scene-context';
 import { Btn, EmptyNote, IconBtn, PanelHead, Pill, SelectField, TextField, Toggle } from './ui';
 
@@ -45,11 +53,6 @@ const KNOWN = new Set<string>(
 );
 const BOOL_KEYS = new Set(['visible', 'enabled', 'wrap', 'centerwrap', 'scaleimage']);
 
-function rgbaToHex(c: Rgba): string {
-  const h = (n: number) => n.toString(16).padStart(2, '0');
-  return `#${h(c.r)}${h(c.g)}${h(c.b)}`;
-}
-
 export default function Inspector() {
   const { t } = useTranslation('c-tf2-hud');
   const { scene, scheme } = useSceneContext();
@@ -60,6 +63,9 @@ export default function Inspector() {
   const jump = useEditor((s) => s.jump);
   const toggleForce = useEditor((s) => s.toggleForce);
   const forceHidden = useEditor((s) => s.forceHidden);
+  const test = useEditor((s) => s.test);
+  const strings = useEditor((s) => s.localisation);
+  const setFocusProp = useEditor((s) => s.setFocusProp);
   const node = scene?.nodes.find((n) => n.id === selectedId);
   const [adding, setAdding] = useState('');
 
@@ -101,46 +107,38 @@ export default function Inspector() {
   const present = (keys: readonly string[]) =>
     keys.filter((k) => props.has(k) || LAYOUT.includes(k as never));
 
-  const colorField = (key: string) => {
-    const raw = get(key) ?? '';
-    const resolved = raw ? resolveColor(scheme, raw) : undefined;
-    return (
-      <div className="flex items-center gap-1.5">
-        <label className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-(--app-radius-sm) border border-(--app-border-bright)">
-          <span className="tf2hud-checker absolute inset-0" aria-hidden />
-          <span
-            className="absolute inset-0"
-            style={{ background: resolved ? rgbaCss(resolved) : 'transparent' }}
-            aria-hidden
-          />
-          <input
-            type="color"
-            aria-label={t('pick-color', { defaultValue: 'Pick colour for {{key}}', key })}
-            value={resolved ? rgbaToHex(resolved) : '#ffffff'}
-            onChange={(e) => {
-              const m = /^#(..)(..)(..)$/.exec(e.target.value);
-              if (!m) return;
-              const a = resolved?.a ?? 255;
-              set(key, `${parseInt(m[1], 16)} ${parseInt(m[2], 16)} ${parseInt(m[3], 16)} ${a}`);
-            }}
-            className="absolute inset-0 size-full cursor-pointer opacity-0"
-          />
-        </label>
-        <TextField
-          list="tf2hud-scheme-colors"
-          aria-label={key}
-          value={raw}
-          onChange={(e) => set(key, e.target.value)}
-          className="font-mono"
-        />
-      </div>
-    );
+  const writeScheme = (name: string, literal: string) => {
+    const schemeText = readText('resource/clientscheme.res');
+    if (schemeText !== undefined) {
+      writeText('resource/clientscheme.res', setSchemeColor(schemeText, name, literal));
+    }
   };
+  const colorField = (key: string) => (
+    <ColorField
+      value={get(key) ?? ''}
+      onChange={(v) => set(key, v)}
+      scheme={scheme}
+      label={key}
+      onCreateSchemeColor={writeScheme}
+    />
+  );
+
+  const screenH = scene?.screen.h ?? 1080;
+  const scale = screenH / 480;
+  const parentRect = (node.parentId && scene?.nodes.find((n) => n.id === node.parentId)?.rect) || {
+    x: 0,
+    y: 0,
+    w: scene?.screen.w ?? 1920,
+    h: screenH,
+  };
+  const pin = pinOf(props);
 
   const field = (key: string) => {
     const lower = key.toLowerCase();
     const value = get(key) ?? '';
     let control: React.ReactNode;
+    let detail: string | undefined;
+    let detailNode: React.ReactNode;
     if (BOOL_KEYS.has(lower)) {
       control = (
         <Toggle
@@ -151,22 +149,13 @@ export default function Inspector() {
       );
     } else if (lower === 'font') {
       control = (
-        <SelectField
-          aria-label={key}
-          value={value.toLowerCase()}
-          onChange={(e) => set(key, scheme.fontNames.get(e.target.value) ?? e.target.value)}
-        >
-          {value && !scheme.fonts.has(value.toLowerCase()) ? (
-            <option value={value.toLowerCase()}>{value} ⚠</option>
-          ) : null}
-          {[...scheme.fontNames.entries()]
-            .sort((a, b) => a[1].localeCompare(b[1]))
-            .map(([k, name]) => (
-              <option key={k} value={k}>
-                {name}
-              </option>
-            ))}
-        </SelectField>
+        <FontField
+          value={value}
+          onChange={(v) => set(key, v)}
+          scheme={scheme}
+          screenH={screenH}
+          label={key}
+        />
       );
     } else if (lower === 'textalignment') {
       control = (
@@ -183,15 +172,24 @@ export default function Inspector() {
         </SelectField>
       );
     } else if (lower === 'border') {
+      const def = borderOf(scheme, value);
       control = (
-        <SelectField aria-label={key} value={value} onChange={(e) => set(key, e.target.value)}>
-          <option value="">{t('none', { defaultValue: '(none)' })}</option>
-          {[...scheme.borders.keys()].sort().map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
-          ))}
-        </SelectField>
+        <div className="min-w-0 space-y-1">
+          <SelectField
+            aria-label={key}
+            value={value.toLowerCase()}
+            onChange={(e) => set(key, e.target.value)}
+          >
+            <option value="">{t('none', { defaultValue: '(none)' })}</option>
+            {value && !def ? <option value={value.toLowerCase()}>{value} ⚠</option> : null}
+            {[...scheme.borders.keys()].sort().map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </SelectField>
+          {def ? <BorderSwatch border={def} scheme={scheme} /> : null}
+        </div>
       );
     } else if (lower.includes('color')) {
       control = colorField(key);
@@ -208,23 +206,55 @@ export default function Inspector() {
         </SelectField>
       );
     } else {
+      const isDim = lower === 'xpos' || lower === 'ypos' || lower === 'wide' || lower === 'tall';
+      const focusOn = () => setFocusProp({ nodeId: node.id, key: lower as 'xpos' });
       control = (
         <TextField
           aria-label={key}
           value={value}
           onChange={(e) => set(key, e.target.value)}
-          className={['xpos', 'ypos', 'wide', 'tall'].includes(lower) ? 'font-mono' : undefined}
+          className={isDim ? 'font-mono' : undefined}
           placeholder={LAYOUT.includes(key as never) ? '0' : undefined}
+          {...(isDim
+            ? {
+                onFocus: focusOn,
+                onBlur: () => setFocusProp(null),
+                onPointerEnter: focusOn,
+                onPointerLeave: () =>
+                  document.activeElement?.tagName !== 'INPUT' && setFocusProp(null),
+              }
+            : {})}
         />
       );
+      if (isDim) {
+        const e = explainDim(
+          lower as 'xpos',
+          value,
+          scale,
+          lower === 'xpos' || lower === 'wide' ? parentRect.w : parentRect.h,
+          pin && (lower === 'xpos' || lower === 'ypos') ? { sibling: pin.sibling } : undefined,
+        );
+        detail = e.text;
+      } else if (lower === 'labeltext' && value) {
+        const shown = substituteLabel(value, varsFromState(test), strings);
+        if (shown !== value) detail = `→ ${shown}`;
+      } else if (lower === 'image' && value) {
+        detailNode = <ImageThumb value={value} />;
+      }
     }
     return (
-      <div key={key} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-2">
-        <span className="truncate text-xs text-(--app-text-muted)" title={keyFor(key)}>
-          {key}
-          {keyFor(key) !== key ? <span className="text-(--app-text-dim)"> ·min</span> : null}
-        </span>
-        {control}
+      <div key={key} className="space-y-0.5">
+        <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-2">
+          <span className="truncate text-xs text-(--app-text-muted)" title={keyFor(key)}>
+            {key}
+            {keyFor(key) !== key ? <span className="text-(--app-text-dim)"> ·min</span> : null}
+          </span>
+          {control}
+        </div>
+        {detail ? (
+          <p className="ps-[7rem] text-[11px] leading-snug text-(--app-text-dim)">{detail}</p>
+        ) : null}
+        {detailNode ? <div className="ps-[7rem]">{detailNode}</div> : null}
       </div>
     );
   };
@@ -273,6 +303,11 @@ export default function Inspector() {
         <div className="flex flex-wrap items-center gap-1.5 pt-2">
           <Pill tone="accent">{node.control}</Pill>
           {node.isFrame ? <Pill>{t('frame', { defaultValue: 'frame' })}</Pill> : null}
+          {node.file === HUD_LAYOUT_FILE ? (
+            <Pill tone="info">
+              {t('from-hudlayout', { defaultValue: 'positioned by hudlayout.res' })}
+            </Pill>
+          ) : null}
           {!node.visible ? (
             <Pill tone="warning">{t('hidden', { defaultValue: 'hidden' })}</Pill>
           ) : null}

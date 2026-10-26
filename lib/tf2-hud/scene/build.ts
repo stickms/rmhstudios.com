@@ -107,16 +107,22 @@ export function imagePath(raw: string): string {
   return out.join('/').replace(/\.(vtf|vmt|png|tga|jpg)$/i, '');
 }
 
-function substitute(ctx: SceneContext, raw: string): string {
+/** Resolve `#Token` localisation and `%var%` substitution the way a label does. */
+export function substituteLabel(
+  raw: string,
+  vars: ReadonlyMap<string, string>,
+  strings: ReadonlyMap<string, string>,
+): string {
   let text = raw;
   if (text.startsWith('#')) {
     const key = text.slice(1).toLowerCase();
-    text = ctx.strings.get(key) ?? text.slice(1);
+    text = strings.get(key) ?? text.slice(1);
   }
-  return text.replace(
-    /%([A-Za-z0-9_]+)%/g,
-    (m, name: string) => ctx.vars.get(name.toLowerCase()) ?? m,
-  );
+  return text.replace(/%([A-Za-z0-9_]+)%/g, (m, name: string) => vars.get(name.toLowerCase()) ?? m);
+}
+
+function substitute(ctx: SceneContext, raw: string): string {
+  return substituteLabel(raw, ctx.vars, ctx.strings);
 }
 
 function parseAlignment(raw: string | undefined): { h: HAlign; v: VAlign } {

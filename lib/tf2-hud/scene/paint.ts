@@ -95,7 +95,8 @@ function drawText(g: CanvasRenderingContext2D, op: TextOp) {
   g.restore();
 }
 
-function drawBorder(g: CanvasRenderingContext2D, op: BorderOp) {
+/** Draw a border definition (used by scene painting and by the scheme's border swatches). */
+export function drawBorder(g: CanvasRenderingContext2D, op: BorderOp) {
   const { x, y, w, h } = op.rect;
   const sides = [
     ['left', op.border.left, op.colors.left],
@@ -271,7 +272,17 @@ export function paintScene(g: CanvasRenderingContext2D, scene: Scene, opts: Pain
   }
 }
 
+/** A measurement the inspector asks the preview to draw for the property being edited. */
+export interface GuideSpec {
+  node: PanelNode;
+  parent: PanelNode['rect'];
+  key: 'xpos' | 'ypos' | 'wide' | 'tall';
+  /** How the value is anchored: from the start, the end (`r`) or the centre (`c`). */
+  align: 'start' | 'end' | 'center';
+}
+
 export interface OverlayOptions {
+  guide?: GuideSpec;
   selected?: PanelNode;
   hover?: PanelNode;
   /** Scene pixels per CSS pixel, so handles keep a constant on-screen size. */
@@ -297,8 +308,83 @@ export function handlePoints(r: PanelNode['rect']): Record<HandleId, [number, nu
   };
 }
 
+function guideLabel(g: CanvasRenderingContext2D, text: string, x: number, y: number, k: number) {
+  g.save();
+  g.font = `${11 * k}px ui-monospace, Menlo, Consolas, monospace`;
+  const w = g.measureText(text).width + 8 * k;
+  const h = 16 * k;
+  g.fillStyle = 'rgb(255,140,40)';
+  g.fillRect(x - w / 2, y - h / 2, w, h);
+  g.fillStyle = 'rgb(20,10,0)';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(text, x, y + k * 0.5);
+  g.restore();
+}
+
+function paintGuide(g: CanvasRenderingContext2D, guide: GuideSpec, k: number) {
+  const { node, parent, key, align } = guide;
+  const r = node.rect;
+  g.save();
+  g.strokeStyle = 'rgb(255,140,40)';
+  g.fillStyle = 'rgb(255,140,40)';
+  g.lineWidth = k;
+  // The reference frame the value is measured against.
+  g.setLineDash([2 * k, 3 * k]);
+  g.globalAlpha = 0.6;
+  g.strokeRect(parent.x, parent.y, parent.w, parent.h);
+  g.globalAlpha = 1;
+  g.setLineDash([]);
+  const line = (x1: number, y1: number, x2: number, y2: number) => {
+    g.beginPath();
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+    g.stroke();
+  };
+  const cap = 4 * k;
+  if (key === 'xpos') {
+    const y = r.y + r.h / 2;
+    const x0 =
+      align === 'end'
+        ? parent.x + parent.w
+        : align === 'center'
+          ? parent.x + Math.trunc(parent.w / 2)
+          : parent.x;
+    line(x0, y, r.x, y);
+    line(x0, y - cap, x0, y + cap);
+    line(r.x, y - cap, r.x, y + cap);
+    guideLabel(g, `${Math.round(Math.abs(r.x - x0))} px`, (x0 + r.x) / 2, y, k);
+  } else if (key === 'ypos') {
+    const x = r.x + r.w / 2;
+    const y0 =
+      align === 'end'
+        ? parent.y + parent.h
+        : align === 'center'
+          ? parent.y + Math.trunc(parent.h / 2)
+          : parent.y;
+    line(x, y0, x, r.y);
+    line(x - cap, y0, x + cap, y0);
+    line(x - cap, r.y, x + cap, r.y);
+    guideLabel(g, `${Math.round(Math.abs(r.y - y0))} px`, x, (y0 + r.y) / 2, k);
+  } else if (key === 'wide') {
+    const y = r.y + r.h + 8 * k;
+    line(r.x, y, r.x + r.w, y);
+    line(r.x, y - cap, r.x, y + cap);
+    line(r.x + r.w, y - cap, r.x + r.w, y + cap);
+    guideLabel(g, `${Math.round(r.w)} px`, r.x + r.w / 2, y + 10 * k, k);
+  } else {
+    const x = r.x + r.w + 8 * k;
+    line(x, r.y, x, r.y + r.h);
+    line(x - cap, r.y, x + cap, r.y);
+    line(x - cap, r.y + r.h, x + cap, r.y + r.h);
+    guideLabel(g, `${Math.round(r.h)} px`, x + 24 * k, r.y + r.h / 2, k);
+  }
+  g.restore();
+}
+
 export function paintOverlay(g: CanvasRenderingContext2D, o: OverlayOptions): void {
   const k = o.pxPerCss;
+  if (o.guide) paintGuide(g, o.guide, k);
   if (o.hover && o.hover !== o.selected) {
     const r = o.hover.rect;
     g.save();
