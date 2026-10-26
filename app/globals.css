@@ -375,6 +375,13 @@
   --gel-mold: 1.15;
   --gel-feather: 3px;
   --gel-shoulder: 1.2;
+  /* The lens (docs/plasmatic-jelly-system.md §1.1, lib/liquid/glass/shader.ts): `--gel-dispersion` scales the
+     red-to-blue refraction spread against real crown glass (×8 makes the fringe ~2px at the steepest rim instead of
+     0.2px), `--gel-lens` scales the slab thickness the refraction travels, `--gel-reflect` the Fresnel environment
+     reflection on the shoulder. All three are free per pixel (no extra texture read). */
+  --gel-dispersion: 8;
+  --gel-lens: 1;
+  --gel-reflect: 1;
   /* Where the shader cannot draw the rim (an <input> holds no canvas; a surface past the rim budget), CSS molds it
      instead: the 1px Fresnel line softens into a `--gel-feather` glow, a field keeps only `--gel-field-line` of its
      border, and a soft `--gel-well-shade` falls inside its top lip, so it reads as pressed into the ground rather
@@ -1175,6 +1182,9 @@
   --gel-disperse-g: 0px;
   --gel-disperse-b: 0px;
   --gel-mold: 0;
+  --gel-dispersion: 1;
+  --gel-lens: 1;
+  --gel-reflect: 0;
   --gel-field-line: 100%;
   --gel-well-shade: transparent;
   --row-glow-strength: 34%;
