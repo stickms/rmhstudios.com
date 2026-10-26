@@ -381,6 +381,10 @@
      than outlined on it. */
   --gel-field-line: 40%;
   --gel-well-shade: rgba(16, 20, 36, 0.1);
+  /* How strong a dropdown row's hover glow is: the accent at this share, fading to nothing at the row's edges. Light
+     grounds (this :root default, light, sepia) take 10%: their accent is ink, and 20% of ink reads as a smudge, not a
+     glow. The dark themes restate 20%, and high contrast 34%. */
+  --row-glow-strength: 10%;
   /* The keyboard focus ring: a SOLID 2px outline in this colour, never the plasma glow. */
   --focus-ring: var(--site-accent);
   /* Mirrors of lib/jelly/tiers.ts — the TS constant is the source of truth and
@@ -1173,6 +1177,7 @@
   --gel-mold: 0;
   --gel-field-line: 100%;
   --gel-well-shade: transparent;
+  --row-glow-strength: 34%;
   --gel-feather: 0px;
   --gel-shoulder: 1;
   --plasma-wake: 0;
@@ -1239,6 +1244,7 @@
   --site-glass-saturate: 180%;
   --site-radius: 32px;
   --site-radius-sm: 24px;
+  --row-glow-strength: 20%;
   --site-shadow: 0 0 0 0 transparent;
   --site-shadow-sm: 0 0 0 0 transparent;
   --site-canvas:
@@ -1406,6 +1412,7 @@
   --site-glass-depth-sm: 0 0 0 0 transparent;
   --site-radius: 26px;
   --site-radius-sm: 20px;
+  --row-glow-strength: 20%;
   --site-canvas:
     radial-gradient(110% 85% at 12% -6%, rgba(70, 120, 220, 0.32), transparent 62%),
     radial-gradient(95% 78% at 94% 2%, rgba(90, 150, 255, 0.24), transparent 60%),
@@ -1502,6 +1509,7 @@
      same technical silhouette without coupling the theme to data-slot rules. */
   --site-radius: 24px;
   --site-radius-sm: 18px;
+  --row-glow-strength: 20%;
   --site-control-radius: 18px;
   --site-font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
   --site-font-body:
@@ -4908,6 +4916,30 @@ html.nav-pop .page-root > * {
   [data-evert~='over']::before {
     z-index: 3;
     background: var(--liquid-coat);
+  }
+
+  /* Dropdown rows are text, not bands. A menu, select or autocomplete row has no fill, edge or radius of its own;
+     hovering it (or moving the keyboard highlight onto it) wakes a gentle glow behind the text: a soft accent wash that
+     fades to nothing at the row's own edges (`closest-side`), so it never draws a rectangle against the panel. It is the
+     same state layer as above — an opacity transition, no keyframes, no shadow, no filter — and the text is never
+     the thing that glows. Destructive rows glow in the danger colour. Selected rows are marked by their accent text and
+     check, not by a fill. */
+  [data-slot='menu-item'][data-evert]::before,
+  [data-slot='select-item'][data-evert]::before,
+  [data-row-glow][data-evert]::before {
+    border-radius: 0;
+    background: radial-gradient(
+      ellipse closest-side at 50% 50%,
+      color-mix(in srgb, var(--site-accent) var(--row-glow-strength, 20%), transparent),
+      transparent
+    );
+  }
+  [data-slot='menu-item'][data-tone='danger'][data-evert]::before {
+    background: radial-gradient(
+      ellipse closest-side at 50% 50%,
+      color-mix(in srgb, var(--site-danger) var(--row-glow-strength, 20%), transparent),
+      transparent
+    );
   }
 }
 

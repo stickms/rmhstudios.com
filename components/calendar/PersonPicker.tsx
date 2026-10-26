@@ -73,7 +73,10 @@ export function PersonPicker({
             <li key={u.id}>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-site-text hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+                data-evert=""
+                data-row-glow=""
+                data-jelly="off"
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-site-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
                 onClick={() => {
                   onChange([
                     ...value,

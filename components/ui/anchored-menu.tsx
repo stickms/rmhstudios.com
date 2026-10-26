@@ -446,10 +446,9 @@ export function AnchoredMenu({
             data-motion="pop"
             data-state={state}
             onKeyDown={onPanelKeyDown}
-            // `py-1.5`, no side padding: the rows are flush bands and this
-            // panel (`overflow-y: auto`, anchored-menu.css) clips them, so the
-            // first and last row's highlight takes the panel's own curve
-            // (components/ui/menu.tsx) rather than repeating a corner of its own.
+            // `py-1.5`, no side padding: the rows are plain text with a hover
+            // glow (components/ui/menu.tsx), and this panel (`overflow-y: auto`,
+            // anchored-menu.css) supplies the only curve.
             className={cn('anchored-menu glass-overlay py-1.5', className)}
             style={style}
           >
