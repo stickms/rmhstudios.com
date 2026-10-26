@@ -13089,3 +13089,19 @@ model Tf2HudUserBlob {
   @@index([sha1])
   @@map("tf2_hud_user_blob")
 }
+
+/// Runtime feature flags: code ships dark, an admin releases it (optionally to a
+/// percentage of users), and turning it off is a row update rather than a rollback.
+/// Evaluated by lib/flags/evaluate.ts; managed through /api/admin/flags.
+model FeatureFlag {
+  key            String   @id @db.VarChar(64)
+  enabled        Boolean  @default(false)
+  /// 0-100, consulted only while enabled. Bucketed per (key, userId).
+  rolloutPercent Int      @default(100)
+  description    String   @default("") @db.VarChar(280)
+  updatedBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("feature_flag")
+}
