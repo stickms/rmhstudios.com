@@ -3,6 +3,8 @@ name: web-ci
 
 on:
   pull_request:
+  # GitHub merge queue: the exact merge result is tested before it lands on main.
+  merge_group:
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
@@ -39,7 +41,7 @@ jobs:
       - name: Classify the complete PR change
         id: classify
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node .github/scripts/classify-change.mjs
 
   typecheck:
@@ -125,10 +127,10 @@ jobs:
         run: pnpm exec tsx scripts/check-entry-composition.ts --strict
 
       - name: Archive checked frontend for nightly browser checks
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
         run: tar -cf checked-frontend.tar .output
       - name: Retain checked frontend
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: checked-frontend
@@ -207,7 +209,7 @@ jobs:
         run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
 
   eversion-changes:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -222,7 +224,7 @@ jobs:
           EVENT: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          if [ "$EVENT" != "pull_request" ]; then
+          if [ "$EVENT" != "pull_request" ] && [ "$EVENT" != "merge_group" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -412,7 +414,7 @@ jobs:
           EVENT: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          if [ "$EVENT" != "pull_request" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$EVENT" != "pull_request" ] && [ "$EVENT" != "merge_group" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
           changed=$(git diff --name-only HEAD^1 HEAD)
           if echo "$changed" | grep -Eq '^(lib/jelly/|lib/liquid/|app/jelly-[a-z-]+\.css$|app/liquid-glass\.css$|app/globals\.css$|components/ui/button\.tsx$|hooks/useLiquidInteractions\.ts$|hooks/useFluidDrag\.ts$|lib/fluid\.ts$|testing/e2e/(frame-budget|jelly-interaction|fouc-routes)\.mjs$|testing/e2e/lib/gpu\.mjs$|package\.json$|pnpm-lock\.yaml$|vite\.config\.[cm]?[jt]s$|\.github/workflows/web-ci\.yml$)'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
@@ -450,7 +452,7 @@ jobs:
 
   frame-budget:
     needs: build
-    if: github.event_name != 'pull_request' && !inputs.update-baselines
+    if: github.event_name != 'pull_request' && github.event_name != 'merge_group' && !inputs.update-baselines
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -518,7 +520,7 @@ jobs:
 
   migrations:
     needs: changes
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -527,12 +529,12 @@ jobs:
           fetch-depth: 0
       - name: New migrations must stay rollback-compatible (expand/contract)
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node .github/scripts/check-migrations-additive.mjs
 
   required-checks:
     needs: [changes, typecheck, test, build, audit, integration, jelly-e2e, migrations]
-    if: always() && github.event_name == 'pull_request'
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'merge_group')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -553,7 +555,7 @@ jobs:
 
   payload-diagnostics:
     needs: build
-    if: github.event_name != 'pull_request' && !inputs.update-baselines
+    if: github.event_name != 'pull_request' && github.event_name != 'merge_group' && !inputs.update-baselines
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

@@ -1,0 +1,30 @@
+# Weekly delivery metrics from the deploy workflow's own history; the numbers
+# land in the run summary. Read-only, no external service.
+name: dora-metrics
+
+on:
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: Window in days
+        default: '30'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+      - name: Compute delivery metrics
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DORA_DAYS: ${{ inputs.days || '30' }}
+        run: node .github/scripts/dora-metrics.mjs
