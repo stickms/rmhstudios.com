@@ -30,8 +30,9 @@ export function TimeRuler({ width, trackHeaderWidth }: TimeRulerProps) {
     const startBeat = scrollX / ppb;
     const endBeat = (scrollX + rulerWidth) / ppb;
 
-    // Background
-    ctx.fillStyle = 'var(--site-surface, #1a1a2e)';
+    // Background. A canvas cannot resolve `var()`, so read the token off the element.
+    ctx.fillStyle =
+      getComputedStyle(canvas).getPropertyValue('--app-surface').trim() || 'transparent';
     ctx.fillRect(0, 0, rulerWidth, 28);
 
     // Loop region
@@ -119,13 +120,13 @@ export function TimeRuler({ width, trackHeaderWidth }: TimeRulerProps) {
     <div className="flex h-7 shrink-0">
       {/* Track header spacer */}
       <div
-        className="shrink-0 border-b border-r border-site-border bg-site-surface"
+        className="shrink-0 border-b border-r border-(--app-border) bg-(--app-surface)"
         style={{ width: trackHeaderWidth }}
       />
       {/* Ruler canvas */}
       <canvas
         ref={canvasRef}
-        className="cursor-pointer border-b border-site-border"
+        className="cursor-pointer border-b border-(--app-border)"
         onClick={handleClick}
       />
     </div>

@@ -81,23 +81,23 @@ export function ArrangementView({ isMobile = false }: { isMobile?: boolean }) {
   // ─── Empty State ──────────────────────────────────────────────────────────
   if (tracks.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 text-site-text-muted">
+      <div className="flex h-full flex-col items-center justify-center gap-4 text-(--app-text-muted)">
         <Music4 className="h-16 w-16 opacity-20" />
         <div className="text-center">
-          <p className="text-sm font-medium text-site-text">{t("no-tracks-yet", { defaultValue: "No tracks yet" })}</p>
+          <p className="text-sm font-medium text-(--app-text)">{t("no-tracks-yet", { defaultValue: "No tracks yet" })}</p>
           <p className="mt-1 text-xs">{t("add-track-to-start", { defaultValue: "Add a track to start making music" })}</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => handleAddTrack('midi')}
-            className="flex items-center gap-2 rounded-site-sm bg-site-accent-dim px-4 py-2 text-sm text-site-accent hover:bg-site-accent-dim"
+            className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent-dim) px-4 py-2 text-sm text-(--app-accent) hover:bg-(--app-accent-dim)"
           >
             <Plus className="h-4 w-4" />
             {t("midi-track", { defaultValue: "MIDI Track" })}
           </button>
           <button
             onClick={() => handleAddTrack('audio')}
-            className="flex items-center gap-2 rounded-site-sm bg-site-accent-dim px-4 py-2 text-sm text-site-accent hover:bg-site-accent-dim"
+            className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent-dim) px-4 py-2 text-sm text-(--app-accent) hover:bg-(--app-accent-dim)"
           >
             <Plus className="h-4 w-4" />
             {t("audio-track", { defaultValue: "Audio Track" })}
@@ -143,7 +143,7 @@ export function ArrangementView({ isMobile = false }: { isMobile?: boolean }) {
         {/* Track lanes (scrollable) */}
         <div
           ref={lanesRef}
-          className="flex-1 overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-site-border"
+          className="flex-1 overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-(--app-border)"
           onScroll={handleScroll}
         >
           <div style={{ width: totalTimelineWidth, position: 'relative' }}>
@@ -158,7 +158,7 @@ export function ArrangementView({ isMobile = false }: { isMobile?: boolean }) {
 
             {/* Add track spacer in lanes area */}
             <div
-              className="flex items-center border-b border-site-border bg-site-bg-subtle"
+              className="flex items-center border-b border-(--app-border) bg-(--app-bg-subtle)"
               style={{ height: 32, width: totalTimelineWidth }}
             />
           </div>

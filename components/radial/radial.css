@@ -2248,6 +2248,21 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   opacity: 1;
   transform: none;
 }
+/* The overlay mounts with the open (RadialHub: a closed dialog left mounted
+   would hold Radix's Escape layer), so the veil and the foot are created
+   already open and have no closed style to transition FROM. These give them
+   one — the same closed base state — so the open is the one motion it was.
+   Browsers without `@starting-style` show them at once; the close is unchanged. */
+@starting-style {
+  .radial-hub[data-phase='open'] .radial-hub__veil {
+    clip-path: circle(0 at 50% 50%);
+    opacity: 0;
+  }
+  .radial-hub[data-phase='open'] .radial-hub__foot {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
 
 /* ── EVERTING — the hub hands the screen to the Globe Eversion ──────────────
    (docs/plans/2026-10-17-globe-eversion.md §9.2 step 3; amended 2026-10-19.)
