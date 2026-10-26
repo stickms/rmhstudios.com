@@ -17,14 +17,15 @@
  * adjacent buttons in the same toolbar did not look like the same control. So
  * the row is a primitive now, and the four decisions above are made once.
  *
- * ## The grammar is flush rows in one rounded panel
+ * ## The grammar is text rows in one rounded panel
  *
- * A dropdown is ONE rounded slab, not a stack of separate pills. Rows are
- * plain full-width bands (no radius of their own) and the panel — which clips
- * its contents (`overflow` on the panel, vertical padding `py-1.5`, no side
- * padding) — gives the first and last row's highlight its curve, so every row
- * takes the parent's shape instead of repeating a corner of its own. Row text
- * is inset `px-4` so it clears the curve. A row that sits OUTSIDE a clipping
+ * A dropdown is ONE rounded slab, not a stack of pills and not a stack of bands.
+ * A row has no fill, edge or radius of its own — it is its text (and icon) —
+ * and hovering it, or moving the keyboard highlight onto it, wakes a gentle
+ * glow behind the text: a soft accent wash that fades to nothing at the row's
+ * own edges (globals.css §7.3, `[data-slot='menu-item']::before`). The panel
+ * clips its contents (`overflow`, `py-1.5`, no side padding), and row text is
+ * inset `px-4` so it clears the panel's curve. A row that sits OUTSIDE a clipping
  * panel (a list inside a dialog) opts back in with its own `rounded-site-sm`.
  *
  * ## Height is a touch target, not a font size
@@ -97,9 +98,9 @@ const ROW_BASE = cn(
   // Focus is the highlight here. The menu moves real DOM focus between rows
   // (that is what `role="menu"` requires), so the focused row must read as the
   // highlighted one — otherwise a keyboard user is navigating an invisible
-  // cursor. The global focus ring still lands on top of it. The fill is the row's
+  // cursor. The global focus ring still lands on top of it. The glow is the row's
   // eversion layer (`data-evert`, globals.css §7.3): hover, press and keyboard
-  // focus turn it out of the row.
+  // focus wake it.
   'disabled:pointer-events-none disabled:opacity-50',
   // A disabled <a> is not a thing, so links opt out through the attribute the
   // menu's roving focus and the pointer both read.
@@ -163,8 +164,8 @@ export const MenuItem = React.forwardRef<HTMLElement, MenuItemProps>(function Me
     [MENU_ITEM_ATTR]: '',
     'data-slot': 'menu-item',
     'data-evert': '',
-    // Rows press as jelly controls (lib/jelly/physics.ts); the attribute is the kept alias.
-    'data-fluid-press': '',
+    // A row is text, not a body: no rim slab, no soft body, no haze floor. Only the hover glow (`data-evert`) wakes.
+    'data-jelly': 'off',
     'data-tone': tone,
     role: checked === undefined ? 'menuitem' : 'menuitemradio',
     ...(checked === undefined ? {} : { 'aria-checked': checked }),

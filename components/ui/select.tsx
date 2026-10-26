@@ -187,9 +187,9 @@ const TIER_CLASSES = {
     // radius on it does not read as "very rounded", it reads as a lozenge, with
     // the first and last rows sliced by the curve and a bulge of empty material
     // at each end. The panel takes the panel radius and CLIPS its rows (the
-    // base class carries `overflow-hidden py-1.5`): the rows are flush bands with
-    // no radius of their own, so the first and last highlight follows the
-    // panel's curve instead of repeating a pill inside it.
+    // base class carries `overflow-hidden py-1.5`): the rows are plain text with no
+    // fill or radius of their own, and hover wakes a soft glow behind the text
+    // (globals.css §7.3) instead of repeating a pill inside the panel.
     content: 'glass-overlay rounded-[var(--site-radius)] text-site-text',
     // Rows match the trigger, so the value you pick looks like the value you
     // then see sitting in the control.
@@ -277,6 +277,8 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
         data-slot="select-item"
         // Radix's roving highlight (`data-highlighted`) turns the row's eversion layer out (globals.css §7.3).
         data-evert=""
+        // A row is text, not a body: no rim slab, no soft body (lib/jelly/tiers.ts opt-out). Hover glows via `data-evert`.
+        data-jelly="off"
         className={cn(
           // The same row metrics as `MenuItem` (components/ui/menu.tsx), because
           // a select's list and an overflow menu are the same object to whoever
