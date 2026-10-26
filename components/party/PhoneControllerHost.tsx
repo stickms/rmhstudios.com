@@ -36,7 +36,7 @@ export function PhoneControllerHost({ sink }: { sink: ControllerSink }) {
   return (
     <div data-floating="feature-overlay" className="absolute bottom-3 left-3 z-30">
       {open ? (
-        <div className="glass-overlay w-56 space-y-2 rounded-site p-3 text-center text-site-text">
+        <div className="glass-overlay w-56 space-y-2 rounded-site p-4 text-center text-site-text">
           <button
             type="button"
             onClick={() => setOpen(false)}

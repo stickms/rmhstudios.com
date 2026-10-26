@@ -327,7 +327,7 @@ export function LightsOutGame() {
                 </div>
 
                 {/* Grid */}
-                <div className="glass-pane mx-auto w-full max-w-xs rounded-site p-4">
+                <div className="glass-pane mx-auto w-full max-w-xs rounded-site p-5">
                     {isTriangle ? (
                         <div className="flex flex-col items-center gap-2 py-2">
                             {grid.map((row, r) => (
@@ -575,7 +575,7 @@ export function LightsOutGame() {
                             exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                         >
-                            <ul className="glass-fill flex flex-col gap-2 rounded-site p-3">
+                            <ul className="glass-fill flex flex-col gap-2 rounded-site p-4">
                                 {pastPuzzles.map((p) => (
                                     <li
                                         key={p.dateKey}

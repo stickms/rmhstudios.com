@@ -242,7 +242,7 @@ function InterviewForm({
 
   return (
     <form
-      className="glass-pane mt-3 space-y-3 rounded-site p-4"
+      className="glass-pane mt-3 space-y-3 rounded-site p-5"
       onSubmit={(e) => {
         e.preventDefault();
         submit.mutate();

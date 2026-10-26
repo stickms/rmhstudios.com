@@ -9,11 +9,7 @@ import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 export const Route = createFileRoute('/api/admin/curated-builds/image/proxy')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
-        if (!session || !(session.user as any).isAdmin) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
+      GET: defineHandler({ auth: 'admin' }, async ({ request }) => {
         const url = new URL(request.url).searchParams.get('url');
         if (!url) {
           return Response.json({ error: 'Missing url parameter' }, { status: 400 });

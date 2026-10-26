@@ -215,8 +215,8 @@
    overridden below :root. */
 @theme inline {
   --default-transition-duration: calc(var(--site-transition-speed, 200ms) * 0.75);
-  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-timing-function: var(--ease-smooth);
+  --ease-out: var(--ease-smooth);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
@@ -337,7 +337,7 @@
   --site-jelly-plasma-b: #8fe0ee;
   --site-jelly-plasma: 0.25;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.9;
+  --site-jelly-quiet: 0.3;
   --site-jelly-haze-edge: 0.16;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -368,6 +368,33 @@
   --gel-disperse-r: -1.5px;
   --gel-disperse-g: 0px;
   --gel-disperse-b: 1.5px;
+  /* The molded rim (2026-10-25): the slab rises out of the ground instead of being outlined on it.
+     `--gel-mold` is the shoulder's depth (0 = the outlined rim), `--gel-feather` how far the outermost
+     pixels dissolve into the ground, `--gel-shoulder` widens the bevel for the rounded shoulder. Read
+     per surface by the rim shader (lib/liquid/glass/shader.ts "Molded shoulder"). */
+  --gel-mold: 1.15;
+  --gel-feather: 3px;
+  --gel-shoulder: 1.2;
+  /* The lens (docs/plasmatic-jelly-system.md §1.1, lib/liquid/glass/shader.ts): `--gel-dispersion` scales the
+     red-to-blue refraction spread against real crown glass (×8 makes the fringe ~2px at the steepest rim instead of
+     0.2px), `--gel-lens` scales the slab thickness the refraction travels, `--gel-reflect` the Fresnel environment
+     reflection on the shoulder. All three are free per pixel (no extra texture read). */
+  --gel-dispersion: 8;
+  --gel-lens: 1;
+  --gel-reflect: 1;
+  /* Where the shader cannot draw the rim (an <input> holds no canvas; a surface past the rim budget), CSS molds it
+     instead: the 1px Fresnel line softens into a `--gel-feather` glow, a field keeps only `--gel-field-line` of its
+     border, and a soft `--gel-well-shade` falls inside its top lip, so it reads as pressed into the ground rather
+     than outlined on it. */
+  --gel-field-line: 40%;
+  /* The same for a role's hairline where the shader draws no rim (past the budget, before admission): the share of
+     `--site-border` it keeps, so an unadmitted slab fades into the ground instead of snapping to an outline. */
+  --gel-edge-line: 55%;
+  --gel-well-shade: rgba(16, 20, 36, 0.1);
+  /* How strong a dropdown row's hover glow is: the accent at this share, fading to nothing at the row's edges. Light
+     grounds (this :root default, light, sepia) take 10%: their accent is ink, and 20% of ink reads as a smudge, not a
+     glow. The dark themes restate 20%, and high contrast 34%. */
+  --row-glow-strength: 10%;
   /* The keyboard focus ring: a SOLID 2px outline in this colour, never the plasma glow. */
   --focus-ring: var(--site-accent);
   /* Mirrors of lib/jelly/tiers.ts — the TS constant is the source of truth and
@@ -387,7 +414,12 @@
   --pulse-tau: 260ms; /* CHARGE.pulseTauMs */
   --space-4: 16px; /* JELLY_LAYOUT.minGapPx: bodies sit at least this far apart */
 
-  --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
+  /* The site's one tween curve (lib/motion.ts EASE.smooth): it leaves at zero speed, moves quickly through the middle
+     and lands softly, so a transition has no jolt at either end — and one that is interrupted and turned around starts
+     again from rest at the frame it was on, instead of snapping to full speed. The old curve,
+     var(--ease-smooth), covered 22% of its distance in the first 5% of its time. */
+  --ease-smooth: cubic-bezier(0.3, 0, 0.15, 1);
+  --ease-glass: var(--ease-smooth);
   --glass-bevel: 12px;
   --glass-glint-size: 320px;
   --glass-glint-opacity: 0.4;
@@ -421,8 +453,14 @@
   /* Elevation tokens — feather-soft Apple depth layering */
   --site-shadow: 0 0 0 0 transparent;
   --site-shadow-sm: 0 0 0 0 transparent;
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  /* The corner scale is concentric, in 8px steps: a card is 32px, and anything sitting 8px inside one (a button,
+     a field, a row, a menu item) is 24px, so the inner corner follows the outer one instead of fighting it. 24px is
+     a full pill up to 48px tall (every button, field and tab), and a softly rounded rectangle above that, so a tall
+     box never turns into a lozenge. Controls ARE the small radius: one number, so a field beside a button matches.
+     Panels and popups take the card radius, never the control's. A control's inline padding is about half its height
+     (button.tsx, input.tsx, badge.tsx, liquid-tabs.tsx), which keeps the text optically centred in its rounded ends. */
+  --site-radius: 32px;
+  --site-radius-sm: 24px;
   --site-control-radius: var(--site-radius-sm);
   /* Geist for everything, Geist Mono for eyebrows and data (CLAUDE.md
      "Identity"). After them, the system face and Inter cover the scripts
@@ -842,7 +880,7 @@
      One duration and one curve for the whole page, so every reveal in a
      scroll reads as the same hand. The curve is a long decelerate — it arrives
      rather than stops. Kept as tokens so a section cannot invent its own. */
-  --rebar-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --rebar-ease: var(--ease-smooth);
   --rebar-dur: 620ms;
   --rebar-dur-quick: 260ms;
 
@@ -932,8 +970,8 @@
   --site-glass-tint-strong: rgba(255, 255, 255, 0.52);
   --site-glass-rim: rgba(0, 0, 0, 0.12);
   --site-glass-rim-soft: rgba(0, 0, 0, 0.05);
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  --site-radius: 32px;
+  --site-radius-sm: 24px;
   /* Every layer must be a real <image>: this token is consumed as
      `background-image` by the aurora layer, where a bare colour would make the
      whole declaration invalid (and the canvas silently vanish). The flat white
@@ -964,7 +1002,7 @@
   --site-jelly-plasma-b: #8fe0ee;
   --site-jelly-plasma: 0.25;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.9;
+  --site-jelly-quiet: 0.3;
   --site-jelly-haze-edge: 0.16;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -996,7 +1034,7 @@
   --site-border: rgba(18, 30, 66, 0.1);
   --site-border-bright: rgba(18, 30, 66, 0.2);
   --site-text: #17203a;
-  --site-text-muted: rgba(38, 50, 82, 0.74);
+  --site-text-muted: rgba(38, 50, 82, 0.82);
   --site-text-dim: rgba(38, 50, 82, 0.68);
   --site-accent: #6a4fd0;
   --site-accent-fg: #ffffff;
@@ -1020,8 +1058,8 @@
   --site-glass-saturate: 150%;
   /* §4.35: bright rims on bright frost need less light to read as an edge. */
   --glass-glint-opacity: 0.5;
-  --site-radius: 16px;
-  --site-radius-sm: 10px;
+  --site-radius: 26px;
+  --site-radius-sm: 20px;
   --site-canvas:
     radial-gradient(110% 85% at 8% -5%, rgba(120, 165, 255, 0.28), transparent 60%),
     radial-gradient(95% 75% at 95% 2%, rgba(185, 150, 255, 0.24), transparent 60%),
@@ -1047,7 +1085,7 @@
   --site-jelly-plasma-b: #9fdcf4;
   --site-jelly-plasma: 0.5;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.75;
+  --site-jelly-quiet: 0.3;
   --site-jelly-haze-edge: 0.14;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -1106,9 +1144,9 @@
   --site-glass-depth-sm: none;
   --site-canvas: none;
   --site-border-width: 2px;
-  --site-radius: 12px;
-  --site-radius-sm: 8px;
-  --site-control-radius: 8px;
+  --site-radius: 20px;
+  --site-radius-sm: 14px;
+  --site-control-radius: 14px;
   --background: #000000;
   --foreground: #ffffff;
 
@@ -1146,6 +1184,16 @@
   --gel-disperse-r: 0px;
   --gel-disperse-g: 0px;
   --gel-disperse-b: 0px;
+  --gel-mold: 0;
+  --gel-dispersion: 1;
+  --gel-lens: 1;
+  --gel-reflect: 0;
+  --gel-field-line: 100%;
+  --gel-edge-line: 100%;
+  --gel-well-shade: transparent;
+  --row-glow-strength: 34%;
+  --gel-feather: 0px;
+  --gel-shoulder: 1;
   --plasma-wake: 0;
   --focus-ring: var(--site-accent);
 }
@@ -1181,8 +1229,8 @@
   --site-border: rgba(255, 255, 255, 0.12);
   --site-border-bright: rgba(255, 255, 255, 0.26);
   --site-text: #f5f5f7;
-  --site-text-muted: #a1a1a6;
-  --site-text-dim: #86868b;
+  --site-text-muted: #c2c2c8;
+  --site-text-dim: #9c9ca3;
   --site-accent: #2997ff;
   /* Near-black, not white: #ffffff on this blue is ~3.0:1, which failed on
      every accent-filled control in the theme — the active nav pill, the Post
@@ -1208,8 +1256,9 @@
   --site-glass-depth: 0 0 0 0 transparent;
   --site-glass-depth-sm: 0 0 0 0 transparent;
   --site-glass-saturate: 180%;
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
+  --site-radius: 32px;
+  --site-radius-sm: 24px;
+  --row-glow-strength: 20%;
   --site-shadow: 0 0 0 0 transparent;
   --site-shadow-sm: 0 0 0 0 transparent;
   --site-canvas:
@@ -1234,7 +1283,7 @@
   --site-jelly-plasma-b: #9b6bff;
   --site-jelly-plasma: 0.8;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.75;
+  --site-jelly-quiet: 0.25;
   --site-jelly-haze-edge: 0.04;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -1246,6 +1295,7 @@
   --gel-ink: var(--site-accent);
   --on-ink: var(--site-accent-fg);
   --gel-fresnel: rgba(255, 255, 255, 0.14);
+  --gel-well-shade: rgba(0, 0, 0, 0.5);
   --gel-specular: rgba(255, 255, 255, 0.85);
   --gel-edge-r: rgba(255, 96, 112, 0.22);
   --gel-edge-g: rgba(80, 220, 150, 0.1);
@@ -1266,7 +1316,7 @@
   --site-border: rgba(90, 62, 32, 0.18);
   --site-border-bright: rgba(90, 62, 32, 0.3);
   --site-text: #3a2e1e;
-  --site-text-muted: rgba(70, 54, 34, 0.74);
+  --site-text-muted: rgba(70, 54, 34, 0.82);
   --site-text-dim: rgba(70, 54, 34, 0.72);
   --site-accent: #a2592e;
   --site-accent-fg: #fff;
@@ -1289,8 +1339,8 @@
   --site-glass-saturate: 150%;
   /* §4.35: bright rims on bright frost need less light to read as an edge. */
   --glass-glint-opacity: 0.5;
-  --site-radius: 16px;
-  --site-radius-sm: 10px;
+  --site-radius: 26px;
+  --site-radius-sm: 20px;
   --site-canvas:
     radial-gradient(110% 85% at 10% -5%, rgba(220, 180, 120, 0.32), transparent 60%),
     radial-gradient(95% 78% at 94% 4%, rgba(210, 160, 90, 0.22), transparent 60%),
@@ -1315,7 +1365,7 @@
   --site-jelly-plasma-b: #eaa79e;
   --site-jelly-plasma: 0.5;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.75;
+  --site-jelly-quiet: 0.3;
   --site-jelly-haze-edge: 0.1;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -1347,8 +1397,8 @@
   --site-border: rgba(180, 205, 255, 0.14);
   --site-border-bright: rgba(180, 205, 255, 0.26);
   --site-text: #eaeef7;
-  --site-text-muted: rgba(202, 216, 245, 0.8);
-  --site-text-dim: rgba(202, 216, 245, 0.62);
+  --site-text-muted: rgba(208, 220, 246, 0.88);
+  --site-text-dim: rgba(202, 216, 245, 0.7);
   --site-accent: #5e9dff;
   --site-accent-fg: #001227;
   --site-accent-hover: #7db0ff;
@@ -1374,8 +1424,9 @@
   --site-glass-light: rgba(180, 210, 255, 0.14);
   --site-glass-depth: 0 0 0 0 transparent;
   --site-glass-depth-sm: 0 0 0 0 transparent;
-  --site-radius: 16px;
-  --site-radius-sm: 10px;
+  --site-radius: 26px;
+  --site-radius-sm: 20px;
+  --row-glow-strength: 20%;
   --site-canvas:
     radial-gradient(110% 85% at 12% -6%, rgba(70, 120, 220, 0.32), transparent 62%),
     radial-gradient(95% 78% at 94% 2%, rgba(90, 150, 255, 0.24), transparent 60%),
@@ -1398,7 +1449,7 @@
   --site-jelly-plasma-b: #47d1c4;
   --site-jelly-plasma: 0.8;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.75;
+  --site-jelly-quiet: 0.25;
   --site-jelly-haze-edge: 0.04;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -1410,6 +1461,7 @@
   --gel-ink: var(--site-accent);
   --on-ink: var(--site-accent-fg);
   --gel-fresnel: rgba(200, 220, 255, 0.18);
+  --gel-well-shade: rgba(0, 0, 0, 0.5);
   --gel-specular: rgba(225, 236, 255, 0.85);
   --gel-edge-r: rgba(255, 110, 140, 0.2);
   --gel-edge-g: rgba(80, 220, 190, 0.1);
@@ -1433,8 +1485,8 @@
   --site-border: rgba(178, 230, 255, 0.14);
   --site-border-bright: rgba(182, 239, 255, 0.36);
   --site-text: #f5f9ff;
-  --site-text-muted: rgba(222, 235, 248, 0.8);
-  --site-text-dim: rgba(207, 224, 242, 0.66);
+  --site-text-muted: rgba(226, 237, 249, 0.88);
+  --site-text-dim: rgba(207, 224, 242, 0.74);
   --site-accent: #76f7ff;
   --site-accent-fg: #031214;
   --site-accent-hover: #a1fbff;
@@ -1469,9 +1521,10 @@
 
   /* Tighter geometry and faster response give every tokenized primitive the
      same technical silhouette without coupling the theme to data-slot rules. */
-  --site-radius: 14px;
-  --site-radius-sm: 9px;
-  --site-control-radius: 9px;
+  --site-radius: 24px;
+  --site-radius-sm: 18px;
+  --row-glow-strength: 20%;
+  --site-control-radius: 18px;
   --site-font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
   --site-font-body:
     var(--font-geist), -apple-system, BlinkMacSystemFont, 'SF Pro Text', var(--font-inter),
@@ -1483,7 +1536,7 @@
   --site-press-duration: 180ms;
   --site-heading-transform: none;
   --site-letter-spacing: -0.035em;
-  --ease-glass: cubic-bezier(0.16, 1, 0.3, 1.18);
+  --ease-glass: cubic-bezier(0.3, 0, 0.15, 1.18);
 
   /* A subtle 64px technical grid sits behind asymmetric cyan/violet energy.
      Repeating gradients keep the pattern crisp at any viewport size. */
@@ -1524,7 +1577,7 @@
   --site-jelly-plasma-b: #c86bff;
   --site-jelly-plasma: 0.9;
   --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.75;
+  --site-jelly-quiet: 0.25;
   --site-jelly-haze-edge: 0.04;
   --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
@@ -1536,6 +1589,7 @@
   --gel-ink: var(--site-accent);
   --on-ink: var(--site-accent-fg);
   --gel-fresnel: rgba(191, 244, 255, 0.22);
+  --gel-well-shade: rgba(0, 0, 0, 0.5);
   --gel-specular: rgba(214, 250, 255, 0.9);
   --gel-edge-r: rgba(255, 90, 160, 0.22);
   --gel-edge-g: rgba(0, 255, 198, 0.1);
@@ -1724,7 +1778,7 @@ html:not(.app-route) .site-aurora::before {
      `.radial-backdrop__field` in components/radial/radial.css. Gate:
      lib/__tests__/static-backdrop.test.ts. */
   translate: var(--aurora-mx, 0px) var(--aurora-my, 0px);
-  transition: translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: translate 0.5s var(--ease-smooth);
 }
 
 /* Aurora layer 2 — the far field (§5.1). A depth sibling behind the near layer:
@@ -1750,7 +1804,7 @@ html:not(.app-route):not(.style-high-contrast) .site-aurora::after {
       transparent 70%
     );
   translate: calc(var(--aurora-mx, 0px) * -0.6) calc(var(--aurora-my, 0px) * -0.6);
-  transition: translate 0.9s cubic-bezier(0.22, 1, 0.36, 1); /* lazier trail */
+  transition: translate 0.9s var(--ease-smooth); /* lazier trail */
 }
 
 /* Low-end devices and high-contrast (canvas is `none` there) pay nothing for the
@@ -4279,7 +4333,7 @@ input[type='number'] {
 @layer base {
   html.media-reveal:not(.app-route)
     img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal]) {
-    transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 0.32s var(--ease-smooth);
   }
   html.media-reveal:not(.app-route)
     img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal]):not([data-loaded]) {
@@ -4318,7 +4372,7 @@ input[type='number'] {
   }
 }
 .page-root > * {
-  animation: page-enter 0.16s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: page-enter 0.16s var(--ease-smooth) backwards;
 }
 .page-root > [data-page-enter-complete],
 .page-root > [data-route-pending] {
@@ -4480,8 +4534,9 @@ html:not([data-navigated]) .page-root > * {
   --motion-out: 0.1s;
   --motion-bloom: 0.26s;
   --motion-collapse: 0.11s;
-  --motion-ease-in: cubic-bezier(0.16, 1, 0.3, 1);
-  --motion-ease-out: ease-in;
+  --motion-ease-in: var(--ease-smooth);
+  /* Smooth at both ends: a dismissal that ends at full speed reads as a cut. */
+  --motion-ease-out: cubic-bezier(0.45, 0, 0.55, 1);
   /* An exit that has a long way to travel (a phone sheet leaving through the
      bottom edge). `--motion-out` is right for a panel that fades where it
      stands; 0.1s across a whole screen height is a teleport, not a dismissal.
@@ -4876,6 +4931,30 @@ html.nav-pop .page-root > * {
     z-index: 3;
     background: var(--liquid-coat);
   }
+
+  /* Dropdown rows are text, not bands. A menu, select or autocomplete row has no fill, edge or radius of its own;
+     hovering it (or moving the keyboard highlight onto it) wakes a gentle glow behind the text: a soft accent wash that
+     fades to nothing at the row's own edges (`closest-side`), so it never draws a rectangle against the panel. It is the
+     same state layer as above — an opacity transition, no keyframes, no shadow, no filter — and the text is never
+     the thing that glows. Destructive rows glow in the danger colour. Selected rows are marked by their accent text and
+     check, not by a fill. */
+  [data-slot='menu-item'][data-evert]::before,
+  [data-slot='select-item'][data-evert]::before,
+  [data-row-glow][data-evert]::before {
+    border-radius: 0;
+    background: radial-gradient(
+      ellipse closest-side at 50% 50%,
+      color-mix(in srgb, var(--site-accent) var(--row-glow-strength, 20%), transparent),
+      transparent
+    );
+  }
+  [data-slot='menu-item'][data-tone='danger'][data-evert]::before {
+    background: radial-gradient(
+      ellipse closest-side at 50% 50%,
+      color-mix(in srgb, var(--site-danger) var(--row-glow-strength, 20%), transparent),
+      transparent
+    );
+  }
 }
 
 /* The ghost of the layer (lib/evert-auto.ts): for a control that cannot hold its own `::before` (a text field, a
@@ -5087,12 +5166,33 @@ html.nav-pop .page-root > * {
   }
 }
 
+/* WebKit cannot run a `linear()` timing function on the compositor: an animation
+   or transition on one is ticked on the main thread and capped at 30 fps even on
+   a 120 Hz display (WebKit bug 281429, "as designed" until bug 250970). So in
+   WebKit only — `font: -apple-system-body` is a WebKit-only value — the sampled
+   springs fall back to the closest cubic-bezier, which WebKit accelerates. The
+   durations stay the springs' settle times, so the curves front-load the travel
+   the way the springs do (their last third is sub-pixel); `snappy` and `pop`
+   keep their overshoot through a y > 1 control point. Chromium and Gecko
+   accelerate `linear()` and keep the exact springs. After every token it
+   overrides (the evert springs are declared above), before `perf-lite`, which
+   still wins. */
+@supports (font: -apple-system-body) {
+  :root {
+    --spring-smooth: var(--ease-smooth);
+    --spring-snappy: cubic-bezier(0.34, 1.4, 0.64, 1);
+    --spring-sheet: var(--ease-smooth);
+    --evert-ease: var(--ease-smooth);
+    --evert-ease-pop: cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+}
+
 /* perf-lite: one short tween instead of the sampled settle; the focus ring simply lands. */
 html.perf-lite {
   --evert-in: 0.16s;
-  --evert-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --evert-ease: var(--ease-smooth);
   --evert-pop-in: 0.16s;
-  --evert-ease-pop: cubic-bezier(0.22, 1, 0.36, 1);
+  --evert-ease-pop: var(--ease-smooth);
 }
 html.perf-lite :focus-visible {
   animation: none;
@@ -5201,7 +5301,7 @@ html.nav-restoring .feed-card-cv {
 }
 .content-item-enter,
 .feed-item-enter {
-  animation: content-item-enter 0.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: content-item-enter 0.2s var(--ease-smooth) backwards;
 }
 
 /* ─── Skeleton shimmer ───────────────────────────────────────────────────
@@ -5343,7 +5443,7 @@ body {
 [data-slot='card'],
 .feed-card-cv > :first-child {
   transition:
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 240ms var(--ease-smooth),
     border-color 180ms ease,
     box-shadow 240ms ease;
 }
@@ -5564,7 +5664,7 @@ body {
      whole `translate3d()`. So this shape has been sitting still since it
      shipped; it moves now. */
   transform: translate3d(0, calc(var(--spatial-scroll-y, 0px) * 0.08), 0) rotate(11deg);
-  transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 800ms var(--ease-smooth);
 }
 
 .spatial-design-hero__art span {
@@ -5579,7 +5679,7 @@ body {
   opacity: 0.72;
   /* Same correction as the shape above. */
   transform: translate3d(0, calc(var(--spatial-scroll-y, 0px) * -0.035), 0);
-  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 900ms var(--ease-smooth);
 }
 
 .spatial-design-hero__copy {
@@ -5724,8 +5824,8 @@ body {
   opacity: 0;
   transform: translateY(18px);
   transition:
-    opacity 700ms cubic-bezier(0.22, 1, 0.36, 1) var(--spatial-delay, 0ms),
-    transform 700ms cubic-bezier(0.22, 1, 0.36, 1) var(--spatial-delay, 0ms);
+    opacity 700ms var(--ease-smooth) var(--spatial-delay, 0ms),
+    transform 700ms var(--ease-smooth) var(--spatial-delay, 0ms);
 }
 
 [data-animate] [data-spatial-reveal][data-visible] {

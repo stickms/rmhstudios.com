@@ -361,7 +361,10 @@ describe('anon-html-cache — the allowlist matches the route tree', () => {
 
   /** A route file's URL path, by TanStack's file-naming rules. */
   function urlPathFor(file: string): string | null {
-    let rel = file.slice(ROUTES_DIR.length + 1).replace(/\.tsx$/, '');
+    let rel = file
+      .slice(ROUTES_DIR.length + 1)
+      .replaceAll('\\', '/')
+      .replace(/\.tsx$/, '');
     if (rel === '__root' || rel === '_site') return null;
     rel = rel.split('[.]').join(ESCAPED_DOT);
     const segments = rel
@@ -503,7 +506,10 @@ describe('no static-asset cache rule may capture an HTML route', () => {
       'utf8',
     );
     // The heredoc body is real JSON once the shell quoting is stripped.
-    const body = script.split("read -r -d '' BODY <<'JSON' || true\n")[1]?.split('\nJSON')[0];
+    const body = script
+      .replaceAll('\r\n', '\n')
+      .split("read -r -d '' BODY <<'JSON' || true\n")[1]
+      ?.split('\nJSON')[0];
     return JSON.parse(body ?? '{"rules":[]}').rules;
   })();
 
@@ -526,7 +532,8 @@ describe('no static-asset cache rule may capture an HTML route', () => {
     for (const rule of rules.filter((r) => !isHtmlRule(r))) {
       for (const prefix of prefixesOf(rule.expression)) {
         for (const path of CACHEABLE_ANON_PATHS) {
-          if (path.startsWith(prefix)) collisions.push(`${rule.description}: "${prefix}" ⊃ ${path}`);
+          if (path.startsWith(prefix))
+            collisions.push(`${rule.description}: "${prefix}" ⊃ ${path}`);
         }
       }
     }
@@ -583,7 +590,10 @@ describe('no static-asset cache rule may capture an HTML route', () => {
       join(process.cwd(), 'deploy/apply-cloudflare-cache-rules.sh'),
       'utf8',
     );
-    const body = script.split("read -r -d '' BODY <<'JSON' || true\n")[1]?.split('\nJSON')[0];
+    const body = script
+      .replaceAll('\r\n', '\n')
+      .split("read -r -d '' BODY <<'JSON' || true\n")[1]
+      ?.split('\nJSON')[0];
     const parsed = JSON.parse(body ?? '{"rules":[]}').rules as {
       description: string;
       action_parameters?: {
@@ -629,7 +639,7 @@ describe('failed /assets lookups are never cacheable', () => {
 
   const IMMUTABLE = 'public, max-age=31536000, immutable';
 
-  it('replaces the route rule\'s immutable year with no-store on a 404 chunk', () => {
+  it("replaces the route rule's immutable year with no-store on a 404 chunk", () => {
     // Observed in production: a deleted chunk answered 404 text/html with this
     // header and Cloudflare cached it (MISS then HIT, rising Age).
     const h = run('/assets/GameErrorBoundary-x86ofMTg.js', 404, IMMUTABLE);
@@ -637,15 +647,15 @@ describe('failed /assets lookups are never cacheable', () => {
   });
 
   it('also covers 5xx under /assets/', () => {
-    expect(run('/assets/index-abc.js', 500, IMMUTABLE, 'application/json').get('cache-control')).toBe(
-      'no-store',
-    );
+    expect(
+      run('/assets/index-abc.js', 500, IMMUTABLE, 'application/json').get('cache-control'),
+    ).toBe('no-store');
   });
 
   it('leaves a successful chunk immutable', () => {
-    expect(run('/assets/index-abc.js', 200, IMMUTABLE, 'text/javascript').get('cache-control')).toBe(
-      IMMUTABLE,
-    );
+    expect(
+      run('/assets/index-abc.js', 200, IMMUTABLE, 'text/javascript').get('cache-control'),
+    ).toBe(IMMUTABLE);
   });
 
   it('leaves non-asset 404s alone', () => {

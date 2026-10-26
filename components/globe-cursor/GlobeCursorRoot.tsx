@@ -1,6 +1,8 @@
 'use client';
 
 import { Suspense, lazy, useEffect, useState } from 'react';
+import { useLocation } from '@tanstack/react-router';
+import { isNativeMaterialRoute } from '@/lib/native-material-routes';
 import { useGlobeCursorStore } from '@/stores/globeCursorStore';
 
 /**
@@ -20,6 +22,7 @@ export function GlobeCursorRoot() {
   const hydrated = useGlobeCursorStore((s) => s.hydrated);
   const enabled = useGlobeCursorStore((s) => s.settings.enabled);
   const [fine, setFine] = useState(false);
+  const { pathname } = useLocation();
 
   useEffect(() => {
     hydrate();
@@ -31,7 +34,8 @@ export function GlobeCursorRoot() {
     return () => mq.removeEventListener('change', onChange);
   }, [hydrate]);
 
-  if (!hydrated || !enabled || !fine) return null;
+  // Some apps (the TF2 HUD Editor) use the plain system cursor.
+  if (!hydrated || !enabled || !fine || isNativeMaterialRoute(pathname)) return null;
   return (
     <Suspense fallback={null}>
       <GlobeCursor />

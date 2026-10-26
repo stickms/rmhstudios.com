@@ -10,8 +10,8 @@ the five section plans beside it hold the derivations. Where this file and the c
 disagree, the code (and its tests) win and this file is the bug.
 
 **Unified design.** The material is the overhaul above **plus** the owner's #989 spec
-layered on top of it: dormant plasma that wakes on hover, an RGB-led refracting edge with
-a Fresnel line and no gloss band, a liquid-glass **lens dent** with a light dot that
+layered on top of it: dormant plasma that wakes on hover, a molded RGB-led refracting edge
+(a lit shoulder rising from the ground, no hairline) and no gloss band, a liquid-glass **lens dent** with a light dot that
 slides with the pointer, and electric **charge** that hops on a click, breaks down small
 gaps and attracts neighbours by Coulomb's law. The short statement every agent reads is
 the "Design system: Plasmatic Jelly" section of [`CLAUDE.md`](../CLAUDE.md); this file is
@@ -106,13 +106,13 @@ box (`AMBIENT_BOUNDS.maxOverdrawPx`, the focus ring's offset).
 Read a surface from the inside out. Each layer is drawn by a shared service and tuned
 by tokens; no component paints one.
 
-| #   | Layer               | What it is                                                                                                                                                                                                                        | Drawn by                                                        | Tokens                                                   |
-| --- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------- |
-| 1   | **Gel**             | Hazy, translucent body that darkens slightly toward its base. The primary action is ink gel.                                                                                                                                      | CSS gel layers (`app/jelly-material.css`), rim shader           | `--gel-body` → `--gel-depth`; `--gel-ink`, `--on-ink`    |
-| 2   | **Haze**            | Always-moving, low-contrast flow: currents, eddies, faint plasma at the crests. Interior damped behind text (≤ 12 px/s, features ≥ 120 px).                                                                                       | `haze-shader.ts` (slots) or `.jelly-flow` carriers              | `--site-jelly-*`, `--site-jelly-quiet`                   |
-| 3   | **Plasma**          | A core and filaments clipped **inside** the gel, invisible at rest (`PLASMA.rest` = 0). Hover wakes it to `PLASMA.wake`; press, focus and a click take it to 1; a click's charge rings through it. Plasma never draws an outline. | engine (`jelly-glsl.ts`), level from physics via `plasma:level` | `--plasma-wake`, `--pulse-speed`, `--pulse-tau`          |
-| 4   | **Edge refraction** | The refracting, lit rim with a soft bevel band just inside it carrying a distinct R/G/B split — red toward the top-left light, blue away. The RGB split leads; white is secondary. Plus a 1 px Fresnel edge.                      | engine (`shader.ts`, `jelly-glsl.ts`), CSS rim in the fallback  | `--gel-bevel`, `--gel-disperse-r/-g/-b`, `--gel-fresnel` |
-| 5   | **No gloss**        | No broad gloss band or glint across the face. Shine lives at the edges and in the dent (§3.1).                                                                                                                                    | —                                                               | —                                                        |
+| #   | Layer               | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Drawn by                                                        | Tokens                                                                                                                                                       |
+| --- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **Gel**             | Hazy, translucent body that darkens slightly toward its base. The primary action is ink gel.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | CSS gel layers (`app/jelly-material.css`), rim shader           | `--gel-body` → `--gel-depth`; `--gel-ink`, `--on-ink`                                                                                                        |
+| 2   | **Haze**            | Always-moving, low-contrast flow: currents, eddies, faint plasma at the crests. Interior damped behind text (≤ 12 px/s, features ≥ 120 px).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `haze-shader.ts` (slots) or `.jelly-flow` carriers              | `--site-jelly-*`, `--site-jelly-quiet`                                                                                                                       |
+| 3   | **Plasma**          | A core and filaments clipped **inside** the gel, invisible at rest (`PLASMA.rest` = 0). Hover wakes it to `PLASMA.wake`; press, focus and a click take it to 1; a click's charge rings through it. Plasma never draws an outline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | engine (`jelly-glsl.ts`), level from physics via `plasma:level` | `--plasma-wake`, `--pulse-speed`, `--pulse-tau`                                                                                                              |
+| 4   | **Edge refraction** | The refracting, lit rim with a soft bevel band just inside it carrying a distinct R/G/B split — red toward the top-left light, blue away. The RGB split leads; white is secondary. **Molded:** the slab rises from the ground over a widened shoulder, lit toward the light and shadowed away from it, with a feathered silhouette and no hairline; the 1 px Fresnel edge returns only where the mold is off. **The lens:** each of the three scene samples uses its own wavelength's index (N-BK7), spread by `--gel-dispersion` × crown glass; the refracted picture is shown, not buried under tint, haze or shadow; Fresnel-weighted environment reflection (`--gel-reflect`) mirrors a soft studio off the bevel normal. | engine (`shader.ts`, `jelly-glsl.ts`), CSS rim in the fallback  | `--gel-bevel`, `--gel-disperse-r/-g/-b`, `--gel-fresnel`, `--gel-mold`, `--gel-feather`, `--gel-shoulder`, `--gel-dispersion`, `--gel-lens`, `--gel-reflect` |
+| 5   | **No gloss**        | No broad gloss band or glint across the face. Shine lives at the edges and in the dent (§3.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | —                                                               | —                                                                                                                                                            |
 
 The plasma level is an event, not a style: physics emits `plasma:level { el, level }` on
 the bus as the pointer wakes, presses and leaves a body; the engine eases the drawn level
@@ -120,26 +120,64 @@ toward it over `PLASMA.easeMs`, and the arcs read it as charge. The plasma colou
 the accent (`--site-accent`); the haze's second plasma hue only appears inside the gel,
 never as UI colour.
 
+### 1.2 The lens: what it costs, and why it is safe on every engine (2026-10-26)
+
+The rim shader's refraction, wavelength dispersion and reflection add **no texture read and no bandwidth**: the refracted
+band still reads the page snapshot exactly three times per pixel (one per wavelength), and the reflection is arithmetic.
+What the lens _removes_ pays for what it adds:
+
+- **The deep interior is skipped** (nothing is drawn there) in a nested `if`/`else` block. It must stay nested: a SIMD
+  rasteriser (SwiftShader, llvmpipe) keeps executing straight-line code after a masked `return` for the whole pixel
+  group, but skips a block no lane enters.
+- **The edge gradient is analytic** (`sdGrad` in `jelly-glsl.ts`), not a four-evaluation central difference — cheaper,
+  and exact where a corner arc meets a straight edge.
+- **Constant-exponent `pow()` is repeated squaring** (`pw70/pw80/pw120`), the dearest instruction on a CPU rasteriser.
+
+Measured on the identical draw (the real `GlassRenderer`, same inputs, `readPixels`-synchronised), old → new, ms per
+draw, software GL: llvmpipe/Firefox — lit-only 900×340 card 1.96 → 0.79, refracting card 2.25 → 1.63, pane 1.04 → 0.79,
+bar 3.42 → 2.83; WebKitGTK — card 2.25 → 0.96 (lit-only 2.04 → 0.83), button 0.38 → 0.25; SwiftShader/Chromium — 5–20%
+faster, never slower. `lib/liquid/glass/__tests__/jelly-policy.test.ts` pins the three-sample budget and the nested
+interior block, so a change that adds a texture read or flattens the skip fails the build.
+
+The smoothness comes from the geometry, not from filtering: a quartic squircle bevel (C3 against the flat interior) with
+a smoothly saturating slope instead of a clamp, C2 `sstep` fades, and ±½ LSB interleaved-gradient-noise dither so the
+shoulder cannot band on an 8-bit canvas.
+
 ## 2. The ambient clock and the idle policy (R7)
 
 The owner's brief is that jelly **always** has underlying motion. The engine's ambient
 clock therefore never freezes while someone could be looking:
 
-| State                                                                                                              | Clock                                        |
-| ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
-| engaged (input within the last 20 s)                                                                               | tier clock: 30 Hz (15 Hz handheld)           |
-| idle (`IDLE_AFTER_MS` = 20 s without input)                                                                        | floor: 12 Hz (8 Hz handheld) — **no freeze** |
-| `jellyMotion = calm`                                                                                               | ≤ 12 Hz, amplitude × 0.4, slots halved       |
-| hidden tab · unfocused window · scroll in flight · nothing hazy on screen · degraded tier · `still` · game playing | **0** — no loop at all                       |
+| State                                                                                                              | Clock                                         |
+| ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| engaged (input within the last 20 s)                                                                               | tier clock: 60 Hz (30 Hz handheld)            |
+| idle (`IDLE_AFTER_MS` = 20 s without input)                                                                        | floor: 30 Hz (15 Hz handheld) — **no freeze** |
+| `jellyMotion = calm`                                                                                               | ≤ 12 Hz, amplitude × 0.4, slots halved        |
+| hidden tab · unfocused window · scroll in flight · nothing hazy on screen · degraded tier · `still` · game playing | **0** — no loop at all                        |
 
 Between ticks the engine sleeps on a timer, not on a spinning rAF: the timer wakes the
 engine's driver on the shared frame loop (§8.1), which draws at most six due surfaces with
 one shared `uTime` and then lets the driver sleep again.
 
+**2026-10-25: the clock doubled (30/12 → 60/30 Hz, 15/8 → 30/15 handheld).** The owner asked
+for "zero lag and as much fps as possible". What made it affordable: rims and haze draw in a
+worker (`lib/liquid/glass/glass.worker.ts`; the engine still makes every decision — which
+surfaces, when, light, dent, lattice, plasma — and posts each frame's draws, which the worker
+coalesces per canvas so a slow GPU drops stale frames instead of queueing them), and there each
+frame reaches its canvas by `transferToImageBitmap()` → `bitmaprenderer` instead of a
+`drawImage` that made the main thread wait for the GPU. That wait was worst in Firefox, where
+WebGL runs in a separate GPU process: hovering across eight cards cost 26 ms of main thread a
+frame (37 fps, governor at its last step) and costs 0.7 ms (59 fps) from the worker. Engines
+without a worker-capable `OffscreenCanvas` keep the main-thread copy path
+(`renderer.ts` "Handing a frame over").
+The governor walks the clock back to 30 Hz at its first step, so a
+machine that cannot hold 60 — software GL, Safari Low Power Mode, Chrome Energy Saver (both
+cap rendering at 30 fps) — settles where it can instead of missing every other tick.
+
 **Audit reversal, recorded deliberately.** The 2026-10-08 performance audit set the
 "page at rest" frame limit to 2 fps and the backdrop went fully still because of it.
 R7 reverses that limit for the jelly material: the rest limit in `frame-budget.mjs`
-becomes **13 fps** (the 12 Hz floor + 1). The CPU target at rest stays **≤ 250 ms/s** on
+becomes **31 fps** (the 30 Hz floor + 1; it was 13 fps over the original 12 Hz floor). The CPU target at rest stays **≤ 250 ms/s** on
 `/` (desktop; ≤ 200 ms/s handheld; the 2026-10-08 failure was 1020 ms/s). What did
 **not** change: the backdrop (aurora, ring field) stays completely still
 (`static-backdrop.test.ts`) — jelly moves, the room does not — and no site CSS may add a
@@ -147,9 +185,9 @@ free-standing `infinite` animation outside `.jelly-flow`.
 
 **The governor** (`lib/jelly/governor.ts`) is the battery and thermal answer. The engine
 feeds it each tick's cost, interval and the clock that tick ran at; after a 30-tick warm-up,
-a 2 s window whose p90 cost exceeds 6 ms (8 ms handheld; the cost includes the WebGL → 2D copies) or whose p90 interval exceeds 1.5×
-the period of the clock actually running (the 12 Hz idle floor is on time at 83 ms) takes one
-step down: clock 30 → 20 Hz · slots halved · carriers halved · ambient arcs off · haze at
+a 2 s window whose p90 cost exceeds 4 ms (8 ms handheld) or whose p90 interval exceeds 1.5×
+the period of the clock actually running (the 30 Hz idle floor is on time at 33 ms) takes one
+step down: clock 60 → 30 Hz · slots halved · carriers halved · ambient arcs off · haze at
 0.125 scale · floor clock 6 Hz (the ladder never freezes the haze). Downscale only, one step per window, reset on route change. The
 tier itself never flips on a frame-rate reading.
 
@@ -293,9 +331,9 @@ table):
 
 | Tier                                   | Rims | Haze slots | Carriers | Clock / idle | Bodies    | Lattices | Ambient arcs | Click bolts |
 | -------------------------------------- | ---- | ---------- | -------- | ------------ | --------- | -------- | ------------ | ----------- |
-| `full` (fine pointer)                  | 24   | 8          | 24       | 30 / 12 Hz   | 12        | 8        | ≥ 2 s apart  | 3           |
-| `coarse`                               | 16   | 6          | 16       | 30 / 12 Hz   | 8         | 6        | ≥ 2 s apart  | 2           |
-| `handheld` (coarse, ≤ 1024 px)         | 10   | 4          | 8        | 15 / 8 Hz    | 6         | 4        | ≥ 4 s apart  | 1           |
+| `full` (fine pointer)                  | 24   | 8          | 24       | 60 / 30 Hz   | 12        | 8        | ≥ 2 s apart  | 3           |
+| `coarse`                               | 16   | 6          | 16       | 60 / 30 Hz   | 8         | 6        | ≥ 2 s apart  | 2           |
+| `handheld` (coarse, ≤ 1024 px)         | 10   | 4          | 8        | 30 / 15 Hz   | 6         | 4        | ≥ 4 s apart  | 1           |
 | `lite` (`perf-lite`)                   | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
 | `off` (degraded)                       | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
 | game playing (`html[data-game-state]`) | 2    | 0          | 0        | 0            | 0         | 0        | off          | 0           |
@@ -449,6 +487,15 @@ dent and the rubber band need it — so there is no `overflow: hidden` directly 
 Cards use `--site-radius`, controls `--site-radius-sm`. Game play-fields are
 `data-jelly-zone="playfield"` (excluded); ambient motion and arcs stop while a game is
 playing.
+
+**Nested bodies.** A body's molded shoulder may reach only as far as `roomFor(padding,
+childInset)` allows (`lib/liquid/glass/policy.ts`): inside the host's own padding when it
+has any (a full-bleed media card keeps its whole shoulder over the media), and
+`NEST_GAP` (2 px) short of the nearest nested body, never thinner than `BEVEL_MIN`
+(3 px). The engine measures the insets with the rect read it already does
+(`fitNested`), with `ROOM_HYSTERESIS_PX` so a breathing card does not re-size its
+shoulder. Two rims therefore never stack on one line: a button in a card or a capsule in
+its track molds out of its parent instead of overlapping its edge.
 
 **Identity.** Silent, sleek, frontier AI: calm, never busy. One electric accent
 (`--site-accent`), which is also the plasma colour; no gradients on the ground, no neon or

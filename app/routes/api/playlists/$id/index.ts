@@ -32,11 +32,14 @@ export const Route = createFileRoute('/api/playlists/$id/')({
         },
       ),
 
-      DELETE: defineHandler({}, async ({ params, session }) => {
-        const ok = await deletePlaylist(params.id, session.user.id);
-        if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
-        return Response.json({ success: true });
-      }),
+      DELETE: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:playlists/:id/index' } },
+        async ({ params, session }) => {
+          const ok = await deletePlaylist(params.id, session.user.id);
+          if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
+          return Response.json({ success: true });
+        },
+      ),
     },
   },
 });

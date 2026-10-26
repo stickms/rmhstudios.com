@@ -7,10 +7,11 @@ import {
   readFileSync,
   writeFileSync,
   existsSync,
+  rmSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { dirname, join, resolve } from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { SeriesRow } from '../alarm-rules';
 import { guardVerdict } from '../post-deploy';
 
@@ -65,39 +66,69 @@ describe('guardVerdict', () => {
   });
 });
 
+const tempDirectories: string[] = [];
+afterEach(() => {
+  for (const dir of tempDirectories.splice(0)) rmSync(dir, { recursive: true, force: true });
+});
+const shellPath = (value: string) =>
+  value
+    .replaceAll('\\', '/')
+    .replace(/^([A-Za-z]):/, (_, drive: string) => '/' + drive.toLowerCase());
+const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
+
 describe('post-deploy-guard.sh', () => {
   const SCRIPT = resolve(__dirname, '../../../deploy/post-deploy-guard.sh');
 
   function harness(verdicts: string[], headAfter?: { at: number; sha: string }) {
     const dir = mkdtempSync(join(tmpdir(), 'guard-'));
+    tempDirectories.push(dir);
     mkdirSync(join(dir, 'deploy'));
+    mkdirSync(join(dir, 'ledger'));
+    writeFileSync(
+      join(dir, 'ledger/live.json'),
+      JSON.stringify({ id: 'release-current', sha: 'abc1234' }),
+    );
+    copyFileSync(
+      resolve(__dirname, '../../../deploy/release-state.mjs'),
+      join(dir, 'deploy/release-state.mjs'),
+    );
     mkdirSync(join(dir, 'bin'));
     copyFileSync(SCRIPT, join(dir, 'deploy/post-deploy-guard.sh'));
     const stub = (path: string, body: string) => {
-      writeFileSync(path, `#!/usr/bin/env bash\n${body}\n`);
+      writeFileSync(path, `#!/bin/bash\n${body}\n`);
       chmodSync(path, 0o755);
     };
     writeFileSync(join(dir, 'verdicts'), verdicts.join('\n') + '\n');
     stub(
       join(dir, 'bin/curl'),
-      `n=$(cat ${dir}/n 2>/dev/null || echo 0); n=$((n+1)); echo $n > ${dir}/n; sed -n "\${n}p" ${dir}/verdicts`,
+      `n=$(cat "$TEST_ROOT/n" 2>/dev/null || echo 0); n=$((n+1)); echo $n > "$TEST_ROOT/n";
+       ${headAfter ? `[ "$n" -ge ${headAfter.at} ] && printf '%s' '{"id":"release-new","sha":"${headAfter.sha}"}' > "$TEST_ROOT/ledger/live.json";` : ''}
+       sed -n "\${n}p" "$TEST_ROOT/verdicts"`,
     );
-    stub(
-      join(dir, 'bin/git'),
-      `n=$(cat ${dir}/n 2>/dev/null || echo 0); ${headAfter ? `[ "$n" -ge ${headAfter.at} ] && { echo ${headAfter.sha}; exit 0; };` : ''} echo abc1234`,
-    );
-    stub(join(dir, 'deploy/oncall-send.sh'), `echo "send $*" >> ${dir}/log`);
+    stub(join(dir, 'deploy/oncall-send.sh'), 'echo "send $*" >> "$TEST_ROOT/log"');
     stub(
       join(dir, 'deploy.sh'),
-      `echo "deploy $* POST_DEPLOY_GUARD=$POST_DEPLOY_GUARD ALLOW_OLDER_DEPLOY=$ALLOW_OLDER_DEPLOY" >> ${dir}/log`,
+      'echo "deploy $* POST_DEPLOY_GUARD=$POST_DEPLOY_GUARD ALLOW_OLDER_DEPLOY=$ALLOW_OLDER_DEPLOY WEB=$RELEASE_EXPECT_WEB_DIGEST ID=${DEPLOY_RELEASE_ID:-unset}" >> "$TEST_ROOT/log"',
     );
     const out = execFileSync(
-      'bash',
-      [join(dir, 'deploy/post-deploy-guard.sh'), 'abc1234', 'prev999', '1800000000'],
+      process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' : '/bin/bash',
+      [
+        '--noprofile',
+        '--norc',
+        '-c',
+        `PATH=${quote(shellPath(join(dir, 'bin')))}:${quote(shellPath(dirname(process.execPath)))}:"$PATH"; export PATH; exec bash ${quote(shellPath(join(dir, 'deploy/post-deploy-guard.sh')))} abc1234 prev999 1800000000`,
+      ],
       {
         env: {
-          PATH: `${join(dir, 'bin')}:/usr/bin:/bin`,
+          ...process.env,
+          TEST_ROOT: shellPath(dir),
+          DEPLOY_STATE_DIR: shellPath(join(dir, 'ledger')),
+          DEPLOY_EXPECT_LIVE_ID: 'release-current',
+          DEPLOY_RELEASE_ID: 'release-current',
+          PREV_WEB_REF: `ghcr.io/test/web@sha256:${'a'.repeat(64)}`,
+          PREV_FULL_REF: `ghcr.io/test/full@sha256:${'b'.repeat(64)}`,
           INTERNAL_API_SECRET: 's',
+          GUARD_URL: 'http://127.0.0.1:1/fixture-only',
           GUARD_INTERVAL_SECONDS: '0',
           GUARD_MINUTES: '6',
         },
@@ -119,6 +150,7 @@ describe('post-deploy-guard.sh', () => {
     const { log } = harness([ok, ok, bad, bad]);
     expect(log).toMatch(/send alert firing D05 2 .*abc1234/);
     expect(log).toMatch(/deploy production prev999 POST_DEPLOY_GUARD=0 ALLOW_OLDER_DEPLOY=1/);
+    expect(log).toContain(`WEB=sha256:${'a'.repeat(64)} ID=unset`);
   });
 
   it('a single bad minute, or bad minutes before the minimum wait, do not roll back', () => {
@@ -126,7 +158,7 @@ describe('post-deploy-guard.sh', () => {
     expect(harness([bad, bad, ok, ok, ok, ok]).log).not.toMatch(/^deploy /m);
   });
 
-  it('stands down when a newer deploy moves HEAD', () => {
+  it('stands down when a newer serving release takes over, independently of checkout HEAD', () => {
     const { out, log } = harness([bad, bad, bad, bad, bad, bad], { at: 1, sha: 'fff0000' });
     expect(out).toMatch(/newer deploy/);
     expect(log).not.toMatch(/^deploy /m);

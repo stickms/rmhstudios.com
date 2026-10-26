@@ -446,11 +446,10 @@ export function AnchoredMenu({
             data-motion="pop"
             data-state={state}
             onKeyDown={onPanelKeyDown}
-            // `p-1`, not `py-1`: rows are `rounded-site-sm` and inset from the
-            // panel edge (components/ui/menu.tsx), so the highlight is a pill
-            // inside the panel rather than a square band that collides with the
-            // panel's own corner radius on the first and last row.
-            className={cn('anchored-menu glass-overlay p-1', className)}
+            // `py-1.5`, no side padding: the rows are plain text with a hover
+            // glow (components/ui/menu.tsx), and this panel (`overflow-y: auto`,
+            // anchored-menu.css) supplies the only curve.
+            className={cn('anchored-menu glass-overlay py-1.5', className)}
             style={style}
           >
             {children}

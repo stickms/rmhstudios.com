@@ -8,12 +8,7 @@
 
 import { PEER_GRACE_MS } from '../../lib/shared/realtime/types';
 
-function envInt(key: string, fallback: number): number {
-  const raw = process.env[key];
-  if (raw === undefined) return fallback;
-  const parsed = parseInt(raw, 10);
-  return Number.isNaN(parsed) ? fallback : parsed;
-}
+import { envInt } from '../shared/config';
 
 function envString(key: string, fallback: string): string {
   return process.env[key] ?? fallback;
@@ -21,7 +16,7 @@ function envString(key: string, fallback: string): string {
 
 export const config = {
   // ─── Network ───
-  PORT: envInt('RMHBOX_PORT', 7676),
+  PORT: envInt('RMHBOX_PORT', 7676, 1, 65_535),
   SOCKET_PATH: envString('RMHBOX_SOCKET_PATH', '/rmhbox-ws/'),
   CORS_ORIGIN: envString('RMHBOX_CORS_ORIGIN', process.env.SOCKET_CORS_ORIGIN || ''),
 

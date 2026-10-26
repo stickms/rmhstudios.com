@@ -9,10 +9,7 @@ import { getAdminReviewCounts } from '@/lib/admin-review.server';
 export const Route = createFileRoute('/api/admin/review-counts')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
-        if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
+      GET: defineHandler({ auth: 'admin' }, async () => {
         return Response.json(await getAdminReviewCounts());
       }),
     },

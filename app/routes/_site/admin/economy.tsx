@@ -177,7 +177,7 @@ function AdminEconomyPage() {
               />
             </div>
 
-            <section className="glass-pane rounded-site p-4">
+            <section className="glass-pane rounded-site p-5">
               <div className="mb-3 flex items-center gap-2">
                 <Users className="h-5 w-5 text-site-accent" aria-hidden />
                 <h2 className="site-section-label">

@@ -88,7 +88,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
       <DatacenterTabs active="/rmh-datacenter/contact" />
 
       <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <p className="max-w-prose text-site-text-muted">
             {t('con-lede', {
               defaultValue:
@@ -140,7 +140,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
 
         {sent ? (
           <section
-            className="glass-pane rounded-site border border-site-accent p-4 sm:p-6"
+            className="glass-pane rounded-site border border-site-accent p-5 sm:p-6"
             role="status"
           >
             <h2 className="font-display text-xl font-semibold text-site-text">
@@ -155,7 +155,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
           </section>
         ) : null}
 
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('con-form-kicker', { defaultValue: 'Capacity request' })}
             heading={t('con-form-heading', { defaultValue: 'Tell us the shape of the load' })}

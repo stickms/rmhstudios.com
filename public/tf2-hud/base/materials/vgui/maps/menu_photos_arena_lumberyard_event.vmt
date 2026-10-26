@@ -1,0 +1,7 @@
+"UnlitGeneric"
+{
+	"$basetexture" "vgui/maps/menu_photos_arena_lumberyard_event"
+	"$translucent" 1
+	"$ignorerez" 1
+	"$vertexcolor" 1
+}

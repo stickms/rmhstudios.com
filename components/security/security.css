@@ -14,7 +14,7 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 .sec-page {
-  --sec-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --sec-ease: var(--ease-smooth);
 
   position: relative;
   min-height: 100dvh;

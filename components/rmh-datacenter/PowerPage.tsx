@@ -48,7 +48,7 @@ export default function PowerPage() {
       <DatacenterTabs active="/rmh-datacenter/power" />
 
       <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <p className="max-w-prose text-site-text-muted">
             {t('pow-lede', {
               defaultValue:
@@ -86,7 +86,7 @@ export default function PowerPage() {
           />
         </div>
 
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('pow-s1-kicker', { defaultValue: 'The train' })}
             heading={t('pow-s1-heading', { defaultValue: 'From the substation to the PDU' })}
@@ -125,7 +125,7 @@ export default function PowerPage() {
           </dl>
         </section>
 
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('pow-s2-kicker', { defaultValue: 'Efficiency' })}
             heading={t('pow-s2-heading', { defaultValue: 'PUE per campus, worst included' })}
@@ -204,7 +204,7 @@ export default function PowerPage() {
           </div>
         </section>
 
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('pow-s4-kicker', { defaultValue: 'Afterwards' })}
             heading={t('pow-s4-heading', { defaultValue: 'The heat has somewhere to go' })}
@@ -231,7 +231,7 @@ export default function PowerPage() {
           </dl>
         </section>
 
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('pow-cta-kicker', { defaultValue: 'Reporting' })}
             heading={t('pow-cta-heading', { defaultValue: 'Your share of all of this, monthly' })}

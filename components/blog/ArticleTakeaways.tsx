@@ -42,7 +42,7 @@ export function ArticleTakeaways({ slug }: { slug: string }) {
 
   return (
     <aside
-      className="glass-pane max-w-2xl rounded-site p-4 sm:p-5"
+      className="glass-pane max-w-2xl rounded-site p-5 sm:p-5"
       aria-label={t('takeaways-title', { defaultValue: 'Key takeaways' })}
     >
       <h2 className="site-section-label mb-3 flex items-center gap-2">

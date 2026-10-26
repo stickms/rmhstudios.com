@@ -282,7 +282,7 @@ export function BotAdminPage() {
               />
             </div>
 
-            <section className="glass-pane rounded-site p-4">
+            <section className="glass-pane rounded-site p-5">
               <h2 className="site-section-label mb-3">
                 {t('bots-habit-mix', { defaultValue: 'Pool by posting habit' })}
               </h2>
@@ -299,7 +299,7 @@ export function BotAdminPage() {
             </section>
 
             <form
-              className="glass-pane space-y-4 rounded-site p-4"
+              className="glass-pane space-y-4 rounded-site p-5"
               onSubmit={(e) => {
                 e.preventDefault();
                 void save();

@@ -6,11 +6,7 @@ import { prisma } from '@/lib/prisma.server';
 export const Route = createFileRoute('/api/admin/analytics')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
-        if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
-
+      GET: defineHandler({ auth: 'admin' }, async () => {
         const now = Date.now();
         const d7 = new Date(now - 7 * 24 * 60 * 60 * 1000);
         const d30 = new Date(now - 30 * 24 * 60 * 60 * 1000);

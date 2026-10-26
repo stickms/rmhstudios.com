@@ -38,7 +38,7 @@ language:
   `lib/jelly/` + `lib/liquid/glass/`; the globe keeps its own dielectric coat and
   dough body. On top sit the owner's #989 layers: a gel body that darkens toward
   its base, **dormant plasma** inside it that hover wakes and press brightens, an
-  **RGB-led edge** with a 1px Fresnel line and no gloss band across the face, a
+  **molded RGB-led edge** (a lit shoulder rising from the ground, no hairline) and no gloss band across the face, a
   press **lens dent** with a light dot that slides with a drag (and rubber-bands
   off the edge), and **charge** — click charge that hops to a neighbour, small
   gaps that break down, Coulomb attraction within the nudge bound.
@@ -113,6 +113,17 @@ Page titles wrap by default, and search/filter rows must fit a 320px viewport.
 Search and filters sit directly below their tab group, before summaries or cards.
 Controls use `--site-control-radius` (the small radius), panels use `--site-radius`;
 avatars, circular icon controls, badges and the globe keep their explicit shape.
+**The corner scale is concentric** (Midnight/Daylight: card 32px, control and inner
+tile 24px — 8px steps, so anything inset 8px inside a card follows its curve). 24px is a
+full pill up to 48px tall, so every button, field and tab is a pill and a taller box is a
+softly rounded rectangle, never a lozenge. A control's inline padding is about half its
+height. A dropdown is **one rounded slab, not a stack of pills or bands**: its rows are
+plain text (inset `px-4`) with no fill, edge or radius of their own, and hovering one — or
+moving the keyboard highlight onto it — wakes a gentle glow behind the text, a soft accent
+wash that fades to nothing at the row's edges (`--row-glow-strength`; danger rows glow red;
+selected rows are marked by accent text and a check). The panel supplies the only curve.
+Menu separators are short and soft, not a full-bleed hairline. Change a radius by changing the
+tokens, never a component.
 Clicks squash the jelly and discharge arcs through the shared services; they never
 change layout, and neighbours move at most the bounded nudge. The navigator globe is the one
 surface whose (dough) jelly ripples where it is pressed.
@@ -893,10 +904,10 @@ gated off there too, via `html.app-route`).
 - **Jelly motion states (the material layer).** The material is the one thing
   on a page that moves on its own, and only through its owners
   ([`plasmatic-jelly-system.md`](plasmatic-jelly-system.md) §2–§4). _Engaged_
-  (input in the last 20 s): the engine's haze clock ticks at 30 Hz (15 Hz
-  handheld). _Idle_: it drops to a 12 Hz floor and **does not freeze** — this
+  (input in the last 20 s): the engine's haze clock ticks at 60 Hz (30 Hz
+  handheld). _Idle_: it drops to a 30 Hz floor and **does not freeze** — this
   deliberately reverses the 2026-10-08 audit's 2 fps rest limit (the rest limit is
-  now 13 fps; CPU at rest stays ≤ 250 ms/s on `/`). _Unseen or degraded_ (hidden
+  now 31 fps; CPU at rest stays ≤ 250 ms/s on `/`). _Unseen or degraded_ (hidden
   tab, unfocused window, scroll in flight, nothing hazy on screen, a degraded tier,
   `jellyMotion = still`, a game playing): 0 Hz, no loop. The soft body and the
   arcs run frames only while a body or an arc is moving. Never add a CSS
@@ -1158,7 +1169,10 @@ gated off there too, via `html.app-route`).
   0.64s settle would park the compose FAB at the bottom of the document), and
   exits stay short tweens (a dismissal should feel immediate, and a spring from
   rest starts slowly). Bare Tailwind `transition*` utilities default to
-  `EASE.standard` on `duration-site-fast` rather than Tailwind's Material curve.
+  `--ease-smooth` (`EASE.smooth`: zero speed at both ends) on
+  `duration-site-fast` rather than Tailwind's Material curve, and the shared
+  framer `transition`/`exitTransition` are zero-bounce springs, so an
+  interrupted motion carries its speed into the next instead of restarting.
 
 - **The close is real, on both kinds of surface.** A dismissal is not a
   performance — a quick uniform reabsorb toward the anchor over

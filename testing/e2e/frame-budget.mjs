@@ -91,7 +91,7 @@ const CHROMIUM_PATH =
  *
  * Plasmatic Jelly R7 (docs/plans/plasmatic-jelly/00-master-plan.md, owner decision 2026-10-23): the material
  * ALWAYS has underlying motion, so a visible page never reaches 0 frames. After `IDLE_AFTER_MS` without input the
- * ambient clock drops to the tier's idle floor (`JELLY_BUDGETS[tier].idleClockHz`, 12 Hz on desktop) and stays
+ * ambient clock drops to the tier's idle floor (`JELLY_BUDGETS[tier].idleClockHz`, 30 Hz on desktop) and stays
  * there; it is 0 only when the tab is hidden, the window unfocused, nothing jelly is on screen, the tier is degraded
  * or `jellyMotion = still`. The rest limit is therefore that floor + 1 frame of slack (13 fps) — a DELIBERATE
  * reversal of the 2026-10-08 audit's 2 fps rest limit (docs/performance-audit-2026-10-08.md), recorded in the
@@ -100,7 +100,7 @@ const CHROMIUM_PATH =
  */
 const IDLE_FLOOR_HZ = Math.max(...Object.values(JELLY_BUDGETS).map((b) => b.idleClockHz));
 const REST_FRAME_LIMIT = IDLE_FLOOR_HZ + 1;
-/** `--engaged`: someone is moving the pointer, so the clock runs at the tier's engaged rate (30 Hz) + 5 of slack. */
+/** `--engaged`: someone is moving the pointer, so the clock runs at the tier's engaged rate (60 Hz) + 5 of slack. */
 const ENGAGED_FRAME_LIMIT = Math.max(...Object.values(JELLY_BUDGETS).map((b) => b.clockHz)) + 5;
 /** Advisory browser-CPU budget at rest on `/` (04 §3.5); printed next to the cadence, never gated. */
 const REST_CPU_TARGET_MS = 250;

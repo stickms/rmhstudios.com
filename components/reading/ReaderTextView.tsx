@@ -201,7 +201,7 @@ export default function ReaderTextView({
                 </p>
               ) : null}
               {noText ? (
-                <div className="glass-fill rounded-site p-4 text-site-text-muted" role="note">
+                <div className="glass-fill rounded-site p-5 text-site-text-muted" role="note">
                   <p className="font-semibold text-site-text">
                     {t('no-text-layer', { defaultValue: 'No selectable text here' })}
                   </p>

@@ -176,7 +176,7 @@ export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapP
         </div>
       ) : (
         <div className="flex min-h-56 flex-col items-center justify-center gap-3 p-6 text-center sm:min-h-64">
-          <div className="rounded-site bg-site-surface-hover p-3">
+          <div className="rounded-site bg-site-surface-hover p-4">
             <Navigation className="h-7 w-7 text-site-text-muted" />
           </div>
           <p className="max-w-xs text-sm text-site-text-muted">

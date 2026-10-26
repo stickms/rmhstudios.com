@@ -130,8 +130,7 @@ describe('Redis down — rate limiting gets LOOSER, never absent', () => {
 
   it('honours applyMultiplier:false without dropping the limit entirely', async () => {
     // Security-critical limiters (auth, abuse) opt out of the multiplier. The
-    // fallback emulates that by pre-dividing; the risk is an off-by-a-factor
-    // that silently un-limits the most sensitive endpoints on the site.
+    // fallback must preserve the exact count, even below the multiplier.
     const prefix = nextPrefix();
     const limit = 8;
     let last: RateLimitResult | null = null;
@@ -145,6 +144,34 @@ describe('Redis down — rate limiting gets LOOSER, never absent', () => {
     }
     expect(last?.allowed).toBe(false);
   });
+
+  it.each([1, 3, 5, 7])(
+    'preserves an exact unmultiplied ceiling of %i when Redis is unavailable',
+    async (limit) => {
+      const prefix = nextPrefix();
+      for (let i = 0; i < limit; i++) {
+        const result = await checkRateLimit('4.4.4.5', {
+          limit,
+          windowMs: 60_000,
+          prefix,
+          applyMultiplier: false,
+        });
+        expect(result.allowed).toBe(true);
+        expect(result.limit).toBe(limit);
+        expect(result.remaining).toBe(limit - i - 1);
+      }
+      expect(
+        (
+          await checkRateLimit('4.4.4.5', {
+            limit,
+            windowMs: 60_000,
+            prefix,
+            applyMultiplier: false,
+          })
+        ).allowed,
+      ).toBe(false);
+    },
+  );
 
   it('reports that distributed limits are unavailable rather than pretending', async () => {
     // Honest self-reporting is what makes the looseness auditable — the ops

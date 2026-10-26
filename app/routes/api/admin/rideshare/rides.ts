@@ -11,10 +11,6 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import type { Prisma } from '@prisma/client';
 
-function isAdmin(session: { user: unknown } | null): boolean {
-  return !!session && !!(session.user as { isAdmin?: boolean }).isAdmin;
-}
-
 const STATUSES = [
   'SCHEDULED',
   'REQUESTED',
@@ -45,11 +41,7 @@ const rideSelect = {
 export const Route = createFileRoute('/api/admin/rideshare/rides')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
-        if (!isAdmin(session)) {
-          return new Response('Unauthorized', { status: 401 });
-        }
-
+      GET: defineHandler({ auth: 'admin' }, async ({ request }) => {
         const params = new URL(request.url).searchParams;
         const statusParam = params.get('status');
         const q = params.get('q')?.trim();

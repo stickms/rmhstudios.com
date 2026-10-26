@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 /**
  * X4 · Question of the day — server side.
  *
@@ -155,7 +156,7 @@ export async function listAnswers(
   viewerId: string | null,
   opts: { cursor?: string | null; limit?: number } = {},
 ): Promise<QotdAnswersPage> {
-  const limit = Math.min(Math.max(opts.limit ?? 20, 1), 30);
+  const limit = pageSize(opts.limit, 20, 30);
   const hidden = await getHiddenAuthorIds(viewerId);
   const now = new Date();
   const links = await prisma.qotdAnswer.findMany({

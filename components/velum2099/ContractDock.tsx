@@ -202,7 +202,7 @@ export function ContractDock() {
           ) : (
             <ul className="max-h-[50dvh] space-y-2 overflow-y-auto">
               {board.map((c) => (
-                <li key={c.id} className="glass-fill flex items-center gap-3 rounded-site p-3">
+                <li key={c.id} className="glass-fill flex items-center gap-3 rounded-site p-4">
                   <div className="min-w-0 grow">
                     <p className="font-mono text-sm font-bold text-site-text">
                       {fmt(c.bestSeconds)}

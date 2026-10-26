@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 339 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 140 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 345 routes. 199 render inside the standard site shell (sidebar, nav, context rail); 146 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -358,6 +358,12 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/tag/:tag/rss.xml` | — | public | `app/routes/tag.$tag.rss[.]xml.ts` |
 | `/temple-of-joy` | — | public | `app/routes/temple-of-joy/index.tsx` |
 | `/terms` | Terms of Use | public | `app/routes/terms.tsx` |
+| `/tf2-hud` | — | public | `app/routes/tf2-hud/index.tsx` |
+| `/tf2-hud/editor` | — | public | `app/routes/tf2-hud/editor.tsx` |
+| `/tf2-hud/h/:slug` | — | public | `app/routes/tf2-hud/h.$slug.tsx` |
+| `/tf2-hud/mine` | — | public | `app/routes/tf2-hud/mine.tsx` |
+| `/tf2-hud/s/:token` | — | public | `app/routes/tf2-hud/s.$token.tsx` |
+| `/tf2-hud/workshop` | TF2 HUD Workshop — community Team Fortress 2 HUDs | public | `app/routes/tf2-hud/workshop.tsx` |
 | `/u/:handle/rss.xml` | — | public | `app/routes/u.$handle.rss[.]xml.ts` |
 | `/v/:slug` | — | public | `app/routes/v.$slug.tsx` |
 | `/v/new` | redirects to `/v` | public | `app/routes/v.new.tsx` |

@@ -31,12 +31,13 @@ export const Route = createFileRoute('/api/admin/reports/$id')({
   server: {
     handlers: {
       POST: defineHandler(
-        { auth: 'optional', body: actionSchema, allowEmptyBody: true },
+        {
+          auth: 'admin',
+          rateLimit: { policy: 'write', scope: 'user' },
+          body: actionSchema,
+          allowEmptyBody: true,
+        },
         async ({ params, session, body }) => {
-          if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-            return Response.json({ error: 'Forbidden' }, { status: 403 });
-          }
-
           const report = await prisma.contentReport.findUnique({ where: { id: params.id } });
           if (!report) return Response.json({ error: 'Report not found' }, { status: 404 });
 

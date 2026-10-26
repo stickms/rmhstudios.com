@@ -1,3 +1,4 @@
+import { pageSize, boundedInteger } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 /**
  * RMHbox Leaderboard API — GET /api/rmhbox/leaderboard
@@ -202,8 +203,8 @@ export const Route = createFileRoute('/api/rmhbox/leaderboard')({
         const period = searchParams.get('period') ?? 'all-time';
         const minigame = searchParams.get('minigame') ?? undefined;
         const metric = searchParams.get('metric') ?? 'score';
-        const limit = Math.min(Math.max(Number(searchParams.get('limit')) || 20, 1), 50);
-        const offset = Math.max(Number(searchParams.get('offset')) || 0, 0);
+        const limit = pageSize(searchParams.get('limit'), 20, 50);
+        const offset = boundedInteger(searchParams.get('offset'), 0, 0, 2_147_483_647);
 
         try {
           // Get current user for rank computation

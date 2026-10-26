@@ -201,7 +201,7 @@ export function ProfileCosmetics() {
               return (
                 <div
                   key={item.id}
-                  className="glass-fill glass-interactive flex items-center gap-3 rounded-site p-3"
+                  className="glass-fill glass-interactive flex items-center gap-3 rounded-site p-4"
                   // Rarity communicates value through the rim colour, matching
                   // the shop grid.
                   style={{

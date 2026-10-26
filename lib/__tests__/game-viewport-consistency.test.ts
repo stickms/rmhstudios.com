@@ -76,6 +76,7 @@ const FULLSCREEN_DIRS = [
   'rmhstudy',
   'rmhtube',
   'rmhtype',
+  'tf2-hud',
   'shared',
   'signal-forge',
   'slice-it',

@@ -1,23 +1,20 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { handleSchema } from '@/lib/handle-schema';
+import { adminUserUpdateSchema } from '@/lib/admin/schemas';
 import { logAdminAction } from '@/lib/admin-audit.server';
 
 export const Route = createFileRoute('/api/admin/users')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
-        if (!session || !(session.user as any).isAdmin) {
-          return new Response('Unauthorized', { status: 401 });
-        }
-
+      GET: defineHandler({ auth: 'admin' }, async ({ request }) => {
         const { searchParams } = new URL(request.url);
         const search = searchParams.get('q');
 
         const cursor = searchParams.get('cursor');
-        const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
+        const limit = pageSize(searchParams.get('limit'), 50, 100);
 
         // Bot accounts are ordinary `user` rows created by the Go bot-worker.
         // They're indistinguishable from people in a flat list, so let the
@@ -39,8 +36,6 @@ export const Route = createFileRoute('/api/admin/users')({
           ...(accounts === 'people' ? { isBot: false } : {}),
         };
 
-        let orderBy: any = { createdAt: 'desc' };
-
         if (cursor) {
           const cursorUser = await prisma.user.findUnique({
             where: { id: cursor },
@@ -48,14 +43,21 @@ export const Route = createFileRoute('/api/admin/users')({
           });
 
           if (cursorUser) {
-            // For descending order, we want items strictly older than the cursor
-            whereClause.createdAt = { lt: cursorUser.createdAt };
+            // Include the id tie-breaker so users created in the same batch are not skipped.
+            whereClause.AND = [
+              {
+                OR: [
+                  { createdAt: { lt: cursorUser.createdAt } },
+                  { createdAt: cursorUser.createdAt, id: { lt: cursor } },
+                ],
+              },
+            ];
           }
         }
 
         const users = await prisma.user.findMany({
           where: whereClause,
-          orderBy,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
           select: {
             id: true,
             name: true,
@@ -87,79 +89,71 @@ export const Route = createFileRoute('/api/admin/users')({
           hasMore,
         });
       }),
-      PATCH: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
-        if (!session || !(session.user as any).isAdmin) {
-          return new Response('Unauthorized', { status: 401 });
-        }
+      PATCH: defineHandler(
+        {
+          auth: 'admin',
+          rateLimit: { policy: 'write', scope: 'user' },
+          body: adminUserUpdateSchema,
+        },
+        async ({ body, session }) => {
+          const { userId, isVerified, isAdmin, handle } = body;
 
-        const body = await request.json();
-        const { userId, isVerified, isAdmin, handle } = body;
+          // Prevent editing oneself to remove admin
+          if (userId === session.user.id && isAdmin === false) {
+            return new Response('Cannot remove admin privileges from yourself', { status: 400 });
+          }
 
-        if (!userId) {
-          return new Response('Missing userId', { status: 400 });
-        }
-
-        // Prevent editing oneself to remove admin
-        if (userId === session.user.id && isAdmin === false) {
-          return new Response('Cannot remove admin privileges from yourself', { status: 400 });
-        }
-
-        const updateData: any = {};
-        if (typeof isVerified === 'boolean') updateData.isVerified = isVerified;
-        if (typeof isAdmin === 'boolean') updateData.isAdmin = isAdmin;
-
-        // Admin handle change (no cooldown, but must be valid and unique)
-        if (typeof handle === 'string') {
-          // Prevent admins from changing other admins' handles
           const targetUser = await prisma.user.findUnique({
             where: { id: userId },
             select: { isAdmin: true },
           });
-          if (targetUser?.isAdmin && userId !== session.user.id) {
-            return new Response("Cannot change another admin's handle", { status: 403 });
+          if (!targetUser) return Response.json({ error: 'User not found' }, { status: 404 });
+
+          const updateData: Prisma.UserUpdateInput = {};
+          if (typeof isVerified === 'boolean') updateData.isVerified = isVerified;
+          if (typeof isAdmin === 'boolean') updateData.isAdmin = isAdmin;
+
+          // Admin handle change (no cooldown, but must be valid and unique)
+          if (typeof handle === 'string') {
+            // Prevent admins from changing other admins' handles
+            if (targetUser.isAdmin && userId !== session.user.id) {
+              return new Response("Cannot change another admin's handle", { status: 403 });
+            }
+
+            const existing = await prisma.user.findUnique({
+              where: { handle },
+              select: { id: true },
+            });
+            if (existing && existing.id !== userId) {
+              return Response.json({ error: 'This handle is already taken' }, { status: 409 });
+            }
+
+            updateData.handle = handle;
+            updateData.handleChangedAt = new Date();
           }
 
-          const validation = handleSchema.safeParse(handle);
-          if (!validation.success) {
-            return Response.json(
-              { error: validation.error.issues[0]?.message ?? 'Invalid handle' },
-              { status: 400 },
-            );
-          }
-
-          const existing = await prisma.user.findUnique({
-            where: { handle },
-            select: { id: true },
+          const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: updateData,
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              handle: true,
+              isVerified: true,
+              isAdmin: true,
+            },
           });
-          if (existing && existing.id !== userId) {
-            return Response.json({ error: 'This handle is already taken' }, { status: 409 });
-          }
 
-          updateData.handle = handle;
-          updateData.handleChangedAt = new Date();
-        }
+          await logAdminAction(session.user.id, 'user.update', {
+            targetType: 'User',
+            targetId: userId,
+            detail: Object.keys(updateData).join(',') || 'none',
+          });
 
-        const updatedUser = await prisma.user.update({
-          where: { id: userId },
-          data: updateData,
-          select: {
-            id: true,
-            name: true,
-            username: true,
-            handle: true,
-            isVerified: true,
-            isAdmin: true,
-          },
-        });
-
-        await logAdminAction(session.user.id, 'user.update', {
-          targetType: 'User',
-          targetId: userId,
-          detail: Object.keys(updateData).join(',') || 'none',
-        });
-
-        return Response.json(updatedUser);
-      }),
+          return Response.json(updatedUser);
+        },
+      ),
     },
   },
 });

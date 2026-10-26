@@ -218,7 +218,7 @@ export function CommunitiesColumn({
               // Listed + locked: metadata and the way in, nothing of the content.
               return (
                 <RevealItem as="li" key={c.id}>
-                  <div className="flex flex-col gap-3 rounded-site glass-fill p-4">
+                  <div className="flex flex-col gap-3 rounded-site glass-fill p-5">
                     <Link
                       to={`/c/${c.slug}` as string}
                       className="rounded-site-sm transition-colors duration-site hover:bg-site-surface-hover"
@@ -246,7 +246,7 @@ export function CommunitiesColumn({
               <RevealItem as="li" key={c.id}>
                 <Link
                   to={`/c/${c.slug}` as string}
-                  className="flex items-start gap-4 rounded-site glass-fill p-4 transition-[translate,border-color,background-color] duration-site hover:-translate-y-0.5 hover:border-site-accent/50 hover:bg-site-surface-hover"
+                  className="flex items-start gap-4 rounded-site glass-fill p-5 transition-[translate,border-color,background-color] duration-site hover:-translate-y-0.5 hover:border-site-accent/50 hover:bg-site-surface-hover"
                 >
                   <div
                     className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-3xl"

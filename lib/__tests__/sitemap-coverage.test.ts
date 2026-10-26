@@ -55,7 +55,10 @@ const ESCAPED_DOT = '__ESCAPED_DOT__';
  * directory's own path.
  */
 function urlPathFor(file: string): string | null {
-  let rel = file.slice(ROUTES_DIR.length + 1).replace(/\.tsx$/, '');
+  let rel = file
+    .slice(ROUTES_DIR.length + 1)
+    .replaceAll('\\', '/')
+    .replace(/\.tsx$/, '');
   if (rel === '__root' || rel === '_site') return null;
   // `[.]` is a literal dot in a route filename, so it has to survive the
   // split-on-dot below. A named sentinel rather than a control character —

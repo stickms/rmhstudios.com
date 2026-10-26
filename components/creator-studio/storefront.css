@@ -156,11 +156,8 @@
   margin: 8px 0 22px;
   border-radius: var(--site-radius);
   overflow: hidden;
-  border: 0.5px solid var(--site-border);
-  box-shadow: var(--site-shadow);
-  background: var(--site-surface);
   opacity: 0;
-  animation: store-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: store-rise 0.6s var(--ease-smooth) both;
 }
 
 .store-hero__link {
@@ -457,7 +454,7 @@
 .store-card {
   position: relative;
   opacity: 0;
-  animation: store-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: store-rise 0.55s var(--ease-smooth) both;
 }
 
 .store-card__link {
@@ -526,7 +523,7 @@
   overflow: hidden;
   transition:
     opacity var(--site-transition-speed) var(--ease-out),
-    transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform 300ms var(--ease-smooth);
 }
 .store-card__link:hover .store-card__hoverdesc {
   opacity: 1;
@@ -665,4 +662,9 @@
      piece of site chrome beside it. */
   padding: 14px var(--site-panel-padding, 1.25rem);
   border-radius: var(--site-radius, 14px);
+}
+
+/* The molded rim: while the shader draws this card's edge, its own hairline would outline what the rim dissolves. */
+.store-spot__link[data-liquid-canvas='on'] {
+  border-color: transparent;
 }

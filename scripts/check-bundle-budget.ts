@@ -198,6 +198,10 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
+  // New enforced ceiling freezes the October 23 baseline (~46 KB), including
+  // all shipped jelly layers. The older 40 KB advisory remains in perf-budgets.
+  // Existing required JavaScript budgets are unchanged.
+  siteCssBrotli: 48 * 1024,
   entryRaw: 537_900,
   criticalPathRaw: 1_291_000,
   criticalPathBrotli: 359_500,
@@ -487,11 +491,20 @@ async function main(): Promise<number> {
     brotli += brotliCompressSync(buf).length;
   }
   const entryRaw = readChunk(OUT_DIR, entry).length;
+  const siteSheets = readdirSync(path.join(OUT_DIR, 'assets')).filter((file) =>
+    /^site-tier-[\w-]+\.css$/.test(file),
+  );
+  if (siteSheets.length !== 1)
+    throw new Error('Expected exactly one render-blocking site stylesheet');
+  const siteCssBrotli = brotliCompressSync(
+    readFileSync(path.join(OUT_DIR, 'assets', siteSheets[0])),
+  ).length;
 
   const rows: Array<[string, number, number]> = [
     ['entry, raw', entryRaw, BUDGETS.entryRaw],
     ['critical path, raw', raw, BUDGETS.criticalPathRaw],
     ['critical path, brotli', brotli, BUDGETS.criticalPathBrotli],
+    ['site CSS, brotli', siteCssBrotli, BUDGETS.siteCssBrotli],
   ];
 
   if (process.argv.includes('--json')) {
@@ -503,6 +516,7 @@ async function main(): Promise<number> {
           entryRaw,
           criticalPathRaw: raw,
           criticalPathBrotli: brotli,
+          siteCssBrotli,
           budgets: BUDGETS,
         },
         null,

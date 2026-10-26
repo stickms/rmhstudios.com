@@ -103,7 +103,7 @@ function AdminAlbumsPage() {
         {/* Create — a singular action panel gets the L2 glass pane. */}
         <form
           onSubmit={createAlbum}
-          className="glass-pane flex flex-col gap-2 rounded-site p-4 sm:flex-row sm:items-center"
+          className="glass-pane flex flex-col gap-2 rounded-site p-5 sm:flex-row sm:items-center"
         >
           <Input
             type="text"

@@ -188,7 +188,9 @@ void main() {
   float rimZone = 1.0 - smoothstep(uBezel * 0.4, uBezel, d);
   float hazeA = max(0.0, uHaze.a * (0.5 + 0.5 * dens) + rimZone * uAmp * (density - 0.5) * (EDGE_BOOST * uHaze.a + 2.0 * uEdge));
 
-  float crest = smoothstep(0.62, 0.86, mix(0.5, density, uAmp));
+  // Crests follow the damped field (dens), not the raw one: behind text the plasma is as calm as the haze it rides on,
+  // and the bright crests run along the edges (2026-10-25 readability pass; it used the raw density everywhere).
+  float crest = smoothstep(0.62, 0.86, dens);
   vec3 plasma = mix(uPlasmaA, uPlasmaB, smoothstep(0.3, 0.7, jNoise(p * 0.7 - t * 0.02)));
   float plasmaA = uPlasma * crest * mix(0.35, 1.0, band);
 

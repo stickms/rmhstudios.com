@@ -62,7 +62,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
       role="region"
       aria-label={t('bracket', { defaultValue: 'Tournament bracket' })}
       tabIndex={0}
-      className="glass-fill max-w-full overflow-x-auto rounded-site p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-site-accent"
+      className="glass-fill max-w-full overflow-x-auto rounded-site p-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-site-accent"
     >
       <div className="flex gap-4 min-w-max">
         {rounds.map(([round, matches]) => (
@@ -73,7 +73,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
               const bWon = m.winnerEntrantId && m.winnerEntrantId === m.entrantBId;
               const ready = m.state === 'READY' || m.state === 'LIVE';
               return (
-                <div key={m.id} className="glass-fill flex flex-col gap-2 rounded-site p-3">
+                <div key={m.id} className="glass-fill flex flex-col gap-2 rounded-site p-4">
                   {[
                     { id: m.entrantAId, won: aWon },
                     { id: m.entrantBId, won: bWon },

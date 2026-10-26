@@ -33,9 +33,11 @@
  *    site's own), and any subtree can opt out with `data-no-reveal`.
  */
 
+import { SMOOTH_EASE_CSS } from '@/lib/motion';
+
 const PLACEHOLDER = '[data-slot="skeleton"],.rad-loader,[data-skeleton],[aria-busy="true"]';
 const DURATION_MS = 260;
-const EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const EASING = SMOOTH_EASE_CSS;
 const MAX_PER_BATCH = 24;
 
 /** Was this removed node (or anything inside it) a loading placeholder? */

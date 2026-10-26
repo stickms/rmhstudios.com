@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
@@ -59,10 +60,7 @@ export const Route = createFileRoute('/api/daily-puzzles/leaderboard')({
               return Response.json({ error: 'Invalid date' }, { status: 400 });
             }
 
-            const limit = Math.min(
-              50,
-              Math.max(1, parseInt(searchParams.get('limit') || '20', 10)),
-            );
+            const limit = pageSize(searchParams.get('limit'), 20, 50);
 
             const entries = await prisma.dailyPuzzleScore.findMany({
               where: { gameMode, dateKey },

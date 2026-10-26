@@ -24,11 +24,26 @@
 
 set -euo pipefail
 
+# The release journal (deploy/release-state.mjs) runs on node, and every release
+# writes to it before it does anything else. Fail here, loudly, rather than part-way
+# through with a bare "node: command not found" and nothing recorded. The webhook
+# listener puts its own node first on PATH; a manual run needs node on PATH too.
+command -v node >/dev/null 2>&1 || {
+    echo "FATAL: node is not on PATH ($PATH). deploy.sh needs it for the release journal." >&2
+    exit 1
+}
+
 # ── Determine environment ────────────────────────────────────────────────────
 ENVIRONMENT="${1:-production}"
 # Optional: the exact commit CI built + pushed to GHCR. Passed by the webhook
 # listener as $2; empty on a manual run (falls back to the branch tip).
 DEPLOY_TARGET_SHA="${2:-}"
+if [ -n "$DEPLOY_TARGET_SHA" ] && ! [[ "$DEPLOY_TARGET_SHA" =~ ^[0-9a-f]{7,40}$ ]]; then
+    echo 'FATAL: the deployment target must be a commit SHA' >&2
+    exit 1
+fi
+export DEPLOY_RELEASE_ID="${DEPLOY_RELEASE_ID:-release-$(date +%s)-$$}"
+export DEPLOY_REQUESTED_AT="${DEPLOY_REQUESTED_AT:-$(date +%s)}"
 
 case "$ENVIRONMENT" in
     production)
@@ -65,10 +80,16 @@ case "$ENVIRONMENT" in
 esac
 
 REMOTE_REPO="origin"
-REPO_DIR="/home/rmhstudios/rmhstudios.com"
+REPO_DIR="${REPO_DIR:-/home/rmhstudios/rmhstudios.com}"
+export DEPLOY_STATE_DIR="${DEPLOY_STATE_DIR:-${REPO_DIR}/.deploy/releases}"
+release_event() {
+    local sha="${GIT_SHA_FULL:-$DEPLOY_TARGET_SHA}"
+    [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || return 0
+    node "$REPO_DIR/deploy/release-state.mjs" record "$DEPLOY_STATE_DIR" "$DEPLOY_RELEASE_ID" "$sha" "$1"
+}
 
-LOCKFILE="/tmp/autodeploy-${ENVIRONMENT}.lock"
-QUEUE_FILE="/tmp/autodeploy-${ENVIRONMENT}.queue"
+LOCKFILE="${DEPLOY_LOCKFILE:-/tmp/autodeploy-${ENVIRONMENT}.lock}"
+QUEUE_FILE="${DEPLOY_QUEUE_FILE:-/tmp/autodeploy-${ENVIRONMENT}.queue}"
 DEPLOY_LOG="/tmp/autodeploy-${ENVIRONMENT}-$$.log"
 DISCORD_WEBHOOK="${DISCORD_WEBHOOK_URL:-}"
 
@@ -139,10 +160,12 @@ curl_retry() {
     return 1
 }
 
+# Usage: get_commit_info [rev]   (default HEAD)
 get_commit_info() {
-    DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
-    DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B 2>/dev/null || echo "(no commit message)")
-    DEPLOY_AUTHOR=$("$GIT_BIN" log -1 --pretty='%an' 2>/dev/null || echo "unknown")
+    local rev="${1:-HEAD}"
+    DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short "$rev" 2>/dev/null || echo "unknown")
+    DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B "$rev" 2>/dev/null || echo "(no commit message)")
+    DEPLOY_AUTHOR=$("$GIT_BIN" log -1 --pretty='%an' "$rev" 2>/dev/null || echo "unknown")
     # Escape special JSON characters and control characters
     DEPLOY_COMMIT_MSG=$(printf '%s' "$DEPLOY_COMMIT_MSG" | \
         sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g; s/\r/\\r/g' | \
@@ -206,6 +229,29 @@ send_deploy_started() {
     DEPLOY_ANNOUNCED=1
 }
 
+# Final-state an embed for a request that ends WITHOUT update_deploy_status —
+# superseded in the queue, skipped as older than live, or deploy.sh dying — so it
+# doesn't sit at "handing off to the VPS…" / "deploying" forever. Describes
+# DEPLOY_TARGET_SHA, not HEAD: until this request's reset, HEAD is whatever the
+# previous deploy left live. Edit-only (no message id = nothing left hanging).
+# Usage: discord_close <color> <title-suffix>
+discord_close() {
+    [ -n "$DISCORD_WEBHOOK" ] && [ -n "$DEPLOY_MSG_ID" ] || return 0
+    local rev="${DEPLOY_TARGET_SHA:-HEAD}" env_label payload
+    if "$GIT_BIN" cat-file -e "${rev}^{commit}" 2>/dev/null; then
+        get_commit_info "$rev"
+    else
+        # A queued request's commit may not be fetched on the VPS yet.
+        DEPLOY_SHORT_HASH="${rev:0:7}"; DEPLOY_COMMIT_MSG="$rev"; DEPLOY_AUTHOR="unknown"
+    fi
+    env_label=$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
+    payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"footer":{"text":"%s"}}]}' \
+        "[$env_label] Commit $DEPLOY_SHORT_HASH - $2" "$DEPLOY_COMMIT_MSG" "$1" "$DEPLOY_AUTHOR")
+    curl_retry -X PATCH -H "Content-Type: application/json" \
+        -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null || \
+        log "WARNING: Failed to edit Discord message ($2) after retries."
+}
+
 # ── On-call (deploy/oncall-send.sh → the off-box watchdog) ──────────────────
 # The deploy channel is for everyone; every failed deploy also pages @oncall
 # (Sev2): even one that left production on the old release blocks shipping.
@@ -247,7 +293,7 @@ oncall_deploy() {
 record_deploy_event() {
     local status="$1" reason="$2" secret url
     secret="${INTERNAL_API_SECRET:-}"
-    [ -n "$secret" ] || secret=$(grep -E '^INTERNAL_API_SECRET=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+    [ -n "$secret" ] || secret=$(grep -E '^INTERNAL_API_SECRET=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' || true)
     [ -n "$secret" ] || return 0
     url="${DEPLOY_EVENT_URL:-https://rmhstudios.com/api/internal/ops/deploy-event}"
     local body
@@ -262,6 +308,7 @@ update_deploy_status() {
     local status="$1"  # "success", "fail", or "rolledback" (web auto-rolled back)
     local reason="${2:-}"  # optional failure reason
 
+    release_event "$status"
     DEPLOY_REPORTED=1
     oncall_deploy "$status" "$reason"
     record_deploy_event "$status" "$reason"
@@ -369,6 +416,34 @@ prune_rollback_images() {
     done
 }
 
+# ── Helper: reclaim disk in tiers ───────────────────────────────────────────
+# The host no longer builds (images are pulled from GHCR), so nothing here is
+# needed for the next deploy except the running containers and one rollback image.
+#   gentle — stopped containers, dangling images, BuildKit cache older than
+#            DEPLOY_BUILD_CACHE_KEEP_HOURS (default 72). Always safe, runs every deploy.
+#   hard [target_gb] — escalates one step at a time and STOPS as soon as free space
+#            reaches target_gb: all BuildKit cache, then rollback trimmed to 1, and
+#            only last every unused image — which also removes the :rollback image
+#            the post-deploy rollback depends on, so it is the last resort.
+# The BuildKit cache is the one thing no deploy step ever cleaned: it was left by
+# the old build-on-host era and sat at 11.6 GB on a 45 GB disk.
+reclaim_disk() {
+    local tier="${1:-gentle}" target="${2:-0}"
+    "$DOCKER_BIN" container prune -f > /dev/null 2>&1 || true
+    "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
+    if [ "$tier" = hard ]; then
+        "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
+        [ "$target" -gt 0 ] && [ "$(free_disk_gb)" -ge "$target" ] && return 0
+        prune_rollback_images 1
+        [ "$target" -gt 0 ] && [ "$(free_disk_gb)" -ge "$target" ] && return 0
+        "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
+    else
+        "$DOCKER_BIN" builder prune -f --filter "until=${DEPLOY_BUILD_CACHE_KEEP_HOURS:-72}h" > /dev/null 2>&1 || true
+        prune_rollback_images
+    fi
+    return 0
+}
+
 # ── Helper: free space (whole GB) on the filesystem backing Docker's data dir ─
 # Falls back to / if the Docker root can't be determined.
 free_disk_gb() {
@@ -390,12 +465,18 @@ total_disk_gb() {
 
 cleanup() {
     local rc=$?
+    if [ "$rc" -ne 0 ] && [ "$DEPLOY_REPORTED" = 0 ]; then release_event fail || true; fi
+    if [ -n "${BG_HEALTH_PID:-}" ]; then kill "$BG_HEALTH_PID" 2>/dev/null || true; wait "$BG_HEALTH_PID" 2>/dev/null || true; fi
+    [ -z "${HEALTH_RESULT_FILE:-}" ] || rm -f "$HEALTH_RESULT_FILE" "${HEALTH_RESULT_FILE}.workers"
     # A deploy that announced itself but exits without a final status (an
     # unexpected `set -e` failure, a kill) would otherwise sit at "deploying"
     # forever with nobody told.
     if [ "$DEPLOY_IN_PROGRESS" = 1 ] && [ "$DEPLOY_REPORTED" = 0 ] && [ -f "${REPO_DIR}/deploy/oncall-send.sh" ]; then
         bash "${REPO_DIR}/deploy/oncall-send.sh" alert firing D04 2 "Deploy died without reporting a result" \
             "Commit ${DEPLOY_SHORT_HASH:-unknown} on ${ENVIRONMENT}: deploy.sh exited $rc before a final status. Check webhook.log." || true
+    fi
+    if [ "$DEPLOY_IN_PROGRESS" = 1 ] && [ "$DEPLOY_REPORTED" = 0 ]; then
+        discord_close 16711680 "deploy died (exit $rc) without a result — check webhook.log" || true
     fi
     rm -f "$DEPLOY_LOG"
 }
@@ -470,6 +551,7 @@ discord_progress() {
 }
 
 stage() {
+    release_event "$1"
     local i now
     now=$(date +%s)
     for i in "${!STAGE_KEYS[@]}"; do
@@ -542,14 +624,18 @@ if ! touch "$LOCKFILE" 2>/dev/null; then
 fi
 exec 200>>"$LOCKFILE"
 
+release_event queued
 if ! flock -n 200; then
     # Another deploy is running — signal for redeploy with our PID
     log "Deploy already in progress. Queuing for redeploy after current deploy finishes."
+    discord_close 16776960 "⏳ queued behind the deploy in progress…"
     printf '%s\n' "$$" > "${QUEUE_FILE}.$$" && mv -f "${QUEUE_FILE}.$$" "$QUEUE_FILE"
 
-    # Block until the running deploy releases the lock
-    if ! flock 200; then
-        log "FATAL: Failed to acquire deploy lock."
+    # Block until the running deploy releases the lock. A healthy deploy holds it
+    # for ~10-15 min; bound the wait so a wedged holder fails this release loudly
+    # (the exit trap reports it) instead of leaving it "queued" forever.
+    if ! flock -w "${DEPLOY_LOCK_WAIT_SECONDS:-2700}" 200; then
+        log "FATAL: Failed to acquire deploy lock within ${DEPLOY_LOCK_WAIT_SECONDS:-2700}s — another deploy is wedged (see 'fuser $LOCKFILE')."
         rm -f "${QUEUE_FILE}.$$"
         exit 1
     fi
@@ -557,7 +643,9 @@ if ! flock -n 200; then
     # Check if we're still the most recent queued instance
     queued_pid=$(cat "$QUEUE_FILE" 2>/dev/null)
     if [ "$queued_pid" != "$$" ]; then
+        release_event superseded
         log "Superseded by a newer deploy request. Exiting."
+        discord_close 9807270 "⏹️ superseded by a newer commit while queued; not deployed"
         exit 0
     fi
 
@@ -566,7 +654,12 @@ if ! flock -n 200; then
     log "=== Queued deploy now executing ==="
 fi
 
-log "=== Deploy triggered ($ENVIRONMENT, branch=$BRANCH) ==="
+release_event lock-acquired
+if [ -n "${DEPLOY_EXPECT_LIVE_ID:-}" ]; then
+    current_live=$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" live id)
+    [ "$current_live" = "$DEPLOY_EXPECT_LIVE_ID" ] || { release_event superseded; log "A newer release is serving; refusing stale rollback."; exit 0; }
+fi
+log "=== Deploy triggered ($ENVIRONMENT, branch=$BRANCH, release=$DEPLOY_RELEASE_ID) ==="
 DEPLOY_START_TIME=$(date +%s)
 
 # Capture all deploy output to log file.
@@ -584,7 +677,10 @@ step_start "Fetching latest code..."
 
 # The release live before this deploy — the post-deploy guard's rollback
 # target. Exported so the self-restart below (HEAD already moved) keeps it.
-export PREV_DEPLOYED_SHA="${PREV_DEPLOYED_SHA:-$("$GIT_BIN" rev-parse HEAD 2>/dev/null || true)}"
+export PREV_DEPLOYED_SHA="${PREV_DEPLOYED_SHA:-$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" last-successful sha)}"
+export PREV_RELEASE_ID="${PREV_RELEASE_ID:-$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" live id)}"
+export PREV_WEB_REF="${PREV_WEB_REF:-$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" last-successful webDigest)}"
+export PREV_FULL_REF="${PREV_FULL_REF:-$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" last-successful fullDigest)}"
 
 # Snapshot deploy.sh hash before pulling so we can detect self-updates.
 DEPLOY_SCRIPT_PATH="${REPO_DIR}/deploy.sh"
@@ -606,7 +702,7 @@ PRE_PULL_HASH=$(sha256sum "$DEPLOY_SCRIPT_PATH" | awk '{print $1}')
 # ancestor of it, it is already contained in what is live: skip. An intentional
 # rollback sets ALLOW_OLDER_DEPLOY=1.
 if [ -n "$DEPLOY_TARGET_SHA" ] && [ "${ALLOW_OLDER_DEPLOY:-0}" != "1" ]; then
-    LIVE_SHA=$("$GIT_BIN" rev-parse HEAD 2>/dev/null || true)
+    LIVE_SHA=$(node "$REPO_DIR/deploy/release-state.mjs" read "$DEPLOY_STATE_DIR" live sha)
     TARGET_FULL_SHA=$("$GIT_BIN" rev-parse --verify --quiet "${DEPLOY_TARGET_SHA}^{commit}" 2>/dev/null || true)
     if [ -n "$LIVE_SHA" ] && [ -n "$TARGET_FULL_SHA" ] && [ "$TARGET_FULL_SHA" != "$LIVE_SHA" ] \
         && "$GIT_BIN" merge-base --is-ancestor "$TARGET_FULL_SHA" "$LIVE_SHA" 2>/dev/null; then
@@ -614,6 +710,7 @@ if [ -n "$DEPLOY_TARGET_SHA" ] && [ "${ALLOW_OLDER_DEPLOY:-0}" != "1" ]; then
         log "  For an intentional rollback re-run with ALLOW_OLDER_DEPLOY=1."
         # No GitHub status: set_github_status posts to HEAD, which is the LIVE
         # commit, and would overwrite its real deploy result.
+        discord_close 9807270 "⏭️ skipped — already contained in the live release"
         exit 0
     fi
 fi
@@ -628,7 +725,9 @@ if [ -n "$DEPLOY_TARGET_SHA" ]; then
     if "$GIT_BIN" cat-file -e "${DEPLOY_TARGET_SHA}^{commit}" 2>/dev/null; then
         RESET_TARGET="$DEPLOY_TARGET_SHA"
     else
-        log "WARNING: requested deploy SHA ${DEPLOY_TARGET_SHA} not reachable after fetch — falling back to ${REMOTE_REPO}/${BRANCH} tip."
+        "$GIT_BIN" fetch "$REMOTE_REPO" "$DEPLOY_TARGET_SHA" || { release_event fail; log "Cannot fetch the approved SHA; refusing branch-tip fallback."; exit 1; }
+        "$GIT_BIN" cat-file -e "${DEPLOY_TARGET_SHA}^{commit}" || exit 1
+        RESET_TARGET="$DEPLOY_TARGET_SHA"
     fi
 fi
 "$GIT_BIN" reset --hard "$RESET_TARGET" || {
@@ -649,7 +748,7 @@ if [ "$PRE_PULL_HASH" != "$POST_PULL_HASH" ] && [ -z "${DEPLOY_SELF_RESTARTED:-}
     # (The tee fd 200 fix above handles normal runs, but this is belt-and-suspenders.)
     exec 200>&-
     export DEPLOY_SELF_RESTARTED=1
-    exec bash "$DEPLOY_SCRIPT_PATH" "$ENVIRONMENT"
+    exec bash "$DEPLOY_SCRIPT_PATH" "$ENVIRONMENT" "$DEPLOY_TARGET_SHA"
 fi
 
 # ── Step 1c: (removed) Apache CDN asset permissions ──────────────────────────
@@ -668,6 +767,7 @@ GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 # reset above, HEAD is exactly the deploy target, so this is the tag to pull.
 GIT_SHA_FULL=$("$GIT_BIN" rev-parse HEAD 2>/dev/null || echo "")
 
+release_event fetched
 send_deploy_started
 DEPLOY_IN_PROGRESS=1  # from here on, exiting without update_deploy_status is a D04 (cleanup)
 
@@ -680,9 +780,7 @@ DEPLOY_IN_PROGRESS=1  # from here on, exiting without update_deploy_status is a 
 #   DEPLOY_PULL_RESERVE_GB — transient space the incoming image layers need (default 6)
 stage pull
 step_start "Pre-pull disk cleanup..."
-"$DOCKER_BIN" container prune -f > /dev/null 2>&1 || true
-"$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
-prune_rollback_images
+reclaim_disk gentle
 
 DEPLOY_HEADROOM_GB="${DEPLOY_HEADROOM_GB:-2}"
 DEPLOY_PULL_RESERVE_GB="${DEPLOY_PULL_RESERVE_GB:-6}"
@@ -691,16 +789,19 @@ NEED_FREE_GB=$(( DEPLOY_HEADROOM_GB + DEPLOY_PULL_RESERVE_GB ))
 DISK_FREE_GB=$(free_disk_gb)
 log "Disk: ${DISK_FREE_GB}G free of ${DISK_TOTAL_GB}G (need ≥ ${NEED_FREE_GB}G to pull and keep ${DEPLOY_HEADROOM_GB}G headroom)."
 if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
-    log "Low disk — trimming rollback images to 1 and pruning all unused images."
-    prune_rollback_images 1
-    "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
+    log "Low disk — reclaiming BuildKit cache, then rollback images, then unused images, until ${NEED_FREE_GB}G is free."
+    reclaim_disk hard "$NEED_FREE_GB"
     DISK_FREE_GB=$(free_disk_gb)
-    if [ "${DISK_FREE_GB:-0}" -lt "$DEPLOY_HEADROOM_GB" ]; then
-        log "ERROR: only ${DISK_FREE_GB}G free after pruning — refusing to pull (would breach the ${DEPLOY_HEADROOM_GB}G headroom)."
+    # Fail closed on the full requirement, not just the headroom: pulling into less
+    # than the incoming layers need fills the disk MID-pull, which takes down
+    # Postgres and every container's writable layer with it (2026-10-25).
+    if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
+        log "ERROR: only ${DISK_FREE_GB}G free after reclaiming — need ≥ ${NEED_FREE_GB}G to pull safely. Refusing; nothing was changed."
+        log "  Find the space: bash deploy/disk-report.sh; sudo du -xh / --max-depth=2 | sort -h | tail -25"
         update_deploy_status fail "insufficient disk to pull safely"
         exit 1
     fi
-    log "After prune: ${DISK_FREE_GB}G free."
+    log "After reclaim: ${DISK_FREE_GB}G free."
 else
     log "Disk healthy."
 fi
@@ -749,16 +850,41 @@ fi
 # per-layer locking makes shared-layer pulls safe to overlap. Each pull's log is
 # captured to its own file so a failure still reports WHICH image and why, exactly
 # as the old serial version did.
-WEB_PULL_LOG=$(mktemp /tmp/pull-web.XXXXXX)
-FULL_PULL_LOG=$(mktemp /tmp/pull-full.XXXXXX)
-"$DOCKER_BIN" pull "${GHCR_IMAGE}:${GIT_SHA_FULL}"      > "$WEB_PULL_LOG"  2>&1 & pull_web=$!
-"$DOCKER_BIN" pull "${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}" > "$FULL_PULL_LOG" 2>&1 & pull_full=$!
-
-web_pull_ok=0; full_pull_ok=0
-wait "$pull_web"  || web_pull_ok=1
-wait "$pull_full" || full_pull_ok=1
-cat "$WEB_PULL_LOG" "$FULL_PULL_LOG"
-rm -f "$WEB_PULL_LOG" "$FULL_PULL_LOG"
+WEB_PULL_REF="${GHCR_IMAGE}:${GIT_SHA_FULL}"
+FULL_PULL_REF="${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}"
+if [ -n "${RELEASE_EXPECT_WEB_DIGEST:-}" ] || [ -n "${RELEASE_EXPECT_FULL_DIGEST:-}" ]; then
+    [[ "$RELEASE_EXPECT_WEB_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || exit 1
+    [[ "$RELEASE_EXPECT_FULL_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || exit 1
+    WEB_PULL_REF="${GHCR_IMAGE}@${RELEASE_EXPECT_WEB_DIGEST}"
+    FULL_PULL_REF="${GHCR_IMAGE_FULL}@${RELEASE_EXPECT_FULL_DIGEST}"
+fi
+# Sets web_pull_ok / full_pull_ok (0 = pulled) and PULL_NO_SPACE (1 = a pull died
+# because the disk filled, which reclaiming space can fix; anything else cannot).
+pull_images() {
+    local web_log full_log
+    web_log=$(mktemp /tmp/pull-web.XXXXXX)
+    full_log=$(mktemp /tmp/pull-full.XXXXXX)
+    "$DOCKER_BIN" pull "$WEB_PULL_REF"  > "$web_log" 2>&1 & local pull_web=$!
+    "$DOCKER_BIN" pull "$FULL_PULL_REF" > "$full_log" 2>&1 & local pull_full=$!
+    web_pull_ok=0; full_pull_ok=0; PULL_NO_SPACE=0
+    wait "$pull_web"  || web_pull_ok=1
+    wait "$pull_full" || full_pull_ok=1
+    cat "$web_log" "$full_log"
+    if [ "$web_pull_ok" -ne 0 ] || [ "$full_pull_ok" -ne 0 ]; then
+        if grep -qi 'no space left' "$web_log" "$full_log" 2>/dev/null; then PULL_NO_SPACE=1; fi
+    fi
+    rm -f "$web_log" "$full_log"
+}
+pull_images
+# The up-front check estimates what a pull needs; layers can still outgrow it. A pull
+# that dies on "no space left" is retried ONCE after reclaiming everything not needed
+# (layers already downloaded are kept, so the retry is cheap). Other failures are not.
+if [ "$PULL_NO_SPACE" = 1 ]; then
+    log "Pull ran out of disk (${DISK_FREE_GB:-?}G free beforehand) — reclaiming and retrying once..."
+    reclaim_disk hard "${NEED_FREE_GB:-0}"
+    log "$(free_disk_gb)G free after reclaim."
+    pull_images
+fi
 
 if [ "$web_pull_ok" -ne 0 ]; then
     log "ERROR: failed to pull ${GHCR_IMAGE}:${GIT_SHA_FULL}."
@@ -770,6 +896,13 @@ if [ "$full_pull_ok" -ne 0 ]; then
     update_deploy_status fail "image pull failed (full)"
     exit 1
 fi
+
+"$DOCKER_BIN" tag "$WEB_PULL_REF" "${GHCR_IMAGE}:${GIT_SHA_FULL}"
+"$DOCKER_BIN" tag "$FULL_PULL_REF" "${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}"
+export RELEASE_WEB_DIGEST=$("$DOCKER_BIN" image inspect -f '{{index .RepoDigests 0}}' "$WEB_PULL_REF")
+export RELEASE_FULL_DIGEST=$("$DOCKER_BIN" image inspect -f '{{index .RepoDigests 0}}' "$FULL_PULL_REF")
+export RELEASE_CONFIG_HASH=$("$DOCKER_BIN" image inspect -f '{{index .Config.Labels "io.rmh.public-config-hash"}}' "$WEB_PULL_REF")
+release_event pulled
 
 # Before :latest moves, keep what it pointed at as :rollback — the release the
 # non-web services are restored to if they fail their health checks after
@@ -789,30 +922,20 @@ done
 "$DOCKER_BIN" tag "${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}" "${FULL_IMAGE_NAME}:${GIT_SHA}"
 step_done
 
-# ── Step 2a: Sync static assets to Cloudflare R2 (incremental) ───────────────
-# library/music/models/sprites are served from R2 behind cdn.rmhstudios.com,
-# not off disk. scripts/sync-static-assets-to-r2.mjs uses the AWS SDK (already a
-# dependency) to diff local public/ against the bucket and upload only NEW or
-# CHANGED files while removing ones deleted locally — so an unchanged deploy
-# transfers nothing. It runs INSIDE the freshly built image (which carries
-# node_modules + scripts/), with the host public/ bind-mounted read-only (the
-# image deliberately omits these heavy dirs). No rclone or host tooling needed.
-# Best-effort: a sync hiccup must never block shipping the app (a short
-# Cache-Control TTL + the next deploy are the safety net). Skips itself when
-# VITE_CDN_BASE_URL isn't set (assets then served from the local origin).
-# Launched in the BACKGROUND so the (potentially long) upload overlaps the
-# avatar backfill, DB migrations, container bring-up, hotswap and health checks
-# below instead of serializing the deploy behind it. It is best-effort and
-# touches only R2 (read-only public/ mount, no DB or containers), so nothing
-# downstream depends on it — we join the job at the very end (Step 6) before
-# reporting success. BG_R2_PID stays empty when the sync is skipped.
+# ── Step 2a: Publish immutable candidate assets while migrations run ────────
+# Required uploads finish before service replacement or traffic flip. Older
+# namespaces are retained for existing tabs and rollback images.
 BG_R2_PID=""
 BG_AVATAR_PID=""
 BG_MEDIA_PID=""
 if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
-    log "Syncing static assets to R2 (incremental, in background)..."
+    STATIC_ASSET_VERSIONS=$("$DOCKER_BIN" image inspect -f '{{index .Config.Labels "io.rmh.static-asset-versions"}}' "${IMAGE_NAME}:latest")
+    [ "$STATIC_ASSET_VERSIONS" != '<no value>' ] || STATIC_ASSET_VERSIONS=''
+    log "Publishing candidate static assets to R2 (overlaps migrations)..."
     (
-        "$DOCKER_BIN" run --rm \
+        exec 200>&-
+        timeout "${ASSET_PUBLISH_TIMEOUT_SECONDS:-600}" "$DOCKER_BIN" run --rm \
+            -e "STATIC_ASSET_VERSIONS=$STATIC_ASSET_VERSIONS" \
             --env-file "$ENV_FILE" \
             -e PUBLIC_DIR=/app/public \
             -v "${REPO_DIR}/public:/app/public:ro" \
@@ -820,7 +943,7 @@ if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
             "${IMAGE_NAME}:latest" \
             scripts/sync-static-assets-to-r2.mjs \
             && log "R2 static asset sync complete." \
-            || log "WARNING: R2 static asset sync failed — assets may be stale until the next deploy."
+            || { log "ERROR: candidate assets could not be published."; exit 1; }
     ) &
     BG_R2_PID=$!
 else
@@ -886,7 +1009,7 @@ for i in $(seq 1 $MIGRATION_RETRIES); do
     # failures AND pending/failed migrations. We need to inspect the output to
     # tell them apart, so we must capture the exit code manually.
     set +e
-    MIGRATE_OUTPUT=$(dc run --rm --no-deps web sh -c 'npx prisma migrate status 2>&1')
+    MIGRATE_OUTPUT=$(dc run --rm --no-deps web sh -c 'node node_modules/prisma/build/index.js migrate status 2>&1')
     MIGRATE_EXIT=$?
     set -e
 
@@ -909,29 +1032,8 @@ for i in $(seq 1 $MIGRATION_RETRIES); do
     sleep "$MIGRATION_DELAY"
 done
 
-# Run baseline-resolve and `migrate deploy` in a SINGLE container rather than
-# separate `dc run --rm` invocations. Each run on this image boots node + prisma
-# (~5–10s of pure overhead), so collapsing them shaves real time off every deploy.
-#
-#   - resolve --applied 0_baseline: on first run the _prisma_migrations table or
-#     baseline may not be recorded; mark it applied so Prisma doesn't try to
-#     re-create existing tables. Idempotent + ignored on later runs.
-#
-# `prisma migrate status` exits 0 ONLY when the schema is already up to date, so
-# a zero exit means there is nothing to apply and the whole container boot can be
-# skipped — the common case on a deploy that adds no migration. A non-zero exit
-# means the loop above confirmed the DB is reachable but there is work to do.
-#
-# Failed-migration recovery is driven off `migrate deploy`, NOT off the
-# `migrate status` output. It used to be the other way round: deploy.sh scraped
-# status for the `prisma migrate resolve --rolled-back "<name>"` hint that older
-# Prisma printed. Prisma 7's `migrate status` does not report failed migrations
-# at ALL — it lists only unapplied ones — so that scrape could never match and
-# the recovery path was dead code. The first migration to actually fail in
-# production proved it: status reported one pending migration and said nothing
-# about the failure, deploy then died P3009, and every subsequent deploy died the
-# same way until someone resolved it by hand. `migrate deploy`'s own P3009 names
-# the migration, so that is what we parse now.
+# An up-to-date status avoids another Prisma container startup. Pending work
+# runs migrate deploy; failed/partial migrations require deliberate recovery.
 if [ "${MIGRATE_EXIT:-1}" -eq 0 ]; then
     log "  Schema already up to date — skipping migrate deploy (no pending migrations)."
 else
@@ -952,46 +1054,17 @@ else
             web sh -c "$1" 2>&1
     }
 
-    # Captured rather than streamed, because the P3009 recovery below has to read
-    # it. Echoed straight back out so the deploy log is unchanged.
+    # Preserve the complete failure output for the release log.
     set +e
     MIGRATE_DEPLOY_OUTPUT=$(run_migrate_container \
-        'npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true; npx prisma migrate deploy')
+        'node node_modules/prisma/build/index.js migrate deploy')
     MIGRATE_DEPLOY_EXIT=$?
     set -e
     printf '%s\n' "$MIGRATE_DEPLOY_OUTPUT"
 
-    # P3009: an earlier deploy left a migration recorded as failed, and Prisma
-    # refuses to apply anything else until it is resolved. PostgreSQL runs each
-    # migration inside a transaction, so a failed one committed NOTHING — marking
-    # it rolled back and letting `migrate deploy` re-apply it is the documented
-    # recovery and is safe to do unattended. Bounded, and never the same migration
-    # twice: a migration that fails again on re-apply reports P3018 (a different
-    # message this does not match), so it stops here and the deploy fails loudly.
-    RESOLVED_MIGRATIONS=""
-    RECOVERY_ATTEMPTS=0
-    while [ "$MIGRATE_DEPLOY_EXIT" -ne 0 ] && [ "$RECOVERY_ATTEMPTS" -lt 3 ]; do
-        FAILED_MIGRATION=$(printf '%s\n' "$MIGRATE_DEPLOY_OUTPUT" \
-            | sed -n 's/^The `\([^`]*\)` migration started at .* failed$/\1/p' | head -1)
-        [ -n "$FAILED_MIGRATION" ] || break
-        case " $RESOLVED_MIGRATIONS " in
-            *" $FAILED_MIGRATION "*)
-                log "  Migration '$FAILED_MIGRATION' failed again after being resolved — not retrying."
-                break
-                ;;
-        esac
-        RESOLVED_MIGRATIONS="$RESOLVED_MIGRATIONS $FAILED_MIGRATION"
-        RECOVERY_ATTEMPTS=$((RECOVERY_ATTEMPTS + 1))
-        log "  Migration '$FAILED_MIGRATION' is recorded as failed (P3009); marking it rolled back and retrying."
-
-        set +e
-        MIGRATE_DEPLOY_OUTPUT=$(run_migrate_container \
-            "npx prisma migrate resolve --rolled-back \"$FAILED_MIGRATION\" && npx prisma migrate deploy")
-        MIGRATE_DEPLOY_EXIT=$?
-        set -e
-        printf '%s\n' "$MIGRATE_DEPLOY_OUTPUT"
-    done
-
+    # A failed migration can be partially applied. Never automatically mark it
+    # rolled back or replay DDL based on error-message matching. Inspect its
+    # state and reconcile it through the migration recovery runbook.
     if [ "$MIGRATE_DEPLOY_EXIT" -ne 0 ]; then
         log "ERROR: Database migration failed."
         update_deploy_status fail "database migration failed"
@@ -1026,7 +1099,10 @@ if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
         # node+Prisma container boot. Joined at Step 6 before we report success.
         log "Backfilling existing avatars to R2 (idempotent, in background)..."
         (
-            dc -f docker-compose.yml -f deploy/docker-compose.backfill.yml run --rm --no-deps -T \
+            exec 200>&-
+            timeout -k 30 "${BACKFILL_TIMEOUT_SECONDS:-600}" \
+            "$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+                -f docker-compose.yml -f deploy/docker-compose.backfill.yml run --rm --no-deps -T \
                 -e STORAGE_PATH=/app/db \
                 --entrypoint node \
                 web \
@@ -1050,7 +1126,10 @@ if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
     if [ -d "$STORAGE_PATH_HOST/music" ] || [ -d "$STORAGE_PATH_HOST/builds" ]; then
         log "Backfilling local media (songs, covers, build thumbnails) to R2 (idempotent, in background)..."
         (
-            dc -f docker-compose.yml -f deploy/docker-compose.backfill.yml run --rm --no-deps -T \
+            exec 200>&-
+            timeout -k 30 "${BACKFILL_TIMEOUT_SECONDS:-600}" \
+            "$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+                -f docker-compose.yml -f deploy/docker-compose.backfill.yml run --rm --no-deps -T \
                 -e STORAGE_PATH=/app/db \
                 --entrypoint node \
                 web \
@@ -1107,6 +1186,11 @@ step_done
 #   here in parallel as before — a brief blip on a websocket/worker reconnect is
 #   invisible, the user-facing 520 only ever came from the web port.
 stage services
+if [ -n "$BG_R2_PID" ]; then
+    if ! wait "$BG_R2_PID"; then update_deploy_status fail "candidate static assets unavailable"; exit 1; fi
+    BG_R2_PID=''
+    release_event assets-published
+fi
 step_start "Starting containers (all services except web)..."
 if ! dc up -d --no-build --remove-orphans --scale web=0; then
     log "ERROR: docker compose up failed."
@@ -1114,6 +1198,96 @@ if ! dc up -d --no-build --remove-orphans --scale web=0; then
     exit 1
 fi
 step_done
+
+SUPERVISOR_METRICS_PORT="${PORT_SUPERVISOR_METRICS:-9090}"
+check_supervisor() {
+    for _ in $(seq 1 24); do
+        if dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/health" >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 5
+    done
+    return 1
+}
+
+
+# HTTP /health on each hub + status (a listening port alone said nothing about a
+# hub that accepted connections but could not serve them).
+check_http() {
+    local port=$1
+    for _ in $(seq 1 "${HTTP_HEALTH_TRIES:-24}"); do
+        curl -fsS --max-time 4 "http://127.0.0.1:${port}/health" >/dev/null 2>&1 && return 0
+        sleep 5
+    done
+    return 1
+}
+
+# The cron/queue workers have no port: healthy = still running, with no new
+# restarts, after a settle window (a crash-loop shows up as RestartCount moving).
+WORKER_SERVICES="jobs ladder-worker homes-worker"
+worker_state() { # → "<running> <restartCount>" or "missing"
+    local id
+    id=$(dc ps -q "$1" 2>/dev/null | head -n1)
+    [ -n "$id" ] || { echo missing; return; }
+    "$DOCKER_BIN" inspect -f '{{.State.Running}} {{.RestartCount}}' "$id" 2>/dev/null || echo missing
+}
+check_workers() {
+    local svc before after failed="" base=""
+    if [ -f "${HEALTH_RESULT_FILE}.workers" ]; then
+        base=$(cat "${HEALTH_RESULT_FILE}.workers")
+    else
+        for svc in $WORKER_SERVICES; do base="${base}${svc}|$(worker_state "$svc")"$'\n'; done
+        printf '%s' "$base" > "${HEALTH_RESULT_FILE}.workers"
+    fi
+    sleep "${1:-${WORKER_SETTLE_SECONDS:-30}}"
+    for svc in $WORKER_SERVICES; do
+        before=$(printf '%s' "$base" | grep "^${svc}|" | cut -d'|' -f2-); after=$(worker_state "$svc")
+        case "$after" in
+            "true "*) [ "$after" = "$before" ] || failed="$failed $svc" ;;
+            *) failed="$failed $svc" ;;
+        esac
+    done
+    [ -z "$failed" ] || { echo "$failed"; return 1; }
+}
+
+# Runs every check in one parallel wave; prints the failing service names.
+run_health_checks() {
+    local failed="" job wf
+    check_http "$PORT_SOCKET"  & local p_socket=$!
+    check_http "$PORT_RMHBOX"  & local p_rmhbox=$!
+    check_http "$PORT_RMHTUBE" & local p_rmhtube=$!
+    check_http "$PORT_STATUS"  & local p_status=$!
+    check_supervisor           & local p_sup=$!
+    wf=$(mktemp); check_workers "${1:-${WORKER_SETTLE_SECONDS:-30}}" > "$wf" & local p_workers=$!
+    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status" "supervisor:$p_sup"; do
+        wait "${job#*:}" || failed="$failed ${job%%:*}"
+    done
+    wait "$p_workers" || failed="$failed $(cat "$wf")"
+    rm -f "$wf"
+    echo "$failed" | xargs
+}
+
+# Restore the non-web services to the release they ran before this deploy (the
+# :rollback images), then re-check them. Web is left alone: it already passed
+# its own smoke test + bake in the hotswap, and rolls back on its own.
+rollback_non_web() {
+    local img
+    for img in "$IMAGE_NAME" "$FULL_IMAGE_NAME"; do
+        "$DOCKER_BIN" image inspect "${img}:rollback" >/dev/null 2>&1 || return 1
+    done
+    log "Rolling back non-web services to the previous release..."
+    for img in "$IMAGE_NAME" "$FULL_IMAGE_NAME"; do
+        "$DOCKER_BIN" tag "${img}:rollback" "${img}:latest" || return 1
+    done
+    dc up -d --no-build --remove-orphans --scale web=0 || return 1
+    local still
+    rm -f "${HEALTH_RESULT_FILE}.workers"
+    still=$(run_health_checks)
+    [ -z "$still" ] || { log "Still unhealthy after rollback: $still"; return 1; }
+}
+
+export HEALTH_RESULT_FILE=$(mktemp)
+(exec 200>&-; run_health_checks > "$HEALTH_RESULT_FILE") & BG_HEALTH_PID=$!
 
 # ── Step 4b: Zero-downtime hotswap of the web container ─────────────────────
 # Runs the freshly built image as a second web container on the spare port,
@@ -1140,6 +1314,12 @@ while IFS= read -r line; do
     case "$line" in
         ::deploy-stage::*) stage "${line#::deploy-stage::}" ;;
         ::deploy-note::*)  stage_note "${line#::deploy-note::}" ;;
+        ::deploy-event::traffic-moved)
+            node "$REPO_DIR/deploy/release-state.mjs" promote "$DEPLOY_STATE_DIR" "$DEPLOY_RELEASE_ID" "$PREV_RELEASE_ID"
+            release_event traffic-moved ;;
+        ::deploy-event::rolledback)
+            node "$REPO_DIR/deploy/release-state.mjs" restore "$DEPLOY_STATE_DIR" "$DEPLOY_RELEASE_ID"
+            release_event rolledback ;;
         ::deploy-rc::*)    hotswap_rc="${line#::deploy-rc::}" ;;
         *)                 printf '%s\n' "$line" ;;
     esac
@@ -1190,90 +1370,15 @@ step_done
 # goroutines inside the single `supervisor` process; it serves a MERGED
 # /health + /metrics on METRICS_ADDR (:9090), NOT host-published, so we probe it
 # from INSIDE the container with `dc exec`.
-SUPERVISOR_METRICS_PORT="${PORT_SUPERVISOR_METRICS:-9090}"
-check_supervisor() {
-    for _ in $(seq 1 24); do
-        if dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/health" >/dev/null 2>&1; then
-            return 0
-        fi
-        sleep 5
-    done
-    return 1
-}
-
 stage health
-step_start "Running health checks (hubs, status, supervisor, workers — parallel)..."
-
-# HTTP /health on each hub + status (a listening port alone said nothing about a
-# hub that accepted connections but could not serve them).
-check_http() {
-    local port=$1
-    for _ in $(seq 1 "${HTTP_HEALTH_TRIES:-24}"); do
-        curl -fsS --max-time 4 "http://127.0.0.1:${port}/health" >/dev/null 2>&1 && return 0
-        sleep 5
-    done
-    return 1
-}
-
-# The cron/queue workers have no port: healthy = still running, with no new
-# restarts, after a settle window (a crash-loop shows up as RestartCount moving).
-WORKER_SERVICES="jobs ladder-worker homes-worker"
-worker_state() { # → "<running> <restartCount>" or "missing"
-    local id
-    id=$(dc ps -q "$1" 2>/dev/null | head -n1)
-    [ -n "$id" ] || { echo missing; return; }
-    "$DOCKER_BIN" inspect -f '{{.State.Running}} {{.RestartCount}}' "$id" 2>/dev/null || echo missing
-}
-check_workers() {
-    local svc before after failed="" base=""
-    for svc in $WORKER_SERVICES; do base="${base}${svc}|$(worker_state "$svc")"$'\n'; done
-    sleep "${WORKER_SETTLE_SECONDS:-30}"
-    for svc in $WORKER_SERVICES; do
-        before=$(printf '%s' "$base" | grep "^${svc}|" | cut -d'|' -f2-); after=$(worker_state "$svc")
-        case "$after" in
-            "true "*) [ "$after" = "$before" ] || failed="$failed $svc" ;;
-            *) failed="$failed $svc" ;;
-        esac
-    done
-    [ -z "$failed" ] || { echo "$failed"; return 1; }
-}
-
-# Runs every check in one parallel wave; prints the failing service names.
-run_health_checks() {
-    local failed="" job wf
-    check_http "$PORT_SOCKET"  & local p_socket=$!
-    check_http "$PORT_RMHBOX"  & local p_rmhbox=$!
-    check_http "$PORT_RMHTUBE" & local p_rmhtube=$!
-    check_http "$PORT_STATUS"  & local p_status=$!
-    check_supervisor           & local p_sup=$!
-    wf=$(mktemp); check_workers > "$wf" & local p_workers=$!
-    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status" "supervisor:$p_sup"; do
-        wait "${job#*:}" || failed="$failed ${job%%:*}"
-    done
-    wait "$p_workers" || failed="$failed $(cat "$wf")"
-    rm -f "$wf"
-    echo "$failed" | xargs
-}
-
-# Restore the non-web services to the release they ran before this deploy (the
-# :rollback images), then re-check them. Web is left alone: it already passed
-# its own smoke test + bake in the hotswap, and rolls back on its own.
-rollback_non_web() {
-    local img
-    for img in "$IMAGE_NAME" "$FULL_IMAGE_NAME"; do
-        "$DOCKER_BIN" image inspect "${img}:rollback" >/dev/null 2>&1 || return 1
-    done
-    log "Rolling back non-web services to the previous release..."
-    for img in "$IMAGE_NAME" "$FULL_IMAGE_NAME"; do
-        "$DOCKER_BIN" tag "${img}:rollback" "${img}:latest" || return 1
-    done
-    dc up -d --no-build --remove-orphans --scale web=0 || return 1
-    local still
-    still=$(run_health_checks)
-    [ -z "$still" ] || { log "Still unhealthy after rollback: $still"; return 1; }
-}
-
-failed_services=$(run_health_checks)
+step_start "Joining service health checks (observed during web bake)..."
+wait "$BG_HEALTH_PID"
+BG_HEALTH_PID=''
+failed_services=$(cat "$HEALTH_RESULT_FILE")
+# Re-probe readiness and compare against the original worker snapshot after bake.
+# This catches failures anywhere in the observation window without another sleep.
+late_failures=$(run_health_checks 0)
+failed_services=$(printf '%s %s' "$failed_services" "$late_failures" | xargs)
 if [ -n "$failed_services" ]; then
     log "ERROR: health checks failed for: ${failed_services}"
     log "--- Container logs (${failed_services}) ---"
@@ -1305,15 +1410,13 @@ log "Pruning dangling images..."
 
 # Keep at most 2 SHA-tagged images per environment for rollback.
 prune_rollback_images 2
+"$DOCKER_BIN" builder prune -f --filter "until=${DEPLOY_BUILD_CACHE_KEEP_HOURS:-72}h" > /dev/null 2>&1 || true
 
-# Headroom enforcement. With the build now off-host there is no BuildKit cache to
-# cap or wipe — the SHA-tagged rollback images are the only heavy, reclaimable
-# thing left. If disk is still under the headroom after the prune above, drop to
-# a single rollback image and prune all unused images.
+# Headroom enforcement: if disk is still under the headroom, take everything that
+# is not running or the one rollback image (all BuildKit cache, unused images).
 if [ "$(free_disk_gb)" -lt "$DEPLOY_HEADROOM_GB" ]; then
-    log "Only $(free_disk_gb)G free (< ${DEPLOY_HEADROOM_GB}G headroom) — trimming rollback images to 1."
-    prune_rollback_images 1
-    "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
+    log "Only $(free_disk_gb)G free (< ${DEPLOY_HEADROOM_GB}G headroom) — reclaiming everything not running."
+    reclaim_disk hard "$DEPLOY_HEADROOM_GB"
     log "After reclaim: $(free_disk_gb)G disk free."
 fi
 
@@ -1414,16 +1517,24 @@ fi
 } 2>/dev/null || true
 
 # ── Done ─────────────────────────────────────────────────────────────────────
+release_event validated
 update_deploy_status success
 
 # Watch the new release for 15 min and roll it back if the page/API 5xx or
 # latency alarms fire on its traffic (deploy/post-deploy-guard.sh). Detached,
 # so the deploy lock is released now; the guard stands down on a newer deploy.
 # Off for the redeploy the guard itself starts (POST_DEPLOY_GUARD=0).
+# `200>&-` is what actually releases the lock: a detached child inherits fd 200,
+# and the flock lives as long as any holder of that open file does — without it
+# the guard pinned the lock for its whole 15 minutes and every deploy pushed in
+# that window queued behind it (the guard only stands down once a newer release
+# is live, which it could not become while waiting for the lock).
+# DEPLOY_SHORT_HASH is only set when the Discord announcer ran; GIT_SHA is the same value.
+GUARD_SHA="${DEPLOY_SHORT_HASH:-$GIT_SHA}"
 if [ "${POST_DEPLOY_GUARD:-1}" = 1 ] && [ -x "${REPO_DIR}/deploy/post-deploy-guard.sh" ] \
-   && [ -n "${PREV_DEPLOYED_SHA:-}" ] && [ "${PREV_DEPLOYED_SHA:0:7}" != "${DEPLOY_SHORT_HASH:0:7}" ]; then
-    setsid nohup bash "${REPO_DIR}/deploy/post-deploy-guard.sh" "$DEPLOY_SHORT_HASH" "$PREV_DEPLOYED_SHA" "$(date +%s)" \
-        >> "${GUARD_LOG:-/home/rmhstudios/post-deploy-guard.log}" 2>&1 < /dev/null &
+   && [ -n "${PREV_DEPLOYED_SHA:-}" ] && [ "${PREV_DEPLOYED_SHA:0:7}" != "${GUARD_SHA:0:7}" ]; then
+    DEPLOY_EXPECT_LIVE_ID="$DEPLOY_RELEASE_ID" setsid nohup bash "${REPO_DIR}/deploy/post-deploy-guard.sh" "$GUARD_SHA" "$PREV_DEPLOYED_SHA" "$(date +%s)" \
+        >> "${GUARD_LOG:-/home/rmhstudios/post-deploy-guard.log}" 2>&1 < /dev/null 200>&- &
     log "Post-deploy guard started (15 min, rollback target ${PREV_DEPLOYED_SHA:0:12})."
 fi
 

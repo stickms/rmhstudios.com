@@ -273,7 +273,7 @@ export function ShopColumn({
               key={item.id}
               // L1 .glass-fill + .glass-interactive together light the hover glint
               // ring (the ring selector needs BOTH classes) and the pointer light.
-              className="glass-fill glass-interactive flex min-w-0 flex-col items-stretch gap-4 rounded-site p-4"
+              className="glass-fill glass-interactive flex min-w-0 flex-col items-stretch gap-4 rounded-site p-5"
               // Rarity communicates value through the rim colour (§9.4): a tinted
               // border + a matching inner specular hairline over the base rim.
               style={{

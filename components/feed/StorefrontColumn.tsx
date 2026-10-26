@@ -235,7 +235,7 @@ export function StorefrontColumn({
  </div>
 
  {showForm && (
- <div className="mx-4 mt-4 rounded-site glass-pane p-4">
+ <div className="mx-4 mt-4 rounded-site glass-pane p-5">
  <div className="flex items-center justify-between">
  <h2 className="text-sm font-semibold text-site-text">
  {t('new-product', { defaultValue:'New product'})}
@@ -314,7 +314,7 @@ export function StorefrontColumn({
  products.map((p) => (
  <div
  key={p.id}
- className={`rounded-site glass-fill p-4 ${p.active ?'':'opacity-70'}`}
+ className={`rounded-site glass-fill p-5 ${p.active ?'':'opacity-70'}`}
  >
  <div className="flex items-start justify-between gap-3">
  <div className="min-w-0">

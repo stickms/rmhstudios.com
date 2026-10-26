@@ -104,7 +104,7 @@ export default function PhotoMode({
 
   return (
     <div
-      className="glass-overlay pointer-events-auto absolute bottom-[calc(var(--safe-bottom,0px)+0.75rem)] left-1/2 z-50 w-[min(94vw,26rem)] -translate-x-1/2 space-y-3 rounded-site p-4"
+      className="glass-overlay pointer-events-auto absolute bottom-[calc(var(--safe-bottom,0px)+0.75rem)] left-1/2 z-50 w-[min(94vw,26rem)] -translate-x-1/2 space-y-3 rounded-site p-5"
       role="dialog"
       aria-label={t('photo-mode', { defaultValue: 'Photo mode' })}
     >

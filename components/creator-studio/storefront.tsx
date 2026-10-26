@@ -297,7 +297,7 @@ function HeroCard({ item }: { item: StoreItem }) {
   const { t } = useTranslation('feed');
   return (
     <div
-      className="store-hero"
+      className="store-hero glass-fill"
       style={{ '--card-hue': String(item.hue ?? 220) } as React.CSSProperties}
     >
       <PrimaryWrapper item={item} className="store-hero__link" ariaLabel={item.title}>

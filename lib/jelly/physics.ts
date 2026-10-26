@@ -983,7 +983,7 @@ export function installJellyPhysics(
     b.epoch = epoch;
     b.policy = resolveSoftPolicy({ ...b.traits, width: rect.w, height: rect.h }, { features });
     if (b.policy.mode === 'off' || !moves(b.policy)) return false;
-    b.lensOk = !el.style.filter;
+    b.lensOk = !el.style.filter && rect.w * rect.h <= DENT.lensMaxAreaPx;
     if (b.policy.envelope) {
       const computed = win.getComputedStyle(el);
       // A host with a stylesheet filter of its own keeps it: the lens never replaces (or chains after) one.

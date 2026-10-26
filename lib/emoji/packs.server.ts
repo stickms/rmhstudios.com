@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 /**
  * Emoji & sticker packs — server queries.
  *
@@ -124,7 +125,7 @@ export async function browsePacks(
   viewerId: string | null,
   opts: { query?: string; take?: number; cursor?: string } = {},
 ): Promise<PackSummary[]> {
-  const take = Math.min(opts.take ?? 30, 60);
+  const take = pageSize(opts.take, 30, 60);
   const rows = await prisma.emojiPack.findMany({
     where: {
       status: 'APPROVED',

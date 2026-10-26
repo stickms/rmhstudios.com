@@ -129,7 +129,7 @@ export function ModOnboarding({
             </Button>
           </div>
           {q.options.map((o, k) => (
-            <div key={k} className="glass-inset flex flex-col gap-2 rounded-site p-3">
+            <div key={k} className="glass-inset flex flex-col gap-2 rounded-site p-4">
               <div className="flex items-center gap-2">
                 <Input
                   value={o.label}

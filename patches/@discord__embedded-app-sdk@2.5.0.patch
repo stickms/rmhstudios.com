@@ -1,0 +1,205 @@
+diff --git a/output/Discord.d.ts b/output/Discord.d.ts
+index 81126e93a621ad9be4b4ae90c1b1b9c1693ded57..e16e5430b5d2af561ee1343db5eb92e7844de276 100644
+--- a/output/Discord.d.ts
++++ b/output/Discord.d.ts
+@@ -1,5 +1,5 @@
+ import EventEmitter from 'eventemitter3';
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ import { EventSchema } from './schema/events';
+ import { Platform, RPCCloseCodes } from './Constants';
+ import { IDiscordSDK, MaybeZodObjectArray, SdkConfiguration } from './interface';
+diff --git a/output/commands/setActivity.d.ts b/output/commands/setActivity.d.ts
+index 1f7669156936be4e2d77b46336891bdc6f01a48b..bc321a58e7d44d405db0a3eeab6a7c15e71c9ee2 100644
+--- a/output/commands/setActivity.d.ts
++++ b/output/commands/setActivity.d.ts
+@@ -1,4 +1,4 @@
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ import { TSendCommand } from '../schema/types';
+ export declare const SetActivity: zod.ZodNullable<zod.ZodObject<zod.objectUtil.extendShape<Pick<{
+     name: zod.ZodString;
+diff --git a/output/commands/setOrientationLockState.d.ts b/output/commands/setOrientationLockState.d.ts
+index 04be245d430838da1b43b908637511be41054401..bbe2e6400d3fc7d4338db70a83b2b79f194d2545 100644
+--- a/output/commands/setOrientationLockState.d.ts
++++ b/output/commands/setOrientationLockState.d.ts
+@@ -1,4 +1,4 @@
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ import { OrientationLockState } from '../schema/common';
+ import { TSendCommand } from '../schema/types';
+ export interface SetOrientationLockStateInputFallback {
+diff --git a/output/generated/schemas.d.ts b/output/generated/schemas.d.ts
+index 60b4a7f2319315110b939fafd31ec94b47c878fb..dda52f49d2aa82a81cc945ff06c54a1d73b32538 100644
+--- a/output/generated/schemas.d.ts
++++ b/output/generated/schemas.d.ts
+@@ -3,7 +3,7 @@
+  * Run "npm run sync" to regenerate file.
+  * @generated
+  */
+-import { z, infer as zInfer } from 'zod';
++import { z, infer as zInfer } from 'zod/v3';
+ export declare const InitiateImageUploadResponseSchema: z.ZodObject<{
+     image_url: z.ZodString;
+ }, "strip", z.ZodTypeAny, {
+diff --git a/output/interface.d.ts b/output/interface.d.ts
+index 8bd4d4956cd2359959ce9347681cd9ef8df6de09..2efcf7023f7a9fafedc1a035335f231464b44855 100644
+--- a/output/interface.d.ts
++++ b/output/interface.d.ts
+@@ -1,7 +1,7 @@
+ import { Platform, RPCCloseCodes } from './Constants';
+ import commands from './commands';
+ import { EventArgs, EventSchema } from './schema/events';
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ /**
+  * An optional configuration object to customize the sdk options
+  */
+diff --git a/output/lib/zod/lib/index.cjs b/output/lib/zod/lib/index.cjs
+index 8c7b0fcff7f43973f610396feaa4c92cccafb883..aaf4c404131fb2e7234520016a571dcbe40a6e27 100644
+--- a/output/lib/zod/lib/index.cjs
++++ b/output/lib/zod/lib/index.cjs
+@@ -2189,6 +2189,7 @@ class ZodArray extends ZodType {
+                     message: def.exactLength.message,
+                 });
+                 status.dirty();
++                if (tooBig) return INVALID;
+             }
+         }
+         if (def.minLength !== null) {
+@@ -2215,6 +2216,7 @@ class ZodArray extends ZodType {
+                     message: def.maxLength.message,
+                 });
+                 status.dirty();
++                return INVALID;
+             }
+         }
+         if (ctx.common.async) {
+@@ -3237,6 +3239,7 @@ class ZodSet extends ZodType {
+                     message: def.maxSize.message,
+                 });
+                 status.dirty();
++                return INVALID;
+             }
+         }
+         const valueType = this._def.valueType;
+diff --git a/output/lib/zod/lib/index.mjs b/output/lib/zod/lib/index.mjs
+index 3d650148ec830e5de33c55d30a92267ab5a776ef..9fccd12816dfdcf5868dd9e0283f9534664daf19 100644
+--- a/output/lib/zod/lib/index.mjs
++++ b/output/lib/zod/lib/index.mjs
+@@ -2185,6 +2185,7 @@ class ZodArray extends ZodType {
+                     message: def.exactLength.message,
+                 });
+                 status.dirty();
++                if (tooBig) return INVALID;
+             }
+         }
+         if (def.minLength !== null) {
+@@ -2211,6 +2212,7 @@ class ZodArray extends ZodType {
+                     message: def.maxLength.message,
+                 });
+                 status.dirty();
++                return INVALID;
+             }
+         }
+         if (ctx.common.async) {
+@@ -3233,6 +3235,7 @@ class ZodSet extends ZodType {
+                     message: def.maxSize.message,
+                 });
+                 status.dirty();
++                return INVALID;
+             }
+         }
+         const valueType = this._def.valueType;
+diff --git a/output/mock.d.ts b/output/mock.d.ts
+index f0eba1a5f0e0c439c681550192c76cae5d90f7e1..602218b00c96028f4c1ac7770f1acdd101d64786 100644
+--- a/output/mock.d.ts
++++ b/output/mock.d.ts
+@@ -1,4 +1,4 @@
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ import EventEmitter from 'eventemitter3';
+ import { EventSchema } from './schema/events';
+ import { Platform } from './Constants';
+diff --git a/output/schema/common.d.ts b/output/schema/common.d.ts
+index 22a1cb3648126311266302e25898a2abd645424e..8acb76592618795fcc523b2b21fa5b1c8659c9dd 100644
+--- a/output/schema/common.d.ts
++++ b/output/schema/common.d.ts
+@@ -1,4 +1,4 @@
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ export declare const DISPATCH = "DISPATCH";
+ export declare enum Commands {
+     AUTHORIZE = "AUTHORIZE",
+diff --git a/output/schema/events.d.ts b/output/schema/events.d.ts
+index 55d1893ae2df4c3d1a8358f82c4af7883909fd4d..d12c0ffa30c21d533857b471a51385af2701003f 100644
+--- a/output/schema/events.d.ts
++++ b/output/schema/events.d.ts
+@@ -1,4 +1,4 @@
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ import { Orientation } from '../Constants';
+ import { Commands } from './common';
+ export declare const ERROR = "ERROR";
+diff --git a/output/schema/index.d.ts b/output/schema/index.d.ts
+index 8926ae259dd2edf901276870066bc6ac9e3eb954..1f2b92f2fb63fa47414c14d13eb2715403c1769a 100644
+--- a/output/schema/index.d.ts
++++ b/output/schema/index.d.ts
+@@ -1,4 +1,4 @@
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ import * as Events from './events';
+ import * as Responses from './responses';
+ import * as Common from './common';
+diff --git a/output/schema/responses.d.ts b/output/schema/responses.d.ts
+index fa8d39e6a42d832e461f9fe8640294cf60204667..6a00c3bcbb7c179ab093518f25eaf2533c1842eb 100644
+--- a/output/schema/responses.d.ts
++++ b/output/schema/responses.d.ts
+@@ -1,4 +1,4 @@
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ import { Commands } from './common';
+ import { AuthenticateResponseSchema, InitiateImageUploadResponseSchema } from '../generated/schemas';
+ export declare const EmptyResponse: zod.ZodNullable<zod.ZodObject<{}, "strip", zod.ZodTypeAny, {}, {}>>;
+diff --git a/output/schema/types.d.ts b/output/schema/types.d.ts
+index 3c15ede9de7f1c39ec78036a019c53ba7d2721e5..c065eab6b975b80062744fd57da58cf4b6346d1d 100644
+--- a/output/schema/types.d.ts
++++ b/output/schema/types.d.ts
+@@ -1,4 +1,4 @@
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ import * as Events from './events';
+ import * as Common from './common';
+ import type { GetActivityInstanceConnectedParticipantsResponse } from '../generated/schemas';
+diff --git a/output/utils/commandFactory.d.ts b/output/utils/commandFactory.d.ts
+index 4244e7c29dd3bbe566db323e06919412aff15c98..59e01ac4e94baa2d3bcc8aa8c238e545e70ecec5 100644
+--- a/output/utils/commandFactory.d.ts
++++ b/output/utils/commandFactory.d.ts
+@@ -1,4 +1,4 @@
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ import { Commands } from '../schema/common';
+ import type { TSendCommand } from '../schema/types';
+ import { Command, Schemas } from '../generated/schemas';
+diff --git a/output/utils/compatCommandFactory.d.ts b/output/utils/compatCommandFactory.d.ts
+index f447a97e4eab00f30c16278939280f2da4468ca4..76428f0a50734a645c3896ed3ff8d6d96038dd84 100644
+--- a/output/utils/compatCommandFactory.d.ts
++++ b/output/utils/compatCommandFactory.d.ts
+@@ -1,4 +1,4 @@
+-import * as zod from 'zod';
++import * as zod from 'zod/v3';
+ import { Commands } from '../schema/common';
+ import { TSendCommand } from '../schema/types';
+ /**
+diff --git a/output/utils/zodUtils.d.ts b/output/utils/zodUtils.d.ts
+index 0a7ebe9e3ac5358d02f040f71dea8c67fd02634c..60e13766d6aa27d245cd397b636b2277081262cd 100644
+--- a/output/utils/zodUtils.d.ts
++++ b/output/utils/zodUtils.d.ts
+@@ -1,5 +1,5 @@
+-import * as zod from 'zod';
+-import { ZodDefault, ZodTypeAny } from 'zod';
++import * as zod from 'zod/v3';
++import { ZodDefault, ZodTypeAny } from 'zod/v3';
+ type ValueOf<T> = T[keyof T];
+ interface UnhandledObject {
+     readonly UNHANDLED: -1;

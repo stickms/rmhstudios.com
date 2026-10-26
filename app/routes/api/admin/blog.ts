@@ -3,115 +3,81 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { pingIndexNow } from '@/lib/seo/indexnow.server';
+import { Prisma } from '@prisma/client';
+import { blogPostSchema } from '@/lib/admin/schemas';
 
 export const Route = createFileRoute('/api/admin/blog')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
-        const user = session?.user as any;
+      POST: defineHandler(
+        { auth: 'admin', rateLimit: { policy: 'write', scope: 'user' }, body: blogPostSchema },
+        async ({ body, session }) => {
+          const user = session.user;
 
-        if (!user || !user.isAdmin) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+          const { title, slug, description, image, date, tags, content, isEdit } = body;
 
-        const body = await request.json();
-        const { title, slug, description, image, date, tags, content, isEdit } = body;
-
-        console.log(`Saving blog post (${isEdit ? 'EDIT' : 'NEW'}):`, body);
-
-        if (!title || !slug || !date || !description || !content) {
-          return Response.json({ error: 'Missing required fields' }, { status: 400 });
-        }
-
-        // Validate slug format
-        if (!/^[a-z0-9-]+$/.test(slug)) {
-          return Response.json(
-            { error: 'Invalid slug format. Use lowercase letters, numbers, and hyphens.' },
-            { status: 400 },
-          );
-        }
-
-        // Check if file already exists ONLY if we aren't editing
-        if (!isEdit) {
-          const existingPost = await prisma.blogPost.findUnique({ where: { slug } });
-          if (existingPost) {
-            return Response.json(
-              { error: 'A post with this slug already exists' },
-              { status: 409 },
-            );
+          const data = { title, date, description, image: image || null, tags, content };
+          try {
+            // A create must never update a concurrent writer's post with the same slug.
+            if (isEdit) await prisma.blogPost.update({ where: { slug }, data });
+            else await prisma.blogPost.create({ data: { slug, ...data } });
+          } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+              if (error.code === 'P2002') {
+                return Response.json(
+                  { error: 'A post with this slug already exists' },
+                  { status: 409 },
+                );
+              }
+              if (error.code === 'P2025') {
+                return Response.json({ error: 'Post not found' }, { status: 404 });
+              }
+            }
+            throw error;
           }
-        }
 
-        let formattedTags: string[] = [];
-        if (tags && Array.isArray(tags)) {
-          formattedTags = tags;
-        } else if (typeof tags === 'string' && tags.trim() !== '') {
-          formattedTags = [tags];
-        }
+          await logAdminAction(user.id, isEdit ? 'blog.edit' : 'blog.create', {
+            targetType: 'BlogPost',
+            targetId: slug,
+            detail: title,
+          });
 
-        await prisma.blogPost.upsert({
-          where: { slug },
-          update: {
-            title,
-            date,
-            description,
-            image: image || null,
-            tags: formattedTags,
-            content,
-          },
-          create: {
-            slug,
-            title,
-            date,
-            description,
-            image: image || null,
-            tags: formattedTags,
-            content,
-          },
-        });
+          // The post is live at /blog/<slug> the moment the write commits, and
+          // every blogPost row is in the sitemap unconditionally (see
+          // lib/sitemap.server.ts). Tell IndexNow now rather than waiting for the
+          // next crawl. Fire-and-forget by contract — never awaited, never throws.
+          pingIndexNow([`/blog/${slug}`]);
 
-        await logAdminAction(user.id, isEdit ? 'blog.edit' : 'blog.create', {
-          targetType: 'BlogPost',
-          targetId: slug,
-          detail: title,
-        });
+          return Response.json({ success: true, slug });
+        },
+      ),
+      DELETE: defineHandler(
+        { auth: 'admin', rateLimit: { policy: 'write', scope: 'user' } },
+        async ({ request, session }) => {
+          const user = session.user;
 
-        // The post is live at /blog/<slug> the moment the upsert commits, and
-        // every blogPost row is in the sitemap unconditionally (see
-        // lib/sitemap.server.ts). Tell IndexNow now rather than waiting for the
-        // next crawl. Fire-and-forget by contract — never awaited, never throws.
-        pingIndexNow([`/blog/${slug}`]);
+          const { searchParams } = new URL(request.url);
+          const slug = searchParams.get('slug');
 
-        return Response.json({ success: true, slug });
-      }),
-      DELETE: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
-        const user = session?.user as any;
-
-        if (!user || !user.isAdmin) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const { searchParams } = new URL(request.url);
-        const slug = searchParams.get('slug');
-
-        if (!slug) {
-          return Response.json({ error: 'Slug is required' }, { status: 400 });
-        }
-
-        try {
-          await prisma.blogPost.delete({ where: { slug } });
-        } catch (e: any) {
-          if (e.code === 'P2025') {
-            // Prisma error code for record not found
-            return Response.json({ error: 'Post not found' }, { status: 404 });
+          if (!slug) {
+            return Response.json({ error: 'Slug is required' }, { status: 400 });
           }
-          throw e;
-        }
 
-        await logAdminAction(user.id, 'blog.delete', { targetType: 'BlogPost', targetId: slug });
+          try {
+            await prisma.blogPost.delete({ where: { slug } });
+          } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+              // Prisma error code for record not found
+              return Response.json({ error: 'Post not found' }, { status: 404 });
+            }
+            throw e;
+          }
 
-        return Response.json({ success: true });
-      }),
+          await logAdminAction(user.id, 'blog.delete', { targetType: 'BlogPost', targetId: slug });
+
+          return Response.json({ success: true });
+        },
+      ),
     },
   },
 });

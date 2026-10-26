@@ -58,6 +58,8 @@ vi.mock('../scene', () => ({
 vi.mock('../scene-store', () => ({
   clearScene: () => {},
   publishScene: () => Promise.resolve(),
+  currentScene: () => null,
+  onSceneChange: () => () => {},
 }));
 
 import { jellyBus } from '@/lib/jelly/bus';

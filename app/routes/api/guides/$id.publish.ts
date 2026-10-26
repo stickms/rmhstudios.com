@@ -9,16 +9,22 @@ const schema = z.object({ published: z.boolean() });
 export const Route = createFileRoute('/api/guides/$id/publish')({
   server: {
     handlers: {
-      POST: defineHandler({ body: schema }, async ({ params, session, body }) => {
-        try {
-          await publishGuide(session.user.id, params.id, body.published);
-        } catch (e) {
-          if (e instanceof GameMetaError)
-            return Response.json({ error: e.message }, { status: 404 });
-          throw e;
-        }
-        return Response.json({ ok: true });
-      }),
+      POST: defineHandler(
+        {
+          rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:guides/:id.publish' },
+          body: schema,
+        },
+        async ({ params, session, body }) => {
+          try {
+            await publishGuide(session.user.id, params.id, body.published);
+          } catch (e) {
+            if (e instanceof GameMetaError)
+              return Response.json({ error: e.message }, { status: 404 });
+            throw e;
+          }
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });

@@ -238,7 +238,7 @@ function ChartRow({
   const clearRate = evidence.clearRate;
 
   return (
-    <li className="glass-fill rounded-site p-4">
+    <li className="glass-fill rounded-site p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

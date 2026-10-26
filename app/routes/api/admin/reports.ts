@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
@@ -11,11 +12,7 @@ import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 export const Route = createFileRoute('/api/admin/reports')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
-        if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
-
+      GET: defineHandler({ auth: 'admin' }, async ({ request }) => {
         const url = new URL(request.url);
         const statusParam = url.searchParams.get('status') ?? 'PENDING';
         const validStatuses = ['PENDING', 'REVIEWING', 'RESOLVED', 'DISMISSED'] as const;
@@ -23,7 +20,7 @@ export const Route = createFileRoute('/api/admin/reports')({
           ? (statusParam as (typeof validStatuses)[number])
           : 'PENDING';
         const cursor = url.searchParams.get('cursor');
-        const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 25, 1), 50);
+        const limit = pageSize(url.searchParams.get('limit'), 25, 50);
 
         const rows = await prisma.contentReport.findMany({
           where: { status },

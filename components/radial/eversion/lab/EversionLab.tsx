@@ -472,7 +472,7 @@ export function EversionLab() {
 
       <section
         aria-label="Eversion lab controls"
-        className="glass-overlay rounded-site absolute bottom-[calc(0.75rem+var(--safe-bottom))] left-[calc(0.75rem+var(--safe-left))] flex max-h-[calc(100dvh-1.5rem-var(--safe-top)-var(--safe-bottom))] w-[min(26rem,calc(100vw-1.5rem-var(--safe-left)-var(--safe-right)))] flex-col gap-3 overflow-y-auto p-4 text-sm"
+        className="glass-overlay rounded-site absolute bottom-[calc(0.75rem+var(--safe-bottom))] left-[calc(0.75rem+var(--safe-left))] flex max-h-[calc(100dvh-1.5rem-var(--safe-top)-var(--safe-bottom))] w-[min(26rem,calc(100vw-1.5rem-var(--safe-left)-var(--safe-right)))] flex-col gap-3 overflow-y-auto p-5 text-sm"
         data-eversion-lab-panel
       >
         <header className="flex items-baseline justify-between gap-2">

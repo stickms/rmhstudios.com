@@ -3,10 +3,6 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 
-function isAdmin(session: { user: unknown } | null): boolean {
-  return !!session && !!(session.user as { isAdmin?: boolean }).isAdmin;
-}
-
 const decisionSchema = z.object({
   id: z.string().min(1),
   action: z.enum(['approve', 'reject']),
@@ -16,10 +12,7 @@ const decisionSchema = z.object({
 export const Route = createFileRoute('/api/admin/rideshare/applications')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
-        if (!isAdmin(session)) {
-          return new Response('Unauthorized', { status: 401 });
-        }
+      GET: defineHandler({ auth: 'admin' }, async ({ request }) => {
         const statusParam = new URL(request.url).searchParams.get('status') ?? 'PENDING';
         const status = ['PENDING', 'APPROVED', 'REJECTED'].includes(statusParam)
           ? (statusParam as 'PENDING' | 'APPROVED' | 'REJECTED')
@@ -54,51 +47,52 @@ export const Route = createFileRoute('/api/admin/rideshare/applications')({
         return Response.json({ items });
       }),
 
-      PATCH: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
-        if (!isAdmin(session)) {
-          return new Response('Unauthorized', { status: 401 });
-        }
-        const adminId = session!.user.id;
+      PATCH: defineHandler(
+        { auth: 'admin', rateLimit: { policy: 'write', scope: 'user' } },
+        async ({ request, session }) => {
+          const adminId = session.user.id;
 
-        const parsed = decisionSchema.safeParse(await request.json());
-        if (!parsed.success) {
-          return Response.json({ error: 'Invalid request' }, { status: 400 });
-        }
-        const { id, action, rejectionReason } = parsed.data;
+          const parsed = decisionSchema.safeParse(await request.json());
+          if (!parsed.success) {
+            return Response.json({ error: 'Invalid request' }, { status: 400 });
+          }
+          const { id, action, rejectionReason } = parsed.data;
 
-        const driver = await prisma.rideshareDriver.findUnique({ where: { id } });
-        if (!driver) {
-          return Response.json({ error: 'Application not found' }, { status: 404 });
-        }
-        if (driver.status !== 'PENDING') {
-          return Response.json({ error: 'Application already reviewed.' }, { status: 409 });
-        }
+          const driver = await prisma.rideshareDriver.findUnique({ where: { id } });
+          if (!driver) {
+            return Response.json({ error: 'Application not found' }, { status: 404 });
+          }
+          if (driver.status !== 'PENDING') {
+            return Response.json({ error: 'Application already reviewed.' }, { status: 409 });
+          }
 
-        const updated = await prisma.rideshareDriver.update({
-          where: { id },
-          data: {
-            status: action === 'approve' ? 'APPROVED' : 'REJECTED',
-            rejectionReason:
-              action === 'reject' ? rejectionReason || 'Application not approved.' : null,
-            reviewedById: adminId,
-            reviewedAt: new Date(),
-          },
-        });
-
-        await prisma.adminAuditLog
-          .create({
+          const updated = await prisma.rideshareDriver.update({
+            where: { id },
             data: {
-              adminId,
-              action: action === 'approve' ? 'rideshare.driver.approve' : 'rideshare.driver.reject',
-              targetType: 'rideshare_driver',
-              targetId: id,
-              detail: action === 'reject' ? rejectionReason || null : null,
+              status: action === 'approve' ? 'APPROVED' : 'REJECTED',
+              rejectionReason:
+                action === 'reject' ? rejectionReason || 'Application not approved.' : null,
+              reviewedById: adminId,
+              reviewedAt: new Date(),
             },
-          })
-          .catch(() => {});
+          });
 
-        return Response.json({ status: updated.status });
-      }),
+          await prisma.adminAuditLog
+            .create({
+              data: {
+                adminId,
+                action:
+                  action === 'approve' ? 'rideshare.driver.approve' : 'rideshare.driver.reject',
+                targetType: 'rideshare_driver',
+                targetId: id,
+                detail: action === 'reject' ? rejectionReason || null : null,
+              },
+            })
+            .catch(() => {});
+
+          return Response.json({ status: updated.status });
+        },
+      ),
     },
   },
 });

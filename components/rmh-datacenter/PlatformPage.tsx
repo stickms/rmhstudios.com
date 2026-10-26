@@ -31,7 +31,7 @@ export default function PlatformPage() {
       <DatacenterTabs active="/rmh-datacenter/platform" />
 
       <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <p className="max-w-prose text-site-text-muted">
             {t('plat-lede', {
               defaultValue:
@@ -40,7 +40,7 @@ export default function PlatformPage() {
           </p>
         </section>
 
-        <section id="colocation" className="glass-pane rounded-site p-4 sm:p-6">
+        <section id="colocation" className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker="PL-01"
             heading={t('plat-colo-heading', {
@@ -81,7 +81,7 @@ export default function PlatformPage() {
           </dl>
         </section>
 
-        <section id="bare-metal" className="glass-pane rounded-site p-4 sm:p-6">
+        <section id="bare-metal" className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker="PL-02"
             heading={t('plat-metal-heading', {
@@ -136,7 +136,7 @@ export default function PlatformPage() {
           </div>
         </section>
 
-        <section id="accelerated" className="glass-pane rounded-site p-4 sm:p-6">
+        <section id="accelerated" className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker="PL-03"
             heading={t('plat-gpu-heading', {
@@ -177,7 +177,7 @@ export default function PlatformPage() {
           </dl>
         </section>
 
-        <section id="storage" className="glass-pane rounded-site p-4 sm:p-6">
+        <section id="storage" className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker="PL-04"
             heading={t('plat-store-heading', {
@@ -212,7 +212,7 @@ export default function PlatformPage() {
           </dl>
         </section>
 
-        <section id="resilience" className="glass-pane rounded-site p-4 sm:p-6">
+        <section id="resilience" className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker="PL-05"
             heading={t('plat-dr-heading', {
@@ -263,7 +263,7 @@ export default function PlatformPage() {
           </div>
         </section>
 
-        <section className="glass-pane rounded-site p-4 sm:p-6">
+        <section className="glass-pane rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('plat-cta-kicker', { defaultValue: 'Quoting' })}
             heading={t('plat-cta-heading', { defaultValue: 'Send a load, get a hall' })}

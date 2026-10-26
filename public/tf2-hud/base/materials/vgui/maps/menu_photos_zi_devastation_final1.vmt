@@ -1,0 +1,8 @@
+"UnlitGeneric"
+{
+	"$basetexture" "vgui/maps/menu_photos_zi_devastation_final1"
+
+	"$translucent" 1
+	"$ignorez" 1
+	"$vertexcolor" 1
+}

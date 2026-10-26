@@ -6,18 +6,21 @@ import { hideAward, AwardError } from '@/lib/awards/awards.server';
 export const Route = createFileRoute('/api/awards/$id/hide')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ params, session }) => {
-        try {
-          await hideAward(session.user.id, params.id);
-        } catch (e) {
-          if (e instanceof AwardError) {
-            const status = e.message === 'FORBIDDEN' ? 403 : 404;
-            return Response.json({ error: e.message }, { status });
+      POST: defineHandler(
+        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:awards/:id.hide' } },
+        async ({ params, session }) => {
+          try {
+            await hideAward(session.user.id, params.id);
+          } catch (e) {
+            if (e instanceof AwardError) {
+              const status = e.message === 'FORBIDDEN' ? 403 : 404;
+              return Response.json({ error: e.message }, { status });
+            }
+            throw e;
           }
-          throw e;
-        }
-        return Response.json({ ok: true });
-      }),
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });

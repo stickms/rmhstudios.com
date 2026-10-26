@@ -19,11 +19,13 @@ export const Route = createFileRoute('/api/admin/users/$id/ban')({
   server: {
     handlers: {
       POST: defineHandler(
-        { auth: 'optional', body: schema, allowEmptyBody: true },
+        {
+          auth: 'admin',
+          rateLimit: { policy: 'write', scope: 'user' },
+          body: schema,
+          allowEmptyBody: true,
+        },
         async ({ params, session, body }) => {
-          if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) {
-            return Response.json({ error: 'Forbidden' }, { status: 403 });
-          }
           if (params.id === session.user.id) {
             return Response.json({ error: 'You cannot ban yourself' }, { status: 400 });
           }

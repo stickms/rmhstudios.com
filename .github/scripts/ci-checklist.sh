@@ -56,9 +56,11 @@ def dur:
   else " · \(.secs)s" end;
 [ row("Typecheck"; "ci"; "Typecheck"; "step"),
   row("Lint"; "ci"; "Lint"; "step"),
-  row("Unit tests"; "ci"; "Test"; "job"),
+  row("Unit tests 1/2"; "unit (1/2)"; "Test"; "job"),
+  row("Unit tests 2/2"; "unit (2/2)"; "Test"; "job"),
   row("Integration tests"; "integration"; "Integration tests"; "job"),
-  row("Go tests"; "go-test"; "Go tests"; "job"),
+  row("Go tests"; "go-test"; "build + test (bazel)"; "job"),
+  row("Candidate smoke"; "build"; "Smoke the published production images"; "step"),
   row("Images built + pushed"; "build"; "Build + push both images (bake, single graph)"; "step") ]
 | { fields: [{name: "CI", value: (map("\(icon) \(.label)\(dur)") | join("\n"))}],
     state: (if any(.[]; .status == "completed" and .conclusion != "success" and .conclusion != "skipped") then "failure"

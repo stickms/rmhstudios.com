@@ -5,6 +5,13 @@ know what to trust. Agent-facing guides live at the repo root
 ([`CLAUDE.md`](../CLAUDE.md), [`AGENTS.md`](../AGENTS.md)) and in each major
 directory's `CLAUDE.md`.
 
+Latest build and deployment review:
+[`build-deploy-audit-2026-10-23.md`](./build-deploy-audit-2026-10-23.md)
+measures 30 recent deployment runs, separates CI handoff from production readiness,
+and ranks speed improvements with runtime-performance acceptance criteria.
+Implementation and post-merge activation:
+[`deployment-speed-implementation-2026-10-24.md`](./deployment-speed-implementation-2026-10-24.md).
+
 This tree also builds as a Sphinx/MyST site for Read the Docs — `conf.py`,
 `requirements.txt` and `index.md` (the landing page + nav) here, with
 `.readthedocs.yaml` at the repo root. Build it locally with:
@@ -114,6 +121,7 @@ writing, not necessarily the current code).
 | [`altair/`](./altair/)                                                                                                                                                           | Altair strategy game — implementation, multiplayer, balance patch history                                                                        |
 | [`rmhmusic/`](./rmhmusic/), [`rmhtube/`](./rmhtube/), [`rmhvibe/`](./rmhvibe/), [`rmhtech/`](./rmhtech/)                                                                         | App design docs (rmhtube `features.md` is a 2025 roadmap — historical)                                                                           |
 | [`signal-forge/`](./signal-forge/), [`temple-of-joy/`](./temple-of-joy/), [`void-breaker/`](./void-breaker/), [`daily-puzzles/`](./daily-puzzles/), [`rmhpoetry/`](./rmhpoetry/) | Game design docs                                                                                                                                 |
+| [`tf2-hud-editor.md`](./tf2-hud-editor.md)                                                                                                                                       | RMH TF2 HUD Editor: architecture, the base HUD, preview fidelity, storage/API trust model                                                        |
 | [`alex-tamagotchi/`](./alex-tamagotchi/)                                                                                                                                         | Alex, the Discord tamagotchi pet (now implemented in `go-services/internal/discordbot`)                                                          |
 | [`textbook/`](./textbook/), [`indonesia-history/`](./indonesia-history/)                                                                                                         | Generated book projects (architecture textbook; Library content) — content artifacts, not code docs                                              |
 

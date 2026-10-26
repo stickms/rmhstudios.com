@@ -1,3 +1,4 @@
+import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 /**
@@ -15,7 +16,7 @@ export const Route = createFileRoute('/api/user-builds/featured')({
     handlers: {
       GET: defineHandler({ auth: 'none' }, async ({ request }) => {
         const { searchParams } = new URL(request.url);
-        const limit = Math.min(parseInt(searchParams.get('limit') || '6'), 20);
+        const limit = pageSize(searchParams.get('limit'), 6, 20);
 
         // Get current user session (optional)
         let currentUserId: string | null = null;

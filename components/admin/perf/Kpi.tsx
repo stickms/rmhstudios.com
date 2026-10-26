@@ -25,7 +25,7 @@ interface KpiProps {
 export function Kpi({ label, value, tone = 'none', hint }: KpiProps) {
   const { t } = useTranslation('f-perf');
   return (
-    <div className="glass-fill rounded-site p-4">
+    <div className="glass-fill rounded-site p-5">
       <p className="text-xs text-site-text-muted">{label}</p>
       <p
         className={cn(

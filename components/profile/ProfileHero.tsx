@@ -549,7 +549,7 @@ export function ProfileHero({
         <div className="grid gap-3 sm:grid-cols-2">
           {profile.membershipPriceCoins && profile.membershipPriceCoins > 0 ? (
             <section
-              className="glass-fill rounded-site p-4"
+              className="glass-fill rounded-site p-5"
               aria-labelledby="profile-membership-title"
             >
               <div className="flex items-start gap-3">
@@ -599,7 +599,7 @@ export function ProfileHero({
 
           {profile.tipGoal && profile.tipGoal > 0 ? (
             <section
-              className="glass-fill rounded-site p-4"
+              className="glass-fill rounded-site p-5"
               aria-labelledby="profile-tip-goal-title"
             >
               <div className="flex items-center justify-between gap-3">

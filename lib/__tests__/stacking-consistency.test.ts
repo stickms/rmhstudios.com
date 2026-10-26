@@ -127,6 +127,7 @@ const NON_SITE_DIRS = new Set([
   'rmhtube',
   'rmhmusic',
   'rmhtype',
+  'tf2-hud',
   'rmhstudy',
   'rmhcode',
   'rmhvibe',

@@ -61,7 +61,7 @@ export default function FriendlyChallenges() {
     );
 
   return (
-    <section className="glass-pane rounded-site p-4 space-y-3" aria-labelledby="friendly-heading">
+    <section className="glass-pane rounded-site p-5 space-y-3" aria-labelledby="friendly-heading">
       <div>
         <h2 id="friendly-heading" className="site-section-label">
           {t('fr-title', { defaultValue: 'Friendly challenge' })}

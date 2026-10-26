@@ -90,7 +90,7 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
 
   return (
     <section
-      className={`rounded-site border border-site-border bg-site-accent-dim/20 p-4 ${className ?? ''}`}
+      className={`rounded-site border border-site-border bg-site-accent-dim/20 p-5 ${className ?? ''}`}
       aria-label={t('first-week-title', { defaultValue: 'Your first week' })}
     >
       <div className="mb-2 flex items-start justify-between gap-2">

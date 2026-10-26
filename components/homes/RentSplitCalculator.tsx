@@ -118,7 +118,7 @@ export function RentSplitCalculator({
             (f) => `× ${FEATURE_WEIGHTS[f]} ${featureLabel[f].toLowerCase()}`,
           );
           return (
-            <li key={i} className="glass-fill rounded-site p-4">
+            <li key={i} className="glass-fill rounded-site p-5">
               <div className="flex flex-wrap items-end gap-3">
                 <label className="min-w-32 flex-1 space-y-2 text-sm">
                   <span className="text-site-text-muted">

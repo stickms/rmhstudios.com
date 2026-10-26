@@ -5,12 +5,7 @@
  * Environment variables override defaults for production flexibility.
  */
 
-function envInt(key: string, fallback: number): number {
-  const raw = process.env[key];
-  if (raw === undefined) return fallback;
-  const parsed = parseInt(raw, 10);
-  return Number.isNaN(parsed) ? fallback : parsed;
-}
+import { envInt } from '../shared/config';
 
 function envString(key: string, fallback: string): string {
   return process.env[key] ?? fallback;
@@ -18,7 +13,7 @@ function envString(key: string, fallback: string): string {
 
 export const config = {
   // ─── Network ───
-  PORT: envInt('SOCKET_PORT', 7001),
+  PORT: envInt('SOCKET_PORT', 7001, 1, 65_535),
   SOCKET_PATH: envString('SOCKET_PATH', '/socket/'),
   CORS_ORIGIN: envString('SOCKET_CORS_ORIGIN', ''),
 
