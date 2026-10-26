@@ -516,8 +516,22 @@ jobs:
         if: always()
         run: kill "$(cat "$RUNNER_TEMP/jelly-server.pid" 2>/dev/null)" 2>/dev/null || true
 
+  migrations:
+    needs: changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: New migrations must stay rollback-compatible (expand/contract)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node .github/scripts/check-migrations-additive.mjs
+
   required-checks:
-    needs: [changes, typecheck, test, build, audit, integration, jelly-e2e]
+    needs: [changes, typecheck, test, build, audit, integration, jelly-e2e, migrations]
     if: always() && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -529,6 +543,7 @@ jobs:
           node --input-type=module <<'NODE'
           const needs = JSON.parse(process.env.RESULTS);
           if (needs.changes.result !== 'success') throw new Error('Change classification failed');
+          if (needs.migrations.result !== 'success') throw new Error('migrations: ' + needs.migrations.result);
           for (const name of ['typecheck', 'test', 'audit', 'jelly-e2e', 'build', 'integration']) {
             const kind = ['build', 'integration'].includes(name) ? 'frontend' : 'checks';
             const expected = needs.changes.outputs[kind] === 'true' ? 'success' : 'skipped';
