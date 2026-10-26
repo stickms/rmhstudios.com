@@ -296,7 +296,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  data-state={menuState}
  role="menu"
  aria-label={t('add-to-post-aria', { defaultValue:'Add to post'})}
- className="absolute top-full right-0 mt-1 w-52 origin-top-right glass-overlay p-1 z-50"
+ className="absolute top-full right-0 mt-1 w-52 origin-top-right glass-overlay p-2 z-50"
  >
  <MenuItem
  icon={BarChart3}

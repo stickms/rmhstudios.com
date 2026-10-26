@@ -239,7 +239,7 @@ export function BulkCleanupPanel() {
     return (
       <section aria-labelledby="bulk-heading" className="flex flex-col gap-4">
         {heading}
-        <div className="glass-pane rounded-site p-4">
+        <div className="glass-pane rounded-site p-5">
           <p className="text-sm text-site-text">
             {t('bulk-upgrade-body', {
               tier: listGate.requiredTierLabel ?? 'Pro',
@@ -264,7 +264,7 @@ export function BulkCleanupPanel() {
       {heading}
 
       {upsell ? (
-        <div className="glass-pane rounded-site p-4">
+        <div className="glass-pane rounded-site p-5">
           <p className="text-sm text-site-text">
             {t('bulk-upgrade-body', {
               tier: upsell.requiredTierLabel ?? 'Pro',
@@ -282,7 +282,7 @@ export function BulkCleanupPanel() {
         </div>
       ) : null}
 
-      <div className="glass-pane flex flex-col gap-4 rounded-site p-4">
+      <div className="glass-pane flex flex-col gap-4 rounded-site p-5">
         <div className="flex flex-col gap-2">
           <Label htmlFor="bulk-kind">
             {t('bulk-kind-label', { defaultValue: 'What to clean' })}
@@ -394,7 +394,7 @@ export function BulkCleanupPanel() {
       </div>
 
       {preview ? (
-        <div className="glass-pane flex flex-col gap-3 rounded-site p-4">
+        <div className="glass-pane flex flex-col gap-3 rounded-site p-5">
           <p className="text-sm font-semibold text-site-text">
             {t('bulk-preview-count', {
               count: preview.total,
@@ -434,7 +434,7 @@ export function BulkCleanupPanel() {
       ) : null}
 
       {active ? (
-        <div className="glass-pane flex flex-col gap-3 rounded-site p-4">
+        <div className="glass-pane flex flex-col gap-3 rounded-site p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold text-site-text">{kinds[active.kind].label}</p>
             <Badge size="sm" variant="accent">

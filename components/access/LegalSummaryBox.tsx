@@ -75,7 +75,7 @@ export function LegalSummaryBox({ kind }: { kind: Kind }) {
 
   return (
     <aside
-      className="glass-fill not-prose rounded-site p-4"
+      className="glass-fill not-prose rounded-site p-5"
       aria-label={t('sum-label', { defaultValue: 'Plain-language summary' })}
     >
       <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-site-text">

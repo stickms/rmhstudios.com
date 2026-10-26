@@ -208,7 +208,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
       </div>
 
       {aiAvailable && aiOpen && (
-        <div className="glass-fill mt-3 rounded-site p-4">
+        <div className="glass-fill mt-3 rounded-site p-5">
           <label
             htmlFor="ai-prompt"
             className="mb-2 flex items-center gap-2 text-sm font-medium text-site-text"

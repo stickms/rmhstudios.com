@@ -64,7 +64,7 @@ export default function CanvasPanel() {
   return (
     <div className="space-y-[var(--site-section-gap)]">
       <form
-        className="glass-pane space-y-3 rounded-site p-4"
+        className="glass-pane space-y-3 rounded-site p-5"
         onSubmit={(e) => {
           e.preventDefault();
           void create();

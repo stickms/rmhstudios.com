@@ -60,6 +60,9 @@ esac`,
   stub('flock', '[ "${FAKE_DEPLOYING:-0}" = 1 ] && exit 1 || exit 0');
   stub('journalctl', `echo "journalctl $*" >> "${log}"`);
   stub('apt-get', `echo "apt-get $*" >> "${log}"`);
+  // The pressure report runs `du` over the real /home; on a CI runner that is the whole checkout and outlasts the 5 s
+  // test timeout. Stub it like every other host command.
+  stub('du', 'printf "4.0K\\t/home\\n"');
 
   const cores = join(dir, 'coredump');
   const tmp = join(dir, 'tmp');

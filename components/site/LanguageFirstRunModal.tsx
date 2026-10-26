@@ -56,7 +56,7 @@ export function LanguageFirstRunModal() {
     <Dialog open={open} onOpenChange={(o) => { if (!o) finish(); }}>
       <DialogContent className="max-w-md gap-0">
         <div className="mb-4 flex justify-center">
-          <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-3">
+          <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-4">
             <Globe className="h-7 w-7 text-site-accent" aria-hidden />
           </div>
         </div>

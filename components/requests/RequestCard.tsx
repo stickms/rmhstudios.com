@@ -105,7 +105,7 @@ export function RequestCard({
           ) : null}
 
           {request.officialNote ? (
-            <div className="glass-inset mt-3 rounded-site p-3">
+            <div className="glass-inset mt-3 rounded-site p-4">
               <p className="mb-1 flex items-center gap-2 text-xs font-semibold text-site-accent">
                 <Megaphone className="size-3.5 shrink-0" aria-hidden />
                 {t('request-official-reply', { defaultValue: 'Official reply' })}

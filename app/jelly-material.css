@@ -176,14 +176,20 @@
       var(--gel-depth, transparent)
     );
     --liquid-fill-coat: var(--liquid-coat);
+    /* The band's softness: the bevel, widened like the shader's shoulder and feathered like its silhouette, so the
+       CSS twin of the molded rim is a soft lip, not a coloured line (6px exactly where both are neutral). */
+    --jelly-edge-blur: calc(
+      var(--gel-bevel, 6px) * var(--gel-shoulder, 1) + var(--gel-feather, 0px)
+    );
     --gel-edge:
       inset calc(-1 * var(--gel-disperse-r, 0px)) calc(-1 * var(--gel-disperse-r, 0px))
-        var(--gel-bevel, 6px) 0 var(--gel-edge-r, transparent),
+        var(--jelly-edge-blur) 0 var(--gel-edge-r, transparent),
       inset calc(-1 * var(--gel-disperse-g, 0px)) calc(-1 * var(--gel-disperse-g, 0px))
-        var(--gel-bevel, 6px) 0 var(--gel-edge-g, transparent),
+        var(--jelly-edge-blur) 0 var(--gel-edge-g, transparent),
       inset calc(-1 * var(--gel-disperse-b, 0px)) calc(-1 * var(--gel-disperse-b, 0px))
-        var(--gel-bevel, 6px) 0 var(--gel-edge-b, transparent),
-      inset 0 0 0 1px var(--gel-fresnel, transparent);
+        var(--jelly-edge-blur) 0 var(--gel-edge-b, transparent),
+      inset 0 0 var(--gel-feather, 0px) calc(1px - min(var(--gel-feather, 0px), 1px))
+        var(--gel-fresnel, transparent);
   }
   /* Something better draws the haze: a haze canvas (engine) or a CSS carrier. Under perf-lite neither may run, so
      the floor stays whatever the attributes say. */
@@ -372,8 +378,10 @@
 
   /* ── 4. Static CSS rim (01 §3.4) ────────────────────────────────────────────────────────────────────────────────
      Every surface the shader does NOT draw gets one lit top line, a faint plasma subsurface glow, and the gel edge
-     (§2b: the RGB-led band and the 1px Fresnel line). Static: never in a transition list (hover-css.ts forbids shadow
-     transitions), so it costs nothing at rest. */
+     (§2b: the RGB-led band and the Fresnel line — a hard 1px line only where `--gel-feather` is 0, otherwise a soft
+     glow that far in, the molded rim's CSS twin). A field adds the well: a soft shade inside its top lip and a fainter
+     border (`--gel-well-shade`, `--gel-field-line`), so it reads as pressed into the ground. Static: never in a
+     transition list (hover-css.ts forbids shadow transitions), so it costs nothing at rest. */
   :is(
       .glass-fill,
       .glass-pane,
@@ -394,7 +402,14 @@
             ),
           transparent
         ),
+      inset 0 1.5px 4px -1px var(--jelly-well, transparent),
       var(--gel-edge, 0 0 0 0 transparent);
+  }
+  :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):not([data-liquid-canvas='on']):not(
+      [data-liquid-material='off']
+    ) {
+    --jelly-well: var(--gel-well-shade, transparent);
+    border-color: color-mix(in srgb, var(--site-border) var(--gel-field-line, 100%), transparent);
   }
 
   /* ── 5. Haze canvas (drawn by lib/liquid/glass/engine.ts, W2-A) ─────────────────────────────────────────────────

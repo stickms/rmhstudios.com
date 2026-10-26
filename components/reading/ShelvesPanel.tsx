@@ -88,7 +88,7 @@ export default function ShelvesPanel() {
         return (
           <section
             key={shelf}
-            className="glass-fill rounded-site p-4"
+            className="glass-fill rounded-site p-5"
             aria-labelledby={`rf-shelf-${shelf}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">

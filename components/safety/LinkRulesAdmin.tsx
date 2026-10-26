@@ -62,7 +62,7 @@ export function LinkRulesAdmin() {
             'Links to blocked domains, and to domains that only just started appearing, open a warning page first. Allowed domains skip the new-domain warning.',
         })}
       </p>
-      <div className="glass-fill flex flex-wrap items-end gap-2 rounded-site p-4">
+      <div className="glass-fill flex flex-wrap items-end gap-2 rounded-site p-5">
         <Input
           className="min-w-48 flex-1"
           value={domain}

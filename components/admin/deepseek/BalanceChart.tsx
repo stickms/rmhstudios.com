@@ -75,7 +75,7 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
   });
 
   return (
-    <div className="glass-fill rounded-site p-4">
+    <div className="glass-fill rounded-site p-5">
       <div className="mb-2 flex min-h-5 flex-wrap items-center justify-between gap-2 text-xs text-site-text-muted">
         <span>{t('chart-title', { defaultValue: 'Total balance per hour' })}</span>
         {cur && (

@@ -58,7 +58,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
   }
 
   return (
-    <div className="glass-fill rounded-site p-4">
+    <div className="glass-fill rounded-site p-5">
       <div className="flex items-center gap-2">
         <Gift className="h-5 w-5 text-site-accent" />
         <h3 className="font-semibold text-site-text">{t("add-tip-header", { defaultValue: "Add a tip for your driver" })}</h3>

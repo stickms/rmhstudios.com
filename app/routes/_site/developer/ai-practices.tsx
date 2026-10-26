@@ -34,7 +34,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function Code({ children }: { children: string }) {
   return (
-    <pre className="glass-inset overflow-x-auto rounded-site p-3 font-mono text-sm leading-relaxed text-site-text">
+    <pre className="glass-inset overflow-x-auto rounded-site p-4 font-mono text-sm leading-relaxed text-site-text">
       {children}
     </pre>
   );

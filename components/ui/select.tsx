@@ -282,7 +282,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
           // `pointer-coarse:min-h-11` touch floor. These rows were `py-1.5
           // pl-2.5`, which lands at ~30px — under the floor, and visibly tighter
           // than the menu that opens from the button next to it.
-          'relative flex w-full min-h-9 pointer-coarse:min-h-11 cursor-pointer select-none items-center gap-2.5 py-2 pl-3 pr-8 outline-none',
+          'relative flex w-full min-h-9 pointer-coarse:min-h-11 cursor-pointer select-none items-center gap-2.5 py-2 pl-4 pr-9 outline-none',
           'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
           styles.item,
         )}
@@ -319,7 +319,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
               // difference when the three sit on one line: the baselines stop
               // agreeing and the row reads as assembled from two kits. 44px is
               // also the touch floor, which `h-10` was under.
-              controlSize === 'sm' ? 'h-9 px-3.5 py-1 pr-8' : 'h-12 px-4 py-2 pr-10',
+              controlSize === 'sm' ? 'h-9 px-4.5 py-1 pr-9' : 'h-12 px-5 py-2 pr-11',
               'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
               // The value can be longer than the control: clip it rather than let
               // it push the chevron out of the box.
@@ -358,7 +358,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                 // in the theme's own material. `glass-overlay` is the shared
                 // floating-panel tier (globals.css §5.1). z-60 clears the z-50
                 // dialogs a select can be opened from inside.
-                'z-[60] max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden p-1',
+                'z-[60] max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden p-2',
                 styles.content,
               )}
             >

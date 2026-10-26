@@ -101,7 +101,7 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
   ];
 
   return (
-    <section className="glass-pane rounded-site p-4 sm:p-6" aria-labelledby="request-board">
+    <section className="glass-pane rounded-site p-5 sm:p-6" aria-labelledby="request-board">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id="request-board" className="font-display text-xl font-bold text-site-text">

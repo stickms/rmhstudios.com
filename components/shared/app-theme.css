@@ -82,9 +82,9 @@
   --app-font-mono: 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
 
   /* Shape */
-  --app-radius: 16px;
-  --app-radius-sm: 12px;
-  --app-radius-lg: 24px;
+  --app-radius: 24px;
+  --app-radius-sm: 18px;
+  --app-radius-lg: 32px;
 
   /* Depth */
   --app-shadow: 0 0 0 0 transparent;

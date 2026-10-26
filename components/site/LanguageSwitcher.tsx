@@ -175,7 +175,7 @@ export function LanguageSwitcher() {
               maxHeight: rect.maxHeight,
               "--motion-origin": rect.openUp ? "bottom center" : "top center",
             } as CSSProperties}
-            className="z-[100] overflow-y-auto overscroll-contain glass-overlay p-1"
+            className="z-[100] overflow-y-auto overscroll-contain glass-overlay p-2"
           >
             {LOCALES.map((l) => {
               const active = l === locale;

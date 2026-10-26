@@ -143,7 +143,7 @@ export function CookieConsent() {
       // it was re-run on every scroll frame of a first visit — the single
       // largest scroll cost on `/` (perf audit 2026-10-08: ~3.3ms of ~10ms per
       // frame). Opaque also reads better for a notice you are required to read.
-      className="glass-overlay glass-opaque bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-4"
+      className="glass-overlay glass-opaque bottom-above-dock fixed inset-x-3 z-40 mx-auto max-w-2xl rounded-site p-5"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Cookie className="hidden h-5 w-5 shrink-0 text-site-accent sm:block" aria-hidden />

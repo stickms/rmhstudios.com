@@ -82,7 +82,7 @@ export function AdminReleaseNotes() {
 
   return (
     <AdminBody width="narrow">
-      <section className="glass-fill space-y-3 rounded-site p-4">
+      <section className="glass-fill space-y-3 rounded-site p-5">
         <h2 className="site-section-label">
           {t('admin-pasteTitle', { defaultValue: 'Merged pull requests' })}
         </h2>
@@ -107,7 +107,7 @@ export function AdminReleaseNotes() {
         </Button>
       </section>
 
-      <section className="glass-fill space-y-3 rounded-site p-4">
+      <section className="glass-fill space-y-3 rounded-site p-5">
         <h2 className="site-section-label">
           {t('admin-editTitle', { defaultValue: 'Release note' })}
         </h2>
@@ -159,7 +159,7 @@ export function AdminReleaseNotes() {
 
       <ul className="space-y-3">
         {notes.map((n) => (
-          <li key={n.id} className="glass-fill space-y-3 rounded-site p-4">
+          <li key={n.id} className="glass-fill space-y-3 rounded-site p-5">
             <div className="flex items-center gap-2">
               <p className="min-w-0 flex-1 truncate text-sm font-semibold text-site-text">
                 {n.version} · {n.title}

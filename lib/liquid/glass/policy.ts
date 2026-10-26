@@ -24,11 +24,50 @@ export const GLASS_BUDGET = {
   largeArea: 250_000,
 } as const;
 
-/** Bevel width for a surface: wide enough to refract visibly, never so wide that content sits inside it. */
-export function bevelFor(width: number, height: number, radius: number): number {
+/**
+ * Bevel width for a surface: wide enough to refract visibly, never so wide that content sits inside it. `shoulder`
+ * (`--gel-shoulder`, 0.5..2) widens it for the molded rim's rounded shoulder; the ceiling grows with it, and the molded
+ * shading stays in the bevel's outer 60%, so text in a card's padding is still clear of it.
+ *
+ * `room` is how far the shoulder may reach before it would run under something else ({@link roomFor}): a nested body
+ * or the host's padded content. A parent's edge never overlaps a child's, so nested surfaces mold into each other
+ * instead of stacking two rims on one line.
+ */
+export function bevelFor(
+  width: number,
+  height: number,
+  radius: number,
+  shoulder = 1,
+  room = Infinity,
+): number {
   const short = Math.min(width, height);
-  const wanted = Math.min(short * 0.26, Math.max(radius * 0.9, 16));
-  return Math.max(3, Math.min(24, Math.round(wanted), Math.floor(short / 2) - 1));
+  const k = Math.max(0.5, Math.min(2, shoulder));
+  const wanted = Math.min(short * 0.26, Math.max(radius * 0.9, 16)) * k;
+  return Math.max(
+    BEVEL_MIN,
+    Math.min(
+      Math.round(24 * Math.max(1, k)),
+      Math.round(wanted),
+      Math.floor(short / 2) - 1,
+      Math.floor(room),
+    ),
+  );
+}
+
+/** The thinnest shoulder a surface is drawn with: below this the rim reads as an outline again. */
+export const BEVEL_MIN = 3;
+/** Clear space kept between a parent's shoulder and a nested body's silhouette, CSS px. */
+export const NEST_GAP = 2;
+
+/**
+ * How far a surface's shoulder may reach, CSS px. `padding` is the host's smallest padding: when it has any, the
+ * shoulder stays in it, so text never sits on the slope (a full-bleed host — padding 0, a media card — keeps its whole
+ * shoulder over the media). `childInset` is the smallest distance from the host's edge to a nested body's edge; the
+ * shoulder stops {@link NEST_GAP} short of it.
+ */
+export function roomFor(padding: number, childInset: number): number {
+  const pad = padding > 0 ? padding : Infinity;
+  return Math.max(BEVEL_MIN, Math.min(pad, childInset - NEST_GAP));
 }
 
 /** How far behind the surface the page appears to be: the reach of refraction. Shorter than the bevel by design. */

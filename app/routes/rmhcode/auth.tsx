@@ -77,7 +77,7 @@ function AuthContent() {
       <div className="app-ground bg-site-bg flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
           <div className="glass-pane rounded-site p-6 text-center">
-            <div className="flex justify-center mb-4"><div className="p-3 rounded-site bg-site-accent-dim border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div></div>
+            <div className="flex justify-center mb-4"><div className="p-4 rounded-site bg-site-accent-dim border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div></div>
             <h1 className="text-xl font-semibold text-site-text mb-2">{t("sign-in-to-authorize", { defaultValue: "Sign in to authorize rmhcode" })}</h1>
             <p className="text-sm text-site-text-muted mb-6">{t("sign-in-description", { defaultValue: "You need to sign in to your RMH account to authorize the CLI." })}</p>
             <Link to={loginUrl}><Button variant="accent" className="w-full">{t("sign-in-to-continue", { defaultValue: "Sign In to Continue" })}</Button></Link>
@@ -107,7 +107,7 @@ function AuthContent() {
       <div className="app-ground bg-site-bg flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full">
           <div className="rounded-site border border-site-success/30 bg-site-success/10 p-6 text-center">
-            <div className="flex justify-center mb-4"><div className="p-3 rounded-site bg-site-success/15 border border-site-success/30"><Check className="w-8 h-8 text-site-success" /></div></div>
+            <div className="flex justify-center mb-4"><div className="p-4 rounded-site bg-site-success/15 border border-site-success/30"><Check className="w-8 h-8 text-site-success" /></div></div>
             <h1 className="text-xl font-semibold text-site-text mb-2">{t("authorization-successful", { defaultValue: "Authorization Successful!" })}</h1>
             <p className="text-sm text-site-text-muted">{t("redirecting", { defaultValue: "Redirecting back to rmhcode CLI..." })}</p>
           </div>
@@ -121,7 +121,7 @@ function AuthContent() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
         <div className="glass-pane rounded-site p-6">
           <div className="flex items-center gap-4 mb-6">
-            <div className="p-3 rounded-site bg-site-accent-dim border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div>
+            <div className="p-4 rounded-site bg-site-accent-dim border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div>
             <div><h1 className="text-xl font-semibold text-site-text">{t("authorize-rmhcode", { defaultValue: "Authorize rmhcode" })}</h1><p className="text-sm text-site-text-muted">{t("cli-requesting-access", { defaultValue: "CLI is requesting access to your account" })}</p></div>
           </div>
           <div className="p-4 glass-inset rounded-site-sm mb-6">

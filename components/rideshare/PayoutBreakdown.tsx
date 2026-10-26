@@ -27,7 +27,7 @@ export function PayoutBreakdown({ fareCents, tipCents, estimate }: PayoutBreakdo
   }
 
   return (
-    <div className="glass-fill rounded-site p-4">
+    <div className="glass-fill rounded-site p-5">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="text-sm font-semibold text-site-text">
           {estimate ? 'Estimated pay' : 'Your earnings'}

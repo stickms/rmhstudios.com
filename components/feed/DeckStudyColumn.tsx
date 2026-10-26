@@ -288,7 +288,7 @@ export function DeckStudyColumn({
 
  {deck.isOwner && (
  <Reveal
- className={`rounded-site glass-fill p-3 ${LIFT_CARD}`}
+ className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}
  >
  <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
  <Plus className="h-3.5 w-3.5"/> {t('add-a-card', { defaultValue:'Add a card'})}

@@ -60,7 +60,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
     (filters.petsAllowed ? 1 : 0);
 
   return (
-    <div className="glass-fill rounded-site p-4">
+    <div className="glass-fill rounded-site p-5">
       <div className="flex flex-wrap items-center gap-2">
         <LiquidTabs
           size="sm"

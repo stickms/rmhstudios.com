@@ -114,7 +114,7 @@ export function ProfilerTab() {
 
   return (
     <div className="space-y-6">
-      <section className="glass-fill space-y-3 rounded-site p-4">
+      <section className="glass-fill space-y-3 rounded-site p-5">
         <p className="text-sm text-site-text-muted">
           {t('profile-intro', {
             defaultValue:

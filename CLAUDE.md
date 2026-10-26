@@ -249,7 +249,12 @@ and data are Geist Mono, everything else Geist. One ink-gel primary action
 4. **Edge refraction, smooth and RGB-led:** the refracting, lit rim, with a soft
    band just inside it (`--gel-bevel`) carrying a distinct red/green/blue split
    (`--gel-disperse-r/-g/-b`, red toward the top-left light, blue away). The RGB
-   split leads; white is secondary. Plus a 1px Fresnel edge (`--gel-fresnel`).
+   split leads; white is secondary. The rim is **molded**, not drawn: the slab
+   rises out of the ground over a widened shoulder (`--gel-shoulder`), lit on
+   the light side and falling into soft shadow on the far side (`--gel-mold`),
+   with a feathered silhouette (`--gel-feather`) — no hairline, no border. The
+   1px Fresnel edge (`--gel-fresnel`) returns only where the mold is off (high
+   contrast, the CSS fallback).
 5. **No broad gloss band or glint across the face.** Shine lives at the edges
    and in the dent.
 
@@ -285,9 +290,23 @@ transform` on a body, untriggered flicker, ripple, or a second spring formula.
 
 **Layout:** bodies sit at least `--space-4` (16px) apart. Leave `--jelly-margin`
 (16px) unclipped round every body; no `overflow: hidden` directly around one.
-Cards `--site-radius`, controls `--site-radius-sm`. Game play-fields are
+Cards `--site-radius` (32px), controls `--site-radius-sm` (24px — a pill up to 48px tall;
+the scale is concentric in 8px steps, so a popup insets its rows `p-2`). Game play-fields are
 `data-jelly-zone="playfield"` (excluded); ambient motion and arcs stop while a
-game is playing.
+game is playing. **Nested bodies mold, never stack:** a body's shoulder stays
+inside its own padding and stops `NEST_GAP` (2px) short of any body nested in
+it (`roomFor` in `lib/liquid/glass/policy.ts`, measured by the engine), so a
+button in a card or a capsule in its track never draws a second edge on top
+of its parent's.
+
+**Motion is smooth at both ends and interruptible.** Tweens ride one curve,
+`--ease-smooth` / `EASE.smooth` (leaves at zero speed, lands softly) — never
+an ease-out that starts at full speed. The shared framer `transition` /
+`exitTransition` are zero-bounce springs, so a state flipped mid-flight carries
+its speed into the new target. Enters and exits are CSS **transitions** with
+`@starting-style` (plus a no-op presence animation so Radix keeps the node), not
+keyframe pairs: a menu, dialog or sheet closed while it is still opening turns
+around from the frame it is on.
 
 **Accessibility and degradation stay central** (`lib/jelly/tiers.ts`): high
 contrast, forced colors, reduced transparency and `perf-lite` switch the jelly
@@ -309,9 +328,11 @@ pointer listener fan-out, one overlay canvas (arcs only). The ambient clock runs
 unfocused, nothing is on screen, the tier is degraded, or Jelly motion is Still.
 Budgets per tier in `JELLY_BUDGETS` (desktop: 24 rims, 8 haze slots, 24 carriers,
 12 bodies — never above `--jelly-body-budget` (24)), with a downscale-only
-governor. Haze draws in a worker (`lib/liquid/glass/haze.worker.ts`), which hands
-each frame to its canvas without a copy (`transferToImageBitmap` →
-`bitmaprenderer`); the globe cursor is its own GPU canvas moved by `transform`.
+governor. Rims and haze draw in a worker (`lib/liquid/glass/glass.worker.ts`), which
+hands each frame to its canvas without a copy (`transferToImageBitmap` →
+`bitmaprenderer`), so the main thread never waits for the GPU — in Firefox a
+GPU-process round trip per surface; the globe cursor is its own GPU canvas moved
+by `transform`.
 Rects are read in scroll/resize/activation, never per frame or pointer
 event; nothing writes custom properties to `<html>` per frame. The only filters
 are the lens and refraction blurs inside a moving body's own SVG, active only

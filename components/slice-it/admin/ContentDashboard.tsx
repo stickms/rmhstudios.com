@@ -124,7 +124,7 @@ export function ContentDashboard() {
           />
         ) : (
           <>
-            <section className="glass-fill space-y-3 rounded-site p-4">
+            <section className="glass-fill space-y-3 rounded-site p-5">
               <h2 className="site-section-label flex items-center gap-2">
                 <HardDrive className="size-4" aria-hidden />
                 {t('admin-content-storage', { defaultValue: 'Storage' })}
@@ -167,7 +167,7 @@ export function ContentDashboard() {
               </dl>
             </section>
 
-            <section className="glass-fill space-y-3 rounded-site p-4">
+            <section className="glass-fill space-y-3 rounded-site p-5">
               <h2 className="site-section-label flex items-center gap-2">
                 <TrendingUp className="size-4" aria-hidden />
                 {t('admin-content-uploads', { defaultValue: 'Uploads per day' })}
@@ -188,7 +188,7 @@ export function ContentDashboard() {
               )}
             </section>
 
-            <section className="glass-fill space-y-3 rounded-site p-4">
+            <section className="glass-fill space-y-3 rounded-site p-5">
               <h2 className="site-section-label flex items-center gap-2">
                 <AlertTriangle className="size-4" aria-hidden />
                 {t('admin-content-broken', { defaultValue: 'Charts that look broken' })}
@@ -226,7 +226,7 @@ export function ContentDashboard() {
               )}
             </section>
 
-            <section className="glass-fill space-y-3 rounded-site p-4">
+            <section className="glass-fill space-y-3 rounded-site p-5">
               <h2 className="site-section-label flex items-center gap-2">
                 <Trash2 className="size-4" aria-hidden />
                 {t('admin-content-orphans', { defaultValue: 'Orphaned storage objects' })}

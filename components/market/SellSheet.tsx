@@ -146,7 +146,7 @@ export function SellSheet({
             {sorted.map((item) => (
               <div
                 key={item.id}
-                className="glass-fill flex items-center gap-3 rounded-site p-3"
+                className="glass-fill flex items-center gap-3 rounded-site p-4"
               >
                 <MarketItemPreview kind={item.kind} data={item.data} />
                 <div className="min-w-0 flex-1">

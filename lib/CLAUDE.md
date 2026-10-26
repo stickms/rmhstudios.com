@@ -106,8 +106,8 @@ bundle only**. SSR/server builds get the real module.
 - **Liquid glass (rims and haze):** `liquid/glass/` — `engine.ts` (the document
   service and a frame driver: slab admission, cursor light, RGB-led edge, plasma, dent
   glow and light dot, charge pulse rings, haze canvases, the ambient clock — timer-woken,
-  60 Hz engaged, idle floor 30 Hz, 0 when unseen — and lattice stepping; haze canvases are drawn by
-  `haze.worker.ts` through `haze-worker.ts` where workers can render WebGL 2 on an `OffscreenCanvas`),
+  60 Hz engaged, idle floor 30 Hz, 0 when unseen — and lattice stepping; rim and haze canvases are drawn by
+  `glass.worker.ts` through `glass-worker.ts` where workers can render WebGL 2 on an `OffscreenCanvas`),
   `shader.ts`, `jelly-glsl.ts`, `haze-shader.ts` and `renderer.ts` (one shared
   WebGL 2 context),
   `policy.ts` and `color.ts` (pure, unit-tested decisions), `scene.ts` +

@@ -233,7 +233,7 @@ function RmhCodePage() {
           <h2 className="text-xl font-semibold text-site-text mb-6">{t("features-heading", { defaultValue: "Features" })}</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {features.map((feature) => (
-              <div key={feature.title} className="glass-fill rounded-site p-4 hover:border-site-border-bright transition-colors">
+              <div key={feature.title} className="glass-fill rounded-site p-5 hover:border-site-border-bright transition-colors">
                 <feature.icon className="w-6 h-6 text-site-accent mb-3" />
                 <h3 className="font-semibold text-site-text mb-1">{feature.title}</h3>
                 <p className="text-sm text-site-text-muted">{feature.description}</p>

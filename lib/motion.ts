@@ -41,22 +41,31 @@ export const DURATION = {
 } as const;
 
 /**
- * Easing curves. `standard` is a smooth deceleration (easeOut-family) used for
- * nearly all enters; `emphasized` adds a hair more snap for elements that
- * should feel deliberate; `inOut` is for symmetric moves (a value counting,
- * a bar filling).
+ * Easing curves. `smooth` is the site's one tween curve (CSS `--ease-smooth`):
+ * it leaves at zero speed, moves quickly through the middle and lands softly,
+ * so a tween has no jolt at either end, and one that is interrupted restarts
+ * from rest at the frame it was on. The old easeOut-family curves left at full
+ * speed (22% of the distance in the first 5% of the time), which read as a
+ * jump whenever a hover or an enter was cut short and turned around.
+ * `standard`, `emphasized` and `glass` are kept as names for their callers and
+ * ride the same curve; `inOut` is for symmetric moves (a value counting, a bar
+ * filling).
  */
+const SMOOTH: Bezier = [0.3, 0, 0.15, 1];
 export const EASE = {
-  standard: [0.22, 1, 0.36, 1] as Bezier,
-  emphasized: [0.16, 1, 0.3, 1] as Bezier,
+  smooth: SMOOTH,
+  standard: SMOOTH,
+  emphasized: SMOOTH,
   inOut: [0.65, 0, 0.35, 1] as Bezier,
   /**
    * Spatial spring physics (press-release flex, dock grow, tab-capsule settle).
    */
-  glass: [0.16, 1, 0.3, 1] as Bezier,
+  glass: SMOOTH,
 } as const;
 
-export const GLASS_EASE_CSS = 'cubic-bezier(0.16, 1, 0.3, 1)';
+/** `EASE.smooth` as a CSS timing function, for code that cannot read a custom property (WAAPI `easing`). */
+export const SMOOTH_EASE_CSS = 'cubic-bezier(0.3, 0, 0.15, 1)';
+export const GLASS_EASE_CSS = SMOOTH_EASE_CSS;
 
 /**
  * Spring presets for physical, interruptible motion (drag, reorder, pop-in).
@@ -141,11 +150,18 @@ export const pressable = {
  */
 export const POP_COLLAPSE_MS = 110;
 
-/** The default tweened transition — smooth, quick, used by the variants below. */
-export const transition: Transition = { duration: DURATION.base, ease: EASE.standard };
+/**
+ * The default transition used by the variants below: a critically damped
+ * spring (no bounce) rather than a tween. It starts from rest and settles
+ * without a final jolt, and — the reason it is a spring — when the state flips
+ * again mid-flight (an enter cancelled by an exit, a hover left early) it
+ * carries on from its current position AND speed into the new target, so one
+ * motion molds into the next instead of stopping dead and restarting.
+ */
+export const transition: Transition = { type: 'spring', duration: DURATION.slow, bounce: 0 };
 
-/** Slightly faster transition for exits so dismissals feel immediate. */
-export const exitTransition: Transition = { duration: DURATION.fast, ease: EASE.standard };
+/** Slightly quicker for exits so dismissals feel immediate; still a spring, so a reopen turns it around smoothly. */
+export const exitTransition: Transition = { type: 'spring', duration: DURATION.base, bounce: 0 };
 
 /** Simple opacity cross-fade. Good for tab panels, tooltips, overlays. */
 export const fade: Variants = {
@@ -185,7 +201,7 @@ export const popIn: Variants = {
 /** Dialog/backdrop overlay — a plain, quick fade behind modal content. */
 export const overlay: Variants = {
   initial: { opacity: 0 },
-  animate: { opacity: 1, transition: { duration: DURATION.fast, ease: EASE.standard } },
+  animate: { opacity: 1, transition: { type: 'spring', duration: DURATION.base, bounce: 0 } },
   exit: { opacity: 0, transition: exitTransition },
 };
 
@@ -196,7 +212,7 @@ export const modalContent: Variants = {
     opacity: 1,
     scale: 1,
     y: 0,
-    transition: { duration: DURATION.slow, ease: EASE.emphasized },
+    transition: { type: 'spring', duration: DURATION.slow, bounce: 0 },
   },
   exit: { opacity: 0, scale: 0.97, y: 8, transition: exitTransition },
 };

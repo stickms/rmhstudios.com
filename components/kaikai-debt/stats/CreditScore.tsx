@@ -274,7 +274,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
   const band = creditBand(summary.score);
 
   return (
-    <section className="glass-pane flex flex-col gap-4 rounded-site p-3 sm:p-4">
+    <section className="glass-pane flex flex-col gap-4 rounded-site p-4 sm:p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
           <h3 className="font-display text-base font-semibold text-site-text">

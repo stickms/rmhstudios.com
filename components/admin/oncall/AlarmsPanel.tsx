@@ -63,7 +63,7 @@ function AlarmCard({ alarm }: { alarm: AlarmView }) {
     resolved: t('phase-resolved', { defaultValue: 'Resolved' }),
   };
   return (
-    <li className="glass-fill rounded-site p-4">
+    <li className="glass-fill rounded-site p-5">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant={alarm.sev <= 2 ? 'danger' : 'warning'} icon={false}>
           {t('sev', { defaultValue: 'SEV{{sev}}', sev: alarm.sev })}
@@ -132,7 +132,7 @@ export function AlarmsPanel() {
 
   if (!data.ok) {
     return (
-      <section className="glass-pane rounded-site p-4">
+      <section className="glass-pane rounded-site p-5">
         <h2 className="site-section-label">
           {data.error === 'not_configured'
             ? t('not-configured-title', { defaultValue: 'On-call watchdog not configured' })
@@ -205,7 +205,7 @@ export function AlarmsPanel() {
         />
       </div>
 
-      <section className="glass-pane rounded-site p-4">
+      <section className="glass-pane rounded-site p-5">
         <h2 className="site-section-label">
           {t('heartbeats-title', { defaultValue: 'Check-ins' })}
         </h2>
@@ -269,7 +269,7 @@ export function AlarmsPanel() {
             ))}
           </ul>
         ) : (
-          <p className="glass-fill rounded-site p-4 text-sm text-site-text-muted">
+          <p className="glass-fill rounded-site p-5 text-sm text-site-text-muted">
             {t('open-empty', { defaultValue: 'Nothing firing.' })}
           </p>
         )}

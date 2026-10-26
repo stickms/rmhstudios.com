@@ -202,7 +202,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
           const nameInvalid = !d.name.trim();
           const priceInvalid = d.priceCoins < TIER_PRICE_MIN || d.priceCoins > TIER_PRICE_MAX;
           return (
-            <div key={d.key} className="rounded-site glass-fill p-4 space-y-4">
+            <div key={d.key} className="rounded-site glass-fill p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-medium uppercase tracking-wide text-site-text-dim">
                   {t('tier-n', { defaultValue: 'Tier {{n}}', n: i + 1 })}

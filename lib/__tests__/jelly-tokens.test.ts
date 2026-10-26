@@ -84,7 +84,18 @@ const GEL_COLOURS = [
   '--focus-ring',
 ];
 /** Declared once on :root (theme-independent geometry), switched off by high contrast. */
-const GEL_GEOMETRY = ['--gel-bevel', '--gel-disperse-r', '--gel-disperse-g', '--gel-disperse-b'];
+const GEL_GEOMETRY = [
+  '--gel-bevel',
+  '--gel-disperse-r',
+  '--gel-disperse-g',
+  '--gel-disperse-b',
+  // The molded rim (2026-10-25): shoulder depth, edge feather, bevel widening.
+  '--gel-mold',
+  '--gel-feather',
+  '--gel-shoulder',
+  '--gel-field-line',
+  '--gel-well-shade',
+];
 
 const THEMES = ['default', 'light', 'graphite', 'sepia', 'nocturne', 'ultra', 'high-contrast'];
 
@@ -151,6 +162,9 @@ describe('#989 gel tokens', () => {
       expect(px(hc[token]), token).toBe(0);
     }
     expect(hc['--plasma-wake']).toBe('0');
+    // High contrast keeps a plain, outlined edge: no molded shoulder.
+    expect(hc['--gel-mold']).toBe('0');
+    expect(hc['--gel-field-line']).toBe('100%');
   });
 
   it('the global focus ring is the solid --focus-ring, never a glow', () => {
@@ -198,10 +212,16 @@ describe('#989 CSS gel layers (the non-shader tier)', () => {
     const flat = flatten(MATERIAL);
     for (const ch of ['r', 'g', 'b']) {
       expect(flat).toContain(
-        `inset calc(-1 * var(--gel-disperse-${ch}, 0px)) calc(-1 * var(--gel-disperse-${ch}, 0px)) var(--gel-bevel, 6px) 0 var(--gel-edge-${ch}, transparent)`,
+        `inset calc(-1 * var(--gel-disperse-${ch}, 0px)) calc(-1 * var(--gel-disperse-${ch}, 0px)) var(--jelly-edge-blur) 0 var(--gel-edge-${ch}, transparent)`,
       );
     }
-    expect(flat).toContain('inset 0 0 0 1px var(--gel-fresnel, transparent)');
+    expect(flat).toContain(
+      '--jelly-edge-blur: calc(var(--gel-bevel, 6px) * var(--gel-shoulder, 1) + var(--gel-feather, 0px))',
+    );
+    // The Fresnel line: 1px hard where --gel-feather is 0 (high contrast), a soft glow that far in under the mold.
+    expect(flat).toContain(
+      'inset 0 0 var(--gel-feather, 0px) calc(1px - min(var(--gel-feather, 0px), 1px)) var(--gel-fresnel, transparent)',
+    );
     expect(flat).toContain('var(--gel-edge, 0 0 0 0 transparent)');
   });
 });

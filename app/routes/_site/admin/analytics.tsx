@@ -101,7 +101,7 @@ function AnalyticsPage() {
               />
             </div>
 
-            <div className="glass-pane rounded-site p-4">
+            <div className="glass-pane rounded-site p-5">
               <h2 className="site-section-label mb-3">
                 {t('posts-per-day-14d', { defaultValue: 'Posts per day (14 days)' })}
               </h2>

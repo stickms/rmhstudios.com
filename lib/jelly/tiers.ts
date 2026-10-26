@@ -57,7 +57,7 @@ export interface JellyBudget {
 /**
  * The budgets, final per R6/R10 and 04 §3.1. The ambient clock (2026-10-25, "zero lag, as much fps as possible") runs
  * at 60 Hz engaged and 30 Hz idle on the desktop tiers, 30/15 on handhelds — twice the original 30/12 and 15/8. It
- * could only double once the haze left the main thread (`lib/liquid/glass/haze.worker.ts`), where it stopped paying a
+ * could only double once rims and haze left the main thread (`lib/liquid/glass/glass.worker.ts`), where they stopped paying a
  * GPU readback per canvas (`renderer.ts` "Handing a frame over"); the governor still walks it back down under load. Ambient slots stay at 8 (not 24) because every animated haze canvas is a
  * compositor layer re-rastered on every tick; 24 of them is the 2026-10-08 never-idle failure in a new form.
  *

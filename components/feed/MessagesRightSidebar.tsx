@@ -59,7 +59,7 @@ export function MessagesRightSidebar() {
  <div className="p-4 space-y-6">
  {/* Previously Messaged */}
  {loaded && recent.length > 0 && (
- <section className="glass-fill rounded-site p-4">
+ <section className="glass-fill rounded-site p-5">
  <h2 className="font-display font-bold text-lg text-site-text flex items-center gap-2 mb-3">
  <MessageCircle className="w-5 h-5 text-site-accent"/>
  {t("recently-messaged", { defaultValue:"Recently Messaged"})}
@@ -74,7 +74,7 @@ export function MessagesRightSidebar() {
 
  {/* Suggested Users */}
  {loaded && suggested.length > 0 && (
- <section className="glass-fill rounded-site p-4">
+ <section className="glass-fill rounded-site p-5">
  <h2 className="font-display font-bold text-lg text-site-text flex items-center gap-2 mb-3">
  <UserPlus className="w-5 h-5 text-site-accent"/>
  {t("start-a-conversation", { defaultValue:"Start a Conversation"})}
@@ -90,7 +90,7 @@ export function MessagesRightSidebar() {
 
  {/* Empty state */}
  {loaded && recent.length === 0 && suggested.length === 0 && (
- <section className="glass-fill rounded-site p-4">
+ <section className="glass-fill rounded-site p-5">
  <p className="text-sm text-site-text-muted text-center py-4">
  {t("visit-profile-to-start", { defaultValue:"Visit someone's profile to start a conversation."})}
  </p>

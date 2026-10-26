@@ -63,7 +63,7 @@ function SitePagePending() {
         </div>
         <div className="space-y-2 px-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="glass-fill flex gap-3 rounded-site p-3">
+            <div key={i} className="glass-fill flex gap-3 rounded-site p-4">
               <Skeleton shimmer className="size-10 shrink-0 rounded-full" />
               <div className="min-w-0 flex-1 space-y-3">
                 <Skeleton shimmer className="h-3.5 w-40" />

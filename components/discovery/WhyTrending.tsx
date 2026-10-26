@@ -105,7 +105,7 @@ export function WhyTrending({ tag }: { tag: string }) {
                         <Link
                           to={p.href}
                           onClick={() => setOpen(false)}
-                          className="glass-fill block rounded-site p-3 hover:bg-site-surface-hover"
+                          className="glass-fill block rounded-site p-4 hover:bg-site-surface-hover"
                         >
                           <p className="text-sm text-site-text">{p.snippet}</p>
                           <p className="mt-1 text-xs text-site-text-muted">{p.author}</p>

@@ -52,7 +52,7 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
   const firing = rule.evaluations.some((e) => e.active);
 
   return (
-    <li className="glass-fill min-w-0 rounded-site p-4">
+    <li className="glass-fill min-w-0 rounded-site p-5">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <h3 className="font-semibold text-site-text">{rule.title}</h3>
@@ -174,7 +174,7 @@ export function AlarmRules() {
         })}
       </p>
       {failed ? (
-        <p className="glass-fill mt-3 rounded-site p-4 text-sm text-site-text-muted">
+        <p className="glass-fill mt-3 rounded-site p-5 text-sm text-site-text-muted">
           {t('rules-failed', {
             defaultValue: 'Could not load the alarm rules. Refresh to try again.',
           })}

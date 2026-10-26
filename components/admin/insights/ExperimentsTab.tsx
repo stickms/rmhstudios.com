@@ -78,7 +78,7 @@ export function ExperimentsTab() {
       </p>
       <form
         onSubmit={create}
-        className="glass-pane grid gap-3 rounded-site p-4 sm:grid-cols-[1fr_1fr_6rem_auto] sm:items-end"
+        className="glass-pane grid gap-3 rounded-site p-5 sm:grid-cols-[1fr_1fr_6rem_auto] sm:items-end"
       >
         <div className="space-y-1">
           <Label htmlFor="exp-key">{t('exp-key', { defaultValue: 'Key' })}</Label>

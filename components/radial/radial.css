@@ -105,7 +105,7 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  transition: transform 0.2s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+  transition: transform 0.2s var(--ease-glass, var(--ease-smooth));
 }
 .radial-skip:focus {
   transform: translateY(0);
@@ -358,7 +358,7 @@ body:has(.radial-shell) .call-banner {
   color: var(--site-text);
   cursor: pointer;
   transition:
-    transform 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    transform 0.18s var(--ease-glass, var(--ease-smooth)),
     background-color 0.18s ease;
 }
 .radial-topbar__btn[aria-expanded='true'] {
@@ -1107,8 +1107,8 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
      ONE synchronous animation. `scale` transitions faster — it is the press
      cue, and a press has to answer immediately. */
   transition:
-    transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
-    scale 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    transform 0.5s var(--ease-glass, var(--ease-smooth)),
+    scale 0.18s var(--ease-glass, var(--ease-smooth)),
     opacity 0.34s ease,
     box-shadow 0.28s ease;
 }
@@ -1202,7 +1202,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
 /* On mount the mark blooms open — scaling + rotating out of the core while its
    stroke draws itself (pathLength-normalised), leaning into the SVG. */
 .radial-hub__logo {
-    animation: rmh-logo-bloom 1.05s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+    animation: rmh-logo-bloom 1.05s var(--ease-glass, var(--ease-smooth)) both;
   }
 .radial-hub__logo path {
     animation: rmh-logo-draw 1.3s ease both;
@@ -1409,7 +1409,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
      first so the last handful of pixels, which no easing can shrink fast enough
      to stop reading as a smudge, are already gone when the circle arrives. */
   transition:
-    clip-path 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    clip-path 0.5s var(--ease-glass, var(--ease-smooth)),
     opacity 0.3s ease-in;
 }
 .radial-hub[data-phase='open'] .radial-hub__veil {
@@ -1418,7 +1418,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
   /* OPENING — the veil is at full strength from the first frame, so only the
      circle animates and the reveal stays a wipe rather than a cross-fade. */
   transition:
-    clip-path 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    clip-path 0.5s var(--ease-glass, var(--ease-smooth)),
     opacity 0.12s ease;
 }
 /* ── Sinking the page behind the globe ─────────────────────────────────────
@@ -1481,7 +1481,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
      it is to stop filtering `.radial-frame` at all and let the veil carry the
      separation alone, which is already what `perf-lite`, `reduce-transparency`
      and `ios-webkit` do a few rules below. */
-  transition: filter 0.32s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+  transition: filter 0.32s var(--ease-glass, var(--ease-smooth));
 }
 /* …and the "rasterises once" above is only true if the blurred layer HOLDS
    STILL. `.radial-backdrop` used to own breathing rings and a drifting blob
@@ -1633,10 +1633,10 @@ html.ios-webkit .radial-hub__veil {
    the globe is mounted only while the menu is up, and an element that is created
    already in its open state has no previous style to transition FROM. */
 .radial-hub[data-phase='open'] .radial-globe {
-  animation: globe-in 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  animation: globe-in 0.5s var(--ease-glass, var(--ease-smooth)) both;
 }
 .radial-hub[data-phase='closing'] .radial-globe {
-  animation: globe-out 0.42s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+  animation: globe-out 0.42s var(--ease-glass, var(--ease-smooth)) both;
 }
 @keyframes globe-in {
   from {
@@ -1969,7 +1969,7 @@ html.reduce-transparency .radial-globe__contact,
     background-color 0.18s ease,
     color 0.18s ease,
     box-shadow 0.18s ease,
-    transform 0.18s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+    transform 0.18s var(--ease-glass, var(--ease-smooth));
 }
 .radial-globe__pin-dot svg {
   width: 1.15rem;
@@ -2222,7 +2222,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   transform: translateY(10px);
   transition:
     opacity 0.4s ease,
-    transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+    transform 0.5s var(--ease-glass, var(--ease-smooth));
   display: inline-flex;
   align-items: center;
   gap: var(--rad-2);
@@ -2268,7 +2268,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   clip-path: circle(0px at calc(50% - var(--eversion-dx, 0px)) calc(50% - var(--eversion-dy, 0px)));
   opacity: 1;
   transition: clip-path var(--eversion-delay, 250ms)
-    var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+    var(--ease-glass, var(--ease-smooth));
 }
 /* KEYFRAMES, not a transition, for the same reason the bloom is: the open globe
    is held by `globe-in` (fill `both`), and a property an animation was driving
@@ -2325,7 +2325,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 .radial-hub[data-phase='everting'] .radial-hub__orb {
   opacity: 1;
   pointer-events: none;
-  transition: transform 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+  transition: transform 0.5s var(--ease-glass, var(--ease-smooth));
 }
 .radial-hub__identity {
   display: inline-flex;
@@ -2456,7 +2456,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   cursor: pointer;
   box-shadow: none;
   transition:
-    transform 0.2s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)),
+    transform 0.2s var(--ease-glass, var(--ease-smooth)),
     box-shadow 0.2s ease;
 }
 .radial-feed__compose:hover {
@@ -3279,7 +3279,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
    nav, so it re-runs — carrying the home's flowy feel to every page. The
    no-preference gate turns it off under reduced-motion. */
 .radial-shell:not([data-home]) .page-heading {
-    animation: radial-page-rise 0.5s var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1)) both;
+    animation: radial-page-rise 0.5s var(--ease-glass, var(--ease-smooth)) both;
   }
 @keyframes radial-page-rise {
   from {

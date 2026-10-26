@@ -16,6 +16,15 @@
  * after physics, before arcs); this file owns no animation-frame loop of its own. Pointer input arrives through the
  * one jelly pointer hub (`lib/jelly/pointer.ts`).
  *
+ * ## Where it draws
+ *
+ * Every decision is made here; the pixels are made in the glass worker (`glass-worker.ts`, `glass.worker.ts`) where an
+ * engine can render WebGL 2 on a worker's `OffscreenCanvas`. Each rim and haze canvas is transferred to it once, and a
+ * frame posts its draws in one message — so this thread never waits for the GPU (in Firefox, a GPU-process round trip
+ * per surface). Canvases made before the worker answers move over without a blink (the old one stays under the new
+ * until the worker's first frame lands). Without a worker, or after it loses its context, the same draws run here on
+ * the page's `GlassRenderer`.
+ *
  * ## What it never does
  *
  * - Touch layout: it reads rects in observer callbacks and frames, and writes only canvases and attributes.
@@ -112,6 +121,7 @@ import {
   addRing,
   approach,
   bevelFor,
+  roomFor,
   cssPx,
   cursorTilt,
   dprFor,
@@ -141,9 +151,9 @@ import {
   type HazeDraw,
   type JellyLook,
 } from './renderer';
-import { startHazeWorker, type HazeWorkerHost } from './haze-worker';
+import { hazeKey, rimKey, startGlassWorker, type GlassWorkerHost } from './glass-worker';
 import { createSceneProvider, SCENE_POLICY, type SceneProvider, type SceneShot } from './scene';
-import { clearScene, publishScene } from './scene-store';
+import { clearScene, currentScene, onSceneChange, publishScene } from './scene-store';
 
 /**
  * What becomes a slab. The five glass roles, plus the CONTROLS that carry the material without a role class: solid
@@ -176,6 +186,10 @@ const GEL_FALLBACK = {
   fresnel: [1, 1, 1, 0.55] as RGBA,
   specular: [1, 1, 1, 0.95] as RGBA,
   accent: [0.42, 0.31, 0.82, 1] as RGBA,
+  /** The molded rim (`--gel-mold`, `--gel-feather`, `--gel-shoulder`); 0 / 0 / 1 is the outlined rim. */
+  mold: 0,
+  featherPx: 0,
+  shoulder: 1,
 } as const;
 const LIGHT_HEIGHT = 96;
 /**
@@ -185,8 +199,8 @@ const LIGHT_HEIGHT = 96;
  */
 const SCENE_EDGE_MARGIN = 3;
 const MUTATION_SETTLE_MS = 1600;
-/** Longest a main-thread haze canvas stays under the worker canvas replacing it, waiting for the worker's first frame. */
-const HAZE_HANDOVER_MS = 1000;
+/** Longest a main-thread canvas stays under the worker canvas replacing it, waiting for the worker's first frame. */
+const WORKER_HANDOVER_MS = 1000;
 /**
  * Longest a surface's cached viewport rect is trusted while nothing invalidated it. Scroll, resize, a size change, a
  * DOM mutation and (re)admission all invalidate the cache at once; this bound only covers layout that shifts without
@@ -195,6 +209,11 @@ const HAZE_HANDOVER_MS = 1000;
  * at most this often while the pointer moves.
  */
 const RECT_MAX_AGE_MS = 250;
+/**
+ * A surface's shoulder room changes only when it moves by at least this much, CSS px. The rects it is measured from
+ * carry the soft body's transforms (a plump of up to 3%), which would otherwise re-size the shoulder as a card breathes.
+ */
+const ROOM_HYSTERESIS_PX = 1.5;
 
 interface Surface {
   el: HTMLElement;
@@ -226,7 +245,11 @@ interface Surface {
   /** Rim canvas overdraw past the host, px (fixed at activation). */
   margin: number;
   haze: HTMLCanvasElement | null;
-  /** The haze canvas was transferred to the haze worker: only the worker can draw it now. */
+  /** The rim canvas was transferred to the glass worker: only the worker can draw it now. */
+  rimRemote: boolean;
+  /** The main-thread rim canvas a worker canvas is replacing: shown until the worker's first frame lands. */
+  rimOld: HTMLCanvasElement | null;
+  /** The haze canvas was transferred to the glass worker: only the worker can draw it now. */
   hazeRemote: boolean;
   /** The main-thread haze canvas a worker canvas is replacing: shown until the worker's first frame lands. */
   hazeOld: HTMLCanvasElement | null;
@@ -244,6 +267,13 @@ interface Surface {
   // ── #989 ──
   /** Gel tokens, read with the look. */
   gel: GelLook;
+  /** Bevel width multiplier for the molded shoulder (`--gel-shoulder`), read with the look. */
+  shoulder: number;
+  /** Smallest padding and the border width, CSS px, read with the look. */
+  pad: number;
+  border: number;
+  /** How far the shoulder may reach before it runs under content or a nested body (`roomFor`), CSS px. */
+  room: number;
   /** Target and eased plasma wake level (bus `plasma:level`). */
   plasmaTarget: number;
   plasmaLevel: number;
@@ -305,6 +335,8 @@ const defaultGel = (): GelLook => ({
   specular: [...GEL_FALLBACK.specular],
   accent: [GEL_FALLBACK.accent[0], GEL_FALLBACK.accent[1], GEL_FALLBACK.accent[2]],
   plasmaPeak: PLASMA_LOOK.peakDark,
+  mold: GEL_FALLBACK.mold,
+  feather: GEL_FALLBACK.featherPx,
 });
 
 const NO_LOOK: JellyLook = {
@@ -365,12 +397,13 @@ export function installLiquidGlass(doc: Document = document): () => void {
   let rendererFailed = false;
   let disposed = false;
   /**
-   * The haze worker (`haze-worker.ts`): once ready, new haze canvases are transferred to it and drawn off the main
-   * thread. Started lazily with the first haze canvas; null where workers or `OffscreenCanvas` are unavailable, in
-   * which case — and until it is ready — haze draws here exactly as before.
+   * The glass worker (`glass-worker.ts`): once ready, rim and haze canvases are transferred to it and drawn off the main
+   * thread, so this thread never waits for the GPU (in Gecko, a GPU-process round trip per surface). Started with the
+   * first slab; null where workers or `OffscreenCanvas` are unavailable, in which case — and until it is ready —
+   * everything draws here exactly as before.
    */
-  let hazeWorker: HazeWorkerHost | null = null;
-  let hazeWorkerTried = false;
+  let worker: GlassWorkerHost | null = null;
+  let workerTried = false;
 
   // Page snapshot state.
   let scene: { width: number; height: number; scrollX: number; scrollY: number } | null = null;
@@ -589,6 +622,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       jellyOn: true,
       margin: 0,
       haze: null,
+      rimRemote: false,
+      rimOld: null,
       hazeRemote: false,
       hazeOld: null,
       hazeOn: false,
@@ -599,6 +634,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
       latticeParked: false,
       latticeBuf: new Float32Array(16),
       gel: defaultGel(),
+      shoulder: GEL_FALLBACK.shoulder,
+      pad: 0,
+      border: 0,
+      room: Infinity,
       plasmaTarget: 0,
       plasmaLevel: 0,
       plasmaAt: 0,
@@ -689,7 +728,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
       specular: rgba('--gel-specular', GEL_FALLBACK.specular),
       accent: rgb('--site-accent', '--site-accent', GEL_FALLBACK.accent),
       plasmaPeak: dark ? PLASMA_LOOK.peakDark : PLASMA_LOOK.peakLight,
+      mold: Math.max(0, Math.min(1.5, num('--gel-mold', GEL_FALLBACK.mold))),
+      feather: Math.max(0, Math.min(8, cssPx(raw('--gel-feather'), GEL_FALLBACK.featherPx))),
     };
+    s.shoulder = Math.max(0.5, Math.min(2, num('--gel-shoulder', GEL_FALLBACK.shoulder)));
     s.jellyOn = num('--site-jelly-on', 1) > 0;
     s.still = jellyOptedOut(s.el);
     s.hazeFresh = true;
@@ -700,6 +742,13 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.width = s.el.clientWidth;
     s.height = s.el.clientHeight;
     const border = parseFloat(style.borderTopWidth) || 0;
+    s.border = border;
+    s.pad = Math.min(
+      parseFloat(style.paddingTop) || 0,
+      parseFloat(style.paddingRight) || 0,
+      parseFloat(style.paddingBottom) || 0,
+      parseFloat(style.paddingLeft) || 0,
+    );
     s.radius = innerRadius(style.borderTopLeftRadius, border, s.width, s.height);
     s.tint = resolveColor(style.backgroundColor, [1, 1, 1, 0], doc);
     if (style.position === 'static') s.el.setAttribute('data-liquid-static', '');
@@ -724,13 +773,51 @@ export function installLiquidGlass(doc: Document = document): () => void {
     }
     s.el.setAttribute('data-liquid-canvas', 'on');
     s.el.append(canvas);
+    ensureWorker();
+    s.rimRemote = !!worker?.ready && worker.adopt(rimKey(s.id), canvas);
     s.dirty = true;
     if (!scene) provider.request('activate');
   };
+  /**
+   * Nested bodies (a button in a card, a tab capsule in its track): each parent's shoulder stops short of its nearest
+   * child and stays inside its own padding (`roomFor`), so two rims never stack on one line. Runs with the rect read,
+   * so it costs no extra layout; n is bounded by the rim budget.
+   */
+  const fitNested = (active: Surface[]) => {
+    for (const s of active) {
+      const p = s.rect!;
+      let inset = Infinity;
+      for (const c of active) {
+        if (c === s || !s.el.contains(c.el)) continue;
+        const r = c.rect!;
+        inset = Math.min(
+          inset,
+          r.left - p.left,
+          p.right - r.right,
+          r.top - p.top,
+          p.bottom - r.bottom,
+        );
+      }
+      const room = roomFor(s.pad, inset - s.border);
+      const moved =
+        room === Infinity || s.room === Infinity
+          ? room !== s.room
+          : Math.abs(room - s.room) >= ROOM_HYSTERESIS_PX;
+      if (moved) {
+        s.room = room;
+        s.dirty = true;
+      }
+    }
+  };
+
   const deactivate = (s: Surface) => {
     removeHaze(s);
     dropLattice(s);
     if (!s.canvas) return;
+    if (s.rimRemote) worker?.drop(rimKey(s.id));
+    s.rimRemote = false;
+    s.rimOld?.remove();
+    s.rimOld = null;
     s.canvas.remove();
     s.canvas = null;
     s.el.removeAttribute('data-liquid-canvas');
@@ -751,43 +838,99 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.el.setAttribute('data-jelly-haze', 'on');
     jellyBus.emit('haze:change', { el: s.el, on: true });
   };
-  const ensureHazeWorker = () => {
-    if (hazeWorkerTried || disposed) return;
-    hazeWorkerTried = true;
-    hazeWorker = startHazeWorker(win as Window & typeof globalThis, {
+  const ensureWorker = () => {
+    if (workerTried || disposed) return;
+    workerTried = true;
+    worker = startGlassWorker(win as Window & typeof globalThis, {
       // Canvases made before the worker answered move to it; new ones go to it directly.
       onReady: () => {
+        sendScene();
+        for (const s of surfaces.values()) moveRimToWorker(s);
         for (const s of hazeSet) moveHazeToWorker(s);
         scheduleReconcile();
+        requestFrame();
       },
-      onDrawn: (ids) => {
-        for (const s of hazeSet) {
-          if (!s.hazeRemote || !ids.includes(s.id)) continue;
-          s.hazeOld?.remove();
-          s.hazeOld = null;
-          markHazeOn(s);
+      onDrawn: (keys) => {
+        for (const s of surfaces.values()) {
+          if (s.rimOld && s.rimRemote && keys.includes(rimKey(s.id))) {
+            s.rimOld.remove();
+            s.rimOld = null;
+          }
+          if (s.hazeRemote && keys.includes(hazeKey(s.id))) {
+            s.hazeOld?.remove();
+            s.hazeOld = null;
+            markHazeOn(s);
+          }
         }
       },
       onLost: () => {
-        hazeWorker = null;
+        worker = null;
         // A transferred canvas can never be drawn here: drop them, and reconcile builds main-thread ones.
-        for (const s of [...hazeSet]) if (s.hazeRemote) removeHaze(s);
+        for (const s of surfaces.values()) {
+          if (s.rimRemote) deactivate(s);
+          else if (s.hazeRemote) removeHaze(s);
+        }
         scheduleReconcile();
       },
     });
   };
+  /** Give the worker its own copy of the latest page snapshot (textures do not cross contexts, or threads). */
+  const sendScene = () => {
+    const shared = currentScene();
+    if (!shared || !worker?.ready) return;
+    win
+      .createImageBitmap(shared.bitmap)
+      .then((copy) => (worker ? worker.scene(copy) : copy.close()))
+      .catch(() => {});
+  };
+
+  /** A worker canvas replacing `old` stays above it; `old` goes once the worker's first frame lands, or after a bound. */
+  const retireLater = (old: HTMLCanvasElement, stillOld: () => boolean, clear: () => void) => {
+    // A frame that never lands (a zero-size host, a dropped message) must not leave a frozen copy underneath.
+    win.setTimeout(() => {
+      if (!stillOld()) return;
+      old.remove();
+      clear();
+    }, WORKER_HANDOVER_MS);
+  };
 
   /**
-   * Hand a main-thread haze canvas's job to the worker: a fresh canvas is transferred and drawn there, and the old one
-   * stays on screen underneath it until the worker's first frame lands (`onDrawn`), so the haze never blinks.
+   * Hand a main-thread rim canvas's job to the worker: a fresh canvas is transferred and drawn there, and the old one
+   * stays on screen underneath it until the worker's first frame lands (`onDrawn`), so the rim never blinks.
    */
+  const moveRimToWorker = (s: Surface) => {
+    if (!s.canvas || s.rimRemote || !worker?.ready) return;
+    const old = s.canvas;
+    const c = doc.createElement('canvas');
+    c.className = old.className;
+    c.setAttribute('data-liquid-glass', '');
+    c.setAttribute('aria-hidden', 'true');
+    c.style.cssText = old.style.cssText;
+    // After the old one: the rim stays the host's last child.
+    s.el.append(c);
+    if (!worker.adopt(rimKey(s.id), c)) {
+      c.remove();
+      return;
+    }
+    s.rimOld = old;
+    s.canvas = c;
+    s.rimRemote = true;
+    s.dirty = true;
+    retireLater(
+      old,
+      () => s.rimOld === old,
+      () => (s.rimOld = null),
+    );
+  };
+
+  /** The same for a haze canvas. */
   const moveHazeToWorker = (s: Surface) => {
-    if (!s.haze || s.hazeRemote || !s.canvas || !hazeWorker?.ready) return;
+    if (!s.haze || s.hazeRemote || !s.canvas || !worker?.hazeReady) return;
     const c = doc.createElement('canvas');
     c.className = 'jelly-haze-canvas';
     c.setAttribute('aria-hidden', 'true');
-    s.el.insertBefore(c, s.canvas);
-    if (!hazeWorker.adopt(s.id, c)) {
+    s.el.insertBefore(c, s.haze);
+    if (!worker.adopt(hazeKey(s.id), c)) {
       c.remove();
       return;
     }
@@ -796,24 +939,23 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.haze = c;
     s.hazeRemote = true;
     s.hazeFresh = true;
-    // A frame that never lands (a zero-size host, a dropped message) must not leave a frozen copy underneath.
-    win.setTimeout(() => {
-      if (s.hazeOld !== old) return;
-      old.remove();
-      s.hazeOld = null;
-    }, HAZE_HANDOVER_MS);
+    retireLater(
+      old,
+      () => s.hazeOld === old,
+      () => (s.hazeOld = null),
+    );
   };
 
   const addHaze = (s: Surface) => {
     if (s.haze || !s.canvas) return;
-    ensureHazeWorker();
+    ensureWorker();
     const c = doc.createElement('canvas');
     c.className = 'jelly-haze-canvas';
     c.setAttribute('aria-hidden', 'true');
     // Just before the rim canvas: the rim stays the host's last child and content keeps its first child.
     s.el.insertBefore(c, s.canvas);
     s.haze = c;
-    s.hazeRemote = !!hazeWorker?.ready && hazeWorker.adopt(s.id, c);
+    s.hazeRemote = !!worker?.hazeReady && worker.adopt(hazeKey(s.id), c);
     s.hazeOn = false;
     s.hazeFresh = true;
     s.due = 0;
@@ -824,7 +966,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
   function removeHaze(s: Surface) {
     hazeSet.delete(s);
     if (!s.haze) return;
-    if (s.hazeRemote) hazeWorker?.drop(s.id);
+    if (s.hazeRemote) worker?.drop(hazeKey(s.id));
     s.hazeRemote = false;
     s.hazeOld?.remove();
     s.hazeOld = null;
@@ -968,7 +1110,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
 
   const drawSurface = (s: Surface, rect: DOMRect, now: number = win.performance.now()): boolean => {
     const r = renderer;
-    if (!r?.ready || !s.canvas || !s.el.isConnected) return false;
+    if ((!s.rimRemote && !r?.ready) || !s.canvas || !s.el.isConnected) return false;
     // Never draw into a canvas that is no longer in its host: put it back first (see `repairLayers`).
     if (s.canvas.parentNode !== s.el) {
       scheduleReconcile();
@@ -979,7 +1121,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     const w = s.width;
     const h = s.height;
     if (w < 1 || h < 1) return false;
-    const bezel = bevelFor(w, h, s.radius);
+    const bezel = bevelFor(w, h, s.radius, s.shoulder, s.room);
     const thickness = thicknessFor(bezel);
     const dpr = dprFor(win.devicePixelRatio || 1, w, h);
 
@@ -1037,7 +1179,12 @@ export function installLiquidGlass(doc: Document = document): () => void {
           }
         : null,
     };
-    return r.draw(o, s.canvas);
+    if (s.rimRemote) {
+      if (!worker?.ready) return false;
+      worker.queue({ key: rimKey(s.id), kind: 'rim', time: 0, draw: o });
+      return true;
+    }
+    return r!.draw(o, s.canvas);
   };
 
   // ── The ambient clock (R7) ────────────────────────────────────────────────
@@ -1069,7 +1216,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       height: h,
       scale: hazeScaleFor(w, h, s.role, knobsAt(governor.step).hazeScale),
       radius: s.radius,
-      bezel: bevelFor(w, h, s.radius),
+      bezel: bevelFor(w, h, s.radius, s.shoulder, s.room),
       look: s.look,
       flow: s.flow,
       quiet: s.quiet,
@@ -1081,8 +1228,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
     };
     if (s.hazeRemote) {
       // Off the main thread; `onDrawn` marks the first frame (the CSS carrier stays until it is really there).
-      if (!hazeWorker?.ready) return false;
-      hazeWorker.queue(s.id, draw);
+      if (!worker?.ready) return false;
+      worker.queue({ key: hazeKey(s.id), kind: 'haze', time, draw });
       return true;
     }
     const ok = r!.drawHaze(draw, time, s.haze);
@@ -1118,7 +1265,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
       s.hazeFresh = false;
       s.due = hz > 0 ? nextDue(now, hz, s.role) : now;
     }
-    hazeWorker?.flush(time);
     if (!ticking) return;
     // Idle CSS carriers step on this frame too (lib/jelly/flow-carriers.ts), so rest stays one frame per tick.
     jellyBus.emit('ambient:tick', {});
@@ -1177,7 +1323,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
         s.lattice = createLattice({
           w: s.width,
           h: s.height,
-          bevel: bevelFor(s.width, s.height, s.radius),
+          bevel: bevelFor(s.width, s.height, s.radius, s.shoulder, s.room),
           amplitude: latticeAmplitude(s.width, s.height),
         });
         s.latticeInput = null;
@@ -1261,6 +1407,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       again = rimPass(now, dt);
       rimWanted = again;
     }
+    // Everything this frame queued for the worker goes in one message.
+    worker?.flush();
     pointerMoved = false;
     if (again) {
       rimWanted = true;
@@ -1289,6 +1437,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     if (now - rectsAt > RECT_MAX_AGE_MS || active.some((s) => !s.rect)) {
       for (const s of active) s.rect = s.el.getBoundingClientRect();
       rectsAt = now;
+      fitNested(active);
     }
     for (const s of active) {
       const rect = s.rect!;
@@ -1571,6 +1720,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       requestFrame();
     }),
     jellyBus.on('plasma:level', (p) => onPlasmaLevel(p.el, p.level)),
+    onSceneChange(sendScene),
     jellyBus.on('charge:pulse', (p) => onPulse(p.el, p.q, p.x, p.y)),
     jellyBus.on('arc:strike', (p) => onPulse(p.el, Math.min(1, p.energy), p.x, p.y)),
     jellyBus.on('body:release', (p) =>
@@ -1606,8 +1756,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
     for (const s of surfaces.values()) deactivate(s);
     surfaces.clear();
     provider.dispose();
-    hazeWorker?.dispose();
-    hazeWorker = null;
+    worker?.dispose();
+    worker = null;
     clearScene();
     root.removeAttribute('data-liquid-scene');
     renderer?.dispose();

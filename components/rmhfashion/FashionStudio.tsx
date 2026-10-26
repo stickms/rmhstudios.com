@@ -218,7 +218,7 @@ export function FashionStudio() {
           </section>
 
           {/* ── The figure ──────────────────────────────────────────────── */}
-          <section className="glass-fill rounded-site flex flex-col gap-4 p-4">
+          <section className="glass-fill rounded-site flex flex-col gap-4 p-5">
             <SectionHeading icon={User}>
               {t('figure-heading', { defaultValue: 'Your figure' })}
             </SectionHeading>

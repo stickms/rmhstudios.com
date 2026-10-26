@@ -819,7 +819,7 @@ type TFn = ReturnType<typeof useTranslation>['t'];
 function PollView({ poll, onVote, t }: { poll: Poll; onVote: (idx: number) => void; t: TFn }) {
  const voted = poll.myVote !== null;
  return (
- <div className="mt-1.5 w-64 max-w-full rounded-site glass-fill p-3">
+ <div className="mt-1.5 w-64 max-w-full rounded-site glass-fill p-4">
  <p className="mb-2 text-sm font-semibold text-site-text">{poll.question}</p>
  <div className="flex flex-col gap-1.5">
  {poll.options.map((o, i) => {

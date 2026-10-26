@@ -60,7 +60,7 @@ export function MetricsSection() {
         />
       </div>
       {failed ? (
-        <p className="glass-fill mt-3 rounded-site p-4 text-sm text-site-text-muted">
+        <p className="glass-fill mt-3 rounded-site p-5 text-sm text-site-text-muted">
           {t('metrics-failed', {
             defaultValue: 'Could not load the metrics. Refresh to try again.',
           })}

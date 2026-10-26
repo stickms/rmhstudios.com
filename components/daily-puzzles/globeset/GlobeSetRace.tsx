@@ -447,7 +447,7 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
 
   return (
     <div className="mt-5 space-y-4">
-      <div className="glass-pane flex flex-wrap items-center justify-between gap-4 rounded-site p-4">
+      <div className="glass-pane flex flex-wrap items-center justify-between gap-4 rounded-site p-5">
         <div>
           <p className="text-xs font-medium text-site-text-muted">
             {counting
@@ -617,7 +617,7 @@ function RaceResults() {
         ))}
       </ol>
       {record && record.racesPlayed > 0 && (
-        <dl className="glass-fill mt-4 grid grid-cols-3 gap-3 rounded-site p-3 text-center">
+        <dl className="glass-fill mt-4 grid grid-cols-3 gap-3 rounded-site p-4 text-center">
           <RecordFigure
             label={t('globeset-record-races', { defaultValue: 'Races' })}
             value={String(record.racesPlayed)}
