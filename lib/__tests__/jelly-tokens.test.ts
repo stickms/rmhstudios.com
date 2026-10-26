@@ -95,6 +95,10 @@ const GEL_GEOMETRY = [
   '--gel-shoulder',
   '--gel-field-line',
   '--gel-well-shade',
+  // The lens (2026-10-26): wavelength spread, slab thickness and environment reflection.
+  '--gel-dispersion',
+  '--gel-lens',
+  '--gel-reflect',
 ];
 
 const THEMES = ['default', 'light', 'graphite', 'sepia', 'nocturne', 'ultra', 'high-contrast'];
@@ -165,6 +169,8 @@ describe('#989 gel tokens', () => {
     // High contrast keeps a plain, outlined edge: no molded shoulder.
     expect(hc['--gel-mold']).toBe('0');
     expect(hc['--gel-field-line']).toBe('100%');
+    // ...and no lens: nothing is refracted or reflected where the rim is not drawn.
+    expect(hc['--gel-reflect']).toBe('0');
   });
 
   it('the global focus ring is the solid --focus-ring, never a glow', () => {

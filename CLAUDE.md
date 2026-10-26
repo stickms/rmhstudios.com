@@ -254,7 +254,11 @@ and data are Geist Mono, everything else Geist. One ink-gel primary action
    the light side and falling into soft shadow on the far side (`--gel-mold`),
    with a feathered silhouette (`--gel-feather`) — no hairline, no border. The
    1px Fresnel edge (`--gel-fresnel`) returns only where the mold is off (high
-   contrast, the CSS fallback).
+   contrast, the CSS fallback). The rim is a **lens**: red, green and blue refract
+   with their own indices (`--gel-dispersion` × crown glass), the refracted page
+   is shown rather than buried, and a Fresnel-weighted soft environment reflects
+   off the shoulder (`--gel-reflect`) — all arithmetic over the same three
+   scene reads, so it costs nothing (docs §1.2).
 5. **No broad gloss band or glint across the face.** Shine lives at the edges
    and in the dent.
 

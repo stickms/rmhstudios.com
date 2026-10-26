@@ -322,12 +322,27 @@ describe('shader contract', () => {
       expect(src).not.toMatch(/\bgloss\b/);
     }
     // Every specular term is masked to the bevel band.
-    expect(FRAG).toContain('float edgeOnly = 1.0 - smoothstep(0.6, 1.0, t);');
+    expect(FRAG).toContain('float edgeOnly = 1.0 - sstep(0.6, 1.0, t);');
     for (const term of ['keySpec', 'fillSpec', 'curSpec', 'counter']) {
       const line = FRAG.split('\n').find((l) => l.trim().startsWith(`float ${term} =`));
       expect(line, term).toBeDefined();
       expect(line!.trim().endsWith('* edgeOnly;'), term).toBe(true);
     }
+  });
+
+  it('the lens costs no extra texture read and the interior skips the whole refraction path', () => {
+    // Refraction + dispersion + reflection are arithmetic over the SAME three scene samples (one per wavelength).
+    expect((FRAG.match(/texture\(uScene,/g) ?? []).length).toBe(3);
+    // Reflection is masked to the shoulder like every other bright term.
+    expect(FRAG).toMatch(/vec3 refl = glassFresnel\(n\.z\) \* [^;]*edgeOnly[^;]*;/);
+    // The deep interior leaves in a NESTED block (a masked early return still costs a SIMD rasteriser the whole body).
+    expect(FRAG).toMatch(
+      /if \(d > max\(bz, d0 \+ 3\.0 \* bw \+ 2\.0\) && uDentOn < 0\.5 && uPlasmaInRim < 0\.5\) \{\s*outColor = vec4\(0\.0\);\s*\} else \{/,
+    );
+    // pow() with a constant exponent is repeated squaring (the dearest instruction on a CPU rasteriser).
+    expect(FRAG).not.toMatch(/\bpow\([^)]*,\s*(70|80|120)\.0\)/);
+    // The wavelength spread, thickness and reflection are look tokens, not constants.
+    expect(FRAG).toContain('uniform vec3 uLens;');
   });
 
   it('#989: RGB-led edge, Fresnel line, gel depth, plasma clipped inside, dent glow and light dot', () => {

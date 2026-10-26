@@ -50,6 +50,17 @@
  *   shade and the Fresnel line fade out there), and the RGB band moves inward onto the shoulder, so the dispersion reads
  *   as light inside the jelly, not as a coloured outline: it widens to a soft tint across the shoulder. All of it stays inside the outer 60% of the bevel, clear of
  *   the padding text sits in. `uMold.x` 0 is the pre-2026-10-25 outlined rim, exactly.
+ * - **The lens** (2026-10-26, `uLens` = `--gel-dispersion`, `--gel-lens`, `--gel-reflect`). The refraction was always
+ *   physical, but it was buried: the refracted picture was mixed with the slab tint at full strength, veiled with haze and
+ *   then darkened by the molded shoulder's shadow, so the rim read as a dark tube. Over a refracting rim the tint and haze
+ *   now take a lighter share and the shadow gives way to the picture (`rim.a`). Dispersion is `--gel-dispersion` × crown
+ *   glass (real N-BK7 separates red and blue by ~0.01 in index, a fraction of a pixel, hence the multiplier): each of the
+ *   three samples uses its own wavelength's index. The bevel is a quartic squircle (C3 against the flat interior) with a
+ *   smoothly saturating slope, its normal comes from an analytic distance gradient, the fades are C2 smootherstep, and the
+ *   output is dithered ±½ LSB, so the shoulder has no kink, no seam and no banding. Reflection is Fresnel (per wavelength)
+ *   times a soft analytic studio environment mirrored off the bevel normal — arithmetic only, no extra texture read.
+ *   **Cost:** the same three scene reads; the deep interior (nothing is drawn there) is skipped in a nested block, the
+ *   gradient is analytic (it was four distance evaluations) and constant-exponent pow() calls are repeated squaring.
  * - **Gel depth** (`--gel-body` → `--gel-depth`) is the host's CSS coat (`--liquid-coat`); the shader does not draw it
  *   again.
  * - **No gloss across the face.** Every specular term is masked to the bevel band (`edgeOnly`); there is no sheen
@@ -111,6 +122,7 @@ uniform vec2 uDentStretch; // rubber-band stretch, px
 uniform float uDentOn;
 uniform vec4 uSpecular;    // dent light dot colour + alpha (--gel-specular)
 uniform vec2 uMold;        // x = shoulder depth 0..1.5 (--gel-mold), y = edge feather px (--gel-feather)
+uniform vec3 uLens;        // x = wavelength spread (x crown glass, --gel-dispersion), y = slab thickness multiplier (--gel-lens), z = environment reflection strength (--gel-reflect)
 
 ${GLASS_OPTICS_GLSL}
 ${SDF_GLSL}
@@ -119,6 +131,16 @@ ${LATTICE_GLSL}
 ${PLASMA_GLSL}
 
 float jBand(float x, float w) { return exp(-(x * x) / (w * w)); }
+
+// x^N for the constant exponents the lighting uses, by repeated squaring. x is a cosine in [0, 1]. A transcendental
+// pow() is the dearest instruction in this program on a CPU rasteriser and not free on a GPU; these are a handful of
+// multiplies and agree with pow() to float precision.
+float pw70(float x) { x = max(x, 0.0); float x2 = x * x, x4 = x2 * x2, x8 = x4 * x4, x16 = x8 * x8, x32 = x16 * x16; return x32 * x32 * x4 * x2; }
+float pw80(float x) { x = max(x, 0.0); float x2 = x * x, x4 = x2 * x2, x8 = x4 * x4, x16 = x8 * x8, x32 = x16 * x16; return x32 * x32 * x16; }
+float pw120(float x) { x = max(x, 0.0); float x2 = x * x, x4 = x2 * x2, x8 = x4 * x4, x16 = x8 * x8, x32 = x16 * x16, x64 = x32 * x32; return x64 * x32 * x16 * x8; }
+// A C2 smoothstep (Perlin's): no kink in the first OR second derivative where a fade meets flat, so a fade across the
+// bevel cannot read as a line.
+float sstep(float a, float b, float x) { x = clamp((x - a) / (b - a), 0.0, 1.0); return x * x * x * (x * (x * 6.0 - 15.0) + 10.0); }
 
 void main() {
   // CSS px, y down, origin at the HOST's top-left (the canvas starts uMargin px outside it).
@@ -158,17 +180,38 @@ void main() {
   // ── Bevel geometry ──
   float bz = max(uBezel, 2.0);
   float t = clamp(d / bz, 0.0, 1.0);
-  float tt = max(t, 0.035);
-  // Convex squircle profile h = bz·(1 - (1 - t)^3)^(1/3); its slope is finite everywhere but the very rim.
-  float inner = max(1.0 - pow(1.0 - tt, 3.0), 1e-4);
-  float slope = t >= 1.0 ? 0.0 : min(pow(1.0 - tt, 2.0) / pow(inner, 2.0 / 3.0), 4.5);
-  // Outward unit normal of the boundary, by central differences of the distance field.
+  // The RGB band's geometry, here because the interior early-out below needs where its tail ends.
+  // Molded: the band spreads across the shoulder as a soft iridescent tint (a wide, lower Gaussian), never a line.
+  float bw = mix(max(1.2, uBand.x * 0.45), max(2.0, bz * 0.3), moldOn);
+  // Molded: the band sits on the shoulder, a third of the way in, not on the outline.
+  float d0 = mix(min(uBand.x, bz), max(uBand.x, bz * 0.3), moldOn);
+  // The deep interior draws NOTHING: every light term is confined to the bevel, the band's tail is gone by
+  // d0 + 3·bw (+ the dispersion shift), the edge strokes by 3 px, and only a dent or in-rim plasma paints inside.
+  // Leaving here is exact (the pixel would be 0) and skips the whole refraction/lighting path on the ~80% of a large
+  // slab's pixels that are interior — the single biggest saving available to every engine, GPU or CPU rasteriser.
+  // It is a nested block, not an early \`return\`: a SIMD rasteriser (SwiftShader, llvmpipe) keeps running straight-line
+  // code after a masked return for the whole pixel group, but skips a block no lane enters.
+  if (d > max(bz, d0 + 3.0 * bw + 2.0) && uDentOn < 0.5 && uPlasmaInRim < 0.5) {
+    outColor = vec4(0.0);
+  } else {
+  // Quartic "convex squircle" profile h = bz·(1 - u^4)^(1/4), u = 1 - t. It meets the flat interior with a vanishing
+  // slope AND curvature (C3), which is what makes the refraction fade into the page without a seam; the slope is
+  // infinite at the very rim, so it is capped by a smooth saturation (C-infinity) instead of a hard clamp's kink.
+  float u = 1.0 - t;
+  float u2 = u * u;
+  float inner = max(1.0 - u2 * u2, 1e-4);
+  float sq = sqrt(inner);
+  float rawSlope = t >= 1.0 ? 0.0 : u2 * u / (sq * sqrt(sq));
+  float slope = rawSlope / sqrt(1.0 + rawSlope * rawSlope * (1.0 / 20.25));
+  // Outward unit normal of the boundary (analytic: see SDF_GLSL).
   vec2 g = sdGrad(q, hs, r);
   // A gentle ~2.6 degree optical rock toward the cursor. It changes the rim's
   // refraction and reflections without shifting pixels of live text or the hit area.
   vec3 n = normalize(vec3(g * slope + uTilt * 0.045, 1.0));
   // Shine lives at the edges: every specular term below is confined to the bevel band.
-  float edgeOnly = 1.0 - smoothstep(0.6, 1.0, t);
+  float edgeOnly = 1.0 - sstep(0.6, 1.0, t);
+  // The molded shoulder's gate: keeps every bright term off the outermost, steepest pixels.
+  float rise = sstep(0.0, 0.3, t);
 
   vec3 key = normalize(vec3(-0.46, -0.62, 0.64));
   vec2 Ld = normalize(key.xy);                    // toward the top-left key light, screen space
@@ -176,16 +219,19 @@ void main() {
 
   // ── Refraction of the page, in the bevel band only ──
   vec4 rim = vec4(0.0);
-  float band = (1.0 - smoothstep(0.55, 1.0, t)) * uSceneOn;
+  float band = (1.0 - sstep(0.55, 1.0, t)) * uSceneOn;
   if (band > 0.001) {
     vec2 base = P + uSceneMap.xy;
-    // Jelly disperses a little less than crown glass: the spread around green is scaled by uDispersion.
-    vec3 ior = GLASS_IOR_RGB.g + (GLASS_IOR_RGB - GLASS_IOR_RGB.g) * uDispersion;
+    // Wavelength-dependent refraction: red, green and blue have their own indices (N-BK7, Sellmeier) and their own
+    // rays. Real crown glass spreads red-to-blue by only ~0.012 in index, a fraction of a pixel at this thickness, so
+    // the spread is scaled by --gel-dispersion (× crown glass) until the fringe reads as light, not as noise.
+    vec3 ior = GLASS_IOR_RGB.g + (GLASS_IOR_RGB - GLASS_IOR_RGB.g) * (uDispersion * uLens.x);
+    float thick = uThickness * uLens.y;
     // RGB-led: the channels are also split along the light direction (negative disperse = toward it).
     float fall = 1.0 - t;
-    vec2 uvR = (base + glassSlabOffset(n, ior.r, uThickness) - Ld * uDisperse.r * fall) * uSceneMap.zw;
-    vec2 uvG = (base + glassSlabOffset(n, ior.g, uThickness) - Ld * uDisperse.g * fall) * uSceneMap.zw;
-    vec2 uvB = (base + glassSlabOffset(n, ior.b, uThickness) - Ld * uDisperse.b * fall) * uSceneMap.zw;
+    vec2 uvR = (base + glassSlabOffset(n, ior.r, thick) - Ld * uDisperse.r * fall) * uSceneMap.zw;
+    vec2 uvG = (base + glassSlabOffset(n, ior.g, thick) - Ld * uDisperse.g * fall) * uSceneMap.zw;
+    vec2 uvB = (base + glassSlabOffset(n, ior.b, thick) - Ld * uDisperse.b * fall) * uSceneMap.zw;
     vec4 sR = texture(uScene, uvR);
     vec4 sG = texture(uScene, uvG);
     vec4 sB = texture(uScene, uvB);
@@ -194,10 +240,11 @@ void main() {
     // black once a snapshot landed; the sampled coverage keeps them clear, so the live DOM shows through instead.
     float sa = sG.a;
     vec3 c = vec3(sR.r, sG.g, sB.b);
-    // The slab's own tint, so the rim matches the interior it fades into.
-    c = mix(c, uTint.rgb * sa, uTint.a);
+    // The slab's own tint, so the rim matches the interior it fades into — lightly: a glass edge shows the page through
+    // it, and a full-strength tint buried the refraction under a dark tube.
+    c = mix(c, uTint.rgb * sa, uTint.a * 0.45);
     // Jelly is slightly hazy, not perfectly clear: veil the refracted band with the haze.
-    c = mix(c, uHaze.rgb * sa, uHaze.a * 0.45);
+    c = mix(c, uHaze.rgb * sa, uHaze.a * 0.2);
     rim = vec4(c, sa) * band;
   }
 
@@ -205,8 +252,8 @@ void main() {
   vec3 V = vec3(0.0, 0.0, 1.0);
   vec3 fillL = normalize(vec3(0.55, 0.5, 0.67));
   float fres = glassFresnel(n.z).g;
-  float keySpec = pow(max(dot(n, normalize(key + V)), 0.0), 120.0) * 0.8 * edgeOnly;
-  float fillSpec = pow(max(dot(n, normalize(fillL + V)), 0.0), 70.0) * 0.26 * edgeOnly;
+  float keySpec = pw120(dot(n, normalize(key + V))) * 0.5 * edgeOnly;
+  float fillSpec = pw70(dot(n, normalize(fillL + V))) * 0.26 * edgeOnly;
 
   // The cursor is a point light hovering above the glass; it glints on the bevel, never as a hotspot on the face.
   vec3 toL = vec3(uLight.xy - P, uLight.z);
@@ -214,7 +261,7 @@ void main() {
   vec3 Lc = toL / max(distL, 1e-3);
   float reach = uLight.z * 2.4;
   float fallL = uLightOn / (1.0 + (distL * distL) / (reach * reach));
-  float curSpec = pow(max(dot(n, normalize(Lc + V)), 0.0), 80.0) * 1.3 * fallL * edgeOnly;
+  float curSpec = pw80(dot(n, normalize(Lc + V))) * 1.3 * fallL * edgeOnly;
 
   // The inner edge: a thin bright line, strongest on the edges that face a light.
   float stroke = (1.0 - smoothstep(0.0, uPx * 1.8, d - uPx * 0.5)) * smoothstep(-uPx, 0.0, d);
@@ -223,14 +270,14 @@ void main() {
   float lineK = stroke * (0.18 + 0.55 * facing + 0.5 * facingC * uLightOn) * (1.0 - moldOn);
 
   // A dimmer glint on the far edge: light bouncing inside the slab.
-  float counter = pow(max(dot(n, normalize(vec3(-key.xy, 0.55) + V)), 0.0), 70.0) * 0.24 * edgeOnly;
+  float counter = pw70(dot(n, normalize(vec3(-key.xy, 0.55) + V))) * 0.24 * edgeOnly;
   float body = (1.0 - t) * 0.035 * max(dot(n, key), 0.0);
-  // The molded shoulder (see the header). \`rise\` keeps every bright term off the outermost, steepest pixels.
-  float rise = smoothstep(0.0, 0.3, t);
+  // The molded shoulder (see the header). \`rise\` (above) keeps every bright term off the outermost, steepest pixels.
   float lift = mix(1.0, rise, moldOn);
-  float moldHi = rise * (1.0 - smoothstep(0.25, 0.6, t)) * pow(0.5 + 0.5 * sh, 1.5) * mold;
+  float shn = 0.5 + 0.5 * sh;
+  float moldHi = rise * (1.0 - sstep(0.25, 0.6, t)) * shn * sqrt(shn) * mold;
   // The shadow peaks a little inside the edge and fades toward it, so the outermost pixels meet the ground, not a stroke.
-  float moldLo = smoothstep(0.0, 0.22, t) * (1.0 - smoothstep(0.22, 0.62, t)) * mix(0.3, 1.0, 0.5 - 0.5 * sh) * mold;
+  float moldLo = sstep(0.0, 0.22, t) * (1.0 - sstep(0.22, 0.62, t)) * mix(0.3, 1.0, 0.5 - 0.5 * sh) * mold;
 
   // The shaded half. Glass on a pale ground reads through its DARK edge — refraction throws a thin shadow right at the
   // rim, and the side turned away from the light is denser — not through white highlights, which vanish on white.
@@ -241,6 +288,16 @@ void main() {
   // The molded shoulder's own shadow replaces the ink shade: in ink it would draw a light line on a dark ground.
   float shadeA = clamp(shade * mix(1.0, 0.5, uDark), 0.0, 0.5) * (1.0 - moldOn);
 
+  // ── Reflection: Fresnel-weighted environment ──
+  // The view ray mirrors off the bevel (R = I - 2(n·I)n, I straight into the page) into a soft studio: a wide softbox
+  // up-left, a dimmer one low-right, a faint ambient. Fresnel is per wavelength (it brightens toward grazing angles,
+  // i.e. the steep rim), and rise/edgeOnly keep it on the shoulder, not on the outline. Pure arithmetic — it reads no
+  // extra texture, so the refracted rim still costs exactly its three samples.
+  vec3 Rf = vec3(2.0 * n.z * n.xy, 2.0 * n.z * n.z - 1.0);
+  float kl = max(dot(Rf, key), 0.0); kl *= kl; kl *= kl; kl *= kl;
+  float fl = max(dot(Rf, fillL), 0.0); fl *= fl; fl *= fl;
+  vec3 refl = glassFresnel(n.z) * (0.10 + 0.95 * kl + 0.42 * fl) * (uLens.z * edgeOnly * rise);
+
   float k = mix(1.0, 0.82, uDark);
   // White is secondary: the lit terms are kept under the RGB band below.
   float lit =
@@ -249,10 +306,6 @@ void main() {
   vec3 glint = mix(vec3(1.0), uRim, 0.35);
 
   // ── The RGB-led refraction band (--gel-bevel, --gel-disperse-*) ──
-  // Molded: the band spreads across the shoulder as a soft iridescent tint (a wide, lower Gaussian), never a line.
-  float bw = mix(max(1.2, uBand.x * 0.45), max(2.0, bz * 0.3), moldOn);
-  // Molded: the band sits on the shoulder, a third of the way in, not on the outline.
-  float d0 = mix(min(uBand.x, bz), max(uBand.x, bz * 0.3), moldOn);
   // A channel displaced by v = -Ld·disperse sits where d(P - v) = d - sh·disperse reaches the band depth.
   float fR = jBand(d - sh * uDisperse.r - d0, bw) * uEdgeR.a;
   float fG = jBand(d - sh * uDisperse.g - d0, bw) * uEdgeG.a;
@@ -279,11 +332,11 @@ void main() {
   col = col * (1.0 - shadeA) + uInk * shadeA * (0.5 + 0.5 * rim.a);
   a = a + shadeA * (1.0 - a);
   // The far shoulder rolls into shadow: darkened toward black (premultiplied: colour scales, alpha grows).
-  float moldA = clamp(moldLo * 0.62, 0.0, 0.78);
+  float moldA = clamp(moldLo * 0.62, 0.0, 0.78) * (1.0 - 0.65 * rim.a);
   col *= 1.0 - moldA;
   a = a + moldA * (1.0 - a);
-  col += rgbBand + glint * litA * (1.0 - 0.15 * rim.a) + uFresnel.rgb * fresA;
-  a = a + (rgbA + litA * 0.9 + fresA) * (1.0 - a);
+  col += rgbBand + glint * litA * (1.0 - 0.15 * rim.a) + uFresnel.rgb * fresA + refl;
+  a = a + (rgbA + litA * 0.9 + fresA + max(refl.r, max(refl.g, refl.b))) * (1.0 - a);
 
   // ── The dent: a soft rim glow round the bowl and a light dot on its far slope ──
   if (uDentOn > 0.5 && uDent.z > 0.001) {
@@ -299,5 +352,12 @@ void main() {
   }
 
   a = clamp(a, 0.0, 1.0);
-  outColor = vec4(min(col, vec3(a)) * cover, a * cover);
+  vec4 o = vec4(min(col, vec3(a)) * cover, a * cover);
+  // Interleaved-gradient-noise dither (Jimenez 2014), ±½ of an 8-bit step: the soft shoulder, the shadow and the
+  // reflection are long gradients, and on an 8-bit canvas they band without it. Added to colour and alpha alike, so
+  // premultiplication holds, and only where there is something to dither.
+  float ign = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+  float dz = (ign - 0.5) * (1.0 / 255.0) * step(0.003, o.a);
+  outColor = vec4(clamp(o.rgb + dz, 0.0, 1.0), clamp(o.a + dz, 0.0, 1.0));
+  }
 }`;
