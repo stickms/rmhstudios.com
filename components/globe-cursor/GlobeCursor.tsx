@@ -37,11 +37,12 @@ import { useGlobeCursorStore } from '@/stores/globeCursorStore';
  *   per-frame CPU blur in WebKit and Gecko). A trail or sparkles fly far from
  *   the globe, and the CPU fallback has no GPU canvas, so either keeps the
  *   full-viewport 2D canvas.
- * - **Drawn where the pointer will be.** A drawn cursor is at least a frame
- *   behind the hardware one. Where the browser predicts pointer motion
- *   (`getPredictedEvents()`, Chromium) the globe aims at the prediction for the
- *   frame it is drawn in; the hotspot dot stays on the real pointer. The
- *   follower spring is off by default (`lag` 0).
+ * - **Centred on the pointer, always.** The globe is the cursor, so it is drawn
+ *   exactly at the real pointer (`PointerEvent.clientX/Y`) — not at a predicted
+ *   position, which overshoots on a stop or a turn and leaves the globe off the
+ *   mouse — and over text fields too, where it shrinks and dims under the OS
+ *   I-beam instead of sitting beside it. The follower spring is off by default
+ *   (`lag` 0), so at rest and in motion the globe's centre is the pointer.
  *
  * ## When the frame runs
  *
@@ -65,8 +66,6 @@ import { useGlobeCursorStore } from '@/stores/globeCursorStore';
  */
 
 const STYLE_ID = 'rmh-globe-cursor-style';
-/** A predicted point further than this (CSS px) from the real pointer is a misprediction and is ignored. */
-const MAX_LEAD_PX = 48;
 /** The fixed, click-through, compositor-moved layer every direct-mode element is. */
 const LAYER_CSS =
   'position:fixed;left:0;top:0;pointer-events:none;z-index:var(--z-cursor);will-change:transform,opacity;';
@@ -84,16 +83,6 @@ function cursorCss(s: GlobeCursorSettings): string {
   if (s.honourCanvas) keep.push('canvas');
   if (s.nativeOverText) keep.push(TEXT_FIELD);
   return `html.${HTML_CLASS}, html.${HTML_CLASS} *:not(${keep.join(', ')}) { cursor: none !important; }`;
-}
-
-/** The browser's predicted pointer position for the coming frame, or the real one. */
-function lead(e: PointerEvent): [number, number] {
-  const predicted = typeof e.getPredictedEvents === 'function' ? e.getPredictedEvents() : null;
-  const p = predicted && predicted.length > 0 ? predicted[predicted.length - 1] : null;
-  if (!p || Math.hypot(p.clientX - e.clientX, p.clientY - e.clientY) > MAX_LEAD_PX) {
-    return [e.clientX, e.clientY];
-  }
-  return [p.clientX, p.clientY];
 }
 
 /** Whether everything the cursor paints stays near the globe (no trail, no sparkles): direct mode can draw it. */
@@ -343,8 +332,7 @@ export default function GlobeCursor() {
       if (lastHover === 'native') {
         engine.leave();
       } else {
-        const [lx, ly] = lead(e);
-        engine.move(e.clientX, e.clientY, lx, ly);
+        engine.move(e.clientX, e.clientY);
         setNativeHidden(true);
       }
       kick();

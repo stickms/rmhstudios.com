@@ -300,9 +300,9 @@ export class GlobeCursorEngine {
   /* ── Input ─────────────────────────────────────────────────────────────── */
 
   /**
-   * The pointer moved to (`x`, `y`). `leadX`/`leadY` is where the browser predicts it will be by the time this frame is
-   * on screen (`PointerEvent.getPredictedEvents()`); the globe aims there, so it is not drawn a frame behind the hand.
-   * The hotspot dot always stays on the real pointer.
+   * The pointer moved to (`x`, `y`). The globe is centred on the real pointer: it is the hotspot, so it is never drawn
+   * ahead of it. `leadX`/`leadY` (a predicted position) remain for callers that want to aim elsewhere, but the cursor
+   * component no longer passes them — a prediction that overshoots on a stop or a turn leaves the globe off the mouse.
    */
   move(x: number, y: number, leadX = x, leadY = y): void {
     this.tx = x;
@@ -1021,8 +1021,10 @@ export class GlobeCursorEngine {
     if (!this.gpu?.ok) return null;
     const alpha = this.alpha * s.opacity;
     const textMode = this.hover === 'text' && s.nativeOverText && s.hideNative;
-    const cx = this.x + (textMode ? 16 : 0);
-    const cy = this.y + (textMode ? 16 : 0);
+    // Always centred on the pointer, text fields included: the OS I-beam is drawn above the page, so it reads on top
+    // of the (smaller, dimmer) globe instead of the globe having to sit beside it.
+    const cx = this.x;
+    const cy = this.y;
     if (alpha < 0.005) {
       return { visible: false, x: cx, y: cy, size: 0, opacity: 0, halo: null, hotspot: null };
     }
@@ -1086,8 +1088,6 @@ export class GlobeCursorEngine {
     const css = this.paintSprite();
     const half = css / 2;
     const textMode = this.hover === 'text' && s.nativeOverText && s.hideNative;
-    const ox = textMode ? 16 : 0;
-    const oy = textMode ? 16 : 0;
     const R = (s.size / 2) * this.scale;
 
     // Sparkles.
@@ -1115,34 +1115,21 @@ export class GlobeCursorEngine {
         const t = 1 - k / (s.trail + 1);
         const sc = 0.45 + 0.55 * t;
         ctx.globalAlpha = alpha * t * 0.45;
-        this.grow(p.x + ox, p.y + oy, half * sc + 1);
-        ctx.drawImage(
-          this.spriteSource,
-          p.x + ox - half * sc,
-          p.y + oy - half * sc,
-          css * sc,
-          css * sc,
-        );
+        this.grow(p.x, p.y, half * sc + 1);
+        ctx.drawImage(this.spriteSource, p.x - half * sc, p.y - half * sc, css * sc, css * sc);
       }
     }
 
     // Halo.
     if (s.glow > 0) {
       const gr = R * (1.6 + s.glow * 1.6);
-      const g = ctx.createRadialGradient(
-        this.x + ox,
-        this.y + oy,
-        R * 0.4,
-        this.x + ox,
-        this.y + oy,
-        gr,
-      );
+      const g = ctx.createRadialGradient(this.x, this.y, R * 0.4, this.x, this.y, gr);
       g.addColorStop(0, this.glowCss(0.38 * s.glow * alpha));
       g.addColorStop(1, this.glowCss(0));
       ctx.globalAlpha = 1;
-      this.grow(this.x + ox, this.y + oy, gr + 1);
+      this.grow(this.x, this.y, gr + 1);
       ctx.fillStyle = g;
-      ctx.fillRect(this.x + ox - gr, this.y + oy - gr, gr * 2, gr * 2);
+      ctx.fillRect(this.x - gr, this.y - gr, gr * 2, gr * 2);
     }
 
     // The globe, with its silhouette glow.
@@ -1152,8 +1139,8 @@ export class GlobeCursorEngine {
       ctx.shadowBlur = s.glow * R * 1.1 * dpr;
     }
     // The sprite's square plus twice the shadow blur, which spreads past the silhouette.
-    this.grow(this.x + ox, this.y + oy, half * Math.SQRT2 + s.glow * R * 2.2 + 2);
-    ctx.drawImage(this.spriteSource, this.x + ox - half, this.y + oy - half, css, css);
+    this.grow(this.x, this.y, half * Math.SQRT2 + s.glow * R * 2.2 + 2);
+    ctx.drawImage(this.spriteSource, this.x - half, this.y - half, css, css);
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';
 
