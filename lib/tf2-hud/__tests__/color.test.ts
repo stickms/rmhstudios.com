@@ -131,3 +131,27 @@ describe('label substitution', () => {
     expect(substituteLabel('#Missing_Token', vars, strings)).toBe('Missing_Token');
   });
 });
+
+describe('fonts', () => {
+  it('knows the bundled TF2 faces, custom and system fonts', async () => {
+    const { BUNDLED_FACES, fontFamilyFor, fontGroups, fontStatus, knownFontNames } =
+      await import('../assets/fonts');
+    expect(Object.keys(BUNDLED_FACES)).toEqual([
+      'tf2',
+      'tf2 build',
+      'tf2 secondary',
+      'tf2 professor',
+      'tfd',
+      'team fortress logo',
+    ]);
+    expect(fontFamilyFor('TF2 Build')).toMatch(/^"TF2 Build",/);
+    expect(fontFamilyFor('verdana')).toContain('Verdana');
+    expect(fontFamilyFor('Some Custom Face')).toMatch(/^"Some Custom Face",/);
+    const always = () => true;
+    expect(fontStatus('TF2 Secondary', always)).toBe('bundled');
+    expect(fontStatus('Verdana', always)).toBe('system');
+    expect(fontStatus('Nope', () => false)).toBe('missing');
+    expect(fontGroups().bundled).toHaveLength(6);
+    expect(knownFontNames()[0]).toBe('TF2');
+  });
+});

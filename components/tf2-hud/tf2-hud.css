@@ -11,21 +11,117 @@
 
 @import '../shared/app-theme.css';
 
+/* The TF2 faces, under their exact internal names so a scheme `"name" "TF2 Build"` and this
+   stylesheet resolve to the same file. Single-weight faces declare the whole weight range so the
+   browser never fakes a bold. Preview/UI assets only — never part of an exported HUD. */
 @font-face {
-  font-family: 'Bebas Neue';
+  font-family: 'TF2';
+  src: url('/tf2-hud/fonts/tf2.ttf') format('truetype');
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
-  font-weight: 400;
-  src: url('../../node_modules/@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2')
-    format('woff2');
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074,
-    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: 'TF2 Placeholder Display';
-  src: local('Bebas Neue'), local('BebasNeue-Regular');
+  font-family: 'TF2 Build';
+  src: url('/tf2-hud/fonts/tf2build.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TF2 Secondary';
+  src: url('/tf2-hud/fonts/tf2secondary.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TF2 Professor';
+  src: url('/tf2-hud/fonts/tf2professor.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'tfd';
+  src: url('/tf2-hud/fonts/tfd.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Team Fortress Logo';
+  src: url('/tf2-hud/fonts/tflogo.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Plain Team Fortress 2: the system cursor, flat controls ─────── */
+
+.tf2hud-theme,
+.tf2hud-theme * {
+  cursor: default;
+}
+.tf2hud-theme
+  :is(
+    button,
+    a,
+    [role='tab'],
+    summary,
+    select,
+    input[type='checkbox'],
+    input[type='radio'],
+    input[type='range']
+  ):not(:disabled) {
+  cursor: pointer;
+}
+.tf2hud-theme
+  :is(input[type='text'], input[type='search'], input[type='number'], textarea, .cm-content) {
+  cursor: text;
+}
+.tf2hud-theme :is(button, a, [role='tab']) {
+  transition: none;
+}
+
+/* The active tab's orange underline (an inset line, so tabs never change size). */
+.tf2hud-tab[aria-selected='true'] {
+  box-shadow: inset 0 -2px 0 var(--app-accent);
+}
+
+/* The menu tick-box: a square with an orange check, no pill, no slide. */
+.tf2hud-check {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+  border: 1px solid var(--app-border-bright);
+  border-radius: var(--app-radius-sm);
+  background: var(--app-bg);
+}
+.tf2hud-check::before {
+  content: '';
+  width: 0.55rem;
+  height: 0.55rem;
+  background: var(--app-accent);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+  transform: scale(0);
+}
+.tf2hud-check:checked::before {
+  transform: scale(1);
+}
+.tf2hud-check:checked {
+  border-color: var(--app-accent);
+}
+.tf2hud-check:disabled {
+  opacity: 0.45;
 }
 
 /* ─── Dark (default): the in-game menu palette ───────────────────── */
@@ -51,9 +147,10 @@
   --app-info: #6d9bb5;
   --app-rare: #b8738f;
 
-  --app-font-display: 'TF2 Placeholder Display', 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
-  --app-font-body:
-    var(--font-archivo), 'Archivo', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+  --app-font-display: 'TF2 Build', Impact, 'Arial Narrow', sans-serif;
+  --app-font-body: 'TF2 Secondary', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+  --tf2-font-logo: 'Team Fortress Logo', 'TF2 Build', Impact, sans-serif;
+  --tf2-font-flourish: 'TF2 Professor', 'TF2 Secondary', Georgia, serif;
   --app-font-mono: 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
 
   /* TF2's panels are blocky: tight corners everywhere. */
@@ -63,6 +160,10 @@
 
   --app-shadow: 0 3px 0 rgb(0 0 0 / 0.35);
 
+  /* Controls and panels sit on this; it is the app surface, named so no jelly adapter claims it. */
+  --tf2-panel: #38312c;
+  /* No jelly anywhere in this app (the same kill switch high contrast uses). */
+  --app-jelly-on: 0;
   --tf2-red: #b8383b;
   --tf2-blu: #5885a2;
   --tf2-paper: #ebe3cb;
@@ -94,6 +195,7 @@
   --app-info: #2f5f7e;
   --app-shadow: 0 3px 0 rgb(60 40 20 / 0.18);
 
+  --tf2-panel: #f6f0dd;
   --tf2-checker-a: #d9cfb3;
   --tf2-checker-b: #e0d6bb;
 }
@@ -103,15 +205,24 @@
 /* The title strip: a flat orange band with the display face, like a TF2 menu header. */
 .tf2hud-title {
   font-family: var(--app-font-display);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.tf2hud-logo {
+  font-family: var(--tf2-font-logo);
+  letter-spacing: 0.02em;
+}
+
+.tf2hud-flourish {
+  font-family: var(--tf2-font-flourish);
 }
 
 .tf2hud-panel-head {
   font-family: var(--app-font-display);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--app-text-muted);
 }
 

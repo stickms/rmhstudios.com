@@ -1,5 +1,5 @@
 /**
- * PUT /api/tf2-hud/blobs/:sha1 — upload one file's bytes. The server re-hashes
+ * PUT /api/tf2-hud/blobs/:sha1 — upload one file's bytes (optionally gzip, via x-upload-encoding). The server re-hashes
  * the body and refuses a mismatch, so the hash in a manifest is proof of content.
  */
 
@@ -20,14 +20,16 @@ export const Route = createFileRoute('/api/tf2-hud/blobs/$sha1')({
           guard(async () => {
             const sha1 = sha1Param.safeParse(params.sha1);
             if (!sha1.success) return apiError('Invalid hash', 400);
+            // The editor gzips in the browser; the wire size is capped at the file ceiling too,
+            // and the inflated size is capped again inside storeBlob (bomb-safe).
             let bytes: Uint8Array;
             try {
               bytes = await readRequestBodyLimited(request, HUD_LIMITS.maxBlobBytes);
             } catch (e) {
-              if (e instanceof RequestBodyTooLargeError) return apiError('File is larger than 25 MB', 413);
+              if (e instanceof RequestBodyTooLargeError) return apiError('File is too large', 413);
               throw e;
             }
-            await storeBlob(userId, sha1.data, bytes);
+            await storeBlob(userId, sha1.data, bytes, request.headers.get('x-upload-encoding'));
             return new Response(null, { status: 204 });
           }),
       ),

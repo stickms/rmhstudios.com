@@ -43,7 +43,8 @@ lib/tf2-hud/
 Panels refer to colours, fonts and borders by **name**, and those names live in `clientscheme.res` — so the editor shows what a value really resolves to and lets you change it at either level.
 
 - **Colour picker** (`ColorPicker.tsx`): saturation/brightness square, hue and opacity, hex / `rgb()` / VGUI `r g b a` entry, eyedropper, recent colours and a searchable swatch grid of scheme colours. Dragging writes numbers; choosing a swatch writes the _name_. The field always shows the chain (`TanDark → 117 107 94 255`) and warns when a value is neither a colour nor a scheme name. "Save" turns the current colour into a new scheme colour.
-- **Font picker** (`FontPicker.tsx`): every scheme font rendered in the face that is active at the current resolution (screen-height windows vs. proportional faces), with size and weight, and a status — _custom file_, _placeholder_ (a stand-in for a Valve face), _system font_ or _not installed_.
+- **Font picker** (`FontPicker.tsx`): every scheme font rendered in the face that is active at the current resolution (screen-height windows vs. proportional faces), with size and weight, and a status — _custom file_, _TF2 face_, _system font_ or _not installed_. The face field has a grouped browser (TF2 faces · this HUD's fonts · system fonts), each shown in itself; any other installed family can be typed in.
+- **Fonts, in order of precedence:** a font file in the HUD (`resource/fonts/*.ttf`, registered under its internal name) → the six bundled TF2 faces (`TF2`, `TF2 Build`, `TF2 Secondary`, `TF2 Professor`, `tfd`, `Team Fortress Logo`, served from `public/tf2-hud/fonts/` and used by the preview _and_ the app chrome) → a system stack. The bundled faces are Valve's: they exist for preview only and are never written into an exported HUD or stored in an account.
 - **Scheme tab** (`SchemePanel.tsx`): all colours and `BaseSettings`, all fonts (with a face editor: name, size, weight, flags, screen-height window, add a face) and all borders drawn with the preview's own border painter. Editing a scheme entry updates every panel that names it, live. Entries used by the selected panel are highlighted.
 - **Inspector previews**: each position/size value is explained at the current resolution ("120 units from the bottom edge → 810 px from the top"), focusing one draws its measurement in the preview, `labelText` shows the substituted text (`%Health%` → `125`), `image` shows the texture or the missing-texture checkerboard, borders show a swatch, and elements positioned by `hudlayout.res` say so.
 
@@ -54,6 +55,10 @@ Panels refer to colours, fonts and borders by **name**, and those names live in 
 - **Versions:** explicit saves add a version (kept: 100). Autosaves fold into the previous autosave if it is under 15 minutes old. Any version can be restored as a new one.
 - **Validation:** syntax, missing `#base`, unknown font/colour/border, missing textures (info only), misplaced or oversized files, uppercase paths.
 
+## Look and feel
+
+The editor is plain Team Fortress 2, not the site's Plasmatic Jelly: flat panels (`--tf2-panel`), square-ish corners, the TF2 faces, and the system cursor. On `/tf2-hud/**` the jelly services and the globe cursor are not installed at all (`lib/native-material-routes.ts`, read by `Providers` and `GlobeCursorRoot`), tabs are `TfTabs` (flat, orange underline) and toggles are native checkboxes. Do not add `glass-*` classes or `data-jelly*` attributes here.
+
 ## Storage and the API
 
 A HUD is rows in `tf2_hud` / `tf2_hud_version` (a JSON manifest per version) plus content-addressed blobs in object storage under `tf2-hud/blobs/<sha1[0:2]>/<sha1>`. Forks and versions share blobs.
@@ -63,7 +68,9 @@ Trust model (`lib/tf2-hud/hud.server.ts`):
 - A manifest may only reference blobs its author uploaded (`tf2_hud_user_blob`), or can already read by forking. Knowing a hash never grants a file.
 - The server re-hashes every upload and takes sizes from the stored blob.
 - Paths are re-validated (`sanitizePath`, HUD root folders, extension allow-list); files are served with an extension-derived content type, `nosniff`, `Content-Disposition: attachment` and a sandbox CSP.
-- Limits: 25 MB per file, 150 MB and 5,000 files per HUD, 100 HUDs per user.
+- Limits (`HUD_LIMITS`, `maxBytesFor`; sizes are uncompressed, i.e. what the game loads): per file — 64 KB `.vmt`, 1 MB text, 3 MB font, 4 MB sound or image (8 MB hard ceiling); per HUD — 2,000 files and 40 MB; per account — 400 MB of distinct uploaded files and 50 HUDs. The editor checks the same numbers before uploading and says which file is over.
+
+**Compression.** Object storage is the site's R2/S3 layer (`lib/storage/s3.server.ts`). The browser gzips each upload (`CompressionStream`, skipped for PNG/JPEG/Ogg/MP3, sent with `x-upload-encoding: gzip`); the server inflates it with a hard output ceiling (a decompression bomb is refused, not allocated), checks the SHA-1 of the _uncompressed_ bytes, then stores it Brotli-compressed unless that saves under 5% (`blob-codec.server.ts`). `tf2_hud_blob.size` is the real size, `storedSize` the bytes on disk, `encoding` is `none` or `br`; files are decoded again, with the same bounded ceiling, when served. Because identity is the uncompressed hash, dedupe and manifests are unaffected.
 
 | Route                                               | Purpose                                               |
 | --------------------------------------------------- | ----------------------------------------------------- |
@@ -80,7 +87,7 @@ Orphaned blobs (from deleted HUDs) are not yet garbage-collected.
 
 ## Zip import
 
-Import is the untrusted boundary: entries are sanitised (no traversal/absolute paths), junk and unsupported types skipped, the HUD root is detected inside any nesting (`tf/custom/<name>/…`), letter case is normalised to the base, and unchanged files are dropped. Limits: 5,000 entries, 25 MB per file, 150 MB total — enforced while streaming, so a lying header cannot inflate past them.
+Import is the untrusted boundary: entries are sanitised (no traversal/absolute paths), junk and unsupported types skipped, the HUD root is detected inside any nesting (`tf/custom/<name>/…`), letter case is normalised to the base, and unchanged files are dropped. Limits: 5,000 entries, 8 MB per file, 80 MB total — enforced while streaming, so a lying header cannot inflate past them.
 
 ## Working on it
 

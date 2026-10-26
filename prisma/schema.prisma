@@ -13062,7 +13062,12 @@ model Tf2HudShare {
 /// One stored file, keyed by the SHA-1 of its bytes.
 model Tf2HudBlob {
   sha1       String           @id @db.VarChar(40)
+  /// Uncompressed size in bytes (what the game would load).
   size       Int
+  /// How the stored object is encoded: "none" or "br" (Brotli).
+  encoding   String           @default("none") @db.VarChar(8)
+  /// Bytes actually stored, after compression.
+  storedSize Int              @default(0)
   storageKey String
   createdAt  DateTime         @default(now())
   owners     Tf2HudUserBlob[]

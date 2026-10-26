@@ -17,6 +17,7 @@ import {
   sanitizePath,
 } from '../project/paths';
 import { binaryContent, textFromBytes } from '../project/model';
+import { HUD_LIMITS } from '../api-types';
 import { decodeUtf8 } from '../util/sha1';
 import type { BaseIndex, FileContent, Overlay } from '../project/types';
 
@@ -28,8 +29,8 @@ export interface ImportLimits {
 
 export const DEFAULT_IMPORT_LIMITS: ImportLimits = {
   maxEntries: 5000,
-  maxFileBytes: 25 * 1024 * 1024,
-  maxTotalBytes: 150 * 1024 * 1024,
+  maxFileBytes: HUD_LIMITS.maxBlobBytes,
+  maxTotalBytes: HUD_LIMITS.maxTotalBytes * 2,
 };
 
 export class ImportError extends Error {

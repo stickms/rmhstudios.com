@@ -64,11 +64,23 @@ export interface HudListResponse {
   nextCursor: string | null;
 }
 
+/**
+ * What one HUD, and one account, may store. Sizes are of the *uncompressed*
+ * files (what the game would load); everything is stored Brotli-compressed on
+ * top of that. A full-fat HUD — every panel file, a few fonts, a few hundred
+ * texture stubs — is well under 10 MB, so these leave generous room without
+ * letting one account fill the bucket.
+ */
 export const HUD_LIMITS = {
-  maxFiles: 5000,
-  maxBlobBytes: 25 * 1024 * 1024,
-  maxTotalBytes: 150 * 1024 * 1024,
-  maxHudsPerUser: 100,
+  /** Files in one HUD's overlay (the changes from the TF2 default). */
+  maxFiles: 2000,
+  /** Hard ceiling for any single file; `maxBytesFor` in project/paths.ts tightens it per type. */
+  maxBlobBytes: 8 * 1024 * 1024,
+  /** One HUD, uncompressed. */
+  maxTotalBytes: 40 * 1024 * 1024,
+  /** Every distinct file one account has uploaded, uncompressed — the account-wide quota. */
+  maxUserUploadBytes: 400 * 1024 * 1024,
+  maxHudsPerUser: 50,
   maxTags: 8,
   maxVersionsKept: 100,
 } as const;

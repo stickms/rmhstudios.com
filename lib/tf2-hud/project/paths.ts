@@ -37,6 +37,26 @@ export const ALLOWED_HUD_EXTENSIONS = new Set([
 
 export const MAX_PATH_LENGTH = 240;
 
+const MB = 1024 * 1024;
+
+/**
+ * The largest a single file of this type may be (uncompressed). Panel and script
+ * files are text and tiny; a `.vmt` is a few hundred bytes; fonts and textures are
+ * the bulk; sounds are capped hardest because audio is what makes a HUD huge.
+ */
+export function maxBytesFor(path: string): number {
+  const ext = extOf(path);
+  if (ext === 'vmt') return 64 * 1024;
+  if (TEXT_EXTENSIONS.has(ext)) return 1 * MB;
+  if (FONT_EXTENSIONS.has(ext)) return 3 * MB;
+  if (SOUND_EXTENSIONS.has(ext)) return 4 * MB;
+  if (IMAGE_EXTENSIONS.has(ext)) return 4 * MB;
+  return 1 * MB;
+}
+
+/** Formats that are already compressed; recompressing them only costs CPU. */
+export const INCOMPRESSIBLE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'mp3', 'ogg']);
+
 export function extOf(path: string): string {
   const base = path.slice(path.lastIndexOf('/') + 1);
   const dot = base.lastIndexOf('.');

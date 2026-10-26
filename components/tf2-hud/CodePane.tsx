@@ -6,7 +6,7 @@
 
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { TfTabs, type TfTab } from './TfTabs';
 import { basename, categoryOf, isTextPath } from '@/lib/tf2-hud/project/paths';
 import { useEditor } from '@/lib/tf2-hud/store';
 import CodeEditor from './CodeEditor';
@@ -48,12 +48,12 @@ export default function CodePane() {
     );
   }
 
-  const tabs: LiquidTab[] = openPaths.map((p) => ({ id: p, label: basename(p) }));
+  const tabs: TfTab[] = openPaths.map((p) => ({ id: p, label: basename(p) }));
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-1 border-b border-(--app-border) p-1.5">
         <div className="min-w-0 flex-1">
-          <LiquidTabs
+          <TfTabs
             tabs={tabs}
             value={activePath}
             size="sm"

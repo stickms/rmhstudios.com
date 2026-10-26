@@ -8,7 +8,7 @@ import { Download, Play, Trash2, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { TfTabs, type TfTab } from './TfTabs';
 import { readFontNames } from '@/lib/tf2-hud/assets/ttf-names';
 import { decodeVtf } from '@/lib/tf2-hud/assets/vtf';
 import { categoryOf, basename, extOf } from '@/lib/tf2-hud/project/paths';
@@ -135,7 +135,7 @@ export default function AssetsPanel() {
     return [...set].filter((p) => kindOf(p) === kind).sort();
   }, [overlay, baseIndex, tfAssets, kind]);
 
-  const tabs: LiquidTab[] = [
+  const tabs: TfTab[] = [
     { id: 'fonts', label: t('fonts', { defaultValue: 'Fonts' }) },
     { id: 'sounds', label: t('sounds', { defaultValue: 'Sounds' }) },
     { id: 'textures', label: t('textures', { defaultValue: 'Textures' }) },
@@ -178,7 +178,7 @@ export default function AssetsPanel() {
         }
       />
       <div className="border-b border-(--app-border) p-2">
-        <LiquidTabs
+        <TfTabs
           tabs={tabs}
           value={kind}
           size="sm"

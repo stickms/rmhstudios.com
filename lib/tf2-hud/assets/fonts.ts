@@ -2,17 +2,38 @@
  * Font families for the preview.
  *
  * The scheme names faces the way the engine does (`"TF2 Build"`, `"Verdana"`).
- * Valve's TF2 faces cannot be bundled, so each is mapped to an open placeholder
- * until the real files are sourced — swapping them is a one-line change in
- * `BUILT_IN`. Fonts a HUD ships in `resource/` (and `CustomFontFiles`) are
- * registered at runtime and win over the built-ins.
+ * Three sources, in priority order:
+ *
+ *   1. **Custom** — fonts the HUD ships (`resource/*.ttf`, `CustomFontFiles`),
+ *      registered at runtime under their internal family name. They win, as in game.
+ *   2. **Bundled** — the TF2 faces the game itself ships (`TF2`, `TF2 Build`,
+ *      `TF2 Secondary`, `TF2 Professor`, `tfd`, `Team Fortress Logo`). They are
+ *      declared with `@font-face` in `components/tf2-hud/tf2-hud.css` under their
+ *      exact internal names, so a scheme `"name" "TF2 Build"` resolves with no
+ *      mapping. They are preview assets only and are never put in an export.
+ *   3. **System** — ordinary fonts (Verdana, Arial, …) through a stack with a
+ *      metric-compatible fallback, and any other installed family by name.
  */
 
-const BUILT_IN: Record<string, string> = {
-  tf2: '"TF2 Placeholder Display", "Bebas Neue", Impact, "Arial Narrow", sans-serif',
-  'tf2 build': '"TF2 Placeholder Display", "Bebas Neue", Impact, "Arial Narrow", sans-serif',
-  'tf2 secondary': '"TF2 Placeholder Serif", Georgia, "Times New Roman", serif',
-  tf2professor: '"TF2 Placeholder Serif", Georgia, serif',
+/** Faces bundled with the editor, by lower-case internal name → display label. */
+export const BUNDLED_FACES: Record<string, { name: string; note: string; sample?: string }> = {
+  tf2: { name: 'TF2', note: 'Menus and the HUD’s lighter text' },
+  'tf2 build': { name: 'TF2 Build', note: 'Heavy display face — scores, health, headings' },
+  'tf2 secondary': { name: 'TF2 Secondary', note: 'Item names, descriptions and body text' },
+  'tf2 professor': { name: 'TF2 Professor', note: 'The small-caps flourish face' },
+  tfd: {
+    name: 'tfd',
+    note: 'Weapon and class silhouettes (the kill-feed icon font)',
+    sample: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789',
+  },
+  'team fortress logo': {
+    name: 'Team Fortress Logo',
+    note: 'The wordmark face',
+    sample: 'Team Fortress 2',
+  },
+};
+
+const SYSTEM_STACKS: Record<string, string> = {
   verdana: 'Verdana, "DejaVu Sans", sans-serif',
   arial: 'Arial, "Liberation Sans", Helvetica, sans-serif',
   tahoma: 'Tahoma, "DejaVu Sans", sans-serif',
@@ -22,8 +43,11 @@ const BUILT_IN: Record<string, string> = {
   'times new roman': '"Times New Roman", "Liberation Serif", serif',
   georgia: 'Georgia, "DejaVu Serif", serif',
   'segoe ui': '"Segoe UI", "DejaVu Sans", sans-serif',
-  impact: 'Impact, "Bebas Neue", sans-serif',
+  impact: 'Impact, "Arial Narrow", sans-serif',
 };
+
+/** Fallbacks used while a bundled face is still loading. */
+const BUNDLED_FALLBACK = 'Impact, "Arial Narrow", Verdana, sans-serif';
 
 const custom = new Map<string, string>();
 
@@ -33,12 +57,32 @@ const key = (name: string) => name.trim().toLowerCase();
 export function fontFamilyFor(name: string): string {
   const k = key(name);
   const registered = custom.get(k);
-  if (registered) return `"${registered}", ${BUILT_IN[k] ?? 'sans-serif'}`;
-  return BUILT_IN[k] ?? `"${name.replace(/"/g, '')}", Verdana, sans-serif`;
+  if (registered) return `"${registered}", ${SYSTEM_STACKS[k] ?? 'sans-serif'}`;
+  const bundled = BUNDLED_FACES[k];
+  if (bundled) return `"${bundled.name}", ${BUNDLED_FALLBACK}`;
+  return SYSTEM_STACKS[k] ?? `"${name.replace(/"/g, '')}", Verdana, sans-serif`;
 }
 
 export function isBuiltInFont(name: string): boolean {
-  return key(name) in BUILT_IN;
+  const k = key(name);
+  return k in SYSTEM_STACKS || k in BUNDLED_FACES;
+}
+
+let bundledLoad: Promise<void> | undefined;
+
+/**
+ * Make sure the bundled faces are loaded before the canvas paints with them (a
+ * canvas does not wait for a face it merely names). Resolves once all six have
+ * either loaded or failed; failure just leaves the fallback stack in use.
+ */
+export function ensureBundledFonts(): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts) return Promise.resolve();
+  bundledLoad ??= Promise.all(
+    Object.values(BUNDLED_FACES).map((f) =>
+      document.fonts.load(`16px "${f.name}"`).catch(() => []),
+    ),
+  ).then(() => undefined);
+  return bundledLoad;
 }
 
 /** VGUI weight (0–1000, 0 = default) → CSS weight. */
@@ -51,18 +95,18 @@ export function fontCss(name: string, px: number, weight: number, italic: boolea
   return `${italic ? 'italic ' : ''}${cssWeight(weight)} ${px.toFixed(2)}px ${fontFamilyFor(name)}`;
 }
 
-export type FontStatus = 'custom' | 'placeholder' | 'system' | 'missing';
+export type FontStatus = 'custom' | 'bundled' | 'system' | 'missing';
 
 /**
- * Where a scheme face's glyphs will come from: a file the HUD ships, one of our
- * stand-ins for Valve's faces, a font the browser has, or nothing (it will fall
- * back, so the preview will not match the game).
+ * Where a scheme face's glyphs will come from: a file the HUD ships, a TF2 face
+ * the editor bundles, a font the browser has, or nothing (it will fall back, so
+ * the preview will not match the game).
  */
 export function fontStatus(name: string, installed: (family: string) => boolean): FontStatus {
   const k = key(name);
   if (custom.has(k)) return 'custom';
-  if (k.startsWith('tf2')) return 'placeholder';
-  if (k in BUILT_IN && installed(name)) return 'system';
+  if (k in BUNDLED_FACES) return 'bundled';
+  if (k in SYSTEM_STACKS) return installed(name) ? 'system' : 'missing';
   return installed(name) ? 'system' : 'missing';
 }
 
@@ -89,7 +133,37 @@ export function registeredCustomFonts(): string[] {
   return [...custom.keys()];
 }
 
-/** Names the user can pick for a scheme font: built-ins first, then registered. */
+export interface FontGroups {
+  /** TF2 faces bundled with the editor. */
+  bundled: string[];
+  /** Fonts the current HUD ships. */
+  custom: string[];
+  /** Common system fonts the scheme can name. */
+  system: string[];
+}
+
+/** Every face name a scheme font can use, grouped by where it comes from. */
+export function fontGroups(): FontGroups {
+  return {
+    bundled: Object.values(BUNDLED_FACES).map((f) => f.name),
+    custom: [...custom.keys()].filter((k) => !(k in BUNDLED_FACES)).sort(),
+    system: [
+      'Verdana',
+      'Arial',
+      'Tahoma',
+      'Trebuchet MS',
+      'Segoe UI',
+      'Georgia',
+      'Times New Roman',
+      'Courier New',
+      'Lucida Console',
+      'Impact',
+    ],
+  };
+}
+
+/** Names the user can pick for a scheme font: bundled, custom, then system. */
 export function knownFontNames(): string[] {
-  return [...new Set([...Object.keys(BUILT_IN), ...custom.keys()])].sort();
+  const g = fontGroups();
+  return [...g.bundled, ...g.custom, ...g.system];
 }

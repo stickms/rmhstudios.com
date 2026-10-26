@@ -37,11 +37,7 @@ export default function Tf2HudMine() {
   }, [session]);
 
   return (
-    <div
-      data-jelly-scope="off"
-      data-jelly="off"
-      className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)"
-    >
+    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
       <AppHeader
         title={t('my-huds', { defaultValue: 'My HUDs' })}
         backLabel="RMH TF2 HUD Editor"

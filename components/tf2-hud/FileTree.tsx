@@ -27,7 +27,7 @@ import {
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { TfTabs, type TfTab } from './TfTabs';
 import { changedFiles, statusOf } from '@/lib/tf2-hud/project/model';
 import {
   HUD_ROOT_FOLDERS,
@@ -168,7 +168,7 @@ export default function FileTree() {
     });
   }, []);
 
-  const tabs: LiquidTab[] = [
+  const tabs: TfTab[] = [
     { id: 'all', label: t('filter-all', { defaultValue: 'All' }) },
     {
       id: 'modified',
@@ -407,7 +407,7 @@ export default function FileTree() {
         }
       />
       <div className="space-y-2 border-b border-(--app-border) p-2">
-        <LiquidTabs
+        <TfTabs
           tabs={tabs}
           value={filter}
           size="sm"

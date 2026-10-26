@@ -4,7 +4,7 @@
  * The site's `components/ui/*` primitives are `--site-*` and re-theme with the
  * site; this app has its own palette (the TF2 menu look), so its controls take
  * the app tokens instead. They are deliberately few — every one is used across
- * several panels — and tab strips are NOT here: those are `LiquidTabs`.
+ * several panels — and tab strips are NOT here: those are `TfTabs`.
  */
 'use client';
 
@@ -24,7 +24,6 @@ import {
   type SelectHTMLAttributes,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
 /* ─────────────────────────────── buttons ─────────────────────────────── */
@@ -39,7 +38,7 @@ const BTN_VARIANT: Record<BtnVariant, string> = {
   primary:
     'border-transparent bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)',
   secondary:
-    'border-(--app-border-bright) bg-(--app-surface) text-(--app-text) hover:bg-(--app-surface-hover)',
+    'border-(--app-border-bright) bg-(--tf2-panel) text-(--app-text) hover:bg-(--app-surface-hover)',
   ghost:
     'border-transparent text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)',
   danger:
@@ -201,8 +200,16 @@ export function Toggle({
   label: string;
   disabled?: boolean;
 }) {
+  // A native checkbox drawn as a TF2 menu tick-box: no jelly body, works without JS styling.
   return (
-    <Switch checked={checked} onCheckedChange={onChange} aria-label={label} disabled={disabled} />
+    <input
+      type="checkbox"
+      className="tf2hud-check"
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+      aria-label={label}
+      disabled={disabled}
+    />
   );
 }
 

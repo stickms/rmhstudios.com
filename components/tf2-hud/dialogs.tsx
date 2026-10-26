@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import {
   extOf,
+  maxBytesFor,
   sanitizePath,
   FONT_EXTENSIONS,
   IMAGE_EXTENSIONS,
@@ -134,8 +135,6 @@ export function defaultDestination(name: string): string {
   return `resource/${safe}`;
 }
 
-const MAX_UPLOAD = 25 * 1024 * 1024;
-
 /** Place a batch of picked files at editable destination paths. */
 export function UploadDialog({ files, onClose }: { files: File[]; onClose: () => void }) {
   const { t } = useTranslation('c-tf2-hud');
@@ -158,8 +157,14 @@ export function UploadDialog({ files, onClose }: { files: File[]; onClose: () =>
         toast.error(t('bad-path', { defaultValue: 'Invalid path: {{path}}', path: dests[i] }));
         continue;
       }
-      if (f.size > MAX_UPLOAD) {
-        toast.error(t('too-big', { defaultValue: '{{name}} is larger than 25 MB', name: f.name }));
+      if (f.size > maxBytesFor(path)) {
+        toast.error(
+          t('too-big-for-type', {
+            defaultValue: '{{name}} is larger than {{mb}} MB, the limit for that file type',
+            name: f.name,
+            mb: Math.round(maxBytesFor(path) / 1024 / 1024),
+          }),
+        );
         continue;
       }
       const bytes = new Uint8Array(await f.arrayBuffer());

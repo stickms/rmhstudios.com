@@ -8,7 +8,7 @@ import { Search } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AppHeader from '@/components/shared/AppHeader';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { TfTabs, type TfTab } from './TfTabs';
 import { api } from '@/lib/tf2-hud/api';
 import type { HudSummary } from '@/lib/tf2-hud/api-types';
 import HudCard from './HudCard';
@@ -57,18 +57,14 @@ export default function Tf2HudWorkshop() {
     void load(null);
   }, [load]);
 
-  const tabs: LiquidTab[] = [
+  const tabs: TfTab[] = [
     { id: 'top', label: t('sort-top', { defaultValue: 'Top' }) },
     { id: 'new', label: t('sort-new', { defaultValue: 'Newest' }) },
     { id: 'forks', label: t('sort-forks', { defaultValue: 'Most forked' }) },
   ];
 
   return (
-    <div
-      data-jelly-scope="off"
-      data-jelly="off"
-      className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)"
-    >
+    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
       <AppHeader
         title={t('workshop', { defaultValue: 'HUD Workshop' })}
         backLabel="RMH TF2 HUD Editor"
@@ -77,7 +73,7 @@ export default function Tf2HudWorkshop() {
       <main className="mx-auto w-full max-w-5xl px-4 pb-16">
         <div className="flex flex-wrap items-center gap-3 py-6">
           <div className="min-w-0 flex-1 sm:max-w-xs">
-            <LiquidTabs
+            <TfTabs
               tabs={tabs}
               value={sort}
               size="sm"

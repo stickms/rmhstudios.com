@@ -10,8 +10,7 @@
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
-import { knownFontNames } from '@/lib/tf2-hud/assets/fonts';
+import { TfTabs, type TfTab } from './TfTabs';
 import { fontInstalled, describeFont, listSchemeColors } from '@/lib/tf2-hud/scheme/inspect';
 import {
   addSchemeFont,
@@ -30,7 +29,7 @@ import { COND_ENVS } from '@/lib/tf2-hud/scheme/cond';
 import { useEditor } from '@/lib/tf2-hud/store';
 import { cn } from '@/lib/utils';
 import { ColorPickerPopover } from './ColorPicker';
-import { FaceSample, statusTone, useFontStatusLabel } from './FontPicker';
+import { FacePicker, FaceSample, statusTone, useFontStatusLabel } from './FontPicker';
 import { useSceneContext } from './scene-context';
 import { Btn, EmptyNote, Modal, NumberField, PanelHead, Pill, TextField, Toggle } from './ui';
 import { BorderSwatch } from './border-swatch';
@@ -226,14 +225,14 @@ function FontEditor({
           >
             <FaceSample def={def} px={Math.max(12, def.tall)} />
             <div className="grid gap-2 sm:grid-cols-4">
-              <label className="col-span-2 flex flex-col gap-1 text-[11px] text-(--app-text-muted)">
+              <div className="col-span-2 flex flex-col gap-1 text-[11px] text-(--app-text-muted)">
                 {t('face', { defaultValue: 'Face' })}
-                <TextField
-                  list="tf2hud-face-names"
+                <FacePicker
+                  key={`${name}:${i}`}
                   value={def.name}
-                  onChange={(e) => setProp(i, 'name', e.target.value)}
+                  onChange={(v) => setProp(i, 'name', v)}
                 />
-              </label>
+              </div>
               <label className="flex flex-col gap-1 text-[11px] text-(--app-text-muted)">
                 {t('size', { defaultValue: 'Size' })}
                 <NumberField
@@ -328,11 +327,6 @@ function FontEditor({
           {t('add-face', { defaultValue: 'Add a face' })}
         </Btn>
       </div>
-      <datalist id="tf2hud-face-names">
-        {knownFontNames().map((n) => (
-          <option key={n} value={n} />
-        ))}
-      </datalist>
     </Modal>
   );
 }
@@ -515,7 +509,7 @@ export default function SchemePanel() {
   const { t } = useTranslation('c-tf2-hud');
   const { scheme } = useSceneContext();
   const [tab, setTab] = useState<Tab>('colors');
-  const tabs: LiquidTab[] = [
+  const tabs: TfTab[] = [
     { id: 'colors', label: t('colors', { defaultValue: 'Colours' }), count: scheme.colors.size },
     { id: 'fonts', label: t('fonts', { defaultValue: 'Fonts' }), count: scheme.fontNames.size },
     { id: 'borders', label: t('borders', { defaultValue: 'Borders' }), count: scheme.borders.size },
@@ -527,7 +521,7 @@ export default function SchemePanel() {
     >
       <PanelHead title={t('scheme', { defaultValue: 'Scheme' })} />
       <div className="border-b border-(--app-border) p-1.5">
-        <LiquidTabs
+        <TfTabs
           tabs={tabs}
           value={tab}
           size="sm"

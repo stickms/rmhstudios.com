@@ -162,11 +162,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
   }
 
   return (
-    <div
-      data-jelly-scope="off"
-      data-jelly="off"
-      className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)"
-    >
+    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
       <AppHeader
         title={detail?.title ?? 'RMH TF2 HUD Editor'}
         backLabel={t('workshop', { defaultValue: 'HUD Workshop' })}

@@ -244,10 +244,14 @@ blocking "Dead tailwindcss-animate class (§13 rule 9)" \
   'class.*(^|[^A-Za-z0-9:._/-])(animate-(in|out)|fade-(in|out)|zoom-(in|out)|slide-(in-from|out-to)-(top|bottom|left|right)|fill-mode-(both|forwards|backwards|none))([^A-Za-z0-9._/-]|$)' \
   'That plugin is not installed — these compile to zero rules. Use the lib/motion.ts variants (scaleIn / popIn / modalContent).'
 
-blocking "Hand-rolled tab strip (§13 rule 1)" \
-  '\.tsx$' \
-  'role=("|.)tablist' \
-  'Tab strips are <LiquidTabs> (components/ui/liquid-tabs.tsx). The allowlist is closed.'
+# The one exemption mirrors TABLIST_ALLOW in design-consistency.test.ts: the TF2 HUD Editor is
+# deliberately outside the jelly material and ships its own flat TfTabs.
+TABLISTS=$(scan '\.tsx$' 'role=("|.)tablist' | grep -v 'components/tf2-hud/TfTabs.tsx' || true)
+if [ -n "$TABLISTS" ]; then
+  fail "Hand-rolled tab strip (§13 rule 1)"
+  printf '%s\n' "$TABLISTS"
+  printf '%s    → Tab strips are <LiquidTabs> (components/ui/liquid-tabs.tsx). The allowlist is closed.%s\n' "$dim" "$off"
+fi
 
 CAPSULES=$(scan '^(components|app/routes)/.*\.tsx$' 'layoutId[ ]*=[ ]*[{"]' |
   grep -v 'components/ui/liquid-tabs.tsx' || true)

@@ -59,12 +59,15 @@ const RENDERER = join('components', 'ui', 'liquid-tabs.tsx');
  *    site shell with its own candlelit palette (temple-of-joy.css) and a
  *    glyph-over-label rail, not text pills. A glass capsule in the middle of it
  *    would read as a piece of a different product.
+ *  - The TF2 HUD Editor's TfTabs: that app is intentionally outside the Plasmatic Jelly
+ *    material (flat, square, 100% Team Fortress 2), and LiquidTabs' capsule is jelly.
  * New tablists get NO entry here — they must use LiquidTabs.
  */
 const TABLIST_ALLOW = new Set([
   RENDERER,
   join('components', 'library', 'AlbumViewer.tsx'),
   join('components', 'temple-of-joy', 'TempleTabs.tsx'),
+  join('components', 'tf2-hud', 'TfTabs.tsx'),
 ]);
 
 /**

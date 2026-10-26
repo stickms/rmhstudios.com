@@ -26,7 +26,14 @@ import {
   type VersionSummary,
   type Visibility,
 } from './api-types';
-import { ALLOWED_HUD_EXTENSIONS, HUD_ROOT_FOLDERS, extOf, sanitizePath } from './project/paths';
+import { CodecError, decodeFromStorage, decodeUpload, encodeForStorage } from './blob-codec.server';
+import {
+  ALLOWED_HUD_EXTENSIONS,
+  HUD_ROOT_FOLDERS,
+  extOf,
+  maxBytesFor,
+  sanitizePath,
+} from './project/paths';
 import { slugify } from './zip/export';
 
 export class HudError extends Error {
@@ -166,10 +173,16 @@ async function checkManifest(userId: string, manifest: ManifestEntry[]): Promise
       throw new HudError(`File contents for ${e.path} have not been uploaded`, 400);
     totalBytes += size;
     fileCount++;
+    if (size > maxBytesFor(e.path)) {
+      throw new HudError(
+        `${e.path} is larger than ${Math.round(maxBytesFor(e.path) / 1024 / 1024)} MB, the limit for that file type`,
+        413,
+      );
+    }
     return { path: e.path, sha1: e.sha1, size };
   });
   if (totalBytes > HUD_LIMITS.maxTotalBytes)
-    throw new HudError('This HUD is larger than 150 MB', 413);
+    throw new HudError(`This HUD is larger than ${HUD_LIMITS.maxTotalBytes / 1024 / 1024} MB`, 413);
   return { entries, fileCount, totalBytes };
 }
 
@@ -184,23 +197,56 @@ export async function missingBlobs(userId: string, hashes: string[]): Promise<st
   return hashes.filter((h) => !set.has(h));
 }
 
-/** Store the bytes (once, globally) and record that `userId` supplied them. */
-export async function storeBlob(userId: string, sha1: string, bytes: Uint8Array): Promise<void> {
+/**
+ * Store the bytes (once, globally, Brotli-compressed where it helps) and record
+ * that `userId` supplied them. `encoding` is how the request body arrived
+ * (`gzip` from the editor, which compresses in the browser); the hash is always
+ * of the uncompressed file.
+ */
+export async function storeBlob(
+  userId: string,
+  sha1: string,
+  body: Uint8Array,
+  encoding: string | null = null,
+): Promise<void> {
+  let bytes: Buffer;
+  try {
+    bytes = decodeUpload(body, encoding, HUD_LIMITS.maxBlobBytes);
+  } catch (e) {
+    if (e instanceof CodecError) throw new HudError(e.message, e.status);
+    throw e;
+  }
   if (bytes.length === 0 || bytes.length > HUD_LIMITS.maxBlobBytes) {
     throw new HudError('File size is not allowed', 413);
   }
   if (sha1Of(bytes) !== sha1) throw new HudError('Hash does not match the uploaded bytes', 400);
 
-  const owned = await prisma.tf2HudUserBlob.count({ where: { userId } });
-  if (owned >= MAX_USER_BLOBS) throw new HudError('Storage limit reached', 429);
+  const [count, sum] = await Promise.all([
+    prisma.tf2HudUserBlob.count({ where: { userId } }),
+    prisma.tf2HudBlob.aggregate({
+      _sum: { size: true },
+      where: { owners: { some: { userId } } },
+    }),
+  ]);
+  if (count >= MAX_USER_BLOBS) throw new HudError('Storage limit reached', 429);
+  if ((sum._sum.size ?? 0) + bytes.length > HUD_LIMITS.maxUserUploadBytes) {
+    throw new HudError('Your HUD storage is full. Delete a HUD you no longer need.', 429);
+  }
 
   const existing = await prisma.tf2HudBlob.findUnique({ where: { sha1 }, select: { sha1: true } });
   if (!existing) {
+    const packed = encodeForStorage(bytes);
     const storageKey = `${BLOB_PREFIX}${sha1.slice(0, 2)}/${sha1}`;
-    await putObject(storageKey, Buffer.from(bytes), 'application/octet-stream');
+    await putObject(storageKey, packed.body, 'application/octet-stream');
     await prisma.tf2HudBlob.upsert({
       where: { sha1 },
-      create: { sha1, size: bytes.length, storageKey },
+      create: {
+        sha1,
+        size: bytes.length,
+        encoding: packed.encoding,
+        storedSize: packed.body.length,
+        storageKey,
+      },
       update: {},
     });
   }
@@ -335,12 +381,12 @@ async function serve(row: HudRow, path: string, version?: number): Promise<Serve
   if (!entry?.sha1 || entry.deleted) throw new HudError('Not found', 404);
   const blob = await prisma.tf2HudBlob.findUnique({
     where: { sha1: entry.sha1 },
-    select: { storageKey: true },
+    select: { storageKey: true, encoding: true, size: true },
   });
   const object = blob ? await getObject(blob.storageKey) : null;
-  if (!object) throw new HudError('Not found', 404);
+  if (!blob || !object) throw new HudError('Not found', 404);
   return {
-    body: object.body,
+    body: decodeFromStorage(Buffer.from(object.body), blob.encoding, blob.size),
     contentType: contentTypeForFilename(path),
     sha1: entry.sha1,
     immutablePublic: row.visibility === 'PUBLIC',

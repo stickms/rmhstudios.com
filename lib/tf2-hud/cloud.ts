@@ -6,7 +6,7 @@
 import { api } from './api';
 import { HUD_LIMITS, type HudDetail, type ManifestEntry } from './api-types';
 import { binaryContent, contentBytes, textFromBytes } from './project/model';
-import { isTextPath } from './project/paths';
+import { isTextPath, maxBytesFor } from './project/paths';
 import type { FileContent, HudMeta, Overlay } from './project/types';
 
 export interface Progress {
@@ -58,15 +58,18 @@ export async function uploadMissingBlobs(
 export function validateForCloud(overlay: Overlay): string | null {
   let total = 0;
   let count = 0;
-  for (const c of overlay.values()) {
+  for (const [path, c] of overlay) {
     if (!c) continue;
     const size = contentBytes(c).length;
-    if (size > HUD_LIMITS.maxBlobBytes) return 'A file is larger than 25 MB.';
+    if (size > maxBytesFor(path)) {
+      return `${path} is larger than ${Math.round(maxBytesFor(path) / 1024 / 1024)} MB, the limit for that file type.`;
+    }
     total += size;
     count++;
   }
   if (count > HUD_LIMITS.maxFiles) return `A HUD can have at most ${HUD_LIMITS.maxFiles} files.`;
-  if (total > HUD_LIMITS.maxTotalBytes) return 'This HUD is larger than 150 MB.';
+  if (total > HUD_LIMITS.maxTotalBytes)
+    return `This HUD is larger than ${HUD_LIMITS.maxTotalBytes / 1024 / 1024} MB.`;
   return null;
 }
 

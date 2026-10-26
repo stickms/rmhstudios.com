@@ -85,11 +85,7 @@ export default function Tf2HudLanding() {
   ];
 
   return (
-    <div
-      data-jelly-scope="off"
-      data-jelly="off"
-      className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)"
-    >
+    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
       <AppHeader
         title="RMH TF2 HUD Editor"
         backLabel={t('apps', { defaultValue: 'Apps' })}
@@ -97,6 +93,7 @@ export default function Tf2HudLanding() {
       />
       <main className="mx-auto w-full max-w-5xl px-4 pb-16">
         <section className="py-10 text-center sm:py-16">
+          <p className="tf2hud-logo text-2xl text-(--app-accent)">Team Fortress 2</p>
           <h1 className="tf2hud-title text-5xl text-(--app-text) sm:text-7xl">
             {t('hero', { defaultValue: 'Build your TF2 HUD' })}
           </h1>

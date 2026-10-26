@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { syncCustomFonts } from '@/lib/tf2-hud/assets/font-sync';
+import { ensureBundledFonts } from '@/lib/tf2-hud/assets/fonts';
 import { ImageStore } from '@/lib/tf2-hud/assets/images';
 import { kvSet } from '@/lib/tf2-hud/kv/edit';
 import { propsOf } from '@/lib/tf2-hud/kv/props';
@@ -69,6 +70,11 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
     redraw();
     // Textures change when project files, the base or imported game files do.
   }, [images, readBytes, overlay, tfVersion, baseVersion, redraw]);
+
+  // The bundled TF2 faces must be loaded before the canvas paints with them.
+  useEffect(() => {
+    void ensureBundledFonts().then(redraw);
+  }, [redraw]);
 
   // Fonts shipped by the HUD (or the imported install) answer to their scheme names.
   useEffect(() => {

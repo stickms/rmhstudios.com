@@ -6,10 +6,19 @@
 'use client';
 
 import { useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { TfTabs, type TfTab } from './TfTabs';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { api, ApiError } from '@/lib/tf2-hud/api';
@@ -17,27 +26,58 @@ import { loadOverlay, type Progress } from '@/lib/tf2-hud/cloud';
 import { useTf2HudPrefs } from '@/lib/tf2-hud/prefs';
 import { startLocalAutosave, useEditor } from '@/lib/tf2-hud/store';
 import { ImportError } from '@/lib/tf2-hud/zip/import';
-import AssetsPanel from './AssetsPanel';
-import CodePane from './CodePane';
-import CommandPalette, { type PaletteAction } from './CommandPalette';
+import type { PaletteAction } from './CommandPalette';
 import { ConfirmDialog } from './dialogs';
-import DiffView from './DiffView';
-import ExportDialog from './ExportDialog';
-import HistoryPanel from './HistoryPanel';
-import ShortcutsDialog from './ShortcutsDialog';
 import { useCloudSave } from './use-cloud-save';
 import FileTree from './FileTree';
 import Inspector from './Inspector';
 import OutlinePanel from './OutlinePanel';
 import Preview from './Preview';
 import PreviewToolbar from './PreviewToolbar';
-import ProblemsPanel from './ProblemsPanel';
-import SchemePanel from './SchemePanel';
-import SaveShareDialog from './SaveShareDialog';
 import { SceneProvider } from './scene-context';
-import TestPanel from './TestPanel';
 import TopBar from './TopBar';
 import { ValidationProvider } from './validation-context';
+
+// The heavy panels (CodeMirror especially) and every dialog load on first use, so the editor
+// paints with just the file tree, preview and inspector; they are prefetched at idle below.
+const AssetsPanel = lazy(() => import('./AssetsPanel'));
+const CodePane = lazy(() => import('./CodePane'));
+const CommandPalette = lazy(() => import('./CommandPalette'));
+const DiffView = lazy(() => import('./DiffView'));
+const ExportDialog = lazy(() => import('./ExportDialog'));
+const HistoryPanel = lazy(() => import('./HistoryPanel'));
+const ShortcutsDialog = lazy(() => import('./ShortcutsDialog'));
+const ProblemsPanel = lazy(() => import('./ProblemsPanel'));
+const SchemePanel = lazy(() => import('./SchemePanel'));
+const SaveShareDialog = lazy(() => import('./SaveShareDialog'));
+const TestPanel = lazy(() => import('./TestPanel'));
+
+/** Mounts a lazy dialog the first time it opens, then keeps it mounted so its exit animation runs. */
+function OnFirstOpen({ open, children }: { open: boolean; children: ReactNode }) {
+  const [seen, setSeen] = useState(open);
+  if (open && !seen) setSeen(true);
+  return seen ? <Suspense fallback={null}>{children}</Suspense> : null;
+}
+
+function PanelFallback() {
+  const { t } = useTranslation('c-tf2-hud');
+  return (
+    <p role="status" className="p-4 text-xs text-(--app-text-dim)">
+      {t('loading-panel', { defaultValue: 'Loading…' })}
+    </p>
+  );
+}
+
+function prefetchHeavyPanels() {
+  const run = () => {
+    void import('./CodePane');
+    void import('./SchemePanel');
+    void import('./DiffView');
+  };
+  if (typeof window.requestIdleCallback === 'function')
+    window.requestIdleCallback(run, { timeout: 4000 });
+  else window.setTimeout(run, 2500);
+}
 
 type RightTab =
   'inspector' | 'code' | 'scheme' | 'test' | 'history' | 'diff' | 'problems' | 'assets';
@@ -157,6 +197,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
 
   /* ── autosave + keep the URL pointing at the draft ── */
   useEffect(() => startLocalAutosave(), []);
+  useEffect(() => prefetchHeavyPanels(), []);
   useEffect(() => {
     if (draft || hud || (overlaySize === 0 && metaName === 'My HUD')) return;
     void navigate({ to: '/tf2-hud/editor', search: { draft: draftId }, replace: true });
@@ -335,7 +376,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
     [t, undo, redo, setView, view.showHidden, view.showBounds, view.minmode, setPref],
   );
 
-  const rightTabs: LiquidTab[] = [
+  const rightTabs: TfTab[] = [
     { id: 'inspector', label: t('inspector', { defaultValue: 'Inspector' }) },
     { id: 'code', label: t('code', { defaultValue: 'Code' }) },
     { id: 'scheme', label: t('scheme', { defaultValue: 'Scheme' }) },
@@ -346,7 +387,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
     { id: 'assets', label: t('assets', { defaultValue: 'Assets' }) },
   ];
 
-  const leftTabs: LiquidTab[] = [
+  const leftTabs: TfTab[] = [
     { id: 'files', label: t('files', { defaultValue: 'Files' }) },
     { id: 'outline', label: t('outline', { defaultValue: 'Outline' }) },
   ];
@@ -354,7 +395,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
   const rightBody = (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0 border-b border-(--app-border) p-1.5">
-        <LiquidTabs
+        <TfTabs
           tabs={rightTabs}
           value={rightTab}
           size="sm"
@@ -364,13 +405,15 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
       </div>
       <div className="min-h-0 flex-1">
         {rightTab === 'inspector' ? <Inspector /> : null}
-        {rightTab === 'code' ? <CodePane /> : null}
-        {rightTab === 'scheme' ? <SchemePanel /> : null}
-        {rightTab === 'test' ? <TestPanel /> : null}
-        {rightTab === 'history' ? <HistoryPanel /> : null}
-        {rightTab === 'diff' ? <DiffView /> : null}
-        {rightTab === 'problems' ? <ProblemsPanel /> : null}
-        {rightTab === 'assets' ? <AssetsPanel /> : null}
+        <Suspense fallback={<PanelFallback />}>
+          {rightTab === 'code' ? <CodePane /> : null}
+          {rightTab === 'scheme' ? <SchemePanel /> : null}
+          {rightTab === 'test' ? <TestPanel /> : null}
+          {rightTab === 'history' ? <HistoryPanel /> : null}
+          {rightTab === 'diff' ? <DiffView /> : null}
+          {rightTab === 'problems' ? <ProblemsPanel /> : null}
+          {rightTab === 'assets' ? <AssetsPanel /> : null}
+        </Suspense>
       </div>
     </div>
   );
@@ -378,7 +421,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
   const leftBody = (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0 border-b border-(--app-border) p-1.5">
-        <LiquidTabs
+        <TfTabs
           tabs={leftTabs}
           value={leftTab}
           size="sm"
@@ -411,7 +454,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
     );
   }
 
-  const mobileTabs: LiquidTab[] = [
+  const mobileTabs: TfTab[] = [
     { id: 'files', label: t('files', { defaultValue: 'Files' }) },
     { id: 'preview', label: t('preview', { defaultValue: 'Preview' }) },
     { id: 'edit', label: t('edit', { defaultValue: 'Edit' }) },
@@ -420,11 +463,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
   return (
     <SceneProvider>
       <ValidationProvider>
-        <div
-          data-jelly-scope="off"
-          data-jelly="off"
-          className="app-viewport flex h-dvh min-h-0 flex-col bg-(--app-bg) text-(--app-text)"
-        >
+        <div className="app-viewport flex h-dvh min-h-0 flex-col bg-(--app-bg) text-(--app-text)">
           <TopBar
             onImport={() => zipInput.current?.click()}
             onExport={() => setExportOpen(true)}
@@ -490,7 +529,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
                 {mobile === 'files' ? leftBody : mobile === 'preview' ? center : rightBody}
               </div>
               <div className="shrink-0 border-t border-(--app-border) p-1.5 pb-[max(0.375rem,var(--app-safe-bottom))]">
-                <LiquidTabs
+                <TfTabs
                   tabs={mobileTabs}
                   value={mobile}
                   onChange={(id) => setMobile(id as MobileView)}
@@ -513,10 +552,18 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
               if (f) requestImport(f);
             }}
           />
-          <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
-          <SaveShareDialog open={saveOpen} onOpenChange={setSaveOpen} />
-          <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
-          <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} actions={actions} />
+          <OnFirstOpen open={exportOpen}>
+            <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
+          </OnFirstOpen>
+          <OnFirstOpen open={saveOpen}>
+            <SaveShareDialog open={saveOpen} onOpenChange={setSaveOpen} />
+          </OnFirstOpen>
+          <OnFirstOpen open={shortcutsOpen}>
+            <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+          </OnFirstOpen>
+          <OnFirstOpen open={paletteOpen}>
+            <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} actions={actions} />
+          </OnFirstOpen>
           <ConfirmDialog
             open={confirmImport !== null}
             onOpenChange={(o) => !o && setConfirmImport(null)}

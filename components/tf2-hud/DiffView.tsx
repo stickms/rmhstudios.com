@@ -118,7 +118,7 @@ export default function DiffView() {
                       <tr key={`gap-${i}`}>
                         <td
                           colSpan={3}
-                          className="bg-(--app-surface) px-3 py-0.5 text-center text-[11px] text-(--app-text-dim)"
+                          className="bg-(--tf2-panel) px-3 py-0.5 text-center text-[11px] text-(--app-text-dim)"
                         >
                           ⋯
                         </td>

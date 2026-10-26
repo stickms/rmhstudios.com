@@ -9,7 +9,14 @@
 import { ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cssWeight, fontFamilyFor, fontStatus, type FontStatus } from '@/lib/tf2-hud/assets/fonts';
+import {
+  BUNDLED_FACES,
+  cssWeight,
+  fontFamilyFor,
+  fontGroups,
+  fontStatus,
+  type FontStatus,
+} from '@/lib/tf2-hud/assets/fonts';
 import { describeFont, fontInstalled } from '@/lib/tf2-hud/scheme/inspect';
 import type { FontDef, Scheme } from '@/lib/tf2-hud/scheme/scheme';
 import { cn } from '@/lib/utils';
@@ -17,25 +24,23 @@ import { Pill, Popover, TextField } from './ui';
 
 export const SAMPLE_TEXT = 'Health 125 · Quick brown fox 0123';
 
+/** Icon faces show their glyphs, not prose (which would render as blanks). */
+export const sampleFor = (face: string): string =>
+  BUNDLED_FACES[face.trim().toLowerCase()]?.sample ?? SAMPLE_TEXT;
+
 export function useFontStatusLabel() {
   const { t } = useTranslation('c-tf2-hud');
   return (s: FontStatus) =>
     ({
       custom: t('font-custom', { defaultValue: 'custom file' }),
-      placeholder: t('font-placeholder', { defaultValue: 'placeholder' }),
+      bundled: t('font-bundled', { defaultValue: 'TF2 face' }),
       system: t('font-system', { defaultValue: 'system font' }),
       missing: t('font-missing', { defaultValue: 'not installed' }),
     })[s];
 }
 
 export function statusTone(s: FontStatus): 'success' | 'warning' | 'neutral' | 'danger' {
-  return s === 'custom'
-    ? 'success'
-    : s === 'placeholder'
-      ? 'warning'
-      : s === 'missing'
-        ? 'danger'
-        : 'neutral';
+  return s === 'custom' || s === 'bundled' ? 'success' : s === 'missing' ? 'danger' : 'neutral';
 }
 
 /** Rendered text in one face, at a size capped so it fits a list row. */
@@ -64,7 +69,7 @@ export function FaceSample({
         WebkitTextStroke: def.outline ? '0.6px rgb(0 0 0 / 0.9)' : undefined,
       }}
     >
-      {text}
+      {text ?? sampleFor(def.name)}
     </span>
   );
 }
@@ -194,6 +199,93 @@ export function FontField({
             );
           })}
         </ul>
+      </Popover>
+    </div>
+  );
+}
+
+/**
+ * Pick the typeface (the `name` inside a scheme font's face): the bundled TF2
+ * faces, fonts this HUD ships, and common system fonts — each rendered in
+ * itself. Any other installed family can still be typed in.
+ */
+export function FacePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useTranslation('c-tf2-hud');
+  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
+  const [draft, setDraft] = useState(value);
+  const groups = fontGroups();
+  const sections: [string, string[]][] = [
+    [t('faces-bundled', { defaultValue: 'TF2 faces' }), groups.bundled],
+    ...(groups.custom.length
+      ? [
+          [t('faces-custom', { defaultValue: 'This HUD’s fonts' }), groups.custom] as [
+            string,
+            string[],
+          ],
+        ]
+      : []),
+    [t('faces-system', { defaultValue: 'System fonts' }), groups.system],
+  ];
+  const row = (name: string) => (
+    <li key={name}>
+      <button
+        type="button"
+        onClick={() => {
+          onChange(name);
+          setDraft(name);
+          setOpen(false);
+        }}
+        className={cn(
+          'block w-full rounded-(--app-radius-sm) px-2 py-1 text-start hover:bg-(--app-surface-hover)',
+          name.toLowerCase() === value.toLowerCase() && 'bg-(--app-accent-dim)',
+        )}
+      >
+        <span className="block text-[11px] text-(--app-text-muted)">{name}</span>
+        <span
+          className="block truncate text-lg text-(--app-text)"
+          style={{ fontFamily: fontFamilyFor(name) }}
+        >
+          {sampleFor(name)}
+        </span>
+      </button>
+    </li>
+  );
+  return (
+    <div className="flex gap-1">
+      <TextField
+        aria-label={t('face', { defaultValue: 'Face' })}
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          onChange(e.target.value);
+        }}
+      />
+      <button
+        ref={setAnchor}
+        type="button"
+        aria-label={t('browse-faces', { defaultValue: 'Browse typefaces' })}
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="h-8 shrink-0 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--tf2-panel) px-2 text-xs font-semibold text-(--app-text) hover:bg-(--app-surface-hover)"
+      >
+        <ChevronDown className="size-4" aria-hidden />
+      </button>
+      <Popover
+        anchor={anchor}
+        open={open}
+        onClose={() => setOpen(false)}
+        label={t('browse-faces', { defaultValue: 'Browse typefaces' })}
+        width={360}
+      >
+        <div className="max-h-80 space-y-2 overflow-y-auto">
+          {sections.map(([title, names]) => (
+            <section key={title}>
+              <h4 className="tf2hud-panel-head mb-1">{title}</h4>
+              <ul>{names.map(row)}</ul>
+            </section>
+          ))}
+        </div>
       </Popover>
     </div>
   );

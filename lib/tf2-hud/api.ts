@@ -56,6 +56,36 @@ export interface ListParams {
   limit?: number;
 }
 
+/** Gzip with the platform's CompressionStream; null when unavailable or not worth it. */
+async function gzipIfSmaller(bytes: Uint8Array): Promise<Uint8Array | null> {
+  if (
+    bytes.length < 256 ||
+    typeof CompressionStream === 'undefined' ||
+    looksCompressedFormat(bytes)
+  )
+    return null;
+  try {
+    const stream = new Blob([bytes as BlobPart])
+      .stream()
+      .pipeThrough(new CompressionStream('gzip'));
+    const out = new Uint8Array(await new Response(stream).arrayBuffer());
+    return out.length < bytes.length * 0.95 ? out : null;
+  } catch {
+    return null;
+  }
+}
+
+/** PNG, JPEG, Ogg, MP3 and ZIP are already compressed; gzipping them only costs time. */
+function looksCompressedFormat(b: Uint8Array): boolean {
+  return (
+    (b[0] === 0x89 && b[1] === 0x50) ||
+    (b[0] === 0xff && b[1] === 0xd8) ||
+    (b[0] === 0x4f && b[1] === 0x67 && b[2] === 0x67) ||
+    (b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33) ||
+    (b[0] === 0x50 && b[1] === 0x4b)
+  );
+}
+
 export const api = {
   list(p: ListParams = {}): Promise<HudListResponse> {
     const qs = new URLSearchParams();
@@ -121,11 +151,16 @@ export const api = {
   checkBlobs(hashes: string[]): Promise<{ missing: string[] }> {
     return request('/api/tf2-hud/blobs/check', { method: 'POST', ...json({ hashes }) });
   },
-  async uploadBlob(sha1: string, bytes: Uint8Array): Promise<void> {
+  /** Upload one file, gzipped in the browser when that helps (the server re-hashes the inflated bytes). */
+  async uploadBlob(sha1: string, bytes: Uint8Array, compress = true): Promise<void> {
+    const packed = compress ? await gzipIfSmaller(bytes) : null;
     await request(`/api/tf2-hud/blobs/${sha1}`, {
       method: 'PUT',
-      body: bytes as BodyInit,
-      headers: { 'Content-Type': 'application/octet-stream' },
+      body: (packed ?? bytes) as BodyInit,
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        ...(packed ? { 'x-upload-encoding': 'gzip' } : {}),
+      },
     });
   },
   async fetchFile(
