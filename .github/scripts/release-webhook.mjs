@@ -22,23 +22,13 @@ export async function webhookRequest(payload, env = process.env) {
     throw new Error(`Release webhook returned HTTP ${response.status}: ${text.slice(0, 300)}`);
   return { status: response.status, text };
 }
-async function main(action) {
-  const id = `release-${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT}`;
-  if (action === 'trigger') {
-    const result = await webhookRequest({
-      ref: process.env.COMMIT_REF,
-      after: process.env.COMMIT_SHA,
-      release_id: id,
-      images: { web: process.env.WEB_DIGEST, full: process.env.FULL_DIGEST },
-    });
-    if (result.status === 404) throw new Error('Deployment webhook was not found');
-    console.log(`Release ${id} accepted. Host completion is reported separately.`);
-    return;
-  }
-  if (action !== 'wait') throw new Error('Expected trigger or wait');
-  const deadline = Date.now() + 15 * 60_000;
+export async function awaitRelease(
+  id,
+  { timeoutMs = 15 * 60_000, pollMs = 10_000, request = webhookRequest } = {},
+) {
+  const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const result = await webhookRequest({ action: 'status', release_id: id });
+    const result = await request({ action: 'status', release_id: id });
     if (result.status === 200) {
       let state;
       try {
@@ -57,14 +47,48 @@ async function main(action) {
             `### Release ${id}\n\n| Phase | UTC |\n| --- | --- |\n${rows}\n`,
           );
         }
-        if (state.phase !== 'success' && state.phase !== 'superseded')
-          throw new Error(`Host release ended: ${state.phase}`);
-        return;
+        return state;
       }
     }
-    await new Promise((done) => setTimeout(done, 10_000));
+    await new Promise((done) => setTimeout(done, pollMs));
   }
   throw new Error('Host release did not complete within 15 minutes');
+}
+async function main(action) {
+  const id = `release-${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT}`;
+  if (action === 'trigger') {
+    const result = await webhookRequest({
+      ref: process.env.COMMIT_REF,
+      after: process.env.COMMIT_SHA,
+      release_id: id,
+      images: { web: process.env.WEB_DIGEST, full: process.env.FULL_DIGEST },
+    });
+    if (result.status === 404) throw new Error('Deployment webhook was not found');
+    console.log(`Release ${id} accepted. Host completion is reported separately.`);
+    return;
+  }
+  if (action !== 'wait' && action !== 'rollback')
+    throw new Error('Expected trigger, wait or rollback');
+  const state = await awaitRelease(id);
+  if (action === 'wait') {
+    if (state.phase !== 'success' && state.phase !== 'superseded')
+      throw new Error(`Host release ended: ${state.phase}`);
+    return;
+  }
+  // Only a release that actually went live can need undoing: a failed or
+  // self-rolled-back one already left the previous release serving.
+  if (state.phase !== 'success') {
+    console.log(`Release ${id} ended ${state.phase}; nothing to roll back.`);
+    return;
+  }
+  const result = await webhookRequest({
+    action: 'rollback',
+    release_id: id,
+    reason: process.env.ROLLBACK_REASON || 'post-deploy verification failed',
+  });
+  if (result.status !== 202)
+    throw new Error(`Rollback not accepted (HTTP ${result.status}): ${result.text}`);
+  console.log(`Rollback of ${id} accepted; the host restores the previous release.`);
 }
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   main(process.argv[2]).catch((error) => {

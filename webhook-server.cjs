@@ -109,6 +109,85 @@ http
         }
       }
 
+      /* Post-deploy verification failed (CI runs the slow suites AFTER the release
+         ships): put the previous release back. The bad release's own journal entry
+         names what was serving before it, so the request carries only the id —
+         nothing here is attacker-chosen beyond which already-journaled release to
+         undo. deploy.sh refuses (DEPLOY_EXPECT_LIVE_ID) unless that release is
+         still the live one, so a stale or repeated request cannot roll back a newer
+         release; it queues behind any deploy in progress on the same flock. */
+      if (payload.action === 'rollback') {
+        const stateDir = process.env.DEPLOY_STATE_DIR || `${PROJECT_DIR}/.deploy/releases`;
+        let bad;
+        try {
+          const { readState } = await import('./deploy/release-state.mjs');
+          bad = readState(stateDir, releaseId);
+          const rollbackId = `release-rollback-${releaseId.slice('release-'.length)}`.slice(0, 89);
+          const previous = bad && bad.previous;
+          const digest = (ref) =>
+            String(ref || '')
+              .split('@')
+              .pop();
+          if (
+            !bad ||
+            !previous ||
+            !/^[0-9a-f]{40}$/.test(previous.sha || '') ||
+            !/^sha256:[0-9a-f]{64}$/.test(digest(previous.webDigest)) ||
+            !/^sha256:[0-9a-f]{64}$/.test(digest(previous.fullDigest))
+          ) {
+            res.writeHead(409);
+            return res.end('No journaled previous release to roll back to');
+          }
+          if (readState(stateDir, rollbackId) || acceptedReleases.has(rollbackId)) {
+            res.writeHead(202);
+            return res.end('Rollback already requested');
+          }
+          acceptedReleases.set(rollbackId, previous.sha);
+          const reason = String(payload.reason || 'post-deploy verification failed').slice(0, 200);
+          logMsg(
+            `Rollback of ${releaseId} requested (${reason}) — restoring ${previous.sha.slice(0, 7)}`,
+          );
+          const logFd = fs.openSync(LOG_FILE, 'a');
+          const child = spawn(
+            process.env.DEPLOY_SHELL || 'bash',
+            [DEPLOY_SCRIPT, 'production', previous.sha],
+            {
+              detached: true,
+              stdio: ['ignore', logFd, logFd],
+              cwd: PROJECT_DIR,
+              env: {
+                ...process.env,
+                PATH: DEPLOY_PATH,
+                ALLOW_OLDER_DEPLOY: '1',
+                POST_DEPLOY_GUARD: '0',
+                DEPLOY_EXPECT_LIVE_ID: releaseId,
+                DEPLOY_DISCORD_MSG_ID: '',
+                DEPLOY_RELEASE_ID: rollbackId,
+                DEPLOY_REQUESTED_AT: String(Math.floor(Date.now() / 1000)),
+                RELEASE_EXPECT_WEB_DIGEST: digest(previous.webDigest),
+                RELEASE_EXPECT_FULL_DIGEST: digest(previous.fullDigest),
+              },
+            },
+          );
+          fs.closeSync(logFd);
+          child.once('error', (error) => {
+            acceptedReleases.delete(rollbackId);
+            logMsg(`Rollback process failed to start: ${error.message}`);
+            res.writeHead(503);
+            res.end('Rollback process failed to start');
+          });
+          child.once('spawn', () => {
+            res.writeHead(202);
+            res.end('Rolling back');
+            child.unref();
+          });
+          return;
+        } catch {
+          res.writeHead(503);
+          return res.end('Release journal unavailable');
+        }
+      }
+
       const environment = BRANCH_ENV_MAP[payload.ref];
       if (!environment) {
         logMsg(`Ignored push to ${payload.ref} (no matching environment)`);

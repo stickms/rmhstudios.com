@@ -333,7 +333,7 @@ jobs:
         run: bazelisk test --build_tests_only //go-services/...
 
   deploy-gate:
-    needs: [ci, test, integration, build, go-test]
+    needs: [ci, test, build, go-test]
     if: always() && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -346,7 +346,7 @@ jobs:
           sparse-checkout: .github/scripts
 
       - name: Gate failed — CI/build or a stall blocked the deploy
-        if: needs.ci.result != 'success' || needs.test.result != 'success' || needs.integration.result != 'success' || needs.build.result != 'success' || needs.go-test.result != 'success'
+        if: needs.ci.result != 'success' || needs.test.result != 'success' || needs.build.result != 'success' || needs.go-test.result != 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -360,14 +360,14 @@ jobs:
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             DISCORD_FIELDS=$(bash .github/scripts/ci-checklist.sh fields | jq -c '.fields' 2>/dev/null || echo '[]') \
             bash .github/scripts/discord-notify.sh edit-or-post 15158332 \
-              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-${GIT_SHA:0:7}} — deploy BLOCKED (CI=${{ needs.ci.result }}, integration=${{ needs.integration.result }}, go=${{ needs.go-test.result }}, build=${{ needs.build.result }}); nothing shipped" \
+              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-${GIT_SHA:0:7}} — deploy BLOCKED (CI=${{ needs.ci.result }}, go=${{ needs.go-test.result }}, build=${{ needs.build.result }}); nothing shipped" \
               "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}" || true
           fi
-          echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, integration=${{ needs.integration.result }}, go=${{ needs.go-test.result }}, build=${{ needs.build.result }}. Images (if any) are inert; nothing shipped."
+          echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, go=${{ needs.go-test.result }}, build=${{ needs.build.result }}. Images (if any) are inert; nothing shipped."
           exit 1
 
       - name: Trigger VPS deploy (webhook listener)
-        if: needs.ci.result == 'success' && needs.test.result == 'success' && needs.integration.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success'
+        if: needs.ci.result == 'success' && needs.test.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success'
         env:
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
@@ -379,7 +379,7 @@ jobs:
         run: node .github/scripts/release-webhook.mjs trigger
 
       - name: Discord — trigger failed (post-build handoff)
-        if: failure() && needs.ci.result == 'success' && needs.test.result == 'success' && needs.integration.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success' && github.ref == 'refs/heads/main'
+        if: failure() && needs.ci.result == 'success' && needs.test.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success' && github.ref == 'refs/heads/main'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}
@@ -390,6 +390,44 @@ jobs:
           bash .github/scripts/discord-notify.sh edit 15158332 \
             "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-} — CI green + images pushed, but the VPS deploy trigger failed (see Actions logs)" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
+
+  # The slow suite (real flows vs a throwaway Postgres + the built app) no longer
+  # holds the release: the fast gate above (typecheck, lint, unit, build, image
+  # smoke) ships, and this job decides afterwards. A failure puts the previous
+  # release back through the same journaled rollback path the post-deploy guard
+  # uses (webhook-server.cjs `rollback`). Safe because migrations are additive
+  # (scripts/check-migrations-additive.mjs gates them in web-ci).
+  post-deploy-verify:
+    needs: [integration, deploy-gate]
+    if: always() && github.ref == 'refs/heads/main' && needs.deploy-gate.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+      - name: Integration passed — release stands
+        if: needs.integration.result == 'success'
+        run: echo "Post-deploy verification passed; nothing to roll back."
+      - name: Integration cancelled — superseded by a newer commit
+        if: needs.integration.result == 'cancelled' || needs.integration.result == 'skipped'
+        run: echo "Verification did not complete (${{ needs.integration.result }}); the newer run owns the decision."
+      - name: Integration failed — roll the release back
+        if: needs.integration.result == 'failure'
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ROLLBACK_REASON: integration suite failed after deploy (run ${{ github.run_id }})
+        run: |
+          echo "::error::Post-deploy integration suite failed — rolling production back to the previous release."
+          node .github/scripts/release-webhook.mjs rollback
+          bash .github/scripts/discord-notify.sh post 15158332 \
+            "↩️ [PRODUCTION] ${GITHUB_SHA:0:7} — post-deploy integration FAILED; rolled back to the previous release" \
+            "$ROLLBACK_REASON" "ci" || true
+          exit 1
 
   cache-maintenance:
     needs: build
