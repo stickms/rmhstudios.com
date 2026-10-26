@@ -16,18 +16,54 @@ export const RESOLUTIONS: readonly Resolution[] = [
   { id: '640x480', label: '640×480 (4:3)', w: 640, h: 480 },
   { id: '800x600', label: '800×600 (4:3)', w: 800, h: 600 },
   { id: '1024x768', label: '1024×768 (4:3)', w: 1024, h: 768 },
+  { id: '1152x864', label: '1152×864 (4:3)', w: 1152, h: 864 },
+  { id: '1280x1024', label: '1280×1024 (5:4)', w: 1280, h: 1024 },
   { id: '1280x720', label: '1280×720 (16:9)', w: 1280, h: 720 },
   { id: '1280x800', label: '1280×800 (16:10, Steam Deck)', w: 1280, h: 800 },
   { id: '1366x768', label: '1366×768 (16:9)', w: 1366, h: 768 },
   { id: '1600x900', label: '1600×900 (16:9)', w: 1600, h: 900 },
+  { id: '1440x900', label: '1440×900 (16:10)', w: 1440, h: 900 },
   { id: '1680x1050', label: '1680×1050 (16:10)', w: 1680, h: 1050 },
   { id: '1920x1080', label: '1920×1080 (16:9)', w: 1920, h: 1080 },
   { id: '1920x1200', label: '1920×1200 (16:10)', w: 1920, h: 1200 },
   { id: '2560x1080', label: '2560×1080 (21:9)', w: 2560, h: 1080 },
   { id: '2560x1440', label: '2560×1440 (16:9)', w: 2560, h: 1440 },
   { id: '3440x1440', label: '3440×1440 (21:9)', w: 3440, h: 1440 },
+  { id: '2560x1600', label: '2560×1600 (16:10)', w: 2560, h: 1600 },
   { id: '3840x2160', label: '3840×2160 (4K)', w: 3840, h: 2160 },
+  { id: '5120x1440', label: '5120×1440 (32:9)', w: 5120, h: 1440 },
 ];
+
+/** Aspect ratios the custom size can snap to. */
+export const ASPECTS = [
+  { id: '4:3', value: 4 / 3 },
+  { id: '5:4', value: 5 / 4 },
+  { id: '16:10', value: 16 / 10 },
+  { id: '16:9', value: 16 / 9 },
+  { id: '21:9', value: 21 / 9 },
+  { id: '32:9', value: 32 / 9 },
+] as const;
+
+/** The nearest named aspect within 2%, else a decimal like `1.60:1`. */
+export function aspectLabel(w: number, h: number): string {
+  if (!(w > 0 && h > 0)) return '—';
+  const r = w / h;
+  const hit = ASPECTS.find((a) => Math.abs(a.value - r) / a.value < 0.02);
+  return hit ? hit.id : `${r.toFixed(2)}:1`;
+}
+
+/** The width that gives `aspect` at height `h`. */
+export function widthForAspect(aspect: number, h: number): number {
+  return clampResolution(h * aspect, h).w;
+}
+
+/**
+ * The engine lays proportional values out on a 480-unit-high canvas, so a wide
+ * screen has more than 640 units across — the number a HUD author actually designs for.
+ */
+export function virtualSize(w: number, h: number): { w: number; h: number } {
+  return { w: Math.round((w * 480) / h), h: 480 };
+}
 
 export const DEFAULT_RESOLUTION = '1920x1080';
 

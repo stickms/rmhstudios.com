@@ -50,6 +50,16 @@ export interface TestState {
   currency: number;
   /** Fill for progress bars, 0–100. */
   progress: number;
+  /** Weapon in hand (`auto` = the class's default); decides which weapon/meter HUDs are on screen. */
+  weapon: string;
+  /** Active stickybombs. */
+  pipes: number;
+  /** Weapon/item meter fill (shield charge, Hype, bow draw…), 0–100. */
+  meter: number;
+  /** Engineer's sentry: 0 = not built, 1–3 = level. */
+  sentryLevel: number;
+  /** Transient on-screen events switched on (see `EVENTS` in game-state). */
+  events: string[];
 }
 
 export const DEFAULT_TEST_STATE: TestState = {
@@ -67,6 +77,11 @@ export const DEFAULT_TEST_STATE: TestState = {
   playerName: 'RMH Player',
   currency: 1250,
   progress: 60,
+  weapon: 'auto',
+  pipes: 4,
+  meter: 70,
+  sentryLevel: 2,
+  events: [],
 };
 
 export interface FixturePreset {
@@ -144,7 +159,7 @@ export function varsFromState(s: TestState): Map<string, string> {
     ['victorytime', mmss(s.roundSeconds)],
     ['intelvalue', 0],
     ['flagvalue', 0],
-    ['activepipes', 4],
+    ['activepipes', s.pipes ?? 4],
     ['red_alive', 6],
     ['blue_alive', 6],
     ['red_escrow', 0],

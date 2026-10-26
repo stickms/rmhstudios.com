@@ -55,6 +55,11 @@ export interface ImageOp {
   tint?: Rgba;
   /** 0–1: draw only this fraction of the width (progress bars). */
   clipX?: number;
+  /**
+   * Draw at the texture's own pixel size from the panel's top-left, clipped to the panel, instead of
+   * stretching to it. This is what an `ImagePanel` does unless `scaleImage` is set.
+   */
+  native?: boolean;
 }
 
 /** Content that only exists at runtime (3D models, avatars, lists). */
@@ -89,6 +94,8 @@ export interface PanelNode {
   shown: boolean;
   isFrame: boolean;
   parentId: string | null;
+  /** Bounds of the ancestor panels this one is clipped to (absent when only the screen clips it). */
+  clip?: Rect;
   /** Source range of the entry in the file text. */
   source: { start: number; end: number };
   ops: DrawOp[];

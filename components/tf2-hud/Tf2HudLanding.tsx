@@ -13,6 +13,7 @@ import AppHeader from '@/components/shared/AppHeader';
 import { deleteDraft, listDrafts, type DraftSummary } from '@/lib/tf2-hud/local-drafts';
 import { useEditor } from '@/lib/tf2-hud/store';
 import { ImportError } from '@/lib/tf2-hud/zip/import';
+import Tf2Logo from './Tf2Logo';
 import { Btn, IconBtn } from './ui';
 
 export default function Tf2HudLanding() {
@@ -93,7 +94,10 @@ export default function Tf2HudLanding() {
       />
       <main className="mx-auto w-full max-w-5xl px-4 pb-16">
         <section className="py-10 text-center sm:py-16">
-          <p className="tf2hud-logo text-2xl text-(--app-accent)">Team Fortress 2</p>
+          <Tf2Logo
+            className="max-h-24 w-auto"
+            label={t('game-name', { defaultValue: 'Team Fortress 2' })}
+          />
           <h1 className="tf2hud-title text-5xl text-(--app-text) sm:text-7xl">
             {t('hero', { defaultValue: 'Build your TF2 HUD' })}
           </h1>

@@ -4,12 +4,31 @@
  */
 'use client';
 
-import { Eye, EyeOff, Maximize, Minimize2, Scan, ZoomIn, ZoomOut } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  Eye,
+  EyeOff,
+  Maximize,
+  MonitorSmartphone,
+  Minimize2,
+  Scan,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PAGES, PAGE_GROUPS, SINGLE_FILE_PREFIX, resolvePage } from '@/lib/tf2-hud/pages';
 import { COND_ENVS, type CondEnvName } from '@/lib/tf2-hud/scheme/cond';
 import { useEditor } from '@/lib/tf2-hud/store';
-import { RESOLUTIONS, ZOOM_STEPS } from '@/lib/tf2-hud/view';
+import {
+  ASPECTS,
+  RESOLUTIONS,
+  ZOOM_STEPS,
+  aspectLabel,
+  clampResolution,
+  screenOf,
+  virtualSize,
+  widthForAspect,
+} from '@/lib/tf2-hud/view';
 import { IconBtn, SelectField } from './ui';
 
 const ENV_LABELS: Record<CondEnvName, string> = {
@@ -28,6 +47,8 @@ export default function PreviewToolbar() {
 
   const current = resolvePage(pageId);
   const zoomValue = view.zoom === 'fit' ? 'fit' : String(view.zoom);
+  const screen = screenOf(view);
+  const virtual = virtualSize(screen.w, screen.h);
 
   const stepZoom = (dir: 1 | -1) => {
     const cur = view.zoom === 'fit' ? 1 : view.zoom;
@@ -101,8 +122,52 @@ export default function PreviewToolbar() {
             onChange={(e) => setView({ custom: { ...view.custom, h: Number(e.target.value) } })}
             className="h-8 w-16 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) px-1.5 text-xs"
           />
+          <IconBtn
+            icon={ArrowLeftRight}
+            label={t('swap-orientation', { defaultValue: 'Swap width and height' })}
+            onClick={() => setView({ custom: { w: view.custom.h, h: view.custom.w } })}
+          />
+          <SelectField
+            aria-label={t('snap-aspect', { defaultValue: 'Snap to aspect ratio' })}
+            value=""
+            onChange={(e) => {
+              const a = ASPECTS.find((x) => x.id === e.target.value);
+              if (a)
+                setView({
+                  custom: { w: widthForAspect(a.value, view.custom.h), h: view.custom.h },
+                });
+            }}
+            className="w-24"
+          >
+            <option value="">{t('aspect', { defaultValue: 'Aspect' })}</option>
+            {ASPECTS.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.id}
+              </option>
+            ))}
+          </SelectField>
+          <IconBtn
+            icon={MonitorSmartphone}
+            label={t('match-screen', { defaultValue: 'Use this screen’s resolution' })}
+            onClick={() => {
+              const dpr = window.devicePixelRatio || 1;
+              setView({
+                custom: clampResolution(window.screen.width * dpr, window.screen.height * dpr),
+              });
+            }}
+          />
         </div>
       ) : null}
+
+      <span
+        className="hidden font-mono text-[11px] text-(--app-text-dim) xl:inline"
+        title={t('virtual-hint', {
+          defaultValue:
+            'Proportional values lay out on a canvas 480 units high; this is its width.',
+        })}
+      >
+        {aspectLabel(screen.w, screen.h)} · {virtual.w}×{virtual.h}
+      </span>
 
       <div className="flex items-center">
         <IconBtn

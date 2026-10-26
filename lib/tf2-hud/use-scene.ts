@@ -12,6 +12,7 @@ import { buildScene } from './scene/build';
 import type { Scene } from './scene/types';
 import { varsFromState } from './fixtures';
 import { resolvePage, type HudPage } from './pages';
+import { gateFor, progressFor } from './game-state';
 import { CORE_FILES, useEditor } from './store';
 import { screenOf } from './view';
 
@@ -55,6 +56,8 @@ export function useScene(): SceneResult {
 
   const screen = useMemo(() => screenOf(view), [view]);
   const vars = useMemo(() => varsFromState(test), [test]);
+  const gate = useMemo(() => gateFor(test), [test]);
+  const progressForPanel = useMemo(() => progressFor(test), [test]);
 
   const scene = useMemo(() => {
     if (!page || baseStatus !== 'ready') return null;
@@ -71,6 +74,9 @@ export function useScene(): SceneResult {
         vars,
         strings,
         progress: test.progress / 100,
+        gate,
+        progressFor: progressForPanel,
+        player: { playerClass: test.playerClass, team: test.team },
       },
       page.files,
     );
@@ -90,7 +96,11 @@ export function useScene(): SceneResult {
     forceHidden,
     vars,
     strings,
+    gate,
+    progressForPanel,
     test.progress,
+    test.playerClass,
+    test.team,
   ]);
 
   // Files that exist but whose bytes have not arrived yet.

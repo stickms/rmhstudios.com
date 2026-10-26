@@ -15,7 +15,7 @@
  *
  * and drops world/model/backpack materials, sounds scripts, item schemas and
  * everything else (tens of thousands of files no HUD preview ever touches).
- * Textures (.vtf) are not part of the base; a missing texture previews as the
+ * Textures (.vtf) are copied in from the supplied materials pack when present; a missing texture previews as the
  * engine's pink/black checkerboard. Run `build-manifest.mjs` afterwards.
  */
 import {

@@ -149,7 +149,6 @@
 
   --app-font-display: 'TF2 Build', Impact, 'Arial Narrow', sans-serif;
   --app-font-body: 'TF2 Secondary', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
-  --tf2-font-logo: 'Team Fortress Logo', 'TF2 Build', Impact, sans-serif;
   --tf2-font-flourish: 'TF2 Professor', 'TF2 Secondary', Georgia, serif;
   --app-font-mono: 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
 
@@ -207,11 +206,6 @@
   font-family: var(--app-font-display);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-}
-
-.tf2hud-logo {
-  font-family: var(--tf2-font-logo);
-  letter-spacing: 0.02em;
 }
 
 .tf2hud-flourish {
