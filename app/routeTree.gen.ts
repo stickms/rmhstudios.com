@@ -136,6 +136,7 @@ import { Route as ApiCircleRouteImport } from './routes/api/circle'
 import { Route as ApiClientErrorRouteImport } from './routes/api/client-error'
 import { Route as ApiExploreRouteImport } from './routes/api/explore'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
+import { Route as ApiFlagsRouteImport } from './routes/api/flags'
 import { Route as ApiGiftSubRouteImport } from './routes/api/gift-sub'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiImageProxyRouteImport } from './routes/api/image-proxy'
@@ -382,6 +383,7 @@ import { Route as ApiAdminAppealsRouteImport } from './routes/api/admin/appeals'
 import { Route as ApiAdminAuditLogRouteImport } from './routes/api/admin/audit-log'
 import { Route as ApiAdminBlogRouteImport } from './routes/api/admin/blog'
 import { Route as ApiAdminEconomyRouteImport } from './routes/api/admin/economy'
+import { Route as ApiAdminFlagsRouteImport } from './routes/api/admin/flags'
 import { Route as ApiAdminLinkRulesRouteImport } from './routes/api/admin/link-rules'
 import { Route as ApiAdminModMacrosRouteImport } from './routes/api/admin/mod-macros'
 import { Route as ApiAdminOncallRouteImport } from './routes/api/admin/oncall'
@@ -1937,6 +1939,11 @@ const ApiFeedbackRoute = ApiFeedbackRouteImport.update({
   path: '/api/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFlagsRoute = ApiFlagsRouteImport.update({
+  id: '/api/flags',
+  path: '/api/flags',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGiftSubRoute = ApiGiftSubRouteImport.update({
   id: '/api/gift-sub',
   path: '/api/gift-sub',
@@ -3176,6 +3183,11 @@ const ApiAdminBlogRoute = ApiAdminBlogRouteImport.update({
 const ApiAdminEconomyRoute = ApiAdminEconomyRouteImport.update({
   id: '/api/admin/economy',
   path: '/api/admin/economy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminFlagsRoute = ApiAdminFlagsRouteImport.update({
+  id: '/api/admin/flags',
+  path: '/api/admin/flags',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminLinkRulesRoute = ApiAdminLinkRulesRouteImport.update({
@@ -8116,6 +8128,7 @@ export interface FileRoutesByFullPath {
   '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
+  '/api/flags': typeof ApiFlagsRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
   '/api/health': typeof ApiHealthRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
@@ -8324,6 +8337,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/economy': typeof ApiAdminEconomyRoute
+  '/api/admin/flags': typeof ApiAdminFlagsRoute
   '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
   '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
   '/api/admin/oncall': typeof ApiAdminOncallRoute
@@ -9381,6 +9395,7 @@ export interface FileRoutesByTo {
   '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
+  '/api/flags': typeof ApiFlagsRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
   '/api/health': typeof ApiHealthRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
@@ -9589,6 +9604,7 @@ export interface FileRoutesByTo {
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/economy': typeof ApiAdminEconomyRoute
+  '/api/admin/flags': typeof ApiAdminFlagsRoute
   '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
   '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
   '/api/admin/oncall': typeof ApiAdminOncallRoute
@@ -10674,6 +10690,7 @@ export interface FileRoutesById {
   '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
+  '/api/flags': typeof ApiFlagsRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
   '/api/health': typeof ApiHealthRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
@@ -10883,6 +10900,7 @@ export interface FileRoutesById {
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/economy': typeof ApiAdminEconomyRoute
+  '/api/admin/flags': typeof ApiAdminFlagsRoute
   '/api/admin/link-rules': typeof ApiAdminLinkRulesRoute
   '/api/admin/mod-macros': typeof ApiAdminModMacrosRoute
   '/api/admin/oncall': typeof ApiAdminOncallRoute
@@ -11969,6 +11987,7 @@ export interface FileRouteTypes {
     | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
+    | '/api/flags'
     | '/api/gift-sub'
     | '/api/health'
     | '/api/image-proxy'
@@ -12177,6 +12196,7 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/economy'
+    | '/api/admin/flags'
     | '/api/admin/link-rules'
     | '/api/admin/mod-macros'
     | '/api/admin/oncall'
@@ -13234,6 +13254,7 @@ export interface FileRouteTypes {
     | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
+    | '/api/flags'
     | '/api/gift-sub'
     | '/api/health'
     | '/api/image-proxy'
@@ -13442,6 +13463,7 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/economy'
+    | '/api/admin/flags'
     | '/api/admin/link-rules'
     | '/api/admin/mod-macros'
     | '/api/admin/oncall'
@@ -14526,6 +14548,7 @@ export interface FileRouteTypes {
     | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
+    | '/api/flags'
     | '/api/gift-sub'
     | '/api/health'
     | '/api/image-proxy'
@@ -14735,6 +14758,7 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/economy'
+    | '/api/admin/flags'
     | '/api/admin/link-rules'
     | '/api/admin/mod-macros'
     | '/api/admin/oncall'
@@ -15766,6 +15790,7 @@ export interface RootRouteChildren {
   ApiClientErrorRoute: typeof ApiClientErrorRoute
   ApiExploreRoute: typeof ApiExploreRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
+  ApiFlagsRoute: typeof ApiFlagsRoute
   ApiGiftSubRoute: typeof ApiGiftSubRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiImageProxyRoute: typeof ApiImageProxyRoute
@@ -15813,6 +15838,7 @@ export interface RootRouteChildren {
   ApiAdminAuditLogRoute: typeof ApiAdminAuditLogRoute
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminEconomyRoute: typeof ApiAdminEconomyRoute
+  ApiAdminFlagsRoute: typeof ApiAdminFlagsRoute
   ApiAdminLinkRulesRoute: typeof ApiAdminLinkRulesRoute
   ApiAdminModMacrosRoute: typeof ApiAdminModMacrosRoute
   ApiAdminOncallRoute: typeof ApiAdminOncallRoute
@@ -17377,6 +17403,13 @@ declare module '@tanstack/react-router' {
       path: '/api/feedback'
       fullPath: '/api/feedback'
       preLoaderRoute: typeof ApiFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/flags': {
+      id: '/api/flags'
+      path: '/api/flags'
+      fullPath: '/api/flags'
+      preLoaderRoute: typeof ApiFlagsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/gift-sub': {
@@ -19099,6 +19132,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/economy'
       fullPath: '/api/admin/economy'
       preLoaderRoute: typeof ApiAdminEconomyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/flags': {
+      id: '/api/admin/flags'
+      path: '/api/admin/flags'
+      fullPath: '/api/admin/flags'
+      preLoaderRoute: typeof ApiAdminFlagsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/link-rules': {
@@ -27822,6 +27862,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiClientErrorRoute: ApiClientErrorRoute,
   ApiExploreRoute: ApiExploreRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
+  ApiFlagsRoute: ApiFlagsRoute,
   ApiGiftSubRoute: ApiGiftSubRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiImageProxyRoute: ApiImageProxyRoute,
@@ -27869,6 +27910,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAuditLogRoute: ApiAdminAuditLogRoute,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminEconomyRoute: ApiAdminEconomyRoute,
+  ApiAdminFlagsRoute: ApiAdminFlagsRoute,
   ApiAdminLinkRulesRoute: ApiAdminLinkRulesRoute,
   ApiAdminModMacrosRoute: ApiAdminModMacrosRoute,
   ApiAdminOncallRoute: ApiAdminOncallRoute,
@@ -28552,6 +28594,7 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
 
 import type { getRouter } from './router.tsx'
 import type { createStart } from '@tanstack/react-start'
