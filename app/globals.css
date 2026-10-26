@@ -215,8 +215,8 @@
    overridden below :root. */
 @theme inline {
   --default-transition-duration: calc(var(--site-transition-speed, 200ms) * 0.75);
-  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-timing-function: var(--ease-smooth);
+  --ease-out: var(--ease-smooth);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
@@ -400,7 +400,12 @@
   --pulse-tau: 260ms; /* CHARGE.pulseTauMs */
   --space-4: 16px; /* JELLY_LAYOUT.minGapPx: bodies sit at least this far apart */
 
-  --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
+  /* The site's one tween curve (lib/motion.ts EASE.smooth): it leaves at zero speed, moves quickly through the middle
+     and lands softly, so a transition has no jolt at either end — and one that is interrupted and turned around starts
+     again from rest at the frame it was on, instead of snapping to full speed. The old curve,
+     var(--ease-smooth), covered 22% of its distance in the first 5% of its time. */
+  --ease-smooth: cubic-bezier(0.3, 0, 0.15, 1);
+  --ease-glass: var(--ease-smooth);
   --glass-bevel: 12px;
   --glass-glint-size: 320px;
   --glass-glint-opacity: 0.4;
@@ -855,7 +860,7 @@
      One duration and one curve for the whole page, so every reveal in a
      scroll reads as the same hand. The curve is a long decelerate — it arrives
      rather than stops. Kept as tokens so a section cannot invent its own. */
-  --rebar-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --rebar-ease: var(--ease-smooth);
   --rebar-dur: 620ms;
   --rebar-dur-quick: 260ms;
 
@@ -1503,7 +1508,7 @@
   --site-press-duration: 180ms;
   --site-heading-transform: none;
   --site-letter-spacing: -0.035em;
-  --ease-glass: cubic-bezier(0.16, 1, 0.3, 1.18);
+  --ease-glass: cubic-bezier(0.3, 0, 0.15, 1.18);
 
   /* A subtle 64px technical grid sits behind asymmetric cyan/violet energy.
      Repeating gradients keep the pattern crisp at any viewport size. */
@@ -1745,7 +1750,7 @@ html:not(.app-route) .site-aurora::before {
      `.radial-backdrop__field` in components/radial/radial.css. Gate:
      lib/__tests__/static-backdrop.test.ts. */
   translate: var(--aurora-mx, 0px) var(--aurora-my, 0px);
-  transition: translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: translate 0.5s var(--ease-smooth);
 }
 
 /* Aurora layer 2 — the far field (§5.1). A depth sibling behind the near layer:
@@ -1771,7 +1776,7 @@ html:not(.app-route):not(.style-high-contrast) .site-aurora::after {
       transparent 70%
     );
   translate: calc(var(--aurora-mx, 0px) * -0.6) calc(var(--aurora-my, 0px) * -0.6);
-  transition: translate 0.9s cubic-bezier(0.22, 1, 0.36, 1); /* lazier trail */
+  transition: translate 0.9s var(--ease-smooth); /* lazier trail */
 }
 
 /* Low-end devices and high-contrast (canvas is `none` there) pay nothing for the
@@ -4300,7 +4305,7 @@ input[type='number'] {
 @layer base {
   html.media-reveal:not(.app-route)
     img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal]) {
-    transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 0.32s var(--ease-smooth);
   }
   html.media-reveal:not(.app-route)
     img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal]):not([data-loaded]) {
@@ -4339,7 +4344,7 @@ input[type='number'] {
   }
 }
 .page-root > * {
-  animation: page-enter 0.16s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: page-enter 0.16s var(--ease-smooth) backwards;
 }
 .page-root > [data-page-enter-complete],
 .page-root > [data-route-pending] {
@@ -4501,8 +4506,9 @@ html:not([data-navigated]) .page-root > * {
   --motion-out: 0.1s;
   --motion-bloom: 0.26s;
   --motion-collapse: 0.11s;
-  --motion-ease-in: cubic-bezier(0.16, 1, 0.3, 1);
-  --motion-ease-out: ease-in;
+  --motion-ease-in: var(--ease-smooth);
+  /* Smooth at both ends: a dismissal that ends at full speed reads as a cut. */
+  --motion-ease-out: cubic-bezier(0.45, 0, 0.55, 1);
   /* An exit that has a long way to travel (a phone sheet leaving through the
      bottom edge). `--motion-out` is right for a panel that fades where it
      stands; 0.1s across a whole screen height is a teleport, not a dismissal.
@@ -5121,10 +5127,10 @@ html.nav-pop .page-root > * {
    still wins. */
 @supports (font: -apple-system-body) {
   :root {
-    --spring-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+    --spring-smooth: var(--ease-smooth);
     --spring-snappy: cubic-bezier(0.34, 1.4, 0.64, 1);
-    --spring-sheet: cubic-bezier(0.16, 1, 0.3, 1);
-    --evert-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --spring-sheet: var(--ease-smooth);
+    --evert-ease: var(--ease-smooth);
     --evert-ease-pop: cubic-bezier(0.34, 1.4, 0.64, 1);
   }
 }
@@ -5132,9 +5138,9 @@ html.nav-pop .page-root > * {
 /* perf-lite: one short tween instead of the sampled settle; the focus ring simply lands. */
 html.perf-lite {
   --evert-in: 0.16s;
-  --evert-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --evert-ease: var(--ease-smooth);
   --evert-pop-in: 0.16s;
-  --evert-ease-pop: cubic-bezier(0.22, 1, 0.36, 1);
+  --evert-ease-pop: var(--ease-smooth);
 }
 html.perf-lite :focus-visible {
   animation: none;
@@ -5243,7 +5249,7 @@ html.nav-restoring .feed-card-cv {
 }
 .content-item-enter,
 .feed-item-enter {
-  animation: content-item-enter 0.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: content-item-enter 0.2s var(--ease-smooth) backwards;
 }
 
 /* ─── Skeleton shimmer ───────────────────────────────────────────────────
@@ -5385,7 +5391,7 @@ body {
 [data-slot='card'],
 .feed-card-cv > :first-child {
   transition:
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 240ms var(--ease-smooth),
     border-color 180ms ease,
     box-shadow 240ms ease;
 }
@@ -5606,7 +5612,7 @@ body {
      whole `translate3d()`. So this shape has been sitting still since it
      shipped; it moves now. */
   transform: translate3d(0, calc(var(--spatial-scroll-y, 0px) * 0.08), 0) rotate(11deg);
-  transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 800ms var(--ease-smooth);
 }
 
 .spatial-design-hero__art span {
@@ -5621,7 +5627,7 @@ body {
   opacity: 0.72;
   /* Same correction as the shape above. */
   transform: translate3d(0, calc(var(--spatial-scroll-y, 0px) * -0.035), 0);
-  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 900ms var(--ease-smooth);
 }
 
 .spatial-design-hero__copy {
@@ -5766,8 +5772,8 @@ body {
   opacity: 0;
   transform: translateY(18px);
   transition:
-    opacity 700ms cubic-bezier(0.22, 1, 0.36, 1) var(--spatial-delay, 0ms),
-    transform 700ms cubic-bezier(0.22, 1, 0.36, 1) var(--spatial-delay, 0ms);
+    opacity 700ms var(--ease-smooth) var(--spatial-delay, 0ms),
+    transform 700ms var(--ease-smooth) var(--spatial-delay, 0ms);
 }
 
 [data-animate] [data-spatial-reveal][data-visible] {

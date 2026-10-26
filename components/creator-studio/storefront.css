@@ -160,7 +160,7 @@
   box-shadow: var(--site-shadow);
   background: var(--site-surface);
   opacity: 0;
-  animation: store-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: store-rise 0.6s var(--ease-smooth) both;
 }
 
 .store-hero__link {
@@ -457,7 +457,7 @@
 .store-card {
   position: relative;
   opacity: 0;
-  animation: store-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: store-rise 0.55s var(--ease-smooth) both;
 }
 
 .store-card__link {
@@ -526,7 +526,7 @@
   overflow: hidden;
   transition:
     opacity var(--site-transition-speed) var(--ease-out),
-    transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform 300ms var(--ease-smooth);
 }
 .store-card__link:hover .store-card__hoverdesc {
   opacity: 1;

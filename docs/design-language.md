@@ -1158,7 +1158,10 @@ gated off there too, via `html.app-route`).
   0.64s settle would park the compose FAB at the bottom of the document), and
   exits stay short tweens (a dismissal should feel immediate, and a spring from
   rest starts slowly). Bare Tailwind `transition*` utilities default to
-  `EASE.standard` on `duration-site-fast` rather than Tailwind's Material curve.
+  `--ease-smooth` (`EASE.smooth`: zero speed at both ends) on
+  `duration-site-fast` rather than Tailwind's Material curve, and the shared
+  framer `transition`/`exitTransition` are zero-bounce springs, so an
+  interrupted motion carries its speed into the next instead of restarting.
 
 - **The close is real, on both kinds of surface.** A dismissal is not a
   performance — a quick uniform reabsorb toward the anchor over

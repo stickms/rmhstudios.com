@@ -121,6 +121,7 @@ import {
   addRing,
   approach,
   bevelFor,
+  roomFor,
   cssPx,
   cursorTilt,
   dprFor,
@@ -208,6 +209,11 @@ const WORKER_HANDOVER_MS = 1000;
  * at most this often while the pointer moves.
  */
 const RECT_MAX_AGE_MS = 250;
+/**
+ * A surface's shoulder room changes only when it moves by at least this much, CSS px. The rects it is measured from
+ * carry the soft body's transforms (a plump of up to 3%), which would otherwise re-size the shoulder as a card breathes.
+ */
+const ROOM_HYSTERESIS_PX = 1.5;
 
 interface Surface {
   el: HTMLElement;
@@ -263,6 +269,11 @@ interface Surface {
   gel: GelLook;
   /** Bevel width multiplier for the molded shoulder (`--gel-shoulder`), read with the look. */
   shoulder: number;
+  /** Smallest padding and the border width, CSS px, read with the look. */
+  pad: number;
+  border: number;
+  /** How far the shoulder may reach before it runs under content or a nested body (`roomFor`), CSS px. */
+  room: number;
   /** Target and eased plasma wake level (bus `plasma:level`). */
   plasmaTarget: number;
   plasmaLevel: number;
@@ -624,6 +635,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
       latticeBuf: new Float32Array(16),
       gel: defaultGel(),
       shoulder: GEL_FALLBACK.shoulder,
+      pad: 0,
+      border: 0,
+      room: Infinity,
       plasmaTarget: 0,
       plasmaLevel: 0,
       plasmaAt: 0,
@@ -728,6 +742,13 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.width = s.el.clientWidth;
     s.height = s.el.clientHeight;
     const border = parseFloat(style.borderTopWidth) || 0;
+    s.border = border;
+    s.pad = Math.min(
+      parseFloat(style.paddingTop) || 0,
+      parseFloat(style.paddingRight) || 0,
+      parseFloat(style.paddingBottom) || 0,
+      parseFloat(style.paddingLeft) || 0,
+    );
     s.radius = innerRadius(style.borderTopLeftRadius, border, s.width, s.height);
     s.tint = resolveColor(style.backgroundColor, [1, 1, 1, 0], doc);
     if (style.position === 'static') s.el.setAttribute('data-liquid-static', '');
@@ -757,6 +778,38 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.dirty = true;
     if (!scene) provider.request('activate');
   };
+  /**
+   * Nested bodies (a button in a card, a tab capsule in its track): each parent's shoulder stops short of its nearest
+   * child and stays inside its own padding (`roomFor`), so two rims never stack on one line. Runs with the rect read,
+   * so it costs no extra layout; n is bounded by the rim budget.
+   */
+  const fitNested = (active: Surface[]) => {
+    for (const s of active) {
+      const p = s.rect!;
+      let inset = Infinity;
+      for (const c of active) {
+        if (c === s || !s.el.contains(c.el)) continue;
+        const r = c.rect!;
+        inset = Math.min(
+          inset,
+          r.left - p.left,
+          p.right - r.right,
+          r.top - p.top,
+          p.bottom - r.bottom,
+        );
+      }
+      const room = roomFor(s.pad, inset - s.border);
+      const moved =
+        room === Infinity || s.room === Infinity
+          ? room !== s.room
+          : Math.abs(room - s.room) >= ROOM_HYSTERESIS_PX;
+      if (moved) {
+        s.room = room;
+        s.dirty = true;
+      }
+    }
+  };
+
   const deactivate = (s: Surface) => {
     removeHaze(s);
     dropLattice(s);
@@ -1068,7 +1121,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     const w = s.width;
     const h = s.height;
     if (w < 1 || h < 1) return false;
-    const bezel = bevelFor(w, h, s.radius, s.shoulder);
+    const bezel = bevelFor(w, h, s.radius, s.shoulder, s.room);
     const thickness = thicknessFor(bezel);
     const dpr = dprFor(win.devicePixelRatio || 1, w, h);
 
@@ -1163,7 +1216,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       height: h,
       scale: hazeScaleFor(w, h, s.role, knobsAt(governor.step).hazeScale),
       radius: s.radius,
-      bezel: bevelFor(w, h, s.radius, s.shoulder),
+      bezel: bevelFor(w, h, s.radius, s.shoulder, s.room),
       look: s.look,
       flow: s.flow,
       quiet: s.quiet,
@@ -1270,7 +1323,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
         s.lattice = createLattice({
           w: s.width,
           h: s.height,
-          bevel: bevelFor(s.width, s.height, s.radius, s.shoulder),
+          bevel: bevelFor(s.width, s.height, s.radius, s.shoulder, s.room),
           amplitude: latticeAmplitude(s.width, s.height),
         });
         s.latticeInput = null;
@@ -1384,6 +1437,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     if (now - rectsAt > RECT_MAX_AGE_MS || active.some((s) => !s.rect)) {
       for (const s of active) s.rect = s.el.getBoundingClientRect();
       rectsAt = now;
+      fitNested(active);
     }
     for (const s of active) {
       const rect = s.rect!;

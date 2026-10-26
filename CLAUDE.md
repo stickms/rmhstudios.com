@@ -292,7 +292,20 @@ transform` on a body, untriggered flicker, ripple, or a second spring formula.
 (16px) unclipped round every body; no `overflow: hidden` directly around one.
 Cards `--site-radius`, controls `--site-radius-sm`. Game play-fields are
 `data-jelly-zone="playfield"` (excluded); ambient motion and arcs stop while a
-game is playing.
+game is playing. **Nested bodies mold, never stack:** a body's shoulder stays
+inside its own padding and stops `NEST_GAP` (2px) short of any body nested in
+it (`roomFor` in `lib/liquid/glass/policy.ts`, measured by the engine), so a
+button in a card or a capsule in its track never draws a second edge on top
+of its parent's.
+
+**Motion is smooth at both ends and interruptible.** Tweens ride one curve,
+`--ease-smooth` / `EASE.smooth` (leaves at zero speed, lands softly) — never
+an ease-out that starts at full speed. The shared framer `transition` /
+`exitTransition` are zero-bounce springs, so a state flipped mid-flight carries
+its speed into the new target. Enters and exits are CSS **transitions** with
+`@starting-style` (plus a no-op presence animation so Radix keeps the node), not
+keyframe pairs: a menu, dialog or sheet closed while it is still opening turns
+around from the frame it is on.
 
 **Accessibility and degradation stay central** (`lib/jelly/tiers.ts`): high
 contrast, forced colors, reduced transparency and `perf-lite` switch the jelly

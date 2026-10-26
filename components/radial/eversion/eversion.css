@@ -140,7 +140,7 @@
 }
 .radial-hub .eversion-hold-layer--focus .eversion-hold {
   filter: blur(0px);
-  transition: filter 250ms var(--ease-glass, cubic-bezier(0.16, 1, 0.3, 1));
+  transition: filter 250ms var(--ease-glass, var(--ease-smooth));
 }
 html:is(.perf-lite, .reduce-transparency, .ios-webkit) .radial-hub .eversion-hold {
   filter: none;

@@ -25,7 +25,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { spring, type Spring } from '@/lib/fluid';
-import { APPLE_SPRING } from '@/lib/motion';
+import { APPLE_SPRING, EASE, SMOOTH_EASE_CSS } from '@/lib/motion';
 
 const ROOT = join(__dirname, '..', '..');
 const GLOBALS = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
@@ -112,12 +112,18 @@ describe('dialog and sheet: one path both ways, readable on the quick clock', ()
     expect(DIALOG).toContain('@starting-style');
   });
 
-  it('the desktop sheet exit ends on the frame its enter starts from', () => {
-    const desktop = SHEET.indexOf('@media (min-width: 768px)');
-    expect(desktop).toBeGreaterThan(-1);
-    expect(transformIn(keyframes(SHEET, 'ui-sheet-content-out', desktop))).toBe(
-      transformIn(keyframes(SHEET, 'ui-sheet-content-in', desktop)),
-    );
+  it('sheets are interruptible transitions whose exit ends on the frame the open starts from', () => {
+    // Transitions, not keyframes: a sheet closed mid-rise turns around from the frame it is on.
+    expect(SHEET).toContain('@starting-style');
+    expect(SHEET).not.toMatch(/@keyframes ui-sheet-content-(in|out)/);
+    const closed = /\[data-slot="sheet-content"\]\[data-state="closed"\]\s*\{([^}]*)\}/g;
+    const starting =
+      /@starting-style\s*\{[^@]*?\[data-slot="sheet-content"\]\[data-state="open"\]\s*\{([^}]*)\}/g;
+    const exits = [...SHEET.matchAll(closed)].map((m) => transformIn(m[1]));
+    const enters = [...SHEET.matchAll(starting)].map((m) => transformIn(m[1]));
+    // Phone and desktop, each one path both ways.
+    expect(exits).toHaveLength(2);
+    expect(enters).toEqual(exits);
   });
 
   it('a spring-driven enter takes its opacity from a separate short animation', () => {
@@ -138,7 +144,18 @@ describe('Tailwind transition defaults ride the site curve and clock', () => {
     expect(cssVar('--default-transition-duration')).toBe(
       'calc(var(--site-transition-speed, 200ms) * 0.75)',
     );
-    // EASE.standard in lib/motion.ts.
-    expect(cssVar('--default-transition-timing-function')).toBe('cubic-bezier(0.22, 1, 0.36, 1)');
+    // EASE.smooth in lib/motion.ts: every bare `transition*` utility rides the site curve.
+    expect(cssVar('--default-transition-timing-function')).toBe('var(--ease-smooth)');
+  });
+
+  it('the site curve is smooth at both ends and matches EASE.smooth', () => {
+    expect(cssVar('--ease-smooth')).toBe(SMOOTH_EASE_CSS);
+    expect(SMOOTH_EASE_CSS).toBe(`cubic-bezier(${EASE.smooth.join(', ')})`);
+    const [x1, y1, x2, y2] = EASE.smooth;
+    // Leaves at zero speed (P1 on the time axis) and lands at zero speed (P2 at the target).
+    expect(y1).toBe(0);
+    expect(x1).toBeGreaterThan(0);
+    expect(y2).toBe(1);
+    expect(x2).toBeLessThan(1);
   });
 });

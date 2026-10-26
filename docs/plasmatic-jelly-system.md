@@ -465,6 +465,15 @@ Cards use `--site-radius`, controls `--site-radius-sm`. Game play-fields are
 `data-jelly-zone="playfield"` (excluded); ambient motion and arcs stop while a game is
 playing.
 
+**Nested bodies.** A body's molded shoulder may reach only as far as `roomFor(padding,
+childInset)` allows (`lib/liquid/glass/policy.ts`): inside the host's own padding when it
+has any (a full-bleed media card keeps its whole shoulder over the media), and
+`NEST_GAP` (2 px) short of the nearest nested body, never thinner than `BEVEL_MIN`
+(3 px). The engine measures the insets with the rect read it already does
+(`fitNested`), with `ROOM_HYSTERESIS_PX` so a breathing card does not re-size its
+shoulder. Two rims therefore never stack on one line: a button in a card or a capsule in
+its track molds out of its parent instead of overlapping its edge.
+
 **Identity.** Silent, sleek, frontier AI: calm, never busy. One electric accent
 (`--site-accent`), which is also the plasma colour; no gradients on the ground, no neon or
 glowing type, no sci-fi illustration. Text is Geist, eyebrows and data Geist Mono, through

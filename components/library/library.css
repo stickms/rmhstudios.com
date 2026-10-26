@@ -82,7 +82,7 @@
   opacity: 0;
 }
 .lib-reveal[data-revealed='true'] {
-  animation: lib-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: lib-rise 0.55s var(--ease-smooth) both;
 }
 
 @keyframes lib-rise {
@@ -2336,7 +2336,7 @@
   -webkit-backdrop-filter: blur(28px);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
-  animation: lib-details-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: lib-details-in 260ms var(--ease-smooth) both;
 }
 @keyframes lib-details-in {
   from {
