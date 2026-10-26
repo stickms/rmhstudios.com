@@ -76,7 +76,7 @@ export interface GlobeCursorSettings {
   /** A crisp dot at the exact hotspot, so precision never depends on the lag. */
   hotspot: boolean;
   hideNative: boolean;
-  /** Keep the I-beam over text fields (the globe shrinks beside it). */
+  /** Keep the I-beam over text fields (the globe shrinks and dims under it, still centred on the pointer). */
   nativeOverText: boolean;
   /** Over a <canvas> (games draw their own cursors) show the native one instead. */
   honourCanvas: boolean;

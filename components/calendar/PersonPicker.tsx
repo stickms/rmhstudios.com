@@ -68,12 +68,12 @@ export function PersonPicker({
         />
       </label>
       {shown.length > 0 && (
-        <ul className="glass-overlay rounded-site p-2">
+        <ul className="glass-overlay overflow-hidden rounded-site py-1.5">
           {shown.map((u) => (
             <li key={u.id}>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded-site-sm px-2 py-1.5 text-left text-sm text-site-text hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-site-text hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
                 onClick={() => {
                   onChange([
                     ...value,

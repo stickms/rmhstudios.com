@@ -175,7 +175,7 @@ export function LanguageSwitcher() {
               maxHeight: rect.maxHeight,
               "--motion-origin": rect.openUp ? "bottom center" : "top center",
             } as CSSProperties}
-            className="z-[100] overflow-y-auto overscroll-contain glass-overlay p-2"
+            className="z-[100] overflow-y-auto overscroll-contain glass-overlay py-1.5"
           >
             {LOCALES.map((l) => {
               const active = l === locale;
@@ -188,7 +188,7 @@ export function LanguageSwitcher() {
                   data-active={active}
                   onClick={() => choose(l)}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-site-sm px-2.5 py-2 text-left text-sm transition-colors",
+                    "flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition-colors",
                     "focus:outline-none focus-visible:bg-site-surface-hover",
                     active
                       ? "bg-site-accent-dim text-site-text"

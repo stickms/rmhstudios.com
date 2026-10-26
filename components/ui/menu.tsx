@@ -17,16 +17,15 @@
  * adjacent buttons in the same toolbar did not look like the same control. So
  * the row is a primitive now, and the four decisions above are made once.
  *
- * ## The grammar is inset-and-rounded, not full-bleed
+ * ## The grammar is flush rows in one rounded panel
  *
- * Of the two shapes in the codebase, this takes the one `Select` already used:
- * the panel carries `p-2` and each row is `rounded-site-sm`, so the highlight is
- * a rounded pill inset from the panel's edge rather than a square band running
- * wall to wall. The numbers are concentric: a 24px row inside an 8px inset sits
- * in a 32px panel (`--site-radius`), so the row's corner follows the panel's. That is what AppKit and UIKit both draw, and it is the shape the
- * panel's own corner radius implies — a square highlight in a rounded panel
- * collides with the curve on the first and last rows, which is exactly the
- * "sliced corner" the `Select` comment describes one level up.
+ * A dropdown is ONE rounded slab, not a stack of separate pills. Rows are
+ * plain full-width bands (no radius of their own) and the panel — which clips
+ * its contents (`overflow` on the panel, vertical padding `py-1.5`, no side
+ * padding) — gives the first and last row's highlight its curve, so every row
+ * takes the parent's shape instead of repeating a corner of its own. Row text
+ * is inset `px-4` so it clears the curve. A row that sits OUTSIDE a clipping
+ * panel (a list inside a dialog) opts back in with its own `rounded-site-sm`.
  *
  * ## Height is a touch target, not a font size
  *
@@ -93,7 +92,7 @@ export const MENU_ITEM_ATTR = 'data-menu-item';
 
 const ROW_BASE = cn(
   'relative flex w-full min-h-9 pointer-coarse:min-h-11 cursor-pointer select-none items-center gap-2.5',
-  'rounded-site-sm px-3 py-2 text-left text-sm outline-none',
+  'rounded-none px-4 py-2 text-left text-sm outline-none',
   'transition-colors duration-site',
   // Focus is the highlight here. The menu moves real DOM focus between rows
   // (that is what `role="menu"` requires), so the focused row must read as the
@@ -214,16 +213,16 @@ export const MenuItem = React.forwardRef<HTMLElement, MenuItemProps>(function Me
 /**
  * A hairline between groups of rows.
  *
- * Inset from the panel's curved edge and softened, so it divides the groups
- * without becoming a hairline that runs into the panel's rounded corners: the
- * panel is a 32px slab, a full-bleed 1px rule meets its curve at a point.
+ * Inset to the rows' text and softened, so it divides the groups without
+ * becoming a hairline that runs into the panel's rounded corners: the panel is
+ * a 32px slab, a full-bleed 1px rule meets its curve at a point.
  */
 export function MenuSeparator({ className }: { className?: string }) {
   return (
     <div
       role="separator"
       aria-orientation="horizontal"
-      className={cn('mx-3 my-1.5 h-px bg-site-border/50', className)}
+      className={cn('mx-4 my-1.5 h-px bg-site-border/50', className)}
     />
   );
 }
@@ -239,7 +238,7 @@ export function MenuLabel({
   return (
     <div
       className={cn(
-        'px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-site-text-dim',
+        'px-4 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-site-text-dim',
         className,
       )}
     >
