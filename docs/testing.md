@@ -634,3 +634,9 @@ Plus SAST/quality gates that aren't tests but run on PRs: `senior-review.yml`
 ### Migration rollback-compatibility gate
 
 `web-ci.yml` job `migrations` runs `.github/scripts/check-migrations-additive.mjs` over migrations **added** in the PR. Production rollbacks (post-deploy guard, `post-deploy-verify`) redeploy the previous image on the already-migrated database, so a new migration must not drop, rename, retype or tighten (`SET NOT NULL`, `NOT NULL` without `DEFAULT`, `DROP DEFAULT`) anything the previous release uses. Do it as expand → ship → contract. A deliberate contract step opts in with `-- rmh:contract-ok <why it is safe>` in the migration file.
+
+### Merge queue and delivery metrics
+
+`web-ci.yml` also runs on `merge_group`, treated exactly like a PR (same classifier, same `required-checks`, no nightly-only jobs), so GitHub's merge queue tests the real merge result before it reaches `main`. **Turning it on is a repo setting** (Settings → Rules → branch protection for `main` → "Require merge queue"); the workflow is ready either way.
+
+`dora-metrics.yml` posts deploy frequency, merge→deployed lead time, change-failure rate and time-to-restore to the run summary every Monday (and on demand), computed from the deploy workflow's own run history.
