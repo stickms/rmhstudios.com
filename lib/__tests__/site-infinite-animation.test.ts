@@ -141,7 +141,6 @@ const BASELINE = new Map<string, string>([
   ],
   ['app/globals.css :: rad-loader-pulse', 'route loader — exists only while a route loads'],
   ['app/globals.css :: rad-loader-orbit', 'route loader — exists only while a route loads'],
-  ['app/globals.css :: delight-ribbon', 'celebration ribbon, mounted only for the celebration'],
   ['components/radial/radial.css :: radial-pulse-soft', 'unread / live dots, a few px'],
   [
     'components/radial/radial.css :: globe-armed',

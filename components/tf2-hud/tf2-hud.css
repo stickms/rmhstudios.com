@@ -331,11 +331,8 @@
 
 /* ─── One consistent look ────────────────────────────────────────────
    The TF2 Hub is its own world, so none of the site's ambient dressing leaks in
-   while a TF2 page is showing: no seasonal ribbon across the top edge, and the
-   route-progress bar is TF2 orange rather than the site accent. */
-html[class*='season-'] body:has(.tf2hud-theme)::before {
-  content: none;
-}
+   while a TF2 page is showing: the route-progress bar is TF2 orange rather than
+   the site accent. */
 body:has(.tf2hud-theme) [data-nav-progress] {
   background: #cf6a1c;
 }

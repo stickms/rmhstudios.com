@@ -13,8 +13,15 @@ in `app/globals.css`).
 ## Current material contract
 
 The main UI provides grouped desktop navigation; on a phone the only navigator is
-the globe, whose docked trigger is a small jelly globe (`MiniGlobe`) that swells into
-the full one — there is no tab bar. The globe is the complete navigator.
+the globe, and it is ONE element: the real `LiquidGlobe`, mounted once the page is
+idle in `RadialHub`'s `.radial-hub__dock`, laid out at full size in the middle of the
+screen and held small on the orb's footprint by `translate` and `scale` (radial.css,
+"PHONES: the one docked globe"; the hub measures the pose). Docked it shows dots, not
+icons, and spins with the page (scroll kicks its spin; its idle drift continues). A
+touch on the orb (a transparent target above it) sets both properties to rest, so the
+same globe moves to the middle and grows; choosing a destination navigates at once and
+the globe turns itself inside out while it comes back down (`landing`). There is no tab
+bar. The globe is the complete navigator.
 Eversion runs only from the open globe; ordinary links never spawn a mini globe.
 Its surface shares `lib/liquid/globe-material.ts` with the navigator, including
 while it flattens. After the handoff, the remaining motion is shortened through

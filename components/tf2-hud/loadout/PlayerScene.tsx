@@ -11,6 +11,7 @@
 'use client';
 
 import { useGLTF } from '@react-three/drei';
+import StudioLight from './StudioLight';
 import { ResetViewButton, ViewerOrbit, rememberView, useResetView } from './viewer-controls';
 import { Canvas, createPortal, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from 'react';
@@ -211,12 +212,11 @@ export default function PlayerScene({
     <div className="relative size-full">
       <Canvas
         dpr={[1, 1.5]}
+        flat
         camera={{ fov: 30, position: [0, 1, 4] }}
         gl={{ antialias: true, alpha: true }}
       >
-        <ambientLight intensity={1.1} />
-        <directionalLight position={[3, 4, 5]} intensity={2.2} />
-        <directionalLight position={[-4, 1, -2]} intensity={0.8} color="#ffd9b0" />
+        <StudioLight />
         <ViewerOrbit
           resetRef={ref}
           minPolarAngle={Math.PI / 3}

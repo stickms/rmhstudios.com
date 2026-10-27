@@ -37,7 +37,7 @@ import { inShell } from './eversion/eversion-nav';
 import { createHandOff, type HandOffHow } from './hub-handoff';
 import { whenQuiet } from './quiet';
 import { SELF_EVERT_MS } from './self-evert-timing';
-import { MiniGlobe } from './MiniGlobe';
+import { RmhLogo } from './RmhLogo';
 import { isGlobeDocked, useGlobeDestinations } from './globe-dock';
 
 /**
@@ -104,6 +104,13 @@ const MOTION_MS = 500;
  * full-screen Globe Eversion do it (radial.css, `isGlobeDocked`).
  */
 const ORB_NAV_QUERY = '(max-width: 1119.98px)';
+const subscribeOrbNav = (cb: () => void) => {
+  const mq = window.matchMedia(ORB_NAV_QUERY);
+  mq.addEventListener('change', cb);
+  return () => mq.removeEventListener('change', cb);
+};
+const orbNavSnapshot = () => window.matchMedia(ORB_NAV_QUERY).matches;
+const orbNavServer = () => false;
 
 /**
  * The RMH navigator. Tapping the fixed RMH orb sends it to the middle of the
@@ -175,8 +182,15 @@ export function RadialHub() {
   // `landing` keeps the globe mounted too: the page has already changed under it and it is still coming home.
   const menuVisible =
     phase === 'open' || phase === 'closing' || phase === 'everting' || phase === 'landing';
-  /** The globe turns itself inside out in place and lands on the orb (set when the menu opens; see ORB_NAV_QUERY). */
-  const [inPlace, setInPlace] = useState(false);
+  /**
+   * Phones (see ORB_NAV_QUERY): the globe is ONE persistent element docked at the bottom, small, spinning with the
+   * page, and a touch moves it to the middle and grows it. The overlay then holds only the veil, the catcher and the
+   * foot. Wider, the overlay owns its own globe, as before.
+   */
+  const inPlace = useSyncExternalStore(subscribeOrbNav, orbNavSnapshot, orbNavServer);
+  /** The docked globe is mounted (after the page's first idle, or at the first tap). */
+  const [dockReady, setDockReady] = useState(false);
+  const dockRef = useRef<HTMLDivElement | null>(null);
   /**
    * Globe Eversion (flag-gated). `eversionOn` is resolved after mount because the flag reads `location`, which the
    * server render does not have - it is what decides whether LiquidGlobe is handed `onNavigate` at all, so with the
@@ -304,24 +318,8 @@ export function RadialHub() {
   const toggle = useCallback(() => {
     if (handOffMachine.busy() || phaseRef.current === 'landing') return;
     clearTimer();
-    // The orb and the globe are one object moving: tell the CSS how far, and how much bigger, the docked
-    // globe has to travel and grow (one layout read, on the tap that starts it).
-    const hub = hubRef.current;
-    const orb = orbRef.current;
-    if (hub && orb && phaseRef.current === 'closed') {
-      const rect = orb.getBoundingClientRect();
-      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-      const globe = Math.min(window.innerWidth * 0.86, window.innerHeight * 0.48, rem * 30);
-      if (rect.width > 0) {
-        hub.style.setProperty('--orb-open-scale', String(globe / rect.width));
-        hub.style.setProperty('--globe-from-scale', String(rect.width / globe));
-        hub.style.setProperty(
-          '--globe-from-dy',
-          `${rect.top + rect.height / 2 - window.innerHeight / 2}px`,
-        );
-      }
-    }
-    setInPlace(window.matchMedia(ORB_NAV_QUERY).matches);
+    // A tap before the docked globe has mounted mounts it now; it grows in from the orb (radial.css `@starting-style`).
+    if (inPlace) setDockReady(true);
     setPhase((p) => {
       // Opening is a single synchronous transition — no pre-centring step.
       if (p === 'closed') return 'open';
@@ -329,7 +327,7 @@ export function RadialHub() {
       timerRef.current = setTimeout(() => setPhase('closed'), MOTION_MS);
       return 'closing';
     });
-  }, [handOffMachine]);
+  }, [handOffMachine, inPlace]);
 
   // Backstop for the intent handlers: fetch the globe during the first idle
   // window after the shell settles. This is what keeps the lazy boundary honest
@@ -369,6 +367,11 @@ export function RadialHub() {
       if (isGlobeDocked()) return;
       // The globe eversion's warm-up is the root's now (`EversionRoot`).
       void preloadGlobe()?.then(() => {
+        // On a phone the globe itself is the orb: mount it for good instead of rehearsing.
+        if (inPlace) {
+          setDockReady(true);
+          return;
+        }
         if (rehearsed || phaseRef.current !== 'closed') return;
         rehearsed = true;
         setRehearsing(true);
@@ -380,7 +383,7 @@ export function RadialHub() {
       clearTimeout(timer);
       if (handle !== undefined) w.cancelIdleCallback?.(handle);
     };
-  }, []);
+  }, [inPlace]);
 
   // The rehearsal ends itself after a few frames, and is cut short by a real
   // open (the effect re-runs on `phase` and the real globe takes over).
@@ -393,6 +396,60 @@ export function RadialHub() {
     const timer = setTimeout(() => setRehearsing(false), REHEARSAL_MS);
     return () => clearTimeout(timer);
   }, [rehearsing, phase]);
+
+  /**
+   * Where the docked globe sits when it is closed: its sphere on the orb's footprint. The globe is laid out at its
+   * full size in the middle of the screen (so it is sharp when it opens) and CSS holds it at this pose with
+   * `translate` and `scale` (radial.css `.radial-hub__dock`). Measured from layout offsets, which transforms do not
+   * touch, so it is right whether the globe is docked, moving or open; re-measured on resize.
+   */
+  const measureDock = useCallback(() => {
+    const hub = hubRef.current;
+    const orb = orbRef.current;
+    const dock = dockRef.current;
+    const globe = globeRef.current;
+    const stage = globe?.querySelector<HTMLElement>('.radial-globe__stage');
+    if (!hub || !orb || !dock || !globe || !stage || stage.offsetWidth === 0) return;
+    const box = dock.getBoundingClientRect();
+    let x = 0;
+    let y = 0;
+    for (
+      let el: HTMLElement | null = stage;
+      el && el !== dock;
+      el = el.offsetParent as HTMLElement | null
+    ) {
+      x += el.offsetLeft;
+      y += el.offsetTop;
+    }
+    const half = stage.offsetWidth / 2;
+    const rect = orb.getBoundingClientRect();
+    if (rect.width === 0) return;
+    hub.style.setProperty('--dock-dx', `${rect.left + rect.width / 2 - (box.left + x + half)}px`);
+    hub.style.setProperty('--dock-dy', `${rect.top + rect.height / 2 - (box.top + y + half)}px`);
+    hub.style.setProperty('--dock-scale', String(rect.width / stage.offsetWidth));
+    hub.style.setProperty('--dock-ox', `${stage.offsetLeft + half}px`);
+    hub.style.setProperty('--dock-oy', `${stage.offsetTop + half}px`);
+  }, []);
+  useEffect(() => {
+    if (!inPlace || !dockReady) return;
+    const raf = requestAnimationFrame(measureDock);
+    const onResize = () => measureDock();
+    window.addEventListener('resize', onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [inPlace, dockReady, measureDock]);
+  // The globe is docked while the menu is closed and the orb has its footprint: measure again when it lands.
+  useEffect(() => {
+    if (inPlace && dockReady && phase === 'closed') measureDock();
+  }, [inPlace, dockReady, phase, measureDock]);
+  // The docked globe is not remounted by an open, so focus is handed to it here.
+  useEffect(() => {
+    if (!inPlace || phase !== 'open') return;
+    const raf = requestAnimationFrame(() => globeRef.current?.focus());
+    return () => cancelAnimationFrame(raf);
+  }, [inPlace, phase]);
 
   // Block background scroll + trap Tab while the menu is active. Escape is the
   // dialog's (Radix, below); the trap stays here because the dialog is
@@ -414,20 +471,27 @@ export function RadialHub() {
       if (e.key !== 'Tab' || phaseRef.current !== 'open') return;
       const overlay = overlayRef.current;
       if (!overlay) return;
-      const controls = Array.from(
-        overlay.querySelectorAll<HTMLElement>('a[href], button, [tabindex]'),
-      ).filter(
-        (el) =>
-          el.tabIndex >= 0 &&
-          !el.matches(':disabled') &&
-          el.getClientRects().length > 0 &&
-          getComputedStyle(el).visibility !== 'hidden',
-      );
+      // On a phone the globe (and its pins) is the docked element, outside the overlay, before it in the order.
+      const roots: HTMLElement[] = dockRef.current ? [dockRef.current, overlay] : [overlay];
+      const controls = roots
+        .flatMap((root) =>
+          Array.from(root.querySelectorAll<HTMLElement>('a[href], button, [tabindex]')),
+        )
+        .filter(
+          (el) =>
+            el.tabIndex >= 0 &&
+            !el.matches(':disabled') &&
+            el.getClientRects().length > 0 &&
+            getComputedStyle(el).visibility !== 'hidden',
+        );
       const first = controls[0];
       const last = controls.at(-1);
       if (!first || !last) return;
       const active = document.activeElement;
-      if (!overlay.contains(active) || (e.shiftKey ? active === first : active === last)) {
+      if (
+        !roots.some((r) => r.contains(active)) ||
+        (e.shiftKey ? active === first : active === last)
+      ) {
         e.preventDefault();
         (e.shiftKey ? last : first).focus({ preventScroll: true });
       }
@@ -609,7 +673,12 @@ export function RadialHub() {
   const tab = phase === 'open' || phase === 'closing' ? 0 : -1;
 
   return (
-    <div ref={hubRef} className="radial-hub" data-phase={phase}>
+    <div
+      ref={hubRef}
+      className="radial-hub"
+      data-phase={phase}
+      data-dock={(inPlace && dockReady) || undefined}
+    >
       <button
         ref={orbRef}
         type="button"
@@ -637,7 +706,7 @@ export function RadialHub() {
         onPointerDown={preloadGlobe}
         onFocus={preloadGlobe}
       >
-        <MiniGlobe className="radial-hub__logo" />
+        <RmhLogo className="radial-hub__logo" />
       </button>
 
       {/* Non-modal on purpose: a modal Radix dialog locks scroll with `overflow:
@@ -651,6 +720,26 @@ export function RadialHub() {
           mounted only while the menu is visible: a closed dialog left mounted
           would still be Radix's top layer and swallow every Escape on the page.
           The veil and the foot animate in from `@starting-style` (radial.css). */}
+      {/* PHONES: the one globe. Always mounted once the page is idle, laid out at full size in the middle of the screen
+          and held small on the orb's footprint (radial.css), so a touch only has to move and grow it. Outside the
+          dialog on purpose: it outlives each open. */}
+      {inPlace && dockReady && (
+        <div ref={dockRef} className="radial-hub__dock">
+          <Suspense fallback={null}>
+            <LiquidGlobe
+              rootRef={attachGlobe}
+              items={leaves}
+              pathname={pathname}
+              onDismiss={landOnOrb}
+              ambient
+              evertInPlace
+              tabIndex={tab}
+              surfaceRef={overlayRef}
+            />
+          </Suspense>
+        </div>
+      )}
+
       <DialogPrimitive.Root
         modal={false}
         open={phase === 'open'}
@@ -658,135 +747,134 @@ export function RadialHub() {
           if (!next) dismiss();
         }}
       >
-      {menuVisible && (
-      <DialogPrimitive.Content
-        asChild
-        forceMount
-        aria-describedby={undefined}
-        // Focus lands on the globe (`attachGlobe`) and goes back to the orb only
-        // after a dismissal (the `restoreFocus` effect), never on Radix's terms.
-        onOpenAutoFocus={(event) => event.preventDefault()}
-        onCloseAutoFocus={(event) => event.preventDefault()}
-        // While everting a key press is the effect's fast-forward (the controller
-        // listens in the capture phase); it must not also dismiss the hub.
-        onEscapeKeyDown={(event) => {
-          if (phaseRef.current === 'everting' || handOffMachine.busy()) event.preventDefault();
-        }}
-        // The overlay covers the viewport; its catcher is the outside tap.
-        onInteractOutside={(event) => event.preventDefault()}
-      >
-      <div
-        id="site-globe-navigation"
-        ref={overlayRef}
-        className="radial-hub__overlay"
-        aria-modal="true"
-      >
-        <DialogPrimitive.Title className="sr-only">
-          {t('globe-navigation-title', { defaultValue: 'Explore with the globe' })}
-        </DialogPrimitive.Title>
-        <button
-          type="button"
-          className="radial-hub__catcher"
-          onClick={dismiss}
-          aria-label={t('close', { defaultValue: 'Close' })}
-          tabIndex={tab}
-          // The one control on the overlay that is also a DRAG surface. It is a
-          // button so an outside tap dismisses, but it is also every empty pixel
-          // around the globe — the part of the screen a thumb can actually reach
-          // — so the globe's gesture claims it (LiquidGlobe's surface listener
-          // skips controls unless they carry this). A drag on it turns the globe
-          // and its dismiss is swallowed; a tap still closes the menu.
-          data-globe-surface=""
-        />
-
-        <div className="radial-hub__veil" aria-hidden />
-
-        {/* Mounted only while the menu is up, with the overlay — that is what
-            bounds the globe's frame loop, and it means a closed hub costs a
-            page nothing. `null` fallback: the orb, veil and foot are already
-            animating, so on the rare cold open the overlay simply completes its
-            morph and the globe lands into it. Anything else here would be a
-            second visual state competing with the one motion. */}
-        <Suspense fallback={null}>
-          <LiquidGlobe
-            rootRef={attachGlobe}
-            items={leaves}
-            pathname={pathname}
-            onDismiss={inPlace ? landOnOrb : dismissForNavigation}
-            evertInPlace={inPlace}
-            onNavigate={eversionOn && !inPlace ? handOff : undefined}
-            tabIndex={tab}
-            // The globe's gesture is not confined to the sphere: the whole
-            // overlay turns it, except where a real control lives.
-            surfaceRef={overlayRef}
-          />
-        </Suspense>
-
-        <div className="radial-hub__foot" data-fluid-press="">
-          {session && user ? (
-            <>
-              <Link
-                to={`/u/${user.handle || user.id}` as string}
-                className="radial-hub__identity"
-                data-fluid-press="none"
-                onClick={dismissForNavigation}
-                tabIndex={tab}
-              >
-                <UserAvatar
-                  src={resolved?.image || session.user.image}
-                  alt={resolved?.name || session.user.name || 'You'}
-                  size={30}
-                  fallbackName={resolved?.name || session.user.name}
-                />
-                <span>{resolved?.name || session.user.name}</span>
-              </Link>
-              <Link
-                to="/settings"
-                className="radial-hub__foot-btn"
-                data-fluid-press="none"
-                onClick={dismissForNavigation}
-                tabIndex={tab}
-                aria-label={t('settings', { defaultValue: 'Settings' })}
-              >
-                <Settings aria-hidden />
-              </Link>
+        {menuVisible && (
+          <DialogPrimitive.Content
+            asChild
+            forceMount
+            aria-describedby={undefined}
+            // Focus lands on the globe (`attachGlobe`) and goes back to the orb only
+            // after a dismissal (the `restoreFocus` effect), never on Radix's terms.
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            onCloseAutoFocus={(event) => event.preventDefault()}
+            // While everting a key press is the effect's fast-forward (the controller
+            // listens in the capture phase); it must not also dismiss the hub.
+            onEscapeKeyDown={(event) => {
+              if (phaseRef.current === 'everting' || handOffMachine.busy()) event.preventDefault();
+            }}
+            // The overlay covers the viewport; its catcher is the outside tap.
+            onInteractOutside={(event) => event.preventDefault()}
+          >
+            <div
+              id="site-globe-navigation"
+              ref={overlayRef}
+              className="radial-hub__overlay"
+              aria-modal="true"
+            >
+              <DialogPrimitive.Title className="sr-only">
+                {t('globe-navigation-title', { defaultValue: 'Explore with the globe' })}
+              </DialogPrimitive.Title>
               <button
                 type="button"
-                className="radial-hub__foot-btn"
-                data-fluid-press="none"
-                onClick={signOut}
+                className="radial-hub__catcher"
+                onClick={dismiss}
+                aria-label={t('close', { defaultValue: 'Close' })}
                 tabIndex={tab}
-                aria-label={t('sign-out', { defaultValue: 'Sign out' })}
-              >
-                <LogOut aria-hidden />
-              </button>
-            </>
-          ) : (
-            <Link
-              to="/login"
-              search={{ callbackURL: undefined }}
-              className="radial-hub__signin"
-              data-fluid-press="none"
-              onClick={dismissForNavigation}
-              tabIndex={tab}
-            >
-              {t('sign-in', { defaultValue: 'Sign in' })}
-            </Link>
-          )}
-          <button
-            type="button"
-            className="radial-hub__foot-btn radial-hub__close"
-            data-fluid-press="none"
-            onClick={dismiss}
-            tabIndex={tab}
-            aria-label={t('close', { defaultValue: 'Close' })}
-          >
-            <X aria-hidden />
-          </button>
-        </div>
-      </div>
-      </DialogPrimitive.Content>
-      )}
+                // The one control on the overlay that is also a DRAG surface. It is a
+                // button so an outside tap dismisses, but it is also every empty pixel
+                // around the globe — the part of the screen a thumb can actually reach
+                // — so the globe's gesture claims it (LiquidGlobe's surface listener
+                // skips controls unless they carry this). A drag on it turns the globe
+                // and its dismiss is swallowed; a tap still closes the menu.
+                data-globe-surface=""
+              />
+
+              <div className="radial-hub__veil" aria-hidden />
+
+              {/* Wider screens: the overlay's own globe, mounted only while the menu is up. That is what bounds its
+            frame loop, and it means a closed hub costs a page nothing. `null` fallback: the orb, veil and foot are
+            already animating, so on the rare cold open the overlay simply completes its morph and the globe lands
+            into it. */}
+              {!inPlace && (
+                <Suspense fallback={null}>
+                  <LiquidGlobe
+                    rootRef={attachGlobe}
+                    items={leaves}
+                    pathname={pathname}
+                    onDismiss={dismissForNavigation}
+                    onNavigate={eversionOn ? handOff : undefined}
+                    tabIndex={tab}
+                    // The globe's gesture is not confined to the sphere: the whole
+                    // overlay turns it, except where a real control lives.
+                    surfaceRef={overlayRef}
+                  />
+                </Suspense>
+              )}
+
+              <div className="radial-hub__foot" data-fluid-press="">
+                {session && user ? (
+                  <>
+                    <Link
+                      to={`/u/${user.handle || user.id}` as string}
+                      className="radial-hub__identity"
+                      data-fluid-press="none"
+                      onClick={dismissForNavigation}
+                      tabIndex={tab}
+                    >
+                      <UserAvatar
+                        src={resolved?.image || session.user.image}
+                        alt={resolved?.name || session.user.name || 'You'}
+                        size={30}
+                        fallbackName={resolved?.name || session.user.name}
+                      />
+                      <span>{resolved?.name || session.user.name}</span>
+                    </Link>
+                    <Link
+                      to="/settings"
+                      className="radial-hub__foot-btn"
+                      data-fluid-press="none"
+                      onClick={dismissForNavigation}
+                      tabIndex={tab}
+                      aria-label={t('settings', { defaultValue: 'Settings' })}
+                    >
+                      <Settings aria-hidden />
+                    </Link>
+                    <button
+                      type="button"
+                      className="radial-hub__foot-btn"
+                      data-fluid-press="none"
+                      onClick={signOut}
+                      tabIndex={tab}
+                      aria-label={t('sign-out', { defaultValue: 'Sign out' })}
+                    >
+                      <LogOut aria-hidden />
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    to="/login"
+                    search={{ callbackURL: undefined }}
+                    className="radial-hub__signin"
+                    data-fluid-press="none"
+                    onClick={dismissForNavigation}
+                    tabIndex={tab}
+                  >
+                    {t('sign-in', { defaultValue: 'Sign in' })}
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  className="radial-hub__foot-btn radial-hub__close"
+                  data-fluid-press="none"
+                  onClick={dismiss}
+                  tabIndex={tab}
+                  aria-label={t('close', { defaultValue: 'Close' })}
+                >
+                  <X aria-hidden />
+                </button>
+              </div>
+            </div>
+          </DialogPrimitive.Content>
+        )}
       </DialogPrimitive.Root>
 
       {/* The run's layers, in the shell's stacking context and under the globe, which is handed over on top of
