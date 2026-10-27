@@ -1180,9 +1180,14 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    exactly on top of the reticle. Escape, the foot's X and an outside tap are the
    ways out, and a dismissal hands focus back here. */
 .radial-hub[data-phase='open'] .radial-hub__orb {
-  transform: translate(-50%, calc(var(--orb-bottom) + 50% - 50dvh)) scale(2.6);
+  transform: translate(-50%, calc(var(--orb-bottom) + 50% - 50dvh)) scale(var(--orb-open-scale, 2.6));
   opacity: 0;
   pointer-events: none;
+  /* Fades late, once the globe it hands over to is up, so there is no dip while the two cross. */
+  transition:
+    transform 0.5s var(--ease-glass, var(--ease-smooth)),
+    scale 0.18s var(--ease-glass, var(--ease-smooth)),
+    opacity 0.3s ease 0.16s;
 }
 .radial-hub__orb:focus-visible {
   outline: 3px solid var(--site-text);
@@ -1231,8 +1236,13 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    over the canvas underneath it (see the `everting` block below). The overlay
    has to stay visible for that fade, and must stop taking input: from this
    frame on a press belongs to the effect's fast-forward, not to the globe. */
-.radial-hub[data-phase='everting'] .radial-hub__overlay {
+.radial-hub[data-phase='everting'] .radial-hub__overlay,
+.radial-hub[data-phase='landing'] .radial-hub__overlay {
   visibility: visible;
+  pointer-events: none;
+}
+/* LANDING: nothing on the overlay takes a pointer, so the page the visitor has already arrived at is usable. */
+.radial-hub[data-phase='landing'] .radial-hub__overlay * {
   pointer-events: none;
 }
 /* The first-open rehearsal (RadialHub `rehearsing`): the globe mounted once,
@@ -1476,7 +1486,8 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    field that animated forever, so this block once had to pause them while the
    menu was open. The backdrop is static now on every tier (see the note above
    `.radial-backdrop__field`), so there is nothing left to pause. */
-.radial-shell:has(.radial-hub:not([data-phase='closed'])) .radial-feed__compose {
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='closing'], [data-phase='everting']))
+  .radial-feed__compose {
   visibility: hidden;
 }
 .radial-backdrop,
@@ -1654,10 +1665,12 @@ html.ios-webkit .radial-hub__veil {
 .radial-hub[data-phase='closing'] .radial-globe {
   animation: globe-out 0.42s var(--ease-glass, var(--ease-smooth)) both;
 }
+/* The globe leaves from, and returns to, the docked orb's pose: the same place and size, so the orb and the
+   globe read as one object travelling and growing (RadialHub measures the three variables on the tap). */
 @keyframes globe-in {
   from {
     opacity: 0;
-    transform: scale(0.24);
+    transform: translateY(var(--globe-from-dy, 0px)) scale(var(--globe-from-scale, 0.24));
   }
   to {
     opacity: 1;
@@ -1671,7 +1684,7 @@ html.ios-webkit .radial-hub__veil {
   }
   to {
     opacity: 0;
-    transform: scale(0.24);
+    transform: translateY(var(--globe-from-dy, 0px)) scale(var(--globe-from-scale, 0.24));
   }
 }
 
@@ -2242,25 +2255,34 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
      sign-out and close, so it cannot sit under the home indicator. */
   bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1rem, 4vw, 2rem));
   z-index: 2;
-  /* Fades + rises in with the rest, and back out on close — one motion. */
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rad-1);
+  padding: 0.4rem 0.5rem;
+  border-radius: 999px;
+  max-width: calc(100vw - 2rem);
+  /* One jelly pill, the compose button's material: the same lit sphere shading, and the jelly soft body
+     (`data-fluid-press` on the parent in RadialHub). Everything inside is plain ink on it, with no body of its
+     own (`data-fluid-press="none"`), so there is one body, not five stacked. */
+  background: radial-gradient(
+    ellipse 90% 140% at 30% 20%,
+    color-mix(in srgb, var(--site-accent) 62%, var(--site-accent-fg)) 0%,
+    var(--site-accent) 52%,
+    color-mix(in srgb, var(--site-accent) 70%, var(--site-bg)) 100%
+  );
+  color: var(--site-accent-fg);
+  /* Grows out of its own centre, like the compose pill's arrow: the pill opens outward and the contents are
+     uncovered, not scaled. The clip's end is negative so the jelly's squash is never cropped. */
+  clip-path: inset(-1.25rem calc(50% - 1.6rem) -1.25rem round 999px);
   opacity: 0;
   transform: translateY(10px);
   transition:
-    opacity 0.4s ease,
-    transform 0.5s var(--ease-glass, var(--ease-smooth));
-  display: inline-flex;
-  align-items: center;
-  gap: var(--rad-2);
-  padding: 0.4rem 0.5rem;
-  border-radius: 999px;
-  /* A single floating capsule over the hub's expanding blur — L4 material. No backdrop-filter of its own (see
-     `app/liquid-glass.css`): the tint is dense enough to carry the label over whatever passes under it. */
-  background: color-mix(in srgb, var(--site-bg) 84%, transparent);
-  border: var(--site-border-width, 1px) solid var(--site-border);
-  box-shadow: var(--site-shadow);
-  max-width: calc(100vw - 2rem);
+    clip-path 0.5s var(--ease-smooth),
+    opacity 0.3s var(--ease-smooth),
+    transform 0.5s var(--ease-smooth);
 }
 .radial-hub[data-phase='open'] .radial-hub__foot {
+  clip-path: inset(-1.25rem -1.25rem -1.25rem -1.25rem round 999px);
   opacity: 1;
   transform: none;
 }
@@ -2275,8 +2297,46 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
     opacity: 0;
   }
   .radial-hub[data-phase='open'] .radial-hub__foot {
+    clip-path: inset(-1.25rem calc(50% - 1.6rem) -1.25rem round 999px);
     opacity: 0;
     transform: translateY(10px);
+  }
+}
+
+/* ── LANDING — phones: the page has already changed, and the globe comes home ─────────────────────
+   A destination chosen on the globe is navigated to at once (RadialHub `landOnOrb`). The globe stays up for the
+   length of its own self-eversion (`--land-ms`, `SELF_EVERT_MS`), turning itself inside out in place, and over the
+   same time travels down and shrinks onto the docked orb's pose (the same variables the open used, run backwards),
+   so the run finishes on the mini globe. The veil, the foot and the page blur are already in their closed state
+   (they are only held open by `open`), so they let go on their own. The globe leaves in the last fifth as the orb,
+   at the same pose, comes in. */
+.radial-hub[data-phase='landing'] .radial-globe {
+  animation: globe-land var(--land-ms, 1500ms) var(--ease-smooth) both;
+}
+@keyframes globe-land {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(var(--globe-from-dy, 0px)) scale(var(--globe-from-scale, 0.24));
+  }
+}
+.radial-hub[data-phase='landing'] .radial-hub__orb {
+  pointer-events: none;
+  animation: orb-land-in var(--land-ms, 1500ms) var(--ease-smooth) both;
+}
+@keyframes orb-land-in {
+  0%,
+  70% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }
 
@@ -2373,7 +2433,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   gap: 0.5rem;
   padding: 0.25rem 0.6rem 0.25rem 0.3rem;
   border-radius: 999px;
-  color: var(--site-text);
+  color: inherit;
   text-decoration: none;
   font-size: 0.82rem;
   font-weight: 600;
@@ -2399,8 +2459,10 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.radial-hub__identity:hover {
-  background: var(--site-surface-hover);
+.radial-hub__identity:hover,
+.radial-hub__foot-btn:hover {
+  /* A soft glow behind the ink, as on the dropdown rows: no fill, edge or transform of its own. */
+  background: color-mix(in srgb, var(--site-accent-fg) 16%, transparent);
 }
 .radial-hub__foot-btn {
   display: inline-grid;
@@ -2412,32 +2474,25 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   border-radius: 999px;
   border: none;
   background: transparent;
-  color: var(--site-text);
+  color: inherit;
   cursor: pointer;
-  transition:
-    background-color 0.18s ease,
-    transform 0.18s ease;
-}
-.radial-hub__foot-btn:hover {
-  background: var(--site-surface-hover);
-  transform: translateY(-1px);
+  transition: background-color 0.18s var(--ease-smooth);
 }
 .radial-hub__foot-btn svg {
   width: 1.15rem;
   height: 1.15rem;
 }
-.radial-hub__close {
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
-}
 .radial-hub__signin {
   padding: 0.5rem 1rem;
   border-radius: 999px;
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
+  color: inherit;
   font-weight: 700;
   font-size: 0.82rem;
   text-decoration: none;
+  transition: background-color 0.18s var(--ease-smooth);
+}
+.radial-hub__signin:hover {
+  background: color-mix(in srgb, var(--site-accent-fg) 16%, transparent);
 }
 
 /* ── The feed ─────────────────────────────────────────────────────────── */

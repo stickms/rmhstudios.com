@@ -37,6 +37,7 @@ import {
 import { inShell } from './eversion/eversion-nav';
 import { createHandOff, type HandOffHow } from './hub-handoff';
 import { whenQuiet } from './quiet';
+import { SELF_EVERT_MS } from './self-evert-timing';
 import { MiniGlobe } from './MiniGlobe';
 import { isGlobeDocked, useGlobeDestinations } from './globe-dock';
 
@@ -91,12 +92,19 @@ const noop = () => {};
  * let go of the screen: the veil, globe and foot fade out over the effect's
  * canvas (radial.css) and the orb stays hidden until the run is over.
  */
-type Phase = 'closed' | 'open' | 'closing' | 'everting';
+type Phase = 'closed' | 'open' | 'closing' | 'everting' | 'landing';
 
 // One synchronous motion: the orb, the veil, the globe and the foot all animate
 // together over this long. It also gates how long the overlay stays mounted while
 // closing so the whole thing animates OUT before it hides.
 const MOTION_MS = 500;
+
+/**
+ * Below this width the orb is the navigator and a chosen destination is navigated to at once while the globe
+ * turns itself inside out in place and comes home onto the orb (`landing`); wider, the docked globe or the
+ * full-screen Globe Eversion do it (radial.css, `isGlobeDocked`).
+ */
+const ORB_NAV_QUERY = '(max-width: 1119.98px)';
 
 /**
  * The RMH navigator. Tapping the fixed RMH orb sends it to the middle of the
@@ -168,7 +176,11 @@ export function RadialHub() {
   const landFocus = useRef(false);
   // `everting` keeps the globe mounted: it is fading out OVER the effect's
   // canvas, and unmounting it would cut that fade to a pop.
-  const menuVisible = phase === 'open' || phase === 'closing' || phase === 'everting';
+  // `landing` keeps the globe mounted too: the page has already changed under it and it is still coming home.
+  const menuVisible =
+    phase === 'open' || phase === 'closing' || phase === 'everting' || phase === 'landing';
+  /** The globe turns itself inside out in place and lands on the orb (set when the menu opens; see ORB_NAV_QUERY). */
+  const [inPlace, setInPlace] = useState(false);
   /**
    * Globe Eversion (flag-gated). `eversionOn` is resolved after mount because the flag reads `location`, which the
    * server render does not have - it is what decides whether LiquidGlobe is handed `onNavigate` at all, so with the
@@ -274,9 +286,53 @@ export function RadialHub() {
   const dismissForNavigation = useCallback(() => close(false), [close]);
   const dismiss = useCallback(() => close(true), [close]);
 
-  const toggle = useCallback(() => {
-    if (handOffMachine.busy()) return;
+  /**
+   * A destination was chosen on the globe (phones): the globe stays up, turns itself inside out, and comes down
+   * onto the orb over exactly the length of that turn, while the page changes at once under it (the globe asks for
+   * the navigation right after this). The hub is a shell layer, so it outlives a `_site` page change and the run
+   * finishes on the orb.
+   */
+  const landOnOrb = useCallback(() => {
+    if (phaseRef.current !== 'open') return;
     clearTimer();
+    restoreFocus.current = false;
+    landFocus.current = true;
+    if (reduced) {
+      // No eversion plays under reduced motion, so there is nothing to wait for.
+      phaseRef.current = 'closing';
+      setPhase('closing');
+      timerRef.current = setTimeout(() => setPhase('closed'), 0);
+      return;
+    }
+    // Synchronously: the navigation is asked for straight after, and the site's interceptor asks the hub
+    // whether it is still open before deciding to run the full-screen effect.
+    phaseRef.current = 'landing';
+    hubRef.current?.style.setProperty('--land-ms', `${SELF_EVERT_MS}ms`);
+    setPhase('landing');
+    timerRef.current = setTimeout(() => setPhase('closed'), SELF_EVERT_MS + 60);
+  }, [reduced]);
+
+  const toggle = useCallback(() => {
+    if (handOffMachine.busy() || phaseRef.current === 'landing') return;
+    clearTimer();
+    // The orb and the globe are one object moving: tell the CSS how far, and how much bigger, the docked
+    // globe has to travel and grow (one layout read, on the tap that starts it).
+    const hub = hubRef.current;
+    const orb = orbRef.current;
+    if (hub && orb && phaseRef.current === 'closed') {
+      const rect = orb.getBoundingClientRect();
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const globe = Math.min(window.innerWidth * 0.86, window.innerHeight * 0.48, rem * 30);
+      if (rect.width > 0) {
+        hub.style.setProperty('--orb-open-scale', String(globe / rect.width));
+        hub.style.setProperty('--globe-from-scale', String(rect.width / globe));
+        hub.style.setProperty(
+          '--globe-from-dy',
+          `${rect.top + rect.height / 2 - window.innerHeight / 2}px`,
+        );
+      }
+    }
+    setInPlace(window.matchMedia(ORB_NAV_QUERY).matches);
     setPhase((p) => {
       // Opening is a single synchronous transition — no pre-centring step.
       if (p === 'closed') return 'open';
@@ -363,7 +419,8 @@ export function RadialHub() {
   // Touch panning is blocked by `touch-action: none` on the overlay (radial.css);
   // wheel is blocked here, since touch-action doesn't cover pointer devices.
   useEffect(() => {
-    if (phase === 'closed') return;
+    // `landing` hands the page back at once: it is already the destination and must be usable.
+    if (phase === 'closed' || phase === 'landing') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Tab' || phaseRef.current !== 'open') return;
       const overlay = overlayRef.current;
@@ -666,8 +723,9 @@ export function RadialHub() {
             rootRef={attachGlobe}
             items={leaves}
             pathname={pathname}
-            onDismiss={dismissForNavigation}
-            onNavigate={eversionOn ? handOff : undefined}
+            onDismiss={inPlace ? landOnOrb : dismissForNavigation}
+            evertInPlace={inPlace}
+            onNavigate={eversionOn && !inPlace ? handOff : undefined}
             tabIndex={tab}
             // The globe's gesture is not confined to the sphere: the whole
             // overlay turns it, except where a real control lives.
@@ -675,13 +733,13 @@ export function RadialHub() {
           />
         </Suspense>
 
-        <div className="radial-hub__foot">
+        <div className="radial-hub__foot" data-fluid-press="">
           {session && user ? (
             <>
               <Link
                 to={`/u/${user.handle || user.id}` as string}
                 className="radial-hub__identity"
-                data-fluid-press="firm"
+                data-fluid-press="none"
                 onClick={dismissForNavigation}
                 tabIndex={tab}
               >
@@ -696,7 +754,7 @@ export function RadialHub() {
               <Link
                 to="/settings"
                 className="radial-hub__foot-btn"
-                data-fluid-press=""
+                data-fluid-press="none"
                 onClick={dismissForNavigation}
                 tabIndex={tab}
                 aria-label={t('settings', { defaultValue: 'Settings' })}
@@ -706,7 +764,7 @@ export function RadialHub() {
               <button
                 type="button"
                 className="radial-hub__foot-btn"
-                data-fluid-press=""
+                data-fluid-press="none"
                 onClick={signOut}
                 tabIndex={tab}
                 aria-label={t('sign-out', { defaultValue: 'Sign out' })}
@@ -719,6 +777,7 @@ export function RadialHub() {
               to="/login"
               search={{ callbackURL: undefined }}
               className="radial-hub__signin"
+              data-fluid-press="none"
               onClick={dismissForNavigation}
               tabIndex={tab}
             >
@@ -728,7 +787,7 @@ export function RadialHub() {
           <button
             type="button"
             className="radial-hub__foot-btn radial-hub__close"
-            data-fluid-press=""
+            data-fluid-press="none"
             onClick={dismiss}
             tabIndex={tab}
             aria-label={t('close', { defaultValue: 'Close' })}
