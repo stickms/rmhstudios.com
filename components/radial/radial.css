@@ -1236,8 +1236,13 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    over the canvas underneath it (see the `everting` block below). The overlay
    has to stay visible for that fade, and must stop taking input: from this
    frame on a press belongs to the effect's fast-forward, not to the globe. */
-.radial-hub[data-phase='everting'] .radial-hub__overlay {
+.radial-hub[data-phase='everting'] .radial-hub__overlay,
+.radial-hub[data-phase='landing'] .radial-hub__overlay {
   visibility: visible;
+  pointer-events: none;
+}
+/* LANDING: nothing on the overlay takes a pointer, so the page the visitor has already arrived at is usable. */
+.radial-hub[data-phase='landing'] .radial-hub__overlay * {
   pointer-events: none;
 }
 /* The first-open rehearsal (RadialHub `rehearsing`): the globe mounted once,
@@ -1481,7 +1486,8 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    field that animated forever, so this block once had to pause them while the
    menu was open. The backdrop is static now on every tier (see the note above
    `.radial-backdrop__field`), so there is nothing left to pause. */
-.radial-shell:has(.radial-hub:not([data-phase='closed'])) .radial-feed__compose {
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='closing'], [data-phase='everting']))
+  .radial-feed__compose {
   visibility: hidden;
 }
 .radial-backdrop,
@@ -2294,6 +2300,43 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
     clip-path: inset(-1.25rem calc(50% - 1.6rem) -1.25rem round 999px);
     opacity: 0;
     transform: translateY(10px);
+  }
+}
+
+/* ── LANDING — phones: the page has already changed, and the globe comes home ─────────────────────
+   A destination chosen on the globe is navigated to at once (RadialHub `landOnOrb`). The globe stays up for the
+   length of its own self-eversion (`--land-ms`, `SELF_EVERT_MS`), turning itself inside out in place, and over the
+   same time travels down and shrinks onto the docked orb's pose (the same variables the open used, run backwards),
+   so the run finishes on the mini globe. The veil, the foot and the page blur are already in their closed state
+   (they are only held open by `open`), so they let go on their own. The globe leaves in the last fifth as the orb,
+   at the same pose, comes in. */
+.radial-hub[data-phase='landing'] .radial-globe {
+  animation: globe-land var(--land-ms, 1500ms) var(--ease-smooth) both;
+}
+@keyframes globe-land {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(var(--globe-from-dy, 0px)) scale(var(--globe-from-scale, 0.24));
+  }
+}
+.radial-hub[data-phase='landing'] .radial-hub__orb {
+  pointer-events: none;
+  animation: orb-land-in var(--land-ms, 1500ms) var(--ease-smooth) both;
+}
+@keyframes orb-land-in {
+  0%,
+  70% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }
 
