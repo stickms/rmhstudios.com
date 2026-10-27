@@ -203,8 +203,14 @@ describe('styles and war paint fields', () => {
     ]);
     expect(cat.items.find((i) => i.id === 12)?.wk).toBe('smg');
     expect(cat.items.find((i) => i.id === 13)?.wk).toBeUndefined();
-    // the war-painted skins themselves are not loadout items
-    expect(cat.items.some((i) => i.id === 15001)).toBe(false);
+    // a skin with its own id is its base weapon with a fixed kit, named for both; one whose kit has no name is dropped
+    expect(cat.items.find((i) => i.id === 15001)).toMatchObject({
+      n: 'Woodsy Widowmaker Gun',
+      q: 'decorated',
+      wk: 'smg',
+      sk: { kit: 5, base: 12 },
+    });
+    expect(cat.items.some((i) => i.id === 15002)).toBe(false);
   });
 
   it('has no war paints when the names are unavailable', () => {
@@ -233,6 +239,13 @@ describe('styles and war paint fields', () => {
     ).toThrow();
   });
 
+  it("lets a decorated weapon's wear and seed be set, but not its kit", () => {
+    expect(() =>
+      validateSlots(kitCat, 'scout', { primary: { item: 15001, wear: 4, seed: 7 } }),
+    ).not.toThrow();
+    expect(() => validateSlots(kitCat, 'scout', { primary: { item: 15001, kit: 5 } })).toThrow();
+  });
+
   it('allows a war paint on a weapon with a known kit, and nowhere else', () => {
     expect(() =>
       validateSlots(kitCat, 'scout', { primary: { item: 12, kit: 5, wear: 3, seed: 1234 } }),
@@ -241,5 +254,48 @@ describe('styles and war paint fields', () => {
     // a kit only exists for the weapons it was made for
     expect(() => validateSlots(kitCat, 'scout', { primary: { item: 13, kit: 5 } })).toThrow();
     expect(() => validateSlots(kitCat, 'scout', { cosmetic1: { item: 10, kit: 5 } })).toThrow();
+  });
+});
+
+describe('tiers, Halloween restriction and festivizing', () => {
+  const items = `
+"items_game"
+{
+  "prefabs" { "hat" { "item_class" "tf_wearable" "item_slot" "head" "item_type_name" "#T_Hat" } "gun" { "item_class" "tf_weapon" "item_slot" "primary" "item_type_name" "#T_Gun" } }
+  "items"
+  {
+    "20" { "name" "Tiered Hat" "prefab" "hat" "item_name" "#T_Hat" "used_by_classes" { "scout" "1" } }
+    "21" { "name" "Spooky Hat" "prefab" "hat" "item_name" "#T_Hat" "holiday_restriction" "halloween_or_fullmoon" "used_by_classes" { "scout" "1" } }
+    "22" { "name" "Christmas Hat" "prefab" "hat" "item_name" "#T_Hat" "holiday_restriction" "christmas" "used_by_classes" { "scout" "1" } }
+    "23" { "name" "Festive Gun" "prefab" "gun" "item_name" "#T_Gun" "tags" { "can_be_festivized" "1" } "used_by_classes" { "scout" "1" } }
+  }
+  "item_collections"
+  {
+    "Ref" { "is_reference_collection" "1" "items" { "Some Dummy" "10" } }
+    "Set" { "items" { "legendary" { "Tiered Hat" "10" } "Mythical" { "Festive Gun" "10" } "unknown" { "Spooky Hat" "10" } } }
+  }
+}`;
+  const english = `"lang" { "Tokens" { "T_Hat" "Hat" "T_Gun" "Gun" } }`;
+  const cat = buildCatalog({ itemsGame: items, english, label: 't', now: new Date(0) });
+  const get = (id: number) => cat.items.find((i) => i.id === id)!;
+
+  it("reads an item's tier from the collection that lists it", () => {
+    expect(get(20).rt).toBe('legendary');
+    expect(get(23).rt).toBe('mythical');
+    expect(get(21).rt).toBeUndefined();
+  });
+
+  it('marks items restricted to Halloween, and no other holiday', () => {
+    expect(get(21).hr).toBe(1);
+    expect(get(22).hr).toBeUndefined();
+    expect(get(20).hr).toBeUndefined();
+  });
+
+  it('marks festivizable weapons and only allows festivizing those', () => {
+    expect(get(23).fz).toBe(1);
+    expect(() =>
+      validateSlots(cat, 'scout', { primary: { item: 23, festive: true } }),
+    ).not.toThrow();
+    expect(() => validateSlots(cat, 'scout', { cosmetic1: { item: 20, festive: true } })).toThrow();
   });
 });

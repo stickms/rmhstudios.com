@@ -24,6 +24,7 @@ import {
   type CatalogItem,
   type LoadoutEntry,
   type TfClass,
+  modelItemId,
 } from '@/lib/tf2-loadout/catalog-types';
 import {
   compactPlacement,
@@ -59,6 +60,8 @@ export default function ItemCustomizeModal({
   const slot = slotFor(item, cls);
   const canEffect = slot === 'head' || slot === 'misc' || slot === 'taunt';
   const canWarPaint = slot === 'primary' || slot === 'secondary' || slot === 'melee';
+  // A decorated weapon has its pattern built in: the player sets its wear and seed, not the kit.
+  const decorated = !!item.sk;
   const kind = slot === 'head' ? 'head' : slot === 'taunt' ? 'taunt' : 'misc';
 
   const paintOptions = useMemo(
@@ -106,7 +109,7 @@ export default function ItemCustomizeModal({
       <div className="grid gap-4 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
         <div className="flex flex-col gap-2 md:sticky md:top-0 md:self-start">
           <ItemModelViewer
-            itemId={item.id}
+            itemId={modelItemId(item)}
             cls={cls}
             style={entry.style}
             paint={warPaintOf(idx, entry)}
@@ -220,7 +223,14 @@ export default function ItemCustomizeModal({
               <legend className="px-1 text-xs font-semibold text-(--app-text-muted)">
                 {t('war-paint', { defaultValue: 'War paint' })}
               </legend>
-              {kitOptions.length ? (
+              {decorated ? (
+                <p className="text-xs text-(--app-text-muted)">
+                  {t('decorated-pattern', {
+                    defaultValue: 'This weapon is a {{pattern}} skin; its pattern is fixed.',
+                    pattern: idx.kit(item.sk!.kit)?.n ?? '',
+                  })}
+                </p>
+              ) : kitOptions.length ? (
                 <Field label={t('war-paint-pattern', { defaultValue: 'Pattern' })}>
                   <SearchSelect
                     value={entry.kit}
@@ -244,7 +254,7 @@ export default function ItemCustomizeModal({
                   })}
                 </p>
               )}
-              {entry.kit !== undefined ? (
+              {entry.kit !== undefined || decorated ? (
                 <>
                   <Field label={t('wear', { defaultValue: 'Wear' })}>
                     <SelectField
@@ -288,7 +298,20 @@ export default function ItemCustomizeModal({
             </fieldset>
           ) : null}
 
-          {!item.p && !item.st && !canEffect && !canWarPaint ? (
+          {item.fz ? (
+            <Field label={t('festivized', { defaultValue: 'Festivized' })}>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={!!entry.festive}
+                  onChange={(e) => onPatch({ festive: e.target.checked || undefined })}
+                />
+                {t('festivize-weapon', { defaultValue: 'Festivize this weapon' })}
+              </label>
+            </Field>
+          ) : null}
+
+          {!item.p && !item.st && !canEffect && !canWarPaint && !item.fz ? (
             <p className="text-sm text-(--app-text-dim)">
               {t('nothing-to-customize', { defaultValue: 'This item has nothing to customize.' })}
             </p>
