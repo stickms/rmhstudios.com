@@ -1,0 +1,121 @@
+/* JellyGroup — placement, member shape and the flat glow. The parent's surface (rim, haze, press) comes from its
+   `.glass-*` role; nothing here draws an edge. The glow is the dropdown-row recipe (globals.css §7.3): a feathered
+   accent wash on the `data-evert` layer, an opacity transition, no shadow, no filter, no keyframes. */
+
+[data-slot='jelly-group'] {
+  --jelly-group-inset: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: var(--jelly-group-inset);
+  border-radius: var(--site-control-radius);
+}
+[data-slot='jelly-group'][data-orientation='vertical'] {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+[data-slot='jelly-group-item'] {
+  --glow-strength: var(--row-glow-strength, 20%);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--site-text-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  border-radius: max(0px, calc(var(--site-control-radius) - var(--jelly-group-inset)));
+  transition: color var(--site-transition-speed) var(--ease-smooth);
+}
+[data-slot='jelly-group'][data-size='sm'] [data-slot='jelly-group-item'] {
+  min-height: 2.25rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+@media (pointer: coarse) {
+  [data-slot='jelly-group-item'] {
+    min-height: var(--site-touch-target);
+    min-width: var(--site-touch-target);
+  }
+}
+[data-slot='jelly-group-item']:hover,
+[data-slot='jelly-group-item'][data-selected] {
+  color: var(--site-text);
+}
+[data-slot='jelly-group-item']:disabled,
+[data-slot='jelly-group-item'][aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+[data-slot='jelly-group-item'] svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* The feathered glow: fades to nothing at the member's own edge, so it never draws a rectangle on the parent. */
+[data-slot='jelly-group-item'][data-evert]::before {
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse closest-side at 50% 50%,
+    color-mix(in srgb, var(--site-accent) var(--glow-strength), transparent),
+    transparent
+  );
+}
+[data-slot='jelly-group-item']:hover:not(:disabled)::before {
+  opacity: 0.7;
+}
+[data-slot='jelly-group-item'][data-selected] {
+  --glow-strength: calc(var(--row-glow-strength, 20%) * 1.6);
+}
+[data-slot='jelly-group-item'][data-selected]::before {
+  opacity: 1;
+}
+
+[data-slot='jelly-group-divider'] {
+  align-self: center;
+  width: 1px;
+  height: 1rem;
+  margin-inline: 0.125rem;
+  background: color-mix(in srgb, var(--site-text) 14%, transparent);
+}
+[data-slot='jelly-group'][data-orientation='vertical'] [data-slot='jelly-group-divider'] {
+  width: 1rem;
+  height: 1px;
+  margin-inline: 0;
+  margin-block: 0.125rem;
+}
+
+/* High contrast and forced colours have no material: the selected member is the filled accent, as LiquidTabs'
+   thumb is there. */
+.style-high-contrast [data-slot='jelly-group-item'][data-selected] {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+.style-high-contrast [data-slot='jelly-group-item'][data-selected]::before {
+  opacity: 0;
+}
+@media (forced-colors: active) {
+  [data-slot='jelly-group-item'][data-selected],
+  [data-slot='jelly-group-item'][aria-current='page'] {
+    background: Highlight;
+    color: HighlightText;
+  }
+}
+
+/* A link member selects through its own aria-current. */
+[data-slot='jelly-group-item'][aria-current='page'] {
+  --glow-strength: calc(var(--row-glow-strength, 20%) * 1.6);
+  color: var(--site-text);
+}
+[data-slot='jelly-group-item'][aria-current='page']::before {
+  opacity: 1;
+}

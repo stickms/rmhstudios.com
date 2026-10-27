@@ -41,7 +41,7 @@
 
 **Interfaces:**
 - Produces: `JellyGroup` (parent) and `JellyGroup.Item`, `JellyGroup.Divider`.
-  - `JellyGroup(props: { role?: 'chrome' | 'pane' | 'fill'; size?: 'sm' | 'default'; orientation?: 'horizontal' | 'vertical'; className?: string; children: React.ReactNode } & React.HTMLAttributes<HTMLDivElement>)`, renders `<div data-slot="jelly-group" data-size data-orientation className="glass-<role> ...">`; default role `fill`.
+  - `JellyGroup(props: { surface?: 'chrome' | 'pane' | 'fill'; size?: 'sm' | 'default'; orientation?: 'horizontal' | 'vertical'; className?: string; children: React.ReactNode } & React.HTMLAttributes<HTMLDivElement>)`, renders `<div data-slot="jelly-group" data-size data-orientation className="glass-<role> ...">`; default `surface="fill"` (renamed from `role`: it collides with the HTML attribute and trips jsx-a11y/aria-role).
   - `JellyGroup.Item(props: { selected?: boolean; asChild?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>)`, renders `<button type="button" data-slot="jelly-group-item" data-jelly="off" data-evert="" data-selected={selected || undefined} aria-pressed={selected}>`; with `asChild` uses Radix `Slot` and forwards the same attributes. `aria-pressed` is omitted when `asChild` (the child supplies `aria-current`/`aria-selected`).
   - `JellyGroup.Divider()`: `<span data-slot="jelly-group-divider" aria-hidden />`.
   - CSS contract: item radius `max(0px, calc(var(--site-control-radius) - var(--jelly-group-inset, 0.25rem)))`; hover/focus/selected paint the feathered glow on `::before` (`data-evert` layer), selected strength `calc(var(--row-glow-strength, 20%) * 1.6)`; `.style-high-contrast` and `@media (forced-colors: active)` selected = filled accent with `--site-accent-fg` / `HighlightText`.

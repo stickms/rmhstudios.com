@@ -98,6 +98,10 @@ const JELLY_OFF_ALLOW = new Map<string, string>([
     'the /jelly material lab DEMONSTRATES the opt-out: one specimen is deliberately rendered with the material off, beside the live ones',
   ],
   [
+    'components/ui/jelly-group.tsx',
+    'a JellyGroup MEMBER is flat inside its parent, which is the one jelly body: it must not be a rim slab or a soft body of its own (two edges on one line); only its hover/selected glow (data-evert) wakes. Call sites use JellyGroup.Item rather than writing the attribute themselves',
+  ],
+  [
     'components/ui/select.tsx',
     'a dropdown ROW is text inside one rounded panel, not a surface: it must not be a rim slab or a soft body (it would draw its own bevel and squash inside the panel); only its hover glow (data-evert) wakes',
   ],
