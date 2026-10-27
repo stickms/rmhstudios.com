@@ -180,14 +180,40 @@ describe('styles and war paint fields', () => {
       "visuals" { "styles" { "0" { "name" "#S_A" } "1" { "name" "#S_B" "skin" "1" } "2" { "name" "Hidden" "selectable" "0" } } } }
     "11" { "name" "One Style Hat" "prefab" "hat" "item_name" "#T_One" "used_by_classes" { "scout" "1" }
       "visuals" { "styles" { "0" { "name" "#S_A" } } } }
-    "12" { "name" "Gun" "prefab" "gun" "item_name" "#T_Gun" "used_by_classes" { "scout" "1" } }
+    "12" { "name" "Gun" "prefab" "gun weapon_smg" "item_name" "#T_Gun" "used_by_classes" { "scout" "1" } }
+    "13" { "name" "Other Gun" "prefab" "gun weapon_flamethrower" "item_name" "#T_Gun" "used_by_classes" { "scout" "1" } }
+    "15001" { "name" "concealedkiller_smg_woodsywidowmaker" "prefab" "paintkit_weapon_smg" "static_attrs" { "paintkit_proto_def_index" "5" } }
+    "15002" { "name" "concealedkiller_pistol_unnamed" "prefab" "paintkit_weapon_pistol" "static_attrs" { "paintkit_proto_def_index" "6" } }
   }
 }`;
   const english = `"lang" { "Tokens" { "T_Hat" "Hat" "T_Gun" "Gun" "T_Styled" "Styled Hat" "T_One" "One Style Hat" "S_A" "Plain" "S_B" "Fancy" } }`;
-  const cat = buildCatalog({ itemsGame: items, english, label: 't', now: new Date(0) });
-  const kitCat = { ...cat, kits: [{ id: 5, n: 'Woodsy' }] };
+  const protoEnglish = `"lang" { "Tokens" { "9_5_field { field_number: 2 }" "Woodsy Widowmaker" "9_5_field { field_number: 3 }" "Not the name" } }`;
+  const cat = buildCatalog({
+    itemsGame: items,
+    english,
+    protoEnglish,
+    label: 't',
+    now: new Date(0),
+  });
+  const kitCat = cat;
 
-  it('lists the styles a player can choose, by the game\'s key, and only when there are two or more', () => {
+  it('lists a named war paint with the script each weapon uses, and the weapons that can take it', () => {
+    expect(cat.kits).toEqual([
+      { id: 5, n: 'Woodsy Widowmaker', w: { smg: 'concealedkiller_smg_woodsywidowmaker' } },
+    ]);
+    expect(cat.items.find((i) => i.id === 12)?.wk).toBe('smg');
+    expect(cat.items.find((i) => i.id === 13)?.wk).toBeUndefined();
+    // the war-painted skins themselves are not loadout items
+    expect(cat.items.some((i) => i.id === 15001)).toBe(false);
+  });
+
+  it('has no war paints when the names are unavailable', () => {
+    expect(
+      buildCatalog({ itemsGame: items, english, label: 't', now: new Date(0) }).kits,
+    ).toBeUndefined();
+  });
+
+  it("lists the styles a player can choose, by the game's key, and only when there are two or more", () => {
     expect(cat.items.find((i) => i.id === 10)?.st).toEqual([
       { k: 0, n: 'Plain' },
       { k: 1, n: 'Fancy' },
@@ -202,7 +228,9 @@ describe('styles and war paint fields', () => {
   });
 
   it('only allows an effect placement alongside an effect', () => {
-    expect(() => validateSlots(cat, 'scout', { cosmetic1: { item: 10, fx: { y: 0.2 } } })).toThrow();
+    expect(() =>
+      validateSlots(cat, 'scout', { cosmetic1: { item: 10, fx: { y: 0.2 } } }),
+    ).toThrow();
   });
 
   it('allows a war paint on a weapon with a known kit, and nowhere else', () => {
@@ -210,6 +238,8 @@ describe('styles and war paint fields', () => {
       validateSlots(kitCat, 'scout', { primary: { item: 12, kit: 5, wear: 3, seed: 1234 } }),
     ).not.toThrow();
     expect(() => validateSlots(kitCat, 'scout', { primary: { item: 12, kit: 99 } })).toThrow();
+    // a kit only exists for the weapons it was made for
+    expect(() => validateSlots(kitCat, 'scout', { primary: { item: 13, kit: 5 } })).toThrow();
     expect(() => validateSlots(kitCat, 'scout', { cosmetic1: { item: 10, kit: 5 } })).toThrow();
   });
 });

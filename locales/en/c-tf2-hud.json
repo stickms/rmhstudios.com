@@ -560,7 +560,7 @@
   "visibility-hint": "Unlisted loadouts are reachable by link but not listed in the workshop.",
   "war-paint": "War paint",
   "war-paint-pattern": "Pattern",
-  "war-paint-preview-note": "The 3D preview does not draw war paint patterns yet; the choice is saved with the loadout.",
+  "war-paint-preview-approx": "The preview paints the weapon with the game's own pattern for this war paint. The pattern's random parts come from the seed here, so the same seed can differ from the game in detail.",
   "war-paint-unavailable": "War paints appear here once the game files have been synced.",
   "warn-class": "{{item}} cannot be used by this class.",
   "warn-duplicate": "{{item}} is equipped more than once.",

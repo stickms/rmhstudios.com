@@ -26,7 +26,8 @@ import {
 } from 'three';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import EffectParticles, { type EffectSpec } from './EffectParticles';
-import { applyTint, cloneWithMaterials } from './model-utils';
+import { applyPaintTexture, applyTint, cloneWithMaterials, type WarPaint } from './model-utils';
+import { useWarPaintTexture } from './use-war-paint';
 
 export interface PlayerPart {
   key: string;
@@ -35,6 +36,8 @@ export interface PlayerPart {
   tint?: string;
   /** An unusual effect around this cosmetic. */
   effect?: EffectSpec;
+  /** A war paint on this weapon. */
+  paint?: WarPaint;
 }
 
 interface BodyState {
@@ -137,11 +140,13 @@ function Part({
   url,
   tint,
   effect,
+  paint,
   body,
 }: {
   url: string;
   tint?: string;
   effect?: EffectSpec;
+  paint?: WarPaint;
   body: BodyState;
 }) {
   const { scene } = useGLTF(url);
@@ -174,6 +179,11 @@ function Part({
   useEffect(() => {
     applyTint(root, tint);
   }, [root, tint]);
+
+  const paintTexture = useWarPaintTexture(paint?.script, paint?.wear ?? 1, paint?.seed ?? 0);
+  useEffect(() => {
+    applyPaintTexture(root, paintTexture);
+  }, [root, paintTexture]);
 
   return effect && mount
     ? createPortal(<EffectParticles spec={effect} box={mount.box} />, mount.bone)
@@ -221,7 +231,7 @@ export default function PlayerScene({
             // One missing or broken cosmetic must not take the player down with it.
             <SilentErrorBoundary key={p.key} label="tf2-player-part" fallback={null}>
               <Suspense fallback={null}>
-                <Part url={p.url} tint={p.tint} effect={p.effect} body={ready} />
+                <Part url={p.url} tint={p.tint} effect={p.effect} paint={p.paint} body={ready} />
               </Suspense>
             </SilentErrorBoundary>
           ))

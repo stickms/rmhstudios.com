@@ -17,6 +17,7 @@ import {
   type Catalog,
   type CatalogEffect,
   type CatalogItem,
+  type CatalogKit,
   type CatalogPaint,
   type ItemSlot,
   type Quality,
@@ -28,7 +29,7 @@ import {
  * new field): stored catalogs built by an older version are then rebuilt on the
  * next refresh instead of waiting for Valve to change the schema.
  */
-export const BUILDER_VERSION = 4;
+export const BUILDER_VERSION = 5;
 
 /** Identifies a schema *as this builder reads it*. */
 export const schemaHash = (itemsGame: string): string =>
@@ -106,9 +107,27 @@ function localiser(englishText: string) {
 
 const hex = (n: number) => `#${(n & 0xffffff).toString(16).padStart(6, '0')}`;
 
+/** Prefix of the prefab every war-painted weapon skin item uses: `paintkit_weapon_<weapon key>`. */
+const PAINTKIT_PREFAB = 'paintkit_weapon_';
+
+/** `tf_proto_obj_defs_english.txt`: the war paint names, keyed `9_<kit id>_field { field_number: 2 }`. */
+function kitNames(protoEnglish: string | undefined): Map<number, string> {
+  const names = new Map<number, string>();
+  if (!protoEnglish) return names;
+  const tokens = block(block(parseVdf(protoEnglish), 'lang'), 'Tokens');
+  for (const key of Object.keys(tokens ?? {})) {
+    const m = /^9_(\d+)_field \{ field_number: 2 \}$/.exec(key);
+    const v = tokens?.[key];
+    if (m && typeof v === 'string' && v.trim()) names.set(Number(m[1]), v.trim());
+  }
+  return names;
+}
+
 export interface BuildInput {
   itemsGame: string;
   english: string;
+  /** War paint names; without them the catalog has no war paints. */
+  protoEnglish?: string;
   label: string;
   /** Override the clock in tests. */
   now?: Date;
@@ -126,10 +145,28 @@ export function buildCatalog(input: BuildInput): Catalog {
   const paints: CatalogPaint[] = [];
 
   const stockIds = new Set<number>();
+  // War paints: each war-painted weapon skin in the schema is one (kit, weapon) pair, and its name is the
+  // name of the game's pattern script for it.
+  const kitScripts = new Map<number, Record<string, string>>();
+  const weaponKeys = new Map<number, string>();
   for (const [idText, raw] of Object.entries(items)) {
     const id = Number(idText);
     if (!Number.isInteger(id) || typeof raw !== 'object') continue;
-    if ((str(raw, 'prefab') ?? '').split(/\s+/).some((p) => EXCLUDED_PREFAB.test(p))) continue;
+    const prefabNames = (str(raw, 'prefab') ?? '').split(/\s+/);
+    const skin = prefabNames.find((p) => p.startsWith(PAINTKIT_PREFAB));
+    if (skin) {
+      const kit = Number(str(block(raw, 'static_attrs'), 'paintkit_proto_def_index'));
+      const script = str(raw, 'name');
+      if (Number.isInteger(kit) && kit > 0 && script) {
+        (kitScripts.get(kit) ?? kitScripts.set(kit, {}).get(kit)!)[
+          skin.slice(PAINTKIT_PREFAB.length)
+        ] = script;
+      }
+      continue;
+    }
+    if (prefabNames.some((p) => EXCLUDED_PREFAB.test(p))) continue;
+    const weaponPrefab = prefabNames.find((p) => /^weapon_./.test(p));
+    if (weaponPrefab) weaponKeys.set(id, weaponPrefab.slice('weapon_'.length));
     const it = resolve(raw);
     const name = str(it, 'name') ?? '';
 
@@ -160,7 +197,8 @@ export function buildCatalog(input: BuildInput): Catalog {
     if (name.startsWith('Upgradeable ')) continue;
     // Hidden items are normally internal. The exception is a class's stock weapon ("baseitem"), which
     // the game hides from the backpack but every class starts with — the builder's stock loadout needs it.
-    const stock = str(it, 'hidden') === '1' && str(it, 'baseitem') === '1' && WEAPON_SLOTS.has(slot);
+    const stock =
+      str(it, 'hidden') === '1' && str(it, 'baseitem') === '1' && WEAPON_SLOTS.has(slot);
     if (str(it, 'hidden') === '1' && !stock) continue;
     const displayName = loc(str(it, 'item_name'));
     if (!displayName) continue;
@@ -217,14 +255,32 @@ export function buildCatalog(input: BuildInput): Catalog {
     const covered = TF_CLASSES.every((cls) => {
       if (!(it.c & classBit(cls))) return true;
       return out.some(
-        (o) =>
-          o.id !== it.id &&
-          !stockIds.has(o.id) &&
-          o.n === it.n &&
-          (o.c & classBit(cls)) !== 0,
+        (o) => o.id !== it.id && !stockIds.has(o.id) && o.n === it.n && (o.c & classBit(cls)) !== 0,
       );
     });
     if (covered) out.splice(i, 1);
+  }
+
+  // War paints the game names, and the weapons that can take them.
+  const names = kitNames(input.protoEnglish);
+  const kits: CatalogKit[] = [];
+  const paintable = new Set<string>();
+  for (const [kit, w] of kitScripts) {
+    const n = names.get(kit);
+    if (!n) continue;
+    kits.push({ id: kit, n, w });
+    for (const key of Object.keys(w)) paintable.add(key);
+  }
+  kits.sort((a, b) => a.n.localeCompare(b.n) || a.id - b.id);
+  for (const it of out) {
+    const key = weaponKeys.get(it.id);
+    if (
+      key &&
+      paintable.has(key) &&
+      (it.s === 'primary' || it.s === 'secondary' || it.s === 'melee')
+    ) {
+      it.wk = key;
+    }
   }
 
   out.sort((a, b) => a.n.localeCompare(b.n) || a.id - b.id);
@@ -269,6 +325,7 @@ export function buildCatalog(input: BuildInput): Catalog {
     items: out,
     paints,
     effects,
+    ...(kits.length ? { kits } : {}),
     conflicts,
   };
 }

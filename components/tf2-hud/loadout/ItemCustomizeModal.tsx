@@ -32,6 +32,7 @@ import {
   WEAR_NAMES,
 } from '@/lib/tf2-loadout/fx';
 import type { CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
+import { warPaintOf } from '@/lib/tf2-loadout/warpaint';
 import ItemModelViewer from './ItemModelViewer';
 
 export default function ItemCustomizeModal({
@@ -68,9 +69,13 @@ export default function ItemCustomizeModal({
     () => catalog.effects.map((f) => ({ id: f.id, label: f.n })),
     [catalog.effects],
   );
+  // Only the war paints that exist for this weapon.
   const kitOptions = useMemo(
-    () => (catalog.kits ?? []).map((k) => ({ id: k.id, label: k.n })),
-    [catalog.kits],
+    () =>
+      (catalog.kits ?? [])
+        .filter((k) => item.wk && k.w[item.wk])
+        .map((k) => ({ id: k.id, label: k.n })),
+    [catalog.kits, item.wk],
   );
 
   const effect = entry.effect !== undefined ? idx.effect(entry.effect) : undefined;
@@ -104,6 +109,7 @@ export default function ItemCustomizeModal({
             itemId={item.id}
             cls={cls}
             style={entry.style}
+            paint={warPaintOf(idx, entry)}
             tint={entry.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
             effect={effectSpec}
             className="h-64 md:h-72"
@@ -272,9 +278,9 @@ export default function ItemCustomizeModal({
                     </div>
                   </Field>
                   <p className="text-[11px] text-(--app-text-dim)">
-                    {t('war-paint-preview-note', {
+                    {t('war-paint-preview-approx', {
                       defaultValue:
-                        'The 3D preview does not draw war paint patterns yet; the choice is saved with the loadout.',
+                        "The preview paints the weapon with the game's own pattern for this war paint. The pattern's random parts come from the seed here, so the same seed can differ from the game in detail.",
                     })}
                   </p>
                 </>

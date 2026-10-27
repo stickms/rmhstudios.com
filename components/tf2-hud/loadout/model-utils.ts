@@ -1,6 +1,14 @@
 /** Helpers shared by the item viewer and the player viewer. */
 
-import { Color, type Material, type Mesh, type MeshStandardMaterial, type Object3D } from 'three';
+import {
+  Color,
+  type Material,
+  type Mesh,
+  type MeshStandardMaterial,
+  type Object3D,
+  type Texture,
+} from 'three';
+import type { WarPaint } from '@/lib/tf2-loadout/warpaint';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 /**
@@ -42,3 +50,28 @@ export function applyTint(root: Object3D, tint?: string): void {
     }
   });
 }
+
+/**
+ * Draw a weapon with a war paint's texture in place of its own base colour map (the game does the same:
+ * the paint is the weapon's whole texture). `null` puts the original back. Only the first textured
+ * material is replaced — a weapon is one texture in the game's data — and the original is remembered on
+ * the material.
+ */
+export function applyPaintTexture(root: Object3D, texture: Texture | null): void {
+  let done = false;
+  root.traverse((o: Object3D) => {
+    const mesh = o as Mesh;
+    if (done || !mesh.isMesh) return;
+    for (const m of materialsOf(mesh)) {
+      const std = m as MeshStandardMaterial;
+      if (!('map' in std) || (!std.map && !std.userData.originalMap)) continue;
+      std.userData.originalMap ??= std.map;
+      std.map = texture ?? (std.userData.originalMap as Texture);
+      std.needsUpdate = true;
+      done = true;
+      return;
+    }
+  });
+}
+
+export type { WarPaint };

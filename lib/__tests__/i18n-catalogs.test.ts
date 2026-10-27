@@ -164,7 +164,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'style-default',
     'war-paint',
     'war-paint-pattern',
-    'war-paint-preview-note',
+    'war-paint-preview-approx',
     'war-paint-unavailable',
     'warn-class',
     'warn-duplicate',

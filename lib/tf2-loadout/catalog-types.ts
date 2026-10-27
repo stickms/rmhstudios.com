@@ -70,6 +70,8 @@ export interface CatalogItem {
   i?: string;
   /** The styles a player can choose between (two or more), by the game's style key and name. */
   st?: { k: number; n: string }[];
+  /** The weapon key a war paint is looked up by (`weapon_<key>` prefab), on weapons that can take one. */
+  wk?: string;
 }
 
 export interface CatalogPaint {
@@ -90,6 +92,8 @@ export interface CatalogEffect {
 export interface CatalogKit {
   id: number;
   n: string;
+  /** Weapon key (a weapon's `weapon_<key>` prefab) → the name of the game's pattern script for this kit on it. */
+  w: Record<string, string>;
 }
 
 export interface Catalog {
@@ -163,7 +167,10 @@ export const COSMETIC_KEYS: LoadoutSlotKey[] = Array.from({ length: COSMETIC_SLO
  * The cosmetic slot keys to show: the game's three, plus however many more the loadout already
  * uses (so an over-full loadout shows everything it holds), capped at {@link MAX_COSMETIC_SLOTS}.
  */
-export function cosmeticSlotKeys(slots: Record<string, unknown>, minimum = COSMETIC_SLOTS): LoadoutSlotKey[] {
+export function cosmeticSlotKeys(
+  slots: Record<string, unknown>,
+  minimum = COSMETIC_SLOTS,
+): LoadoutSlotKey[] {
   let highest = 0;
   for (const k of Object.keys(slots)) {
     const m = /^cosmetic(\d+)$/.exec(k);

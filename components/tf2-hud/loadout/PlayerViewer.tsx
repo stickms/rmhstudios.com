@@ -15,6 +15,7 @@ import { animUrl, tauntClip, useAnimIndex } from '@/lib/tf2-loadout/use-anims';
 import { classModel, modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
 import { cn } from '@/lib/utils';
 import type { EffectSpec } from './EffectParticles';
+import type { WarPaint } from './model-utils';
 import type { PlayerPart } from './PlayerScene';
 
 const PlayerScene = lazy(() => import('./PlayerScene'));
@@ -36,6 +37,8 @@ export interface WornItem {
   /** Paint colour, `#rrggbb`. */
   tint?: string;
   effect?: EffectSpec;
+  /** War paint on the held weapon. */
+  paint?: WarPaint;
 }
 
 export default function PlayerViewer({

@@ -76,6 +76,12 @@ A cosmetic is authored around the model origin and, in the game, follows a bone 
 
 To try it on a few models locally you need a game install: `python3 scripts/tf2-assets/convert.py --root <install> --manifest model-manifest.json --out out --limit 20` (manifest from `pnpm exec tsx scripts/tf2-models/model-manifest.ts`), then open the GLBs in any glTF viewer.
 
+### War paints
+
+A war paint is a pattern script from the game's `paintkits_master.txt`: per (kit, weapon) five wear levels, each a tree of `texture_lookup`, `combine_multiply`, `combine_lerp` and `select` operations over the game's own textures that paints the weapon's whole texture. The catalog lists the kits (`catalog.kits`: names from `tf_proto_obj_defs_english.txt`, plus the script name for each weapon the kit exists for) and marks the weapons that can take one (`item.wk`); the war-painted weapon skins in the schema (`paintkit_weapon_*`) are the (kit, weapon) pairs and their `name` is the script name.
+
+The sync's `paintkits` channel (`scripts/tf2-assets/paintkits.py`, `tf2-paintkits/` in object storage) publishes each script as compact JSON (`kits/<script>.json`) and every texture the scripts read as WebP (`tex/<path>.webp`; the "groups" maps that give each region of a weapon an id are lossless), served by `/api/tf2-loadout/paintkits/*`. In the browser `lib/tf2-loadout/warpaint.ts` runs the tree for the chosen wear level and seed in a worker (`warpaint.worker.ts`) and the result replaces the weapon's base colour map. The tree, the group masks and the layering are the game's; the seed's random draws (rotation, offset, scale and level ranges) and our reading of the black/offset/gamma level adjustment are ours, so the same seed is stable here but can differ from the game in detail. Stickers in a script are drawn as plain texture layers.
+
 ### Producing the models by hand (fallback)
 
 The older manual route still works if the automatic sync is not set up: list the needed files with `scripts/tf2-models/model-manifest.ts`, extract and convert them yourself, name them with `scripts/tf2-models/rename-glb.ts`, and upload with `scripts/tf2-models/upload.ts`. Prefer the sync — it is incremental and keeps itself current.

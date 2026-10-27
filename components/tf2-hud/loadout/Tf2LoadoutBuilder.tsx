@@ -71,6 +71,7 @@ import { useCatalog, type CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemModelViewer from './ItemModelViewer';
 import ItemCustomizeModal from './ItemCustomizeModal';
 import LoadoutAssistant from './LoadoutAssistant';
+import { warPaintOf } from '@/lib/tf2-loadout/warpaint';
 import PlayerViewer, { type WornItem } from './PlayerViewer';
 import ItemTile from './ItemTile';
 import WarningList from './WarningList';
@@ -302,7 +303,10 @@ function Builder({
     });
     // The player holds one weapon: the primary, else the secondary, else the melee.
     const held = (['primary', 'secondary', 'melee'] as const).find((k) => slots[k]);
-    if (held) out.push({ slotKey: held, itemId: slots[held]!.item });
+    if (held) {
+      const e = slots[held]!;
+      out.push({ slotKey: held, itemId: e.item, paint: warPaintOf(idx, e) });
+    }
     return out;
   }, [slots, idx, cosmeticKeys, cls]);
   const tauntItem = useMemo(() => {
@@ -994,6 +998,7 @@ function Picker({
             itemId={current.id}
             cls={cls}
             style={entry?.style}
+            paint={entry ? warPaintOf(idx, entry) : undefined}
             tint={entry?.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
           />
           <div className="flex min-w-0 flex-col gap-3">

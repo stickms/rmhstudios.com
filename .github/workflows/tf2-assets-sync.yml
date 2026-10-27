@@ -118,12 +118,13 @@ jobs:
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as models --state-key tf2-models/_state.json --build "$build" $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hud --state-key tf2-hud-base/_state.json --build "$build" --builder 1 $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as icons --state-key tf2-icons/_state.json --build "$build" --builder 1 $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as paintkits --state-key tf2-paintkits/_state.json --build "$build" --builder 1 $force
           if grep -q 'run_' "$GITHUB_OUTPUT" && grep -q '^run_.*=true' "$GITHUB_OUTPUT"; then echo "any=true" >> "$GITHUB_OUTPUT"; fi
           rm -f appinfo.txt
 
       - name: Nothing to do
         if: steps.cfg.outputs.ready == 'true' && steps.gate.outputs.any != 'true'
-        run: echo "Models, icons and HUD base are already published for this game build — no download, no uploads."
+        run: echo "Models, icons, war paints and HUD base are already published for this game build — no download, no uploads."
 
       - name: Make room on the runner
         if: steps.gate.outputs.any == 'true'
@@ -179,6 +180,14 @@ jobs:
             --root /mnt/tf2 --manifest /mnt/work/manifest/icon-manifest.json \
             --state /mnt/work/icons-state.json --out /mnt/work/icons)
 
+      - name: War paints — kit scripts and their textures, only what changed
+        if: steps.gate.outputs.run_paintkits == 'true'
+        run: |
+          mkdir -p /mnt/work/paintkits
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-paintkits/_state.json --out /mnt/work/paintkits-state.json
+          (cd scripts/tf2-assets && FORCE=${{ inputs.force == true && '1' || '0' }} python3 paintkits.py \
+            --root /mnt/tf2 --state /mnt/work/paintkits-state.json --out /mnt/work/paintkits)
+
       - name: HUD base — collect only what changed
         if: steps.gate.outputs.run_hud == 'true'
         run: |
@@ -205,6 +214,13 @@ jobs:
           prune=""; [ "${{ inputs.prune }}" = "true" ] && prune="--prune"
           pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/icons --prefix tf2-icons/ \
             --state-key tf2-icons/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune
+
+      - name: Upload changed war paint data
+        if: steps.gate.outputs.run_paintkits == 'true'
+        run: |
+          prune=""; [ "${{ inputs.prune }}" = "true" ] && prune="--prune"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/paintkits --prefix tf2-paintkits/ \
+            --state-key tf2-paintkits/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune
 
       - name: Upload changed HUD files (Brotli)
         if: steps.gate.outputs.run_hud == 'true'
