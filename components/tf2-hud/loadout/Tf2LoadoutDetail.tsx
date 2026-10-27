@@ -5,7 +5,7 @@
 'use client';
 
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Copy, GitFork, Heart, Pencil } from 'lucide-react';
+import { AlertTriangle, Copy, GitFork, Heart, Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -17,7 +17,13 @@ import { useClipboard } from '@/hooks/useClipboard';
 import { ApiError } from '@/lib/tf2-hud/api';
 import { loadoutApi } from '@/lib/tf2-loadout/api';
 import type { LoadoutDetail } from '@/lib/tf2-loadout/api-types';
-import { COSMETIC_KEYS, TAUNT_KEYS, weaponSlotsFor } from '@/lib/tf2-loadout/catalog-types';
+import {
+  cosmeticSlotKeys,
+  TAUNT_KEYS,
+  weaponSlotsFor,
+} from '@/lib/tf2-loadout/catalog-types';
+import { loadoutWarnings } from '@/lib/tf2-loadout/rules';
+import WarningList from './WarningList';
 import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
 import ItemTile from './ItemTile';
 import { CLASS_DEFAULT } from './labels';
@@ -103,10 +109,12 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
             title: t('weapons', { defaultValue: 'Weapons' }),
             keys: weaponSlotsFor(idx.catalog, detail.tfClass) as string[],
           },
-          { title: t('cosmetics', { defaultValue: 'Cosmetics' }), keys: COSMETIC_KEYS },
+          { title: t('cosmetics', { defaultValue: 'Cosmetics' }), keys: cosmeticSlotKeys(detail.slots) },
           { title: t('taunts', { defaultValue: 'Taunts' }), keys: ['action', ...TAUNT_KEYS] },
         ]
       : [];
+
+  const warnings = detail && idx ? loadoutWarnings(idx.catalog, detail.tfClass, detail.slots) : [];
 
   return (
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
@@ -194,6 +202,19 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                 </Btn>
               </div>
             </header>
+
+            {warnings.length && idx ? (
+              <div
+                role="status"
+                className="rounded-(--app-radius-sm) border border-(--app-warning)/50 bg-(--app-warning)/10 p-2.5"
+              >
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-(--app-warning)">
+                  <AlertTriangle className="size-4 shrink-0" aria-hidden />
+                  {t('not-possible', { defaultValue: 'Not possible in the game' })}
+                </p>
+                <WarningList warnings={warnings} idx={idx} />
+              </div>
+            ) : null}
 
             {groups.map((g) => {
               const filled = g.keys.filter((k) => detail.slots[k]);

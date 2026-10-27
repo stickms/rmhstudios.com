@@ -6,7 +6,19 @@
 'use client';
 
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Check, Copy, FolderOpen, Globe, Plus, Save, Search, Trash2, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  Copy,
+  FolderOpen,
+  Globe,
+  Plus,
+  RotateCcw,
+  Save,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -24,6 +36,7 @@ import {
   SearchSelect,
   SelectField,
   TextField,
+  Toggle,
 } from '@/components/tf2-hud/ui';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSentinel } from '@/hooks/useSentinel';
@@ -33,7 +46,10 @@ import { cn } from '@/lib/utils';
 import { loadoutApi } from '@/lib/tf2-loadout/api';
 import type { Visibility } from '@/lib/tf2-loadout/api-types';
 import {
-  COSMETIC_KEYS,
+  COSMETIC_SLOTS,
+  MAX_COSMETIC_SLOTS,
+  cosmeticKey,
+  cosmeticSlotKeys,
   qualityAccent,
   TAUNT_KEYS,
   TF_CLASSES,
@@ -47,16 +63,19 @@ import {
   type LoadoutSlots,
   type TfClass,
 } from '@/lib/tf2-loadout/catalog-types';
-import { loadDraft, saveDraft } from '@/lib/tf2-loadout/local-drafts';
+import { hasDraft, loadDraft, saveDraft } from '@/lib/tf2-loadout/local-drafts';
+import { legalize, loadoutWarnings, stockLoadout } from '@/lib/tf2-loadout/rules';
 import { useCatalog, type CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemModelViewer from './ItemModelViewer';
 import PlayerViewer, { type WornItem } from './PlayerViewer';
 import ItemTile from './ItemTile';
+import WarningList from './WarningList';
 import { CLASS_DEFAULT } from './labels';
 
 const SITE = () => (typeof window === 'undefined' ? '' : window.location.origin);
 const PAGE = 60;
 const LAST_CLASS_KEY = 'rmh-tf2-loadout-class';
+const UNRESTRICTED_KEY = 'rmh-tf2-loadout-unrestricted';
 
 function lastClass(): TfClass {
   try {
@@ -128,7 +147,10 @@ function Builder({
   const { catalog } = idx;
 
   const [cls, setCls] = useState<TfClass>(initialClass ?? 'scout');
-  const [slots, setSlots] = useState<LoadoutSlots>({});
+  // The initial, untouched slots object: autosave ignores it, so an empty draft is only ever written
+  // for a loadout the player (or a load) actually set.
+  const initialSlots = useRef<LoadoutSlots>({}).current;
+  const [slots, setSlots] = useState<LoadoutSlots>(initialSlots);
   const [selected, setSelected] = useState<LoadoutSlotKey | null>(null);
   const [remote, setRemote] = useState<{
     id: string;
@@ -141,6 +163,10 @@ function Builder({
   const [saveOpen, setSaveOpen] = useState(false);
   const [signIn, setSignIn] = useState(false);
   const [ready, setReady] = useState(false);
+  // "Allow any combination": off keeps to what the game allows; on lets the player equip anything
+  // (the warnings panel then says what the game could not do).
+  const [unrestricted, setUnrestrictedState] = useState(false);
+  const [extraCosmetics, setExtraCosmetics] = useState(0);
   // Screen readers: what the last change did (the picker is a separate region from the slots).
   const [announce, setAnnounce] = useState('');
   // Wide screens show the picker beside the slots; narrower ones open it as a sheet.
@@ -179,7 +205,7 @@ function Builder({
     } else {
       const c = initialClass ?? lastClass();
       setCls(c);
-      setSlots(loadDraft(c));
+      setSlots(draftOrStock(c));
       setReady(true);
       hydrated.current = true;
     }
@@ -192,9 +218,9 @@ function Builder({
 
   // Unsaved work lives in a per-class draft.
   useEffect(() => {
-    if (!hydrated.current || remote) return;
+    if (!hydrated.current || remote || slots === initialSlots) return;
     saveDraft(cls, slots);
-  }, [cls, slots, remote]);
+  }, [cls, slots, remote, initialSlots]);
 
   const changeClass = (next: TfClass) => {
     if (remote || next === cls) return;
@@ -204,16 +230,46 @@ function Builder({
       /* storage unavailable */
     }
     setCls(next);
-    setSlots(loadDraft(next));
+    setSlots(draftOrStock(next));
+    setExtraCosmetics(0);
     setSelected(null);
   };
 
   const weaponKeys = useMemo(() => weaponSlotsFor(catalog, cls), [catalog, cls]);
 
+  // A class that has never been edited here starts from its stock weapons; one the player emptied
+  // on purpose stays empty.
+  const draftOrStock = (c: TfClass): LoadoutSlots =>
+    hasDraft(c) ? loadDraft(c) : stockLoadout(catalog, c);
+
+  useEffect(() => {
+    try {
+      setUnrestrictedState(localStorage.getItem(UNRESTRICTED_KEY) === '1');
+    } catch {
+      /* storage unavailable: the rules stay on */
+    }
+  }, []);
+  const setUnrestricted = (on: boolean) => {
+    setUnrestrictedState(on);
+    try {
+      localStorage.setItem(UNRESTRICTED_KEY, on ? '1' : '0');
+    } catch {
+      /* not kept */
+    }
+  };
+
+  // The game's three cosmetic slots; more only while "allow any combination" is on (or the loadout already
+  // holds more), up to the builder's cap.
+  const cosmeticKeys = useMemo(
+    () => cosmeticSlotKeys(slots, unrestricted ? COSMETIC_SLOTS + extraCosmetics : COSMETIC_SLOTS),
+    [slots, unrestricted, extraCosmetics],
+  );
+  const warnings = useMemo(() => loadoutWarnings(catalog, cls, slots), [catalog, cls, slots]);
+
   // What the 3D player wears: the cosmetics, with their paint.
   const worn = useMemo<WornItem[]>(
     () =>
-      COSMETIC_KEYS.flatMap((k) => {
+      cosmeticKeys.flatMap((k) => {
         const e = slots[k];
         if (!e) return [];
         return [
@@ -224,7 +280,7 @@ function Builder({
           },
         ];
       }),
-    [slots, idx],
+    [slots, idx, cosmeticKeys],
   );
 
   const slotLabel = useCallback(
@@ -264,7 +320,9 @@ function Builder({
     const next: LoadoutSlots = { ...slots };
     const removed: string[] = [];
     const isWorn = key.startsWith('cosmetic') || key.startsWith('taunt');
-    for (const [k, e] of Object.entries(next)) {
+    // With the rules on, equipping something takes out what it could not be worn with: the same item
+    // twice, or a cosmetic covering the same part of the body.
+    for (const [k, e] of unrestricted ? [] : Object.entries(next)) {
       if (k === key) continue;
       const other = idx.item(e.item);
       const sameItem = isWorn && e.item === item.id && k.startsWith(key.replace(/\d+$/, ''));
@@ -316,6 +374,25 @@ function Builder({
   const clearAll = () => {
     edit({});
     setSelected(null);
+  };
+
+  const resetToStock = () => {
+    edit(stockLoadout(catalog, cls));
+    setExtraCosmetics(0);
+    setSelected(null);
+    setAnnounce(t('announce-stock', { defaultValue: 'Back to the stock loadout.' }));
+  };
+
+  const makePlayable = () => {
+    const fixed = legalize(catalog, cls, slots);
+    edit(fixed.slots);
+    setExtraCosmetics(0);
+    setAnnounce(
+      t('announce-playable', {
+        defaultValue: 'Removed {{count}} so the loadout fits the game.',
+        count: fixed.dropped.length,
+      }),
+    );
   };
 
   const filled = Object.keys(slots).length;
@@ -383,6 +460,9 @@ function Builder({
               {t('copy-link', { defaultValue: 'Copy link' })}
             </Btn>
           ) : null}
+          <Btn size="sm" variant="ghost" icon={RotateCcw} onClick={resetToStock}>
+            {t('reset-stock', { defaultValue: 'Stock' })}
+          </Btn>
           <Btn size="sm" variant="ghost" icon={Trash2} disabled={filled === 0} onClick={clearAll}>
             {t('clear-all', { defaultValue: 'Clear' })}
           </Btn>
@@ -407,6 +487,13 @@ function Builder({
         >
           {/* The player sits right under the class bar; the options follow it. */}
           <PlayerViewer cls={cls} worn={worn} />
+          <RulesPanel
+            warnings={warnings}
+            idx={idx}
+            unrestricted={unrestricted}
+            onToggle={setUnrestricted}
+            onFix={makePlayable}
+          />
           <SlotGroup title={t('weapons', { defaultValue: 'Weapons' })}>
             {weaponKeys.map((k) => (
               <SlotCell
@@ -422,7 +509,7 @@ function Builder({
             ))}
           </SlotGroup>
           <SlotGroup title={t('cosmetics', { defaultValue: 'Cosmetics' })}>
-            {COSMETIC_KEYS.map((k) => (
+            {cosmeticKeys.map((k) => (
               <SlotCell
                 key={k}
                 slotKey={k}
@@ -434,6 +521,19 @@ function Builder({
                 ready={ready}
               />
             ))}
+            {unrestricted && cosmeticKeys.length < MAX_COSMETIC_SLOTS ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setExtraCosmetics(Math.max(0, cosmeticKeys.length - COSMETIC_SLOTS) + 1);
+                  setSelected(cosmeticKey(cosmeticKeys.length));
+                }}
+                className="flex aspect-square min-w-0 flex-col items-center justify-center gap-1 rounded-(--app-radius-sm) border border-dashed border-(--app-border) text-xs text-(--app-text-dim) hover:border-(--app-accent) hover:text-(--app-text)"
+              >
+                <Plus className="size-5" aria-hidden />
+                {t('add-cosmetic-slot', { defaultValue: 'Add slot' })}
+              </button>
+            ) : null}
           </SlotGroup>
           <SlotGroup title={t('action-and-taunts', { defaultValue: 'Action & taunts' })}>
             {['action', ...TAUNT_KEYS].map((k) => (
@@ -547,6 +647,59 @@ function Builder({
         />
       ) : null}
     </main>
+  );
+}
+
+function RulesPanel({
+  warnings,
+  idx,
+  unrestricted,
+  onToggle,
+  onFix,
+}: {
+  warnings: ReturnType<typeof loadoutWarnings>;
+  idx: CatalogIndex;
+  unrestricted: boolean;
+  onToggle: (on: boolean) => void;
+  onFix: () => void;
+}) {
+  const { t } = useTranslation('c-tf2-hud');
+  return (
+    <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-3 text-xs">
+      <label className="flex cursor-pointer items-start gap-2.5">
+        <Toggle
+          checked={unrestricted}
+          onChange={onToggle}
+          label={t('allow-any', { defaultValue: 'Allow any combination' })}
+        />
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold text-(--app-text)">
+            {t('allow-any', { defaultValue: 'Allow any combination' })}
+          </span>
+          <span className="block text-(--app-text-dim)">
+            {t('allow-any-desc', {
+              defaultValue:
+                'Off: only what the game allows. On: equip as many items as you like; anything the game could not do is flagged.',
+            })}
+          </span>
+        </span>
+      </label>
+      {warnings.length ? (
+        <div
+          role="status"
+          className="mt-3 rounded-(--app-radius-sm) border border-(--app-warning)/50 bg-(--app-warning)/10 p-2.5"
+        >
+          <p className="flex items-center gap-1.5 font-semibold text-(--app-warning)">
+            <AlertTriangle className="size-4 shrink-0" aria-hidden />
+            {t('not-possible', { defaultValue: 'Not possible in the game' })}
+          </p>
+          <WarningList warnings={warnings} idx={idx} />
+          <Btn size="sm" className="mt-2" onClick={onFix}>
+            {t('make-playable', { defaultValue: 'Make it playable' })}
+          </Btn>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

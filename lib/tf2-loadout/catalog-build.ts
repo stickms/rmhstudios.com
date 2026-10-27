@@ -28,12 +28,13 @@ import {
  * new field): stored catalogs built by an older version are then rebuilt on the
  * next refresh instead of waiting for Valve to change the schema.
  */
-export const BUILDER_VERSION = 2;
+export const BUILDER_VERSION = 3;
 
 /** Identifies a schema *as this builder reads it*. */
 export const schemaHash = (itemsGame: string): string =>
   createHash('sha1').update(`${BUILDER_VERSION}:`).update(itemsGame).digest('hex');
 
+const WEAPON_SLOTS = new Set(['primary', 'secondary', 'melee', 'building', 'pda', 'pda2']);
 const SLOT_SET = new Set<string>(ITEM_SLOTS);
 
 const QUALITY_BY_NAME: Record<string, Quality> = {
@@ -124,6 +125,7 @@ export function buildCatalog(input: BuildInput): Catalog {
   const out: CatalogItem[] = [];
   const paints: CatalogPaint[] = [];
 
+  const stockIds = new Set<number>();
   for (const [idText, raw] of Object.entries(items)) {
     const id = Number(idText);
     if (!Number.isInteger(id) || typeof raw !== 'object') continue;
@@ -155,7 +157,11 @@ export function buildCatalog(input: BuildInput): Catalog {
     const slot = str(it, 'item_slot') ?? '';
     if (!SLOT_SET.has(slot)) continue;
     // The schema keeps an "Upgradeable …" twin of every stock weapon for the stat-tracking system.
-    if (name.startsWith('Upgradeable ') || str(it, 'hidden') === '1') continue;
+    if (name.startsWith('Upgradeable ')) continue;
+    // Hidden items are normally internal. The exception is a class's stock weapon ("baseitem"), which
+    // the game hides from the backpack but every class starts with — the builder's stock loadout needs it.
+    const stock = str(it, 'hidden') === '1' && str(it, 'baseitem') === '1' && WEAPON_SLOTS.has(slot);
+    if (str(it, 'hidden') === '1' && !stock) continue;
     const displayName = loc(str(it, 'item_name'));
     if (!displayName) continue;
 
@@ -177,6 +183,7 @@ export function buildCatalog(input: BuildInput): Catalog {
       : str(it, 'equip_region')
         ? [str(it, 'equip_region')!]
         : [];
+    if (stock) stockIds.add(id);
     out.push({
       id,
       n: displayName,
@@ -188,6 +195,24 @@ export function buildCatalog(input: BuildInput): Catalog {
       ...((slot === 'head' || slot === 'misc') && regions.length ? { r: regions } : {}),
       ...(str(block(it, 'capabilities'), 'paintable') === '1' ? { p: 1 as const } : {}),
     });
+  }
+
+  // A hidden stock weapon that a visible item of the same name already covers for every class that can
+  // use it (the Scout's pistol is the same "Pistol" the Engineer has) would only show up twice.
+  for (let i = out.length - 1; i >= 0; i--) {
+    const it = out[i];
+    if (!stockIds.has(it.id)) continue;
+    const covered = TF_CLASSES.every((cls) => {
+      if (!(it.c & classBit(cls))) return true;
+      return out.some(
+        (o) =>
+          o.id !== it.id &&
+          !stockIds.has(o.id) &&
+          o.n === it.n &&
+          (o.c & classBit(cls)) !== 0,
+      );
+    });
+    if (covered) out.splice(i, 1);
   }
 
   out.sort((a, b) => a.n.localeCompare(b.n) || a.id - b.id);

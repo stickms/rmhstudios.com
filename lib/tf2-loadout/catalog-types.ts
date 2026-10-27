@@ -134,7 +134,10 @@ export function regionsConflict(
 
 /* ───────────────────────────── loadout slots ───────────────────────────── */
 
+/** What the game itself allows: three cosmetic slots. The builder can exceed it (with a warning). */
 export const COSMETIC_SLOTS = 3;
+/** The most cosmetic slots the builder offers. */
+export const MAX_COSMETIC_SLOTS = 24;
 export const TAUNT_SLOTS = 8;
 
 /** Loadout slot keys, in display order. Weapon slots depend on the class (see {@link weaponSlotsFor}). */
@@ -146,6 +149,20 @@ export const tauntKey = (i: number): LoadoutSlotKey => `taunt${i + 1}`;
 export const COSMETIC_KEYS: LoadoutSlotKey[] = Array.from({ length: COSMETIC_SLOTS }, (_, i) =>
   cosmeticKey(i),
 );
+/**
+ * The cosmetic slot keys to show: the game's three, plus however many more the loadout already
+ * uses (so an over-full loadout shows everything it holds), capped at {@link MAX_COSMETIC_SLOTS}.
+ */
+export function cosmeticSlotKeys(slots: Record<string, unknown>, minimum = COSMETIC_SLOTS): LoadoutSlotKey[] {
+  let highest = 0;
+  for (const k of Object.keys(slots)) {
+    const m = /^cosmetic(\d+)$/.exec(k);
+    if (m) highest = Math.max(highest, Number(m[1]));
+  }
+  const n = Math.min(MAX_COSMETIC_SLOTS, Math.max(minimum, highest));
+  return Array.from({ length: n }, (_, i) => cosmeticKey(i));
+}
+
 export const TAUNT_KEYS: LoadoutSlotKey[] = Array.from({ length: TAUNT_SLOTS }, (_, i) =>
   tauntKey(i),
 );
