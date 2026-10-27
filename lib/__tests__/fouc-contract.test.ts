@@ -156,11 +156,11 @@ describe('default theme before first paint', () => {
     expect(stored.get('rmh-style')).toBe('default');
   });
 
-  it('high contrast is unaffected', () => {
-    const { classes, html } = runThemeScript({ 'rmh-style': 'high-contrast' });
-    expect(classes.has('style-high-contrast')).toBe(true);
-    expect(classes.has('style-graphite')).toBe(false);
-    expect(html.style.backgroundColor).toBe('#000000');
+  it('a stored high-contrast id (the theme was removed) self-heals to the default', () => {
+    const { classes, stored } = runThemeScript({ 'rmh-style': 'high-contrast' });
+    expect(classes.has('style-high-contrast')).toBe(false);
+    expect(classes.has('style-graphite')).toBe(true);
+    expect(stored.get('rmh-style')).toBe(DEFAULT_STYLE);
   });
 
   it('a retired id self-heals to the default', () => {

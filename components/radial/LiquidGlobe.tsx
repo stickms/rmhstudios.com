@@ -238,26 +238,13 @@ const lensScale = (x: number, y: number, z: number) => {
 
 /**
  * Whether this visit gets the shader material (`./jelly-glass`). The CSS glass
- * stays for high contrast (legibility over sheen), the reduced-transparency
- * settings and `perf-lite` (a weak device should not pay for a second GL
+ * stays for `perf-lite` (a weak device should not pay for a second GL
  * context), and anywhere WebGL will not start.
  */
 function jellyEligible(): boolean {
   if (typeof window === 'undefined') return false;
   const html = document.documentElement.classList;
-  if (
-    html.contains('style-high-contrast') ||
-    html.contains('perf-lite') ||
-    html.contains('reduce-transparency')
-  ) {
-    return false;
-  }
-  if (
-    window.matchMedia?.('(prefers-reduced-transparency: reduce)').matches ||
-    window.matchMedia?.('(prefers-contrast: more)').matches
-  ) {
-    return false;
-  }
+  if (html.contains('perf-lite')) return false;
   return supportsWebGL();
 }
 
@@ -842,7 +829,9 @@ export function LiquidGlobe({
   const wobble = useRef<{ yaw: number; vYaw: number; pitch: number; vPitch: number } | null>(null);
   /** The dough body (see the note above `DEFORM_OUT`), and where the finger holding it is, in radii. */
   const [jelly] = useState(() => new DoughBody());
-  useEffect(() => { void jelly.enableWasm(); }, [jelly]);
+  useEffect(() => {
+    void jelly.enableWasm();
+  }, [jelly]);
   const grabAt = useRef({ x: 0, y: 0, left: 0, top: 0, r: 1 });
   const everting = useRef(false);
   const nextEvertPulse = useRef(0);
@@ -875,7 +864,15 @@ export function LiquidGlobe({
    * hidden, degraded or off screen), the haze amplitude, the eased plasma level and whether a fine pointer is over
    * the ball. Driven by the globe's own (allowlisted) frame loop — no second rAF; the jelly env watcher refreshes it.
    */
-  const coatClock = useRef({ hz: 0, idleHz: 0, amp: 0, onScreen: false, last: 0, plasma: 0, over: false });
+  const coatClock = useRef({
+    hz: 0,
+    idleHz: 0,
+    amp: 0,
+    onScreen: false,
+    last: 0,
+    plasma: 0,
+    over: false,
+  });
 
   // Only these three reach the render: the caption, the ring's state classes.
   const [lock, setLock] = useState(-1);
@@ -899,7 +896,9 @@ export function LiquidGlobe({
     // first REAL open running that code cold.
     if (quiet.current) {
       // Half a turn about the globe's own polar axis (a body-space rotation, on the right).
-      settle.current = normalizeQuat(mulQuat(rot.current.q, quatFromYawPitch(180, 0, quat()), quat()));
+      settle.current = normalizeQuat(
+        mulQuat(rot.current.q, quatFromYawPitch(180, 0, quat()), quat()),
+      );
     }
     dirty.current = true;
     // Orientation is chosen once per mount (the hub mounts this on open), not on
@@ -1039,11 +1038,6 @@ export function LiquidGlobe({
     const stage = stageRef.current;
     const host = glassRef.current;
     const root = document.documentElement;
-    const preferences = [
-      matchMedia('(prefers-reduced-transparency: reduce)'),
-      matchMedia('(prefers-contrast: more)'),
-      matchMedia('(forced-colors: active)'),
-    ];
     /* The page behind the hub, refracted through the ball. The glass engine keeps the latest snapshot of the page (taken
        while it was idle, i.e. BEFORE the hub opened); the coat samples it through a ball-lens model at the hub's own blur.
        Placing it reads layout, so it happens when the globe attaches, resizes, finishes blooming, or a new picture lands,
@@ -1103,7 +1097,7 @@ export function LiquidGlobe({
     const stopScene = onSceneChange(refreshScene);
     const sync = () => {
       if (cancelled || !host || !stage) return;
-      if (!jellyEligible() || preferences.some((q) => q.matches)) {
+      if (!jellyEligible()) {
         if (glass?.canvas.parentElement === host) glass.canvas.remove();
         jellyGlass.current = null;
         delete stage.dataset.globeCoat;
@@ -1208,7 +1202,6 @@ export function LiquidGlobe({
     };
     const observer = new MutationObserver(sync);
     observer.observe(root, { attributes: true, attributeFilter: ['class', 'style'] });
-    preferences.forEach((q) => q.addEventListener('change', sync));
     sync();
     return () => {
       cancelled = true;
@@ -1219,7 +1212,6 @@ export function LiquidGlobe({
       window.removeEventListener('scroll', onScroll);
       cancelAnimationFrame(scrollRaf);
       observer.disconnect();
-      preferences.forEach((q) => q.removeEventListener('change', sync));
       // The single cached canvas may already belong to a newer mount.
       if (glass?.onChange === sync) glass.onChange = null;
       window.clearTimeout(coatTimer);
@@ -1426,12 +1418,15 @@ export function LiquidGlobe({
         skinModule.current = m;
         // Warm the skin while nothing is happening, so the first navigation's run finds its program built (it builds
         // in the background either way; this just starts it before anyone navigates).
-        idle = window.setTimeout(() => {
-          if (!cancelled && !skin.current && jellyEligible()) {
-            skin.current = m.SelfEvertSkin.create();
-            if (!skin.current) skinModule.current = null;
-          }
-        }, evertInPlace ? SKIN_WARM_IN_PLACE_MS : SKIN_WARM_MS);
+        idle = window.setTimeout(
+          () => {
+            if (!cancelled && !skin.current && jellyEligible()) {
+              skin.current = m.SelfEvertSkin.create();
+              if (!skin.current) skinModule.current = null;
+            }
+          },
+          evertInPlace ? SKIN_WARM_IN_PLACE_MS : SKIN_WARM_MS,
+        );
       })
       .catch(() => {
         /* The run keeps its wireframe-only form. */
@@ -1707,7 +1702,15 @@ export function LiquidGlobe({
     const momRest = new Float64Array(6);
     const cageMoments = (m: Float64Array, e: number, fit: number, out: Float64Array) => {
       out.fill(0);
-      const ring = (ux: number, uy: number, uz: number, vx: number, vy: number, vz: number, oy: number) => {
+      const ring = (
+        ux: number,
+        uy: number,
+        uz: number,
+        vx: number,
+        vy: number,
+        vz: number,
+        oy: number,
+      ) => {
         // Every other sample: the moments do not need the cage's full resolution.
         for (let s = 0; s < RING_SAMPLES; s += 2) {
           const ct = RING_COS[s]!;
@@ -1912,7 +1915,13 @@ export function LiquidGlobe({
           let swell: number;
           if (selfRun.e >= 0) {
             // The same point of the surface, part-way through turning inside out.
-            evert(Math.atan2(bx, bz), Math.asin(by < -1 ? 1 : by > 1 ? -1 : -by), selfRun.e, EVERT_OUT, 0);
+            evert(
+              Math.atan2(bx, bz),
+              Math.asin(by < -1 ? 1 : by > 1 ? -1 : -by),
+              selfRun.e,
+              EVERT_OUT,
+              0,
+            );
             bx = EVERT_OUT[0]!;
             by = EVERT_OUT[1]!;
             bz = EVERT_OUT[2]!;
@@ -2381,7 +2390,6 @@ export function LiquidGlobe({
         soft = true;
         dirty.current = true;
       }
-    
 
       // 1. Motion. Dragging writes the rotation directly (in the pointer handler);
       //    everything here is what happens when you are NOT dragging.
@@ -2421,7 +2429,7 @@ export function LiquidGlobe({
         } else {
           normalizeQuat(mulQuat(quatFromRotvec(SV[0]!, SV[1]!, SV[2]!, SQ), target, r.q));
         }
-      
+
         dirty.current = true;
       }
 
@@ -2653,10 +2661,13 @@ export function LiquidGlobe({
       // A sleep restarts `dt` from one nominal frame, so whatever wakes the loop starts from where it was.
       last = 0;
       if (wait === Infinity) return;
-      timer = setTimeout(() => {
-        timer = 0;
-        if (!raf) raf = requestAnimationFrame(step);
-      }, Math.max(0, wait));
+      timer = setTimeout(
+        () => {
+          timer = 0;
+          if (!raf) raf = requestAnimationFrame(step);
+        },
+        Math.max(0, wait),
+      );
     };
 
     raf = requestAnimationFrame(step);

@@ -22,16 +22,6 @@
   --rmhcar-cage-major: 0.52;
 }
 
-/* High contrast is not a darker theme, it is a LEGIBILITY mode: a wireframe at
-   22% ink is exactly the sort of thing it exists to stop shipping. The cage goes
-   to full strength and the three tiers keep only enough separation to still read
-   as three tiers. */
-.style-high-contrast .rmhcar-stage {
-  --rmhcar-cage-minor: 0.62;
-  --rmhcar-cage-parallel: 0.5;
-  --rmhcar-cage-major: 1;
-}
-
 /* The stage is a fixed-ratio box so the camera framing (which is solved against
    the fleet's extents, not the viewport) is the same shape on every screen. */
 .rmhcar-stage {

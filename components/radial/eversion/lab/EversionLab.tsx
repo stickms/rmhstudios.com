@@ -47,7 +47,6 @@ import { readThemeColours } from './themeColours';
 const THEMES = [
   { id: 'graphite', label: 'Dark' },
   { id: 'default', label: 'Light' },
-  { id: 'high-contrast', label: 'High contrast' },
 ];
 
 const PROJECTION_OPTIONS: { value: string; label: string }[] = [

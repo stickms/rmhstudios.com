@@ -152,9 +152,9 @@ describe('electric arcs runtime', () => {
     expect(rt.active).toBe(true);
   });
 
-  it('high contrast, reduced transparency and perf-lite remove the layer', () => {
+  it('perf-lite removes the layer', () => {
     const rt = install();
-    for (const cls of ['style-high-contrast', 'reduce-transparency', 'perf-lite']) {
+    for (const cls of ['perf-lite']) {
       env.root.classes.add(cls);
       env.mutate();
       expect(rt.active, cls).toBe(false);

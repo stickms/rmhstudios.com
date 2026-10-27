@@ -65,7 +65,7 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] = [
     icon: Palette,
     label: 'Appearance & accessibility',
     hint: 'Text size, density, motion, glass clarity, colour vision',
-    keywords: 'dark mode light high contrast dyslexia font reduce transparency colorblind',
+    keywords: 'dark mode light dyslexia font colorblind',
   },
   {
     id: 'themes',
@@ -103,7 +103,8 @@ export const SETTINGS_DESTINATIONS: SettingsDestination[] = [
     icon: CalendarDays,
     label: 'Calendar feed & scheduling',
     hint: 'Subscribe to your RSVPs and bookings; polls and office hours',
-    keywords: 'ics google calendar apple outlook subscribe feed office hours availability poll find a time',
+    keywords:
+      'ics google calendar apple outlook subscribe feed office hours availability poll find a time',
     requiresAuth: true,
   },
 

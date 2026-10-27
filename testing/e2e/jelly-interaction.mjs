@@ -25,7 +25,7 @@
  * - **Plasma level (#989):** hover emits `plasma:level` at `PLASMA.wake`, press at 1, leaving back to 0.
  * - **Click charge (#989):** a click deposits charge (`charge:pulse`); hop and click arcs never outnumber what the flash
  *   ledger admits — no 1 s window holds more than `FLASH_LEDGER.maxOnsets` strikes, even under a click storm.
- * - **Degraded tier:** `.style-high-contrast` removes haze, carriers and the arc layer.
+ * - **Degraded tier:** `.perf-lite` removes haze, carriers and the arc layer.
  * - **Teardown** leaves no jelly node or attribute behind.
  *
  * **On a machine with no GPU** (SwiftShader / llvmpipe — every CI runner) frames are slow and the governor steps down.
@@ -839,15 +839,15 @@ try {
   check('leaving still brings the haze back', (await count('.jelly-haze-canvas')) >= 1);
 
   // ── A degraded tier stands the material down ──
-  await page.evaluate(() => document.documentElement.classList.add('style-high-contrast'));
+  await page.evaluate(() => document.documentElement.classList.add('perf-lite'));
   await settle(500);
   check(
-    '.style-high-contrast removes haze, carriers and arcs',
+    '.perf-lite removes haze, carriers and arcs',
     (await count('.jelly-haze-canvas')) === 0 &&
       (await count('.jelly-flow')) === 0 &&
       (await count('.jelly-arc-layer')) === 0,
   );
-  await page.evaluate(() => document.documentElement.classList.remove('style-high-contrast'));
+  await page.evaluate(() => document.documentElement.classList.remove('perf-lite'));
   await settle(300);
 
   // ── Teardown ──

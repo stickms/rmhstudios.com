@@ -17,14 +17,6 @@
   --rmhfash-cage-major: 0.5;
 }
 
-/* High contrast is a legibility mode, not a darker theme: a wireframe at 26%
-   ink is exactly what it exists to stop shipping. */
-.style-high-contrast .rmhfash-stage {
-  --rmhfash-cage-minor: 0.6;
-  --rmhfash-cage-parallel: 0.48;
-  --rmhfash-cage-major: 1;
-}
-
 .rmhfash-stage {
   position: relative;
   aspect-ratio: 3 / 4;

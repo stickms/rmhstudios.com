@@ -258,10 +258,11 @@ export const JELLY_LAYOUT = {
 } as const;
 
 /**
- * The root classes that degrade the material, exactly as the site stamps them on `<html>` today (the engine's `off()`
- * and `runtime.ts`'s `disabled()`). Forced colours, reduced transparency and print are media queries, read separately.
+ * The root class that degrades the material, exactly as the site stamps it on `<html>` today (the engine's `off()`
+ * and `runtime.ts`'s `disabled()`). Print is a media query, read separately. The site's high-contrast theme and the
+ * OS forced-colours / reduced-transparency fallbacks were removed: the material always draws.
  */
-export const DEGRADED_ROOT_SELECTOR = '.reduce-transparency,.style-high-contrast,.perf-lite';
+export const DEGRADED_ROOT_SELECTOR = '.perf-lite';
 
 /** The app tier's high-contrast theme lives on the app shell, not `<html>`, so it is looked up in the document. */
 export const APP_HIGH_CONTRAST_SELECTOR = '.app-high-contrast';
@@ -306,16 +307,12 @@ export const JELLY_LAYER_SELECTOR =
 /** The handheld tier's query, copied exactly from `handheld-tier.test.ts` (which pins it here). */
 export const HANDHELD_QUERY = '(pointer: coarse) and (max-width: 1024px)';
 export const FINE_POINTER_QUERY = '(hover: hover) and (pointer: fine)';
-const FORCED_QUERY = '(forced-colors: active)';
-const TRANSPARENCY_QUERY = '(prefers-reduced-transparency: reduce)';
 const PRINT_QUERY = 'print';
 
 /** The media queries {@link onJellyEnvChange} watches: everything the tier and the off predicate read. */
 export const JELLY_ENV_QUERIES = [
   HANDHELD_QUERY,
   FINE_POINTER_QUERY,
-  FORCED_QUERY,
-  TRANSPARENCY_QUERY,
   PRINT_QUERY,
 ] as const;
 
@@ -351,14 +348,7 @@ const matches = (win: Window | undefined, query: string): boolean => {
 
 /** Why the material may not draw at all, apart from `perf-lite` (which is the `lite` tier, not off). */
 function hardOff(doc: Document, win: Window | undefined): boolean {
-  const root = doc.documentElement;
-  return (
-    matches(win, TRANSPARENCY_QUERY) ||
-    matches(win, FORCED_QUERY) ||
-    matches(win, PRINT_QUERY) ||
-    root.matches('.reduce-transparency,.style-high-contrast') ||
-    !!doc.querySelector(APP_HIGH_CONTRAST_SELECTOR)
-  );
+  return matches(win, PRINT_QUERY) || !!doc.querySelector(APP_HIGH_CONTRAST_SELECTOR);
 }
 
 const perfLite = (doc: Document): boolean => doc.documentElement.matches('.perf-lite');
@@ -396,8 +386,7 @@ export function gamePlaying(doc: Document | undefined = defaultDoc()): boolean {
 
 /**
  * May the material layers draw at all: false for canvases, haze, carriers and arcs under a degraded root
- * ({@link DEGRADED_ROOT_SELECTOR}, so `perf-lite` included), the app high-contrast theme, forced colours, reduced
- * transparency, print, or a hidden tab. No document (SSR) → true.
+ * ({@link DEGRADED_ROOT_SELECTOR}, so `perf-lite` included), the app high-contrast theme, print, or a hidden tab. No document (SSR) → true.
  */
 export function jellyOff(doc: Document | undefined = defaultDoc()): boolean {
   if (!doc) return true;
@@ -418,7 +407,7 @@ export interface JellyModeState {
  * What each service may do right now: the tier, the off predicate, `jellyMotion`, `electricArcs` and the game state
  * folded into one answer so engine, carriers, physics and arcs cannot disagree.
  *
- * - Hidden tab, print and forced colours: nothing (04 §4.7 — no physics transforms under forced colours).
+ * - Hidden tab and print: nothing.
  * - Other material-off states and `perf-lite`: press only, no ambient, no arcs.
  * - Game playing (R16): ambient and arcs zeroed, no bodies.
  * - `still`: press only, arcs off whatever `electricArcs` says (R9). `calm`: no ambient arcs, clicks per preference.
@@ -427,7 +416,7 @@ export function jellyMode(env?: JellyEnv): JellyModeState {
   const { doc, win } = resolveEnv(env);
   const none: JellyModeState = { ambient: false, arcs: 'off', deform: 'off' };
   if (!doc || doc.hidden) return none;
-  if (matches(win, PRINT_QUERY) || matches(win, FORCED_QUERY)) return none;
+  if (matches(win, PRINT_QUERY)) return none;
   if (gamePlaying(doc)) return none;
   const press: JellyModeState = { ambient: false, arcs: 'off', deform: 'press' };
   if (jellyOff(doc)) return press;

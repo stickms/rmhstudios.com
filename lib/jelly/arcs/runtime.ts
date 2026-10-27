@@ -7,7 +7,7 @@
  * **Global off** — no arcs of any kind, the layer is removed and every input listener is detached; only the
  * environment watchers stay:
  *
- * - `jellyMode().arcs === 'off'` (`lib/jelly/tiers.ts`): reduced transparency, forced colours, print, high contrast
+ * - `jellyMode().arcs === 'off'` (`lib/jelly/tiers.ts`): print, the app tier's high contrast
  *   (site and app), `perf-lite`, a hidden tab, a playing game, `jellyMotion = still`, `electricArcs = off`;
  * - the radial hub open (`.radial-hub:not([data-phase="closed"])`) or an eversion in progress (`.eversion-overlay`) —
  *   tiers does not know about these, so this file checks them, through one body observer and again at every action.

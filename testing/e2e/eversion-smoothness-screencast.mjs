@@ -13,7 +13,7 @@
 //
 //   --quick               desktop × dark, 3 fast-forward runs
 //   --profiles a,b        desktop | mobile                (default: both; --quick: desktop)
-//   --themes a,b          dark | light | high-contrast    (default: dark,light,high-contrast for the
+//   --themes a,b          dark | light    (default: dark,light for the
 //                         uninterrupted run; every other run uses the first)
 //   --ff-runs N           fast-forward instants for S#31(b) (default 20; --quick 3)
 //   --seed N              seed of the instants (default 31)
@@ -100,7 +100,7 @@ const opt = (n, d) => {
 };
 const QUICK = flag('--quick');
 const PROFILES_RUN = opt('--profiles', QUICK ? 'desktop' : 'desktop,mobile').split(',');
-const THEMES_RUN = opt('--themes', QUICK ? 'dark' : 'dark,light,high-contrast').split(',');
+const THEMES_RUN = opt('--themes', QUICK ? 'dark' : 'dark,light').split(',');
 const FF_RUNS = Number(opt('--ff-runs', QUICK ? '3' : '20'));
 const SEED = Number(opt('--seed', '31'));
 const CUT_RATIO = Number(opt('--cut-ratio', '4'));

@@ -185,18 +185,10 @@ const hexOf = (c: RGBA) => toHex(c);
 // ── the themes ──────────────────────────────────────────────────────────────────────────────────────────
 const rootBlock = blocks(GLOBALS, ':root').find((b) => b.includes('--site-jelly-haze:'));
 const ROOT_TOKENS: Tokens = decls(rootBlock ?? '');
-const THEMES = [
-  'default',
-  'light',
-  'graphite',
-  'sepia',
-  'nocturne',
-  'ultra',
-  'high-contrast',
-] as const;
+const THEMES = ['default', 'light', 'graphite', 'sepia', 'nocturne', 'ultra'] as const;
 function siteTheme(name: string): Tokens {
-  const own = blocks(GLOBALS, `.style-${name}`)[0] ?? '';
-  return { ...ROOT_TOKENS, ...decls(own) };
+  const own: Tokens = Object.assign({}, ...blocks(GLOBALS, `.style-${name}`).map(decls));
+  return { ...ROOT_TOKENS, ...own };
 }
 
 /** Role → its tint over the ground, exactly as liquid-glass.css writes it (asserted to still be there below). */
@@ -297,7 +289,7 @@ describe('Plasmatic Jelly tokens exist in every theme', () => {
   });
 
   it.each(THEMES)('.style-%s declares the whole jelly + arc token set', (name) => {
-    const own = decls(blocks(GLOBALS, `.style-${name}`)[0] ?? '');
+    const own = Object.assign({}, ...blocks(GLOBALS, `.style-${name}`).map(decls));
     const missing = TOKENS.filter((tok) => !(tok in own));
     expect(
       missing,
@@ -308,13 +300,6 @@ describe('Plasmatic Jelly tokens exist in every theme', () => {
   it(':root and .style-default agree (the default is restated as a class for scoped previews)', () => {
     const def = decls(blocks(GLOBALS, '.style-default')[0] ?? '');
     for (const tok of TOKENS) expect(def[tok], tok).toBe(ROOT_TOKENS[tok]);
-  });
-
-  it('high contrast zeroes the material', () => {
-    const hc = decls(blocks(GLOBALS, '.style-high-contrast')[0] ?? '');
-    for (const tok of TOKENS) {
-      expect(['0', 'transparent'], `${tok} in .style-high-contrast`).toContain(hc[tok]);
-    }
   });
 
   it('the arc layer has its z tier: menu < arcs < 50 (dialogs) < arcs-modal < tooltip', () => {
@@ -373,9 +358,7 @@ describe('Ink gel — the signal action holds 4.5:1 at both ends of its coat (#9
     const t = siteTheme(theme);
     const ink = over(resolve(t['--site-bg'], t), resolve('var(--gel-ink)', t));
     const onInk = resolve('var(--on-ink)', t);
-    // High contrast strips every coat from buttons (liquid-glass.css degradation): the ink is flat there.
-    const ends =
-      theme === 'high-contrast' ? ['transparent'] : ['var(--gel-body)', 'var(--gel-depth)'];
+    const ends = ['var(--gel-body)', 'var(--gel-depth)'];
     for (const end of ends) {
       const g = over(ink, resolve(end, t));
       expect(

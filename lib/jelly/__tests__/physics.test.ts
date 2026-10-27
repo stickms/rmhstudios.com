@@ -426,6 +426,36 @@ describe('installJellyPhysics', () => {
     expect(inlineClean(btn)).toBe(true);
   });
 
+  it('a press on a flat member presses the parent that marks itself press-through, not the member', () => {
+    // A JellyGroup (or a bar of flat members): the members opt out of being bodies, the parent is the one body.
+    install();
+    const group = make('div', {
+      cls: ['glass-fill'],
+      attrs: { 'data-jelly-press-through': '' },
+      box: { left: 0, top: 0, width: 260, height: 56 },
+    });
+    const member = make('button', { attrs: { 'data-jelly': 'off' } });
+    group.children.push(member);
+    member.parentElement = group;
+    body.append(group);
+    fire('pointerdown', member, 40, 20, { pointerType: 'touch' });
+    expect(group.hasAttribute('data-jelly-active')).toBe(true);
+    expect(member.hasAttribute('data-jelly-active')).toBe(false);
+  });
+
+  it('a press-through container with no glass body around it falls back to the member rules (opted out: nothing presses)', () => {
+    install();
+    const strip = make('div', {
+      attrs: { 'data-jelly-press-through': '', 'data-jelly-scope': 'off' },
+    });
+    const tab = make('button');
+    strip.children.push(tab);
+    tab.parentElement = strip;
+    body.append(strip);
+    expect(() => fire('pointerdown', tab, 40, 20, { pointerType: 'touch' })).not.toThrow();
+    expect(strip.hasAttribute('data-jelly-active')).toBe(false);
+  });
+
   it('a held press leaves plastic memory; the loop runs until it has decayed and the body is cleared', () => {
     // Regression (testing/e2e/liquid-glass.mjs, 2026-10-23): a press held past plasticHoldMs leaves plastic memory in
     // the rest target. The springs settled ON that (still decaying) target, `settled` stopped the frames, plastic only

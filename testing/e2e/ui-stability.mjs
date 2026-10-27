@@ -144,7 +144,6 @@ try {
         --site-radius-sm:10px; --rad-card-pad:20px; --rad-3:12px; --rad-4:16px; --rad-5:24px;
         --rad-card-gap:20px; --site-floating-reserve:80px; --site-surface-hover:#15203018; }
       .style-graphite { --site-bg:#11141a; --site-text:#f4f6fa; --site-text-muted:#b8c2d1; --site-border:#657085; --site-border-bright:#ccd7ed; }
-      .style-high-contrast { --site-bg:#000; --site-text:#fff; --site-border:#fff; --site-border-bright:#fff; }
       * {box-sizing:border-box} body {margin:0;background:var(--site-bg);color:var(--site-text);font:16px system-ui}
       #root {max-width:560px;padding:12px;margin:auto} button {align-self:flex-start;min-height:32px}
       ${hoverCss}
@@ -204,7 +203,7 @@ try {
     });
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 800 });
-    for (const theme of ['', 'style-graphite', 'style-high-contrast']) {
+    for (const theme of ['', 'style-graphite']) {
       await page.evaluate((theme) => {
         document.documentElement.className = theme;
         window.scrollTo(0, 0);
@@ -216,16 +215,14 @@ try {
       await settle(650);
       const hovered = await geometry();
       // Jelly: the hovered card may plump/lean within MOTION_BOUNDS; its LAYOUT never changes and its neighbour
-      // moves at most the nudge bound. High contrast keeps press only (04 §4.7), so there it must not move at all.
+      // moves at most the nudge bound.
       const travel = Math.abs(rest.y - hovered.y);
       check(
         `${width}/${theme}: hover deforms within bounds and never resizes layout (Δy ${travel.toFixed(2)}px)`,
         travel <= MOTION_BOUNDS.maxEdgeTravelPx &&
           rest.offsetH === hovered.offsetH &&
           hovered.transform === 'none' &&
-          Math.abs((hovered.neighbourY ?? 0) - (rest.neighbourY ?? 0)) <= MOTION_BOUNDS.nudgePx &&
-          (theme !== 'style-high-contrast' ||
-            (hovered.scale === 'none' && hovered.translate === 'none')),
+          Math.abs((hovered.neighbourY ?? 0) - (rest.neighbourY ?? 0)) <= MOTION_BOUNDS.nudgePx,
       );
       // The delegate link fills the card; the soft body must be the CARD (host + glass + hover layer move together),
       // never the link inside a still card — that slides the text and hit area off its own glass.

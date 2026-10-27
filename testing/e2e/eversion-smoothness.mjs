@@ -15,7 +15,7 @@
 //   BASE_URL=http://127.0.0.1:7371 node testing/e2e/eversion-smoothness.mjs --quick
 //
 //   --quick               dark theme, 3 fast-forwards (about 11 min on a loaded 4-core software-GL box)
-//   --themes a,b          dark | light | high-contrast   (default: all three for the uninterrupted
+//   --themes a,b          dark | light   (default: all three for the uninterrupted
 //                         run; every other scenario uses the first; --quick: dark)
 //   --ff-runs N           fast-forward instants for S#31(b) (default 20; --quick 3)
 //   --seed N              seed of the instants (default 31)
@@ -99,7 +99,7 @@ const opt = (n, d) => {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d;
 };
 const QUICK = flag('--quick');
-const THEMES_RUN = opt('--themes', QUICK ? 'dark' : 'dark,light,high-contrast').split(',');
+const THEMES_RUN = opt('--themes', QUICK ? 'dark' : 'dark,light').split(',');
 const FF_RUNS = Number(opt('--ff-runs', QUICK ? '3' : '20'));
 const SEED = Number(opt('--seed', '31'));
 const CUT_RATIO = Number(opt('--cut-ratio', '2'));

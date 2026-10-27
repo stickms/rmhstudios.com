@@ -102,7 +102,7 @@ const GEL_GEOMETRY = [
   '--gel-reflect',
 ];
 
-const THEMES = ['default', 'light', 'graphite', 'sepia', 'nocturne', 'ultra', 'high-contrast'];
+const THEMES = ['default', 'light', 'graphite', 'sepia', 'nocturne', 'ultra'];
 
 /** Whitespace-insensitive view of a stylesheet: runs collapsed, none just inside parentheses (prettier wraps them). */
 const flatten = (css: string) =>
@@ -116,8 +116,8 @@ describe('#989 physics mirrors equal lib/jelly/tiers.ts', () => {
   });
 
   it('no theme block re-declares a physics mirror (one value, everywhere)', () => {
-    for (const theme of THEMES.filter((t) => t !== 'high-contrast')) {
-      const own = decls(blocks(GLOBALS, `.style-${theme}`)[0] ?? '');
+    for (const theme of THEMES) {
+      const own = Object.assign({}, ...blocks(GLOBALS, `.style-${theme}`).map(decls));
       for (const token of Object.keys(MIRRORS)) {
         expect(own[token], `.style-${theme} must not restate ${token}`).toBeUndefined();
       }
@@ -140,7 +140,7 @@ describe('#989 gel tokens', () => {
   });
 
   it.each(THEMES)('.style-%s restates every gel colour', (theme) => {
-    const own = decls(blocks(GLOBALS, `.style-${theme}`)[0] ?? '');
+    const own = Object.assign({}, ...blocks(GLOBALS, `.style-${theme}`).map(decls));
     const missing = GEL_COLOURS.filter((t) => !(t in own));
     expect(missing, `.style-${theme} must restate the gel colours`).toEqual([]);
   });
@@ -150,29 +150,8 @@ describe('#989 gel tokens', () => {
     for (const token of GEL_COLOURS) expect(def[token], token).toBe(ROOT_TOKENS[token]);
   });
 
-  it('high contrast: opaque gel, no dispersion, Fresnel, specular or plasma', () => {
-    const hc = decls(blocks(GLOBALS, '.style-high-contrast')[0] ?? '');
-    expect(hc['--gel-body']).toBe('var(--site-surface-opaque)');
-    expect(hc['--gel-depth']).toBe('var(--site-surface-opaque)');
-    for (const token of [
-      '--gel-fresnel',
-      '--gel-specular',
-      '--gel-edge-r',
-      '--gel-edge-g',
-      '--gel-edge-b',
-    ]) {
-      expect(hc[token], token).toBe('transparent');
-    }
-    for (const token of ['--gel-disperse-r', '--gel-disperse-g', '--gel-disperse-b']) {
-      expect(px(hc[token]), token).toBe(0);
-    }
-    expect(hc['--plasma-wake']).toBe('0');
-    // High contrast keeps a plain, outlined edge: no molded shoulder.
-    expect(hc['--gel-mold']).toBe('0');
-    expect(hc['--gel-field-line']).toBe('100%');
-    expect(hc['--gel-edge-line']).toBe('100%');
-    // ...and no lens: nothing is refracted or reflected where the rim is not drawn.
-    expect(hc['--gel-reflect']).toBe('0');
+  it('the site high-contrast theme is gone (the app tier keeps its own .app-high-contrast)', () => {
+    expect(blocks(GLOBALS, '.style-high-contrast')).toHaveLength(0);
   });
 
   it('the global focus ring is the solid --focus-ring, never a glow', () => {
@@ -181,7 +160,7 @@ describe('#989 gel tokens', () => {
       "[tabindex]:not([tabindex='-1']):focus-visible { outline: 2px solid var(--focus-ring, var(--site-accent));",
     );
     for (const theme of THEMES) {
-      const own = decls(blocks(GLOBALS, `.style-${theme}`)[0] ?? '');
+      const own = Object.assign({}, ...blocks(GLOBALS, `.style-${theme}`).map(decls));
       expect(own['--focus-ring'], `.style-${theme} --focus-ring`).not.toMatch(
         /plasma|glow|gradient/,
       );

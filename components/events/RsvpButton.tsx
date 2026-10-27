@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { JellyGroup } from '@/components/ui/jelly-group';
 import type { RsvpStatus, RsvpResult } from '@/lib/events.server';
 
 interface RsvpButtonProps {
@@ -67,19 +66,12 @@ export function RsvpButton({
   };
 
   return (
-    <div
-      className="flex items-center gap-2"
-      role="group"
-      aria-label={t('rsvp-label', { defaultValue: 'RSVP' })}
-    >
-      <Button
-        type="button"
-        size="sm"
-        variant={status === 'going' ? 'accent' : 'outline'}
+    // One jelly body with two flat members: the chosen answer is the glow lying on it (clicking it again withdraws).
+    <JellyGroup size="sm" role="group" aria-label={t('rsvp-label', { defaultValue: 'RSVP' })}>
+      <JellyGroup.Item
         onClick={() => submit('going')}
         disabled={disabled || busy || full}
-        aria-pressed={status === 'going'}
-        className="rounded-full"
+        selected={status === 'going'}
       >
         <Check aria-hidden />
         {status === 'going'
@@ -87,22 +79,15 @@ export function RsvpButton({
           : full
             ? t('rsvp-full', { defaultValue: 'Full' })
             : t('rsvp-go', { defaultValue: 'Going' })}
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
+      </JellyGroup.Item>
+      <JellyGroup.Item
         onClick={() => submit('maybe')}
         disabled={disabled || busy}
-        aria-pressed={status === 'maybe'}
-        className={cn(
-          'rounded-full',
-          status === 'maybe' && 'border-site-accent bg-site-accent-dim text-site-accent',
-        )}
+        selected={status === 'maybe'}
       >
         <HelpCircle aria-hidden />
         {t('rsvp-maybe', { defaultValue: 'Maybe' })}
-      </Button>
-    </div>
+      </JellyGroup.Item>
+    </JellyGroup>
   );
 }

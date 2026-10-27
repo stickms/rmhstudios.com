@@ -98,8 +98,7 @@
 }
 html.style-graphite .kd-root,
 html.style-nocturne .kd-root,
-html.style-ultra .kd-root,
-html.style-high-contrast .kd-root {
+html.style-ultra .kd-root {
   --kd-seq-1: rgb(132 51 0);
   --kd-seq-2: rgb(172 77 0);
   --kd-seq-3: rgb(213 106 0);
@@ -398,27 +397,12 @@ html.perf-lite .kd-atmos__sweep {
   display: none;
 }
 
-/* High contrast: the whole layer goes. A legibility mode that still has an aura
-   behind the text has not delivered legibility. */
-html.style-high-contrast .kd-atmos__aura,
-html.style-high-contrast .kd-atmos__globe,
-html.style-high-contrast .kd-atmos__sweep {
-  display: none;
-}
-html.style-high-contrast .kd-atmos {
-  --kd-veil: 1;
-}
-
 /* Reduced transparency asks for exactly this: less showing through. */
 @media (prefers-reduced-transparency: reduce) {
   .kd-atmos {
     --kd-veil: 0.9;
     --kd-atmos-strength: 0.5;
   }
-}
-html.reduce-transparency .kd-atmos {
-  --kd-veil: 0.9;
-  --kd-atmos-strength: 0.5;
 }
 
 /* ==========================================================================
@@ -750,13 +734,3 @@ html.reduce-transparency .kd-atmos {
    takes away MOTION and EXPENSE, never information: a reduced-motion reader
    still gets the whole heatmap, and a high-contrast reader still gets the eight
    series that are the only thing distinguishing one category from another. */
-
-/* High contrast keeps the palette — it is the only thing distinguishing eight
-   series, and a legibility mode that erases the legend has not delivered
-   legibility — but drops the gridlines to the theme's own ink so nothing is
-   drawn in a colour-mix the mode did not choose. */
-html.style-high-contrast .kd-root {
-  --kd-grid: color-mix(in srgb, var(--site-text) 24%, transparent);
-  --kd-grid-strong: color-mix(in srgb, var(--site-text) 44%, transparent);
-  --kd-axis: var(--site-text);
-}

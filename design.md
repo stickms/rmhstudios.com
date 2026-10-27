@@ -129,8 +129,8 @@ violation of one of them:
    ambient text colour. `globals.css` supplies the pairings by default through
    zero-specificity rules, and a custom accent is contrast-checked at runtime —
    but hardcoding `text-white` on a themed surface defeats both.
-3. **Degradation is central, not per-component.** High contrast, reduced
-   transparency, `perf-lite`, forced colors and the jelly switches are handled once,
+3. **Degradation is central, not per-component.** `perf-lite`, print and the
+   jelly switches are handled once,
    in the token layer and the glass classes. A component that branches on them by
    hand is a bug. **Legibility must never depend on an optic** — text has to hold
    on `--site-surface-opaque`.
@@ -177,8 +177,7 @@ them share one frame and one pointer listener. A click discharges arcs and pulse
 layout, and neighbours move at most a bounded nudge that returns to rest. Nothing
 paints a replacement cursor, moves a gradient centre, or animates a root variable,
 and no component adds its own pointer loop, deformation or arc code. **The
-background remains still**: jelly moves, the room does not. Reduced transparency,
-high contrast, forced colours and `perf-lite` remove the ambient motion and arcs
+background remains still**: jelly moves, the room does not. `perf-lite` and print remove the ambient motion and arcs
 live. The navigator globe keeps its own dough jelly, which ripples where it is pressed. See [the implementation contract](docs/plasmatic-jelly-system.md).
 
 **A tier class is not decoration you can inline.** `bg-site-surface border
@@ -344,12 +343,9 @@ nothing else changes.
 
 - The **default** is strict monochrome jelly. Others are the same material in
   their own palette over their own aurora.
-- **High contrast is not a theme variant — it is the absence of the material**:
-  opaque surfaces, 2px borders, no optics, no haze, no arcs. Everything must
-  survive it.
+- There is **no high-contrast theme** (removed 2026-10-27); the site ships
+  Midnight and Daylight. `perf-lite` and print render the material off.
 - On top of any theme, an **accent preset** overrides only the accent tokens.
-- A **reduce transparency** switch (beside the OS preference) makes every
-  surface opaque; the old glass-clarity slider is retired.
 - **User themes** are the same idea taken to a marketplace: a theme is colours
   plus a few scalar knobs, from which the full contract is _derived_ — so every
   user theme is a correct glass tint and inherits future optics upgrades for
@@ -380,13 +376,12 @@ makes the accessible variants work.
   and RTL (`ar`, `ur`) is first-class — logical spacing, mirrored directional
   icons, `dir` set before paint.
 - **Preference switches and a device tier degrade the material centrally**:
-  jelly motion, electric arcs, reduced transparency, high contrast, forced
-  colors, plus a
+  jelly motion, electric arcs, plus a
   `perf-lite` tier derived from conservative device facts (not a measured-fps
   probe, which would restyle the page under the user for reasons they can't see).
 - **Comfort is a settings suite, not a theme.** On top of whichever theme is
   active, a visitor sets text size, density, a dyslexia-friendly face, a
-  jelly-motion and electric-arc switch, reduced transparency, tilt effects, and a
+  jelly-motion and electric-arc switch, tilt effects, and a
   **colour-vision mode**. Each is one more layer of the same token contract, so
   no component knows it happened.
 - **Colour is never the only carrier of meaning.** Roughly 8% of men have some
@@ -469,7 +464,7 @@ If you remember six things:
    intent read from projection, response on pointer-down; the formulas live in
    one file. `transform`/`opacity` and independent transforms only, and nothing
    writes root variables per frame.
-5. **Degrade centrally.** High contrast, reduced transparency, `perf-lite` and
+5. **Degrade centrally.** `perf-lite` and
    the jelly switches are the token layer's and the jelly policy's job — and
    legibility may never depend on an optic.
-6. **Look at it.** Three themes, two widths, jelly motion Still once.
+6. **Look at it.** Both themes, two widths, jelly motion Still once.

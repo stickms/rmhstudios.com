@@ -410,7 +410,7 @@
      ratio), so a slab outside the budget is molded out of the ground like its neighbours, not outlined. The degraded
      tiers keep the full edge: it is their only one. A border utility (danger, accent, selection) is in a later layer and
      still wins. */
-  html:not(.reduce-transparency):not(.perf-lite):not(.style-high-contrast):not(.app-high-contrast)
+  html:not(.perf-lite):not(.app-high-contrast)
     :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay):not([data-liquid-canvas='on']):not(
       [data-liquid-material='off']
     ) {
@@ -472,11 +472,10 @@ html[data-game-state='playing'] .jelly-flow > span,
    carrier, no haze canvas, no floor, no rim glow, no soft-body transform. `perf-lite` keeps the static floor and the
    CSS rim; only the moving layers go (no carriers, no haze canvases). `!important` because these are accessibility
    contracts, not looks: they outrank theme, material and utility layers alike. */
-:is(.reduce-transparency, .style-high-contrast, .perf-lite, .app-high-contrast)
-  :is(.jelly-flow, .jelly-haze-canvas) {
+:is(.perf-lite, .app-high-contrast) :is(.jelly-flow, .jelly-haze-canvas) {
   display: none !important;
 }
-:is(.reduce-transparency, .style-high-contrast, .app-high-contrast)
+:is(.app-high-contrast)
   :is(
     .glass-fill,
     .glass-pane,
@@ -490,7 +489,7 @@ html[data-game-state='playing'] .jelly-flow > span,
   --jelly-floor: none, none !important;
   box-shadow: none !important;
 }
-@media (prefers-reduced-transparency: reduce), (forced-colors: active), print {
+@media print {
   .jelly-flow,
   .jelly-haze-canvas {
     display: none !important;
@@ -509,7 +508,7 @@ html[data-game-state='playing'] .jelly-flow > span,
     box-shadow: none !important;
   }
 }
-@media (forced-colors: active), print {
+@media print {
   /* Soft-body transforms (02, `lib/jelly/physics.ts`) never apply where the OS owns the colours or on paper. */
   [data-jelly-body] {
     translate: none !important;

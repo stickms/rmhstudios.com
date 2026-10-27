@@ -38,8 +38,8 @@ feature lives in that feature's directory; genuinely shared primitives live in
   toasts — CI-enforced, because L1 is not a slab and a menu on it ghosts),
   `.glass-inset` for fields. `bg-site-surface border border-site-border
 rounded-site shadow-site-sm` renders the same _box_ and none of the
-  _material_ — no haze, no rim, no soft body, and nothing for high-contrast /
-  reduced transparency / `perf-lite` to switch off. Budget per tier
+  _material_ — no haze, no rim, no soft body, and nothing for
+  `perf-lite` to switch off. Budget per tier
   (`lib/jelly/tiers.ts`): at most 24 rim slabs, 8 animated haze canvases and 24 CSS
   flow carriers on a desktop, fewer on phones (roles first, cards, then controls). **No box-shadow
   on any UI surface** — shadow tokens are zero; the refracting edge is the depth.
@@ -156,8 +156,8 @@ cannot see, and it is the half that decides whether the change looks native:
 - [ ] **Strings through `t("key", { defaultValue })`** in the `c-<area>`
       namespace, `pnpm i18n:extract` run, key present in `locales/en/`. New
       namespace ⇒ also register it in `NAMESPACES` (`lib/i18n/config.ts`).
-- [ ] **Looked at in three themes × two widths** — Daylight, `.style-graphite`,
-      `.style-high-contrast`, phone and desktop, once with jelly motion `still`.
+- [ ] **Looked at in both themes × two widths** — Daylight and `.style-graphite`,
+      phone and desktop, once with jelly motion `still`.
       Nothing in CI can do this for you (design-language.md §0.9).
 - [ ] **Keyboard + screen reader**: icon-only controls named, decorative icons
       `aria-hidden`, focus ring visible against the surface it lands on, no new

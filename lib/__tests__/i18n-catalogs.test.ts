@@ -227,6 +227,9 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'custom-accent-none',
     'theme',
     'theme-desc',
+    // The high-contrast theme was removed (2026-10-27); the Theme row's description is English-only until the
+    // translate pipeline runs on the en change; remove with it.
+    'theme-desc-two-themes',
     // Globe-eversion "Navigation transition" row (T21, 2026-10-17). English-only
     // until the translate pipeline runs on the en change; remove with it.
     'nav-transition',

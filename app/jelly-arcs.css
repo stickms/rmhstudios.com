@@ -26,12 +26,12 @@
 .jelly-arc-layer[data-layer='modal'] {
   z-index: var(--z-arcs-modal);
 }
-:is(.reduce-transparency, .style-high-contrast, .perf-lite, .app-high-contrast) .jelly-arc-layer,
+:is(.perf-lite, .app-high-contrast) .jelly-arc-layer,
 html:is([data-electric-arcs='off'], [data-jelly-motion='still'], [data-game-state='playing'])
   .jelly-arc-layer {
   display: none !important;
 }
-@media (prefers-reduced-transparency: reduce), (forced-colors: active), print {
+@media print {
   .jelly-arc-layer {
     display: none !important;
   }

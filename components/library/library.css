@@ -2612,11 +2612,9 @@
   border-radius: calc(var(--site-radius) * 1.25);
 }
 
-
 .lib--glass-playground .lib__section + .lib__section {
   margin-top: var(--site-section-gap);
 }
-
 
 .lib--glass-playground .lib__section--catalog + .lib__section--catalog {
   margin-top: var(--site-section-gap);
@@ -2841,13 +2839,6 @@
     min-height: 174px;
     padding-top: 11px;
   }
-}
-
-/* `.lib-section-shell` is not in this list any more: it keeps `.glass-fill`'s
-   rim in every theme now, so high contrast has nothing left to restore. The
-   orbit cards still clear their transparent border here. */
-.style-high-contrast .lib--glass-playground .lib-orbit-card {
-  border-color: var(--site-border);
 }
 
 /* ─── Phone density: two volumes per row ─────────────────────────────────────

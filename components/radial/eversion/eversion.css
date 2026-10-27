@@ -142,13 +142,13 @@
   filter: blur(0px);
   transition: filter 250ms var(--ease-glass, var(--ease-smooth));
 }
-html:is(.perf-lite, .reduce-transparency, .ios-webkit) .radial-hub .eversion-hold {
+html:is(.perf-lite, .ios-webkit) .radial-hub .eversion-hold {
   filter: none;
 }
 /* The phone page is blurred on every tier but those two (radial.css, "Phones"), so the
    frozen picture of it is too. */
 @media (max-width: 767.98px) {
-  html:not(.perf-lite):not(.reduce-transparency)
+  html:not(.perf-lite)
     .radial-hub:is([data-phase='open'], [data-phase='everting'])
     .eversion-hold-layer:not(.eversion-hold-layer--focus)
     .eversion-hold {
@@ -363,11 +363,5 @@ html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .ever
   }
   to {
     scale: 0;
-  }
-}
-@media (forced-colors: active) {
-  .evert-popup {
-    border-color: CanvasText;
-    background: Canvas;
   }
 }

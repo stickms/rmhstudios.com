@@ -239,9 +239,9 @@ describe('the frozen picture (the destination is rendered before the animation, 
   it('is sharp on every tier that opts the shell out of that blur (and outranks the blur rule)', () => {
     // html:is(.a) .radial-hub .eversion-hold = (0,3,1) over .radial-hub:is([attr]) .eversion-hold = (0,3,0).
     expect(
-      rule('html:is(.perf-lite, .reduce-transparency, .ios-webkit) .radial-hub .eversion-hold'),
+      rule('html:is(.perf-lite, .ios-webkit) .radial-hub .eversion-hold'),
     ).toMatch(/filter: none;/);
-    for (const tier of ['perf-lite', 'reduce-transparency', 'ios-webkit']) {
+    for (const tier of ['perf-lite', 'ios-webkit']) {
       expect(radial).toMatch(new RegExp(`html\\.${tier}\\s+\\.radial-shell:has`));
     }
   });
@@ -267,7 +267,7 @@ describe('the frozen picture (the destination is rendered before the animation, 
       /\.radial-shell:has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) > \[data-floating\]:not\(\[data-floating='hub'\]\) \{ filter: blur\(var\(--hub-page-blur, 6px\)\);/,
     );
     expect(flatRadial).toMatch(
-      /html:is\(\.perf-lite, \.reduce-transparency, \.ios-webkit\) \.radial-shell:has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) > \[data-floating\]:not\(\[data-floating='hub'\]\) \{ filter: none;/,
+      /html:is\(\.perf-lite, \.ios-webkit\) \.radial-shell:has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) > \[data-floating\]:not\(\[data-floating='hub'\]\) \{ filter: none;/,
     );
   });
 

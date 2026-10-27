@@ -95,7 +95,7 @@ for the rules CI already fails on (raw palette colours, hardcoded radii,
 the executable gates in `lib/__tests__/` that are the **authority** for
 `docs/design-language.md` §13 · eslint on the changed files · `tsc --noEmit` ·
 the generated-docs freshness checks. Then it prints the handful of things no
-script can check — the three themes, the role-less switcher that is really a
+script can check — both themes, the role-less switcher that is really a
 tab strip — because a green gate means you did not regress an enforced rule,
 never that the change looks right.
 
@@ -201,7 +201,7 @@ _why_.
    reduced-motion setting and OS overrides must not return. The jelly's ambient
    motion and arcs have their own material switches (`jellyMotion`,
    `electricArcs`; WCAG 2.2.2/2.3.1) read only by `lib/jelly/tiers.ts`. Test
-   `light` and `high-contrast` themes, and jelly motion `still`.
+   `light` and `graphite` themes, and jelly motion `still`.
 8. **Security:** zod-validate all input; rate-limit writes/AI/uploads;
    user-supplied URL fetches through `lib/ssrf-guard.server`; CSP/security
    headers live in `deploy/apache/rmhstudios.conf` (the production front door;
@@ -295,8 +295,13 @@ transform` on a body, untriggered flicker, ripple, or a second spring formula.
 **Layout:** bodies sit at least `--space-4` (16px) apart. Leave `--jelly-margin`
 (16px) unclipped round every body; no `overflow: hidden` directly around one.
 Cards `--site-radius` (32px), controls `--site-radius-sm` (24px — a pill up to 48px tall;
-the scale is concentric in 8px steps). A dropdown is one rounded slab: its rows are plain
-text with no fill, edge or radius, and hover wakes a soft glow behind the text. Game play-fields are
+the scale is concentric in 8px steps). **A cluster of related controls is one body,
+not a row of pills:** `<JellyGroup>` (`components/ui/jelly-group.tsx`) is the parent
+and its members are flat (no edge or body of their own); the selected member is a
+feathered glow lying on it, as in `LiquidTabs` on the main site. A lone control may
+still be a pill. A dropdown is one rounded slab: its rows are plain
+text with no fill, edge or radius, and hover wakes a soft glow behind the text.
+Games and apps keep their own design scheme (e.g. the raised tab thumb). Game play-fields are
 `data-jelly-zone="playfield"` (excluded); ambient motion and arcs stop while a
 game is playing. **Nested bodies mold, never stack:** a body's shoulder stays
 inside its own padding and stops `NEST_GAP` (2px) short of any body nested in
@@ -313,10 +318,11 @@ its speed into the new target. Enters and exits are CSS **transitions** with
 keyframe pairs: a menu, dialog or sheet closed while it is still opening turns
 around from the frame it is on.
 
-**Accessibility and degradation stay central** (`lib/jelly/tiers.ts`): high
-contrast, forced colors, reduced transparency and `perf-lite` switch the jelly
-off and render opaque `--site-surface-opaque` with a solid edge (press feedback
-stays); components never branch on them. Users control the material with
+**Accessibility and degradation stay central** (`lib/jelly/tiers.ts`): `perf-lite`
+(and print, and the app tier's own high-contrast mode) switch the jelly off and
+render opaque `--site-surface-opaque` with a solid edge (press feedback stays);
+components never branch on them. The site has no high-contrast theme and no
+forced-colors / reduced-transparency fallback: they were removed (2026-10-27). Users control the material with
 `jellyMotion` (Lively / Calm / Still — Still stops all ambient motion, WCAG
 2.2.2; also one tap from the top bar) and `electricArcs` (Full / Clicks / Off).
 The retired reduced-motion setting and OS overrides do not return. Text holds

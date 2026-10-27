@@ -32,28 +32,28 @@
      rim. A role class on the same element wins: these never restate a role's knobs. Utilities (a `bg-gradient-*`, a
      `shadow-*`) still win on layer, so a host that paints its own image or shadow keeps it. */
   :is([data-jelly='card'], [data-jelly='lift']):not(
-      .glass-fill,
-      .glass-pane,
-      .glass-chrome,
-      .glass-overlay,
-      .glass-inset,
-      .glass-interactive,
-      .app-glass
-    ) {
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    .glass-interactive,
+    .app-glass
+  ) {
     --jelly-haze-a: var(--site-jelly-haze-fill);
     --jelly-plasma-k: 0.05;
     --jelly-flow-speed: 1;
     --jelly-flow-axis-deg: 100deg;
   }
   [data-jelly='pane']:not(
-      .glass-fill,
-      .glass-pane,
-      .glass-chrome,
-      .glass-overlay,
-      .glass-inset,
-      .glass-interactive,
-      .app-glass
-    ) {
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    .glass-interactive,
+    .app-glass
+  ) {
     --jelly-haze-a: var(--site-jelly-haze-pane);
     --jelly-plasma-k: 0.06;
     --jelly-flow-speed: 1;
@@ -62,22 +62,22 @@
   /* Raw controls the migration tagged (`data-jelly` bare, or a press style): they have a surface of their own, so the
      haze is the field-level whisper, not a card's. */
   :is(
-      [data-jelly=''],
-      [data-jelly='control'],
-      [data-jelly='sink'],
-      [data-jelly='firm'],
-      [data-jelly='drag'],
-      [data-jelly='lite']
-    ):not(
-      .glass-fill,
-      .glass-pane,
-      .glass-chrome,
-      .glass-overlay,
-      .glass-inset,
-      .glass-interactive,
-      .app-glass,
-      [data-slot]
-    ) {
+    [data-jelly=''],
+    [data-jelly='control'],
+    [data-jelly='sink'],
+    [data-jelly='firm'],
+    [data-jelly='drag'],
+    [data-jelly='lite']
+  ):not(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    .glass-interactive,
+    .app-glass,
+    [data-slot]
+  ) {
     --jelly-haze-a: var(--site-jelly-haze-inset);
     --jelly-plasma-k: 0.04;
     --jelly-flow-speed: 1.2;
@@ -86,21 +86,21 @@
 
   /* Static floor + rim for every host this file owns. Declared on the host so `--jelly-haze-a` resolves there. */
   :is(
-      [data-jelly]:not(
-          [data-jelly='off'],
-          [data-jelly='none'],
-          .glass-fill,
-          .glass-pane,
-          .glass-chrome,
-          .glass-overlay,
-          .glass-inset,
-          .glass-interactive,
-          .app-glass,
-          [data-slot]
-        ),
-      [data-slot='switch'],
-      [data-slot='skeleton']
-    ) {
+    [data-jelly]:not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      .glass-interactive,
+      .app-glass,
+      [data-slot]
+    ),
+    [data-slot='switch'],
+    [data-slot='skeleton']
+  ) {
     --jelly-static-haze: radial-gradient(
       120% 90% at 25% 15%,
       color-mix(
@@ -134,21 +134,21 @@
     background-size: var(--jelly-floor-size);
   }
   :is(
-      [data-jelly]:not(
-          [data-jelly='off'],
-          [data-jelly='none'],
-          .glass-fill,
-          .glass-pane,
-          .glass-chrome,
-          .glass-overlay,
-          .glass-inset,
-          .glass-interactive,
-          .app-glass,
-          [data-slot]
-        ),
-      [data-slot='switch'],
-      [data-slot='skeleton']
-    ):not([data-liquid-canvas='on']) {
+    [data-jelly]:not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      .glass-interactive,
+      .app-glass,
+      [data-slot]
+    ),
+    [data-slot='switch'],
+    [data-slot='skeleton']
+  ):not([data-liquid-canvas='on']) {
     box-shadow: var(--jelly-rim, var(--site-shadow-sm));
   }
   /* A carrier draws the haze: the floor steps aside (perf-lite keeps the floor; no carrier runs there). */
@@ -362,7 +362,7 @@ html[data-game-state='playing'] [data-jelly-zone='hud'] :is(.jelly-flow, .jelly-
    draws its 1px ring with it). `perf-lite` keeps all of it: it is static. `!important` because these are
    accessibility contracts, not looks; only custom properties and images are forced, never `box-shadow` itself, so a
    `ring-*` focus utility is untouched. */
-:is(.reduce-transparency, .style-high-contrast, .app-high-contrast)
+:is(.app-high-contrast)
   :is(
     [data-jelly],
     [data-sonner-toast],
@@ -376,16 +376,20 @@ html[data-game-state='playing'] [data-jelly-zone='hud'] :is(.jelly-flow, .jelly-
   --jelly-floor: none, none !important;
   --jelly-rim: none !important;
 }
-:is(.reduce-transparency, .style-high-contrast, .app-high-contrast)
-  :is([data-slot='switch'], [data-switch-knob], [data-slot='slider-thumb']) {
+:is(.app-high-contrast) :is([data-slot='switch'], [data-switch-knob], [data-slot='slider-thumb']) {
   --jelly-floor: none, none !important;
   --jelly-rim: var(--site-shadow-sm) !important;
 }
-:is(.reduce-transparency, .style-high-contrast, .app-high-contrast)
-  :is([data-switch-knob], [data-tab-thumb], [data-slot='slider-thumb'], [data-slot='slider-range']) {
+:is(.app-high-contrast)
+  :is(
+    [data-switch-knob],
+    [data-tab-thumb],
+    [data-slot='slider-thumb'],
+    [data-slot='slider-range']
+  ) {
   background-image: none !important;
 }
-@media (prefers-reduced-transparency: reduce), (forced-colors: active), print {
+@media print {
   :is(
     [data-jelly],
     [data-sonner-toast],
@@ -403,7 +407,12 @@ html[data-game-state='playing'] [data-jelly-zone='hud'] :is(.jelly-flow, .jelly-
     --jelly-floor: none, none !important;
     --jelly-rim: var(--site-shadow-sm) !important;
   }
-  :is([data-switch-knob], [data-tab-thumb], [data-slot='slider-thumb'], [data-slot='slider-range']) {
+  :is(
+    [data-switch-knob],
+    [data-tab-thumb],
+    [data-slot='slider-thumb'],
+    [data-slot='slider-range']
+  ) {
     background-image: none !important;
   }
 }
@@ -417,4 +426,20 @@ html[data-game-state='playing'] [data-jelly-zone='hud'] :is(.jelly-flow, .jelly-
 html .glass-overlay[data-dialog-shell='bare'] {
   background: none !important;
   border: 0 !important;
+}
+
+/* ── 6b. LiquidTabs on the main site: the selected tab is a flat glow, not a raised droplet ───────────────────────────
+   The thumb element stays (it is the layoutId morph and the ink hook), but on the site it paints a feathered accent wash
+   lying on the track: no edge, no coat, no rim. Games and apps keep the droplet above (`html.app-route`, or
+   `appearance="thumb"` on the strip). Higher specificity than §6, so it needs no `!important`. */
+html:not(.app-route) [data-slot='liquid-tabs']:not([data-tab-appearance='thumb']) [data-tab-thumb] {
+  border: 0;
+  background-color: transparent;
+  background-image: radial-gradient(
+    ellipse closest-side at 50% 50%,
+    color-mix(in srgb, var(--site-accent) calc(var(--row-glow-strength, 20%) * 1.8), transparent)
+      35%,
+    transparent 100%
+  );
+  box-shadow: none;
 }

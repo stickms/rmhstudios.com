@@ -69,6 +69,7 @@ import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { SPRING } from '@/lib/motion';
 import { NotificationBadge } from '@/components/ui/notification-badge';
+import { useIsAppTier } from '@/components/ui/app-tier-context';
 
 /**
  * Strips with this many tabs or fewer are a segmented control — equal segments
@@ -102,8 +103,8 @@ export interface LiquidTabRenderProps {
   id: string;
   /** `'page'` on the active item — link mode marks the current route this way. */
   'aria-current': 'page' | undefined;
-  /** Route tabs press like button tabs: a control-mode jelly body (`lib/jelly/physics.ts`; the attribute is its alias). */
-  'data-fluid-press': string;
+  /** Thumb appearance only (games/apps): route tabs press like button tabs, a control-mode jelly body (`lib/jelly/physics.ts`). Absent in the flat glow, where the whole strip is one opted-out subtree. */
+  'data-fluid-press'?: string;
   /** Class string matching a tablist-mode tab (pad + accent-on-active). */
   className: string;
   /** Hover tooltip — set to the label in `iconOnly` mode; spread it onto the link. */
@@ -161,6 +162,12 @@ interface LiquidTabsProps {
   renderTab?: (tab: LiquidTab, props: LiquidTabRenderProps) => React.ReactNode;
   /** Accessible name for the tablist / nav (already translated). */
   'aria-label'?: string;
+  /**
+   * How the selected tab is drawn. `glow` (the main-site default): a flat, feathered accent wash lying on the track,
+   * and the tabs are flat members of it (not jelly bodies). `thumb` (the default on game/app routes, from
+   * `AppTierContext`): the raised thumb the full-screen games and apps keep for their own design scheme.
+   */
+  appearance?: 'glow' | 'thumb';
 }
 
 export function LiquidTabs({
@@ -173,8 +180,12 @@ export function LiquidTabs({
   iconOnly = false,
   idBase,
   renderTab,
+  appearance: appearanceProp,
   'aria-label': ariaLabel,
 }: LiquidTabsProps) {
+  // Games and apps keep the raised thumb; the main site gets the flat glow. An explicit prop wins.
+  const appTier = useIsAppTier();
+  const appearance = appearanceProp ?? (appTier ? 'thumb' : 'glow');
   const uid = useId();
   const listRef = useRef<HTMLElement>(null);
   // useId scopes the capsule's layoutId so multiple LiquidTabs never collide.
@@ -186,6 +197,7 @@ export function LiquidTabs({
   const panelId = (id: string) => (idBase ? `${idBase}-panel-${id}` : undefined);
 
   const link = Boolean(renderTab);
+  const glow = appearance === 'glow';
 
   // Roving keyboard nav (WAI-ARIA tabs pattern): ←/→/↑/↓ move, Home/End jump to
   // the ends, and focus follows. Disabled tabs are skipped. Tablist mode only —
@@ -435,7 +447,7 @@ export function LiquidTabs({
             active,
             id: tabId(tab.id),
             'aria-current': active ? 'page' : undefined,
-            'data-fluid-press': '',
+            'data-fluid-press': glow ? undefined : '',
             className: cn(itemClass(active), 'flex-1'),
             title: tab.icon ? tab.label : undefined,
             children: content(tab),
@@ -462,7 +474,7 @@ export function LiquidTabs({
         data-tab-active={active ? 'true' : 'false'}
         // Hover and press turn a tint out of the tab, under the thumb (globals.css §7.3).
         data-evert=""
-        data-fluid-press=""
+        data-fluid-press={glow ? undefined : ''}
         className={itemClass(active)}
       >
         {capsule(active)}
@@ -478,6 +490,9 @@ export function LiquidTabs({
     'data-slot': 'liquid-tabs',
     'data-tab-size': size,
     'data-tab-fit': equal ? 'equal' : 'content',
+    'data-tab-appearance': appearance,
+    // Flat members: one opted-out subtree, so no tab (button or a caller's <Link>) is a jelly body of its own.
+    'data-jelly-scope': glow ? 'off' : undefined,
     'data-tab-icon-only': iconOnly ? '' : undefined,
     'data-fade-start': 'false',
     'data-fade-end': 'false',

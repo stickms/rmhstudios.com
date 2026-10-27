@@ -6,6 +6,7 @@ import { Bell, MessageCircle, Search, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { JellyGroup } from '@/components/ui/jelly-group';
 import { BackToTop } from '@/components/ui/back-to-top';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
@@ -194,7 +195,7 @@ function RadialTopBar() {
   const close = () => setPanel(null);
 
   return (
-    <header className="radial-topbar glass-chrome">
+    <header className="radial-topbar glass-chrome" data-jelly-press-through="">
       <TabBadge count={unread + notifications} />
       <Link
         to="/"
@@ -208,11 +209,9 @@ function RadialTopBar() {
       </Link>
 
       <div className="radial-topbar__actions">
-        <button
+        <JellyGroup.Item
           type="button"
           className="radial-topbar__btn radial-topbar__search"
-          data-evert=""
-          data-fluid-press=""
           onClick={openCommandPalette}
           {...panelIntentProps}
           aria-haspopup="dialog"
@@ -222,16 +221,14 @@ function RadialTopBar() {
           <Search aria-hidden />
           <span>{t('search-site', { defaultValue: 'Search RMH Studios' })}</span>
           <kbd aria-hidden>/</kbd>
-        </button>
+        </JellyGroup.Item>
 
         {session ? (
           <>
-            <button
+            <JellyGroup.Item
               type="button"
               ref={messagesRef}
               className="radial-topbar__btn max-sm:hidden"
-              data-evert=""
-              data-fluid-press=""
               onClick={() => toggle('messages')}
               {...panelIntentProps}
               aria-haspopup="dialog"
@@ -240,17 +237,15 @@ function RadialTopBar() {
             >
               <MessageCircle aria-hidden />
               {unread > 0 && <span className="radial-topbar__dot" aria-hidden />}
-            </button>
+            </JellyGroup.Item>
             <LazyPanel mounted={panelsMounted}>
               <MessagesPanel open={panel === 'messages'} onClose={close} anchorRef={messagesRef} />
             </LazyPanel>
 
-            <button
+            <JellyGroup.Item
               type="button"
               ref={bellRef}
               className="radial-topbar__btn"
-              data-evert=""
-              data-fluid-press=""
               onClick={() => toggle('notifications')}
               {...panelIntentProps}
               aria-haspopup="dialog"
@@ -259,7 +254,7 @@ function RadialTopBar() {
             >
               <Bell aria-hidden />
               {notifications > 0 && <span className="radial-topbar__dot" aria-hidden />}
-            </button>
+            </JellyGroup.Item>
             <LazyPanel mounted={panelsMounted}>
               <NotificationsPanel
                 open={panel === 'notifications'}
@@ -268,11 +263,10 @@ function RadialTopBar() {
               />
             </LazyPanel>
 
-            <button
+            <JellyGroup.Item
               type="button"
               ref={avatarRef}
               className="radial-topbar__avatar"
-              data-fluid-press=""
               onClick={() => toggle('profile')}
               {...panelIntentProps}
               aria-haspopup="dialog"
@@ -285,7 +279,7 @@ function RadialTopBar() {
                 size={32}
                 fallbackName={resolved?.name || session.user.name}
               />
-            </button>
+            </JellyGroup.Item>
             <LazyPanel mounted={panelsMounted}>
               <ProfilePanel open={panel === 'profile'} onClose={close} anchorRef={avatarRef} />
             </LazyPanel>
@@ -305,12 +299,10 @@ function RadialTopBar() {
           <>
             {/* Signed out there is no profile panel, so its "Pause ambient motion"
                 control (WCAG 2.2.2) gets a panel of its own — DisplayPanel. */}
-            <button
+            <JellyGroup.Item
               type="button"
               ref={displayRef}
               className="radial-topbar__btn"
-              data-evert=""
-              data-fluid-press=""
               onClick={() => toggle('display')}
               {...panelIntentProps}
               aria-haspopup="dialog"
@@ -318,19 +310,19 @@ function RadialTopBar() {
               aria-label={t('display-settings', { defaultValue: 'Display settings' })}
             >
               <SlidersHorizontal aria-hidden />
-            </button>
+            </JellyGroup.Item>
             <LazyPanel mounted={panelsMounted}>
               <DisplayPanel open={panel === 'display'} onClose={close} anchorRef={displayRef} />
             </LazyPanel>
-            <Link
-              to="/login"
-              search={{ callbackURL: undefined }}
-              className="radial-topbar__signin"
-              data-evert=""
-              data-fluid-press=""
-            >
-              {t('sign-in', { defaultValue: 'Sign in' })}
-            </Link>
+            <JellyGroup.Item asChild>
+              <Link
+                to="/login"
+                search={{ callbackURL: undefined }}
+                className="radial-topbar__signin"
+              >
+                {t('sign-in', { defaultValue: 'Sign in' })}
+              </Link>
+            </JellyGroup.Item>
           </>
         )}
       </div>

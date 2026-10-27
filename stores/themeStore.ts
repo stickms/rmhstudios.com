@@ -34,7 +34,6 @@ import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 export const SITE_STYLES = [
   { id: 'graphite', label: 'Midnight', icon: '◐', group: 'RMH', bg: '#000000' },
   { id: 'default', label: 'Daylight', icon: '☀', group: 'RMH', bg: '#ffffff' },
-  { id: 'high-contrast', label: 'High contrast', icon: '◑', group: 'RMH', bg: '#000000' },
 ] as const;
 
 /**

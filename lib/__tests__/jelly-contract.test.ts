@@ -95,12 +95,8 @@ function fakeDoc(o: DocOpts = {}): Document {
 
 /** Every signal that must stand the material down, with what 04 §4.7 leaves of the soft body. */
 const DEGRADED: Array<[string, DocOpts, 'press' | 'off']> = [
-  ['OS reduced transparency', { media: [FINE, '(prefers-reduced-transparency: reduce)'] }, 'press'],
-  ['forced colours', { media: [FINE, '(forced-colors: active)'] }, 'off'],
   ['print', { media: [FINE, 'print'] }, 'off'],
-  ['the site high-contrast theme', { classes: ['style-high-contrast'] }, 'press'],
   ['the app high-contrast theme', { appHighContrast: true }, 'press'],
-  ['the legacy reduce-transparency class', { classes: ['reduce-transparency'] }, 'press'],
   ['perf-lite', { classes: ['perf-lite'] }, 'press'],
   ['a hidden tab', { hidden: true }, 'off'],
   ['a game in play (R16)', { attrs: { 'data-game-state': 'playing' } }, 'off'],

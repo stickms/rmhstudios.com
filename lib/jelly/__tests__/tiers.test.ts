@@ -168,7 +168,7 @@ describe('safety bounds (04 §4.3–4.5, R12, R13)', () => {
 
 describe('selectors', () => {
   it('the degraded root is spelled exactly as the engine and the cursor runtime match it', () => {
-    expect(DEGRADED_ROOT_SELECTOR).toBe('.reduce-transparency,.style-high-contrast,.perf-lite');
+    expect(DEGRADED_ROOT_SELECTOR).toBe('.perf-lite');
     for (const file of ['lib/liquid/glass/engine.ts', 'lib/liquid/runtime.ts']) {
       const src = read(file);
       // Either the literal (today) or the shared import (after W2-A/W2-D adopt it).
@@ -217,15 +217,19 @@ describe('jellyTier', () => {
   });
 
   it.each([
-    [{ classes: ['reduce-transparency'] }],
-    [{ classes: ['style-high-contrast'] }],
-    [{ classes: ['perf-lite', 'style-high-contrast'] }],
     [{ appContrast: true }],
-    [{ media: ['(forced-colors: active)'] }],
-    [{ media: ['(prefers-reduced-transparency: reduce)'] }],
     [{ media: ['print'] }],
   ] as [FakeOpts][])('is off for %j', (o) => {
     expect(jellyTier({ doc: fineDoc(o) })).toBe('off');
+  });
+
+  it.each([
+    [{ media: ['(forced-colors: active)'] }],
+    [{ media: ['(prefers-reduced-transparency: reduce)'] }],
+    [{ classes: ['reduce-transparency'] }],
+    [{ classes: ['style-high-contrast'] }],
+  ] as [FakeOpts][])('no longer degrades for %j (the contrast theme and OS fallbacks were removed)', (o) => {
+    expect(jellyTier({ doc: fineDoc(o) })).toBe('full');
   });
 
   it('is not changed by a hidden tab (that is a clock decision)', () => {
@@ -245,11 +249,7 @@ describe('jellyOff', () => {
 
   it.each([
     [{ classes: ['perf-lite'] }],
-    [{ classes: ['reduce-transparency'] }],
-    [{ classes: ['style-high-contrast'] }],
     [{ appContrast: true }],
-    [{ media: ['(forced-colors: active)'] }],
-    [{ media: ['(prefers-reduced-transparency: reduce)'] }],
     [{ media: ['print'] }],
     [{ hidden: true }],
   ] as [FakeOpts][])('is true for %j', (o) => {
@@ -313,16 +313,12 @@ describe('jellyMode', () => {
 
   it.each([
     [{ classes: ['perf-lite'] }],
-    [{ classes: ['reduce-transparency'] }],
-    [{ classes: ['style-high-contrast'] }],
     [{ appContrast: true }],
-    [{ media: ['(prefers-reduced-transparency: reduce)'] }],
   ] as [FakeOpts][])('keeps press but drops the material for %j', (o) => {
     expect(mode(o)).toEqual({ ambient: false, arcs: 'off', deform: 'press' });
   });
 
   it.each([
-    [{ media: ['(forced-colors: active)'] }],
     [{ media: ['print'] }],
     [{ hidden: true }],
     [{ attrs: { 'data-game-state': 'playing' } }],
@@ -452,7 +448,7 @@ describe('onJellyEnvChange', () => {
     expect(w.observers[0]!.filter).not.toContain('data-scrolling');
 
     // A media change, an attribute change and a visibility change all reach both.
-    [...w.queries.get('(forced-colors: active)')!][0]!();
+    [...w.queries.get('print')!][0]!();
     w.observers[0]!.cb();
     [...w.docListeners.get('visibilitychange')!][0]!();
     expect([a, b]).toEqual([3, 3]);
