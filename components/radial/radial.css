@@ -1122,10 +1122,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
   border: none;
   cursor: pointer;
   color: var(--site-accent-fg);
-  /* No disc and no fill: the orb is the globe itself (MiniGlobe), a canvas that turns and gives under the
-     finger. A drag turns it, so the browser must not take the touch for a scroll. */
   background: none;
-  touch-action: none;
   -webkit-tap-highlight-color: transparent;
   /* No shadow. It used to carry a `0 10px 30px -8px rgba(0,0,0,0.5)` bloom plus a
      contact shadow, both hardcoded black rather than themed — so on the light
@@ -1189,6 +1186,32 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
     scale 0.18s var(--ease-glass, var(--ease-smooth)),
     opacity 0.3s ease 0.16s;
 }
+/* Phones: the orb never moves. It is only the touch target over the docked globe, which is what travels. */
+.radial-hub[data-dock][data-phase='open'] .radial-hub__orb {
+  transform: translateX(-50%);
+  opacity: 1;
+  transition: none;
+}
+.radial-hub__orb::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  /* The orb as a lit sphere. On a phone this is only the placeholder until the real globe is docked over it
+     (`data-dock`): wider screens keep it. */
+  background: radial-gradient(
+    circle at 34% 28%,
+    color-mix(in srgb, var(--site-accent) 62%, var(--site-accent-fg)) 0%,
+    var(--site-accent) 48%,
+    color-mix(in srgb, var(--site-accent) 70%, var(--site-bg)) 100%
+  );
+  transition: opacity 0.5s var(--ease-smooth);
+}
+.radial-hub[data-dock] .radial-hub__orb::before,
+.radial-hub[data-dock] .radial-hub__logo {
+  opacity: 0;
+}
 .radial-hub__orb:focus-visible {
   outline: 3px solid var(--site-text);
   outline-offset: 3px;
@@ -1199,14 +1222,48 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    continuous GPU work, and this one ran on every `_site` page for decoration
    alone. The orb carries its own glass material; nothing replaces the aura. */
 
-/* The orb's globe (MiniGlobe.tsx): a canvas hanging out past the orb by the dough body's extent, so a
-   bulge or a dent has room to move. It takes no pointer events of its own; the orb's button does. */
+/* The RMH mark (radial spirograph SVG) drawn in the orb's accent-contrast ink. */
 .radial-hub__logo {
-  position: absolute;
-  inset: -15%;
-  width: 130%;
-  height: 130%;
-  pointer-events: none;
+  display: block;
+  width: 74%;
+  height: 74%;
+  overflow: visible;
+  /* The mark sits on the orb's own solid accent fill, so the correct ink is
+     simply the accent's paired foreground — a token every theme and preset
+     authors and `ensureReadableAccent()` contrast-checks, which makes this
+     deterministic in a way a blend mode is not. (An earlier revision used
+     `mix-blend-mode: difference` here; blending only composites against the
+     backdrop inside the element's OWN stacking context, which is exactly how the
+     hub glyphs ended up white-on-white.) */
+  color: var(--site-accent-fg);
+}
+.radial-hub__logo path {
+  /* Hairline line-art: the mark is a very dense spirograph rendered tiny (~44px
+     in the orb), so any weight bleeds the overlapping curves into a solid muddy
+     blob. Kept very fine (this scales DOWN with the geometry, so on-screen it's
+     a sub-pixel filigree) → a delicate white mark, not a heavy black disc. */
+  stroke-width: 0.8;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+/* On mount the mark blooms open — scaling + rotating out of the core while its
+   stroke draws itself (pathLength-normalised), leaning into the SVG. */
+.radial-hub__logo {
+    animation: rmh-logo-bloom 1.05s var(--ease-glass, var(--ease-smooth)) both;
+  }
+.radial-hub__logo path {
+    animation: rmh-logo-draw 1.3s ease both;
+  }
+@keyframes rmh-logo-bloom {
+  from {
+    transform: scale(0.15) rotate(-50deg);
+    opacity: 0;
+  }
+}
+@keyframes rmh-logo-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
 }
 
 /* ── Radial navigation overlay ────────────────────────────────────────── */
@@ -2303,41 +2360,78 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   }
 }
 
-/* ── LANDING — phones: the page has already changed, and the globe comes home ─────────────────────
-   A destination chosen on the globe is navigated to at once (RadialHub `landOnOrb`). The globe stays up for the
-   length of its own self-eversion (`--land-ms`, `SELF_EVERT_MS`), turning itself inside out in place, and over the
-   same time travels down and shrinks onto the docked orb's pose (the same variables the open used, run backwards),
-   so the run finishes on the mini globe. The veil, the foot and the page blur are already in their closed state
-   (they are only held open by `open`), so they let go on their own. The globe leaves in the last fifth as the orb,
-   at the same pose, comes in. */
-.radial-hub[data-phase='landing'] .radial-globe {
-  animation: globe-land var(--land-ms, 1500ms) var(--ease-smooth) both;
-}
-@keyframes globe-land {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  80% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(var(--globe-from-dy, 0px)) scale(var(--globe-from-scale, 0.24));
-  }
-}
-.radial-hub[data-phase='landing'] .radial-hub__orb {
+/* ── PHONES: the one docked globe ─────────────────────────────────────────────────────────────────
+   RadialHub renders the real globe once (`.radial-hub__dock`), laid out at its full size in the middle of the
+   screen and held SMALL on the orb's footprint by two individual properties, `translate` and `scale`, whose values
+   the hub measures (`--dock-dx/dy/scale`, origin `--dock-ox/oy`: the sphere's centre, so it scales about itself).
+   Open is the same element with both set to rest, so a touch only moves and grows it, and what it shows is sharp
+   because it is drawn at full size. `scale` is the property LiquidGlobe waits on to re-place the page it refracts.
+
+   While docked it is a dot globe: the icons and labels cannot be read at this size, so only the pins' discs show,
+   and the icons arrive as it grows. It takes no pointer: the orb above it is the touch target. */
+.radial-hub__dock {
+  position: fixed;
+  /* Clear of the top and bottom edges, symmetric about the screen's centre (the globe is laid out there). */
+  inset: 0.75rem 0;
+  z-index: calc(var(--z-floating) - 1);
+  display: grid;
+  place-items: center;
   pointer-events: none;
-  animation: orb-land-in var(--land-ms, 1500ms) var(--ease-smooth) both;
 }
-@keyframes orb-land-in {
-  0%,
-  70% {
+.radial-hub:is([data-phase='open'], [data-phase='closing'], [data-phase='landing'], [data-phase='everting'])
+  .radial-hub__dock {
+  /* Above the veil for the whole open, close and landing, so the globe never dips under it mid-move. */
+  z-index: calc(var(--z-hub-overlay) + 1);
+}
+.radial-hub[data-phase] .radial-hub__dock .radial-globe {
+  transform-origin: var(--dock-ox, 50%) var(--dock-oy, 50%);
+  translate: var(--dock-dx, 0px) var(--dock-dy, 0px);
+  scale: var(--dock-scale, 0.2);
+  /* The overlay's keyframe open/close is for the wider screens; here the same element just moves. */
+  animation: none;
+  pointer-events: none;
+  transition:
+    translate 0.5s var(--ease-glass, var(--ease-smooth)),
+    scale 0.5s var(--ease-glass, var(--ease-smooth)),
+    opacity 0.4s var(--ease-smooth);
+}
+.radial-hub[data-phase='open'] .radial-hub__dock .radial-globe {
+  translate: 0 0;
+  scale: 1;
+}
+/* LANDING: the page has already changed (RadialHub `landOnOrb`) and the globe comes home over the length of its own
+   self-eversion, so the run ends on the docked globe. Same element, same two properties, slower. */
+.radial-hub[data-phase='landing'] .radial-hub__dock .radial-globe {
+  transition-duration: var(--land-ms, 1500ms), var(--land-ms, 1500ms), 0.4s;
+  transition-timing-function: var(--ease-smooth);
+}
+/* A globe that mounts at its docked pose fades in rather than appearing; one mounted by a tap before it was ready
+   grows in from the orb. */
+@starting-style {
+  .radial-hub[data-phase] .radial-hub__dock .radial-globe {
     opacity: 0;
   }
-  100% {
-    opacity: 1;
-  }
+}
+.radial-hub[data-phase='open'] .radial-hub__dock .radial-globe__stage {
+  pointer-events: auto;
+}
+/* The marquee, the reticle and the readout are for the open globe. */
+.radial-hub__dock .radial-globe__title,
+.radial-hub__dock .radial-globe__reticle {
+  transition: opacity 0.3s var(--ease-smooth);
+}
+.radial-hub:not([data-phase='open']) .radial-hub__dock .radial-globe__title,
+.radial-hub:not([data-phase='open']) .radial-hub__dock .radial-globe__reticle {
+  opacity: 0;
+}
+/* Dots: icons and labels step aside while it is small. */
+.radial-hub__dock .radial-globe__pin-dot svg,
+.radial-hub__dock .radial-globe__pin-name {
+  transition: opacity 0.3s var(--ease-smooth);
+}
+.radial-hub:not([data-phase='open']) .radial-hub__dock .radial-globe__pin-dot svg,
+.radial-hub:not([data-phase='open']) .radial-hub__dock .radial-globe__pin-name {
+  opacity: 0;
 }
 
 /* ── EVERTING — the hub hands the screen to the Globe Eversion ──────────────
