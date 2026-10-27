@@ -1122,14 +1122,11 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
   border: none;
   cursor: pointer;
   color: var(--site-accent-fg);
-  /* A jelly sphere, not a flat disc: lit from the upper left, deepening toward
-     the far limb. Every stop is a theme token, so each theme tints its own globe. */
-  background: radial-gradient(
-    circle at 34% 28%,
-    color-mix(in srgb, var(--site-accent) 62%, var(--site-accent-fg)) 0%,
-    var(--site-accent) 48%,
-    color-mix(in srgb, var(--site-accent) 70%, var(--site-bg)) 100%
-  );
+  /* No disc and no fill: the orb is the globe itself (MiniGlobe), a canvas that turns and gives under the
+     finger. A drag turns it, so the browser must not take the touch for a scroll. */
+  background: none;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
   /* No shadow. It used to carry a `0 10px 30px -8px rgba(0,0,0,0.5)` bloom plus a
      contact shadow, both hardcoded black rather than themed — so on the light
      themes the orb sat in a grey halo the size of itself, which read as a glow
@@ -1164,20 +1161,8 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    The orb still clears content at rest: columns reserve `--site-floating-reserve`
    at their end, so nothing lands under it once a scroll settles. */
 
-/* Hover/press lift only while docked (closed) — never fight the glide-to-centre.
-   The scaling lives on the independent `scale` property, not inside `transform`:
-   `transform` here is load-bearing POSITIONING (the -50% that centres the orb on
-   the viewport, and the glide-to-centre while open), and the fluid press layer
-   drives `scale` inline. Keeping them in separate properties means the spring
-   overrides this rule while a finger is down instead of multiplying with it —
-   which is what would turn a 0.96 press into a 0.92 double-squish. */
-.radial-hub[data-phase='closed'] .radial-hub__orb:hover {
-  transform: translateX(-50%) translateY(-3px);
-  scale: 1.04;
-}
-.radial-hub[data-phase='closed'] .radial-hub__orb:active {
-  scale: 0.96;
-}
+/* No CSS hover lift or press scale on the orb: it is a globe that turns and gives under the finger
+   (MiniGlobe's dough body), and a transform here would fight that. */
 /* Stay above the overlay for the whole open AND close motion. */
 .radial-hub[data-phase='open'] .radial-hub__orb,
 .radial-hub[data-phase='closing'] .radial-hub__orb {
@@ -1209,27 +1194,14 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    continuous GPU work, and this one ran on every `_site` page for decoration
    alone. The orb carries its own glass material; nothing replaces the aura. */
 
-/* The orb's face: a mini globe (MiniGlobe.tsx) in the orb's accent-contrast ink. It
-   settles in once on mount; the globe it swells into owns every other motion. */
+/* The orb's globe (MiniGlobe.tsx): a canvas hanging out past the orb by the dough body's extent, so a
+   bulge or a dent has room to move. It takes no pointer events of its own; the orb's button does. */
 .radial-hub__logo {
-  display: block;
-  width: 82%;
-  height: 82%;
-  overflow: visible;
-  color: var(--site-accent-fg);
-  animation: rmh-globe-settle 0.7s var(--ease-smooth) both;
-}
-.radial-hub__globe-lit {
-  stop-color: color-mix(in srgb, var(--site-accent) 70%, var(--site-accent-fg));
-}
-.radial-hub__globe-deep {
-  stop-color: color-mix(in srgb, var(--site-accent) 78%, var(--site-bg));
-}
-@keyframes rmh-globe-settle {
-  from {
-    transform: scale(0.6);
-    opacity: 0;
-  }
+  position: absolute;
+  inset: -15%;
+  width: 130%;
+  height: 130%;
+  pointer-events: none;
 }
 
 /* ── Radial navigation overlay ────────────────────────────────────────── */
@@ -1240,7 +1212,10 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    swelling into the sphere. */
 .radial-hub__overlay {
   position: fixed;
-  inset: 0;
+  /* Clear of the top and bottom edges by 12px (symmetric, so the globe's centre does not move): a fixed
+     layer touching an edge is what iOS Safari fills its status bar and tab bar strips from, and with the
+     globe open that was a solid band under it. */
+  inset: 0.75rem 0;
   z-index: var(--z-hub-overlay);
   display: grid;
   place-items: center;
@@ -2503,20 +2478,17 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 .radial-feed__compose {
   position: fixed;
   /* The shared bottom-right lane (globals.css §5.5x A.1). Same numbers this rule
-     always used, now expressed once so back-to-top can sit on the row beside it
-     without a second copy of the clamps to keep in step. */
+     always used, now expressed once so the lane's clamps live in one place. */
   right: var(--site-fab-row-right);
   bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom));
   z-index: var(--z-floating);
   display: inline-flex;
-  align-items: center;
-  gap: var(--rad-2);
-  padding: var(--rad-3) var(--rad-4);
+  align-items: stretch;
   border: none;
   border-radius: 999px;
-  /* The same jelly sphere as the hub orb (lit upper left, deepening to the far limb), so the two
-     floating controls are one material. Its softness is the jelly body's (`data-fluid-press` in
-     RadialFeed): no CSS transform or transition here, which would fight the physics. */
+  /* The same jelly sphere as the hub orb's shading (lit upper left, deepening to the far limb). Its softness
+     is the jelly body's (`data-fluid-press` in RadialFeed): no CSS transform or transition on the pill itself,
+     which would fight the physics. */
   background: radial-gradient(
     circle at 30% 24%,
     color-mix(in srgb, var(--site-accent) 62%, var(--site-accent-fg)) 0%,
@@ -2526,10 +2498,51 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   color: var(--site-accent-fg);
   font-size: 0.875rem;
   font-weight: 700;
-  cursor: pointer;
   box-shadow: none;
 }
-.radial-feed__compose svg {
+.radial-feed__fab-action,
+.radial-feed__fab-top {
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.radial-feed__fab-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rad-2);
+  padding: var(--rad-3) var(--rad-4);
+  border-radius: 999px;
+}
+/* The back-to-top arrow grows out of the pill's left end and folds back into it. Width carries the open
+   and close (the pill is anchored on the right, so it extends leftwards), opacity follows on the same
+   smooth curve, and `visibility` flips at the end of the close so a folded arrow is not focusable. */
+.radial-feed__fab-top {
+  display: grid;
+  place-items: center;
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    width 0.36s var(--ease-smooth),
+    opacity 0.24s var(--ease-smooth),
+    visibility 0s linear 0.36s;
+}
+.radial-feed__fab-top[data-shown] {
+  width: 2.75rem;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    width 0.36s var(--ease-smooth),
+    opacity 0.3s var(--ease-smooth) 0.06s,
+    visibility 0s;
+}
+.radial-feed__fab-action svg,
+.radial-feed__fab-top svg {
   width: 1.1rem;
   height: 1.1rem;
 }
