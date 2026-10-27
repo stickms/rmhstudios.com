@@ -23,6 +23,7 @@
  *   React re-render that redraws every rim held software-GL frames for 100–400 ms
  *   (`testing/e2e/jelly-interaction.mjs`, the re-render pass).
  */
+import { startProgram, whenLinked } from '@/lib/render/gl-program';
 import { HAZE_FRAG } from './haze-shader';
 import { FRAG, VERT } from './shader';
 
@@ -156,18 +157,6 @@ export interface HazeDraw {
 
 type GL = WebGL2RenderingContext;
 
-function compile(gl: GL, type: number, src: string): WebGLShader | null {
-  const s = gl.createShader(type);
-  if (!s) return null;
-  gl.shaderSource(s, src);
-  gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-    gl.deleteShader(s);
-    return null;
-  }
-  return s;
-}
-
 const HAZE_NAMES = [
   'uSize',
   'uScale',
@@ -237,18 +226,6 @@ const NAMES = [
 ] as const;
 type UName = (typeof NAMES)[number];
 
-function link(gl: GL, vs: WebGLShader, fsSrc: string): WebGLProgram | null {
-  const fs = compile(gl, gl.FRAGMENT_SHADER, fsSrc);
-  if (!fs) return null;
-  const prog = gl.createProgram();
-  if (!prog) return null;
-  gl.attachShader(prog, vs);
-  gl.attachShader(prog, fs);
-  gl.bindAttribLocation(prog, 0, 'aPos');
-  gl.linkProgram(prog);
-  return gl.getProgramParameter(prog, gl.LINK_STATUS) ? prog : null;
-}
-
 /** `transfer`: zero-copy ImageBitmap handoff into `bitmaprenderer` targets. `copy`: `drawImage` into 2D targets. */
 export type GlassHandoff = 'transfer' | 'copy';
 
@@ -283,6 +260,8 @@ export class GlassRenderer {
     canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
       this.lost = true;
+      this.builds++;
+      this.building = false;
       this.gl = null;
       this.tex = null;
       this.rimProg = this.hazeProg = this.current = null;
@@ -291,15 +270,24 @@ export class GlassRenderer {
     canvas.addEventListener('webglcontextrestored', () => {
       this.lost = false;
       this.cw = this.ch = 0;
-      this.init();
-      this.onChange?.();
+      // The page's renderer rebuilds in the background (and calls `onChange` when it has); a worker's, here.
+      if (this.handoff === 'copy') {
+        this.init(true);
+      } else {
+        this.init();
+        this.onChange?.();
+      }
     });
   }
 
-  /** The page's renderer: the copy handoff, onto a high-water backing store (see "Handing a frame over"). */
+  /**
+   * The page's renderer: the copy handoff, onto a high-water backing store (see "Handing a frame over"). Its programs
+   * build in the background (`lib/render/gl-program.ts`), so creating it never stalls the page on the driver: it is
+   * {@link pending} (not `ready`) until they link, and then `onChange` fires — or {@link failed} turns true.
+   */
   static create(doc: Document = document): GlassRenderer | null {
     const r = new GlassRenderer(doc.createElement('canvas'), 'copy');
-    return r.init() ? r : null;
+    return r.init(true) ? r : null;
   }
 
   /**
@@ -320,7 +308,22 @@ export class GlassRenderer {
     return !this.lost && this.gl !== null;
   }
 
-  private init(): boolean {
+  /** The programs are still building (the page renderer, between `create` and its first `onChange`). */
+  get pending(): boolean {
+    return this.building;
+  }
+
+  /** The rim program will not build on this driver. */
+  failed = false;
+  private building = false;
+  private builds = 0;
+
+  /**
+   * Start a context and queue both programs. The rim and haze programs share one vertex shader and are queued
+   * together, so a driver that compiles in parallel does both at once. `background`: finish when they have linked,
+   * without blocking (the page); otherwise wait for them here (a worker, where nobody sees the wait).
+   */
+  private init(background = false): boolean {
     const gl = this.canvas.getContext('webgl2', {
       alpha: true,
       premultipliedAlpha: true,
@@ -331,11 +334,46 @@ export class GlassRenderer {
       powerPreference: 'default',
     }) as GL | null;
     if (!gl) return false;
-    const vs = compile(gl, gl.VERTEX_SHADER, VERT);
-    if (!vs) return false;
-    const prog = link(gl, vs, FRAG);
-    if (!prog) return false;
-    const haze = link(gl, vs, HAZE_FRAG);
+    const attribs = { aPos: 0 };
+    const rimBuild = startProgram(gl, { vert: VERT, frag: FRAG, attribs });
+    if (!rimBuild?.vertShader) return false;
+    const vs = rimBuild.vertShader;
+    const hazeBuild = startProgram(gl, { vert: VERT, frag: HAZE_FRAG, attribs, vertShader: vs });
+    const done = (prog: WebGLProgram | null, haze: WebGLProgram | null): boolean => {
+      gl.deleteShader(vs);
+      if (!prog) {
+        if (haze) gl.deleteProgram(haze);
+        this.failed = true;
+        return false;
+      }
+      this.finish(gl, prog, haze);
+      return true;
+    };
+    if (!background) {
+      const prog = rimBuild.linked() ? rimBuild.program : null;
+      const haze = hazeBuild?.linked() ? hazeBuild.program : null;
+      if (!prog) gl.deleteProgram(rimBuild.program);
+      if (hazeBuild && !haze) gl.deleteProgram(hazeBuild.program);
+      return done(prog, haze);
+    }
+    const generation = ++this.builds;
+    this.building = true;
+    void Promise.all([
+      whenLinked(gl, rimBuild),
+      hazeBuild ? whenLinked(gl, hazeBuild) : Promise.resolve(null),
+    ]).then(([prog, haze]) => {
+      // A context lost (and perhaps restored, with a build of its own) while this one was pending: not ours.
+      if (generation !== this.builds) return;
+      this.building = false;
+      if (this.lost) return;
+      done(prog, haze);
+      this.onChange?.();
+    });
+    return true;
+  }
+
+  /** The rest of the set-up, once the rim program (and perhaps the haze program) has linked. */
+  private finish(gl: GL, prog: WebGLProgram, haze: WebGLProgram | null): void {
     if (haze) for (const n of HAZE_NAMES) this.h[n] = gl.getUniformLocation(haze, n);
     this.hazeProg = haze;
     this.hazeTime = NaN;
@@ -362,7 +400,6 @@ export class GlassRenderer {
     gl.uniform1i(this.u.uScene, 0);
     this.tex = tex;
     this.gl = gl;
-    return true;
   }
 
   /**

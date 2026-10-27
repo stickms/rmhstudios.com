@@ -170,9 +170,31 @@ WebGL runs in a separate GPU process: hovering across eight cards cost 26 ms of 
 frame (37 fps, governor at its last step) and costs 0.7 ms (59 fps) from the worker. Engines
 without a worker-capable `OffscreenCanvas` keep the main-thread copy path
 (`renderer.ts` "Handing a frame over").
-The governor walks the clock back to 30 Hz at its first step, so a
-machine that cannot hold 60 — software GL, Safari Low Power Mode, Chrome Energy Saver (both
-cap rendering at 30 fps) — settles where it can instead of missing every other tick.
+
+**2026-10-27: coming up without a stutter.** The cursor, the globe's coat and skin and the
+rims used to build their WebGL programs on mount with a blocking status query, so the page
+hitched in the frames where they arrived, and each swapped in at once. Now:
+
+- **No program blocks the main thread.** `lib/render/gl-program.ts` queues compile + link and
+  reads `LINK_STATUS` only once the driver is done (`KHR_parallel_shader_compile`; without it a
+  WebGL 2 fence plus a minimum wait). Shader logs are read only on failure.
+- **Worker first.** Where a worker can draw, the engine admits no slab until it is ready
+  (bounded by `WORKER_WAIT_MS`) and builds no page renderer, so the rims compile only there;
+  where it cannot, the page renderer builds in the background. Admission is spread over
+  passes (`ACTIVATE_PER_PASS`) instead of the whole rim budget in one frame.
+- **Cross-fades, not swaps.** A rim or haze canvas is transparent until its first frame lands,
+  then fades in (`--liquid-enter` = `ENTER_MS`) over the CSS material, which stays until the
+  fade is done: only then is the host marked `data-liquid-canvas="on"` / `data-jelly-haze="on"`
+  (`data-liquid-layer` carries the stacking context meanwhile). The globe's coat does the same
+  (`data-globe-coat`: `entering` → `on`, `--globe-coat-fade`), the docked globe grows in from
+  `@starting-style` (`--globe-enter`), and the cursor swells out of the pointer on the hover
+  spring, with the system cursor kept until the globe covers it (`coversPointer`).
+- **Built once.** The cursor's context and program are shared per page (`acquireGlobeGl`) and
+  survive remounts, like the coat's; across visits the browser's own program cache answers,
+  which is why GLSL sources never carry per-session values.
+  The governor walks the clock back to 30 Hz at its first step, so a
+  machine that cannot hold 60 — software GL, Safari Low Power Mode, Chrome Energy Saver (both
+  cap rendering at 30 fps) — settles where it can instead of missing every other tick.
 
 **Audit reversal, recorded deliberately.** The 2026-10-08 performance audit set the
 "page at rest" frame limit to 2 fps and the backdrop went fully still because of it.
@@ -422,7 +444,8 @@ through tokens (R15). That coat draws the material's layers itself — haze, dor
 Fresnel edge — clipped to the sphere, so no globe element may ever be a rectangular host: `GLOBE_SELECTOR` in
 `lib/jelly/tiers.ts` is part of `OPT_OUT_SELECTOR` and of the engine's and registry's excludes, and click arcs never
 take a press on the globe (`lib/jelly/__tests__/globe-exclusion.test.ts`). The coat's private "drawn" flag is
-`data-globe-coat`, never `data-jelly` (a `data-jelly` stage was the square plasma outline of 2026-10-23).
+`data-globe-coat` (`entering` while it fades in over the CSS glass, `on` once it has), never `data-jelly` (a
+`data-jelly` stage was the square plasma outline of 2026-10-23).
 
 Retained from the liquid-glass contract, unchanged: the snapshot lifecycle
 (`scene.ts`: 260 ms coalescing, ≥ 1.5 s spacing, idle-time capture, 1.6 s mutation

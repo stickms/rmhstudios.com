@@ -420,6 +420,12 @@
      var(--ease-smooth), covered 22% of its distance in the first 5% of its time. */
   --ease-smooth: cubic-bezier(0.3, 0, 0.15, 1);
   --ease-glass: var(--ease-smooth);
+  /* Entrances of the shader-drawn layers, each the CSS twin of the constant that times its hand-over: a rim or haze
+     canvas fading in over the CSS material (engine.ts ENTER_MS), the globe's coat fading in over its CSS glass
+     (LiquidGlobe COAT_FADE_MS), and the docked globe growing in when its chunk lands. */
+  --liquid-enter: 300ms;
+  --globe-coat-fade: 420ms;
+  --globe-enter: 560ms;
   --glass-bevel: 12px;
   --glass-glint-size: 320px;
   --glass-glint-opacity: 0.4;

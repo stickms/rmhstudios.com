@@ -148,12 +148,39 @@
     pointer-events: none;
     user-select: none;
   }
+  /* The entrance (engine.ts `ENTER_MS` = `--liquid-enter`). A rim or haze canvas is transparent until its first frame
+     lands (`data-liquid-fresh`), then fades in OVER the CSS material, which stays until the fade is done: only then
+     does the engine mark the host `data-liquid-canvas="on"` (rim) or `data-jelly-haze="on"` (haze) and the static
+     coat, edge and carrier step aside. `@starting-style` covers a canvas whose first frame lands before its first
+     style, and `data-liquid-settled` stops a canvas that has entered from fading again when it is re-inserted (React
+     wiping its host) or handed to the glass worker. Opacity only; without `@starting-style` the frame-gated fade
+     still runs. */
+  :is(.liquid-glass-canvas, .jelly-haze-canvas) {
+    transition: opacity var(--liquid-enter) var(--ease-smooth);
+  }
+  :is(.liquid-glass-canvas, .jelly-haze-canvas)[data-liquid-fresh] {
+    opacity: 0;
+  }
+  :is(.liquid-glass-canvas, .jelly-haze-canvas)[data-liquid-settled] {
+    transition: none;
+  }
+  @starting-style {
+    :is(.liquid-glass-canvas, .jelly-haze-canvas) {
+      opacity: 0;
+    }
+  }
   /* A CSS jelly carrier (`.jelly-flow`, z -3) or a haze canvas needs the same isolated stacking context the rim slab
-     does, or its negative z-index resolves against the nearest ancestor context and paints under the host's tint. */
-  :is([data-liquid-canvas='on'], [data-jelly-flow='on'], [data-jelly-haze='on']) {
+     does, or its negative z-index resolves against the nearest ancestor context and paints under the host's tint.
+     `data-liquid-layer` is the engine's mark from the moment a canvas is in the host (while it fades in, too). */
+  :is(
+    [data-liquid-canvas='on'],
+    [data-liquid-layer],
+    [data-jelly-flow='on'],
+    [data-jelly-haze='on']
+  ) {
     isolation: isolate;
   }
-  [data-liquid-canvas='on'][data-liquid-static] {
+  [data-liquid-layer][data-liquid-static] {
     position: relative;
   }
   :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay)[data-liquid-canvas='on']:not(

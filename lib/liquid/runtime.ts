@@ -95,7 +95,7 @@ export function installLiquidInteractions(doc: Document = document): () => void 
     if (
       !host ||
       // The glass engine lights these in the shader; a CSS carrier on top would be a second, DOM-churning light.
-      host.matches('[data-liquid-canvas]') ||
+      host.matches('[data-liquid-canvas],[data-liquid-layer]') ||
       host.closest(EXCLUDE) ||
       host.matches('input,textarea,select') ||
       (host !== lightHost && win.getComputedStyle(host).position === 'static')
