@@ -6,21 +6,30 @@
 import { useEffect, useState } from 'react';
 import { request } from '@/lib/tf2-hud/api';
 
-let pending: Promise<Set<number>> | null = null;
+let pending: Promise<Set<string>> | null = null;
 
-function loadModelIds(): Promise<Set<number>> {
-  pending ??= request<{ ids: number[] }>('/api/tf2-loadout/models').then((r) => new Set(r.ids));
+function loadModelIds(): Promise<Set<string>> {
+  pending ??= request<{ ids: string[] }>('/api/tf2-loadout/models').then((r) => new Set(r.ids));
   pending.catch(() => {
     pending = null;
   });
   return pending;
 }
 
-export const modelUrl = (id: number): string => `/api/tf2-loadout/models/${id}.glb`;
+export const modelUrl = (name: string): string => `/api/tf2-loadout/models/${name}.glb`;
 
-/** `null` while loading or if the list is unavailable; otherwise the set of defindexes with a model. */
-export function useModelIds(): Set<number> | null {
-  const [ids, setIds] = useState<Set<number> | null>(null);
+/**
+ * The model to show for an item worn by `cls`: its per-class variant when one
+ * was uploaded, otherwise the shared model, otherwise none.
+ */
+export function pickModel(ids: ReadonlySet<string>, itemId: number, cls?: string): string | null {
+  if (cls && ids.has(`${itemId}_${cls}`)) return `${itemId}_${cls}`;
+  return ids.has(String(itemId)) ? String(itemId) : null;
+}
+
+/** `null` while loading or if the list is unavailable; otherwise the set of model names that exist. */
+export function useModelIds(): Set<string> | null {
+  const [ids, setIds] = useState<Set<string> | null>(null);
   useEffect(() => {
     let alive = true;
     loadModelIds().then(

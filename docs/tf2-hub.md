@@ -34,9 +34,21 @@ A loadout is one class plus `slots`: `{ [slotKey]: { item: defindex, paint?: def
 
 The builder shows a 3D view of any item that has a model (`ItemModelViewer` → `Viewer3D`, three.js via react-three-fiber). The viewer, three.js and the model are all lazy: nothing loads until an item with a model is selected, and the canvas renders on demand (no idle cost), with orbit and zoom.
 
-- **Where models live.** GLB files in the site's object storage at `tf2-models/<defindex>.glb`. `GET /api/tf2-loadout/models` lists which exist (cached 5 min) and `GET /api/tf2-loadout/models/:id.glb` serves one. An item with no GLB shows "No 3D model for this item yet."
+- **Where models live.** GLB files in the site's object storage at `tf2-models/<defindex>.glb`, or `tf2-models/<defindex>_<class>.glb` for an item with one model per class (the viewer prefers the per-class file for the selected class). `GET /api/tf2-loadout/models` lists which exist (cached 5 min) and `GET /api/tf2-loadout/models/:name.glb` serves one. An item with no GLB shows "No 3D model for this item yet."
 - **Paint.** A material flagged `extras.tint = true` in the GLB has its base colour multiplied by the paint colour.
-- **Getting models in.** Valve's models are not in the item schema or the public mirror, so they have to be converted once from a game install: [Creators_SourceMDLToGLTF](https://github.com/rob5300/Creators_SourceMDLToGLTF) (a Blender plugin, built for the Creators.TF loadout page) batch-converts TF2 weapons and cosmetics to GLB. Name the outputs `<defindex>.glb` and run `pnpm exec tsx scripts/tf2-models/upload.ts <dir>` against the target environment.
+- **What not to upload:** `.vpk` files. The site serves **GLB** files; a VPK is the game's packed archive you extract _from_.
+
+### Producing the models (one-off, from a TF2 install)
+
+The model files are not in the item schema or the public mirror, so they come from your own copy of the game:
+
+1. **List what is needed.** `pnpm exec tsx scripts/tf2-models/model-manifest.ts out/` writes `model-manifest.json` / `.csv` (per item: the `.mdl` path(s) and the GLB name each converts to) and `mdl-paths.txt` (every distinct `.mdl`). Today that is 2,262 items → 4,940 distinct `.mdl` files → 5,192 GLBs (cosmetics worn by several classes have one model per class): ~224 weapon models, ~1,264 Valve cosmetics (`models/player/items/**`) and ~3,443 workshop cosmetics (`models/workshop*/player/items/**`). Taunts and PDAs have no model entry.
+2. **Extract from the game's VPKs.** In `Team Fortress 2/tf/`, open `tf2_misc_dir.vpk` (the `.mdl`, `.vvd` and `.dx90.vtx` files for each path in `mdl-paths.txt`) and `tf2_textures_dir.vpk` (the `materials/models/**` textures those models use) with a VPK tool such as VPKEdit or GCFScape. If a model converts untextured, extract its materials from both archives.
+3. **Convert to GLB.** [Creators_SourceMDLToGLTF](https://github.com/rob5300/Creators_SourceMDLToGLTF) is a Blender plugin (it needs Blender Source Tools) that batch-converts decompiled TF2 weapons and cosmetics to GLB; it was written for the Creators.TF loadout preview and also produces tint masks.
+4. **Name them.** `pnpm exec tsx scripts/tf2-models/rename-glb.ts <converted-dir> out/model-manifest.json <ready-dir>` matches each converted file to its item (by path, or by file name when unambiguous) and writes `<defindex>.glb` / `<defindex>_<class>.glb`. It lists anything unmatched or ambiguous instead of guessing.
+5. **Upload.** `pnpm exec tsx scripts/tf2-models/upload.ts <ready-dir>` against the target environment (R2/S3 when configured). Models can be added in batches; the picker shows a 3D view for each item as soon as its GLB exists. Weapons and Valve cosmetics (~1,500 models) cover most of what people pick; the workshop cosmetics are the long tail.
+
+Weapon models in the schema are the in-game `c_models` (first-person) ones, which may carry arm geometry; check a few before converting everything.
 
 ## Long lists
 

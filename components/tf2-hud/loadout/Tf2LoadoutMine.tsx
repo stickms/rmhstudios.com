@@ -9,7 +9,7 @@ import { Search, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import AppHeader from '@/components/shared/AppHeader';
+import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { SignInRequiredDialog } from '@/components/shared/SignInRequiredDialog';
 import { useSession } from '@/components/Providers';
 import { Btn, EmptyNote, IconBtn, Modal, SelectField } from '@/components/tf2-hud/ui';
@@ -89,7 +89,7 @@ export default function Tf2LoadoutMine() {
 
   return (
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
-      <AppHeader
+      <Tf2Header
         title={t('my-loadouts', { defaultValue: 'My loadouts' })}
         backLabel={t('loadout-builder', { defaultValue: 'Loadout Builder' })}
         backHref="/tf2/loadout"

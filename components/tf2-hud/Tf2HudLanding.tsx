@@ -9,7 +9,7 @@ import { Boxes, FileArchive, FolderOpen, Globe, Layers, Trash2 } from 'lucide-re
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import AppHeader from '@/components/shared/AppHeader';
+import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { deleteDraft, listDrafts, type DraftSummary } from '@/lib/tf2-hud/local-drafts';
 import { useEditor } from '@/lib/tf2-hud/store';
 import { ImportError } from '@/lib/tf2-hud/zip/import';
@@ -87,7 +87,7 @@ export default function Tf2HudLanding() {
 
   return (
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
-      <AppHeader
+      <Tf2Header
         title="RMH TF2 HUD Editor"
         backLabel={t('tf2-hub', { defaultValue: 'TF2 Hub' })}
         backHref="/tf2"

@@ -3,7 +3,8 @@
  *
  *   pnpm exec tsx scripts/tf2-models/upload.ts <dir-of-glb-files>
  *
- * Files are named `<defindex>.glb` (the item's number in items_game.txt); anything
+ * Files are named `<defindex>.glb` (the item's number in items_game.txt), or
+ * `<defindex>_<class>.glb` for an item with a model per class; anything
  * else in the directory is ignored. Uses the same storage as the rest of the site
  * (R2/S3 when configured, the local filesystem otherwise), so run it with the
  * target environment's variables. See docs/tf2-hub.md → "3D models".
@@ -24,7 +25,7 @@ const MAGIC = 0x46546c67; // "glTF"
 let ok = 0;
 let skipped = 0;
 for (const name of readdirSync(dir)) {
-  const m = /^(\d{1,7})\.glb$/.exec(name);
+  const m = /^(\d{1,7}(?:_[a-z]{3,10})?)\.glb$/.exec(name);
   if (!m) continue;
   const bytes = readFileSync(path.join(dir, name));
   if (bytes.length < 12 || bytes.readUInt32LE(0) !== MAGIC) {
@@ -32,8 +33,8 @@ for (const name of readdirSync(dir)) {
     skipped++;
     continue;
   }
-  await putObject(modelKey(Number(m[1])), bytes, 'model/gltf-binary');
+  await putObject(modelKey(m[1]), bytes, 'model/gltf-binary');
   ok++;
 }
-console.log(`uploaded ${ok} model(s)${skipped ? `, skipped ${skipped}` : ''}`);
+process.stdout.write(`uploaded ${ok} model(s)${skipped ? `, skipped ${skipped}` : ''}\n`);
 process.exit(0);

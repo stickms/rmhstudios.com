@@ -10,7 +10,7 @@ import { lazy, Suspense, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { supportsWebGL } from '@/lib/shared/platform';
-import { modelUrl, useModelIds } from '@/lib/tf2-loadout/use-models';
+import { modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
 import { cn } from '@/lib/utils';
 
 const Viewer3D = lazy(() => import('./Viewer3D'));
@@ -31,23 +31,27 @@ function Note({ children, className }: { children: ReactNode; className?: string
 
 export default function ItemModelViewer({
   itemId,
+  cls,
   tint,
   className,
 }: {
   itemId: number;
+  /** The class wearing it, to pick a per-class model. */
+  cls?: string;
   /** Paint colour, `#rrggbb`. */
   tint?: string;
   className?: string;
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const ids = useModelIds();
+  const model = ids ? pickModel(ids, itemId, cls) : null;
   const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
 
   const body = !webgl ? (
     <Note>{t('model-no-webgl', { defaultValue: 'Your browser cannot show 3D models.' })}</Note>
   ) : ids === null ? (
     <Note>{t('model-checking', { defaultValue: 'Checking for a 3D model…' })}</Note>
-  ) : !ids.has(itemId) ? (
+  ) : !model ? (
     <Note>{t('model-none', { defaultValue: 'No 3D model for this item yet.' })}</Note>
   ) : (
     <SilentErrorBoundary
@@ -57,7 +61,7 @@ export default function ItemModelViewer({
       }
     >
       <Suspense fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}>
-        <Viewer3D url={modelUrl(itemId)} tint={tint} />
+        <Viewer3D url={modelUrl(model)} tint={tint} />
       </Suspense>
     </SilentErrorBoundary>
   );

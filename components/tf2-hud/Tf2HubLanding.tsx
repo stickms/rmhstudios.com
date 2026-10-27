@@ -7,7 +7,7 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Globe, LayoutDashboard, Shirt } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import AppHeader from '@/components/shared/AppHeader';
+import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import Tf2Logo from './Tf2Logo';
 
 export default function Tf2HubLanding() {
@@ -38,7 +38,7 @@ export default function Tf2HubLanding() {
 
   return (
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
-      <AppHeader
+      <Tf2Header
         title="RMH TF2 Hub"
         backLabel={t('apps', { defaultValue: 'Apps' })}
         backHref="/apps"

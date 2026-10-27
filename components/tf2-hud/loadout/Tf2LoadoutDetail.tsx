@@ -9,7 +9,7 @@ import { Copy, GitFork, Heart, Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import AppHeader from '@/components/shared/AppHeader';
+import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { SignInRequiredDialog } from '@/components/shared/SignInRequiredDialog';
 import { useSession } from '@/components/Providers';
 import { Btn, Pill } from '@/components/tf2-hud/ui';
@@ -110,7 +110,7 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
 
   return (
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
-      <AppHeader
+      <Tf2Header
         title={detail?.title ?? t('loadout', { defaultValue: 'Loadout' })}
         backLabel={t('workshop-back', { defaultValue: 'Workshop' })}
         backHref="/tf2/workshop?type=loadouts"

@@ -6,7 +6,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { LayoutDashboard, Shirt } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import AppHeader from '@/components/shared/AppHeader';
+import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import LoadoutWorkshopList from '@/components/tf2-hud/loadout/LoadoutWorkshopList';
 import HudWorkshopList from './HudWorkshopList';
 import { TfTabs, type TfTab } from './TfTabs';
@@ -24,7 +24,7 @@ export default function Tf2Workshop({ type }: { type: WorkshopType }) {
 
   return (
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
-      <AppHeader
+      <Tf2Header
         title={t('workshop-title', { defaultValue: 'TF2 Workshop' })}
         backLabel={t('tf2-hub', { defaultValue: 'TF2 Hub' })}
         backHref="/tf2"

@@ -10,7 +10,7 @@ import { Download, GitFork, Heart, Pencil } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import AppHeader from '@/components/shared/AppHeader';
+import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { useSession } from '@/components/Providers';
 import { api, ApiError } from '@/lib/tf2-hud/api';
 import type { HudDetail } from '@/lib/tf2-hud/api-types';
@@ -164,7 +164,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
 
   return (
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
-      <AppHeader
+      <Tf2Header
         title={detail?.title ?? 'RMH TF2 HUD Editor'}
         backLabel={t('workshop', { defaultValue: 'HUD Workshop' })}
         backHref="/tf2/workshop"

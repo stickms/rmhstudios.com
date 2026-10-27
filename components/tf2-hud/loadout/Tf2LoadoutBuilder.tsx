@@ -10,7 +10,7 @@ import { Check, Copy, FolderOpen, Globe, Plus, Save, Search, Trash2, X } from 'l
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import AppHeader from '@/components/shared/AppHeader';
+import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { SignInRequiredDialog } from '@/components/shared/SignInRequiredDialog';
 import { useSession } from '@/components/Providers';
 import { TfTabs, type TfTab } from '@/components/tf2-hud/TfTabs';
@@ -77,7 +77,7 @@ export default function Tf2LoadoutBuilder({
 
   return (
     <div className="app-page flex min-h-dvh flex-col bg-(--app-bg) text-(--app-text)">
-      <AppHeader
+      <Tf2Header
         title={t('loadout-title', { defaultValue: 'Loadout Builder' })}
         backLabel={t('tf2-hub', { defaultValue: 'TF2 Hub' })}
         backHref="/tf2"
@@ -650,6 +650,7 @@ function Picker({
         <div className="grid gap-3 border-b border-(--app-border) p-3 sm:grid-cols-[13rem_minmax(0,1fr)]">
           <ItemModelViewer
             itemId={current.id}
+            cls={cls}
             tint={entry?.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
           />
           <div className="flex min-w-0 flex-col gap-3">
