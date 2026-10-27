@@ -145,6 +145,16 @@
 html:is(.perf-lite, .reduce-transparency, .ios-webkit) .radial-hub .eversion-hold {
   filter: none;
 }
+/* The phone page is blurred on every tier but those two (radial.css, "Phones"), so the
+   frozen picture of it is too. */
+@media (max-width: 767.98px) {
+  html:not(.perf-lite):not(.reduce-transparency)
+    .radial-hub:is([data-phase='open'], [data-phase='everting'])
+    .eversion-hold-layer:not(.eversion-hold-layer--focus)
+    .eversion-hold {
+    filter: blur(var(--hub-page-blur, 3px));
+  }
+}
 
 /* ── Hiding the live page (spec §6.6) ──────────────────────────────────────
    While the opaque canvas covers the screen, the shell under it would keep

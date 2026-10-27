@@ -1577,6 +1577,34 @@ html.ios-webkit .radial-hub__veil {
   background: var(--site-bg);
 }
 
+/* ── Phones: the page stays visible behind the globe ────────────────────────
+   On a phone the menu used to black the page out: iOS Safari is one of the tiers
+   above that skip the blur, so its veil was opaque `--site-bg`. The page now stays
+   there, very slightly blurred, with only a light tint over it for the globe's
+   labels. Only `perf-lite` and `reduce-transparency` keep the opaque veil: the first
+   exists to avoid this raster and the second asked for less see-through material.
+
+   WebKit is the one engine the note above warns about (a blur of the document-tall
+   feed is a memory bet there). The radius is kept to 3px for that reason, and the
+   feed layer is the single thing to drop (`filter: none`, here) if it ever renders
+   blank on a device. The veil's tint then has to go back to opaque with it. */
+@media (max-width: 767.98px) {
+  .radial-shell {
+    --hub-page-blur: 3px;
+  }
+  html:not(.perf-lite):not(.reduce-transparency)
+    .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting']))
+    :is(.radial-backdrop, .radial-topbar, .radial-frame),
+  html:not(.perf-lite):not(.reduce-transparency)
+    .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting']))
+    > [data-floating]:not([data-floating='hub']) {
+    filter: blur(var(--hub-page-blur, 3px));
+  }
+  html:not(.perf-lite):not(.reduce-transparency) .radial-hub__veil {
+    background: color-mix(in srgb, var(--site-bg) 24%, transparent);
+  }
+}
+
 /* ── The liquid globe navigator ────────────────────────────────────────────
    The navigator itself: a glass sphere with one pin per destination, which you
    TURN to find where you want to go. Bring a place into the reticle at the front
