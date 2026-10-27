@@ -366,6 +366,7 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
         ref={composeRef}
         type="button"
         className="radial-feed__compose"
+        data-fluid-press=""
         data-evert=""
         onClick={openCompose}
         aria-label={t('compose', { defaultValue: 'Compose' })}

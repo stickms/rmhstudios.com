@@ -48,9 +48,11 @@ export function NavigationProgress() {
   }, [pending]);
 
   return (
+    // Out of the box tree while idle, not just transparent: iOS 26 Safari reads any fixed element at the top
+    // edge (opacity or not) as the source of the status-bar tint, and this one is full width.
     <div
       aria-hidden
-      className={`pointer-events-none fixed inset-x-0 top-0 z-[300] h-0.5 transition-opacity duration-site ${visible ? 'opacity-100' : 'opacity-0'}`}
+      className={`pointer-events-none fixed inset-x-0 top-0 z-[300] h-0.5 ${visible ? 'block' : 'hidden'}`}
     >
       <div
         data-nav-progress

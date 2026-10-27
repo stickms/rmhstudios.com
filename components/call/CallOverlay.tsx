@@ -184,7 +184,7 @@ export function CallOverlay() {
     // banner rides full-screen routes (games, login) that have no top bar —
     // `:has()` on the body, since the token lives at :root but the BAR does not.
     <div
-      className="call-banner fixed inset-x-0 top-0 z-[120] flex justify-center p-2"
+      className="call-banner fixed inset-x-0 top-3 z-[120] flex justify-center p-2"
       style={{ paddingTop: 'max(0.5rem, var(--safe-top, 0px))' }}
     >
       <div

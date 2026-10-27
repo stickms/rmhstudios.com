@@ -24,7 +24,7 @@ export function Masthead() {
   const { t } = useTranslation('c-rebar-rutabaga');
 
   return (
-    <header className="sticky top-0 z-30 border-b border-rebar-line bg-rebar-paper supports-[backdrop-filter]:bg-rebar-paper/78 supports-[backdrop-filter]:backdrop-blur-xl">
+    <header className="sticky top-3 z-30 mx-3 rounded-site border border-rebar-line bg-rebar-paper supports-[backdrop-filter]:bg-rebar-paper/78 supports-[backdrop-filter]:backdrop-blur-xl">
       <div className="mx-auto flex max-w-[86rem] items-center justify-between gap-6 px-6 py-4 sm:px-10">
         <Link
           to="/services"

@@ -186,7 +186,7 @@ export function KaikaiDebtCounter({ snapshot }: { snapshot: DebtSnapshot }) {
           reading a ledger. What it is NOT is a different design system: the bar
           is the same `.glass-chrome` every sticky header on the site uses, at
           the same measure, in the same tokens. */}
-      <header className="glass-chrome sticky top-0 z-20 border-b border-site-border">
+      <header className="glass-chrome sticky top-3 z-20 mx-3 rounded-site border border-site-border">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-3 sm:gap-3">
           <Link
             to="/"

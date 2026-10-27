@@ -2237,15 +2237,23 @@ html.ios-webkit .glass-liquid::after {
   display: none;
 }
 
-/* iOS 26 Safari derives the material behind its status bar and floating toolbar
-   from fixed/sticky layers near the corresponding viewport edge. Keep these
-   targets mounted through drawer state changes so WebKit never switches from
-   them to the drawer and fades in a solid sampled colour.
+/* iOS 26 Safari tints the strips behind its status bar and floating toolbar from
+   `position: fixed` / sticky layers at the screen edge, and a layer with a paint of its own (the aurora
+   canvas, here) is read as one flat colour and filled in as an opaque band that covers the content
+   scrolling under it. Transparency, `pointer-events: none`, transforms and `backdrop-filter` do not
+   reliably opt a layer out. Sites that show their page behind the bars (apple.com, reddit.com) have no
+   fixed layer at the edges: their ground is the document's own background, and anything fixed sits well
+   clear of an edge.
 
-   A transparent target alone is insufficient: WebKit samples through it and
-   still finds the opaque drawer. A real, minimal backdrop filter makes WebKit
-   preserve its translucent browser material. Five pixels reaches both edge
-   probes, and the maximum practical z-index keeps app overlays from winning. *
+   So on iOS WebKit the full-viewport fixed decoration is not rendered at all, on every page: the aurora
+   and the ring backdrop (the document background above already carries the canvas on site pages) and the
+   arc canvas. Page-level headers and banners that were pinned flush to the top edge (the call banners,
+   the Kaikai ledger bar, the Rebar masthead) are inset from it the same way the shell's top capsule is. The sticky top
+   capsule and the orb and compose button already sit well off the edges (radial.css). Content then runs
+   under both bars with Safari's own soft edge, not a flat band. */
+html.ios-webkit :is(.site-aurora, .radial-backdrop, .jelly-arc-layer) {
+  display: none;
+}
 
 /* Forced colors / Windows High Contrast strips backgrounds — keep structural
    borders so panes retain their shape; make sure the v2 optics pseudos paint
@@ -3327,19 +3335,15 @@ html.app-route:has(.app-page) {
   scrollbar-gutter: stable;
 }
 
-/* Fixed descendants are clipped to Safari's visual viewport, leaving the
-   physical strips behind the status and floating tab bars without the aurora.
-   The root canvas is allowed to paint those strips, so mirror the site canvas
-   there on mobile iOS. Keeping it viewport-fixed also prevents a tall scrolling
-   page from exposing the end of the gradient at either edge. */
-@media (max-width: 47.999rem) {
-  html.ios-webkit:not(.app-route) {
-    background-image: var(--site-canvas);
-    background-repeat: no-repeat;
-    background-position: center top;
-    background-size: cover;
-    background-attachment: fixed;
-  }
+/* The page's ground on iOS WebKit is the ROOT's own background: the aurora layer is not rendered
+   there (see the iOS edge note below), because a fixed full-viewport layer is what makes Safari fill
+   the strips behind its bars with one flat colour. The root canvas scrolls with the document, and
+   content runs under both bars. */
+html.ios-webkit:not(.app-route) {
+  background-image: var(--site-canvas);
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
 }
 
 body {
