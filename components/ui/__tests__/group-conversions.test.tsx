@@ -57,6 +57,7 @@ describe('related controls are one jelly group with flat members', () => {
     expect(members(html)).toBe(3); // Select all, Archive, Clear
     expect(html.match(/data-slot="button"/g)).toHaveLength(1); // Delete
     expect(html).toContain('glass-chrome');
+    expect(html).toContain('data-jelly-press-through=""');
   });
 
   it('ModelToggle: a radio group whose options are flat members, the chosen one glowing', () => {

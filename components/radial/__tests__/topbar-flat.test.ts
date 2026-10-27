@@ -2,11 +2,18 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(new URL('../RadialShell.tsx', import.meta.url), 'utf8');
-const bar = src.slice(src.indexOf('function RadialTopBar'), src.indexOf('interface RadialShellProps'));
+const bar = src.slice(
+  src.indexOf('function RadialTopBar'),
+  src.indexOf('interface RadialShellProps'),
+);
 
 describe('top bar members are flat', () => {
   it('keeps the bar as the one glass body', () => {
-    expect(bar).toMatch(/<header className="radial-topbar glass-chrome">/);
+    expect(bar).toMatch(/<header className="radial-topbar glass-chrome"/);
+  });
+
+  it('the bar takes the press for its members', () => {
+    expect(bar).toMatch(/<header[^>]*data-jelly-press-through/);
   });
 
   it('presses no member as a body of its own', () => {

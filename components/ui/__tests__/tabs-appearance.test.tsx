@@ -14,6 +14,8 @@ describe('LiquidTabs appearance', () => {
     expect(html).toContain('data-tab-appearance="glow"');
     // The strip is one opted-out subtree: no tab inside it is a jelly body, whichever element a caller renders.
     expect(html).toContain('data-jelly-scope="off"');
+    // The track is a field-tier surface (not a soft body), so tabs press nothing: no press-through here.
+    expect(html).not.toContain('data-jelly-press-through');
     expect(html).not.toContain('data-fluid-press');
   });
 

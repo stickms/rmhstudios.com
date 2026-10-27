@@ -28,6 +28,7 @@
 @import './jelly-material.css';
 @import './jelly-arcs.css';
 @import './jelly-coverage.css';
+@import '../components/ui/jelly-group.css' layer(components);
 
 /* Scope Tailwind's content scanning to code that actually renders in the browser.
    Without this, auto-detection also scans build/test/infra/docs directories and

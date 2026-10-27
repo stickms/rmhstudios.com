@@ -1,6 +1,10 @@
 /* JellyGroup — placement, member shape and the flat glow. The parent's surface (rim, haze, press) comes from its
    `.glass-*` role; nothing here draws an edge. The glow is the dropdown-row recipe (globals.css §7.3): a feathered
-   accent wash on the `data-evert` layer, an opacity transition, no shadow, no filter, no keyframes. */
+   accent wash on the `data-evert` layer, an opacity transition, no shadow, no filter, no keyframes.
+
+   This sheet is `@import`ed into app/globals.css `layer(components)`, never imported from the component: unlayered
+   rules would beat every Tailwind utility a caller puts on a member (`hidden`, `px-*`, `font-*`, `text-*`), whatever the
+   specificity. In the layer, a utility wins and these are only the defaults. */
 
 [data-slot='jelly-group'] {
   --jelly-group-inset: 0.25rem;
@@ -44,14 +48,18 @@
   padding: 0.375rem 0.75rem;
   font-size: 0.75rem;
 }
+/* The touch-target floor. It names the small size too: without that, the `sm` rule above (more specific) would keep
+   a 36px member on a phone. */
 @media (pointer: coarse) {
-  [data-slot='jelly-group-item'] {
+  [data-slot='jelly-group-item'],
+  [data-slot='jelly-group'][data-size='sm'] [data-slot='jelly-group-item'] {
     min-height: var(--site-touch-target);
     min-width: var(--site-touch-target);
   }
 }
-[data-slot='jelly-group-item']:hover,
-[data-slot='jelly-group-item'][data-selected] {
+[data-slot='jelly-group-item'][data-selected],
+[data-slot='jelly-group-item'][aria-current]:not([aria-current='false']),
+[data-slot='jelly-group-item'][aria-expanded='true'] {
   color: var(--site-text);
 }
 [data-slot='jelly-group-item']:disabled,
@@ -74,14 +82,35 @@
     transparent
   );
 }
-[data-slot='jelly-group-item']:hover:not(:disabled)::before {
-  opacity: 0.7;
-}
-[data-slot='jelly-group-item'][data-selected] {
+/* Selected: the glow lying on the parent. A link member selects through its own aria-current, a menu/panel trigger
+   through aria-expanded. */
+[data-slot='jelly-group-item'][data-selected],
+[data-slot='jelly-group-item'][aria-current]:not([aria-current='false']),
+[data-slot='jelly-group-item'][aria-expanded='true'] {
   --glow-strength: calc(var(--row-glow-strength, 20%) * 1.6);
 }
-[data-slot='jelly-group-item'][data-selected]::before {
+[data-slot='jelly-group-item'][data-selected]::before,
+[data-slot='jelly-group-item'][aria-current]:not([aria-current='false'])::before,
+[data-slot='jelly-group-item'][aria-expanded='true']::before {
   opacity: 1;
+}
+/* A disabled member that is still the answer keeps its glow, dimmed with the rest of the member. */
+[data-slot='jelly-group-item'][data-selected]:disabled::before {
+  opacity: 0.6;
+}
+/* Hover wakes a softer glow, only where there is a hover: a tap must not leave one stuck beside the selected one. */
+@media (hover: hover) and (pointer: fine) {
+  [data-slot='jelly-group-item']:hover:not(:disabled, [aria-disabled='true']) {
+    color: var(--site-text);
+  }
+  [data-slot='jelly-group-item']:hover:not(:disabled, [aria-disabled='true'])::before {
+    opacity: 0.7;
+  }
+  [data-slot='jelly-group-item'][data-selected]:hover:not(:disabled)::before,
+  [data-slot='jelly-group-item'][aria-current]:not([aria-current='false']):hover::before,
+  [data-slot='jelly-group-item'][aria-expanded='true']:hover::before {
+    opacity: 1;
+  }
 }
 
 [data-slot='jelly-group-divider'] {
@@ -96,12 +125,4 @@
   height: 1px;
   margin-inline: 0;
   margin-block: 0.125rem;
-}
-/* A link member selects through its own aria-current. */
-[data-slot='jelly-group-item'][aria-current='page'] {
-  --glow-strength: calc(var(--row-glow-strength, 20%) * 1.6);
-  color: var(--site-text);
-}
-[data-slot='jelly-group-item'][aria-current='page']::before {
-  opacity: 1;
 }

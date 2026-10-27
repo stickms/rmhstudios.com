@@ -55,7 +55,8 @@ describe('JellyGroup', () => {
     expect(html).not.toContain('aria-pressed');
   });
 
-  it('never marks a disabled member selected', () => {
+  it('a disabled selected member keeps its state: it is dimmed, not deselected', () => {
+    // An RSVP of "Going" to a past event, or the current answer while a request is in flight, is still the answer.
     const html = renderToStaticMarkup(
       <JellyGroup>
         <JellyGroup.Item selected disabled>
@@ -63,7 +64,18 @@ describe('JellyGroup', () => {
         </JellyGroup.Item>
       </JellyGroup>,
     );
-    expect(html).not.toContain('data-selected');
+    expect(html).toContain('data-selected=""');
+    expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain('disabled=""');
+  });
+
+  it('the group asks to be pressed through its flat members', () => {
+    const html = renderToStaticMarkup(
+      <JellyGroup>
+        <JellyGroup.Item>A</JellyGroup.Item>
+      </JellyGroup>,
+    );
+    expect(html).toContain('data-jelly-press-through=""');
   });
 
   it('lets a link be a member and leaves selection to its own aria-current', () => {

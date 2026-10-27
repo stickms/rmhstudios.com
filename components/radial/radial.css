@@ -372,9 +372,6 @@ body:has(.radial-shell) .call-banner {
   border-radius: 999px;
   color: var(--site-text);
 }
-.radial-topbar__btn[aria-expanded='true'] {
-  background: var(--site-surface-active, var(--site-surface-hover));
-}
 /* Unread marker — a dot rather than a count, so the bar's rhythm never shifts. */
 .radial-topbar__dot {
   position: absolute;
@@ -3641,7 +3638,8 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
     .page-root
     :is([data-slot='liquid-tabs-sheet'], [data-slot='search-field']):only-child:not(
       [role='dialog'] *,
-      [data-motion] *
+      [data-motion] *,
+      :is(.flex-1, .grow) > *
     ) {
     box-sizing: border-box;
     width: calc(var(--rad-viewport-width, 100vw) - 2 * var(--page-controls-inset));

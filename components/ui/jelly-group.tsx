@@ -17,7 +17,8 @@ import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 
 import { cn } from '@/lib/utils';
-import './jelly-group.css';
+// The stylesheet is `@import`ed into app/globals.css in `@layer components`: unlayered CSS would beat every
+// Tailwind utility a caller puts on a member (hidden, px-*, font-*), whatever its specificity.
 
 type GroupRole = 'chrome' | 'pane' | 'fill';
 
@@ -40,6 +41,8 @@ function JellyGroupRoot({
       data-slot="jelly-group"
       data-size={size}
       data-orientation={orientation}
+      // Pressing any flat member presses this body (lib/jelly/physics.ts `bodyElFrom`).
+      data-jelly-press-through=""
       className={cn(`glass-${surface}`, className)}
       {...props}
     />
@@ -56,7 +59,8 @@ const Item = React.forwardRef<HTMLButtonElement, JellyGroupItemProps>(function J
   ref,
 ) {
   const Comp = asChild ? Slot : 'button';
-  const on = Boolean(selected) && !disabled;
+  // A disabled member keeps its state (dimmed, not deselected): "Going" to a past event is still the answer.
+  const on = Boolean(selected);
   return (
     <Comp
       ref={ref}
@@ -71,6 +75,8 @@ const Item = React.forwardRef<HTMLButtonElement, JellyGroupItemProps>(function J
       data-slot="jelly-group-item"
       // The group is the body; a member must not be pressed as a second one (lib/jelly/physics.ts).
       data-jelly="off"
+      // The alias too: it keeps the site's control-radius rule (globals.css) off this member, whose radius is concentric.
+      data-liquid-material="off"
       data-evert=""
       data-selected={on ? '' : undefined}
       className={cn(className)}

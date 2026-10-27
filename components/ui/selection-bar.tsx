@@ -76,6 +76,7 @@ export function SelectionBar({
       {count > 0 && (
         <motion.div
           data-slot="selection-bar"
+          data-jelly-press-through=""
           role="toolbar"
           aria-label={t('selection-actions', { defaultValue: 'Selection actions' })}
           variants={variants}

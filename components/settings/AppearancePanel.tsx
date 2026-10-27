@@ -219,7 +219,7 @@ export function AppearancePanel() {
               selected={store.colorVision === mode}
               onClick={() => setColorVision(mode)}
             >
-              <span className="flex flex-col text-left">
+              <span className="flex flex-col whitespace-normal text-start">
                 <span className="text-sm font-medium text-site-text">
                   {t(`color-vision-${mode}`, { defaultValue: COLOR_VISION_LABELS[mode] })}
                 </span>
