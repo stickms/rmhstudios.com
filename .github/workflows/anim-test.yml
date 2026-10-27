@@ -1,0 +1,25 @@
+name: anim-test
+# Throwaway: restores the cached TF2 subset and runs the converter pieces under development against it.
+on:
+  push:
+    branches: [chore/tf2-anim-dev]
+    paths: ['.github/workflows/anim-test.yml', 'tools/anim_test.py', 'tools/anim_run.sh', 'tools/overlay/**']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: ~/cache-out
+          key: tf2-anim-sample-v1
+          fail-on-cache-miss: true
+      - run: mkdir -p "$HOME/sample" && tar -xJf "$HOME/cache-out/sample.tar.xz" -C "$HOME/sample"
+      - run: pip install --quiet vpk numpy pillow
+      - name: Code under test
+        run: git clone --depth 1 --branch feat/tf2-models-sync https://github.com/stickms/rmhstudios.com "$GITHUB_WORKSPACE/code"
+      - name: Run
+        run: bash tools/anim_run.sh "$HOME/sample" 2>&1 | tail -200
