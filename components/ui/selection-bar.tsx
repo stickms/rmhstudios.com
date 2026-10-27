@@ -84,7 +84,7 @@ export function SelectionBar({
           exit="exit"
           transition={{ duration: DURATION.fast, ease: EASE.standard }}
           className={cn(
-            'glass-chrome sticky bottom-0 mt-3 flex flex-wrap items-center gap-2 rounded-site px-3 py-2',
+            'glass-chrome sticky bottom-3 mt-3 flex flex-wrap items-center gap-2 rounded-site px-3 py-2',
             className,
           )}
         >

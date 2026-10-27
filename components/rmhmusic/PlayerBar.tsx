@@ -46,7 +46,7 @@ export default function PlayerBar() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
+    <div className="fixed inset-x-3 bottom-[calc(var(--safe-bottom)+0.5rem)] z-50 overflow-hidden rounded-(--app-radius) border" style={{ borderColor: 'color-mix(in srgb, var(--app-text) 10%, transparent)' }}>
       {/* Progress bar */}
       <div className="h-1 w-full" style={{ background: 'var(--app-surface)' }}>
         <motion.div
@@ -57,11 +57,10 @@ export default function PlayerBar() {
       </div>
 
       <div
-        // The bar's SURFACE runs to the physical edge (a translucent bar that
-        // stops short of the bottom looks like a mistake); its padding carries
-        // the insets so the controls clear the home indicator.
-        className="flex items-center gap-4 border-t px-4 py-3 pb-[calc(0.75rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))] backdrop-blur-xl"
-        style={{ background: 'color-mix(in srgb, var(--app-bg) 85%, transparent)', borderColor: 'color-mix(in srgb, var(--app-text) 10%, transparent)' }}
+        // A floating capsule clear of the edge (the wrapper above insets it by the safe area): a bar
+        // whose surface runs to the physical bottom is what iOS Safari extends into a flat band.
+        className="flex items-center gap-4 px-4 py-3 backdrop-blur-xl"
+        style={{ background: 'color-mix(in srgb, var(--app-bg) 85%, transparent)' }}
       >
         {/* Track info */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
