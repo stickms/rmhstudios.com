@@ -1,7 +1,7 @@
 """Throwaway: scenes.image, eye materials, paint kits."""
 import os, sys, struct, zlib, re, lzma, glob
 root = sys.argv[1]
-p = root + "/game/scenes/scenes.image"
+p = root + "/scenes/scenes.image"
 print("scenes.image exists", os.path.exists(p), os.path.getsize(p) if os.path.exists(p) else 0)
 b = open(p, "rb").read()
 ident, ver, nscenes, nstrings, entry_off = struct.unpack_from("<4s4i", b, 0)
@@ -25,11 +25,11 @@ for nm in ("scenes/player/scout/low/taunt_conga.vcd", "scenes/player/scout/low/t
     strs = sorted(set(re.findall(rb"[A-Za-z_][A-Za-z0-9_]{5,}", data)))
     print("  strings", [s.decode() for s in strs if b"taunt" in s.lower() or b"gesture" in s.lower()][:20])
 # eye materials
-for f in sorted(glob.glob(root + "/game/materials/models/player/**/*eye*", recursive=True))[:12]:
+for f in sorted(glob.glob(root + "/materials/models/player/**/*eye*", recursive=True))[:12]:
     print("eye file", f.replace(root, ""), os.path.getsize(f))
-for f in sorted(glob.glob(root + "/game/materials/models/player/shared/*.vmt"))[:10]:
+for f in sorted(glob.glob(root + "/materials/models/player/shared/*.vmt"))[:10]:
     print("==", f.replace(root, "")); print(open(f, errors="replace").read()[:500])
-pk = root + "/game/scripts/items/paintkits_master.txt"
+pk = root + "/scripts/items/paintkits_master.txt"
 print("paintkits_master", os.path.exists(pk))
 if os.path.exists(pk):
     t = open(pk, encoding="utf-8", errors="replace").read(); print(len(t)); print(t[:2500])
