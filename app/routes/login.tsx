@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { CookieConsent } from '@/components/site/CookieConsent';
 import { cn } from '@/lib/utils';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export const Route = createFileRoute('/login')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -59,6 +60,7 @@ function safeInternalPath(raw?: string): string {
 type Pending = 'passkey' | 'discord' | 'github' | 'email' | null;
 
 function LoginPage() {
+  const isCard = useMediaQuery('(min-width: 640px)');
   const { t } = useTranslation('pages');
   const { callbackURL: rawCallback } = Route.useSearch();
 
@@ -408,10 +410,15 @@ function LoginPage() {
     <main className="flex min-h-dvh flex-col items-center justify-center sm:px-4 sm:py-8">
       {/* Flagship: a singular L2 pane with hero edge-refraction + prism rim
           (1 of ≤2/page). data-glass-lens opts it into the per-element lens
-          filter; .glass-liquid adds the ambient sheen (1 of ≤3/page). */}
+          filter; .glass-liquid adds the ambient sheen (1 of ≤3/page). Only the
+          card width takes the slab: on a phone the same markup would be a
+          full-viewport glass body, its rim drawn at the screen edges. */}
       <div
-        data-glass-lens=""
-        className="glass-pane glass-liquid glass-refract glass-refract--prism relative flex min-h-dvh w-full max-w-none flex-col justify-center rounded-none px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:min-h-0 sm:max-w-sm sm:rounded-site sm:p-8"
+        data-glass-lens={isCard ? '' : undefined}
+        className={cn(
+          'relative flex min-h-dvh w-full max-w-none flex-col justify-center rounded-none px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:min-h-0 sm:max-w-sm sm:rounded-site sm:p-8',
+          isCard && 'glass-pane glass-liquid glass-refract glass-refract--prism',
+        )}
       >
         {/* Brand + heading */}
         <div className="mb-6 flex flex-col items-center text-center">
