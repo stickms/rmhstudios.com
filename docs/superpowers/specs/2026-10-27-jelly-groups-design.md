@@ -85,7 +85,7 @@ Existing tests stay green (`design-consistency`, `site-infinite-animation`, tab-
 - Fields stay separate `glass-inset` bodies rather than joining a group.
 - Badges/tags stay standalone pills; they are labels, not controls.
 - No engine change; flat members use the existing `data-jelly="off"` opt-out.
-- Selected tab glow replaces the raised thumb everywhere, including routes that re-skin it.
+- Selected tab glow replaces the raised thumb on the main site only; the app tier keeps the thumb (see resolutions).
 
 ## Left to the builder
 
@@ -99,4 +99,4 @@ Exact CSS token names and glow strength, the precise inset per size, how `Divide
 - **Group in a card:** a group inside a `glass-pane` or `glass-fill` card is its own `fill` body and molds inside the card (`roomFor`). A cluster that has no parent worth a body stays standalone rather than becoming a body-less group.
 - **Tiebreaker for ambiguous clusters:** convert only if the members sit on one row (or scroll in one row), are the same kind of control, and are mutually related (tabs, segmented choices, toolbars, action rows, pagination). Chips that wrap onto several lines, or that are added and removed independently (tags, filters the user builds), stay standalone. Record each ambiguous call in the audit doc.
 - **Acceptance:** the builder captures before/after screenshots for each stage (themes and widths as above) and attaches them to the PR; the owner reviews them there. No stored baseline.
-- **Open, owner decision (asked in chat):** `LiquidTabs` and the `--tab-thumb-*` variables are also used by games/apps (`components/slice-it`, `laundry-sort`, `rmhtube` watch party, `rmhtype`, `daily-puzzles`, `app-theme.css`, and a few more). Default if not answered: they inherit the new flat glow, because the primitive is shared and a legacy mode would keep the old thumb alive, but their own pages are otherwise not audited.
+- **Owner decision: games and apps keep their own design scheme.** The new flat glow is the main-site look only. `LiquidTabs` keeps the existing raised thumb (and the `--tab-thumb-*` re-skin variables set by `app-theme.css`, `slice-it.css`, etc.) for the full-screen app tier. Mechanism: the flat glow is the default, and the legacy thumb rules in `globals.css`/`jelly-material.css`/`jelly-coverage.css` stay, scoped to `html.app-route` (set before first paint for every route in `THEME_EXCLUDED_ROUTES`) and to an explicit `appearance="thumb"` prop on `LiquidTabs` for any consumer on a route that list misses. The builder checks every game/app consumer of `LiquidTabs` (Slice It, Laundry Sort, RMHTube watch party, RMHType, daily puzzles, Versecraft, Neon Driftway, `rmhcode`) and adds the prop where the route class does not reach. `JellyGroup` is a site-tier primitive; game/app files do not import it in this change, and no game/app visuals change.
