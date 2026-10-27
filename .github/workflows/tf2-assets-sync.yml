@@ -169,7 +169,7 @@ jobs:
       # The game is no longer needed: free the 30+ GB before uploading.
       - name: Delete the game install
         if: always() && (steps.gate.outputs.run_models == 'true' || steps.gate.outputs.run_hud == 'true')
-        run: rm -rf /mnt/tf2 "$HOME/Steam" "$HOME/.steam"
+        run: sudo rm -rf /mnt/tf2 "$HOME/Steam" "$HOME/.steam"
 
       - name: Upload changed models (Brotli)
         if: steps.gate.outputs.run_models == 'true'
@@ -187,4 +187,4 @@ jobs:
 
       - name: Clean up
         if: always()
-        run: rm -rf /mnt/work /mnt/tf2 "$HOME/Steam" "$HOME/.steam" "$HOME/steamcmd" appinfo.txt 2>/dev/null || true
+        run: sudo rm -rf /mnt/work /mnt/tf2 "$HOME/Steam" "$HOME/.steam" "$HOME/steamcmd" appinfo.txt 2>/dev/null || true

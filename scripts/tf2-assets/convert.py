@@ -152,6 +152,7 @@ def main():
     if args.limit:
         todo = todo[: args.limit]
     cache = {}
+    reasons = {}
     for item, ref in todo:
         stem = ref["mdl"][:-4]
         if stem not in cache:
@@ -178,7 +179,7 @@ def main():
         try:
             data = convert(fs, ref["mdl"], mdl, vvd, vtx, slots)
         except Exception as e:  # noqa: BLE001
-            print("fail", ref["mdl"], type(e).__name__, e, file=sys.stderr)
+            reasons[type(e).__name__ + ": " + str(e)] = reasons.get(type(e).__name__ + ": " + str(e), 0) + 1
             failed.append(ref["glb"])
             continue
         with open(os.path.join(args.out, ref["glb"]), "wb") as fh:
@@ -192,6 +193,8 @@ def main():
     print("converted %d, unchanged %d, failed %d" % (converted, skipped, len(failed)))
     if failed:
         print("failed:", ", ".join(failed[:20]))
+        for why, n in sorted(reasons.items(), key=lambda kv: -kv[1])[:8]:
+            print("  %5d  %s" % (n, why))
 
 
 if __name__ == "__main__":
