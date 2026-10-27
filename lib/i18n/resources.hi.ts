@@ -59,7 +59,6 @@ import hiCStatus from "@/locales/hi/c-status.json";
 import hiCStudio from "@/locales/hi/c-studio.json";
 import hiCSynapseStorm from "@/locales/hi/c-synapse-storm.json";
 import hiCTempleOfJoy from "@/locales/hi/c-temple-of-joy.json";
-import hiCTf2Hud from "@/locales/hi/c-tf2-hud.json";
 import hiCTournaments from "@/locales/hi/c-tournaments.json";
 import hiCUi from "@/locales/hi/c-ui.json";
 import hiCUserBuilds from "@/locales/hi/c-user-builds.json";
@@ -157,7 +156,6 @@ const hiResources = {
   "c-studio": hiCStudio,
   "c-synapse-storm": hiCSynapseStorm,
   "c-temple-of-joy": hiCTempleOfJoy,
-  "c-tf2-hud": hiCTf2Hud,
   "c-tournaments": hiCTournaments,
   "c-ui": hiCUi,
   "c-user-builds": hiCUserBuilds,

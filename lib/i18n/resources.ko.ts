@@ -59,7 +59,6 @@ import koCStatus from "@/locales/ko/c-status.json";
 import koCStudio from "@/locales/ko/c-studio.json";
 import koCSynapseStorm from "@/locales/ko/c-synapse-storm.json";
 import koCTempleOfJoy from "@/locales/ko/c-temple-of-joy.json";
-import koCTf2Hud from "@/locales/ko/c-tf2-hud.json";
 import koCTournaments from "@/locales/ko/c-tournaments.json";
 import koCUi from "@/locales/ko/c-ui.json";
 import koCUserBuilds from "@/locales/ko/c-user-builds.json";
@@ -157,7 +156,6 @@ const koResources = {
   "c-studio": koCStudio,
   "c-synapse-storm": koCSynapseStorm,
   "c-temple-of-joy": koCTempleOfJoy,
-  "c-tf2-hud": koCTf2Hud,
   "c-tournaments": koCTournaments,
   "c-ui": koCUi,
   "c-user-builds": koCUserBuilds,

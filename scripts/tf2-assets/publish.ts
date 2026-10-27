@@ -23,8 +23,8 @@
 
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { brotliCompressSync, constants as zc } from 'node:zlib';
 import { deleteObject, getObject, putObject } from '../../lib/storage/s3.server';
+import { encodeAsset } from '../../lib/tf2-loadout/asset-codec';
 import {
   MODEL_BUILDER_VERSION,
   nextState,
@@ -57,6 +57,7 @@ const need = (name: string): string => {
 
 const CONTENT_TYPE: Record<string, string> = {
   '.glb': 'model/gltf-binary',
+  '.webp': 'image/webp',
   '.json': 'application/json',
   '.vtf': 'application/octet-stream',
   '.vmt': 'text/plain; charset=utf-8',
@@ -128,6 +129,7 @@ if (cmd === 'check') {
   const published: Record<string, PublishedModel> = {};
   let sent = 0;
   let bytes = 0;
+  let rawBytes = 0;
   let missing = 0;
   const queue = [...plan.upload];
   const worker = async (): Promise<void> => {
@@ -139,17 +141,9 @@ if (cmd === 'check') {
       }
       const raw = readFileSync(file);
       const ct = CONTENT_TYPE[path.extname(w.name).toLowerCase()] ?? 'application/octet-stream';
-      const br = brotliCompressSync(raw, {
-        params: {
-          [zc.BROTLI_PARAM_QUALITY]: 9,
-          [zc.BROTLI_PARAM_SIZE_HINT]: raw.length,
-        },
-      });
-      // Only keep the Brotli form when it really is smaller (already-compressed
-      // WebP-in-GLB barely shrinks); otherwise store the file as it is.
-      const useBr = br.length < raw.length * 0.95;
-      const body = useBr ? br : raw;
-      await putObject(prefix + w.name, body, ct, useBr ? 'br' : undefined);
+      const { body, contentEncoding } = encodeAsset(raw, ct);
+      await putObject(prefix + w.name, body, ct, contentEncoding);
+      rawBytes += raw.length;
       published[w.name] = { src: w.src, size: body.length };
       sent++;
       bytes += body.length;
@@ -172,7 +166,7 @@ if (cmd === 'check') {
   const next = nextState(state, published, complete ? build : state.steamBuild, removed, builder);
   await putObject(stateKey, Buffer.from(JSON.stringify(next)), 'application/json');
   process.stdout.write(
-    `uploaded ${sent} (${(bytes / 1024 / 1024).toFixed(1)} MiB stored), unchanged ${plan.unchanged}, ` +
+    `uploaded ${sent} (${(rawBytes / 1024 / 1024).toFixed(1)} MiB → ${(bytes / 1024 / 1024).toFixed(1)} MiB stored after Brotli), unchanged ${plan.unchanged}, ` +
       `not produced ${missing}, stale ${plan.stale.length}${bare.has('prune') ? ' (pruned)' : ' (kept)'}\n`,
   );
 } else {

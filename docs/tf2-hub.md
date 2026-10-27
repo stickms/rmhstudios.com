@@ -59,7 +59,7 @@ Nothing here is uploaded by hand. `.github/workflows/tf2-assets-sync.yml` runs d
 
 1. **Gate.** One GET of each channel's state file, compared with the game's current public Steam build id. Same build → the job stops before downloading anything.
 2. **Per-file hashes.** Every output carries a hash of exactly what it was built from (model + materials + textures + converter version; for HUD files, the file's own SHA-1). The state file is the only index — no bucket listing — and only files whose hash changed are converted and uploaded.
-3. **Compression.** Changed files are Brotli-compressed and stored with `Content-Encoding: br` (kept raw when Brotli saves under 5%). `readModel` and `/api/tf2-hud/base` hand the stored bytes straight to browsers that accept `br`.
+3. **Compression.** Every uploaded file is Brotli-compressed (`lib/tf2-loadout/asset-codec.ts`: level 11 for text, 9 for binary) and stored with `Content-Encoding: br`; a file is stored raw only if Brotli cannot make it smaller. Reading it back is lossless: a browser that accepts `br` (all of them) gets the stored bytes untouched and inflates them itself, anything else gets the inflated original from the serving routes (`readModel`, `readBaseFile`, `readIcon`). The upload log prints raw → stored size.
 4. **Cleanup.** The 30+ GB install is deleted as soon as extraction finishes, and again if the job fails; the runner is discarded anyway. Objects for items that left the game are only deleted when a manual run sets **prune**, and never for a model that merely failed to convert this time.
 
 `force` rebuilds and re-checks everything; `limit` converts only N models (for testing). Bump `CONVERTER_VERSION` in `convert.py` (and `MODEL_BUILDER_VERSION` in `lib/tf2-loadout/model-sync.ts`) when the converter's output changes, so every model is rebuilt once.
@@ -73,10 +73,6 @@ To try it on a few models locally you need a game install: `python3 scripts/tf2-
 ### Producing the models by hand (fallback)
 
 The older manual route still works if the automatic sync is not set up: list the needed files with `scripts/tf2-models/model-manifest.ts`, extract and convert them yourself, name them with `scripts/tf2-models/rename-glb.ts`, and upload with `scripts/tf2-models/upload.ts`. Prefer the sync — it is incremental and keeps itself current.
-
-## Sign in with Steam
-
-The login page offers Steam alongside Discord and GitHub. Steam speaks OpenID 2.0 rather than OAuth, so `lib/auth-steam.ts` is a small Better Auth plugin (`/api/auth/steam/start`, `/api/auth/steam/callback`) over the protocol checks in `lib/steam-openid.ts`. The identity is a normal `account` row (`providerId = 'steam'`, `accountId` = SteamID64). Steam shares no email, so a first sign-in creates a user with a non-routable placeholder address; Steam is never matched to an existing user by email, and attaching it to one needs a signed-in session (`/api/auth/steam/start?mode=link`). A new account takes the player's Steam name and avatar from their public profile page (no API key is needed; a private profile gets a generic name).
 
 ## Long lists
 

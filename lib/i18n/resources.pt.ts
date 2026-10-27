@@ -59,7 +59,6 @@ import ptCStatus from "@/locales/pt/c-status.json";
 import ptCStudio from "@/locales/pt/c-studio.json";
 import ptCSynapseStorm from "@/locales/pt/c-synapse-storm.json";
 import ptCTempleOfJoy from "@/locales/pt/c-temple-of-joy.json";
-import ptCTf2Hud from "@/locales/pt/c-tf2-hud.json";
 import ptCTournaments from "@/locales/pt/c-tournaments.json";
 import ptCUi from "@/locales/pt/c-ui.json";
 import ptCUserBuilds from "@/locales/pt/c-user-builds.json";
@@ -157,7 +156,6 @@ const ptResources = {
   "c-studio": ptCStudio,
   "c-synapse-storm": ptCSynapseStorm,
   "c-temple-of-joy": ptCTempleOfJoy,
-  "c-tf2-hud": ptCTf2Hud,
   "c-tournaments": ptCTournaments,
   "c-ui": ptCUi,
   "c-user-builds": ptCUserBuilds,

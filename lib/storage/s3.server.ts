@@ -62,19 +62,33 @@ function localPath(key: string): string {
   return resolved;
 }
 
-async function localPut(key: string, body: Buffer): Promise<void> {
+/**
+ * `encoding` is set only when the caller handed over bytes it had already
+ * compressed (the asset sync does). The disk has no object metadata, so that
+ * is recorded in a `<file>.enc` marker and handed back by `localGet`; without
+ * it a Brotli body would be served as if it were the file.
+ */
+async function localPut(key: string, body: Buffer, encoding?: string): Promise<void> {
   warnLocalOnce();
   const file = localPath(key);
   await fs.mkdir(path.dirname(file), { recursive: true });
   await fs.writeFile(file, body);
+  if (encoding === "br") await fs.writeFile(`${file}.enc`, "br");
+  else await fs.rm(`${file}.enc`, { force: true });
 }
 
 async function localGet(
   key: string
-): Promise<{ body: Buffer; contentType: string } | null> {
+): Promise<{ body: Buffer; contentType: string; contentEncoding?: string } | null> {
   try {
-    const body = await fs.readFile(localPath(key));
-    return { body, contentType: contentTypeForFilename(key) };
+    const file = localPath(key);
+    const body = await fs.readFile(file);
+    const marker = await fs.readFile(`${file}.enc`, "utf8").catch(() => "");
+    return {
+      body,
+      contentType: contentTypeForFilename(key),
+      ...(marker.trim() === "br" ? { contentEncoding: "br" } : {}),
+    };
   } catch (err) {
     if ((err as { code?: string })?.code === "ENOENT") return null;
     throw err;
@@ -87,6 +101,7 @@ async function localDelete(key: string): Promise<void> {
   } catch (err) {
     if ((err as { code?: string })?.code !== "ENOENT") throw err;
   }
+  await fs.rm(`${localPath(key)}.enc`, { force: true });
 }
 
 async function localExists(key: string): Promise<boolean> {
@@ -177,7 +192,7 @@ export async function putObject(
   // The local FS backend can't persist metadata; readers fall back to sniffing.
   // Brotli'd bodies would therefore be unreadable on disk, so the local path
   // stores what it was handed.
-  if (!s3Configured()) return localPut(key, encoding === "br" ? body : out);
+  if (!s3Configured()) return localPut(key, encoding === "br" ? body : out, contentEncoding);
 
   await getClient().send(
     new PutObjectCommand({

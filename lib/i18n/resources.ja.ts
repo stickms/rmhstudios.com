@@ -59,7 +59,6 @@ import jaCStatus from "@/locales/ja/c-status.json";
 import jaCStudio from "@/locales/ja/c-studio.json";
 import jaCSynapseStorm from "@/locales/ja/c-synapse-storm.json";
 import jaCTempleOfJoy from "@/locales/ja/c-temple-of-joy.json";
-import jaCTf2Hud from "@/locales/ja/c-tf2-hud.json";
 import jaCTournaments from "@/locales/ja/c-tournaments.json";
 import jaCUi from "@/locales/ja/c-ui.json";
 import jaCUserBuilds from "@/locales/ja/c-user-builds.json";
@@ -157,7 +156,6 @@ const jaResources = {
   "c-studio": jaCStudio,
   "c-synapse-storm": jaCSynapseStorm,
   "c-temple-of-joy": jaCTempleOfJoy,
-  "c-tf2-hud": jaCTf2Hud,
   "c-tournaments": jaCTournaments,
   "c-ui": jaCUi,
   "c-user-builds": jaCUserBuilds,

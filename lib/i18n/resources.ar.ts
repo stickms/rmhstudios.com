@@ -59,7 +59,6 @@ import arCStatus from "@/locales/ar/c-status.json";
 import arCStudio from "@/locales/ar/c-studio.json";
 import arCSynapseStorm from "@/locales/ar/c-synapse-storm.json";
 import arCTempleOfJoy from "@/locales/ar/c-temple-of-joy.json";
-import arCTf2Hud from "@/locales/ar/c-tf2-hud.json";
 import arCTournaments from "@/locales/ar/c-tournaments.json";
 import arCUi from "@/locales/ar/c-ui.json";
 import arCUserBuilds from "@/locales/ar/c-user-builds.json";
@@ -159,7 +158,6 @@ const arResources = {
   "c-studio": arCStudio,
   "c-synapse-storm": arCSynapseStorm,
   "c-temple-of-joy": arCTempleOfJoy,
-  "c-tf2-hud": arCTf2Hud,
   "c-tournaments": arCTournaments,
   "c-ui": arCUi,
   "c-user-builds": arCUserBuilds,
