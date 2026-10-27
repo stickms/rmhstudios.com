@@ -3490,7 +3490,11 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
     .tab-sheet-scroll
   ):not(.site-sticky-pinned),
 .radial-shell__main .sticky:not(.site-sticky-pinned) {
-  position: static !important;
+  /* `relative`, not `static`: a glass role host (`.glass-chrome` on a header)
+     hangs its haze and rim canvases off `position: absolute; inset: 0`, so a
+     static host hands them to the nearest positioned ancestor — `<main>` — and
+     a gray column the height of the whole page paints behind the content. */
+  position: relative !important;
   inset-block-start: auto !important;
   top: auto !important;
 }
