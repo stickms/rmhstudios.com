@@ -297,6 +297,34 @@ Work through this for every new or edited page:
       finished diff. A green gate means you did not regress an enforced rule;
       it does not mean the page looks right.
 
+### How consistency is enforced (what catches what)
+
+Consistency fails when it lives in comments and memory. Each layer below catches
+a different class of drift; none replaces the others.
+
+| Layer                                                                              | Runs                                                                                                             | Catches                                                                                                                                                                                                                                                                                                                                                |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `lib/__tests__/design-consistency.test.ts` and the other gates in `lib/__tests__/` | every commit (`pnpm check:consistency`) and `pnpm test`                                                          | hand-rolled tab strips, raw palette colours, hardcoded radii, `transition-all`, floating UI below L4, jelly coverage, token contracts, motion rules                                                                                                                                                                                                    |
+| `lib/__tests__/ios-edge-contract.test.ts`                                          | same                                                                                                             | the iOS edge contract: no `theme-color` on iOS, the fixed decoration hidden on `html.ios-webkit`, the root carrying the canvas, the top capsule floating, and a **ratchet** against any NEW `fixed`/`sticky` layer pinned flush to the top or bottom edge (what makes Safari paint a coloured band behind its status bar and tab bar)                  |
+| `lib/__tests__/page-swap-css.test.ts`, `page-transition*.test.ts`                  | same                                                                                                             | the quick page swap: tokens, opacity-only keyframe, frame exemption, wiring                                                                                                                                                                                                                                                                            |
+| **`pnpm audit:pages`** (`scripts/audit-pages.mjs`)                                 | on demand, before and after any change to the shell, page frame, tabs, top bar or global CSS; against `pnpm dev` | in a real browser with an iPhone Safari user-agent: every visible fixed/sticky element touching a screen edge (the cause of the bands), and the page anatomy: PageLayout heading, tab strip and search starting and ending on the same edges. `--full` adds desktop and Daylight. `--strict` fails on anything not in `docs/page-audit-allowlist.json` |
+
+Rules of the road:
+
+- **The allowlist and the ratchet only shrink.** A finding is fixed, not listed;
+  a listing needs the owner's review and a reason, and a stale entry is reported
+  so it gets deleted.
+- **A new layer pinned to an edge is a design decision, not a styling detail.**
+  Float it off the edge (the top capsule sits 0.75rem down), make it in-flow, or
+  hide it on `html.ios-webkit`. Do not paint `theme-color` on iOS and do not add
+  a full-viewport fixed layer: iOS reads either as one flat coloured band.
+- **Page frame drift is found by measurement, not by eye.** If `/games` and
+  `/create` do not look alike, `pnpm audit:pages --routes /games,/create` says
+  which edge differs. Fix the page to use `PageLayout` / `PageTabs` / the shared
+  gutter instead of its own wrapper padding.
+- **Extend the guards when you extend the system.** A new shared primitive gets
+  a gate in `lib/__tests__/` (or an audit metric) in the same commit that adds it.
+
 ---
 
 ## 4. Full-screen games/apps

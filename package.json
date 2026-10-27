@@ -19,6 +19,7 @@
     "clean": "rm -rf .output dist-server .tanstack tsconfig.tsbuildinfo dist-server/tsconfig.server.tsbuildinfo",
     "build:frontend": "pnpm run build-vibe-packages && pnpm run images:variants && cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build",
     "build:frontend:sourcemap": "pnpm run build-vibe-packages && pnpm run images:variants && cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build --sourcemap",
+    "audit:pages": "node scripts/audit-pages.mjs",
     "check:consistency": "bash scripts/check-consistency.sh",
     "check:consistency:full": "bash scripts/check-consistency.sh --full",
     "hooks:install": "git config core.hooksPath .githooks && echo 'commit gate installed (.githooks/pre-commit)'",
