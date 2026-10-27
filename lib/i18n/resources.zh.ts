@@ -59,6 +59,7 @@ import zhCStatus from "@/locales/zh/c-status.json";
 import zhCStudio from "@/locales/zh/c-studio.json";
 import zhCSynapseStorm from "@/locales/zh/c-synapse-storm.json";
 import zhCTempleOfJoy from "@/locales/zh/c-temple-of-joy.json";
+import zhCTf2Hud from "@/locales/zh/c-tf2-hud.json";
 import zhCTournaments from "@/locales/zh/c-tournaments.json";
 import zhCUi from "@/locales/zh/c-ui.json";
 import zhCUserBuilds from "@/locales/zh/c-user-builds.json";
@@ -158,6 +159,7 @@ const zhResources = {
   "c-studio": zhCStudio,
   "c-synapse-storm": zhCSynapseStorm,
   "c-temple-of-joy": zhCTempleOfJoy,
+  "c-tf2-hud": zhCTf2Hud,
   "c-tournaments": zhCTournaments,
   "c-ui": zhCUi,
   "c-user-builds": zhCUserBuilds,

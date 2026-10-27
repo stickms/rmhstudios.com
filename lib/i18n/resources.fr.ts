@@ -59,6 +59,7 @@ import frCStatus from "@/locales/fr/c-status.json";
 import frCStudio from "@/locales/fr/c-studio.json";
 import frCSynapseStorm from "@/locales/fr/c-synapse-storm.json";
 import frCTempleOfJoy from "@/locales/fr/c-temple-of-joy.json";
+import frCTf2Hud from "@/locales/fr/c-tf2-hud.json";
 import frCTournaments from "@/locales/fr/c-tournaments.json";
 import frCUi from "@/locales/fr/c-ui.json";
 import frCUserBuilds from "@/locales/fr/c-user-builds.json";
@@ -156,6 +157,7 @@ const frResources = {
   "c-studio": frCStudio,
   "c-synapse-storm": frCSynapseStorm,
   "c-temple-of-joy": frCTempleOfJoy,
+  "c-tf2-hud": frCTf2Hud,
   "c-tournaments": frCTournaments,
   "c-ui": frCUi,
   "c-user-builds": frCUserBuilds,

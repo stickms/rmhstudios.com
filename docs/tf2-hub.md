@@ -38,17 +38,42 @@ The builder shows a 3D view of any item that has a model (`ItemModelViewer` → 
 - **Paint.** A material flagged `extras.tint = true` in the GLB has its base colour multiplied by the paint colour.
 - **What not to upload:** `.vpk` files. The site serves **GLB** files; a VPK is the game's packed archive you extract _from_.
 
-### Producing the models (one-off, from a TF2 install)
+### Keeping the game files current (automatic)
 
-The model files are not in the item schema or the public mirror, so they come from your own copy of the game:
+Nothing here is uploaded by hand. `.github/workflows/tf2-assets-sync.yml` runs daily, after every deploy, and on demand (Actions → tf2-assets-sync → Run workflow), and keeps three things in object storage current:
 
-1. **List what is needed.** `pnpm exec tsx scripts/tf2-models/model-manifest.ts out/` writes `model-manifest.json` / `.csv` (per item: the `.mdl` path(s) and the GLB name each converts to) and `mdl-paths.txt` (every distinct `.mdl`). Today that is 2,262 items → 4,940 distinct `.mdl` files → 5,192 GLBs (cosmetics worn by several classes have one model per class): ~224 weapon models, ~1,264 Valve cosmetics (`models/player/items/**`) and ~3,443 workshop cosmetics (`models/workshop*/player/items/**`). Taunts and PDAs have no model entry.
-2. **Extract from the game's VPKs.** In `Team Fortress 2/tf/`, open `tf2_misc_dir.vpk` (the `.mdl`, `.vvd` and `.dx90.vtx` files for each path in `mdl-paths.txt`) and `tf2_textures_dir.vpk` (the `materials/models/**` textures those models use) with a VPK tool such as VPKEdit or GCFScape. If a model converts untextured, extract its materials from both archives.
-3. **Convert to GLB.** [Creators_SourceMDLToGLTF](https://github.com/rob5300/Creators_SourceMDLToGLTF) is a Blender plugin (it needs Blender Source Tools) that batch-converts decompiled TF2 weapons and cosmetics to GLB; it was written for the Creators.TF loadout preview and also produces tint masks.
-4. **Name them.** `pnpm exec tsx scripts/tf2-models/rename-glb.ts <converted-dir> out/model-manifest.json <ready-dir>` matches each converted file to its item (by path, or by file name when unambiguous) and writes `<defindex>.glb` / `<defindex>_<class>.glb`. It lists anything unmatched or ambiguous instead of guessing.
-5. **Upload.** `pnpm exec tsx scripts/tf2-models/upload.ts <ready-dir>` against the target environment (R2/S3 when configured). Models can be added in batches; the picker shows a 3D view for each item as soon as its GLB exists. Weapons and Valve cosmetics (~1,500 models) cover most of what people pick; the workshop cosmetics are the long tail.
+| What                                                         | Where                                                | Built by                        |
+| ------------------------------------------------------------ | ---------------------------------------------------- | ------------------------------- |
+| Item 3D models (GLB, textures baked in as WebP)              | `tf2-models/<defindex>[_<class>].glb`                | `scripts/tf2-assets/convert.py` |
+| HUD editor base: panels, schemes, materials **and textures** | `tf2-hud-base/<path>`                                | `scripts/tf2-assets/hud.py`     |
+| One state file per channel                                   | `tf2-models/_state.json`, `tf2-hud-base/_state.json` | `scripts/tf2-assets/publish.ts` |
 
-Weapon models in the schema are the in-game `c_models` (first-person) ones, which may carry arm geometry; check a few before converting everything.
+**Why a login is needed.** Valve's free dedicated-server download carries the _index_ of every texture but not the texture data, and the client's content depot refuses anonymous logins. The job therefore signs in to Steam on the CI runner with an account that owns TF2 (free to add). Use a dedicated account with Steam Guard off; the credentials exist only as repository secrets and only on the runner, never on the VPS.
+
+**Secrets** (Settings → Secrets and variables → Actions): `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_REGION`, `STEAM_USER`, `STEAM_PASS`. While any is missing the job ends early with a notice and uploads nothing.
+
+**What keeps it cheap** (in the order it applies):
+
+1. **Gate.** One GET of each channel's state file, compared with the game's current public Steam build id. Same build → the job stops before downloading anything.
+2. **Per-file hashes.** Every output carries a hash of exactly what it was built from (model + materials + textures + converter version; for HUD files, the file's own SHA-1). The state file is the only index — no bucket listing — and only files whose hash changed are converted and uploaded.
+3. **Compression.** Changed files are Brotli-compressed and stored with `Content-Encoding: br` (kept raw when Brotli saves under 5%). `readModel` and `/api/tf2-hud/base` hand the stored bytes straight to browsers that accept `br`.
+4. **Cleanup.** The 30+ GB install is deleted as soon as extraction finishes, and again if the job fails; the runner is discarded anyway. Objects for items that left the game are only deleted when a manual run sets **prune**, and never for a model that merely failed to convert this time.
+
+`force` rebuilds and re-checks everything; `limit` converts only N models (for testing). Bump `CONVERTER_VERSION` in `convert.py` (and `MODEL_BUILDER_VERSION` in `lib/tf2-loadout/model-sync.ts`) when the converter's output changes, so every model is rebuilt once.
+
+**HUD editor.** The editor asks `/api/tf2-hud/base/manifest.json` first; if a sync has published, that manifest and every file come from storage, otherwise it uses the copy shipped in `public/tf2-hud/base`. The two are never mixed.
+
+**What the converter does.** `srcmodel.py` reads the Source model (MDL v44–49, VVD v4, VTX v7): LOD 0 of the default body groups, bind-pose geometry, normals, UVs, and the materials of skin family 0. `srctex.py` reads the VMT (following `patch` includes) and decodes the VTF (DXT1/3/5 and the common uncompressed formats) to WebP, capped at 512 px. `glb.py` writes the GLB; a material whose VMT blends the paint colour by base alpha is flagged `extras.tint`. Skeletons and animation are not exported — the cosmetics are static.
+
+To try it on a few models locally you need a game install: `python3 scripts/tf2-assets/convert.py --root <install> --manifest model-manifest.json --out out --limit 20` (manifest from `pnpm exec tsx scripts/tf2-models/model-manifest.ts`), then open the GLBs in any glTF viewer.
+
+### Producing the models by hand (fallback)
+
+The older manual route still works if the automatic sync is not set up: list the needed files with `scripts/tf2-models/model-manifest.ts`, extract and convert them yourself, name them with `scripts/tf2-models/rename-glb.ts`, and upload with `scripts/tf2-models/upload.ts`. Prefer the sync — it is incremental and keeps itself current.
+
+## Sign in with Steam
+
+The login page offers Steam alongside Discord and GitHub. Steam speaks OpenID 2.0 rather than OAuth, so `lib/auth-steam.ts` is a small Better Auth plugin (`/api/auth/steam/start`, `/api/auth/steam/callback`) over the protocol checks in `lib/steam-openid.ts`. The identity is a normal `account` row (`providerId = 'steam'`, `accountId` = SteamID64). Steam shares no email, so a first sign-in creates a user with a non-routable placeholder address; Steam is never matched to an existing user by email, and attaching it to one needs a signed-in session (`/api/auth/steam/start?mode=link`). Set `STEAM_API_KEY` to use the player's Steam name and avatar for new accounts.
 
 ## Long lists
 

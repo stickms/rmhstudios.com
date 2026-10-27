@@ -1,0 +1,190 @@
+name: tf2-assets-sync
+
+# Keeps the TF2 Hub's game files in object storage current: item 3D models
+# (GLB, textures baked in) and the HUD editor's base (panels, schemes, materials,
+# textures). The game itself only ever exists on this runner — Valve's files are
+# downloaded with SteamCMD, the few thousand we use are converted/selected, the
+# rest (tens of GB) is deleted, and nothing is committed to the repository.
+#
+# Cost control, in order:
+#   1. Gate: one tiny GET of each channel's state file, compared with the game's
+#      current public Steam build id. Same build → the job ends here, having
+#      downloaded nothing and uploaded nothing.
+#   2. Per-file: every output is keyed by a hash of exactly what it was built
+#      from; the state file remembers it, and only changed files are uploaded.
+#   3. Compression: changed files are Brotli-compressed before upload.
+#   4. Cleanup: the 30+ GB install is deleted as soon as extraction finishes
+#      (and again on failure); objects no longer in the game are only deleted
+#      when a manual run asks for `prune`.
+#
+# Needs these repository secrets (the job exits with a notice while any is missing):
+#   S3_ENDPOINT, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET, S3_REGION
+#   STEAM_USER, STEAM_PASS   a Steam account that owns Team Fortress 2 (free to
+#                            add). Valve's texture files are not downloadable
+#                            anonymously. Use a dedicated account with Steam Guard off.
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_run:
+    workflows: [deploy]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild and re-check everything even if the Steam build is unchanged
+        type: boolean
+        default: false
+      prune:
+        description: Delete published files the game no longer contains
+        type: boolean
+        default: false
+      limit:
+        description: Convert at most this many models (testing)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tf2-assets-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+      S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+      S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      S3_REGION: ${{ secrets.S3_REGION }}
+      STEAM_USER: ${{ secrets.STEAM_USER }}
+      STEAM_PASS: ${{ secrets.STEAM_PASS }}
+    steps:
+      - name: Check configuration
+        id: cfg
+        run: |
+          missing=""
+          for v in S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET STEAM_USER STEAM_PASS; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice title=TF2 asset sync skipped::Missing repository secrets:$missing"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.cfg.outputs.ready == 'true'
+      - uses: ./.github/actions/setup-deps
+        if: steps.cfg.outputs.ready == 'true'
+
+      - name: Install SteamCMD
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lib32gcc-s1 lib32stdc++6 curl
+          mkdir -p "$HOME/steamcmd" && cd "$HOME/steamcmd"
+          curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar xz
+
+      - name: Gate on the current Steam build
+        id: gate
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          "$HOME/steamcmd/steamcmd.sh" +login anonymous +app_info_print 440 +quit > appinfo.txt 2>&1 || true
+          build=$(python3 - <<'PY'
+          import re
+          t = open("appinfo.txt", errors="replace").read()
+          i = t.find('"branches"')
+          m = re.search(r'"public"\s*\{[^{}]*?"buildid"\s*"(\d+)"', t[i:], re.S) if i >= 0 else None
+          print(m.group(1) if m else "")
+          PY
+          )
+          echo "Steam public build: ${build:-unknown}"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as models --state-key tf2-models/_state.json --build "$build" $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hud --state-key tf2-hud-base/_state.json --build "$build" --builder 1 $force
+          rm -f appinfo.txt
+
+      - name: Nothing to do
+        if: steps.cfg.outputs.ready == 'true' && steps.gate.outputs.run_models != 'true' && steps.gate.outputs.run_hud != 'true'
+        run: echo "Models and HUD base are already published for this game build — no download, no uploads."
+
+      - name: Make room on the runner
+        if: steps.gate.outputs.run_models == 'true' || steps.gate.outputs.run_hud == 'true'
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL
+          sudo mkdir -p /mnt/tf2 /mnt/work && sudo chown "$USER" /mnt/tf2 /mnt/work
+          df -h / /mnt | cat
+
+      - name: Download Team Fortress 2
+        if: steps.gate.outputs.run_models == 'true' || steps.gate.outputs.run_hud == 'true'
+        run: |
+          for i in 1 2 3; do
+            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/tf2 +login "$STEAM_USER" "$STEAM_PASS" +app_update 440 validate +quit \
+              > "$HOME/steam.log" 2>&1 || true
+            grep -i -E 'success|error|fail|guard' "$HOME/steam.log" | grep -v -i password | tail -5
+            [ -f /mnt/tf2/tf/tf2_textures_000.vpk ] && break
+            echo "attempt $i did not finish; retrying"; sleep 30
+          done
+          [ -f /mnt/tf2/tf/tf2_textures_000.vpk ] || { echo "::error::Texture archives missing — does the Steam account own TF2?"; exit 1; }
+          du -sh /mnt/tf2 | cat
+
+      - name: Python tools
+        if: steps.gate.outputs.run_models == 'true' || steps.gate.outputs.run_hud == 'true'
+        run: pip install --quiet vpk numpy pillow
+
+      - name: Models — plan and convert only what changed
+        if: steps.gate.outputs.run_models == 'true'
+        run: |
+          mkdir -p /mnt/work/models
+          items=/mnt/tf2/tf/scripts/items/items_game.txt; english=/mnt/tf2/tf/resource/tf_english.txt
+          if [ -f "$items" ] && [ -f "$english" ]; then
+            pnpm exec tsx scripts/tf2-models/model-manifest.ts /mnt/work/manifest "$items" "$english"
+          else
+            pnpm exec tsx scripts/tf2-models/model-manifest.ts /mnt/work/manifest
+          fi
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-models/_state.json --out /mnt/work/models-state.json
+          lim=""; [ -n "${{ inputs.limit }}" ] && lim="--limit ${{ inputs.limit }}"
+          (cd scripts/tf2-assets && FORCE=${{ inputs.force == true && '1' || '0' }} python3 convert.py \
+            --root /mnt/tf2 --manifest /mnt/work/manifest/model-manifest.json \
+            --state /mnt/work/models-state.json --out /mnt/work/models $lim)
+
+      - name: HUD base — collect only what changed
+        if: steps.gate.outputs.run_hud == 'true'
+        run: |
+          mkdir -p /mnt/work/hud
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-hud-base/_state.json --out /mnt/work/hud-state.json
+          (cd scripts/tf2-assets && FORCE=${{ inputs.force == true && '1' || '0' }} python3 hud.py \
+            --root /mnt/tf2 --state /mnt/work/hud-state.json --build "${{ steps.gate.outputs.build }}" --out /mnt/work/hud)
+
+      # The game is no longer needed: free the 30+ GB before uploading.
+      - name: Delete the game install
+        if: always() && (steps.gate.outputs.run_models == 'true' || steps.gate.outputs.run_hud == 'true')
+        run: sudo rm -rf /mnt/tf2 "$HOME/Steam" "$HOME/.steam"
+
+      - name: Upload changed models (Brotli)
+        if: steps.gate.outputs.run_models == 'true'
+        run: |
+          prune=""; [ "${{ inputs.prune }}" = "true" ] && prune="--prune"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/models --prefix tf2-models/ \
+            --state-key tf2-models/_state.json --build "${{ steps.gate.outputs.build }}" $prune
+
+      - name: Upload changed HUD files (Brotli)
+        if: steps.gate.outputs.run_hud == 'true'
+        run: |
+          prune=""; [ "${{ inputs.prune }}" = "true" ] && prune="--prune"
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/hud --prefix tf2-hud-base/ \
+            --state-key tf2-hud-base/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune
+
+      - name: Clean up
+        if: always()
+        run: sudo rm -rf /mnt/work /mnt/tf2 "$HOME/Steam" "$HOME/.steam" "$HOME/steamcmd" appinfo.txt 2>/dev/null || true

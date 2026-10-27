@@ -11,7 +11,7 @@ import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
 import { useState, useRef, useEffect } from 'react';
 import { DiscordIcon, GithubIcon } from '@/components/ui/brand-icons';
-import { Mail, Lock, User, Camera, Fingerprint, Loader2, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, User, Camera, Fingerprint, Loader2, ArrowLeft, Gamepad2 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ export const Route = createFileRoute('/login')({
       (search.callbackUrl as string) ||
       (search.next as string) ||
       undefined,
+    ...(typeof search.error === 'string' ? { error: search.error } : {}),
   }),
   head: () => ({
     meta: [{ title: 'Login | RMH' }],
@@ -56,11 +57,11 @@ function safeInternalPath(raw?: string): string {
 }
 
 /** Which action is currently in flight (drives per-button spinners + disabling). */
-type Pending = 'passkey' | 'discord' | 'github' | 'email' | null;
+type Pending = 'passkey' | 'discord' | 'github' | 'steam' | 'email' | null;
 
 function LoginPage() {
   const { t } = useTranslation('pages');
-  const { callbackURL: rawCallback } = Route.useSearch();
+  const { callbackURL: rawCallback, error: rawError } = Route.useSearch();
 
   const [callbackURL, setCallbackURL] = useState(() => safeInternalPath(rawCallback));
 
@@ -94,7 +95,11 @@ function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() =>
+    rawError === 'steam_failed' || rawError === 'steam_state'
+      ? t('steam-error', { defaultValue: 'Steam sign-in did not complete. Please try again.' })
+      : null,
+  );
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -186,9 +191,14 @@ function LoginPage() {
     }
   };
 
-  const handleSocial = (provider: 'discord' | 'github') => async () => {
+  const handleSocial = (provider: 'discord' | 'github' | 'steam') => async () => {
     setPending(provider);
     setError(null);
+    if (provider === 'steam') {
+      // Steam speaks OpenID 2.0, so it is a plain redirect handled by lib/auth-steam.ts.
+      window.location.href = `/api/auth/steam/start?mode=signin&callbackURL=${encodeURIComponent(callbackURL)}`;
+      return;
+    }
     await authClient.signIn.social({ provider, callbackURL });
   };
 
@@ -283,6 +293,11 @@ function LoginPage() {
       id: 'github' as const,
       label: t('continue-with-github', { defaultValue: 'Continue with GitHub' }),
       icon: <GithubIcon className="size-5" />,
+    },
+    {
+      id: 'steam' as const,
+      label: t('continue-with-steam', { defaultValue: 'Continue with Steam' }),
+      icon: <Gamepad2 className="size-5" aria-hidden />,
     },
   ];
 
@@ -452,9 +467,18 @@ function LoginPage() {
             </Button>
           )}
 
+          {error && !showEmail && (
+            <div
+              role="alert"
+              className="rounded-site-sm border border-site-danger/40 bg-site-danger/10 px-3 py-2 text-center text-xs text-site-danger"
+            >
+              {error}
+            </div>
+          )}
+
           {/* Providers: a compact row of glass chips — brand glyphs keep full
               colour (they are content, not chrome). Labelled for assistive tech. */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {providers.map((p) => (
               <Button
                 key={p.id}
