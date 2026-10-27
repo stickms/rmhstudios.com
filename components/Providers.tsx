@@ -77,6 +77,7 @@ import type { Locale } from '@/lib/i18n/config';
 import type { LocaleBundle } from '@/lib/i18n/resources';
 import { recoverViewTransition } from '@/lib/view-transition';
 import { applyPerfTier } from '@/lib/perf-tier';
+import { AppTierContext } from '@/components/ui/app-tier-context';
 import { installScrollbarReveal } from '@/lib/scrollbar-reveal';
 import { installSwapReveal } from '@/lib/swap-reveal';
 import { isRetryable, maxRetries, retryDelayMs } from '@/lib/http';
@@ -911,79 +912,81 @@ export function Providers({
           {/* One shared animation scheme for every account and device. */}
           <MotionConfig reducedMotion="never">
             <SessionCtx.Provider value={effectiveSession}>
-              <ResolvedUserCtx.Provider
-                value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}
-              >
-                <ConfirmProvider>
-                  {children}
-                  {/* Globally-mounted, non-critical chrome. Isolate it so a throw
+              <AppTierContext.Provider value={isAppRoute}>
+                <ResolvedUserCtx.Provider
+                  value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}
+                >
+                  <ConfirmProvider>
+                    {children}
+                    {/* Globally-mounted, non-critical chrome. Isolate it so a throw
                       in the command palette / recents tracker / theme-preview bar
                       is reported and swallowed instead of bubbling to the root
                       errorComponent and taking down the whole app. `children`
                       (the page) is deliberately OUTSIDE this boundary — primary
                       content must still surface a real route-level error. */}
-                  <SilentErrorBoundary label="global-chrome">
-                    <CommandPaletteMount />
-                    <RecentsTracker />
-                    <PatchNotesMount />
-                    {/* §14: the floating try-before-buy / preview-on-site confirm bar,
+                    <SilentErrorBoundary label="global-chrome">
+                      <CommandPaletteMount />
+                      <RecentsTracker />
+                      <PatchNotesMount />
+                      {/* §14: the floating try-before-buy / preview-on-site confirm bar,
                         mounted globally so it survives navigation under a previewed theme. */}
-                    <ThemePreviewBar />
-                    {/* Voice calls. Mounted here for the same reason: an
+                      <ThemePreviewBar />
+                      {/* Voice calls. Mounted here for the same reason: an
                         incoming call has to ring wherever the user is, and
                         answering one must survive navigating away. */}
-                    <CallMount />
-                    <GroupCallMount />
-                    <AccessMount />
-                    <DelightMount />
-                  </SilentErrorBoundary>
-                </ConfirmProvider>
-              </ResolvedUserCtx.Provider>
-              <Toaster
-                theme={style === 'graphite' ? 'dark' : 'light'}
-                position="bottom-left"
-                // The bottom lane is SHARED, and sonner does not know that.
-                //
-                // Left to its defaults, sonner sits 16px off the bottom edge at
-                // `z-index: 999999999` — above everything — and below 600px it
-                // rewrites `bottom-left` to span the WHOLE bottom edge. That is
-                // the hub orb's lane: the orb is
-                // `bottom: calc(env(safe-area-inset-bottom) + var(--site-hub-orb-inset))`
-                // and 60px tall, so on a 390px phone a toast covered it almost
-                // entirely for its four-second life — and the orb is the site's
-                // only navigation control on mobile. The same 16px also lands
-                // inside the iOS home-indicator strip, so swipe-to-dismiss
-                // fought the system home gesture, and a toast raised from inside
-                // a bottom sheet covered the sheet's own confirm/cancel row.
-                //
-                // `--site-floating-reserve` is derived from the orb's own
-                // geometry tokens (globals.css §5.5x), so this clears the orb by
-                // construction and cannot drift if the orb is resized. It
-                // already includes the safe-area inset — do not add it twice.
-                offset={{ bottom: 'var(--site-floating-reserve)' }}
-                mobileOffset={{
-                  bottom: 'var(--site-floating-reserve)',
-                  left: '0.75rem',
-                  right: '0.75rem',
-                }}
-                toastOptions={{
-                  // Toasts are L4 floating UI and get the matching fill inline. It is written out here rather than by
-                  // adding `.glass-overlay` because that class also sets position, max sizes and overflow — all of
-                  // which sonner owns for its own stacking. The jelly material (haze floor, CSS rim, carrier) comes
-                  // from `[data-sonner-toast]` in app/jelly-coverage.css, so only longhands are set here: a
-                  // `background` / `box-shadow` inline would erase the floor and the rim. No backdrop-filter — no
-                  // glass role has one (docs/liquid-glass-system.md); the overlay fill is the legibility floor.
-                  style: {
-                    // The SAME expression `.glass-overlay` uses (globals.css §L4), not a third answer.
-                    backgroundColor: 'var(--site-glass-overlay-fill)',
-                    border: '1px solid var(--site-border)',
-                    // A toast is a panel, not a control: `--site-radius`, the
-                    // same curve every other floating panel takes.
-                    borderRadius: 'var(--site-radius)',
-                    color: 'var(--site-text)',
-                  },
-                }}
-              />
+                      <CallMount />
+                      <GroupCallMount />
+                      <AccessMount />
+                      <DelightMount />
+                    </SilentErrorBoundary>
+                  </ConfirmProvider>
+                </ResolvedUserCtx.Provider>
+                <Toaster
+                  theme={style === 'graphite' ? 'dark' : 'light'}
+                  position="bottom-left"
+                  // The bottom lane is SHARED, and sonner does not know that.
+                  //
+                  // Left to its defaults, sonner sits 16px off the bottom edge at
+                  // `z-index: 999999999` — above everything — and below 600px it
+                  // rewrites `bottom-left` to span the WHOLE bottom edge. That is
+                  // the hub orb's lane: the orb is
+                  // `bottom: calc(env(safe-area-inset-bottom) + var(--site-hub-orb-inset))`
+                  // and 60px tall, so on a 390px phone a toast covered it almost
+                  // entirely for its four-second life — and the orb is the site's
+                  // only navigation control on mobile. The same 16px also lands
+                  // inside the iOS home-indicator strip, so swipe-to-dismiss
+                  // fought the system home gesture, and a toast raised from inside
+                  // a bottom sheet covered the sheet's own confirm/cancel row.
+                  //
+                  // `--site-floating-reserve` is derived from the orb's own
+                  // geometry tokens (globals.css §5.5x), so this clears the orb by
+                  // construction and cannot drift if the orb is resized. It
+                  // already includes the safe-area inset — do not add it twice.
+                  offset={{ bottom: 'var(--site-floating-reserve)' }}
+                  mobileOffset={{
+                    bottom: 'var(--site-floating-reserve)',
+                    left: '0.75rem',
+                    right: '0.75rem',
+                  }}
+                  toastOptions={{
+                    // Toasts are L4 floating UI and get the matching fill inline. It is written out here rather than by
+                    // adding `.glass-overlay` because that class also sets position, max sizes and overflow — all of
+                    // which sonner owns for its own stacking. The jelly material (haze floor, CSS rim, carrier) comes
+                    // from `[data-sonner-toast]` in app/jelly-coverage.css, so only longhands are set here: a
+                    // `background` / `box-shadow` inline would erase the floor and the rim. No backdrop-filter — no
+                    // glass role has one (docs/liquid-glass-system.md); the overlay fill is the legibility floor.
+                    style: {
+                      // The SAME expression `.glass-overlay` uses (globals.css §L4), not a third answer.
+                      backgroundColor: 'var(--site-glass-overlay-fill)',
+                      border: '1px solid var(--site-border)',
+                      // A toast is a panel, not a control: `--site-radius`, the
+                      // same curve every other floating panel takes.
+                      borderRadius: 'var(--site-radius)',
+                      color: 'var(--site-text)',
+                    },
+                  }}
+                />
+              </AppTierContext.Provider>
             </SessionCtx.Provider>
           </MotionConfig>
         </LazyMotion>

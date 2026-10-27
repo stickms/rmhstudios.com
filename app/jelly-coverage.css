@@ -427,3 +427,19 @@ html .glass-overlay[data-dialog-shell='bare'] {
   background: none !important;
   border: 0 !important;
 }
+
+/* ── 6b. LiquidTabs on the main site: the selected tab is a flat glow, not a raised droplet ───────────────────────────
+   The thumb element stays (it is the layoutId morph and the ink hook), but on the site it paints a feathered accent wash
+   lying on the track: no edge, no coat, no rim. Games and apps keep the droplet above (`html.app-route`, or
+   `appearance="thumb"` on the strip). Higher specificity than §6, so it needs no `!important`. */
+html:not(.app-route) [data-slot='liquid-tabs']:not([data-tab-appearance='thumb']) [data-tab-thumb] {
+  border: 0;
+  background-color: transparent;
+  background-image: radial-gradient(
+    ellipse closest-side at 50% 50%,
+    color-mix(in srgb, var(--site-accent) calc(var(--row-glow-strength, 20%) * 1.8), transparent)
+      35%,
+    transparent 100%
+  );
+  box-shadow: none;
+}
