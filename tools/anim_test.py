@@ -1,34 +1,16 @@
-import os, sys, collections
-sys.path.insert(0, os.environ["CODE"] + "/scripts/tf2-assets")
-import kv
+import os, subprocess, sys, glob, json
 root = sys.argv[1]
-tree = kv.parse(open(root + "/scripts/items/paintkits_master.txt", encoding="utf-8", errors="replace").read())
-top = kv.get(tree, "item_paintkit_definitions")
-names = [n for n, _ in top]
-def show(pairs, d=0, maxd=99):
-    s = ""
-    for k, v in pairs:
-        if isinstance(v, list):
-            s += "  " * d + k + " {\n" + (show(v, d + 1, maxd) if d < maxd else "  " * (d + 1) + "...\n") + "  " * d + "}\n"
-        else:
-            s += "  " * d + "%s = %s\n" % (k, v)
-    return s
-print("templates:", [n for n in names if "template" in n.lower()][:20])
-for n, b in top:
-    if n == "paintkit_template":
-        print("paintkit_template children:", [k for k, _ in b])
-        for k, v in b[:3]:
-            print(show([(k, v)], 0, 3)[:2500])
-impl = collections.Counter()
-for n, b in top:
-    v = kv.get(b, "implements")
-    if v: impl[v] += 1
-print("implements counts:", dict(impl))
-# first templated kit, wear_level_1 and 5 trimmed
-for n, b in top:
-    if kv.get(b, "implements") and "template" not in n:
-        print("KIT", n); print(show([(k, v) for k, v in b if k != "wear_level_2" and k != "wear_level_3" and k != "wear_level_4"])[:3500]); break
-# which kits have textures keyed by $[..] and how do kits without wear_level keys look
-nowear = [n for n, b in top if not kv.get(b, "wear_level_1")]
-print("without wear_level_1:", len(nowear), nowear[:10])
-print("kit names sample:", names[:6], names[-4:])
+code = os.environ["CODE"] + "/scripts/tf2-assets"
+r = subprocess.run([sys.executable, "paintkits.py", "--root", root, "--out", "/tmp/pk"], cwd=code, capture_output=True, text=True)
+print(r.stdout[-2500:], r.stderr[-2500:])
+files = glob.glob("/tmp/pk/**/*", recursive=True)
+fs = [f for f in files if os.path.isfile(f)]
+print("files", len(fs), "bytes", sum(os.path.getsize(f) for f in fs))
+for kind in ("kits", "tex"):
+    sz = [os.path.getsize(f) for f in fs if "/%s/" % kind in f]
+    print(kind, len(sz), "total", sum(sz), "max", max(sz) if sz else 0)
+k = json.load(open("/tmp/pk/kits/concealedkiller_sniperrifle_nightowl.json"))
+def count(t):
+    return 1 + sum(count(c) for c in t[1:] if isinstance(c, list)) if isinstance(t, list) and t and t[0] in "mal" else 1
+print("nightowl nodes per level", [count(t) if t else 0 for t in k["w"]])
+print(json.dumps(k["w"][0])[:1200])
