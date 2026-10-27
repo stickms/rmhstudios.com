@@ -23,9 +23,18 @@ if (!out) {
   process.exit(1);
 }
 
+/** The game ships some files (tf_english.txt) as UTF-16 with a BOM; the public mirror re-encodes them as UTF-8. */
+function decodeText(bytes: Buffer): string {
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) return bytes.subarray(2).toString('utf16le');
+  if (bytes[0] === 0xfe && bytes[1] === 0xff) {
+    return Buffer.from(bytes.subarray(2)).swap16().toString('utf16le');
+  }
+  return bytes.toString('utf8');
+}
+
 const MIRROR = 'https://raw.githubusercontent.com/SteamDatabase/GameTracking-TF2/master/tf/';
 async function text(local: string | undefined, remote: string): Promise<string> {
-  if (local) return readFileSync(local, 'utf8');
+  if (local) return decodeText(readFileSync(local));
   const res = await fetch(MIRROR + remote);
   if (!res.ok) throw new Error(`${remote}: HTTP ${res.status}`);
   return res.text();
