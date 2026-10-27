@@ -19,6 +19,7 @@ import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import type { VibeCard } from '@/lib/rmhvibe/vibe.server';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
+import '@/components/builds/builds.css';
 import '@/components/creator-studio/storefront.css';
 import '@/components/rmhvibe/vibe.css';
 
@@ -181,35 +182,34 @@ export function PagesTab({
     [items, t],
   );
 
+  // The shared page toolbar (the one /games and /create/builds use): the search takes the row at the page gutter, the
+  // admin backfill button sits after it. It used to be a `glass-chrome` title bar ("Pages" + search), which started the
+  // search at x=76 on a phone while the heading and tab strip started at 16 — the tab already says "Pages".
   const toolbar = (
-    <header className="vibe-gallery__head store-pages__head glass-chrome">
-      <h3 className="vibe-gallery__title">{t('pages-title', { defaultValue: 'Pages' })}</h3>
-      {/* Fills the bar rather than floating at its right edge. `ml-auto` with a
-          fixed 320px width is right for `BuildsTab`, where the field is one of a
-          cluster of controls (search + sort) with nothing opposite it — but this
-          header has a title on the left, so the same rule left a stretch of
-          empty capsule between the two and read as a gap rather than a bar. */}
-      <SearchField
-        containerClassName="min-w-0 flex-1"
-        value={query}
-        onValueChange={setQuery}
-        placeholder={t('search-placeholder', { defaultValue: 'Search pages...' })}
-        aria-label={t('search-aria-label', { defaultValue: 'Search pages' })}
-      />
-      {isAdmin && (
-        <button
-          type="button"
-          onClick={backfillThumbs}
-          disabled={backfilling}
-          aria-busy={backfilling}
-          className="vibe-backfill"
-          title={t('backfill-thumbs', { defaultValue: 'Backfill all page thumbnails' })}
-          aria-label={t('backfill-thumbs', { defaultValue: 'Backfill all page thumbnails' })}
-        >
-          <CloudUpload size={18} aria-hidden="true" />
-        </button>
-      )}
-    </header>
+    <div data-slot="page-controls" className="builds-toolbar">
+      <div className="builds-toolbar__right">
+        <SearchField
+          containerClassName="min-w-0 flex-1 basis-56"
+          value={query}
+          onValueChange={setQuery}
+          placeholder={t('search-placeholder', { defaultValue: 'Search pages...' })}
+          aria-label={t('search-aria-label', { defaultValue: 'Search pages' })}
+        />
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={backfillThumbs}
+            disabled={backfilling}
+            aria-busy={backfilling}
+            className="vibe-backfill"
+            title={t('backfill-thumbs', { defaultValue: 'Backfill all page thumbnails' })}
+            aria-label={t('backfill-thumbs', { defaultValue: 'Backfill all page thumbnails' })}
+          >
+            <CloudUpload size={18} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    </div>
   );
 
   return (

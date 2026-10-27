@@ -159,6 +159,10 @@ cannot see, and it is the half that decides whether the change looks native:
 - [ ] **Looked at in both themes × two widths** — Daylight and `.style-graphite`,
       phone and desktop, once with jelly motion `still`.
       Nothing in CI can do this for you (design-language.md §0.9).
+- [ ] **iOS bars stay clear**: nothing new is `fixed`/`sticky` flush to the top or bottom
+      edge, and no new full-viewport fixed layer (hide it on `html.ios-webkit`).
+      `ios-edge-contract.test.ts` blocks the static cases; run `pnpm audit:pages` for a
+      shell, page-frame or global-CSS change.
 - [ ] **Keyboard + screen reader**: icon-only controls named, decorative icons
       `aria-hidden`, focus ring visible against the surface it lands on, no new
       jsx-a11y warnings.

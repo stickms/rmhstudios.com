@@ -58,6 +58,7 @@ pnpm test:integration        # real flows vs a running app + throwaway Postgres 
 pnpm build                   # vibe-packages → vite build → esbuild 6 server bundles
 pnpm i18n:extract            # after adding t() strings
 pnpm check:consistency       # THE COMMIT GATE — run before every commit (see below)
+pnpm audit:pages             # real-browser sweep: iOS edge-pinned layers + page-anatomy drift (needs pnpm dev)
 make gazelle && make test    # Go: regenerate BUILD files, run Bazel tests
 ```
 
@@ -331,6 +332,16 @@ The retired reduced-motion setting and OS overrides do not return. Text holds
 are `aria-hidden` decoration, never the only signal of state. Where a browser
 will not apply SVG filters to HTML, the lens simply does not refract; rim and
 indent remain.
+
+**iOS Safari bars (never bring the coloured bands back):** iOS 26 Safari fills the
+strips behind its status bar and floating tab bar from any `position: fixed` / sticky
+layer at a screen edge, as one flat band. So: no `theme-color` on iOS, no full-viewport
+fixed decoration (hide it on `html.ios-webkit`; the root carries the canvas), and
+nothing pinned flush to the top or bottom (float it off the edge like `.radial-topbar`).
+`lib/__tests__/ios-edge-contract.test.ts` asserts the invariants and ratchets any new
+edge-pinned layer; `pnpm audit:pages` finds the rest in a real browser. Both are
+described in [`docs/page-consistency.md`](docs/page-consistency.md) §"How consistency
+is enforced".
 
 **Performance:** one frame driver (`lib/jelly/frame.ts` — one
 `requestAnimationFrame`; services register through `drive(fn)`), one window

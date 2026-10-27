@@ -186,6 +186,12 @@ html.style-sepia .kd-root {
      never reflow anything above it. */
   contain: strict;
 }
+/* A full-viewport fixed layer with its own paint is what makes iOS 26 Safari fill the strips behind its status bar and
+   tab bar with one flat band (app/globals.css "iOS 26 Safari tints the strips…"; lib/__tests__/ios-edge-contract.test.ts).
+   Not rendered on iOS WebKit, like the site's own aurora; the page ground there is the root's canvas. */
+html.ios-webkit .kd-atmos {
+  display: none;
+}
 
 /* --- Aura: two counter-rotating fields in the theme's own accent ----------
    Rotation rather than translation, because a rotating radial field never

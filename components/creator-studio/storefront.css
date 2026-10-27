@@ -138,10 +138,8 @@
 
 /* Toolbars (search/sort/submit) are rendered inside .store — strip their own
    centering/padding so they align with the hero + mosaic edges.
-   NB: only a toolbar whose horizontal padding is a PAGE GUTTER belongs here. One
-   that is itself a bordered capsule (`.store-pages__head`) needs that padding as
-   its INNER padding — zeroing it put the title and the search field flush against
-   the capsule's own border. */
+   NB: only a toolbar whose horizontal padding is a PAGE GUTTER belongs here; one
+   that is itself a bordered capsule needs that padding as its INNER padding. */
 .store .builds-toolbar {
   max-width: none;
   margin: 0 0 14px;
@@ -650,18 +648,6 @@
 .store-persona-meta svg {
   display: inline;
   vertical-align: -1px;
-}
-
-/* The Pages tab's search header sits flush above its storefront (the prompt
-   dock is the real hero), so drop the storefront's own top spacing there. */
-.store-pages__head {
-  margin-bottom: 16px;
-  /* Its own inner padding, from the site's panel token — NOT the standalone
-     gallery's page gutter (`clamp(16px, 4vw, 40px)`), which reads as a hole at
-     wide viewports. The capsule follows the theme's radius like every other
-     piece of site chrome beside it. */
-  padding: 14px var(--site-panel-padding, 1.25rem);
-  border-radius: var(--site-radius, 14px);
 }
 
 /* The molded rim: while the shader draws this card's edge, its own hairline would outline what the rim dissolves. */
