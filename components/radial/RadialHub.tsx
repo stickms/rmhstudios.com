@@ -277,6 +277,23 @@ export function RadialHub() {
   const toggle = useCallback(() => {
     if (handOffMachine.busy()) return;
     clearTimer();
+    // The orb and the globe are one object moving: tell the CSS how far, and how much bigger, the docked
+    // globe has to travel and grow (one layout read, on the tap that starts it).
+    const hub = hubRef.current;
+    const orb = orbRef.current;
+    if (hub && orb && phaseRef.current === 'closed') {
+      const rect = orb.getBoundingClientRect();
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const globe = Math.min(window.innerWidth * 0.86, window.innerHeight * 0.48, rem * 30);
+      if (rect.width > 0) {
+        hub.style.setProperty('--orb-open-scale', String(globe / rect.width));
+        hub.style.setProperty('--globe-from-scale', String(rect.width / globe));
+        hub.style.setProperty(
+          '--globe-from-dy',
+          `${rect.top + rect.height / 2 - window.innerHeight / 2}px`,
+        );
+      }
+    }
     setPhase((p) => {
       // Opening is a single synchronous transition — no pre-centring step.
       if (p === 'closed') return 'open';
@@ -675,13 +692,13 @@ export function RadialHub() {
           />
         </Suspense>
 
-        <div className="radial-hub__foot">
+        <div className="radial-hub__foot" data-fluid-press="">
           {session && user ? (
             <>
               <Link
                 to={`/u/${user.handle || user.id}` as string}
                 className="radial-hub__identity"
-                data-fluid-press="firm"
+                data-fluid-press="none"
                 onClick={dismissForNavigation}
                 tabIndex={tab}
               >
@@ -696,7 +713,7 @@ export function RadialHub() {
               <Link
                 to="/settings"
                 className="radial-hub__foot-btn"
-                data-fluid-press=""
+                data-fluid-press="none"
                 onClick={dismissForNavigation}
                 tabIndex={tab}
                 aria-label={t('settings', { defaultValue: 'Settings' })}
@@ -706,7 +723,7 @@ export function RadialHub() {
               <button
                 type="button"
                 className="radial-hub__foot-btn"
-                data-fluid-press=""
+                data-fluid-press="none"
                 onClick={signOut}
                 tabIndex={tab}
                 aria-label={t('sign-out', { defaultValue: 'Sign out' })}
@@ -719,6 +736,7 @@ export function RadialHub() {
               to="/login"
               search={{ callbackURL: undefined }}
               className="radial-hub__signin"
+              data-fluid-press="none"
               onClick={dismissForNavigation}
               tabIndex={tab}
             >
@@ -728,7 +746,7 @@ export function RadialHub() {
           <button
             type="button"
             className="radial-hub__foot-btn radial-hub__close"
-            data-fluid-press=""
+            data-fluid-press="none"
             onClick={dismiss}
             tabIndex={tab}
             aria-label={t('close', { defaultValue: 'Close' })}
