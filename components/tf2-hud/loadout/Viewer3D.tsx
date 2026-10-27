@@ -9,7 +9,8 @@
  */
 'use client';
 
-import { OrbitControls, useGLTF } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
+import { ResetViewButton, ViewerOrbit, rememberView, useResetView } from './viewer-controls';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Box3, MathUtils, Sphere, Vector3, type PerspectiveCamera } from 'three';
@@ -63,6 +64,7 @@ function Model({
       orbit.target.copy(sphere.center);
       orbit.update();
     }
+    rememberView(controls);
     onFit(radius, box);
     invalidate();
   }, [root, camera, controls, invalidate, onFit]);
@@ -92,25 +94,23 @@ export default function Viewer3D({
     },
     [],
   );
+  const { ref, reset } = useResetView();
   return (
-    <Canvas
-      dpr={[1, 1.5]}
-      frameloop="demand"
-      camera={{ fov: 35, position: [2.2, 1.2, 3] }}
-      gl={{ antialias: true, alpha: true }}
-    >
-      <ambientLight intensity={1.1} />
-      <directionalLight position={[3, 4, 5]} intensity={2.2} />
-      <directionalLight position={[-4, 1, -2]} intensity={0.8} color="#ffd9b0" />
-      <OrbitControls
-        makeDefault
-        enablePan={false}
-        enableDamping
-        minDistance={radius * 1.2}
-        maxDistance={radius * 8}
-      />
-      <Model url={url} tint={tint} paint={paint} onFit={onFit} />
-      {effect && box ? <EffectParticles spec={effect} box={box} /> : null}
-    </Canvas>
+    <div className="relative size-full">
+      <Canvas
+        dpr={[1, 1.5]}
+        frameloop="demand"
+        camera={{ fov: 35, position: [2.2, 1.2, 3] }}
+        gl={{ antialias: true, alpha: true }}
+      >
+        <ambientLight intensity={1.1} />
+        <directionalLight position={[3, 4, 5]} intensity={2.2} />
+        <directionalLight position={[-4, 1, -2]} intensity={0.8} color="#ffd9b0" />
+        <ViewerOrbit resetRef={ref} minDistance={radius * 1.2} maxDistance={radius * 8} />
+        <Model url={url} tint={tint} paint={paint} onFit={onFit} />
+        {effect && box ? <EffectParticles spec={effect} box={box} /> : null}
+      </Canvas>
+      <ResetViewButton onClick={reset} />
+    </div>
   );
 }

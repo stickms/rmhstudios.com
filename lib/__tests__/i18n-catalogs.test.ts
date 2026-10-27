@@ -159,6 +159,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'randomize',
     'reset-position',
     'reset-stock',
+    'reset-view',
     'search-war-paints',
     'style',
     'style-default',
