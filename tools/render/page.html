@@ -1,0 +1,38 @@
+<!doctype html><meta charset=utf-8><body style="margin:0;background:#222">
+<canvas id=c width=1200 height=520></canvas>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+<script type=module>
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const cls = new URLSearchParams(location.search).get('cls') || 'scout';
+const taunt = new URLSearchParams(location.search).get('taunt') || 'taunt_conga';
+const r = new THREE.WebGLRenderer({canvas: document.getElementById('c'), preserveDrawingBuffer: true, antialias: true});
+r.setScissorTest(true); r.setClearColor(0x2a2d33);
+const L = new GLTFLoader();
+const load = (u) => new Promise((res, rej) => L.load(u, res, undefined, rej));
+const log = [];
+try {
+  const g = await load(`/out/class_${cls}.glb`);
+  const root = g.scene;
+  const sc = new THREE.Scene();
+  sc.add(new THREE.HemisphereLight(0xffffff, 0x555566, 1.6)); const d = new THREE.DirectionalLight(0xffffff, 2); d.position.set(2, 3, 4); sc.add(d);
+  sc.add(root);
+  log.push('clips ' + g.animations.map(a => a.name + ':' + a.duration.toFixed(2)));
+  const mixer = new THREE.AnimationMixer(root);
+  const idle = g.animations.find(a => a.name === 'idle');
+  const views = [];
+  const shot = (i, cx, cy, cz, tx, ty, fov) => { views.push({i, cam: new THREE.PerspectiveCamera(fov, 400/520, .01, 50), cx, cy, cz, tx, ty}); };
+  shot(0, 0, 0.9, 3.2, 0, 0.9, 30); shot(1, 0, 1.45, 0.7, 0, 1.45, 30); shot(2, 0, 0.9, 3.2, 0, 0.9, 30);
+  const draw = (v, x) => { v.cam.position.set(v.cx, v.cy, v.cz); v.cam.lookAt(v.tx, v.ty, 0); r.setViewport(x, 0, 400, 520); r.setScissor(x, 0, 400, 520); r.render(sc, v.cam); };
+  if (idle) { mixer.clipAction(idle).play(); mixer.update(0.7); }
+  root.updateMatrixWorld(true);
+  draw(views[0], 0); draw(views[1], 400);
+  try {
+    const ta = await load(`/out/anim_${cls}_${taunt}.glb`);
+    mixer.stopAllAction(); const act = mixer.clipAction(ta.animations[0], root); act.play(); mixer.setTime(ta.animations[0].duration * 0.4);
+    root.updateMatrixWorld(true); log.push('taunt ' + ta.animations[0].name + ' ' + ta.animations[0].duration.toFixed(2));
+  } catch (e) { log.push('taunt load failed ' + e); }
+  draw(views[2], 800);
+} catch (e) { log.push('ERR ' + e + (e && e.stack || '')); }
+window.__log = log; window.__done = true;
+</script>

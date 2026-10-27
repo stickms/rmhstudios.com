@@ -22,4 +22,4 @@ jobs:
       - name: Code under test
         run: git clone --depth 1 --branch feat/tf2-models-sync https://github.com/stickms/rmhstudios.com "$GITHUB_WORKSPACE/code"
       - name: Run
-        run: bash tools/anim_run.sh "$HOME/sample" 2>&1 | tail -200
+        run: bash tools/anim_run.sh "$HOME/sample" 2>&1 | tail -400
