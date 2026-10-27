@@ -329,6 +329,54 @@ export const TF2_LOADOUT_ASSISTANT: PromptSpec = {
   forbid: ['As an AI', 'I cannot reveal'],
 };
 
+export const TF2_HUD_SELECT: PromptSpec = {
+  id: 'tf2-hud-select',
+  version: 1,
+  task: 'moderate',
+  instructions: [
+    'You help a player customise a Team Fortress 2 HUD. You are given the paths of the HUD files in',
+    'their project and a request. Choose the files that must change to do what they asked.',
+    'Return ONLY a JSON object: {"files":["path", ...]}',
+    '- At most four paths, copied exactly from the list. Prefer the fewest files that do the job.',
+    '- Colours are defined in resource/clientscheme.res; a panel\'s position, size and visibility are',
+    '  in its own file under resource/ui/ (for example hudplayerhealth.res, hudammoweapons.res).',
+    '- If nothing in the list can do what they asked, return {"files":[]}.',
+  ].join('\n'),
+  maxChars: 600,
+};
+
+export const TF2_HUD_EDIT: PromptSpec = {
+  id: 'tf2-hud-edit',
+  version: 1,
+  task: 'concierge',
+  instructions: [
+    'You edit a Team Fortress 2 HUD for a player who describes what they want. You are shown the',
+    'contents of a few HUD files (Valve KeyValues .res files) and their request.',
+    'Return ONLY a JSON object:',
+    '{"summary":"...","changes":[{"file":"path","op":"set","path":["Root","Panel","key"],"value":"..."}]}',
+    '- "file" must be one of the paths you were shown, copied exactly.',
+    '- "path" is the key path inside the file, outermost first: the file\'s root block (for example',
+    '  "Resource/UI/HudPlayerHealth.res"), then the panel, then the property. In clientscheme.res the',
+    '  path starts "Scheme", "Colors", then the colour name. "op" is "set" (change or add a value) or',
+    '  "remove" (delete a key; no "value").',
+    '- Conventions: xpos, ypos, wide and tall are in a 640x480 space that is scaled to the screen.',
+    '  A leading "c" means relative to the centre ("c-100"), "r" from the right or bottom edge',
+    '  ("r120"), "f" from the full size; a plain number is from the left or top. Keep the prefix style',
+    '  the value already uses. "visible" and "enabled" are "0" or "1". Colours are "r g b a" (0-255).',
+    '  Panels name colours from the scheme (fgcolor, bgcolor, and so on): to recolour something for the',
+    '  whole HUD, change the scheme colour; to recolour one element, point that property at a different',
+    '  scheme colour name or give it a direct "r g b a".',
+    '- Change only what the request needs. Do not restructure, rename or remove ControlName or',
+    '  fieldName. If a key repeats under platform conditionals, change the one without a conditional',
+    '  or the [$WIN32] one.',
+    '- summary: one to three plain sentences saying what you changed and why, in the player\'s terms.',
+    '  If you could not do part of the request with these files, say so there. Return empty "changes"',
+    '  if nothing can be done.',
+  ].join('\n'),
+  maxChars: 12_000,
+  forbid: ['As an AI'],
+};
+
 /** Everything registered. The injection and contract suites iterate this. */
 export const ALL_PROMPTS: readonly PromptSpec[] = [
   TOOL_SELECT,
@@ -344,4 +392,6 @@ export const ALL_PROMPTS: readonly PromptSpec[] = [
   KAIKAI_DEBT_ANSWER,
   KAIKAI_DEBT_RECEIPTS,
   TF2_LOADOUT_ASSISTANT,
+  TF2_HUD_SELECT,
+  TF2_HUD_EDIT,
 ] as const;
