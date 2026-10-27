@@ -59,6 +59,7 @@ import idCStatus from "@/locales/id/c-status.json";
 import idCStudio from "@/locales/id/c-studio.json";
 import idCSynapseStorm from "@/locales/id/c-synapse-storm.json";
 import idCTempleOfJoy from "@/locales/id/c-temple-of-joy.json";
+import idCTf2Hud from "@/locales/id/c-tf2-hud.json";
 import idCTournaments from "@/locales/id/c-tournaments.json";
 import idCUi from "@/locales/id/c-ui.json";
 import idCUserBuilds from "@/locales/id/c-user-builds.json";
@@ -156,6 +157,7 @@ const idResources = {
   "c-studio": idCStudio,
   "c-synapse-storm": idCSynapseStorm,
   "c-temple-of-joy": idCTempleOfJoy,
+  "c-tf2-hud": idCTf2Hud,
   "c-tournaments": idCTournaments,
   "c-ui": idCUi,
   "c-user-builds": idCUserBuilds,

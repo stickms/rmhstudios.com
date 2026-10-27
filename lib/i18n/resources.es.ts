@@ -59,6 +59,7 @@ import esCStatus from "@/locales/es/c-status.json";
 import esCStudio from "@/locales/es/c-studio.json";
 import esCSynapseStorm from "@/locales/es/c-synapse-storm.json";
 import esCTempleOfJoy from "@/locales/es/c-temple-of-joy.json";
+import esCTf2Hud from "@/locales/es/c-tf2-hud.json";
 import esCTournaments from "@/locales/es/c-tournaments.json";
 import esCUi from "@/locales/es/c-ui.json";
 import esCUserBuilds from "@/locales/es/c-user-builds.json";
@@ -156,6 +157,7 @@ const esResources = {
   "c-studio": esCStudio,
   "c-synapse-storm": esCSynapseStorm,
   "c-temple-of-joy": esCTempleOfJoy,
+  "c-tf2-hud": esCTf2Hud,
   "c-tournaments": esCTournaments,
   "c-ui": esCUi,
   "c-user-builds": esCUserBuilds,

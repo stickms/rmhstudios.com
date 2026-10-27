@@ -122,7 +122,7 @@ jobs:
         if: steps.gate.outputs.run_models == 'true' || steps.gate.outputs.run_hud == 'true'
         run: |
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL
-          sudo mkdir -p /mnt/tf2 && sudo chown "$USER" /mnt/tf2
+          sudo mkdir -p /mnt/tf2 /mnt/work && sudo chown "$USER" /mnt/tf2 /mnt/work
           df -h / /mnt | cat
 
       - name: Download Team Fortress 2
@@ -130,8 +130,8 @@ jobs:
         run: |
           for i in 1 2 3; do
             "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/tf2 +login "$STEAM_USER" "$STEAM_PASS" +app_update 440 validate +quit \
-              > /mnt/steam.log 2>&1 || true
-            grep -i -E 'success|error|fail|guard' /mnt/steam.log | grep -v -i password | tail -5
+              > "$HOME/steam.log" 2>&1 || true
+            grep -i -E 'success|error|fail|guard' "$HOME/steam.log" | grep -v -i password | tail -5
             [ -f /mnt/tf2/tf/tf2_textures_000.vpk ] && break
             echo "attempt $i did not finish; retrying"; sleep 30
           done
