@@ -37,7 +37,7 @@ import {
 import { inShell } from './eversion/eversion-nav';
 import { createHandOff, type HandOffHow } from './hub-handoff';
 import { whenQuiet } from './quiet';
-import { RmhLogo } from './RmhLogo';
+import { MiniGlobe } from './MiniGlobe';
 import { isGlobeDocked, useGlobeDestinations } from './globe-dock';
 
 /**
@@ -591,7 +591,7 @@ export function RadialHub() {
         onPointerDown={preloadGlobe}
         onFocus={preloadGlobe}
       >
-        <RmhLogo className="radial-hub__logo" />
+        <MiniGlobe className="radial-hub__logo" />
       </button>
 
       {/* Non-modal on purpose: a modal Radix dialog locks scroll with `overflow:
