@@ -32,8 +32,9 @@
  * `SearchField`, same position, just owned by the panel that filters.
  */
 
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { LiquidTabs, type LiquidTab, type LiquidTabRenderProps } from '@/components/ui/liquid-tabs';
+import { swapContentAfter } from '@/lib/page-transition';
 
 interface PageTabsProps {
   tabs: LiquidTab[];
@@ -73,8 +74,21 @@ export function PageTabs({
   'aria-label': ariaLabel,
   search,
 }: PageTabsProps) {
+  // A tab switch that does not change the route (the content below is swapped by state) gets the same quick dip as a
+  // navigation: the content after this strip dims-and-rises, the strip itself never moves, and nothing in the new
+  // content replays its entrance (lib/page-transition.ts). Not on the first render.
+  const controls = useRef<HTMLDivElement>(null);
+  const first = useRef(true);
+  useLayoutEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (controls.current) swapContentAfter(controls.current);
+  }, [value]);
+
   return (
-    <div data-slot="page-controls" className="page-controls">
+    <div ref={controls} data-slot="page-controls" className="page-controls">
       <div className={`mt-3 ${search ? 'mb-2' : 'mb-3'} ${GUTTER}`}>
         <LiquidTabs
           tabs={tabs}

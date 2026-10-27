@@ -3,12 +3,14 @@ import { routeTree } from './routeTree.gen';
 import { RoutePending } from '@/components/ui/RoutePending';
 import { installNotFoundHeadGuard } from '@/lib/router/not-found-head';
 import { installStyleTierPreload } from '@/lib/style-tier';
+import { installPageTransitions } from '@/lib/page-transition';
 import appTierCss from '@/app/app-tier.css?url';
 
 // `getRouter()` runs once per client page load and once per SSR request. The
 // style-tier preload is a browser-only, page-lifetime singleton, so it is
 // installed here behind a latch rather than from a component effect.
 let styleTierPreloadInstalled = false;
+let pageTransitionsInstalled = false;
 
 export function getRouter() {
   const router = createTanStackRouter({
@@ -80,6 +82,12 @@ export function getRouter() {
   if (typeof document !== 'undefined' && !styleTierPreloadInstalled) {
     styleTierPreloadInstalled = true;
     installStyleTierPreload(router, appTierCss);
+  }
+
+  // The quick page swap's navigation markers (html[data-nav-kind], html[data-page-leaving]): browser-only, once.
+  if (typeof document !== 'undefined' && !pageTransitionsInstalled) {
+    pageTransitionsInstalled = true;
+    installPageTransitions(router);
   }
 
   return router;

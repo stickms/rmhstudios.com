@@ -4107,19 +4107,33 @@ input[type='number'] {
  * against the page box instead of the viewport. 0.16s of that is invisible;
  * the spring's 0.64s settle would park the FAB at the bottom of the document
  * for over half a second on every navigation. */
+/* The page swap (docs/superpowers/specs/2026-10-27-smooth-transitions-design.md). OPACITY ONLY, and never blank: the old
+   page dims to --swap-dim while it leaves (html[data-page-leaving], set by lib/page-transition.ts) and the new one
+   enters from that same level, so a navigation reads as one quick dip instead of a blink. No transform on purpose: a
+   running transform on the page root makes its `position: fixed` descendants (the compose FAB, floating lanes) lay out
+   against the page box instead of the viewport. Every other one-shot entrance inside the page is finished at mount
+   (finishEntranceAnimations), so this is the only one that paints. */
+:root {
+  --swap-dim: 0.6;
+  --swap-out: 70ms;
+  --swap-in: 120ms;
+}
 @keyframes page-enter {
   from {
-    opacity: 0;
-    transform: translateY(4px);
+    opacity: var(--swap-dim);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 .page-root > * {
-  animation: page-enter 0.16s var(--ease-smooth) backwards;
+  animation: page-enter var(--swap-in) var(--ease-smooth) backwards;
+  transition: opacity var(--swap-out) var(--ease-smooth);
 }
+html[data-page-leaving] .page-root > * {
+  opacity: var(--swap-dim);
+}
+/* The kind rides on the flag itself (a sibling leave dims only the content). */
 .page-root > [data-page-enter-complete],
 .page-root > [data-route-pending] {
   animation: none !important;
@@ -4133,6 +4147,25 @@ input[type='number'] {
  * which marks the page then on screen complete first so it never replays. */
 html:not([data-navigated]) .page-root > * {
   animation: none;
+}
+
+/* Same layout group (tabbed / sibling pages): the frame, the title and the tab strip, stays perfectly still and only the
+   content swaps. The column itself never animates; the swap is keyed to what is NOT the frame, on the two shapes the
+   shell renders (PageLayout's `page-content`, and the radial feed). Pages with another shape simply swap instantly. */
+html[data-nav-kind='sibling'] .page-root > * {
+  animation: none;
+}
+html[data-nav-kind='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']),
+html[data-nav-kind='sibling'] .radial-feed > :not([data-slot='page-controls'], h1, .radial-feed__compose) {
+  animation: page-enter var(--swap-in) var(--ease-smooth) backwards;
+  transition: opacity var(--swap-out) var(--ease-smooth);
+}
+html[data-page-leaving='sibling'] .page-root > * {
+  opacity: 1;
+}
+html[data-page-leaving='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']),
+html[data-page-leaving='sibling'] .radial-feed > :not([data-slot='page-controls'], h1, .radial-feed__compose) {
+  opacity: var(--swap-dim);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
