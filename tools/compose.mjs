@@ -9,6 +9,12 @@ async function load(p) {
   const { data, info } = await sharp(f).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   return fromRgba(new Uint8ClampedArray(data), info.width, info.height);
 }
+{
+  const g = await load('models/weapons/c_models/c_sniperrifle/p_sniperrifle_groups');
+  const h = new Map();
+  for (let i = 0; i < g.w * g.h; i++) { const v = Math.round(g.data[i * 3] * 255); h.set(v, (h.get(v) || 0) + 1); }
+  console.log('groups', g.w + 'x' + g.h, [...h.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([v, n]) => v + ':' + n).join(' '));
+}
 for (const [wear, seed] of [[1, 5], [3, 5], [5, 5], [3, 99]]) {
   const tree = script.w[wear - 1];
   const paths = [...texturesOf(tree)];

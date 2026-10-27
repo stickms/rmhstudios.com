@@ -50,8 +50,17 @@ def _clean(path):
 
 def node(name, pairs, skipped):
     """One operation block -> compact node, or None for something the preview does not draw."""
-    if name == "texture_lookup" or name == "sticker":
-        tex = kv.get(pairs, "texture") or kv.get(pairs, "base")
+    if name == "apply_sticker":
+        # a decal pasted onto a quad of the weapon's texture, wrapped around the operation it goes on:
+        # the preview draws the operation and leaves the decal off
+        for k, v in pairs:
+            if isinstance(v, list) and k != "sticker":
+                inner = node(k, v, skipped)
+                if inner:
+                    return inner
+        return None
+    if name == "texture_lookup":
+        tex = kv.get(pairs, "texture")
         if not tex or tex.startswith("$"):
             return None
         params = {}
@@ -73,7 +82,7 @@ def node(name, pairs, skipped):
         if not groups or groups.startswith("$"):
             return None
         return ["s", _clean(groups), ids]
-    if name != "apply_sticker":
+    if name != "sticker":
         skipped[name] = skipped.get(name, 0) + 1
     return None
 
