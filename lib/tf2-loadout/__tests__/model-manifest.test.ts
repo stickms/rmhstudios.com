@@ -164,3 +164,47 @@ describe('buildTauntManifest', () => {
     ]);
   });
 });
+
+describe('item styles', () => {
+  const items = `
+"items_game"
+{
+  "prefabs" { "base_hat" { "item_slot" "head" "item_name" "#T_Hat" } }
+  "items"
+  {
+    "701" { "name" "Hat" "prefab" "base_hat" "model_player" "models/p/hat.mdl" "used_by_classes" { "scout" "1" }
+      "visuals" { "styles" {
+        "0" { "name" "Plain" }
+        "1" { "name" "Other model" "model_player" "models/p/hat_alt.mdl" }
+        "2" { "name" "Other skin" "skin_red" "2" "skin_blu" "3" }
+        "3" { "name" "Attributes only" "additional_hidden_bodygroups" { "hat" "1" } }
+      } } }
+    "702" { "name" "Class hat" "prefab" "base_hat" "model_player_per_class" { "basename" "models/p/ch_%s.mdl" } "used_by_classes" { "demoman" "1" }
+      "visuals" { "styles" { "1" { "name" "Alt" "model_player_per_class" { "basename" "models/p/ch_alt_%s.mdl" } } } } }
+  }
+}`;
+  const m = buildModelManifest(items, ENGLISH);
+  it('publishes a style that changes the model, or only the skin, as its own file', () => {
+    expect(m.find((i) => i.id === 701)?.models).toEqual([
+      { mdl: 'models/p/hat.mdl', role: 'main', glb: '701.glb' },
+      { mdl: 'models/p/hat_alt.mdl', role: 'main', glb: '701_s1.glb', style: 1 },
+      { mdl: 'models/p/hat.mdl', role: 'main', glb: '701_s2.glb', style: 2, skin: 2 },
+    ]);
+  });
+  it('names per-class style models by class and style, in a form the routes accept', () => {
+    const models = m.find((i) => i.id === 702)!.models;
+    expect(models.map((x) => x.glb)).toEqual(['702_demoman.glb', '702_demoman_s1.glb']);
+    for (const x of models) expect(MODEL_NAME.test(x.glb.replace(/\.glb$/, ''))).toBe(true);
+  });
+});
+
+describe('pickModel with styles', () => {
+  it('prefers the style file, then the class file, then the shared one', () => {
+    const ids = new Set(['701', '701_s1', '702_demoman', '702_demoman_s1']);
+    expect(pickModel(ids, 701, 'scout', 1)).toBe('701_s1');
+    expect(pickModel(ids, 701, 'scout', 2)).toBe('701');
+    expect(pickModel(ids, 702, 'demoman', 1)).toBe('702_demoman_s1');
+    expect(pickModel(ids, 702, 'demoman')).toBe('702_demoman');
+    expect(pickModel(ids, 999, 'demoman', 1)).toBeNull();
+  });
+});

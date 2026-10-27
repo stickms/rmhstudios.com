@@ -25,7 +25,12 @@ import {
   type LoadoutEntry,
   type TfClass,
 } from '@/lib/tf2-loadout/catalog-types';
-import { compactPlacement, effectProfile, resolvePlacement, WEAR_NAMES } from '@/lib/tf2-loadout/fx';
+import {
+  compactPlacement,
+  effectProfile,
+  resolvePlacement,
+  WEAR_NAMES,
+} from '@/lib/tf2-loadout/fx';
 import type { CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemModelViewer from './ItemModelViewer';
 
@@ -70,7 +75,9 @@ export default function ItemCustomizeModal({
 
   const effect = entry.effect !== undefined ? idx.effect(entry.effect) : undefined;
   const placement = resolvePlacement(entry.fx, kind);
-  const effectSpec = effect ? { profile: effectProfile(effect.n, effect.id), placement } : undefined;
+  const effectSpec = effect
+    ? { profile: effectProfile(effect.n, effect.id), placement }
+    : undefined;
   const setPlacement = (next: Partial<typeof placement>) =>
     onPatch({ fx: compactPlacement({ ...placement, ...next }, kind) });
   const pct = (v: number) => `${Math.round(v * 100)}%`;
@@ -96,6 +103,7 @@ export default function ItemCustomizeModal({
           <ItemModelViewer
             itemId={item.id}
             cls={cls}
+            style={entry.style}
             tint={entry.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
             effect={effectSpec}
             className="h-64 md:h-72"
@@ -104,7 +112,7 @@ export default function ItemCustomizeModal({
             <p className="text-[11px] text-(--app-text-dim)">
               {t('effect-approx', {
                 defaultValue:
-                  'The preview draws an effect with the same look as the game\'s; the game\'s own particles differ in detail.',
+                  "The preview draws an effect with the same look as the game's; the game's own particles differ in detail.",
               })}
             </p>
           ) : null}
@@ -149,7 +157,9 @@ export default function ItemCustomizeModal({
                 <SearchSelect
                   value={entry.effect}
                   options={effectOptions}
-                  onChange={(id) => onPatch({ effect: id, ...(id === undefined ? { fx: undefined } : {}) })}
+                  onChange={(id) =>
+                    onPatch({ effect: id, ...(id === undefined ? { fx: undefined } : {}) })
+                  }
                   noneLabel={t('no-effect', { defaultValue: 'None' })}
                   placeholder={t('search-effects', { defaultValue: 'Search effects' })}
                   label={t('unusual-effect', { defaultValue: 'Unusual effect' })}

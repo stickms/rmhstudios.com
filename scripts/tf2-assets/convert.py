@@ -225,9 +225,9 @@ def encode_texture(vtf, keep_alpha):
     return buf.getvalue()
 
 
-def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None):
+def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=0):
     """`anim` = (animations mdl bytes) for a class body: its skeleton, skin and idle clip go in the GLB."""
-    info, meshes = srcmodel.build_meshes(mdl, vvd, vtx)
+    info, meshes = srcmodel.build_meshes(mdl, vvd, vtx, skin)
     if not meshes:
         raise srcmodel.ModelError("no geometry")
     skeleton = bones = world = None
@@ -416,7 +416,9 @@ def main():
         mdl, vvd, vtx, slots = entry
         is_class = ref["glb"].startswith("class_")
         anim = fs.read(stem + "_animations.mdl") if is_class else None
-        src = source_hash(mdl, vvd, vtx, slots, hashlib.sha1(anim).digest() if anim else b"")
+        skin = int(ref.get("skin", 0) or 0)
+        src = source_hash(mdl, vvd, vtx, slots,
+                          (hashlib.sha1(anim).digest() if anim else b"") + b"|skin%d" % skin)
         if is_class and anim:
             class_anims[ref["glb"][len("class_"):-4]] = (stem, mdl, anim)
         if published.get(ref["glb"], {}).get("src") == src and os.environ.get("FORCE") != "1":
@@ -424,7 +426,7 @@ def main():
             skipped += 1
             continue
         try:
-            data = convert(fs, ref["mdl"], mdl, vvd, vtx, slots, is_class, anim)
+            data = convert(fs, ref["mdl"], mdl, vvd, vtx, slots, is_class, anim, skin)
         except Exception as e:  # noqa: BLE001
             reasons[type(e).__name__ + ": " + str(e)] = reasons.get(type(e).__name__ + ": " + str(e), 0) + 1
             failed.append(ref["glb"])

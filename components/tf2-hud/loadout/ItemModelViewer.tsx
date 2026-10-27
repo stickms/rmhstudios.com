@@ -33,6 +33,7 @@ function Note({ children, className }: { children: ReactNode; className?: string
 export default function ItemModelViewer({
   itemId,
   cls,
+  style,
   tint,
   effect,
   className,
@@ -40,6 +41,8 @@ export default function ItemModelViewer({
   itemId: number;
   /** The class wearing it, to pick a per-class model. */
   cls?: string;
+  /** The chosen item style. */
+  style?: number;
   /** Paint colour, `#rrggbb`. */
   tint?: string;
   /** An unusual effect to show around the model. */
@@ -48,7 +51,7 @@ export default function ItemModelViewer({
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const ids = useModelIds();
-  const model = ids ? pickModel(ids, itemId, cls) : null;
+  const model = ids ? pickModel(ids, itemId, cls, style) : null;
   const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
 
   const body = !webgl ? (

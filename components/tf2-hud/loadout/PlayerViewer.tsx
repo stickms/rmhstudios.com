@@ -31,6 +31,8 @@ function Note({ children }: { children: ReactNode }) {
 export interface WornItem {
   slotKey: string;
   itemId: number;
+  /** The chosen item style. */
+  style?: number;
   /** Paint colour, `#rrggbb`. */
   tint?: string;
   effect?: EffectSpec;
@@ -63,7 +65,7 @@ export default function PlayerViewer({
     if (!ids) return [];
     const out: PlayerPart[] = [];
     for (const w of worn) {
-      const name = pickModel(ids, w.itemId, cls);
+      const name = pickModel(ids, w.itemId, cls, w.style);
       if (name) {
         out.push({
           key: `${w.slotKey}:${name}`,

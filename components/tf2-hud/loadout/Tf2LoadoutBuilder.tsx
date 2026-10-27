@@ -294,6 +294,7 @@ function Builder({
         {
           slotKey: k,
           itemId: e.item,
+          style: e.style,
           tint: e.paint !== undefined ? idx.paint(e.paint)?.rgb : undefined,
           effect: effectSpecOf(idx, e, slotFor(idx.item(e.item)!, cls) ?? 'misc'),
         },
@@ -992,6 +993,7 @@ function Picker({
           <ItemModelViewer
             itemId={current.id}
             cls={cls}
+            style={entry?.style}
             tint={entry?.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
           />
           <div className="flex min-w-0 flex-col gap-3">
