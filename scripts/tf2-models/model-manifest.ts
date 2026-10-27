@@ -19,6 +19,7 @@ import path from 'node:path';
 import {
   buildIconManifest,
   buildModelManifest,
+  classModelEntries,
   uniqueModels,
 } from '../../lib/tf2-loadout/model-manifest';
 
@@ -47,7 +48,7 @@ async function text(local: string | undefined, remote: string): Promise<string> 
 
 const itemsGame = await text(itemsPath, 'scripts/items/items_game.txt');
 const english = await text(englishPath, 'resource/tf_english.txt');
-const manifest = buildModelManifest(itemsGame, english);
+const manifest = [classModelEntries(), ...buildModelManifest(itemsGame, english)];
 const icons = buildIconManifest(itemsGame, english);
 const mdls = uniqueModels(manifest);
 

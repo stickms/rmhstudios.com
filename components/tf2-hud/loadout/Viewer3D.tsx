@@ -12,22 +12,8 @@
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import {
-  Box3,
-  Color,
-  MathUtils,
-  Sphere,
-  Vector3,
-  type Material,
-  type Mesh,
-  type MeshStandardMaterial,
-  type Object3D,
-  type PerspectiveCamera,
-} from 'three';
-
-function materialsOf(mesh: Mesh): Material[] {
-  return Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-}
+import { Box3, MathUtils, Sphere, Vector3, type PerspectiveCamera } from 'three';
+import { applyTint, cloneWithMaterials } from './model-utils';
 
 function Model({
   url,
@@ -40,34 +26,11 @@ function Model({
 }) {
   const { scene } = useGLTF(url);
   const { camera, controls, invalidate } = useThree();
-  // The loader caches one scene per URL; give this viewer its own copy, with its
-  // own materials, so tinting never leaks into another viewer of the same model.
-  const root = useMemo(() => {
-    const copy = scene.clone(true);
-    copy.traverse((o: Object3D) => {
-      const mesh = o as Mesh;
-      if (!mesh.isMesh) return;
-      mesh.material = Array.isArray(mesh.material)
-        ? mesh.material.map((m) => m.clone())
-        : mesh.material.clone();
-    });
-    return copy;
-  }, [scene]);
+  // Own copy of the cached scene, so tinting never leaks into another viewer.
+  const root = useMemo(() => cloneWithMaterials(scene), [scene]);
 
   useEffect(() => {
-    const colour = tint ? new Color(tint) : null;
-    root.traverse((o: Object3D) => {
-      const mesh = o as Mesh;
-      if (!mesh.isMesh) return;
-      for (const m of materialsOf(mesh)) {
-        if (!m.userData?.tint || !('color' in m)) continue;
-        const std = m as MeshStandardMaterial;
-        std.userData.baseColor ??= std.color.clone();
-        std.color.copy(std.userData.baseColor as Color);
-        if (colour) std.color.multiply(colour);
-        std.needsUpdate = true;
-      }
-    });
+    applyTint(root, tint);
     // The canvas renders on demand, so a colour change has to ask for a frame.
     invalidate();
   }, [root, tint, invalidate]);

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buildIconManifest, buildModelManifest, uniqueModels } from '../model-manifest';
+import {
+  buildIconManifest,
+  buildModelManifest,
+  classModelEntries,
+  uniqueModels,
+} from '../model-manifest';
+import { MODEL_NAME } from '../models.server';
 import { pickModel } from '../use-models';
 
 const ITEMS_GAME = `
@@ -86,5 +92,25 @@ describe('buildIconManifest', () => {
 
   it('skips excluded families', () => {
     expect(icons.some((i) => i.id === 942)).toBe(false);
+  });
+});
+
+describe('classModelEntries', () => {
+  const entry = classModelEntries();
+
+  it('lists the nine class bodies, with the game\'s file-name spellings', () => {
+    expect(entry.models).toHaveLength(9);
+    expect(entry.models.find((m) => m.class === 'demoman')).toEqual({
+      class: 'demoman',
+      mdl: 'models/player/demo.mdl',
+      role: 'main',
+      glb: 'class_demoman.glb',
+    });
+  });
+
+  it('names every body in a form the model routes accept, and nothing like an item id', () => {
+    for (const m of entry.models) expect(MODEL_NAME.test(m.glb.replace(/\.glb$/, ''))).toBe(true);
+    expect(MODEL_NAME.test('class_')).toBe(false);
+    expect(MODEL_NAME.test('class_../x')).toBe(false);
   });
 });

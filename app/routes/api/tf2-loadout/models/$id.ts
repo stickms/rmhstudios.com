@@ -12,7 +12,7 @@ export const Route = createFileRoute('/api/tf2-loadout/models/$id')({
       GET: defineHandler(
         { auth: 'none', rateLimit: 'read', etag: false },
         async ({ params, request }) => {
-          const m = /^(\d{1,7}(?:_[a-z]{3,10})?)(?:\.glb)?$/.exec(params.id);
+          const m = /^(\d{1,7}(?:_[a-z]{3,10})?|class_[a-z]{3,10})(?:\.glb)?$/.exec(params.id);
           if (!m) return apiError('Not found', 404);
           const model = await readModel(m[1], request.headers.get('accept-encoding') ?? '');
           if (!model) return apiError('Not found', 404);

@@ -42,3 +42,7 @@ export function useModelIds(): Set<string> | null {
   }, []);
   return ids;
 }
+
+/** The class body model, once the sync has published it. */
+export const classModel = (ids: ReadonlySet<string>, cls: string): string | null =>
+  ids.has(`class_${cls}`) ? `class_${cls}` : null;

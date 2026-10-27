@@ -17,14 +17,15 @@ let listed: { at: number; ids: string[] } | null = null;
 /** `name` is `<defindex>` or `<defindex>_<class>` (a per-class variant). */
 export const modelKey = (name: string): string => `${PREFIX}${name}.glb`;
 
-export const MODEL_NAME = /^\d{1,7}(?:_[a-z]{3,10})?$/;
+/** `940`, `940_soldier`, or a class body: `class_soldier`. */
+export const MODEL_NAME = /^(?:\d{1,7}(?:_[a-z]{3,10})?|class_[a-z]{3,10})$/;
 
 /** Names (`940`, `940_soldier`) of the models that exist, cached for a few minutes. */
 export async function listModelIds(): Promise<string[]> {
   if (listed && Date.now() - listed.at < LIST_TTL_MS) return listed.ids;
   const keys = await listObjects(PREFIX, 20_000);
   const ids = keys
-    .map((k) => /^tf2-models\/(\d+(?:_[a-z]+)?)\.glb$/.exec(k)?.[1])
+    .map((k) => /^tf2-models\/(\d+(?:_[a-z]+)?|class_[a-z]+)\.glb$/.exec(k)?.[1])
     .filter((v): v is string => v !== undefined)
     .sort();
   listed = { at: Date.now(), ids };

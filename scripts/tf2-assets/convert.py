@@ -24,7 +24,7 @@ import srctex
 from vpkfs import GameFS
 
 # Bump when the output for the same source would change.
-CONVERTER_VERSION = 1
+CONVERTER_VERSION = 3
 SCALE = 0.01905  # Source units are 0.75 inch
 MAX_TEX = 512
 TINT_KEYS = ("$blendtintbybasealpha",)
@@ -33,6 +33,31 @@ TINT_KEYS = ("$blendtintbybasealpha",)
 def to_gl(pos):
     """Positions and normals arrive Y-up already (the compiled bind pose), so only scale."""
     return pos * SCALE
+
+
+def matrix4(pose12):
+    """A 3x4 row-major Source matrix as a 4x4 acting on scaled coordinates."""
+    m = np.eye(4)
+    m[:3, :] = np.array(pose12, dtype=np.float64).reshape(3, 4)
+    m[:3, 3] *= SCALE
+    return m
+
+
+def column_major(m):
+    return [round(float(x), 6) for x in m.T.flatten()]
+
+
+def attachment_extras(mdl, info, is_class):
+    """How a model sits on a class. The class model lists its bones' bind-pose world matrices; a
+    cosmetic names the bone it follows and its own pose-to-bone matrix. A viewer places the cosmetic
+    at `classBone[name] × pose`, which is what the game's bone-merge does in the reference pose."""
+    bones = srcmodel.read_bones(mdl)
+    if is_class:
+        return {"bones": {b["name"]: column_major(np.linalg.inv(matrix4(b["pose_to_bone"]))) for b in bones}}
+    bone = bones[info["dominant_bone"]] if bones else None
+    if bone is None:
+        return None
+    return {"attach": {"bone": bone["name"], "pose": column_major(matrix4(bone["pose_to_bone"]))}}
 
 
 def material_files(fs, info):
@@ -91,7 +116,7 @@ def encode_texture(vtf, keep_alpha):
     return buf.getvalue()
 
 
-def convert(fs, mdl_path, mdl, vvd, vtx, slots):
+def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False):
     info, meshes = srcmodel.build_meshes(mdl, vvd, vtx)
     if not meshes:
         raise srcmodel.ModelError("no geometry")
@@ -126,7 +151,7 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots):
             mat_index[t] = len(materials) - 1
         out_meshes.append({"pos": to_gl(m["pos"]), "nrm": to_gl(m["nrm"]) / SCALE,
                            "uv": m["uv"], "idx": m["idx"], "material": mat_index[t]})
-    return glb.write_glb(out_meshes, materials, images)
+    return glb.write_glb(out_meshes, materials, images, attachment_extras(mdl, info, is_class))
 
 
 def main():
@@ -177,7 +202,7 @@ def main():
             skipped += 1
             continue
         try:
-            data = convert(fs, ref["mdl"], mdl, vvd, vtx, slots)
+            data = convert(fs, ref["mdl"], mdl, vvd, vtx, slots, ref["glb"].startswith("class_"))
         except Exception as e:  # noqa: BLE001
             reasons[type(e).__name__ + ": " + str(e)] = reasons.get(type(e).__name__ + ": " + str(e), 0) + 1
             failed.append(ref["glb"])

@@ -9,7 +9,7 @@ def _pad(b, fill=b"\0"):
     return b + fill * (-len(b) % 4)
 
 
-def write_glb(meshes, materials, images):
+def write_glb(meshes, materials, images, scene_extras=None):
     """meshes: [{pos, nrm, uv, idx, material}]; materials: [{name, image (index|None),
     alpha ('OPAQUE'|'MASK'|'BLEND'), double_sided, tint}]; images: [webp bytes]."""
     blob = bytearray()
@@ -68,7 +68,8 @@ def write_glb(meshes, materials, images):
 
     doc = {
         "asset": {"version": "2.0", "generator": "rmhstudios tf2-assets"},
-        "scene": 0, "scenes": [{"nodes": [0]}], "nodes": [{"mesh": 0}],
+        "scene": 0, "scenes": [{"nodes": [0], **({"extras": scene_extras} if scene_extras else {})}],
+        "nodes": [{"mesh": 0}],
         "meshes": [{"primitives": prims}],
         "buffers": [{"byteLength": len(blob)}],
         "bufferViews": views, "accessors": accessors, "materials": gl_mats,

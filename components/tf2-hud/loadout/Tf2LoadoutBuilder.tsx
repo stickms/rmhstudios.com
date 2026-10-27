@@ -50,6 +50,7 @@ import {
 import { loadDraft, saveDraft } from '@/lib/tf2-loadout/local-drafts';
 import { useCatalog, type CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemModelViewer from './ItemModelViewer';
+import PlayerViewer, { type WornItem } from './PlayerViewer';
 import ItemTile from './ItemTile';
 import { CLASS_DEFAULT } from './labels';
 
@@ -208,6 +209,23 @@ function Builder({
   };
 
   const weaponKeys = useMemo(() => weaponSlotsFor(catalog, cls), [catalog, cls]);
+
+  // What the 3D player wears: the cosmetics, with their paint.
+  const worn = useMemo<WornItem[]>(
+    () =>
+      COSMETIC_KEYS.flatMap((k) => {
+        const e = slots[k];
+        if (!e) return [];
+        return [
+          {
+            slotKey: k,
+            itemId: e.item,
+            tint: e.paint !== undefined ? idx.paint(e.paint)?.rgb : undefined,
+          },
+        ];
+      }),
+    [slots, idx],
+  );
 
   const slotLabel = useCallback(
     (key: LoadoutSlotKey): string => {
@@ -387,6 +405,8 @@ function Builder({
           aria-label={t('loadout-slots', { defaultValue: 'Loadout slots' })}
           className="flex flex-col gap-4"
         >
+          {/* The player sits right under the class bar; the options follow it. */}
+          <PlayerViewer cls={cls} worn={worn} />
           <SlotGroup title={t('weapons', { defaultValue: 'Weapons' })}>
             {weaponKeys.map((k) => (
               <SlotCell
@@ -430,16 +450,10 @@ function Builder({
             ))}
           </SlotGroup>
           <p className="text-xs text-(--app-text-dim)">
-            {catalog.source.hasIcons
-              ? t('catalog-source', {
-                  defaultValue: 'Items from {{source}}, updated automatically.',
-                  source: catalog.source.label,
-                })
-              : t('catalog-source-no-icons', {
-                  defaultValue:
-                    'Items from {{source}}, updated automatically. Inventory icons appear once a Steam API key is configured.',
-                  source: catalog.source.label,
-                })}
+            {t('catalog-source', {
+              defaultValue: 'Items from {{source}}, updated automatically.',
+              source: catalog.source.label,
+            })}
           </p>
         </section>
 
