@@ -9,7 +9,6 @@ import {
 
 const ok: EligibilityInputs = {
   flagEnabled: true,
-  reducedMotion: false,
   webgl2: true,
   chunkReady: true,
 };
@@ -34,15 +33,11 @@ describe('evaluateEligibility', () => {
   it('first failing row wins, in the documented order', () => {
     const allBad: EligibilityInputs = {
       flagEnabled: false,
-      reducedMotion: true,
       webgl2: false,
       chunkReady: false,
     };
     expect(evaluateEligibility(allBad)).toBe('flag-off');
     expect(evaluateEligibility({ ...allBad, flagEnabled: true })).toBe('no-webgl2');
-    expect(evaluateEligibility({ ...allBad, flagEnabled: true, reducedMotion: false })).toBe(
-      'no-webgl2',
-    );
     expect(INELIGIBILITY_ORDER).toEqual(['flag-off', 'no-webgl2', 'chunk-not-ready']);
   });
 });
@@ -54,7 +49,7 @@ describe('shouldCaptureBefore', () => {
   });
   it('does not capture for any other reason', () => {
     expect(shouldCaptureBefore({ ...ok, flagEnabled: false })).toBe(false);
-    expect(shouldCaptureBefore({ ...ok, reducedMotion: true })).toBe(true);
+    expect(shouldCaptureBefore({ ...ok })).toBe(true);
     expect(shouldCaptureBefore({ ...ok, webgl2: null })).toBe(false);
   });
 });

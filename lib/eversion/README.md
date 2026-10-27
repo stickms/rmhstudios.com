@@ -177,7 +177,7 @@ an accessibility or capability check off.
 | Frame governor (`DprGovernor`, <= 2 DPR steps)                                                                                        | Lowers resolution mid-run, never cancels            | Unchanged                             |
 | Run watchdog (`MAX_RUN_MS`, 30 s of silence)                                                                                          | Force-ends a stalled run with a fade                | Unchanged: the switch cannot hang     |
 | The destination's capture (`AFTER_CAPTURE_TIMEOUT_MS`, after the `DESTINATION_SETTLE_*` gate)                                         | 1.5 s; a miss ends the run unanimated (`abort`)     | `BACKGROUND_CAPTURE_TIMEOUT_MS` (4 s) |
-| Reduced motion (OS or site toggle), no WebGL2 / lost context, flag off, chunk not loaded, failed host, traversal, external link, busy | Fall back                                           | **Never overridden**                  |
+| No WebGL2 / lost context, flag off, chunk not loaded, failed host, traversal, external link, busy | Fall back                                           | **Never overridden**                  |
 
 The switch reaches the code in three places: the runner's priming section
 (`RunnerDeps.alwaysEvert?()` picks the `ALWAYS_EVERT_*` limits), the controller

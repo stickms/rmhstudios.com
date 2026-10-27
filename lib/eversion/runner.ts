@@ -222,7 +222,7 @@ export interface RunnerDeps {
   overlay: OverlayPort;
   page: PagePort;
   router: RouterPort;
-  /** Eligibility (flag, reduced motion, WebGL2, chunk), evaluated at the moment of release. */
+  /** Eligibility (flag, WebGL2, chunk), evaluated at the moment of release. */
   ineligibleReason(): FallbackReason | null;
   awaitBefore(graceMs: number): Promise<ImageBitmap | null>;
   /** The BEFORE scheduler's capture session, reused for AFTER; `null` makes the controller open its own. */

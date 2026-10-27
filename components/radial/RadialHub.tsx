@@ -16,7 +16,6 @@ import { LogOut, Settings, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser, useSession } from '@/components/Providers';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import type { NavLeaf } from '@/lib/sidebar-nav';
 import { isEversionEnabled } from '@/lib/eversion/flags';
@@ -142,9 +141,6 @@ export function RadialHub() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const router = useRouter();
-  // The site's own Reduce motion switch, never the OS query (amended 2026-10-21): the hub's motion is the globe's
-  // hand-over too, and it plays by default.
-  const reduced = useReducedMotion();
   const { data: session } = useSession();
   const { resolved } = useResolvedUser();
   const user = session?.user as HubUser | undefined;
@@ -277,9 +273,9 @@ export function RadialHub() {
       restoreFocus.current = dismissed;
       setPhase((p) => (p === 'closed' ? p : 'closing'));
       // Keep the overlay mounted while every layer animates out, then hide it.
-      timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : MOTION_MS);
+      timerRef.current = setTimeout(() => setPhase('closed'), MOTION_MS);
     },
-    [reduced, handOffMachine],
+    [handOffMachine],
   );
 
   /** Navigation-driven close: the destination page owns focus from here. */
@@ -297,20 +293,13 @@ export function RadialHub() {
     clearTimer();
     restoreFocus.current = false;
     landFocus.current = true;
-    if (reduced) {
-      // No eversion plays under reduced motion, so there is nothing to wait for.
-      phaseRef.current = 'closing';
-      setPhase('closing');
-      timerRef.current = setTimeout(() => setPhase('closed'), 0);
-      return;
-    }
     // Synchronously: the navigation is asked for straight after, and the site's interceptor asks the hub
     // whether it is still open before deciding to run the full-screen effect.
     phaseRef.current = 'landing';
     hubRef.current?.style.setProperty('--land-ms', `${SELF_EVERT_MS}ms`);
     setPhase('landing');
     timerRef.current = setTimeout(() => setPhase('closed'), SELF_EVERT_MS + 60);
-  }, [reduced]);
+  }, []);
 
   const toggle = useCallback(() => {
     if (handOffMachine.busy() || phaseRef.current === 'landing') return;
@@ -337,10 +326,10 @@ export function RadialHub() {
       // Opening is a single synchronous transition — no pre-centring step.
       if (p === 'closed') return 'open';
       restoreFocus.current = true;
-      timerRef.current = setTimeout(() => setPhase('closed'), reduced ? 0 : MOTION_MS);
+      timerRef.current = setTimeout(() => setPhase('closed'), MOTION_MS);
       return 'closing';
     });
-  }, [reduced, handOffMachine]);
+  }, [handOffMachine]);
 
   // Backstop for the intent handlers: fetch the globe during the first idle
   // window after the shell settles. This is what keeps the lazy boundary honest
@@ -533,7 +522,7 @@ export function RadialHub() {
 
   /**
    * LiquidGlobe's confirm hand-off (hold-release, pin click, Enter). Ineligible -
-   * reduced motion, no WebGL2 - is exactly today's path. A bridge that has not
+   * no WebGL2 - is exactly today's path. A bridge that has not
    * loaded yet is waited for (bounded; see `CONTROLLER_WAIT_MS`), so the first
    * navigation of a page-load plays the effect too. Otherwise the controller navigates by itself, while the hub
    * is still open (it renders and captures the destination behind a frozen picture of this page, then lets the

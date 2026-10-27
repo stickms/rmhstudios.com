@@ -912,7 +912,6 @@ export type TranslateFn = (key: string, options?: { defaultValue?: string }) => 
  */
 export type FallbackReason =
   | 'flag-off'
-  | 'reduced-motion'
   | 'no-webgl2'
   | 'chunk-not-ready'
   | 'before-missing'

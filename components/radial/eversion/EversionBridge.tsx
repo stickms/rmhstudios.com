@@ -109,8 +109,7 @@ export default function EversionBridge({
     // Initialise the render host on the page's real canvas once the page is QUIET,
     // instead of 700 ms after the hub next opens: that is the program compile, and a
     // release that beat it used to skip the effect. Once per page; the hub's own
-    // `onHubOpened` warm is then a no-op. Only for a visitor who can see the effect:
-    // reduced motion never compiles anything.
+    // `onHubOpened` warm is then a no-op. Only for a visitor who can see the effect.
     const cancelWarm = whenQuiet(
       () => {
         if (live.current.beforeCapture.isEligible()) void controller.warmHost();
