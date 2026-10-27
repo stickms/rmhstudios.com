@@ -115,8 +115,12 @@ Controls use `--site-control-radius` (the small radius), panels use `--site-radi
 avatars, circular icon controls, badges and the globe keep their explicit shape.
 **The corner scale is concentric** (Midnight/Daylight: card 32px, control and inner
 tile 24px — 8px steps, so anything inset 8px inside a card follows its curve). 24px is a
-full pill up to 48px tall, so every button, field and tab is a pill and a taller box is a
-softly rounded rectangle, never a lozenge. A control's inline padding is about half its
+full pill up to 48px tall, so a lone button or field is a pill and a taller box is a
+softly rounded rectangle, never a lozenge. **Related controls are not a row of pills:** a
+cluster (toolbar, segmented choice, pagination, tabs) is ONE jelly body — `JellyGroup`, or
+`LiquidTabs` for tabs — whose members are flat on it, the selected one marked by a feathered
+accent glow rather than a raised capsule or a filled accent pill. Games and apps keep their
+own scheme. A control's inline padding is about half its
 height. A dropdown is **one rounded slab, not a stack of pills or bands**: its rows are
 plain text (inset `px-4`) with no fill, edge or radius of their own, and hovering one — or
 moving the keyboard highlight onto it — wakes a gentle glow behind the text, a soft accent

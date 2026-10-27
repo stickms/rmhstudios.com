@@ -1512,13 +1512,13 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    this way — `hooks/useLiquidBackground.ts` detaches wholesale on `ios-webkit`
    because "moving a fixed, oversized gradient underneath multiple translucent
    surfaces can wedge WebKit's compositor". Same engine, same shape of problem. */
-html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'],[data-phase='everting'])) .radial-backdrop,
-html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'],[data-phase='everting'])) .radial-topbar,
-html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'],[data-phase='everting'])) .radial-frame,
-html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'],[data-phase='everting'])) .radial-backdrop,
-html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'],[data-phase='everting'])) .radial-topbar,
-html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'],[data-phase='everting'])) .radial-frame,
-html:is(.perf-lite,.ios-webkit) .radial-shell:has(.radial-hub:is([data-phase='open'],[data-phase='everting']))>[data-floating]:not([data-floating='hub']) {
+html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
+html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
+html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
+html:is(.perf-lite, .ios-webkit) .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
   filter: none;
 }
 /* The veil is translucent ONLY because the page behind it is blurred (see its
@@ -1544,8 +1544,8 @@ html.ios-webkit .radial-hub__veil {
   .radial-shell {
     --hub-page-blur: 3px;
   }
-  html:not(.perf-lite) .radial-shell:has(.radial-hub:is([data-phase='open'],[data-phase='everting'])) :is(.radial-backdrop,.radial-topbar,.radial-frame),
-html:not(.perf-lite) .radial-shell:has(.radial-hub:is([data-phase='open'],[data-phase='everting']))>[data-floating]:not([data-floating='hub']) {
+  html:not(.perf-lite) .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) :is(.radial-backdrop, .radial-topbar, .radial-frame),
+html:not(.perf-lite) .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
     filter: blur(var(--hub-page-blur, 3px));
   }
   html:not(.perf-lite) .radial-hub__veil {

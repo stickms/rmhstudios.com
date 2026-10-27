@@ -295,8 +295,13 @@ transform` on a body, untriggered flicker, ripple, or a second spring formula.
 **Layout:** bodies sit at least `--space-4` (16px) apart. Leave `--jelly-margin`
 (16px) unclipped round every body; no `overflow: hidden` directly around one.
 Cards `--site-radius` (32px), controls `--site-radius-sm` (24px — a pill up to 48px tall;
-the scale is concentric in 8px steps). A dropdown is one rounded slab: its rows are plain
-text with no fill, edge or radius, and hover wakes a soft glow behind the text. Game play-fields are
+the scale is concentric in 8px steps). **A cluster of related controls is one body,
+not a row of pills:** `<JellyGroup>` (`components/ui/jelly-group.tsx`) is the parent
+and its members are flat (no edge or body of their own); the selected member is a
+feathered glow lying on it, as in `LiquidTabs` on the main site. A lone control may
+still be a pill. A dropdown is one rounded slab: its rows are plain
+text with no fill, edge or radius, and hover wakes a soft glow behind the text.
+Games and apps keep their own design scheme (e.g. the raised tab thumb). Game play-fields are
 `data-jelly-zone="playfield"` (excluded); ambient motion and arcs stop while a
 game is playing. **Nested bodies mold, never stack:** a body's shoulder stays
 inside its own padding and stops `NEST_GAP` (2px) short of any body nested in
