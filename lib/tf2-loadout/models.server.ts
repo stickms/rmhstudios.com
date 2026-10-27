@@ -6,7 +6,8 @@
  * what is there. Anything not uploaded simply has no 3D view.
  */
 
-import { getObject, listObjects } from '@/lib/storage/s3.server';
+import { brotliDecompressSync } from 'node:zlib';
+import { getObjectEncoded, listObjects } from '@/lib/storage/s3.server';
 
 const PREFIX = 'tf2-models/';
 const LIST_TTL_MS = 5 * 60_000;
@@ -30,8 +31,23 @@ export async function listModelIds(): Promise<string[]> {
   return ids;
 }
 
-export async function readModel(name: string): Promise<Buffer | null> {
+/**
+ * One model, ready to send. The sync stores GLBs Brotli-compressed; a browser
+ * that accepts `br` gets those bytes untouched (no CPU, smallest transfer),
+ * anything else gets them inflated.
+ */
+export async function readModel(
+  name: string,
+  acceptEncoding = '',
+): Promise<{ body: Buffer; contentEncoding?: 'br' } | null> {
   if (!MODEL_NAME.test(name)) return null;
-  const obj = await getObject(modelKey(name));
-  return obj ? obj.body : null;
+  const stored = await getObjectEncoded(modelKey(name));
+  if (!stored) return null;
+  if (stored.contentEncoding !== 'br') return { body: stored.body };
+  if (/\bbr\b/.test(acceptEncoding)) return { body: stored.body, contentEncoding: 'br' };
+  try {
+    return { body: brotliDecompressSync(stored.body) };
+  } catch {
+    return { body: stored.body };
+  }
 }
