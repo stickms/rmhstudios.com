@@ -59,7 +59,6 @@ import itCStatus from "@/locales/it/c-status.json";
 import itCStudio from "@/locales/it/c-studio.json";
 import itCSynapseStorm from "@/locales/it/c-synapse-storm.json";
 import itCTempleOfJoy from "@/locales/it/c-temple-of-joy.json";
-import itCTf2Hud from "@/locales/it/c-tf2-hud.json";
 import itCTournaments from "@/locales/it/c-tournaments.json";
 import itCUi from "@/locales/it/c-ui.json";
 import itCUserBuilds from "@/locales/it/c-user-builds.json";
@@ -157,7 +156,6 @@ const itResources = {
   "c-studio": itCStudio,
   "c-synapse-storm": itCSynapseStorm,
   "c-temple-of-joy": itCTempleOfJoy,
-  "c-tf2-hud": itCTf2Hud,
   "c-tournaments": itCTournaments,
   "c-ui": itCUi,
   "c-user-builds": itCUserBuilds,

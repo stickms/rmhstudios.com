@@ -45,18 +45,21 @@ Nothing here is uploaded by hand. `.github/workflows/tf2-assets-sync.yml` runs d
 | What                                                         | Where                                                | Built by                        |
 | ------------------------------------------------------------ | ---------------------------------------------------- | ------------------------------- |
 | Item 3D models (GLB, textures baked in as WebP)              | `tf2-models/<defindex>[_<class>].glb`                | `scripts/tf2-assets/convert.py` |
+| Item inventory icons (the pictures on the item tiles, WebP)   | `tf2-icons/<defindex>.webp`         | `scripts/tf2-assets/icons.py`          |
+| Item inventory icons (the pictures on the item tiles, WebP)   | `tf2-icons/<defindex>.webp`         | `scripts/tf2-assets/icons.py`          |
+| Item inventory icons (the pictures on the item tiles, WebP)   | `tf2-icons/<defindex>.webp`         | `scripts/tf2-assets/icons.py`          |
 | HUD editor base: panels, schemes, materials **and textures** | `tf2-hud-base/<path>`                                | `scripts/tf2-assets/hud.py`     |
-| One state file per channel                                   | `tf2-models/_state.json`, `tf2-hud-base/_state.json` | `scripts/tf2-assets/publish.ts` |
+| One state file per channel                                   | `tf2-models/_state.json`, `tf2-icons/_state.json`, `tf2-hud-base/_state.json` | `scripts/tf2-assets/publish.ts` |
 
 **Why a login is needed.** Valve's free dedicated-server download carries the _index_ of every texture but not the texture data, and the client's content depot refuses anonymous logins. The job therefore signs in to Steam on the CI runner with an account that owns TF2 (free to add). Use a dedicated account with Steam Guard off; the credentials exist only as repository secrets and only on the runner, never on the VPS.
 
-**Secrets** (Settings → Secrets and variables → Actions): `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_REGION`, `STEAM_USER`, `STEAM_PASS`. While any is missing the job ends early with a notice and uploads nothing.
+**Secrets** (Settings → Secrets and variables → Actions): `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_REGION`, `STEAM_USER`, `STEAM_PASS` (no Steam API key is used anywhere). While any is missing the job ends early with a notice and uploads nothing.
 
 **What keeps it cheap** (in the order it applies):
 
 1. **Gate.** One GET of each channel's state file, compared with the game's current public Steam build id. Same build → the job stops before downloading anything.
 2. **Per-file hashes.** Every output carries a hash of exactly what it was built from (model + materials + textures + converter version; for HUD files, the file's own SHA-1). The state file is the only index — no bucket listing — and only files whose hash changed are converted and uploaded.
-3. **Compression.** Changed files are Brotli-compressed and stored with `Content-Encoding: br` (kept raw when Brotli saves under 5%). `readModel` and `/api/tf2-hud/base` hand the stored bytes straight to browsers that accept `br`.
+3. **Compression.** Every uploaded file is Brotli-compressed (`lib/tf2-loadout/asset-codec.ts`: level 11 for text, 9 for binary) and stored with `Content-Encoding: br`; a file is stored raw only if Brotli cannot make it smaller. Reading it back is lossless: a browser that accepts `br` (all of them) gets the stored bytes untouched and inflates them itself, anything else gets the inflated original from the serving routes (`readModel`, `readBaseFile`, `readIcon`). The upload log prints raw → stored size.
 4. **Cleanup.** The 30+ GB install is deleted as soon as extraction finishes, and again if the job fails; the runner is discarded anyway. Objects for items that left the game are only deleted when a manual run sets **prune**, and never for a model that merely failed to convert this time.
 
 `force` rebuilds and re-checks everything; `limit` converts only N models (for testing). Bump `CONVERTER_VERSION` in `convert.py` (and `MODEL_BUILDER_VERSION` in `lib/tf2-loadout/model-sync.ts`) when the converter's output changes, so every model is rebuilt once.
@@ -70,10 +73,6 @@ To try it on a few models locally you need a game install: `python3 scripts/tf2-
 ### Producing the models by hand (fallback)
 
 The older manual route still works if the automatic sync is not set up: list the needed files with `scripts/tf2-models/model-manifest.ts`, extract and convert them yourself, name them with `scripts/tf2-models/rename-glb.ts`, and upload with `scripts/tf2-models/upload.ts`. Prefer the sync — it is incremental and keeps itself current.
-
-## Sign in with Steam
-
-The login page offers Steam alongside Discord and GitHub. Steam speaks OpenID 2.0 rather than OAuth, so `lib/auth-steam.ts` is a small Better Auth plugin (`/api/auth/steam/start`, `/api/auth/steam/callback`) over the protocol checks in `lib/steam-openid.ts`. The identity is a normal `account` row (`providerId = 'steam'`, `accountId` = SteamID64). Steam shares no email, so a first sign-in creates a user with a non-routable placeholder address; Steam is never matched to an existing user by email, and attaching it to one needs a signed-in session (`/api/auth/steam/start?mode=link`). Set `STEAM_API_KEY` to use the player's Steam name and avatar for new accounts.
 
 ## Long lists
 
@@ -92,6 +91,6 @@ Checked with axe-core (WCAG 2.0–2.2 A/AA + best practice) at 375 and 1360 px a
 ### What this does not cover
 
 - **Models are not included.** See above: the viewer works end to end, but real TF2 models have to be converted from a game install and uploaded. Until then items show "No 3D model yet".
-- **Inventory icons need a Steam API key.** Without `STEAM_API_KEY`, tiles show the item's initials. Valve's icons live in packed game files, so the key (for `GetSchemaItems`) is the only public source.
+- **Inventory icons** come from the game's own files via the asset sync (below), so no Steam API key is needed. Until the first sync has run, tiles show the item's initials.
 - **The default HUD is not auto-updated.** The HUD Editor's base (`public/tf2-hud/base/`) is extracted from a game install by `scripts/tf2-hud/import-base.mjs`; those files are not in the public mirror either, so refreshing them stays a manual step when Valve changes the HUD.
 - **Steam Workshop.** TF2's Steam Workshop takes cosmetic/weapon submissions, not loadouts. "Workshop" here is the RMH Studios workshop at `/tf2/workshop`.

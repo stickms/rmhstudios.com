@@ -59,7 +59,6 @@ import urCStatus from "@/locales/ur/c-status.json";
 import urCStudio from "@/locales/ur/c-studio.json";
 import urCSynapseStorm from "@/locales/ur/c-synapse-storm.json";
 import urCTempleOfJoy from "@/locales/ur/c-temple-of-joy.json";
-import urCTf2Hud from "@/locales/ur/c-tf2-hud.json";
 import urCTournaments from "@/locales/ur/c-tournaments.json";
 import urCUi from "@/locales/ur/c-ui.json";
 import urCUserBuilds from "@/locales/ur/c-user-builds.json";
@@ -157,7 +156,6 @@ const urResources = {
   "c-studio": urCStudio,
   "c-synapse-storm": urCSynapseStorm,
   "c-temple-of-joy": urCTempleOfJoy,
-  "c-tf2-hud": urCTf2Hud,
   "c-tournaments": urCTournaments,
   "c-ui": urCUi,
   "c-user-builds": urCUserBuilds,

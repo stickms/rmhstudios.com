@@ -59,7 +59,6 @@ import deCStatus from "@/locales/de/c-status.json";
 import deCStudio from "@/locales/de/c-studio.json";
 import deCSynapseStorm from "@/locales/de/c-synapse-storm.json";
 import deCTempleOfJoy from "@/locales/de/c-temple-of-joy.json";
-import deCTf2Hud from "@/locales/de/c-tf2-hud.json";
 import deCTournaments from "@/locales/de/c-tournaments.json";
 import deCUi from "@/locales/de/c-ui.json";
 import deCUserBuilds from "@/locales/de/c-user-builds.json";
@@ -157,7 +156,6 @@ const deResources = {
   "c-studio": deCStudio,
   "c-synapse-storm": deCSynapseStorm,
   "c-temple-of-joy": deCTempleOfJoy,
-  "c-tf2-hud": deCTf2Hud,
   "c-tournaments": deCTournaments,
   "c-ui": deCUi,
   "c-user-builds": deCUserBuilds,

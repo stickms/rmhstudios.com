@@ -58,12 +58,20 @@ function merge(base: VdfObject, over: VdfObject): VdfObject {
 
 const norm = (p: string): string => p.replace(/\\/g, '/').replace(/^\/+/, '').toLowerCase();
 
-export function buildModelManifest(
+interface LoadoutItem {
+  id: number;
+  name: string;
+  /** The item with its prefabs merged in. */
+  it: VdfObject;
+  classes: TfClass[];
+}
+
+/** Every item the loadout builder lists, with prefabs resolved: the shared first half of both manifests. */
+function loadoutItems(
   itemsGame: string,
   english: string,
-  /** Only these defindexes (e.g. the catalog's items), or every loadout item when omitted. */
   only?: ReadonlySet<number>,
-): ModelManifestItem[] {
+): LoadoutItem[] {
   const ig = block(parseVdf(itemsGame), 'items_game');
   const items = block(ig, 'items');
   const prefabs = block(ig, 'prefabs');
@@ -92,7 +100,7 @@ export function buildModelManifest(
     return merge(acc, node);
   };
 
-  const out: ModelManifestItem[] = [];
+  const out: LoadoutItem[] = [];
   for (const [idText, raw] of Object.entries(items)) {
     const id = Number(idText);
     if (!Number.isInteger(id) || typeof raw !== 'object') continue;
@@ -108,7 +116,20 @@ export function buildModelManifest(
       return v && v !== '0';
     });
     if (!classes.length) continue;
+    const name = names.get((str(it, 'item_name') ?? '').replace(/^#/, '').toLowerCase());
+    out.push({ id, name: name ?? str(it, 'name') ?? String(id), it, classes });
+  }
+  return out;
+}
 
+export function buildModelManifest(
+  itemsGame: string,
+  english: string,
+  /** Only these defindexes (e.g. the catalog's items), or every loadout item when omitted. */
+  only?: ReadonlySet<number>,
+): ModelManifestItem[] {
+  const out: ModelManifestItem[] = [];
+  for (const { id, name, it, classes } of loadoutItems(itemsGame, english, only)) {
     const models: ModelRef[] = [];
     const perClass = block(it, 'model_player_per_class');
     const single = str(it, 'model_player');
@@ -125,9 +146,33 @@ export function buildModelManifest(
     const extra = str(it, 'extra_wearable');
     if (extra) models.push({ mdl: norm(extra), role: 'extra', glb: `${id}_extra.glb` });
     if (!models.length) continue;
+    out.push({ id, name, models });
+  }
+  return out.sort((a, b) => a.id - b.id);
+}
 
-    const name = names.get((str(it, 'item_name') ?? '').replace(/^#/, '').toLowerCase());
-    out.push({ id, name: name ?? str(it, 'name') ?? String(id), models });
+export interface IconManifestItem {
+  id: number;
+  /** Inventory icon texture, relative to `materials/` and without extension, e.g. `backpack/player/items/scout/bonk_helmet`. */
+  icon: string;
+  /** The file the converted icon is stored as. */
+  file: string;
+}
+
+/**
+ * Which inventory icon texture each loadout item uses (`image_inventory`), for the icons
+ * channel of the asset sync. Unlike models this covers every item, taunts and
+ * action items included.
+ */
+export function buildIconManifest(
+  itemsGame: string,
+  english: string,
+  only?: ReadonlySet<number>,
+): IconManifestItem[] {
+  const out: IconManifestItem[] = [];
+  for (const { id, it } of loadoutItems(itemsGame, english, only)) {
+    const icon = str(it, 'image_inventory');
+    if (icon) out.push({ id, icon: norm(icon), file: `${id}.webp` });
   }
   return out.sort((a, b) => a.id - b.id);
 }

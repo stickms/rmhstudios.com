@@ -10,7 +10,6 @@ import Stripe from 'stripe';
 import { stripe } from '@better-auth/stripe';
 import { customSession } from 'better-auth/plugins';
 import { passkey } from '@better-auth/passkey';
-import { steam } from '@/lib/auth-steam';
 import { getUserTier } from '@/lib/entitlements';
 import { sendEmail } from '@/lib/email/send.server';
 
@@ -281,8 +280,6 @@ export const auth = betterAuth({
         },
       },
     }),
-    // Sign in with / link Steam (OpenID 2.0) — see lib/auth-steam.ts.
-    steam(),
     customSession(async ({ user, session }) => {
       const tier = await getUserTier(user.id);
       return { user: { ...user, tier }, session };

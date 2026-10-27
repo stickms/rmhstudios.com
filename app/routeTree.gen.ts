@@ -1121,6 +1121,7 @@ import { Route as ApiTf2HudBlobsCheckRouteImport } from './routes/api/tf2-hud/bl
 import { Route as ApiTf2HudHudsIndexRouteImport } from './routes/api/tf2-hud/huds/index'
 import { Route as ApiTf2HudHudsIdRouteImport } from './routes/api/tf2-hud/huds/$id'
 import { Route as ApiTf2HudShareTokenRouteImport } from './routes/api/tf2-hud/share/$token'
+import { Route as ApiTf2LoadoutIconsIdRouteImport } from './routes/api/tf2-loadout/icons/$id'
 import { Route as ApiTf2LoadoutLoadoutsIndexRouteImport } from './routes/api/tf2-loadout/loadouts/index'
 import { Route as ApiTf2LoadoutLoadoutsIdRouteImport } from './routes/api/tf2-loadout/loadouts/$id'
 import { Route as ApiTf2LoadoutModelsIndexRouteImport } from './routes/api/tf2-loadout/models/index'
@@ -7012,6 +7013,11 @@ const ApiTf2HudShareTokenRoute = ApiTf2HudShareTokenRouteImport.update({
   path: '/api/tf2-hud/share/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTf2LoadoutIconsIdRoute = ApiTf2LoadoutIconsIdRouteImport.update({
+  id: '/api/tf2-loadout/icons/$id',
+  path: '/api/tf2-loadout/icons/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTf2LoadoutLoadoutsIndexRoute =
   ApiTf2LoadoutLoadoutsIndexRouteImport.update({
     id: '/api/tf2-loadout/loadouts/',
@@ -9131,6 +9137,7 @@ export interface FileRoutesByFullPath {
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
   '/api/tf2-hud/huds/$id': typeof ApiTf2HudHudsIdRouteWithChildren
   '/api/tf2-hud/share/$token': typeof ApiTf2HudShareTokenRouteWithChildren
+  '/api/tf2-loadout/icons/$id': typeof ApiTf2LoadoutIconsIdRoute
   '/api/tf2-loadout/loadouts/$id': typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
   '/api/tf2-loadout/models/$id': typeof ApiTf2LoadoutModelsIdRoute
   '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
@@ -10410,6 +10417,7 @@ export interface FileRoutesByTo {
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
   '/api/tf2-hud/huds/$id': typeof ApiTf2HudHudsIdRouteWithChildren
   '/api/tf2-hud/share/$token': typeof ApiTf2HudShareTokenRouteWithChildren
+  '/api/tf2-loadout/icons/$id': typeof ApiTf2LoadoutIconsIdRoute
   '/api/tf2-loadout/loadouts/$id': typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
   '/api/tf2-loadout/models/$id': typeof ApiTf2LoadoutModelsIdRoute
   '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
@@ -11718,6 +11726,7 @@ export interface FileRoutesById {
   '/api/tf2-hud/blobs/check': typeof ApiTf2HudBlobsCheckRoute
   '/api/tf2-hud/huds/$id': typeof ApiTf2HudHudsIdRouteWithChildren
   '/api/tf2-hud/share/$token': typeof ApiTf2HudShareTokenRouteWithChildren
+  '/api/tf2-loadout/icons/$id': typeof ApiTf2LoadoutIconsIdRoute
   '/api/tf2-loadout/loadouts/$id': typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
   '/api/tf2-loadout/models/$id': typeof ApiTf2LoadoutModelsIdRoute
   '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
@@ -13026,6 +13035,7 @@ export interface FileRouteTypes {
     | '/api/tf2-hud/blobs/check'
     | '/api/tf2-hud/huds/$id'
     | '/api/tf2-hud/share/$token'
+    | '/api/tf2-loadout/icons/$id'
     | '/api/tf2-loadout/loadouts/$id'
     | '/api/tf2-loadout/models/$id'
     | '/api/themes/$id/buy'
@@ -14305,6 +14315,7 @@ export interface FileRouteTypes {
     | '/api/tf2-hud/blobs/check'
     | '/api/tf2-hud/huds/$id'
     | '/api/tf2-hud/share/$token'
+    | '/api/tf2-loadout/icons/$id'
     | '/api/tf2-loadout/loadouts/$id'
     | '/api/tf2-loadout/models/$id'
     | '/api/themes/$id/buy'
@@ -15612,6 +15623,7 @@ export interface FileRouteTypes {
     | '/api/tf2-hud/blobs/check'
     | '/api/tf2-hud/huds/$id'
     | '/api/tf2-hud/share/$token'
+    | '/api/tf2-loadout/icons/$id'
     | '/api/tf2-loadout/loadouts/$id'
     | '/api/tf2-loadout/models/$id'
     | '/api/themes/$id/buy'
@@ -16532,6 +16544,7 @@ export interface RootRouteChildren {
   ApiTf2HudBlobsCheckRoute: typeof ApiTf2HudBlobsCheckRoute
   ApiTf2HudHudsIdRoute: typeof ApiTf2HudHudsIdRouteWithChildren
   ApiTf2HudShareTokenRoute: typeof ApiTf2HudShareTokenRouteWithChildren
+  ApiTf2LoadoutIconsIdRoute: typeof ApiTf2LoadoutIconsIdRoute
   ApiTf2LoadoutLoadoutsIdRoute: typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
   ApiTf2LoadoutModelsIdRoute: typeof ApiTf2LoadoutModelsIdRoute
   ApiTrashKindIdRoute: typeof ApiTrashKindIdRoute
@@ -24454,6 +24467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTf2HudShareTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tf2-loadout/icons/$id': {
+      id: '/api/tf2-loadout/icons/$id'
+      path: '/api/tf2-loadout/icons/$id'
+      fullPath: '/api/tf2-loadout/icons/$id'
+      preLoaderRoute: typeof ApiTf2LoadoutIconsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/tf2-loadout/loadouts/': {
       id: '/api/tf2-loadout/loadouts/'
       path: '/api/tf2-loadout/loadouts'
@@ -28720,6 +28740,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTf2HudBlobsCheckRoute: ApiTf2HudBlobsCheckRoute,
   ApiTf2HudHudsIdRoute: ApiTf2HudHudsIdRouteWithChildren,
   ApiTf2HudShareTokenRoute: ApiTf2HudShareTokenRouteWithChildren,
+  ApiTf2LoadoutIconsIdRoute: ApiTf2LoadoutIconsIdRoute,
   ApiTf2LoadoutLoadoutsIdRoute: ApiTf2LoadoutLoadoutsIdRouteWithChildren,
   ApiTf2LoadoutModelsIdRoute: ApiTf2LoadoutModelsIdRoute,
   ApiTrashKindIdRoute: ApiTrashKindIdRoute,
