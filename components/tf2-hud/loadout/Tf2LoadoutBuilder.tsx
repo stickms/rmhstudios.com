@@ -67,7 +67,13 @@ import {
 } from '@/lib/tf2-loadout/catalog-types';
 import { hasDraft, loadDraft, saveDraft } from '@/lib/tf2-loadout/local-drafts';
 import { WEAR_NAMES } from '@/lib/tf2-loadout/fx';
-import { equipInto, legalize, loadoutWarnings, stockLoadout } from '@/lib/tf2-loadout/rules';
+import {
+  equipInto,
+  legalize,
+  loadoutWarnings,
+  stockLoadout,
+  withSupportedOptions,
+} from '@/lib/tf2-loadout/rules';
 import type { AiAction } from '@/lib/tf2-loadout/ai-core';
 import { useCatalog, type CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemModelViewer from './ItemModelViewer';
@@ -200,7 +206,7 @@ function Builder({
             return;
           }
           setCls(d.tfClass);
-          setSlots(d.slots);
+          setSlots(withSupportedOptions(catalog, d.slots));
           setRemote({
             id: d.id,
             slug: d.slug,
@@ -254,7 +260,7 @@ function Builder({
   // A class that has never been edited here starts from its stock weapons; one the player emptied
   // on purpose stays empty.
   const draftOrStock = (c: TfClass): LoadoutSlots =>
-    hasDraft(c) ? loadDraft(c) : stockLoadout(catalog, c);
+    hasDraft(c) ? withSupportedOptions(catalog, loadDraft(c)) : stockLoadout(catalog, c);
 
   useEffect(() => {
     try {
@@ -966,7 +972,7 @@ function Picker({
             cls={cls}
             style={entry?.style}
             paint={entry ? warPaintOf(idx, entry) : undefined}
-            tint={entry?.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
+            tint={current.p && entry?.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
           />
           <div className="flex min-w-0 flex-col gap-3">
             <div className="min-w-0">

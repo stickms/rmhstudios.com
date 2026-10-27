@@ -36,12 +36,13 @@ export function wornItems(
   const out: WornItem[] = cosmeticKeys.flatMap((k) => {
     const e = slots[k];
     if (!e) return [];
+    const it = idx.item(e.item);
     return [
       {
         slotKey: k,
         itemId: e.item,
         style: e.style,
-        tint: e.paint !== undefined ? idx.paint(e.paint)?.rgb : undefined,
+        tint: it?.p && e.paint !== undefined ? idx.paint(e.paint)?.rgb : undefined,
         effect: effectSpecOf(idx, e, slotFor(idx.item(e.item)!, cls) ?? 'misc'),
       },
     ];

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { cosmeticSlotKeys, TF_CLASSES, type Catalog, type CatalogItem } from '../catalog-types';
-import { equipInto, legalize, loadoutWarnings, stockLoadout, STOCK_ITEMS } from '../rules';
+import {
+  equipInto,
+  legalize,
+  loadoutWarnings,
+  stockLoadout,
+  STOCK_ITEMS,
+  withSupportedOptions,
+} from '../rules';
 
 const bit = (cls: (typeof TF_CLASSES)[number]) => 1 << TF_CLASSES.indexOf(cls);
 const item = (id: number, over: Partial<CatalogItem>): CatalogItem => ({
@@ -151,5 +158,59 @@ describe('equipInto', () => {
   it('leaves weapons alone', () => {
     const r = equipInto(catalog, { primary: { item: 13 } }, 'melee', find(0), false);
     expect(r.slots).toEqual({ primary: { item: 13 }, melee: { item: 0 } });
+  });
+});
+
+describe('withSupportedOptions', () => {
+  const cat: Catalog = {
+    ...catalog,
+    items: [
+      item(100, { s: 'head', p: 1 }),
+      item(101, { s: 'head' }),
+      item(102, { s: 'primary', fz: 1, wk: 'scattergun' }),
+      item(103, { s: 'primary', wk: 'scattergun', sk: { kit: 5, base: 102 } }),
+      item(104, {
+        s: 'misc',
+        st: [
+          { k: 0, n: 'A' },
+          { k: 1, n: 'B' },
+        ],
+      }),
+    ],
+    paints: [{ id: 7, n: 'Paint', rgb: '#ffffff' }],
+    kits: [{ id: 5, n: 'Kit', w: { scattergun: 'script' } }],
+  };
+
+  it('drops a paint from an item that cannot be painted and keeps it on one that can', () => {
+    const out = withSupportedOptions(cat, {
+      cosmetic1: { item: 100, paint: 7 },
+      cosmetic2: { item: 101, paint: 7 },
+    });
+    expect(out.cosmetic1.paint).toBe(7);
+    expect(out.cosmetic2.paint).toBeUndefined();
+  });
+
+  it('drops an unknown paint, a missing style and an unsupported festive flag', () => {
+    const out = withSupportedOptions(cat, {
+      cosmetic1: { item: 100, paint: 99 },
+      cosmetic2: { item: 104, style: 5 },
+      primary: { item: 101, festive: true },
+    });
+    expect(out.cosmetic1.paint).toBeUndefined();
+    expect(out.cosmetic2.style).toBeUndefined();
+    expect(out.primary.festive).toBeUndefined();
+    expect(
+      withSupportedOptions(cat, { primary: { item: 102, festive: true } }).primary.festive,
+    ).toBe(true);
+  });
+
+  it('keeps a decorated weapon wear and seed but not a kit of its own choosing', () => {
+    const out = withSupportedOptions(cat, { primary: { item: 103, kit: 5, wear: 3, seed: 9 } });
+    expect(out.primary).toEqual({ item: 103, wear: 3, seed: 9 });
+  });
+
+  it('returns the same object when nothing needs dropping', () => {
+    const slots = { cosmetic1: { item: 100, paint: 7 } };
+    expect(withSupportedOptions(cat, slots)).toBe(slots);
   });
 });

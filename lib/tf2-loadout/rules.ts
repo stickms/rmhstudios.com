@@ -164,3 +164,40 @@ export function equipInto(
   next[key] = { item: item.id };
   return { slots: next, removed };
 }
+
+/**
+ * A loadout with every option the item cannot take taken off: a paint on an item that is not
+ * paintable, a style it does not have, a festive weapon that cannot be festivized, a war paint on
+ * something that is not a paintable weapon. The server rejects these when saving; this keeps one that
+ * arrives from an older save, a shared link or a draft from being shown (or re-saved) as if it worked.
+ * Items the catalog no longer has are left alone. Returns the same object when nothing changed.
+ */
+export function withSupportedOptions(catalog: Catalog, slots: LoadoutSlots): LoadoutSlots {
+  const byId = new Map(catalog.items.map((i) => [i.id, i]));
+  const paints = new Set(catalog.paints.map((p) => p.id));
+  const kits = new Map((catalog.kits ?? []).map((k) => [k.id, k]));
+  let out: LoadoutSlots | null = null;
+  for (const [key, entry] of Object.entries(slots)) {
+    const item = byId.get(entry.item);
+    if (!item) continue;
+    const next = { ...entry };
+    if (next.paint !== undefined && !(item.p && paints.has(next.paint))) delete next.paint;
+    if (next.style !== undefined && !item.st?.some((s) => s.k === next.style)) delete next.style;
+    if (next.festive && !item.fz) delete next.festive;
+    const kit = next.kit !== undefined ? kits.get(next.kit) : undefined;
+    const kitOk = !item.sk && !!(kit && item.wk && kit.w[item.wk]);
+    if (next.kit !== undefined && !kitOk) {
+      delete next.kit;
+      if (!item.sk) {
+        delete next.wear;
+        delete next.seed;
+      }
+    }
+    if ((next.wear !== undefined || next.seed !== undefined) && !item.wk) {
+      delete next.wear;
+      delete next.seed;
+    }
+    if (Object.keys(next).length !== Object.keys(entry).length) (out ??= { ...slots })[key] = next;
+  }
+  return out ?? slots;
+}

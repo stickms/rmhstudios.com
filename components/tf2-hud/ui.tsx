@@ -504,6 +504,8 @@ export function Popover({
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const [root, setRoot] = useState<HTMLElement | null>(null);
+  // Where the panel should be in viewport coordinates; `pos` is that corrected for its containing block.
+  const desired = useRef<{ left: number; top: number } | null>(null);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -522,8 +524,22 @@ export function Popover({
     const below = a.bottom + 6;
     const top = below + h > window.innerHeight - 8 ? Math.max(8, a.top - h - 6) : below;
     const left = Math.max(8, Math.min(a.left, window.innerWidth - w - 8));
+    desired.current = { left, top };
     setPos({ left, top });
   }, [open, anchor, width, children, root]);
+
+  // Portaled into a dialog that is itself positioned with a transform, a `position: fixed` panel is
+  // placed relative to that dialog, not the viewport, so the coordinates above land somewhere else
+  // (the list showed up below the modal). Measure where it actually landed and shift by the difference;
+  // it settles in one step, since the correction is exactly the offset.
+  useLayoutEffect(() => {
+    const want = desired.current;
+    if (!open || !pos || !want || !ref.current) return;
+    const got = ref.current.getBoundingClientRect();
+    const dx = want.left - got.left;
+    const dy = want.top - got.top;
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) setPos({ left: pos.left + dx, top: pos.top + dy });
+  }, [open, pos]);
 
   useEffect(() => {
     if (!open) return;

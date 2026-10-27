@@ -113,7 +113,7 @@ export default function ItemCustomizeModal({
             cls={cls}
             style={entry.style}
             paint={warPaintOf(idx, entry)}
-            tint={entry.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
+            tint={item.p && entry.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
             effect={effectSpec}
             className="h-64 md:h-72"
           />
