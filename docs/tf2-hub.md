@@ -54,6 +54,16 @@ Weapon models in the schema are the in-game `c_models` (first-person) ones, whic
 
 Every long list has search, and every list that can grow loads as you scroll (`hooks/useSentinel.ts`, an IntersectionObserver trigger): the item picker (search by name or type, type filter, 60 at a time), the paint and unusual-effect pickers (`SearchSelect`, a keyboard-navigable combobox), the HUD and loadout workshops, "My HUDs" and "My loadouts", and the HUD editor's font and colour pickers. Workshop search on loadouts also matches the names of the items in them (`Tf2Loadout.itemIds`, a GIN-indexed array).
 
+## Accessibility and phones
+
+Checked with axe-core (WCAG 2.0–2.2 A/AA + best practice) at 375 and 1360 px across the hub, both workshops, the builder (with the picker open), My loadouts and the HUD pages: zero violations. What that rests on, so it stays true:
+
+- **One theme, contrast designed in.** `--app-text-dim` is 5.6:1 on `--app-bg-subtle` and `--app-accent-text` (the accent used _as text_) 6.3:1; the fill colour `--app-accent` is for fills, borders and rings only. New text colours should be checked against the lightest surface they land on.
+- **Headings.** `Tf2Header` always renders the page's `h1` (a phone shows it too); a page with its own hero passes `heading={false}`. Cards are `h2`.
+- **Cards** are one tap target: the title link stretches over the card and the actions sit above it.
+- **Phones.** Below `lg` the item picker opens as a full-height sheet (`Modal sheet`) instead of a column far below the slots; slots are a 3-column grid; list grids are explicit `grid-cols-1` (an auto track sizes to its widest card and runs off the screen). A `SearchSelect` inside the sheet portals into the dialog, because a modal dialog makes everything outside it inert.
+- **Screen readers and keyboard.** Equipping or emptying a slot is announced through a polite live region; opening a slot moves focus to the picker's search box on wide screens (not on phones, where it would raise the keyboard over the sheet); the combobox uses `aria-activedescendant`; the picker's visible item names are `aria-hidden` because each tile button already carries the name.
+
 ### What this does not cover
 
 - **Models are not included.** See above: the viewer works end to end, but real TF2 models have to be converted from a game install and uploaded. Until then items show "No 3D model yet".

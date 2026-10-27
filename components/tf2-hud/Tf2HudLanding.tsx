@@ -88,6 +88,7 @@ export default function Tf2HudLanding() {
   return (
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
       <Tf2Header
+        heading={false}
         title="RMH TF2 HUD Editor"
         backLabel={t('tf2-hub', { defaultValue: 'TF2 Hub' })}
         backHref="/tf2"
@@ -154,7 +155,7 @@ export default function Tf2HudLanding() {
               </h2>
               <Link
                 to="/tf2/hud-editor/mine"
-                className="text-xs font-semibold text-(--app-accent) hover:underline"
+                className="text-xs font-semibold text-(--app-accent-text) hover:underline"
               >
                 {t('my-saved-huds', { defaultValue: 'My saved HUDs' })}
               </Link>
@@ -202,8 +203,8 @@ export default function Tf2HudLanding() {
               key={f.title}
               className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-4"
             >
-              <f.icon className="mb-2 size-5 text-(--app-accent)" aria-hidden />
-              <h3 className="tf2hud-title text-xl">{f.title}</h3>
+              <f.icon className="mb-2 size-5 text-(--app-accent-text)" aria-hidden />
+              <h2 className="tf2hud-title text-xl">{f.title}</h2>
               <p className="mt-1 text-sm text-(--app-text-muted)">{f.body}</p>
             </div>
           ))}

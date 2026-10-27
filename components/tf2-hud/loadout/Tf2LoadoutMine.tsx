@@ -153,7 +153,10 @@ export default function Tf2LoadoutMine() {
                 })}
           </EmptyNote>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-busy={state === 'loading'}>
+          <ul
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            aria-busy={state === 'loading'}
+          >
             {items.map((l) => (
               <li key={l.id} className="contents">
                 <LoadoutCard

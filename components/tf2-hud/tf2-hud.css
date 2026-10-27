@@ -136,9 +136,12 @@
   --app-border-bright: #6a5b4d;
   --app-text: #ebe3cb;
   --app-text-muted: #b9ab8d;
-  --app-text-dim: #857a66;
+  /* 5.6:1 on --app-bg-subtle, 4.8:1 on --app-surface (was #857a66, 3.5:1). */
+  --app-text-dim: #a89d86;
 
   --app-accent: #cf6a1c;
+  /* The accent as TEXT (links, pills, eyebrows): 6.3:1 on --app-bg-subtle; the fill colour above is 4.1:1. */
+  --app-accent-text: #ee9248;
   --app-accent-fg: #1c0f04;
   --app-accent-hover: #e07a2a;
   --app-success: #8fb05a;

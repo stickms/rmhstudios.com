@@ -25,9 +25,11 @@ import {
   SelectField,
   TextField,
 } from '@/components/tf2-hud/ui';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSentinel } from '@/hooks/useSentinel';
 import { useClipboard } from '@/hooks/useClipboard';
 import { ApiError } from '@/lib/tf2-hud/api';
+import { cn } from '@/lib/utils';
 import { loadoutApi } from '@/lib/tf2-loadout/api';
 import type { Visibility } from '@/lib/tf2-loadout/api-types';
 import {
@@ -138,6 +140,10 @@ function Builder({
   const [saveOpen, setSaveOpen] = useState(false);
   const [signIn, setSignIn] = useState(false);
   const [ready, setReady] = useState(false);
+  // Screen readers: what the last change did (the picker is a separate region from the slots).
+  const [announce, setAnnounce] = useState('');
+  // Wide screens show the picker beside the slots; narrower ones open it as a sheet.
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const hydrated = useRef(false);
 
   // Boot: an existing loadout, or this class's local draft.
@@ -255,6 +261,13 @@ function Builder({
     }
     next[key] = { item: item.id };
     edit(next);
+    setAnnounce(
+      t('announce-equipped', {
+        defaultValue: '{{item}} equipped in {{slot}}.',
+        item: item.n,
+        slot: slotLabel(key),
+      }),
+    );
     if (removed.length) {
       toast.info(
         t('removed-overlap', {
@@ -279,6 +292,7 @@ function Builder({
     const next = { ...slots };
     delete next[key];
     edit(next);
+    setAnnounce(t('announce-emptied', { defaultValue: '{{slot}} emptied.', slot: slotLabel(key) }));
   };
 
   const clearAll = () => {
@@ -429,9 +443,44 @@ function Builder({
           </p>
         </section>
 
-        <section
-          aria-label={t('item-picker', { defaultValue: 'Item picker' })}
-          className="min-h-96 overflow-y-auto rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]"
+        {isDesktop ? (
+          <section
+            aria-label={t('item-picker', { defaultValue: 'Item picker' })}
+            className="min-h-96 overflow-y-auto rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]"
+          >
+            {selected ? (
+              <Picker
+                key={`${cls}:${selected}`}
+                idx={idx}
+                cls={cls}
+                slotKey={selected}
+                label={slotLabel(selected)}
+                entry={slots[selected]}
+                onEquip={(item) => equip(selected, item)}
+                onPatch={(change) => patch(selected, change)}
+                onClear={() => clear(selected)}
+                onClose={() => setSelected(null)}
+              />
+            ) : (
+              <EmptyNote>
+                {t('pick-a-slot', {
+                  defaultValue: 'Pick a slot on the left to choose an item for it.',
+                })}
+              </EmptyNote>
+            )}
+          </section>
+        ) : null}
+      </div>
+
+      {!isDesktop ? (
+        <Modal
+          sheet
+          open={selected !== null}
+          onOpenChange={(o) => !o && setSelected(null)}
+          title={selected ? slotLabel(selected) : ''}
+          description={t('sheet-desc', {
+            defaultValue: 'Choose an item for this slot. Close the sheet when you are done.',
+          })}
         >
           {selected ? (
             <Picker
@@ -441,20 +490,19 @@ function Builder({
               slotKey={selected}
               label={slotLabel(selected)}
               entry={slots[selected]}
+              embedded
               onEquip={(item) => equip(selected, item)}
               onPatch={(change) => patch(selected, change)}
               onClear={() => clear(selected)}
               onClose={() => setSelected(null)}
             />
-          ) : (
-            <EmptyNote>
-              {t('pick-a-slot', {
-                defaultValue: 'Pick a slot on the left to choose an item for it.',
-              })}
-            </EmptyNote>
-          )}
-        </section>
-      </div>
+          ) : null}
+        </Modal>
+      ) : null}
+
+      <p role="status" aria-live="polite" className="sr-only">
+        {announce}
+      </p>
 
       <SaveDialog
         open={saveOpen}
@@ -492,7 +540,7 @@ function SlotGroup({ title, children }: { title: string; children: React.ReactNo
   return (
     <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle)">
       <PanelHead title={title} />
-      <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3">
         {children}
       </div>
     </div>
@@ -574,6 +622,7 @@ function Picker({
   onPatch,
   onClear,
   onClose,
+  embedded = false,
 }: {
   idx: CatalogIndex;
   cls: TfClass;
@@ -584,6 +633,8 @@ function Picker({
   onPatch: (change: Partial<LoadoutEntry>) => void;
   onClear: () => void;
   onClose: () => void;
+  /** Inside a sheet that already has a title and a close button. */
+  embedded?: boolean;
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const { catalog } = idx;
@@ -624,27 +675,37 @@ function Picker({
 
   return (
     <div className="flex flex-col">
-      <PanelHead
-        title={label}
-        className="sticky top-0 z-10 bg-(--app-bg-subtle)"
-        actions={
-          <>
-            {entry ? (
-              <Btn size="xs" variant="ghost" icon={Trash2} onClick={onClear}>
-                {t('empty-the-slot', { defaultValue: 'Empty' })}
-              </Btn>
-            ) : null}
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={t('close', { defaultValue: 'Close' })}
-              className="inline-flex size-7 items-center justify-center rounded-(--app-radius-sm) text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)"
-            >
-              <X className="size-4" aria-hidden />
-            </button>
-          </>
-        }
-      />
+      {embedded ? (
+        entry ? (
+          <div className="flex justify-end px-3 pt-1">
+            <Btn size="sm" variant="ghost" icon={Trash2} onClick={onClear}>
+              {t('empty-the-slot', { defaultValue: 'Empty' })}
+            </Btn>
+          </div>
+        ) : null
+      ) : (
+        <PanelHead
+          title={label}
+          className="sticky top-0 z-10 bg-(--app-bg-subtle)"
+          actions={
+            <>
+              {entry ? (
+                <Btn size="xs" variant="ghost" icon={Trash2} onClick={onClear}>
+                  {t('empty-the-slot', { defaultValue: 'Empty' })}
+                </Btn>
+              ) : null}
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={t('close', { defaultValue: 'Close' })}
+                className="inline-flex size-7 items-center justify-center rounded-(--app-radius-sm) text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            </>
+          }
+        />
+      )}
 
       {current ? (
         <div className="grid gap-3 border-b border-(--app-border) p-3 sm:grid-cols-[13rem_minmax(0,1fr)]">
@@ -691,7 +752,12 @@ function Picker({
         </div>
       ) : null}
 
-      <div className="sticky top-9 z-10 flex flex-wrap gap-2 border-b border-(--app-border) bg-(--app-bg-subtle) p-3">
+      <div
+        className={cn(
+          'sticky z-10 flex flex-wrap gap-2 border-b border-(--app-border) bg-(--app-bg-subtle) p-3',
+          embedded ? 'top-0' : 'top-9',
+        )}
+      >
         <div className="relative min-w-40 flex-1">
           <Search
             className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-(--app-text-dim)"
@@ -699,6 +765,9 @@ function Picker({
           />
           <TextField
             type="search"
+            // Opening a slot moves focus to the search box on wide screens; on a phone that
+            // would raise the keyboard over the sheet before anything is seen.
+            autoFocus={!embedded}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('search-items', {
@@ -746,6 +815,7 @@ function Picker({
               >
                 <ItemTile item={it} selected={active} onClick={() => onEquip(it)} />
                 <span
+                  aria-hidden
                   className="flex items-center gap-1 truncate text-xs"
                   style={{ color: qualityAccent(it.q) ?? undefined }}
                 >

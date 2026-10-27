@@ -13,17 +13,17 @@ import { Pill } from './ui';
 export default function HudCard({ hud, actions }: { hud: HudSummary; actions?: React.ReactNode }) {
   const { t } = useTranslation('c-tf2-hud');
   return (
-    <article className="flex flex-col gap-2 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-4">
+    <article className="relative flex flex-col gap-2 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-4 hover:border-(--app-border-bright)">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="tf2hud-title min-w-0 truncate text-xl">
+        <h2 className="tf2hud-title min-w-0 truncate text-xl">
           <Link
             to="/tf2/hud-editor/h/$slug"
             params={{ slug: hud.slug }}
-            className="hover:underline"
+            className="block truncate hover:underline after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-(--app-radius)"
           >
             {hud.title}
           </Link>
-        </h3>
+        </h2>
         {hud.visibility !== 'PUBLIC' ? (
           <Pill tone={hud.visibility === 'PRIVATE' ? 'warning' : 'info'}>
             {hud.visibility === 'PRIVATE'
@@ -74,7 +74,7 @@ export default function HudCard({ hud, actions }: { hud: HudSummary; actions?: R
             {hud.downloadCount}
           </span>
         </span>
-        <div className="flex items-center gap-1">{actions}</div>
+        <div className="relative z-10 flex items-center gap-1">{actions}</div>
       </div>
     </article>
   );

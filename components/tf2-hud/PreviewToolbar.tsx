@@ -225,7 +225,7 @@ export default function PreviewToolbar() {
           title={t('minmode-hint', { defaultValue: 'Preview the compact "minmode" layout' })}
           className={`h-8 rounded-(--app-radius-sm) px-2 text-xs font-semibold ${
             view.minmode
-              ? 'bg-(--app-accent-dim) text-(--app-accent)'
+              ? 'bg-(--app-accent-dim) text-(--app-accent-text)'
               : 'text-(--app-text-muted) hover:bg-(--app-surface-hover)'
           }`}
         >

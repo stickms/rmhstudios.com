@@ -151,7 +151,7 @@ function ColorsTab({ scheme }: { scheme: Scheme }) {
                         {c.alias ? `→ ${c.raw}` : c.raw}
                       </span>
                       {used ? (
-                        <span className="block truncate text-[10px] text-(--app-accent)">
+                        <span className="block truncate text-[10px] text-(--app-accent-text)">
                           {t('used-by', {
                             defaultValue: 'used by {{props}}',
                             props: used.join(', '),
