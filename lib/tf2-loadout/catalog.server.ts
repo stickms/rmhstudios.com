@@ -158,7 +158,14 @@ async function refresh(force: boolean): Promise<void> {
   ]);
   if (!englishRes.ok) throw new Error(`Localisation fetch failed (${englishRes.status})`);
 
-  let catalog = buildCatalog({ itemsGame, english: await englishRes.text(), label });
+  // War paint names live in another localisation file; the catalog is useful without them, so a failed
+  // fetch only means no war paints this time.
+  const protoRes = await fetchText(`${MIRROR}resource/tf_proto_obj_defs_english.txt`, [
+    'raw.githubusercontent.com',
+  ]).catch(() => null);
+  const protoEnglish = protoRes?.ok ? await protoRes.text() : undefined;
+
+  let catalog = buildCatalog({ itemsGame, english: await englishRes.text(), protoEnglish, label });
   if (key) catalog = applyIcons(catalog, await steamIcons(key));
   if (catalog.items.length < 500)
     throw new Error('Built catalog is implausibly small; keeping the old one');
@@ -179,7 +186,12 @@ async function refresh(force: boolean): Promise<void> {
     create: { id: ROW_ID, ...fields },
     update: fields,
   });
-  memo = { hash: catalog.source.hash, json: JSON.stringify(catalog), checkedAt: now, builderCurrent: true };
+  memo = {
+    hash: catalog.source.hash,
+    json: JSON.stringify(catalog),
+    checkedAt: now,
+    builderCurrent: true,
+  };
 }
 
 /** Run one refresh at a time; concurrent callers share it. */

@@ -10,7 +10,8 @@
  */
 'use client';
 
-import { OrbitControls, useGLTF } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
+import { ResetViewButton, ViewerOrbit, rememberView, useResetView } from './viewer-controls';
 import { Canvas, createPortal, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
@@ -26,7 +27,8 @@ import {
 } from 'three';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import EffectParticles, { type EffectSpec } from './EffectParticles';
-import { applyTint, cloneWithMaterials } from './model-utils';
+import { applyPaintTexture, applyTint, cloneWithMaterials, type WarPaint } from './model-utils';
+import { useWarPaintTexture } from './use-war-paint';
 
 export interface PlayerPart {
   key: string;
@@ -35,6 +37,8 @@ export interface PlayerPart {
   tint?: string;
   /** An unusual effect around this cosmetic. */
   effect?: EffectSpec;
+  /** A war paint on this weapon. */
+  paint?: WarPaint;
 }
 
 interface BodyState {
@@ -112,6 +116,7 @@ function Body({
       orbit.target.copy(centre);
       orbit.update();
     }
+    rememberView(controls);
     const next = { root, mixer, height: size.y, box };
     setState(next);
     onReady(next);
@@ -137,11 +142,13 @@ function Part({
   url,
   tint,
   effect,
+  paint,
   body,
 }: {
   url: string;
   tint?: string;
   effect?: EffectSpec;
+  paint?: WarPaint;
   body: BodyState;
 }) {
   const { scene } = useGLTF(url);
@@ -175,6 +182,11 @@ function Part({
     applyTint(root, tint);
   }, [root, tint]);
 
+  const paintTexture = useWarPaintTexture(paint?.script, paint?.wear ?? 1, paint?.seed ?? 0);
+  useEffect(() => {
+    applyPaintTexture(root, paintTexture);
+  }, [root, paintTexture]);
+
   return effect && mount
     ? createPortal(<EffectParticles spec={effect} box={mount.box} />, mount.bone)
     : null;
@@ -194,38 +206,40 @@ export default function PlayerScene({
   tauntUrl?: string;
 }) {
   const [ready, setReady] = useState<BodyState | null>(null);
+  const { ref, reset } = useResetView();
   return (
-    <Canvas
-      dpr={[1, 1.5]}
-      camera={{ fov: 30, position: [0, 1, 4] }}
-      gl={{ antialias: true, alpha: true }}
-    >
-      <ambientLight intensity={1.1} />
-      <directionalLight position={[3, 4, 5]} intensity={2.2} />
-      <directionalLight position={[-4, 1, -2]} intensity={0.8} color="#ffd9b0" />
-      <OrbitControls
-        makeDefault
-        enablePan={false}
-        enableDamping
-        minPolarAngle={Math.PI / 3}
-        maxPolarAngle={(Math.PI * 2) / 3}
-        minDistance={ready ? ready.height * 0.8 : 1}
-        maxDistance={ready ? ready.height * 3.5 : 8}
-      />
-      <Suspense fallback={null}>
-        <Body url={body} tauntUrl={tauntUrl} onReady={setReady} />
-      </Suspense>
-      {ready && bodyEffect ? <EffectParticles spec={bodyEffect} box={ready.box} /> : null}
-      {ready
-        ? parts.map((p) => (
-            // One missing or broken cosmetic must not take the player down with it.
-            <SilentErrorBoundary key={p.key} label="tf2-player-part" fallback={null}>
-              <Suspense fallback={null}>
-                <Part url={p.url} tint={p.tint} effect={p.effect} body={ready} />
-              </Suspense>
-            </SilentErrorBoundary>
-          ))
-        : null}
-    </Canvas>
+    <div className="relative size-full">
+      <Canvas
+        dpr={[1, 1.5]}
+        camera={{ fov: 30, position: [0, 1, 4] }}
+        gl={{ antialias: true, alpha: true }}
+      >
+        <ambientLight intensity={1.1} />
+        <directionalLight position={[3, 4, 5]} intensity={2.2} />
+        <directionalLight position={[-4, 1, -2]} intensity={0.8} color="#ffd9b0" />
+        <ViewerOrbit
+          resetRef={ref}
+          minPolarAngle={Math.PI / 3}
+          maxPolarAngle={(Math.PI * 2) / 3}
+          minDistance={ready ? ready.height * 0.8 : 1}
+          maxDistance={ready ? ready.height * 3.5 : 8}
+        />
+        <Suspense fallback={null}>
+          <Body url={body} tauntUrl={tauntUrl} onReady={setReady} />
+        </Suspense>
+        {ready && bodyEffect ? <EffectParticles spec={bodyEffect} box={ready.box} /> : null}
+        {ready
+          ? parts.map((p) => (
+              // One missing or broken cosmetic must not take the player down with it.
+              <SilentErrorBoundary key={p.key} label="tf2-player-part" fallback={null}>
+                <Suspense fallback={null}>
+                  <Part url={p.url} tint={p.tint} effect={p.effect} paint={p.paint} body={ready} />
+                </Suspense>
+              </SilentErrorBoundary>
+            ))
+          : null}
+      </Canvas>
+      <ResetViewButton onClick={reset} />
+    </div>
   );
 }

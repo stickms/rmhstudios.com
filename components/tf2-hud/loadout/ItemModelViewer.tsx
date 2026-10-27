@@ -13,6 +13,7 @@ import { supportsWebGL } from '@/lib/shared/platform';
 import { modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
 import { cn } from '@/lib/utils';
 import type { EffectSpec } from './EffectParticles';
+import type { WarPaint } from './model-utils';
 
 const Viewer3D = lazy(() => import('./Viewer3D'));
 
@@ -35,6 +36,7 @@ export default function ItemModelViewer({
   cls,
   style,
   tint,
+  paint,
   effect,
   className,
 }: {
@@ -45,6 +47,8 @@ export default function ItemModelViewer({
   style?: number;
   /** Paint colour, `#rrggbb`. */
   tint?: string;
+  /** A war paint to draw the model with. */
+  paint?: WarPaint;
   /** An unusual effect to show around the model. */
   effect?: EffectSpec;
   className?: string;
@@ -68,7 +72,7 @@ export default function ItemModelViewer({
       }
     >
       <Suspense fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}>
-        <Viewer3D url={modelUrl(model)} tint={tint} effect={effect} />
+        <Viewer3D url={modelUrl(model)} tint={tint} paint={paint} effect={effect} />
       </Suspense>
     </SilentErrorBoundary>
   );

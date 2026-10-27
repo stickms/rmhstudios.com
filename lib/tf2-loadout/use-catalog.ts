@@ -7,24 +7,33 @@
 
 import { useEffect, useState } from 'react';
 import { loadoutApi } from './api';
-import type { Catalog, CatalogEffect, CatalogItem, CatalogPaint } from './catalog-types';
+import type {
+  Catalog,
+  CatalogEffect,
+  CatalogItem,
+  CatalogKit,
+  CatalogPaint,
+} from './catalog-types';
 
 export interface CatalogIndex {
   catalog: Catalog;
   item(id: number): CatalogItem | undefined;
   paint(id: number): CatalogPaint | undefined;
   effect(id: number): CatalogEffect | undefined;
+  kit(id: number): CatalogKit | undefined;
 }
 
 function index(catalog: Catalog): CatalogIndex {
   const items = new Map(catalog.items.map((i) => [i.id, i]));
   const paints = new Map(catalog.paints.map((p) => [p.id, p]));
   const effects = new Map(catalog.effects.map((e) => [e.id, e]));
+  const kits = new Map((catalog.kits ?? []).map((k) => [k.id, k]));
   return {
     catalog,
     item: (id) => items.get(id),
     paint: (id) => paints.get(id),
     effect: (id) => effects.get(id),
+    kit: (id) => kits.get(id),
   };
 }
 

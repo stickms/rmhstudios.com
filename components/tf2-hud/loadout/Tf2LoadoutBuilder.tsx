@@ -20,6 +20,7 @@ import {
   Sparkles,
   Trash2,
   X,
+  Eye,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -51,6 +52,7 @@ import {
   MAX_COSMETIC_SLOTS,
   cosmeticKey,
   cosmeticSlotKeys,
+  modelItemId,
   qualityAccent,
   TAUNT_KEYS,
   TF_CLASSES,
@@ -64,29 +66,22 @@ import {
   type TfClass,
 } from '@/lib/tf2-loadout/catalog-types';
 import { hasDraft, loadDraft, saveDraft } from '@/lib/tf2-loadout/local-drafts';
-import { effectProfile, resolvePlacement, WEAR_NAMES } from '@/lib/tf2-loadout/fx';
+import { WEAR_NAMES } from '@/lib/tf2-loadout/fx';
 import { equipInto, legalize, loadoutWarnings, stockLoadout } from '@/lib/tf2-loadout/rules';
 import type { AiAction } from '@/lib/tf2-loadout/ai-core';
 import { useCatalog, type CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemModelViewer from './ItemModelViewer';
 import ItemCustomizeModal from './ItemCustomizeModal';
 import LoadoutAssistant from './LoadoutAssistant';
-import PlayerViewer, { type WornItem } from './PlayerViewer';
+import { kitOf, warPaintOf } from '@/lib/tf2-loadout/warpaint';
+import { rarityColor, tierName } from '@/lib/tf2-loadout/rarity';
+import PlayerViewer from './PlayerViewer';
+import { tauntEffectOf, tauntItemOf, wornItems } from './worn';
 import ItemTile from './ItemTile';
+import ItemPreviewModal from './ItemPreviewModal';
+import { IconButton } from '@/components/ui/icon-button';
 import WarningList from './WarningList';
 import { CLASS_DEFAULT } from './labels';
-
-/** The effect on an equipped item, ready to draw (undefined when it has none). */
-function effectSpecOf(
-  idx: CatalogIndex,
-  e: LoadoutEntry,
-  slot: Parameters<typeof resolvePlacement>[1],
-) {
-  const fx = e.effect !== undefined ? idx.effect(e.effect) : undefined;
-  return fx
-    ? { profile: effectProfile(fx.n, fx.id), placement: resolvePlacement(e.fx, slot) }
-    : undefined;
-}
 
 const SITE = () => (typeof window === 'undefined' ? '' : window.location.origin);
 const PAGE = 60;
@@ -285,38 +280,13 @@ function Builder({
   );
   const warnings = useMemo(() => loadoutWarnings(catalog, cls, slots), [catalog, cls, slots]);
 
-  // What the 3D player wears: the cosmetics, with their paint.
-  const worn = useMemo<WornItem[]>(() => {
-    const out: WornItem[] = cosmeticKeys.flatMap((k) => {
-      const e = slots[k];
-      if (!e) return [];
-      return [
-        {
-          slotKey: k,
-          itemId: e.item,
-          style: e.style,
-          tint: e.paint !== undefined ? idx.paint(e.paint)?.rgb : undefined,
-          effect: effectSpecOf(idx, e, slotFor(idx.item(e.item)!, cls) ?? 'misc'),
-        },
-      ];
-    });
-    // The player holds one weapon: the primary, else the secondary, else the melee.
-    const held = (['primary', 'secondary', 'melee'] as const).find((k) => slots[k]);
-    if (held) out.push({ slotKey: held, itemId: slots[held]!.item });
-    return out;
-  }, [slots, idx, cosmeticKeys, cls]);
-  const tauntItem = useMemo(() => {
-    for (const k of TAUNT_KEYS) if (slots[k]) return slots[k]!.item;
-    return undefined;
-  }, [slots]);
-  const tauntEffect = useMemo(() => {
-    for (const k of TAUNT_KEYS) {
-      const e = slots[k];
-      const spec = e ? effectSpecOf(idx, e, 'taunt') : undefined;
-      if (spec) return spec;
-    }
-    return undefined;
-  }, [slots, idx]);
+  // What the 3D player wears: the cosmetics, with their paint, and the held weapon.
+  const worn = useMemo(
+    () => wornItems(idx, cls, slots, cosmeticKeys),
+    [slots, idx, cosmeticKeys, cls],
+  );
+  const tauntItem = useMemo(() => tauntItemOf(slots), [slots]);
+  const tauntEffect = useMemo(() => tauntEffectOf(idx, slots), [slots, idx]);
 
   const slotLabel = useCallback(
     (key: LoadoutSlotKey): string => {
@@ -920,6 +890,7 @@ function Picker({
   const [query, setQuery] = useState('');
   const [type, setType] = useState('');
   const [shown, setShown] = useState(PAGE);
+  const [previewing, setPreviewing] = useState<CatalogItem | null>(null);
 
   const all = useMemo(() => itemsForSlot(catalog, cls, slotKey), [catalog, cls, slotKey]);
   const types = useMemo(() => [...new Set(all.map((i) => i.t).filter(Boolean))].sort(), [all]);
@@ -991,9 +962,10 @@ function Picker({
       {current ? (
         <div className="grid gap-3 border-b border-(--app-border) p-3 sm:grid-cols-[13rem_minmax(0,1fr)]">
           <ItemModelViewer
-            itemId={current.id}
+            itemId={modelItemId(current)}
             cls={cls}
             style={entry?.style}
+            paint={entry ? warPaintOf(idx, entry) : undefined}
             tint={entry?.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
           />
           <div className="flex min-w-0 flex-col gap-3">
@@ -1027,10 +999,26 @@ function Picker({
                 {entry.effect !== undefined && idx.effect(entry.effect) ? (
                   <Pill tone="accent">{idx.effect(entry.effect)!.n}</Pill>
                 ) : null}
-                {entry.kit !== undefined ? (
+                {kitOf(current, entry) !== undefined ? (
                   <Pill>
-                    {(catalog.kits ?? []).find((k) => k.id === entry.kit)?.n ?? '#' + entry.kit}
+                    {(catalog.kits ?? []).find((k) => k.id === kitOf(current, entry))?.n ??
+                      '#' + kitOf(current, entry)}
                     {entry.wear ? ` · ${WEAR_NAMES[entry.wear - 1]}` : ''}
+                  </Pill>
+                ) : current.sk && entry.wear ? (
+                  <Pill>{WEAR_NAMES[entry.wear - 1]}</Pill>
+                ) : null}
+                {entry.festive ? (
+                  <Pill tone="accent">{t('festivized', { defaultValue: 'Festivized' })}</Pill>
+                ) : null}
+                {current.rt ? (
+                  <Pill>
+                    <span
+                      aria-hidden
+                      className="me-1 inline-block size-2.5 rounded-full border border-(--app-border-bright)"
+                      style={{ background: rarityColor(current.rt) }}
+                    />
+                    {tierName(current)}
                   </Pill>
                 ) : null}
               </div>
@@ -1101,20 +1089,40 @@ function Picker({
                 className="flex min-w-0 flex-col gap-1 [contain-intrinsic-size:auto_9rem] [content-visibility:auto]"
               >
                 <ItemTile item={it} selected={active} onClick={() => onEquip(it)} />
-                <span
-                  aria-hidden
-                  className="flex items-center gap-1 truncate text-xs"
-                  style={{ color: qualityAccent(it.q) ?? undefined }}
-                >
-                  {active ? <Check className="size-3 shrink-0" aria-hidden /> : null}
-                  <span className="truncate">{it.n}</span>
-                </span>
+                <div className="flex items-center gap-1">
+                  <span
+                    aria-hidden
+                    className="flex min-w-0 flex-1 items-center gap-1 truncate text-xs"
+                    style={{ color: qualityAccent(it.q) ?? undefined }}
+                  >
+                    {active ? <Check className="size-3 shrink-0" aria-hidden /> : null}
+                    <span className="truncate">{it.n}</span>
+                  </span>
+                  <IconButton
+                    icon={Eye}
+                    label={t('preview-item', { defaultValue: 'Preview {{name}}', name: it.n })}
+                    showTooltip={false}
+                    size="icon-sm"
+                    onClick={() => setPreviewing(it)}
+                  />
+                </div>
               </li>
             );
           })}
         </ul>
       )}
       {shown < matches.length ? <div ref={more} aria-hidden className="h-8" /> : null}
+      {previewing ? (
+        <ItemPreviewModal
+          item={previewing}
+          cls={cls}
+          idx={idx}
+          sheet={!wide}
+          equipped={entry?.item === previewing.id}
+          onEquip={() => onEquip(previewing)}
+          onClose={() => setPreviewing(null)}
+        />
+      ) : null}
       {customizeOpen && current && entry ? (
         <ItemCustomizeModal
           open
