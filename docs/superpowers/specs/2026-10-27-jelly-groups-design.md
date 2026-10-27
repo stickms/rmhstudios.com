@@ -90,3 +90,13 @@ Existing tests stay green (`design-consistency`, `site-infinite-animation`, tab-
 ## Left to the builder
 
 Exact CSS token names and glow strength, the precise inset per size, how `Divider` renders, the audit inventory itself, and per-call-site judgment on group vs standalone (record it in the audit doc).
+
+## Resolutions from the builder check (my calls unless marked "owner")
+
+- **Press feel:** attributes and CSS only, no engine change. Members carry `data-jelly="off"`; a press anywhere in the group presses the **parent** body (its dent follows the pointer across members). `JellyGroup.Item` must set the attribute itself, including when `asChild` wraps a `<Link>` or Radix trigger.
+- **What draws the glow:** a tinted, **feathered** fill, the same recipe as the dropdown row glow (`radial-gradient` of `--site-accent` at `--row-glow-strength`, fading to nothing at the edges), driven by the existing opacity state layer. No hard edge, no shadow, no keyframe, so it cannot read as a second rim. The tab morph moves this element with the existing `layoutId` spring. Plasma and `roomFor` are not involved: the glow is not a body.
+- **Size:** a group takes the outer size the old cluster had; members shrink by the inset (default 4px). The top bar height and the 44px coarse-pointer touch target do not change, and tab call sites do not reflow.
+- **Group in a card:** a group inside a `glass-pane` or `glass-fill` card is its own `fill` body and molds inside the card (`roomFor`). A cluster that has no parent worth a body stays standalone rather than becoming a body-less group.
+- **Tiebreaker for ambiguous clusters:** convert only if the members sit on one row (or scroll in one row), are the same kind of control, and are mutually related (tabs, segmented choices, toolbars, action rows, pagination). Chips that wrap onto several lines, or that are added and removed independently (tags, filters the user builds), stay standalone. Record each ambiguous call in the audit doc.
+- **Acceptance:** the builder captures before/after screenshots for each stage (themes and widths as above) and attaches them to the PR; the owner reviews them there. No stored baseline.
+- **Open, owner decision (asked in chat):** `LiquidTabs` and the `--tab-thumb-*` variables are also used by games/apps (`components/slice-it`, `laundry-sort`, `rmhtube` watch party, `rmhtype`, `daily-puzzles`, `app-theme.css`, and a few more). Default if not answered: they inherit the new flat glow, because the primitive is shared and a legacy mode would keep the old thumb alive, but their own pages are otherwise not audited.
