@@ -55,7 +55,20 @@ export function planCatalogTranslations(args: {
     sources: { ...previousSource, ...sources },
     target,
   }).filter((key) => !previousSource || !sameValue(previousSource[key], source[key]));
-  return { target, sources, todo };
+  // Numbers, symbols and bare placeholders ("10", "—", "{{done}}/{{total}}")
+  // read the same in every locale, so copy them instead of paying for a call.
+  const paid = todo.filter((key) => {
+    const english = source[key];
+    if (typeof english !== 'string' || hasWords(english)) return true;
+    target[key] = english;
+    sources[key] = english;
+    return false;
+  });
+  return { target, sources, todo: paid };
+}
+
+function hasWords(text: string): boolean {
+  return /\p{L}/u.test(text.replace(/\{\{[^}]*\}\}/g, ''));
 }
 
 /** Never mark a missing/malformed answer as translated by saving English. */
