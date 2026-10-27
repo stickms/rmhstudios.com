@@ -24,6 +24,8 @@ import { loadoutWarnings } from '@/lib/tf2-loadout/rules';
 import WarningList from './WarningList';
 import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
 import ItemTile from './ItemTile';
+import PlayerViewer from './PlayerViewer';
+import { tauntEffectOf, tauntItemOf, wornItems } from './worn';
 import { CLASS_DEFAULT } from './labels';
 
 export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
@@ -203,6 +205,15 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                 </Btn>
               </div>
             </header>
+
+            {idx ? (
+              <PlayerViewer
+                cls={detail.tfClass}
+                worn={wornItems(idx, detail.tfClass, detail.slots, cosmeticSlotKeys(detail.slots))}
+                taunt={tauntItemOf(detail.slots)}
+                tauntEffect={tauntEffectOf(idx, detail.slots)}
+              />
+            ) : null}
 
             {warnings.length && idx ? (
               <div
