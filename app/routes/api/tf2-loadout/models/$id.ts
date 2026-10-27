@@ -25,7 +25,7 @@ export const Route = createFileRoute('/api/tf2-loadout/models/$id')({
             });
           }
           const m =
-            /^(\d{1,7}(?:_[a-z]{3,10})?|class_[a-z]{3,10}|anim_[a-z]{3,10}_[a-z0-9_]{1,64})(?:\.glb)?$/.exec(
+            /^(\d{1,7}(?:_[a-z]{3,10})?(?:_s\d{1,3})?|class_[a-z]{3,10}|anim_[a-z]{3,10}_[a-z0-9_]{1,64})(?:\.glb)?$/.exec(
               params.id,
             );
           if (!m) return apiError('Not found', 404);

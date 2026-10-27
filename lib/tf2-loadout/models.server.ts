@@ -22,7 +22,7 @@ export const modelKey = (name: string): string => `${PREFIX}${name}.glb`;
  * (`anim_soldier_taunt_conga`: the skeleton and a single clip, no mesh).
  */
 export const MODEL_NAME =
-  /^(?:\d{1,7}(?:_[a-z]{3,10})?|class_[a-z]{3,10}|anim_[a-z]{3,10}_[a-z0-9_]{1,64})$/;
+  /^(?:\d{1,7}(?:_[a-z]{3,10})?(?:_s\d{1,3})?|class_[a-z]{3,10}|anim_[a-z]{3,10}_[a-z0-9_]{1,64})$/;
 
 export const ANIM_INDEX_KEY = `${PREFIX}anims.json`;
 
@@ -31,7 +31,7 @@ export async function listModelIds(): Promise<string[]> {
   if (listed && Date.now() - listed.at < LIST_TTL_MS) return listed.ids;
   const keys = await listObjects(PREFIX, 20_000);
   const ids = keys
-    .map((k) => /^tf2-models\/(\d+(?:_[a-z]+)?|class_[a-z]+)\.glb$/.exec(k)?.[1])
+    .map((k) => /^tf2-models\/(\d+(?:_[a-z]+)?(?:_s\d+)?|class_[a-z]+)\.glb$/.exec(k)?.[1])
     .filter((v): v is string => v !== undefined)
     .sort();
   listed = { at: Date.now(), ids };

@@ -47,6 +47,7 @@ def read_mdl(mdl):
         raise ModelError("unsupported MDL version %s" % version)
     (num_tex, tex_idx, num_cd, cd_idx, num_skin_ref, _num_fam, skin_idx,
      num_body, body_idx) = struct.unpack_from("<9i", mdl, 0xCC)
+    num_fam = struct.unpack_from("<i", mdl, 0xCC + 20)[0]
     textures = []
     for i in range(num_tex):
         base = tex_idx + i * 64
@@ -56,7 +57,10 @@ def read_mdl(mdl):
     for i in range(num_cd):
         off = struct.unpack_from("<i", mdl, cd_idx + i * 4)[0]
         cds.append(_cstr(mdl, off).replace("\\", "/"))
-    skin0 = list(struct.unpack_from("<%dh" % num_skin_ref, mdl, skin_idx)) if num_skin_ref else []
+    # skin families: row f maps each material slot to the texture that family uses
+    skins = [list(struct.unpack_from("<%dh" % num_skin_ref, mdl, skin_idx + f * num_skin_ref * 2))
+             for f in range(max(num_fam, 1))] if num_skin_ref else [[]]
+    skin0 = skins[0]
     bodyparts = []
     for b in range(num_body):
         bp = body_idx + b * 16
@@ -84,7 +88,7 @@ def read_mdl(mdl):
                              "forward": forward, "texture": texture, "iris_scale": iris_scale})
             models.append({"meshes": meshes, "vert_start": vert_idx // 48, "eyeballs": eyes})
         bodyparts.append(models)
-    return {"textures": textures, "cdtextures": cds, "skin0": skin0, "bodyparts": bodyparts}
+    return {"textures": textures, "cdtextures": cds, "skin0": skin0, "skins": skins, "bodyparts": bodyparts}
 
 
 def read_bones(mdl):
@@ -149,7 +153,7 @@ def read_vtx(vtx):
     return result
 
 
-def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes):
+def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0):
     """-> (info, [ {texture, pos, nrm, uv, idx} ]) merged per texture index."""
     info = read_mdl(mdl_bytes)
     verts = read_vvd(vvd_bytes)
@@ -163,8 +167,8 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes):
         for k, mesh in enumerate(model["meshes"]):
             if k >= len(vmeshes) or not len(vmeshes[k]):
                 continue
-            skin = info["skin0"]
-            tex = skin[mesh["material"]] if mesh["material"] < len(skin) else mesh["material"]
+            fam = info["skins"][skin] if 0 <= skin < len(info["skins"]) else info["skin0"]
+            tex = fam[mesh["material"]] if mesh["material"] < len(fam) else mesh["material"]
             # Source's triangles are clockwise (Direct3D); glTF front faces are counter-clockwise.
             ids = (vmeshes[k][: len(vmeshes[k]) // 3 * 3].reshape(-1, 3)[:, ::-1].reshape(-1)
                    + model["vert_start"] + mesh["voff"])

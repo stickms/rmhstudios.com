@@ -34,6 +34,10 @@ export interface ModelRef {
   role: 'main' | 'extra';
   /** The GLB file name this model should be converted to. */
   glb: string;
+  /** The item style this model is for (`<id>[_<class>]_s<N>.glb`); absent for the default. */
+  style?: number;
+  /** The MDL skin family to render it with, for a style that only changes the skin. */
+  skin?: number;
 }
 
 export interface ModelManifestItem {
@@ -145,6 +149,42 @@ export function buildModelManifest(
       }
     } else if (single) {
       models.push({ mdl: norm(single), role: 'main', glb: `${id}.glb` });
+    }
+    // Styles that change the model or its skin family are published as their own files.
+    const styleBlock = block(block(it, 'visuals') ?? Object.create(null), 'styles');
+    if (styleBlock && models.length) {
+      const base = models.filter((m) => m.role === 'main' && m.style === undefined);
+      for (const key of Object.keys(styleBlock)) {
+        const k = Number(key);
+        const sb = block(styleBlock, key);
+        if (!sb || !Number.isInteger(k) || k < 1) continue;
+        const suffix = `_s${k}`;
+        const own = block(sb, 'model_player_per_class');
+        const single = str(sb, 'model_player');
+        const skin = Number(str(sb, 'skin_red') ?? str(sb, 'skin'));
+        if (own) {
+          const basename = str(own, 'basename');
+          for (const c of classes) {
+            const explicit = str(own, c) ?? str(own, FILE_CLASS[c]);
+            const mdl = explicit ?? (basename ? basename.replace('%s', FILE_CLASS[c]) : null);
+            if (mdl) {
+              models.push({
+                class: c,
+                mdl: norm(mdl),
+                role: 'main',
+                glb: `${id}_${c}${suffix}.glb`,
+                style: k,
+              });
+            }
+          }
+        } else if (single) {
+          models.push({ mdl: norm(single), role: 'main', glb: `${id}${suffix}.glb`, style: k });
+        } else if (Number.isInteger(skin) && skin > 0) {
+          for (const m of base) {
+            models.push({ ...m, glb: m.glb.replace(/\.glb$/, `${suffix}.glb`), style: k, skin });
+          }
+        }
+      }
     }
     const extra = str(it, 'extra_wearable');
     if (extra) models.push({ mdl: norm(extra), role: 'extra', glb: `${id}_extra.glb` });
