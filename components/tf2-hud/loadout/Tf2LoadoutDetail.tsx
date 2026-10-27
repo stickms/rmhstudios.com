@@ -17,16 +17,15 @@ import { useClipboard } from '@/hooks/useClipboard';
 import { ApiError } from '@/lib/tf2-hud/api';
 import { loadoutApi } from '@/lib/tf2-loadout/api';
 import type { LoadoutDetail } from '@/lib/tf2-loadout/api-types';
-import {
-  cosmeticSlotKeys,
-  TAUNT_KEYS,
-  weaponSlotsFor,
-} from '@/lib/tf2-loadout/catalog-types';
+import { cosmeticSlotKeys, TAUNT_KEYS, weaponSlotsFor } from '@/lib/tf2-loadout/catalog-types';
 import { WEAR_NAMES } from '@/lib/tf2-loadout/fx';
+import { kitOf } from '@/lib/tf2-loadout/warpaint';
 import { loadoutWarnings } from '@/lib/tf2-loadout/rules';
 import WarningList from './WarningList';
 import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
 import ItemTile from './ItemTile';
+import PlayerViewer from './PlayerViewer';
+import { tauntEffectOf, tauntItemOf, wornItems } from './worn';
 import { CLASS_DEFAULT } from './labels';
 
 export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
@@ -110,7 +109,10 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
             title: t('weapons', { defaultValue: 'Weapons' }),
             keys: weaponSlotsFor(idx.catalog, detail.tfClass) as string[],
           },
-          { title: t('cosmetics', { defaultValue: 'Cosmetics' }), keys: cosmeticSlotKeys(detail.slots) },
+          {
+            title: t('cosmetics', { defaultValue: 'Cosmetics' }),
+            keys: cosmeticSlotKeys(detail.slots),
+          },
           { title: t('taunts', { defaultValue: 'Taunts' }), keys: ['action', ...TAUNT_KEYS] },
         ]
       : [];
@@ -204,6 +206,15 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
               </div>
             </header>
 
+            {idx ? (
+              <PlayerViewer
+                cls={detail.tfClass}
+                worn={wornItems(idx, detail.tfClass, detail.slots, cosmeticSlotKeys(detail.slots))}
+                taunt={tauntItemOf(detail.slots)}
+                tauntEffect={tauntEffectOf(idx, detail.slots)}
+              />
+            ) : null}
+
             {warnings.length && idx ? (
               <div
                 role="status"
@@ -230,9 +241,19 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                       const effect = e.effect !== undefined ? idx!.effect(e.effect) : undefined;
                       const paint = e.paint !== undefined ? idx!.paint(e.paint) : undefined;
                       const style = item?.st?.find((x) => x.k === e.style)?.n;
+                      const kitId = kitOf(item, e);
                       const kit =
-                        e.kit !== undefined
-                          ? `${(idx!.catalog.kits ?? []).find((x) => x.id === e.kit)?.n ?? `#${e.kit}`}${e.wear ? ` · ${WEAR_NAMES[e.wear - 1]}` : ''}`
+                        kitId !== undefined || e.festive
+                          ? [
+                              kitId !== undefined
+                                ? ((idx!.catalog.kits ?? []).find((x) => x.id === kitId)?.n ??
+                                  `#${kitId}`)
+                                : null,
+                              e.wear ? WEAR_NAMES[e.wear - 1] : null,
+                              e.festive ? t('festivized', { defaultValue: 'Festivized' }) : null,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')
                           : undefined;
                       return (
                         <li key={k} className="flex min-w-0 flex-col gap-1">

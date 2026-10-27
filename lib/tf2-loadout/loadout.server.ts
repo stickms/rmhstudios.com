@@ -107,7 +107,7 @@ export function validateSlots(catalog: Catalog, tfClass: TfClass, slots: Loadout
   const byId = new Map(catalog.items.map((i) => [i.id, i]));
   const paints = new Set(catalog.paints.map((p) => p.id));
   const effects = new Set(catalog.effects.map((e) => e.id));
-  const kits = new Set((catalog.kits ?? []).map((k) => k.id));
+  const kits = new Map((catalog.kits ?? []).map((k) => [k.id, k]));
 
   for (const [key, entry] of Object.entries(slots)) {
     const item = byId.get(entry.item);
@@ -130,9 +130,20 @@ export function validateSlots(catalog: Catalog, tfClass: TfClass, slots: Loadout
     if (entry.style !== undefined && !item.st?.some((s) => s.k === entry.style)) {
       throw new LoadoutError(`${item.n} has no such style`, 400);
     }
+    if (entry.festive && !item.fz) {
+      throw new LoadoutError(`${item.n} cannot be festivized`, 400);
+    }
     if (entry.kit !== undefined || entry.wear !== undefined || entry.seed !== undefined) {
       const warPaintable = slot === 'primary' || slot === 'secondary' || slot === 'melee';
-      if (!warPaintable || (entry.kit !== undefined && !kits.has(entry.kit))) {
+      // A decorated weapon already has its kit; only its wear and seed are the player's to set.
+      if (item.sk && entry.kit !== undefined) {
+        throw new LoadoutError(`${item.n} already has its own pattern`, 400);
+      }
+      const kit = entry.kit !== undefined ? kits.get(entry.kit) : undefined;
+      if (
+        !warPaintable ||
+        (!item.sk && entry.kit !== undefined && !(kit && item.wk && kit.w[item.wk]))
+      ) {
         throw new LoadoutError(`${item.n} cannot take that war paint`, 400);
       }
     }

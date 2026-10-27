@@ -9,20 +9,24 @@
  */
 'use client';
 
-import { OrbitControls, useGLTF } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
+import { ResetViewButton, ViewerOrbit, rememberView, useResetView } from './viewer-controls';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Box3, MathUtils, Sphere, Vector3, type PerspectiveCamera } from 'three';
 import EffectParticles, { type EffectSpec } from './EffectParticles';
-import { applyTint, cloneWithMaterials } from './model-utils';
+import { applyPaintTexture, applyTint, cloneWithMaterials, type WarPaint } from './model-utils';
+import { useWarPaintTexture } from './use-war-paint';
 
 function Model({
   url,
   tint,
+  paint,
   onFit,
 }: {
   url: string;
   tint?: string;
+  paint?: WarPaint;
   onFit: (radius: number, box: Box3) => void;
 }) {
   const { scene } = useGLTF(url);
@@ -35,6 +39,12 @@ function Model({
     // The canvas renders on demand, so a colour change has to ask for a frame.
     invalidate();
   }, [root, tint, invalidate]);
+
+  const paintTexture = useWarPaintTexture(paint?.script, paint?.wear ?? 1, paint?.seed ?? 0);
+  useEffect(() => {
+    applyPaintTexture(root, paintTexture);
+    invalidate();
+  }, [root, paintTexture, invalidate]);
 
   // Frame the model: aim the camera at its centre from a distance that fits its
   // bounding sphere, whatever its size or origin.
@@ -54,6 +64,7 @@ function Model({
       orbit.target.copy(sphere.center);
       orbit.update();
     }
+    rememberView(controls);
     onFit(radius, box);
     invalidate();
   }, [root, camera, controls, invalidate, onFit]);
@@ -64,10 +75,13 @@ function Model({
 export default function Viewer3D({
   url,
   tint,
+  paint,
   effect,
 }: {
   url: string;
   tint?: string;
+  /** A war paint to draw the model with. */
+  paint?: WarPaint;
   /** An unusual effect to draw around the model. */
   effect?: EffectSpec;
 }) {
@@ -80,25 +94,23 @@ export default function Viewer3D({
     },
     [],
   );
+  const { ref, reset } = useResetView();
   return (
-    <Canvas
-      dpr={[1, 1.5]}
-      frameloop="demand"
-      camera={{ fov: 35, position: [2.2, 1.2, 3] }}
-      gl={{ antialias: true, alpha: true }}
-    >
-      <ambientLight intensity={1.1} />
-      <directionalLight position={[3, 4, 5]} intensity={2.2} />
-      <directionalLight position={[-4, 1, -2]} intensity={0.8} color="#ffd9b0" />
-      <OrbitControls
-        makeDefault
-        enablePan={false}
-        enableDamping
-        minDistance={radius * 1.2}
-        maxDistance={radius * 8}
-      />
-      <Model url={url} tint={tint} onFit={onFit} />
-      {effect && box ? <EffectParticles spec={effect} box={box} /> : null}
-    </Canvas>
+    <div className="relative size-full">
+      <Canvas
+        dpr={[1, 1.5]}
+        frameloop="demand"
+        camera={{ fov: 35, position: [2.2, 1.2, 3] }}
+        gl={{ antialias: true, alpha: true }}
+      >
+        <ambientLight intensity={1.1} />
+        <directionalLight position={[3, 4, 5]} intensity={2.2} />
+        <directionalLight position={[-4, 1, -2]} intensity={0.8} color="#ffd9b0" />
+        <ViewerOrbit resetRef={ref} minDistance={radius * 1.2} maxDistance={radius * 8} />
+        <Model url={url} tint={tint} paint={paint} onFit={onFit} />
+        {effect && box ? <EffectParticles spec={effect} box={box} /> : null}
+      </Canvas>
+      <ResetViewButton onClick={reset} />
+    </div>
   );
 }
