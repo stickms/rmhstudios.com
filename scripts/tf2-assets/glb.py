@@ -1,4 +1,4 @@
-"""Minimal GLB (glTF 2.0 binary) writer for textured static meshes."""
+"""Minimal GLB (glTF 2.0 binary) writer for textured meshes, with optional skeleton, skin and animation clips."""
 import json
 import struct
 
@@ -9,9 +9,14 @@ def _pad(b, fill=b"\0"):
     return b + fill * (-len(b) % 4)
 
 
-def write_glb(meshes, materials, images, scene_extras=None):
-    """meshes: [{pos, nrm, uv, idx, material}]; materials: [{name, image (index|None),
-    alpha ('OPAQUE'|'MASK'|'BLEND'), double_sided, tint}]; images: [webp bytes]."""
+def write_glb(meshes, materials, images, scene_extras=None, skeleton=None, clips=None):
+    """meshes: [{pos, nrm, uv, idx, material, joints?, weights?}]; materials: [{name, image (index|None),
+    alpha ('OPAQUE'|'MASK'|'BLEND'), double_sided, tint}]; images: [webp bytes].
+
+    skeleton: {names, parent, pos [n,3], quat [n,4], ibm [n,4,4]} — bone nodes (local bind TRS), plus a skin
+    over them when the meshes carry `joints`/`weights`.
+    clips: [{name, times [k], tracks: [{bone, path ('translation'|'rotation'), values [k or 1, 3|4]}]}] —
+    animation targeting the skeleton's bone nodes (the file may carry no mesh at all)."""
     blob = bytearray()
     views, accessors, prims = [], [], []
 
@@ -43,6 +48,11 @@ def write_glb(meshes, materials, images, scene_extras=None):
             "NORMAL": add_acc(nrm.tobytes(), 5126, len(nrm), "VEC3", 34962),
             "TEXCOORD_0": add_acc(uv.tobytes(), 5126, len(uv), "VEC2", 34962),
         }
+        if "joints" in m:
+            joints = np.ascontiguousarray(m["joints"], "<u2")
+            weights = np.ascontiguousarray(m["weights"], "<f4")
+            attrs["JOINTS_0"] = add_acc(joints.tobytes(), 5123, len(joints), "VEC4", 34962)
+            attrs["WEIGHTS_0"] = add_acc(weights.tobytes(), 5126, len(weights), "VEC4", 34962)
         prims.append({"attributes": attrs,
                       "indices": add_acc(idx.tobytes(), 5125 if wide else 5123, len(idx), "SCALAR", 34963),
                       "material": m["material"]})
@@ -66,14 +76,65 @@ def write_glb(meshes, materials, images, scene_extras=None):
             g["extras"] = {"tint": True}
         gl_mats.append(g)
 
+    nodes, root_nodes, skins = [], [], []
+    mesh_node = None
+    if meshes:
+        mesh_node = {"name": "model", "mesh": 0}
+        nodes.append(mesh_node)
+        root_nodes.append(0)
+    base = len(nodes)
+    if skeleton:
+        n = len(skeleton["names"])
+        for i in range(n):
+            node = {"name": skeleton["names"][i],
+                    "translation": [round(float(x), 6) for x in skeleton["pos"][i]],
+                    "rotation": [round(float(x), 7) for x in skeleton["quat"][i]]}
+            nodes.append(node)
+        for i in range(n):
+            p = skeleton["parent"][i]
+            if p < 0:
+                root_nodes.append(base + i)
+            else:
+                nodes[base + p].setdefault("children", []).append(base + i)
+        if meshes and "joints" in meshes[0]:
+            ibm = np.ascontiguousarray(
+                np.asarray(skeleton["ibm"], np.float64).transpose(0, 2, 1).reshape(n, 16), "<f4")
+            skins.append({"joints": [base + i for i in range(n)],
+                          "inverseBindMatrices": add_acc(ibm.tobytes(), 5126, n, "MAT4", None),
+                          "skeleton": next(base + i for i in range(n) if skeleton["parent"][i] < 0)})
+            mesh_node["skin"] = 0
+
+    animations = []
+    for clip in clips or []:
+        times = np.ascontiguousarray(clip["times"], "<f4")
+        t_acc = add_acc(times.tobytes(), 5126, len(times), "SCALAR", None, ([float(times.min())], [float(times.max())]))
+        samplers, channels = [], []
+        for tr in clip["tracks"]:
+            vals = np.ascontiguousarray(tr["values"], "<f4")
+            width = 4 if tr["path"] == "rotation" else 3
+            # a single sample is a constant pose: it still needs two keys of the same value to span the clip
+            if len(vals) == 1 and len(times) > 1:
+                vals = np.repeat(vals, len(times), axis=0)
+            acc = add_acc(vals.tobytes(), 5126, len(vals), "VEC4" if width == 4 else "VEC3", None)
+            samplers.append({"input": t_acc, "output": acc, "interpolation": "LINEAR"})
+            channels.append({"sampler": len(samplers) - 1,
+                             "target": {"node": base + tr["bone"], "path": tr["path"]}})
+        animations.append({"name": clip["name"], "samplers": samplers, "channels": channels})
+
     doc = {
         "asset": {"version": "2.0", "generator": "rmhstudios tf2-assets"},
-        "scene": 0, "scenes": [{"nodes": [0], **({"extras": scene_extras} if scene_extras else {})}],
-        "nodes": [{"mesh": 0}],
-        "meshes": [{"primitives": prims}],
+        "scene": 0, "scenes": [{"nodes": root_nodes, **({"extras": scene_extras} if scene_extras else {})}],
+        "nodes": nodes,
         "buffers": [{"byteLength": len(blob)}],
-        "bufferViews": views, "accessors": accessors, "materials": gl_mats,
+        "bufferViews": views, "accessors": accessors,
     }
+    if meshes:
+        doc["meshes"] = [{"primitives": prims}]
+        doc["materials"] = gl_mats
+    if skins:
+        doc["skins"] = skins
+    if animations:
+        doc["animations"] = animations
     if images:
         doc.update({"images": gl_images, "textures": textures,
                     "extensionsUsed": ["EXT_texture_webp"], "extensionsRequired": ["EXT_texture_webp"]})

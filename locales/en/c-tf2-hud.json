@@ -518,6 +518,8 @@
   "swap-orientation": "Swap width and height",
   "tags": "Tags (comma separated)",
   "tags-label": "Tags",
+  "taunt-no-animation": "No animation is available for this taunt yet.",
+  "taunt-playing": "Playing the taunt on a loop.",
   "taunts": "Taunts",
   "team": "Team",
   "test": "Test",

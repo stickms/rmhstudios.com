@@ -1,8 +1,7 @@
 """Source-engine model reader (MDL v44-49 + VVD v4 + VTX v7) -> triangle meshes.
 
-Only what a static preview needs: LOD 0 of the default body group, bind-pose
-vertex positions, normals, UVs, and the material (skin family 0) each triangle
-uses. No skeleton, animation or physics.
+LOD 0 of the default body group: bind-pose vertex positions, normals, UVs, bone weights, eyeballs, and the
+material (skin family 0) each triangle uses. Skeleton and animation live in srcanim.
 """
 import struct
 
@@ -71,7 +70,19 @@ def read_mdl(mdl):
                 me = mo + mesh_idx + k * 116
                 material, _mi, mverts, voff = struct.unpack_from("<4i", mdl, me)
                 meshes.append({"material": material, "numverts": mverts, "voff": voff})
-            models.append({"meshes": meshes, "vert_start": vert_idx // 48})
+            neye, eye_idx = struct.unpack_from("<2i", mdl, mo + 100)
+            eyes = []
+            for e in range(neye):
+                eo = mo + eye_idx + e * 172
+                bone, = struct.unpack_from("<i", mdl, eo + 4)
+                org = struct.unpack_from("<3f", mdl, eo + 8)
+                zoffset, radius = struct.unpack_from("<2f", mdl, eo + 20)
+                up = struct.unpack_from("<3f", mdl, eo + 28)
+                forward = struct.unpack_from("<3f", mdl, eo + 40)
+                texture, _u1, iris_scale = struct.unpack_from("<iif", mdl, eo + 52)
+                eyes.append({"bone": bone, "org": org, "zoffset": zoffset, "radius": radius, "up": up,
+                             "forward": forward, "texture": texture, "iris_scale": iris_scale})
+            models.append({"meshes": meshes, "vert_start": vert_idx // 48, "eyeballs": eyes})
         bodyparts.append(models)
     return {"textures": textures, "cdtextures": cds, "skin0": skin0, "bodyparts": bodyparts}
 
@@ -160,6 +171,7 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes):
             if ids.max() >= len(verts):
                 raise ModelError("vertex index out of range")
             by_tex.setdefault(tex, []).append(ids)
+    info["eyeballs"] = [e for models in info["bodyparts"] if models for e in models[0]["eyeballs"]]
     # The bone most of this model's vertices follow: a cosmetic attaches to the wearer through it.
     if by_tex:
         used = np.unique(np.concatenate([np.concatenate(g) for g in by_tex.values()]))
@@ -177,8 +189,14 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes):
         ids = np.concatenate(groups)
         uniq, inverse = np.unique(ids, return_inverse=True)
         v = verts[uniq]
+        nb = np.maximum(v["nb"].astype(np.int64), 1)
+        w = np.where(np.arange(3)[None, :] < nb[:, None], v["w"], 0.0).astype(np.float32)
+        w[:, 0] = np.where(v["nb"] == 0, 1.0, w[:, 0])
+        w /= np.maximum(w.sum(1, keepdims=True), 1e-6)
         out.append({
             "texture": tex,
+            "joints": np.concatenate([v["bone"].astype(np.uint16), np.zeros((len(v), 1), np.uint16)], axis=1),
+            "weights": np.concatenate([w, np.zeros((len(v), 1), np.float32)], axis=1),
             "pos": np.ascontiguousarray(v["pos"]),
             "nrm": np.ascontiguousarray(v["nrm"]),
             "uv": np.ascontiguousarray(v["uv"]),

@@ -35,7 +35,6 @@ import {
   Modal,
   PanelHead,
   Pill,
-  SearchSelect,
   SelectField,
   TextField,
   Toggle,
@@ -56,7 +55,6 @@ import {
   TAUNT_KEYS,
   TF_CLASSES,
   itemsForSlot,
-  regionsConflict,
   slotFor,
   weaponSlotsFor,
   type CatalogItem,
@@ -288,22 +286,28 @@ function Builder({
   const warnings = useMemo(() => loadoutWarnings(catalog, cls, slots), [catalog, cls, slots]);
 
   // What the 3D player wears: the cosmetics, with their paint.
-  const worn = useMemo<WornItem[]>(
-    () =>
-      cosmeticKeys.flatMap((k) => {
-        const e = slots[k];
-        if (!e) return [];
-        return [
-          {
-            slotKey: k,
-            itemId: e.item,
-            tint: e.paint !== undefined ? idx.paint(e.paint)?.rgb : undefined,
-            effect: effectSpecOf(idx, e, slotFor(idx.item(e.item)!, cls) ?? 'misc'),
-          },
-        ];
-      }),
-    [slots, idx, cosmeticKeys, cls],
-  );
+  const worn = useMemo<WornItem[]>(() => {
+    const out: WornItem[] = cosmeticKeys.flatMap((k) => {
+      const e = slots[k];
+      if (!e) return [];
+      return [
+        {
+          slotKey: k,
+          itemId: e.item,
+          tint: e.paint !== undefined ? idx.paint(e.paint)?.rgb : undefined,
+          effect: effectSpecOf(idx, e, slotFor(idx.item(e.item)!, cls) ?? 'misc'),
+        },
+      ];
+    });
+    // The player holds one weapon: the primary, else the secondary, else the melee.
+    const held = (['primary', 'secondary', 'melee'] as const).find((k) => slots[k]);
+    if (held) out.push({ slotKey: held, itemId: slots[held]!.item });
+    return out;
+  }, [slots, idx, cosmeticKeys, cls]);
+  const tauntItem = useMemo(() => {
+    for (const k of TAUNT_KEYS) if (slots[k]) return slots[k]!.item;
+    return undefined;
+  }, [slots]);
   const tauntEffect = useMemo(() => {
     for (const k of TAUNT_KEYS) {
       const e = slots[k];
@@ -446,7 +450,10 @@ function Builder({
     }
     setUndoSlots(slots);
     edit(next);
-    const extra = Math.max(0, ...Object.keys(next).map((k) => Number(/^cosmetic(\d+)$/.exec(k)?.[1] ?? 0)) );
+    const extra = Math.max(
+      0,
+      ...Object.keys(next).map((k) => Number(/^cosmetic(\d+)$/.exec(k)?.[1] ?? 0)),
+    );
     if (unrestricted && extra > COSMETIC_SLOTS) setExtraCosmetics(extra - COSMETIC_SLOTS);
     const msg = t('ai-equipped-toast', {
       defaultValue: 'Equipped {{names}}.',
@@ -569,7 +576,7 @@ function Builder({
           className="flex flex-col gap-4"
         >
           {/* The player sits right under the class bar; the options follow it. */}
-          <PlayerViewer cls={cls} worn={worn} tauntEffect={tauntEffect} />
+          <PlayerViewer cls={cls} worn={worn} tauntEffect={tauntEffect} taunt={tauntItem} />
           <RulesPanel
             warnings={warnings}
             idx={idx}
@@ -769,6 +776,7 @@ function RulesPanel({
   const { t } = useTranslation('c-tf2-hud');
   return (
     <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-3 text-xs">
+      {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- Toggle renders the native checkbox */}
       <label className="flex cursor-pointer items-start gap-2.5">
         <Toggle
           checked={unrestricted}
@@ -933,14 +941,14 @@ function Picker({
   const slot = current ? slotFor(current, cls) : null;
   const customizable = Boolean(
     current &&
-      (current.p ||
-        current.st ||
-        slot === 'head' ||
-        slot === 'misc' ||
-        slot === 'taunt' ||
-        slot === 'primary' ||
-        slot === 'secondary' ||
-        slot === 'melee'),
+    (current.p ||
+      current.st ||
+      slot === 'head' ||
+      slot === 'misc' ||
+      slot === 'taunt' ||
+      slot === 'primary' ||
+      slot === 'secondary' ||
+      slot === 'melee'),
   );
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const wide = useMediaQuery('(min-width: 1024px)');

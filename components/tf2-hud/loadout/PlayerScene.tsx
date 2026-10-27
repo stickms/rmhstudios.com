@@ -1,19 +1,29 @@
 /**
- * The 3D canvas for the builder's player: the class body with the equipped
- * cosmetics on it. Loaded lazily with the rest of three.js.
+ * The 3D canvas for the builder's player: the class body, animated, with the equipped cosmetics and
+ * the held weapon on it. Loaded lazily with the rest of three.js.
  *
- * Placement: the converter writes each class model's bone matrices (`bones`) and, for a
- * cosmetic, the bone it follows and its pose on that bone (`attach`). A cosmetic sits at
- * `bones[attach.bone] × attach.pose` — the game's bone-merge in the reference pose — so the
- * hat is on the head and the backpack on the back whatever the class. Renders on demand; the
- * user turns the player around, there is no idle animation.
+ * The class body is a skinned model with the game's own loadout-screen idle baked in (`idle`); a taunt
+ * is a separate file holding just the skeleton and one clip, played on the same bones and looped. The
+ * converter writes, for every cosmetic or weapon, the bone it follows and its pose on that bone
+ * (`attach`). Each one is added to that bone, so it moves with the animation exactly as the game's
+ * bone-merge does, and sits in the right place in the reference pose.
  */
 'use client';
 
 import { OrbitControls, useGLTF } from '@react-three/drei';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, createPortal, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { Box3, MathUtils, Matrix4, Vector3, type PerspectiveCamera } from 'three';
+import {
+  AnimationMixer,
+  Box3,
+  LoopRepeat,
+  MathUtils,
+  Matrix4,
+  Vector3,
+  type Mesh,
+  type Object3D,
+  type PerspectiveCamera,
+} from 'three';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import EffectParticles, { type EffectSpec } from './EffectParticles';
 import { applyTint, cloneWithMaterials } from './model-utils';
@@ -27,21 +37,66 @@ export interface PlayerPart {
   effect?: EffectSpec;
 }
 
-type Bones = Record<string, number[]>;
+interface BodyState {
+  root: Object3D;
+  mixer: AnimationMixer;
+  height: number;
+  box: Box3;
+}
+
+/** Plays a taunt clip on the body, looped, easing in over the idle and back out when it goes. */
+function Taunt({ url, body }: { url: string; body: BodyState }) {
+  const { animations } = useGLTF(url);
+  useEffect(() => {
+    const clip = animations[0];
+    if (!clip) return undefined;
+    const action = body.mixer.clipAction(clip, body.root);
+    action.setLoop(LoopRepeat, Infinity);
+    action.reset().fadeIn(0.25).play();
+    const idle = body.mixer.existingAction('idle');
+    idle?.fadeOut(0.25);
+    return () => {
+      action.fadeOut(0.25);
+      idle?.reset().fadeIn(0.25).play();
+      // Stop it once it has faded, so a finished taunt leaves no tracks fighting the idle.
+      setTimeout(() => action.stop(), 300);
+    };
+  }, [animations, body]);
+  return null;
+}
 
 function Body({
   url,
+  tauntUrl,
   onReady,
 }: {
   url: string;
-  onReady: (bones: Bones, height: number, box: Box3) => void;
+  tauntUrl?: string;
+  onReady: (body: BodyState) => void;
 }) {
-  const { scene } = useGLTF(url);
-  const { camera, controls, invalidate } = useThree();
-  const root = useMemo(() => cloneWithMaterials(scene), [scene]);
+  const gltf = useGLTF(url);
+  const { camera, controls } = useThree();
+  const root = useMemo(() => cloneWithMaterials(gltf.scene), [gltf.scene]);
+  const mixer = useMemo(() => new AnimationMixer(root), [root]);
+  const [state, setState] = useState<BodyState | null>(null);
+
+  useEffect(() => {
+    // A pose moves limbs outside the bind-pose bounds the renderer culls by.
+    root.traverse((o) => {
+      if ((o as Mesh).isMesh) o.frustumCulled = false;
+    });
+    const idle = gltf.animations.find((a) => a.name === 'idle');
+    if (idle) mixer.clipAction(idle, root).setLoop(LoopRepeat, Infinity).play();
+    mixer.update(0);
+    return () => {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(root);
+    };
+  }, [root, mixer, gltf.animations]);
 
   // Frame the whole player, front on, from a distance that fits its height.
   useLayoutEffect(() => {
+    root.updateMatrixWorld(true);
     const box = new Box3().setFromObject(root);
     const size = box.getSize(new Vector3());
     const centre = box.getCenter(new Vector3());
@@ -57,79 +112,91 @@ function Body({
       orbit.target.copy(centre);
       orbit.update();
     }
-    onReady((scene.userData.bones as Bones | undefined) ?? {}, size.y, box);
-    invalidate();
-  }, [root, scene, camera, controls, invalidate, onReady]);
+    const next = { root, mixer, height: size.y, box };
+    setState(next);
+    onReady(next);
+  }, [root, mixer, camera, controls, onReady]);
 
-  return <primitive object={root} />;
+  useFrame((_, dt) => mixer.update(Math.min(dt, 0.1)));
+
+  return (
+    <>
+      <primitive object={root} />
+      {state && tauntUrl ? (
+        <SilentErrorBoundary label="tf2-player-taunt" fallback={null}>
+          <Suspense fallback={null}>
+            <Taunt url={tauntUrl} body={state} />
+          </Suspense>
+        </SilentErrorBoundary>
+      ) : null}
+    </>
+  );
 }
 
 function Part({
   url,
   tint,
   effect,
-  bones,
+  body,
 }: {
   url: string;
   tint?: string;
   effect?: EffectSpec;
-  bones: Bones;
+  body: BodyState;
 }) {
   const { scene } = useGLTF(url);
-  const { invalidate } = useThree();
   const root = useMemo(() => cloneWithMaterials(scene), [scene]);
-  const [box, setBox] = useState<Box3 | null>(null);
+  const [mount, setMount] = useState<{ bone: Object3D; box: Box3 } | null>(null);
 
   useLayoutEffect(() => {
     const attach = scene.userData.attach as { bone: string; pose: number[] } | undefined;
-    const world = attach ? bones[attach.bone] : undefined;
-    if (!attach || !world) {
+    const bone = attach ? body.root.getObjectByName(attach.bone) : undefined;
+    if (!attach || !bone) {
       // No known attachment (an older file, or a bone this class lacks): show nothing rather than
       // a cosmetic floating at the feet.
-      root.visible = false;
-    } else {
-      root.matrixAutoUpdate = false;
-      root.matrix.fromArray(world).multiply(new Matrix4().fromArray(attach.pose));
-      root.visible = true;
-      // Where the cosmetic ended up, for an effect that sits on it.
-      root.updateMatrixWorld(true);
-      setBox(new Box3().setFromObject(root));
+      setMount(null);
+      return undefined;
     }
-    invalidate();
-  }, [root, scene, bones, invalidate]);
+    root.matrixAutoUpdate = false;
+    root.matrix.fromArray(attach.pose);
+    bone.add(root);
+    body.root.updateMatrixWorld(true);
+    // Where the cosmetic sits on its bone, for an effect that follows it.
+    const box = new Box3()
+      .setFromObject(root)
+      .applyMatrix4(new Matrix4().copy(bone.matrixWorld).invert());
+    setMount({ bone, box });
+    return () => {
+      bone.remove(root);
+    };
+  }, [root, scene, body]);
 
   useEffect(() => {
     applyTint(root, tint);
-    invalidate();
-  }, [root, tint, invalidate]);
+  }, [root, tint]);
 
-  return (
-    <>
-      <primitive object={root} />
-      {effect && box ? <EffectParticles spec={effect} box={box} /> : null}
-    </>
-  );
+  return effect && mount
+    ? createPortal(<EffectParticles spec={effect} box={mount.box} />, mount.bone)
+    : null;
 }
 
 export default function PlayerScene({
   body,
   parts,
   bodyEffect,
+  tauntUrl,
 }: {
   body: string;
   parts: PlayerPart[];
   /** A taunt's unusual effect, around the whole player. */
   bodyEffect?: EffectSpec;
+  /** The taunt clip to play (looped) instead of the idle. */
+  tauntUrl?: string;
 }) {
-  const [ready, setReady] = useState<{ bones: Bones; height: number; box: Box3 } | null>(null);
-  const onReady = useMemo(
-    () => (bones: Bones, height: number, box: Box3) => setReady({ bones, height, box }),
-    [],
-  );
+  const [ready, setReady] = useState<BodyState | null>(null);
   return (
     <Canvas
       dpr={[1, 1.5]}
-      frameloop="demand"
       camera={{ fov: 30, position: [0, 1, 4] }}
       gl={{ antialias: true, alpha: true }}
     >
@@ -146,7 +213,7 @@ export default function PlayerScene({
         maxDistance={ready ? ready.height * 3.5 : 8}
       />
       <Suspense fallback={null}>
-        <Body url={body} onReady={onReady} />
+        <Body url={body} tauntUrl={tauntUrl} onReady={setReady} />
       </Suspense>
       {ready && bodyEffect ? <EffectParticles spec={bodyEffect} box={ready.box} /> : null}
       {ready
@@ -154,7 +221,7 @@ export default function PlayerScene({
             // One missing or broken cosmetic must not take the player down with it.
             <SilentErrorBoundary key={p.key} label="tf2-player-part" fallback={null}>
               <Suspense fallback={null}>
-                <Part url={p.url} tint={p.tint} effect={p.effect} bones={ready.bones} />
+                <Part url={p.url} tint={p.tint} effect={p.effect} body={ready} />
               </Suspense>
             </SilentErrorBoundary>
           ))

@@ -87,6 +87,8 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // TF2 loadout builder rules (stock loadout, game-rule warnings, unlimited cosmetics) and the AI
   // assistants. English-only until the translate workflow runs on merge; remove entries with it.
   'c-tf2-hud': [
+    'taunt-playing',
+    'taunt-no-animation',
     'add-cosmetic-slot',
     'ai-applied',
     'ai-chip-cosmetics',

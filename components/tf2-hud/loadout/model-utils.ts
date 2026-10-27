@@ -1,13 +1,15 @@
 /** Helpers shared by the item viewer and the player viewer. */
 
 import { Color, type Material, type Mesh, type MeshStandardMaterial, type Object3D } from 'three';
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 /**
  * The loader caches one scene per URL; give each viewer its own copy, with its own
- * materials, so tinting never leaks into another viewer of the same model.
+ * materials, so tinting never leaks into another viewer of the same model. A plain `clone` leaves a
+ * skinned mesh bound to the original skeleton, so the class body goes through SkeletonUtils.
  */
 export function cloneWithMaterials(scene: Object3D): Object3D {
-  const copy = scene.clone(true);
+  const copy = cloneSkinned(scene);
   copy.traverse((o: Object3D) => {
     const mesh = o as Mesh;
     if (!mesh.isMesh) return;

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildIconManifest,
   buildModelManifest,
+  buildTauntManifest,
   classModelEntries,
   uniqueModels,
 } from '../model-manifest';
@@ -98,7 +99,7 @@ describe('buildIconManifest', () => {
 describe('classModelEntries', () => {
   const entry = classModelEntries();
 
-  it('lists the nine class bodies, with the game\'s file-name spellings', () => {
+  it("lists the nine class bodies, with the game's file-name spellings", () => {
     expect(entry.models).toHaveLength(9);
     expect(entry.models.find((m) => m.class === 'demoman')).toEqual({
       class: 'demoman',
@@ -112,5 +113,54 @@ describe('classModelEntries', () => {
     for (const m of entry.models) expect(MODEL_NAME.test(m.glb.replace(/\.glb$/, ''))).toBe(true);
     expect(MODEL_NAME.test('class_')).toBe(false);
     expect(MODEL_NAME.test('class_../x')).toBe(false);
+  });
+});
+
+describe('stock weapons', () => {
+  it('lists a hidden "baseitem" weapon, which the builder shows, but not other hidden items', () => {
+    const items = `
+"items_game"
+{
+  "prefabs" { "weapon_base" { "item_slot" "primary" "item_name" "#T_Gun" } }
+  "items"
+  {
+    "199" { "name" "Shotgun" "prefab" "weapon_base" "hidden" "1" "baseitem" "1" "model_player" "models/w/shotgun.mdl" "used_by_classes" { "soldier" "1" } }
+    "200" { "name" "Internal" "prefab" "weapon_base" "hidden" "1" "model_player" "models/w/internal.mdl" "used_by_classes" { "soldier" "1" } }
+  }
+}`;
+    expect(buildModelManifest(items, ENGLISH).map((i) => i.id)).toEqual([199]);
+  });
+});
+
+describe('animation clip names', () => {
+  it('are accepted by the model routes, and nothing path-like is', () => {
+    expect(MODEL_NAME.test('anim_scout_taunt_conga')).toBe(true);
+    expect(MODEL_NAME.test('anim_demoman_taunt_rps_rock_win')).toBe(true);
+    expect(MODEL_NAME.test('anim_scout_../x')).toBe(false);
+    expect(MODEL_NAME.test('anim_scout_')).toBe(false);
+    expect(MODEL_NAME.test('anim__taunt')).toBe(false);
+  });
+});
+
+describe('buildTauntManifest', () => {
+  const items = `
+"items_game"
+{
+  "prefabs" { "taunt" { "item_slot" "taunt" "item_name" "#T_Taunt" } }
+  "items"
+  {
+    "1118" { "name" "Conga" "prefab" "taunt" "used_by_classes" { "scout" "1" "pyro" "1" "spy" "1" }
+      "taunt" { "custom_taunt_scene_per_class" {
+        "scout" "scenes/player/scout/low/Taunt_Conga.vcd"
+        "pyro" { "1" "scenes\\\\player\\\\pyro\\\\low\\\\taunt_conga.vcd" "2" "scenes/player/pyro/low/taunt_conga2.vcd" }
+      } } }
+    "13" { "name" "Scattergun" "item_slot" "primary" "item_name" "#T_Taunt" "used_by_classes" { "scout" "1" } }
+    "1119" { "name" "No scene" "prefab" "taunt" "used_by_classes" { "scout" "1" } }
+  }
+}`;
+  it('lists the scene each class plays, as a bare name, including a class with several', () => {
+    expect(buildTauntManifest(items, ENGLISH)).toEqual([
+      { id: 1118, scenes: { scout: ['taunt_conga'], pyro: ['taunt_conga', 'taunt_conga2'] } },
+    ]);
   });
 });
