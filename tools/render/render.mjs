@@ -6,7 +6,7 @@ p.on('console', (m) => console.log('console', m.text()));
 p.on('pageerror', (e) => console.log('pageerror', e.message));
 await p.goto(`http://localhost:8123/page.html?cls=${cls}&taunt=${taunt}`);
 await p.waitForFunction('window.__done', null, { timeout: 60000 });
-console.log(JSON.stringify(await p.evaluate('window.__log')));
+for (const l of await p.evaluate('window.__log')) console.log(l);
 await p.screenshot({ path: `/tmp/shot_${cls}.jpg`, type: 'jpeg', quality: 55 });
-console.log('B64START_' + cls + ' ' + fs.readFileSync(`/tmp/shot_${cls}.jpg`).toString('base64') + ' B64END');
+
 await b.close();

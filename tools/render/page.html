@@ -34,5 +34,17 @@ try {
   } catch (e) { log.push('taunt load failed ' + e); }
   draw(views[2], 800);
 } catch (e) { log.push('ERR ' + e + (e && e.stack || '')); }
+
+function ascii(x0, cols, rows) {
+  const c2 = document.createElement('canvas'); c2.width = 1200; c2.height = 520; const cx = c2.getContext('2d'); cx.drawImage(document.getElementById('c'), 0, 0);
+  const ramp = ' .:-=+*#%@'; let out = [];
+  for (let j = 0; j < rows; j++) { let line = ''; for (let i = 0; i < cols; i++) {
+    const px = cx.getImageData(x0 + Math.floor(i * 400 / cols), Math.floor(j * 520 / rows), 1, 1).data;
+    const bg = Math.abs(px[0]-0x2a)+Math.abs(px[1]-0x2d)+Math.abs(px[2]-0x33) < 12;
+    const l = (px[0]*0.3+px[1]*0.59+px[2]*0.11)/255;
+    line += bg ? ' ' : ramp[Math.min(9, 1 + Math.floor(l * 8.99))]; } out.push(line); }
+  return out.join('\n');
+}
+log.push('IDLE\n' + ascii(0, 50, 40)); log.push('HEAD\n' + ascii(400, 80, 44)); log.push('TAUNT\n' + ascii(800, 50, 40));
 window.__log = log; window.__done = true;
 </script>
