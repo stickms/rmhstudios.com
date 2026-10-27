@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 928 files across 196 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 930 files across 196 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -2019,10 +2019,11 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/tf2-hud`
 
-14 routes.
+15 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/tf2-hud/ai` | `POST` | `app/routes/api/tf2-hud/ai.ts` |
 | `/api/tf2-hud/base/*` | `GET` | `app/routes/api/tf2-hud/base/$.ts` |
 | `/api/tf2-hud/blobs/:sha1` | `PUT` | `app/routes/api/tf2-hud/blobs/$sha1.ts` |
 | `/api/tf2-hud/blobs/check` | `POST` | `app/routes/api/tf2-hud/blobs/check.ts` |
@@ -2040,10 +2041,11 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/tf2-loadout`
 
-8 routes.
+9 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/tf2-loadout/ai` | `POST` | `app/routes/api/tf2-loadout/ai.ts` |
 | `/api/tf2-loadout/catalog` | `GET` | `app/routes/api/tf2-loadout/catalog.ts` |
 | `/api/tf2-loadout/icons/:id` | `GET` | `app/routes/api/tf2-loadout/icons/$id.ts` |
 | `/api/tf2-loadout/loadouts` | `GET` `POST` | `app/routes/api/tf2-loadout/loadouts/index.ts` |
