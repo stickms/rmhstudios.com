@@ -27,6 +27,7 @@ export type PaintResponse =
   | { id: number; ok: true; w: number; h: number; rgba: Uint8ClampedArray }
   | { id: number; ok: false };
 
+const WHITE: Raster = { w: 1, h: 1, data: new Float32Array([1, 1, 1]) };
 const scripts = new Map<string, Promise<KitScript | null>>();
 const rasters = new Map<string, Promise<Raster | null>>();
 const MAX_CACHED = 80;
@@ -74,7 +75,10 @@ async function paint(req: PaintRequest): Promise<PaintResponse> {
   if (!tree) return { id: req.id, ok: false };
   const paths = [...texturesOf(tree)];
   const loaded = await Promise.all(paths.map(loadRaster));
-  const byPath = new Map(paths.map((p, i) => [p, loaded[i]] as const));
+  // The stock models' ambient-occlusion maps are not in the game files; AO only darkens, so none is white.
+  const byPath = new Map(
+    paths.map((p, i) => [p, loaded[i] ?? (p.endsWith('_ao') ? WHITE : null)] as const),
+  );
   const out = compose(tree, {
     size: req.size,
     seed: req.seed,
