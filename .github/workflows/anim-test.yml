@@ -15,7 +15,7 @@ jobs:
       - uses: actions/cache/restore@v4
         with:
           path: ~/cache-out
-          key: tf2-anim-sample-v1
+          key: tf2-anim-sample-v2
           fail-on-cache-miss: true
       - run: mkdir -p "$HOME/sample" && tar -xJf "$HOME/cache-out/sample.tar.xz" -C "$HOME/sample"
       - run: pip install --quiet vpk numpy pillow
