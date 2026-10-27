@@ -20,6 +20,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import sys
 
 import numpy as np
@@ -38,7 +39,10 @@ PARAMS = {"rotation": "r", "translate_u": "u", "translate_v": "v", "scale_uv": "
 
 
 def _range(text):
-    nums = [float(x) for x in text.replace(",", " ").split()]
+    try:
+        nums = [float(x) for x in text.replace(",", " ").split()]
+    except ValueError:
+        return None  # an unresolved $[variable]
     if not nums:
         return None
     return [nums[0], nums[-1]] if len(nums) > 1 else [nums[0], nums[0]]
@@ -87,13 +91,49 @@ def node(name, pairs, skipped):
     return None
 
 
-def kit_json(body, skipped):
+_VAR = re.compile(r"\$\[(\w+)\]")
+
+
+def variables(block, templates, depth=0):
+    """`$name` definitions of a block, under those of the templates it `implements` (nearest wins)."""
+    out = {}
+    parent = kv.get(block, "implements")
+    if isinstance(parent, str) and depth < 4 and parent in templates:
+        out.update(variables(templates[parent], templates, depth + 1))
+    for k, v in block:
+        if k.startswith("$") and not isinstance(v, list):
+            out[k[1:].lower()] = v
+    return out
+
+
+def substitute(text, vars_):
+    """Replace `$[name]` (names may be built from other variables, e.g. `c_$[weapon]_ao`)."""
+    for _ in range(6):
+        new = _VAR.sub(lambda m: vars_.get(m.group(1).lower(), m.group(0)), text)
+        if new == text:
+            break
+        text = new
+    return text
+
+
+def expand(pairs, vars_):
+    """A block with every `$[name]` filled in and the `$name` definitions dropped."""
+    out = []
+    for k, v in pairs:
+        if k.startswith("$"):
+            continue
+        out.append((k, expand(v, vars_) if isinstance(v, list) else substitute(v, vars_)))
+    return out
+
+
+def kit_json(body, skipped, templates=None):
     """A kit's five wear levels -> {"v": 1, "w": [tree | null, ...]}."""
     levels = []
     for level in range(1, 6):
         block = kv.get(body, "wear_level_%d" % level)
         tree = None
         if isinstance(block, list):
+            block = expand(block, variables(block, templates or {}))
             kids = [n for n in (node(k, v, skipped) for k, v in block if isinstance(v, list)) if n]
             # a wear level holds one root operation
             tree = kids[0] if len(kids) == 1 else (["m"] + kids if kids else None)
@@ -148,11 +188,13 @@ def main():
     top = kv.get(kv.parse(raw.decode("utf-8", "replace")), "item_paintkit_definitions") or []
     os.makedirs(args.out, exist_ok=True)
 
+    templates = {name.split(" ", 1)[1]: body for name, body in top
+                 if name.startswith("paintkit_template ") and isinstance(body, list)}
     wanted, skipped, textures, kits, failed = {}, {}, set(), 0, []
     for name, body in top:
         if not isinstance(body, list) or kv.get(body, "wear_level_1") is None or " " in name:
             continue  # a template, not a kit
-        data = kit_json(body, skipped)
+        data = kit_json(body, skipped, templates)
         if not any(data["w"]):
             continue
         for tree in data["w"]:
