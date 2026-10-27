@@ -15,6 +15,7 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Box3, MathUtils, Matrix4, Vector3, type PerspectiveCamera } from 'three';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
+import EffectParticles, { type EffectSpec } from './EffectParticles';
 import { applyTint, cloneWithMaterials } from './model-utils';
 
 export interface PlayerPart {
@@ -22,6 +23,8 @@ export interface PlayerPart {
   url: string;
   /** Paint colour, `#rrggbb`. */
   tint?: string;
+  /** An unusual effect around this cosmetic. */
+  effect?: EffectSpec;
 }
 
 type Bones = Record<string, number[]>;
@@ -31,7 +34,7 @@ function Body({
   onReady,
 }: {
   url: string;
-  onReady: (bones: Bones, height: number) => void;
+  onReady: (bones: Bones, height: number, box: Box3) => void;
 }) {
   const { scene } = useGLTF(url);
   const { camera, controls, invalidate } = useThree();
@@ -54,17 +57,28 @@ function Body({
       orbit.target.copy(centre);
       orbit.update();
     }
-    onReady((scene.userData.bones as Bones | undefined) ?? {}, size.y);
+    onReady((scene.userData.bones as Bones | undefined) ?? {}, size.y, box);
     invalidate();
   }, [root, scene, camera, controls, invalidate, onReady]);
 
   return <primitive object={root} />;
 }
 
-function Part({ url, tint, bones }: { url: string; tint?: string; bones: Bones }) {
+function Part({
+  url,
+  tint,
+  effect,
+  bones,
+}: {
+  url: string;
+  tint?: string;
+  effect?: EffectSpec;
+  bones: Bones;
+}) {
   const { scene } = useGLTF(url);
   const { invalidate } = useThree();
   const root = useMemo(() => cloneWithMaterials(scene), [scene]);
+  const [box, setBox] = useState<Box3 | null>(null);
 
   useLayoutEffect(() => {
     const attach = scene.userData.attach as { bone: string; pose: number[] } | undefined;
@@ -77,6 +91,9 @@ function Part({ url, tint, bones }: { url: string; tint?: string; bones: Bones }
       root.matrixAutoUpdate = false;
       root.matrix.fromArray(world).multiply(new Matrix4().fromArray(attach.pose));
       root.visible = true;
+      // Where the cosmetic ended up, for an effect that sits on it.
+      root.updateMatrixWorld(true);
+      setBox(new Box3().setFromObject(root));
     }
     invalidate();
   }, [root, scene, bones, invalidate]);
@@ -86,13 +103,27 @@ function Part({ url, tint, bones }: { url: string; tint?: string; bones: Bones }
     invalidate();
   }, [root, tint, invalidate]);
 
-  return <primitive object={root} />;
+  return (
+    <>
+      <primitive object={root} />
+      {effect && box ? <EffectParticles spec={effect} box={box} /> : null}
+    </>
+  );
 }
 
-export default function PlayerScene({ body, parts }: { body: string; parts: PlayerPart[] }) {
-  const [ready, setReady] = useState<{ bones: Bones; height: number } | null>(null);
+export default function PlayerScene({
+  body,
+  parts,
+  bodyEffect,
+}: {
+  body: string;
+  parts: PlayerPart[];
+  /** A taunt's unusual effect, around the whole player. */
+  bodyEffect?: EffectSpec;
+}) {
+  const [ready, setReady] = useState<{ bones: Bones; height: number; box: Box3 } | null>(null);
   const onReady = useMemo(
-    () => (bones: Bones, height: number) => setReady({ bones, height }),
+    () => (bones: Bones, height: number, box: Box3) => setReady({ bones, height, box }),
     [],
   );
   return (
@@ -117,12 +148,13 @@ export default function PlayerScene({ body, parts }: { body: string; parts: Play
       <Suspense fallback={null}>
         <Body url={body} onReady={onReady} />
       </Suspense>
+      {ready && bodyEffect ? <EffectParticles spec={bodyEffect} box={ready.box} /> : null}
       {ready
         ? parts.map((p) => (
             // One missing or broken cosmetic must not take the player down with it.
             <SilentErrorBoundary key={p.key} label="tf2-player-part" fallback={null}>
               <Suspense fallback={null}>
-                <Part url={p.url} tint={p.tint} bones={ready.bones} />
+                <Part url={p.url} tint={p.tint} effect={p.effect} bones={ready.bones} />
               </Suspense>
             </SilentErrorBoundary>
           ))

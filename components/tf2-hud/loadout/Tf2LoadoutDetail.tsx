@@ -22,6 +22,7 @@ import {
   TAUNT_KEYS,
   weaponSlotsFor,
 } from '@/lib/tf2-loadout/catalog-types';
+import { WEAR_NAMES } from '@/lib/tf2-loadout/fx';
 import { loadoutWarnings } from '@/lib/tf2-loadout/rules';
 import WarningList from './WarningList';
 import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
@@ -228,6 +229,11 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                       const item = idx!.item(e.item);
                       const effect = e.effect !== undefined ? idx!.effect(e.effect) : undefined;
                       const paint = e.paint !== undefined ? idx!.paint(e.paint) : undefined;
+                      const style = item?.st?.find((x) => x.k === e.style)?.n;
+                      const kit =
+                        e.kit !== undefined
+                          ? `${(idx!.catalog.kits ?? []).find((x) => x.id === e.kit)?.n ?? `#${e.kit}`}${e.wear ? ` · ${WEAR_NAMES[e.wear - 1]}` : ''}`
+                          : undefined;
                       return (
                         <li key={k} className="flex min-w-0 flex-col gap-1">
                           {item ? (
@@ -241,9 +247,9 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                             {item?.n ??
                               t('unknown-item', { defaultValue: 'Item no longer in the game' })}
                           </span>
-                          {paint || effect ? (
+                          {paint || effect || style || kit ? (
                             <span className="truncate text-[11px] text-(--app-text-dim)">
-                              {[paint?.n, effect?.n].filter(Boolean).join(' · ')}
+                              {[paint?.n, style, effect?.n, kit].filter(Boolean).join(' · ')}
                             </span>
                           ) : null}
                         </li>

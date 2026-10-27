@@ -108,6 +108,7 @@ export function validateSlots(catalog: Catalog, tfClass: TfClass, slots: Loadout
   const byId = new Map(catalog.items.map((i) => [i.id, i]));
   const paints = new Set(catalog.paints.map((p) => p.id));
   const effects = new Set(catalog.effects.map((e) => e.id));
+  const kits = new Set((catalog.kits ?? []).map((k) => k.id));
 
   for (const [key, entry] of Object.entries(slots)) {
     const item = byId.get(entry.item);
@@ -122,6 +123,18 @@ export function validateSlots(catalog: Catalog, tfClass: TfClass, slots: Loadout
     if (entry.effect !== undefined) {
       if (!(slot === 'head' || slot === 'misc' || slot === 'taunt') || !effects.has(entry.effect)) {
         throw new LoadoutError(`${item.n} cannot take that effect`, 400);
+      }
+    }
+    if (entry.fx !== undefined && entry.effect === undefined) {
+      throw new LoadoutError(`${item.n} has an effect placement but no effect`, 400);
+    }
+    if (entry.style !== undefined && !item.st?.some((s) => s.k === entry.style)) {
+      throw new LoadoutError(`${item.n} has no such style`, 400);
+    }
+    if (entry.kit !== undefined || entry.wear !== undefined || entry.seed !== undefined) {
+      const warPaintable = slot === 'primary' || slot === 'secondary' || slot === 'melee';
+      if (!warPaintable || (entry.kit !== undefined && !kits.has(entry.kit))) {
+        throw new LoadoutError(`${item.n} cannot take that war paint`, 400);
       }
     }
     // Overlapping regions, a repeated cosmetic and more than three cosmetics are allowed on purpose:

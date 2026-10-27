@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { TF_CLASSES } from './catalog-types';
+import { MAX_SEED, TF_CLASSES } from './catalog-types';
 import { LOADOUT_LIMITS } from './api-types';
 
 export const visibilitySchema = z.enum(['PRIVATE', 'UNLISTED', 'PUBLIC']);
@@ -14,10 +14,24 @@ const SLOT_KEY = /^(primary|secondary|melee|building|pda|pda2|action|cosmetic(?:
 
 const defindex = z.number().int().min(0).max(1_000_000);
 
+const fraction = z.number().min(-2).max(2);
+
 export const entrySchema = z.object({
   item: defindex,
   paint: defindex.optional(),
   effect: defindex.optional(),
+  fx: z
+    .object({
+      x: fraction.optional(),
+      y: fraction.optional(),
+      z: fraction.optional(),
+      s: z.number().min(0.25).max(4).optional(),
+    })
+    .optional(),
+  style: z.number().int().min(0).max(30).optional(),
+  kit: defindex.optional(),
+  wear: z.number().int().min(1).max(5).optional(),
+  seed: z.number().int().min(0).max(MAX_SEED).optional(),
 });
 
 export const slotsSchema = z
