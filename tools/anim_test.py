@@ -27,9 +27,5 @@ for nm in ("scenes/player/scout/low/taunt_conga.vcd", "scenes/player/scout/low/t
 # eye materials
 for f in sorted(glob.glob(root + "/materials/models/player/**/*eye*", recursive=True))[:12]:
     print("eye file", f.replace(root, ""), os.path.getsize(f))
-for f in sorted(glob.glob(root + "/materials/models/player/shared/*.vmt"))[:10]:
-    print("==", f.replace(root, "")); print(open(f, errors="replace").read()[:500])
-pk = root + "/scripts/items/paintkits_master.txt"
-print("paintkits_master", os.path.exists(pk))
-if os.path.exists(pk):
-    t = open(pk, encoding="utf-8", errors="replace").read(); print(len(t)); print(t[:2500])
+for f in sorted(glob.glob(root + "/materials/models/player/**/*eye*.vmt", recursive=True))[:4]:
+    print("==", f.replace(root, "")); print(open(f, errors="replace").read()[:600])
