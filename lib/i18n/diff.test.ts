@@ -84,6 +84,18 @@ describe('merge translation spending', () => {
     expect(plan.todo).toEqual([]);
   });
 
+  it('copies strings with nothing to translate instead of paying for them', () => {
+    const plan = planCatalogTranslations({
+      source: { rank: '10', ratio: '{{done}}/{{total}}', none: '—', label: '{{count}} items' },
+      previousSource: {},
+      target: {},
+      sources: {},
+    });
+    expect(plan.todo).toEqual(['label']);
+    expect(plan.target).toEqual({ rank: '10', ratio: '{{done}}/{{total}}', none: '—' });
+    expect(plan.sources).toEqual(plan.target);
+  });
+
   it('rejects incomplete responses instead of treating English fallback as translated', () => {
     const entries = { a: 'Hello', b: 'Goodbye' };
     for (const response of [null, [], {}, { a: 'Bonjour' }, { a: 'Bonjour', b: ' ' }]) {
