@@ -2514,21 +2514,20 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   padding: var(--rad-3) var(--rad-4);
   border: none;
   border-radius: 999px;
-  background: var(--site-accent);
+  /* The same jelly sphere as the hub orb (lit upper left, deepening to the far limb), so the two
+     floating controls are one material. Its softness is the jelly body's (`data-fluid-press` in
+     RadialFeed): no CSS transform or transition here, which would fight the physics. */
+  background: radial-gradient(
+    circle at 30% 24%,
+    color-mix(in srgb, var(--site-accent) 62%, var(--site-accent-fg)) 0%,
+    var(--site-accent) 52%,
+    color-mix(in srgb, var(--site-accent) 70%, var(--site-bg)) 100%
+  );
   color: var(--site-accent-fg);
   font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow: none;
-  transition:
-    transform 0.2s var(--ease-glass, var(--ease-smooth)),
-    box-shadow 0.2s ease;
-}
-.radial-feed__compose:hover {
-  transform: translateY(-2px);
-}
-.radial-feed__compose:active {
-  transform: scale(0.96);
 }
 .radial-feed__compose svg {
   width: 1.1rem;

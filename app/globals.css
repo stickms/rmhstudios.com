@@ -2237,15 +2237,39 @@ html.ios-webkit .glass-liquid::after {
   display: none;
 }
 
-/* iOS 26 Safari derives the material behind its status bar and floating toolbar
-   from fixed/sticky layers near the corresponding viewport edge. Keep these
-   targets mounted through drawer state changes so WebKit never switches from
-   them to the drawer and fades in a solid sampled colour.
+/* iOS 26 Safari derives the material behind its status bar and floating toolbar from
+   fixed/sticky layers at the corresponding viewport edge. When it finds none it falls
+   back to the page's own ground and fills those strips with that one flat colour, which
+   on a dark theme is the black band under the clock and behind the tab bar (and it hides
+   the content scrolling under them). A transparent element is not enough: WebKit samples
+   through it. A real, minimal backdrop filter makes it keep its translucent material
+   instead, so the page shows through the bars.
 
-   A transparent target alone is insufficient: WebKit samples through it and
-   still finds the opaque drawer. A real, minimal backdrop filter makes WebKit
-   preserve its translucent browser material. Five pixels reaches both edge
-   probes, and the maximum practical z-index keeps app overlays from winning. *
+   Two 5px strips, one per edge (rendered once in `__root.tsx`), reach both edge probes.
+   They paint nothing, take no pointer events and exist on iOS WebKit only (`ios-webkit`
+   is stamped pre-paint). They are not a glass role and are 5px tall, so the "no
+   backdrop-filter on a surface" rule is not what this is. The maximum z-index keeps an
+   overlay from becoming the sampled layer. */
+.safari-edge {
+  display: none;
+}
+html.ios-webkit .safari-edge {
+  display: block;
+  position: fixed;
+  inset-inline: 0;
+  height: 5px;
+  z-index: 2147483647;
+  pointer-events: none;
+  background: transparent;
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+}
+html.ios-webkit .safari-edge--top {
+  top: 0;
+}
+html.ios-webkit .safari-edge--bottom {
+  bottom: 0;
+}
 
 /* Forced colors / Windows High Contrast strips backgrounds — keep structural
    borders so panes retain their shape; make sure the v2 optics pseudos paint
