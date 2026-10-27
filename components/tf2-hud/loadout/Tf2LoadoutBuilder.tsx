@@ -51,6 +51,7 @@ import {
   MAX_COSMETIC_SLOTS,
   cosmeticKey,
   cosmeticSlotKeys,
+  modelItemId,
   qualityAccent,
   TAUNT_KEYS,
   TF_CLASSES,
@@ -71,7 +72,8 @@ import { useCatalog, type CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemModelViewer from './ItemModelViewer';
 import ItemCustomizeModal from './ItemCustomizeModal';
 import LoadoutAssistant from './LoadoutAssistant';
-import { warPaintOf } from '@/lib/tf2-loadout/warpaint';
+import { kitOf, warPaintOf } from '@/lib/tf2-loadout/warpaint';
+import { rarityColor, tierName } from '@/lib/tf2-loadout/rarity';
 import PlayerViewer, { type WornItem } from './PlayerViewer';
 import ItemTile from './ItemTile';
 import WarningList from './WarningList';
@@ -305,7 +307,11 @@ function Builder({
     const held = (['primary', 'secondary', 'melee'] as const).find((k) => slots[k]);
     if (held) {
       const e = slots[held]!;
-      out.push({ slotKey: held, itemId: e.item, paint: warPaintOf(idx, e) });
+      out.push({
+        slotKey: held,
+        itemId: modelItemId(idx.item(e.item) ?? { id: e.item }),
+        paint: warPaintOf(idx, e),
+      });
     }
     return out;
   }, [slots, idx, cosmeticKeys, cls]);
@@ -995,7 +1001,7 @@ function Picker({
       {current ? (
         <div className="grid gap-3 border-b border-(--app-border) p-3 sm:grid-cols-[13rem_minmax(0,1fr)]">
           <ItemModelViewer
-            itemId={current.id}
+            itemId={modelItemId(current)}
             cls={cls}
             style={entry?.style}
             paint={entry ? warPaintOf(idx, entry) : undefined}
@@ -1032,10 +1038,26 @@ function Picker({
                 {entry.effect !== undefined && idx.effect(entry.effect) ? (
                   <Pill tone="accent">{idx.effect(entry.effect)!.n}</Pill>
                 ) : null}
-                {entry.kit !== undefined ? (
+                {kitOf(current, entry) !== undefined ? (
                   <Pill>
-                    {(catalog.kits ?? []).find((k) => k.id === entry.kit)?.n ?? '#' + entry.kit}
+                    {(catalog.kits ?? []).find((k) => k.id === kitOf(current, entry))?.n ??
+                      '#' + kitOf(current, entry)}
                     {entry.wear ? ` · ${WEAR_NAMES[entry.wear - 1]}` : ''}
+                  </Pill>
+                ) : current.sk && entry.wear ? (
+                  <Pill>{WEAR_NAMES[entry.wear - 1]}</Pill>
+                ) : null}
+                {entry.festive ? (
+                  <Pill tone="accent">{t('festivized', { defaultValue: 'Festivized' })}</Pill>
+                ) : null}
+                {current.rt ? (
+                  <Pill>
+                    <span
+                      aria-hidden
+                      className="me-1 inline-block size-2.5 rounded-full border border-(--app-border-bright)"
+                      style={{ background: rarityColor(current.rt) }}
+                    />
+                    {tierName(current)}
                   </Pill>
                 ) : null}
               </div>

@@ -72,7 +72,22 @@ export interface CatalogItem {
   st?: { k: number; n: string }[];
   /** The weapon key a war paint is looked up by (`weapon_<key>` prefab), on weapons that can take one. */
   wk?: string;
+  /** The item's tier (the game's rarity: common … ancient), when a collection grades it. */
+  rt?: Rarity;
+  /** Only equippable around Halloween (the schema's `holiday_restriction`). */
+  hr?: 1;
+  /** A weapon that can be festivized. */
+  fz?: 1;
+  /**
+   * A decorated weapon: a skin with its own item id, which is a stock weapon (`base`, whose model and
+   * icon it uses) painted with a fixed kit. Unlike a war paint, the kit cannot be changed.
+   */
+  sk?: { kit: number; base: number };
 }
+
+/** The game's item tiers, lowest to highest (named Civilian … Elite on weapons). */
+export const RARITIES = ['common', 'uncommon', 'rare', 'mythical', 'legendary', 'ancient'] as const;
+export type Rarity = (typeof RARITIES)[number];
 
 export interface CatalogPaint {
   id: number;
@@ -122,6 +137,10 @@ export function iconUrl(item: Pick<CatalogItem, 'i'>): string | null {
   if (!item.i) return null;
   return /^https?:\/\//.test(item.i) ? item.i : ICON_BASE + item.i;
 }
+
+/** The item whose model and icon stand for this one: a decorated weapon's base weapon, else itself. */
+export const modelItemId = (item: Pick<CatalogItem, 'id' | 'sk'>): number =>
+  item.sk?.base ?? item.id;
 
 export const classBit = (cls: TfClass): number => 1 << TF_CLASSES.indexOf(cls);
 
@@ -239,6 +258,8 @@ export interface LoadoutEntry {
   kit?: number;
   wear?: number;
   seed?: number;
+  /** A festivized weapon (its lights are drawn on the model). */
+  festive?: boolean;
 }
 
 export type LoadoutSlots = Record<LoadoutSlotKey, LoadoutEntry>;

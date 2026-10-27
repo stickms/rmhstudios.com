@@ -42,13 +42,13 @@ The builder shows a 3D view of any item that has a model (`ItemModelViewer` → 
 
 Nothing here is uploaded by hand. `.github/workflows/tf2-assets-sync.yml` runs daily, after every deploy, and on demand (Actions → tf2-assets-sync → Run workflow), and keeps three things in object storage current:
 
-| What                                                         | Where                                                | Built by                        |
-| ------------------------------------------------------------ | ---------------------------------------------------- | ------------------------------- |
-| Item 3D models (GLB, textures baked in as WebP)              | `tf2-models/<defindex>[_<class>].glb`                | `scripts/tf2-assets/convert.py` |
-| Item inventory icons (the pictures on the item tiles, WebP)   | `tf2-icons/<defindex>.webp`         | `scripts/tf2-assets/icons.py`          |
-| Item inventory icons (the pictures on the item tiles, WebP)   | `tf2-icons/<defindex>.webp`         | `scripts/tf2-assets/icons.py`          |
-| Item inventory icons (the pictures on the item tiles, WebP)   | `tf2-icons/<defindex>.webp`         | `scripts/tf2-assets/icons.py`          |
-| HUD editor base: panels, schemes, materials **and textures** | `tf2-hud-base/<path>`                                | `scripts/tf2-assets/hud.py`     |
+| What                                                         | Where                                                                         | Built by                        |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------- |
+| Item 3D models (GLB, textures baked in as WebP)              | `tf2-models/<defindex>[_<class>].glb`                                         | `scripts/tf2-assets/convert.py` |
+| Item inventory icons (the pictures on the item tiles, WebP)  | `tf2-icons/<defindex>.webp`                                                   | `scripts/tf2-assets/icons.py`   |
+| Item inventory icons (the pictures on the item tiles, WebP)  | `tf2-icons/<defindex>.webp`                                                   | `scripts/tf2-assets/icons.py`   |
+| Item inventory icons (the pictures on the item tiles, WebP)  | `tf2-icons/<defindex>.webp`                                                   | `scripts/tf2-assets/icons.py`   |
+| HUD editor base: panels, schemes, materials **and textures** | `tf2-hud-base/<path>`                                                         | `scripts/tf2-assets/hud.py`     |
 | One state file per channel                                   | `tf2-models/_state.json`, `tf2-icons/_state.json`, `tf2-hud-base/_state.json` | `scripts/tf2-assets/publish.ts` |
 
 **Why a login is needed.** Valve's free dedicated-server download carries the _index_ of every texture but not the texture data, and the client's content depot refuses anonymous logins. The job therefore signs in to Steam on the CI runner with an account that owns TF2 (free to add). Use a dedicated account with Steam Guard off; the credentials exist only as repository secrets and only on the runner, never on the VPS.
@@ -81,6 +81,14 @@ To try it on a few models locally you need a game install: `python3 scripts/tf2-
 A war paint is a pattern script from the game's `paintkits_master.txt`: per (kit, weapon) five wear levels, each a tree of `texture_lookup`, `combine_multiply`, `combine_lerp` and `select` operations over the game's own textures that paints the weapon's whole texture. The catalog lists the kits (`catalog.kits`: names from `tf_proto_obj_defs_english.txt`, plus the script name for each weapon the kit exists for) and marks the weapons that can take one (`item.wk`); the war-painted weapon skins in the schema (`paintkit_weapon_*`) are the (kit, weapon) pairs and their `name` is the script name.
 
 The sync's `paintkits` channel (`scripts/tf2-assets/paintkits.py`, `tf2-paintkits/` in object storage) publishes each script as compact JSON (`kits/<script>.json`) and every texture the scripts read as WebP (`tex/<path>.webp`; the "groups" maps that give each region of a weapon an id are lossless), served by `/api/tf2-loadout/paintkits/*`. In the browser `lib/tf2-loadout/warpaint.ts` runs the tree for the chosen wear level and seed in a worker (`warpaint.worker.ts`) and the result replaces the weapon's base colour map. The tree, the group masks and the layering are the game's; the seed's random draws (rotation, offset, scale and level ranges) and our reading of the black/offset/gamma level adjustment are ours, so the same seed is stable here but can differ from the game in detail. The decals some kits paste onto the weapon (`apply_sticker`) are not drawn; the pattern underneath is.
+
+### Decorated skins, tiers, Halloween and festivizing
+
+Some weapon skins are not war paints: the schema gives each its own item id (`15000+`, prefab `paintkit_weapon_<weapon key>`, `paintkit_proto_def_index` = the kit). The catalog lists them as `decorated` items named "<kit> <weapon>" with `item.sk = { kit, base }`: the model and icon come from the base weapon (`modelItemId`), the kit is fixed (a loadout entry may not set `kit` on them), and the player picks only wear and seed. `kitOf` / `warPaintOf` in `warpaint.ts` resolve the kit either way.
+
+Other per-item marks come from the schema as well: `item.rt` is the tier from `item_collections` (the `items { <tier> { <item name> } }` blocks, matched on the item's `name`), `item.hr` is a `holiday_restriction` containing "halloween", and `item.fz` is the `can_be_festivized` tag. `LoadoutEntry.festive` records a festivized weapon and is only valid on `fz` items. The item tile sits on the tier's colour (`lib/tf2-loadout/rarity.ts`: the `ItemRarity*_GreyedOut` entries of the HUD's own `clientscheme.res`, kept equal by a test), and a Halloween-only item shows a ghost mark in the tile's corner. Weapons use the grade names (Civilian … Elite), everything else Common … Ancient.
+
+Not drawn: the festivizer's lights are recorded and shown as a label, but the festive attachment model is not rendered in the 3D preview. Wear on a decorated weapon is applied by the same compositor as a war paint, which has the approximations described above.
 
 ### Producing the models by hand (fallback)
 

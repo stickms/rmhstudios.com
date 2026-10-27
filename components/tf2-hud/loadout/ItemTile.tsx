@@ -1,11 +1,15 @@
 /**
  * One item in a loadout slot or the picker: its inventory icon (when the Steam
  * schema supplied one) or a lettered placeholder, edged in the item's quality
- * colour, with its paint as a dot.
+ * colour, with its paint as a dot. A tiered item sits on its tier's colour (the HUD's own), and one that
+ * can only be equipped around Halloween carries the Halloween mark in its corner.
  */
 'use client';
 
 import { useState } from 'react';
+import { Ghost } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { rarityBackground } from '@/lib/tf2-loadout/rarity';
 import {
   iconUrl,
   qualityAccent,
@@ -27,9 +31,12 @@ function initials(name: string): string {
 export function ItemIcon({ item, className }: { item: CatalogItem; className?: string }) {
   // The icon synced from the game's own files first; then Steam's CDN if the catalog carries
   // a path for it; then initials.
-  const sources = [`/api/tf2-loadout/icons/${item.id}`, iconUrl(item)].filter(
-    (u): u is string => !!u,
-  );
+  // A decorated weapon has no icon of its own in the game files: it shows its base weapon's.
+  const sources = [
+    `/api/tf2-loadout/icons/${item.id}`,
+    iconUrl(item),
+    item.sk ? `/api/tf2-loadout/icons/${item.sk.base}` : null,
+  ].filter((u): u is string => !!u);
   // Per item, so a recycled tile starts over with the first source.
   const [attempt, setAttempt] = useState({ id: item.id, n: 0 });
   const tried = attempt.id === item.id ? attempt.n : 0;
@@ -78,9 +85,20 @@ export default function ItemTile({
   onClick?: () => void;
   className?: string;
 }) {
+  const { t } = useTranslation('c-tf2-hud');
+  const halloween = t('halloween-only', { defaultValue: 'Halloween only' });
   const body = (
     <>
       <ItemIcon item={item} />
+      {item.hr ? (
+        <span
+          title={halloween}
+          className="absolute start-1 top-1 inline-flex size-4 items-center justify-center rounded-full bg-(--app-bg) text-(--app-accent)"
+        >
+          <Ghost className="size-3" aria-hidden />
+          <span className="sr-only">{halloween}</span>
+        </span>
+      ) : null}
       {paint ? (
         <span
           aria-hidden
@@ -96,7 +114,13 @@ export default function ItemTile({
     className,
   );
   const accent = qualityAccent(item.q);
-  const style = accent ? { borderColor: accent } : undefined;
+  const style =
+    accent || item.rt
+      ? {
+          ...(accent ? { borderColor: accent } : {}),
+          ...(item.rt ? { backgroundColor: rarityBackground(item.rt) } : {}),
+        }
+      : undefined;
   return onClick ? (
     <button
       type="button"

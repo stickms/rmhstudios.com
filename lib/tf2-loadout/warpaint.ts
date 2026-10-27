@@ -14,7 +14,7 @@
  * gamma) is our reading of those three numbers.
  */
 
-import type { LoadoutEntry } from './catalog-types';
+import type { CatalogItem, LoadoutEntry } from './catalog-types';
 import type { CatalogIndex } from './use-catalog';
 
 export type Range = [number, number];
@@ -263,13 +263,21 @@ export interface WarPaint {
   seed: number;
 }
 
-/** The war paint an equipped weapon shows, if its entry has a kit that exists for that weapon. */
+/**
+ * The kit an equipped weapon is painted with: a decorated weapon's own (fixed), else the one the player
+ * picked for a weapon that takes war paints.
+ */
+export const kitOf = (item: Pick<CatalogItem, 'sk'> | undefined, entry: LoadoutEntry) =>
+  item?.sk ? item.sk.kit : entry.kit;
+
+/** The war paint an equipped weapon shows, if it has a kit that exists for that weapon. */
 export function warPaintOf(
   idx: Pick<CatalogIndex, 'item' | 'kit'>,
   entry: LoadoutEntry,
 ): WarPaint | undefined {
-  if (entry.kit === undefined) return undefined;
-  const weapon = idx.item(entry.item)?.wk;
-  const script = weapon ? idx.kit(entry.kit)?.w[weapon] : undefined;
+  const item = idx.item(entry.item);
+  const kit = kitOf(item, entry);
+  if (kit === undefined) return undefined;
+  const script = item?.wk ? idx.kit(kit)?.w[item.wk] : undefined;
   return script ? { script, wear: entry.wear ?? 1, seed: entry.seed ?? 0 } : undefined;
 }

@@ -130,10 +130,20 @@ export function validateSlots(catalog: Catalog, tfClass: TfClass, slots: Loadout
     if (entry.style !== undefined && !item.st?.some((s) => s.k === entry.style)) {
       throw new LoadoutError(`${item.n} has no such style`, 400);
     }
+    if (entry.festive && !item.fz) {
+      throw new LoadoutError(`${item.n} cannot be festivized`, 400);
+    }
     if (entry.kit !== undefined || entry.wear !== undefined || entry.seed !== undefined) {
       const warPaintable = slot === 'primary' || slot === 'secondary' || slot === 'melee';
+      // A decorated weapon already has its kit; only its wear and seed are the player's to set.
+      if (item.sk && entry.kit !== undefined) {
+        throw new LoadoutError(`${item.n} already has its own pattern`, 400);
+      }
       const kit = entry.kit !== undefined ? kits.get(entry.kit) : undefined;
-      if (!warPaintable || (entry.kit !== undefined && !(kit && item.wk && kit.w[item.wk]))) {
+      if (
+        !warPaintable ||
+        (!item.sk && entry.kit !== undefined && !(kit && item.wk && kit.w[item.wk]))
+      ) {
         throw new LoadoutError(`${item.n} cannot take that war paint`, 400);
       }
     }
