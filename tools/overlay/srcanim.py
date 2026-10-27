@@ -113,7 +113,7 @@ def read_sequences(mdl):
         gs = struct.unpack_from("<2i", mdl, o + 68)
         count = max(1, gs[0]) * max(1, gs[1])
         anims = list(struct.unpack_from("<%dh" % count, mdl, o + idx_idx)) if idx_idx else []
-        seqs.append({"name": _cstr(mdl, o + label_off), "flags": flags, "blends": blends, "anims": anims, "group": gs})
+        seqs.append({"index": i, "name": _cstr(mdl, o + label_off), "flags": flags, "blends": blends, "anims": anims, "group": gs})
     return seqs
 
 
@@ -126,75 +126,107 @@ def read_animdesc(mdl, index):
     block, aindex = struct.unpack_from("<2i", mdl, d + 52)
     sect_idx, sect_frames = struct.unpack_from("<2i", mdl, d + 80)
     return {"at": d, "name": _cstr(mdl, d + sznm), "fps": fps, "flags": flags, "frames": frames,
-            "block": block, "index": aindex, "sections": sect_frames}
+            "block": block, "index": aindex, "sectionindex": sect_idx, "sections": sect_frames}
+
+
+def _entries(mdl, start, nb):
+    """The per-bone records of one block of animation data (mstudioanim_t chain)."""
+    out = []
+    o = start
+    for _ in range(nb + 1):
+        bone, flags, nxt = struct.unpack_from("<BBh", mdl, o)
+        if bone >= nb:
+            raise ModelError("animation names bone %d of %d" % (bone, nb))
+        p = o + 4
+        e = {"bone": bone, "rot": None, "pos": None, "rot_ptr": None, "pos_ptr": None}
+        if flags & RAWROT:
+            e["rot"] = _quat48(mdl, p)
+            p += 6
+        elif flags & RAWROT2:
+            e["rot"] = _quat64(mdl, p)
+            p += 8
+        elif flags & ANIMROT:
+            e["rot_ptr"] = (p, struct.unpack_from("<3h", mdl, p))  # value offsets are relative to the triple
+            p += 6
+        if flags & RAWPOS:
+            e["pos"] = tuple(_half(h) for h in struct.unpack_from("<3H", mdl, p))
+            p += 6
+        elif flags & ANIMPOS:
+            e["pos_ptr"] = (p, struct.unpack_from("<3h", mdl, p))
+            p += 6
+        out.append(e)
+        if nxt == 0:
+            break
+        o += nxt
+    return out
+
+
+def _apply(mdl, bones, entries, frame, pos, quat):
+    for e in entries:
+        bone = e["bone"]
+        bn = bones[bone]
+        if e["rot"] is not None:
+            quat[bone] = e["rot"]
+        elif e["rot_ptr"] is not None:
+            base, ptr = e["rot_ptr"]
+            ang = [bn["rot"][j] if ptr[j] == 0
+                   else bn["rot"][j] + _rle(mdl, base + ptr[j], frame) * bn["rotscale"][j] for j in range(3)]
+            quat[bone] = _euler_quat(*ang)
+        if e["pos"] is not None:
+            pos[bone] = e["pos"]
+        elif e["pos_ptr"] is not None:
+            base, ptr = e["pos_ptr"]
+            pos[bone] = [bn["pos"][j] if ptr[j] == 0
+                         else bn["pos"][j] + _rle(mdl, base + ptr[j], frame) * bn["posscale"][j] for j in range(3)]
 
 
 def decode_animdesc(mdl, bones, desc, max_frames=None):
     """-> (pos [frames, bones, 3], quat [frames, bones, 4]) local transforms. A bone the clip does not mention
-    keeps its bind pose."""
+    keeps its bind pose. Long clips are stored in sections of `sectionframes` frames, plus the final frame on
+    its own."""
     if desc["flags"] & (DESC_DELTA | DESC_FRAMEANIM):
         raise ModelError("delta / frame animation")
-    if desc["sections"]:
-        raise ModelError("sectioned animation")
     if desc["block"] != 0:
         raise ModelError("animation lives in a .ani block")
     frames = desc["frames"] if max_frames is None else min(desc["frames"], max_frames)
     nb = len(bones)
-    pos = np.tile(np.array([b["pos"] for b in bones], np.float32), (frames, 1, 1))
-    quat = np.tile(np.array([b["quat"] for b in bones], np.float32), (frames, 1, 1))
+    bind_p = np.array([b["pos"] for b in bones], np.float32)
+    bind_q = np.array([b["quat"] for b in bones], np.float32)
+    pos = np.tile(bind_p, (frames, 1, 1))
+    quat = np.tile(bind_q, (frames, 1, 1))
     if desc["flags"] & DESC_ALLZEROS:
         return pos, quat
-    start = desc["at"] + desc["index"]
-    o = start
-    for _ in range(nb + 1):
-        bone, flags, nxt = struct.unpack_from("<BBh", mdl, o)
-        if bone == 255:
-            break
-        if bone >= nb:
-            raise ModelError("animation names bone %d of %d" % (bone, nb))
-        bn = bones[bone]
-        p = o + 4
-        rot_ptr = pos_ptr = None
-        rot_base = pos_base = None
-        raw_q = raw_p = None
-        if flags & RAWROT:
-            raw_q = _quat48(mdl, p)
-            p += 6
-        elif flags & RAWROT2:
-            raw_q = _quat64(mdl, p)
-            p += 8
-        elif flags & ANIMROT:
-            rot_ptr = struct.unpack_from("<3h", mdl, p)
-            rot_base = p  # value offsets are relative to the pointer triple itself
-            p += 6
-        if flags & RAWPOS:
-            raw_p = tuple(_half(h) for h in struct.unpack_from("<3H", mdl, p))
-            p += 6
-        elif flags & ANIMPOS:
-            pos_ptr = struct.unpack_from("<3h", mdl, p)
-            pos_base = p
-            p += 6
-        for f in range(frames):
-            if raw_q is not None:
-                quat[f, bone] = raw_q
-            elif rot_ptr is not None:
-                ang = []
-                for j in range(3):
-                    if rot_ptr[j] == 0:
-                        ang.append(bn["rot"][j])
-                    else:
-                        ang.append(bn["rot"][j] + _rle(mdl, rot_base + rot_ptr[j], f) * bn["rotscale"][j])
-                quat[f, bone] = _euler_quat(*ang)
-            if raw_p is not None:
-                pos[f, bone] = raw_p
-            elif pos_ptr is not None:
-                pos[f, bone] = [bn["pos"][j] if pos_ptr[j] == 0
-                                else bn["pos"][j] + _rle(mdl, pos_base + pos_ptr[j], f) * bn["posscale"][j]
-                                for j in range(3)]
-        if nxt == 0:
-            break
-        o += nxt
+    sections = {}
+
+    def section_entries(index):
+        if index not in sections:
+            if desc["sections"]:
+                block, aindex = struct.unpack_from("<2i", mdl, desc["at"] + desc["sectionindex"] + index * 8)
+                if block != 0:
+                    raise ModelError("section lives in a .ani block")
+                sections[index] = _entries(mdl, desc["at"] + aindex, nb)
+            else:
+                sections[0] = _entries(mdl, desc["at"] + desc["index"], nb)
+        return sections[index]
+
+    for f in range(frames):
+        local, sec = f, 0
+        if desc["sections"]:
+            if desc["frames"] > desc["sections"] and f == desc["frames"] - 1:
+                sec, local = desc["frames"] // desc["sections"] + 1, 0
+            else:
+                sec = f // desc["sections"]
+                local = f - sec * desc["sections"]
+        _apply(mdl, bones, section_entries(sec), local, pos[f], quat[f])
     return pos, quat
+
+
+def sequence_layers(mdl, index):
+    """Sequence indices a sequence layers on top of itself (mstudioautolayer_t, 24 bytes each)."""
+    nseq, seq_off = struct.unpack_from("<2i", mdl, 0xBC)
+    o = seq_off + index * 212
+    count, at = struct.unpack_from("<2i", mdl, o + 148)
+    return [struct.unpack_from("<h", mdl, o + at + k * 24)[0] for k in range(count)]
 
 
 def root_fix(base_mdl, bones):
@@ -226,13 +258,21 @@ def matrix_quat(m):
     return q
 
 
-def decode_sequence(mdl, bones, seq, fix=None, max_frames=None):
+def decode_sequence(mdl, bones, seq, fix=None, max_frames=None, seqs=None):
     """Decode the middle blend cell of a sequence (the neutral aim of an aimmatrix pose). `fix` is
     `root_fix(...)`: it re-expresses the root bone's motion in the bind pose's space."""
     if not seq["anims"]:
         raise ModelError("sequence has no animations")
     pick = seq["anims"][len(seq["anims"]) // 2] if seq["blends"] > 1 else seq["anims"][0]
     desc = read_animdesc(mdl, pick)
+    if desc["flags"] & DESC_ALLZEROS and desc["flags"] & DESC_DELTA and seqs is not None:
+        # a taunt's visible sequence is an empty delta; its motion is the absolute sequence it layers on
+        for li in sequence_layers(mdl, seq["index"]):
+            if 0 <= li < len(seqs) and li != seq["index"]:
+                d2 = read_animdesc(mdl, seqs[li]["anims"][0]) if seqs[li]["anims"] else None
+                if d2 and not d2["flags"] & (DESC_DELTA | DESC_FRAMEANIM):
+                    desc = d2
+                    break
     pos, quat = decode_animdesc(mdl, bones, desc, max_frames)
     if fix is not None:
         for r, b in enumerate(bones):

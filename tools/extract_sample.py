@@ -26,6 +26,13 @@ extra += [n for n in names if n.startswith("models/player/items/taunts/")][:40]
 print("extra files:", len(extra))
 want += extra
 
+# scenes (taunt VCDs), paint-kit data, item scripts, eye materials
+extra2 = [n for n in names if n in ("scenes/scenes.image",) or n.startswith("scripts/items/") and n.endswith(".txt")]
+extra2 += [n for n in names if n.startswith("materials/models/player/") and ("eye" in n or "shared" in n) and n.endswith((".vmt", ".vtf"))]
+extra2 += [n for n in names if n.startswith("materials/patterns/") or n.startswith("materials/models/weapons/customization/")][:400]
+print("extra2:", len(extra2), [n for n in extra2 if "scenes" in n or "paintkit" in n])
+want += extra2
+
 # a few real cosmetics and the paint-kit / particle data that are small
 for pat in ("scripts/items/", "resource/tf_english", "particles/"):
     pass
