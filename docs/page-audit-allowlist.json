@@ -1,6 +1,7 @@
 {
   "_why": "Reviewed findings of `pnpm audit:pages`. One-directional: entries come out as pages are fixed, they do not go in without the owner's review (docs/page-consistency.md, 'How consistency is enforced'). The script reports stale entries so they get deleted.",
   "edges": {},
+  "canvas": {},
   "near": {
     "/": ["NEAR div.radial-feed__compose"]
   },
