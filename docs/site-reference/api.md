@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 926 files across 196 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 928 files across 196 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -2019,10 +2019,11 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/tf2-hud`
 
-13 routes.
+14 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/tf2-hud/base/*` | `GET` | `app/routes/api/tf2-hud/base/$.ts` |
 | `/api/tf2-hud/blobs/:sha1` | `PUT` | `app/routes/api/tf2-hud/blobs/$sha1.ts` |
 | `/api/tf2-hud/blobs/check` | `POST` | `app/routes/api/tf2-hud/blobs/check.ts` |
 | `/api/tf2-hud/huds` | `GET` `POST` | `app/routes/api/tf2-hud/huds/index.ts` |
@@ -2039,11 +2040,12 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/tf2-loadout`
 
-7 routes.
+8 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/tf2-loadout/catalog` | `GET` | `app/routes/api/tf2-loadout/catalog.ts` |
+| `/api/tf2-loadout/icons/:id` | `GET` | `app/routes/api/tf2-loadout/icons/$id.ts` |
 | `/api/tf2-loadout/loadouts` | `GET` `POST` | `app/routes/api/tf2-loadout/loadouts/index.ts` |
 | `/api/tf2-loadout/loadouts/:id` | `DELETE` `GET` `PUT` | `app/routes/api/tf2-loadout/loadouts/$id.ts` |
 | `/api/tf2-loadout/loadouts/:id/fork` | `POST` | `app/routes/api/tf2-loadout/loadouts/$id.fork.ts` |
