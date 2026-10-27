@@ -27,6 +27,18 @@ for (const [wear, seed] of [[1, 5], [3, 5], [5, 5], [3, 99]]) {
   let mean = [0, 0, 0];
   for (let i = 0; i < r.w * r.h; i++) for (let c = 0; c < 3; c++) mean[c] += r.data[i * 3 + c] / (r.w * r.h);
   console.log(`wear ${wear} seed ${seed}: ${paths.length} textures (${missing.length} missing ${missing.slice(0, 3)}), ${ms} ms, mean`, mean.map((v) => v.toFixed(2)).join(','));
+  if (wear === 1 && seed === 5) {
+    const g = await load('models/weapons/c_models/c_sniperrifle/p_sniperrifle_groups');
+    const acc = new Map();
+    for (let y = 0; y < 256; y++) for (let x = 0; x < 256; x++) {
+      const id = Math.round(g.data[((y * 2) * g.w + x * 2) * 3] * 255);
+      const key = Math.round(id / 16) * 16;
+      const a = acc.get(key) || [0, 0, 0, 0];
+      for (let c = 0; c < 3; c++) a[c] += r.data[(y * 256 + x) * 3 + c];
+      a[3]++; acc.set(key, a);
+    }
+    console.log('mean colour by group id (rounded to 16):', [...acc.entries()].sort((a, b) => a[0] - b[0]).map(([k, a]) => k + '=' + [0, 1, 2].map((c) => Math.round((a[c] / a[3]) * 255).toString(16).padStart(2, '0')).join('') + '(' + a[3] + ')').join(' '));
+  }
   if (wear === 3 && seed === 5) {
     const N = 8;
     for (let y = 0; y < N; y++) {
