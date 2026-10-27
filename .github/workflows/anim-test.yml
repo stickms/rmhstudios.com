@@ -3,7 +3,7 @@ name: anim-test
 on:
   push:
     branches: [chore/tf2-anim-dev]
-    paths: ['.github/workflows/anim-test.yml', 'tools/anim_test.py', 'tools/anim_run.sh', 'tools/overlay/**']
+    paths: ['.github/workflows/anim-test.yml', 'tools/anim_test.py', 'tools/anim_run.sh', 'tools/overlay/**', 'tools/render/**']
 permissions:
   contents: read
 jobs:
