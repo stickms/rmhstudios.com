@@ -825,7 +825,13 @@ export function installLiquidGlass(doc: Document = document): () => void {
     );
     s.radius = innerRadius(style.borderTopLeftRadius, border, s.width, s.height);
     s.tint = resolveColor(style.backgroundColor, [1, 1, 1, 0], doc);
-    if (style.position === 'static') s.el.setAttribute('data-liquid-static', '');
+    // `data-liquid-static` makes the host `position: relative` (app/liquid-glass.css) so its absolutely positioned
+    // canvases anchor to it. That very rule is what a later read sees, so a host already marked and now `relative`
+    // stays marked: clearing it would drop the rule, the host would fall back to static, and the next read would set
+    // it again — a flip-flop during which the canvas spans the nearest positioned ancestor (a viewport-sized slab).
+    const marked = s.el.hasAttribute('data-liquid-static');
+    if (style.position === 'static' || (marked && style.position === 'relative'))
+      s.el.setAttribute('data-liquid-static', '');
     else s.el.removeAttribute('data-liquid-static');
     readJelly(s, style);
   };

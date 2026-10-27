@@ -115,7 +115,9 @@ function inPage() {
   // host means the host is not the containing block (e.g. forced `position: static`) and a gray slab as large as the
   // page paints behind the content. The jelly margin lets a canvas run a little past its host, hence the allowance.
   const canvas = [];
-  for (const c of document.querySelectorAll('canvas.liquid-glass-canvas, canvas.jelly-haze-canvas')) {
+  for (const c of document.querySelectorAll(
+    'canvas.liquid-glass-canvas, canvas.jelly-haze-canvas',
+  )) {
     const host = c.parentElement;
     if (!host) continue;
     const a = c.getBoundingClientRect();
@@ -223,7 +225,13 @@ for (const pass of passes) {
         await page.keyboard.press('Escape');
         await page.waitForTimeout(900);
       }
-      const r = await page.evaluate(inPage);
+      let r = await page.evaluate(inPage);
+      // A host is marked static a frame after its canvas lands (the engine's own fix-up), so an oversized-canvas reading
+      // is confirmed after a settle before it counts.
+      if (r.canvas.length) {
+        await page.waitForTimeout(1500);
+        r = { ...r, canvas: (await page.evaluate(inPage)).canvas };
+      }
       if (pass.ios && !r.ios)
         errors.push(`${label}: html.ios-webkit was not stamped (user agent not recognised)`);
       for (const e of pass.ios ? r.edges : []) (findings.edges[path] ??= []).push(e);
