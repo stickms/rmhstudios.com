@@ -5,7 +5,17 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Command, FileDiff, FolderUp, Redo2, Save, Undo2, Download } from 'lucide-react';
+import {
+  ArrowLeft,
+  Command,
+  Download,
+  FileDiff,
+  FolderUp,
+  Redo2,
+  Save,
+  Sparkles,
+  Undo2,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTf2HudPrefs } from '@/lib/tf2-hud/prefs';
 import { changedFiles } from '@/lib/tf2-hud/project/model';
@@ -17,11 +27,13 @@ export default function TopBar({
   onExport,
   onSave,
   onPalette,
+  onAssistant,
 }: {
   onImport: () => void;
   onExport: () => void;
   onSave: () => void;
   onPalette: () => void;
+  onAssistant: () => void;
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const meta = useEditor((s) => s.meta);
@@ -109,6 +121,11 @@ export default function TopBar({
           <FileDiff className="size-4" aria-hidden />
           {changed}
         </button>
+        <IconBtn
+          icon={Sparkles}
+          label={t('hud-ai-open', { defaultValue: 'Ask AI to change the HUD' })}
+          onClick={onAssistant}
+        />
         <IconBtn
           icon={Command}
           label={t('command-palette', { defaultValue: 'Command palette' })}

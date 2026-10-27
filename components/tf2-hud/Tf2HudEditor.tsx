@@ -45,6 +45,7 @@ const CodePane = lazy(() => import('./CodePane'));
 const CommandPalette = lazy(() => import('./CommandPalette'));
 const DiffView = lazy(() => import('./DiffView'));
 const ExportDialog = lazy(() => import('./ExportDialog'));
+const HudAssistant = lazy(() => import('./HudAssistant'));
 const HistoryPanel = lazy(() => import('./HistoryPanel'));
 const ShortcutsDialog = lazy(() => import('./ShortcutsDialog'));
 const ProblemsPanel = lazy(() => import('./ProblemsPanel'));
@@ -117,6 +118,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
   const [exportOpen, setExportOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const { save: cloudSave, canQuickSave } = useCloudSave();
   const [confirmImport, setConfirmImport] = useState<File | null>(null);
@@ -469,6 +471,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
             onExport={() => setExportOpen(true)}
             onSave={() => setSaveOpen(true)}
             onPalette={() => setPaletteOpen(true)}
+            onAssistant={() => setAssistantOpen(true)}
           />
           {loading ? (
             <div
@@ -560,6 +563,9 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
           </OnFirstOpen>
           <OnFirstOpen open={shortcutsOpen}>
             <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+          </OnFirstOpen>
+          <OnFirstOpen open={assistantOpen}>
+            <HudAssistant open={assistantOpen} onOpenChange={setAssistantOpen} />
           </OnFirstOpen>
           <OnFirstOpen open={paletteOpen}>
             <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} actions={actions} />
