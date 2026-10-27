@@ -5,19 +5,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import {
-  ArrowLeft,
-  Command,
-  Contrast,
-  FileDiff,
-  FolderUp,
-  Moon,
-  Redo2,
-  Save,
-  Sun,
-  Undo2,
-  Download,
-} from 'lucide-react';
+import { ArrowLeft, Command, FileDiff, FolderUp, Redo2, Save, Undo2, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTf2HudPrefs } from '@/lib/tf2-hud/prefs';
 import { changedFiles } from '@/lib/tf2-hud/project/model';
@@ -46,13 +34,9 @@ export default function TopBar({
   const redo = useEditor((s) => s.redo);
   const overlay = useEditor((s) => s.overlay);
   const baseIndex = useEditor((s) => s.baseIndex);
-  const theme = useTf2HudPrefs((s) => s.theme);
-  const setTheme = useTf2HudPrefs((s) => s.setTheme);
   const setPref = useTf2HudPrefs((s) => s.set);
 
   const changed = changedFiles(overlay, baseIndex).length;
-  // dark → light → high contrast → dark
-  const nextTheme = theme === 'dark' ? 'light' : theme === 'light' ? 'high-contrast' : 'dark';
 
   const status: Record<
     SaveState,
@@ -79,7 +63,7 @@ export default function TopBar({
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-(--app-border) bg-(--app-bg-subtle) px-2 sm:px-3">
       <Link
-        to="/tf2-hud"
+        to="/tf2/hud-editor"
         className="flex shrink-0 items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1 text-sm font-medium text-(--app-text-muted) hover:text-(--app-text)"
       >
         <ArrowLeft className="size-4 rtl-flip" aria-hidden />
@@ -129,17 +113,6 @@ export default function TopBar({
           icon={Command}
           label={t('command-palette', { defaultValue: 'Command palette' })}
           onClick={onPalette}
-        />
-        <IconBtn
-          icon={nextTheme === 'light' ? Sun : nextTheme === 'dark' ? Moon : Contrast}
-          label={
-            nextTheme === 'light'
-              ? t('light-theme', { defaultValue: 'Light theme' })
-              : nextTheme === 'dark'
-                ? t('dark-theme', { defaultValue: 'Dark theme' })
-                : t('contrast-theme', { defaultValue: 'High-contrast theme' })
-          }
-          onClick={() => setTheme(nextTheme)}
         />
         <Btn variant="ghost" icon={FolderUp} onClick={onImport} className="hidden lg:inline-flex">
           {t('import-zip', { defaultValue: 'Import zip' })}

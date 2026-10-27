@@ -14,6 +14,8 @@ model User {
   tf2Huds          Tf2Hud[]         @relation("Tf2HudOwner")
   tf2HudLikes      Tf2HudLike[]
   tf2HudBlobs      Tf2HudUserBlob[]
+  tf2Loadouts      Tf2Loadout[]     @relation("Tf2LoadoutOwner")
+  tf2LoadoutLikes  Tf2LoadoutLike[]
   name             String?
   username         String?          @unique // Added for username login
   handle           String?          @unique // Unique user handle for @mentions and URLs
@@ -13104,4 +13106,76 @@ model FeatureFlag {
   updatedAt      DateTime @updatedAt
 
   @@map("feature_flag")
+}
+
+// ─────────────────────────── RMH TF2 Loadouts ───────────────────────────
+// Per-class cosmetic/weapon loadouts built in the TF2 Hub. Items are referenced
+// by the game's own defindex; names, slots and icons come from the auto-refreshed
+// catalog below, so a game update never needs a migration. Visibility reuses the
+// HUD enum (PRIVATE / UNLISTED / PUBLIC).
+
+model Tf2Loadout {
+  id          String           @id @default(cuid())
+  ownerId     String
+  owner       User             @relation("Tf2LoadoutOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  /// URL slug (`/tf2/loadout/l/<slug>`): the title plus a short random suffix.
+  slug        String           @unique
+  title       String           @db.VarChar(80)
+  description String           @default("") @db.VarChar(2000)
+  /// scout | soldier | pyro | demoman | heavy | engineer | medic | sniper | spy
+  tfClass     String           @db.VarChar(12)
+  /// { [slotKey]: { item: defindex, paint?: defindex, effect?: id } }
+  slots       Json
+  /// Every defindex in `slots`, so a workshop search for an item name can find loadouts that use it.
+  itemIds     Int[]
+  visibility  Tf2HudVisibility @default(PRIVATE)
+  forkOfId    String?
+  forkOf      Tf2Loadout?      @relation("Tf2LoadoutForks", fields: [forkOfId], references: [id], onDelete: SetNull)
+  forks       Tf2Loadout[]     @relation("Tf2LoadoutForks")
+  likeCount   Int              @default(0)
+  forkCount   Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  likes Tf2LoadoutLike[]
+
+  @@index([visibility, updatedAt(sort: Desc)])
+  @@index([visibility, likeCount(sort: Desc)])
+  @@index([visibility, tfClass])
+  @@index([ownerId, updatedAt(sort: Desc)])
+  @@index([forkOfId])
+  @@index([itemIds], type: Gin)
+  @@map("tf2_loadout")
+}
+
+model Tf2LoadoutLike {
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loadoutId String
+  loadout   Tf2Loadout @relation(fields: [loadoutId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@id([userId, loadoutId])
+  @@index([loadoutId])
+  @@map("tf2_loadout_like")
+}
+
+/// The item catalog the loadout builder reads, built from the game's own schema
+/// and refreshed on a schedule (see lib/tf2-loadout/catalog.server.ts). One row.
+model Tf2LoadoutCatalog {
+  id        String   @id
+  /// SHA-1 of the schema file the catalog was built from.
+  hash      String   @db.VarChar(40)
+  /// HTTP ETag of the schema at the mirror, for conditional refreshes.
+  etag      String?  @db.VarChar(200)
+  label     String   @db.VarChar(120)
+  itemCount Int
+  hasIcons  Boolean  @default(false)
+  /// Brotli-compressed catalog JSON.
+  data      Bytes
+  builtAt   DateTime
+  /// Last time a refresh was attempted successfully (even if nothing changed).
+  checkedAt DateTime
+
+  @@map("tf2_loadout_catalog")
 }

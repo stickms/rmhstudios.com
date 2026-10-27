@@ -10,7 +10,7 @@ import { Download, GitFork, Heart, Pencil } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import AppHeader from '@/components/shared/AppHeader';
+import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { useSession } from '@/components/Providers';
 import { api, ApiError } from '@/lib/tf2-hud/api';
 import type { HudDetail } from '@/lib/tf2-hud/api-types';
@@ -129,7 +129,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
       },
       overlay,
     });
-    void navigate({ to: '/tf2-hud/editor', search: {} });
+    void navigate({ to: '/tf2/hud-editor/editor', search: {} });
   };
 
   const toggleLike = async () => {
@@ -152,7 +152,8 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
       <div className="app-page flex min-h-dvh flex-col items-center justify-center gap-4 bg-(--app-bg) p-6 text-center text-(--app-text)">
         <p className="max-w-md text-sm text-(--app-text-muted)">{error}</p>
         <Link
-          to="/tf2-hud/workshop"
+          to="/tf2/workshop"
+          search={{ type: 'huds' }}
           className="rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2 text-sm font-semibold text-(--app-accent-fg)"
         >
           {t('browse-workshop', { defaultValue: 'Browse the workshop' })}
@@ -163,10 +164,10 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
 
   return (
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
-      <AppHeader
+      <Tf2Header
         title={detail?.title ?? 'RMH TF2 HUD Editor'}
         backLabel={t('workshop', { defaultValue: 'HUD Workshop' })}
-        backHref="/tf2-hud/workshop"
+        backHref="/tf2/workshop"
       />
       <main className="mx-auto w-full max-w-6xl px-4 pb-16">
         <div className="flex flex-wrap items-start justify-between gap-4 py-6">
@@ -182,7 +183,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
                     {' · '}
                     {t('fork-of', { defaultValue: 'fork of {{title}}', title: '' })}
                     <Link
-                      to="/tf2-hud/h/$slug"
+                      to="/tf2/hud-editor/h/$slug"
                       params={{ slug: detail.forkOf.slug }}
                       className="underline"
                     >
@@ -225,7 +226,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
             ) : null}
             {detail?.isOwner && !token ? (
               <Link
-                to="/tf2-hud/editor"
+                to="/tf2/hud-editor/editor"
                 search={{ hud: detail.id }}
                 className="inline-flex h-8 items-center gap-1.5 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg-subtle) px-3 text-xs font-semibold hover:bg-(--app-surface-hover)"
               >

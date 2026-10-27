@@ -88,13 +88,18 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch of the build detail page.',
   },
-  '/tf2-hud/h/$slug': {
-    path: '/tf2-hud/h/fouc-audit-no-such-hud',
+  '/tf2/loadout/l/$slug': {
+    path: '/tf2/loadout/l/fouc-audit-no-such-loadout',
+    fidelity: 'shell',
+    why: 'Not-found branch of a loadout page: the same app header and not-found state as any unknown slug.',
+  },
+  '/tf2/hud-editor/h/$slug': {
+    path: '/tf2/hud-editor/h/fouc-audit-no-such-hud',
     fidelity: 'shell',
     why: 'Not-found branch of a HUD page: the same app header and not-found state as any unknown slug.',
   },
-  '/tf2-hud/s/$token': {
-    path: '/tf2-hud/s/fouc-audit-no-such-token',
+  '/tf2/hud-editor/s/$token': {
+    path: '/tf2/hud-editor/s/fouc-audit-no-such-token',
     fidelity: 'shell',
     why: 'Not-found branch of a share link: the same app header and not-found state as any unknown token.',
   },

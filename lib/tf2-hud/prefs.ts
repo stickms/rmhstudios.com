@@ -6,10 +6,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-export type Tf2HudTheme = 'dark' | 'light' | 'high-contrast';
-
 export interface Tf2HudPrefs {
-  theme: Tf2HudTheme;
   /** Left/right panel widths, as percentages of the workspace. */
   treeOpen: boolean;
   rightOpen: boolean;
@@ -22,8 +19,7 @@ export interface Tf2HudPrefs {
   /** Most recently picked colours (VGUI `r g b a` literals), newest first. */
   recentColors: string[];
   pushRecentColor(literal: string): void;
-  setTheme(theme: Tf2HudTheme): void;
-  set<K extends keyof Omit<Tf2HudPrefs, 'set' | 'setTheme' | 'pushRecentColor'>>(
+  set<K extends keyof Omit<Tf2HudPrefs, 'set' | 'pushRecentColor'>>(
     key: K,
     value: Tf2HudPrefs[K],
   ): void;
@@ -46,7 +42,6 @@ const safeStorage = createJSONStorage(() => {
 export const useTf2HudPrefs = create<Tf2HudPrefs>()(
   persist(
     (set) => ({
-      theme: 'dark',
       treeOpen: true,
       rightOpen: true,
       rightTab: 'inspector',
@@ -58,7 +53,6 @@ export const useTf2HudPrefs = create<Tf2HudPrefs>()(
         set((s) => ({
           recentColors: [literal, ...s.recentColors.filter((c) => c !== literal)].slice(0, 12),
         })),
-      setTheme: (theme) => set({ theme }),
       set: (key, value) => set({ [key]: value } as Partial<Tf2HudPrefs>),
     }),
     { name: 'rmh-tf2-hud-prefs', storage: safeStorage, version: 1 },

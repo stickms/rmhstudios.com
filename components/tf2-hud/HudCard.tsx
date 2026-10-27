@@ -16,7 +16,11 @@ export default function HudCard({ hud, actions }: { hud: HudSummary; actions?: R
     <article className="flex flex-col gap-2 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-4">
       <div className="flex items-start justify-between gap-2">
         <h3 className="tf2hud-title min-w-0 truncate text-xl">
-          <Link to="/tf2-hud/h/$slug" params={{ slug: hud.slug }} className="hover:underline">
+          <Link
+            to="/tf2/hud-editor/h/$slug"
+            params={{ slug: hud.slug }}
+            className="hover:underline"
+          >
             {hud.title}
           </Link>
         </h3>

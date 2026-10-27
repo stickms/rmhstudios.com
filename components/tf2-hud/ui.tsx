@@ -9,13 +9,15 @@
 'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X, type LucideIcon } from 'lucide-react';
+import { Check, ChevronDown, Search, X, type LucideIcon } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { useSentinel } from '@/hooks/useSentinel';
 import {
   forwardRef,
   useEffect,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -551,5 +553,194 @@ export function Popover({
       {children}
     </div>,
     root,
+  );
+}
+
+/* ─────────────────────────── searchable select ─────────────────────────── */
+
+export interface SearchOption {
+  id: number;
+  label: string;
+  /** Optional colour chip drawn before the label (a paint). */
+  swatch?: string;
+}
+
+const OPTION_BATCH = 60;
+
+/**
+ * A select with a search box, for lists too long to scan (hundreds of unusual
+ * effects, dozens of paints). Options render in batches and the next batch
+ * loads as the list scrolls, so opening it is instant at any size. Arrow keys
+ * move, Enter picks, Escape closes.
+ */
+export function SearchSelect({
+  value,
+  options,
+  onChange,
+  noneLabel,
+  placeholder,
+  label,
+  className,
+}: {
+  value: number | undefined;
+  options: SearchOption[];
+  onChange: (id: number | undefined) => void;
+  /** The entry that clears the choice ("No paint"). */
+  noneLabel: string;
+  placeholder: string;
+  /** Accessible name for the control and its list. */
+  label: string;
+  className?: string;
+}) {
+  const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [shown, setShown] = useState(OPTION_BATCH);
+  const [active, setActive] = useState(0);
+  const listId = useId();
+
+  const current = value === undefined ? undefined : options.find((o) => o.id === value);
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options;
+  }, [options, query]);
+  // Row 0 is always the "none" entry, unless a search is narrowing the list.
+  const rows = useMemo<(SearchOption | null)[]>(
+    () => (query.trim() ? matches : [null, ...matches]),
+    [matches, query],
+  );
+
+  useEffect(() => {
+    setShown(OPTION_BATCH);
+    setActive(0);
+  }, [query, open]);
+
+  const more = useSentinel(() => setShown((n) => n + OPTION_BATCH), {
+    enabled: open && shown < rows.length,
+    watch: shown,
+    rootMargin: '120px 0px',
+  });
+
+  const close = () => {
+    setOpen(false);
+    setQuery('');
+  };
+  const pick = (o: SearchOption | null) => {
+    onChange(o?.id);
+    close();
+    anchor?.focus();
+  };
+
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive((i) => Math.min(rows.length - 1, i + 1));
+      setShown((n) => Math.max(n, active + 2 + OPTION_BATCH / 2));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((i) => Math.max(0, i - 1));
+    } else if (e.key === 'Enter' && rows.length) {
+      e.preventDefault();
+      pick(rows[Math.min(active, rows.length - 1)] ?? null);
+    }
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    document.getElementById(`${listId}-${active}`)?.scrollIntoView({ block: 'nearest' });
+  }, [active, open, listId]);
+
+  return (
+    <>
+      <button
+        ref={setAnchor}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={label}
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          'flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) px-2 text-start text-xs text-(--app-text) focus-visible:border-(--app-accent)',
+          className,
+        )}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          {current?.swatch ? (
+            <span
+              aria-hidden
+              className="size-3 shrink-0 rounded-full border border-(--app-border-bright)"
+              style={{ background: current.swatch }}
+            />
+          ) : null}
+          <span className={cn('truncate', !current && 'text-(--app-text-dim)')}>
+            {current?.label ?? noneLabel}
+          </span>
+        </span>
+        <ChevronDown className="size-3.5 shrink-0 text-(--app-text-dim)" aria-hidden />
+      </button>
+      <Popover anchor={anchor} open={open} onClose={close} label={label} width={300}>
+        <div className="relative mb-2">
+          <Search
+            className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-(--app-text-dim)"
+            aria-hidden
+          />
+          <input
+            autoFocus
+            type="search"
+            role="combobox"
+            aria-expanded
+            aria-controls={listId}
+            aria-activedescendant={`${listId}-${active}`}
+            aria-label={placeholder}
+            placeholder={placeholder}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={onKey}
+            className={cn(FIELD, 'ps-7')}
+          />
+        </div>
+        <ul
+          id={listId}
+          role="listbox"
+          aria-label={label}
+          className="max-h-64 overflow-y-auto overscroll-contain"
+        >
+          {rows.slice(0, shown).map((o, i) => (
+            // Keyboard picking happens on the combobox input above (aria-activedescendant).
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+            <li
+              key={o?.id ?? 'none'}
+              id={`${listId}-${i}`}
+              role="option"
+              aria-selected={o ? o.id === value : value === undefined}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => pick(o)}
+              onPointerMove={() => setActive(i)}
+              className={cn(
+                'flex cursor-pointer items-center gap-2 rounded-(--app-radius-sm) px-2 py-1.5 text-xs',
+                i === active ? 'bg-(--app-surface-hover)' : '',
+                !o && 'text-(--app-text-dim)',
+              )}
+            >
+              {o?.swatch ? (
+                <span
+                  aria-hidden
+                  className="size-3 shrink-0 rounded-full border border-(--app-border-bright)"
+                  style={{ background: o.swatch }}
+                />
+              ) : null}
+              <span className="min-w-0 flex-1 truncate">{o?.label ?? noneLabel}</span>
+              {(o ? o.id === value : value === undefined) ? (
+                <Check className="size-3.5 shrink-0 text-(--app-accent)" aria-hidden />
+              ) : null}
+            </li>
+          ))}
+          {shown < rows.length ? <li ref={more} aria-hidden className="h-px" /> : null}
+          {rows.length === 0 ? (
+            <li className="px-2 py-3 text-center text-xs text-(--app-text-dim)">—</li>
+          ) : null}
+        </ul>
+      </Popover>
+    </>
   );
 }

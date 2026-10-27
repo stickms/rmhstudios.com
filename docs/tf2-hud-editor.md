@@ -2,7 +2,7 @@
 
 A browser-based editor for Team Fortress 2 custom HUDs: live preview of every HUD page, a code editor and a visual inspector over the real `.res` files, a changed-files view, zip import/export, and account saving, sharing and a workshop.
 
-- App id `rmh-tf2-hud`, routes under `/tf2-hud` (`app/routes/tf2-hud*`), UI in `components/tf2-hud/`, logic in `lib/tf2-hud/`, API in `app/routes/api/tf2-hud/`.
+- Part of the [TF2 Hub](tf2-hub.md). App id `rmh-tf2-hud`, routes under `/tf2/hud-editor` (`app/routes/tf2/hud-editor/`), UI in `components/tf2-hud/`, logic in `lib/tf2-hud/`, API in `app/routes/api/tf2-hud/` (unchanged). Static base assets are still served from `/tf2-hud/base` and `/tf2-hud/fonts`.
 - Design: [`superpowers/specs/2026-10-25-rmh-tf2-hud-editor-design.md`](superpowers/specs/2026-10-25-rmh-tf2-hud-editor-design.md). Plan: [`superpowers/plans/2026-10-25-rmh-tf2-hud-editor.md`](superpowers/plans/2026-10-25-rmh-tf2-hud-editor.md).
 
 ## How it fits together

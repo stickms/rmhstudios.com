@@ -171,34 +171,6 @@
   --tf2-checker-b: #35302c;
 }
 
-/* ─── Light: tan paper ───────────────────────────────────────────── */
-
-.tf2hud-theme.app-light {
-  --app-bg: #e4dac0;
-  --app-bg-subtle: #ece3cb;
-  --app-surface: #f6f0dd;
-  --app-surface-hover: #efe7cf;
-  --app-surface-active: #e5dbbf;
-  --app-border: #cbbf9f;
-  --app-border-bright: #a99a76;
-  --app-text: #2b2623;
-  --app-text-muted: #65594a;
-  --app-text-dim: #8c7f69;
-
-  --app-accent: #a8470d;
-  --app-accent-fg: #fff8ec;
-  --app-accent-hover: #8f3a08;
-  --app-success: #4d6e1f;
-  --app-danger: #a82c30;
-  --app-warning: #8a5d00;
-  --app-info: #2f5f7e;
-  --app-shadow: 0 3px 0 rgb(60 40 20 / 0.18);
-
-  --tf2-panel: #f6f0dd;
-  --tf2-checker-a: #d9cfb3;
-  --tf2-checker-b: #e0d6bb;
-}
-
 /* ══ Editor chrome ═══════════════════════════════════════════════════ */
 
 /* The title strip: a flat orange band with the display face, like a TF2 menu header. */
@@ -352,4 +324,15 @@
 }
 .tf2hud-diff-del {
   background: color-mix(in srgb, var(--app-danger) 16%, transparent);
+}
+
+/* ─── One consistent look ────────────────────────────────────────────
+   The TF2 Hub is its own world, so none of the site's ambient dressing leaks in
+   while a TF2 page is showing: no seasonal ribbon across the top edge, and the
+   route-progress bar is TF2 orange rather than the site accent. */
+html[class*='season-']:not(.style-high-contrast) body:has(.tf2hud-theme)::before {
+  content: none;
+}
+body:has(.tf2hud-theme) [data-nav-progress] {
+  background: #cf6a1c;
 }

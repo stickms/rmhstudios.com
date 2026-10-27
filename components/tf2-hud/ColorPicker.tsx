@@ -11,6 +11,7 @@
 
 import { Pipette, Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSentinel } from '@/hooks/useSentinel';
 import { useTranslation } from 'react-i18next';
 import {
   contrast,
@@ -51,10 +52,18 @@ function PickerBody({ value, scheme, onChange, onCreateSchemeColor }: BodyProps)
   const square = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const colors = useMemo(() => listSchemeColors(scheme), [scheme]);
-  const shown = useMemo(() => {
+  const [limit, setLimit] = useState(120);
+  const matching = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (q ? colors.filter((c) => c.name.toLowerCase().includes(q)) : colors).slice(0, 240);
+    return q ? colors.filter((c) => c.name.toLowerCase().includes(q)) : colors;
   }, [colors, query]);
+  const shown = useMemo(() => matching.slice(0, limit), [matching, limit]);
+  useEffect(() => setLimit(120), [query]);
+  const moreColors = useSentinel(() => setLimit((n) => n + 120), {
+    enabled: limit < matching.length,
+    watch: limit,
+    rootMargin: '80px 0px',
+  });
 
   // Follow outside changes (e.g. undo) unless the user is mid-drag.
   useEffect(() => {
@@ -272,6 +281,9 @@ function PickerBody({ value, scheme, onChange, onCreateSchemeColor }: BodyProps)
               <Swatch color={c.rgba} className="size-6" />
             </button>
           ))}
+          {limit < matching.length ? (
+            <span ref={moreColors} aria-hidden className="h-6 w-px" />
+          ) : null}
         </div>
       </div>
 

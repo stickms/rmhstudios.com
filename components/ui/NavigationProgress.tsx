@@ -53,6 +53,7 @@ export function NavigationProgress() {
       className={`pointer-events-none fixed inset-x-0 top-0 z-[300] h-0.5 transition-opacity duration-site ${visible ? 'opacity-100' : 'opacity-0'}`}
     >
       <div
+        data-nav-progress
         className="h-full origin-left bg-site-accent transition-transform duration-site-fast ease-out"
         style={{ transform: `scaleX(${progress / 100})` }}
       />

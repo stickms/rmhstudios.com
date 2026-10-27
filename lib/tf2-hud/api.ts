@@ -21,7 +21,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
+export async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     credentials: 'same-origin',
     ...init,
@@ -45,7 +45,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
 
-const json = (body: unknown): RequestInit => ({ body: JSON.stringify(body) });
+export const json = (body: unknown): RequestInit => ({ body: JSON.stringify(body) });
 
 export interface ListParams {
   q?: string;
