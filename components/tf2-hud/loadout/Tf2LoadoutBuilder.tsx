@@ -15,6 +15,7 @@ import {
   Plus,
   RotateCcw,
   Save,
+  Sparkles,
   Search,
   Trash2,
   X,
@@ -64,9 +65,11 @@ import {
   type TfClass,
 } from '@/lib/tf2-loadout/catalog-types';
 import { hasDraft, loadDraft, saveDraft } from '@/lib/tf2-loadout/local-drafts';
-import { legalize, loadoutWarnings, stockLoadout } from '@/lib/tf2-loadout/rules';
+import { equipInto, legalize, loadoutWarnings, stockLoadout } from '@/lib/tf2-loadout/rules';
+import type { AiAction } from '@/lib/tf2-loadout/ai-core';
 import { useCatalog, type CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemModelViewer from './ItemModelViewer';
+import LoadoutAssistant from './LoadoutAssistant';
 import PlayerViewer, { type WornItem } from './PlayerViewer';
 import ItemTile from './ItemTile';
 import WarningList from './WarningList';
@@ -161,12 +164,15 @@ function Builder({
   } | null>(null);
   const [dirty, setDirty] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
-  const [signIn, setSignIn] = useState(false);
+  const [signIn, setSignIn] = useState<'save' | 'ai' | null>(null);
   const [ready, setReady] = useState(false);
   // "Allow any combination": off keeps to what the game allows; on lets the player equip anything
   // (the warnings panel then says what the game could not do).
   const [unrestricted, setUnrestrictedState] = useState(false);
   const [extraCosmetics, setExtraCosmetics] = useState(0);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  // What the loadout was before the assistant last changed it, so one tap undoes the batch.
+  const [undoSlots, setUndoSlots] = useState<LoadoutSlots | null>(null);
   // Screen readers: what the last change did (the picker is a separate region from the slots).
   const [announce, setAnnounce] = useState('');
   // Wide screens show the picker beside the slots; narrower ones open it as a sheet.
@@ -317,25 +323,7 @@ function Builder({
   };
 
   const equip = (key: LoadoutSlotKey, item: CatalogItem) => {
-    const next: LoadoutSlots = { ...slots };
-    const removed: string[] = [];
-    const isWorn = key.startsWith('cosmetic') || key.startsWith('taunt');
-    // With the rules on, equipping something takes out what it could not be worn with: the same item
-    // twice, or a cosmetic covering the same part of the body.
-    for (const [k, e] of unrestricted ? [] : Object.entries(next)) {
-      if (k === key) continue;
-      const other = idx.item(e.item);
-      const sameItem = isWorn && e.item === item.id && k.startsWith(key.replace(/\d+$/, ''));
-      const overlaps =
-        key.startsWith('cosmetic') &&
-        k.startsWith('cosmetic') &&
-        regionsConflict(item.r, other?.r, catalog.conflicts);
-      if (sameItem || overlaps) {
-        delete next[k];
-        if (overlaps && other) removed.push(other.n);
-      }
-    }
-    next[key] = { item: item.id };
+    const { slots: next, removed } = equipInto(catalog, slots, key, item, unrestricted);
     edit(next);
     setAnnounce(
       t('announce-equipped', {
@@ -348,7 +336,7 @@ function Builder({
       toast.info(
         t('removed-overlap', {
           defaultValue: 'Removed {{names}} — it overlaps {{item}}.',
-          names: removed.join(', '),
+          names: removed.map((r) => r.n).join(', '),
           item: item.n,
         }),
       );
@@ -393,6 +381,72 @@ function Builder({
         count: fixed.dropped.length,
       }),
     );
+  };
+
+  // The assistant's suggestions land through the same rules as a tap on a tile.
+  const applyActions = (actions: AiAction[]) => {
+    let next: LoadoutSlots = { ...slots };
+    const names: string[] = [];
+    const removed: string[] = [];
+    let skipped = 0;
+    for (const a of actions) {
+      const item = idx.item(a.item);
+      if (!item) continue;
+      const n = /^cosmetic(\d+)$/.exec(a.slot)?.[1];
+      if (!unrestricted && n && Number(n) > COSMETIC_SLOTS) {
+        skipped++;
+        continue;
+      }
+      const r = equipInto(catalog, next, a.slot, item, unrestricted);
+      next = r.slots;
+      removed.push(...r.removed.map((x) => x.n));
+      next[a.slot] = {
+        item: item.id,
+        ...(a.paint !== undefined ? { paint: a.paint } : {}),
+        ...(a.effect !== undefined ? { effect: a.effect } : {}),
+      };
+      names.push(item.n);
+    }
+    if (!names.length) {
+      if (skipped) {
+        toast.info(
+          t('ai-skipped-limit', {
+            defaultValue:
+              'The game only has three cosmetic slots. Turn on "Allow any combination" to wear more.',
+          }),
+        );
+      }
+      return;
+    }
+    setUndoSlots(slots);
+    edit(next);
+    const extra = Math.max(0, ...Object.keys(next).map((k) => Number(/^cosmetic(\d+)$/.exec(k)?.[1] ?? 0)) );
+    if (unrestricted && extra > COSMETIC_SLOTS) setExtraCosmetics(extra - COSMETIC_SLOTS);
+    const msg = t('ai-equipped-toast', {
+      defaultValue: 'Equipped {{names}}.',
+      names: names.join(', '),
+    });
+    setAnnounce(msg);
+    toast.success(
+      removed.length
+        ? `${msg} ${t('ai-removed-toast', { defaultValue: 'Replaced {{names}}.', names: removed.join(', ') })}`
+        : msg,
+    );
+    if (skipped) {
+      toast.info(
+        t('ai-skipped-limit', {
+          defaultValue:
+            'The game only has three cosmetic slots. Turn on "Allow any combination" to wear more.',
+        }),
+      );
+    }
+  };
+
+  const undoApply = () => {
+    if (!undoSlots) return;
+    edit(undoSlots);
+    setUndoSlots(null);
+    setAnnounce(t('ai-undone', { defaultValue: 'Undone.' }));
   };
 
   const filled = Object.keys(slots).length;
@@ -460,6 +514,9 @@ function Builder({
               {t('copy-link', { defaultValue: 'Copy link' })}
             </Btn>
           ) : null}
+          <Btn size="sm" icon={Sparkles} onClick={() => setAssistantOpen(true)}>
+            {t('ai-open', { defaultValue: 'Ask AI' })}
+          </Btn>
           <Btn size="sm" variant="ghost" icon={RotateCcw} onClick={resetToStock}>
             {t('reset-stock', { defaultValue: 'Stock' })}
           </Btn>
@@ -471,7 +528,7 @@ function Builder({
             variant="primary"
             icon={Save}
             disabled={filled === 0 || (remote !== null && !dirty)}
-            onClick={() => (session ? setSaveOpen(true) : setSignIn(true))}
+            onClick={() => (session ? setSaveOpen(true) : setSignIn('save'))}
           >
             {remote
               ? t('save-changes', { defaultValue: 'Save changes' })
@@ -636,14 +693,34 @@ function Builder({
         }}
         onNeedSignIn={() => {
           setSaveOpen(false);
-          setSignIn(true);
+          setSignIn('save');
         }}
+      />
+      <LoadoutAssistant
+        open={assistantOpen}
+        onOpenChange={setAssistantOpen}
+        sheet={!isDesktop}
+        cls={cls}
+        slots={slots}
+        idx={idx}
+        signedIn={Boolean(session)}
+        onNeedSignIn={() => {
+          setAssistantOpen(false);
+          setSignIn('ai');
+        }}
+        onApply={applyActions}
+        canUndo={undoSlots !== null}
+        onUndo={undoApply}
       />
       {signIn ? (
         <SignInRequiredDialog
           open
-          onClose={() => setSignIn(false)}
-          feature={t('feature-save-loadouts', { defaultValue: 'Save loadouts to your account' })}
+          onClose={() => setSignIn(null)}
+          feature={
+            signIn === 'ai'
+              ? t('feature-loadout-ai', { defaultValue: 'Use the loadout assistant' })
+              : t('feature-save-loadouts', { defaultValue: 'Save loadouts to your account' })
+          }
         />
       ) : null}
     </main>

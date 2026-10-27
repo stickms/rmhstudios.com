@@ -129,3 +129,38 @@ export function legalize(
   }
   return { slots: next, dropped };
 }
+
+/**
+ * Put `item` in `key`. With the rules on (`unrestricted` false) it first takes out whatever the item
+ * could not be worn with: the same item in another slot of its kind, or a cosmetic covering the same
+ * part of the body. The caller says what was removed.
+ */
+export function equipInto(
+  catalog: Catalog,
+  slots: LoadoutSlots,
+  key: string,
+  item: CatalogItem,
+  unrestricted: boolean,
+): { slots: LoadoutSlots; removed: CatalogItem[] } {
+  const next: LoadoutSlots = { ...slots };
+  const removed: CatalogItem[] = [];
+  const byId = new Map(catalog.items.map((i) => [i.id, i]));
+  const isWorn = key.startsWith('cosmetic') || key.startsWith('taunt');
+  if (!unrestricted) {
+    for (const [k, e] of Object.entries(next)) {
+      if (k === key) continue;
+      const other = byId.get(e.item);
+      const sameItem = isWorn && e.item === item.id && k.startsWith(key.replace(/\d+$/, ''));
+      const overlaps =
+        key.startsWith('cosmetic') &&
+        k.startsWith('cosmetic') &&
+        regionsConflict(item.r, other?.r, catalog.conflicts);
+      if (sameItem || overlaps) {
+        delete next[k];
+        if (overlaps && other) removed.push(other);
+      }
+    }
+  }
+  next[key] = { item: item.id };
+  return { slots: next, removed };
+}
