@@ -33,7 +33,6 @@ import {
 } from '@/lib/fluid';
 import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
 import { DoughBody } from '@/lib/dough';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
 import type { JellyFrame, JellyGlass } from './jelly-glass';
@@ -670,8 +669,6 @@ export function LiquidGlobe({
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const router = useRouter();
-  // Honour both the account preference and the OS motion setting.
-  const reduced = useReducedMotion();
 
   const nodes = useMemo(() => place(items), [items]);
 
@@ -1092,7 +1089,7 @@ export function LiquidGlobe({
     const stopScene = onSceneChange(refreshScene);
     const sync = () => {
       if (cancelled || !host || !stage) return;
-      if (reduced || !jellyEligible() || preferences.some((q) => q.matches)) {
+      if (!jellyEligible() || preferences.some((q) => q.matches)) {
         if (glass?.canvas.parentElement === host) glass.canvas.remove();
         jellyGlass.current = null;
         delete stage.dataset.globeCoat;
@@ -1216,7 +1213,7 @@ export function LiquidGlobe({
       jellyGlass.current = null;
       if (stage) delete stage.dataset.globeCoat;
     };
-  }, [jelly, jellyFrame, reduced, ambient]);
+  }, [jelly, jellyFrame, ambient]);
 
   /* ── The coat's ambient clock ─────────────────────────────────────────────
      What the jelly policy allows the coat's haze to do right now (lib/jelly/tiers.ts — the same budget every slab's
@@ -1227,7 +1224,7 @@ export function LiquidGlobe({
     if (!stage) return;
     const clock = coatClock.current;
     const read = () => {
-      const on = jellyMode().ambient && !reduced;
+      const on = jellyMode().ambient;
       const budget = jellyBudget();
       clock.hz = on ? budget.clockHz : 0;
       clock.idleHz = on ? budget.idleClockHz : 0;
@@ -1250,7 +1247,7 @@ export function LiquidGlobe({
       io?.disconnect();
       clock.onScreen = false;
     };
-  }, [reduced]);
+  }, []);
 
   /* ── Someone is there ─────────────────────────────────────────────────────
      Input anywhere in the window keeps the ambient tick at its engaged rate (step 2b); a window regaining focus
@@ -1378,19 +1375,19 @@ export function LiquidGlobe({
   /** When the self-eversion started (`performance.now()`), or 0 when none is playing. */
   const selfEvert = useRef(0);
   /**
-   * Play the self-eversion (see `SELF_EVERT_MS`). An `ambient` globe only, never
-   * with reduced motion, and never in the rehearsal. The pins and the reticle
+   * Play the self-eversion (see `SELF_EVERT_MS`). An `ambient` globe, or the hub's `evertInPlace` one, and
+   * never in the rehearsal. The pins and the reticle
    * step aside for it (radial.css, `data-self-evert`); the frame loop clears the
    * attribute when the run ends.
    */
   const startSelfEvert = useCallback(() => {
-    if (!(ambient || evertInPlace) || reduced || quiet.current) return;
+    if (!(ambient || evertInPlace) || quiet.current) return;
     selfEvert.current = performance.now();
     stageRef.current?.closest('.radial-globe')?.setAttribute('data-self-evert', '');
     skinOn.current = prepareSkin();
     if (skinOn.current) stageRef.current?.setAttribute('data-skin', 'on');
     dirty.current = true;
-  }, [ambient, evertInPlace, reduced]);
+  }, [ambient, evertInPlace]);
 
   /* ── The self-eversion's surface ──────────────────────────────────────────
      The cage alone turned inside out in front of a glass disc that stayed a
@@ -2348,30 +2345,29 @@ export function LiquidGlobe({
       let soft = false;
       // 0c. The soft body. While held, the grabbed region chases the finger's velocity (zero once it holds still);
       //     after, every mode springs back. Repaints only while something is deformed.
-      if (!reduced) {
-        if (drag.current.active) {
-          const at = grabAt.current;
-          // The surface's velocity at the front, in radii/s: ω × ẑ for ω in rad/s.
-          const vx = stationary ? 0 : spinV.current[1]!.get() * DEG;
-          const vy = stationary ? 0 : -spinV.current[0]!.get() * DEG;
-          jelly.drag(at.x, at.y, vx, vy);
-        }
-        if (everting.current && now >= nextEvertPulse.current) {
-          const t = now * 0.001;
-          // Deterministic "random": two incommensurate frequencies per axis.
-          const vx = (Math.sin(t * 11.7) + Math.sin(t * 7.1 + 1.3)) * 1.9;
-          const vy = (Math.cos(t * 9.3 + 0.7) + Math.sin(t * 6.4 + 0.2)) * 1.9;
-          jelly.nudge(vx, vy, 0.85);
-          const jitter = 0.5 + 0.5 * Math.sin(t * 5.9 + 0.4);
-          nextEvertPulse.current =
-            now + EVERT_JELLY_PULSE_MIN + (EVERT_JELLY_PULSE_MAX - EVERT_JELLY_PULSE_MIN) * jitter;
-          dirty.current = true;
-        }
-        if (jelly.step(dt)) {
-          soft = true;
-          dirty.current = true;
-        }
+      if (drag.current.active) {
+        const at = grabAt.current;
+        // The surface's velocity at the front, in radii/s: ω × ẑ for ω in rad/s.
+        const vx = stationary ? 0 : spinV.current[1]!.get() * DEG;
+        const vy = stationary ? 0 : -spinV.current[0]!.get() * DEG;
+        jelly.drag(at.x, at.y, vx, vy);
       }
+      if (everting.current && now >= nextEvertPulse.current) {
+        const t = now * 0.001;
+        // Deterministic "random": two incommensurate frequencies per axis.
+        const vx = (Math.sin(t * 11.7) + Math.sin(t * 7.1 + 1.3)) * 1.9;
+        const vy = (Math.cos(t * 9.3 + 0.7) + Math.sin(t * 6.4 + 0.2)) * 1.9;
+        jelly.nudge(vx, vy, 0.85);
+        const jitter = 0.5 + 0.5 * Math.sin(t * 5.9 + 0.4);
+        nextEvertPulse.current =
+          now + EVERT_JELLY_PULSE_MIN + (EVERT_JELLY_PULSE_MAX - EVERT_JELLY_PULSE_MIN) * jitter;
+        dirty.current = true;
+      }
+      if (jelly.step(dt)) {
+        soft = true;
+        dirty.current = true;
+      }
+    
 
       // 1. Motion. Dragging writes the rotation directly (in the pointer handler);
       //    everything here is what happens when you are NOT dragging.
@@ -2389,34 +2385,29 @@ export function LiquidGlobe({
       //    carries on round it and curves into the target.
       if (!drag.current.active && settle.current) {
         const target = settle.current;
-        if (reduced) {
+        // x = log(q · target⁻¹)
+        SQ2[0] = target[0]!;
+        SQ2[1] = -target[1]!;
+        SQ2[2] = -target[2]!;
+        SQ2[3] = -target[3]!;
+        rotvecOf(mulQuat(r.q, SQ2, SQ2), SV);
+        let rest = true;
+        for (let a = 0; a < 3; a++) {
+          const st = springStep({ value: SV[a]!, velocity: r.w[a]! }, 0, SETTLE_SPRING, dt);
+          SV[a] = st.value;
+          r.w[a] = st.velocity;
+          // Arrived when EVERY axis has: a spring passing through its target at
+          // speed is at zero displacement but is not finished.
+          if (Math.abs(st.value) >= 0.05 || Math.abs(st.velocity) >= 2) rest = false;
+        }
+        if (rest) {
           copyQuat(target, r.q);
           r.w.fill(0);
           settle.current = null;
         } else {
-          // x = log(q · target⁻¹)
-          SQ2[0] = target[0]!;
-          SQ2[1] = -target[1]!;
-          SQ2[2] = -target[2]!;
-          SQ2[3] = -target[3]!;
-          rotvecOf(mulQuat(r.q, SQ2, SQ2), SV);
-          let rest = true;
-          for (let a = 0; a < 3; a++) {
-            const st = springStep({ value: SV[a]!, velocity: r.w[a]! }, 0, SETTLE_SPRING, dt);
-            SV[a] = st.value;
-            r.w[a] = st.velocity;
-            // Arrived when EVERY axis has: a spring passing through its target at
-            // speed is at zero displacement but is not finished.
-            if (Math.abs(st.value) >= 0.05 || Math.abs(st.velocity) >= 2) rest = false;
-          }
-          if (rest) {
-            copyQuat(target, r.q);
-            r.w.fill(0);
-            settle.current = null;
-          } else {
-            normalizeQuat(mulQuat(quatFromRotvec(SV[0]!, SV[1]!, SV[2]!, SQ), target, r.q));
-          }
+          normalizeQuat(mulQuat(quatFromRotvec(SV[0]!, SV[1]!, SV[2]!, SQ), target, r.q));
         }
+      
         dirty.current = true;
       }
 
@@ -2426,7 +2417,7 @@ export function LiquidGlobe({
       if (!drag.current.active && !settle.current) {
         const speed = Math.hypot(r.w[0]!, r.w[1]!, r.w[2]!);
         if (speed > 0) {
-          if (speed < 1 || reduced) {
+          if (speed < 1) {
             r.w.fill(0);
           } else {
             turn(r.q, r.w[0]! * dt, r.w[1]! * dt, r.w[2]! * dt);
@@ -2472,11 +2463,11 @@ export function LiquidGlobe({
         // globe stays exactly where the hand left it.
         rotvecOf(quatToFront(px[lockIdx]!, py[lockIdx]!, pz[lockIdx]!, SQ2), SV);
         if (Math.hypot(SV[0]!, SV[1]!, SV[2]!) > 0.05) {
-          const k = reduced ? 1 : 1 - Math.exp(-9 * dt);
+          const k = 1 - Math.exp(-9 * dt);
           turn(r.q, SV[0]! * k, SV[1]! * k, SV[2]! * k);
           moved = true;
         }
-      } else if (!touched.current && !reduced && !hovering.current && tick > 0) {
+      } else if (!touched.current && !hovering.current && tick > 0) {
         // Untouched: drift, so a globe left alone still reads as a globe rather
         // than a picture of one. It stops the moment anyone takes hold (for good,
         // unless the globe is `ambient`). About the screen's vertical, so it
@@ -2662,7 +2653,7 @@ export function LiquidGlobe({
       timer = 0;
       wakeLoop.current = () => {};
     };
-  }, [nodes, reduced, jelly, jellyFrame, ambient]);
+  }, [nodes, jelly, jellyFrame, ambient]);
 
   // An ambient globe holds its drift while the pointer is over it: a pin you are
   // reading or about to click should not slide out from under the cursor. Every
@@ -2718,10 +2709,6 @@ export function LiquidGlobe({
    */
   const strike = useCallback(
     (clientX: number, clientY: number) => {
-      // Reduced motion means no travelling wave. A ripple is pure ornament, and
-      // an unrequested full-surface animation is exactly what the preference is
-      // asking not to be shown; the press still turns the globe as it always did.
-      if (reduced) return;
       const stage = stageRef.current;
       if (!stage) return;
       const rect = stage.getBoundingClientRect();
@@ -2789,7 +2776,7 @@ export function LiquidGlobe({
       live.push(impact);
       dirty.current = true;
     },
-    [reduced, jelly],
+    [jelly],
   );
 
   /** Take hold of the globe. Shared by every surface that can start a drag. */
@@ -2811,7 +2798,7 @@ export function LiquidGlobe({
         at.r = r;
         at.x = (e.clientX - rect.left - r) / r;
         at.y = (e.clientY - rect.top - r) / r;
-        if (!reduced) jelly.grab(at.x, at.y);
+        jelly.grab(at.x, at.y);
       }
       drag.current = {
         active: true,
@@ -2840,7 +2827,7 @@ export function LiquidGlobe({
       }
       setGrabbing(true);
     },
-    [strike, reduced, jelly],
+    [strike, jelly],
   );
 
   const onPointerDown = useCallback(

@@ -104,7 +104,7 @@ export interface HeldNavigation {
 
 export interface NavigatorDeps {
   router: NavRouter;
-  /** The visitor can have the effect at all (flag, Reduce motion, WebGL2). */
+  /** The visitor can have the effect at all (flag, WebGL2). */
   enabled(): boolean;
   /** A run (or a hub hand-off) is already on: let navigations through untouched. */
   busy(): boolean;

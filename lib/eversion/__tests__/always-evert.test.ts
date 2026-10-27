@@ -39,7 +39,6 @@ import type {
 
 const ok: EligibilityInputs = {
   flagEnabled: true,
-  reducedMotion: false,
   webgl2: true,
   chunkReady: true,
   hostState: 'ready',
@@ -62,15 +61,6 @@ describe('eligibility: the host row (amended 2026-10-18)', () => {
     expect(evaluateEligibility(ok)).toBeNull();
   });
 
-  it('ignores the retired motion preference without bypassing host failures', () => {
-    for (const hostState of ['idle', 'initialising', 'ready'] as HostLifeState[]) {
-      expect(evaluateEligibility({ ...ok, hostState, reducedMotion: true })).toBeNull();
-    }
-    expect(evaluateEligibility({ ...ok, hostState: 'failed', reducedMotion: true })).toBe(
-      'host-error',
-    );
-  });
-
   it.each([false, null] as const)('never bypasses missing WebGL2 (%s)', (webgl2) => {
     for (const hostState of ['idle', 'initialising', 'ready'] as HostLifeState[]) {
       expect(evaluateEligibility({ ...ok, hostState, webgl2 })).toBe('no-webgl2');
@@ -82,11 +72,10 @@ describe('eligibility: the host row (amended 2026-10-18)', () => {
     expect(evaluateEligibility({ ...ok, chunkReady: false })).toBe('chunk-not-ready');
   });
 
-  it('capability checks still apply when a retired motion preference is supplied', () => {
+  it('capability checks apply together', () => {
     expect(
       evaluateEligibility({
         flagEnabled: true,
-        reducedMotion: true,
         webgl2: false,
         chunkReady: false,
         hostState: 'initialising',
@@ -346,8 +335,8 @@ describe('the runner with "Always evert globe"', () => {
     expect((await p).fallback).toBe('host-error');
   });
 
-  it('does not bypass a controller-reported ineligibility (reduced motion, no WebGL2, busy)', async () => {
-    for (const reason of ['reduced-motion', 'no-webgl2', 'host-error'] as const) {
+  it('does not bypass a controller-reported ineligibility (no WebGL2, host error, busy)', async () => {
+    for (const reason of ['no-webgl2', 'host-error'] as const) {
       const r = rig({ alwaysEvert: () => true, ineligibleReason: () => reason });
       expect((await r.runner.run(NODE, GLOBE)).fallback).toBe(reason);
       expect(r.log).toEqual([]);

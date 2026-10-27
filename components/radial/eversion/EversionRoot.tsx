@@ -23,7 +23,6 @@ import {
   type HeldNavigation,
   type NavRouter,
 } from './eversion-nav';
-import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import type { EversionControllerHandle } from './useEversionController';
 import './eversion.css';
 
@@ -101,8 +100,7 @@ export function EversionRoot() {
     };
     return installNavigationEversion({
       router: navRouter,
-      enabled: () =>
-        !prefersReducedMotion() && !hasNoEffect() && document.visibilityState === 'visible',
+      enabled: () => !hasNoEffect() && document.visibilityState === 'visible',
       hubOpen: () => !!getHub()?.isOpen(),
       busy: () => {
         const phase = getController()?.state().phase;

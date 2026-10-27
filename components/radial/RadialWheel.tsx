@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 export interface RadialWheelItem {
   id: string;
@@ -36,14 +35,13 @@ export function RadialWheel({
   haptics = false,
   lead,
 }: RadialWheelProps) {
-  const reduced = useReducedMotion();
   const trackRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   // Preserve the focused card across pagination observer rebuilds.
   const focusRef = useRef<Element | null>(null);
 
   useEffect(() => {
-    if (!haptics || reduced || typeof IntersectionObserver === 'undefined') return;
+    if (!haptics || typeof IntersectionObserver === 'undefined') return;
     if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
     const track = trackRef.current;
     if (!track) return;
@@ -71,7 +69,7 @@ export function RadialWheel({
     );
     for (const el of track.querySelectorAll<HTMLElement>('.radial-wheel__slot')) io.observe(el);
     return () => io.disconnect();
-  }, [haptics, reduced, items.length]);
+  }, [haptics, items.length]);
 
   // Lazy-load: fire when the sentinel nears the viewport (with headroom).
   useEffect(() => {

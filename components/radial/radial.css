@@ -3373,8 +3373,6 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
    orbiting blobs melted into the core; that goo bank is gone, and the mark
    animates as plain discs everywhere — same motion, no per-frame filter. */
 
-/* ── Reduced motion: kill all continuous / decorative animation ───────── */
-
 /* ==========================================================================
    Radial content pages
    Every non-home _site route renders its own layout inside .radial-shell__main.
@@ -3408,8 +3406,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 
 /* ── Soft radial entrance for page headers / heroes ───────────────────────
    A gentle rise as each page's title mounts — a fresh element on every client
-   nav, so it re-runs — carrying the home's flowy feel to every page. The
-   no-preference gate turns it off under reduced-motion. */
+   nav, so it re-runs — carrying the home's flowy feel to every page. */
 .radial-shell:not([data-home]) .page-heading {
     animation: radial-page-rise 0.5s var(--ease-glass, var(--ease-smooth)) both;
   }
@@ -3538,9 +3535,6 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 .radial-shell {
   overflow-x: clip;
 }
-
-/* A.6 — Reduced motion: the panels and rails are chrome, not decoration, so they
-   stay — only their transitions collapse. */
 
 /* Deck loading skeletons — same geometry as `.rad-deck__row`, so the panel does
    not resize when the real rows arrive (the deck used to swap a bare

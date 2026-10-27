@@ -617,8 +617,7 @@ export function createEversionController(
    * Every run takes the runner's generous `ALWAYS_EVERT_*` waits (amended 2026-10-21: "not a single page transition
    * should be without eversion"). They were the "Always evert globe" preference's; a page transition that skipped
    * the effect because the picture or the renderer was a moment late is exactly what the owner asked never to see,
-   * so the preference is now everybody's and its switch is gone from Settings. The site's Reduce motion switch is
-   * decided by eligibility BEFORE this is ever consulted.
+   * so the preference is now everybody's and its switch is gone from Settings.
    */
   const alwaysEvert = (): boolean => true;
 

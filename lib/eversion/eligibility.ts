@@ -4,8 +4,8 @@
  *
  * ## Why this is a plain module
  *
- * The four things that make a visitor ineligible live in four different places —
- * the rollout flag, the site's Reduce motion switch, the WebGL2 detection that T25 caches, and whether the eversion chunk
+ * The three things that make a visitor ineligible live in three different places —
+ * the rollout flag, the WebGL2 detection that T25 caches, and whether the eversion chunk
  * has finished loading. Reading them needs a `window`, a Zustand store and a
  * lazily-loaded host. Deciding what they MEAN needs none of that, and it is the
  * part with the order-of-precedence rules worth testing: so the readers are
@@ -16,8 +16,7 @@
  *
  * The first failing row wins, and the order is the order of the cheapest and
  * most definitive answer: a flag that is off says nothing else matters (and is
- * the only reason a visitor ever sees today); reduced motion is a preference we
- * must honour before anything technical; WebGL2 is a capability that does not
+ * the only reason a visitor ever sees today); WebGL2 is a capability that does not
  * change within a page-load; the chunk is the only one that can flip to ready
  * later in the same session, so it goes last.
  *
@@ -42,8 +41,6 @@ import type { FallbackReason } from './types';
 export interface EligibilityInputs {
   /** `isEversionEnabled()`. */
   flagEnabled: boolean;
-  /** @deprecated Ignored legacy input. Motion uses the shared site scheme. */
-  reducedMotion?: boolean;
   /** Cached WebGL2 detection; `null` when it could not be determined. */
   webgl2: boolean | null;
   /** `isEversionReady()` — the eversion chunk (and its dependencies) is loaded. */

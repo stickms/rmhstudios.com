@@ -8,7 +8,7 @@
  *
  * The answer is the same on the server (no `location`, so the query adds
  * nothing): SSR and hydration agree. Whether a particular navigation may run it
- * (reduced motion, WebGL2, capture ready) is decided client-side by the
+ * (WebGL2, capture ready) is decided client-side by the
  * controller.
  */
 
@@ -55,7 +55,7 @@ function queryFlags(): QueryFlags {
  * (the server, or when it throws) only the production flag counts.
  *
  * This answers only "is the feature on". Whether a particular navigation is
- * ELIGIBLE (reduced motion, WebGL2, capture ready) is the controller's
+ * ELIGIBLE (WebGL2, capture ready) is the controller's
  * `isEligible()`.
  */
 export function isEversionEnabled(): boolean {

@@ -18,8 +18,8 @@ the full one — there is no tab bar. The globe is the complete navigator.
 Eversion runs only from the open globe; ordinary links never spawn a mini globe.
 Its surface shares `lib/liquid/globe-material.ts` with the navigator, including
 while it flattens. After the handoff, the remaining motion is shortened through
-the timeline's continuous re-planning path. OS and account reduced motion both
-apply. These rules supersede historical notes below about eversion on every
+the timeline's continuous re-planning path. There is no reduced-motion setting
+or alternative: the globe and the eversion are the navigation, not decoration. These rules supersede historical notes below about eversion on every
 navigation or on individual controls.
 
 The site material is **Plasmatic Jelly** (2026-10-23), documented in
@@ -333,9 +333,8 @@ rises, falls back below rest, and settles — a ripple, not a shockwave. Retune 
 feel there, and it stays testable (`lib/__tests__/fluid.test.ts`) and available to
 anything else that ever needs to answer a touch this way.
 
-**The site's Reduce motion switch stands it down completely** (since 2026-10-21
-the OS preference does not: the owner asked for the motion to play by default).
-The press still turns the globe as it always did.
+There is no reduced-motion alternative for it (the setting is gone, 2026-10-27): the
+ripple always plays.
 
 ### The dough body
 
@@ -459,7 +458,7 @@ with the task plan beside it. The components here are in `eversion/`
   the hub flips to its `everting` look only at the controller's commit, so every
   earlier failure is **today's navigation, untouched** and has nothing to undo.
   There is no fallback that adds a visible delay: no controller, no WebGL2,
-  reduced motion, a render host or BEFORE capture that is not ready yet all
+  a render host or BEFORE capture that is not ready yet all
   answer immediately with the ordinary dismiss-and-navigate.
 - **It always plays in full** (amended 2026-10-20; it used to fast-forward on
   input). No tap, click or key speeds it up, before `start` or after it: a tap
@@ -468,8 +467,8 @@ with the task plan beside it. The components here are in `eversion/`
 - **Back/forward never animates.** A traversal during priming reports
   `traversal` and the hub just closes; mid-run it aborts with a crossfade onto
   the live page. A run always ends: a stall watchdog force-ends it with a fade.
-- **Reduced motion** (OS or the account toggle) runs today's veil-and-navigate
-  fade unchanged, never the effect. `perf-lite` runs it at the minimum tier.
+- `perf-lite` runs the effect at the minimum tier. There is no reduced-motion
+  alternative to the effect.
 - **The orb returns through the hub's ordinary closed-state fade.** It is hidden
   during the run (`data-phase='everting'`, `opacity` + `pointer-events` only, so it
   never moves) and fades back in (`opacity 0.34s ease`, the base `.radial-hub__orb`

@@ -257,10 +257,10 @@ afterEach(() => vi.useRealTimers());
 
 describe('eversion runner: the fallback paths (today runs; nothing navigated)', () => {
   it('ineligible: returns the reason, marks fallback, touches nothing', async () => {
-    const r = rig({ ineligibleReason: () => 'reduced-motion' });
+    const r = rig({ ineligibleReason: () => 'no-webgl2' });
     const out = await r.runner.run(NODE, GLOBE);
-    expect(out).toEqual({ fallback: 'reduced-motion' });
-    expect(r.log).toEqual(['mark:fallback:reduced-motion']);
+    expect(out).toEqual({ fallback: 'no-webgl2' });
+    expect(r.log).toEqual(['mark:fallback:no-webgl2']);
   });
 
   it('BEFORE missing: falls back before mounting anything', async () => {

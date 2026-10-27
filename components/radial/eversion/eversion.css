@@ -365,7 +365,6 @@ html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .ever
     scale: 0;
   }
 }
-/* The site's own Reduce motion switch: no globe at all (the run is not eligible either). */
 @media (forced-colors: active) {
   .evert-popup {
     border-color: CanvasText;
