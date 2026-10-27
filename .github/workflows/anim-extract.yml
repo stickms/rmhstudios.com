@@ -41,9 +41,9 @@ jobs:
         run: CODE="$GITHUB_WORKSPACE/code" python3 tools/extract_sample.py /mnt/tf2 /mnt/sample/game 2>&1 | tail -150
       - name: Pack
         run: |
-          cd /mnt/sample && tar -cf - . | xz -T0 -6 > /mnt/sample.tar.xz
-          ls -la /mnt/sample.tar.xz
-          mkdir -p "$HOME/cache-out" && mv /mnt/sample.tar.xz "$HOME/cache-out/"
+          mkdir -p "$HOME/cache-out"
+          cd /mnt/sample && tar -cf - . | xz -T0 -6 > "$HOME/cache-out/sample.tar.xz"
+          ls -la "$HOME/cache-out"
       - uses: actions/cache/save@v4
         with:
           path: ~/cache-out

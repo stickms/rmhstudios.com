@@ -61,3 +61,75 @@ for mdl in ("models/player/scout.mdl", "models/player/scout_animations.mdl"):
         o = seqi + i * 212
         names_.append(cstr(b, o + struct.unpack_from("<i", b, o + 4)[0]))
     print("   sequences:", names_[:120])
+
+
+# ---- more diagnostics for the animation / eye / weapon work ----
+def seqs_of(b):
+    nseq, seqi = struct.unpack_from("<2i", b, 0xBC)
+    out = []
+    for i in range(nseq):
+        o = seqi + i * 212
+        out.append((i, cstr(b, o + struct.unpack_from("<i", b, o + 4)[0]), o))
+    return out
+
+p = os.path.join(out, "models/player/scout_animations.mdl")
+b = open(p, "rb").read()
+S = seqs_of(b)
+print("== scout_animations: sequences matching taunt/idle/stand/ref/loadout:")
+print([n for _, n, _ in S if re.search(r"taunt|idle|stand|loadout|ref$|pose", n, re.I)])
+print("== all scout_animations sequence names after 120:")
+print([n for _, n, _ in S][120:])
+# the idle sequence in detail
+for i, n, o in S:
+    if n in ("PRIMARY_aimmatrix_idle", "MELEE_aimmatrix_idle"):
+        v = struct.unpack_from("<4i", b, o)  # baseptr, szlabel, szactname, flags
+        flags = struct.unpack_from("<i", b, o + 12)[0]
+        act, actw, nev, evi = struct.unpack_from("<4i", b, o + 16)
+        nblends, animindexindex = struct.unpack_from("<2i", b, o + 56)
+        moveidx, gs0, gs1, pi0, pi1 = struct.unpack_from("<5i", b, o + 64)
+        print("seq", n, "flags", hex(flags), "act", act, "blends", nblends, "group", gs0, gs1, "paramidx", pi0, pi1, "animindexindex", animindexindex)
+        shorts = struct.unpack_from("<%dh" % nblends, b, o + animindexindex)
+        print("   anim indices", shorts)
+        nanim, animi = struct.unpack_from("<2i", b, 0xB4)
+        for ai in shorts[:3]:
+            d = animi + ai * 100
+            baseptr, sznm, fps, aflags, nframes = struct.unpack_from("<iifii", b, d)
+            ablock, aindex = struct.unpack_from("<2i", b, d + 56)
+            sect_idx, sect_frames = struct.unpack_from("<2i", b, d + 80)
+            print("   animdesc", ai, cstr(b, d + sznm), "fps", fps, "flags", hex(aflags), "frames", nframes, "block", ablock, "animindex", aindex, "section", sect_idx, sect_frames)
+
+# scout.mdl: bones, attachments, eyeballs, includes
+p = os.path.join(out, "models/player/scout.mdl")
+b = open(p, "rb").read()
+nb, bi = struct.unpack_from("<2i", b, 0x9C)
+print("scout bones:", [cstr(b, bi + i * 216 + struct.unpack_from("<i", b, bi + i * 216)[0]) for i in range(nb)])
+natt, atti = struct.unpack_from("<2i", b, 240)
+print("scout attachments:", natt)
+for i in range(natt):
+    o = atti + i * 92
+    nm = cstr(b, o + struct.unpack_from("<i", b, o)[0])
+    flags, bone = struct.unpack_from("<2i", b, o + 4)
+    mat = struct.unpack_from("<12f", b, o + 12)
+    print("  ", nm, "bone", bone, [round(x, 2) for x in mat])
+# eyeballs: in the model(s) of bodypart 'head'
+nbody, bodyi = struct.unpack_from("<2i", b, 0xE8)
+for bp in range(nbody):
+    bo = bodyi + bp * 16
+    nm, nmodels, base, mi = struct.unpack_from("<4i", b, bo)
+    for m in range(nmodels):
+        mo = bo + mi + m * 148
+        neye, eyei = struct.unpack_from("<2i", b, mo + 100)
+        if neye:
+            for e in range(neye):
+                eo = mo + eyei + e * 172
+                vals = struct.unpack_from("<i i i 3f 3f 3f f f i i i f i i i i f i i i i i i i i i i i i", b, eo)[:30] if False else None
+                raw = b[eo:eo + 172]
+                print("  eyeball", e, "of model", cstr(b, mo)[:20], "raw floats", [round(x, 3) for x in struct.unpack_from("<20f", raw, 0)])
+print("== game data files of interest:")
+for pat in ("paintkit", "protodef", "unusual", "effect"):
+    hits = [n for n in names if pat in n.lower() and not n.endswith((".vtf", ".vmt", ".mdl", ".vvd", ".vtx", ".wav", ".mp3"))]
+    print(pat, len(hits), hits[:25])
+print("scripts/items:", [n for n in names if n.startswith("scripts/items/")][:40])
+print("pcf count:", len([n for n in names if n.endswith(".pcf")]))
+w = [n for n in names if n.startswith("models/weapons/w_models/") and n.endswith(".mdl")]
+print("w_models:", len(w), [n for n in w if re.search(r"w_(scattergun|bat|pistol)\b|w_scattergun", n)][:12])
