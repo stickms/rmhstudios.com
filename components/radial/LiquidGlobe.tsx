@@ -131,6 +131,9 @@ const SETTLE_SPRING = spring(0.62, 0.1);
 const COAT_FADE_MS = 420;
 /** After the skin's chunk lands, how long before its GPU program is warmed (off the page's first busy second). */
 const SKIN_WARM_MS = 2500;
+/** A docked globe's spin kick per pixel scrolled (deg/s), and the most a scroll can add to it. */
+const SCROLL_SPIN = 4;
+const SCROLL_SPIN_MAX = 220;
 /** The hub's globe is opened to be used, so its skin is warmed almost at once: a choice can come within seconds. */
 const SKIN_WARM_IN_PLACE_MS = 300;
 /**
@@ -1078,7 +1081,18 @@ export function LiquidGlobe({
     // A docked globe stays put while the page moves under it, so the picture it
     // refracts has to be re-placed with the scroll — once per frame at most.
     let scrollRaf = 0;
+    let lastScrollY = window.scrollY;
     const onScroll = () => {
+      // A docked globe turns with the page: scrolling kicks its spin about the vertical, and the free coast (step 1b)
+      // carries it on and slows it. Read in the scroll event, where layout is clean.
+      const y = window.scrollY;
+      const dy = y - lastScrollY;
+      lastScrollY = y;
+      if (dy !== 0 && !drag.current.active && !settle.current) {
+        const w = rot.current.w;
+        w[1] = Math.max(-SCROLL_SPIN_MAX, Math.min(SCROLL_SPIN_MAX, w[1]! + dy * SCROLL_SPIN));
+        wakeLoop.current();
+      }
       if (scrollRaf) return;
       scrollRaf = requestAnimationFrame(() => {
         scrollRaf = 0;
@@ -2856,12 +2870,13 @@ export function LiquidGlobe({
      sees them (they bubble), and returns early, so exactly one of the two ever
      takes a given gesture. */
   useEffect(() => {
-    const surface = surfaceRef?.current;
-    if (!surface) return;
-
+    // Resolved when the event arrives, not when this mounts: the hub's overlay (the drag surface) is created
+    // and destroyed with each open, and a docked globe outlives it.
     const onDown = (e: PointerEvent) => {
+      const surface = surfaceRef?.current;
       const target = e.target as Element | null;
-      if (!target || target.closest('.radial-globe__stage')) return;
+      if (!surface || !target || !surface.contains(target)) return;
+      if (target.closest('.radial-globe__stage')) return;
       const control = target.closest('a, button, input, select, textarea, [role="button"]');
       if (control && !control.hasAttribute('data-globe-surface')) return;
       beginDrag(e);
@@ -2870,17 +2885,19 @@ export function LiquidGlobe({
     // dismiss or a pin's link — the same job the stage's `onClickCapture` does
     // for the sphere itself.
     const onClickCapture = (e: MouseEvent) => {
+      const surface = surfaceRef?.current;
+      if (!surface || !(e.target instanceof Node) || !surface.contains(e.target)) return;
       if (!swallowClick.current) return;
       swallowClick.current = false;
       e.preventDefault();
       e.stopPropagation();
     };
 
-    surface.addEventListener('pointerdown', onDown);
-    surface.addEventListener('click', onClickCapture, true);
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('click', onClickCapture, true);
     return () => {
-      surface.removeEventListener('pointerdown', onDown);
-      surface.removeEventListener('click', onClickCapture, true);
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('click', onClickCapture, true);
     };
   }, [beginDrag, surfaceRef]);
 
