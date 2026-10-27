@@ -10,7 +10,7 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import { useRef, type KeyboardEvent } from 'react';
+import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface TfTab {
@@ -40,6 +40,11 @@ export function TfTabs({
 }) {
   const refs = useRef(new Map<string, HTMLButtonElement>());
   const enabled = tabs.filter((t) => !t.disabled);
+
+  // In a strip that scrolls sideways (a phone), the selected tab must not sit off screen.
+  useEffect(() => {
+    refs.current.get(value)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [value]);
 
   const onKey = (e: KeyboardEvent) => {
     const i = enabled.findIndex((t) => t.id === value);

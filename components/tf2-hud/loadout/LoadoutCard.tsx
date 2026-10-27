@@ -35,17 +35,17 @@ export default function LoadoutCard({
       })
     : [];
   return (
-    <article className="flex flex-col gap-2 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-4">
+    <article className="relative flex flex-col gap-2 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-4 hover:border-(--app-border-bright)">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="tf2hud-title min-w-0 truncate text-xl">
+        <h2 className="tf2hud-title min-w-0 truncate text-xl">
           <Link
             to="/tf2/loadout/l/$slug"
             params={{ slug: loadout.slug }}
-            className="hover:underline"
+            className="block truncate hover:underline after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-(--app-radius)"
           >
             {loadout.title}
           </Link>
-        </h3>
+        </h2>
         <div className="flex shrink-0 items-center gap-1">
           <Pill tone="accent">
             {t(`class-${loadout.tfClass}`, { defaultValue: CLASS_DEFAULT[loadout.tfClass] })}
@@ -96,7 +96,7 @@ export default function LoadoutCard({
             {loadout.forkCount}
           </span>
         </span>
-        <div className="flex items-center gap-1">{actions}</div>
+        <div className="relative z-10 flex items-center gap-1">{actions}</div>
       </div>
     </article>
   );

@@ -98,7 +98,7 @@ export const IconBtn = forwardRef<HTMLButtonElement, IconBtnProps>(function Icon
       className={cn(
         'inline-flex shrink-0 items-center justify-center rounded-(--app-radius-sm) border border-transparent text-(--app-text-muted) transition-[color,background-color] duration-(--app-duration-fast) hover:bg-(--app-surface-hover) hover:text-(--app-text) disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4',
         size === 'xs' ? 'size-7' : 'size-8',
-        active && 'bg-(--app-accent-dim) text-(--app-accent)',
+        active && 'bg-(--app-accent-dim) text-(--app-accent-text)',
         className,
       )}
       {...rest}
@@ -288,7 +288,7 @@ export function Pill({
 }) {
   const tones = {
     neutral: 'bg-(--app-surface-hover) text-(--app-text-muted)',
-    accent: 'bg-(--app-accent-dim) text-(--app-accent)',
+    accent: 'bg-(--app-accent-dim) text-(--app-accent-text)',
     success: 'bg-(--app-success-dim) text-(--app-success)',
     warning: 'bg-(--app-warning-dim) text-(--app-warning)',
     danger: 'bg-(--app-danger-dim) text-(--app-danger)',
@@ -325,6 +325,7 @@ export function Modal({
   children,
   footer,
   wide,
+  sheet,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -333,6 +334,8 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
   wide?: boolean;
+  /** A full-height bottom sheet (phones) instead of a centred dialog. */
+  sheet?: boolean;
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const [container, setContainer] = useState<HTMLElement | null>(null);
@@ -345,8 +348,11 @@ export function Modal({
         <DialogPrimitive.Overlay className="app-overlay fixed inset-0 z-50 bg-(--app-scrim)" />
         <DialogPrimitive.Content
           className={cn(
-            'app-modal fixed top-1/2 left-1/2 z-50 flex max-h-[min(88dvh,46rem)] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-(--app-radius) border border-(--app-border-bright) bg-(--app-bg-subtle) text-(--app-text) shadow-(--app-shadow)',
-            wide ? 'max-w-3xl' : 'max-w-md',
+            'fixed z-50 flex flex-col border border-(--app-border-bright) bg-(--app-bg-subtle) text-(--app-text) shadow-(--app-shadow)',
+            sheet
+              ? 'app-sheet inset-x-0 bottom-0 h-[calc(100dvh-2.5rem)] rounded-t-(--app-radius) pb-[var(--app-safe-bottom,0px)]'
+              : 'app-modal top-1/2 left-1/2 max-h-[min(88dvh,46rem)] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-(--app-radius)',
+            !sheet && (wide ? 'max-w-3xl' : 'max-w-md'),
           )}
         >
           <div className="flex items-start justify-between gap-3 border-b border-(--app-border) px-4 py-3">
@@ -501,8 +507,12 @@ export function Popover({
 
   useLayoutEffect(() => {
     if (!open) return;
-    setRoot(document.querySelector<HTMLElement>('.tf2hud-theme'));
-  }, [open]);
+    // Inside a dialog, portal into it: a modal dialog makes everything outside it inert.
+    setRoot(
+      anchor?.closest<HTMLElement>('[role=dialog]') ??
+        document.querySelector<HTMLElement>('.tf2hud-theme'),
+    );
+  }, [open, anchor]);
 
   useLayoutEffect(() => {
     if (!open || !anchor || !ref.current) return;
@@ -731,7 +741,7 @@ export function SearchSelect({
               ) : null}
               <span className="min-w-0 flex-1 truncate">{o?.label ?? noneLabel}</span>
               {(o ? o.id === value : value === undefined) ? (
-                <Check className="size-3.5 shrink-0 text-(--app-accent)" aria-hidden />
+                <Check className="size-3.5 shrink-0 text-(--app-accent-text)" aria-hidden />
               ) : null}
             </li>
           ))}

@@ -16,29 +16,40 @@ export default function Tf2Header({
   backLabel,
   backHref,
   rightActions,
+  heading = true,
 }: {
   title: string;
   backLabel: string;
   backHref: string;
   rightActions?: ReactNode;
+  /** False when the page has its own visible h1 (a hero): the bar's title is then plain text. */
+  heading?: boolean;
 }) {
   const goBack = useBackOrFallback();
   return (
-    <header className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b border-(--app-border) bg-(--app-bg-subtle) px-3 sm:px-4">
+    // Phone: [back] [title…] [actions]. From `sm` up the title is centred between them.
+    <header className="grid h-14 shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 border-b border-(--app-border) bg-(--app-bg-subtle) px-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-2 sm:px-4">
       <div className="flex min-w-0 items-center">
         <Link
           to={backHref}
           onClick={goBack}
-          className="flex items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1 text-sm font-medium text-(--app-text-muted) hover:text-(--app-text)"
+          className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-(--app-radius-sm) px-2 text-sm font-medium text-(--app-text-muted) hover:text-(--app-text) sm:min-h-8 sm:min-w-0 sm:justify-start"
         >
           <ArrowLeft className="size-4 shrink-0 rtl-flip" aria-hidden />
           <span className="hidden truncate xs:inline">{backLabel}</span>
           <span className="sr-only xs:hidden">{backLabel}</span>
         </Link>
       </div>
-      <h1 className="tf2hud-title hidden truncate px-2 text-2xl text-(--app-text) sm:block">
-        {title}
-      </h1>
+      {/* Always in the document (screen readers need the page's h1 at every width). */}
+      {heading ? (
+        <h1 className="tf2hud-title min-w-0 truncate text-xl text-(--app-text) sm:px-2 sm:text-2xl">
+          {title}
+        </h1>
+      ) : (
+        <p className="tf2hud-title min-w-0 truncate text-xl text-(--app-text) sm:px-2 sm:text-2xl">
+          {title}
+        </p>
+      )}
       <div className="flex min-w-0 items-center justify-end gap-2">{rightActions}</div>
     </header>
   );

@@ -65,7 +65,7 @@ export default function Tf2Logo({ className, label }: { className?: string; labe
         className={cn('h-auto max-w-full object-contain', className, state !== 'ready' && 'hidden')}
       />
       {state === 'ready' ? null : (
-        <p className="tf2hud-title text-2xl text-(--app-accent)" aria-label={label}>
+        <p className="tf2hud-title text-2xl text-(--app-accent-text)" aria-label={label}>
           {label}
         </p>
       )}

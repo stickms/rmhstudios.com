@@ -39,6 +39,7 @@ export default function Tf2HubLanding() {
   return (
     <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
       <Tf2Header
+        heading={false}
         title="RMH TF2 Hub"
         backLabel={t('apps', { defaultValue: 'Apps' })}
         backHref="/apps"
@@ -66,10 +67,10 @@ export default function Tf2HubLanding() {
                 to={tool.to}
                 className="group flex flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-6 transition-[background-color,border-color] duration-(--app-duration-fast) hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
               >
-                <tool.icon className="size-8 text-(--app-accent)" aria-hidden />
+                <tool.icon className="size-8 text-(--app-accent-text)" aria-hidden />
                 <h2 className="tf2hud-title text-3xl">{tool.title}</h2>
                 <p className="text-sm text-(--app-text-muted)">{tool.body}</p>
-                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-(--app-accent)">
+                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-(--app-accent-text)">
                   {tool.cta}
                   <ArrowRight className="size-4 rtl-flip" aria-hidden />
                 </span>
@@ -84,7 +85,7 @@ export default function Tf2HubLanding() {
             search={{ type: 'huds' }}
             className="flex items-center gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-4 transition-[background-color,border-color] duration-(--app-duration-fast) hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
           >
-            <Globe className="size-5 shrink-0 text-(--app-accent)" aria-hidden />
+            <Globe className="size-5 shrink-0 text-(--app-accent-text)" aria-hidden />
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">
                 {t('hub-workshop-title', { defaultValue: 'Workshop' })}
