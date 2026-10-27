@@ -52,15 +52,22 @@ export interface JellyGroupItemProps extends React.ButtonHTMLAttributes<HTMLButt
 }
 
 const Item = React.forwardRef<HTMLButtonElement, JellyGroupItemProps>(function JellyGroupItem(
-  { selected = false, asChild = false, disabled, className, ...props },
+  { selected, asChild = false, disabled, className, ...props },
   ref,
 ) {
   const Comp = asChild ? Slot : 'button';
-  const on = selected && !disabled;
+  const on = Boolean(selected) && !disabled;
   return (
     <Comp
       ref={ref}
-      {...(asChild ? {} : { type: 'button', disabled, 'aria-pressed': on })}
+      {...(asChild
+        ? {}
+        : {
+            type: 'button',
+            disabled,
+            // A toggle only when the caller says so: a button that opens a panel is not "pressed".
+            'aria-pressed': selected === undefined ? undefined : on,
+          })}
       data-slot="jelly-group-item"
       // The group is the body; a member must not be pressed as a second one (lib/jelly/physics.ts).
       data-jelly="off"

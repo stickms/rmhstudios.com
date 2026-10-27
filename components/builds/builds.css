@@ -96,4 +96,10 @@
   .builds-toolbar__right > * {
     max-width: 100%;
   }
+  /* Sort sits under the search at the same width, so tabs, search and sort share one edge. */
+  .builds-toolbar__right > .builds-sort,
+  .builds-toolbar__right > .builds-sort > * {
+    flex: 1 0 100%;
+    width: 100%;
+  }
 }

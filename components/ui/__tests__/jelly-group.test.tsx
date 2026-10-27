@@ -38,12 +38,21 @@ describe('JellyGroup', () => {
     const html = renderToStaticMarkup(
       <JellyGroup>
         <JellyGroup.Item selected>A</JellyGroup.Item>
-        <JellyGroup.Item>B</JellyGroup.Item>
+        <JellyGroup.Item selected={false}>B</JellyGroup.Item>
       </JellyGroup>,
     );
     expect(html.match(/data-selected=""/g)).toHaveLength(1);
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain('aria-pressed="false"');
+  });
+
+  it('is not a toggle unless asked: no aria-pressed without a selected prop', () => {
+    const html = renderToStaticMarkup(
+      <JellyGroup>
+        <JellyGroup.Item>Opens a panel</JellyGroup.Item>
+      </JellyGroup>,
+    );
+    expect(html).not.toContain('aria-pressed');
   });
 
   it('never marks a disabled member selected', () => {

@@ -360,20 +360,17 @@ body:has(.radial-shell) .call-banner {
   align-items: center;
   gap: var(--rad-2);
 }
-.radial-topbar__btn {
-  position: relative;
+/* The bar is the one jelly body; its controls are flat `JellyGroup.Item` members (components/ui/jelly-group.css), so
+   they draw no edge of their own. Here they only take the bar's own sizing: a touch-target square, an icon centred. */
+.radial-topbar .radial-topbar__btn[data-slot='jelly-group-item'] {
   display: inline-grid;
   place-items: center;
   width: var(--site-touch-target);
   height: var(--site-touch-target);
-  border: none;
-  background: transparent;
+  min-height: 0;
+  padding: 0;
   border-radius: 999px;
   color: var(--site-text);
-  cursor: pointer;
-  transition:
-    transform 0.18s var(--ease-glass, var(--ease-smooth)),
-    background-color 0.18s ease;
 }
 .radial-topbar__btn[aria-expanded='true'] {
   background: var(--site-surface-active, var(--site-surface-hover));
@@ -388,10 +385,6 @@ body:has(.radial-shell) .call-banner {
   border-radius: 999px;
   background: var(--site-accent);
   box-shadow: 0 0 0 2px var(--site-bg);
-}
-.radial-topbar__btn:hover {
-  /* The hover tint everts in (`data-evert`, globals.css §7.3). */
-  background: var(--site-surface-hover);
 }
 .radial-topbar__btn svg {
   width: 1.2rem;
@@ -410,11 +403,12 @@ body:has(.radial-shell) .call-banner {
     animation: radial-pulse-soft 1.6s ease-in-out infinite;
   }
 
-.radial-topbar__avatar {
+.radial-topbar .radial-topbar__avatar[data-slot='jelly-group-item'] {
   display: inline-grid;
   place-items: center;
   border: none;
   padding: 0;
+  min-height: 0;
   width: var(--site-touch-target);
   height: var(--site-touch-target);
   background: transparent;
@@ -427,9 +421,10 @@ body:has(.radial-shell) .call-banner {
 .radial-topbar__avatar[aria-expanded='true'] {
   outline-color: var(--site-border-bright);
 }
-.radial-topbar__signin {
+.radial-topbar .radial-topbar__signin[data-slot='jelly-group-item'] {
+  /* A flat member of the bar: no edge of its own (the bar's rim is the only line); the accent wash is its hover. */
+  border: 0;
   border-radius: var(--site-control-radius);
-  border: 1px solid var(--site-border-bright);
   display: inline-flex;
   align-items: center;
   min-height: var(--site-touch-target);
@@ -3616,15 +3611,17 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   display: none;
 }
 @media (min-width: 640px) {
-  .radial-topbar__search {
+  /* A flat member that reads as a field: a soft recessed well in the bar, no edge of its own (the bar's rim is the
+     only line). Doubled class so it outranks the member's own sizing above. */
+  .radial-topbar .radial-topbar__search[data-slot='jelly-group-item'] {
     display: flex;
     justify-content: flex-start;
     gap: var(--rad-2);
     width: clamp(12rem, 24vw, 22rem);
     padding-inline: var(--rad-3);
-    border: var(--site-border-width) solid var(--site-border);
+    border: 0;
     border-radius: var(--site-control-radius);
-    background: var(--site-surface);
+    background: color-mix(in srgb, var(--site-text) 6%, transparent);
   }
   .radial-topbar__search span {
     display: block;
@@ -3667,15 +3664,36 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
     width: var(--rad-viewport-width, 100vw);
     max-width: var(--rad-viewport-width, 100vw);
     margin-inline: calc(50% - var(--rad-viewport-width, 100vw) / 2);
-    padding-inline: max(0.75rem, var(--safe-left), var(--safe-right));
+    padding-inline: max(var(--page-controls-inset, 1rem), var(--safe-left), var(--safe-right));
     border-radius: 0;
   }
-  .radial-shell [data-slot='page-controls'] > :is(.px-2, .md\:px-3) {
+  .radial-shell [data-slot='page-controls'] > :is(.px-2, .px-3, .px-4, .md\:px-3) {
     padding-inline: 0;
   }
   .radial-shell [data-slot='page-controls'] [data-slot='search-field'] {
     width: 100%;
     max-width: none;
+  }
+
+  /* One width for a page's controls on a phone. Tab strips and search fields used to land at five different insets
+     (7px to 72px at 390) because each wrapper padded itself. They now share one edge, `--page-controls-inset`, no
+     matter which wrapper hosts them. Only a lone control is sized (`:only-child`): a search sharing a row with a
+     button keeps its row. */
+  .radial-shell .page-root {
+    --page-controls-inset: 1rem;
+  }
+  .radial-shell
+    .page-root
+    :is([data-slot='liquid-tabs-sheet'], [data-slot='search-field']):only-child:not(
+      [role='dialog'] *,
+      [data-motion] *
+    ) {
+    box-sizing: border-box;
+    width: calc(var(--rad-viewport-width, 100vw) - 2 * var(--page-controls-inset));
+    max-width: none;
+    margin-inline: calc(
+      (100% - (var(--rad-viewport-width, 100vw) - 2 * var(--page-controls-inset))) / 2
+    );
   }
 }
 
