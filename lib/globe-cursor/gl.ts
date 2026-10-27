@@ -16,6 +16,7 @@
  */
 
 import { EVERSION_GLSL, GLSL_HEADER } from '@/lib/eversion/gl/shaders';
+import { startProgram, whenLinked } from '@/lib/render/gl-program';
 import { probeGpu } from '@/lib/render/probe';
 import type { CursorDetail } from './settings';
 
@@ -187,19 +188,6 @@ function grid(nT: number, nP: number, closed: boolean): Float32Array {
   return new Float32Array(out);
 }
 
-function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader {
-  const sh = gl.createShader(type);
-  if (!sh) throw new Error('createShader failed');
-  gl.shaderSource(sh, src);
-  gl.compileShader(sh);
-  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-    const log = gl.getShaderInfoLog(sh);
-    gl.deleteShader(sh);
-    throw new Error(`globe cursor shader: ${log ?? 'compile failed'}`);
-  }
-  return sh;
-}
-
 /** Row-major 3×3 → the column-major Float32Array GL wants. */
 function colMajor(m: Float64Array, out: Float32Array): Float32Array {
   out[0] = m[0]!;
@@ -233,40 +221,50 @@ export class GlobeGl {
   private nm = new Float64Array(9);
 
   /**
-   * Returns null where WebGL 2 is unavailable or the shader will not build; the
+   * Resolves null where WebGL 2 is unavailable or the shader will not build; the
    * engine then draws on the CPU (faceted). On a software rasteriser
    * (SwiftShader, llvmpipe — what a blocklisted driver falls back to) the
    * eversion per vertex is the expensive part, so the mesh is capped at the
    * coarsest grid there; the per-pixel normal keeps it smooth regardless.
+   *
+   * The program is built in the background (`lib/render/gl-program.ts`): nothing
+   * here waits for the driver, so mounting the cursor never stalls a frame. Use
+   * {@link acquireGlobeGl}, which builds it once per page and hands the same
+   * context back to every later mount.
    */
-  static create(): GlobeGl | null {
+  static async create(): Promise<GlobeGl | null> {
     try {
-      return new GlobeGl(probeGpu().gpuTier === 0);
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl2', {
+        alpha: true,
+        antialias: true,
+        premultipliedAlpha: true,
+        depth: true,
+        powerPreference: 'low-power',
+      });
+      if (!gl) return null;
+      const build = startProgram(gl, { vert: VERT, frag: FRAG, attribs: { a_tp: 0 } });
+      if (!build) return null;
+      const program = await whenLinked(gl, build);
+      if (build.vertShader) gl.deleteShader(build.vertShader);
+      if (!program) {
+        gl.getExtension('WEBGL_lose_context')?.loseContext();
+        return null;
+      }
+      return new GlobeGl(probeGpu().gpuTier === 0, canvas, gl, program);
     } catch {
       return null;
     }
   }
 
-  private constructor(private readonly software: boolean) {
-    this.canvas = document.createElement('canvas');
-    const gl = this.canvas.getContext('webgl2', {
-      alpha: true,
-      antialias: true,
-      premultipliedAlpha: true,
-      depth: true,
-      powerPreference: 'low-power',
-    });
-    if (!gl) throw new Error('webgl2 unavailable');
+  private constructor(
+    private readonly software: boolean,
+    canvas: HTMLCanvasElement,
+    gl: WebGL2RenderingContext,
+    program: WebGLProgram,
+  ) {
+    this.canvas = canvas;
     this.gl = gl;
-    const program = gl.createProgram();
-    if (!program) throw new Error('createProgram failed');
-    gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT));
-    gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAG));
-    gl.bindAttribLocation(program, 0, 'a_tp');
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      throw new Error(`globe cursor program: ${gl.getProgramInfoLog(program) ?? 'link failed'}`);
-    }
     this.program = program;
     for (const name of [
       'u_stageParams',
@@ -432,4 +430,20 @@ export class GlobeGl {
     gl.deleteProgram(this.program);
     gl.getExtension('WEBGL_lose_context')?.loseContext();
   }
+}
+
+/**
+ * The page's one cursor GPU surface. Built once, in the background, the first time a cursor mounts; a later mount (the
+ * setting toggled back on, a return from a route that keeps the system cursor) gets the SAME context and program back
+ * at once instead of compiling from scratch. A lost context is dropped and the next acquire builds a fresh one.
+ */
+let shared: Promise<GlobeGl | null> | null = null;
+export function acquireGlobeGl(): Promise<GlobeGl | null> {
+  if (shared) {
+    const prev = shared;
+    shared = prev.then((g) => (g && !g.ok ? GlobeGl.create() : g));
+    return shared;
+  }
+  shared = GlobeGl.create();
+  return shared;
 }

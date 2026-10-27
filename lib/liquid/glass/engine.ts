@@ -151,7 +151,13 @@ import {
   type HazeDraw,
   type JellyLook,
 } from './renderer';
-import { hazeKey, rimKey, startGlassWorker, type GlassWorkerHost } from './glass-worker';
+import {
+  canUseGlassWorker,
+  hazeKey,
+  rimKey,
+  startGlassWorker,
+  type GlassWorkerHost,
+} from './glass-worker';
 import { createSceneProvider, SCENE_POLICY, type SceneProvider, type SceneShot } from './scene';
 import { clearScene, currentScene, onSceneChange, publishScene } from './scene-store';
 
@@ -206,6 +212,25 @@ const MUTATION_SETTLE_MS = 1600;
 /** Longest a main-thread canvas stays under the worker canvas replacing it, waiting for the worker's first frame. */
 const WORKER_HANDOVER_MS = 1000;
 /**
+ * Where a worker can run, how long the engine waits for it before building a page renderer after all. Until then no
+ * slab is admitted and no shader is compiled on the main thread: the CSS material is the whole look, which is what
+ * the page showed before the engine loaded anyway. A worker that answers later still takes the canvases over.
+ */
+const WORKER_WAIT_MS = 5000;
+/**
+ * A new rim or haze canvas fades in over this long (`--liquid-enter`, app/liquid-glass.css — the same number), and
+ * the host keeps its CSS material underneath until the fade has landed; only then is it marked
+ * `data-liquid-canvas="on"` and the static coat, edge and carrier step aside. A cross-fade, never a swap.
+ */
+const ENTER_MS = 300;
+/**
+ * New slabs admitted per reconcile pass. A cold page admits up to the rim budget at once; each admission reads its
+ * host's computed style and adds a canvas, so they are spread over a few frames instead of landing in one.
+ */
+const ACTIVATE_PER_PASS = 6;
+/** Between staggered admission passes. */
+const ACTIVATE_GAP_MS = 32;
+/**
  * Longest a surface's cached viewport rect is trusted while nothing invalidated it. Scroll, resize, a size change, a
  * DOM mutation and (re)admission all invalidate the cache at once; this bound only covers layout that shifts without
  * any of those (a CSS-only hover changing a neighbour's margin). Reading rects every rim frame forced a synchronous
@@ -257,6 +282,11 @@ interface Surface {
   hazeRemote: boolean;
   /** The main-thread haze canvas a worker canvas is replacing: shown until the worker's first frame lands. */
   hazeOld: HTMLCanvasElement | null;
+  /** The rim has faded in and the host is marked `data-liquid-canvas="on"` (see {@link ENTER_MS}). */
+  entered: boolean;
+  /** Pending end of the rim's / haze's entrance fade. */
+  enterTimer: number;
+  hazeTimer: number;
   /** Haze drawn at least once since (re)creation / a look change; `data-jelly-haze` is set. */
   hazeOn: boolean;
   /** Needs a draw regardless of the clock (new canvas, new look). */
@@ -411,6 +441,12 @@ export function installLiquidGlass(doc: Document = document): () => void {
    */
   let worker: GlassWorkerHost | null = null;
   let workerTried = false;
+  /**
+   * Draw on the page instead of waiting for the worker: from the start where no worker can run, else once it failed
+   * or {@link WORKER_WAIT_MS} passed without an answer.
+   */
+  let workerGaveUp = !canUseGlassWorker(win as Window & typeof globalThis);
+  let workerWait = 0;
 
   // Page snapshot state.
   let scene: { width: number; height: number; scrollX: number; scrollY: number } | null = null;
@@ -514,11 +550,12 @@ export function installLiquidGlass(doc: Document = document): () => void {
     canCapture: sceneAllowed,
     policy: () => SCENE_POLICY[tier],
     onShot: (shot: SceneShot) => {
-      if (disposed || !renderer?.ready) {
+      if (disposed || !drawable()) {
         shot.bitmap.close();
         return;
       }
-      const ok = renderer.setScene(shot.bitmap);
+      // The page renderer takes its own upload; the worker gets its copy through the scene store (`sendScene`).
+      const ok = renderer?.ready ? renderer.setScene(shot.bitmap) : true;
       // Share a clone with readers that live in another GL context (the globe's coat), then release ours.
       void publishScene(shot.bitmap, {
         width: shot.width,
@@ -541,15 +578,28 @@ export function installLiquidGlass(doc: Document = document): () => void {
     },
   });
 
+  /**
+   * The page renderer, once its programs have linked. They build in the background (`GlassRenderer.create`), so this is
+   * null while they are pending; `onChange` reconciles when they land. A renderer whose context was lost is replaced.
+   */
   const ensureRenderer = (): GlassRenderer | null => {
     if (renderer?.ready) return renderer;
+    if (renderer?.pending) return null;
     if (rendererFailed) return null;
+    renderer?.dispose();
     renderer = GlassRenderer.create(doc);
     if (!renderer) {
       rendererFailed = true;
       return null;
     }
-    renderer.onChange = () => {
+    const own = renderer;
+    own.onChange = () => {
+      if (own !== renderer) return;
+      if (own.failed) {
+        rendererFailed = true;
+        renderer = null;
+        own.dispose();
+      }
       if (!renderer?.ready) {
         // Context lost: put the CSS material back until it is restored.
         for (const s of surfaces.values()) deactivate(s);
@@ -561,7 +611,22 @@ export function installLiquidGlass(doc: Document = document): () => void {
         reconcile();
       }
     };
-    return renderer;
+    return own.ready ? own : null;
+  };
+  /** Something can draw a rim now: the worker, or the page renderer. */
+  const drawable = () => !!(worker?.ready || renderer?.ready);
+  const hazeDrawable = () => !!(worker?.hazeReady || renderer?.hazeReady);
+  /**
+   * May a slab be admitted now? Where a worker can run, only once it is ready (the page compiles nothing); the page
+   * renderer is built only where it cannot, or once it has failed or kept us waiting too long.
+   */
+  const canDraw = (): boolean => {
+    if (worker?.ready) return true;
+    if (!workerGaveUp) {
+      ensureWorker();
+      if (!workerGaveUp) return false;
+    }
+    return !!ensureRenderer();
   };
 
   const markAllDirty = () => {
@@ -633,6 +698,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
       rimOld: null,
       hazeRemote: false,
       hazeOld: null,
+      entered: false,
+      enterTimer: 0,
+      hazeTimer: 0,
       hazeOn: false,
       hazeFresh: false,
       due: 0,
@@ -766,13 +834,15 @@ export function installLiquidGlass(doc: Document = document): () => void {
     readJelly(s, style);
   };
 
-  const activate = (s: Surface) => {
-    if (s.canvas) return;
-    if (!ensureRenderer()) return;
+  const activate = (s: Surface): boolean => {
+    if (s.canvas) return false;
+    if (!canDraw()) return false;
     const canvas = doc.createElement('canvas');
     canvas.className = 'liquid-glass-canvas';
     canvas.setAttribute('data-liquid-glass', '');
     canvas.setAttribute('aria-hidden', 'true');
+    // Transparent until its first frame lands, then it fades in (`rimDrawn`).
+    canvas.setAttribute('data-liquid-fresh', '');
     s.canvas = canvas;
     measure(s);
     // Static, never animated: room for an outward lattice bulge on cards and controls (≤ 2px, 02 §1.3).
@@ -781,12 +851,39 @@ export function installLiquidGlass(doc: Document = document): () => void {
       const m = s.margin;
       canvas.style.cssText = `left:${-m}px;top:${-m}px;width:calc(100% + ${2 * m}px);height:calc(100% + ${2 * m}px)`;
     }
-    s.el.setAttribute('data-liquid-canvas', 'on');
+    // The layer's stacking context and containing block now; `data-liquid-canvas="on"` (the CSS material stepping
+    // aside) only once the rim has faded in over it.
+    s.el.setAttribute('data-liquid-layer', '');
     s.el.append(canvas);
-    ensureWorker();
     s.rimRemote = !!worker?.ready && worker.adopt(rimKey(s.id), canvas);
     s.dirty = true;
     if (!scene) provider.request('activate');
+    return true;
+  };
+  /** The rim's first frame is on screen: fade it in, and hand the host over once the fade has landed. */
+  const rimDrawn = (s: Surface) => {
+    if (s.entered || s.enterTimer || !s.canvas) return;
+    s.canvas.removeAttribute('data-liquid-fresh');
+    s.enterTimer = win.setTimeout(() => {
+      s.enterTimer = 0;
+      if (!s.canvas) return;
+      s.entered = true;
+      // Settled: re-inserting it (React wiping the host, `repairLayers`) must not replay the fade.
+      s.canvas.setAttribute('data-liquid-settled', '');
+      s.el.setAttribute('data-liquid-canvas', 'on');
+    }, ENTER_MS);
+  };
+  /** The same for a haze canvas: it fades in over the CSS carrier, which steps aside (`markHazeOn`) once it has. */
+  const hazeDrawn = (s: Surface) => {
+    const c = s.haze;
+    if (!c || s.hazeOn || s.hazeTimer) return;
+    c.removeAttribute('data-liquid-fresh');
+    s.hazeTimer = win.setTimeout(() => {
+      s.hazeTimer = 0;
+      if (s.haze !== c) return;
+      c.setAttribute('data-liquid-settled', '');
+      markHazeOn(s);
+    }, ENTER_MS);
   };
   /**
    * Nested bodies (a button in a card, a tab capsule in its track): each parent's shoulder stops short of its nearest
@@ -823,6 +920,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
   const deactivate = (s: Surface) => {
     removeHaze(s);
     dropLattice(s);
+    win.clearTimeout(s.enterTimer);
+    s.enterTimer = 0;
+    s.entered = false;
     if (!s.canvas) return;
     if (s.rimRemote) worker?.drop(rimKey(s.id));
     s.rimRemote = false;
@@ -831,6 +931,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.canvas.remove();
     s.canvas = null;
     s.el.removeAttribute('data-liquid-canvas');
+    s.el.removeAttribute('data-liquid-layer');
     s.el.removeAttribute('data-liquid-static');
     s.light = 0;
     s.tiltX = s.tiltY = 0;
@@ -848,12 +949,19 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.el.setAttribute('data-jelly-haze', 'on');
     jellyBus.emit('haze:change', { el: s.el, on: true });
   };
+  const giveUpOnWorker = () => {
+    if (workerGaveUp) return;
+    workerGaveUp = true;
+    win.clearTimeout(workerWait);
+    scheduleReconcile();
+  };
   const ensureWorker = () => {
     if (workerTried || disposed) return;
     workerTried = true;
     worker = startGlassWorker(win as Window & typeof globalThis, {
       // Canvases made before the worker answered move to it; new ones go to it directly.
       onReady: () => {
+        win.clearTimeout(workerWait);
         sendScene();
         for (const s of surfaces.values()) moveRimToWorker(s);
         for (const s of hazeSet) moveHazeToWorker(s);
@@ -862,16 +970,21 @@ export function installLiquidGlass(doc: Document = document): () => void {
       },
       onDrawn: (keys) => {
         for (const s of surfaces.values()) {
-          if (s.rimOld && s.rimRemote && keys.includes(rimKey(s.id))) {
-            s.rimOld.remove();
+          if (s.rimRemote && keys.includes(rimKey(s.id))) {
+            s.rimOld?.remove();
             s.rimOld = null;
+            rimDrawn(s);
           }
           if (s.hazeRemote && keys.includes(hazeKey(s.id))) {
             s.hazeOld?.remove();
             s.hazeOld = null;
-            markHazeOn(s);
+            hazeDrawn(s);
           }
         }
+      },
+      onFailed: () => {
+        worker = null;
+        giveUpOnWorker();
       },
       onLost: () => {
         worker = null;
@@ -880,9 +993,13 @@ export function installLiquidGlass(doc: Document = document): () => void {
           if (s.rimRemote) deactivate(s);
           else if (s.hazeRemote) removeHaze(s);
         }
+        // The page draws from here on (`canDraw` builds its renderer).
+        workerGaveUp = true;
         scheduleReconcile();
       },
     });
+    if (!worker) giveUpOnWorker();
+    else workerWait = win.setTimeout(() => worker?.ready || giveUpOnWorker(), WORKER_WAIT_MS);
   };
   /** Give the worker its own copy of the latest page snapshot (textures do not cross contexts, or threads). */
   const sendScene = () => {
@@ -916,6 +1033,12 @@ export function installLiquidGlass(doc: Document = document): () => void {
     c.setAttribute('data-liquid-glass', '');
     c.setAttribute('aria-hidden', 'true');
     c.style.cssText = old.style.cssText;
+    // It replaces a canvas already on screen (which stays under it until its first frame): no second fade, unless the
+    // old one never drew either.
+    c.setAttribute(
+      old.hasAttribute('data-liquid-fresh') ? 'data-liquid-fresh' : 'data-liquid-settled',
+      '',
+    );
     // After the old one: the rim stays the host's last child.
     s.el.append(c);
     if (!worker.adopt(rimKey(s.id), c)) {
@@ -939,6 +1062,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     const c = doc.createElement('canvas');
     c.className = 'jelly-haze-canvas';
     c.setAttribute('aria-hidden', 'true');
+    c.setAttribute(s.hazeOn ? 'data-liquid-settled' : 'data-liquid-fresh', '');
     s.el.insertBefore(c, s.haze);
     if (!worker.adopt(hazeKey(s.id), c)) {
       c.remove();
@@ -948,6 +1072,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.hazeOld = old;
     s.haze = c;
     s.hazeRemote = true;
+    // A fade in flight belonged to the old canvas; the new one runs its own from its first frame.
+    win.clearTimeout(s.hazeTimer);
+    s.hazeTimer = 0;
     s.hazeFresh = true;
     retireLater(
       old,
@@ -958,10 +1085,10 @@ export function installLiquidGlass(doc: Document = document): () => void {
 
   const addHaze = (s: Surface) => {
     if (s.haze || !s.canvas) return;
-    ensureWorker();
     const c = doc.createElement('canvas');
     c.className = 'jelly-haze-canvas';
     c.setAttribute('aria-hidden', 'true');
+    c.setAttribute('data-liquid-fresh', '');
     // Just before the rim canvas: the rim stays the host's last child and content keeps its first child.
     s.el.insertBefore(c, s.canvas);
     s.haze = c;
@@ -975,6 +1102,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
   };
   function removeHaze(s: Surface) {
     hazeSet.delete(s);
+    win!.clearTimeout(s.hazeTimer);
+    s.hazeTimer = 0;
     if (!s.haze) return;
     if (s.hazeRemote) worker?.drop(hazeKey(s.id));
     s.hazeRemote = false;
@@ -1013,7 +1142,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     // A hidden tab keeps its canvases (the clock is already 0); dropping them would only rebuild them on return.
     if (doc.hidden) return;
     const want = new Set<Surface>();
-    if (registry && renderer?.hazeReady && mode.ambient && governed.hazeSlots > 0) {
+    if (registry && hazeDrawable() && mode.ambient && governed.hazeSlots > 0) {
       const focus = pointerLive && queries.fine.matches ? { x: pointerX, y: pointerY } : null;
       for (const e of hazeSlots(registry.ambientSlots(governed, focus))) {
         const s = surfaces.get(e.el as HTMLElement);
@@ -1040,6 +1169,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
   };
 
   let reconcileQueued = false;
+  let activateTimer = 0;
   const scheduleReconcile = () => {
     if (reconcileQueued || disposed) return;
     reconcileQueued = true;
@@ -1073,7 +1203,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
       }
       if (s.haze) s.el.append(s.haze);
       s.el.append(s.canvas);
-      if (s.el.getAttribute('data-liquid-canvas') !== 'on')
+      if (!s.el.hasAttribute('data-liquid-layer')) s.el.setAttribute('data-liquid-layer', '');
+      if (s.entered && s.el.getAttribute('data-liquid-canvas') !== 'on')
         s.el.setAttribute('data-liquid-canvas', 'on');
       s.dirty = true;
       if (s.haze) s.hazeFresh = true;
@@ -1104,7 +1235,17 @@ export function installLiquidGlass(doc: Document = document): () => void {
     for (const s of surfaces.values()) {
       if (!want.has(s)) deactivate(s);
     }
-    for (const s of want) activate(s);
+    // Highest priority first (`admit` order); the rest on the next pass, a frame or two later.
+    let admitted = 0;
+    for (const s of want) {
+      if (s.canvas) continue;
+      if (admitted >= ACTIVATE_PER_PASS) {
+        win.clearTimeout(activateTimer);
+        activateTimer = win.setTimeout(scheduleReconcile, ACTIVATE_GAP_MS);
+        break;
+      }
+      if (activate(s)) admitted++;
+    }
     reconcileHaze();
     invalidateRects();
     requestFrame();
@@ -1194,7 +1335,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
       worker.queue({ key: rimKey(s.id), kind: 'rim', time: 0, draw: o });
       return true;
     }
-    return r!.draw(o, s.canvas);
+    const ok = r!.draw(o, s.canvas);
+    if (ok) rimDrawn(s);
+    return ok;
   };
 
   // ── The ambient clock (R7) ────────────────────────────────────────────────
@@ -1243,7 +1386,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       return true;
     }
     const ok = r!.drawHaze(draw, time, s.haze);
-    if (ok) markHazeOn(s);
+    if (ok) hazeDrawn(s);
     return ok;
   };
 
@@ -1308,7 +1451,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     win.clearTimeout(ambientTimer);
     ambientTimer = win.setTimeout(() => {
       ambientTimer = 0;
-      if (!disposed && renderer?.ready) wakeDriver();
+      if (!disposed && drawable()) wakeDriver();
     }, wait);
     return false;
   };
@@ -1403,7 +1546,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       win.clearTimeout(ambientTimer);
       ambientTimer = 0;
     }
-    if (disposed || !renderer?.ready) return false;
+    if (disposed || !drawable()) return false;
     const now = win.performance.now();
     const dt = Math.min(0.05, Math.max(0.001, (now - lastFrame) / 1000 || 0.016));
     lastFrame = now;
@@ -1548,12 +1691,12 @@ export function installLiquidGlass(doc: Document = document): () => void {
   /** A rim frame (pointer, size, theme, scroll, snapshot, lattice, plasma, ring, dent): reads rects, redraws changes. */
   const requestFrame = () => {
     rimWanted = true;
-    if (driver?.awake || disposed || !renderer?.ready) return;
+    if (driver?.awake || disposed || !drawable()) return;
     wakeDriver();
   };
   /** A frame for the ambient clock only (no rect reads unless the rim also wants one). */
   const wakeAmbient = () => {
-    if (driver?.awake || disposed || !renderer?.ready) return;
+    if (driver?.awake || disposed || !drawable()) return;
     wakeDriver();
   };
   const stopFrames = () => {
@@ -1753,6 +1896,8 @@ export function installLiquidGlass(doc: Document = document): () => void {
     doc.removeEventListener('wheel', onInput, true);
     win.clearTimeout(mutationTimer);
     win.clearTimeout(scrollTimer);
+    win.clearTimeout(activateTimer);
+    win.clearTimeout(workerWait);
     tree.disconnect();
     themeObserver.disconnect();
     visibility.disconnect();

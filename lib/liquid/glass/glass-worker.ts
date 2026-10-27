@@ -2,11 +2,12 @@
  * The page side of the glass worker (`glass.worker.ts`): starts it, hands it rim and haze canvases and the page
  * snapshot, posts each frame's draws, and says when it can no longer draw.
  *
- * Everything degrades to the main-thread path. The worker is used only once it has answered `ready` with a working
- * WebGL 2 context on an `OffscreenCanvas`; until then (and in engines without `transferControlToOffscreen`, without
- * module workers, or under a CSP that forbids them) the engine draws on the main thread, exactly as before. A canvas,
- * once transferred, can never be drawn by the page again, so when the worker loses its context the engine drops those
- * canvases and builds fresh ones on the main thread (`onLost`).
+ * Everything degrades to the main-thread path. Where a worker can run at all, the engine waits for it (bounded) and
+ * builds no page renderer, so no shader is compiled on the main thread; the worker is used once it has answered
+ * `ready` with a working WebGL 2 context on an `OffscreenCanvas`. In engines without `transferControlToOffscreen`,
+ * without module workers, or under a CSP that forbids them — or if the worker fails or is slow to answer — the
+ * engine draws on the main thread. A canvas, once transferred, can never be drawn by the page again, so when the
+ * worker loses its context the engine drops those canvases and builds fresh ones on the main thread (`onLost`).
  */
 import type { GlassDraw, HazeDraw } from './renderer';
 
@@ -55,6 +56,8 @@ export interface GlassWorkerCallbacks {
   onDrawn(keys: readonly string[]): void;
   /** The worker cannot draw (context lost, crashed). Its canvases are dead. */
   onLost(): void;
+  /** The worker died before it was ever ready (no WebGL 2 there, a failed module load): draw on the page instead. */
+  onFailed?(): void;
 }
 
 /** Whether this engine can hand a page canvas to a worker at all. */
@@ -101,6 +104,7 @@ export function startGlassWorker(
     ready = false;
     worker.terminate();
     if (was) cb.onLost();
+    else cb.onFailed?.();
   };
   worker.onmessage = (e: MessageEvent<GlassWorkerOut>) => {
     const m = e.data;

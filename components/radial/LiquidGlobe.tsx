@@ -125,6 +125,13 @@ const DEG = Math.PI / 180;
  */
 const SETTLE_SPRING = spring(0.62, 0.1);
 /**
+ * How long the shader coat takes to fade in over the CSS glass before the CSS disc steps aside. Equal to
+ * `--globe-coat-fade` in radial.css: the timer flips `data-globe-coat` to `on` as the transition lands.
+ */
+const COAT_FADE_MS = 420;
+/** After the skin's chunk lands, how long before its GPU program is warmed (off the page's first busy second). */
+const SKIN_WARM_MS = 2500;
+/**
  * Idle drift (deg/s) — only until the visitor first takes hold. It advances on the jelly ambient tick (step 2b), not
  * per vsync: 60 Hz while someone is there, the 30 Hz idle floor after `IDLE_AFTER_MS`, and not at all under `still`,
  * the degraded tiers, a hidden or unfocused tab, or off screen (CLAUDE.md "Plasmatic Jelly" → Performance, R7).
@@ -1018,6 +1025,7 @@ export function LiquidGlobe({
     let loading = false;
     let glass: JellyGlass | null = null;
     let factory: typeof import('./jelly-glass') | null = null;
+    let coatTimer = 0;
     const stage = stageRef.current;
     const host = glassRef.current;
     const root = document.documentElement;
@@ -1052,7 +1060,13 @@ export function LiquidGlobe({
     const onBloomEnd = (e: Event) => {
       if (e.target === globeRoot) refreshScene();
     };
+    // The docked globe grows in on mount (radial.css `@starting-style`); the scene is placed from the stage's rect, so
+    // it is placed again once the grow has landed.
+    const onGrowEnd = (e: TransitionEvent) => {
+      if (e.target === globeRoot && e.propertyName === 'scale') refreshScene();
+    };
     globeRoot?.addEventListener('animationend', onBloomEnd);
+    globeRoot?.addEventListener('transitionend', onGrowEnd as EventListener);
     window.addEventListener('resize', refreshScene);
     // A docked globe stays put while the page moves under it, so the picture it
     // refracts has to be re-placed with the scroll — once per frame at most.
@@ -1148,13 +1162,28 @@ export function LiquidGlobe({
       f.ripples.fill(0);
       for (let i = 3; i < 12; i += 4) f.ripples[i] = -1;
       f.gx = f.gy = f.pinch = 0;
-      host.appendChild(g.canvas);
+      // Re-appending an attached canvas would move it, and a moved node starts its `@starting-style` fade again.
+      const fresh = g.canvas.parentElement !== host;
+      if (fresh) host.appendChild(g.canvas);
       g.setField(jelly.field, jelly.version);
       g.render(f);
       jellyGlass.current = g;
       jellyDirty.current = true;
       dirty.current = true;
-      stage.dataset.globeCoat = 'on';
+      // The coat FADES in over the CSS glass (`entering`: both are drawn, radial.css), and only once it is fully up
+      // does the CSS disc step aside (`on`) — so the swap is a cross-fade, never a frame with a different ball.
+      if (fresh || !stage.dataset.globeCoat) {
+        stage.dataset.globeCoat = 'entering';
+        window.clearTimeout(coatTimer);
+        coatTimer = window.setTimeout(() => {
+          if (
+            !cancelled &&
+            g.canvas.parentElement === host &&
+            stage.dataset.globeCoat === 'entering'
+          )
+            stage.dataset.globeCoat = 'on';
+        }, COAT_FADE_MS);
+      }
     };
     const observer = new MutationObserver(sync);
     observer.observe(root, { attributes: true, attributeFilter: ['class', 'style'] });
@@ -1164,6 +1193,7 @@ export function LiquidGlobe({
       cancelled = true;
       stopScene();
       globeRoot?.removeEventListener('animationend', onBloomEnd);
+      globeRoot?.removeEventListener('transitionend', onGrowEnd as EventListener);
       window.removeEventListener('resize', refreshScene);
       window.removeEventListener('scroll', onScroll);
       cancelAnimationFrame(scrollRaf);
@@ -1171,6 +1201,7 @@ export function LiquidGlobe({
       preferences.forEach((q) => q.removeEventListener('change', sync));
       // The single cached canvas may already belong to a newer mount.
       if (glass?.onChange === sync) glass.onChange = null;
+      window.clearTimeout(coatTimer);
       if (glass?.canvas.parentElement === host) glass.canvas.remove();
       jellyGlass.current = null;
       if (stage) delete stage.dataset.globeCoat;
@@ -1367,15 +1398,26 @@ export function LiquidGlobe({
   useEffect(() => {
     if (!ambient) return;
     let cancelled = false;
+    let idle = 0;
     void import('./self-evert-skin')
       .then((m) => {
-        if (!cancelled) skinModule.current = m;
+        if (cancelled) return;
+        skinModule.current = m;
+        // Warm the skin while nothing is happening, so the first navigation's run finds its program built (it builds
+        // in the background either way; this just starts it before anyone navigates).
+        idle = window.setTimeout(() => {
+          if (!cancelled && !skin.current && jellyEligible()) {
+            skin.current = m.SelfEvertSkin.create();
+            if (!skin.current) skinModule.current = null;
+          }
+        }, SKIN_WARM_MS);
       })
       .catch(() => {
         /* The run keeps its wireframe-only form. */
       });
     return () => {
       cancelled = true;
+      window.clearTimeout(idle);
       skin.current?.canvas.remove();
       skin.current = null;
       skinOn.current = false;
@@ -1388,6 +1430,11 @@ export function LiquidGlobe({
     const mod = skinModule.current;
     if (!stage || !mod || !jellyEligible()) return false;
     let s = skin.current;
+    if (s?.failed) {
+      skin.current = null;
+      skinModule.current = null; // the program will not build here: do not try again
+      return false;
+    }
     if (!s) {
       s = mod.SelfEvertSkin.create();
       if (!s) {

@@ -54,6 +54,7 @@
  * mount of the globe, so opening the menu never compiles a shader twice.
  */
 
+import { startProgram, whenLinked } from '@/lib/render/gl-program';
 import { CONTACT, DOUGH_EXTENT, DOUGH_N } from '@/lib/dough';
 import { GLASS_OPTICS_GLSL } from '@/lib/liquid/optics';
 import { NOISE_GLSL } from '@/lib/liquid/glass/jelly-glsl';
@@ -464,19 +465,6 @@ interface Uniforms {
 /** The driver's last compile/link message, kept for diagnostics: a silent fallback is how an engine-specific shader bug hides. */
 export let lastShaderError = '';
 
-function compile(gl: GL, type: number, src: string): WebGLShader | null {
-  const s = gl.createShader(type);
-  if (!s) return null;
-  gl.shaderSource(s, src);
-  gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-    lastShaderError = gl.getShaderInfoLog(s) ?? 'shader compile failed';
-    gl.deleteShader(s);
-    return null;
-  }
-  return s;
-}
-
 /**
  * One GL context, one program, one full-screen triangle. WebGL 2 because the dough field is a half-float texture that
  * must filter linearly, which WebGL 1 only offers behind extensions that are missing on parts of the mobile fleet.
@@ -493,7 +481,10 @@ export class JellyGlass {
   private cssPx = 0;
   private lost = false;
   private uploaded = -1;
-  /** Called when the context is lost or restored, so the owner can swap to or from the CSS material. */
+  /** The program will not build on this driver: the CSS glass stays for the rest of the page. */
+  failed = false;
+  private builds = 0;
+  /** Called when the context is lost or restored, or the program has finished building, so the owner can swap to or from the CSS material. */
   onChange: (() => void) | null = null;
 
   private constructor(canvas: HTMLCanvasElement) {
@@ -503,6 +494,7 @@ export class JellyGlass {
     canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
       this.lost = true;
+      this.builds++;
       this.gl = null;
       this.u = null;
       this.tex = null;
@@ -542,19 +534,29 @@ export class JellyGlass {
     };
     const gl = this.canvas.getContext('webgl2', opts) as GL | null;
     if (!gl) return false;
-    const vs = compile(gl, gl.VERTEX_SHADER, VERT);
-    const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
-    if (!vs || !fs) return false;
-    const prog = gl.createProgram();
-    if (!prog) return false;
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.bindAttribLocation(prog, 0, 'aPos');
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-      lastShaderError = gl.getProgramInfoLog(prog) ?? 'program link failed';
-      return false;
-    }
+    // Built in the background (`lib/render/gl-program.ts`): nothing waits on the driver, so the globe's first paint
+    // never stalls a frame on this shader. `ready` stays false — the CSS glass is the material — until it links, and
+    // `onChange` tells the owner when it has (or that it never will: `failed`).
+    const build = startProgram(gl, { vert: VERT, frag: FRAG, attribs: { aPos: 0 } });
+    if (!build) return false;
+    const generation = ++this.builds;
+    void whenLinked(gl, build).then((prog) => {
+      if (build.vertShader) gl.deleteShader(build.vertShader);
+      // A context lost (and perhaps restored, with a build of its own) while this one was pending: not ours to report.
+      if (this.lost || generation !== this.builds) return;
+      if (!prog) {
+        lastShaderError = build.error();
+        this.failed = true;
+      } else {
+        this.finish(gl, prog);
+      }
+      this.onChange?.();
+    });
+    return true;
+  }
+
+  /** The rest of the set-up, once the program has linked. */
+  private finish(gl: GL, prog: WebGLProgram): void {
     gl.useProgram(prog);
     // One oversized triangle covers the viewport with no diagonal seam.
     const buf = gl.createBuffer();
@@ -624,7 +626,6 @@ export class JellyGlass {
     this.tex = tex;
     this.gl = gl;
     this.px = 0;
-    return true;
   }
 
   /**
@@ -759,6 +760,7 @@ let shared: JellyGlass | null | undefined;
  */
 export function acquireJellyGlass(): JellyGlass | null {
   if (shared === undefined) shared = JellyGlass.create();
+  if (shared?.failed) shared = null;
   return shared;
 }
 

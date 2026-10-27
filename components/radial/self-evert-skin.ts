@@ -21,6 +21,7 @@
  * WebGL2, or the program will not build) leaves the run as it was: the wireframe over the resting glass.
  */
 
+import { startProgram, whenLinked } from '@/lib/render/gl-program';
 import { buildMesh } from '@/lib/eversion/mesh';
 import { evert } from '@/lib/eversion/thurston';
 import type { Mesh } from '@/lib/eversion/types';
@@ -97,18 +98,6 @@ void main() {
 
 type GL = WebGL2RenderingContext;
 
-function compile(gl: GL, type: number, src: string): WebGLShader | null {
-  const s = gl.createShader(type);
-  if (!s) return null;
-  gl.shaderSource(s, src);
-  gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-    gl.deleteShader(s);
-    return null;
-  }
-  return s;
-}
-
 export interface SkinPalette {
   ink: readonly [number, number, number];
   accent: readonly [number, number, number];
@@ -141,6 +130,9 @@ export class SelfEvertSkin {
     alpha: WebGLUniformLocation | null;
   } | null = null;
   private readonly m3 = new Float32Array(9);
+  private builds = 0;
+  /** The program will not build on this driver: runs stay wireframe-only. */
+  failed = false;
 
   private constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -153,6 +145,7 @@ export class SelfEvertSkin {
     canvas.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
       this.lost = true;
+      this.builds++;
       this.gl = null;
       this.u = null;
       this.posBuf = null;
@@ -186,17 +179,22 @@ export class SelfEvertSkin {
       powerPreference: 'low-power',
     }) as GL | null;
     if (!gl) return false;
-    const vs = compile(gl, gl.VERTEX_SHADER, VERT);
-    const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
-    if (!vs || !fs) return false;
-    const prog = gl.createProgram();
-    if (!prog) return false;
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.bindAttribLocation(prog, 0, 'aPos');
-    gl.bindAttribLocation(prog, 1, 'aNrm');
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
+    // Built in the background (`lib/render/gl-program.ts`), so warming the skin never stalls a frame; `ready` stays
+    // false (the run goes wireframe-only) until it links.
+    const build = startProgram(gl, { vert: VERT, frag: FRAG, attribs: { aPos: 0, aNrm: 1 } });
+    if (!build) return false;
+    const generation = ++this.builds;
+    void whenLinked(gl, build).then((prog) => {
+      if (build.vertShader) gl.deleteShader(build.vertShader);
+      if (this.lost || generation !== this.builds) return;
+      if (prog) this.finish(gl, prog);
+      else this.failed = true;
+    });
+    return true;
+  }
+
+  /** The rest of the set-up, once the program has linked. */
+  private finish(gl: GL, prog: WebGLProgram): void {
     gl.useProgram(prog);
 
     const posBuf = gl.createBuffer();
@@ -237,7 +235,6 @@ export class SelfEvertSkin {
     this.posBuf = posBuf;
     this.nrmBuf = nrmBuf;
     this.px = 0;
-    return true;
   }
 
   /**

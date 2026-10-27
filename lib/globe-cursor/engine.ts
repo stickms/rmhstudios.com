@@ -58,6 +58,8 @@ const TRAIL_SPACING = 0.05;
 const REST_PX = 0.1;
 const REST_V = 2;
 const REST_EPS = 0.002;
+/** `coversPointer()`: the fraction of its size (× fade) at which the growing globe takes over from the system cursor. */
+const COVER_SCALE = 0.4;
 
 /** CPU fallback grid (no WebGL 2). The GPU path's own, much finer grid is in `gl.ts`. */
 const GRID: Record<CursorDetail, [number, number]> = {
@@ -250,7 +252,11 @@ export class GlobeCursorEngine {
   private deform = new Float64Array(9);
   private deformIT = new Float64Array(9);
 
-  constructor(settings: GlobeCursorSettings) {
+  /**
+   * `gpu` is the page's shared surface (`acquireGlobeGl()` in `./gl`), already built — or null for the CPU path. The
+   * engine borrows it: `dispose` hands it back for the next mount rather than destroying a compiled program.
+   */
+  constructor(settings: GlobeCursorSettings, gpu: GlobeGl | null = null) {
     this.s = settings;
     this.outsideHsl = hexToHsl(settings.outside);
     this.insideHsl = hexToHsl(settings.inside);
@@ -260,12 +266,12 @@ export class GlobeCursorEngine {
     if (!ctx) throw new Error('2d context unavailable');
     this.sctx = ctx;
     this.spriteSource = this.sprite;
-    this.gpu = GlobeGl.create();
+    this.gpu = gpu;
     this.buildMesh();
   }
 
   dispose(): void {
-    this.gpu?.dispose();
+    // Borrowed, not owned (see the constructor): the next cursor reuses the context and its program.
     this.gpu = null;
   }
 
@@ -312,9 +318,23 @@ export class GlobeCursorEngine {
     if (!this.placed || this.reduced) {
       this.x = x;
       this.y = y;
+      // The first appearance GROWS in: the hover-scale spring starts from nothing and the globe swells out of the
+      // pointer to its size (the same spring that grows it over a link, so it lands with the cursor's own jelly).
+      if (!this.placed && !this.reduced) {
+        this.scale = 0;
+        this.scaleV = 0;
+      }
       this.placed = true;
     }
     this.visible = true;
+  }
+
+  /**
+   * Whether the globe is big enough on screen to stand in for the system cursor. The caller keeps the OS cursor until
+   * this holds, so there is never a moment with no pointer at all while the globe grows in.
+   */
+  coversPointer(): boolean {
+    return this.visible && (this.reduced || this.scale * this.alpha >= COVER_SCALE);
   }
 
   leave(): void {
@@ -468,9 +488,10 @@ export class GlobeCursorEngine {
 
     // Orientation: spin about the screen vertical, then roll with travel.
     if (this.ambient) this.rotate(0, 1, 0, s.spin * DEG * dt);
-    if (s.roll && speed > 1) {
-      const r = (s.size / 2) * this.scale;
-      this.rotate(-mvy / speed, mvx / speed, 0, (speed * dt) / r);
+    // Not while it is still a speck growing in: rolling a radius of ~0 would be an unbounded turn.
+    const rollR = (s.size / 2) * this.scale;
+    if (s.roll && speed > 1 && rollR > 1) {
+      this.rotate(-mvy / speed, mvx / speed, 0, (speed * dt) / rollR);
     }
 
     // Trail history.

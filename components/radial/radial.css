@@ -816,6 +816,19 @@ body:has(.radial-shell) .call-banner {
   --globe-size: var(--dock-globe);
   gap: 0;
   margin-bottom: 0;
+  /* The docked globe's chunk loads after the page; when it lands the globe GROWS in — a fade and a swell from just
+     under its size — instead of appearing in one frame. A transition from `@starting-style`, so a reload mid-grow
+     turns around from where it is; browsers without it show the globe at once. LiquidGlobe re-places the refracted
+     page when the `scale` transition ends (its rect is read from layout once the grow has landed). */
+  transition:
+    opacity var(--globe-enter) var(--ease-smooth),
+    scale var(--globe-enter) var(--ease-smooth);
+}
+@starting-style {
+  .rad-globe-dock .radial-globe {
+    opacity: 0;
+    scale: 0.86;
+  }
 }
 /* The overlay's marquee ("The Liquid Globe") is for the full-screen menu; docked,
    the sphere is the whole of it. */
@@ -1880,6 +1893,15 @@ html.reduce-transparency .radial-globe__contact,
   width: calc(100% + 2 * var(--jelly-bleed));
   height: calc(100% + 2 * var(--jelly-bleed));
   pointer-events: none;
+  /* The coat arrives as a cross-fade, not a swap: it fades in OVER the CSS glass (`data-globe-coat="entering"`, both
+     drawn) and LiquidGlobe flips the stage to `on` — the CSS disc steps aside — as the fade lands (`COAT_FADE_MS`,
+     the same number). Browsers without `@starting-style` show it at once, as before. Opacity only. */
+  transition: opacity var(--globe-coat-fade) var(--ease-smooth);
+}
+@starting-style {
+  .radial-globe__jelly {
+    opacity: 0;
+  }
 }
 /* The shader owns the body, rim hairline and silhouette now, so the CSS disc stops clipping and stops drawing them.
    Only the drop shadow stays CSS (a static ellipse on the surface below: it does not need to deform). */

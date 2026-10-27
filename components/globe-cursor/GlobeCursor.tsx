@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { msToAmbientTick } from '@/lib/jelly/ambient-tick';
@@ -10,6 +10,7 @@ import {
   HOTSPOT_SIZE_PX,
   type HoverKind,
 } from '@/lib/globe-cursor/engine';
+import { acquireGlobeGl, type GlobeGl } from '@/lib/globe-cursor/gl';
 import { IDLE_AFTER_MS, jellyBudget, jellyMode, onJellyEnvChange } from '@/lib/jelly/tiers';
 import type { GlobeCursorSettings } from '@/lib/globe-cursor/settings';
 import { useGlobeCursorStore } from '@/stores/globeCursorStore';
@@ -124,6 +125,21 @@ export default function GlobeCursor() {
   const kickRef = useRef<() => void>(() => {});
   /** Re-lay the canvas out for the current settings (small moving box vs full viewport). */
   const layoutRef = useRef<() => void>(() => {});
+  /**
+   * The GPU surface, built in the background (`acquireGlobeGl`): `undefined` while it builds, then the surface or null
+   * (the CPU path). The cursor boots only once it is known, so a page never stalls a frame on the shader compile, and
+   * until then the system cursor is the cursor. A later mount gets the same, already-built context back at once.
+   */
+  const [gpu, setGpu] = useState<GlobeGl | null | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    void acquireGlobeGl().then((g) => {
+      if (live) setGpu(g);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
 
   // Settings → engine + stylesheet.
   useEffect(() => {
@@ -155,6 +171,7 @@ export default function GlobeCursor() {
   }, [reduced]);
 
   useEffect(() => {
+    if (gpu === undefined) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -163,7 +180,7 @@ export default function GlobeCursor() {
 
     let engine: GlobeCursorEngine;
     try {
-      engine = new GlobeCursorEngine(settingsRef.current);
+      engine = new GlobeCursorEngine(settingsRef.current, gpu);
     } catch {
       return;
     }
@@ -284,6 +301,7 @@ export default function GlobeCursor() {
         }
         dirty = engine.draw(ctx);
       }
+      syncNative();
       // Reduced motion draws one still frame per event. Otherwise: every vsync while anything settles, the ambient
       // tick while only the eversion runs, and nothing at all once it rests (ambient motion off, or no pointer).
       if (reducedRef.current) {
@@ -317,15 +335,21 @@ export default function GlobeCursor() {
     }
     kickRef.current = kick;
 
-    const setNativeHidden = (hidden: boolean) => {
-      html.classList.toggle(HTML_CLASS, hidden && settingsRef.current.hideNative);
+    // The system cursor goes only once the globe covers the pointer (`coversPointer`: grown in, faded up), and comes
+    // back the moment it does not. Re-checked every frame, written only when it changes.
+    let nativeHidden = false;
+    const syncNative = () => {
+      const hidden = engine.coversPointer() && settingsRef.current.hideNative;
+      if (hidden === nativeHidden && html.classList.contains(HTML_CLASS) === hidden) return;
+      nativeHidden = hidden;
+      html.classList.toggle(HTML_CLASS, hidden);
     };
 
     const onMove = (e: PointerEvent) => {
       lastInput = performance.now();
       if (e.pointerType !== 'mouse') {
         engine.leave();
-        setNativeHidden(false);
+        syncNative();
         kick();
         return;
       }
@@ -333,7 +357,6 @@ export default function GlobeCursor() {
         engine.leave();
       } else {
         engine.move(e.clientX, e.clientY);
-        setNativeHidden(true);
       }
       kick();
     };
@@ -399,7 +422,7 @@ export default function GlobeCursor() {
       html.classList.remove(HTML_CLASS);
       document.getElementById(STYLE_ID)?.remove();
     };
-  }, []);
+  }, [gpu]);
 
   // Portalled: the cursor must sit above the shell's chrome, never inside `.radial-frame`.
   return createPortal(
