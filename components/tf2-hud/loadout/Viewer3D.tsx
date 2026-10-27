@@ -10,6 +10,7 @@
 'use client';
 
 import { useGLTF } from '@react-three/drei';
+import StudioLight from './StudioLight';
 import { ResetViewButton, ViewerOrbit, rememberView, useResetView } from './viewer-controls';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
@@ -99,13 +100,12 @@ export default function Viewer3D({
     <div className="relative size-full">
       <Canvas
         dpr={[1, 1.5]}
+        flat
         frameloop="demand"
         camera={{ fov: 35, position: [2.2, 1.2, 3] }}
         gl={{ antialias: true, alpha: true }}
       >
-        <ambientLight intensity={1.1} />
-        <directionalLight position={[3, 4, 5]} intensity={2.2} />
-        <directionalLight position={[-4, 1, -2]} intensity={0.8} color="#ffd9b0" />
+        <StudioLight />
         <ViewerOrbit resetRef={ref} minDistance={radius * 1.2} maxDistance={radius * 8} />
         <Model url={url} tint={tint} paint={paint} onFit={onFit} />
         {effect && box ? <EffectParticles spec={effect} box={box} /> : null}
