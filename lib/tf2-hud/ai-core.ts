@@ -63,6 +63,7 @@ export function validateSelection(raw: unknown, allowed: ReadonlySet<string>): s
   return out;
 }
 
+// eslint-disable-next-line no-control-regex -- control characters are rejected on purpose
 const SAFE_VALUE = /^[^\u0000-\u001f\u007f]*$/;
 
 /** Normalise the model's change list; anything malformed is dropped here and counted by the caller. */
