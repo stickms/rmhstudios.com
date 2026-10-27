@@ -10,37 +10,35 @@ mb = srcanim.read_skeleton(base)
 ma = srcanim.read_skeleton(anim)
 seqs = srcanim.read_sequences(anim)
 names = {s["name"]: s for s in seqs}
-def ang(q1, q2):
-    d = abs(sum(a * b for a, b in zip(q1, q2)))
-    return math.degrees(2 * math.acos(min(1, d)))
-print("pelvis bind (base)", mb[0]["pos"], mb[0]["quat"], "rot", mb[0]["rot"], "scales", mb[0]["posscale"], mb[0]["rotscale"])
-print("pelvis bind (anim mdl)", ma[0]["pos"], ma[0]["quat"], "rot", ma[0]["rot"])
-print("names equal:", [b["name"] for b in mb[:76]] == [b["name"] for b in ma])
-for n in ("stand_PRIMARY", "stand_MELEE"):
-    desc, pos, quat = srcanim.decode_sequence(anim, ma, names[n])
-    print("==", n, "frames", desc["frames"])
-    for f in (0, 1, desc["frames"] // 2):
-        print(" frame", f, "pelvis pos", np.round(pos[f, 0], 2), "quat", np.round(quat[f, 0], 3))
-    # which bones does frame 0 move vs the bind
-    big = []
-    for i, b in enumerate(ma):
-        a = ang(quat[0, i], b["quat"]); d = float(np.linalg.norm(pos[0, i] - np.array(b["pos"])))
-        if a > 20 or d > 8: big.append((b["name"], round(a), round(d, 1)))
-    print(" bones deviating from bind at frame 0:", big[:30])
-    # raw dump of the first mstudioanim_t entries
-    o = desc["at"] + desc["index"]
-    ents = []
+s = names["stand_MELEE"]
+desc = srcanim.read_animdesc(anim, s["anims"][0])
+print("desc", desc, "zero span/count/index/stall", struct.unpack_from("<hhif", anim, desc["at"] + 88))
+o = desc["at"] + desc["index"]
+bone, flags, nxt = struct.unpack_from("<BBh", anim, o)
+ptrs = struct.unpack_from("<6h", anim, o + 4)
+print("pelvis entry flags", hex(flags), "next", nxt, "ptrs rot", ptrs[:3], "pos", ptrs[3:])
+for ch, p in enumerate(ptrs):
+    if p == 0: print(" ch", ch, "none"); continue
+    q = o + p
+    stream = []
+    k = 0
+    # walk the runs
+    tot = 0
     for _ in range(12):
-        bone, flags, nxt = struct.unpack_from("<BBh", anim, o)
-        ents.append((bone, hex(flags), nxt))
-        if nxt == 0: break
-        o += nxt
-    print(" first entries (bone, flags, next):", ents)
-ref = names.get("ref")
-print("ref in anim mdl:", bool(ref))
-rseq = [s for s in srcanim.read_sequences(base) if s["name"] == "ref"][0]
-print("base ref seq anims:", rseq["anims"])
+        valid, total = anim[q], anim[q + 1]
+        vals = struct.unpack_from("<%dh" % valid, anim, q + 2)
+        stream.append((valid, total, vals[:6]))
+        tot += total
+        if tot >= desc["frames"]: break
+        q += (valid + 1) * 2
+    print(" ch", ch, "scale", (ma[0]["rotscale"] + ma[0]["posscale"])[ch if ch < 3 else ch], "runs", stream)
+rp = srcanim.decode_animdesc(anim, ma, desc)[0][:, 0]
+print("pelvis pos by frame", np.round(rp, 1).tolist())
+# root fix from the base model's own reference pose
+rseq = [x for x in srcanim.read_sequences(base) if x["name"] == "ref"][0]
 rd = srcanim.read_animdesc(base, rseq["anims"][0])
-print("ref animdesc", rd["name"], rd["frames"], hex(rd["flags"]))
-rp, rq = srcanim.decode_animdesc(base, mb, rd)
-print("ref pelvis", np.round(rp[0, 0], 2), np.round(rq[0, 0], 3), "dev from bind", ang(rq[0, 0], mb[0]["quat"]))
+rp2, rq2 = srcanim.decode_animdesc(base, mb, rd)
+Rb = srcanim.quat_matrix(mb[0]["quat"]); Rr = srcanim.quat_matrix(rq2[0, 0])
+C = Rb @ Rr.T
+print("C =\n", np.round(C, 3), "det", round(np.linalg.det(C), 3))
+print("C @ ref pos", np.round(C @ rp2[0, 0], 2), "bind pos", np.round(mb[0]["pos"], 2))
