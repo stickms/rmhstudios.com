@@ -49,7 +49,7 @@ const UA =
 const ALLOW_PATH = join(ROOT, 'docs/page-audit-allowlist.json');
 const allow = existsSync(ALLOW_PATH)
   ? JSON.parse(readFileSync(ALLOW_PATH, 'utf8'))
-  : { edges: {}, near: {}, anatomy: {} };
+  : { edges: {}, near: {}, canvas: {}, anatomy: {} };
 
 /** Static `_site` paths from the generated route tree (no params, no API, no admin). */
 function routesFromTree() {
@@ -111,6 +111,17 @@ function inPage() {
     )
       near.push(`NEAR ${describe(e)}`);
   }
+  // A glass host's haze and rim canvases are `position: absolute; inset: 0` inside it, so a canvas far bigger than its
+  // host means the host is not the containing block (e.g. forced `position: static`) and a gray slab as large as the
+  // page paints behind the content. The jelly margin lets a canvas run a little past its host, hence the allowance.
+  const canvas = [];
+  for (const c of document.querySelectorAll('canvas.liquid-glass-canvas, canvas.jelly-haze-canvas')) {
+    const host = c.parentElement;
+    if (!host) continue;
+    const a = c.getBoundingClientRect();
+    const t = host.getBoundingClientRect();
+    if (a.width > t.width + 96 || a.height > t.height + 96) canvas.push(`CANVAS ${describe(host)}`);
+  }
   const q = (s) => document.querySelector(s);
   const box = (el) => {
     if (!el) return null;
@@ -133,6 +144,7 @@ function inPage() {
     ios: document.documentElement.classList.contains('ios-webkit'),
     edges,
     near,
+    canvas,
     anatomy: {
       heading: heading ? box(heading.querySelector('h1, h2') || heading) : null,
       tabs: box(tabs),
@@ -172,7 +184,7 @@ function anatomyFindings(a, width) {
   return out;
 }
 
-const findings = { edges: {}, near: {}, anatomy: {} };
+const findings = { edges: {}, near: {}, canvas: {}, anatomy: {} };
 const errors = [];
 // `--chromium /path/to/chrome` (or PW_CHROMIUM) when the installed Playwright's own browser build is not available.
 const executablePath = opt('chromium', process.env.PW_CHROMIUM || '') || undefined;
@@ -189,6 +201,8 @@ for (const pass of passes) {
         // A returning visitor: the consent banner is a transient fixed panel near the bottom of every page for a first
         // visit, and would drown the report. `--first-visit` audits it instead.
         if (consented) window.localStorage.setItem('rmh-cookie-consent', 'essential');
+        // Likewise the first-run language chooser, a modal with a full-viewport scrim.
+        if (consented) window.localStorage.setItem('rmh-lang-picked-v1', '1');
       } catch {
         /* private mode */
       }
@@ -201,12 +215,20 @@ for (const pass of passes) {
     const page = await ctx.newPage();
     try {
       await page.goto(BASE + path, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+      // The glass canvases are created after hydration; a fixed wait alone misses them on a slow page.
+      await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {});
       await page.waitForTimeout(2500);
+      // A release-notes or welcome modal opens on its own and its scrim is deliberately full-viewport; audit the page, not it.
+      if (!FIRST_VISIT && (await page.locator('[role=dialog]').count())) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(900);
+      }
       const r = await page.evaluate(inPage);
       if (pass.ios && !r.ios)
         errors.push(`${label}: html.ios-webkit was not stamped (user agent not recognised)`);
       for (const e of pass.ios ? r.edges : []) (findings.edges[path] ??= []).push(e);
       for (const e of pass.ios ? r.near : []) (findings.near[path] ??= []).push(e);
+      for (const e of r.canvas) (findings.canvas[path] ??= []).push(e);
       for (const a of anatomyFindings(r.anatomy, pass.width)) {
         (findings.anatomy[`${path} @${pass.width}`] ??= []).push(a);
       }
@@ -226,9 +248,10 @@ const report = [];
 const TITLES = {
   edges: 'iOS EDGE-PINNED LAYERS (coloured-band risk)',
   near: 'PAINTED FIXED LAYERS NEAR A BAR (look here when a band appears)',
+  canvas: 'GLASS CANVASES LARGER THAN THEIR HOST (stray gray slab)',
   anatomy: 'PAGE ANATOMY DEVIATIONS',
 };
-for (const kind of ['edges', 'near', 'anatomy']) {
+for (const kind of ['edges', 'near', 'canvas', 'anatomy']) {
   const title = TITLES[kind];
   const lines = [];
   for (const [path, list] of Object.entries(findings[kind])) {
@@ -243,7 +266,7 @@ for (const kind of ['edges', 'near', 'anatomy']) {
 // Stale allowlist entries: reviewed findings that no longer occur (only meaningful for the routes that were audited).
 const audited = new Set(routes);
 const stale = [];
-for (const kind of ['edges', 'near', 'anatomy']) {
+for (const kind of ['edges', 'near', 'canvas', 'anatomy']) {
   for (const [path, list] of Object.entries(allow[kind] ?? {})) {
     if (!audited.has(path.split(' @')[0])) continue;
     for (const text of list)
