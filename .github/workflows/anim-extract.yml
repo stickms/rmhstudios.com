@@ -5,7 +5,7 @@ name: anim-extract
 on:
   push:
     branches: [chore/tf2-anim-dev]
-    paths: ['.github/workflows/anim-extract.yml', 'tools/extract_sample.py']
+    paths: ['.github/workflows/anim-extract.yml', 'tools/extract_sample.py', 'tools/kv.py']
 permissions:
   contents: read
 jobs:
@@ -47,4 +47,4 @@ jobs:
       - uses: actions/cache/save@v4
         with:
           path: ~/cache-out
-          key: tf2-anim-sample-v2
+          key: tf2-anim-sample-v3

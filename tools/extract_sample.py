@@ -1,6 +1,7 @@
 """Throwaway dev tool: pull a working subset of TF2 out of an install into a folder and print what is there."""
 import glob, os, re, shutil, struct, sys
 sys.path.insert(0, os.environ["CODE"] + "/scripts/tf2-assets")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from vpkfs import GameFS
 
 root, out = sys.argv[1], sys.argv[2]
@@ -140,3 +141,24 @@ print("scripts/items:", [n for n in names if n.startswith("scripts/items/")][:40
 print("pcf count:", len([n for n in names if n.endswith(".pcf")]))
 w = [n for n in names if n.startswith("models/weapons/w_models/") and n.endswith(".mdl")]
 print("w_models:", len(w), [n for n in w if re.search(r"w_(scattergun|bat|pistol)\b|w_scattergun", n)][:12])
+
+
+# ---- war paint textures: everything the kit scripts look up
+import kv as _kv
+_pk = open(os.path.join(root, "tf/scripts/items/paintkits_master.txt") if os.path.exists(os.path.join(root, "tf/scripts/items/paintkits_master.txt")) else os.path.join(out, "scripts/items/paintkits_master.txt"), encoding="utf-8", errors="replace").read()
+_top = _kv.get(_kv.parse(_pk), "item_paintkit_definitions")
+_tex = set()
+def _walk(pairs):
+    for k, v in pairs:
+        if isinstance(v, list): _walk(v)
+        elif k in ("texture", "texture_red", "texture_blue", "groups", "base") and not v.startswith("$"): _tex.add(v.replace("\\", "/").lower())
+for _n, _b in _top: _walk(_b)
+n = size = 0
+for t in sorted(_tex):
+    p = "materials/" + t + ".vtf"
+    d = fs.read(p)
+    if d is None:
+        print("missing kit texture", t); continue
+    q = os.path.join(out, p); os.makedirs(os.path.dirname(q), exist_ok=True)
+    open(q, "wb").write(d); n += 1; size += len(d)
+print("kit textures: %d of %d written, %.1f MB" % (n, len(_tex), size / 1e6))
