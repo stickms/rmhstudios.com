@@ -2245,12 +2245,13 @@ html.ios-webkit .glass-liquid::after {
    fixed layer at the edges: their ground is the document's own background, and anything fixed sits well
    clear of an edge.
 
-   So on iOS WebKit the full-viewport fixed decoration is not rendered at all: the aurora and the ring
-   backdrop (the document background above already carries the canvas) and the arc canvas. The sticky top
+   So on iOS WebKit the full-viewport fixed decoration is not rendered at all, on every page: the aurora
+   and the ring backdrop (the document background above already carries the canvas on site pages) and the
+   arc canvas. Page-level headers and banners that were pinned flush to the top edge (the call banners,
+   the Kaikai ledger bar, the Rebar masthead) are inset from it the same way the shell's top capsule is. The sticky top
    capsule and the orb and compose button already sit well off the edges (radial.css). Content then runs
    under both bars with Safari's own soft edge, not a flat band. */
-html.ios-webkit:not(.app-route) :is(.site-aurora, .radial-backdrop),
-html.ios-webkit .jelly-arc-layer {
+html.ios-webkit :is(.site-aurora, .radial-backdrop, .jelly-arc-layer) {
   display: none;
 }
 
