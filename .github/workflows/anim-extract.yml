@@ -1,0 +1,50 @@
+name: anim-extract
+# Throwaway dev loop (never merged): extracts the parts of Team Fortress 2 needed to build the
+# animation/eye/weapon converters into a private Actions cache, so later runs take minutes, not a
+# 30 GB download. Nothing from the game is committed anywhere.
+on:
+  push:
+    branches: [chore/tf2-anim-dev]
+    paths: ['.github/workflows/anim-extract.yml', 'tools/extract_sample.py']
+permissions:
+  contents: read
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      STEAM_USER: ${{ secrets.STEAM_USER }}
+      STEAM_PASS: ${{ secrets.STEAM_PASS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Code under test
+        run: git clone --depth 1 --branch feat/tf2-models-sync https://github.com/stickms/rmhstudios.com "$GITHUB_WORKSPACE/code"
+      - name: Install SteamCMD
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lib32gcc-s1 lib32stdc++6 curl
+          mkdir -p "$HOME/steamcmd" && cd "$HOME/steamcmd"
+          curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar xz
+      - name: Download TF2
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android
+          sudo mkdir -p /mnt/tf2 /mnt/sample && sudo chown "$USER" /mnt/tf2 /mnt/sample
+          for i in 1 2 3; do
+            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/tf2 +login "$STEAM_USER" "$STEAM_PASS" +app_update 440 validate +quit > "$HOME/steam.log" 2>&1 || true
+            [ -f /mnt/tf2/tf/tf2_textures_000.vpk ] && break
+            sleep 30
+          done
+          cp /mnt/tf2/tf/scripts/items/items_game.txt /mnt/tf2/tf/resource/tf_english.txt /mnt/sample/ 2>/dev/null || true
+      - run: pip install --quiet vpk numpy pillow
+      - name: Extract the subset
+        run: CODE="$GITHUB_WORKSPACE/code" python3 tools/extract_sample.py /mnt/tf2 /mnt/sample/game 2>&1 | tail -150
+      - name: Pack
+        run: |
+          cd /mnt/sample && tar -cf - . | xz -T0 -6 > /mnt/sample.tar.xz
+          ls -la /mnt/sample.tar.xz
+          mkdir -p "$HOME/cache-out" && mv /mnt/sample.tar.xz "$HOME/cache-out/"
+      - uses: actions/cache/save@v4
+        with:
+          path: ~/cache-out
+          key: tf2-anim-sample-v1
