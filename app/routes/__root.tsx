@@ -692,9 +692,6 @@ function RootDocument({ children }: { children: ReactNode }) {
 
             So it must stay a leaf: never render children into it. */}
         <div className="site-aurora" aria-hidden />
-        {/* iOS 26 Safari edge probes: see `.safari-edge` in globals.css. */}
-        <div className="safari-edge safari-edge--top" aria-hidden />
-        <div className="safari-edge safari-edge--bottom" aria-hidden />
         {children}
         {/* The tab capsule's #glass-goo host. Glass optics do not use SVG lenses. */}
         <GlassFilter />

@@ -2237,38 +2237,21 @@ html.ios-webkit .glass-liquid::after {
   display: none;
 }
 
-/* iOS 26 Safari derives the material behind its status bar and floating toolbar from
-   fixed/sticky layers at the corresponding viewport edge. When it finds none it falls
-   back to the page's own ground and fills those strips with that one flat colour, which
-   on a dark theme is the black band under the clock and behind the tab bar (and it hides
-   the content scrolling under them). A transparent element is not enough: WebKit samples
-   through it. A real, minimal backdrop filter makes it keep its translucent material
-   instead, so the page shows through the bars.
+/* iOS 26 Safari tints the strips behind its status bar and floating toolbar from
+   `position: fixed` / sticky layers at the screen edge, and a layer with a paint of its own (the aurora
+   canvas, here) is read as one flat colour and filled in as an opaque band that covers the content
+   scrolling under it. Transparency, `pointer-events: none`, transforms and `backdrop-filter` do not
+   reliably opt a layer out. Sites that show their page behind the bars (apple.com, reddit.com) have no
+   fixed layer at the edges: their ground is the document's own background, and anything fixed sits well
+   clear of an edge.
 
-   Two 5px strips, one per edge (rendered once in `__root.tsx`), reach both edge probes.
-   They paint nothing, take no pointer events and exist on iOS WebKit only (`ios-webkit`
-   is stamped pre-paint). They are not a glass role and are 5px tall, so the "no
-   backdrop-filter on a surface" rule is not what this is. The maximum z-index keeps an
-   overlay from becoming the sampled layer. */
-.safari-edge {
+   So on iOS WebKit the full-viewport fixed decoration is not rendered at all: the aurora and the ring
+   backdrop (the document background above already carries the canvas) and the arc canvas. The sticky top
+   capsule and the orb and compose button already sit well off the edges (radial.css). Content then runs
+   under both bars with Safari's own soft edge, not a flat band. */
+html.ios-webkit:not(.app-route) :is(.site-aurora, .radial-backdrop),
+html.ios-webkit .jelly-arc-layer {
   display: none;
-}
-html.ios-webkit .safari-edge {
-  display: block;
-  position: fixed;
-  inset-inline: 0;
-  height: 5px;
-  z-index: 2147483647;
-  pointer-events: none;
-  background: transparent;
-  -webkit-backdrop-filter: blur(1px);
-  backdrop-filter: blur(1px);
-}
-html.ios-webkit .safari-edge--top {
-  top: 0;
-}
-html.ios-webkit .safari-edge--bottom {
-  bottom: 0;
 }
 
 /* Forced colors / Windows High Contrast strips backgrounds — keep structural
@@ -3351,19 +3334,15 @@ html.app-route:has(.app-page) {
   scrollbar-gutter: stable;
 }
 
-/* Fixed descendants are clipped to Safari's visual viewport, leaving the
-   physical strips behind the status and floating tab bars without the aurora.
-   The root canvas is allowed to paint those strips, so mirror the site canvas
-   there on mobile iOS. Keeping it viewport-fixed also prevents a tall scrolling
-   page from exposing the end of the gradient at either edge. */
-@media (max-width: 47.999rem) {
-  html.ios-webkit:not(.app-route) {
-    background-image: var(--site-canvas);
-    background-repeat: no-repeat;
-    background-position: center top;
-    background-size: cover;
-    background-attachment: fixed;
-  }
+/* The page's ground on iOS WebKit is the ROOT's own background: the aurora layer is not rendered
+   there (see the iOS edge note below), because a fixed full-viewport layer is what makes Safari fill
+   the strips behind its bars with one flat colour. The root canvas scrolls with the document, and
+   content runs under both bars. */
+html.ios-webkit:not(.app-route) {
+  background-image: var(--site-canvas);
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
 }
 
 body {
