@@ -38,6 +38,7 @@ import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
 import type { JellyFrame, JellyGlass } from './jelly-glass';
 import type { SelfEvertSkin } from './self-evert-skin';
+import { SELF_EVERT_MS } from './self-evert-timing';
 import { luminance, resolveColor } from '@/lib/liquid/glass/color';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
 import { PLASMA_LOOK } from '@/lib/liquid/glass/policy';
@@ -131,6 +132,8 @@ const SETTLE_SPRING = spring(0.62, 0.1);
 const COAT_FADE_MS = 420;
 /** After the skin's chunk lands, how long before its GPU program is warmed (off the page's first busy second). */
 const SKIN_WARM_MS = 2500;
+/** The hub's globe is opened to be used, so its skin is warmed almost at once: a choice can come within seconds. */
+const SKIN_WARM_IN_PLACE_MS = 300;
 /**
  * Idle drift (deg/s) — only until the visitor first takes hold. It advances on the jelly ambient tick (step 2b), not
  * per vsync: 60 Hz while someone is there, the 30 Hz idle floor after `IDLE_AFTER_MS`, and not at all under `still`,
@@ -157,7 +160,6 @@ const AMBIENT_RESUME_MS = 4000;
  * The glass body everts with it: `./self-evert-skin` draws the same surface as
  * lit glass while the resting disc fades out (see `prepareSkin`).
  */
-const SELF_EVERT_MS = 1500;
 /** The eversion proper, as a fraction of the run: the turn and tip span the whole. */
 const SELF_EVERT_WINDOW = [0.06, 0.94] as const;
 /** The tip toward the viewer at the middle of the run, degrees (`mini.ts`: 0.38 rad). */
@@ -622,6 +624,13 @@ interface LiquidGlobeProps {
    */
   ambient?: boolean;
   /**
+   * The hub's globe on a phone: a destination is navigated to AT ONCE and the globe turns itself inside out in
+   * place (the docked globe's self-eversion, see `SELF_EVERT_MS`) instead of handing the screen to the
+   * full-screen Globe Eversion. The hub keeps the globe mounted and carries it down onto the orb while it plays.
+   * Unlike `ambient` the globe is otherwise an ordinary open one.
+   */
+  evertInPlace?: boolean;
+  /**
    * Globe Eversion hand-off (docs/plans/2026-10-17-globe-eversion.md §9.1).
    *
    * When present, confirming a destination calls this INSTEAD of
@@ -655,6 +664,7 @@ export function LiquidGlobe({
   surfaceRef,
   rehearsal = false,
   ambient = false,
+  evertInPlace = false,
   onNavigate,
 }: LiquidGlobeProps) {
   const { t } = useTranslation('feed');
@@ -1374,13 +1384,13 @@ export function LiquidGlobe({
    * attribute when the run ends.
    */
   const startSelfEvert = useCallback(() => {
-    if (!ambient || reduced || quiet.current) return;
+    if (!(ambient || evertInPlace) || reduced || quiet.current) return;
     selfEvert.current = performance.now();
     stageRef.current?.closest('.radial-globe')?.setAttribute('data-self-evert', '');
     skinOn.current = prepareSkin();
     if (skinOn.current) stageRef.current?.setAttribute('data-skin', 'on');
     dirty.current = true;
-  }, [ambient, reduced]);
+  }, [ambient, evertInPlace, reduced]);
 
   /* ── The self-eversion's surface ──────────────────────────────────────────
      The cage alone turned inside out in front of a glass disc that stayed a
@@ -1396,7 +1406,7 @@ export function LiquidGlobe({
   /** Whether the playing run is drawn by the skin. Read by the frame loop. */
   const skinOn = useRef(false);
   useEffect(() => {
-    if (!ambient) return;
+    if (!(ambient || evertInPlace)) return;
     let cancelled = false;
     let idle = 0;
     void import('./self-evert-skin')
@@ -1410,7 +1420,7 @@ export function LiquidGlobe({
             skin.current = m.SelfEvertSkin.create();
             if (!skin.current) skinModule.current = null;
           }
-        }, SKIN_WARM_MS);
+        }, evertInPlace ? SKIN_WARM_IN_PLACE_MS : SKIN_WARM_MS);
       })
       .catch(() => {
         /* The run keeps its wireframe-only form. */
@@ -1422,7 +1432,7 @@ export function LiquidGlobe({
       skin.current = null;
       skinOn.current = false;
     };
-  }, [ambient]);
+  }, [ambient, evertInPlace]);
 
   /** Mount, size and colour the skin for a run. False when the run should go without it. */
   function prepareSkin(): boolean {
@@ -1484,11 +1494,13 @@ export function LiquidGlobe({
         handOff(node, snapshotGlobeState(), entry, snapshotGlobeState);
         return;
       }
+      // Dismiss first: the hub is no longer "open" by the time the navigation is asked for, so the site's
+      // navigation interceptor (`eversion-nav`) leaves it alone, and `ignoreBlocker` keeps it from holding it.
       onDismiss();
       startSelfEvert();
-      void navigate({ to: node.href } as never);
+      void navigate({ to: node.href, ...(evertInPlace ? { ignoreBlocker: true } : {}) } as never);
     },
-    [navigate, onDismiss, snapshotGlobeState, startSelfEvert],
+    [navigate, onDismiss, snapshotGlobeState, startSelfEvert, evertInPlace],
   );
 
   /**
@@ -1506,7 +1518,7 @@ export function LiquidGlobe({
   const onPinClick = useCallback(
     (e: ReactMouseEvent<HTMLElement>, node: GlobeNode) => {
       const plain = e.button === 0 && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
-      if (!onNavigateRef.current || quiet.current || node.external || !plain) {
+      if (!(onNavigateRef.current || evertInPlace) || quiet.current || node.external || !plain) {
         // The pin's own Link navigates; an ambient globe answers it in place.
         if (plain && !node.external) startSelfEvert();
         onDismiss();
@@ -1519,7 +1531,7 @@ export function LiquidGlobe({
       go(node, e.detail === 0 ? 'enter' : 'click');
       swallowClick.current = false;
     },
-    [go, onDismiss, startSelfEvert],
+    [go, onDismiss, startSelfEvert, evertInPlace],
   );
 
   /* ── The frame loop ───────────────────────────────────────────────────────
