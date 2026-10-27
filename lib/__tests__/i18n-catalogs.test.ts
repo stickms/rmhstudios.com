@@ -84,6 +84,22 @@ const KNOWN_PARTIAL_PLURALS: Record<string, string[]> = {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // TF2 loadout builder rules (stock loadout, game-rule warnings, unlimited cosmetics) and the AI
+  // assistants. English-only until the translate workflow runs on merge; remove entries with it.
+  'c-tf2-hud': [
+    'add-cosmetic-slot',
+    'allow-any',
+    'allow-any-desc',
+    'announce-playable',
+    'announce-stock',
+    'make-playable',
+    'not-possible',
+    'reset-stock',
+    'warn-class',
+    'warn-duplicate',
+    'warn-limit',
+    'warn-overlap',
+  ],
   // UI minimalism audit (2026-10-09): /create's prompt heading, which replaced
   // the second "RMH Studios presents / The everything platform." hero.
   // English-only until the translate pipeline runs (needs DEEPSEEK_API_KEY).

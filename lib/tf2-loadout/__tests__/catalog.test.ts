@@ -126,9 +126,45 @@ describe('validateSlots', () => {
     ['an unknown paint', { cosmetic1: { item: 940, paint: 1 } }],
     ['paint on a weapon', { primary: { item: 13, paint: 5030 } }],
     ['an effect on a weapon', { primary: { item: 13, effect: 13 } }],
-    ['overlapping cosmetics', { cosmetic1: { item: 940 }, cosmetic2: { item: 941 } }],
-    ['the same cosmetic twice', { cosmetic1: { item: 940 }, cosmetic2: { item: 940 } }],
   ] as [string, LoadoutSlots][])('rejects %s', (_label, slots) => {
     expect(() => validateSlots(catalog, 'scout', slots)).toThrow();
+  });
+
+  // The builder lets players go past the game's rules (with a warning), so saving such a loadout works.
+  it.each([
+    ['overlapping cosmetics', { cosmetic1: { item: 940 }, cosmetic2: { item: 941 } }],
+    ['the same cosmetic twice', { cosmetic1: { item: 940 }, cosmetic2: { item: 940 } }],
+    ['more than three cosmetics', { cosmetic1: { item: 940 }, cosmetic4: { item: 941 } }],
+  ] as [string, LoadoutSlots][])('accepts %s', (_label, slots) => {
+    expect(() => validateSlots(catalog, 'scout', slots)).not.toThrow();
+  });
+});
+
+describe('hidden stock weapons', () => {
+  const items = `
+"items_game"
+{
+  "prefabs" { "gun" { "item_class" "tf_weapon" "item_slot" "secondary" "item_type_name" "#T_Gun" } }
+  "items"
+  {
+    "22" { "name" "TF_WEAPON_PISTOL" "prefab" "gun" "item_name" "#T_Pistol" "baseitem" "1" "used_by_classes" { "scout" "1" "engineer" "1" } }
+    "23" { "name" "TF_WEAPON_PISTOL_SCOUT" "prefab" "gun" "item_name" "#T_Pistol" "hidden" "1" "baseitem" "1" "used_by_classes" { "scout" "1" } }
+    "10" { "name" "TF_WEAPON_SHOTGUN_SOLDIER" "prefab" "gun" "item_name" "#T_Shotgun" "hidden" "1" "baseitem" "1" "used_by_classes" { "soldier" "1" } }
+    "777" { "name" "Internal thing" "prefab" "gun" "item_name" "#T_Shotgun" "hidden" "1" "used_by_classes" { "soldier" "1" } }
+  }
+}`;
+  const english = `"lang" { "Tokens" { "T_Gun" "Weapon" "T_Pistol" "Pistol" "T_Shotgun" "Shotgun" } }`;
+  const cat = buildCatalog({ itemsGame: items, english, label: 't', now: new Date(0) });
+  const ids = cat.items.map((i) => i.id).sort((a, b) => a - b);
+
+  it("includes a class's hidden stock weapon so its stock loadout can be built", () => {
+    expect(ids).toContain(10);
+  });
+  it('drops one a visible item of the same name already covers, so it is not listed twice', () => {
+    expect(ids).toContain(22);
+    expect(ids).not.toContain(23);
+  });
+  it('still hides internal items that are not stock weapons', () => {
+    expect(ids).not.toContain(777);
   });
 });

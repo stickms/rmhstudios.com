@@ -24,11 +24,18 @@ export function loadDraft(cls: TfClass): LoadoutSlots {
   return read()[cls] ?? {};
 }
 
+/**
+ * Whether this class has ever been edited here. A class with no draft starts from its stock
+ * loadout; one the player emptied on purpose keeps an empty draft, so it stays empty.
+ */
+export function hasDraft(cls: TfClass): boolean {
+  return read()[cls] !== undefined;
+}
+
 export function saveDraft(cls: TfClass, slots: LoadoutSlots): void {
   try {
     const all = read();
-    if (Object.keys(slots).length === 0) delete all[cls];
-    else all[cls] = slots;
+    all[cls] = slots;
     localStorage.setItem(KEY, JSON.stringify(all));
   } catch {
     /* storage unavailable (private mode, quota): the draft just isn't kept */

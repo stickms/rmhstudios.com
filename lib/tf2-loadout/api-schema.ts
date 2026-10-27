@@ -10,7 +10,7 @@ import { LOADOUT_LIMITS } from './api-types';
 export const visibilitySchema = z.enum(['PRIVATE', 'UNLISTED', 'PUBLIC']);
 export const classSchema = z.enum(TF_CLASSES);
 
-const SLOT_KEY = /^(primary|secondary|melee|building|pda|pda2|action|cosmetic[1-3]|taunt[1-8])$/;
+const SLOT_KEY = /^(primary|secondary|melee|building|pda|pda2|action|cosmetic(?:[1-9]|1\d|2[0-4])|taunt[1-8])$/;
 
 const defindex = z.number().int().min(0).max(1_000_000);
 
@@ -22,7 +22,7 @@ export const entrySchema = z.object({
 
 export const slotsSchema = z
   .record(z.string().regex(SLOT_KEY), entrySchema)
-  .refine((s) => Object.keys(s).length <= 20, 'too many slots');
+  .refine((s) => Object.keys(s).length <= 60, 'too many slots');
 
 export const createLoadoutSchema = z.object({
   title: z.string().trim().min(1).max(LOADOUT_LIMITS.maxTitle),
