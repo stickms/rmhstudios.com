@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,51 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import { DURATION, EASE } from '@/lib/motion';
+
+/**
+ * Where the "scrolled down" answer lives, so a page can host the arrow in its own control.
+ *
+ * The feed's compose button and this arrow are one floating control there (`RadialFeed`): the arrow grows out
+ * of the compose pill when the page is scrolled and folds back into it at the top, instead of a second disc
+ * sitting beside it. A page that hosts the arrow calls {@link useBackToTopHost}; while one does, this
+ * component keeps measuring but draws nothing.
+ */
+const fab = {
+  visible: false,
+  hosts: 0,
+  listeners: new Set<() => void>(),
+};
+const emit = () => fab.listeners.forEach((l) => l());
+const subscribe = (l: () => void) => {
+  fab.listeners.add(l);
+  return () => void fab.listeners.delete(l);
+};
+const getVisible = () => fab.visible;
+const getHosted = () => fab.hosts > 0;
+const getServer = () => false;
+
+/** Jump the page (or its opted-in scroller, `[data-scroll-root]`) to the top. */
+export function scrollPageToTop() {
+  const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
+  // Resolved here rather than kept live: one query per click is free, and a
+  // click is the only moment the answer is needed.
+  const scroller = document.querySelector<HTMLElement>('[data-scroll-root]');
+  if (scroller && scroller.offsetParent !== null) scroller.scrollTo({ top: 0, behavior });
+  else window.scrollTo({ top: 0, behavior });
+}
+
+/** For a page that draws the arrow itself: registers as the host and returns whether the page is scrolled. */
+export function useBackToTopHost(): boolean {
+  useEffect(() => {
+    fab.hosts += 1;
+    emit();
+    return () => {
+      fab.hosts -= 1;
+      emit();
+    };
+  }, []);
+  return useSyncExternalStore(subscribe, getVisible, getServer);
+}
 
 /**
  * Floating "back to top" button. Appears once the page is scrolled past
@@ -50,6 +95,7 @@ import { DURATION, EASE } from '@/lib/motion';
  * correctly without this component having to know the scroller exists. Only the
  * click target still needs to, and that is resolved once, on click.
  */
+
 export function BackToTop({ threshold = 600 }: { threshold?: number }) {
   const { t } = useTranslation('c-ui');
   const [visible, setVisible] = useState(false);
@@ -63,20 +109,21 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
       // Gone off the TOP, not merely out of view: on a viewport shorter than the
       // threshold the sentinel starts out below the fold, and "not intersecting"
       // there would show the button on an unscrolled page.
-      setVisible(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+      const next = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+      setVisible(next);
+      fab.visible = next;
+      emit();
     });
     io.observe(sentinel);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      fab.visible = false;
+      emit();
+    };
   }, [threshold]);
+  const hosted = useSyncExternalStore(subscribe, getHosted, getServer);
 
-  const scrollToTop = useCallback(() => {
-    const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
-    // Resolved here rather than kept live: one query per click is free, and a
-    // click is the only moment the answer is needed.
-    const scroller = document.querySelector<HTMLElement>('[data-scroll-root]');
-    if (scroller && scroller.offsetParent !== null) scroller.scrollTo({ top: 0, behavior });
-    else window.scrollTo({ top: 0, behavior });
-  }, []);
+  const scrollToTop = useCallback(() => scrollPageToTop(), []);
 
   return (
     <>
@@ -87,7 +134,7 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
         aria-hidden
       />
       <AnimatePresence>
-        {visible && (
+        {visible && !hosted && (
           <motion.button
             type="button"
             onClick={scrollToTop}

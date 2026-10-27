@@ -2,7 +2,7 @@
 
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Await } from '@tanstack/react-router';
-import { PenLine } from 'lucide-react';
+import { ArrowUp, PenLine } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
@@ -17,6 +17,7 @@ import { PageTabs } from '@/components/feed/PageTabs';
 import { RadialLoader } from '@/components/ui/radial-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDeferOnNavigate } from '@/components/ui/defer-on-navigate';
+import { scrollPageToTop, useBackToTopHost } from '@/components/ui/back-to-top';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { WheelCard } from './WheelCard';
 
@@ -298,39 +299,10 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   });
   const [composeOpen, setComposeOpen] = useState(false);
   const openCompose = useCallback(() => setComposeOpen(true), []);
-  const composeRef = useRef<HTMLButtonElement | null>(null);
 
-  // Publish the compose button's footprint so back-to-top can sit on the row
-  // BESIDE it rather than floating above it (globals.css §5.5x A.1,
-  // `.floating-fab-lane`). CSS cannot derive this number: the FAB is icon-only
-  // below 560px, gains a label above it, and that label is translated — so the
-  // width depends on the active locale. Measured instead, on the element that
-  // knows: one ResizeObserver, which fires on breakpoint and locale changes and
-  // at no other time. Cleared on unmount, so every page without a compose FAB
-  // falls back to the `0px` default and back-to-top keeps the right edge.
-  //
-  // No synchronous first `publish()`: reading `offsetWidth` in a mount effect
-  // laid out the whole incoming page in the middle of a page switch (~25ms at
-  // 4× CPU, docs/performance-audit-2026-10-21.md §Navigation commit). An
-  // observer always reports an element's initial size, after the frame's own
-  // layout, where the read is free.
-  useEffect(() => {
-    const el = composeRef.current;
-    const root = document.documentElement;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const publish = () => {
-      root.style.setProperty(
-        '--float-fab-lane',
-        `calc(${el.offsetWidth}px + var(--site-fab-row-gap))`,
-      );
-    };
-    const ro = new ResizeObserver(publish);
-    ro.observe(el);
-    return () => {
-      ro.disconnect();
-      root.style.removeProperty('--float-fab-lane');
-    };
-  }, []);
+  // The scrolled-down arrow is part of the compose pill (below): it grows out of it when the page is
+  // scrolled and folds back at the top. Registering as the host keeps the shell's own arrow from drawing.
+  const scrolled = useBackToTopHost();
 
   return (
     <section className="radial-feed" aria-label={t('feed', { defaultValue: 'Feed' })}>
@@ -362,21 +334,32 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
         </div>
       </div>
 
-      <button
-        ref={composeRef}
-        type="button"
-        className="radial-feed__compose"
-        data-fluid-press=""
-        data-evert=""
-        onClick={openCompose}
-        aria-label={t('compose', { defaultValue: 'Compose' })}
-        aria-haspopup="dialog"
-      >
-        <PenLine aria-hidden />
-        <span className="radial-feed__compose-label">
-          {t('compose', { defaultValue: 'Compose' })}
-        </span>
-      </button>
+      {/* One floating control: the compose pill, with the back-to-top arrow growing out of its left end when
+          the page is scrolled and folding back into it at the top (radial.css). The pill is the jelly body. */}
+      <div className="radial-feed__compose" data-fluid-press="" data-evert="">
+        <button
+          type="button"
+          className="radial-feed__fab-top"
+          data-shown={scrolled || undefined}
+          tabIndex={scrolled ? 0 : -1}
+          onClick={scrollPageToTop}
+          aria-label={t('back-to-top', { ns: 'c-ui', defaultValue: 'Back to top' })}
+        >
+          <ArrowUp aria-hidden />
+        </button>
+        <button
+          type="button"
+          className="radial-feed__fab-action"
+          onClick={openCompose}
+          aria-label={t('compose', { defaultValue: 'Compose' })}
+          aria-haspopup="dialog"
+        >
+          <PenLine aria-hidden />
+          <span className="radial-feed__compose-label">
+            {t('compose', { defaultValue: 'Compose' })}
+          </span>
+        </button>
+      </div>
 
       {composeOpen && (
         <Suspense fallback={null}>
