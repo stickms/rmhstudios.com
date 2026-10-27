@@ -76,6 +76,19 @@ def read_mdl(mdl):
     return {"textures": textures, "cdtextures": cds, "skin0": skin0, "bodyparts": bodyparts}
 
 
+def read_bones(mdl):
+    """[{name, parent, pose_to_bone}] — `pose_to_bone` is the inverse of the bone's bind-pose world matrix
+    as a 3x4 row-major float array (rotation columns, translation in the last column)."""
+    num_bones, bone_idx = struct.unpack_from("<2i", mdl, 0x9C)
+    bones = []
+    for i in range(num_bones):
+        b = bone_idx + i * 216
+        name_off, parent = struct.unpack_from("<2i", mdl, b)
+        pose = struct.unpack_from("<12f", mdl, b + 96)
+        bones.append({"name": _cstr(mdl, b + name_off).lower(), "parent": parent, "pose_to_bone": pose})
+    return bones
+
+
 def read_vtx(vtx):
     """LOD 0 triangle indices: [bodypart][model][mesh] -> mesh-local vertex ids."""
     (version, _cache, _mb, _mt, _mv, _cs, _nl, _mat, num_bp, bp_off) = struct.unpack_from(
@@ -141,10 +154,24 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes):
                 continue
             skin = info["skin0"]
             tex = skin[mesh["material"]] if mesh["material"] < len(skin) else mesh["material"]
-            ids = vmeshes[k] + model["vert_start"] + mesh["voff"]
+            # Source's triangles are clockwise (Direct3D); glTF front faces are counter-clockwise.
+            ids = (vmeshes[k][: len(vmeshes[k]) // 3 * 3].reshape(-1, 3)[:, ::-1].reshape(-1)
+                   + model["vert_start"] + mesh["voff"])
             if ids.max() >= len(verts):
                 raise ModelError("vertex index out of range")
             by_tex.setdefault(tex, []).append(ids)
+    # The bone most of this model's vertices follow: a cosmetic attaches to the wearer through it.
+    if by_tex:
+        used = np.unique(np.concatenate([np.concatenate(g) for g in by_tex.values()]))
+        v = verts[used]
+        weight = {}
+        for k in range(3):
+            for bone, w, nb in zip(v["bone"][:, k], v["w"][:, k], v["nb"]):
+                if k < nb:
+                    weight[int(bone)] = weight.get(int(bone), 0.0) + float(w)
+        info["dominant_bone"] = max(weight, key=weight.get) if weight else 0
+    else:
+        info["dominant_bone"] = 0
     out = []
     for tex, groups in by_tex.items():
         ids = np.concatenate(groups)

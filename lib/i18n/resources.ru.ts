@@ -59,6 +59,7 @@ import ruCStatus from "@/locales/ru/c-status.json";
 import ruCStudio from "@/locales/ru/c-studio.json";
 import ruCSynapseStorm from "@/locales/ru/c-synapse-storm.json";
 import ruCTempleOfJoy from "@/locales/ru/c-temple-of-joy.json";
+import ruCTf2Hud from "@/locales/ru/c-tf2-hud.json";
 import ruCTournaments from "@/locales/ru/c-tournaments.json";
 import ruCUi from "@/locales/ru/c-ui.json";
 import ruCUserBuilds from "@/locales/ru/c-user-builds.json";
@@ -156,6 +157,7 @@ const ruResources = {
   "c-studio": ruCStudio,
   "c-synapse-storm": ruCSynapseStorm,
   "c-temple-of-joy": ruCTempleOfJoy,
+  "c-tf2-hud": ruCTf2Hud,
   "c-tournaments": ruCTournaments,
   "c-ui": ruCUi,
   "c-user-builds": ruCUserBuilds,

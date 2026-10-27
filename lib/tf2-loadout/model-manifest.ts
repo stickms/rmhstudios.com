@@ -177,6 +177,24 @@ export function buildIconManifest(
   return out.sort((a, b) => a.id - b.id);
 }
 
+/**
+ * The nine class bodies (`models/player/<class>.mdl`), published as `class_<class>.glb` so the
+ * builder can show a player with the equipped cosmetics on it. They are not items, so they come
+ * with id 0 and are appended to the item manifest by the manifest script.
+ */
+export function classModelEntries(): ModelManifestItem {
+  return {
+    id: 0,
+    name: 'Class models',
+    models: TF_CLASSES.map((c) => ({
+      class: c,
+      mdl: `models/player/${FILE_CLASS[c]}.mdl`,
+      role: 'main' as const,
+      glb: `class_${c}.glb`,
+    })),
+  };
+}
+
 /** The distinct `.mdl` files a manifest points at. */
 export function uniqueModels(manifest: readonly ModelManifestItem[]): string[] {
   return [...new Set(manifest.flatMap((i) => i.models.map((m) => m.mdl)))].sort();

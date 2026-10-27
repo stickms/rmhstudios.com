@@ -1,0 +1,95 @@
+/**
+ * The builder's 3D player: the selected class with its equipped cosmetics, shown under the class
+ * bar. The viewer (three.js, the class model and each cosmetic) loads lazily, and only on a
+ * browser that can do WebGL; otherwise — or before the game files have been synced — a short note
+ * says why there is nothing to turn around. The slots below remain the way to pick items.
+ */
+'use client';
+
+import { Box } from 'lucide-react';
+import { lazy, Suspense, useMemo, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
+import { supportsWebGL } from '@/lib/shared/platform';
+import { classModel, modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
+import { cn } from '@/lib/utils';
+import type { PlayerPart } from './PlayerScene';
+
+const PlayerScene = lazy(() => import('./PlayerScene'));
+
+function Note({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-xs text-(--app-text-dim)">
+      <Box className="size-6" aria-hidden />
+      <p className="max-w-64">{children}</p>
+    </div>
+  );
+}
+
+export interface WornItem {
+  slotKey: string;
+  itemId: number;
+  /** Paint colour, `#rrggbb`. */
+  tint?: string;
+}
+
+export default function PlayerViewer({
+  cls,
+  worn,
+  className,
+}: {
+  cls: string;
+  /** The cosmetics currently equipped. */
+  worn: readonly WornItem[];
+  className?: string;
+}) {
+  const { t } = useTranslation('c-tf2-hud');
+  const ids = useModelIds();
+  const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
+  const body = ids ? classModel(ids, cls) : null;
+
+  const parts = useMemo<PlayerPart[]>(() => {
+    if (!ids) return [];
+    const out: PlayerPart[] = [];
+    for (const w of worn) {
+      const name = pickModel(ids, w.itemId, cls);
+      if (name) out.push({ key: `${w.slotKey}:${name}`, url: modelUrl(name), tint: w.tint });
+    }
+    return out;
+  }, [ids, worn, cls]);
+
+  const content = !webgl ? (
+    <Note>{t('model-no-webgl', { defaultValue: 'Your browser cannot show 3D models.' })}</Note>
+  ) : ids === null ? (
+    <Note>{t('model-checking', { defaultValue: 'Checking for a 3D model…' })}</Note>
+  ) : !body ? (
+    <Note>
+      {t('player-unavailable', { defaultValue: 'The 3D player is not available yet.' })}
+    </Note>
+  ) : (
+    <SilentErrorBoundary
+      key={cls}
+      label="tf2-player"
+      fallback={
+        <Note>{t('model-failed', { defaultValue: 'This model could not be loaded.' })}</Note>
+      }
+    >
+      <Suspense fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}>
+        <PlayerScene body={modelUrl(body)} parts={parts} />
+      </Suspense>
+    </SilentErrorBoundary>
+  );
+
+  return (
+    <div
+      role="img"
+      aria-label={t('model-view', { defaultValue: '3D model viewer' })}
+      className={cn(
+        'h-72 overflow-hidden rounded-(--app-radius) border border-(--app-border) bg-(--app-bg) sm:h-80',
+        className,
+      )}
+    >
+      {content}
+    </div>
+  );
+}
