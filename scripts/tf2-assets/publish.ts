@@ -3,6 +3,8 @@
  * what changed. Used by `.github/workflows/tf2-assets-sync.yml`; the Python
  * steps (`convert.py`, `hud.py`) do the conversion, this does the bucket side.
  *
+ *   publish.ts check
+ *       Writes, reads and deletes a tiny object; exits non-zero with a hint when the bucket is not writable.
  *   publish.ts gate  --state-key K --build <steam build> [--builder N] [--force] [--as name]
  *       Prints `run=true|false` (`run_<name>` with --as; also appended to $GITHUB_OUTPUT): is there
  *       anything to do for this Steam build? Costs one small GET.
@@ -64,7 +66,10 @@ const CONTENT_TYPE: Record<string, string> = {
 };
 
 async function loadState(key: string) {
-  const obj = await getObject(key).catch(() => null);
+  // Only "no such object" means "nothing published yet" (getObject returns null for it). Any other
+  // failure — a 403 from a mis-scoped token, a network error — must stop the run: treating it as an
+  // empty state would re-convert and re-upload everything.
+  const obj = await getObject(key);
   return parseState(obj ? obj.body.toString('utf8') : null);
 }
 
@@ -75,7 +80,26 @@ function setOutput(name: string, value: string): void {
 
 const builder = Number(flags.get('builder') ?? MODEL_BUILDER_VERSION);
 
-if (cmd === 'gate') {
+if (cmd === 'check') {
+  // Fail in seconds, before a 30 GB download, if the bucket cannot be written.
+  const key = 'tf2-assets/_write-check';
+  try {
+    await putObject(key, Buffer.from('ok'), 'text/plain');
+    const back = await getObject(key);
+    if (back?.body.toString() !== 'ok') throw new Error('read-back did not match what was written');
+    await deleteObject(key);
+    process.stdout.write('storage: write, read and delete all work\n');
+  } catch (e) {
+    const err = e as { name?: string; message?: string; $metadata?: { httpStatusCode?: number } };
+    console.error(`storage check failed: ${err.name ?? 'Error'} ${err.$metadata?.httpStatusCode ?? ''} ${err.message ?? ''}`);
+    console.error(
+      'Check the repository secrets: S3_BUCKET must be the bucket the R2 token is scoped to, ' +
+        'S3_ENDPOINT must be https://<account-id>.r2.cloudflarestorage.com (no bucket in the path), and the ' +
+        'token (Cloudflare → R2 → Manage API tokens) needs Object Read & Write on that bucket.',
+    );
+    process.exit(1);
+  }
+} else if (cmd === 'gate') {
   const state = await loadState(need('state-key'));
   const build = flags.get('build') || null;
   const d = shouldRun(state, build, { force: bare.has('force'), builder });

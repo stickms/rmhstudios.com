@@ -63,6 +63,7 @@ jobs:
       S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
       S3_BUCKET: ${{ secrets.S3_BUCKET }}
       S3_REGION: ${{ secrets.S3_REGION }}
+      S3_FORCE_PATH_STYLE: 'false' # R2 uses virtual-hosted-style addressing (see .env.example)
       STEAM_USER: ${{ secrets.STEAM_USER }}
       STEAM_PASS: ${{ secrets.STEAM_PASS }}
     steps:
@@ -84,6 +85,10 @@ jobs:
         if: steps.cfg.outputs.ready == 'true'
       - uses: ./.github/actions/setup-deps
         if: steps.cfg.outputs.ready == 'true'
+
+      - name: Check the bucket is writable (before any download)
+        if: steps.cfg.outputs.ready == 'true'
+        run: pnpm exec tsx scripts/tf2-assets/publish.ts check
 
       - name: Install SteamCMD
         if: steps.cfg.outputs.ready == 'true'
