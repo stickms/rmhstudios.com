@@ -10,6 +10,7 @@
  *   model-manifest.csv    the same, one row per model (defindex, class, glb, mdl, name)
  *   mdl-paths.txt         every distinct .mdl path — feed to your VPK extractor
  *   icon-manifest.json    per item: the inventory icon texture and the WebP it converts to
+ *   taunt-manifest.json   per taunt item: the animation scene it plays for each class
  *
  * See docs/tf2-hub.md → "3D models" for the extract → convert → upload steps.
  */
@@ -19,6 +20,8 @@ import path from 'node:path';
 import {
   buildIconManifest,
   buildModelManifest,
+  buildTauntManifest,
+  classModelEntries,
   uniqueModels,
 } from '../../lib/tf2-loadout/model-manifest';
 
@@ -47,8 +50,9 @@ async function text(local: string | undefined, remote: string): Promise<string> 
 
 const itemsGame = await text(itemsPath, 'scripts/items/items_game.txt');
 const english = await text(englishPath, 'resource/tf_english.txt');
-const manifest = buildModelManifest(itemsGame, english);
+const manifest = [classModelEntries(), ...buildModelManifest(itemsGame, english)];
 const icons = buildIconManifest(itemsGame, english);
+const taunts = buildTauntManifest(itemsGame, english);
 const mdls = uniqueModels(manifest);
 
 mkdirSync(out, { recursive: true });
@@ -64,6 +68,7 @@ for (const item of manifest) {
   }
 }
 writeFileSync(path.join(out, 'icon-manifest.json'), JSON.stringify(icons));
+writeFileSync(path.join(out, 'taunt-manifest.json'), JSON.stringify(taunts));
 writeFileSync(path.join(out, 'model-manifest.csv'), csv.join('\n') + '\n');
 writeFileSync(path.join(out, 'mdl-paths.txt'), mdls.join('\n') + '\n');
 

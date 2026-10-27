@@ -1,8 +1,7 @@
 """Source-engine model reader (MDL v44-49 + VVD v4 + VTX v7) -> triangle meshes.
 
-Only what a static preview needs: LOD 0 of the default body group, bind-pose
-vertex positions, normals, UVs, and the material (skin family 0) each triangle
-uses. No skeleton, animation or physics.
+LOD 0 of the default body group: bind-pose vertex positions, normals, UVs, bone weights, eyeballs, and the
+material (skin family 0) each triangle uses. Skeleton and animation live in srcanim.
 """
 import struct
 
@@ -48,6 +47,7 @@ def read_mdl(mdl):
         raise ModelError("unsupported MDL version %s" % version)
     (num_tex, tex_idx, num_cd, cd_idx, num_skin_ref, _num_fam, skin_idx,
      num_body, body_idx) = struct.unpack_from("<9i", mdl, 0xCC)
+    num_fam = struct.unpack_from("<i", mdl, 0xCC + 20)[0]
     textures = []
     for i in range(num_tex):
         base = tex_idx + i * 64
@@ -57,7 +57,10 @@ def read_mdl(mdl):
     for i in range(num_cd):
         off = struct.unpack_from("<i", mdl, cd_idx + i * 4)[0]
         cds.append(_cstr(mdl, off).replace("\\", "/"))
-    skin0 = list(struct.unpack_from("<%dh" % num_skin_ref, mdl, skin_idx)) if num_skin_ref else []
+    # skin families: row f maps each material slot to the texture that family uses
+    skins = [list(struct.unpack_from("<%dh" % num_skin_ref, mdl, skin_idx + f * num_skin_ref * 2))
+             for f in range(max(num_fam, 1))] if num_skin_ref else [[]]
+    skin0 = skins[0]
     bodyparts = []
     for b in range(num_body):
         bp = body_idx + b * 16
@@ -71,9 +74,34 @@ def read_mdl(mdl):
                 me = mo + mesh_idx + k * 116
                 material, _mi, mverts, voff = struct.unpack_from("<4i", mdl, me)
                 meshes.append({"material": material, "numverts": mverts, "voff": voff})
-            models.append({"meshes": meshes, "vert_start": vert_idx // 48})
+            neye, eye_idx = struct.unpack_from("<2i", mdl, mo + 100)
+            eyes = []
+            for e in range(neye):
+                eo = mo + eye_idx + e * 172
+                bone, = struct.unpack_from("<i", mdl, eo + 4)
+                org = struct.unpack_from("<3f", mdl, eo + 8)
+                zoffset, radius = struct.unpack_from("<2f", mdl, eo + 20)
+                up = struct.unpack_from("<3f", mdl, eo + 28)
+                forward = struct.unpack_from("<3f", mdl, eo + 40)
+                texture, _u1, iris_scale = struct.unpack_from("<iif", mdl, eo + 52)
+                eyes.append({"bone": bone, "org": org, "zoffset": zoffset, "radius": radius, "up": up,
+                             "forward": forward, "texture": texture, "iris_scale": iris_scale})
+            models.append({"meshes": meshes, "vert_start": vert_idx // 48, "eyeballs": eyes})
         bodyparts.append(models)
-    return {"textures": textures, "cdtextures": cds, "skin0": skin0, "bodyparts": bodyparts}
+    return {"textures": textures, "cdtextures": cds, "skin0": skin0, "skins": skins, "bodyparts": bodyparts}
+
+
+def read_bones(mdl):
+    """[{name, parent, pose_to_bone}] — `pose_to_bone` is the inverse of the bone's bind-pose world matrix
+    as a 3x4 row-major float array (rotation columns, translation in the last column)."""
+    num_bones, bone_idx = struct.unpack_from("<2i", mdl, 0x9C)
+    bones = []
+    for i in range(num_bones):
+        b = bone_idx + i * 216
+        name_off, parent = struct.unpack_from("<2i", mdl, b)
+        pose = struct.unpack_from("<12f", mdl, b + 96)
+        bones.append({"name": _cstr(mdl, b + name_off).lower(), "parent": parent, "pose_to_bone": pose})
+    return bones
 
 
 def read_vtx(vtx):
@@ -125,7 +153,7 @@ def read_vtx(vtx):
     return result
 
 
-def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes):
+def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes, skin=0):
     """-> (info, [ {texture, pos, nrm, uv, idx} ]) merged per texture index."""
     info = read_mdl(mdl_bytes)
     verts = read_vvd(vvd_bytes)
@@ -139,19 +167,40 @@ def build_meshes(mdl_bytes, vvd_bytes, vtx_bytes):
         for k, mesh in enumerate(model["meshes"]):
             if k >= len(vmeshes) or not len(vmeshes[k]):
                 continue
-            skin = info["skin0"]
-            tex = skin[mesh["material"]] if mesh["material"] < len(skin) else mesh["material"]
-            ids = vmeshes[k] + model["vert_start"] + mesh["voff"]
+            fam = info["skins"][skin] if 0 <= skin < len(info["skins"]) else info["skin0"]
+            tex = fam[mesh["material"]] if mesh["material"] < len(fam) else mesh["material"]
+            # Source's triangles are clockwise (Direct3D); glTF front faces are counter-clockwise.
+            ids = (vmeshes[k][: len(vmeshes[k]) // 3 * 3].reshape(-1, 3)[:, ::-1].reshape(-1)
+                   + model["vert_start"] + mesh["voff"])
             if ids.max() >= len(verts):
                 raise ModelError("vertex index out of range")
             by_tex.setdefault(tex, []).append(ids)
+    info["eyeballs"] = [e for models in info["bodyparts"] if models for e in models[0]["eyeballs"]]
+    # The bone most of this model's vertices follow: a cosmetic attaches to the wearer through it.
+    if by_tex:
+        used = np.unique(np.concatenate([np.concatenate(g) for g in by_tex.values()]))
+        v = verts[used]
+        weight = {}
+        for k in range(3):
+            for bone, w, nb in zip(v["bone"][:, k], v["w"][:, k], v["nb"]):
+                if k < nb:
+                    weight[int(bone)] = weight.get(int(bone), 0.0) + float(w)
+        info["dominant_bone"] = max(weight, key=weight.get) if weight else 0
+    else:
+        info["dominant_bone"] = 0
     out = []
     for tex, groups in by_tex.items():
         ids = np.concatenate(groups)
         uniq, inverse = np.unique(ids, return_inverse=True)
         v = verts[uniq]
+        nb = np.maximum(v["nb"].astype(np.int64), 1)
+        w = np.where(np.arange(3)[None, :] < nb[:, None], v["w"], 0.0).astype(np.float32)
+        w[:, 0] = np.where(v["nb"] == 0, 1.0, w[:, 0])
+        w /= np.maximum(w.sum(1, keepdims=True), 1e-6)
         out.append({
             "texture": tex,
+            "joints": np.concatenate([v["bone"].astype(np.uint16), np.zeros((len(v), 1), np.uint16)], axis=1),
+            "weights": np.concatenate([w, np.zeros((len(v), 1), np.float32)], axis=1),
             "pos": np.ascontiguousarray(v["pos"]),
             "nrm": np.ascontiguousarray(v["nrm"]),
             "uv": np.ascontiguousarray(v["uv"]),

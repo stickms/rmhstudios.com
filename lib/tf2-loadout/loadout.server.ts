@@ -24,7 +24,6 @@ import {
 import { getCatalogObject } from './catalog.server';
 import {
   acceptedSlots,
-  regionsConflict,
   slotFor,
   TF_CLASSES,
   type Catalog,
@@ -108,8 +107,7 @@ export function validateSlots(catalog: Catalog, tfClass: TfClass, slots: Loadout
   const byId = new Map(catalog.items.map((i) => [i.id, i]));
   const paints = new Set(catalog.paints.map((p) => p.id));
   const effects = new Set(catalog.effects.map((e) => e.id));
-  const worn: { regions: readonly string[] | undefined; key: string }[] = [];
-  const used = new Set<number>();
+  const kits = new Set((catalog.kits ?? []).map((k) => k.id));
 
   for (const [key, entry] of Object.entries(slots)) {
     const item = byId.get(entry.item);
@@ -126,18 +124,21 @@ export function validateSlots(catalog: Catalog, tfClass: TfClass, slots: Loadout
         throw new LoadoutError(`${item.n} cannot take that effect`, 400);
       }
     }
-    if (used.has(item.id) && (slot === 'head' || slot === 'misc')) {
-      throw new LoadoutError(`${item.n} is equipped twice`, 400);
+    if (entry.fx !== undefined && entry.effect === undefined) {
+      throw new LoadoutError(`${item.n} has an effect placement but no effect`, 400);
     }
-    used.add(item.id);
-    if (key.startsWith('cosmetic')) {
-      for (const other of worn) {
-        if (regionsConflict(item.r, other.regions, catalog.conflicts)) {
-          throw new LoadoutError(`${item.n} overlaps another cosmetic`, 400);
-        }
+    if (entry.style !== undefined && !item.st?.some((s) => s.k === entry.style)) {
+      throw new LoadoutError(`${item.n} has no such style`, 400);
+    }
+    if (entry.kit !== undefined || entry.wear !== undefined || entry.seed !== undefined) {
+      const warPaintable = slot === 'primary' || slot === 'secondary' || slot === 'melee';
+      if (!warPaintable || (entry.kit !== undefined && !kits.has(entry.kit))) {
+        throw new LoadoutError(`${item.n} cannot take that war paint`, 400);
       }
-      worn.push({ regions: item.r, key });
     }
+    // Overlapping regions, a repeated cosmetic and more than three cosmetics are allowed on purpose:
+    // the builder lets players go past the game's rules (it shows a warning), and a view of such a
+    // loadout shows the same warning (lib/tf2-loadout/rules.ts).
   }
 }
 

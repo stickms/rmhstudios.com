@@ -25,7 +25,7 @@ const MAGIC = 0x46546c67; // "glTF"
 let ok = 0;
 let skipped = 0;
 for (const name of readdirSync(dir)) {
-  const m = /^(\d{1,7}(?:_[a-z]{3,10})?)\.glb$/.exec(name);
+  const m = /^(\d{1,7}(?:_[a-z]{3,10})?|class_[a-z]{3,10})\.glb$/.exec(name);
   if (!m) continue;
   const bytes = readFileSync(path.join(dir, name));
   if (bytes.length < 12 || bytes.readUInt32LE(0) !== MAGIC) {

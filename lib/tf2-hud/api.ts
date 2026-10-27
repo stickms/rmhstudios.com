@@ -2,6 +2,7 @@
  * Browser-side client for `/api/tf2-hud/*`.
  */
 
+import type { HudChange } from './ai-core';
 import type {
   HudDetail,
   HudListResponse,
@@ -162,6 +163,26 @@ export const api = {
         ...(packed ? { 'x-upload-encoding': 'gzip' } : {}),
       },
     });
+  },
+  /** The HUD assistant: which files a request touches, then key-level changes to them. */
+  aiSelect(body: {
+    message: string;
+    paths: string[];
+    history: { role: 'user' | 'assistant'; content: string }[];
+  }): Promise<{ files: string[] } | { unavailable: true; reason: string }> {
+    return request('/api/tf2-hud/ai', {
+      method: 'POST',
+      ...json({ stage: 'select', ...body }),
+    });
+  },
+  aiEdit(body: {
+    message: string;
+    files: { path: string; text: string }[];
+    history: { role: 'user' | 'assistant'; content: string }[];
+  }): Promise<
+    { summary: string; changes: HudChange[]; malformed: number } | { unavailable: true; reason: string }
+  > {
+    return request('/api/tf2-hud/ai', { method: 'POST', ...json({ stage: 'edit', ...body }) });
   },
   async fetchFile(
     source: { hud: string } | { token: string },

@@ -120,6 +120,8 @@ export interface EditorState {
   paths(): string[];
 
   writeText(path: string, text: string, coalesceKey?: string): void;
+  /** Several text edits as ONE history step (so one undo reverts them all). */
+  applyBatch(label: string, files: Readonly<Record<string, string>>): void;
   writeBinary(path: string, bytes: Uint8Array): void;
   createFile(path: string, text?: string): string | null;
   deletePath(path: string): void;
@@ -280,6 +282,15 @@ export const useEditor = create<EditorState>((set, get) => {
         writeFile(s.overlay, s.baseIndex, path, textContent(text)),
         coalesceKey ?? `text:${path}`,
       );
+    },
+
+    applyBatch(label, files) {
+      const s = get();
+      let next = s.overlay;
+      for (const [path, text] of Object.entries(files)) {
+        next = writeFile(next, s.baseIndex, path, textContent(text));
+      }
+      commit(label, next);
     },
 
     writeBinary(path, bytes) {

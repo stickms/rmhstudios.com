@@ -739,6 +739,8 @@ import { Route as ApiStudyTutorRouteImport } from './routes/api/study/tutor'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
 import { Route as ApiTempleOfJoyEfficiencyRouteImport } from './routes/api/temple-of-joy/efficiency'
 import { Route as ApiTempleOfJoySaveRouteImport } from './routes/api/temple-of-joy/save'
+import { Route as ApiTf2HudAiRouteImport } from './routes/api/tf2-hud/ai'
+import { Route as ApiTf2LoadoutAiRouteImport } from './routes/api/tf2-loadout/ai'
 import { Route as ApiTf2LoadoutCatalogRouteImport } from './routes/api/tf2-loadout/catalog'
 import { Route as ApiThemesIndexRouteImport } from './routes/api/themes/index'
 import { Route as ApiThemesIdRouteImport } from './routes/api/themes/$id'
@@ -5000,6 +5002,16 @@ const ApiTempleOfJoySaveRoute = ApiTempleOfJoySaveRouteImport.update({
   path: '/api/temple-of-joy/save',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTf2HudAiRoute = ApiTf2HudAiRouteImport.update({
+  id: '/api/tf2-hud/ai',
+  path: '/api/tf2-hud/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTf2LoadoutAiRoute = ApiTf2LoadoutAiRouteImport.update({
+  id: '/api/tf2-loadout/ai',
+  path: '/api/tf2-loadout/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTf2LoadoutCatalogRoute = ApiTf2LoadoutCatalogRouteImport.update({
   id: '/api/tf2-loadout/catalog',
   path: '/api/tf2-loadout/catalog',
@@ -8715,6 +8727,8 @@ export interface FileRoutesByFullPath {
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/efficiency': typeof ApiTempleOfJoyEfficiencyRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/tf2-hud/ai': typeof ApiTf2HudAiRoute
+  '/api/tf2-loadout/ai': typeof ApiTf2LoadoutAiRoute
   '/api/tf2-loadout/catalog': typeof ApiTf2LoadoutCatalogRoute
   '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
   '/api/themes/shop': typeof ApiThemesShopRoute
@@ -9995,6 +10009,8 @@ export interface FileRoutesByTo {
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/efficiency': typeof ApiTempleOfJoyEfficiencyRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/tf2-hud/ai': typeof ApiTf2HudAiRoute
+  '/api/tf2-loadout/ai': typeof ApiTf2LoadoutAiRoute
   '/api/tf2-loadout/catalog': typeof ApiTf2LoadoutCatalogRoute
   '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
   '/api/themes/shop': typeof ApiThemesShopRoute
@@ -11304,6 +11320,8 @@ export interface FileRoutesById {
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/efficiency': typeof ApiTempleOfJoyEfficiencyRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/tf2-hud/ai': typeof ApiTf2HudAiRoute
+  '/api/tf2-loadout/ai': typeof ApiTf2LoadoutAiRoute
   '/api/tf2-loadout/catalog': typeof ApiTf2LoadoutCatalogRoute
   '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
   '/api/themes/shop': typeof ApiThemesShopRoute
@@ -12613,6 +12631,8 @@ export interface FileRouteTypes {
     | '/api/tags/$tag'
     | '/api/temple-of-joy/efficiency'
     | '/api/temple-of-joy/save'
+    | '/api/tf2-hud/ai'
+    | '/api/tf2-loadout/ai'
     | '/api/tf2-loadout/catalog'
     | '/api/themes/$id'
     | '/api/themes/shop'
@@ -13893,6 +13913,8 @@ export interface FileRouteTypes {
     | '/api/tags/$tag'
     | '/api/temple-of-joy/efficiency'
     | '/api/temple-of-joy/save'
+    | '/api/tf2-hud/ai'
+    | '/api/tf2-loadout/ai'
     | '/api/tf2-loadout/catalog'
     | '/api/themes/$id'
     | '/api/themes/shop'
@@ -15201,6 +15223,8 @@ export interface FileRouteTypes {
     | '/api/tags/$tag'
     | '/api/temple-of-joy/efficiency'
     | '/api/temple-of-joy/save'
+    | '/api/tf2-hud/ai'
+    | '/api/tf2-loadout/ai'
     | '/api/tf2-loadout/catalog'
     | '/api/themes/$id'
     | '/api/themes/shop'
@@ -16272,6 +16296,8 @@ export interface RootRouteChildren {
   ApiTagsTagRoute: typeof ApiTagsTagRoute
   ApiTempleOfJoyEfficiencyRoute: typeof ApiTempleOfJoyEfficiencyRoute
   ApiTempleOfJoySaveRoute: typeof ApiTempleOfJoySaveRoute
+  ApiTf2HudAiRoute: typeof ApiTf2HudAiRoute
+  ApiTf2LoadoutAiRoute: typeof ApiTf2LoadoutAiRoute
   ApiTf2LoadoutCatalogRoute: typeof ApiTf2LoadoutCatalogRoute
   ApiThemesIdRoute: typeof ApiThemesIdRouteWithChildren
   ApiThemesShopRoute: typeof ApiThemesShopRoute
@@ -21791,6 +21817,20 @@ declare module '@tanstack/react-router' {
       path: '/api/temple-of-joy/save'
       fullPath: '/api/temple-of-joy/save'
       preLoaderRoute: typeof ApiTempleOfJoySaveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tf2-hud/ai': {
+      id: '/api/tf2-hud/ai'
+      path: '/api/tf2-hud/ai'
+      fullPath: '/api/tf2-hud/ai'
+      preLoaderRoute: typeof ApiTf2HudAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tf2-loadout/ai': {
+      id: '/api/tf2-loadout/ai'
+      path: '/api/tf2-loadout/ai'
+      fullPath: '/api/tf2-loadout/ai'
+      preLoaderRoute: typeof ApiTf2LoadoutAiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/tf2-loadout/catalog': {
@@ -28465,6 +28505,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTagsTagRoute: ApiTagsTagRoute,
   ApiTempleOfJoyEfficiencyRoute: ApiTempleOfJoyEfficiencyRoute,
   ApiTempleOfJoySaveRoute: ApiTempleOfJoySaveRoute,
+  ApiTf2HudAiRoute: ApiTf2HudAiRoute,
+  ApiTf2LoadoutAiRoute: ApiTf2LoadoutAiRoute,
   ApiTf2LoadoutCatalogRoute: ApiTf2LoadoutCatalogRoute,
   ApiThemesIdRoute: ApiThemesIdRouteWithChildren,
   ApiThemesShopRoute: ApiThemesShopRoute,

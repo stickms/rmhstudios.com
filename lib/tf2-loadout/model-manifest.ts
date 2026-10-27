@@ -34,6 +34,10 @@ export interface ModelRef {
   role: 'main' | 'extra';
   /** The GLB file name this model should be converted to. */
   glb: string;
+  /** The item style this model is for (`<id>[_<class>]_s<N>.glb`); absent for the default. */
+  style?: number;
+  /** The MDL skin family to render it with, for a style that only changes the skin. */
+  skin?: number;
 }
 
 export interface ModelManifestItem {
@@ -107,7 +111,10 @@ function loadoutItems(
     if (only && !only.has(id)) continue;
     if ((str(raw, 'prefab') ?? '').split(/\s+/).some((p) => EXCLUDED_PREFAB.test(p))) continue;
     const it = resolve(raw);
-    if (!SLOT_SET.has(str(it, 'item_slot') ?? '') || str(it, 'hidden') === '1') continue;
+    // Hidden items are internal, except a class's stock weapon ("baseitem"): the builder lists it, so it needs a model.
+    const stock = str(it, 'baseitem') === '1';
+    if (!SLOT_SET.has(str(it, 'item_slot') ?? '') || (str(it, 'hidden') === '1' && !stock))
+      continue;
     if ((str(it, 'name') ?? '').startsWith('Upgradeable ')) continue;
     const used = block(it, 'used_by_classes');
     if (!used) continue;
@@ -143,6 +150,42 @@ export function buildModelManifest(
     } else if (single) {
       models.push({ mdl: norm(single), role: 'main', glb: `${id}.glb` });
     }
+    // Styles that change the model or its skin family are published as their own files.
+    const styleBlock = block(block(it, 'visuals') ?? Object.create(null), 'styles');
+    if (styleBlock && models.length) {
+      const base = models.filter((m) => m.role === 'main' && m.style === undefined);
+      for (const key of Object.keys(styleBlock)) {
+        const k = Number(key);
+        const sb = block(styleBlock, key);
+        if (!sb || !Number.isInteger(k) || k < 1) continue;
+        const suffix = `_s${k}`;
+        const own = block(sb, 'model_player_per_class');
+        const single = str(sb, 'model_player');
+        const skin = Number(str(sb, 'skin_red') ?? str(sb, 'skin'));
+        if (own) {
+          const basename = str(own, 'basename');
+          for (const c of classes) {
+            const explicit = str(own, c) ?? str(own, FILE_CLASS[c]);
+            const mdl = explicit ?? (basename ? basename.replace('%s', FILE_CLASS[c]) : null);
+            if (mdl) {
+              models.push({
+                class: c,
+                mdl: norm(mdl),
+                role: 'main',
+                glb: `${id}_${c}${suffix}.glb`,
+                style: k,
+              });
+            }
+          }
+        } else if (single) {
+          models.push({ mdl: norm(single), role: 'main', glb: `${id}${suffix}.glb`, style: k });
+        } else if (Number.isInteger(skin) && skin > 0) {
+          for (const m of base) {
+            models.push({ ...m, glb: m.glb.replace(/\.glb$/, `${suffix}.glb`), style: k, skin });
+          }
+        }
+      }
+    }
     const extra = str(it, 'extra_wearable');
     if (extra) models.push({ mdl: norm(extra), role: 'extra', glb: `${id}_extra.glb` });
     if (!models.length) continue;
@@ -175,6 +218,66 @@ export function buildIconManifest(
     if (icon) out.push({ id, icon: norm(icon), file: `${id}.webp` });
   }
   return out.sort((a, b) => a.id - b.id);
+}
+
+export interface TauntManifestItem {
+  id: number;
+  /** Per class, the animation scene file name(s) without folder or extension, e.g. `taunt_conga`. */
+  scenes: Partial<Record<TfClass, string[]>>;
+}
+
+const sceneName = (p: string): string =>
+  norm(p)
+    .replace(/^.*\//, '')
+    .replace(/\.vcd$/, '');
+
+/**
+ * Which animation scene each taunt item plays per class (`taunt.custom_taunt_scene_per_class`). The
+ * scene's file name is what the asset sync resolves to a sequence of the class model, so the builder
+ * can play that exact animation on the player.
+ */
+export function buildTauntManifest(
+  itemsGame: string,
+  english: string,
+  only?: ReadonlySet<number>,
+): TauntManifestItem[] {
+  const out: TauntManifestItem[] = [];
+  for (const { id, it, classes } of loadoutItems(itemsGame, english, only)) {
+    if (str(it, 'item_slot') !== 'taunt') continue;
+    const per = block(block(it, 'taunt') ?? Object.create(null), 'custom_taunt_scene_per_class');
+    if (!per) continue;
+    const scenes: TauntManifestItem['scenes'] = {};
+    for (const c of classes) {
+      const v = per[c];
+      const names =
+        typeof v === 'string'
+          ? [v]
+          : v && typeof v === 'object'
+            ? Object.values(v).filter((x): x is string => typeof x === 'string')
+            : [];
+      if (names.length) scenes[c] = names.map(sceneName);
+    }
+    if (Object.keys(scenes).length) out.push({ id, scenes });
+  }
+  return out.sort((a, b) => a.id - b.id);
+}
+
+/**
+ * The nine class bodies (`models/player/<class>.mdl`), published as `class_<class>.glb` so the
+ * builder can show a player with the equipped cosmetics on it. They are not items, so they come
+ * with id 0 and are appended to the item manifest by the manifest script.
+ */
+export function classModelEntries(): ModelManifestItem {
+  return {
+    id: 0,
+    name: 'Class models',
+    models: TF_CLASSES.map((c) => ({
+      class: c,
+      mdl: `models/player/${FILE_CLASS[c]}.mdl`,
+      role: 'main' as const,
+      glb: `class_${c}.glb`,
+    })),
+  };
 }
 
 /** The distinct `.mdl` files a manifest points at. */

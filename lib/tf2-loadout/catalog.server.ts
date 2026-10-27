@@ -37,9 +37,11 @@ export interface ServedCatalog {
   /** The catalog as JSON text, ready to send. */
   json: string;
   checkedAt: Date;
+  /** Built by the current builder version (an older one is rebuilt straight away). */
+  builderCurrent: boolean;
 }
 
-let memo: { hash: string; json: string; checkedAt: Date } | null = null;
+let memo: ServedCatalog | null = null;
 let parsed: { hash: string; catalog: Catalog } | null = null;
 let inflight: Promise<void> | null = null;
 let lastFailureAt = 0;
@@ -177,7 +179,7 @@ async function refresh(force: boolean): Promise<void> {
     create: { id: ROW_ID, ...fields },
     update: fields,
   });
-  memo = { hash: catalog.source.hash, json: JSON.stringify(catalog), checkedAt: now };
+  memo = { hash: catalog.source.hash, json: JSON.stringify(catalog), checkedAt: now, builderCurrent: true };
 }
 
 /** Run one refresh at a time; concurrent callers share it. */
@@ -201,7 +203,12 @@ async function load(): Promise<ServedCatalog | null> {
   const row = await prisma.tf2LoadoutCatalog.findUnique({ where: { id: ROW_ID } });
   if (!row) return null;
   const json = brotliDecompressSync(Buffer.from(row.data)).toString('utf8');
-  memo = { hash: row.hash, json, checkedAt: row.checkedAt };
+  memo = {
+    hash: row.hash,
+    json,
+    checkedAt: row.checkedAt,
+    builderCurrent: row.etag?.startsWith(`${BUILDER_VERSION}|`) ?? false,
+  };
   return memo;
 }
 
@@ -217,8 +224,14 @@ export async function getCatalog(): Promise<ServedCatalog | null> {
     return served;
   }
   const age = Date.now() - served.checkedAt.getTime();
-  if (age > STALE_AFTER_MS && !inflight && Date.now() - lastFailureAt > RETRY_AFTER_MS) {
-    void refreshCatalog(false).catch((e) =>
+  // A snapshot built by an older builder is stale however recently it was checked: after a deploy that
+  // changes what the catalog holds, the new shape is rebuilt at once instead of hours later.
+  if (
+    (age > STALE_AFTER_MS || !served.builderCurrent) &&
+    !inflight &&
+    Date.now() - lastFailureAt > RETRY_AFTER_MS
+  ) {
+    void refreshCatalog(!served.builderCurrent).catch((e) =>
       console.warn('[tf2-loadout] catalog refresh failed; serving the previous snapshot:', e),
     );
   }

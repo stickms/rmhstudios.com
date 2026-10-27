@@ -68,6 +68,8 @@ export interface CatalogItem {
   p?: 1;
   /** Inventory icon, relative to {@link ICON_BASE} (or an absolute URL). Present once the Steam schema has been merged. */
   i?: string;
+  /** The styles a player can choose between (two or more), by the game's style key and name. */
+  st?: { k: number; n: string }[];
 }
 
 export interface CatalogPaint {
@@ -80,6 +82,12 @@ export interface CatalogPaint {
 }
 
 export interface CatalogEffect {
+  id: number;
+  n: string;
+}
+
+/** A war paint: a pattern applied to a weapon, with a wear level and a seed (see {@link LoadoutEntry}). */
+export interface CatalogKit {
   id: number;
   n: string;
 }
@@ -98,6 +106,8 @@ export interface Catalog {
   paints: CatalogPaint[];
   /** Unusual effects for cosmetics and taunts. */
   effects: CatalogEffect[];
+  /** War paints, when the game's data lists them. */
+  kits?: CatalogKit[];
   /** Equip region → regions it cannot be worn with. Symmetric. */
   conflicts: Record<string, string[]>;
 }
@@ -134,7 +144,10 @@ export function regionsConflict(
 
 /* ───────────────────────────── loadout slots ───────────────────────────── */
 
+/** What the game itself allows: three cosmetic slots. The builder can exceed it (with a warning). */
 export const COSMETIC_SLOTS = 3;
+/** The most cosmetic slots the builder offers. */
+export const MAX_COSMETIC_SLOTS = 24;
 export const TAUNT_SLOTS = 8;
 
 /** Loadout slot keys, in display order. Weapon slots depend on the class (see {@link weaponSlotsFor}). */
@@ -146,6 +159,20 @@ export const tauntKey = (i: number): LoadoutSlotKey => `taunt${i + 1}`;
 export const COSMETIC_KEYS: LoadoutSlotKey[] = Array.from({ length: COSMETIC_SLOTS }, (_, i) =>
   cosmeticKey(i),
 );
+/**
+ * The cosmetic slot keys to show: the game's three, plus however many more the loadout already
+ * uses (so an over-full loadout shows everything it holds), capped at {@link MAX_COSMETIC_SLOTS}.
+ */
+export function cosmeticSlotKeys(slots: Record<string, unknown>, minimum = COSMETIC_SLOTS): LoadoutSlotKey[] {
+  let highest = 0;
+  for (const k of Object.keys(slots)) {
+    const m = /^cosmetic(\d+)$/.exec(k);
+    if (m) highest = Math.max(highest, Number(m[1]));
+  }
+  const n = Math.min(MAX_COSMETIC_SLOTS, Math.max(minimum, highest));
+  return Array.from({ length: n }, (_, i) => cosmeticKey(i));
+}
+
 export const TAUNT_KEYS: LoadoutSlotKey[] = Array.from({ length: TAUNT_SLOTS }, (_, i) =>
   tauntKey(i),
 );
@@ -180,11 +207,31 @@ export function itemsForSlot(catalog: Catalog, cls: TfClass, key: LoadoutSlotKey
 
 /* ───────────────────────────── loadout data ───────────────────────────── */
 
-/** One equipped item. `paint` and `effect` are catalog ids. */
+/** Where an unusual effect sits relative to its item, as fractions of the item's size, and how big it is. */
+export interface EffectPlacement {
+  x?: number;
+  y?: number;
+  z?: number;
+  /** Size multiplier. */
+  s?: number;
+}
+
+/** War paint wear levels, best to worst, as the game numbers them. */
+export const WEAR_LEVELS = [1, 2, 3, 4, 5] as const;
+export const MAX_SEED = 999_999_999;
+
+/** One equipped item. `paint`, `effect` and `kit` are catalog ids; `style` is a style key from the item. */
 export interface LoadoutEntry {
   item: number;
   paint?: number;
   effect?: number;
+  /** The unusual effect's placement; absent means the effect's default for this kind of item. */
+  fx?: EffectPlacement;
+  style?: number;
+  /** War paint on a weapon: the kit, its wear (1 Factory New … 5 Battle Scarred) and pattern seed. */
+  kit?: number;
+  wear?: number;
+  seed?: number;
 }
 
 export type LoadoutSlots = Record<LoadoutSlotKey, LoadoutEntry>;

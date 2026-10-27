@@ -19,12 +19,24 @@ function loadModelIds(): Promise<Set<string>> {
 export const modelUrl = (name: string): string => `/api/tf2-loadout/models/${name}.glb`;
 
 /**
- * The model to show for an item worn by `cls`: its per-class variant when one
- * was uploaded, otherwise the shared model, otherwise none.
+ * The model to show for an item worn by `cls` in `style`: the style's own file (per-class, then shared)
+ * when the sync published one, else the item's per-class variant, else the shared model, else none.
  */
-export function pickModel(ids: ReadonlySet<string>, itemId: number, cls?: string): string | null {
-  if (cls && ids.has(`${itemId}_${cls}`)) return `${itemId}_${cls}`;
-  return ids.has(String(itemId)) ? String(itemId) : null;
+export function pickModel(
+  ids: ReadonlySet<string>,
+  itemId: number,
+  cls?: string,
+  style?: number,
+): string | null {
+  const stem = String(itemId);
+  const tries = [
+    ...(style !== undefined && style > 0
+      ? [...(cls ? [`${stem}_${cls}_s${style}`] : []), `${stem}_s${style}`]
+      : []),
+    ...(cls ? [`${stem}_${cls}`] : []),
+    stem,
+  ];
+  return tries.find((n) => ids.has(n)) ?? null;
 }
 
 /** `null` while loading or if the list is unavailable; otherwise the set of model names that exist. */
@@ -42,3 +54,7 @@ export function useModelIds(): Set<string> | null {
   }, []);
   return ids;
 }
+
+/** The class body model, once the sync has published it. */
+export const classModel = (ids: ReadonlySet<string>, cls: string): string | null =>
+  ids.has(`class_${cls}`) ? `class_${cls}` : null;

@@ -6,7 +6,21 @@
 'use client';
 
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Check, Copy, FolderOpen, Globe, Plus, Save, Search, Trash2, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  Copy,
+  FolderOpen,
+  Globe,
+  Plus,
+  RotateCcw,
+  Save,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -21,9 +35,9 @@ import {
   Modal,
   PanelHead,
   Pill,
-  SearchSelect,
   SelectField,
   TextField,
+  Toggle,
 } from '@/components/tf2-hud/ui';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSentinel } from '@/hooks/useSentinel';
@@ -33,12 +47,14 @@ import { cn } from '@/lib/utils';
 import { loadoutApi } from '@/lib/tf2-loadout/api';
 import type { Visibility } from '@/lib/tf2-loadout/api-types';
 import {
-  COSMETIC_KEYS,
+  COSMETIC_SLOTS,
+  MAX_COSMETIC_SLOTS,
+  cosmeticKey,
+  cosmeticSlotKeys,
   qualityAccent,
   TAUNT_KEYS,
   TF_CLASSES,
   itemsForSlot,
-  regionsConflict,
   slotFor,
   weaponSlotsFor,
   type CatalogItem,
@@ -47,15 +63,35 @@ import {
   type LoadoutSlots,
   type TfClass,
 } from '@/lib/tf2-loadout/catalog-types';
-import { loadDraft, saveDraft } from '@/lib/tf2-loadout/local-drafts';
+import { hasDraft, loadDraft, saveDraft } from '@/lib/tf2-loadout/local-drafts';
+import { effectProfile, resolvePlacement, WEAR_NAMES } from '@/lib/tf2-loadout/fx';
+import { equipInto, legalize, loadoutWarnings, stockLoadout } from '@/lib/tf2-loadout/rules';
+import type { AiAction } from '@/lib/tf2-loadout/ai-core';
 import { useCatalog, type CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemModelViewer from './ItemModelViewer';
+import ItemCustomizeModal from './ItemCustomizeModal';
+import LoadoutAssistant from './LoadoutAssistant';
+import PlayerViewer, { type WornItem } from './PlayerViewer';
 import ItemTile from './ItemTile';
+import WarningList from './WarningList';
 import { CLASS_DEFAULT } from './labels';
+
+/** The effect on an equipped item, ready to draw (undefined when it has none). */
+function effectSpecOf(
+  idx: CatalogIndex,
+  e: LoadoutEntry,
+  slot: Parameters<typeof resolvePlacement>[1],
+) {
+  const fx = e.effect !== undefined ? idx.effect(e.effect) : undefined;
+  return fx
+    ? { profile: effectProfile(fx.n, fx.id), placement: resolvePlacement(e.fx, slot) }
+    : undefined;
+}
 
 const SITE = () => (typeof window === 'undefined' ? '' : window.location.origin);
 const PAGE = 60;
 const LAST_CLASS_KEY = 'rmh-tf2-loadout-class';
+const UNRESTRICTED_KEY = 'rmh-tf2-loadout-unrestricted';
 
 function lastClass(): TfClass {
   try {
@@ -127,7 +163,10 @@ function Builder({
   const { catalog } = idx;
 
   const [cls, setCls] = useState<TfClass>(initialClass ?? 'scout');
-  const [slots, setSlots] = useState<LoadoutSlots>({});
+  // The initial, untouched slots object: autosave ignores it, so an empty draft is only ever written
+  // for a loadout the player (or a load) actually set.
+  const initialSlots = useRef<LoadoutSlots>({}).current;
+  const [slots, setSlots] = useState<LoadoutSlots>(initialSlots);
   const [selected, setSelected] = useState<LoadoutSlotKey | null>(null);
   const [remote, setRemote] = useState<{
     id: string;
@@ -138,8 +177,15 @@ function Builder({
   } | null>(null);
   const [dirty, setDirty] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
-  const [signIn, setSignIn] = useState(false);
+  const [signIn, setSignIn] = useState<'save' | 'ai' | null>(null);
   const [ready, setReady] = useState(false);
+  // "Allow any combination": off keeps to what the game allows; on lets the player equip anything
+  // (the warnings panel then says what the game could not do).
+  const [unrestricted, setUnrestrictedState] = useState(false);
+  const [extraCosmetics, setExtraCosmetics] = useState(0);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  // What the loadout was before the assistant last changed it, so one tap undoes the batch.
+  const [undoSlots, setUndoSlots] = useState<LoadoutSlots | null>(null);
   // Screen readers: what the last change did (the picker is a separate region from the slots).
   const [announce, setAnnounce] = useState('');
   // Wide screens show the picker beside the slots; narrower ones open it as a sheet.
@@ -178,7 +224,7 @@ function Builder({
     } else {
       const c = initialClass ?? lastClass();
       setCls(c);
-      setSlots(loadDraft(c));
+      setSlots(draftOrStock(c));
       setReady(true);
       hydrated.current = true;
     }
@@ -191,9 +237,9 @@ function Builder({
 
   // Unsaved work lives in a per-class draft.
   useEffect(() => {
-    if (!hydrated.current || remote) return;
+    if (!hydrated.current || remote || slots === initialSlots) return;
     saveDraft(cls, slots);
-  }, [cls, slots, remote]);
+  }, [cls, slots, remote, initialSlots]);
 
   const changeClass = (next: TfClass) => {
     if (remote || next === cls) return;
@@ -203,11 +249,74 @@ function Builder({
       /* storage unavailable */
     }
     setCls(next);
-    setSlots(loadDraft(next));
+    setSlots(draftOrStock(next));
+    setExtraCosmetics(0);
     setSelected(null);
   };
 
   const weaponKeys = useMemo(() => weaponSlotsFor(catalog, cls), [catalog, cls]);
+
+  // A class that has never been edited here starts from its stock weapons; one the player emptied
+  // on purpose stays empty.
+  const draftOrStock = (c: TfClass): LoadoutSlots =>
+    hasDraft(c) ? loadDraft(c) : stockLoadout(catalog, c);
+
+  useEffect(() => {
+    try {
+      setUnrestrictedState(localStorage.getItem(UNRESTRICTED_KEY) === '1');
+    } catch {
+      /* storage unavailable: the rules stay on */
+    }
+  }, []);
+  const setUnrestricted = (on: boolean) => {
+    setUnrestrictedState(on);
+    try {
+      localStorage.setItem(UNRESTRICTED_KEY, on ? '1' : '0');
+    } catch {
+      /* not kept */
+    }
+  };
+
+  // The game's three cosmetic slots; more only while "allow any combination" is on (or the loadout already
+  // holds more), up to the builder's cap.
+  const cosmeticKeys = useMemo(
+    () => cosmeticSlotKeys(slots, unrestricted ? COSMETIC_SLOTS + extraCosmetics : COSMETIC_SLOTS),
+    [slots, unrestricted, extraCosmetics],
+  );
+  const warnings = useMemo(() => loadoutWarnings(catalog, cls, slots), [catalog, cls, slots]);
+
+  // What the 3D player wears: the cosmetics, with their paint.
+  const worn = useMemo<WornItem[]>(() => {
+    const out: WornItem[] = cosmeticKeys.flatMap((k) => {
+      const e = slots[k];
+      if (!e) return [];
+      return [
+        {
+          slotKey: k,
+          itemId: e.item,
+          style: e.style,
+          tint: e.paint !== undefined ? idx.paint(e.paint)?.rgb : undefined,
+          effect: effectSpecOf(idx, e, slotFor(idx.item(e.item)!, cls) ?? 'misc'),
+        },
+      ];
+    });
+    // The player holds one weapon: the primary, else the secondary, else the melee.
+    const held = (['primary', 'secondary', 'melee'] as const).find((k) => slots[k]);
+    if (held) out.push({ slotKey: held, itemId: slots[held]!.item });
+    return out;
+  }, [slots, idx, cosmeticKeys, cls]);
+  const tauntItem = useMemo(() => {
+    for (const k of TAUNT_KEYS) if (slots[k]) return slots[k]!.item;
+    return undefined;
+  }, [slots]);
+  const tauntEffect = useMemo(() => {
+    for (const k of TAUNT_KEYS) {
+      const e = slots[k];
+      const spec = e ? effectSpecOf(idx, e, 'taunt') : undefined;
+      if (spec) return spec;
+    }
+    return undefined;
+  }, [slots, idx]);
 
   const slotLabel = useCallback(
     (key: LoadoutSlotKey): string => {
@@ -243,23 +352,7 @@ function Builder({
   };
 
   const equip = (key: LoadoutSlotKey, item: CatalogItem) => {
-    const next: LoadoutSlots = { ...slots };
-    const removed: string[] = [];
-    const isWorn = key.startsWith('cosmetic') || key.startsWith('taunt');
-    for (const [k, e] of Object.entries(next)) {
-      if (k === key) continue;
-      const other = idx.item(e.item);
-      const sameItem = isWorn && e.item === item.id && k.startsWith(key.replace(/\d+$/, ''));
-      const overlaps =
-        key.startsWith('cosmetic') &&
-        k.startsWith('cosmetic') &&
-        regionsConflict(item.r, other?.r, catalog.conflicts);
-      if (sameItem || overlaps) {
-        delete next[k];
-        if (overlaps && other) removed.push(other.n);
-      }
-    }
-    next[key] = { item: item.id };
+    const { slots: next, removed } = equipInto(catalog, slots, key, item, unrestricted);
     edit(next);
     setAnnounce(
       t('announce-equipped', {
@@ -272,7 +365,7 @@ function Builder({
       toast.info(
         t('removed-overlap', {
           defaultValue: 'Removed {{names}} — it overlaps {{item}}.',
-          names: removed.join(', '),
+          names: removed.map((r) => r.n).join(', '),
           item: item.n,
         }),
       );
@@ -283,8 +376,10 @@ function Builder({
     const cur = slots[key];
     if (!cur) return;
     const merged: LoadoutEntry = { ...cur, ...change };
-    if (merged.paint === undefined) delete merged.paint;
-    if (merged.effect === undefined) delete merged.effect;
+    // A field set to undefined means "clear it".
+    for (const k of Object.keys(merged) as (keyof LoadoutEntry)[]) {
+      if (merged[k] === undefined) delete merged[k];
+    }
     edit({ ...slots, [key]: merged });
   };
 
@@ -298,6 +393,94 @@ function Builder({
   const clearAll = () => {
     edit({});
     setSelected(null);
+  };
+
+  const resetToStock = () => {
+    edit(stockLoadout(catalog, cls));
+    setExtraCosmetics(0);
+    setSelected(null);
+    setAnnounce(t('announce-stock', { defaultValue: 'Back to the stock loadout.' }));
+  };
+
+  const makePlayable = () => {
+    const fixed = legalize(catalog, cls, slots);
+    edit(fixed.slots);
+    setExtraCosmetics(0);
+    setAnnounce(
+      t('announce-playable', {
+        defaultValue: 'Removed {{count}} so the loadout fits the game.',
+        count: fixed.dropped.length,
+      }),
+    );
+  };
+
+  // The assistant's suggestions land through the same rules as a tap on a tile.
+  const applyActions = (actions: AiAction[]) => {
+    let next: LoadoutSlots = { ...slots };
+    const names: string[] = [];
+    const removed: string[] = [];
+    let skipped = 0;
+    for (const a of actions) {
+      const item = idx.item(a.item);
+      if (!item) continue;
+      const n = /^cosmetic(\d+)$/.exec(a.slot)?.[1];
+      if (!unrestricted && n && Number(n) > COSMETIC_SLOTS) {
+        skipped++;
+        continue;
+      }
+      const r = equipInto(catalog, next, a.slot, item, unrestricted);
+      next = r.slots;
+      removed.push(...r.removed.map((x) => x.n));
+      next[a.slot] = {
+        item: item.id,
+        ...(a.paint !== undefined ? { paint: a.paint } : {}),
+        ...(a.effect !== undefined ? { effect: a.effect } : {}),
+      };
+      names.push(item.n);
+    }
+    if (!names.length) {
+      if (skipped) {
+        toast.info(
+          t('ai-skipped-limit', {
+            defaultValue:
+              'The game only has three cosmetic slots. Turn on "Allow any combination" to wear more.',
+          }),
+        );
+      }
+      return;
+    }
+    setUndoSlots(slots);
+    edit(next);
+    const extra = Math.max(
+      0,
+      ...Object.keys(next).map((k) => Number(/^cosmetic(\d+)$/.exec(k)?.[1] ?? 0)),
+    );
+    if (unrestricted && extra > COSMETIC_SLOTS) setExtraCosmetics(extra - COSMETIC_SLOTS);
+    const msg = t('ai-equipped-toast', {
+      defaultValue: 'Equipped {{names}}.',
+      names: names.join(', '),
+    });
+    setAnnounce(msg);
+    toast.success(
+      removed.length
+        ? `${msg} ${t('ai-removed-toast', { defaultValue: 'Replaced {{names}}.', names: removed.join(', ') })}`
+        : msg,
+    );
+    if (skipped) {
+      toast.info(
+        t('ai-skipped-limit', {
+          defaultValue:
+            'The game only has three cosmetic slots. Turn on "Allow any combination" to wear more.',
+        }),
+      );
+    }
+  };
+
+  const undoApply = () => {
+    if (!undoSlots) return;
+    edit(undoSlots);
+    setUndoSlots(null);
+    setAnnounce(t('ai-undone', { defaultValue: 'Undone.' }));
   };
 
   const filled = Object.keys(slots).length;
@@ -365,6 +548,12 @@ function Builder({
               {t('copy-link', { defaultValue: 'Copy link' })}
             </Btn>
           ) : null}
+          <Btn size="sm" icon={Sparkles} onClick={() => setAssistantOpen(true)}>
+            {t('ai-open', { defaultValue: 'Ask AI' })}
+          </Btn>
+          <Btn size="sm" variant="ghost" icon={RotateCcw} onClick={resetToStock}>
+            {t('reset-stock', { defaultValue: 'Stock' })}
+          </Btn>
           <Btn size="sm" variant="ghost" icon={Trash2} disabled={filled === 0} onClick={clearAll}>
             {t('clear-all', { defaultValue: 'Clear' })}
           </Btn>
@@ -373,7 +562,7 @@ function Builder({
             variant="primary"
             icon={Save}
             disabled={filled === 0 || (remote !== null && !dirty)}
-            onClick={() => (session ? setSaveOpen(true) : setSignIn(true))}
+            onClick={() => (session ? setSaveOpen(true) : setSignIn('save'))}
           >
             {remote
               ? t('save-changes', { defaultValue: 'Save changes' })
@@ -387,6 +576,15 @@ function Builder({
           aria-label={t('loadout-slots', { defaultValue: 'Loadout slots' })}
           className="flex flex-col gap-4"
         >
+          {/* The player sits right under the class bar; the options follow it. */}
+          <PlayerViewer cls={cls} worn={worn} tauntEffect={tauntEffect} taunt={tauntItem} />
+          <RulesPanel
+            warnings={warnings}
+            idx={idx}
+            unrestricted={unrestricted}
+            onToggle={setUnrestricted}
+            onFix={makePlayable}
+          />
           <SlotGroup title={t('weapons', { defaultValue: 'Weapons' })}>
             {weaponKeys.map((k) => (
               <SlotCell
@@ -402,7 +600,7 @@ function Builder({
             ))}
           </SlotGroup>
           <SlotGroup title={t('cosmetics', { defaultValue: 'Cosmetics' })}>
-            {COSMETIC_KEYS.map((k) => (
+            {cosmeticKeys.map((k) => (
               <SlotCell
                 key={k}
                 slotKey={k}
@@ -414,6 +612,19 @@ function Builder({
                 ready={ready}
               />
             ))}
+            {unrestricted && cosmeticKeys.length < MAX_COSMETIC_SLOTS ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setExtraCosmetics(Math.max(0, cosmeticKeys.length - COSMETIC_SLOTS) + 1);
+                  setSelected(cosmeticKey(cosmeticKeys.length));
+                }}
+                className="flex aspect-square min-w-0 flex-col items-center justify-center gap-1 rounded-(--app-radius-sm) border border-dashed border-(--app-border) text-xs text-(--app-text-dim) hover:border-(--app-accent) hover:text-(--app-text)"
+              >
+                <Plus className="size-5" aria-hidden />
+                {t('add-cosmetic-slot', { defaultValue: 'Add slot' })}
+              </button>
+            ) : null}
           </SlotGroup>
           <SlotGroup title={t('action-and-taunts', { defaultValue: 'Action & taunts' })}>
             {['action', ...TAUNT_KEYS].map((k) => (
@@ -430,16 +641,10 @@ function Builder({
             ))}
           </SlotGroup>
           <p className="text-xs text-(--app-text-dim)">
-            {catalog.source.hasIcons
-              ? t('catalog-source', {
-                  defaultValue: 'Items from {{source}}, updated automatically.',
-                  source: catalog.source.label,
-                })
-              : t('catalog-source-no-icons', {
-                  defaultValue:
-                    'Items from {{source}}, updated automatically. Inventory icons appear once a Steam API key is configured.',
-                  source: catalog.source.label,
-                })}
+            {t('catalog-source', {
+              defaultValue: 'Items from {{source}}, updated automatically.',
+              source: catalog.source.label,
+            })}
           </p>
         </section>
 
@@ -522,17 +727,91 @@ function Builder({
         }}
         onNeedSignIn={() => {
           setSaveOpen(false);
-          setSignIn(true);
+          setSignIn('save');
         }}
+      />
+      <LoadoutAssistant
+        open={assistantOpen}
+        onOpenChange={setAssistantOpen}
+        sheet={!isDesktop}
+        cls={cls}
+        slots={slots}
+        idx={idx}
+        signedIn={Boolean(session)}
+        onNeedSignIn={() => {
+          setAssistantOpen(false);
+          setSignIn('ai');
+        }}
+        onApply={applyActions}
+        canUndo={undoSlots !== null}
+        onUndo={undoApply}
       />
       {signIn ? (
         <SignInRequiredDialog
           open
-          onClose={() => setSignIn(false)}
-          feature={t('feature-save-loadouts', { defaultValue: 'Save loadouts to your account' })}
+          onClose={() => setSignIn(null)}
+          feature={
+            signIn === 'ai'
+              ? t('feature-loadout-ai', { defaultValue: 'Use the loadout assistant' })
+              : t('feature-save-loadouts', { defaultValue: 'Save loadouts to your account' })
+          }
         />
       ) : null}
     </main>
+  );
+}
+
+function RulesPanel({
+  warnings,
+  idx,
+  unrestricted,
+  onToggle,
+  onFix,
+}: {
+  warnings: ReturnType<typeof loadoutWarnings>;
+  idx: CatalogIndex;
+  unrestricted: boolean;
+  onToggle: (on: boolean) => void;
+  onFix: () => void;
+}) {
+  const { t } = useTranslation('c-tf2-hud');
+  return (
+    <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-3 text-xs">
+      {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- Toggle renders the native checkbox */}
+      <label className="flex cursor-pointer items-start gap-2.5">
+        <Toggle
+          checked={unrestricted}
+          onChange={onToggle}
+          label={t('allow-any', { defaultValue: 'Allow any combination' })}
+        />
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold text-(--app-text)">
+            {t('allow-any', { defaultValue: 'Allow any combination' })}
+          </span>
+          <span className="block text-(--app-text-dim)">
+            {t('allow-any-desc', {
+              defaultValue:
+                'Off: only what the game allows. On: equip as many items as you like; anything the game could not do is flagged.',
+            })}
+          </span>
+        </span>
+      </label>
+      {warnings.length ? (
+        <div
+          role="status"
+          className="mt-3 rounded-(--app-radius-sm) border border-(--app-warning)/50 bg-(--app-warning)/10 p-2.5"
+        >
+          <p className="flex items-center gap-1.5 font-semibold text-(--app-warning)">
+            <AlertTriangle className="size-4 shrink-0" aria-hidden />
+            {t('not-possible', { defaultValue: 'Not possible in the game' })}
+          </p>
+          <WarningList warnings={warnings} idx={idx} />
+          <Btn size="sm" className="mt-2" onClick={onFix}>
+            {t('make-playable', { defaultValue: 'Make it playable' })}
+          </Btn>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -659,19 +938,21 @@ function Picker({
     watch: shown,
   });
 
-  const paintOptions = useMemo(
-    () => catalog.paints.map((p) => ({ id: p.id, label: p.n, swatch: p.rgb })),
-    [catalog.paints],
-  );
-  const effectOptions = useMemo(
-    () => catalog.effects.map((f) => ({ id: f.id, label: f.n })),
-    [catalog.effects],
-  );
-
   const current = entry ? idx.item(entry.item) : undefined;
-  const canPaint = Boolean(current?.p);
   const slot = current ? slotFor(current, cls) : null;
-  const canEffect = slot === 'head' || slot === 'misc' || slot === 'taunt';
+  const customizable = Boolean(
+    current &&
+    (current.p ||
+      current.st ||
+      slot === 'head' ||
+      slot === 'misc' ||
+      slot === 'taunt' ||
+      slot === 'primary' ||
+      slot === 'secondary' ||
+      slot === 'melee'),
+  );
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const wide = useMediaQuery('(min-width: 1024px)');
 
   return (
     <div className="flex flex-col">
@@ -712,6 +993,7 @@ function Picker({
           <ItemModelViewer
             itemId={current.id}
             cls={cls}
+            style={entry?.style}
             tint={entry?.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
           />
           <div className="flex min-w-0 flex-col gap-3">
@@ -724,29 +1006,34 @@ function Picker({
               </p>
               <p className="truncate text-xs text-(--app-text-dim)">{current.t}</p>
             </div>
-            {canPaint ? (
-              <Field label={t('paint', { defaultValue: 'Paint' })}>
-                <SearchSelect
-                  value={entry?.paint}
-                  options={paintOptions}
-                  onChange={(id) => onPatch({ paint: id })}
-                  noneLabel={t('no-paint', { defaultValue: 'No paint' })}
-                  placeholder={t('search-paints', { defaultValue: 'Search paints' })}
-                  label={t('paint', { defaultValue: 'Paint' })}
-                />
-              </Field>
-            ) : null}
-            {canEffect ? (
-              <Field label={t('unusual-effect', { defaultValue: 'Unusual effect' })}>
-                <SearchSelect
-                  value={entry?.effect}
-                  options={effectOptions}
-                  onChange={(id) => onPatch({ effect: id })}
-                  noneLabel={t('no-effect', { defaultValue: 'None' })}
-                  placeholder={t('search-effects', { defaultValue: 'Search effects' })}
-                  label={t('unusual-effect', { defaultValue: 'Unusual effect' })}
-                />
-              </Field>
+            {customizable && entry ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Btn size="sm" icon={SlidersHorizontal} onClick={() => setCustomizeOpen(true)}>
+                  {t('customize', { defaultValue: 'Customize' })}
+                </Btn>
+                {entry.paint !== undefined && idx.paint(entry.paint) ? (
+                  <Pill>
+                    <span
+                      aria-hidden
+                      className="me-1 inline-block size-2.5 rounded-full border border-(--app-border-bright)"
+                      style={{ background: idx.paint(entry.paint)!.rgb }}
+                    />
+                    {idx.paint(entry.paint)!.n}
+                  </Pill>
+                ) : null}
+                {entry.style !== undefined && current?.st?.find((x) => x.k === entry.style) ? (
+                  <Pill>{current.st!.find((x) => x.k === entry.style)!.n}</Pill>
+                ) : null}
+                {entry.effect !== undefined && idx.effect(entry.effect) ? (
+                  <Pill tone="accent">{idx.effect(entry.effect)!.n}</Pill>
+                ) : null}
+                {entry.kit !== undefined ? (
+                  <Pill>
+                    {(catalog.kits ?? []).find((k) => k.id === entry.kit)?.n ?? '#' + entry.kit}
+                    {entry.wear ? ` · ${WEAR_NAMES[entry.wear - 1]}` : ''}
+                  </Pill>
+                ) : null}
+              </div>
             ) : null}
           </div>
         </div>
@@ -828,6 +1115,18 @@ function Picker({
         </ul>
       )}
       {shown < matches.length ? <div ref={more} aria-hidden className="h-8" /> : null}
+      {customizeOpen && current && entry ? (
+        <ItemCustomizeModal
+          open
+          onOpenChange={setCustomizeOpen}
+          sheet={!wide}
+          item={current}
+          entry={entry}
+          cls={cls}
+          idx={idx}
+          onPatch={onPatch}
+        />
+      ) : null}
     </div>
   );
 }

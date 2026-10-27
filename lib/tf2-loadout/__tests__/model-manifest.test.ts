@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildIconManifest, buildModelManifest, uniqueModels } from '../model-manifest';
+import {
+  buildIconManifest,
+  buildModelManifest,
+  buildTauntManifest,
+  classModelEntries,
+  uniqueModels,
+} from '../model-manifest';
+import { MODEL_NAME } from '../models.server';
 import { pickModel } from '../use-models';
 
 const ITEMS_GAME = `
@@ -86,5 +93,118 @@ describe('buildIconManifest', () => {
 
   it('skips excluded families', () => {
     expect(icons.some((i) => i.id === 942)).toBe(false);
+  });
+});
+
+describe('classModelEntries', () => {
+  const entry = classModelEntries();
+
+  it("lists the nine class bodies, with the game's file-name spellings", () => {
+    expect(entry.models).toHaveLength(9);
+    expect(entry.models.find((m) => m.class === 'demoman')).toEqual({
+      class: 'demoman',
+      mdl: 'models/player/demo.mdl',
+      role: 'main',
+      glb: 'class_demoman.glb',
+    });
+  });
+
+  it('names every body in a form the model routes accept, and nothing like an item id', () => {
+    for (const m of entry.models) expect(MODEL_NAME.test(m.glb.replace(/\.glb$/, ''))).toBe(true);
+    expect(MODEL_NAME.test('class_')).toBe(false);
+    expect(MODEL_NAME.test('class_../x')).toBe(false);
+  });
+});
+
+describe('stock weapons', () => {
+  it('lists a hidden "baseitem" weapon, which the builder shows, but not other hidden items', () => {
+    const items = `
+"items_game"
+{
+  "prefabs" { "weapon_base" { "item_slot" "primary" "item_name" "#T_Gun" } }
+  "items"
+  {
+    "199" { "name" "Shotgun" "prefab" "weapon_base" "hidden" "1" "baseitem" "1" "model_player" "models/w/shotgun.mdl" "used_by_classes" { "soldier" "1" } }
+    "200" { "name" "Internal" "prefab" "weapon_base" "hidden" "1" "model_player" "models/w/internal.mdl" "used_by_classes" { "soldier" "1" } }
+  }
+}`;
+    expect(buildModelManifest(items, ENGLISH).map((i) => i.id)).toEqual([199]);
+  });
+});
+
+describe('animation clip names', () => {
+  it('are accepted by the model routes, and nothing path-like is', () => {
+    expect(MODEL_NAME.test('anim_scout_taunt_conga')).toBe(true);
+    expect(MODEL_NAME.test('anim_demoman_taunt_rps_rock_win')).toBe(true);
+    expect(MODEL_NAME.test('anim_scout_../x')).toBe(false);
+    expect(MODEL_NAME.test('anim_scout_')).toBe(false);
+    expect(MODEL_NAME.test('anim__taunt')).toBe(false);
+  });
+});
+
+describe('buildTauntManifest', () => {
+  const items = `
+"items_game"
+{
+  "prefabs" { "taunt" { "item_slot" "taunt" "item_name" "#T_Taunt" } }
+  "items"
+  {
+    "1118" { "name" "Conga" "prefab" "taunt" "used_by_classes" { "scout" "1" "pyro" "1" "spy" "1" }
+      "taunt" { "custom_taunt_scene_per_class" {
+        "scout" "scenes/player/scout/low/Taunt_Conga.vcd"
+        "pyro" { "1" "scenes\\\\player\\\\pyro\\\\low\\\\taunt_conga.vcd" "2" "scenes/player/pyro/low/taunt_conga2.vcd" }
+      } } }
+    "13" { "name" "Scattergun" "item_slot" "primary" "item_name" "#T_Taunt" "used_by_classes" { "scout" "1" } }
+    "1119" { "name" "No scene" "prefab" "taunt" "used_by_classes" { "scout" "1" } }
+  }
+}`;
+  it('lists the scene each class plays, as a bare name, including a class with several', () => {
+    expect(buildTauntManifest(items, ENGLISH)).toEqual([
+      { id: 1118, scenes: { scout: ['taunt_conga'], pyro: ['taunt_conga', 'taunt_conga2'] } },
+    ]);
+  });
+});
+
+describe('item styles', () => {
+  const items = `
+"items_game"
+{
+  "prefabs" { "base_hat" { "item_slot" "head" "item_name" "#T_Hat" } }
+  "items"
+  {
+    "701" { "name" "Hat" "prefab" "base_hat" "model_player" "models/p/hat.mdl" "used_by_classes" { "scout" "1" }
+      "visuals" { "styles" {
+        "0" { "name" "Plain" }
+        "1" { "name" "Other model" "model_player" "models/p/hat_alt.mdl" }
+        "2" { "name" "Other skin" "skin_red" "2" "skin_blu" "3" }
+        "3" { "name" "Attributes only" "additional_hidden_bodygroups" { "hat" "1" } }
+      } } }
+    "702" { "name" "Class hat" "prefab" "base_hat" "model_player_per_class" { "basename" "models/p/ch_%s.mdl" } "used_by_classes" { "demoman" "1" }
+      "visuals" { "styles" { "1" { "name" "Alt" "model_player_per_class" { "basename" "models/p/ch_alt_%s.mdl" } } } } }
+  }
+}`;
+  const m = buildModelManifest(items, ENGLISH);
+  it('publishes a style that changes the model, or only the skin, as its own file', () => {
+    expect(m.find((i) => i.id === 701)?.models).toEqual([
+      { mdl: 'models/p/hat.mdl', role: 'main', glb: '701.glb' },
+      { mdl: 'models/p/hat_alt.mdl', role: 'main', glb: '701_s1.glb', style: 1 },
+      { mdl: 'models/p/hat.mdl', role: 'main', glb: '701_s2.glb', style: 2, skin: 2 },
+    ]);
+  });
+  it('names per-class style models by class and style, in a form the routes accept', () => {
+    const models = m.find((i) => i.id === 702)!.models;
+    expect(models.map((x) => x.glb)).toEqual(['702_demoman.glb', '702_demoman_s1.glb']);
+    for (const x of models) expect(MODEL_NAME.test(x.glb.replace(/\.glb$/, ''))).toBe(true);
+  });
+});
+
+describe('pickModel with styles', () => {
+  it('prefers the style file, then the class file, then the shared one', () => {
+    const ids = new Set(['701', '701_s1', '702_demoman', '702_demoman_s1']);
+    expect(pickModel(ids, 701, 'scout', 1)).toBe('701_s1');
+    expect(pickModel(ids, 701, 'scout', 2)).toBe('701');
+    expect(pickModel(ids, 702, 'demoman', 1)).toBe('702_demoman_s1');
+    expect(pickModel(ids, 702, 'demoman')).toBe('702_demoman');
+    expect(pickModel(ids, 999, 'demoman', 1)).toBeNull();
   });
 });
