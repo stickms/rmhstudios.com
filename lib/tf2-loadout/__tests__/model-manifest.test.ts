@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildModelManifest, uniqueModels } from '../model-manifest';
+import { buildIconManifest, buildModelManifest, uniqueModels } from '../model-manifest';
 import { pickModel } from '../use-models';
 
 const ITEMS_GAME = `
@@ -13,11 +13,11 @@ const ITEMS_GAME = `
   }
   "items"
   {
-    "13" { "name" "Scattergun" "prefab" "weapon_base" "item_name" "#T_Gun" "model_player" "Models\\\\Weapons\\\\c_scattergun.mdl" "used_by_classes" { "scout" "1" } }
+    "13" { "name" "Scattergun" "prefab" "weapon_base" "item_name" "#T_Gun" "model_player" "Models\\\\Weapons\\\\c_scattergun.mdl" "image_inventory" "backpack\\\\Weapons/c_models\\\\c_scattergun/c_scattergun" "used_by_classes" { "scout" "1" } }
     "940" { "name" "Gibus" "prefab" "base_hat" "item_name" "#T_Hat" "model_player_per_class" { "basename" "models/player/items/all_class/gibus_%s.mdl" } "used_by_classes" { "demoman" "1" "soldier" "1" } }
     "941" { "name" "Shield" "prefab" "weapon_base" "item_name" "#T_Gun" "model_player" "models/w/shield.mdl" "extra_wearable" "models/w/shield_back.mdl" "used_by_classes" { "demoman" "1" } }
     "942" { "name" "Medal" "prefab" "tournament_medal" "model_player" "models/m.mdl" "used_by_classes" { "scout" "1" } }
-    "943" { "name" "No model" "prefab" "base_hat" "item_name" "#T_Hat" "used_by_classes" { "scout" "1" } }
+    "943" { "name" "No model" "prefab" "base_hat" "item_name" "#T_Hat" "image_inventory" "backpack/player/items/scout/nomodel" "used_by_classes" { "scout" "1" } }
   }
 }`;
 const ENGLISH = `"lang" { "Tokens" { "T_Gun" "Gun" "T_Hat" "Hat" } }`;
@@ -71,5 +71,20 @@ describe('pickModel', () => {
     expect(pickModel(ids, 940, 'scout')).toBeNull();
     expect(pickModel(ids, 13, 'scout')).toBe('13');
     expect(pickModel(ids, 7)).toBeNull();
+  });
+});
+
+describe('buildIconManifest', () => {
+  const icons = buildIconManifest(ITEMS_GAME, ENGLISH);
+
+  it('lists the inventory icon of every loadout item, normalised, including ones with no model', () => {
+    expect(icons).toEqual([
+      { id: 13, icon: 'backpack/weapons/c_models/c_scattergun/c_scattergun', file: '13.webp' },
+      { id: 943, icon: 'backpack/player/items/scout/nomodel', file: '943.webp' },
+    ]);
+  });
+
+  it('skips excluded families', () => {
+    expect(icons.some((i) => i.id === 942)).toBe(false);
   });
 });

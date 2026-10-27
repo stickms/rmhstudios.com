@@ -74,23 +74,30 @@ export interface SteamProfile {
   image: string | null;
 }
 
-/** Display name and avatar via the Web API; null without a key or on any failure. */
+/** Name and avatar out of a public profile's `?xml=1` document; null when either is missing. */
+export function parseProfileXml(xml: string): SteamProfile | null {
+  const name = /<steamID><!\[CDATA\[([\s\S]*?)\]\]><\/steamID>/.exec(xml)?.[1]?.trim();
+  if (!name) return null;
+  const avatar = /<avatarFull><!\[CDATA\[(https:\/\/[^\]\s]+)\]\]><\/avatarFull>/.exec(xml)?.[1];
+  return { name: name.slice(0, 60), image: avatar ?? null };
+}
+
+/**
+ * Display name and avatar from the player's public profile page. No API key is
+ * needed; null when the profile is private, missing or Steam is unreachable
+ * (the account is then created with a generic name).
+ */
 export async function fetchSteamProfile(
   steamId: string,
-  apiKey: string | undefined,
   fetchImpl: typeof fetch = fetch,
 ): Promise<SteamProfile | null> {
-  if (!apiKey || !/^\d{17}$/.test(steamId)) return null;
+  if (!/^\d{17}$/.test(steamId)) return null;
   try {
-    const url = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${encodeURIComponent(apiKey)}&steamids=${steamId}`;
-    const res = await fetchImpl(url, { signal: AbortSignal.timeout(8000) });
+    const res = await fetchImpl(`https://steamcommunity.com/profiles/${steamId}/?xml=1`, {
+      signal: AbortSignal.timeout(8000),
+    });
     if (!res.ok) return null;
-    const p = (await res.json())?.response?.players?.[0];
-    if (!p || typeof p.personaname !== 'string') return null;
-    return {
-      name: p.personaname.slice(0, 60),
-      image: typeof p.avatarfull === 'string' && p.avatarfull.startsWith('https://') ? p.avatarfull : null,
-    };
+    return parseProfileXml(await res.text());
   } catch {
     return null;
   }

@@ -111,7 +111,7 @@ export const steam = () =>
 
         let user = existing ? await ctx.context.internalAdapter.findUserById(existing.userId) : null;
         if (!user) {
-          const profile = await fetchSteamProfile(steamId, process.env.STEAM_API_KEY);
+          const profile = await fetchSteamProfile(steamId);
           const created = await ctx.context.internalAdapter.createOAuthUser(
             {
               email: steamPlaceholderEmail(steamId),

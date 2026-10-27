@@ -25,9 +25,16 @@ function initials(name: string): string {
 }
 
 export function ItemIcon({ item, className }: { item: CatalogItem; className?: string }) {
-  const [failed, setFailed] = useState(false);
-  const src = iconUrl(item);
-  if (src && !failed) {
+  // The icon synced from the game's own files first; then Steam's CDN if the catalog carries
+  // a path for it; then initials.
+  const sources = [`/api/tf2-loadout/icons/${item.id}`, iconUrl(item)].filter(
+    (u): u is string => !!u,
+  );
+  // Per item, so a recycled tile starts over with the first source.
+  const [attempt, setAttempt] = useState({ id: item.id, n: 0 });
+  const tried = attempt.id === item.id ? attempt.n : 0;
+  const src = sources[tried];
+  if (src) {
     return (
       <img
         src={src}
@@ -35,7 +42,7 @@ export function ItemIcon({ item, className }: { item: CatalogItem; className?: s
         loading="lazy"
         decoding="async"
         draggable={false}
-        onError={() => setFailed(true)}
+        onError={() => setAttempt({ id: item.id, n: tried + 1 })}
         className={cn('size-full object-contain', className)}
       />
     );

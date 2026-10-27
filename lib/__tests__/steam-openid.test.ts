@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildAuthUrl,
+  parseProfileXml,
   safeCallback,
   steamPlaceholderEmail,
   verifyAssertion,
@@ -77,4 +78,20 @@ describe('helpers', () => {
   it('safeCallback keeps a local path', () => expect(safeCallback('/tf2/loadout?x=1')).toBe('/tf2/loadout?x=1'));
   it('uses a non-routable placeholder email', () =>
     expect(steamPlaceholderEmail(ID)).toBe(`steam-${ID}@users.noreply.rmhstudios.com`));
+});
+
+describe('parseProfileXml', () => {
+  const xml = (name: string, avatar: string) =>
+    `<profile><steamID64>${ID}</steamID64><steamID><![CDATA[${name}]]></steamID><avatarFull><![CDATA[${avatar}]]></avatarFull></profile>`;
+
+  it('reads the persona name and https avatar', () => {
+    expect(parseProfileXml(xml('Heavy Main', 'https://avatars.steamstatic.com/x_full.jpg'))).toEqual({
+      name: 'Heavy Main',
+      image: 'https://avatars.steamstatic.com/x_full.jpg',
+    });
+  });
+  it('ignores a non-https avatar and returns null without a name', () => {
+    expect(parseProfileXml(xml('A', 'http://evil.example/a.jpg'))?.image).toBeNull();
+    expect(parseProfileXml('<response><error><![CDATA[The specified profile could not be found.]]></error></response>')).toBeNull();
+  });
 });
