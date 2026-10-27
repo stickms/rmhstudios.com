@@ -6,6 +6,9 @@ describe('effectProfile', () => {
     expect(effectProfile('Burning Flames', 13)).toMatchObject({ kind: 'flame' });
     expect(effectProfile('Haunted Ghosts', 8)).toMatchObject({ kind: 'smoke' });
     expect(effectProfile('Electrostatic', 7)).toMatchObject({ kind: 'electric' });
+    // "spark" is electric, but "sparkle" is not
+    expect(effectProfile('Sparkle Shimmer', 9)).toMatchObject({ kind: 'sparkle' });
+    expect(effectProfile('Sparks', 10)).toMatchObject({ kind: 'electric' });
     expect(effectProfile('Green Energy', 9)).toMatchObject({ kind: 'electric', colors: ['#52d65a', '#ffffff'] });
     expect(effectProfile('Purple Confetti', 1).colors[0]).toBe('#9b59d0');
   });

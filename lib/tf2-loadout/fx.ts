@@ -31,7 +31,7 @@ export interface EffectProfile {
 
 const KINDS: [EffectKind, RegExp][] = [
   ['flame', /burn|flame|fire|scorch|inferno|blaze|ember|magma|lava|cauldron|hot\b|molten/i],
-  ['electric', /electro|lightning|plasma|static|energy|storm|zap|shock|neon|volt|spark/i],
+  ['electric', /electro|lightning|plasma|static|energy|storm|zap|shock|neon|volt|spark(?!l)/i],
   ['smoke', /smok|ghost|haunt|spectr|soul|spook|mist|fog|cloud|vapo|ash|shadow|dark/i],
   ['snow', /snow|frost|ice|frozen|winter|blizzard|chill|cold|flurr/i],
   ['bubble', /bubble|ocean|aqua|water|sea|rain|drip|splash/i],
