@@ -68,6 +68,8 @@ export interface CatalogItem {
   p?: 1;
   /** Inventory icon, relative to {@link ICON_BASE} (or an absolute URL). Present once the Steam schema has been merged. */
   i?: string;
+  /** The styles a player can choose between (two or more), by the game's style key and name. */
+  st?: { k: number; n: string }[];
 }
 
 export interface CatalogPaint {
@@ -80,6 +82,12 @@ export interface CatalogPaint {
 }
 
 export interface CatalogEffect {
+  id: number;
+  n: string;
+}
+
+/** A war paint: a pattern applied to a weapon, with a wear level and a seed (see {@link LoadoutEntry}). */
+export interface CatalogKit {
   id: number;
   n: string;
 }
@@ -98,6 +106,8 @@ export interface Catalog {
   paints: CatalogPaint[];
   /** Unusual effects for cosmetics and taunts. */
   effects: CatalogEffect[];
+  /** War paints, when the game's data lists them. */
+  kits?: CatalogKit[];
   /** Equip region → regions it cannot be worn with. Symmetric. */
   conflicts: Record<string, string[]>;
 }
@@ -197,11 +207,31 @@ export function itemsForSlot(catalog: Catalog, cls: TfClass, key: LoadoutSlotKey
 
 /* ───────────────────────────── loadout data ───────────────────────────── */
 
-/** One equipped item. `paint` and `effect` are catalog ids. */
+/** Where an unusual effect sits relative to its item, as fractions of the item's size, and how big it is. */
+export interface EffectPlacement {
+  x?: number;
+  y?: number;
+  z?: number;
+  /** Size multiplier. */
+  s?: number;
+}
+
+/** War paint wear levels, best to worst, as the game numbers them. */
+export const WEAR_LEVELS = [1, 2, 3, 4, 5] as const;
+export const MAX_SEED = 999_999_999;
+
+/** One equipped item. `paint`, `effect` and `kit` are catalog ids; `style` is a style key from the item. */
 export interface LoadoutEntry {
   item: number;
   paint?: number;
   effect?: number;
+  /** The unusual effect's placement; absent means the effect's default for this kind of item. */
+  fx?: EffectPlacement;
+  style?: number;
+  /** War paint on a weapon: the kit, its wear (1 Factory New … 5 Battle Scarred) and pattern seed. */
+  kit?: number;
+  wear?: number;
+  seed?: number;
 }
 
 export type LoadoutSlots = Record<LoadoutSlotKey, LoadoutEntry>;

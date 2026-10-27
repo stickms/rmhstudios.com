@@ -12,6 +12,7 @@ import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { supportsWebGL } from '@/lib/shared/platform';
 import { modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
 import { cn } from '@/lib/utils';
+import type { EffectSpec } from './EffectParticles';
 
 const Viewer3D = lazy(() => import('./Viewer3D'));
 
@@ -33,6 +34,7 @@ export default function ItemModelViewer({
   itemId,
   cls,
   tint,
+  effect,
   className,
 }: {
   itemId: number;
@@ -40,6 +42,8 @@ export default function ItemModelViewer({
   cls?: string;
   /** Paint colour, `#rrggbb`. */
   tint?: string;
+  /** An unusual effect to show around the model. */
+  effect?: EffectSpec;
   className?: string;
 }) {
   const { t } = useTranslation('c-tf2-hud');
@@ -61,7 +65,7 @@ export default function ItemModelViewer({
       }
     >
       <Suspense fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}>
-        <Viewer3D url={modelUrl(model)} tint={tint} />
+        <Viewer3D url={modelUrl(model)} tint={tint} effect={effect} />
       </Suspense>
     </SilentErrorBoundary>
   );

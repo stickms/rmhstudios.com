@@ -28,7 +28,7 @@ import {
  * new field): stored catalogs built by an older version are then rebuilt on the
  * next refresh instead of waiting for Valve to change the schema.
  */
-export const BUILDER_VERSION = 3;
+export const BUILDER_VERSION = 4;
 
 /** Identifies a schema *as this builder reads it*. */
 export const schemaHash = (itemsGame: string): string =>
@@ -184,6 +184,17 @@ export function buildCatalog(input: BuildInput): Catalog {
         ? [str(it, 'equip_region')!]
         : [];
     if (stock) stockIds.add(id);
+    // Styles a player can choose (the schema also keeps ones only the game applies, marked not selectable).
+    const styleBlock = block(block(it, 'visuals'), 'styles');
+    const styles: { k: number; n: string }[] = [];
+    if (styleBlock) {
+      for (const key of Object.keys(styleBlock)) {
+        const sb = block(styleBlock, key);
+        const k = Number(key);
+        if (!sb || !Number.isInteger(k) || str(sb, 'selectable') === '0') continue;
+        styles.push({ k, n: loc(str(sb, 'name')) ?? `Style ${k + 1}` });
+      }
+    }
     out.push({
       id,
       n: displayName,
@@ -194,6 +205,7 @@ export function buildCatalog(input: BuildInput): Catalog {
       ...(overrides ? { o: overrides } : {}),
       ...((slot === 'head' || slot === 'misc') && regions.length ? { r: regions } : {}),
       ...(str(block(it, 'capabilities'), 'paintable') === '1' ? { p: 1 as const } : {}),
+      ...(styles.length >= 2 ? { st: styles } : {}),
     });
   }
 

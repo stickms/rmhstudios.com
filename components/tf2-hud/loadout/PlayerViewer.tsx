@@ -13,6 +13,7 @@ import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { supportsWebGL } from '@/lib/shared/platform';
 import { classModel, modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
 import { cn } from '@/lib/utils';
+import type { EffectSpec } from './EffectParticles';
 import type { PlayerPart } from './PlayerScene';
 
 const PlayerScene = lazy(() => import('./PlayerScene'));
@@ -31,16 +32,20 @@ export interface WornItem {
   itemId: number;
   /** Paint colour, `#rrggbb`. */
   tint?: string;
+  effect?: EffectSpec;
 }
 
 export default function PlayerViewer({
   cls,
   worn,
+  tauntEffect,
   className,
 }: {
   cls: string;
   /** The cosmetics currently equipped. */
   worn: readonly WornItem[];
+  /** The equipped taunt's unusual effect, if any: it surrounds the whole player. */
+  tauntEffect?: EffectSpec;
   className?: string;
 }) {
   const { t } = useTranslation('c-tf2-hud');
@@ -53,7 +58,9 @@ export default function PlayerViewer({
     const out: PlayerPart[] = [];
     for (const w of worn) {
       const name = pickModel(ids, w.itemId, cls);
-      if (name) out.push({ key: `${w.slotKey}:${name}`, url: modelUrl(name), tint: w.tint });
+      if (name) {
+        out.push({ key: `${w.slotKey}:${name}`, url: modelUrl(name), tint: w.tint, effect: w.effect });
+      }
     }
     return out;
   }, [ids, worn, cls]);
@@ -75,7 +82,7 @@ export default function PlayerViewer({
       }
     >
       <Suspense fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}>
-        <PlayerScene body={modelUrl(body)} parts={parts} />
+        <PlayerScene body={modelUrl(body)} parts={parts} bodyEffect={tauntEffect} />
       </Suspense>
     </SilentErrorBoundary>
   );

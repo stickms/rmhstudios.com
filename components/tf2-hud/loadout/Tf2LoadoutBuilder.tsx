@@ -15,8 +15,9 @@ import {
   Plus,
   RotateCcw,
   Save,
-  Sparkles,
   Search,
+  SlidersHorizontal,
+  Sparkles,
   Trash2,
   X,
 } from 'lucide-react';
@@ -65,15 +66,29 @@ import {
   type TfClass,
 } from '@/lib/tf2-loadout/catalog-types';
 import { hasDraft, loadDraft, saveDraft } from '@/lib/tf2-loadout/local-drafts';
+import { effectProfile, resolvePlacement, WEAR_NAMES } from '@/lib/tf2-loadout/fx';
 import { equipInto, legalize, loadoutWarnings, stockLoadout } from '@/lib/tf2-loadout/rules';
 import type { AiAction } from '@/lib/tf2-loadout/ai-core';
 import { useCatalog, type CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import ItemModelViewer from './ItemModelViewer';
+import ItemCustomizeModal from './ItemCustomizeModal';
 import LoadoutAssistant from './LoadoutAssistant';
 import PlayerViewer, { type WornItem } from './PlayerViewer';
 import ItemTile from './ItemTile';
 import WarningList from './WarningList';
 import { CLASS_DEFAULT } from './labels';
+
+/** The effect on an equipped item, ready to draw (undefined when it has none). */
+function effectSpecOf(
+  idx: CatalogIndex,
+  e: LoadoutEntry,
+  slot: Parameters<typeof resolvePlacement>[1],
+) {
+  const fx = e.effect !== undefined ? idx.effect(e.effect) : undefined;
+  return fx
+    ? { profile: effectProfile(fx.n, fx.id), placement: resolvePlacement(e.fx, slot) }
+    : undefined;
+}
 
 const SITE = () => (typeof window === 'undefined' ? '' : window.location.origin);
 const PAGE = 60;
@@ -283,11 +298,20 @@ function Builder({
             slotKey: k,
             itemId: e.item,
             tint: e.paint !== undefined ? idx.paint(e.paint)?.rgb : undefined,
+            effect: effectSpecOf(idx, e, slotFor(idx.item(e.item)!, cls) ?? 'misc'),
           },
         ];
       }),
-    [slots, idx, cosmeticKeys],
+    [slots, idx, cosmeticKeys, cls],
   );
+  const tauntEffect = useMemo(() => {
+    for (const k of TAUNT_KEYS) {
+      const e = slots[k];
+      const spec = e ? effectSpecOf(idx, e, 'taunt') : undefined;
+      if (spec) return spec;
+    }
+    return undefined;
+  }, [slots, idx]);
 
   const slotLabel = useCallback(
     (key: LoadoutSlotKey): string => {
@@ -347,8 +371,10 @@ function Builder({
     const cur = slots[key];
     if (!cur) return;
     const merged: LoadoutEntry = { ...cur, ...change };
-    if (merged.paint === undefined) delete merged.paint;
-    if (merged.effect === undefined) delete merged.effect;
+    // A field set to undefined means "clear it".
+    for (const k of Object.keys(merged) as (keyof LoadoutEntry)[]) {
+      if (merged[k] === undefined) delete merged[k];
+    }
     edit({ ...slots, [key]: merged });
   };
 
@@ -543,7 +569,7 @@ function Builder({
           className="flex flex-col gap-4"
         >
           {/* The player sits right under the class bar; the options follow it. */}
-          <PlayerViewer cls={cls} worn={worn} />
+          <PlayerViewer cls={cls} worn={worn} tauntEffect={tauntEffect} />
           <RulesPanel
             warnings={warnings}
             idx={idx}
@@ -903,19 +929,21 @@ function Picker({
     watch: shown,
   });
 
-  const paintOptions = useMemo(
-    () => catalog.paints.map((p) => ({ id: p.id, label: p.n, swatch: p.rgb })),
-    [catalog.paints],
-  );
-  const effectOptions = useMemo(
-    () => catalog.effects.map((f) => ({ id: f.id, label: f.n })),
-    [catalog.effects],
-  );
-
   const current = entry ? idx.item(entry.item) : undefined;
-  const canPaint = Boolean(current?.p);
   const slot = current ? slotFor(current, cls) : null;
-  const canEffect = slot === 'head' || slot === 'misc' || slot === 'taunt';
+  const customizable = Boolean(
+    current &&
+      (current.p ||
+        current.st ||
+        slot === 'head' ||
+        slot === 'misc' ||
+        slot === 'taunt' ||
+        slot === 'primary' ||
+        slot === 'secondary' ||
+        slot === 'melee'),
+  );
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const wide = useMediaQuery('(min-width: 1024px)');
 
   return (
     <div className="flex flex-col">
@@ -968,29 +996,34 @@ function Picker({
               </p>
               <p className="truncate text-xs text-(--app-text-dim)">{current.t}</p>
             </div>
-            {canPaint ? (
-              <Field label={t('paint', { defaultValue: 'Paint' })}>
-                <SearchSelect
-                  value={entry?.paint}
-                  options={paintOptions}
-                  onChange={(id) => onPatch({ paint: id })}
-                  noneLabel={t('no-paint', { defaultValue: 'No paint' })}
-                  placeholder={t('search-paints', { defaultValue: 'Search paints' })}
-                  label={t('paint', { defaultValue: 'Paint' })}
-                />
-              </Field>
-            ) : null}
-            {canEffect ? (
-              <Field label={t('unusual-effect', { defaultValue: 'Unusual effect' })}>
-                <SearchSelect
-                  value={entry?.effect}
-                  options={effectOptions}
-                  onChange={(id) => onPatch({ effect: id })}
-                  noneLabel={t('no-effect', { defaultValue: 'None' })}
-                  placeholder={t('search-effects', { defaultValue: 'Search effects' })}
-                  label={t('unusual-effect', { defaultValue: 'Unusual effect' })}
-                />
-              </Field>
+            {customizable && entry ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Btn size="sm" icon={SlidersHorizontal} onClick={() => setCustomizeOpen(true)}>
+                  {t('customize', { defaultValue: 'Customize' })}
+                </Btn>
+                {entry.paint !== undefined && idx.paint(entry.paint) ? (
+                  <Pill>
+                    <span
+                      aria-hidden
+                      className="me-1 inline-block size-2.5 rounded-full border border-(--app-border-bright)"
+                      style={{ background: idx.paint(entry.paint)!.rgb }}
+                    />
+                    {idx.paint(entry.paint)!.n}
+                  </Pill>
+                ) : null}
+                {entry.style !== undefined && current?.st?.find((x) => x.k === entry.style) ? (
+                  <Pill>{current.st!.find((x) => x.k === entry.style)!.n}</Pill>
+                ) : null}
+                {entry.effect !== undefined && idx.effect(entry.effect) ? (
+                  <Pill tone="accent">{idx.effect(entry.effect)!.n}</Pill>
+                ) : null}
+                {entry.kit !== undefined ? (
+                  <Pill>
+                    {(catalog.kits ?? []).find((k) => k.id === entry.kit)?.n ?? '#' + entry.kit}
+                    {entry.wear ? ` · ${WEAR_NAMES[entry.wear - 1]}` : ''}
+                  </Pill>
+                ) : null}
+              </div>
             ) : null}
           </div>
         </div>
@@ -1072,6 +1105,18 @@ function Picker({
         </ul>
       )}
       {shown < matches.length ? <div ref={more} aria-hidden className="h-8" /> : null}
+      {customizeOpen && current && entry ? (
+        <ItemCustomizeModal
+          open
+          onOpenChange={setCustomizeOpen}
+          sheet={!wide}
+          item={current}
+          entry={entry}
+          cls={cls}
+          idx={idx}
+          onPatch={onPatch}
+        />
+      ) : null}
     </div>
   );
 }

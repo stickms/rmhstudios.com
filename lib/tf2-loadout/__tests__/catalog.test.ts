@@ -168,3 +168,48 @@ describe('hidden stock weapons', () => {
     expect(ids).not.toContain(777);
   });
 });
+
+describe('styles and war paint fields', () => {
+  const items = `
+"items_game"
+{
+  "prefabs" { "hat" { "item_class" "tf_wearable" "item_slot" "head" "item_type_name" "#T_Hat" "capabilities" { "paintable" "1" } } "gun" { "item_class" "tf_weapon" "item_slot" "primary" "item_type_name" "#T_Gun" } }
+  "items"
+  {
+    "10" { "name" "Styled Hat" "prefab" "hat" "item_name" "#T_Styled" "used_by_classes" { "scout" "1" }
+      "visuals" { "styles" { "0" { "name" "#S_A" } "1" { "name" "#S_B" "skin" "1" } "2" { "name" "Hidden" "selectable" "0" } } } }
+    "11" { "name" "One Style Hat" "prefab" "hat" "item_name" "#T_One" "used_by_classes" { "scout" "1" }
+      "visuals" { "styles" { "0" { "name" "#S_A" } } } }
+    "12" { "name" "Gun" "prefab" "gun" "item_name" "#T_Gun" "used_by_classes" { "scout" "1" } }
+  }
+}`;
+  const english = `"lang" { "Tokens" { "T_Hat" "Hat" "T_Gun" "Gun" "T_Styled" "Styled Hat" "T_One" "One Style Hat" "S_A" "Plain" "S_B" "Fancy" } }`;
+  const cat = buildCatalog({ itemsGame: items, english, label: 't', now: new Date(0) });
+  const kitCat = { ...cat, kits: [{ id: 5, n: 'Woodsy' }] };
+
+  it('lists the styles a player can choose, by the game\'s key, and only when there are two or more', () => {
+    expect(cat.items.find((i) => i.id === 10)?.st).toEqual([
+      { k: 0, n: 'Plain' },
+      { k: 1, n: 'Fancy' },
+    ]);
+    expect(cat.items.find((i) => i.id === 11)?.st).toBeUndefined();
+  });
+
+  it('validates a style against the item', () => {
+    expect(() => validateSlots(cat, 'scout', { cosmetic1: { item: 10, style: 1 } })).not.toThrow();
+    expect(() => validateSlots(cat, 'scout', { cosmetic1: { item: 10, style: 2 } })).toThrow();
+    expect(() => validateSlots(cat, 'scout', { cosmetic1: { item: 11, style: 0 } })).toThrow();
+  });
+
+  it('only allows an effect placement alongside an effect', () => {
+    expect(() => validateSlots(cat, 'scout', { cosmetic1: { item: 10, fx: { y: 0.2 } } })).toThrow();
+  });
+
+  it('allows a war paint on a weapon with a known kit, and nowhere else', () => {
+    expect(() =>
+      validateSlots(kitCat, 'scout', { primary: { item: 12, kit: 5, wear: 3, seed: 1234 } }),
+    ).not.toThrow();
+    expect(() => validateSlots(kitCat, 'scout', { primary: { item: 12, kit: 99 } })).toThrow();
+    expect(() => validateSlots(kitCat, 'scout', { cosmetic1: { item: 10, kit: 5 } })).toThrow();
+  });
+});
