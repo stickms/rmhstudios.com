@@ -80,10 +80,12 @@ function MobileDoctrineNav() {
   return (
     <nav
       aria-label={t('nav-mobile', { defaultValue: 'Strategies' })}
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-white/10 pt-2"
+      // A floating capsule, not a bar glued to the bottom edge: a full-width opaque strip there is what
+      // iOS Safari reads as the page's edge and extends into a flat band behind its toolbar.
+      className="md:hidden fixed inset-x-3 z-40 flex items-center justify-around rounded-full border border-white/10 py-1"
       style={{
         background: 'var(--doctrine-bg-secondary, #141416)',
-        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)',
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
       }}
     >
       {mobileNavItems.map((item) => {

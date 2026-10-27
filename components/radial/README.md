@@ -12,8 +12,9 @@ in `app/globals.css`).
 
 ## Current material contract
 
-The main UI now provides grouped desktop navigation and a mobile quick-navigation
-bar around the existing globe trigger. The globe remains the complete navigator.
+The main UI provides grouped desktop navigation; on a phone the only navigator is
+the globe, whose docked trigger is a small jelly globe (`MiniGlobe`) that swells into
+the full one — there is no tab bar. The globe is the complete navigator.
 Eversion runs only from the open globe; ordinary links never spawn a mini globe.
 Its surface shares `lib/liquid/globe-material.ts` with the navigator, including
 while it flattens. After the handoff, the remaining motion is shortened through

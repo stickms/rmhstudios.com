@@ -12,7 +12,6 @@ import { useNotificationCount } from '@/lib/useNotificationCount';
 import { RadialHub } from './RadialHub';
 import { RadialNavRail } from './RadialNavRail';
 import { RadialGlobeDock } from './RadialGlobeDock';
-import { RadialQuickNav } from './RadialQuickNav';
 import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
 import { TabBadge } from '@/components/site/TabBadge';
@@ -434,7 +433,6 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
         </div>
       </RailSlotContext.Provider>
 
-      <RadialQuickNav />
       <RadialHub />
 
       {overlays}

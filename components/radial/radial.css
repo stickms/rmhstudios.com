@@ -305,8 +305,13 @@ body:has(.radial-shell) .call-banner {
      lens then have page on every side to refract and fall into, so it is molded out of the ground instead of framed by
      the window edge. The margins and the shorter height add up to `--rad-topbar-h` exactly, so nothing below it (rails,
      banners, sticky offsets) moves. */
-  top: 0.25rem;
-  margin: 0.25rem 0.75rem;
+  top: 0.75rem;
+  /* Twelve px below the viewport's top edge, with the bottom margin giving the
+     difference back so the total is still `--rad-topbar-h`. iOS 26 Safari paints the
+     strip behind the status bar from a fixed/sticky bar it finds within a few px of
+     the top edge; a bar that sits clear of it leaves that strip to the page itself,
+     instead of a flat black band under the clock and battery. */
+  margin: 0.75rem 0.75rem -0.25rem;
   z-index: var(--z-topbar);
   display: flex;
   align-items: center;
@@ -1117,7 +1122,14 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
   border: none;
   cursor: pointer;
   color: var(--site-accent-fg);
-  background: var(--site-accent);
+  /* A jelly sphere, not a flat disc: lit from the upper left, deepening toward
+     the far limb. Every stop is a theme token, so each theme tints its own globe. */
+  background: radial-gradient(
+    circle at 34% 28%,
+    color-mix(in srgb, var(--site-accent) 62%, var(--site-accent-fg)) 0%,
+    var(--site-accent) 48%,
+    color-mix(in srgb, var(--site-accent) 70%, var(--site-bg)) 100%
+  );
   /* No shadow. It used to carry a `0 10px 30px -8px rgba(0,0,0,0.5)` bloom plus a
      contact shadow, both hardcoded black rather than themed — so on the light
      themes the orb sat in a grey halo the size of itself, which read as a glow
@@ -1197,47 +1209,26 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    continuous GPU work, and this one ran on every `_site` page for decoration
    alone. The orb carries its own glass material; nothing replaces the aura. */
 
-/* The RMH mark (radial spirograph SVG) drawn in the orb's accent-contrast ink. */
+/* The orb's face: a mini globe (MiniGlobe.tsx) in the orb's accent-contrast ink. It
+   settles in once on mount; the globe it swells into owns every other motion. */
 .radial-hub__logo {
   display: block;
-  width: 74%;
-  height: 74%;
+  width: 82%;
+  height: 82%;
   overflow: visible;
-  /* The mark sits on the orb's own solid accent fill, so the correct ink is
-     simply the accent's paired foreground — a token every theme and preset
-     authors and `ensureReadableAccent()` contrast-checks, which makes this
-     deterministic in a way a blend mode is not. (An earlier revision used
-     `mix-blend-mode: difference` here; blending only composites against the
-     backdrop inside the element's OWN stacking context, which is exactly how the
-     hub glyphs ended up white-on-white.) */
   color: var(--site-accent-fg);
+  animation: rmh-globe-settle 0.7s var(--ease-smooth) both;
 }
-.radial-hub__logo path {
-  /* Hairline line-art: the mark is a very dense spirograph rendered tiny (~44px
-     in the orb), so any weight bleeds the overlapping curves into a solid muddy
-     blob. Kept very fine (this scales DOWN with the geometry, so on-screen it's
-     a sub-pixel filigree) → a delicate white mark, not a heavy black disc. */
-  stroke-width: 0.8;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
+.radial-hub__globe-lit {
+  stop-color: color-mix(in srgb, var(--site-accent) 70%, var(--site-accent-fg));
 }
-/* On mount the mark blooms open — scaling + rotating out of the core while its
-   stroke draws itself (pathLength-normalised), leaning into the SVG. */
-.radial-hub__logo {
-    animation: rmh-logo-bloom 1.05s var(--ease-glass, var(--ease-smooth)) both;
-  }
-.radial-hub__logo path {
-    animation: rmh-logo-draw 1.3s ease both;
-  }
-@keyframes rmh-logo-bloom {
+.radial-hub__globe-deep {
+  stop-color: color-mix(in srgb, var(--site-accent) 78%, var(--site-bg));
+}
+@keyframes rmh-globe-settle {
   from {
-    transform: scale(0.15) rotate(-50deg);
+    transform: scale(0.6);
     opacity: 0;
-  }
-}
-@keyframes rmh-logo-draw {
-  from {
-    stroke-dashoffset: 1;
   }
 }
 
@@ -1584,6 +1575,34 @@ html.reduce-transparency .radial-hub__veil,
 html.perf-lite .radial-hub__veil,
 html.ios-webkit .radial-hub__veil {
   background: var(--site-bg);
+}
+
+/* ── Phones: the page stays visible behind the globe ────────────────────────
+   On a phone the menu used to black the page out: iOS Safari is one of the tiers
+   above that skip the blur, so its veil was opaque `--site-bg`. The page now stays
+   there, very slightly blurred, with only a light tint over it for the globe's
+   labels. Only `perf-lite` and `reduce-transparency` keep the opaque veil: the first
+   exists to avoid this raster and the second asked for less see-through material.
+
+   WebKit is the one engine the note above warns about (a blur of the document-tall
+   feed is a memory bet there). The radius is kept to 3px for that reason, and the
+   feed layer is the single thing to drop (`filter: none`, here) if it ever renders
+   blank on a device. The veil's tint then has to go back to opaque with it. */
+@media (max-width: 767.98px) {
+  .radial-shell {
+    --hub-page-blur: 3px;
+  }
+  html:not(.perf-lite):not(.reduce-transparency)
+    .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting']))
+    :is(.radial-backdrop, .radial-topbar, .radial-frame),
+  html:not(.perf-lite):not(.reduce-transparency)
+    .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting']))
+    > [data-floating]:not([data-floating='hub']) {
+    filter: blur(var(--hub-page-blur, 3px));
+  }
+  html:not(.perf-lite):not(.reduce-transparency) .radial-hub__veil {
+    background: color-mix(in srgb, var(--site-bg) 24%, transparent);
+  }
 }
 
 /* ── The liquid globe navigator ────────────────────────────────────────────
@@ -3528,65 +3547,9 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   }
 }
 
-/* Direct navigation supplements the globe on smaller screens. The empty middle
-   track is the existing orb: one navigator, with familiar shortcuts beside it. */
-.radial-quicknav {
-  position: fixed;
-  inset-inline: 0;
-  bottom: calc(var(--safe-bottom) + var(--site-hub-orb-inset));
-  z-index: calc(var(--z-floating) - 1);
-  display: grid;
-  grid-template-columns: 1fr 1fr var(--site-hub-orb-size) 1fr 1fr;
-  align-items: center;
-  width: min(calc(100% - 1.5rem), 30rem);
-  min-height: var(--site-hub-orb-size);
-  margin-inline: auto;
-  padding: var(--rad-1);
-  border-radius: var(--site-radius);
-  transition: opacity var(--site-transition-speed) var(--ease-glass);
-}
-.radial-quicknav__link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--rad-1);
-  min-width: 0;
-  min-height: var(--site-touch-target);
-  padding: var(--rad-1);
-  border-radius: var(--site-radius-sm);
-  color: var(--site-text-muted);
-  text-decoration: none;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  line-height: 1.2;
-  transition:
-    color var(--site-transition-speed) var(--ease-glass),
-    background-color var(--site-transition-speed) var(--ease-glass);
-}
-.radial-quicknav__link svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex: none;
-}
-.radial-quicknav__link span {
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  text-align: center;
-}
-.radial-quicknav__link[aria-current='page'] {
-  color: var(--site-accent);
-  background: var(--site-surface-active);
-}
-.radial-quicknav__link:hover {
-  color: var(--site-text);
-  background: var(--site-surface-hover);
-}
-.radial-shell:has(.radial-hub:not([data-phase='closed'])) .radial-quicknav {
-  visibility: hidden;
-  pointer-events: none;
-  opacity: 0;
-}
+/* The globe is the only navigator on a phone: the docked orb is a small jelly
+   globe that swells into the full one (see the hub's phase rules above), and a
+   chosen destination everts from it. There is no tab bar beside it. */
 .radial-topbar__search span,
 .radial-topbar__search kbd {
   display: none;
@@ -3614,11 +3577,6 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
     color: var(--site-text-muted);
     font-family: var(--site-font-mono);
     font-size: 0.75rem;
-  }
-}
-@media (min-width: 1120px) {
-  .radial-quicknav {
-    display: none;
   }
 }
 @media (max-width: 1119.98px) {
