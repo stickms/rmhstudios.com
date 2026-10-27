@@ -1,6 +1,14 @@
 'use client';
 
-import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Link, useLocation, useRouterState } from '@tanstack/react-router';
 import { Bell, MessageCircle, Search, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +25,12 @@ import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
 import { TabBadge } from '@/components/site/TabBadge';
 import { openCommandPalette } from '@/components/site/command-palette-bus';
+import {
+  commitPageTransition,
+  finishEntranceAnimations,
+  shellLayoutFor,
+  armEntranceGuard,
+} from '@/lib/page-transition';
 
 /**
  * The quick panels, behind a lazy boundary — same treatment, and the same
@@ -366,16 +380,28 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
     select: (s) => (s.resolvedLocation ?? s.location).pathname,
   });
   const isHome = renderedPathname === '/';
-  const layout = /^\/(store|games|apps|create|library)(\/|$)/.test(renderedPathname)
-    ? 'catalog'
-    : /^\/(messages|settings|admin|developer)(\/|$)/.test(renderedPathname)
-      ? 'workspace'
-      : /^\/(blog|news)(\/|$)/.test(renderedPathname)
-        ? 'editorial'
-        : 'social';
+  const layout = shellLayoutFor(renderedPathname);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const [railSlot, setRailSlot] = useState<HTMLElement | null>(null);
   const railSlotRef = useRef<HTMLDivElement | null>(null);
+
+  // Each committed page: finish the one-shot entrance animations it just mounted with (title rise, card rises, feed
+  // item enters) so they never paint, leaving only the shared quick swap (globals.css, `page-swap-in`), and end the
+  // old page's leave dim. A layout effect: it runs after the DOM is in, before the browser paints it. Not on the
+  // document's first render (hydration plays no entrances at all).
+  const committedOnce = useRef(false);
+  useLayoutEffect(() => {
+    if (!committedOnce.current) {
+      committedOnce.current = true;
+      return;
+    }
+    commitPageTransition();
+    const column = shellRef.current?.querySelector('.page-root');
+    if (!column) return;
+    finishEntranceAnimations(column);
+    // Content that arrives a moment later (data resolving, a lazy section) is part of the same swap.
+    armEntranceGuard();
+  }, [renderedPathname]);
 
   // Publish the rail's page slot once it exists, so `PageLayout` can portal a
   // route's `rightSidebar` into it (see components/radial/rail-slot.tsx).
