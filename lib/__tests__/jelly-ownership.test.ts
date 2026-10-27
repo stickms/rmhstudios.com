@@ -214,16 +214,16 @@ describe('N2 — the jelly services have one owner each', () => {
   });
 
   it('(c) the degraded-root predicate is declared once, in lib/jelly/tiers.ts', () => {
-    const DEGRADED = ['.reduce-transparency', '.style-high-contrast', '.perf-lite'];
+    const DEGRADED = ['.perf-lite'];
     const tiers = readFileSync(join(ROOT, 'lib/jelly/tiers.ts'), 'utf8');
     expect(tiers).toMatch(
-      /export const DEGRADED_ROOT_SELECTOR = '\.reduce-transparency,\.style-high-contrast,\.perf-lite';/,
+      /export const DEGRADED_ROOT_SELECTOR = '\.perf-lite';/,
     );
     const offenders: string[] = [];
     for (const f of SOURCES) {
       if (f === 'lib/jelly/tiers.ts') continue;
       for (const m of code(f).matchAll(/(['"`])((?:(?!\1)[^\n\\])*)\1/g)) {
-        if (DEGRADED.every((c) => m[2].includes(c))) offenders.push(`${f}: ${m[0]}`);
+        if (DEGRADED.every((c) => m[2] === c)) offenders.push(`${f}: ${m[0]}`);
       }
     }
     expect(

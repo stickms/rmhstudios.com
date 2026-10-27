@@ -20,10 +20,6 @@ export function installLiquidInteractions(doc: Document = document): () => void 
   const win = doc.defaultView;
   if (!win) return () => {};
   const root = doc.documentElement;
-  const queries = [
-    win.matchMedia('(prefers-reduced-transparency: reduce)'),
-    win.matchMedia('(forced-colors: active)'),
-  ];
   const fine = win.matchMedia('(hover: hover) and (pointer: fine)');
   let appContrast = !!doc.querySelector('.app-high-contrast');
   /** A paint is pending on the next driver frame. */
@@ -38,7 +34,6 @@ export function installLiquidInteractions(doc: Document = document): () => void 
 
   const disabled = () =>
     doc.hidden ||
-    queries.some((q) => q.matches) ||
     root.matches(DEGRADED_ROOT_SELECTOR) ||
     appContrast;
 
@@ -152,7 +147,6 @@ export function installLiquidInteractions(doc: Document = document): () => void 
     attributes: true,
     attributeFilter: ['class'],
   });
-  queries.forEach((q) => q.addEventListener('change', preferenceChange));
   const fineChange = () => clearLight();
   fine.addEventListener('change', fineChange);
   // One paint per wake; never stays awake on its own. Order 25: after the engine (20), before arcs (30).
@@ -181,7 +175,6 @@ export function installLiquidInteractions(doc: Document = document): () => void 
     lightDriver.stop();
     for (const u of unPointer) u();
     observer.disconnect();
-    queries.forEach((q) => q.removeEventListener('change', preferenceChange));
     fine.removeEventListener('change', fineChange);
     doc.removeEventListener('visibilitychange', clear);
     doc.removeEventListener('scroll', invalidate, true);

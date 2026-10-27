@@ -30,7 +30,7 @@
  * - Touch layout: it reads rects in observer callbacks and frames, and writes only canvases and attributes.
  * - Move or animate a host element: text, hit areas and layout stay fixed. Taps never emit waves.
  * - Depend on `backdrop-filter`, WebGL extensions, or `fwidth`: the look is the same in Chromium, WebKit and Gecko.
- * - Draw when it must not: reduced transparency, forced colours, high contrast, `perf-lite` and print all remove every
+ * - Draw when it must not: `perf-lite`, the app tier's high-contrast theme and print all remove every
  *   canvas and leave the CSS material, which is the fallback tier and is always complete without this file.
  *
  * ## Plasmatic Jelly (master plan R6/R7; 01 §2; 02 §1.3; 04 §3)
@@ -422,8 +422,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
     nav.connection?.saveData === true;
 
   const queries = {
-    transparency: win.matchMedia('(prefers-reduced-transparency: reduce)'),
-    forced: win.matchMedia('(forced-colors: active)'),
     fine: win.matchMedia('(hover: hover) and (pointer: fine)'),
     print: win.matchMedia('print'),
   };
@@ -517,8 +515,6 @@ export function installLiquidGlass(doc: Document = document): () => void {
   readEnv();
 
   const off = () =>
-    queries.transparency.matches ||
-    queries.forced.matches ||
     queries.print.matches ||
     root.matches(DEGRADED_ROOT_SELECTOR) ||
     !!doc.querySelector(APP_HIGH_CONTRAST_SELECTOR);
