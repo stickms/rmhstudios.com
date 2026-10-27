@@ -155,6 +155,7 @@ def decode_animdesc(mdl, bones, desc, max_frames=None):
         bn = bones[bone]
         p = o + 4
         rot_ptr = pos_ptr = None
+        rot_base = pos_base = None
         raw_q = raw_p = None
         if flags & RAWROT:
             raw_q = _quat48(mdl, p)
@@ -164,12 +165,14 @@ def decode_animdesc(mdl, bones, desc, max_frames=None):
             p += 8
         elif flags & ANIMROT:
             rot_ptr = struct.unpack_from("<3h", mdl, p)
+            rot_base = p  # value offsets are relative to the pointer triple itself
             p += 6
         if flags & RAWPOS:
             raw_p = tuple(_half(h) for h in struct.unpack_from("<3H", mdl, p))
             p += 6
         elif flags & ANIMPOS:
             pos_ptr = struct.unpack_from("<3h", mdl, p)
+            pos_base = p
             p += 6
         for f in range(frames):
             if raw_q is not None:
@@ -180,13 +183,13 @@ def decode_animdesc(mdl, bones, desc, max_frames=None):
                     if rot_ptr[j] == 0:
                         ang.append(bn["rot"][j])
                     else:
-                        ang.append(bn["rot"][j] + _rle(mdl, o + rot_ptr[j], f) * bn["rotscale"][j])
+                        ang.append(bn["rot"][j] + _rle(mdl, rot_base + rot_ptr[j], f) * bn["rotscale"][j])
                 quat[f, bone] = _euler_quat(*ang)
             if raw_p is not None:
                 pos[f, bone] = raw_p
             elif pos_ptr is not None:
                 pos[f, bone] = [bn["pos"][j] if pos_ptr[j] == 0
-                                else bn["pos"][j] + _rle(mdl, o + pos_ptr[j], f) * bn["posscale"][j]
+                                else bn["pos"][j] + _rle(mdl, pos_base + pos_ptr[j], f) * bn["posscale"][j]
                                 for j in range(3)]
         if nxt == 0:
             break
@@ -194,13 +197,50 @@ def decode_animdesc(mdl, bones, desc, max_frames=None):
     return pos, quat
 
 
-def decode_sequence(mdl, bones, seq, max_frames=None):
-    """Decode the middle blend cell of a sequence (the neutral aim of an aimmatrix pose)."""
+def root_fix(base_mdl, bones):
+    """3x3 basis change from the space animations are authored in (Z up) to the space of the bind pose the
+    mesh and `poseToBone` use (Y up). Both are in the model: its `ref` sequence IS the bind pose in animation
+    space, so the rotation taking the ref root to the bone's default root is the conversion."""
+    ref = next((s for s in read_sequences(base_mdl) if s["name"] == "ref"), None)
+    if ref is None or not ref["anims"]:
+        raise ModelError("no ref sequence")
+    pos, quat = decode_animdesc(base_mdl, bones, read_animdesc(base_mdl, ref["anims"][0]), 1)
+    root = next(i for i, b in enumerate(bones) if b["parent"] < 0)
+    return quat_matrix(bones[root]["quat"]) @ quat_matrix(quat[0, root]).T
+
+
+def matrix_quat(m):
+    t = m[0, 0] + m[1, 1] + m[2, 2]
+    if t > 0:
+        s = math.sqrt(t + 1) * 2
+        q = ((m[2, 1] - m[1, 2]) / s, (m[0, 2] - m[2, 0]) / s, (m[1, 0] - m[0, 1]) / s, s / 4)
+    elif m[0, 0] > m[1, 1] and m[0, 0] > m[2, 2]:
+        s = math.sqrt(1 + m[0, 0] - m[1, 1] - m[2, 2]) * 2
+        q = (s / 4, (m[0, 1] + m[1, 0]) / s, (m[0, 2] + m[2, 0]) / s, (m[2, 1] - m[1, 2]) / s)
+    elif m[1, 1] > m[2, 2]:
+        s = math.sqrt(1 + m[1, 1] - m[0, 0] - m[2, 2]) * 2
+        q = ((m[0, 1] + m[1, 0]) / s, s / 4, (m[1, 2] + m[2, 1]) / s, (m[0, 2] - m[2, 0]) / s)
+    else:
+        s = math.sqrt(1 + m[2, 2] - m[0, 0] - m[1, 1]) * 2
+        q = ((m[0, 2] + m[2, 0]) / s, (m[1, 2] + m[2, 1]) / s, s / 4, (m[1, 0] - m[0, 1]) / s)
+    return q
+
+
+def decode_sequence(mdl, bones, seq, fix=None, max_frames=None):
+    """Decode the middle blend cell of a sequence (the neutral aim of an aimmatrix pose). `fix` is
+    `root_fix(...)`: it re-expresses the root bone's motion in the bind pose's space."""
     if not seq["anims"]:
         raise ModelError("sequence has no animations")
     pick = seq["anims"][len(seq["anims"]) // 2] if seq["blends"] > 1 else seq["anims"][0]
     desc = read_animdesc(mdl, pick)
     pos, quat = decode_animdesc(mdl, bones, desc, max_frames)
+    if fix is not None:
+        for r, b in enumerate(bones):
+            if b["parent"] >= 0:
+                continue
+            for f in range(pos.shape[0]):
+                pos[f, r] = fix @ pos[f, r]
+                quat[f, r] = matrix_quat(fix @ quat_matrix(quat[f, r]))
     return desc, pos, quat
 
 
