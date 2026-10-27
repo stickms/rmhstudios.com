@@ -14,6 +14,10 @@
   flex-direction: column;
   align-items: stretch;
 }
+[data-slot='jelly-group'][data-orientation='vertical'] [data-slot='jelly-group-item'] {
+  justify-content: flex-start;
+  text-align: start;
+}
 
 [data-slot='jelly-group-item'] {
   --glow-strength: var(--row-glow-strength, 20%);

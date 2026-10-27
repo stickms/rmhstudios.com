@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -34,6 +33,7 @@ import {
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { JellyGroup } from '@/components/ui/jelly-group';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 
 async function persist(body: Record<string, unknown>) {
@@ -203,39 +203,33 @@ export function AppearancePanel() {
             'Retint success, warning and danger colours so they stay distinguishable. Status labels also carry their own icon, so nothing depends on colour alone.',
         })}
       >
-        <div
+        <JellyGroup
           role="radiogroup"
           aria-label={t('color-vision', { defaultValue: 'Colour vision' })}
-          className="grid gap-2 sm:grid-cols-2"
+          orientation="vertical"
+          className="w-full"
         >
           {COLOR_VISION_MODES.map((mode) => (
-            <button
+            <JellyGroup.Item
               key={mode}
-              type="button"
               role="radio"
               aria-checked={store.colorVision === mode}
+              // A radio, not a toggle: its state is `aria-checked`.
+              aria-pressed={undefined}
+              selected={store.colorVision === mode}
               onClick={() => setColorVision(mode)}
-              className={cn(
-                'glass-fill glass-interactive rounded-site-sm px-3 py-2 text-left transition-colors',
-                store.colorVision === mode
-                  ? 'border-site-accent bg-site-accent text-site-accent-fg'
-                  : 'text-site-text hover:border-site-text/40',
-              )}
             >
-              <span className="block text-sm font-medium">
-                {t(`color-vision-${mode}`, { defaultValue: COLOR_VISION_LABELS[mode] })}
+              <span className="flex flex-col text-left">
+                <span className="text-sm font-medium text-site-text">
+                  {t(`color-vision-${mode}`, { defaultValue: COLOR_VISION_LABELS[mode] })}
+                </span>
+                <span className="text-xs text-site-text-muted">
+                  {t(`color-vision-${mode}-hint`, { defaultValue: COLOR_VISION_HINTS[mode] })}
+                </span>
               </span>
-              <span
-                className={cn(
-                  'block text-xs',
-                  store.colorVision === mode ? 'opacity-80' : 'text-site-text-muted',
-                )}
-              >
-                {t(`color-vision-${mode}-hint`, { defaultValue: COLOR_VISION_HINTS[mode] })}
-              </span>
-            </button>
+            </JellyGroup.Item>
           ))}
-        </div>
+        </JellyGroup>
 
         {/* A live swatch row: the three semantic colours as they will actually
             render, so the choice can be judged instead of guessed. */}

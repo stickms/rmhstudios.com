@@ -12,7 +12,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { IconButton } from '@/components/ui/icon-button';
+import { JellyGroup } from '@/components/ui/jelly-group';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { DURATION, EASE } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -93,31 +93,44 @@ export function SelectionBar({
           </span>
 
           {onSelectAll && !allSelected && (
-            <Button variant="ghost" size="xs" onClick={onSelectAll}>
+            <JellyGroup.Item onClick={onSelectAll} className="min-h-9 px-3 text-xs">
               {t('select-all', { defaultValue: 'Select all' })}
-            </Button>
+            </JellyGroup.Item>
           )}
 
           <div className="ms-auto flex flex-wrap items-center gap-2">
-            {actions.map((action) => (
-              <Button
-                key={action.id}
-                variant={action.variant ?? 'secondary'}
-                size="sm"
-                disabled={action.disabled}
-                onClick={action.onClick}
-              >
-                {action.icon ? <action.icon aria-hidden /> : null}
-                {action.label}
-              </Button>
-            ))}
-            <IconButton
-              icon={X}
-              size="icon-sm"
-              variant="ghost"
+            {actions.map((action) =>
+              // Neutral actions lie flat on the bar (its glass is the one body); a coloured action keeps its Button.
+              !action.variant || action.variant === 'secondary' || action.variant === 'ghost' ? (
+                <JellyGroup.Item
+                  key={action.id}
+                  disabled={action.disabled}
+                  onClick={action.onClick}
+                  className="min-h-9"
+                >
+                  {action.icon ? <action.icon aria-hidden /> : null}
+                  {action.label}
+                </JellyGroup.Item>
+              ) : (
+                <Button
+                  key={action.id}
+                  variant={action.variant}
+                  size="sm"
+                  disabled={action.disabled}
+                  onClick={action.onClick}
+                >
+                  {action.icon ? <action.icon aria-hidden /> : null}
+                  {action.label}
+                </Button>
+              ),
+            )}
+            <JellyGroup.Item
               onClick={onClear}
-              label={t('clear-selection', { defaultValue: 'Clear selection' })}
-            />
+              aria-label={t('clear-selection', { defaultValue: 'Clear selection' })}
+              className="min-h-9 min-w-9 px-2"
+            >
+              <X aria-hidden />
+            </JellyGroup.Item>
           </div>
         </motion.div>
       )}

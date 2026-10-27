@@ -3,7 +3,10 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-r
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { JellyGroup } from '@/components/ui/jelly-group';
+
+/** A square member: an icon or a page number, a 36px target (44px on touch, from the member's own floor). */
+const ICON_MEMBER = 'min-w-9 px-2';
 
 interface PaginationProps {
   /** Current (1-based) page. */
@@ -49,29 +52,24 @@ export function Pagination({
 
   return (
     <div className={cn('flex flex-col items-center gap-4', className)}>
-      <div className="flex max-w-full flex-wrap items-center justify-center gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+      {/* One jelly body; first/prev/pages/next/last are flat members, the current page a glow lying on it. */}
+      <JellyGroup size="sm" className="max-w-full justify-center">
+        <JellyGroup.Item
           onClick={() => onPageChange(1)}
           disabled={safePage === 1}
-          className="rounded-full pointer-coarse:size-11"
+          className={ICON_MEMBER}
           aria-label={t('first-page', { defaultValue: 'First page' })}
         >
-          <ChevronsLeft className="w-4 h-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+          <ChevronsLeft aria-hidden />
+        </JellyGroup.Item>
+        <JellyGroup.Item
           onClick={() => onPageChange(safePage - 1)}
           disabled={safePage === 1}
-          className="rounded-full pointer-coarse:size-11"
+          className={ICON_MEMBER}
           aria-label={t('prev-page', { defaultValue: 'Previous page' })}
         >
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
+          <ChevronLeft aria-hidden />
+        </JellyGroup.Item>
 
         {pageNumbers.map((p, i) =>
           p === '...' ? (
@@ -79,46 +77,41 @@ export function Pagination({
               ...
             </span>
           ) : (
-            <Button
-              type="button"
+            <JellyGroup.Item
               key={p}
               onClick={() => onPageChange(p)}
+              selected={safePage === p}
+              // The current page is `aria-current`, not a toggle.
+              aria-pressed={undefined}
               aria-current={safePage === p ? 'page' : undefined}
-              variant={safePage === p ? 'default' : 'ghost'}
-              size="icon-sm"
               className={cn(
-                'rounded-full text-sm font-medium pointer-coarse:size-11',
-                safePage !== p && 'hidden text-site-text-muted sm:inline-flex',
+                ICON_MEMBER,
+                'text-sm font-medium',
+                safePage !== p && 'hidden sm:inline-flex',
               )}
             >
               {p}
-            </Button>
+            </JellyGroup.Item>
           ),
         )}
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+        <JellyGroup.Item
           onClick={() => onPageChange(safePage + 1)}
           disabled={safePage === totalPages}
-          className="rounded-full pointer-coarse:size-11"
+          className={ICON_MEMBER}
           aria-label={t('next-page', { defaultValue: 'Next page' })}
         >
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
+          <ChevronRight aria-hidden />
+        </JellyGroup.Item>
+        <JellyGroup.Item
           onClick={() => onPageChange(totalPages)}
           disabled={safePage === totalPages}
-          className="rounded-full pointer-coarse:size-11"
+          className={ICON_MEMBER}
           aria-label={t('last-page', { defaultValue: 'Last page' })}
         >
-          <ChevronsRight className="w-4 h-4" />
-        </Button>
-      </div>
+          <ChevronsRight aria-hidden />
+        </JellyGroup.Item>
+      </JellyGroup>
       {showIndicator ? (
         <p className="text-sm text-site-text-muted">
           {t('page-of', {
