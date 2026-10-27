@@ -117,11 +117,12 @@ describe('§7.3 — the layer costs what the design language allows', () => {
     for (const rule of hoverRules) expect(SECTION.indexOf(rule)).toBeGreaterThan(fine);
   });
 
-  it('perf-lite swaps the springs for a tween, and forced colors drop the layer', () => {
+  it('perf-lite swaps the springs for a tween', () => {
     expect(SECTION).toMatch(
       /html\.perf-lite\s*\{[^}]*--evert-ease:\s*(cubic-bezier|var\(--ease-smooth\))/,
     );
-    expect(SECTION).toMatch(/@media \(forced-colors: active\)\s*\{[^}]*\[data-evert\]::before/);
+    // The forced-colours fallback was removed with the contrast theme.
+    expect(SECTION).not.toMatch(/forced-colors/);
   });
 
   it('uses one animation scheme without system or account motion overrides', () => {

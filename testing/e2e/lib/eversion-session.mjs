@@ -71,7 +71,6 @@ export const PROFILES = {
 export const THEMES = {
   dark: { localStorage: { 'rmh-style': 'graphite' }, colorScheme: 'dark' },
   light: { localStorage: {}, colorScheme: 'light' },
-  'high-contrast': { localStorage: { 'rmh-style': 'high-contrast' }, colorScheme: 'dark' },
 };
 
 export const BASE_URL = (process.env.BASE_URL ?? 'http://localhost:7005').replace(/\/$/, '');
@@ -151,12 +150,15 @@ export async function openSession(options = {}) {
   // software-GL page on a busy CI box can go that long between stages while still
   // alive, and a gate that measures the effect must not measure the watchdog. The
   // controller honours this override (RUN watchdog only; nothing else reads it).
-  await context.addInitScript((ms) => {
-    window.__EVERSION_MAX_RUN_MS = ms;
-    // No visitor input hurries a run (it always plays in full, amended 2026-10-20), but a software-GL run takes
-    // minutes: the controller exposes the timeline's fast-forward to a page marked as the harness (`hurry()`).
-    window.__EVERSION_E2E = true;
-  }, Number(process.env.EVERSION_E2E_MAX_RUN_MS ?? 600_000));
+  await context.addInitScript(
+    (ms) => {
+      window.__EVERSION_MAX_RUN_MS = ms;
+      // No visitor input hurries a run (it always plays in full, amended 2026-10-20), but a software-GL run takes
+      // minutes: the controller exposes the timeline's fast-forward to a page marked as the harness (`hurry()`).
+      window.__EVERSION_E2E = true;
+    },
+    Number(process.env.EVERSION_E2E_MAX_RUN_MS ?? 600_000),
+  );
   const page = await context.newPage();
 
   /** Add the eversion query flags to a path or URL. */

@@ -336,7 +336,7 @@ jobs:
           done
           if [ -f testing/e2e/eversion-hub.mjs ] && [ -z "$UPDATE_BASELINES" ]; then
             for profile in desktop mobile; do
-              for theme in dark light high-contrast; do
+              for theme in dark light; do
                 echo "::group::eversion-hub.mjs $profile/$theme"
                 if PROFILE="$profile" THEME="$theme" cap node testing/e2e/eversion-hub.mjs; then
                   echo "PASS eversion-hub $profile/$theme"; record "eversion-hub $profile/$theme" "PASS"

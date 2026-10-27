@@ -369,18 +369,18 @@ no luminance modulation above 3 Hz; ambient motion never moves a host's position
 `jellyMode()` in `tiers.ts` folds the tier, the off predicate, both preferences and game
 state into `{ambient, arcs, deform}` so the four services cannot disagree.
 
-| Condition                                                           | Ambient haze   | Soft body  | Arcs               | Rim slabs   | CSS                   |
-| ------------------------------------------------------------------- | -------------- | ---------- | ------------------ | ----------- | --------------------- |
-| `lively` (default)                                                  | yes            | full       | per `electricArcs` | yes         | haze floor            |
-| `calm`                                                              | × 0.4, ≤ 12 Hz | full       | clicks (or off)    | yes         | haze floor            |
-| `still`                                                             | no             | press only | off (forced)       | yes         | haze floor            |
-| `perf-lite`                                                         | no             | press only | off                | no          | haze floor + CSS rim  |
-| reduced transparency (OS or account) · high contrast (site or app)  | no             | press only | off                | no          | opaque surfaces       |
-| forced colours · print                                              | no             | none       | off                | no          | system colours / flat |
-| hidden tab                                                          | clock 0        | none       | off, layer cleared | frames stop | —                     |
-| game playing                                                        | no             | none       | off                | ≤ 2         | —                     |
-| `[data-jelly-zone="playfield"]`, `[data-jelly-scope="off"]` subtree | no             | none       | none               | no          | —                     |
-| no WebGL2 / context loss / past the rim budget                      | carrier        | unchanged  | unchanged          | no          | haze floor            |
+| Condition                                                           | Ambient haze   | Soft body  | Arcs               | Rim slabs   | CSS                  |
+| ------------------------------------------------------------------- | -------------- | ---------- | ------------------ | ----------- | -------------------- |
+| `lively` (default)                                                  | yes            | full       | per `electricArcs` | yes         | haze floor           |
+| `calm`                                                              | × 0.4, ≤ 12 Hz | full       | clicks (or off)    | yes         | haze floor           |
+| `still`                                                             | no             | press only | off (forced)       | yes         | haze floor           |
+| `perf-lite`                                                         | no             | press only | off                | no          | haze floor + CSS rim |
+| high contrast (app tier only)                                       | no             | press only | off                | no          | opaque surfaces      |
+| print                                                               | no             | none       | off                | no          | flat                 |
+| hidden tab                                                          | clock 0        | none       | off, layer cleared | frames stop | —                    |
+| game playing                                                        | no             | none       | off                | ≤ 2         | —                    |
+| `[data-jelly-zone="playfield"]`, `[data-jelly-scope="off"]` subtree | no             | none       | none               | no          | —                    |
+| no WebGL2 / context loss / past the rim budget                      | carrier        | unchanged  | unchanged          | no          | haze floor           |
 
 Per-element opt-outs (`OPT_OUT_SELECTOR`): `data-jelly="off"` and the accepted aliases
 `data-liquid-material="off"`, `data-liquid-glass="off"`, `data-liquid-motion="off"`,
@@ -497,7 +497,7 @@ unit-tested in `lib/jelly/__tests__/{frame,pointer}.test.ts`.
 | rest and engaged frame rates             | `testing/e2e/frame-budget.mjs` (clock ≤ 13 fps after the idle threshold, ambient arcs isolated)                                                                                                  |
 
 Browser review (the part no script checks): `/`, a feed page, settings, an app and a
-game; Daylight, Midnight and high contrast; phone and desktop width; `jellyMotion`
+game; Daylight and Midnight; phone and desktop width; `jellyMotion`
 lively, calm and still; `electricArcs` off. Confirm nothing changed **layout**, nothing
 moved more than the nudge bound, and the page drops to the idle floor after 20 s.
 

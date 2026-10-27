@@ -156,8 +156,8 @@ per-page checklist with code.)
 5. **Motion comes from the token set.** `lib/motion.ts` (`DURATION`, `EASE`,
    `SPRING`, `APPLE_SPRING`, `transition`, and the named variants) rather than
    ad-hoc numbers, so a global re-tune stays a one-line change. (§7)
-6. **It degrades centrally, not per component.** High-contrast, reduced
-   transparency, `perf-lite`, `forced-colors` and the jelly switches
+6. **It degrades centrally, not per component.** `perf-lite`, print and the
+   jelly switches
    (`jellyMotion`, `electricArcs`) are handled by the token layer, the glass
    classes and `lib/jelly/tiers.ts`. A component that branches on them by hand
    is a bug, and so is a component with its own pointer loop, deformation or
@@ -169,8 +169,8 @@ per-page checklist with code.)
 8. **The keyboard and screen-reader path works.** Icon-only controls are named,
    decorative icons are `aria-hidden`, focus stays visible and undoubled. (§8,
    §9)
-9. **It was actually looked at** in the three shipped themes — `default`
-   (Daylight), `.style-graphite` (Midnight) and `.style-high-contrast` — at a
+9. **It was actually looked at** in both shipped themes — `default`
+   (Daylight) and `.style-graphite` (Midnight) — at a
    phone width and a desktop width, and once with jelly motion set to Still
    (ambient haze and arcs gone, press still works). Three
    themes × two widths is the floor; the audit matrix in
@@ -276,9 +276,9 @@ or a fire button held for thirty seconds is not a tap, and springing it reads as
 lag while promoting a compositor layer during exactly the frames a game can least
 afford one.
 
-The degraded tiers (`perf-lite`, reduced transparency, high contrast) and
+The degraded tiers (`perf-lite`, the app tier's high contrast) and
 `jellyMotion = still` keep only the press — no hover body, nudge or wobble —
-and forced colours, print and a playing game stand the soft body down entirely
+and print and a playing game stand the soft body down entirely
 (`jellyMode()` in `lib/jelly/tiers.ts`). Direct manipulation that remains useful
 (turning the globe, a sheet gesture) keeps working.
 
@@ -399,11 +399,10 @@ material in its own palette over its own `--site-canvas` aurora. (The old
 **The picker ships three**, and they are one system in three accessibility
 modes rather than a gallery of moods — light, dark, and the no-glass fallback:
 
-| Shipped in `SITE_STYLES` | Label               | What it is                                                                                                                                                         |
-| ------------------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `default` (no class)     | **Daylight** ☀      | The light theme. Strict black-&-white, ink accent, translucent white frost over a white aurora. `color-scheme: light`, document bg `#ffffff`.                      |
-| `graphite`               | **Midnight** ◐      | The site default. OLED-black ground, near-white ink, graphite elevated surfaces, hairline light borders, one calm blue signal. `color-scheme: dark`, bg `#000000`. |
-| `high-contrast`          | **High contrast** ◑ | WCAG AAA, and **the absence of the material**: opaque surfaces, no blur, no glint, no aurora, 2px borders, yellow accent. Everything must survive it.              |
+| Shipped in `SITE_STYLES` | Label          | What it is                                                                                                                                                         |
+| ------------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `default` (no class)     | **Daylight** ☀ | The light theme. Strict black-&-white, ink accent, translucent white frost over a white aurora. `color-scheme: light`, document bg `#ffffff`.                      |
+| `graphite`               | **Midnight** ◐ | The site default. OLED-black ground, near-white ink, graphite elevated surfaces, hairline light borders, one calm blue signal. `color-scheme: dark`, bg `#000000`. |
 
 Four more palettes stay in `globals.css` as complete, ready token sets — they
 are not in the picker, and they exist as the reference every **user theme**
@@ -419,8 +418,8 @@ The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
 material lab at `/jelly` (`/liquid-glass` redirects there). Everyone uses the
 shared default jelly material. The Glass clarity slider is retired: saved device and account values
 cannot make the site opaque or change its tint. Old device keys are cleared
-before first paint and during hydration. OS reduced-transparency preferences,
-forced colours, high contrast and renderer capability fallbacks still apply.
+before first paint and during hydration. Renderer capability fallbacks and `perf-lite` still apply; the site has no
+high-contrast theme and no OS forced-colours or reduced-transparency fallback.
 
 On top of any theme a user can pick an **accent preset** — a curated color
 (`lib/appearance.ts`, `ACCENT_PRESETS`, 14 options) that overrides just the
@@ -703,9 +702,8 @@ floating UI `.glass-overlay`, a field `.glass-inset`, a backdrop `.glass-scrim`.
 
 Rules: never put a backdrop tier (`.glass-pane/chrome/overlay`) on an ancestor of
 a `position:fixed` element (`backdrop-filter` creates a containing block — use
-`.glass-chrome--aside`, which blurs on `::before`). `high-contrast`,
-`prefers-reduced-transparency`, `html.reduce-transparency`, and `html.perf-lite`
-all degrade these classes automatically — no per-component branching.
+`.glass-chrome--aside`, which blurs on `::before`). `html.perf-lite`
+degrades these classes automatically — no per-component branching.
 
 `html.perf-lite` is applied by **`lib/perf-tier.ts`** (from `Providers.tsx`) off
 two conservative device facts: `navigator.deviceMemory < 4`, or
@@ -746,7 +744,7 @@ Always reach for these before writing new markup. Helper: `cn()` from
 | `Breadcrumbs`                                                               | `components/ui/breadcrumbs.tsx`                          | "Where am I" trail for nested pages; also a `breadcrumbs?` prop on `PageLayout`. Last item is the current page (`aria-current`).                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `BackToTop`                                                                 | `components/ui/back-to-top.tsx`                          | Floating scroll-to-top button, mounted once in the `_site` shell (targets the window **and** the mobile `[data-scroll-root]` scroller).                                                                                                                                                                                                                                                                                                                                                                                                |
 | `NotificationBadge`                                                         | `components/ui/notification-badge.tsx`                   | Count pill (`bg-site-danger`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `JellyGroup` | `components/ui/jelly-group.tsx` | One jelly parent for a cluster of related controls; members (`JellyGroup.Item`, `.Divider`) are flat, selection is a feathered glow. Prop `surface`: `chrome`, `pane`, `fill`. A lone control stays a pill; tab strips stay `LiquidTabs`. |
+| `JellyGroup`                                                                | `components/ui/jelly-group.tsx`                          | One jelly parent for a cluster of related controls; members (`JellyGroup.Item`, `.Divider`) are flat, selection is a feathered glow. Prop `surface`: `chrome`, `pane`, `fill`. A lone control stays a pill; tab strips stay `LiquidTabs`.                                                                                                                                                                                                                                                                                              |
 | `UserAvatar`                                                                | `components/ui/UserAvatar.tsx`                           | Default fallback `/images/social/default_avatar.png`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `OptimizedImage`, `BlurImage`                                               | `components/ui/`                                         | Image loading.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `AnimatedCount`, `ViewTransitionLink`, `NavigationProgress`, `RoutePending` | `components/ui/`                                         | Motion/navigation helpers. `RoutePending` is the router-wide pending fallback.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -1441,9 +1439,9 @@ Global (in `globals.css`):
   `RTL_LOCALES` in `lib/i18n/config.ts` (today `ar` and `ur` — read the
   constant, don't hardcode a locale test). Use logical spacing where possible
   and `.rtl-flip` on directional icons.
-- `high-contrast` is an explicit theme choice (there is no
-  `@media (prefers-contrast)` hook) — test new UI against `.style-high-contrast`
-  and the Daylight theme (`default`, no class), not just the default Midnight.
+- The site ships two themes, Midnight (the default) and Daylight (`default`, no
+  class) — test new UI in both. There is no high-contrast theme (removed
+  2026-10-27; the app tier keeps its own).
 - **Never let colour be the only carrier of meaning.** Colour-vision modes
   (§2.1) retint the semantic tokens, but a retint cannot rescue a UI where the
   only difference between two states is hue. Pair status with a glyph, a label,
@@ -1451,10 +1449,7 @@ Global (in `globals.css`):
   that feature (mode list, CSS blocks, pre-paint script) are CI-checked because
   a mode with no CSS block is a setting that appears to work and changes
   nothing.
-- **Respect the in-account switches, not just the OS ones.**
-  `html.reduce-transparency` is set by Settings → Appearance and sits on equal
-  footing with `prefers-reduced-transparency`; code that checks only the media
-  query misses half the people who asked. The retired reduced-motion setting
+- **The retired switches do not come back.** The retired reduced-motion setting
   does not come back. Ambient motion and arcs are paused by the **jelly**
   switches (`html[data-jelly-motion]`, `html[data-electric-arcs]`), which
   `lib/jelly/tiers.ts` reads for every jelly service — never read them in a
@@ -1502,8 +1497,8 @@ lazy locale chunks).
   `lib/motion.ts` instead of ad-hoc `duration`/`ease` numbers.
 - Add `data-slot="..."` to new shared primitives so themes can restyle them.
 - Wire every string through `t(..., { defaultValue })`.
-- Test in the three shipped themes — `default` (Daylight), `graphite`
-  (Midnight) and `high-contrast` — and with jelly motion set to Still.
+- Test in both shipped themes — `default` (Daylight) and `graphite`
+  (Midnight) — and with jelly motion set to Still.
 
 **Don't**
 
@@ -1545,8 +1540,7 @@ what you know from §1 transfers.
 `--app-safe-*` inset tokens) **plus every behaviour built on it** — scrollbars,
 focus rings, `::placeholder`, Gecko's focus/validation quirks, tap-highlight and
 double-tap-zoom suppression, the iOS sub-16px input-zoom floor, `dvh` heights,
-and deliberate degradation for `backdrop-filter`,
-`prefers-reduced-transparency`, `forced-colors` and print.
+and deliberate degradation for `backdrop-filter` and print.
 
 **An app ships only its palette.** Each app's CSS is a class
 (`rmhbox-theme`, …) that redefines the `--app-*` values — RMHbox's is ~30 lines.

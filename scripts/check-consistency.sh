@@ -546,14 +546,13 @@ fi
 step "5. Look at it (nothing below is automatable)"
 if has '\.(tsx|css)$'; then
   cat <<'EOF'
-  ● Three shipped themes × two widths: default (Daylight), .style-graphite
-    (Midnight), .style-high-contrast — at a phone width and a desktop width.
+  ● Both shipped themes × two widths: default (Daylight) and .style-graphite
+    (Midnight) — at a phone width and a desktop width.
     (design-language.md §0.9)
   ● Jelly motion three ways (Settings → Appearance, html[data-jelly-motion]):
     lively — haze drifts, hover plumps, press squashes and wobbles back, arcs
     fire; calm — slower haze, no ambient arcs, no neighbour nudge; still —
-    nothing moves on its own, press only. In .style-high-contrast every haze,
-    carrier and arc must be gone.  (docs/plasmatic-jelly-system.md)
+    nothing moves on its own, press only.  (docs/plasmatic-jelly-system.md)
   ● Did anything change LAYOUT, or move further than the bounded squash
     (≤ 4px edge travel) or the ≤ 1.5px neighbour nudge? Text, hit areas and
     document flow never move.
@@ -563,7 +562,7 @@ if has '\.(tsx|css)$'; then
     those; you can.
   ● Reused a primitive rather than a second copy of one? (§0.3)
   ● Keyboard path + focus ring visible on the surface it lands on, in
-    high contrast too. (§0.8)
+    both themes. (§0.8)
 EOF
   REVIEWED=1
 else

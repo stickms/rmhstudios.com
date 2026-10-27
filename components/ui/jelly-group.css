@@ -93,24 +93,6 @@
   margin-inline: 0;
   margin-block: 0.125rem;
 }
-
-/* High contrast and forced colours have no material: the selected member is the filled accent, as LiquidTabs'
-   thumb is there. */
-.style-high-contrast [data-slot='jelly-group-item'][data-selected] {
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
-}
-.style-high-contrast [data-slot='jelly-group-item'][data-selected]::before {
-  opacity: 0;
-}
-@media (forced-colors: active) {
-  [data-slot='jelly-group-item'][data-selected],
-  [data-slot='jelly-group-item'][aria-current='page'] {
-    background: Highlight;
-    color: HighlightText;
-  }
-}
-
 /* A link member selects through its own aria-current. */
 [data-slot='jelly-group-item'][aria-current='page'] {
   --glow-strength: calc(var(--row-glow-strength, 20%) * 1.6);

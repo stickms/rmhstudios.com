@@ -15,7 +15,7 @@
 //   node testing/e2e/eversion-capture.mjs --quick            # 1 theme, fewer routes
 //   node testing/e2e/eversion-capture.mjs --routes /,/games  # pick routes
 //   node testing/e2e/eversion-capture.mjs --profiles desktop # desktop | mobile
-//   node testing/e2e/eversion-capture.mjs --themes graphite  # default | graphite | high-contrast
+//   node testing/e2e/eversion-capture.mjs --themes graphite  # default | graphite
 //   node testing/e2e/eversion-capture.mjs --loader bundle    # see below
 //   node testing/e2e/eversion-capture.mjs --out DIR --json report.json
 //
@@ -134,8 +134,8 @@ const PROFILES = {
     hasTouch: true,
   },
 };
-/** `rmh-style` values (the localStorage key `themeScript` reads): Daylight, Midnight, High contrast. */
-const THEMES = ['default', 'graphite', 'high-contrast'];
+/** `rmh-style` values (the localStorage key `themeScript` reads): Daylight, Midnight. */
+const THEMES = ['default', 'graphite'];
 
 const pickList = (name, all) => {
   const v = opt(name, null);

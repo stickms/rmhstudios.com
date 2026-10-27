@@ -1110,100 +1110,6 @@
   --focus-ring: var(--site-accent);
 }
 
-/* High Contrast — maximal legibility (WCAG AAA): pure black, pure white text,
-   yellow accent, bright white borders. For low-vision / high-glare users. */
-.style-high-contrast {
-  color-scheme: dark;
-  --site-bg: #000000;
-  --site-bg-subtle: #000000;
-  --site-surface: #000000;
-  --site-surface-hover: #1a1a1a;
-  --site-surface-active: #2a2a2a;
-  --site-surface-opaque: #000000;
-  --site-border: #ffffff;
-  --site-border-bright: #ffffff;
-  --site-text: #ffffff;
-  --site-text-muted: #ededed;
-  --site-text-dim: #cfcfcf;
-  --site-accent: #ffff00;
-  --site-accent-fg: #000000;
-  --site-accent-hover: #e6e600;
-  --site-accent-dim: rgba(255, 255, 0, 0.18);
-  --site-success: #00e676;
-  --site-success-fg: #08120c;
-  --site-danger: #ff8080;
-  --site-danger-fg: #000000;
-  --site-warning: #ffd54a;
-  --site-warning-fg: #000000;
-  /* No glass: flat, opaque, hard-edged. The .glass-* classes are neutralised
-     to opaque surfaces by a global rule (§10); these tokens just make sure any
-     stray reference resolves to something sane rather than inheriting glass. */
-  --site-shadow: 0 0 0 1px #ffffff;
-  --site-shadow-sm: 0 0 0 1px #ffffff;
-  --site-glass-tint: #000000;
-  --site-glass-tint-strong: #1a1a1a;
-  --site-glass-ink: #000000;
-  --site-glass-rim: transparent;
-  --site-glass-rim-soft: transparent;
-  --site-glass-light: transparent;
-  --site-glass-depth: none;
-  --site-glass-depth-sm: none;
-  --site-canvas: none;
-  --site-border-width: 2px;
-  --site-radius: 20px;
-  --site-radius-sm: 14px;
-  --site-control-radius: 14px;
-  --background: #000000;
-  --foreground: #ffffff;
-
-  /* Plasmatic Jelly material + arcs (meanings: the :root block).
-     High contrast: no jelly at all. Every knob is zero; the CSS and the engine both
-     read `--site-jelly-on: 0` as the kill switch. */
-  --site-jelly-haze: transparent;
-  --site-jelly-haze-strong: transparent;
-  --site-jelly-haze-fill: 0;
-  --site-jelly-haze-inset: 0;
-  --site-jelly-haze-pane: 0;
-  --site-jelly-haze-chrome: 0;
-  --site-jelly-haze-overlay: 0;
-  --site-jelly-plasma-a: transparent;
-  --site-jelly-plasma-b: transparent;
-  --site-jelly-plasma: 0;
-  --site-jelly-flow-speed: 0;
-  --site-jelly-quiet: 0;
-  --site-jelly-haze-edge: 0;
-  --site-jelly-on: 0;
-  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
-  --site-arc-core: transparent;
-  --site-arc-glow: transparent;
-  /* #989 gel layers (meanings: the :root block). High contrast: the gel is the opaque
-     surface, and the dispersion, Fresnel edge, specular dot and plasma are off. */
-  --gel-body: var(--site-surface-opaque);
-  --gel-depth: var(--site-surface-opaque);
-  --gel-ink: var(--site-accent);
-  --on-ink: var(--site-accent-fg);
-  --gel-fresnel: transparent;
-  --gel-specular: transparent;
-  --gel-edge-r: transparent;
-  --gel-edge-g: transparent;
-  --gel-edge-b: transparent;
-  --gel-disperse-r: 0px;
-  --gel-disperse-g: 0px;
-  --gel-disperse-b: 0px;
-  --gel-mold: 0;
-  --gel-dispersion: 1;
-  --gel-lens: 1;
-  --gel-reflect: 0;
-  --gel-field-line: 100%;
-  --gel-edge-line: 100%;
-  --gel-well-shade: transparent;
-  --row-glow-strength: 34%;
-  --gel-feather: 0px;
-  --gel-shoulder: 1;
-  --plasma-wake: 0;
-  --focus-ring: var(--site-accent);
-}
-
 /* ── Curated themes (Apple-consistent) ──────────────────────────────────────
    Same token contract as the base three; each is a self-contained palette so a
    theme block can never silently drift. Kept tasteful/minimal on purpose. */
@@ -1214,8 +1120,7 @@
 /* Dyed cloth on a dark ground needs more light than it does on paper, or the
    darker half of the wardrobe collapses into the background. Only the swatches
    that actually disappear are lifted. */
-.style-graphite,
-.style-high-contrast {
+.style-graphite {
   --rmhfash-swatch-ink: #6f7681;
   --rmhfash-swatch-slate: #8fa1b3;
   --rmhfash-swatch-indigo: #6d7fc4;
@@ -1634,18 +1539,8 @@ html[data-color-vision='protanopia'] {
 
 /* Same hues lifted for dark surfaces: the light-theme values fall below the
    contrast floor on a near-black background. */
-html[data-color-vision='deuteranopia']:is(
-    .style-graphite,
-    .style-high-contrast,
-    .style-nocturne,
-    .style-ultra
-  ),
-html[data-color-vision='protanopia']:is(
-    .style-graphite,
-    .style-high-contrast,
-    .style-nocturne,
-    .style-ultra
-  ) {
+html[data-color-vision='deuteranopia']:is(.style-graphite, .style-nocturne, .style-ultra),
+html[data-color-vision='protanopia']:is(.style-graphite, .style-nocturne, .style-ultra) {
   --site-success: #56b4e9;
   --site-success-fg: #08120c;
   --site-danger: #ff9a6b;
@@ -1666,12 +1561,7 @@ html[data-color-vision='tritanopia'] {
   --site-warning-fg: #ffffff;
 }
 
-html[data-color-vision='tritanopia']:is(
-    .style-graphite,
-    .style-high-contrast,
-    .style-nocturne,
-    .style-ultra
-  ) {
+html[data-color-vision='tritanopia']:is(.style-graphite, .style-nocturne, .style-ultra) {
   --site-success: #4ade80;
   --site-success-fg: #08120c;
   --site-danger: #ff8080;
@@ -1792,7 +1682,7 @@ html:not(.app-route) .site-aurora::before {
    written by useLiquidBackground — NO new JS), so motion resolves into depth
    rather than a flat slide. z-index:-2 keeps it behind the near layer. Same
    kill-switches as the near layer below. */
-html:not(.app-route):not(.style-high-contrast) .site-aurora::after {
+html:not(.app-route) .site-aurora::after {
   content: '';
   position: absolute;
   inset: -18%;
@@ -1816,9 +1706,7 @@ html:not(.app-route):not(.style-high-contrast) .site-aurora::after {
 /* Low-end devices and high-contrast (canvas is `none` there) pay nothing for the
    parallax follow — both aurora layers. */
 html.perf-lite .site-aurora::before,
-html.perf-lite .site-aurora::after,
-html.style-high-contrast .site-aurora::before,
-html.style-high-contrast .site-aurora::after {
+html.perf-lite .site-aurora::after {
   animation: none;
   translate: none;
   transition: none;
@@ -1833,7 +1721,7 @@ html.style-high-contrast .site-aurora::after {
    html.app-route block below): the aurora is off there, so a translucent ground
    just greys out over the app's own dark backdrop instead of sampling a shared
    scene — light-theme apps composited to ≈#8a8a8a and lost all their contrast. */
-html:not(.style-high-contrast):not(.app-route) .bg-site-bg:not(.fixed):not([data-drawer-active]) {
+html:not(.app-route) .bg-site-bg:not(.fixed):not([data-drawer-active]) {
   background-color: color-mix(in srgb, var(--site-bg) 52%, transparent);
 }
 
@@ -1986,8 +1874,7 @@ html.app-route {
   contain: layout paint;
   pointer-events: none;
 }
-html.perf-lite .lg-goo,
-html.style-high-contrast .lg-goo {
+html.perf-lite .lg-goo {
   display: none;
 }
 
@@ -2026,93 +1913,9 @@ html [data-sonner-toast] {
 }
 
 /* ── Global degradations ──────────────────────────────────────────────────── */
-
-/* High Contrast: no glass at all. Neutralise every glass class to an opaque
-   surface with no blur (§10); 2px borders and the yellow accent come from the
-   theme tokens. */
-.style-high-contrast
-  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
-  background: var(--site-surface) !important;
-  /* §4.35: restore a real (2px, from --site-border-width) border — the single-
-     sheet glint edge is gone with the opaque surface, so shape needs a solid edge.
-     The `background` shorthand above already stripped the glint background layer. */
-  border-color: var(--site-border) !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
 /* All remaining optics dead (§4.35 simplified pseudo set): the aside blur carrier,
    the refract lens band, and the far aurora. (The pointer hotspot used to be
    switched off here too; it no longer exists on any tier.) */
-.style-high-contrast .glass-chrome--aside::before,
-.style-high-contrast .glass-refract::before,
-.style-high-contrast .site-aurora::after {
-  display: none;
-}
-.style-high-contrast .glass-liquid::after {
-  display: none;
-}
-
-/* The casino table group is deliberately theme-independent (a playing card is a
-   playing card), but high-contrast is an accessibility contract, not a look — so
-   the pieces whose job is to be READ get pushed to the extremes here, and the
-   felt goes flat so pips and pockets sit on solid ink. The suit hues stay hues:
-   a red that is not red stops being a suit. */
-.style-high-contrast {
-  --casino-card: #ffffff;
-  --casino-card-ink: #000000;
-  --casino-card-red: #d00000;
-  --casino-card-edge: #000000;
-  --casino-felt: #000000;
-  --casino-felt-raised: #1a1a1a;
-  --casino-ink: #ffffff;
-  /* GlobeSet's dots are data, so high contrast pushes them to their most
-     separable form rather than flattening them: a saturated ramp on a pure
-     white face, with a black rim so a dot is still a dot against it. */
-  --globeset-card-face: #ffffff;
-  --globeset-card-edge: #000000;
-  --globeset-dot-ink: #000000;
-  --globeset-dot-red: #e60000;
-  --globeset-dot-orange: #ff8000;
-  --globeset-dot-yellow: #ffd400;
-  --globeset-dot-green: #00a000;
-  --globeset-dot-blue: #0066ff;
-  --globeset-dot-purple: #b000e0;
-  --site-podium-gold: #ffd400;
-  --site-podium-silver: #e6e6e6;
-  --site-podium-bronze: #ff9d3c;
-  /* Solid, not translucent: a partly-transparent backing is exactly what this
-     theme exists to remove. Media overlays become opaque plates. */
-  --site-media-scrim: #000000;
-  --site-media-scrim-strong: #000000;
-  --site-media-scrim-hover: #1a1a1a;
-  --site-media-veil: #000000;
-  --site-media-ink: #ffffff;
-  --casino-red: #d00000;
-  --casino-red-hover: #ee1111;
-  --casino-green: #007a3d;
-  --casino-green-hover: #009a4d;
-  /* The restaurant's mark carries text (the reticle's lock count sits on it), so
-     it goes to the extremes like the card faces do. The pearls stay hues — a
-     lingonberry that is not red stops being the food — except the gravel, whose
-     near-black is the one dye that would disappear entirely against this theme's
-     ink-on-ink globe. */
-  --rebar-sulphur: #ffd400;
-  --rebar-sulphur-ink: #000000;
-  --rebar-pearl-gravel: #8a7f74;
-
-  /* The room at maximum contrast. Plaster becomes true black and ink true
-     white, because this theme's contract is extremes, not taste — every pair
-     below clears AA-large, and the hairline is bright enough to survive on a
-     phone at arm's length, which the plaster hairline is not. */
-  --rebar-paper: #000000;
-  --rebar-paper-sunk: #000000;
-  --rebar-paper-raised: #0b0b0b;
-  --rebar-ink: #ffffff;
-  --rebar-ink-soft: #e4e4e4;
-  --rebar-ink-faint: #bdbdbd;
-  --rebar-line: #7a7a7a;
-  --rebar-line-strong: #ffffff;
-}
 
 /* ── Evening service ────────────────────────────────────────────────────────
    Midnight's site chrome is blue-black; a dining room is not. This is the same
@@ -2128,54 +1931,6 @@ html [data-sonner-toast] {
   --rebar-ink-faint: #6d675d;
   --rebar-line: #35302a;
   --rebar-line-strong: #f3efe6;
-}
-
-/* Reduce transparency — three triggers, one behaviour (§10): the OS media
-   query, the user setting (html.reduce-transparency, synced like the theme),
-   and Firefox (no media-query support → the setting covers it). Opaque surfaces
-   in the same hues, zero blur. */
-@media (prefers-reduced-transparency: reduce) {
-  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
-    background: var(--site-surface-opaque, var(--site-surface));
-    /* §4.35: opaque surfaces need real edges — restore the border the single-sheet
-       glint replaced (the shorthand above already dropped the glint layer). */
-    border-color: var(--site-border);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  html:not(.style-high-contrast) .bg-site-bg {
-    background-color: var(--site-surface-opaque, var(--site-bg));
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  /* Lens band + aside blur off (surfaces are opaque; the glint layer is already
-     gone with the shorthand); pointer hotspot stays. */
-  .glass-chrome--aside::before,
-  .glass-refract::before {
-    display: none;
-  }
-  .glass-liquid::after {
-    display: none;
-  }
-}
-html.reduce-transparency
-  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
-  background: var(--site-surface-opaque, var(--site-surface));
-  border-color: var(--site-border); /* §4.35: restore edges on opaque surfaces */
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-html.reduce-transparency .bg-site-bg {
-  background-color: var(--site-surface-opaque, var(--site-bg));
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-html.reduce-transparency .glass-chrome--aside::before,
-html.reduce-transparency .glass-refract::before {
-  display: none;
-}
-html.reduce-transparency .glass-liquid::after {
-  display: none;
 }
 
 /* Device tiering (§6.4/§10): low-end devices keep chrome/overlay blur (few, carry
@@ -2253,26 +2008,6 @@ html.ios-webkit .glass-liquid::after {
    under both bars with Safari's own soft edge, not a flat band. */
 html.ios-webkit :is(.site-aurora, .radial-backdrop, .jelly-arc-layer) {
   display: none;
-}
-
-/* Forced colors / Windows High Contrast strips backgrounds — keep structural
-   borders so panes retain their shape; make sure the v2 optics pseudos paint
-   nothing (their backgrounds are already stripped, this is belt-and-suspenders). */
-@media (forced-colors: active) {
-  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset) {
-    border: 1px solid;
-    /* §4.35: the glint rides the element background now — strip it (and pane noise)
-       so forced colors keep only the structural border. */
-    background-image: none;
-  }
-  /* The remaining pseudo (the refract band) and the far aurora paint nothing. */
-  .glass-refract::before,
-  .site-aurora::after {
-    background: none;
-  }
-  .glass-liquid::after {
-    display: none;
-  }
 }
 
 /* Theme-aware raster maps (RMHHomes). The tint is applied to the tile canvas
@@ -5090,88 +4825,86 @@ html.nav-pop .page-root > * {
 /* Native checkbox and radio: the accent everts out from the centre and the mark
    springs in after it. Drawn with pseudo-elements, which Gecko does not render on
    inputs, so Firefox keeps the native control (in the accent, via accent-color),
-   as does forced colors. Zero-specificity and in the components layer, so any
+   too. Zero-specificity and in the components layer, so any
    control with its own size, radius or colour utilities keeps them. */
 @supports not (-moz-appearance: none) {
-  @media not (forced-colors: active) {
-    @layer components {
-      :where(input[type='checkbox'], input[type='radio']) {
-        appearance: none;
-        position: relative;
-        display: inline-grid;
-        place-content: center;
-        flex-shrink: 0;
-        width: 1rem;
-        height: 1rem;
-        margin: 0;
-        vertical-align: middle;
-        border: 1.5px solid var(--site-border-bright);
-        border-radius: calc(var(--site-radius-sm) * 0.5);
-        background: var(--site-surface-opaque);
-        color: var(--site-accent-fg);
-        cursor: pointer;
-        transition: border-color var(--site-transition-speed) var(--ease-glass);
-      }
-      :where(input[type='radio']) {
-        border-radius: 50%;
-      }
-      :where(input[type='checkbox'], input[type='radio'])::before {
-        content: '';
-        position: absolute;
-        inset: -1.5px;
-        border-radius: inherit;
-        background: var(--site-accent);
-        opacity: 0;
-        transition: opacity var(--site-transition-speed) var(--ease-glass);
-      }
-      :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate)::before {
-        opacity: 1;
-      }
-      :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate) {
-        border-color: var(--site-accent);
-      }
-      /* The tick: two borders of an L, turned to a check. It lands after the fill. */
-      :where(input[type='checkbox'])::after {
-        content: '';
-        position: relative;
-        width: 0.3125rem;
-        height: 0.5625rem;
-        margin-top: -0.125rem;
-        border: solid currentColor;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg) scale(0);
-        transition: transform 0.12s ease-in;
-      }
-      :where(input[type='checkbox']):checked::after {
-        transform: rotate(45deg) scale(1);
-        transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
-      }
-      :where(input[type='checkbox']):indeterminate::after {
-        width: 0.5rem;
-        height: 0;
-        margin-top: 0;
-        border-width: 0 0 2px;
-        transform: scale(1);
-        transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
-      }
-      :where(input[type='radio'])::after {
-        content: '';
-        position: relative;
-        width: 0.375rem;
-        height: 0.375rem;
-        border-radius: 50%;
-        background: currentColor;
-        transform: scale(0);
-        transition: transform 0.12s ease-in;
-      }
-      :where(input[type='radio']):checked::after {
-        transform: scale(1);
-        transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
-      }
-      :where(input[type='checkbox'], input[type='radio']):disabled {
-        cursor: not-allowed;
-        opacity: 0.5;
-      }
+  @layer components {
+    :where(input[type='checkbox'], input[type='radio']) {
+      appearance: none;
+      position: relative;
+      display: inline-grid;
+      place-content: center;
+      flex-shrink: 0;
+      width: 1rem;
+      height: 1rem;
+      margin: 0;
+      vertical-align: middle;
+      border: 1.5px solid var(--site-border-bright);
+      border-radius: calc(var(--site-radius-sm) * 0.5);
+      background: var(--site-surface-opaque);
+      color: var(--site-accent-fg);
+      cursor: pointer;
+      transition: border-color var(--site-transition-speed) var(--ease-glass);
+    }
+    :where(input[type='radio']) {
+      border-radius: 50%;
+    }
+    :where(input[type='checkbox'], input[type='radio'])::before {
+      content: '';
+      position: absolute;
+      inset: -1.5px;
+      border-radius: inherit;
+      background: var(--site-accent);
+      opacity: 0;
+      transition: opacity var(--site-transition-speed) var(--ease-glass);
+    }
+    :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate)::before {
+      opacity: 1;
+    }
+    :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate) {
+      border-color: var(--site-accent);
+    }
+    /* The tick: two borders of an L, turned to a check. It lands after the fill. */
+    :where(input[type='checkbox'])::after {
+      content: '';
+      position: relative;
+      width: 0.3125rem;
+      height: 0.5625rem;
+      margin-top: -0.125rem;
+      border: solid currentColor;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) scale(0);
+      transition: transform 0.12s ease-in;
+    }
+    :where(input[type='checkbox']):checked::after {
+      transform: rotate(45deg) scale(1);
+      transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
+    }
+    :where(input[type='checkbox']):indeterminate::after {
+      width: 0.5rem;
+      height: 0;
+      margin-top: 0;
+      border-width: 0 0 2px;
+      transform: scale(1);
+      transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
+    }
+    :where(input[type='radio'])::after {
+      content: '';
+      position: relative;
+      width: 0.375rem;
+      height: 0.375rem;
+      border-radius: 50%;
+      background: currentColor;
+      transform: scale(0);
+      transition: transform 0.12s ease-in;
+    }
+    :where(input[type='radio']):checked::after {
+      transform: scale(1);
+      transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
+    }
+    :where(input[type='checkbox'], input[type='radio']):disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
     }
   }
 }
@@ -5206,13 +4939,6 @@ html.perf-lite {
 }
 html.perf-lite :focus-visible {
   animation: none;
-}
-@media (forced-colors: active) {
-  [data-evert]::before,
-  [data-slot='switch']::before,
-  .evert-ghost {
-    display: none;
-  }
 }
 
 /* ─── Scoped shared-element View Transitions ─────────────────────────────
@@ -5411,8 +5137,7 @@ html.nav-restoring .feed-card-cv {
 
 .style-graphite,
 .style-nocturne,
-.style-ultra,
-.style-high-contrast {
+.style-ultra {
   --site-inverse-bg: #f7f7fb;
   --site-inverse-text: #11131c;
   --site-inverse-muted: #5e6170;
@@ -6340,25 +6065,6 @@ body {
   color: var(--tab-thumb-ink);
 }
 
-/* High contrast is the absence of the material, so a hairline-and-shadow thumb
-   would be the only cue — and the shadow is stripped there. It keeps the filled
-   accent thumb with its paired ink. */
-.style-high-contrast [data-slot='liquid-tabs'] {
-  --tab-thumb-bg: var(--site-accent);
-  --tab-thumb-ink: var(--site-accent-fg);
-  --tab-thumb-border: var(--site-accent);
-}
-@media (forced-colors: active) {
-  [data-tab-thumb] {
-    background: Highlight;
-    border-color: Highlight;
-  }
-  [data-slot='liquid-tabs'] [data-tab-active='true']:has([data-tab-capsule]),
-  [data-slot='liquid-tabs'] [data-tab-active='true']:has([data-tab-capsule]) > :where(a, button) {
-    color: HighlightText;
-  }
-}
-
 /* §5.5x B — the strip is primary navigation on several routes, and its pills
    were 36–38px on touch. Grow the hit area on coarse pointers only; fine
    pointers keep the compact strip. */
@@ -6673,20 +6379,20 @@ video::cue {
 /* Bedtime mode: during the member's quiet hours, one dimming layer and one
    desaturating layer over the whole page. Fixed, inert, and skipped entirely by
    the high-contrast theme and by print. */
-html[data-bedtime]:not(.style-high-contrast)::before,
-html[data-bedtime]:not(.style-high-contrast)::after {
+html[data-bedtime]::before,
+html[data-bedtime]::after {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 2147483000;
 }
-html[data-bedtime]:not(.style-high-contrast)::before {
+html[data-bedtime]::before {
   background: gray;
   mix-blend-mode: saturation;
   opacity: 0.4;
 }
-html[data-bedtime]:not(.style-high-contrast)::after {
+html[data-bedtime]::after {
   background: black;
   opacity: 0.22;
 }
@@ -6701,7 +6407,7 @@ html[data-bedtime]:not(.style-high-contrast)::after {
    `season-*` and `fools` are set on <html> before first paint. Nothing here
    exists unless one of those classes does. The ribbon is a static 3px strip with
    no layout cost; high-contrast and print skip it. */
-html[class*='season-']:not(.style-high-contrast) body::before {
+html[class*='season-'] body::before {
   content: '';
   position: fixed;
   inset: 0 0 auto 0;

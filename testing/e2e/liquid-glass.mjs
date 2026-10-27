@@ -234,7 +234,6 @@ try {
   // Ambient off (jellyMotion = still) and the degraded tiers: press-only bodies, no hover body (04 §4.2, §4.7).
   for (const state of [
     ['data-jelly-motion', 'still'],
-    ['class', 'style-high-contrast'],
     ['class', 'perf-lite'],
   ]) {
     await page.evaluate(([k, v]) => document.documentElement.setAttribute(k, v), state);
@@ -382,11 +381,11 @@ try {
         (el) => getComputedStyle(el).transform === 'none' && el.getAnimations().length === 0,
       ),
   );
-  await phone.evaluate(() => document.documentElement.classList.add('reduce-transparency'));
+  await phone.evaluate(() => document.documentElement.classList.add('perf-lite'));
   await phone.touchscreen.tap(345, 160);
   await phone.waitForTimeout(160);
   check(
-    'reduced transparency suppresses touch decoration',
+    'perf-lite suppresses touch decoration',
     await phone
       .locator('#left')
       .evaluate(

@@ -7,7 +7,7 @@
 //   pnpm exec vite dev --port 7391 --strictPort --host 127.0.0.1
 //   BASE_URL=http://127.0.0.1:7391 node testing/e2e/eversion-late-content.mjs
 //
-//   Optional: ONLY=<scenario substring>, THEME=dark|light|high-contrast,
+//   Optional: ONLY=<scenario substring>, THEME=dark|light,
 //   VIEW=WxH (default 720x450: a software GL is fill-bound), RUN_MS (ceiling per run),
 //   MIN_SSIM (default 0.92), SAVE=<dir> (AFTER capture + settled screenshot per scenario).
 //

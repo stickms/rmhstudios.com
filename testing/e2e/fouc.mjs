@@ -188,8 +188,8 @@ export const PROFILES = {
     colorScheme: 'dark',
     reducedMotion: 'reduce',
   },
-  'high-contrast': {
-    why: 'The high-contrast theme, which also suppresses the user-theme override path.',
+  'retired-high-contrast': {
+    why: 'A stored id of the removed high-contrast theme must self-heal to Midnight before frame 1.',
     localStorage: { 'rmh-style': 'high-contrast' },
     colorScheme: 'dark',
     reducedMotion: 'reduce',

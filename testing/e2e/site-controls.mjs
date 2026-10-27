@@ -115,7 +115,7 @@ try {
       .locator(selector)
       .first()
       .evaluate((el, property) => getComputedStyle(el).getPropertyValue(property), property);
-  for (const theme of ['', 'style-graphite', 'style-high-contrast']) {
+  for (const theme of ['', 'style-graphite']) {
     await page.evaluate((theme) => {
       document.documentElement.className = theme;
     }, theme);
@@ -154,10 +154,7 @@ try {
         parseFloat(await style('#circle', 'border-radius')) > 100,
       );
       const coat = await style('#post', 'background-image');
-      check(
-        `${prefix}: glass material`,
-        theme === 'style-high-contrast' ? coat === 'none' : coat.includes('gradient'),
-      );
+      check(`${prefix}: glass material`, coat.includes('gradient'));
       check(
         `${prefix}: no page overflow`,
         await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -209,9 +206,7 @@ try {
     check(
       `${selector}: ${shouldMove ? 'press spring' : 'no press motion'} (scale ${scale || 'none'})`,
       // Jelly press squash is volume-preserving and may be anisotropic (`scale: sx sy`, 02 §1.2): every axis sinks.
-      shouldMove
-        ? Boolean(scale) && scale.split(/\s+/).every((v) => Number(v) < 1)
-        : scale === '',
+      shouldMove ? Boolean(scale) && scale.split(/\s+/).every((v) => Number(v) < 1) : scale === '',
     );
     await page.mouse.up();
     // Jelly: a control still under the pointer keeps its hover body (the dent), so "idle" is measured after the
@@ -263,10 +258,6 @@ try {
     'retired account class cannot override transitions',
     parseFloat(await style('[role="tab"]', 'transition-duration')) > 0,
   );
-  await page.evaluate(() => {
-    document.documentElement.className = 'reduce-transparency';
-  });
-  check('reduced transparency removes coat', (await style('#post', 'background-image')) === 'none');
   check('no browser exceptions', errors.length === 0);
   console.log(`${checks} checks passed. Screenshots: ${out}`);
 } finally {

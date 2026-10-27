@@ -319,8 +319,8 @@ export function AppearancePanel() {
           "Appearance" contained no way to change the theme. Point at it. */}
       <Section
         title={t('theme', { defaultValue: 'Theme' })}
-        description={t('theme-desc-dark-default', {
-          defaultValue: 'Midnight (the default), Daylight and High contrast.',
+        description={t('theme-desc-two-themes', {
+          defaultValue: 'Midnight (the default) and Daylight.',
         })}
       >
         <Button asChild variant="outline">

@@ -646,12 +646,10 @@ export function Providers({
 
     // Marketplace user theme (§14): a full v2 retint set inline over the built-in
     // cascade (a transient preview beats the committed one). Skipped on app/game
-    // routes (they own their palette) and under high-contrast (its opaque black/
-    // white must win — inline vars would out-specify the class). Reduced-
-    // transparency composes for free: it paints --site-surface-opaque, which the
-    // theme sets. Accent presets are applied AFTER this block so they still win.
+    // routes (they own their palette). Accent presets are applied AFTER this
+    // block so they still win.
     const activeUserTheme = userThemePreview ?? userTheme;
-    const userThemeOn = !!activeUserTheme && !isAppRoute && activeStyle !== 'high-contrast';
+    const userThemeOn = !!activeUserTheme && !isAppRoute;
     if (userThemeOn && activeUserTheme) {
       for (const [k, v] of Object.entries(activeUserTheme.vars)) html.style.setProperty(k, v);
     } else {
@@ -942,7 +940,7 @@ export function Providers({
                 </ConfirmProvider>
               </ResolvedUserCtx.Provider>
               <Toaster
-                theme={style === 'graphite' || style === 'high-contrast' ? 'dark' : 'light'}
+                theme={style === 'graphite' ? 'dark' : 'light'}
                 position="bottom-left"
                 // The bottom lane is SHARED, and sonner does not know that.
                 //

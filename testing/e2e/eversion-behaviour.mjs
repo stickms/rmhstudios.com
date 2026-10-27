@@ -14,7 +14,7 @@
 //   --quick               one profile (desktop) × one theme (dark); click/Enter entries are
 //                         fast-forwarded to `done` instead of played out (S#25 note below)
 //   --profiles a,b        desktop | mobile            (default: both; --quick: desktop)
-//   --themes a,b          dark | light | high-contrast (default: all; --quick: dark)
+//   --themes a,b          dark | light (default: all; --quick: dark)
 //   --only 25,33          run only these S# numbers
 //   --name text           run only scenarios whose name contains this text
 //   --full-entries        play every entry's run out in full even with --quick
@@ -95,7 +95,7 @@ const opt = (n, d) => {
 };
 const QUICK = flag('--quick');
 const PROFILES_RUN = opt('--profiles', QUICK ? 'desktop' : 'desktop,mobile').split(',');
-const THEMES_RUN = opt('--themes', QUICK ? 'dark' : 'dark,light,high-contrast').split(',');
+const THEMES_RUN = opt('--themes', QUICK ? 'dark' : 'dark,light').split(',');
 const ONLY = new Set(
   opt('--only', '')
     .split(',')

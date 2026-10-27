@@ -12,7 +12,7 @@
 //   # terminal 2
 //   BASE_URL=http://127.0.0.1:7206 node testing/e2e/eversion-hub.mjs
 //
-//   Optional: PROFILE=desktop|mobile (default desktop), THEME=dark|light|high-contrast,
+//   Optional: PROFILE=desktop|mobile (default desktop), THEME=dark|light,
 //   SCREENSHOT_DIR=<dir> (mid-WRAP / mid-EVERSION / mid-UNWRAP PNGs),
 //   ONLY=<scenario-name-substring>.
 //

@@ -244,7 +244,7 @@ export const SITE_DESTINATIONS: SiteDestination[] = [
     href: '/settings/appearance',
     iconName: 'Palette',
     keywords:
-      'theme dark mode light mode midnight daylight high contrast accent colour color font text size density reduce motion transparency',
+      'theme dark mode light mode midnight daylight accent colour color font text size density reduce motion',
     description: 'Theme, accent colour, text size and motion.',
   },
   {

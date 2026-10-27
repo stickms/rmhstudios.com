@@ -742,7 +742,14 @@ html:not(.perf-lite)
     --jelly-flow-gain: var(--app-jelly-flow-speed);
   }
   .app-theme.app-high-contrast
-    :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset, [data-slot='switch']) {
+    :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      [data-slot='switch']
+    ) {
     --site-glass-tint: var(--app-surface);
     --site-glass-light: transparent;
     --site-border: var(--app-border-bright);
@@ -760,15 +767,11 @@ html:not(.perf-lite)
     transparent
   );
 }
-html.reduce-transparency .app-glass,
 .app-high-contrast .app-glass {
   background: var(--app-surface);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-html:is(.reduce-transparency, .style-high-contrast)
-  .app-theme
-  :is([class~='bg-(--app-surface)'], [data-liquid-surface]),
 .app-high-contrast :is([class~='bg-(--app-surface)'], [data-liquid-surface], button) {
   --jelly-floor: none, none;
   background-color: var(--app-surface);
