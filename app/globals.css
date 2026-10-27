@@ -6696,6 +6696,14 @@ html[data-bedtime]:not(.style-high-contrast)::after {
     content: none;
   }
 }
+/* iOS 26 Safari fills the strips behind its status bar and tab bar from any fixed layer that touches an
+   edge (see the iOS edge note in the compositor safety tier above), and these two layers cover the whole
+   viewport: while bedtime was on, both strips turned into opaque bands over the page. On iOS WebKit the
+   dimming is not drawn, so the page keeps running under the bars like every other site. */
+html.ios-webkit[data-bedtime]::before,
+html.ios-webkit[data-bedtime]::after {
+  content: none;
+}
 
 /* ── Delight: seasonal accents + April Fools mode (lib/delight/season.ts) ─────
    `season-*` and `fools` are set on <html> before first paint. Nothing here
@@ -6746,6 +6754,12 @@ html.season-winter {
 }
 html[class*='season-'] body::before {
   animation: delight-ribbon 24s linear infinite;
+}
+/* On iOS WebKit the ribbon sits at the top of the page instead of pinned to the screen edge: a fixed strip
+   flush with the top is what Safari reads as the status-bar tint and fills as an opaque band (see the iOS
+   edge note in the compositor safety tier). */
+html.ios-webkit[class*='season-']:not(.style-high-contrast) body::before {
+  position: absolute;
 }
 @keyframes delight-ribbon {
   to {
