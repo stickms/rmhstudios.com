@@ -107,7 +107,10 @@ function loadoutItems(
     if (only && !only.has(id)) continue;
     if ((str(raw, 'prefab') ?? '').split(/\s+/).some((p) => EXCLUDED_PREFAB.test(p))) continue;
     const it = resolve(raw);
-    if (!SLOT_SET.has(str(it, 'item_slot') ?? '') || str(it, 'hidden') === '1') continue;
+    // Hidden items are internal, except a class's stock weapon ("baseitem"): the builder lists it, so it needs a model.
+    const stock = str(it, 'baseitem') === '1';
+    if (!SLOT_SET.has(str(it, 'item_slot') ?? '') || (str(it, 'hidden') === '1' && !stock))
+      continue;
     if ((str(it, 'name') ?? '').startsWith('Upgradeable ')) continue;
     const used = block(it, 'used_by_classes');
     if (!used) continue;
@@ -173,6 +176,48 @@ export function buildIconManifest(
   for (const { id, it } of loadoutItems(itemsGame, english, only)) {
     const icon = str(it, 'image_inventory');
     if (icon) out.push({ id, icon: norm(icon), file: `${id}.webp` });
+  }
+  return out.sort((a, b) => a.id - b.id);
+}
+
+export interface TauntManifestItem {
+  id: number;
+  /** Per class, the animation scene file name(s) without folder or extension, e.g. `taunt_conga`. */
+  scenes: Partial<Record<TfClass, string[]>>;
+}
+
+const sceneName = (p: string): string =>
+  norm(p)
+    .replace(/^.*\//, '')
+    .replace(/\.vcd$/, '');
+
+/**
+ * Which animation scene each taunt item plays per class (`taunt.custom_taunt_scene_per_class`). The
+ * scene's file name is what the asset sync resolves to a sequence of the class model, so the builder
+ * can play that exact animation on the player.
+ */
+export function buildTauntManifest(
+  itemsGame: string,
+  english: string,
+  only?: ReadonlySet<number>,
+): TauntManifestItem[] {
+  const out: TauntManifestItem[] = [];
+  for (const { id, it, classes } of loadoutItems(itemsGame, english, only)) {
+    if (str(it, 'item_slot') !== 'taunt') continue;
+    const per = block(block(it, 'taunt') ?? Object.create(null), 'custom_taunt_scene_per_class');
+    if (!per) continue;
+    const scenes: TauntManifestItem['scenes'] = {};
+    for (const c of classes) {
+      const v = per[c];
+      const names =
+        typeof v === 'string'
+          ? [v]
+          : v && typeof v === 'object'
+            ? Object.values(v).filter((x): x is string => typeof x === 'string')
+            : [];
+      if (names.length) scenes[c] = names.map(sceneName);
+    }
+    if (Object.keys(scenes).length) out.push({ id, scenes });
   }
   return out.sort((a, b) => a.id - b.id);
 }

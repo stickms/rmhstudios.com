@@ -167,6 +167,7 @@ jobs:
           lim=""; [ -n "${{ inputs.limit }}" ] && lim="--limit ${{ inputs.limit }}"
           (cd scripts/tf2-assets && FORCE=${{ inputs.force == true && '1' || '0' }} python3 convert.py \
             --root /mnt/tf2 --manifest /mnt/work/manifest/model-manifest.json \
+            --taunts /mnt/work/manifest/taunt-manifest.json \
             --state /mnt/work/models-state.json --out /mnt/work/models $lim)
 
       - name: Icons — convert only what changed

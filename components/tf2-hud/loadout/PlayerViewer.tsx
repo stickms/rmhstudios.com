@@ -11,6 +11,7 @@ import { lazy, Suspense, useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { supportsWebGL } from '@/lib/shared/platform';
+import { animUrl, tauntClip, useAnimIndex } from '@/lib/tf2-loadout/use-anims';
 import { classModel, modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
 import { cn } from '@/lib/utils';
 import type { EffectSpec } from './EffectParticles';
@@ -39,17 +40,22 @@ export default function PlayerViewer({
   cls,
   worn,
   tauntEffect,
+  taunt,
   className,
 }: {
   cls: string;
-  /** The cosmetics currently equipped. */
+  /** The cosmetics currently equipped, plus the weapon the player holds. */
   worn: readonly WornItem[];
+  /** The equipped taunt item: its animation plays, looped, on the player. */
+  taunt?: number;
   /** The equipped taunt's unusual effect, if any: it surrounds the whole player. */
   tauntEffect?: EffectSpec;
   className?: string;
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const ids = useModelIds();
+  const anims = useAnimIndex();
+  const clip = taunt !== undefined ? tauntClip(anims, taunt, cls) : null;
   const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
   const body = ids ? classModel(ids, cls) : null;
 
@@ -59,7 +65,12 @@ export default function PlayerViewer({
     for (const w of worn) {
       const name = pickModel(ids, w.itemId, cls);
       if (name) {
-        out.push({ key: `${w.slotKey}:${name}`, url: modelUrl(name), tint: w.tint, effect: w.effect });
+        out.push({
+          key: `${w.slotKey}:${name}`,
+          url: modelUrl(name),
+          tint: w.tint,
+          effect: w.effect,
+        });
       }
     }
     return out;
@@ -70,9 +81,7 @@ export default function PlayerViewer({
   ) : ids === null ? (
     <Note>{t('model-checking', { defaultValue: 'Checking for a 3D model…' })}</Note>
   ) : !body ? (
-    <Note>
-      {t('player-unavailable', { defaultValue: 'The 3D player is not available yet.' })}
-    </Note>
+    <Note>{t('player-unavailable', { defaultValue: 'The 3D player is not available yet.' })}</Note>
   ) : (
     <SilentErrorBoundary
       key={cls}
@@ -82,21 +91,41 @@ export default function PlayerViewer({
       }
     >
       <Suspense fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}>
-        <PlayerScene body={modelUrl(body)} parts={parts} bodyEffect={tauntEffect} />
+        <PlayerScene
+          body={modelUrl(body)}
+          parts={parts}
+          bodyEffect={tauntEffect}
+          tauntUrl={clip ? animUrl(cls, clip) : undefined}
+        />
       </Suspense>
     </SilentErrorBoundary>
   );
 
+  const caption =
+    taunt === undefined || anims === null
+      ? null
+      : clip
+        ? t('taunt-playing', { defaultValue: 'Playing the taunt on a loop.' })
+        : t('taunt-no-animation', {
+            defaultValue: 'No animation is available for this taunt yet.',
+          });
+
   return (
-    <div
-      role="img"
-      aria-label={t('model-view', { defaultValue: '3D model viewer' })}
-      className={cn(
-        'h-72 overflow-hidden rounded-(--app-radius) border border-(--app-border) bg-(--app-bg) sm:h-80',
-        className,
-      )}
-    >
-      {content}
+    <div className={cn('flex flex-col gap-1', className)}>
+      <div
+        role="img"
+        aria-label={t('model-view', { defaultValue: '3D model viewer' })}
+        className={cn(
+          'h-72 overflow-hidden rounded-(--app-radius) border border-(--app-border) bg-(--app-bg) sm:h-80',
+        )}
+      >
+        {content}
+      </div>
+      {caption ? (
+        <p aria-live="polite" className="text-center text-xs text-(--app-text-dim)">
+          {caption}
+        </p>
+      ) : null}
     </div>
   );
 }

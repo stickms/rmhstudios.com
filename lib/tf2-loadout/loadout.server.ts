@@ -24,7 +24,6 @@ import {
 import { getCatalogObject } from './catalog.server';
 import {
   acceptedSlots,
-  regionsConflict,
   slotFor,
   TF_CLASSES,
   type Catalog,
