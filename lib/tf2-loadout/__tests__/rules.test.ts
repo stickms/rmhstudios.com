@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cosmeticSlotKeys, TF_CLASSES, type Catalog, type CatalogItem } from '../catalog-types';
-import { legalize, loadoutWarnings, stockLoadout, STOCK_ITEMS } from '../rules';
+import { equipInto, legalize, loadoutWarnings, stockLoadout, STOCK_ITEMS } from '../rules';
 
 const bit = (cls: (typeof TF_CLASSES)[number]) => 1 << TF_CLASSES.indexOf(cls);
 const item = (id: number, over: Partial<CatalogItem>): CatalogItem => ({
@@ -125,5 +125,31 @@ describe('legalize', () => {
     expect(slots.cosmetic2).toEqual({ item: 102 });
     expect(dropped.sort()).toEqual(['cosmetic2', 'cosmetic5', 'cosmetic6']);
     expect(loadoutWarnings(catalog, 'scout', slots)).toEqual([]);
+  });
+});
+
+describe('equipInto', () => {
+  const find = (id: number) => catalog.items.find((i) => i.id === id)!;
+
+  it('takes out an overlapping cosmetic when the rules are on, and says which', () => {
+    const r = equipInto(catalog, { cosmetic1: { item: 100 } }, 'cosmetic2', find(101), false);
+    expect(r.slots).toEqual({ cosmetic2: { item: 101 } });
+    expect(r.removed.map((i) => i.id)).toEqual([100]);
+  });
+
+  it('keeps everything when overlapping is allowed', () => {
+    const r = equipInto(catalog, { cosmetic1: { item: 100 } }, 'cosmetic2', find(101), true);
+    expect(Object.keys(r.slots)).toEqual(['cosmetic1', 'cosmetic2']);
+    expect(r.removed).toEqual([]);
+  });
+
+  it('moves a repeated cosmetic instead of duplicating it (rules on)', () => {
+    const r = equipInto(catalog, { cosmetic1: { item: 102 } }, 'cosmetic2', find(102), false);
+    expect(r.slots).toEqual({ cosmetic2: { item: 102 } });
+  });
+
+  it('leaves weapons alone', () => {
+    const r = equipInto(catalog, { primary: { item: 13 } }, 'melee', find(0), false);
+    expect(r.slots).toEqual({ primary: { item: 13 }, melee: { item: 0 } });
   });
 });
