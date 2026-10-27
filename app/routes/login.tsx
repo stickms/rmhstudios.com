@@ -27,7 +27,7 @@ export const Route = createFileRoute('/login')({
       (search.callbackUrl as string) ||
       (search.next as string) ||
       undefined,
-    error: typeof search.error === 'string' ? search.error : undefined,
+    ...(typeof search.error === 'string' ? { error: search.error } : {}),
   }),
   head: () => ({
     meta: [{ title: 'Login | RMH' }],

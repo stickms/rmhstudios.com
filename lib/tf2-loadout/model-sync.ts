@@ -38,7 +38,7 @@ export interface ModelState {
 }
 
 export interface WantedModel {
-  /** `<defindex>` or `<defindex>_<class>` (no extension). */
+  /** The object's path under its channel prefix: `940.glb`, `940_soldier.glb`, `resource/ui/hudplayerhealth.res`. */
   name: string;
   /** Hash of the game files this model is built from. */
   src: string;

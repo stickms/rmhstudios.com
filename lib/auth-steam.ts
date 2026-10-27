@@ -19,7 +19,6 @@ import { createAuthEndpoint } from 'better-auth/api';
 import { getSessionFromCtx } from 'better-auth/api';
 import { setSessionCookie } from 'better-auth/cookies';
 import type { BetterAuthPlugin } from 'better-auth';
-import { z } from 'zod';
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
 import {
@@ -44,16 +43,13 @@ export const steam = () =>
     endpoints: {
       steamStart: createAuthEndpoint(
         '/steam/start',
-        {
-          method: 'GET',
-          query: z.object({
-            mode: z.enum(['signin', 'link']).default('signin'),
-            callbackURL: z.string().optional(),
-          }),
-        },
+        { method: 'GET' },
         async (ctx) => {
-          const { mode } = ctx.query;
-          const cb = safeCallback(ctx.query.callbackURL);
+          // Parsed by hand: this module is in lib/auth.ts's import graph, which every hot
+          // route reaches, and those stay free of zod (lib/__tests__/zod-off-hot-routes).
+          const query = (ctx.query ?? {}) as Record<string, unknown>;
+          const mode = query.mode === 'link' ? 'link' : 'signin';
+          const cb = safeCallback(typeof query.callbackURL === 'string' ? query.callbackURL : undefined);
           if (mode === 'link') {
             const session = await getSessionFromCtx(ctx);
             if (!session) throw ctx.redirect(`/login?next=${encodeURIComponent(cb)}`);
