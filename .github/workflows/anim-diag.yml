@@ -1,0 +1,38 @@
+name: anim-diag
+# Throwaway diagnostic (never merged): what the production converter finds for each class body's materials.
+on:
+  push:
+    branches: [chore/tf2-anim-dev]
+    paths: ['.github/workflows/anim-diag.yml', 'tools/diag_materials.py']
+permissions:
+  contents: read
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      STEAM_USER: ${{ secrets.STEAM_USER }}
+      STEAM_PASS: ${{ secrets.STEAM_PASS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Code under test
+        run: git clone --depth 1 --branch main https://github.com/stickms/rmhstudios.com "$GITHUB_WORKSPACE/code"
+      - name: Install SteamCMD
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lib32gcc-s1 lib32stdc++6 curl
+          mkdir -p "$HOME/steamcmd" && cd "$HOME/steamcmd"
+          curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar xz
+      - name: Download TF2
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android
+          sudo mkdir -p /mnt/tf2 && sudo chown "$USER" /mnt/tf2
+          for i in 1 2 3; do
+            "$HOME/steamcmd/steamcmd.sh" +force_install_dir /mnt/tf2 +login "$STEAM_USER" "$STEAM_PASS" +app_update 440 validate +quit > "$HOME/steam.log" 2>&1 || true
+            [ -f /mnt/tf2/tf/tf2_textures_000.vpk ] && break
+            sleep 30
+          done
+      - run: pip install --quiet vpk numpy pillow
+      - name: Diagnose
+        run: CODE="$GITHUB_WORKSPACE/code" python3 tools/diag_materials.py /mnt/tf2 2>&1 | cut -c1-400
