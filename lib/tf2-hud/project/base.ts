@@ -15,16 +15,29 @@ export interface BaseLoader {
 }
 
 export const BASE_URL = '/tf2-hud/base';
+/** Base files synced from the game itself (`scripts/tf2-assets`); absent until a sync has run. */
+export const LIVE_BASE_URL = '/api/tf2-hud/base';
+
+const encodePath = (path: string): string => path.split('/').map(encodeURIComponent).join('/');
+
+// The manifest and the files must come from the same copy, so whichever one
+// answers for the manifest also serves every file.
+let root: Promise<string> | undefined;
+function baseRoot(): Promise<string> {
+  root ??= fetch(`${LIVE_BASE_URL}/manifest.json`)
+    .then((res) => (res.ok ? LIVE_BASE_URL : BASE_URL))
+    .catch(() => BASE_URL);
+  return root;
+}
 
 export const browserLoader: BaseLoader = {
   async manifest() {
-    const res = await fetch(`${BASE_URL}/manifest.json`);
+    const res = await fetch(`${await baseRoot()}/manifest.json`);
     if (!res.ok) throw new Error(`Base manifest failed (${res.status})`);
     return res.json();
   },
   async file(path) {
-    const url = `${BASE_URL}/${path.split('/').map(encodeURIComponent).join('/')}`;
-    const res = await fetch(url);
+    const res = await fetch(`${await baseRoot()}/${encodePath(path)}`);
     if (!res.ok) throw new Error(`Base file ${path} failed (${res.status})`);
     return new Uint8Array(await res.arrayBuffer());
   },
