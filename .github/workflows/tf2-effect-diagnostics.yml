@@ -22,6 +22,7 @@ on:
       - scripts/tf2-assets/effect_audit.py
       - scripts/tf2-assets/visuals_audit.py
       - scripts/tf2-assets/model_probe.py
+      - scripts/tf2-assets/render-probe/**
 
 permissions:
   contents: write
@@ -82,11 +83,23 @@ jobs:
             --effects "${{ inputs.effects || 'Aces High' }}" --repo ../..)
           rm -rf /mnt/work/out/_work
           (cd scripts/tf2-assets && python3 visuals_audit.py --root /mnt/tf2 --out /mnt/work/out)
-          (cd scripts/tf2-assets && python3 model_probe.py --root /mnt/tf2 --out /mnt/work/out)
+          (cd scripts/tf2-assets && python3 model_probe.py --root /mnt/tf2 --out /mnt/work/out --glb-dir /mnt/work/render)
 
       - name: Delete the game install
         if: always()
         run: sudo rm -rf /mnt/tf2 "$HOME/Steam" "$HOME/.steam"
+
+      # The real builder player (PlayerScene), with the models just converted, rendered headlessly: a screenshot of
+      # what the viewer does with them, so a rendering bug can be seen rather than guessed at.
+      - uses: ./.github/actions/setup-deps
+
+      - name: Render the converted models in the real player
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm exec esbuild scripts/tf2-assets/render-probe/entry.tsx --bundle --format=iife --jsx=automatic \
+            --define:process.env.NODE_ENV=\"production\" --log-level=warning --outfile=/mnt/work/render/entry.js
+          printf '<!doctype html><meta charset="utf-8"><body style="margin:0;background:#111"><div id="root"></div><script src="/entry.js"></script>' > /mnt/work/render/index.html
+          node scripts/tf2-assets/render-probe/render.mjs /mnt/work/render /mnt/work/out /mnt/work/render/render-config.json
 
       - name: Publish the results to a branch
         run: |
