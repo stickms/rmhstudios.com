@@ -325,7 +325,8 @@ render opaque `--site-surface-opaque` with a solid edge (press feedback stays);
 components never branch on them. The site has no high-contrast theme and no
 forced-colors / reduced-transparency fallback: they were removed (2026-10-27). Users control the material with
 `jellyMotion` (Lively / Calm / Still — Still stops all ambient motion, WCAG
-2.2.2; also one tap from the top bar) and `electricArcs` (Full / Clicks / Off).
+2.2.2; configured in Appearance) and `electricArcs` (Full / Clicks / Off).
+Direct hover, press and scroll reactions remain active when ambient motion is Still.
 The retired reduced-motion setting and OS overrides do not return. Text holds
 4.5:1 on gel, over haze and over plasma in every theme; the focus ring is
 `--focus-ring`, solid 2px, never the plasma glow. Plasma, haze, arcs and the lens

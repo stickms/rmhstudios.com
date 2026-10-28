@@ -453,6 +453,44 @@ afterEach(() => {
 });
 
 describe('engine layers vs React setTextContent', () => {
+  it('a flat tab group admits its track, never separate rims for its opted-out members', async () => {
+    const group = new FakeEl('div');
+    group.className = 'glass-inset';
+    const nav = new FakeEl('nav');
+    nav.setAttribute('data-jelly-scope', 'off');
+    const tab = new FakeEl('div');
+    tab.setAttribute('data-evert', '');
+    const button = new FakeEl('button');
+    button.setAttribute('data-slot', 'button');
+    nav.append(tab);
+    tab.append(button);
+    group.append(nav);
+    body.append(group);
+    await install();
+    expect(rimOf(group)).toBeDefined();
+    expect(rimOf(tab)).toBeUndefined();
+    expect(rimOf(button)).toBeUndefined();
+  });
+
+  it('a static control keeps its positioning ownership when a theme re-measures the material', async () => {
+    const logo = new FakeEl('div');
+    logo.className = 'glass-inset';
+    body.append(logo);
+    const original = win.getComputedStyle as (el: FakeEl) => Record<string, unknown>;
+    win.getComputedStyle = (el: FakeEl) => ({
+      ...original(el),
+      position: el === logo && !logo.hasAttribute('data-liquid-static') ? 'static' : 'relative',
+    });
+    await install();
+    expect(logo.hasAttribute('data-liquid-static')).toBe(true);
+    for (let i = 0; i < 3; i++) {
+      for (const observer of mutationObservers) observer.cb([]);
+      await frames();
+      expect(logo.hasAttribute('data-liquid-static')).toBe(true);
+      expect(rimOf(logo)?.parentNode).toBe(logo);
+    }
+  });
+
   it('a <Button> whose text is replaced gets its SAME rim canvas back and never draws into a detached one', async () => {
     const btn = new FakeEl('button');
     btn.setAttribute('data-slot', 'button');

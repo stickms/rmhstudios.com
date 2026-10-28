@@ -36,6 +36,7 @@ describe('page transitions are wired into the shell', () => {
     expect(tabs).toContain("from '@/lib/page-transition'");
     expect(tabs).toMatch(/useLayoutEffect\(/);
     expect(tabs).toMatch(/swapContentAfter\(/);
-    expect(tabs).toMatch(/\[value\]/);
+    expect(tabs).toMatch(/\[value, renderTab\]/);
+    expect(tabs).toMatch(/!renderTab/);
   });
 });

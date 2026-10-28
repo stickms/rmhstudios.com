@@ -528,11 +528,16 @@ export function RadialHub() {
     globeRef.current = node;
     if (!node) return;
     requestAnimationFrame(() => {
+      if (globeRef.current !== node) return;
+      // Suspense may mount the globe after the dock's effects have already
+      // measured an empty container. Fit it to the mobile orb as soon as its
+      // real stage exists, rather than leaving the closed globe at screen centre.
+      measureDock();
       // Re-check: a fast open→close can retire the menu before this frame runs,
       // and focusing a globe that is on its way out would steal it back.
       if (phaseRef.current === 'open') node.focus();
     });
-  }, []);
+  }, [measureDock]);
 
   // The orb leaves the tab order while the menu is up (it has become the globe),
   // so hand focus back to it when the menu is dismissed rather than navigated.

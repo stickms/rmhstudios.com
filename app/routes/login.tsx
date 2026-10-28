@@ -513,7 +513,7 @@ function LoginPage() {
               type="button"
               onClick={switchMode}
               className={cn(
-                'inline-flex min-h-11 items-center justify-center gap-1.5 px-3 text-sm text-site-text-muted transition-colors hover:text-site-text',
+                'inline-flex min-h-11 max-w-full flex-wrap items-center justify-center gap-1.5 px-3 text-sm text-site-text-muted transition-colors hover:text-site-text',
                 busy && 'pointer-events-none opacity-60',
               )}
             >

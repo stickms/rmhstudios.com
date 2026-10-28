@@ -389,12 +389,12 @@ export interface SoftFeatures {
 
 /**
  * Degradation matrix. `lite` and `off` keep an isotropic press with no wobble (the material is gone, the press is
- * not); `still` behaves the same, because the user asked for no motion beyond acknowledgement. Coarse and handheld
+ * not). Ambient `still` retains direct interactions. Coarse and handheld
  * tiers have no hover (touch has no hover tier).
  */
 export function softFeatures(tier: JellyTier, motion: JellyMotion = 'lively'): SoftFeatures {
   const budget = JELLY_BUDGETS[tier];
-  const degraded = tier === 'lite' || tier === 'off' || motion === 'still';
+  const degraded = tier === 'lite' || tier === 'off';
   if (degraded) {
     return {
       press: budget.bodies > 0,

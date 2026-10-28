@@ -883,15 +883,18 @@ gated off there too, via `html.app-route`).
 - **Page transitions are one very quick, opacity-only swap — on every page.**
   (`lib/page-transition.ts`, tokens `--swap-dim` / `--swap-out` / `--swap-in` in
   globals.css; design in `docs/superpowers/specs/2026-10-27-smooth-transitions-design.md`.)
-  The old page dims to `--swap-dim` (0.6) in ≤70ms while it leaves and the new one
-  enters from that same level over ≤130ms: never blank, no translate (a transform on
+  The old page dims to `--swap-dim` (0.72) over 100 ms while it leaves and the new one
+  enters from that same level over 220 ms: never blank, no translate (a transform on
   the page root also breaks `position: fixed` descendants), no stagger. Every other
   one-shot CSS entrance inside a newly mounted page (title rise, card rises, feed item
   enters) is **finished in the same frame it mounts**, so a navigation shows one swap and
   nothing replays; opt a subtree out with `data-keep-entrance`. Pages in the same layout
   group (`shellLayoutFor`: catalog / workspace / editorial / social — e.g. `/games` ↔
   `/apps`) keep their **frame still** (`.page-heading`, `[data-slot='page-controls']`) and
-  swap only the content, and `PageTabs` gives a state-based tab switch the same dip. Do not
+  swap only the content.
+  The commit explicitly reveals reused DOM and query-string tabs; interrupted selections
+  resume from their painted opacity. `PageTabs` uses the same reveal for state-based tabs
+  and leaves route tabs to the route service so the fades never stack. Do not
   add a per-page entrance animation for navigation; it will be finished at mount. Works
   without View Transitions (off on WebKit by policy).
 - **Arrivals fade in — automatically.** Two site-wide mechanisms make a slow

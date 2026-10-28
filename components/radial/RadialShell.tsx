@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Link, useLocation, useRouterState } from '@tanstack/react-router';
-import { Bell, MessageCircle, Search, SlidersHorizontal } from 'lucide-react';
+import { Bell, MessageCircle, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useResolvedUser, useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -30,6 +30,7 @@ import {
   finishEntranceAnimations,
   shellLayoutFor,
   armEntranceGuard,
+  revealPageContent,
 } from '@/lib/page-transition';
 
 /**
@@ -55,9 +56,6 @@ const MessagesPanel = lazy(() =>
 );
 const ProfilePanel = lazy(() =>
   import('./TopBarPanels').then((m) => ({ default: m.ProfilePanel })),
-);
-const DisplayPanel = lazy(() =>
-  import('./TopBarPanels').then((m) => ({ default: m.DisplayPanel })),
 );
 
 let panelsPreloaded = false;
@@ -141,7 +139,7 @@ function RadialBackdrop() {
   );
 }
 
-type QuickPanelId = 'notifications' | 'messages' | 'profile' | 'display';
+type QuickPanelId = 'notifications' | 'messages' | 'profile';
 
 /**
  * Slim, quiet utility bar. Identity + search + inbox; the radial hub owns nav.
@@ -176,7 +174,6 @@ function RadialTopBar() {
   const messagesRef = useRef<HTMLButtonElement | null>(null);
   const bellRef = useRef<HTMLButtonElement | null>(null);
   const avatarRef = useRef<HTMLButtonElement | null>(null);
-  const displayRef = useRef<HTMLButtonElement | null>(null);
 
   const unread = useUnreadCount(signedIn);
   const { count: notifications } = useNotificationCount(signedIn);
@@ -311,23 +308,6 @@ function RadialTopBar() {
           />
         ) : (
           <>
-            {/* Signed out there is no profile panel, so its "Pause ambient motion"
-                control (WCAG 2.2.2) gets a panel of its own — DisplayPanel. */}
-            <JellyGroup.Item
-              type="button"
-              ref={displayRef}
-              className="radial-topbar__btn"
-              onClick={() => toggle('display')}
-              {...panelIntentProps}
-              aria-haspopup="dialog"
-              aria-expanded={panel === 'display'}
-              aria-label={t('display-settings', { defaultValue: 'Display settings' })}
-            >
-              <SlidersHorizontal aria-hidden />
-            </JellyGroup.Item>
-            <LazyPanel mounted={panelsMounted}>
-              <DisplayPanel open={panel === 'display'} onClose={close} anchorRef={displayRef} />
-            </LazyPanel>
             <JellyGroup.Item asChild>
               <Link
                 to="/login"
@@ -379,6 +359,9 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
   const renderedPathname = useRouterState({
     select: (s) => (s.resolvedLocation ?? s.location).pathname,
   });
+  const renderedHref = useRouterState({
+    select: (s) => (s.resolvedLocation ?? s.location).href,
+  });
   const isHome = renderedPathname === '/';
   const layout = shellLayoutFor(renderedPathname);
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -399,9 +382,13 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
     const column = shellRef.current?.querySelector('.page-root');
     if (!column) return;
     finishEntranceAnimations(column);
+    revealPageContent(
+      column,
+      document.documentElement.dataset.navKind === 'sibling' ? 'sibling' : 'cross',
+    );
     // Content that arrives a moment later (data resolving, a lazy section) is part of the same swap.
     armEntranceGuard();
-  }, [renderedPathname]);
+  }, [renderedHref]);
 
   // Publish the rail's page slot once it exists, so `PageLayout` can portal a
   // route's `rightSidebar` into it (see components/radial/rail-slot.tsx).

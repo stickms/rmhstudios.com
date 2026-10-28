@@ -216,21 +216,24 @@ describe('jellyTier', () => {
     expect(jellyTier({ doc: fakeDoc({ classes: ['perf-lite'], media: [FINE] }) })).toBe('lite');
   });
 
-  it.each([
-    [{ appContrast: true }],
-    [{ media: ['print'] }],
-  ] as [FakeOpts][])('is off for %j', (o) => {
-    expect(jellyTier({ doc: fineDoc(o) })).toBe('off');
-  });
+  it.each([[{ appContrast: true }], [{ media: ['print'] }]] as [FakeOpts][])(
+    'is off for %j',
+    (o) => {
+      expect(jellyTier({ doc: fineDoc(o) })).toBe('off');
+    },
+  );
 
   it.each([
     [{ media: ['(forced-colors: active)'] }],
     [{ media: ['(prefers-reduced-transparency: reduce)'] }],
     [{ classes: ['reduce-transparency'] }],
     [{ classes: ['style-high-contrast'] }],
-  ] as [FakeOpts][])('no longer degrades for %j (the contrast theme and OS fallbacks were removed)', (o) => {
-    expect(jellyTier({ doc: fineDoc(o) })).toBe('full');
-  });
+  ] as [FakeOpts][])(
+    'no longer degrades for %j (the contrast theme and OS fallbacks were removed)',
+    (o) => {
+      expect(jellyTier({ doc: fineDoc(o) })).toBe('full');
+    },
+  );
 
   it('is not changed by a hidden tab (that is a clock decision)', () => {
     expect(jellyTier({ doc: fakeDoc({ media: [FINE], hidden: true }) })).toBe('full');
@@ -301,22 +304,22 @@ describe('jellyMode', () => {
     );
   });
 
-  it('still is press only and forces arcs off whatever the arcs preference says (R9)', () => {
+  it('still pauses ambient motion and arcs while keeping direct reactions', () => {
     expect(mode({ attrs: { 'data-jelly-motion': 'still', 'data-electric-arcs': 'full' } })).toEqual(
       {
         ambient: false,
         arcs: 'off',
-        deform: 'press',
+        deform: 'full',
       },
     );
   });
 
-  it.each([
-    [{ classes: ['perf-lite'] }],
-    [{ appContrast: true }],
-  ] as [FakeOpts][])('keeps press but drops the material for %j', (o) => {
-    expect(mode(o)).toEqual({ ambient: false, arcs: 'off', deform: 'press' });
-  });
+  it.each([[{ classes: ['perf-lite'] }], [{ appContrast: true }]] as [FakeOpts][])(
+    'keeps press but drops the material for %j',
+    (o) => {
+      expect(mode(o)).toEqual({ ambient: false, arcs: 'off', deform: 'press' });
+    },
+  );
 
   it.each([
     [{ media: ['print'] }],
@@ -348,10 +351,15 @@ describe('jellyBudget', () => {
     expect(b.clickBolts).toBe(3);
   });
 
-  it('still zeroes everything ambient and every arc but keeps rims and press bodies', () => {
+  it('still zeroes ambient work and arcs but keeps interactive lattices and bodies', () => {
     const b = budget({ attrs: { 'data-jelly-motion': 'still' } });
     expect([b.hazeSlots, b.carriers, b.clockHz, b.idleClockHz, b.lattices, b.clickBolts]).toEqual([
-      0, 0, 0, 0, 0, 0,
+      0,
+      0,
+      0,
+      0,
+      JELLY_BUDGETS.full.lattices,
+      0,
     ]);
     expect(b.ambientArcMinIntervalMs).toBe(Infinity);
     expect(b.rims).toBe(24);

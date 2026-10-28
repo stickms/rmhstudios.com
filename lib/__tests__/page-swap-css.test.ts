@@ -8,8 +8,8 @@ describe('the quick page swap (docs/superpowers/specs/2026-10-27-smooth-transiti
   it('has three tokens: how far the old page dims, how fast it leaves, how fast the new one enters', () => {
     for (const t of ['--swap-dim', '--swap-out', '--swap-in']) expect(css).toContain(`${t}:`);
     const ms = (t: string) => Number(new RegExp(`${t}:\\s*(\\d+)ms`).exec(css)?.[1]);
-    expect(ms('--swap-out')).toBeLessThanOrEqual(80);
-    expect(ms('--swap-in')).toBeLessThanOrEqual(140);
+    expect(ms('--swap-out')).toBe(100);
+    expect(ms('--swap-in')).toBe(220);
     expect(Number(/--swap-dim:\s*([\d.]+)/.exec(css)?.[1])).toBeGreaterThanOrEqual(0.5); // never blank
   });
 
