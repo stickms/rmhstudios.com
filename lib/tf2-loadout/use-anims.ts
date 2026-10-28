@@ -36,6 +36,19 @@ export function tauntClip(index: AnimIndex | null, itemId: number, cls: string):
   return clip && index?.clips[cls]?.includes(clip) ? clip : null;
 }
 
+/** Every clip published for `cls` (taunts first, then the rest, each alphabetical); empty when none. */
+export function classClips(index: AnimIndex | null, cls: string): string[] {
+  const all = [...(index?.clips[cls] ?? [])];
+  const rank = (c: string) => (/(^|_)taunt/.test(c) ? 0 : 1);
+  return all.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+}
+
+/** A clip id (`taunt_rps_start`) as a name to show (`Taunt rps start`). */
+export const clipLabel = (clip: string): string => {
+  const words = clip.replace(/_+/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
 /** `null` while loading or when no animations have been published. */
 export function useAnimIndex(): AnimIndex | null {
   const [index, setIndex] = useState<AnimIndex | null>(null);

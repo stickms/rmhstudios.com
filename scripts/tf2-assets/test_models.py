@@ -63,5 +63,26 @@ class ModelAssets(unittest.TestCase):
         self.assertEqual(out["emissiveFactor"], [1, 1, 1])
 
 
+class TauntClips(unittest.TestCase):
+    CLIPS = ["taunt_conga", "taunt_highfive", "taunt_rps_start", "taunt_laugh_loop", "run_primary",
+             "taunt_dosido_initiator"]
+
+    def test_clip_slug_is_route_safe(self):
+        self.assertEqual(convert.clip_slug("Taunt-Conga.v2 "), "taunt_conga_v2")
+        self.assertEqual(len(convert.clip_slug("x" * 200)), 64)
+
+    def test_scene_matches_exact_then_loosely(self):
+        pick = lambda scene: convert.scene_clip(scene, "scout", self.CLIPS)
+        self.assertEqual(pick("Taunt_Conga"), "taunt_conga")  # same name
+        self.assertEqual(pick("hi5"), "taunt_highfive")  # the abbreviation and a missing `taunt` prefix
+        self.assertEqual(pick("taunt_hi5"), "taunt_highfive")  # the game's abbreviation
+        self.assertEqual(pick("conga"), "taunt_conga")  # a missing `taunt` prefix
+        self.assertEqual(pick("taunt_rps"), "taunt_rps_start")  # a scene that is the head of the clip
+        self.assertEqual(pick("taunt_laugh"), "taunt_laugh_loop")  # a loop suffix
+        self.assertEqual(pick("taunt_dosido"), "taunt_dosido_initiator")
+        self.assertIsNone(pick("taunt_nothing_like_it"))
+        self.assertIsNone(pick("ab"))
+
+
 if __name__ == "__main__":
     unittest.main()

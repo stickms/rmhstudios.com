@@ -180,7 +180,10 @@ function Builder({
   // The weapon the player holds: the last weapon slot picked. Picking one also ends the taunt, so the
   // player stands holding it; picking a taunt slot performs that taunt instead.
   const [heldSlot, setHeldSlot] = useState<HeldSlot | null>(null);
+  // An animation picked from the list, played in place of the taunt until a slot is selected again.
+  const [animation, setAnimation] = useState<string | null>(null);
   const showSlot = (key: LoadoutSlotKey) => {
+    setAnimation(null);
     if (key.startsWith('taunt')) setActiveTauntSlot(key);
     else if (isHeldSlot(key)) {
       setHeldSlot(key);
@@ -274,6 +277,7 @@ function Builder({
     setCls(next);
     setActiveTauntSlot(null);
     setHeldSlot(null);
+    setAnimation(null);
     setSlots(draftOrStock(next));
     setExtraCosmetics(0);
     setSelected(null);
@@ -585,7 +589,14 @@ function Builder({
           className="flex flex-col gap-4"
         >
           {/* The player sits right under the class bar; the options follow it. */}
-          <PlayerViewer cls={cls} worn={worn} tauntEffect={tauntEffect} taunt={tauntItem} />
+          <PlayerViewer
+            cls={cls}
+            worn={worn}
+            tauntEffect={tauntEffect}
+            taunt={tauntItem}
+            animation={animation}
+            onAnimationChange={setAnimation}
+          />
           <RulesPanel
             warnings={warnings}
             idx={idx}
