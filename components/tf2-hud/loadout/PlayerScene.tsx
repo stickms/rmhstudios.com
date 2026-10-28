@@ -10,10 +10,10 @@
  */
 'use client';
 
-import { useGLTF } from '@react-three/drei';
+import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import StudioLight from './StudioLight';
 import { ResetViewButton, ViewerOrbit, rememberView, useResetView } from './viewer-controls';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
   AnimationMixer,
@@ -22,12 +22,19 @@ import {
   MathUtils,
   Vector3,
   type Mesh,
+  type SkinnedMesh,
   type Object3D,
   type PerspectiveCamera,
 } from 'three';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import EffectParticles, { type EffectSpec } from './EffectParticles';
-import { applyPaintTexture, applyTint, cloneWithMaterials, type WarPaint } from './model-utils';
+import {
+  applyFestive,
+  applyPaintTexture,
+  applyTint,
+  cloneWithMaterials,
+  type WarPaint,
+} from './model-utils';
 import { useWarPaintTexture } from './use-war-paint';
 
 export interface PlayerPart {
@@ -39,6 +46,7 @@ export interface PlayerPart {
   effect?: EffectSpec;
   /** A war paint on this weapon. */
   paint?: WarPaint;
+  festive?: boolean;
 }
 
 interface BodyState {
@@ -50,7 +58,7 @@ interface BodyState {
 
 /** Plays a taunt clip on the body, looped, easing in over the idle and back out when it goes. */
 function Taunt({ url, body }: { url: string; body: BodyState }) {
-  const { animations } = useGLTF(url);
+  const { animations } = useLoader(Tf2GLTFLoader, url);
   useEffect(() => {
     const clip = animations[0];
     if (!clip) return undefined;
@@ -78,13 +86,13 @@ function Body({
   tauntUrl?: string;
   onReady: (body: BodyState) => void;
 }) {
-  const gltf = useGLTF(url);
+  const gltf = useLoader(Tf2GLTFLoader, url);
   const { camera, controls } = useThree();
   const root = useMemo(() => cloneWithMaterials(gltf.scene), [gltf.scene]);
   const mixer = useMemo(() => new AnimationMixer(root), [root]);
   const [state, setState] = useState<BodyState | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // A pose moves limbs outside the bind-pose bounds the renderer culls by.
     root.traverse((o) => {
       if ((o as Mesh).isMesh) o.frustumCulled = false;
@@ -101,11 +109,16 @@ function Body({
   // Frame the whole player, front on, from a distance that fits its height.
   useLayoutEffect(() => {
     root.updateMatrixWorld(true);
+    root.traverse((o) => {
+      const mesh = o as SkinnedMesh;
+      if (mesh.isSkinnedMesh) mesh.computeBoundingBox();
+    });
     const box = new Box3().setFromObject(root);
     const size = box.getSize(new Vector3());
     const centre = box.getCenter(new Vector3());
     const cam = camera as PerspectiveCamera;
-    const dist = (size.y / 2 / Math.tan(MathUtils.degToRad(cam.fov) / 2)) * 1.05;
+    const halfSpan = Math.max(size.y, size.x / cam.aspect) / 2;
+    const dist = (halfSpan / Math.tan(MathUtils.degToRad(cam.fov) / 2)) * 1.15;
     cam.position.set(centre.x, centre.y, centre.z + dist);
     cam.near = dist / 100;
     cam.far = dist * 100;
@@ -143,17 +156,21 @@ function Part({
   tint,
   effect,
   paint,
+  festive,
   body,
 }: {
   url: string;
   tint?: string;
   effect?: EffectSpec;
   paint?: WarPaint;
+  festive?: boolean;
   body: BodyState;
 }) {
-  const { scene } = useGLTF(url);
+  const { scene } = useLoader(Tf2GLTFLoader, url);
   const root = useMemo(() => cloneWithMaterials(scene), [scene]);
   const [mount, setMount] = useState<{ bone: Object3D; box: Box3 } | null>(null);
+
+  useLayoutEffect(() => applyFestive(root, festive), [root, festive]);
 
   useLayoutEffect(() => {
     type Attachment = { bone: string; pose: number[] };
@@ -236,7 +253,14 @@ export default function PlayerScene({
               // One missing or broken cosmetic must not take the player down with it.
               <SilentErrorBoundary key={p.key} label="tf2-player-part" fallback={null}>
                 <Suspense fallback={null}>
-                  <Part url={p.url} tint={p.tint} effect={p.effect} paint={p.paint} body={ready} />
+                  <Part
+                    url={p.url}
+                    tint={p.tint}
+                    effect={p.effect}
+                    paint={p.paint}
+                    festive={p.festive}
+                    body={ready}
+                  />
                 </Suspense>
               </SilentErrorBoundary>
             ))

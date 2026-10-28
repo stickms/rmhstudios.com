@@ -14,6 +14,7 @@ import { modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
 import { cn } from '@/lib/utils';
 import type { EffectSpec } from './EffectParticles';
 import type { WarPaint } from './model-utils';
+import PlayerViewer from './PlayerViewer';
 
 const Viewer3D = lazy(() => import('./Viewer3D'));
 
@@ -38,6 +39,8 @@ export default function ItemModelViewer({
   tint,
   paint,
   effect,
+  festive,
+  taunt,
   className,
 }: {
   itemId: number;
@@ -51,12 +54,21 @@ export default function ItemModelViewer({
   paint?: WarPaint;
   /** An unusual effect to show around the model. */
   effect?: EffectSpec;
+  festive?: boolean;
+  /** A taunt preview animates this class, rather than trying to display the taunt's prop. */
+  taunt?: boolean;
   className?: string;
 }) {
   const { t } = useTranslation('c-tf2-hud');
   const ids = useModelIds();
   const model = ids ? pickModel(ids, itemId, cls, style) : null;
   const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
+
+  if (taunt && cls) {
+    return (
+      <PlayerViewer cls={cls} worn={[]} taunt={itemId} tauntEffect={effect} className={className} />
+    );
+  }
 
   const body = !webgl ? (
     <Note>{t('model-no-webgl', { defaultValue: 'Your browser cannot show 3D models.' })}</Note>
@@ -72,7 +84,13 @@ export default function ItemModelViewer({
       }
     >
       <Suspense fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}>
-        <Viewer3D url={modelUrl(model)} tint={tint} paint={paint} effect={effect} />
+        <Viewer3D
+          url={modelUrl(model)}
+          tint={tint}
+          paint={paint}
+          effect={effect}
+          festive={festive}
+        />
       </Suspense>
     </SilentErrorBoundary>
   );

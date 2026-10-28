@@ -6,6 +6,8 @@
 
 import { useEffect, useState } from 'react';
 import { request } from '@/lib/tf2-hud/api';
+import { modelUrl } from './use-models';
+import { MODEL_BUILDER_VERSION } from './model-sync';
 
 export interface AnimIndex {
   /** The clip baked into the class body GLB, played whenever nothing else is. */
@@ -20,12 +22,13 @@ let pending: Promise<AnimIndex | null> | null = null;
 
 function loadAnimIndex(): Promise<AnimIndex | null> {
   // Not published yet (an older sync) is not an error: the player simply stands still.
-  pending ??= request<AnimIndex>('/api/tf2-loadout/models/anims.json').catch(() => null);
+  pending ??= request<AnimIndex>(
+    `/api/tf2-loadout/models/anims.json?v=${MODEL_BUILDER_VERSION}`,
+  ).catch(() => null);
   return pending;
 }
 
-export const animUrl = (cls: string, clip: string): string =>
-  `/api/tf2-loadout/models/anim_${cls}_${clip}.glb`;
+export const animUrl = (cls: string, clip: string): string => modelUrl(`anim_${cls}_${clip}`);
 
 /** The clip the taunt item plays for `cls`, if the sync resolved one. */
 export function tauntClip(index: AnimIndex | null, itemId: number, cls: string): string | null {

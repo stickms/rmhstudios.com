@@ -9,31 +9,44 @@
  */
 'use client';
 
-import { useGLTF } from '@react-three/drei';
+import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import StudioLight from './StudioLight';
 import { ResetViewButton, ViewerOrbit, rememberView, useResetView } from './viewer-controls';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useLoader, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Box3, MathUtils, Sphere, Vector3, type Object3D, type PerspectiveCamera } from 'three';
 import EffectParticles, { type EffectSpec } from './EffectParticles';
-import { applyPaintTexture, applyTint, cloneWithMaterials, type WarPaint } from './model-utils';
+import {
+  applyFestive,
+  applyPaintTexture,
+  applyTint,
+  cloneWithMaterials,
+  type WarPaint,
+} from './model-utils';
 import { useWarPaintTexture } from './use-war-paint';
 
 function Model({
   url,
   tint,
   paint,
+  festive,
   onFit,
 }: {
   url: string;
   tint?: string;
   paint?: WarPaint;
+  festive?: boolean;
   onFit: (radius: number, box: Box3, root: Object3D) => void;
 }) {
-  const { scene } = useGLTF(url);
+  const { scene } = useLoader(Tf2GLTFLoader, url);
   const { camera, controls, invalidate } = useThree();
   // Own copy of the cached scene, so tinting never leaks into another viewer.
   const root = useMemo(() => cloneWithMaterials(scene), [scene]);
+
+  useLayoutEffect(() => {
+    applyFestive(root, festive);
+    invalidate();
+  }, [root, festive, invalidate]);
 
   useEffect(() => {
     applyTint(root, tint);
@@ -78,6 +91,7 @@ export default function Viewer3D({
   tint,
   paint,
   effect,
+  festive,
 }: {
   url: string;
   tint?: string;
@@ -85,6 +99,7 @@ export default function Viewer3D({
   paint?: WarPaint;
   /** An unusual effect to draw around the model. */
   effect?: EffectSpec;
+  festive?: boolean;
 }) {
   const [radius, setRadius] = useState(1);
   const [box, setBox] = useState<Box3 | null>(null);
@@ -109,7 +124,7 @@ export default function Viewer3D({
       >
         <StudioLight />
         <ViewerOrbit resetRef={ref} minDistance={radius * 1.2} maxDistance={radius * 8} />
-        <Model url={url} tint={tint} paint={paint} onFit={onFit} />
+        <Model url={url} tint={tint} paint={paint} festive={festive} onFit={onFit} />
         {effect && box ? <EffectParticles spec={effect} box={box} owner={owner} /> : null}
       </Canvas>
       <ResetViewButton onClick={reset} />

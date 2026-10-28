@@ -155,6 +155,10 @@ jobs:
         if: steps.gate.outputs.run_particles == 'true'
         run: python3 -B -m unittest discover -s scripts/tf2-assets -p test_particles.py
 
+      - name: Validate model asset formats
+        if: steps.gate.outputs.run_models == 'true'
+        run: python3 -B -m unittest discover -s scripts/tf2-assets -p test_models.py
+
       - name: Item manifests (models and icons)
         if: steps.gate.outputs.run_models == 'true' || steps.gate.outputs.run_icons == 'true'
         run: |

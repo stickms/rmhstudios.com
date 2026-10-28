@@ -59,6 +59,7 @@ export default function ItemPreviewModal({
       <ItemModelViewer
         itemId={modelItemId(item)}
         cls={cls}
+        taunt={item.s === 'taunt'}
         paint={warPaintOf(idx, { item: item.id })}
         className="h-72"
       />

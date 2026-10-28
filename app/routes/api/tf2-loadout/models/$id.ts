@@ -36,8 +36,8 @@ export const Route = createFileRoute('/api/tf2-loadout/models/$id')({
               ...(model.contentEncoding ? { 'Content-Encoding': model.contentEncoding } : {}),
               Vary: 'Accept-Encoding',
               'Content-Type': 'model/gltf-binary',
-              // A converted model changes only when it is re-uploaded; a day is a fair trade.
-              'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+              // A rebuild can replace a model at this path. Do not retain broken conversions for days.
+              'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
               'X-Content-Type-Options': 'nosniff',
             },
           });
