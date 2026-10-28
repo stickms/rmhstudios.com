@@ -13,7 +13,10 @@ import { Check, ChevronDown, Search, X, type LucideIcon } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useSentinel } from '@/hooks/useSentinel';
 import {
+  Children,
+  Fragment,
   forwardRef,
+  isValidElement,
   useEffect,
   useId,
   useLayoutEffect,
@@ -21,6 +24,8 @@ import {
   useRef,
   useState,
   type ButtonHTMLAttributes,
+  type ChangeEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
@@ -119,12 +124,203 @@ export const TextField = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLIn
   },
 );
 
-export const SelectField = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
-  function SelectField({ className, children, ...rest }, ref) {
+interface SelectEntry {
+  value: string;
+  label: string;
+  disabled?: boolean;
+  group?: string;
+}
+
+const textOf = (node: ReactNode): string =>
+  Children.toArray(node)
+    .map((c) => (typeof c === 'string' || typeof c === 'number' ? String(c) : ''))
+    .join('');
+
+/** The `<option>`s (and `<optgroup>` labels) a select was given as children, flattened in order. */
+function selectEntries(children: ReactNode, group?: string, out: SelectEntry[] = []): SelectEntry[] {
+  Children.forEach(children, (child) => {
+    if (!isValidElement(child)) return;
+    const props = child.props as {
+      value?: string | number;
+      label?: string;
+      disabled?: boolean;
+      children?: ReactNode;
+    };
+    if (child.type === 'optgroup') selectEntries(props.children, props.label, out);
+    else if (child.type === 'option') {
+      const label = textOf(props.children);
+      out.push({
+        value: String(props.value ?? label),
+        label,
+        disabled: props.disabled,
+        group,
+      });
+    } else if (child.type === Fragment) selectEntries(props.children, group, out);
+  });
+  return out;
+}
+
+/**
+ * A select drawn in the TF2 menu style: a button showing the choice and a listbox panel under it, in
+ * place of the browser's own control. It takes the same props and `<option>` / `<optgroup>` children as
+ * a native `<select>`, and calls `onChange` with an event carrying `target.value`.
+ */
+export const SelectField = forwardRef<HTMLButtonElement, SelectHTMLAttributes<HTMLSelectElement>>(
+  function SelectField(
+    { className, children, value, defaultValue, onChange, disabled, id, name, ...rest },
+    ref,
+  ) {
+    const entries = useMemo(() => selectEntries(children), [children]);
+    const [inner, setInner] = useState(String(defaultValue ?? entries[0]?.value ?? ''));
+    const current = String(value ?? inner);
+    const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
+    const [open, setOpen] = useState(false);
+    const [active, setActive] = useState(0);
+    const listId = useId();
+    const selected = entries.find((e) => e.value === current);
+
+    const setRefs = (node: HTMLButtonElement | null) => {
+      setAnchor(node);
+      if (typeof ref === 'function') ref(node);
+      else if (ref) ref.current = node;
+    };
+
+    const openList = () => {
+      setActive(Math.max(0, entries.findIndex((e) => e.value === current)));
+      setOpen(true);
+    };
+    const pick = (entry: SelectEntry | undefined) => {
+      setOpen(false);
+      anchor?.focus();
+      if (!entry || entry.disabled) return;
+      if (value === undefined) setInner(entry.value);
+      if (entry.value !== current) {
+        const target = { value: entry.value, name: name ?? '', id: id ?? '' };
+        onChange?.({ target, currentTarget: target } as unknown as ChangeEvent<HTMLSelectElement>);
+      }
+    };
+    const step = (from: number, dir: 1 | -1) => {
+      for (let n = from + dir; n >= 0 && n < entries.length; n += dir) {
+        if (!entries[n].disabled) return n;
+      }
+      return from;
+    };
+
+    useEffect(() => {
+      if (open) document.getElementById(`${listId}-${active}`)?.scrollIntoView({ block: 'nearest' });
+    }, [open, active, listId]);
+
+    const onKey = (e: ReactKeyboardEvent<HTMLButtonElement>) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!open) return openList();
+        setActive((a) => step(a, e.key === 'ArrowDown' ? 1 : -1));
+      } else if (e.key === 'Home' || e.key === 'End') {
+        if (!open) return;
+        e.preventDefault();
+        setActive(e.key === 'Home' ? step(-1, 1) : step(entries.length, -1));
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (open) pick(entries[active]);
+        else openList();
+      } else if (e.key === 'Tab') {
+        setOpen(false);
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Type a letter to jump to the next entry that starts with it.
+        const at = entries.findIndex(
+          (x, n) => n > active && !x.disabled && x.label.toLowerCase().startsWith(e.key.toLowerCase()),
+        );
+        const first = entries.findIndex(
+          (x) => !x.disabled && x.label.toLowerCase().startsWith(e.key.toLowerCase()),
+        );
+        const next = at >= 0 ? at : first;
+        if (next >= 0) {
+          if (!open) openList();
+          setActive(next);
+        }
+      }
+    };
+
+    const width = Math.max(anchor?.getBoundingClientRect().width ?? 0, 140);
+    let lastGroup: string | undefined;
     return (
-      <select ref={ref} className={cn(FIELD, 'pr-6', className)} {...rest}>
-        {children}
-      </select>
+      <>
+        <button
+          {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
+          ref={setRefs}
+          id={id}
+          type="button"
+          role="combobox"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={open ? listId : undefined}
+          aria-activedescendant={open ? `${listId}-${active}` : undefined}
+          disabled={disabled}
+          onClick={() => (open ? setOpen(false) : openList())}
+          onKeyDown={onKey}
+          className={cn(
+            FIELD,
+            'flex items-center justify-between gap-1 text-start',
+            className,
+          )}
+        >
+          <span className="min-w-0 flex-1 truncate">{selected?.label ?? ''}</span>
+          <ChevronDown className="size-3.5 shrink-0 text-(--app-text-dim)" aria-hidden />
+        </button>
+        <Popover
+          anchor={anchor}
+          open={open}
+          onClose={() => setOpen(false)}
+          label={rest['aria-label'] ?? ''}
+          width={width}
+          className="p-1"
+        >
+          <ul
+            id={listId}
+            role="listbox"
+            aria-label={rest['aria-label']}
+            className="max-h-64 overflow-y-auto overscroll-contain"
+          >
+            {entries.map((o, i) => {
+              const header = o.group !== lastGroup ? o.group : undefined;
+              lastGroup = o.group;
+              return (
+                <Fragment key={`${o.group ?? ''}:${o.value}`}>
+                  {header ? (
+                    <li
+                      role="presentation"
+                      className="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold text-(--app-text-dim)"
+                    >
+                      {header}
+                    </li>
+                  ) : null}
+                  {/* Keyboard picking happens on the combobox button (aria-activedescendant). */}
+                  {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
+                  <li
+                    id={`${listId}-${i}`}
+                    role="option"
+                    aria-selected={o.value === current}
+                    aria-disabled={o.disabled || undefined}
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={() => pick(o)}
+                    onPointerMove={() => !o.disabled && setActive(i)}
+                    className={cn(
+                      'flex cursor-pointer items-center gap-2 rounded-(--app-radius-sm) px-2 py-1.5 text-xs',
+                      i === active && 'bg-(--app-surface-hover)',
+                      o.disabled && 'cursor-default opacity-45',
+                    )}
+                  >
+                    <span className="min-w-0 flex-1 truncate">{o.label}</span>
+                    {o.value === current ? (
+                      <Check className="size-3.5 shrink-0 text-(--app-accent-text)" aria-hidden />
+                    ) : null}
+                  </li>
+                </Fragment>
+              );
+            })}
+          </ul>
+        </Popover>
+      </>
     );
   },
 );
@@ -492,6 +688,7 @@ export function Popover({
   onClose,
   label,
   width = 288,
+  className,
   children,
 }: {
   anchor: HTMLElement | null;
@@ -499,6 +696,7 @@ export function Popover({
   onClose: () => void;
   label: string;
   width?: number;
+  className?: string;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -574,7 +772,10 @@ export function Popover({
         top: pos?.top ?? -9999,
         width: Math.min(width, window.innerWidth - 16),
       }}
-      className="fixed z-60 rounded-(--app-radius) border border-(--app-border-bright) bg-(--app-bg-subtle) p-3 text-(--app-text) shadow-(--app-shadow)"
+      className={cn(
+        'fixed z-60 rounded-(--app-radius) border border-(--app-border-bright) bg-(--app-bg-subtle) p-3 text-(--app-text) shadow-(--app-shadow)',
+        className,
+      )}
     >
       {children}
     </div>,

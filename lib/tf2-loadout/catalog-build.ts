@@ -11,6 +11,7 @@
 import { createHash } from 'node:crypto';
 import { block, parseVdf, str, type VdfObject } from './vdf';
 import {
+  HELD_STANCES,
   ITEM_SLOTS,
   RARITIES,
   TF_CLASSES,
@@ -265,6 +266,10 @@ export function buildCatalog(input: BuildInput): Catalog {
         styles.push({ k, n: loc(str(sb, 'name')) ?? `Style ${k + 1}` });
       }
     }
+    const animSlot = (str(it, 'anim_slot') ?? '').toLowerCase();
+    const stance = HELD_STANCES.find((s) => s === animSlot);
+    const forced = (str(block(it, 'taunt'), 'taunt_force_weapon_slot') ?? '').toLowerCase();
+    const tauntWeapon = slot === 'taunt' ? HELD_STANCES.find((s) => s === forced) : undefined;
     const extra = flags(it, tiers);
     out.push({
       id,
@@ -278,6 +283,8 @@ export function buildCatalog(input: BuildInput): Catalog {
       ...(str(block(it, 'capabilities'), 'paintable') === '1' ? { p: 1 as const } : {}),
       ...(styles.length >= 2 ? { st: styles } : {}),
       ...(str(it, 'particle_suffix') ? { ps: str(it, 'particle_suffix')! } : {}),
+      ...(stance && stance !== slot ? { as: stance } : {}),
+      ...(tauntWeapon ? { tw: tauntWeapon } : {}),
       ...extra,
     });
   }

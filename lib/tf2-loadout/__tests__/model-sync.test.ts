@@ -54,6 +54,15 @@ describe('planSync', () => {
     ];
     expect(planSync(state(), wanted).upload).toEqual([]);
   });
+  it('a forced run uploads everything wanted, even what is already published', () => {
+    const wanted = [
+      { name: '13', src: 'a' },
+      { name: '940_soldier', src: 'b' },
+    ];
+    const plan = planSync(state(), wanted, { force: true });
+    expect(plan.upload.map((u) => u.name)).toEqual(['13', '940_soldier']);
+    expect(plan.unchanged).toBe(0);
+  });
 });
 
 describe('state', () => {

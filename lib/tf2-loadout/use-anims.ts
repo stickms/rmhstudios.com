@@ -5,6 +5,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { HeldStance } from './catalog-types';
 import { request } from '@/lib/tf2-hud/api';
 import { modelUrl } from './use-models';
 import { MODEL_BUILDER_VERSION } from './model-sync';
@@ -41,6 +42,20 @@ export function classClips(index: AnimIndex | null, cls: string): string[] {
   const all = [...(index?.clips[cls] ?? [])];
   const rank = (c: string) => (/(^|_)taunt/.test(c) ? 0 : 1);
   return all.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+}
+
+/** The stance the loadout-screen idle already shows: Medics stand with the medigun. */
+const IDLE_STANCE: Partial<Record<string, HeldStance>> = { medic: 'secondary' };
+
+/** The `stand_<stance>` clip to play for a held weapon, or null when the idle already fits (or none exists). */
+export function stanceClipFor(
+  clips: readonly string[],
+  cls: string,
+  stance: HeldStance | undefined,
+): string | null {
+  if (!stance || stance === (IDLE_STANCE[cls] ?? 'primary')) return null;
+  const clip = `stand_${stance}`;
+  return clips.includes(clip) ? clip : null;
 }
 
 /** A clip id (`taunt_rps_start`) as a name to show (`Taunt rps start`). */

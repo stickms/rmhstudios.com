@@ -38,7 +38,6 @@ import {
   Pill,
   SelectField,
   TextField,
-  Toggle,
 } from '@/components/tf2-hud/ui';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSentinel } from '@/hooks/useSentinel';
@@ -81,12 +80,14 @@ import ItemCustomizeModal from './ItemCustomizeModal';
 import LoadoutAssistant from './LoadoutAssistant';
 import { kitOf, warPaintOf } from '@/lib/tf2-loadout/warpaint';
 import { rarityColor, tierName } from '@/lib/tf2-loadout/rarity';
+import { tauntClip, useAnimIndex } from '@/lib/tf2-loadout/use-anims';
 import PlayerViewer from './PlayerViewer';
 import {
   effectSpecOf,
   isHeldSlot,
   tauntEffectOf,
   tauntItemOf,
+  tauntWeaponOf,
   wornItems,
   type HeldSlot,
 } from './worn';
@@ -99,7 +100,6 @@ import { CLASS_DEFAULT } from './labels';
 const SITE = () => (typeof window === 'undefined' ? '' : window.location.origin);
 const PAGE = 60;
 const LAST_CLASS_KEY = 'rmh-tf2-loadout-class';
-const UNRESTRICTED_KEY = 'rmh-tf2-loadout-unrestricted';
 
 function lastClass(): TfClass {
   try {
@@ -205,9 +205,6 @@ function Builder({
   const [saveOpen, setSaveOpen] = useState(false);
   const [signIn, setSignIn] = useState<'save' | 'ai' | null>(null);
   const [ready, setReady] = useState(false);
-  // "Allow any combination": off keeps to what the game allows; on lets the player equip anything
-  // (the warnings panel then says what the game could not do).
-  const [unrestricted, setUnrestrictedState] = useState(false);
   const [extraCosmetics, setExtraCosmetics] = useState(0);
   const [assistantOpen, setAssistantOpen] = useState(false);
   // What the loadout was before the assistant last changed it, so one tap undoes the batch.
@@ -290,39 +287,41 @@ function Builder({
   const draftOrStock = (c: TfClass): LoadoutSlots =>
     hasDraft(c) ? withSupportedOptions(catalog, loadDraft(c)) : stockLoadout(catalog, c);
 
-  useEffect(() => {
-    try {
-      setUnrestrictedState(localStorage.getItem(UNRESTRICTED_KEY) === '1');
-    } catch {
-      /* storage unavailable: the rules stay on */
-    }
-  }, []);
-  const setUnrestricted = (on: boolean) => {
-    setUnrestrictedState(on);
-    try {
-      localStorage.setItem(UNRESTRICTED_KEY, on ? '1' : '0');
-    } catch {
-      /* not kept */
-    }
-  };
-
-  // The game's three cosmetic slots; more only while "allow any combination" is on (or the loadout already
-  // holds more), up to the builder's cap.
+  // The game's three cosmetic slots, plus any the player adds (or the loadout already holds), up to the
+  // builder's cap. Anything the game could not do is allowed and flagged by the warnings below.
   const cosmeticKeys = useMemo(
-    () => cosmeticSlotKeys(slots, unrestricted ? COSMETIC_SLOTS + extraCosmetics : COSMETIC_SLOTS),
-    [slots, unrestricted, extraCosmetics],
+    () => cosmeticSlotKeys(slots, COSMETIC_SLOTS + extraCosmetics),
+    [slots, extraCosmetics],
   );
   const warnings = useMemo(() => loadoutWarnings(catalog, cls, slots), [catalog, cls, slots]);
+  // Items that clash with another worn item, tinted yellow in their slots.
+  const conflicting = useMemo(() => {
+    const ids = new Set<number>();
+    for (const w of warnings) {
+      if (w.kind === 'overlap') {
+        ids.add(w.a);
+        ids.add(w.b);
+      } else if (w.kind === 'duplicate') ids.add(w.item);
+    }
+    return ids;
+  }, [warnings]);
 
   // What the 3D player wears: the cosmetics, with their paint, and the held weapon.
-  const worn = useMemo(
-    () => wornItems(idx, cls, slots, cosmeticKeys, heldSlot),
-    [slots, idx, cosmeticKeys, cls, heldSlot],
-  );
+  const anims = useAnimIndex();
   const activeTaunt = activeTauntSlot ? slots[activeTauntSlot] : undefined;
   // Before anything is picked the first equipped taunt plays; once a weapon slot is picked, none does.
   const idleDefault = heldSlot === null;
   const tauntItem = activeTaunt?.item ?? (idleDefault ? tauntItemOf(slots) : undefined);
+  // A taunt holsters the weapon (unless the schema forces one out), but only while its animation is what
+  // is showing: an animation picked from the list, or a taunt with no clip yet, leaves the player armed.
+  const tauntWeapon =
+    animation === null && tauntItem !== undefined && tauntClip(anims, tauntItem, cls)
+      ? tauntWeaponOf(idx, tauntItem)
+      : undefined;
+  const worn = useMemo(
+    () => wornItems(idx, cls, slots, cosmeticKeys, heldSlot, tauntWeapon),
+    [slots, idx, cosmeticKeys, cls, heldSlot, tauntWeapon],
+  );
   const tauntEffect = activeTaunt
     ? effectSpecOf(idx, activeTaunt, 'taunt')
     : idleDefault
@@ -364,7 +363,7 @@ function Builder({
 
   const equip = (key: LoadoutSlotKey, item: CatalogItem) => {
     showSlot(key);
-    const { slots: next, removed } = equipInto(catalog, slots, key, item, unrestricted);
+    const { slots: next, removed } = equipInto(catalog, slots, key, item, true);
     edit(next);
     setAnnounce(
       t('announce-equipped', {
@@ -431,16 +430,10 @@ function Builder({
     let next: LoadoutSlots = { ...slots };
     const names: string[] = [];
     const removed: string[] = [];
-    let skipped = 0;
     for (const a of actions) {
       const item = idx.item(a.item);
       if (!item) continue;
-      const n = /^cosmetic(\d+)$/.exec(a.slot)?.[1];
-      if (!unrestricted && n && Number(n) > COSMETIC_SLOTS) {
-        skipped++;
-        continue;
-      }
-      const r = equipInto(catalog, next, a.slot, item, unrestricted);
+      const r = equipInto(catalog, next, a.slot, item, true);
       next = r.slots;
       removed.push(...r.removed.map((x) => x.n));
       next[a.slot] = {
@@ -450,24 +443,14 @@ function Builder({
       };
       names.push(item.n);
     }
-    if (!names.length) {
-      if (skipped) {
-        toast.info(
-          t('ai-skipped-limit', {
-            defaultValue:
-              'The game only has three cosmetic slots. Turn on "Allow any combination" to wear more.',
-          }),
-        );
-      }
-      return;
-    }
+    if (!names.length) return;
     setUndoSlots(slots);
     edit(next);
     const extra = Math.max(
       0,
       ...Object.keys(next).map((k) => Number(/^cosmetic(\d+)$/.exec(k)?.[1] ?? 0)),
     );
-    if (unrestricted && extra > COSMETIC_SLOTS) setExtraCosmetics(extra - COSMETIC_SLOTS);
+    if (extra > COSMETIC_SLOTS) setExtraCosmetics(extra - COSMETIC_SLOTS);
     const msg = t('ai-equipped-toast', {
       defaultValue: 'Equipped {{names}}.',
       names: names.join(', '),
@@ -478,14 +461,6 @@ function Builder({
         ? `${msg} ${t('ai-removed-toast', { defaultValue: 'Replaced {{names}}.', names: removed.join(', ') })}`
         : msg,
     );
-    if (skipped) {
-      toast.info(
-        t('ai-skipped-limit', {
-          defaultValue:
-            'The game only has three cosmetic slots. Turn on "Allow any combination" to wear more.',
-        }),
-      );
-    }
   };
 
   const undoApply = () => {
@@ -600,8 +575,6 @@ function Builder({
           <RulesPanel
             warnings={warnings}
             idx={idx}
-            unrestricted={unrestricted}
-            onToggle={setUnrestricted}
             onFix={makePlayable}
           />
           <SlotGroup title={t('weapons', { defaultValue: 'Weapons' })}>
@@ -622,6 +595,7 @@ function Builder({
             {cosmeticKeys.map((k) => (
               <SlotCell
                 key={k}
+                conflict={!!slots[k] && conflicting.has(slots[k]!.item)}
                 slotKey={k}
                 label={slotLabel(k)}
                 idx={idx}
@@ -631,7 +605,7 @@ function Builder({
                 ready={ready}
               />
             ))}
-            {unrestricted && cosmeticKeys.length < MAX_COSMETIC_SLOTS ? (
+            {cosmeticKeys.length < MAX_COSMETIC_SLOTS ? (
               <button
                 type="button"
                 onClick={() => {
@@ -783,42 +757,20 @@ function Builder({
 function RulesPanel({
   warnings,
   idx,
-  unrestricted,
-  onToggle,
   onFix,
 }: {
   warnings: ReturnType<typeof loadoutWarnings>;
   idx: CatalogIndex;
-  unrestricted: boolean;
-  onToggle: (on: boolean) => void;
   onFix: () => void;
 }) {
   const { t } = useTranslation('c-tf2-hud');
+  if (!warnings.length) return null;
   return (
     <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-3 text-xs">
-      {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- Toggle renders the native checkbox */}
-      <label className="flex cursor-pointer items-start gap-2.5">
-        <Toggle
-          checked={unrestricted}
-          onChange={onToggle}
-          label={t('allow-any', { defaultValue: 'Allow any combination' })}
-        />
-        <span className="min-w-0">
-          <span className="block text-sm font-semibold text-(--app-text)">
-            {t('allow-any', { defaultValue: 'Allow any combination' })}
-          </span>
-          <span className="block text-(--app-text-dim)">
-            {t('allow-any-desc', {
-              defaultValue:
-                'Off: only what the game allows. On: equip as many items as you like; anything the game could not do is flagged.',
-            })}
-          </span>
-        </span>
-      </label>
       {warnings.length ? (
         <div
           role="status"
-          className="mt-3 rounded-(--app-radius-sm) border border-(--app-warning)/50 bg-(--app-warning)/10 p-2.5"
+          className="rounded-(--app-radius-sm) border border-(--app-warning)/50 bg-(--app-warning)/10 p-2.5"
         >
           <p className="flex items-center gap-1.5 font-semibold text-(--app-warning)">
             <AlertTriangle className="size-4 shrink-0" aria-hidden />
@@ -851,6 +803,7 @@ function SlotCell({
   idx,
   entry,
   selected,
+  conflict,
   onSelect,
   ready,
 }: {
@@ -859,6 +812,7 @@ function SlotCell({
   idx: CatalogIndex;
   entry: LoadoutEntry | undefined;
   selected: boolean;
+  conflict?: boolean;
   onSelect: () => void;
   ready: boolean;
 }) {
@@ -875,6 +829,7 @@ function SlotCell({
           item={item}
           paint={entry?.paint !== undefined ? idx.paint(entry.paint) : undefined}
           selected={selected}
+          conflict={conflict}
           onClick={onSelect}
           label={`${label}: ${item.n}`}
         />

@@ -29,7 +29,7 @@ import srctex
 from vpkfs import GameFS
 
 # Bump when the output for the same source would change.
-CONVERTER_VERSION = 6
+CONVERTER_VERSION = 7
 SCALE = 0.01905  # Source units are 0.75 inch
 MAX_TEX = 512
 TINT_KEYS = ("$blendtintbybasealpha",)
@@ -71,7 +71,18 @@ def attachment_extras(mdl, info, is_class):
         current = bones[index]
         candidates.append({"bone": current["name"], "pose": column_major(matrix4(current["pose_to_bone"]))})
         index = current["parent"]
-    return {**extras, "attach": {**candidates[0], "fallbacks": candidates[1:]}}
+    out = {**extras, "attach": {**candidates[0], "fallbacks": candidates[1:]}}
+    jiggle = jiggle_metadata(mdl)
+    if jiggle:
+        out["jiggle"] = jiggle
+    return out
+
+
+def jiggle_metadata(mdl):
+    """Spring settings of a cosmetic's flexible jiggle bones, in glTF units; the viewer simulates them on the
+    bones the GLB's skin carries."""
+    return [{"bone": name, **{k: (v * SCALE if k == "length" else v) for k, v in p.items()}}
+            for name, p in srcmodel.read_jiggle(mdl).items()]
 
 
 def particle_metadata(mdl, bones):
@@ -106,6 +117,10 @@ def particle_metadata(mdl, bones):
     return {"particleAttachments": attachments, "particleHitboxes": hitboxes,
             "particleRoot": {"bone": bones[0]["name"].lower(), "bind": column_major(bind[0])}}
 
+
+# Materials that ended up with no texture (so the viewer draws them as flat grey): (model, material, why).
+# Printed at the end of a run so a sync log says which items are untextured and what is missing.
+UNTEXTURED = []
 
 EYE_SHADERS = ("eyerefract", "eyes")
 IDLE_SEQUENCE = "selectionMenu_Idle"  # the loadout screen's own idle: every class has it, and it loops
@@ -311,8 +326,11 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
     if not meshes:
         raise srcmodel.ModelError("no geometry")
     skeleton = bones = world = None
-    if is_class:
+    # A cosmetic with jiggle bones is skinned (rigid ones stay plain meshes), so the viewer can swing them.
+    jiggly = not is_class and not parts_only and bool(srcmodel.read_jiggle(mdl))
+    if is_class or jiggly:
         bones, skeleton = class_skeleton(mdl)
+    if is_class:
         world = [np.linalg.inv(np.vstack([np.array(p["pose_to_bone"]).reshape(3, 4), [0, 0, 0, 1]]))
                  for p in srcmodel.read_bones(mdl)]
     eye_slots = [i for i, slot in enumerate(slots) if slot and slot[1] in EYE_SHADERS]
@@ -322,6 +340,7 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
         if t not in mat_index:
             slot = slots[t] if 0 <= t < len(slots) else None
             image = None
+            why = "no .vmt found in the model's material paths" if slot is None else None
             emissive = None
             alpha = "OPAQUE"
             double = False
@@ -341,14 +360,18 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                     alpha = "MASK" if kv.get("$alphatest") == "1" else "BLEND"
                 double = kv.get("$nocull") == "1"
                 tint = any(kv.get(k) == "1" for k in TINT_KEYS)
+                if vtf is None and image is None:
+                    why = ("%s has no $basetexture" % _vp if not vtf_path
+                           else "%s is not in the game files (from %s)" % (vtf_path, _vp))
                 if vtf is not None:
                     key = (vtf_path, keep)
                     if key not in image_index:
                         try:
                             images.append(encode_texture(vtf, keep))
                             image_index[key] = len(images) - 1
-                        except srctex.TextureError:
+                        except srctex.TextureError as e:
                             image_index[key] = None
+                            why = "%s: %s" % (vtf_path, e)
                     image = image_index[key]
                     if kv.get("$selfillum") == "1" and image is not None:
                         emission_key = ("emission", vtf_path, kv.get("$selfillumtint"))
@@ -356,6 +379,8 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                             images.append(encode_emission(vtf, kv))
                             image_index[emission_key] = len(images) - 1
                         emissive = image_index[emission_key]
+            if image is None:
+                UNTEXTURED.append((mdl_path, name, why or "texture could not be decoded"))
             materials.append({"name": name.split("/")[-1], "image": image, "alpha": alpha,
                               "double_sided": double, "tint": tint, "emissive": emissive})
             mat_index[t] = len(materials) - 1
@@ -371,7 +396,7 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                 uv = project_eye_uv(m["pos"], eye, world[eye["bone"]])
         out = {"pos": to_gl(m["pos"]), "nrm": to_gl(m["nrm"]) / SCALE,
                "uv": uv, "idx": m["idx"], "material": mat_index[t]}
-        if is_class:
+        if is_class or jiggly:
             out["joints"], out["weights"] = m["joints"], m["weights"]
         out_meshes.append(out)
     clips = None
@@ -407,6 +432,12 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
                 material["emissive"] += len(images)
             material["attachment"] = True
             material["festive"] = ref.get("festive", False)
+        if jiggly:
+            # Bone-merged parts stay put: bind them to the first bone with full weight.
+            for mesh in a_meshes:
+                n = len(mesh["pos"])
+                mesh["joints"] = np.zeros((n, 4), np.uint16)
+                mesh["weights"] = np.tile(np.array([1, 0, 0, 0], np.float32), (n, 1))
         out_meshes.extend(a_meshes)
         materials.extend(a_materials)
         images.extend(a_images)
@@ -591,6 +622,13 @@ def main():
     clips = publish_clips(args, class_anims, published, wanted, failed)
     json.dump(wanted, open(os.path.join(args.out, "wanted.json"), "w"))
     json.dump(failed, open(os.path.join(args.out, "failed.json"), "w"))
+    if UNTEXTURED:
+        seen = sorted(set(UNTEXTURED))
+        json.dump([{"model": m, "material": n, "why": w} for m, n, w in seen],
+                  open(os.path.join(args.out, "untextured.json"), "w"), indent=1)
+        print("untextured materials (drawn flat grey): %d" % len(seen))
+        for m, n, w in seen[:40]:
+            print("  %s [%s]: %s" % (m, n, w))
     print("converted %d, unchanged %d, failed %d" % (converted, skipped, len(failed)))
     if failed:
         print("failed:", ", ".join(failed[:20]))

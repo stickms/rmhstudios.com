@@ -17,7 +17,7 @@
  */
 
 /** Bump when the converter's output changes for the same game files: every model is then rebuilt once. */
-export const MODEL_BUILDER_VERSION = 7;
+export const MODEL_BUILDER_VERSION = 8;
 
 export const STATE_KEY = 'tf2-models/_state.json';
 
@@ -106,13 +106,21 @@ export function shouldRun(
   return { run: false, reason: `game build ${steamBuild} already synced` };
 }
 
-export function planSync(state: ModelState, wanted: readonly WantedModel[]): SyncPlan {
+/**
+ * `force` uploads everything wanted, even a file whose source hash is already published: the hash says
+ * what the file was built from, not that the stored copy is good (a bad conversion, a lost object).
+ */
+export function planSync(
+  state: ModelState,
+  wanted: readonly WantedModel[],
+  { force = false }: { force?: boolean } = {},
+): SyncPlan {
   const upload: WantedModel[] = [];
   let unchanged = 0;
   const wantedNames = new Set<string>();
   for (const w of wanted) {
     wantedNames.add(w.name);
-    if (state.models[w.name]?.src === w.src) unchanged++;
+    if (!force && state.models[w.name]?.src === w.src) unchanged++;
     else upload.push(w);
   }
   const stale = Object.keys(state.models)

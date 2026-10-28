@@ -221,37 +221,42 @@ jobs:
       - name: Upload changed models (Brotli)
         if: steps.gate.outputs.run_models == 'true'
         run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
           prune=""; [ "${{ inputs.prune }}" = "true" ] && prune="--prune"
           pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/models --prefix tf2-models/ \
-            --state-key tf2-models/_state.json --build "${{ steps.gate.outputs.build }}" $prune
+            --state-key tf2-models/_state.json --build "${{ steps.gate.outputs.build }}" $prune $force
 
       - name: Upload changed icons
         if: steps.gate.outputs.run_icons == 'true'
         run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
           prune=""; [ "${{ inputs.prune }}" = "true" ] && prune="--prune"
           pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/icons --prefix tf2-icons/ \
-            --state-key tf2-icons/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune
+            --state-key tf2-icons/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune $force
 
       - name: Upload changed war paint data
         if: steps.gate.outputs.run_paintkits == 'true'
         run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
           prune=""; [ "${{ inputs.prune }}" = "true" ] && prune="--prune"
           pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/paintkits --prefix tf2-paintkits/ \
-            --state-key tf2-paintkits/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune
+            --state-key tf2-paintkits/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune $force
 
       - name: Upload changed particles (manifest last)
         if: steps.gate.outputs.run_particles == 'true'
         run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
           # Retain immutable versions referenced by cached manifests and bundles.
           pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/particles --prefix tf2-particles/ \
-            --state-key tf2-particles/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 --index manifest.json --preserve-index effects
+            --state-key tf2-particles/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 --index manifest.json --preserve-index effects $force
 
       - name: Upload changed HUD files (Brotli)
         if: steps.gate.outputs.run_hud == 'true'
         run: |
+          force=""; [ "${{ inputs.force }}" = "true" ] && force="--force"
           prune=""; [ "${{ inputs.prune }}" = "true" ] && prune="--prune"
           pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/hud --prefix tf2-hud-base/ \
-            --state-key tf2-hud-base/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune
+            --state-key tf2-hud-base/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune $force
 
       - name: Clean up
         if: always()
