@@ -284,6 +284,10 @@
   /* ── Monochrome material contract — glass reads as clean, near-opaque frost ── */
   --site-glass-tint: rgba(255, 255, 255, 0.34);
   --site-glass-tint-strong: rgba(255, 255, 255, 0.5);
+  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(255, 255, 255, 0.9);
   --site-glass-blur-pane: 18px;
   --site-glass-blur-chrome: 20px;
@@ -297,7 +301,7 @@
      border colour) and an inline style object (sonner's toast, which owns its
      own positioning and stacking). Those were three hand-copied approximations
      of this expression before it had a name. */
-  --site-glass-overlay-fill: color-mix(in srgb, var(--site-bg) 90%, transparent);
+  --site-glass-overlay-fill: var(--site-glass-overlay-tint);
 
   /* `--site-glass-menu-opacity` (88%) lived here, for menus opening over live
      content with no scrim. It is retired: it existed because `.glass-overlay`
@@ -975,6 +979,10 @@
   --site-warning-fg: #ffffff;
   --site-glass-tint: rgba(255, 255, 255, 0.36);
   --site-glass-tint-strong: rgba(255, 255, 255, 0.52);
+  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-rim: rgba(0, 0, 0, 0.12);
   --site-glass-rim-soft: rgba(0, 0, 0, 0.05);
   --site-radius: 32px;
@@ -1056,6 +1064,10 @@
   /* Light glass: brighter frost, white rims, cool low-alpha depth. */
   --site-glass-tint: rgba(255, 255, 255, 0.3);
   --site-glass-tint-strong: rgba(255, 255, 255, 0.48);
+  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(244, 247, 253, 0.55);
   --site-glass-rim: rgba(255, 255, 255, 0.9);
   --site-glass-rim-soft: rgba(255, 255, 255, 0.55);
@@ -1134,15 +1146,15 @@
   color-scheme: dark;
   --site-bg: #000000;
   --site-bg-subtle: rgba(255, 255, 255, 0.05);
-  --site-surface: rgba(28, 28, 30, 0.38);
-  --site-surface-hover: rgba(44, 44, 46, 0.52);
-  --site-surface-active: rgba(58, 58, 60, 0.64);
+  --site-surface: rgba(39, 41, 47, 0.76);
+  --site-surface-hover: rgba(48, 51, 59, 0.84);
+  --site-surface-active: rgba(58, 62, 72, 0.9);
   --site-surface-opaque: #1c1c1e;
   --site-border: rgba(255, 255, 255, 0.12);
   --site-border-bright: rgba(255, 255, 255, 0.26);
-  --site-text: #f5f5f7;
-  --site-text-muted: #c2c2c8;
-  --site-text-dim: #9c9ca3;
+  --site-text: #e7e9ef;
+  --site-text-muted: #b6bdca;
+  --site-text-dim: #a0a8b7;
   --site-accent: #2997ff;
   /* Near-black, not white: #ffffff on this blue is ~3.0:1, which failed on
      every accent-filled control in the theme — the active nav pill, the Post
@@ -1159,12 +1171,18 @@
   --site-danger-fg: #ffffff;
   --site-warning: #ff9f0a;
   --site-warning-fg: #100b00;
-  --site-glass-tint: rgba(28, 28, 30, 0.34);
-  --site-glass-tint-strong: rgba(28, 28, 30, 0.52);
+  --site-glass-tint: rgba(39, 41, 47, 0.72);
+  --site-glass-tint-strong: rgba(46, 49, 57, 0.9);
+  /* A black transparent ground adds no body. Use graphite by role so chrome,
+     cards and floating panels remain distinct, including on narrow screens. */
+  --site-glass-pane-tint: color-mix(in srgb, var(--site-surface-opaque) 82%, transparent);
+  --site-glass-chrome-tint: color-mix(in srgb, var(--site-surface-opaque) 92%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-surface-opaque) 96%, transparent);
+  --site-glass-mobile-tint: var(--site-glass-pane-tint);
   --site-glass-ink: rgba(0, 0, 0, 0.62);
   --site-glass-rim: rgba(255, 255, 255, 0.14);
   --site-glass-rim-soft: rgba(255, 255, 255, 0.06);
-  --site-glass-light: rgba(255, 255, 255, 0.1);
+  --site-glass-light: rgba(225, 233, 247, 0.14);
   --site-glass-depth: 0 0 0 0 transparent;
   --site-glass-depth-sm: 0 0 0 0 transparent;
   --site-glass-saturate: 180%;
@@ -1178,6 +1196,7 @@
     linear-gradient(180deg, #000000 0%, #08080a 60%, #000000 100%);
   --site-aurora-far-1: rgba(255, 255, 255, 0.02);
   --site-aurora-far-2: rgba(255, 255, 255, 0.015);
+  --site-backdrop-field-opacity: 0.35;
   /* Dark theme: invert the bright OSM map tiles so maps read on black. */
   --site-map-filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.92);
   --background: #000000;
@@ -1188,7 +1207,7 @@
   --site-jelly-haze-strong: #dfe6f2;
   --site-jelly-haze-fill: 0.11;
   --site-jelly-haze-inset: 0.04;
-  --site-jelly-haze-pane: 0.15;
+  --site-jelly-haze-pane: 0.12;
   --site-jelly-haze-chrome: 0.14;
   --site-jelly-haze-overlay: 0.05;
   --site-jelly-plasma-a: var(--site-accent);
@@ -1202,8 +1221,8 @@
   --site-arc-core: color-mix(in oklch, white 70%, var(--site-accent));
   --site-arc-glow: color-mix(in oklch, var(--site-accent) 55%, transparent);
   /* #989 gel layers (meanings: the :root block). Dark: the base sinks toward the void. */
-  --gel-body: rgba(255, 255, 255, 0.025);
-  --gel-depth: rgba(0, 0, 0, 0.16);
+  --gel-body: rgba(255, 255, 255, 0.045);
+  --gel-depth: rgba(0, 0, 0, 0.06);
   --gel-ink: var(--site-accent);
   --on-ink: var(--site-accent-fg);
   --gel-fresnel: rgba(255, 255, 255, 0.14);
@@ -1242,6 +1261,10 @@
   --site-warning-fg: #100b00;
   --site-glass-tint: rgba(255, 250, 238, 0.3);
   --site-glass-tint-strong: rgba(255, 250, 238, 0.48);
+  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(240, 232, 214, 0.6);
   --site-glass-rim: rgba(255, 248, 230, 0.85);
   --site-glass-rim-soft: rgba(255, 248, 230, 0.45);
@@ -1323,6 +1346,10 @@
   --site-warning-fg: #100b00;
   --site-glass-tint: rgba(150, 185, 255, 0.09);
   --site-glass-tint-strong: rgba(150, 185, 255, 0.15);
+  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   /* Nocturne declared the whole glass contract EXCEPT this one, so it fell
      through to the light theme's `rgba(255, 255, 255, 0.9)` at :root — and
      `.glass-inset` is `background: var(--site-glass-ink)`, which made every
@@ -1413,6 +1440,10 @@
   /* Clearer, colder material with a narrow high-energy edge. */
   --site-glass-tint: rgba(169, 224, 255, 0.065);
   --site-glass-tint-strong: rgba(177, 232, 255, 0.12);
+  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
+  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 86%, transparent);
+  --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
   --site-glass-ink: rgba(2, 6, 14, 0.58);
   --site-glass-rim: rgba(191, 244, 255, 0.42);
   --site-glass-rim-soft: rgba(157, 223, 255, 0.12);
@@ -4114,9 +4145,9 @@ input[type='number'] {
    against the page box instead of the viewport. Every other one-shot entrance inside the page is finished at mount
    (finishEntranceAnimations), so this is the only one that paints. */
 :root {
-  --swap-dim: 0.6;
-  --swap-out: 70ms;
-  --swap-in: 120ms;
+  --swap-dim: 0.72;
+  --swap-out: 100ms;
+  --swap-in: 220ms;
 }
 @keyframes page-enter {
   from {
@@ -4156,7 +4187,9 @@ html[data-nav-kind='sibling'] .page-root > * {
   animation: none;
 }
 html[data-nav-kind='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']),
-html[data-nav-kind='sibling'] .radial-feed > :not([data-slot='page-controls'], h1, .radial-feed__compose) {
+html[data-nav-kind='sibling']
+  .radial-feed
+  > :not([data-slot='page-controls'], h1, .radial-feed__compose) {
   animation: page-enter var(--swap-in) var(--ease-smooth) backwards;
   transition: opacity var(--swap-out) var(--ease-smooth);
 }
@@ -4164,7 +4197,9 @@ html[data-page-leaving='sibling'] .page-root > * {
   opacity: 1;
 }
 html[data-page-leaving='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']),
-html[data-page-leaving='sibling'] .radial-feed > :not([data-slot='page-controls'], h1, .radial-feed__compose) {
+html[data-page-leaving='sibling']
+  .radial-feed
+  > :not([data-slot='page-controls'], h1, .radial-feed__compose) {
   opacity: var(--swap-dim);
 }
 

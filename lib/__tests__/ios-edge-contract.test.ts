@@ -206,21 +206,21 @@ function measure(): Record<string, number> {
   const cssFiles = [
     ...walk(join(ROOT, 'app'), /\.css$/),
     ...walk(join(ROOT, 'components'), /\.css$/),
-  ].filter((abs) => inSiteTier(relative(ROOT, abs)));
+  ].filter((abs) => inSiteTier(relative(ROOT, abs).replaceAll('\\', '/')));
   const hidden = new Set<string>();
   for (const abs of cssFiles) for (const c of hiddenOnIos(readFileSync(abs, 'utf8'))) hidden.add(c);
   const add = (rel: string, n: number) => {
     if (n > 0) counts[rel] = n;
   };
   for (const abs of cssFiles) {
-    add(relative(ROOT, abs), cssFindings(readFileSync(abs, 'utf8'), hidden).length);
+    add(relative(ROOT, abs).replaceAll('\\', '/'), cssFindings(readFileSync(abs, 'utf8'), hidden).length);
   }
   for (const abs of [
     ...walk(join(ROOT, 'components'), /\.tsx$/),
     ...walk(join(ROOT, 'app/routes/_site'), /\.tsx$/),
     ...walk(join(ROOT, 'app/routes'), /^(__root|_site)\.tsx$/),
   ]) {
-    const rel = relative(ROOT, abs);
+    const rel = relative(ROOT, abs).replaceAll('\\', '/');
     if (!inSiteTier(rel)) continue;
     add(rel, twFindings(readFileSync(abs, 'utf8')));
   }

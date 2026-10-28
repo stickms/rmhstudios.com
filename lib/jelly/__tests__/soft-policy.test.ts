@@ -206,11 +206,10 @@ describe('corner flex gate', () => {
 });
 
 describe('degradation', () => {
-  it('lite, off and still keep an isotropic press with no wobble, hover, nudge, flex or lattice', () => {
+  it('lite and off keep an isotropic press with no wobble, hover, nudge, flex or lattice', () => {
     for (const [tier, motion] of [
       ['lite', 'lively'],
       ['off', 'lively'],
-      ['full', 'still'],
     ] as const) {
       const f = softFeatures(tier, motion);
       expect(f).toMatchObject({
@@ -223,6 +222,17 @@ describe('degradation', () => {
       expect(f.lattice).toBe(false);
       expect(f.bodies).toBeLessThanOrEqual(3);
     }
+  });
+
+  it('pausing ambient motion preserves direct hover, press, flex and lattice feedback', () => {
+    expect(softFeatures('full', 'still')).toMatchObject({
+      press: true,
+      hover: true,
+      wobble: true,
+      cornerFlex: true,
+      lattice: true,
+      nudge: false,
+    });
   });
 
   it('touch tiers have no hover; calm has no nudge', () => {

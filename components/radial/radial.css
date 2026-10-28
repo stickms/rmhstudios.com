@@ -190,6 +190,7 @@
    The fusing is done by the blobs' own soft edges, NOT by a goo filter. See the
    cost note above the media query below before adding one back. */
 .radial-backdrop__field {
+  opacity: var(--site-backdrop-field-opacity, 1);
   display: none;
   position: absolute;
   inset: -10%;

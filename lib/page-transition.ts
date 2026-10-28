@@ -2,9 +2,8 @@
  * Page transitions: one very quick, opacity-only swap on every navigation, and a still frame when the two pages
  * share one. Design: docs/superpowers/specs/2026-10-27-smooth-transitions-design.md.
  *
- * Nothing here animates anything itself. It classifies a navigation (`navKind`), stamps it on `<html>` while the old
- * page is leaving (`installPageTransitions`), and finishes the one-shot entrance animations a freshly mounted page
- * would otherwise replay (`finishEntranceAnimations`), so the only entrance left is the shared swap in globals.css.
+ * Classifies a navigation (`navKind`), stamps its leave on `<html>`, finishes competing entrances and reveals the
+ * committed content with an interruptible opacity animation, including reused DOM and query-string tabs.
  * No View Transitions: WebKit has them off on purpose (lib/view-transition.ts), and this must look the same there.
  */
 
@@ -106,6 +105,37 @@ const tokenNumber = (name: string, fallback: number) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+const contentSwaps = new WeakMap<Element, Animation>();
+
+/** Restart from the currently painted opacity when a second selection interrupts
+ * the first. Never transform a page ancestor: fixed/mobile controls must retain
+ * the viewport as their containing block. */
+function revealContent(el: Element, dim: number, ms: number): void {
+  if (typeof el.animate !== 'function') return;
+  const previous = contentSwaps.get(el);
+  const from = previous?.playState === 'running' ? Number(getComputedStyle(el).opacity) : dim;
+  previous?.cancel();
+  const animation = el.animate([{ opacity: from }, { opacity: 1 }], {
+    duration: ms,
+    easing: SMOOTH_EASE_CSS,
+  });
+  if (animation) contentSwaps.set(el, animation);
+}
+
+/** A commit may reuse the page DOM (including a query-string tab). Explicitly
+ * reveal the committed content rather than relying on a CSS animation remount. */
+export function revealPageContent(root: Element, kind: NavKind): void {
+  if (root.ownerDocument.documentElement.matches('.nav-pop,.vt-active')) return;
+  const panel = root.querySelector('[data-slot="page-content"],.radial-feed');
+  const parent = kind === 'sibling' && panel ? panel : root;
+  const dim = tokenNumber('--swap-dim', 0.72);
+  const ms = tokenNumber('--swap-in', 220);
+  for (const child of parent.children) {
+    if (child.matches(`${NOT_CONTENT},[data-slot="page-controls"],[data-route-pending]`)) continue;
+    revealContent(child, dim, ms);
+  }
+}
+
 /**
  * A tab switch with no route change (PageTabs' `value` changed): the content after the tab strip swaps with the same
  * quick dip as a navigation, by animating its siblings from `--swap-dim` to 1 over `--swap-in`, and the entrances
@@ -115,15 +145,12 @@ export function swapContentAfter(
   anchor: Element,
   opts: { dim?: number; ms?: number; finish?: (root: Element) => number } = {},
 ): void {
-  const dim = opts.dim ?? tokenNumber('--swap-dim', 0.6);
-  const ms = opts.ms ?? tokenNumber('--swap-in', 120);
+  const dim = opts.dim ?? tokenNumber('--swap-dim', 0.72);
+  const ms = opts.ms ?? tokenNumber('--swap-in', 220);
   for (let n = anchor.nextElementSibling; n; n = n.nextElementSibling) {
     if (n.matches(NOT_CONTENT)) continue;
-    n.animate([{ opacity: dim }, { opacity: 1 }], {
-      duration: ms,
-      easing: SMOOTH_EASE_CSS,
-    });
     (opts.finish ?? finishEntranceAnimations)(n);
+    revealContent(n, dim, ms);
   }
 }
 

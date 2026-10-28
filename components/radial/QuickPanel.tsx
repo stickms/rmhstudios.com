@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -12,12 +11,8 @@ import {
 } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { DialogPortal } from '@/components/ui/dialog';
-import { ArrowRight, Pause, Play, type LucideIcon } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { ArrowRight, type LucideIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import { useThemeStore } from '@/stores/themeStore';
-import { DEFAULT_JELLY_MOTION, type JellyMotion } from '@/lib/appearance/prefs';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 import { usePopPresence } from '@/hooks/usePopPresence';
 
@@ -259,69 +254,6 @@ export function QuickPanelSkeleton({ rows, label }: { rows: number; label: strin
           </div>
         ))
       )}
-    </div>
-  );
-}
-
-/**
- * The level "Pause ambient motion" returns to. Module scope, not component
- * state: the panel unmounts on close, and the toggle must still restore `calm`
- * (not `lively`) for someone who paused from Calm and reopened the panel.
- */
-let resumeJellyMotion: JellyMotion = DEFAULT_JELLY_MOTION;
-
-/**
- * One-tap "Pause ambient motion" (Plasmatic Jelly R8, WCAG 2.2.2): cycles
- * `jellyMotion` to `still` and back to whatever it was before. Settings →
- * Appearance holds the full three-way control; this is the easy-to-find
- * mechanism 2.2.2 asks for. The store applies `html[data-jelly-motion]` and the
- * localStorage cache (via Providers); the PUT syncs a signed-in account and is a
- * harmless 401 for a signed-out visitor, whose choice lives on the device.
- */
-export function QuickPanelMotionToggle({ className }: { className?: string }) {
-  const { t } = useTranslation('settings-appearance');
-  const jellyMotion = useThemeStore((s) => s.jellyMotion);
-  const setJellyMotion = useThemeStore((s) => s.setJellyMotion);
-  const paused = jellyMotion === 'still';
-
-  const toggle = () => {
-    let next: JellyMotion;
-    if (paused) {
-      next = resumeJellyMotion === 'still' ? DEFAULT_JELLY_MOTION : resumeJellyMotion;
-    } else {
-      resumeJellyMotion = jellyMotion;
-      next = 'still';
-    }
-    setJellyMotion(next);
-    void fetch('/api/preferences/appearance', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ jellyMotion: next }),
-    }).catch(() => {});
-  };
-
-  const Icon = paused ? Play : Pause;
-  const labelId = useId();
-  return (
-    <div
-      className={['rad-panel__row', className].filter(Boolean).join(' ')}
-      data-slot="quick-panel-motion-toggle"
-    >
-      <Icon aria-hidden />
-      <span className="rad-panel__row-main">
-        <strong id={labelId}>
-          {t('pause-ambient-motion', { defaultValue: 'Pause ambient motion' })}
-        </strong>
-        <small>
-          {paused
-            ? t('pause-ambient-motion-on', { defaultValue: 'Paused. Tap to resume.' })
-            : t('pause-ambient-motion-off', {
-                defaultValue: 'Stops the jelly surfaces moving on their own.',
-              })}
-        </small>
-      </span>
-      <Switch checked={paused} onCheckedChange={toggle} aria-labelledby={labelId} />
     </div>
   );
 }

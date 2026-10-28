@@ -97,7 +97,7 @@ uniform vec4 uSceneMap;    // x,y = scene position of the surface's top-left (CS
 uniform float uSceneOn;    // 0..1, fades the refracted rim in
 
 uniform vec4 uTint;        // the surface's own tint (rgb, alpha) — the refracted rim must match the interior
-uniform vec3 uRim;         // colour of the light (the theme's glass-light)
+uniform vec4 uRim;         // colour AND strength of the theme's glass-light
 uniform vec3 uInk;         // the theme's ink: what the shaded side of the slab is drawn with
 uniform float uDark;       // 1 on a dark ground
 uniform vec3 uLight;       // cursor light: x,y in surface CSS px, z = height above the surface
@@ -296,14 +296,17 @@ void main() {
   vec3 Rf = vec3(2.0 * n.z * n.xy, 2.0 * n.z * n.z - 1.0);
   float kl = max(dot(Rf, key), 0.0); kl *= kl; kl *= kl; kl *= kl;
   float fl = max(dot(Rf, fillL), 0.0); fl *= fl; fl *= fl;
-  vec3 refl = glassFresnel(n.z) * (0.10 + 0.95 * kl + 0.42 * fl) * (uLens.z * edgeOnly * rise);
+  // A perceptual gain preserves a readable shoulder at low light levels while
+  // honouring the theme's alpha. Refraction and RGB dispersion stay independent.
+  float lightGain = sqrt(clamp(uRim.a, 0.0, 1.0));
+  vec3 refl = glassFresnel(n.z) * (0.10 + 0.95 * kl + 0.42 * fl) * (uLens.z * edgeOnly * rise) * lightGain;
 
   float k = mix(1.0, 0.82, uDark);
   // White is secondary: the lit terms are kept under the RGB band below.
   float lit =
     ((keySpec + fillSpec + curSpec + counter + body + fres * 0.07 * edgeOnly) * lift + lineK + moldHi * 0.32) * k * 0.8;
-  float litA = clamp(lit, 0.0, 1.0);
-  vec3 glint = mix(vec3(1.0), uRim, 0.35);
+  float litA = clamp(lit * lightGain, 0.0, 1.0);
+  vec3 glint = mix(vec3(1.0), uRim.rgb, 0.35);
 
   // ── The RGB-led refraction band (--gel-bevel, --gel-disperse-*) ──
   // A channel displaced by v = -Ld·disperse sits where d(P - v) = d - sh·disperse reaches the band depth.
@@ -349,7 +352,7 @@ void main() {
     vec2 spot = uDent.xy - Ld * R * 0.6;
     float sx = length(P - spot) / max(R * 0.16, 1.5);
     float dotA = exp(-sx * sx * 2.0) * uDent.z * uSpecular.a * inside;
-    col += mix(uRim, uAccent, 0.35) * glowA + uSpecular.rgb * dotA;
+    col += mix(uRim.rgb, uAccent, 0.35) * glowA + uSpecular.rgb * dotA;
     a = a + (glowA + dotA) * (1.0 - a);
   }
 

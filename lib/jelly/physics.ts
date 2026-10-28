@@ -63,7 +63,7 @@
  * ## Degradation
  *
  * `jellyMode().deform` and `softFeatures(jellyTier(), jellyMotionLevel())` decide what may move: `off` (hidden,
- * print, forced colours, game playing) → nothing; `press` (perf-lite, reduced transparency, high contrast, `still`)
+ * print, game playing) → nothing; `press` (perf-lite, app high contrast)
  * → isotropic-ish press with a critically damped release, no hover, nudge, corner flex or lattice. Re-evaluated on
  * every `onJellyEnvChange`.
  *
@@ -348,6 +348,7 @@ export function installJellyPhysics(
   let keyboardModality = false;
   const lens = opts.lens ?? createJellyLens(doc);
   let lastScroll = -Infinity;
+  let hoverNeedsHitTest = false;
 
   const pointer = { x: 0, y: 0, t: 0, fine: false, inDoc: false };
   const pvx = new VelocityTracker();
@@ -378,7 +379,7 @@ export function installJellyPhysics(
     deformFull = mode.deform === 'full';
     const tier = jellyTier({ doc, win });
     const motion = jellyMotionLevel(doc);
-    // `press` mode is perf-lite / material-off / `still`, which `softFeatures` already degrades to press-only.
+    // Ambient Still preserves direct feedback; only material-off tiers degrade to press-only.
     features = softFeatures(tier, motion);
     const budget = jellyBudget({ doc, win });
     const coarse = !(fineMq?.matches ?? false);
@@ -633,8 +634,7 @@ export function installJellyPhysics(
 
   // ── Activation entry points ─────────────────────────────────────────────
 
-  const hoverAllowed = () =>
-    features.hover && (fineMq?.matches ?? false) && now() - lastScroll >= SOFT_BODY.scrollQuietMs;
+  const hoverAllowed = () => features.hover && (fineMq?.matches ?? false);
 
   const bodyElFrom = (target: EventTarget | null): HTMLElement | null => {
     const t = target as Element | null;
@@ -869,8 +869,11 @@ export function installJellyPhysics(
   const onScroll = () => {
     lastScroll = now();
     epoch++;
-    // A feed flick must not leave a wake of plumped cards.
-    for (const b of bodies.values()) b.hovering = false;
+    // Scrolling moves hosts beneath a stationary fine pointer. Hit-test once
+    // in the next read phase, never in the scroll handler or on touch flicks.
+    hoverNeedsHitTest = pointer.inDoc && pointer.fine && hoverAllowed();
+    if (!hoverNeedsHitTest) for (const b of bodies.values()) b.hovering = false;
+    if (hoverNeedsHitTest && typeof doc.elementFromPoint === 'function') driver.wake();
     requestFrame();
   };
 
@@ -1069,7 +1072,7 @@ export function installJellyPhysics(
       const c = dentContact(b.press.cx - rect.x, b.press.cy - rect.y, rect.w, rect.h);
       d.x = c.x;
       d.y = c.y;
-      // The stretch is deformation: `press` mode (degraded, `still`) keeps only the dent itself.
+      // A degraded material tier keeps the dent without the stretch.
       const stretch = features.wobble && !b.externalDrag;
       target = {
         depth: DENT.depthPx,
@@ -1115,6 +1118,20 @@ export function installJellyPhysics(
 
   function step(dt: number, dtMs: number, t: number): boolean {
     // ── 1. READ ──
+    if (hoverNeedsHitTest) {
+      hoverNeedsHitTest = false;
+      const el = bodyElFrom(doc.elementFromPoint?.(pointer.x, pointer.y) ?? null);
+      for (const b of bodies.values()) b.hovering = b.el === el;
+      if (el) {
+        const b = bodies.get(el) ?? create(el);
+        if (b) {
+          b.hovering = true;
+          if (!b.press && !b.drag) b.phase = 'hover';
+          plasmaFor(el);
+          enforceCap();
+        }
+      }
+    }
     for (const b of [...bodies.values()]) {
       if (!b.ready) {
         if (!activate(b)) {
