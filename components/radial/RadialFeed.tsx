@@ -18,6 +18,7 @@ import { RadialLoader } from '@/components/ui/radial-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDeferOnNavigate } from '@/components/ui/defer-on-navigate';
 import { scrollPageToTop, useBackToTopHost } from '@/components/ui/back-to-top';
+import { useViewportShift } from '@/hooks/useViewportShift';
 import { RadialWheel, type RadialWheelItem } from './RadialWheel';
 import { WheelCard } from './WheelCard';
 
@@ -303,6 +304,8 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   // The scrolled-down arrow is part of the compose pill (below): it grows out of it when the page is
   // scrolled and folds back at the top. Registering as the host keeps the shell's own arrow from drawing.
   const scrolled = useBackToTopHost();
+  const fabRef = useRef<HTMLDivElement | null>(null);
+  useViewportShift(fabRef);
 
   return (
     <section className="radial-feed" aria-label={t('feed', { defaultValue: 'Feed' })}>
@@ -336,7 +339,7 @@ export function RadialFeed({ initialFeed }: { initialFeed?: Promise<InitialFeed>
 
       {/* One floating control: the compose pill, with the back-to-top arrow growing out of its left end when
           the page is scrolled and folding back into it at the top (radial.css). The pill is the jelly body. */}
-      <div className="radial-feed__compose" data-fluid-press="" data-evert="">
+      <div ref={fabRef} className="radial-feed__compose" data-fluid-press="" data-evert="">
         <button
           type="button"
           className="radial-feed__fab-top"

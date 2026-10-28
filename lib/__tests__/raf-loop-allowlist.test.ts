@@ -183,6 +183,11 @@ const ALLOW = new Set<string>([
   // no rAF themselves. No frame is requested while no driver is awake; `stop()`
   // cancels. Settle proven in lib/jelly/__tests__/frame.test.ts.
   'lib/jelly/frame.ts',
+  // The bottom-controls shift (lib/viewport-shift.ts). One frame per visual-viewport or scroll event to read a 1px
+  // fixed probe, and further frames ONLY while the measured gap is not zero (iOS Safari's fixed container catching up
+  // with its toolbar fires no event), capped at 180 frames after the last event. At rest (and on every browser where
+  // the two agree) nothing is scheduled; the last unsubscribe cancels the pending frame.
+  'lib/viewport-shift.ts',
   // The TF2 HUD editor's preview canvas. Not a loop: it requests ONE frame per
   // change (scene, zoom, selection) to coalesce redraws, and the effect's cleanup
   // cancels any pending frame on re-run and on unmount. Nothing is scheduled at rest.
