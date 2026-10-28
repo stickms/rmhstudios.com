@@ -498,6 +498,13 @@ type Phases struct {
 	TTFB    float64 `json:"ttfb"`
 	Total   float64 `json:"total"`
 	Reused  bool    `json:"reused"`
+	// Family ("ipv4" / "ipv6") is the address family of the first connect
+	// attempt, Attempts how many connects were started (more than one means the
+	// dialer fell back to another address) and Addrs how many addresses DNS
+	// returned. Counts and a family only: never the addresses themselves.
+	Family   string `json:"family,omitempty"`
+	Attempts int    `json:"attempts,omitempty"`
+	Addrs    int    `json:"addrs,omitempty"`
 }
 
 // TLSInfo describes the certificate a target served.
@@ -602,10 +609,24 @@ func probe(ctx context.Context, client *http.Client, t Target) (ServiceStatus, P
 	// reading the times after Do is race-free.
 	var dnsStart, dnsDone, connStart, connDone, tlsStart, tlsDone, firstByte time.Time
 	reused := false
+	var family string
+	var attempts, addrs int
 	trace := &httptrace.ClientTrace{
-		DNSStart:             func(httptrace.DNSStartInfo) { dnsStart = time.Now() },
-		DNSDone:              func(httptrace.DNSDoneInfo) { dnsDone = time.Now() },
-		ConnectStart:         func(string, string) { connStart = time.Now() },
+		DNSStart: func(httptrace.DNSStartInfo) { dnsStart = time.Now() },
+		DNSDone: func(i httptrace.DNSDoneInfo) {
+			dnsDone = time.Now()
+			addrs = len(i.Addrs)
+		},
+		ConnectStart: func(_, addr string) {
+			connStart = time.Now()
+			attempts++
+			if family == "" {
+				family = "ipv4"
+				if strings.Count(addr, ":") > 1 {
+					family = "ipv6"
+				}
+			}
+		},
 		ConnectDone:          func(string, string, error) { connDone = time.Now() },
 		TLSHandshakeStart:    func() { tlsStart = time.Now() },
 		TLSHandshakeDone:     func(tls.ConnectionState, error) { tlsDone = time.Now() },
@@ -643,6 +664,7 @@ func probe(ctx context.Context, client *http.Client, t Target) (ServiceStatus, P
 		TLS:     span(tlsStart, tlsDone),
 		TTFB:    span(start, firstByte),
 		Reused:  reused,
+		Family:  family, Attempts: attempts, Addrs: addrs,
 	}
 
 	if err != nil {
