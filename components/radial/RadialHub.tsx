@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type MouseEvent as ReactMouseEvent,
 } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Link, useLocation, useNavigate, useRouter } from '@tanstack/react-router';
@@ -36,7 +37,7 @@ import {
 import { inShell } from './eversion/eversion-nav';
 import { createHandOff, type HandOffHow } from './hub-handoff';
 import { whenQuiet } from './quiet';
-import { SELF_EVERT_MS } from './self-evert-timing';
+import { GLOBE_EVERT_EVENT, SELF_EVERT_MS } from './self-evert-timing';
 import { RmhLogo } from './RmhLogo';
 import { isGlobeDocked, useGlobeDestinations } from './globe-dock';
 
@@ -314,6 +315,27 @@ export function RadialHub() {
     setPhase('landing');
     timerRef.current = setTimeout(() => setPhase('closed'), SELF_EVERT_MS + 60);
   }, []);
+
+  /**
+   * A click on one of the hub's own links (the foot). On a phone it is instant, like a pin: the hub is marked
+   * landing first (so the site's navigation interceptor does not hold the page change for the full-screen effect,
+   * which was the pause), the globe turns itself inside out while it comes home, and the router goes straight to
+   * the page. Modified clicks, and wider screens, keep the link's own behaviour.
+   */
+  const footNav = useCallback(
+    (to: string, search?: Record<string, unknown>) => (e: ReactMouseEvent<HTMLElement>) => {
+      const plain = e.button === 0 && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
+      if (!inPlace || !plain) {
+        dismissForNavigation();
+        return;
+      }
+      e.preventDefault();
+      landOnOrb();
+      window.dispatchEvent(new Event(GLOBE_EVERT_EVENT));
+      void navigate({ to, search, ignoreBlocker: true } as never);
+    },
+    [inPlace, dismissForNavigation, landOnOrb, navigate],
+  );
 
   const toggle = useCallback(() => {
     if (handOffMachine.busy() || phaseRef.current === 'landing') return;
@@ -822,7 +844,7 @@ export function RadialHub() {
                       to={`/u/${user.handle || user.id}` as string}
                       className="radial-hub__identity"
                       data-fluid-press="none"
-                      onClick={dismissForNavigation}
+                      onClick={footNav(`/u/${user.handle || user.id}`)}
                       tabIndex={tab}
                     >
                       <UserAvatar
@@ -837,7 +859,7 @@ export function RadialHub() {
                       to="/settings"
                       className="radial-hub__foot-btn"
                       data-fluid-press="none"
-                      onClick={dismissForNavigation}
+                      onClick={footNav('/settings')}
                       tabIndex={tab}
                       aria-label={t('settings', { defaultValue: 'Settings' })}
                     >
@@ -860,7 +882,7 @@ export function RadialHub() {
                     search={{ callbackURL: undefined }}
                     className="radial-hub__signin"
                     data-fluid-press="none"
-                    onClick={dismissForNavigation}
+                    onClick={footNav('/login', { callbackURL: undefined })}
                     tabIndex={tab}
                   >
                     {t('sign-in', { defaultValue: 'Sign in' })}
