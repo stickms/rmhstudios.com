@@ -95,6 +95,10 @@ export interface EditorState {
   openPaths: string[];
   pageId: string;
   selectedId: string | null;
+  /** Every selected panel (shift-click, marquee); `selectedId` is the one the inspector shows. */
+  selectedIds: ReadonlySet<string>;
+  /** The block being worked on in the Blocks panel; its members are outlined on the canvas. */
+  focusedBlockId: string | null;
   hoverId: string | null;
   /** The layout property being edited, so the preview can draw its measurement. */
   focusProp: { nodeId: string; key: 'xpos' | 'ypos' | 'wide' | 'tall' } | null;
@@ -121,7 +125,7 @@ export interface EditorState {
 
   writeText(path: string, text: string, coalesceKey?: string): void;
   /** Several text edits as ONE history step (so one undo reverts them all). */
-  applyBatch(label: string, files: Readonly<Record<string, string>>): void;
+  applyBatch(label: string, files: Readonly<Record<string, string>>, coalesceKey?: string): void;
   writeBinary(path: string, bytes: Uint8Array): void;
   createFile(path: string, text?: string): string | null;
   deletePath(path: string): void;
@@ -147,12 +151,21 @@ export interface EditorState {
   importZipFile(file: File | Blob): Promise<ImportResult>;
   exportBlob(
     scope: ExportScope,
-    opts?: { includeInfoVdf?: boolean; onProgress?: (done: number, total: number) => void },
+    opts?: {
+      includeInfoVdf?: boolean;
+      /** Keep editor-only data (blocks) in the zip so the HUD re-imports with it. */
+      includeEditorData?: boolean;
+      onProgress?: (done: number, total: number) => void;
+    },
   ): Promise<Blob>;
   restoreDraft(id: string): Promise<boolean>;
 
   setPage(id: string): void;
   select(id: string | null): void;
+  /** Add or remove one panel from the selection (it becomes the inspected one when added). */
+  toggleSelect(id: string): void;
+  selectMany(ids: readonly string[]): void;
+  focusBlock(id: string | null): void;
   hover(id: string | null): void;
   setFocusProp(p: EditorState['focusProp']): void;
   toggleForce(id: string, shown: boolean): void;
@@ -213,6 +226,8 @@ export const useEditor = create<EditorState>((set, get) => {
     openPaths: [],
     pageId: DEFAULT_PAGE_ID,
     selectedId: null,
+    selectedIds: new Set(),
+    focusedBlockId: null,
     hoverId: null,
     focusProp: null,
     forceShown: new Set(),
@@ -284,13 +299,13 @@ export const useEditor = create<EditorState>((set, get) => {
       );
     },
 
-    applyBatch(label, files) {
+    applyBatch(label, files, coalesceKey) {
       const s = get();
       let next = s.overlay;
       for (const [path, text] of Object.entries(files)) {
         next = writeFile(next, s.baseIndex, path, textContent(text));
       }
-      commit(label, next);
+      commit(label, next, coalesceKey);
     },
 
     writeBinary(path, bytes) {
@@ -431,6 +446,8 @@ export const useEditor = create<EditorState>((set, get) => {
         activePath: null,
         openPaths: [],
         selectedId: null,
+        selectedIds: new Set(),
+        focusedBlockId: null,
         hoverId: null,
         forceShown: new Set(),
         forceHidden: new Set(),
@@ -460,6 +477,7 @@ export const useEditor = create<EditorState>((set, get) => {
         base: baseCache,
         scope,
         includeInfoVdf: opts.includeInfoVdf,
+        includeEditorData: opts.includeEditorData,
         onProgress: opts.onProgress,
       });
     },
@@ -484,6 +502,7 @@ export const useEditor = create<EditorState>((set, get) => {
         test: page.state ? { ...get().test, ...page.state } : get().test,
         pageId: id,
         selectedId: null,
+        selectedIds: new Set(),
         hoverId: null,
         forceShown: new Set(),
         forceHidden: new Set(),
@@ -491,7 +510,27 @@ export const useEditor = create<EditorState>((set, get) => {
     },
 
     select(id) {
-      set({ selectedId: id });
+      set({ selectedId: id, selectedIds: id ? new Set([id]) : new Set() });
+    },
+    toggleSelect(id) {
+      set((s) => {
+        const ids = new Set(s.selectedIds);
+        if (s.selectedId) ids.add(s.selectedId);
+        if (ids.has(id)) {
+          ids.delete(id);
+          const rest = [...ids];
+          return { selectedIds: ids, selectedId: rest[rest.length - 1] ?? null };
+        }
+        ids.add(id);
+        return { selectedIds: ids, selectedId: id };
+      });
+    },
+    selectMany(ids) {
+      const list = [...new Set(ids)];
+      set({ selectedIds: new Set(list), selectedId: list[list.length - 1] ?? null });
+    },
+    focusBlock(id) {
+      set({ focusedBlockId: id });
     },
     hover(id) {
       if (get().hoverId !== id) set({ hoverId: id });

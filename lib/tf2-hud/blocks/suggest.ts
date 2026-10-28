@@ -37,7 +37,11 @@ const KIND_LABEL: Record<string, string> = {
   button: 'Buttons',
 };
 
+/** A group bigger than this is a coincidence of styling, not something the author laid out together. */
+const MAX_GROUP = 12;
 const MIN_GROUP = 3;
+/** Sizes within this many virtual units count as the same size. */
+const SIZE_STEP = 16;
 
 function gapBetween(a: PanelNode, b: PanelNode): number {
   const dx = Math.max(
@@ -76,7 +80,8 @@ export function suggestSimilar(
     const props = text === undefined ? undefined : propsOfMember(text, { path: n.keyPath }, opts);
     if (!props) continue;
     const look = LOOK_KEYS.map((k) => props.get(k)?.trim() ?? '').join('|');
-    const sig = `${kind}|${n.control.toLowerCase()}|${look}`;
+    const size = `${Math.round(n.rect.w / (SIZE_STEP * scale))}x${Math.round(n.rect.h / (SIZE_STEP * scale))}`;
+    const sig = `${kind}|${n.control.toLowerCase()}|${size}|${look}`;
     const list = buckets.get(sig) ?? [];
     list.push(n);
     buckets.set(sig, list);
@@ -100,7 +105,7 @@ export function suggestSimilar(
       groups.set(r, [...(groups.get(r) ?? []), n]);
     });
     for (const group of groups.values()) {
-      if (group.length < MIN_GROUP) continue;
+      if (group.length < MIN_GROUP || group.length > MAX_GROUP) continue;
       const members = group.map(toMember);
       const { shared, mixed } = seedShared(members, io, opts);
       const kind = sig.split('|')[0];

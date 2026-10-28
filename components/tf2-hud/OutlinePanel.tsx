@@ -18,6 +18,8 @@ export default function OutlinePanel() {
   const { scene } = useSceneContext();
   const selectedId = useEditor((s) => s.selectedId);
   const select = useEditor((s) => s.select);
+  const toggleSelect = useEditor((s) => s.toggleSelect);
+  const selectedIds = useEditor((s) => s.selectedIds);
   const hover = useEditor((s) => s.hover);
   const toggleForce = useEditor((s) => s.toggleForce);
   const resetForce = useEditor((s) => s.resetForce);
@@ -67,14 +69,16 @@ export default function OutlinePanel() {
                     key={n.id}
                     className={cn(
                       'group flex items-center gap-1 pe-1 hover:bg-(--app-surface-hover)',
-                      selectedId === n.id && 'bg-(--app-accent-dim)',
+                      (selectedId === n.id || selectedIds.has(n.id)) && 'bg-(--app-accent-dim)',
                     )}
                     onPointerEnter={() => hover(n.id)}
                     onPointerLeave={() => hover(null)}
                   >
                     <button
                       type="button"
-                      onClick={() => select(n.id)}
+                      onClick={(e) =>
+                        e.shiftKey || e.ctrlKey || e.metaKey ? toggleSelect(n.id) : select(n.id)
+                      }
                       onDoubleClick={() => jump(n.file, n.source.start)}
                       aria-current={selectedId === n.id}
                       className={cn(

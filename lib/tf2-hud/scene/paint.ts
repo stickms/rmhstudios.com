@@ -303,6 +303,12 @@ export interface GuideSpec {
 export interface OverlayOptions {
   guide?: GuideSpec;
   selected?: PanelNode;
+  /** The rest of a multi-selection (the inspected panel is `selected`). */
+  alsoSelected?: readonly PanelNode[];
+  /** Members of the block open in the Blocks panel. */
+  blockMembers?: readonly PanelNode[];
+  /** A selection box being dragged, in scene pixels. */
+  marquee?: { x: number; y: number; w: number; h: number };
   hover?: PanelNode;
   /** Scene pixels per CSS pixel, so handles keep a constant on-screen size. */
   pxPerCss: number;
@@ -404,6 +410,32 @@ function paintGuide(g: CanvasRenderingContext2D, guide: GuideSpec, k: number) {
 export function paintOverlay(g: CanvasRenderingContext2D, o: OverlayOptions): void {
   const k = o.pxPerCss;
   if (o.guide) paintGuide(g, o.guide, k);
+  if (o.blockMembers?.length) {
+    g.save();
+    g.strokeStyle = 'rgba(90,170,255,0.95)';
+    g.lineWidth = 1.5 * k;
+    g.setLineDash([6 * k, 3 * k]);
+    for (const n of o.blockMembers) g.strokeRect(n.rect.x, n.rect.y, n.rect.w, n.rect.h);
+    g.restore();
+  }
+  if (o.alsoSelected?.length) {
+    g.save();
+    g.strokeStyle = 'rgb(255,140,40)';
+    g.lineWidth = 1.5 * k;
+    for (const n of o.alsoSelected) g.strokeRect(n.rect.x, n.rect.y, n.rect.w, n.rect.h);
+    g.restore();
+  }
+  if (o.marquee) {
+    const m = o.marquee;
+    g.save();
+    g.fillStyle = 'rgba(255,140,40,0.12)';
+    g.strokeStyle = 'rgb(255,140,40)';
+    g.lineWidth = k;
+    g.setLineDash([4 * k, 3 * k]);
+    g.fillRect(m.x, m.y, m.w, m.h);
+    g.strokeRect(m.x, m.y, m.w, m.h);
+    g.restore();
+  }
   if (o.hover && o.hover !== o.selected) {
     const r = o.hover.rect;
     g.save();

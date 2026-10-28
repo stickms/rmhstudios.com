@@ -41,6 +41,7 @@ import { ValidationProvider } from './validation-context';
 // The heavy panels (CodeMirror especially) and every dialog load on first use, so the editor
 // paints with just the file tree, preview and inspector; they are prefetched at idle below.
 const AssetsPanel = lazy(() => import('./AssetsPanel'));
+const BlocksPanel = lazy(() => import('./BlocksPanel'));
 const CodePane = lazy(() => import('./CodePane'));
 const CommandPalette = lazy(() => import('./CommandPalette'));
 const DiffView = lazy(() => import('./DiffView'));
@@ -81,7 +82,7 @@ function prefetchHeavyPanels() {
 }
 
 type RightTab =
-  'inspector' | 'code' | 'scheme' | 'test' | 'history' | 'diff' | 'problems' | 'assets';
+  'inspector' | 'blocks' | 'code' | 'scheme' | 'test' | 'history' | 'diff' | 'problems' | 'assets';
 type MobileView = 'files' | 'preview' | 'edit';
 
 interface Props {
@@ -345,6 +346,14 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
         run: () => setConfirmRevert(true),
       },
       {
+        id: 'blocks',
+        label: t('show-blocks', { defaultValue: 'Show blocks' }),
+        run: () => {
+          setPref('rightOpen', true);
+          setPref('rightTab', 'blocks');
+        },
+      },
+      {
         id: 'history',
         label: t('show-history', { defaultValue: 'Show edit history' }),
         run: () => {
@@ -380,6 +389,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
 
   const rightTabs: TfTab[] = [
     { id: 'inspector', label: t('inspector', { defaultValue: 'Inspector' }) },
+    { id: 'blocks', label: t('blocks', { defaultValue: 'Blocks' }) },
     { id: 'code', label: t('code', { defaultValue: 'Code' }) },
     { id: 'scheme', label: t('scheme', { defaultValue: 'Scheme' }) },
     { id: 'test', label: t('test', { defaultValue: 'Test' }) },
@@ -408,6 +418,7 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
       <div className="min-h-0 flex-1">
         {rightTab === 'inspector' ? <Inspector /> : null}
         <Suspense fallback={<PanelFallback />}>
+          {rightTab === 'blocks' ? <BlocksPanel /> : null}
           {rightTab === 'code' ? <CodePane /> : null}
           {rightTab === 'scheme' ? <SchemePanel /> : null}
           {rightTab === 'test' ? <TestPanel /> : null}

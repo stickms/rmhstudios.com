@@ -5,6 +5,7 @@
 
 import type { BaseCache } from '../project/base';
 import { binaryContent, listPaths, textContent } from '../project/model';
+import { BLOCKS_FILE } from '../blocks/types';
 import { isTextPath } from '../project/paths';
 import type { FileContent, HudMeta, Overlay } from '../project/types';
 import { decodeUtf8 } from '../util/sha1';
@@ -16,6 +17,8 @@ export interface BuildOptions {
   base: BaseCache;
   scope: ExportScope;
   includeInfoVdf?: boolean;
+  /** Blocks live in a sidecar file; the game does not need it, so it stays out unless asked for. */
+  includeEditorData?: boolean;
   onProgress?: (done: number, total: number) => void;
 }
 
@@ -43,6 +46,8 @@ export async function buildHudZip(opts: BuildOptions): Promise<Blob> {
   } else {
     for (const [p, c] of overlay) if (c) files.set(p, c);
   }
+
+  if (!opts.includeEditorData) files.delete(BLOCKS_FILE);
 
   let licenseText: string | undefined;
   try {

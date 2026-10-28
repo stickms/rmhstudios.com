@@ -10,7 +10,18 @@ export interface Tf2HudPrefs {
   /** Left/right panel widths, as percentages of the workspace. */
   treeOpen: boolean;
   rightOpen: boolean;
-  rightTab: 'inspector' | 'code' | 'scheme' | 'test' | 'history' | 'diff' | 'problems' | 'assets';
+  rightTab:
+    | 'inspector'
+    | 'blocks'
+    | 'code'
+    | 'scheme'
+    | 'test'
+    | 'history'
+    | 'diff'
+    | 'problems'
+    | 'assets';
+  /** What an inspector edit does to a panel that is in a block. */
+  blockScope: 'block' | 'panel';
   treeFilter: 'all' | 'modified' | 'problems';
   /** Save signed-in HUDs to the account in the background. */
   cloudAutosave: boolean;
@@ -45,6 +56,7 @@ export const useTf2HudPrefs = create<Tf2HudPrefs>()(
       treeOpen: true,
       rightOpen: true,
       rightTab: 'inspector',
+      blockScope: 'block',
       treeFilter: 'all',
       cloudAutosave: true,
       language: 'english',

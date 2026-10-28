@@ -5,11 +5,11 @@
  */
 'use client';
 
-import { Code2, Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
+import { Code2, Eye, EyeOff, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { kvRemove, kvSet } from '@/lib/tf2-hud/kv/edit';
-import { PROPERTY_NAMES, ALIGNMENTS } from '@/lib/tf2-hud/kv/completions';
+import { PROPERTY_NAMES } from '@/lib/tf2-hud/kv/completions';
 import { propsOf, activeEntries } from '@/lib/tf2-hud/kv/props';
 import { kvAt } from '@/lib/tf2-hud/kv/query';
 import { varsFromState } from '@/lib/tf2-hud/fixtures';
@@ -23,15 +23,21 @@ import {
 import { setSchemeColor } from '@/lib/tf2-hud/scheme/edit';
 import { explainDim } from '@/lib/tf2-hud/scheme/inspect';
 import { COND_ENVS } from '@/lib/tf2-hud/scheme/cond';
-import { borderOf } from '@/lib/tf2-hud/scheme/scheme';
+import {
+  blockOfNode,
+  editMemberValue,
+  resetOverride,
+  useBlocksDoc,
+} from '@/lib/tf2-hud/blocks/actions';
+import { isSharable } from '@/lib/tf2-hud/blocks/types';
+import { useTf2HudPrefs } from '@/lib/tf2-hud/prefs';
 import { useEditor } from '@/lib/tf2-hud/store';
 import { useLocalisation } from '@/lib/tf2-hud/use-scene';
-import { BorderSwatch } from './border-swatch';
-import { ColorField } from './ColorPicker';
-import { FontField } from './FontPicker';
 import ImageThumb from './ImageThumb';
 import { useSceneContext } from './scene-context';
-import { Btn, EmptyNote, IconBtn, PanelHead, Pill, SelectField, TextField, Toggle } from './ui';
+import BlockBar from './BlockBar';
+import { BOOL_KEYS, PropControl, propKind } from './PropControl';
+import { Btn, EmptyNote, IconBtn, PanelHead, Pill, SelectField, TextField } from './ui';
 
 const LAYOUT = ['xpos', 'ypos', 'wide', 'tall', 'zpos'] as const;
 const TEXT = [
@@ -57,7 +63,6 @@ const KNOWN = new Set<string>(
     k.toLowerCase(),
   ),
 );
-const BOOL_KEYS = new Set(['visible', 'enabled', 'wrap', 'centerwrap', 'scaleimage']);
 
 export default function Inspector() {
   const { t } = useTranslation('c-tf2-hud');
@@ -74,6 +79,8 @@ export default function Inspector() {
   const setFocusProp = useEditor((s) => s.setFocusProp);
   const node = scene?.nodes.find((n) => n.id === selectedId);
   const [adding, setAdding] = useState('');
+  const blocksDoc = useBlocksDoc();
+  const blockScope = useTf2HudPrefs((s) => s.blockScope);
 
   const env = COND_ENVS[view.env];
   const text = node ? readText(node.file) : undefined;
@@ -101,12 +108,23 @@ export default function Inspector() {
   const keyFor = (base: string) =>
     view.minmode && props.has(`${base}_minmode`) ? `${base}_minmode` : base;
   const get = (base: string) => props.get(keyFor(base));
-  const set = (base: string, value: string) =>
+  const inBlock = blockOfNode(blocksDoc, node);
+  const pinnedHere = (key: string) =>
+    inBlock?.member.pinned.some((p) => p.toLowerCase() === key.toLowerCase()) ?? false;
+  const set = (base: string, value: string) => {
+    // A panel in a block: the edit goes to the block (all its panels) or, by the author's choice,
+    // only to this panel, which then remembers that it overrides. A key already overridden is just
+    // this panel's.
+    if (inBlock && isSharable(base) && !pinnedHere(base)) {
+      editMemberValue(inBlock.block.id, inBlock.member, base, value, blockScope);
+      return;
+    }
     writeText(
       node.file,
       kvSet(text, [...node.keyPath, keyFor(base)], value, { env }),
       `inspect:${node.id}:${base}`,
     );
+  };
   const remove = (key: string) =>
     writeText(node.file, kvRemove(text, [...node.keyPath, key], { env }));
 
@@ -119,16 +137,6 @@ export default function Inspector() {
       writeText('resource/clientscheme.res', setSchemeColor(schemeText, name, literal));
     }
   };
-  const colorField = (key: string) => (
-    <ColorField
-      value={get(key) ?? ''}
-      onChange={(v) => set(key, v)}
-      scheme={scheme}
-      label={key}
-      onCreateSchemeColor={writeScheme}
-    />
-  );
-
   const screenH = scene?.screen.h ?? 1080;
   const scale = screenH / 480;
   const parentRect = (node.parentId && scene?.nodes.find((n) => n.id === node.parentId)?.rect) || {
@@ -142,96 +150,34 @@ export default function Inspector() {
   const field = (key: string) => {
     const lower = key.toLowerCase();
     const value = get(key) ?? '';
-    let control: React.ReactNode;
     let detail: string | undefined;
     let detailNode: React.ReactNode;
-    if (BOOL_KEYS.has(lower)) {
-      control = (
-        <Toggle
-          label={key}
-          checked={value !== '' && value !== '0'}
-          onChange={(v) => set(key, v ? '1' : '0')}
-        />
-      );
-    } else if (lower === 'font') {
-      control = (
-        <FontField
-          value={value}
-          onChange={(v) => set(key, v)}
-          scheme={scheme}
-          screenH={screenH}
-          label={key}
-        />
-      );
-    } else if (lower === 'textalignment') {
-      control = (
-        <SelectField
-          aria-label={key}
-          value={value || 'west'}
-          onChange={(e) => set(key, e.target.value)}
-        >
-          {ALIGNMENTS.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </SelectField>
-      );
-    } else if (lower === 'border') {
-      const def = borderOf(scheme, value);
-      control = (
-        <div className="min-w-0 space-y-1">
-          <SelectField
-            aria-label={key}
-            value={value.toLowerCase()}
-            onChange={(e) => set(key, e.target.value)}
-          >
-            <option value="">{t('none', { defaultValue: '(none)' })}</option>
-            {value && !def ? <option value={value.toLowerCase()}>{value} ⚠</option> : null}
-            {[...scheme.borders.keys()].sort().map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </SelectField>
-          {def ? <BorderSwatch border={def} scheme={scheme} /> : null}
-        </div>
-      );
-    } else if (lower.includes('color')) {
-      control = colorField(key);
-    } else if (lower === 'paintbackgroundtype') {
-      control = (
-        <SelectField
-          aria-label={key}
-          value={value || '0'}
-          onChange={(e) => set(key, e.target.value)}
-        >
-          <option value="0">{t('bg-none', { defaultValue: '0 — none' })}</option>
-          <option value="1">{t('bg-filled', { defaultValue: '1 — filled' })}</option>
-          <option value="2">{t('bg-rounded', { defaultValue: '2 — rounded' })}</option>
-        </SelectField>
-      );
-    } else {
-      const isDim = lower === 'xpos' || lower === 'ypos' || lower === 'wide' || lower === 'tall';
-      const focusOn = () => setFocusProp({ nodeId: node.id, key: lower as 'xpos' });
-      control = (
-        <TextField
-          aria-label={key}
-          value={value}
-          onChange={(e) => set(key, e.target.value)}
-          className={isDim ? 'font-mono' : undefined}
-          placeholder={LAYOUT.includes(key as never) ? '0' : undefined}
-          {...(isDim
+    const isDim = lower === 'xpos' || lower === 'ypos' || lower === 'wide' || lower === 'tall';
+    const focusOn = () => setFocusProp({ nodeId: node.id, key: lower as 'xpos' });
+    const control = (
+      <PropControl
+        propKey={key}
+        value={value}
+        onChange={(v) => set(key, v)}
+        scheme={scheme}
+        screenH={screenH}
+        onCreateSchemeColor={writeScheme}
+        placeholder={LAYOUT.includes(key as never) ? '0' : undefined}
+        textProps={
+          isDim
             ? {
+                className: 'font-mono',
                 onFocus: focusOn,
                 onBlur: () => setFocusProp(null),
                 onPointerEnter: focusOn,
                 onPointerLeave: () =>
                   document.activeElement?.tagName !== 'INPUT' && setFocusProp(null),
               }
-            : {})}
-        />
-      );
+            : undefined
+        }
+      />
+    );
+    if (propKind(key) === 'text') {
       if (isDim) {
         const e = explainDim(
           lower as 'xpos',
@@ -251,9 +197,32 @@ export default function Inspector() {
     return (
       <div key={key} className="space-y-0.5">
         <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-2">
-          <span className="truncate text-xs text-(--app-text-muted)" title={keyFor(key)}>
-            {key}
-            {keyFor(key) !== key ? <span className="text-(--app-text-dim)"> ·min</span> : null}
+          <span className="flex min-w-0 items-center gap-1 text-xs text-(--app-text-muted)">
+            <span className="truncate" title={keyFor(key)}>
+              {key}
+              {keyFor(key) !== key ? <span className="text-(--app-text-dim)"> ·min</span> : null}
+            </span>
+            {inBlock && isSharable(key) && pinnedHere(key) ? (
+              <button
+                type="button"
+                className="inline-flex shrink-0 items-center text-(--app-info)"
+                title={t('override-reset', {
+                  defaultValue: 'Overrides the block. Click to follow the block again.',
+                })}
+                aria-label={t('override-reset-label', {
+                  defaultValue: 'Follow the block again: {{key}}',
+                  key,
+                })}
+                onClick={() => resetOverride(inBlock.block.id, inBlock.member, key)}
+              >
+                <RotateCcw className="size-3" aria-hidden />
+              </button>
+            ) : inBlock && isSharable(key) && key in inBlock.block.shared ? (
+              <span
+                className="size-1.5 shrink-0 rounded-full bg-(--app-accent)"
+                title={t('follows-block', { defaultValue: 'Follows the block' })}
+              />
+            ) : null}
           </span>
           {control}
         </div>
@@ -321,6 +290,7 @@ export default function Inspector() {
             {node.file.replace('resource/', '')}
           </span>
         </div>
+        <BlockBar node={node} doc={blocksDoc} inBlock={inBlock} />
         <p className="text-[11px] text-(--app-text-dim)">
           {Math.round(node.rect.w)}×{Math.round(node.rect.h)} px at ({Math.round(node.rect.x)},{' '}
           {Math.round(node.rect.y)})

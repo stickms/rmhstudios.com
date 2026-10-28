@@ -5,6 +5,7 @@
 
 import { Download } from 'lucide-react';
 import { useState } from 'react';
+import { BLOCKS_FILE } from '@/lib/tf2-hud/blocks/types';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { changedFiles } from '@/lib/tf2-hud/project/model';
@@ -26,6 +27,8 @@ export default function ExportDialog({
   const exportBlob = useEditor((s) => s.exportBlob);
   const [scope, setScope] = useState<ExportScope>('full');
   const [info, setInfo] = useState(true);
+  const hasBlocks = useEditor((s) => s.overlay.has(BLOCKS_FILE));
+  const [editorData, setEditorData] = useState(false);
   const [busy, setBusy] = useState<{ done: number; total: number } | null>(null);
 
   const changed = changedFiles(overlay, baseIndex).length;
@@ -36,6 +39,7 @@ export default function ExportDialog({
     try {
       const blob = await exportBlob(scope, {
         includeInfoVdf: info,
+        includeEditorData: editorData,
         onProgress: (done, total) => setBusy({ done, total }),
       });
       const url = URL.createObjectURL(blob);
@@ -139,6 +143,24 @@ export default function ExportDialog({
             onChange={setInfo}
           />
         </div>
+        {hasBlocks ? (
+          <div className="flex items-center justify-between gap-3 text-sm text-(--app-text)">
+            <span>
+              {t('include-blocks', { defaultValue: 'Include block data' })}
+              <span className="block text-xs text-(--app-text-muted)">
+                {t('include-blocks-hint', {
+                  defaultValue:
+                    'Lets this editor restore your blocks when the zip is imported. The game ignores it.',
+                })}
+              </span>
+            </span>
+            <Toggle
+              label={t('include-blocks', { defaultValue: 'Include block data' })}
+              checked={editorData}
+              onChange={setEditorData}
+            />
+          </div>
+        ) : null}
       </fieldset>
       <p className="mt-3 rounded-(--app-radius-sm) bg-(--app-bg) p-2 font-mono text-[11px] text-(--app-text-dim)">
         {folder}.zip → {folder}/resource, {folder}/scripts, {folder}/materials, {folder}/sound,
