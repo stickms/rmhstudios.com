@@ -540,3 +540,26 @@ func TestSlugify(t *testing.T) {
 		}
 	}
 }
+
+// A timed-out probe names the phase it was stuck in, so an alert can tell a
+// resolver stall from a handshake stall from a slow handler.
+func TestStalledInNamesTheStuckPhase(t *testing.T) {
+	now := time.Now()
+	var z time.Time
+	cases := []struct {
+		name string
+		got  string
+		want string
+	}{
+		{"dns", stalledIn(now, z, z, z, z, z, z), " (stalled in DNS lookup)"},
+		{"connect", stalledIn(now, now, now, z, z, z, z), " (stalled connecting)"},
+		{"tls", stalledIn(now, now, now, now, now, z, z), " (stalled in TLS handshake)"},
+		{"server", stalledIn(now, now, now, now, now, now, z), " (connected; no response from the server)"},
+		{"nothing started", stalledIn(z, z, z, z, z, z, z), ""},
+	}
+	for _, c := range cases {
+		if c.got != c.want {
+			t.Errorf("%s: got %q, want %q", c.name, c.got, c.want)
+		}
+	}
+}

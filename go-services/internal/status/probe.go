@@ -342,6 +342,25 @@ func freshClient(timeout time.Duration) *http.Client {
 	return &http.Client{Timeout: timeout, Transport: tr}
 }
 
+// stalledIn names the phase a timed-out request was still waiting in, as a
+// suffix for the timeout detail: "timeout after 4000ms" alone cannot tell a
+// resolver stall from a handshake stall from a slow handler, and each points at
+// a different part of the stack. Phases are checked in the order a request
+// passes through them; a phase that started but never finished is the stall.
+func stalledIn(dnsStart, dnsDone, connStart, connDone, tlsStart, tlsDone, firstByte time.Time) string {
+	switch {
+	case !dnsStart.IsZero() && dnsDone.IsZero():
+		return " (stalled in DNS lookup)"
+	case !connStart.IsZero() && connDone.IsZero():
+		return " (stalled connecting)"
+	case !tlsStart.IsZero() && tlsDone.IsZero():
+		return " (stalled in TLS handshake)"
+	case firstByte.IsZero() && (!connDone.IsZero() || !dnsDone.IsZero()):
+		return " (connected; no response from the server)"
+	}
+	return ""
+}
+
 // ProbeOnce fires a parallel HTTP GET for every target and records results.
 func (p *Prober) ProbeOnce(ctx context.Context) {
 	cycleStart := time.Now()
@@ -623,7 +642,8 @@ func probe(ctx context.Context, client *http.Client, t Target) (ServiceStatus, P
 		ss.Status = StatusDown
 		pd.Category = classifyErr(err)
 		if pd.Category == CatTimeout {
-			ss.Detail = fmt.Sprintf("timeout after %dms", client.Timeout.Milliseconds())
+			ss.Detail = fmt.Sprintf("timeout after %dms", client.Timeout.Milliseconds()) +
+				stalledIn(dnsStart, dnsDone, connStart, connDone, tlsStart, tlsDone, firstByte)
 		} else {
 			ss.Detail = err.Error()
 		}
