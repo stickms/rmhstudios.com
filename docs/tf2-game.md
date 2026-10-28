@@ -30,7 +30,8 @@ storage, like the loadout builder's models (see [TF2 Hub](tf2-hub.md)).
 | `lib/tf2-game/audio/`             | Sound playback over `getAudioContext()`.                                                                                                                                   |
 | `lib/tf2-game/client/`            | The browser game loop: input, local "listen server" worker for offline play, connection to the hub for online play.                                                      |
 | `components/tf2-game/`            | React UI: the play page, HUD, menus (team, class, scoreboard, settings).                                                                                                   |
-| `server/socket-server/handlers/tf2-game.ts` | Room manager on the hub. Each match runs in a `worker_threads` worker (`lib/tf2-game/server/match-worker.ts`) so the hub's event loop never simulates.            |
+| `lib/tf2-game/server/`            | Match hosting: the `MatchHost` contract the simulation implements (`match-host.ts`), its one entry point `createTf2Match` (`create-match.ts`), the fixed-step loop (`match-runner.ts`), the worker entry (`match-worker.server.ts`) and the hub's thread pool (`pool.server.ts`). |
+| `server/socket-server/handlers/tf2-game.ts` | Room manager on the hub (`tf2:*` events, `lib/tf2-game/net/events.ts`). Each match runs on a `worker_threads` worker (`lib/tf2-game/server/match-worker.server.ts`) so the hub's event loop never simulates.            |
 | `scripts/tf2-game/`               | Asset pipeline: map packages, materials, props, sounds, view models, particles.                                                                                           |
 
 ## Conventions
@@ -48,6 +49,33 @@ storage, like the loadout builder's models (see [TF2 Hub](tf2-hub.md)).
 - **Environment-agnostic.** `core/`, `formats/`, `world/`, `data/`, `sim/`,
   `bots/` and `net/` import nothing from the DOM, React or Node — they run in a
   browser worker, the hub worker and Vitest alike.
+
+## Multiplayer hosting
+
+A match runs on a worker thread in the games hub's process, never on the hub's
+event loop. The pieces, outermost first:
+
+- **Room manager** (`server/socket-server/handlers/tf2-game.ts`): rooms, codes,
+  the map allowlist (`data/maps.ts`), payload validation, chat delivery, and the
+  relay — unreliable packets go out as volatile `tf2:snapshot`, reliable ones as
+  `tf2:events`. A room whose last player drops is held 30 s for a rejoin.
+- **Pool** (`server/pool.server.ts`): up to `TF2_MAX_WORKERS` threads (default
+  1), `TF2_MAX_MATCHES` matches (default 4), 24 humans per match, a heap cap per
+  thread (`TF2_WORKER_HEAP_MB`, default 256). A thread that crashes or stops
+  heartbeating for 10 s is terminated, its rooms are closed with
+  `server-error`, and a replacement is spawned after a backoff. A bundled hub
+  without the worker bundle refuses matches; running from source (tsx, Vitest)
+  it runs them in-process instead.
+- **Runner** (`server/match-runner.ts`): hosts several matches on one thread at
+  a drift-corrected 66.67 Hz (at most 5 catch-up ticks per wakeup; the rest of a
+  backlog is dropped and logged), one `postMessage` per tick with the buffers
+  transferred.
+- **Host** (`server/match-host.ts`): what the simulation implements.
+  `create-match.ts` is the only place a game is chosen; today it returns
+  `EchoMatchHost`, a transport test double.
+
+The worker is its own esbuild entry in both `package.json` `build` and the
+Dockerfile `server-builder` stage (which asserts the output exists).
 
 ## Tests
 

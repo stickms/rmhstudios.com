@@ -34,6 +34,7 @@ import { CALL_C2S } from '@/lib/call/events';
 import { GCALL_C2S } from '@/lib/groupcall/events';
 import { PARTY_C2S } from '@/lib/party/events';
 import { SPACE_C2S } from '@/lib/spaces/events';
+import { TF2_C2S } from '@/lib/tf2-game/net/events';
 
 const CONFIG_PATH = join(process.cwd(), 'server/socket-server/config.ts');
 
@@ -75,6 +76,7 @@ const CONTRACTS: ReadonlyArray<readonly [string, Readonly<Record<string, string>
   ['call', CALL_C2S],
   ['party', PARTY_C2S],
   ['space', SPACE_C2S],
+  ['tf2', TF2_C2S],
 ];
 
 describe('every inbound socket event is rate limited', () => {
