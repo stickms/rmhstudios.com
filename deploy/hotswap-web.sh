@@ -238,6 +238,19 @@ if [ "$healthy" != true ]; then
 fi
 log "${new_container} is healthy."
 
+# Warm the DB-backed public routes BEFORE traffic moves. The health gate above
+# only proves / and /api/ready; the smoke test hits /sitemap.xml and
+# /blog/rss.xml only after the flip, so their first (cold-cache, cold-pool)
+# requests were real traffic — including the status probes, which time out at
+# 4s and page oncall. Best-effort: a slow or failing warm-up never blocks a deploy.
+for warm_path in /sitemap.xml /blog/rss.xml; do
+    if curl -fsS -o /dev/null --max-time 20 "http://127.0.0.1:${target_port}${warm_path}"; then
+        log "  warmed ${warm_path}"
+    else
+        log "  WARNING: warm-up of ${warm_path} failed or timed out (continuing)"
+    fi
+done
+
 # Promote the restart policy to match the compose `web` service (compose run
 # defaults to `no`). Best-effort — a failure here shouldn't abort the flip.
 "$DOCKER_BIN" update --restart unless-stopped "$new_container" >/dev/null 2>&1 || true
