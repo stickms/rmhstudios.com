@@ -135,6 +135,7 @@ if (cmd === 'check') {
   let bytes = 0;
   let rawBytes = 0;
   let missing = 0;
+  let failedUploads = 0;
   // A mutable asset index can only advertise files after all its dependencies exist.
   const index = flags.get('index');
   const queue = plan.upload.filter((w) => w.name !== index);
@@ -147,7 +148,23 @@ if (cmd === 'check') {
     const raw = readFileSync(file);
     const ct = CONTENT_TYPE[path.extname(w.name).toLowerCase()] ?? 'application/octet-stream';
     const { body, contentEncoding } = encodeAsset(raw, ct);
-    await putObject(prefix + w.name, body, ct, contentEncoding);
+    // A forced run sends thousands of files over many minutes; one dropped connection must cost one
+    // retry, not the run (and the state file with it).
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await putObject(prefix + w.name, body, ct, contentEncoding);
+        break;
+      } catch (e) {
+        if (attempt === 5) {
+          failedUploads++;
+          console.error(
+            `upload failed after ${attempt} attempts: ${w.name}: ${(e as Error).message}`,
+          );
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
+      }
+    }
     rawBytes += raw.length;
     published[w.name] = { src: w.src, size: body.length };
     sent++;
@@ -187,7 +204,7 @@ if (cmd === 'check') {
       }
     }
   }
-  if (indexUpload && missing === 0) await upload(indexUpload);
+  if (indexUpload && missing === 0 && failedUploads === 0) await upload(indexUpload);
 
   let removed: string[] = [];
   if (bare.has('prune')) {
@@ -202,13 +219,18 @@ if (cmd === 'check') {
 
   // Only advance the build id when everything wanted is now published, so a
   // partial failure is retried on the next run instead of being skipped.
-  const complete = missing === 0;
+  const complete = missing === 0 && failedUploads === 0;
   const next = nextState(state, published, complete ? build : state.steamBuild, removed, builder);
   await putObject(stateKey, Buffer.from(JSON.stringify(next)), 'application/json');
   process.stdout.write(
     `uploaded ${sent} (${(rawBytes / 1024 / 1024).toFixed(1)} MiB → ${(bytes / 1024 / 1024).toFixed(1)} MiB stored after Brotli), unchanged ${plan.unchanged}, ` +
-      `not produced ${missing}, stale ${plan.stale.length}${bare.has('prune') ? ' (pruned)' : ' (kept)'}\n`,
+      `not produced ${missing}, failed ${failedUploads}, stale ${plan.stale.length}${bare.has('prune') ? ' (pruned)' : ' (kept)'}\n`,
   );
+  // The files that did go up are recorded above, so the next run only has the rest to send.
+  if (failedUploads) {
+    console.error(`${failedUploads} file(s) could not be uploaded; re-run to send them`);
+    process.exit(1);
+  }
 } else {
   console.error('usage: publish.ts gate|state|push …');
   process.exit(2);

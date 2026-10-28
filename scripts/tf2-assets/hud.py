@@ -15,7 +15,7 @@ import os
 import re
 
 from vpkfs import GameFS
-from srctex import parse_vmt
+from srctex import parse_vmt, texture_path
 
 KEEP_SCRIPTS = ["scripts/hudlayout.res", "scripts/hudanimations_manifest.txt",
                 "scripts/hudanimations_tf.txt", "scripts/mod_textures.txt"]
@@ -84,7 +84,7 @@ def main():
         _shader, kv = parse_vmt(files[v].decode("latin-1"))
         base = kv.get("$basetexture")
         if base:
-            take("materials/" + base.replace("\\", "/").lower() + ".vtf")
+            take(texture_path(base))
 
     os.makedirs(args.out, exist_ok=True)
     manifest_rows = []
