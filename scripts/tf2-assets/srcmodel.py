@@ -94,10 +94,12 @@ def read_mdl(mdl):
             "bodypart_names": bodypart_names}
 
 
-def spreads_over_bones(vvd, share=0.15):
-    """True when a model's vertices follow more than one bone in earnest: the second-heaviest bone carries at
-    least `share` of all the weight. A hat rides one bone; boots, gloves and capes follow a pair or more, which
-    a rigid attachment to a single bone cannot reproduce (both mantreads would sit on one foot)."""
+def spreads_over_bones(vvd, share=0.02):
+    """True when a model's vertices follow more than one bone: the second-heaviest bone carries at least
+    `share` of all the weight (2% by default, to ignore a stray vertex). The game bone-merges every wearable
+    onto the player's skeleton, so a model whose vertices follow several bones (boots, gloves, sleeves, a
+    jacket whose arms follow the arm bones) cannot be hung rigidly from one: both mantreads would sit on one
+    foot and sleeves would stay on the spine while the arms move. A hat that rides one bone stays rigid."""
     verts = read_vvd(vvd)
     if not len(verts):
         return False
