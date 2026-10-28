@@ -89,44 +89,24 @@ export function loadoutWarnings(
 }
 
 /**
- * The same loadout, made playable in the game: only the first three cosmetics (by slot), none
- * that overlaps one already kept, none repeated, and nothing the class cannot use. Weapons are
- * untouched. Returns the keys it dropped so the caller can say what changed.
+ * A test for whether equipping an item in cosmetic slot `key` would clash with something already worn in
+ * another cosmetic slot: the same item again, or one covering the same part of the body. The picker marks
+ * these tiles; it is the check `equipInto` acts on, stated without changing anything. Built once per
+ * loadout so testing every tile in a long list stays cheap.
  */
-export function legalize(
+export function clashesWithWorn(
   catalog: Catalog,
-  cls: TfClass,
   slots: LoadoutSlots,
-): { slots: LoadoutSlots; dropped: string[] } {
+  key: string,
+): (item: CatalogItem) => boolean {
+  if (!key.startsWith('cosmetic')) return () => false;
   const byId = new Map(catalog.items.map((i) => [i.id, i]));
-  const next: LoadoutSlots = {};
-  const dropped: string[] = [];
-  const kept: CatalogItem[] = [];
-  const keys = Object.keys(slots).sort((a, b) => {
-    const wa = a.startsWith('cosmetic') ? Number(a.slice(8)) : -1;
-    const wb = b.startsWith('cosmetic') ? Number(b.slice(8)) : -1;
-    return wa - wb;
-  });
-  for (const key of keys) {
-    const e = slots[key];
-    const item = byId.get(e.item);
-    if (!item) continue;
-    if (!key.startsWith('cosmetic')) {
-      if (slotFor(item, cls) === null) dropped.push(key);
-      else next[key] = e;
-      continue;
-    }
-    const ok =
-      slotFor(item, cls) !== null &&
-      kept.length < COSMETIC_SLOTS &&
-      !kept.some((k) => k.id === item.id || regionsConflict(k.r, item.r, catalog.conflicts));
-    if (ok) {
-      kept.push(item);
-      // Renumbered, so the kept cosmetics fill the first slots instead of leaving gaps.
-      next[`cosmetic${kept.length}`] = e;
-    } else dropped.push(key);
-  }
-  return { slots: next, dropped };
+  const others = Object.entries(slots)
+    .filter(([k]) => k !== key && k.startsWith('cosmetic'))
+    .map(([, e]) => byId.get(e.item))
+    .filter((i): i is CatalogItem => !!i);
+  return (item) =>
+    others.some((o) => o.id === item.id || regionsConflict(item.r, o.r, catalog.conflicts));
 }
 
 /**

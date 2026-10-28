@@ -49,6 +49,9 @@ export const QUALITIES = [
 ] as const;
 export type Quality = (typeof QUALITIES)[number];
 
+/** Body group name → the submodel to show (the schema's `player_bodygroups`). */
+export type Bodygroups = Record<string, number>;
+
 export interface CatalogItem {
   id: number;
   /** Display name. */
@@ -79,7 +82,12 @@ export interface CatalogItem {
   /** Inventory icon, relative to {@link ICON_BASE} (or an absolute URL). Present once the Steam schema has been merged. */
   i?: string;
   /** The styles a player can choose between (two or more), by the game's style key and name. */
-  st?: { k: number; n: string }[];
+  st?: { k: number; n: string; bg?: Bodygroups }[];
+  /**
+   * The class-body groups this cosmetic switches while worn, by the game's group name → the submodel it
+   * selects (`hat: 1` is the empty one, so the class's own hat disappears).
+   */
+  bg?: Bodygroups;
   /** The weapon key a war paint is looked up by (`weapon_<key>` prefab), on weapons that can take one. */
   wk?: string;
   /** Schema particle suffix selecting this weapon's own unusual PCF variants. */

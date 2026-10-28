@@ -67,20 +67,22 @@ import {
 import { hasDraft, loadDraft, saveDraft } from '@/lib/tf2-loadout/local-drafts';
 import { WEAR_NAMES } from '@/lib/tf2-loadout/fx';
 import {
+  clashesWithWorn,
   equipInto,
-  legalize,
   loadoutWarnings,
   stockLoadout,
   withSupportedOptions,
 } from '@/lib/tf2-loadout/rules';
 import type { AiAction } from '@/lib/tf2-loadout/ai-core';
 import { useCatalog, type CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
+import { prefetch } from '@/lib/tf2-loadout/prefetch';
+import { modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
 import ItemModelViewer from './ItemModelViewer';
 import ItemCustomizeModal from './ItemCustomizeModal';
 import LoadoutAssistant from './LoadoutAssistant';
 import { kitOf, warPaintOf } from '@/lib/tf2-loadout/warpaint';
 import { rarityColor, tierName } from '@/lib/tf2-loadout/rarity';
-import { tauntClip, useAnimIndex } from '@/lib/tf2-loadout/use-anims';
+import { animUrl, tauntClip, useAnimIndex } from '@/lib/tf2-loadout/use-anims';
 import PlayerViewer from './PlayerViewer';
 import {
   effectSpecOf,
@@ -413,18 +415,6 @@ function Builder({
     setAnnounce(t('announce-stock', { defaultValue: 'Back to the stock loadout.' }));
   };
 
-  const makePlayable = () => {
-    const fixed = legalize(catalog, cls, slots);
-    edit(fixed.slots);
-    setExtraCosmetics(0);
-    setAnnounce(
-      t('announce-playable', {
-        defaultValue: 'Removed {{count}} so the loadout fits the game.',
-        count: fixed.dropped.length,
-      }),
-    );
-  };
-
   // The assistant's suggestions land through the same rules as a tap on a tile.
   const applyActions = (actions: AiAction[]) => {
     let next: LoadoutSlots = { ...slots };
@@ -489,7 +479,7 @@ function Builder({
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 pb-16 pt-4">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 pb-16 pt-4 lg:h-dvh lg:flex-none lg:overflow-hidden lg:pb-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <TfTabs
           tabs={classTabs}
@@ -558,12 +548,14 @@ function Builder({
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
+      {/* On a wide screen the workspace is exactly the window: the player stays put, the slots under it and
+          the item picker beside it each scroll on their own, and the page never does. A phone scrolls the page. */}
+      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)]">
         <section
           aria-label={t('loadout-slots', { defaultValue: 'Loadout slots' })}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-4 lg:min-h-0"
         >
-          {/* The player sits right under the class bar; the options follow it. */}
+          {/* The player sits right under the class bar and stays in view; the options scroll under it. */}
           <PlayerViewer
             cls={cls}
             worn={worn}
@@ -571,80 +563,79 @@ function Builder({
             taunt={tauntItem}
             animation={animation}
             onAnimationChange={setAnimation}
+            className="lg:shrink-0"
           />
-          <RulesPanel
-            warnings={warnings}
-            idx={idx}
-            onFix={makePlayable}
-          />
-          <SlotGroup title={t('weapons', { defaultValue: 'Weapons' })}>
-            {weaponKeys.map((k) => (
-              <SlotCell
-                key={k}
-                slotKey={k}
-                label={slotLabel(k)}
-                idx={idx}
-                entry={slots[k]}
-                selected={selected === k}
-                onSelect={() => selectSlot(k)}
-                ready={ready}
-              />
-            ))}
-          </SlotGroup>
-          <SlotGroup title={t('cosmetics', { defaultValue: 'Cosmetics' })}>
-            {cosmeticKeys.map((k) => (
-              <SlotCell
-                key={k}
-                conflict={!!slots[k] && conflicting.has(slots[k]!.item)}
-                slotKey={k}
-                label={slotLabel(k)}
-                idx={idx}
-                entry={slots[k]}
-                selected={selected === k}
-                onSelect={() => selectSlot(k)}
-                ready={ready}
-              />
-            ))}
-            {cosmeticKeys.length < MAX_COSMETIC_SLOTS ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setExtraCosmetics(Math.max(0, cosmeticKeys.length - COSMETIC_SLOTS) + 1);
-                  setSelected(cosmeticKey(cosmeticKeys.length));
-                }}
-                className="flex aspect-square min-w-0 flex-col items-center justify-center gap-1 rounded-(--app-radius-sm) border border-dashed border-(--app-border) text-xs text-(--app-text-dim) hover:border-(--app-accent) hover:text-(--app-text)"
-              >
-                <Plus className="size-5" aria-hidden />
-                {t('add-cosmetic-slot', { defaultValue: 'Add slot' })}
-              </button>
-            ) : null}
-          </SlotGroup>
-          <SlotGroup title={t('action-and-taunts', { defaultValue: 'Action & taunts' })}>
-            {['action', ...TAUNT_KEYS].map((k) => (
-              <SlotCell
-                key={k}
-                slotKey={k}
-                label={slotLabel(k)}
-                idx={idx}
-                entry={slots[k]}
-                selected={selected === k}
-                onSelect={() => selectSlot(k)}
-                ready={ready}
-              />
-            ))}
-          </SlotGroup>
-          <p className="text-xs text-(--app-text-dim)">
-            {t('catalog-source', {
-              defaultValue: 'Items from {{source}}, updated automatically.',
-              source: catalog.source.label,
-            })}
-          </p>
+          <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pe-1">
+            <RulesPanel warnings={warnings} idx={idx} />
+            <SlotGroup title={t('weapons', { defaultValue: 'Weapons' })}>
+              {weaponKeys.map((k) => (
+                <SlotCell
+                  key={k}
+                  slotKey={k}
+                  label={slotLabel(k)}
+                  idx={idx}
+                  entry={slots[k]}
+                  selected={selected === k}
+                  onSelect={() => selectSlot(k)}
+                  ready={ready}
+                />
+              ))}
+            </SlotGroup>
+            <SlotGroup title={t('cosmetics', { defaultValue: 'Cosmetics' })}>
+              {cosmeticKeys.map((k) => (
+                <SlotCell
+                  key={k}
+                  conflict={!!slots[k] && conflicting.has(slots[k]!.item)}
+                  slotKey={k}
+                  label={slotLabel(k)}
+                  idx={idx}
+                  entry={slots[k]}
+                  selected={selected === k}
+                  onSelect={() => selectSlot(k)}
+                  ready={ready}
+                />
+              ))}
+              {cosmeticKeys.length < MAX_COSMETIC_SLOTS ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExtraCosmetics(Math.max(0, cosmeticKeys.length - COSMETIC_SLOTS) + 1);
+                    setSelected(cosmeticKey(cosmeticKeys.length));
+                  }}
+                  className="flex aspect-square min-w-0 flex-col items-center justify-center gap-1 rounded-(--app-radius-sm) border border-dashed border-(--app-border) text-xs text-(--app-text-dim) hover:border-(--app-accent) hover:text-(--app-text)"
+                >
+                  <Plus className="size-5" aria-hidden />
+                  {t('add-cosmetic-slot', { defaultValue: 'Add slot' })}
+                </button>
+              ) : null}
+            </SlotGroup>
+            <SlotGroup title={t('action-and-taunts', { defaultValue: 'Action & taunts' })}>
+              {['action', ...TAUNT_KEYS].map((k) => (
+                <SlotCell
+                  key={k}
+                  slotKey={k}
+                  label={slotLabel(k)}
+                  idx={idx}
+                  entry={slots[k]}
+                  selected={selected === k}
+                  onSelect={() => selectSlot(k)}
+                  ready={ready}
+                />
+              ))}
+            </SlotGroup>
+            <p className="text-xs text-(--app-text-dim)">
+              {t('catalog-source', {
+                defaultValue: 'Items from {{source}}, updated automatically.',
+                source: catalog.source.label,
+              })}
+            </p>
+          </div>
         </section>
 
         {isDesktop ? (
           <section
             aria-label={t('item-picker', { defaultValue: 'Item picker' })}
-            className="min-h-96 overflow-y-auto rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]"
+            className="min-h-96 overflow-y-auto overscroll-contain rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) lg:min-h-0"
           >
             {selected ? (
               <Picker
@@ -654,6 +645,7 @@ function Builder({
                 slotKey={selected}
                 label={slotLabel(selected)}
                 entry={slots[selected]}
+                slots={slots}
                 onEquip={(item) => equip(selected, item)}
                 onPatch={(change) => patch(selected, change)}
                 onClear={() => clear(selected)}
@@ -688,6 +680,7 @@ function Builder({
               slotKey={selected}
               label={slotLabel(selected)}
               entry={slots[selected]}
+              slots={slots}
               embedded
               onEquip={(item) => equip(selected, item)}
               onPatch={(change) => patch(selected, change)}
@@ -757,11 +750,9 @@ function Builder({
 function RulesPanel({
   warnings,
   idx,
-  onFix,
 }: {
   warnings: ReturnType<typeof loadoutWarnings>;
   idx: CatalogIndex;
-  onFix: () => void;
 }) {
   const { t } = useTranslation('c-tf2-hud');
   if (!warnings.length) return null;
@@ -777,9 +768,6 @@ function RulesPanel({
             {t('not-possible', { defaultValue: 'Not possible in the game' })}
           </p>
           <WarningList warnings={warnings} idx={idx} />
-          <Btn size="sm" className="mt-2" onClick={onFix}>
-            {t('make-playable', { defaultValue: 'Make it playable' })}
-          </Btn>
         </div>
       ) : null}
     </div>
@@ -871,6 +859,7 @@ function Picker({
   slotKey,
   label,
   entry,
+  slots,
   onEquip,
   onPatch,
   onClear,
@@ -882,6 +871,8 @@ function Picker({
   slotKey: LoadoutSlotKey;
   label: string;
   entry: LoadoutEntry | undefined;
+  /** The whole loadout, to mark the items that would clash with what is already worn. */
+  slots: LoadoutSlots;
   onEquip: (item: CatalogItem) => void;
   onPatch: (change: Partial<LoadoutEntry>) => void;
   onClear: () => void;
@@ -897,6 +888,28 @@ function Picker({
   const [previewing, setPreviewing] = useState<CatalogItem | null>(null);
 
   const all = useMemo(() => itemsForSlot(catalog, cls, slotKey), [catalog, cls, slotKey]);
+  // Dwelling on a tile (or tabbing to it) is the cue that it may be equipped next: fetch its model, or the
+  // taunt's animation, now so the equip is instant. A quick sweep across the grid fetches nothing.
+  const modelIds = useModelIds();
+  const anims = useAnimIndex();
+  const dwell = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const warm = (it: CatalogItem) => {
+    clearTimeout(dwell.current);
+    dwell.current = setTimeout(() => {
+      if (it.s === 'taunt') {
+        const clip = tauntClip(anims, it.id, cls);
+        if (clip) prefetch(animUrl(cls, clip));
+        return;
+      }
+      const name = modelIds ? pickModel(modelIds, modelItemId(it), cls) : null;
+      if (name) prefetch(modelUrl(name));
+    }, 200);
+  };
+  useEffect(() => () => clearTimeout(dwell.current), []);
+  const clashes = useMemo(
+    () => clashesWithWorn(catalog, slots, slotKey),
+    [catalog, slots, slotKey],
+  );
   const types = useMemo(() => [...new Set(all.map((i) => i.t).filter(Boolean))].sort(), [all]);
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -1093,8 +1106,15 @@ function Picker({
               <li
                 key={it.id}
                 className="flex min-w-0 flex-col gap-1 [contain-intrinsic-size:auto_9rem] [content-visibility:auto]"
+                onPointerEnter={() => warm(it)}
+                onFocus={() => warm(it)}
               >
-                <ItemTile item={it} selected={active} onClick={() => onEquip(it)} />
+                <ItemTile
+                  item={it}
+                  selected={active}
+                  conflict={!active && clashes(it)}
+                  onClick={() => onEquip(it)}
+                />
                 <div className="flex items-center gap-1">
                   <span
                     aria-hidden

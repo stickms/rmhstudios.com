@@ -180,6 +180,9 @@ describe('styles and war paint fields', () => {
   {
     "10" { "name" "Styled Hat" "prefab" "hat" "item_name" "#T_Styled" "used_by_classes" { "scout" "1" }
       "visuals" { "styles" { "0" { "name" "#S_A" } "1" { "name" "#S_B" "skin" "1" } "2" { "name" "Hidden" "selectable" "0" } } } }
+    "16" { "name" "Capped Hat" "prefab" "hat" "item_name" "#T_Hat" "used_by_classes" { "scout" "1" }
+      "visuals" { "player_bodygroups" { "hat" "1" "headphones" "1" "grenades" "0" }
+        "styles" { "0" { "name" "#S_A" } "1" { "name" "#S_B" "additional_hidden_bodygroups" { "shoes" "1" } } } } }
     "11" { "name" "One Style Hat" "prefab" "hat" "item_name" "#T_One" "used_by_classes" { "scout" "1" }
       "visuals" { "styles" { "0" { "name" "#S_A" } } } }
     "12" { "name" "Gun" "prefab" "gun weapon_smg" "item_name" "#T_Gun" "used_by_classes" { "scout" "1" } }
@@ -227,6 +230,16 @@ describe('styles and war paint fields', () => {
       { k: 1, n: 'Fancy' },
     ]);
     expect(cat.items.find((i) => i.id === 11)?.st).toBeUndefined();
+  });
+
+  it('records the class-body groups a cosmetic hides, per style, leaving the default out', () => {
+    const hat = cat.items.find((i) => i.id === 16)!;
+    expect(hat.bg).toEqual({ hat: 1, headphones: 1 });
+    expect(hat.st).toEqual([
+      { k: 0, n: 'Plain' },
+      { k: 1, n: 'Fancy', bg: { shoes: 1 } },
+    ]);
+    expect(cat.items.find((i) => i.id === 10)?.bg).toBeUndefined();
   });
 
   it('validates a style against the item', () => {

@@ -6,7 +6,7 @@
  */
 
 import { brotliDecompressSync } from 'node:zlib';
-import { getObjectEncoded } from '@/lib/storage/s3.server';
+import { readStored } from './stored-cache.server';
 
 const PREFIX = 'tf2-paintkits/';
 
@@ -28,7 +28,7 @@ export async function readPaintkitFile(
 ): Promise<{ body: Buffer; contentEncoding?: 'br'; contentType: string } | null> {
   if (!isSafePaintkitPath(path)) return null;
   const contentType = TYPES[path.slice(path.lastIndexOf('.') + 1)];
-  const stored = await getObjectEncoded(PREFIX + path);
+  const stored = await readStored(PREFIX + path);
   if (!stored) return null;
   if (stored.contentEncoding !== 'br') return { body: stored.body, contentType };
   if (/\bbr\b/.test(acceptEncoding))
