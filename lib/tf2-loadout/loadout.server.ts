@@ -25,6 +25,7 @@ import { getCatalogObject } from './catalog.server';
 import {
   acceptedSlots,
   slotFor,
+  effectAppliesTo,
   TF_CLASSES,
   type Catalog,
   type LoadoutSlots,
@@ -106,7 +107,7 @@ async function uniqueSlug(title: string): Promise<string> {
 export function validateSlots(catalog: Catalog, tfClass: TfClass, slots: LoadoutSlots): void {
   const byId = new Map(catalog.items.map((i) => [i.id, i]));
   const paints = new Set(catalog.paints.map((p) => p.id));
-  const effects = new Set(catalog.effects.map((e) => e.id));
+  const effects = new Map(catalog.effects.map((e) => [e.id, e]));
   const kits = new Map((catalog.kits ?? []).map((k) => [k.id, k]));
 
   for (const [key, entry] of Object.entries(slots)) {
@@ -120,7 +121,7 @@ export function validateSlots(catalog: Catalog, tfClass: TfClass, slots: Loadout
       throw new LoadoutError(`${item.n} cannot take that paint`, 400);
     }
     if (entry.effect !== undefined) {
-      if (!(slot === 'head' || slot === 'misc' || slot === 'taunt') || !effects.has(entry.effect)) {
+      if (!effectAppliesTo(effects.get(entry.effect), item, slot)) {
         throw new LoadoutError(`${item.n} cannot take that effect`, 400);
       }
     }

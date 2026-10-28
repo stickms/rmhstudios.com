@@ -1129,6 +1129,7 @@ import { Route as ApiTf2LoadoutLoadoutsIdRouteImport } from './routes/api/tf2-lo
 import { Route as ApiTf2LoadoutModelsIndexRouteImport } from './routes/api/tf2-loadout/models/index'
 import { Route as ApiTf2LoadoutModelsIdRouteImport } from './routes/api/tf2-loadout/models/$id'
 import { Route as ApiTf2LoadoutPaintkitsSplatRouteImport } from './routes/api/tf2-loadout/paintkits/$'
+import { Route as ApiTf2LoadoutParticlesSplatRouteImport } from './routes/api/tf2-loadout/particles/$'
 import { Route as ApiThemesIdBuyRouteImport } from './routes/api/themes/$id.buy'
 import { Route as ApiThemesIdPublishRouteImport } from './routes/api/themes/$id.publish'
 import { Route as ApiTournamentsIdCancelRouteImport } from './routes/api/tournaments/$id/cancel'
@@ -7059,6 +7060,12 @@ const ApiTf2LoadoutPaintkitsSplatRoute =
     path: '/api/tf2-loadout/paintkits/$',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiTf2LoadoutParticlesSplatRoute =
+  ApiTf2LoadoutParticlesSplatRouteImport.update({
+    id: '/api/tf2-loadout/particles/$',
+    path: '/api/tf2-loadout/particles/$',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiThemesIdBuyRoute = ApiThemesIdBuyRouteImport.update({
   id: '/buy',
   path: '/buy',
@@ -9162,6 +9169,7 @@ export interface FileRoutesByFullPath {
   '/api/tf2-loadout/loadouts/$id': typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
   '/api/tf2-loadout/models/$id': typeof ApiTf2LoadoutModelsIdRoute
   '/api/tf2-loadout/paintkits/$': typeof ApiTf2LoadoutPaintkitsSplatRoute
+  '/api/tf2-loadout/particles/$': typeof ApiTf2LoadoutParticlesSplatRoute
   '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
   '/api/themes/$id/publish': typeof ApiThemesIdPublishRoute
   '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
@@ -10445,6 +10453,7 @@ export interface FileRoutesByTo {
   '/api/tf2-loadout/loadouts/$id': typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
   '/api/tf2-loadout/models/$id': typeof ApiTf2LoadoutModelsIdRoute
   '/api/tf2-loadout/paintkits/$': typeof ApiTf2LoadoutPaintkitsSplatRoute
+  '/api/tf2-loadout/particles/$': typeof ApiTf2LoadoutParticlesSplatRoute
   '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
   '/api/themes/$id/publish': typeof ApiThemesIdPublishRoute
   '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
@@ -11757,6 +11766,7 @@ export interface FileRoutesById {
   '/api/tf2-loadout/loadouts/$id': typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
   '/api/tf2-loadout/models/$id': typeof ApiTf2LoadoutModelsIdRoute
   '/api/tf2-loadout/paintkits/$': typeof ApiTf2LoadoutPaintkitsSplatRoute
+  '/api/tf2-loadout/particles/$': typeof ApiTf2LoadoutParticlesSplatRoute
   '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
   '/api/themes/$id/publish': typeof ApiThemesIdPublishRoute
   '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
@@ -13069,6 +13079,7 @@ export interface FileRouteTypes {
     | '/api/tf2-loadout/loadouts/$id'
     | '/api/tf2-loadout/models/$id'
     | '/api/tf2-loadout/paintkits/$'
+    | '/api/tf2-loadout/particles/$'
     | '/api/themes/$id/buy'
     | '/api/themes/$id/publish'
     | '/api/tournaments/$id/cancel'
@@ -14352,6 +14363,7 @@ export interface FileRouteTypes {
     | '/api/tf2-loadout/loadouts/$id'
     | '/api/tf2-loadout/models/$id'
     | '/api/tf2-loadout/paintkits/$'
+    | '/api/tf2-loadout/particles/$'
     | '/api/themes/$id/buy'
     | '/api/themes/$id/publish'
     | '/api/tournaments/$id/cancel'
@@ -15663,6 +15675,7 @@ export interface FileRouteTypes {
     | '/api/tf2-loadout/loadouts/$id'
     | '/api/tf2-loadout/models/$id'
     | '/api/tf2-loadout/paintkits/$'
+    | '/api/tf2-loadout/particles/$'
     | '/api/themes/$id/buy'
     | '/api/themes/$id/publish'
     | '/api/tournaments/$id/cancel'
@@ -16587,6 +16600,7 @@ export interface RootRouteChildren {
   ApiTf2LoadoutLoadoutsIdRoute: typeof ApiTf2LoadoutLoadoutsIdRouteWithChildren
   ApiTf2LoadoutModelsIdRoute: typeof ApiTf2LoadoutModelsIdRoute
   ApiTf2LoadoutPaintkitsSplatRoute: typeof ApiTf2LoadoutPaintkitsSplatRoute
+  ApiTf2LoadoutParticlesSplatRoute: typeof ApiTf2LoadoutParticlesSplatRoute
   ApiTrashKindIdRoute: typeof ApiTrashKindIdRoute
   ApiUsersIdWishlistRoute: typeof ApiUsersIdWishlistRoute
   ApiV1LeaderboardsGameRoute: typeof ApiV1LeaderboardsGameRoute
@@ -24563,6 +24577,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTf2LoadoutPaintkitsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tf2-loadout/particles/$': {
+      id: '/api/tf2-loadout/particles/$'
+      path: '/api/tf2-loadout/particles/$'
+      fullPath: '/api/tf2-loadout/particles/$'
+      preLoaderRoute: typeof ApiTf2LoadoutParticlesSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/themes/$id/buy': {
       id: '/api/themes/$id/buy'
       path: '/buy'
@@ -28807,6 +28828,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTf2LoadoutLoadoutsIdRoute: ApiTf2LoadoutLoadoutsIdRouteWithChildren,
   ApiTf2LoadoutModelsIdRoute: ApiTf2LoadoutModelsIdRoute,
   ApiTf2LoadoutPaintkitsSplatRoute: ApiTf2LoadoutPaintkitsSplatRoute,
+  ApiTf2LoadoutParticlesSplatRoute: ApiTf2LoadoutParticlesSplatRoute,
   ApiTrashKindIdRoute: ApiTrashKindIdRoute,
   ApiUsersIdWishlistRoute: ApiUsersIdWishlistRoute,
   ApiV1LeaderboardsGameRoute: ApiV1LeaderboardsGameRoute,

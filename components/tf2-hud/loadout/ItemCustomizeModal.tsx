@@ -25,15 +25,13 @@ import {
   type LoadoutEntry,
   type TfClass,
   modelItemId,
+  effectCategory,
+  effectsForItem,
 } from '@/lib/tf2-loadout/catalog-types';
-import {
-  compactPlacement,
-  effectProfile,
-  resolvePlacement,
-  WEAR_NAMES,
-} from '@/lib/tf2-loadout/fx';
+import { compactPlacement, resolvePlacement, WEAR_NAMES } from '@/lib/tf2-loadout/fx';
 import type { CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import { warPaintOf } from '@/lib/tf2-loadout/warpaint';
+import { useParticleBundle } from '@/lib/tf2-loadout/particles/client';
 import ItemModelViewer from './ItemModelViewer';
 
 export default function ItemCustomizeModal({
@@ -58,7 +56,7 @@ export default function ItemCustomizeModal({
   const { t } = useTranslation('c-tf2-hud');
   const { catalog } = idx;
   const slot = slotFor(item, cls);
-  const canEffect = slot === 'head' || slot === 'misc' || slot === 'taunt';
+  const canEffect = effectCategory(item, slot) !== null;
   const canWarPaint = slot === 'primary' || slot === 'secondary' || slot === 'melee';
   // A decorated weapon has its pattern built in: the player sets its wear and seed, not the kit.
   const decorated = !!item.sk;
@@ -69,8 +67,8 @@ export default function ItemCustomizeModal({
     [catalog.paints],
   );
   const effectOptions = useMemo(
-    () => catalog.effects.map((f) => ({ id: f.id, label: f.n })),
-    [catalog.effects],
+    () => effectsForItem(catalog, item, cls).map((f) => ({ id: f.id, label: f.n })),
+    [catalog, item, cls],
   );
   // Only the war paints that exist for this weapon.
   const kitOptions = useMemo(
@@ -82,10 +80,9 @@ export default function ItemCustomizeModal({
   );
 
   const effect = entry.effect !== undefined ? idx.effect(entry.effect) : undefined;
+  const particle = useParticleBundle(effect?.id, item.ps);
   const placement = resolvePlacement(entry.fx, kind);
-  const effectSpec = effect
-    ? { profile: effectProfile(effect.n, effect.id), placement }
-    : undefined;
+  const effectSpec = effect ? { id: effect.id, placement, suffix: item.ps } : undefined;
   const setPlacement = (next: Partial<typeof placement>) =>
     onPatch({ fx: compactPlacement({ ...placement, ...next }, kind) });
   const pct = (v: number) => `${Math.round(v * 100)}%`;
@@ -117,12 +114,17 @@ export default function ItemCustomizeModal({
             effect={effectSpec}
             className="h-64 md:h-72"
           />
-          {effect ? (
+          {effect && particle.status !== 'ready' ? (
             <p className="text-[11px] text-(--app-text-dim)">
-              {t('effect-approx', {
-                defaultValue:
-                  "The preview draws an effect with the same look as the game's; the game's own particles differ in detail.",
-              })}
+              {particle.status === 'loading'
+                ? t('effect-loading', { defaultValue: 'Loading the game’s particle effect…' })
+                : particle.status === 'error'
+                  ? t('effect-load-error', {
+                      defaultValue: 'The particle effect could not be loaded.',
+                    })
+                  : t('effect-not-synced', {
+                      defaultValue: 'This particle effect has not been synced yet.',
+                    })}
             </p>
           ) : null}
         </div>

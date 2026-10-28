@@ -14,7 +14,7 @@ import StudioLight from './StudioLight';
 import { ResetViewButton, ViewerOrbit, rememberView, useResetView } from './viewer-controls';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { Box3, MathUtils, Sphere, Vector3, type PerspectiveCamera } from 'three';
+import { Box3, MathUtils, Sphere, Vector3, type Object3D, type PerspectiveCamera } from 'three';
 import EffectParticles, { type EffectSpec } from './EffectParticles';
 import { applyPaintTexture, applyTint, cloneWithMaterials, type WarPaint } from './model-utils';
 import { useWarPaintTexture } from './use-war-paint';
@@ -28,7 +28,7 @@ function Model({
   url: string;
   tint?: string;
   paint?: WarPaint;
-  onFit: (radius: number, box: Box3) => void;
+  onFit: (radius: number, box: Box3, root: Object3D) => void;
 }) {
   const { scene } = useGLTF(url);
   const { camera, controls, invalidate } = useThree();
@@ -66,7 +66,7 @@ function Model({
       orbit.update();
     }
     rememberView(controls);
-    onFit(radius, box);
+    onFit(radius, box, root);
     invalidate();
   }, [root, camera, controls, invalidate, onFit]);
 
@@ -88,10 +88,12 @@ export default function Viewer3D({
 }) {
   const [radius, setRadius] = useState(1);
   const [box, setBox] = useState<Box3 | null>(null);
+  const [owner, setOwner] = useState<Object3D>();
   const onFit = useMemo(
-    () => (r: number, b: Box3) => {
+    () => (r: number, b: Box3, root: Object3D) => {
       setRadius(r);
       setBox(b);
+      setOwner(root);
     },
     [],
   );
@@ -108,7 +110,7 @@ export default function Viewer3D({
         <StudioLight />
         <ViewerOrbit resetRef={ref} minDistance={radius * 1.2} maxDistance={radius * 8} />
         <Model url={url} tint={tint} paint={paint} onFit={onFit} />
-        {effect && box ? <EffectParticles spec={effect} box={box} /> : null}
+        {effect && box ? <EffectParticles spec={effect} box={box} owner={owner} /> : null}
       </Canvas>
       <ResetViewButton onClick={reset} />
     </div>

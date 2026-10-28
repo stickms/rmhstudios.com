@@ -29,7 +29,7 @@ import srctex
 from vpkfs import GameFS
 
 # Bump when the output for the same source would change.
-CONVERTER_VERSION = 4
+CONVERTER_VERSION = 5
 SCALE = 0.01905  # Source units are 0.75 inch
 MAX_TEX = 512
 TINT_KEYS = ("$blendtintbybasealpha",)
@@ -57,12 +57,54 @@ def attachment_extras(mdl, info, is_class):
     cosmetic names the bone it follows and its own pose-to-bone matrix. A viewer places the cosmetic
     at `classBone[name] × pose`, which is what the game's bone-merge does in the reference pose."""
     bones = srcmodel.read_bones(mdl)
+    extras = particle_metadata(mdl, bones)
     if is_class:
-        return {"bones": {b["name"]: column_major(np.linalg.inv(matrix4(b["pose_to_bone"]))) for b in bones}}
+        return {**extras, "bones": {b["name"]: column_major(np.linalg.inv(matrix4(b["pose_to_bone"]))) for b in bones}}
     bone = bones[info["dominant_bone"]] if bones else None
     if bone is None:
         return None
-    return {"attach": {"bone": bone["name"], "pose": column_major(matrix4(bone["pose_to_bone"]))}}
+    # Jiggle/prop bones can dominate a cosmetic without existing on the player.
+    # Follow the nearest shared ancestor, keeping its complete pose-to-bone transform.
+    candidates = []
+    index = info["dominant_bone"]
+    while 0 <= index < len(bones):
+        current = bones[index]
+        candidates.append({"bone": current["name"], "pose": column_major(matrix4(current["pose_to_bone"]))})
+        index = current["parent"]
+    return {**extras, "attach": {**candidates[0], "fallbacks": candidates[1:]}}
+
+
+def particle_metadata(mdl, bones):
+    """MDL attachment transforms and hitboxes, retaining bone-local coordinates for animation."""
+    if not bones:
+        return {}
+    bind = [np.linalg.inv(matrix4(b["pose_to_bone"])) for b in bones]
+    count, at = struct.unpack_from("<2i", mdl, 0xF0)
+    attachments = {}
+    for i in range(count):
+        start = at + i * 92  # mstudioattachment_t
+        name_at, _flags, bone = struct.unpack_from("<3i", mdl, start)
+        if not 0 <= bone < len(bones):
+            continue
+        end = mdl.index(b"\0", start + name_at)
+        name = mdl[start + name_at:end].decode("latin1").lower()
+        local = matrix4(struct.unpack_from("<12f", mdl, start + 12))
+        attachments[name] = {"bone": bones[bone]["name"].lower(),
+                             "pose": column_major(local), "bind": column_major(bind[bone] @ local)}
+    sets, sets_at = struct.unpack_from("<2i", mdl, 0xAC)
+    hitboxes = []
+    if sets:
+        _name, count, offset = struct.unpack_from("<3i", mdl, sets_at)
+        for i in range(count):
+            start = sets_at + offset + i * 68  # mstudiobbox_t
+            bone = struct.unpack_from("<i", mdl, start)[0]
+            if not 0 <= bone < len(bones):
+                continue
+            hitboxes.append({"bone": bones[bone]["name"].lower(), "bind": column_major(bind[bone]),
+                             "min": (np.array(struct.unpack_from("<3f", mdl, start + 8)) * SCALE).tolist(),
+                             "max": (np.array(struct.unpack_from("<3f", mdl, start + 20)) * SCALE).tolist()})
+    return {"particleAttachments": attachments, "particleHitboxes": hitboxes,
+            "particleRoot": {"bone": bones[0]["name"].lower(), "bind": column_major(bind[0])}}
 
 
 EYE_SHADERS = ("eyerefract", "eyes")
@@ -236,9 +278,16 @@ def convert(fs, mdl_path, mdl, vvd, vtx, slots, is_class=False, anim=None, skin=
         world = [np.linalg.inv(np.vstack([np.array(p["pose_to_bone"]).reshape(3, 4), [0, 0, 0, 1]]))
                  for p in srcmodel.read_bones(mdl)]
     eyes = {}
+    eye_slots = [i for i, slot in enumerate(slots) if slot and slot[1] in EYE_SHADERS]
     for e in info.get("eyeballs", []):
         t = e["texture"]
         t = info["skin0"][t] if 0 <= t < len(info["skin0"]) else t
+        # Some compiled TF2 eyeballs retain a zero in the legacy texture field.
+        # It must never make us project the iris UVs onto material 0 (the body).
+        if t not in eye_slots:
+            t = next((i for i in eye_slots if i not in eyes), None)
+        if t is None:
+            continue
         eyes[t] = e
     images, image_index, materials, mat_index, out_meshes = [], {}, [], {}, []
     for m in meshes:

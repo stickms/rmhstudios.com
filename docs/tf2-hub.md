@@ -40,16 +40,16 @@ The builder shows a 3D view of any item that has a model (`ItemModelViewer` → 
 
 ### Keeping the game files current (automatic)
 
-Nothing here is uploaded by hand. `.github/workflows/tf2-assets-sync.yml` runs daily, after every deploy, and on demand (Actions → tf2-assets-sync → Run workflow), and keeps three things in object storage current:
+Nothing here is uploaded by hand. `.github/workflows/tf2-assets-sync.yml` runs daily, after every deploy, and on demand (Actions → tf2-assets-sync → Run workflow), and keeps the following channels in object storage current:
 
 | What                                                         | Where                                                                         | Built by                        |
 | ------------------------------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------- |
 | Item 3D models (GLB, textures baked in as WebP)              | `tf2-models/<defindex>[_<class>].glb`                                         | `scripts/tf2-assets/convert.py` |
 | Item inventory icons (the pictures on the item tiles, WebP)  | `tf2-icons/<defindex>.webp`                                                   | `scripts/tf2-assets/icons.py`   |
-| Item inventory icons (the pictures on the item tiles, WebP)  | `tf2-icons/<defindex>.webp`                                                   | `scripts/tf2-assets/icons.py`   |
-| Item inventory icons (the pictures on the item tiles, WebP)  | `tf2-icons/<defindex>.webp`                                                   | `scripts/tf2-assets/icons.py`   |
+| War paint scripts and pattern textures                      | `tf2-paintkits/`                                                             | `scripts/tf2-assets/paintkits.py` |
 | HUD editor base: panels, schemes, materials **and textures** | `tf2-hud-base/<path>`                                                         | `scripts/tf2-assets/hud.py`     |
-| One state file per channel                                   | `tf2-models/_state.json`, `tf2-icons/_state.json`, `tf2-hud-base/_state.json` | `scripts/tf2-assets/publish.ts` |
+| Unusual particle graphs, materials and animated textures    | `tf2-particles/`                                                             | `scripts/tf2-assets/particles.py` |
+| One state file per channel                                   | `<channel>/_state.json`                                                      | `scripts/tf2-assets/publish.ts` |
 
 **Why a login is needed.** Valve's free dedicated-server download carries the _index_ of every texture but not the texture data, and the client's content depot refuses anonymous logins. The job therefore signs in to Steam on the CI runner with an account that owns TF2 (free to add). Use a dedicated account with Steam Guard off; the credentials exist only as repository secrets and only on the runner, never on the VPS.
 
@@ -75,6 +75,24 @@ A cosmetic is authored around the model origin and, in the game, follows a bone 
 **What the converter does.** `srcmodel.py` reads the Source model (MDL v44–49, VVD v4, VTX v7): LOD 0 of the default body groups, bind-pose geometry, normals, UVs, and the materials of skin family 0. `srctex.py` reads the VMT (following `patch` includes) and decodes the VTF (DXT1/3/5 and the common uncompressed formats) to WebP, capped at 512 px. `glb.py` writes the GLB; a material whose VMT blends the paint colour by base alpha is flagged `extras.tint`. Skeletons and animation are not exported — the cosmetics are static.
 
 To try it on a few models locally you need a game install: `python3 scripts/tf2-assets/convert.py --root <install> --manifest model-manifest.json --out out --limit 20` (manifest from `pnpm exec tsx scripts/tf2-models/model-manifest.ts`), then open the GLBs in any glTF viewer.
+
+### Unusual particles
+
+Weapon effects resolve their `use_suffix_name` mapping against each weapon's `particle_suffix`. Their manifest keys are `<effect ID>:<weapon suffix>`, so a scattergun loads its scattergun particle graph and attachment control points. The held-weapon viewer and the item customizer both use this mapping. Taunts with a schema `refire_time` repeat their bursts while already-emitted particles finish their lifetimes.
+
+The catalog preserves the schema's particle `system` and family (cosmetic, taunt or weapon) alongside each effect's ID and display name. Each item dropdown lists only its own family, and draft cleanup, AI-proposed equips and server validation use the same eligibility helper. Weapons require the schema's `particle_suffix`; decorated skins inherit it from their base weapon. The viewer loads the corresponding PCF graph, rather than inferring colours and motion from English names. Before the particle channel has been published, the item customizer says the effect has not been synced and draws no substitute dots.
+
+`scripts/tf2-assets/particles.py` uses `srctools==2.6.2` to read the game's DMX/PCF files and VTF resource directories. It follows all child systems, resolves VMT patch includes, preserves material parameters and proxies, and exports full-resolution lossless RGBA WebP images for **every** VTF frame. Embedded SHT sequences retain their frame durations, clamping and four UV rectangles per frame. Each bundle contains the effect's complete graph and material dependencies. Files live under `tf2-particles/effects/<hash>.json` and `tf2-particles/tex/<hash>.webp`; `manifest.json` maps effect IDs to bundles. The public `/api/tf2-loadout/particles/*` endpoint serves only these paths, using the stored Brotli encoding when accepted.
+
+The sync adds its own build/version gate and state file, performs extraction before deleting the game, skips decoding unchanged images, uploads dependencies first, and publishes the manifest last. An individual broken effect retains its previously published manifest entry. Immutable versions are retained even on a prune run because cached bundles can still reference them. The model converter version is also bumped: models export MDL attachment transforms, root bones and animated hitboxes. Cosmetics with private jiggle bones fall back to their nearest ancestor shared with the player.
+
+`lib/tf2-loadout/particles/` owns fixed-step simulation, initializers/operators/forces/constraints, delayed child systems and control points, plus instanced textured sprite cards, velocity trails and subdivided ropes. It uses the same Source-unit scale and reference basis as the model converter. Particles simulate in world space; only the PCF's lock operators make already-emitted particles follow a moving attachment. Default placement adds no bounding-box-based offset or size adjustment. Optional saved offsets and scaling still work.
+
+Materials support atlas frame interpolation, dual sequences, alpha/additive/premultiplied blending, overbright, supported material proxies, soft intersections and refraction. Soft/refractive effects share one scene/depth capture per canvas/frame. Viewers share loaded textures and release GPU resources on unmount; unseen particles stop simulating. The existing Still material setting holds the effect at a populated frame.
+
+This is a browser implementation of Source particle behavior, not the Source engine itself. Random-number sequences and coherent noise differ from Valve's implementation; collision queries use the preview model and a studio floor rather than a BSP map. New, unrecognized operators produce a diagnostic. Visual parity with TF2 still needs checking under matching camera, lighting and animation conditions; a successful extraction is not a claim of pixel-identical rendering.
+
+Local extraction: `python -B scripts/tf2-assets/particles.py --root <install> --out <dir> [--only 13,14]`. Format regression tests require `vpk numpy pillow srctools==2.6.2`: `python -B -m unittest discover -s scripts/tf2-assets -p test_particles.py`. They also run in the particle sync job. No game assets are committed.
 
 ### War paints
 

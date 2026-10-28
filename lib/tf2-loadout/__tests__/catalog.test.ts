@@ -94,7 +94,9 @@ describe('buildCatalog', () => {
 
   it('extracts paints, named effects and symmetric conflicts', () => {
     expect(catalog.paints).toEqual([{ id: 5030, n: 'Team Spirit', rgb: '#d8bed8' }]);
-    expect(catalog.effects).toEqual([{ id: 13, n: 'Burning Flames' }]);
+    expect(catalog.effects).toEqual([
+      { id: 13, n: 'Burning Flames', system: 'a', category: 'cosmetic' },
+    ]);
     expect(regionsConflict(['hat'], ['whole_head'], catalog.conflicts)).toBe(true);
     expect(regionsConflict(['whole_head'], ['glasses'], catalog.conflicts)).toBe(true);
     expect(regionsConflict(['hat'], ['glasses'], catalog.conflicts)).toBe(false);

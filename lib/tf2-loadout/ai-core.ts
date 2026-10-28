@@ -15,6 +15,7 @@ import {
   acceptedSlots,
   slotFor,
   usableBy,
+  effectAppliesTo,
   type Catalog,
   type CatalogItem,
   type ItemSlot,
@@ -39,10 +40,48 @@ export interface AiAction {
 }
 
 const STOP = new Set([
-  'the', 'and', 'for', 'with', 'that', 'this', 'make', 'give', 'want', 'some', 'like', 'please',
-  'loadout', 'class', 'build', 'set', 'any', 'can', 'you', 'what', 'should', 'use', 'best', 'good',
-  'cosmetic', 'cosmetics', 'weapon', 'weapons', 'items', 'item', 'wear', 'equip', 'theme', 'themed',
-  'against', 'counter', 'team', 'enemy', 'from', 'about', 'something', 'suggest',
+  'the',
+  'and',
+  'for',
+  'with',
+  'that',
+  'this',
+  'make',
+  'give',
+  'want',
+  'some',
+  'like',
+  'please',
+  'loadout',
+  'class',
+  'build',
+  'set',
+  'any',
+  'can',
+  'you',
+  'what',
+  'should',
+  'use',
+  'best',
+  'good',
+  'cosmetic',
+  'cosmetics',
+  'weapon',
+  'weapons',
+  'items',
+  'item',
+  'wear',
+  'equip',
+  'theme',
+  'themed',
+  'against',
+  'counter',
+  'team',
+  'enemy',
+  'from',
+  'about',
+  'something',
+  'suggest',
 ]);
 
 export const wordsOf = (text: string): string[] =>
@@ -108,7 +147,13 @@ export function selectCandidates(catalog: Catalog, cls: TfClass, message: string
       40,
     ),
     paints: catalog.paints,
-    effects: pick(catalog.effects, words, (e) => e.n, (e) => e.id, 80),
+    effects: pick(
+      catalog.effects,
+      words,
+      (e) => e.n,
+      (e) => e.id,
+      80,
+    ),
   };
 }
 
@@ -129,8 +174,8 @@ export function describeCandidates(c: Candidates, cls: TfClass): string {
     'PAINTS (id|name):',
     ...c.paints.map((p) => `${p.id}|${p.n}`),
     '',
-    'UNUSUAL EFFECTS (id|name):',
-    ...c.effects.map((e) => `${e.id}|${e.n}`),
+    'UNUSUAL EFFECTS (id|name|allowed item family):',
+    ...c.effects.map((e) => `${e.id}|${e.n}|${e.category}`),
   ].join('\n');
 }
 
@@ -139,7 +184,8 @@ export function describeLoadout(catalog: Catalog, slots: LoadoutSlots): string {
   const byId = new Map(catalog.items.map((i) => [i.id, i]));
   const rows = Object.entries(slots).map(([k, e]) => {
     const it = byId.get(e.item);
-    const paint = e.paint !== undefined ? catalog.paints.find((p) => p.id === e.paint)?.n : undefined;
+    const paint =
+      e.paint !== undefined ? catalog.paints.find((p) => p.id === e.paint)?.n : undefined;
     const effect =
       e.effect !== undefined ? catalog.effects.find((x) => x.id === e.effect)?.n : undefined;
     return `${k}: ${it?.n ?? `#${e.item}`} (${e.item})${paint ? `, paint ${paint}` : ''}${effect ? `, effect ${effect}` : ''}`;
@@ -161,7 +207,7 @@ export function validateActions(
 ): { actions: AiAction[]; dropped: number } {
   const byId = new Map(catalog.items.map((i) => [i.id, i]));
   const paints = new Set(catalog.paints.map((p) => p.id));
-  const effects = new Set(catalog.effects.map((e) => e.id));
+  const effects = new Map(catalog.effects.map((e) => [e.id, e]));
   const list = Array.isArray(raw) ? raw.slice(0, ASSISTANT_LIMITS.actions) : [];
   const used = new Set(Object.keys(current));
   const out = new Map<string, AiAction>();
@@ -197,11 +243,7 @@ export function validateActions(
     }
     const action: AiAction = { slot, item: item.id };
     if (typeof obj.paint === 'number' && item.p && paints.has(obj.paint)) action.paint = obj.paint;
-    if (
-      typeof obj.effect === 'number' &&
-      (natural === 'head' || natural === 'misc' || natural === 'taunt') &&
-      effects.has(obj.effect)
-    ) {
+    if (typeof obj.effect === 'number' && effectAppliesTo(effects.get(obj.effect), item, natural)) {
       action.effect = obj.effect;
     }
     used.add(slot);

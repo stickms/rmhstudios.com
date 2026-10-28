@@ -1,8 +1,8 @@
 name: tf2-assets-sync
 
 # Keeps the TF2 Hub's game files in object storage current: item 3D models
-# (GLB, textures baked in), item inventory icons (WebP) and the HUD editor's base
-# (panels, schemes, materials, textures). The game itself only ever exists on this runner — Valve's files are
+# (GLB, textures baked in), inventory icons, war paints, unusual particle graphs
+# and the HUD editor's base. Valve's files are
 # downloaded with SteamCMD, the few thousand we use are converted/selected, the
 # rest (tens of GB) is deleted, and nothing is committed to the repository.
 #
@@ -119,12 +119,13 @@ jobs:
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as hud --state-key tf2-hud-base/_state.json --build "$build" --builder 1 $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as icons --state-key tf2-icons/_state.json --build "$build" --builder 1 $force
           pnpm exec tsx scripts/tf2-assets/publish.ts gate --as paintkits --state-key tf2-paintkits/_state.json --build "$build" --builder 1 $force
+          pnpm exec tsx scripts/tf2-assets/publish.ts gate --as particles --state-key tf2-particles/_state.json --build "$build" --builder 1 $force
           if grep -q 'run_' "$GITHUB_OUTPUT" && grep -q '^run_.*=true' "$GITHUB_OUTPUT"; then echo "any=true" >> "$GITHUB_OUTPUT"; fi
           rm -f appinfo.txt
 
       - name: Nothing to do
         if: steps.cfg.outputs.ready == 'true' && steps.gate.outputs.any != 'true'
-        run: echo "Models, icons, war paints and HUD base are already published for this game build — no download, no uploads."
+        run: echo "Models, icons, war paints, particles and HUD base are already published for this game build — no download, no uploads."
 
       - name: Make room on the runner
         if: steps.gate.outputs.any == 'true'
@@ -148,7 +149,11 @@ jobs:
 
       - name: Python tools
         if: steps.gate.outputs.any == 'true'
-        run: pip install --quiet vpk numpy pillow
+        run: pip install --quiet vpk numpy pillow srctools==2.6.2
+
+      - name: Validate particle asset formats
+        if: steps.gate.outputs.run_particles == 'true'
+        run: python3 -B -m unittest discover -s scripts/tf2-assets -p test_particles.py
 
       - name: Item manifests (models and icons)
         if: steps.gate.outputs.run_models == 'true' || steps.gate.outputs.run_icons == 'true'
@@ -188,6 +193,14 @@ jobs:
           (cd scripts/tf2-assets && FORCE=${{ inputs.force == true && '1' || '0' }} python3 paintkits.py \
             --root /mnt/tf2 --state /mnt/work/paintkits-state.json --out /mnt/work/paintkits)
 
+      - name: Particles — unusual definitions, materials and animated textures
+        if: steps.gate.outputs.run_particles == 'true'
+        run: |
+          mkdir -p /mnt/work/particles
+          pnpm exec tsx scripts/tf2-assets/publish.ts state --state-key tf2-particles/_state.json --out /mnt/work/particles-state.json
+          (cd scripts/tf2-assets && FORCE=${{ inputs.force == true && '1' || '0' }} python3 particles.py \
+            --root /mnt/tf2 --state /mnt/work/particles-state.json --out /mnt/work/particles)
+
       - name: HUD base — collect only what changed
         if: steps.gate.outputs.run_hud == 'true'
         run: |
@@ -221,6 +234,13 @@ jobs:
           prune=""; [ "${{ inputs.prune }}" = "true" ] && prune="--prune"
           pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/paintkits --prefix tf2-paintkits/ \
             --state-key tf2-paintkits/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 $prune
+
+      - name: Upload changed particles (manifest last)
+        if: steps.gate.outputs.run_particles == 'true'
+        run: |
+          # Retain immutable versions referenced by cached manifests and bundles.
+          pnpm exec tsx scripts/tf2-assets/publish.ts push --dir /mnt/work/particles --prefix tf2-particles/ \
+            --state-key tf2-particles/_state.json --build "${{ steps.gate.outputs.build }}" --builder 1 --index manifest.json --preserve-index effects
 
       - name: Upload changed HUD files (Brotli)
         if: steps.gate.outputs.run_hud == 'true'
