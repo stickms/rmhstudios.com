@@ -60,6 +60,17 @@ type Alert struct {
 	Detail   string `json:"detail,omitempty"`
 	Runbook  string `json:"runbook,omitempty"`
 	Source   string `json:"source"`
+	// Attachment is long evidence the watchdog posts as a text file beside the
+	// message, for what will not fit an embed. A watchdog that predates the
+	// field ignores it.
+	Attachment *Attachment `json:"attachment,omitempty"`
+}
+
+// Attachment is a text file for an alarm. The watchdog accepts names of letters,
+// digits and . _ - ending in .txt, and up to 40000 characters of content.
+type Attachment struct {
+	Name    string `json:"name"`
+	Content string `json:"content"`
 }
 
 // Heartbeat checks in under name; the watchdog pages when check-ins stop.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { alertMessage } from '../discord';
-import { Engine, REPAGE_MS, validateInput, type AlarmInput, type AlarmRecord } from '../engine';
+import { Engine, MAX_ATTACHMENT_CHARS, REPAGE_MS, RESOLVE_NOTE_MAX, validateInput, type AlarmInput, type AlarmRecord } from '../engine';
 import { ctx, memoryStorage, recordingNotifier } from './helpers';
 
 // The paging contract on-call depends on: one message per incident, @oncall
@@ -117,5 +117,66 @@ describe('validateInput', () => {
     expect(validateInput({ ...SITE_DOWN, instance: 'a b' })).toMatch(/letters/);
     expect(validateInput({ id: 'A01' })).toMatch(/required/);
     expect(validateInput(SITE_DOWN)).toMatchObject({ id: 'A01', sev: 2 });
+  });
+});
+
+// Long evidence rides beside the message as a text file, because it will not
+// fit an embed (4000 chars) or a reply (2000).
+describe('alarm attachments', () => {
+  const FILE = { name: 'diagnostics-content-feed-180349.txt', content: 'the whole report\n'.repeat(200) };
+
+  it('posts the file with a new alarm and never stores it', async () => {
+    const { engine, notifier, storage } = setup();
+    await engine.fire({ ...SITE_DOWN, attachment: FILE }, T0);
+    expect(notifier.posts).toHaveLength(1);
+    expect(notifier.files[0]).toEqual([FILE]);
+    expect(JSON.stringify([...storage.data.values()])).not.toContain('the whole report');
+  });
+
+  it('posts a quiet reply with new evidence for an alarm that is already up', async () => {
+    const { engine, notifier } = setup();
+    await engine.fire(SITE_DOWN, T0);
+    await engine.fire({ ...SITE_DOWN, attachment: FILE }, T0 + 60_000);
+    expect(notifier.posts).toHaveLength(2);
+    expect(notifier.posts[1]!.content).toContain('Updated diagnostics');
+    expect(notifier.posts[1]!.allowed_mentions).toEqual({ parse: [], roles: [] });
+    expect(notifier.files[1]).toEqual([FILE]);
+  });
+
+  it('attaches the file to the resolve reply and clamps the echoed note', async () => {
+    const { engine, notifier } = setup();
+    await engine.fire(SITE_DOWN, T0);
+    await engine.resolve('A01', T0 + 120_000, 'x'.repeat(5000), FILE);
+    const reply = notifier.posts[1]!;
+    expect(reply.content!.length).toBeLessThan(2000);
+    expect(reply.content).toContain('x'.repeat(RESOLVE_NOTE_MAX));
+    expect(reply.content).not.toContain('x'.repeat(RESOLVE_NOTE_MAX + 1));
+    expect(notifier.files[1]).toEqual([FILE]);
+  });
+
+  it('sends nothing extra when there is no attachment', async () => {
+    const { engine, notifier } = setup();
+    await engine.fire(SITE_DOWN, T0);
+    await engine.resolve('A01', T0 + 60_000);
+    expect(notifier.files).toEqual([undefined, undefined]);
+  });
+
+  it('validates the attachment: a .txt name of safe characters and bounded content', () => {
+    const base = { id: 'A01', sev: 2, title: 't', source: 's' };
+    expect(validateInput({ ...base, attachment: FILE })).toMatchObject({ attachment: FILE });
+    expect(validateInput(base)).not.toHaveProperty('attachment');
+    const bad = [
+      { name: '../etc/passwd.txt', content: 'x' },
+      { name: 'report.exe', content: 'x' },
+      { name: 'a b.txt', content: 'x' },
+      { name: '.hidden.txt', content: 'x' },
+      { name: 'ok.txt', content: '' },
+      { name: 'ok.txt', content: 'x'.repeat(MAX_ATTACHMENT_CHARS + 1) },
+      { name: 5, content: 'x' },
+      'not an object',
+      null,
+    ];
+    for (const attachment of bad) expect(typeof validateInput({ ...base, attachment }), JSON.stringify(attachment)?.slice(0, 40)).toBe('string');
+    expect(validateInput({ ...base, attachment: { name: 'ok.txt', content: 'x'.repeat(MAX_ATTACHMENT_CHARS) } })).toMatchObject({ attachment: { name: 'ok.txt' } });
   });
 });

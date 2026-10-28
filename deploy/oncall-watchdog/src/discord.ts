@@ -154,13 +154,42 @@ export function ephemeral(content: string) {
 
 /* ─── REST client ───────────────────────────────────────────────────────── */
 
+/** A small text file posted with a message (long evidence that will not fit an embed). */
+export interface DiscordFile {
+  name: string;
+  content: string;
+}
+
 export interface Notifier {
   /** Returns the posted message id, or null if only the fallback webhook (or nothing) worked. */
-  post(msg: DiscordMessage): Promise<string | null>;
+  post(msg: DiscordMessage, files?: DiscordFile[]): Promise<string | null>;
   edit(messageId: string, msg: DiscordMessage): Promise<void>;
 }
 
 const API = 'https://discord.com/api/v10';
+
+/**
+ * The request for a message with optional text files. Without files it is the
+ * plain JSON call it always was. With files it is multipart: `payload_json`
+ * carries the message and `files[n]` the attachments (Discord's documented
+ * shape), and the content-type header is left to fetch so it adds the boundary.
+ */
+export function withFiles(
+  init: { method: string; headers: Record<string, string> },
+  payload: unknown,
+  files?: DiscordFile[],
+): { method: string; headers: Record<string, string>; body: string | FormData } {
+  if (!files || files.length === 0) {
+    return { ...init, headers: { ...init.headers, 'content-type': 'application/json' }, body: JSON.stringify(payload) };
+  }
+  const form = new FormData();
+  form.append(
+    'payload_json',
+    JSON.stringify({ ...(payload as object), attachments: files.map((file, id) => ({ id, filename: file.name })) }),
+  );
+  files.forEach((file, id) => form.append(`files[${id}]`, new Blob([file.content], { type: 'text/plain' }), file.name));
+  return { ...init, body: form };
+}
 
 export function discordNotifier(opts: {
   botToken?: string;
@@ -172,31 +201,30 @@ export function discordNotifier(opts: {
   const f = opts.fetchImpl ?? fetch;
   const log = opts.log ?? ((m: string) => console.error(m));
 
-  async function viaWebhook(msg: DiscordMessage): Promise<null> {
+  async function viaWebhook(msg: DiscordMessage, files?: DiscordFile[]): Promise<null> {
     if (!opts.fallbackWebhookUrl) return null;
     // Plain webhooks can't carry interactive buttons; keep only the text + embed.
     const body = { content: msg.content, embeds: msg.embeds, allowed_mentions: msg.allowed_mentions };
-    const res = await f(opts.fallbackWebhookUrl, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const res = await f(opts.fallbackWebhookUrl, withFiles({ method: 'POST', headers: {} }, body, files));
     if (!res.ok) log(`oncall: fallback webhook failed ${res.status}`);
     return null;
   }
 
   return {
-    async post(msg) {
+    async post(msg, files) {
       if (opts.botToken) {
         try {
-          const res = await f(`${API}/channels/${opts.channelId}/messages`, {
-            method: 'POST',
-            headers: { authorization: `Bot ${opts.botToken}`, 'content-type': 'application/json' },
-            body: JSON.stringify(msg),
-          });
+          const res = await f(
+            `${API}/channels/${opts.channelId}/messages`,
+            withFiles({ method: 'POST', headers: { authorization: `Bot ${opts.botToken}` } }, msg, files),
+          );
           if (res.ok) return ((await res.json()) as { id: string }).id;
           log(`oncall: bot post failed ${res.status} ${(await res.text()).slice(0, 200)}`);
         } catch (err) {
           log(`oncall: bot post threw ${String(err)}`);
         }
       }
-      return viaWebhook(msg);
+      return viaWebhook(msg, files);
     },
     async edit(messageId, msg) {
       if (!opts.botToken) return;

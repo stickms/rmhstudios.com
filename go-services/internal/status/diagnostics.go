@@ -34,9 +34,16 @@ import (
 //     strips IP literals, URL hosts, control characters and backticks, and
 //     bounds the length.
 //
-// The whole block is capped at diagMaxBytes so it fits the watchdog's detail
-// limit (3500 chars) beside the alarm's own text.
-const diagMaxBytes = 2800
+// Both renderings are bounded (below) so they fit the watchdog's limits.
+//
+// Two renderings of the same facts: a compact summary that rides in the alarm's
+// embed (diagCompactBytes — the watchdog caps detail at 3500 and a resolve
+// reply's whole content at 2000), and the full report posted as a text file
+// beside it (diagFullBytes — the watchdog accepts 40000 characters).
+const (
+	diagCompactBytes = 1400
+	diagFullBytes    = 32000
+)
 
 // Diagnoser builds the evidence block. A nil *Diagnoser yields "".
 type Diagnoser struct {
@@ -83,19 +90,30 @@ func (d *Diagnoser) Sample(now time.Time) {
 	d.mu.Unlock()
 }
 
-// Report is the evidence block for an alarm about service, "now".
-func (d *Diagnoser) Report(service string, now time.Time) string {
+// Reports returns the compact summary and the full report for an alarm about
+// service, "now". Both are empty for an unknown service or a nil Diagnoser.
+func (d *Diagnoser) Reports(service string, now time.Time) (compact, full string) {
 	if d == nil || d.prober == nil {
-		return ""
+		return "", ""
 	}
 	in, ok := d.prober.diagInput(service)
 	if !ok {
-		return ""
+		return "", ""
 	}
 	in.now = now
 	in.host = d.hostLines(in.failSince, now)
 	in.proc = d.processLine(now)
-	return renderDiag(in)
+	return renderDiag(in, false), renderDiag(in, true)
+}
+
+// attachmentName is the file name for a report: letters, digits, . _ - and
+// .txt, as the watchdog requires.
+func attachmentName(service string, now time.Time) string {
+	slug := slug(service)
+	if slug == "" {
+		slug = "service"
+	}
+	return "diagnostics-" + slug + "-" + now.UTC().Format("150405") + ".txt"
 }
 
 // diagService is one service's current state, for the "everything right now"
@@ -106,6 +124,10 @@ type diagService struct {
 	Latency  *int64
 	Category string
 	Detail   string
+	// Code and Phases are the service's last probe, so the full report can
+	// compare every service's timings from the same moment.
+	Code   int
+	Phases *Phases
 }
 
 // diagInput is everything renderDiag needs, so it can be tested without a Prober.
@@ -148,13 +170,17 @@ func (p *Prober) diagInput(service string) (diagInput, bool) {
 			continue
 		}
 		hh.mu.Lock()
-		ds := diagService{Name: t.Name, Status: hh.last.Status, Latency: hh.last.LatencyMs, Category: hh.detail.Category, Detail: hh.last.Detail}
+		ds := diagService{Name: t.Name, Status: hh.last.Status, Latency: hh.last.LatencyMs, Category: hh.detail.Category, Detail: hh.last.Detail, Code: hh.detail.Code}
+		if hh.detail.Phases != nil {
+			ph := *hh.detail.Phases
+			ds.Phases = &ph
+		}
 		if t.Name == service {
 			in.group, in.targetURL = t.Group, t.URL
 			in.recent = append([]Sample(nil), hh.recent...)
 			in.counters = *hh.ctr
 			in.counters.Errors = copyMap(hh.ctr.Errors)
-			in.counters.Codes = nil
+			in.counters.Codes = copyMap(hh.ctr.Codes)
 			in.counters.Changes = append([]int64(nil), hh.ctr.Changes...)
 			in.last, in.detail = hh.last, hh.detail
 			in.consec = hh.ctr.ConsecFail
@@ -176,8 +202,12 @@ func copyMap(m map[string]int) map[string]int {
 	return out
 }
 
-// renderDiag formats the block. Pure: all I/O happened in the caller.
-func renderDiag(in diagInput) string {
+// renderDiag formats a report. Pure: all I/O happened in the caller. The
+// compact form keeps what decides the diagnosis (the failing probe, whether
+// anything else failed with it, the prober and host); the full form adds the
+// trend, every service's table and timings, the state-change timeline and the
+// lifetime counters.
+func renderDiag(in diagInput, full bool) string {
 	var b strings.Builder
 	w := func(format string, a ...any) { fmt.Fprintf(&b, format+"\n", a...) }
 	clock := func(t time.Time) string { return t.UTC().Format("15:04:05") }
@@ -203,8 +233,8 @@ func renderDiag(in diagInput) string {
 	}
 
 	// This service's last checks: is it a step change, a ramp, or a flap?
-	if n := len(in.recent); n > 0 {
-		from := n - 8
+	if n := len(in.recent); full && n > 0 {
+		from := n - 30
 		if from < 0 {
 			from = 0
 		}
@@ -231,6 +261,9 @@ func renderDiag(in diagInput) string {
 	}
 	w("all services now (%d of %d not up: %s)", len(failing), len(in.all), joinOrNone(failing))
 	for _, s := range in.all {
+		if !full {
+			break
+		}
 		lat := "—"
 		if s.Latency != nil {
 			lat = fmt.Sprintf("%dms", *s.Latency)
@@ -240,13 +273,33 @@ func renderDiag(in diagInput) string {
 			line += "  " + diagText(s.Detail, 60)
 		}
 		w("%s", line)
+		if ph := s.Phases; ph != nil {
+			w("      last probe: http %s · dns %s · connect %s · tls %s · ttfb %s · total %s · %s",
+				codeLabel(s.Code), ms(ph.DNS), ms(ph.Connect), ms(ph.TLS), ms(ph.TTFB), ms(ph.Total), connLabel(ph))
+		}
 	}
 
-	if len(in.counters.Errors) > 0 {
-		w("failures by category (lifetime): %s", mapLine(in.counters.Errors))
+	if full {
+		if len(in.counters.Errors) > 0 {
+			w("failures by category (lifetime): %s", mapLine(in.counters.Errors))
+		}
+		if len(in.counters.Codes) > 0 {
+			w("http codes seen (lifetime): %s", mapLine(in.counters.Codes))
+		}
+		if n := len(in.counters.Changes); n > 0 {
+			from := n - 12
+			if from < 0 {
+				from = 0
+			}
+			times := make([]string, 0, n-from)
+			for _, at := range in.counters.Changes[from:] {
+				times = append(times, time.UnixMilli(at).UTC().Format("01-02 15:04:05"))
+			}
+			w("state changes (newest last, UTC): %s", strings.Join(times, " · "))
+		}
+		w("history   %d state changes recorded · %d blips (failures too short to open an incident) · %d checks recorded",
+			len(in.counters.Changes), in.counters.Blips, in.counters.Checks)
 	}
-	w("history   %d state changes recently · %d blips (failures too short to open an incident) · %d checks recorded",
-		len(in.counters.Changes), in.counters.Blips, in.counters.Checks)
 
 	w("prober    cycle %s (avg %s, %d cycles) · a cycle near the %s timeout means a probe timed out",
 		in.lastCycle.Round(time.Millisecond), in.avgCycle.Round(time.Millisecond), in.cycles, in.timeout)
@@ -256,7 +309,10 @@ func renderDiag(in diagInput) string {
 	for _, l := range in.host {
 		w("%s", l)
 	}
-	return capDiag(b.String())
+	if full {
+		return capDiag(b.String(), diagFullBytes)
+	}
+	return capDiag(b.String(), diagCompactBytes)
 }
 
 // processLine reports the status process itself: a restart, a goroutine leak or
@@ -453,13 +509,13 @@ func mapLine(m map[string]int) string {
 
 // capDiag trims at a line boundary so a long report loses its tail, not a
 // half-written line.
-func capDiag(s string) string {
-	if len(s) <= diagMaxBytes {
+func capDiag(s string, max int) string {
+	if len(s) <= max {
 		return s
 	}
-	cut := strings.LastIndexByte(s[:diagMaxBytes], '\n')
+	cut := strings.LastIndexByte(s[:max], '\n')
 	if cut < 0 {
-		cut = diagMaxBytes
+		cut = max
 	}
 	return s[:cut] + "\n… (truncated)"
 }

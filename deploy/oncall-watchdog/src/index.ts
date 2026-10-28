@@ -219,7 +219,7 @@ export class OncallState {
         const input = body.input as Parameters<Engine['fire']>[0];
         if (body.state === 'resolved') {
           const key = input.instance ? `${input.id}:${input.instance}` : input.id;
-          const rec = await this.engine.resolve(key, now, input.detail);
+          const rec = await this.engine.resolve(key, now, input.detail, input.attachment);
           return json({ ok: true, alarm: rec ?? null });
         }
         return json({ ok: true, alarm: await this.engine.fire(input, now) });

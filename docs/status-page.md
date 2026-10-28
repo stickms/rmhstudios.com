@@ -111,26 +111,32 @@ removing mistakes rather than rewriting history.
 
 ## Diagnostics in on-call alarms
 
-Every automatic-incident alarm sent to the on-call watchdog (and its resolve)
-ends with a fenced evidence block built by `internal/status/diagnostics.go`:
+Every automatic-incident alarm sent to the on-call watchdog carries evidence
+built by `internal/status/diagnostics.go`, in two forms of the same facts:
 
-- the failing probe: target path, streak, DNS / connect / TLS / first-byte
-  timings, address family and connect-attempt count, HTTP code and protocol;
-- the service's last eight checks;
-- **every service's state right now** and which are not up, which is what tells
-  a shared front-door stall (Website, App readiness, Content feed and Sitemap
-  failing together) from one broken route;
-- the prober's own cycle time and the status process (uptime, goroutines, heap,
-  GC, build revision);
-- the host: load average, `/proc/pressure` CPU / IO / memory stall, and the
-  container's CPU quota, memory against its limit, and how much CPU throttling
-  it suffered during the failure (sampled once per cycle).
+- a **compact summary** (≤1400 bytes) in the alarm's embed, as a code fence:
+  the failing probe (target path, streak, DNS / connect / TLS / first-byte
+  timings, address family and connect-attempt count, HTTP code and protocol),
+  how many services are not up and which, the prober's cycle time, the status
+  process (uptime, goroutines, heap, GC, build revision) and the host (load,
+  `/proc/pressure` CPU / IO / memory stall, container CPU quota, memory against
+  its limit, and CPU throttling during the failure, sampled once per cycle);
+- the **full report** (≤32000 bytes) as a `diagnostics-<service>-<HHMMSS>.txt`
+  attachment: all of the above plus the service's last 30 checks, **every
+  service's state and last-probe timings side by side** (a shared front-door
+  stall shows as Website, App readiness, Content feed and Sitemap failing
+  together), the state-change timeline and the lifetime error / HTTP-code
+  counters.
 
-It is built from an allowlist and bounded to 2800 bytes (the watchdog keeps
-3500). It never includes environment values, headers, cookies, bodies, resolved
-or peer IP addresses, internal hostnames or URLs, or file paths; free-text
-probe errors are scrubbed of IP literals, URL hosts, control characters and
-backticks first. Missing `/proc` or cgroup files just drop their line.
+A resolve carries only the file: the watchdog echoes a resolve's detail into a
+reply capped at 2000 characters, so the summary is left out of it.
+
+Built from an allowlist. It never includes environment values, headers,
+cookies, bodies, resolved or peer IP addresses, internal hostnames or URLs, or
+file paths; free-text probe errors are scrubbed of IP literals, URL hosts,
+control characters and backticks first. Missing `/proc` or cgroup files just
+drop their line. Files appear once the watchdog Worker is redeployed (see
+`deploy/oncall-watchdog/README.md`); until then only the summary shows.
 
 ## Public endpoints
 
