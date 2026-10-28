@@ -43,6 +43,26 @@ def supported_functions(repo):
     return {a or b for a, b in re.findall(r"'([^']*)'|\"([^\"]*)\"", block)}
 
 
+def effect_names(fs):
+    """Effect id -> the name the game shows (`Attrib_Particle<id>` in tf_english.txt)."""
+    raw = fs.read("resource/tf_english.txt")
+    if raw is None:
+        return {}
+    text = raw.decode("utf-16" if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else "utf8", "replace")
+    return {m[0]: m[1] for m in re.findall(r'"Attrib_Particle(\d+)"\s+"([^"]*)"', text)}
+
+
+def engine_words(repo):
+    """Every quoted string in the particle engine's sources: the parameter names it can possibly read."""
+    folder = os.path.join(repo, "lib/tf2-loadout/particles")
+    words = set()
+    for name in os.listdir(folder):
+        if name.endswith(".ts"):
+            text = open(os.path.join(folder, name), encoding="utf8").read()
+            words |= {a or b or c for a, b, c in re.findall(r"'([^'\n]*)'|\"([^\"\n]*)\"|`([^`\n]*)`", text)}
+    return {w.lower() for w in words}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", required=True)
@@ -53,12 +73,16 @@ def main():
 
     work = os.path.join(args.out, "_work")
     particles.texture = light_texture
-    index = particles.build(particles.GameFS(args.root), work)
+    fs = particles.GameFS(args.root)
+    names = effect_names(fs)
+    index = particles.build(fs, work)
     manifest = json.load(open(os.path.join(work, "manifest.json")))["effects"]
     known = supported_functions(args.repo)
+    words = engine_words(args.repo)
 
     bundles = {key: json.load(open(os.path.join(work, path))) for key, path in manifest.items()}
     functions, shaders, params = {}, {}, {}
+    ignored_ops, ignored_options, ignored_material = {}, {}, {}
     for key, bundle in bundles.items():
         for name, system in bundle["systems"].items():
             for group in particles.GROUPS:
@@ -68,10 +92,17 @@ def main():
                     entry["effects"].add(key)
                     for p in op["params"]:
                         entry["params"][p] = entry["params"].get(p, 0) + 1
+                        if p.lower() not in words:
+                            ignored_ops.setdefault((group, f), {}).setdefault(p, set()).add(key)
+            for p in system["options"]:
+                if p.lower() not in words:
+                    ignored_options.setdefault(p, set()).add(key)
         for mat in bundle["materials"].values():
             shaders.setdefault(mat["shader"], set()).add(key)
             for p in mat["params"]:
                 params.setdefault(p, set()).add(key)
+                if re.sub(r"^[^$]*\?", "", p).lower() not in words:
+                    ignored_material.setdefault(p, set()).add(key)
 
     unsupported = sorted(
         ({"group": g, "function": f, "effects": len(e["effects"]),
@@ -84,6 +115,13 @@ def main():
         "supportedUsage": {f: len(e["effects"]) for (g, f), e in sorted(functions.items()) if f in known},
         "shaders": {s: len(k) for s, k in sorted(shaders.items())},
         "materialParams": {p: len(k) for p, k in sorted(params.items())},
+        # Parameters present in the game's data that no string in the engine's sources names: behaviour the
+        # engine cannot be honouring. Counts are effects affected.
+        "ignoredOperatorParams": {
+            "%s/%s" % (g, f): {p: len(k) for p, k in sorted(ps.items())}
+            for (g, f), ps in sorted(ignored_ops.items())},
+        "ignoredSystemOptions": {p: len(k) for p, k in sorted(ignored_options.items())},
+        "ignoredMaterialParams": {p: len(k) for p, k in sorted(ignored_material.items())},
         "effectsBrokenByUnsupported": {
             key: sorted({f for (g, f), e in functions.items() if f not in known and key in e["effects"]})
             for key in bundles
@@ -96,13 +134,14 @@ def main():
     matched = []
     for key, bundle in bundles.items():
         schema = bundle["schema"]
-        names = {str(schema.get(k, "")).lower() for k in ("name", "system")} | {key, str(bundle["id"])}
-        if any(w in names or w == str(schema.get("system", "")).lower() for w in wanted):
+        shown = names.get(str(bundle["id"]), "")
+        ids = {str(schema.get(k, "")).lower() for k in ("name", "system")} | {key, str(bundle["id"]), shown.lower()}
+        if any(w in ids for w in wanted):
             matched.append(key)
             json.dump(bundle, open(os.path.join(args.out, "bundles", key.replace(":", "_") + ".json"), "w"),
                       indent=1, sort_keys=True)
     json.dump({"asked": wanted, "matched": matched,
-               "schemaNames": {k: b["schema"].get("name") for k, b in bundles.items()}},
+               "names": {k: [names.get(str(b["id"])), b["system"]] for k, b in bundles.items()}},
               open(os.path.join(args.out, "matched.json"), "w"), indent=1, sort_keys=True)
     print("audited %d effects; %d use an operator the browser lacks; matched %s" % (
         len(bundles), len(audit["effectsBrokenByUnsupported"]), matched or "none"))
