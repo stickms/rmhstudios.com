@@ -70,6 +70,8 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
   const select = useEditor((s) => s.select);
   const hover = useEditor((s) => s.hover);
   const play = view.play;
+  // Models in panels belong to the menu screens (class choice, backpack, store); the in-game HUD stays as it was.
+  const modelsActive = view.models3d && page?.backdrop === 'menu';
   const setPlay = useEditor((s) => s.setPlay);
   const setPlayHover = useEditor((s) => s.setPlayHover);
   const readBytes = useEditor((s) => s.readBytes);
@@ -218,7 +220,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
         images,
         showBounds: view.showBounds,
         // The 3D layer draws these panels' contents; without it they are labelled boxes.
-        skipDynamic: view.models3d ? (n) => isModelPanel(n.control) : undefined,
+        skipDynamic: modelsActive ? (n) => isModelPanel(n.control) : undefined,
       });
       g.globalAlpha = 1;
       paintOverlay(g, {
@@ -239,7 +241,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
     sh,
     view.hudOpacity,
     view.showBounds,
-    view.models3d,
+    modelsActive,
     images,
     selected,
     alsoSelected,
@@ -612,7 +614,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
             onPointerCancel={endDrag}
             onPointerLeave={() => (play ? setPlayHover(null) : hover(null))}
           />
-          <ModelLayer scene={scene} zoom={cssW / sw} front />
+          <ModelLayer scene={scene} zoom={cssW / sw} front enabled={modelsActive} />
           {view.compareOpacity > 0 && view.backdropImage ? (
             <img
               src={view.backdropImage}

@@ -150,14 +150,16 @@ export default function ModelLayer({
   scene,
   zoom,
   front,
+  enabled = true,
 }: {
   scene: Scene | null;
   /** CSS pixels per scene pixel. */
   zoom: number;
   /** `true` draws over the HUD canvas (model panels); `false` behind it (the world player). */
   front: boolean;
+  /** Whether model panels are drawn at all on this page. */
+  enabled?: boolean;
 }) {
-  const models3d = useEditor((s) => s.view.models3d);
   const player3d = useEditor((s) => s.view.player3d);
   const hasContent = useMemo(
     () =>
@@ -166,6 +168,6 @@ export default function ModelLayer({
     [scene],
   );
   if (!scene) return null;
-  if (front ? !(models3d && hasContent) : !player3d) return null;
+  if (front ? !(enabled && hasContent) : !player3d) return null;
   return <ModelContent scene={scene} zoom={zoom} front={front} />;
 }
