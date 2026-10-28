@@ -542,24 +542,40 @@ func TestSlugify(t *testing.T) {
 }
 
 // A timed-out probe names the phase it was stuck in, so an alert can tell a
-// resolver stall from a handshake stall from a slow handler.
+// resolver stall from a handshake stall from a slow handler, and only a stall
+// before the request was sent counts as a connection stall.
 func TestStalledInNamesTheStuckPhase(t *testing.T) {
 	now := time.Now()
 	var z time.Time
-	cases := []struct {
-		name string
-		got  string
-		want string
-	}{
-		{"dns", stalledIn(now, z, z, z, z, z, z), " (stalled in DNS lookup)"},
-		{"connect", stalledIn(now, now, now, z, z, z, z), " (stalled connecting)"},
-		{"tls", stalledIn(now, now, now, now, now, z, z), " (stalled in TLS handshake)"},
-		{"server", stalledIn(now, now, now, now, now, now, z), " (connected; no response from the server)"},
-		{"nothing started", stalledIn(z, z, z, z, z, z, z), ""},
-	}
-	for _, c := range cases {
-		if c.got != c.want {
-			t.Errorf("%s: got %q, want %q", c.name, c.got, c.want)
+	check := func(name, got string, gotPre bool, want string, wantPre bool) {
+		t.Helper()
+		if got != want || gotPre != wantPre {
+			t.Errorf("%s: got (%q, %v), want (%q, %v)", name, got, gotPre, want, wantPre)
 		}
+	}
+	s, p := stalledIn(now, z, z, z, z, z, z)
+	check("dns", s, p, " (stalled in DNS lookup)", true)
+	s, p = stalledIn(now, now, now, z, z, z, z)
+	check("connect", s, p, " (stalled connecting)", true)
+	s, p = stalledIn(now, now, now, now, now, z, z)
+	check("tls", s, p, " (stalled in TLS handshake)", true)
+	s, p = stalledIn(now, now, now, now, now, now, z)
+	check("server", s, p, " (connected; no response from the server)", false)
+	s, p = stalledIn(z, z, z, z, z, z, z)
+	check("nothing started", s, p, "", false)
+}
+
+// A connection stall is on the status page but never reaches on-call.
+func TestAlertForSkipsConnectionStalls(t *testing.T) {
+	inc := &Incident{ID: "x", Kind: "auto", Impact: ImpactMajor, Components: []string{"Content feed"}, Category: CatStall,
+		Updates: []IncidentUpdate{{Body: "timeout after 4000ms (stalled in TLS handshake)"}}}
+	for _, ev := range []string{"incident.created", "incident.updated", "incident.resolved"} {
+		if _, ok := alertFor(Notification{Event: ev, Incident: inc}, ""); ok {
+			t.Errorf("%s for a connection stall was forwarded to on-call", ev)
+		}
+	}
+	inc.Category = CatTimeout
+	if _, ok := alertFor(Notification{Event: "incident.created", Incident: inc}, ""); !ok {
+		t.Error("a plain timeout (server did not answer) must still page")
 	}
 }
