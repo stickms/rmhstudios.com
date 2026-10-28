@@ -17,6 +17,8 @@ import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
   AnimationMixer,
+  type AnimationAction,
+  type AnimationClip,
   Box3,
   LoopRepeat,
   MathUtils,
@@ -52,9 +54,16 @@ export interface PlayerPart {
 interface BodyState {
   root: Object3D;
   mixer: AnimationMixer;
+  /** The class body's own idle clip, when it has one. */
+  idle?: AnimationClip;
   height: number;
   box: Box3;
 }
+
+// The mixer hands back the same action for the same clip and root, so a pending "stop once faded" from
+// a taunt that just ended would also stop the one that replaced it (the body re-frames when the orbit
+// controls arrive, which re-runs the effect below). Each start cancels the timer its predecessor left.
+const pendingStops = new WeakMap<AnimationAction, ReturnType<typeof setTimeout>>();
 
 /** Plays a taunt clip on the body, looped, easing in over the idle and back out when it goes. */
 function Taunt({ url, body }: { url: string; body: BodyState }) {
@@ -63,15 +72,21 @@ function Taunt({ url, body }: { url: string; body: BodyState }) {
     const clip = animations[0];
     if (!clip) return undefined;
     const action = body.mixer.clipAction(clip, body.root);
+    clearTimeout(pendingStops.get(action));
     action.setLoop(LoopRepeat, Infinity);
     action.reset().fadeIn(0.25).play();
-    const idle = body.mixer.existingAction('idle');
+    // `existingAction('idle')` looks the name up on the root, which carries no clips: it never finds it,
+    // and the idle kept playing underneath the taunt. Fade the clip itself.
+    const idle = body.idle ? body.mixer.clipAction(body.idle, body.root) : null;
     idle?.fadeOut(0.25);
     return () => {
       action.fadeOut(0.25);
       idle?.reset().fadeIn(0.25).play();
       // Stop it once it has faded, so a finished taunt leaves no tracks fighting the idle.
-      setTimeout(() => action.stop(), 300);
+      pendingStops.set(
+        action,
+        setTimeout(() => action.stop(), 300),
+      );
     };
   }, [animations, body]);
   return null;
@@ -130,10 +145,16 @@ function Body({
       orbit.update();
     }
     rememberView(controls);
-    const next = { root, mixer, height: size.y, box };
+    const next = {
+      root,
+      mixer,
+      idle: gltf.animations.find((a) => a.name === 'idle'),
+      height: size.y,
+      box,
+    };
     setState(next);
     onReady(next);
-  }, [root, mixer, camera, controls, onReady]);
+  }, [root, mixer, camera, controls, onReady, gltf.animations]);
 
   useFrame((_, dt) => mixer.update(Math.min(dt, 0.1)));
 
