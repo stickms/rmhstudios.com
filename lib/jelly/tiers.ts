@@ -310,11 +310,7 @@ export const FINE_POINTER_QUERY = '(hover: hover) and (pointer: fine)';
 const PRINT_QUERY = 'print';
 
 /** The media queries {@link onJellyEnvChange} watches: everything the tier and the off predicate read. */
-export const JELLY_ENV_QUERIES = [
-  HANDHELD_QUERY,
-  FINE_POINTER_QUERY,
-  PRINT_QUERY,
-] as const;
+export const JELLY_ENV_QUERIES = [HANDHELD_QUERY, FINE_POINTER_QUERY, PRINT_QUERY] as const;
 
 /** The `<html>` attributes {@link onJellyEnvChange} watches. `data-scrolling` is left out on purpose: it flips per fling. */
 export const JELLY_ENV_ATTRIBUTES = [
@@ -410,7 +406,7 @@ export interface JellyModeState {
  * - Hidden tab and print: nothing.
  * - Other material-off states and `perf-lite`: press only, no ambient, no arcs.
  * - Game playing (R16): ambient and arcs zeroed, no bodies.
- * - `still`: press only, arcs off whatever `electricArcs` says (R9). `calm`: no ambient arcs, clicks per preference.
+ * - `still`: ambient motion and arcs stop; direct hover/press/scroll reactions remain available.
  */
 export function jellyMode(env?: JellyEnv): JellyModeState {
   const { doc, win } = resolveEnv(env);
@@ -421,7 +417,7 @@ export function jellyMode(env?: JellyEnv): JellyModeState {
   const press: JellyModeState = { ambient: false, arcs: 'off', deform: 'press' };
   if (jellyOff(doc)) return press;
   const motion = jellyMotionLevel(doc);
-  if (motion === 'still') return press;
+  if (motion === 'still') return { ambient: false, arcs: 'off', deform: 'full' };
   const pref = electricArcsPref(doc);
   const arcs: ElectricArcsMode = motion === 'calm' && pref === 'full' ? 'clicks' : pref;
   return { ambient: true, arcs, deform: 'full' };
@@ -444,7 +440,7 @@ export function jellyBudget(env?: JellyEnv): JellyBudget {
     base.animatedViewports = 0;
     base.clockHz = 0;
     base.idleClockHz = 0;
-    base.lattices = 0;
+    if (mode.deform !== 'full') base.lattices = 0;
   }
   if (mode.arcs !== 'full') base.ambientArcMinIntervalMs = Infinity;
   if (mode.arcs === 'off') base.clickBolts = 0;

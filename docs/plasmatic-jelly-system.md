@@ -373,7 +373,7 @@ state into `{ambient, arcs, deform}` so the four services cannot disagree.
 | ------------------------------------------------------------------- | -------------- | ---------- | ------------------ | ----------- | -------------------- |
 | `lively` (default)                                                  | yes            | full       | per `electricArcs` | yes         | haze floor           |
 | `calm`                                                              | × 0.4, ≤ 12 Hz | full       | clicks (or off)    | yes         | haze floor           |
-| `still`                                                             | no             | press only | off (forced)       | yes         | haze floor           |
+| `still`                                                             | no             | reactive   | off (forced)       | yes         | haze floor           |
 | `perf-lite`                                                         | no             | press only | off                | no          | haze floor + CSS rim |
 | high contrast (app tier only)                                       | no             | press only | off                | no          | opaque surfaces      |
 | print                                                               | no             | none       | off                | no          | flat                 |
@@ -388,24 +388,19 @@ Per-element opt-outs (`OPT_OUT_SELECTOR`): `data-jelly="off"` and the accepted a
 
 ## 7. Preferences and WCAG 2.2.2 (R8, R9)
 
-Ambient haze starts automatically, lasts longer than 5 s and sits beside content, so
-WCAG 2.2.2 (Pause, Stop, Hide) needs a mechanism on every page:
+Ambient animation is controlled separately from direct interaction:
 
 - **`jellyMotion`: `lively` | `calm` | `still`** (default `lively`) in Settings →
   Appearance, stamped pre-paint as `html[data-jelly-motion]` (absent = `lively`).
-- **"Pause ambient motion"** (`QuickPanelMotionToggle`, `components/radial/QuickPanel.tsx`),
-  a one-tap toggle that cycles to `still` and back to the previous level. A signed-in
-  visitor finds it in the top-bar profile panel; a **signed-out** visitor, who has no
-  profile panel and no Settings page, gets a **Display** panel (`DisplayPanel` in
-  `components/radial/TopBarPanels.tsx`) holding the same control, because 2.2.2's pause
-  has to reach everyone the motion reaches. Signed out, the choice lives on the device.
+- The top-bar "Pause ambient motion" shortcut and its signed-out Display panel
+  were removed at the owner's request. Direct hover, press, lens and scroll reactions
+  remain active even under `still`; coarse pointers never acquire hover during a flick.
 - **`electricArcs`: `full` | `clicks` | `off`** (default `full`), stamped as
   `html[data-electric-arcs]`. `still` forces arcs off whatever this says.
 
 Both are account fields (one Prisma migration) with a localStorage cache for signed-out
 visitors. Neither reads the OS `prefers-reduced-motion`: the retired site-wide motion
-setting stays retired (CLAUDE.md §7); these are **material** controls. `still` also
-satisfies WCAG 2.3.3 at no extra cost. Every jelly layer is `aria-hidden`,
+setting stays retired (CLAUDE.md §7); these are **material** controls. Every jelly layer is `aria-hidden`,
 `pointer-events: none`, never focusable and never announced. Tab order and hit areas
 never change, and the focus ring is drawn by the host, so the envelope carries it along.
 The ring is `--focus-ring`: solid, 2 px, never the plasma glow (a focused body's plasma

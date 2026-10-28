@@ -60,6 +60,8 @@ export interface GlassDraw {
   /** rgb 0..1 + alpha. */
   tint: [number, number, number, number];
   rim: [number, number, number];
+  /** Theme light opacity; separate from RGB so dark glass keeps its softer lighting. */
+  rimOpacity?: number;
   ink: [number, number, number];
   dark: number;
   /** Cursor light in surface px (+ height), and how strongly it is on. */
@@ -564,7 +566,7 @@ export class GlassRenderer {
     );
     gl.uniform1f(u.uSceneOn, o.sceneOn);
     gl.uniform4f(u.uTint, o.tint[0], o.tint[1], o.tint[2], o.tint[3]);
-    gl.uniform3f(u.uRim, o.rim[0], o.rim[1], o.rim[2]);
+    gl.uniform4f(u.uRim, o.rim[0], o.rim[1], o.rim[2], o.rimOpacity ?? 1);
     gl.uniform3f(u.uInk, o.ink[0], o.ink[1], o.ink[2]);
     gl.uniform1f(u.uDark, o.dark);
     gl.uniform3f(u.uLight, o.lightX, o.lightY, o.lightZ);

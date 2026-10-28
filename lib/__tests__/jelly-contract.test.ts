@@ -100,7 +100,6 @@ const DEGRADED: Array<[string, DocOpts, 'press' | 'off']> = [
   ['perf-lite', { classes: ['perf-lite'] }, 'press'],
   ['a hidden tab', { hidden: true }, 'off'],
   ['a game in play (R16)', { attrs: { 'data-game-state': 'playing' } }, 'off'],
-  ['jellyMotion = still (R8, WCAG 2.2.2)', { attrs: { 'data-jelly-motion': 'still' } }, 'press'],
 ];
 
 const TIERS = Object.keys(JELLY_BUDGETS) as JellyTier[];
@@ -149,6 +148,11 @@ describe('N1 — every degraded state stands the material down', () => {
       doc: fakeDoc({ attrs: { 'data-jelly-motion': 'still', 'data-electric-arcs': 'full' } }),
     });
     expect(still.arcs).toBe('off');
+    expect(still.ambient).toBe(false);
+    expect(still.deform).toBe('full');
+    const budget = jellyBudget({ doc: fakeDoc({ attrs: { 'data-jelly-motion': 'still' } }) });
+    expect([budget.hazeSlots, budget.carriers, budget.clockHz, budget.idleClockHz, budget.clickBolts]).toEqual([0, 0, 0, 0, 0]);
+    expect(budget.lattices).toBe(JELLY_BUDGETS.full.lattices);
   });
 
   it('calm keeps clicks but no ambient arcs, and never runs faster than its cap', () => {
@@ -164,7 +168,6 @@ describe('N1 — every degraded state stands the material down', () => {
     for (const [tier, motion] of [
       ['lite', 'lively'],
       ['off', 'lively'],
-      ['full', 'still'],
     ] as const) {
       const f = softFeatures(tier, motion);
       expect(f, `${tier}/${motion}`).toMatchObject({

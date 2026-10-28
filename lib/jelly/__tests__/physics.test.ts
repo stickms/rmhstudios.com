@@ -600,6 +600,37 @@ describe('installJellyPhysics', () => {
     expect(rafCalls).toBe(0);
   });
 
+  it('scrolling transfers hover under a stationary mouse, with one hit-test in the read phase', () => {
+    install();
+    const first = make('div', { cls: ['glass-fill'] });
+    const next = make('div', { cls: ['glass-fill'] });
+    body.append(first);
+    body.append(next);
+    const hit = vi.fn(() => next);
+    doc.elementFromPoint = hit;
+    fire('pointerover', first, 50, 20);
+    settle();
+    fire('scroll', null);
+    expect(hit).not.toHaveBeenCalled();
+    step(1);
+    expect(hit).toHaveBeenCalledExactlyOnceWith(50, 20);
+    settle();
+    expect(inlineClean(first)).toBe(true);
+    expect(next.hasAttribute('data-jelly-body')).toBe(true);
+  });
+
+  it('touch scrolling never activates a hover body or reads a hit-test', () => {
+    fine = false;
+    install();
+    const hit = vi.fn();
+    doc.elementFromPoint = hit;
+    fire('pointermove', body, 50, 20, { pointerType: 'touch' });
+    fire('scroll', null);
+    step(1);
+    expect(hit).not.toHaveBeenCalled();
+    expect(rafCalls).toBe(0);
+  });
+
   it('caps the active set (12 fine, 6 coarse) by evicting nudged bodies', () => {
     for (const [isFine, cap] of [
       [true, 12],
@@ -1033,7 +1064,7 @@ describe('the press dent (#989)', () => {
     expect([a, b, c].every((e) => e.style.filter === '' && inlineClean(e))).toBe(true);
   });
 
-  it('degrades: `still` keeps the dent (press feedback) without lens or stretch; a playing game has no dent', () => {
+  it('still retains a reactive dent, lens and stretch; a playing game has no dent', () => {
     const { lens } = svgLens();
     root.setAttribute('data-jelly-motion', 'still');
     install({ lens });
@@ -1043,8 +1074,8 @@ describe('the press dent (#989)', () => {
     fire('pointermove', el, 900, 50);
     step(20);
     expect(dent(el)!.depth).toBeGreaterThan(1);
-    expect(dent(el)!.stretchX).toBe(0);
-    expect(lens.host).toBeNull();
+    expect(dent(el)!.stretchX).toBeGreaterThan(0);
+    expect(lens.host).toBe(el);
     fire('pointerup', el, 900, 50);
     settle();
     teardown();

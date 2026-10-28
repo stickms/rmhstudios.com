@@ -78,14 +78,14 @@ export function PageTabs({
   // navigation: the content after this strip dims-and-rises, the strip itself never moves, and nothing in the new
   // content replays its entrance (lib/page-transition.ts). Not on the first render.
   const controls = useRef<HTMLDivElement>(null);
-  const first = useRef(true);
+  const previousValue = useRef(value);
   useLayoutEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
-    if (controls.current) swapContentAfter(controls.current);
-  }, [value]);
+    if (previousValue.current === value) return;
+    previousValue.current = value;
+    // Route tabs are animated by the committed-page service; don't stack a
+    // second fade over the same panel when a link changes the route.
+    if (controls.current && !renderTab) swapContentAfter(controls.current);
+  }, [value, renderTab]);
 
   return (
     <div ref={controls} data-slot="page-controls" className="page-controls">

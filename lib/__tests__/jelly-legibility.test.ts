@@ -194,9 +194,9 @@ function siteTheme(name: string): Tokens {
 /** Role → its tint over the ground, exactly as liquid-glass.css writes it (asserted to still be there below). */
 const ROLE_TINT: Record<string, string> = {
   fill: 'var(--site-glass-tint)',
-  pane: 'color-mix(in srgb, var(--site-bg) 18%, transparent)',
-  chrome: 'color-mix(in srgb, var(--site-bg) 42%, transparent)',
-  overlay: 'color-mix(in srgb, var(--site-bg) 86%, transparent)',
+  pane: 'var(--site-glass-pane-tint)',
+  chrome: 'var(--site-glass-chrome-tint)',
+  overlay: 'var(--site-glass-overlay-tint)',
   inset: 'color-mix(in srgb, var(--site-text) 3%, transparent)',
 };
 /** Role → peak plasma strength (jelly-material.css §1); inset at its focused value, the worst case. */

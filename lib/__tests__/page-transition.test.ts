@@ -7,6 +7,7 @@ import {
   shellLayoutFor,
   armEntranceGuard,
   swapContentAfter,
+  revealPageContent,
   watchEntrances,
 } from '../page-transition';
 
@@ -339,5 +340,48 @@ describe('swapContentAfter (a state-based tab switch)', () => {
     const finish = vi.fn(() => 0);
     swapContentAfter(anchor as never, { dim: 0.6, ms: 120, finish });
     expect(finish).toHaveBeenCalled();
+  });
+
+  it('a rapid tab reversal continues from the painted opacity instead of jumping back to the floor', () => {
+    const [anchor, content] = chain(sib(), sib());
+    const cancel = vi.fn();
+    content.animate.mockReturnValue({ playState: 'running', cancel });
+    swapContentAfter(anchor as never, { dim: 0.72, ms: 220, finish: () => 0 });
+    vi.stubGlobal('getComputedStyle', () => ({ opacity: '0.91' }));
+    try {
+      swapContentAfter(anchor as never, { dim: 0.72, ms: 220, finish: () => 0 });
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(content.animate).toHaveBeenLastCalledWith(
+        [{ opacity: 0.91 }, { opacity: 1 }],
+        expect.objectContaining({ duration: 220 }),
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('revealPageContent', () => {
+  it('reveals a reused sibling panel and preserves its title and tab controls', () => {
+    const content = { matches: () => false, animate: vi.fn() };
+    const tabs = { matches: () => true, animate: vi.fn() };
+    const column = { matches: () => false, animate: vi.fn() };
+    const html = { matches: () => false };
+    const root = {
+      ownerDocument: { documentElement: html },
+      querySelector: () => ({ children: [tabs, content] }),
+      children: [column],
+    };
+    vi.stubGlobal('document', { documentElement: html });
+    vi.stubGlobal('getComputedStyle', () => ({ getPropertyValue: () => '' }));
+    try {
+      revealPageContent(root as never, 'sibling');
+      revealPageContent(root as never, 'sibling');
+      expect(content.animate).toHaveBeenCalledTimes(2);
+      expect(tabs.animate).not.toHaveBeenCalled();
+      expect(column.animate).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

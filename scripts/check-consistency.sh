@@ -552,7 +552,7 @@ if has '\.(tsx|css)$'; then
   ● Jelly motion three ways (Settings → Appearance, html[data-jelly-motion]):
     lively — haze drifts, hover plumps, press squashes and wobbles back, arcs
     fire; calm — slower haze, no ambient arcs, no neighbour nudge; still —
-    nothing moves on its own, press only.  (docs/plasmatic-jelly-system.md)
+    nothing moves on its own; hover, press and scroll stay reactive.  (docs/plasmatic-jelly-system.md)
   ● Did anything change LAYOUT, or move further than the bounded squash
     (≤ 4px edge travel) or the ≤ 1.5px neighbour nudge? Text, hit areas and
     document flow never move.

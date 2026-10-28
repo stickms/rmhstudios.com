@@ -455,6 +455,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
   // Theme state (re-read on theme change).
   let dark = 0;
   let rim: [number, number, number] = [1, 1, 1];
+  let rimOpacity = 1;
   let ink: [number, number, number] = [0.06, 0.08, 0.12];
 
   // Pointer state.
@@ -533,6 +534,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       doc,
     );
     rim = [glass[0], glass[1], glass[2]];
+    rimOpacity = glass[3];
     const text = resolveColor(
       style.getPropertyValue('--site-text').trim(),
       [0.06, 0.08, 0.12, 1],
@@ -662,7 +664,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
   });
 
   const track = (el: HTMLElement) => {
-    if (!el.matches(SELECTOR) || el.matches(EXCLUDE)) {
+    if (!el.matches(SELECTOR) || el.matches(EXCLUDE) || jellyOptedOut(el)) {
       untrack(el);
       return;
     }
@@ -826,7 +828,9 @@ export function installLiquidGlass(doc: Document = document): () => void {
     s.radius = innerRadius(style.borderTopLeftRadius, border, s.width, s.height);
     s.tint = resolveColor(style.backgroundColor, [1, 1, 1, 0], doc);
     if (style.position === 'static') s.el.setAttribute('data-liquid-static', '');
-    else s.el.removeAttribute('data-liquid-static');
+    // Keep our positioning ownership until teardown. Re-measuring sees the
+    // relative position this marker supplied; removing it would anchor a small
+    // control's canvas to its enclosing panel and stretch its rim into an oval.
     readJelly(s, style);
   };
 
@@ -1301,6 +1305,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
       sceneOn,
       tint: s.tint,
       rim,
+      rimOpacity,
       ink,
       dark,
       lightX: pointerX - ox,
@@ -1577,7 +1582,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
     }
 
     drainWakes();
-    const lightOk = !scrolling && pointerLive && queries.fine.matches;
+    const lightOk = pointerLive && queries.fine.matches;
     // Read all geometry before any canvas/attribute writes. Interleaving these
     // phases forced synchronous layout once per slab in Firefox. And read it only
     // when the cache is invalid or old (RECT_MAX_AGE_MS): a read here follows
@@ -1605,7 +1610,7 @@ export function installLiquidGlass(doc: Document = document): () => void {
         s.light = approach(s.light, goal, 14, dt);
         render = true;
         again = true;
-      } else if (goal > 0 && pointerMoved) {
+      } else if (goal > 0 && (pointerMoved || scrolling)) {
         render = true;
       }
 
@@ -1732,12 +1737,12 @@ export function installLiquidGlass(doc: Document = document): () => void {
       sceneFade = sceneFadeTarget = 0;
       root.removeAttribute('data-liquid-scene');
       for (const s of surfaces.values()) {
-        if (refracts(s) || s.light > 0 || s.tiltX || s.tiltY) s.dirty = true;
-        s.light = 0;
-        s.tiltX = s.tiltY = 0;
+        if (refracts(s)) s.dirty = true;
       }
-      requestFrame();
     }
+    // Geometry moves under a stationary cursor too. Coalesce scroll events on
+    // the shared driver; only scene capture stays paused during the scroll.
+    requestFrame();
     win.clearTimeout(scrollTimer);
     scrollTimer = win.setTimeout(() => {
       scrolling = false;
@@ -1842,7 +1847,15 @@ export function installLiquidGlass(doc: Document = document): () => void {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['data-liquid-glass', 'data-liquid-material', 'data-evert', 'data-jelly'],
+    attributeFilter: [
+      'data-liquid-glass',
+      'data-liquid-material',
+      'data-evert',
+      'data-jelly',
+      'data-jelly-scope',
+      'data-jelly-zone',
+      'data-liquid-motion',
+    ],
   });
   themeObserver.observe(root, {
     attributes: true,
