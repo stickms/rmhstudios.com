@@ -13,6 +13,7 @@ import {
   saveDraft,
   saveTfAssets,
 } from './local-drafts';
+import type { AiContext } from './ai-context';
 import { DEFAULT_TEST_STATE, type TestState } from './fixtures';
 import { DEFAULT_PAGE_ID, resolvePage } from './pages';
 import { BaseCache } from './project/base';
@@ -65,6 +66,17 @@ export const endGesture = (): void => {
   activeGesture = null;
 };
 
+/** Something asked of the HUD assistant from elsewhere in the editor (a panel, a problem, the scheme). */
+export interface AssistantRequest {
+  /** Changes on every request, so asking the same thing twice still opens it. */
+  nonce: number;
+  /** Words to put in the box, or to send straight away. */
+  prompt?: string;
+  autoSend?: boolean;
+  /** What the request is about; its files are shown to the model without asking which files are needed. */
+  context?: AiContext;
+}
+
 export interface HistoryEntry {
   overlay: Overlay;
   label: string;
@@ -102,6 +114,8 @@ export interface EditorState {
   hoverId: string | null;
   /** Screens Play mode came through, so a Back button can return to them. */
   playStack: string[];
+  /** The latest request to the assistant from a button elsewhere; the assistant takes it and opens. */
+  assistantRequest: AssistantRequest | null;
   /** Something (Play mode, the Test panel's animation runner) needs the HUD's animation scripts loaded. */
   animsWanted: boolean;
   /** The button the pointer is on in Play mode. */
@@ -174,6 +188,9 @@ export interface EditorState {
   focusBlock(id: string | null): void;
   setPlay(on: boolean): void;
   wantAnimations(): void;
+  askAssistant(req: Omit<AssistantRequest, 'nonce'>): void;
+  /** The assistant has picked the request up. */
+  clearAssistantRequest(): void;
   /** Open another screen from Play mode (keeping a way back). False when the editor has no such page. */
   playGo(page: string): boolean;
   playBack(): void;
@@ -242,6 +259,7 @@ export const useEditor = create<EditorState>((set, get) => {
     focusedBlockId: null,
     hoverId: null,
     playStack: [],
+    assistantRequest: null,
     animsWanted: false,
     playHover: null,
     focusProp: null,
@@ -555,6 +573,12 @@ export const useEditor = create<EditorState>((set, get) => {
         selectedId: on ? null : s.selectedId,
         selectedIds: on ? new Set() : s.selectedIds,
       }));
+    },
+    askAssistant(req) {
+      set({ assistantRequest: { ...req, nonce: (get().assistantRequest?.nonce ?? 0) + 1 } });
+    },
+    clearAssistantRequest() {
+      if (get().assistantRequest) set({ assistantRequest: null });
     },
     wantAnimations() {
       if (!get().animsWanted) set({ animsWanted: true });

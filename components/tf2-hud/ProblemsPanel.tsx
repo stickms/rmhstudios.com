@@ -3,13 +3,14 @@
  */
 'use client';
 
-import { AlertTriangle, CircleAlert, Info } from 'lucide-react';
+import { AlertTriangle, CircleAlert, Info, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { problemContext } from '@/lib/tf2-hud/ai-context';
 import { useEditor } from '@/lib/tf2-hud/store';
 import type { Severity } from '@/lib/tf2-hud/validate';
 import { cn } from '@/lib/utils';
-import { EmptyNote, PanelHead, Toggle } from './ui';
+import { EmptyNote, IconBtn, PanelHead, Toggle } from './ui';
 import { useValidationContext } from './validation-context';
 
 const ICON = { error: CircleAlert, warning: AlertTriangle, info: Info } as const;
@@ -23,6 +24,7 @@ export default function ProblemsPanel() {
   const { t } = useTranslation('c-tf2-hud');
   const { issues, counts, scopeAll, setScopeAll } = useValidationContext();
   const jump = useEditor((s) => s.jump);
+  const askAssistant = useEditor((s) => s.askAssistant);
   const [showInfo, setShowInfo] = useState(false);
   const list = issues.filter((i) => showInfo || i.severity !== 'info');
 
@@ -66,11 +68,11 @@ export default function ProblemsPanel() {
             {list.map((i) => {
               const Icon = ICON[i.severity];
               return (
-                <li key={i.id}>
+                <li key={i.id} className="flex items-start">
                   <button
                     type="button"
                     onClick={() => jump(i.path, i.offset ?? 0)}
-                    className="flex w-full items-start gap-2 px-3 py-2 text-start hover:bg-(--app-surface-hover)"
+                    className="flex min-w-0 flex-1 items-start gap-2 px-3 py-2 text-start hover:bg-(--app-surface-hover)"
                   >
                     <Icon className={cn('mt-0.5 size-4 shrink-0', TONE[i.severity])} aria-hidden />
                     <span className="min-w-0">
@@ -81,6 +83,24 @@ export default function ProblemsPanel() {
                       </span>
                     </span>
                   </button>
+                  {/\.res$/i.test(i.path) && i.severity !== 'info' ? (
+                    <IconBtn
+                      icon={Sparkles}
+                      size="xs"
+                      className="mt-1.5 me-1"
+                      label={t('fix-with-ai', { defaultValue: 'Fix this with the assistant' })}
+                      onClick={() =>
+                        askAssistant({
+                          context: problemContext(i),
+                          prompt: t('fix-with-ai-prompt', {
+                            defaultValue: 'Fix this problem: {{problem}}',
+                            problem: i.message.slice(0, 200),
+                          }),
+                          autoSend: true,
+                        })
+                      }
+                    />
+                  ) : null}
                 </li>
               );
             })}

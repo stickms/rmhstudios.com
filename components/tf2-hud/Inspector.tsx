@@ -5,7 +5,7 @@
  */
 'use client';
 
-import { Code2, Eye, EyeOff, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { Code2, Eye, EyeOff, Plus, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { kvRemove, kvSet } from '@/lib/tf2-hud/kv/edit';
@@ -24,6 +24,7 @@ import { setSchemeColor } from '@/lib/tf2-hud/scheme/edit';
 import { explainDim } from '@/lib/tf2-hud/scheme/inspect';
 import { COND_ENVS } from '@/lib/tf2-hud/scheme/cond';
 import { blockOfNode, resetOverride, useBlocksDoc } from '@/lib/tf2-hud/blocks/actions';
+import { panelContext } from '@/lib/tf2-hud/ai-context';
 import { writePanelProp } from '@/lib/tf2-hud/panel-edit';
 import { isSharable } from '@/lib/tf2-hud/blocks/types';
 import { useEditor } from '@/lib/tf2-hud/store';
@@ -72,6 +73,7 @@ export default function Inspector() {
   const test = useEditor((s) => s.test);
   const strings = useLocalisation();
   const setFocusProp = useEditor((s) => s.setFocusProp);
+  const askAssistant = useEditor((s) => s.askAssistant);
   const node = scene?.nodes.find((n) => n.id === selectedId);
   const [adding, setAdding] = useState('');
   const blocksDoc = useBlocksDoc();
@@ -247,6 +249,22 @@ export default function Inspector() {
                   : t('show-in-preview', { defaultValue: 'Show in preview' })
               }
               onClick={() => toggleForce(node.id, !shown)}
+            />
+            <IconBtn
+              icon={Sparkles}
+              label={t('ask-ai-panel', { defaultValue: 'Ask the assistant about this panel' })}
+              onClick={() =>
+                askAssistant({
+                  context: panelContext({
+                    panel: node,
+                    props,
+                    scheme,
+                    block: inBlock
+                      ? { name: inBlock.block.name, count: inBlock.block.members.length }
+                      : undefined,
+                  }),
+                })
+              }
             />
             <IconBtn
               icon={Code2}

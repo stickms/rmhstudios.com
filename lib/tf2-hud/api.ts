@@ -179,8 +179,11 @@ export const api = {
     message: string;
     files: { path: string; text: string }[];
     history: { role: 'user' | 'assistant'; content: string }[];
+    /** What the player has selected, so "this" in the request means something. */
+    context?: string;
   }): Promise<
-    { summary: string; changes: HudChange[]; malformed: number } | { unavailable: true; reason: string }
+    | { summary: string; changes: HudChange[]; malformed: number }
+    | { unavailable: true; reason: string }
   > {
     return request('/api/tf2-hud/ai', { method: 'POST', ...json({ stage: 'edit', ...body }) });
   },

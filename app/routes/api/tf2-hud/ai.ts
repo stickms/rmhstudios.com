@@ -1,7 +1,7 @@
 /**
  * POST /api/tf2-hud/ai — the HUD assistant. Two stages, both stateless:
  *   { stage: "select", message, paths }          → which files the request touches
- *   { stage: "edit",   message, files: [{path, text}] } → a summary and key-level changes
+ *   { stage: "edit",   message, files: [{path, text}], context? } → a summary and key-level changes
  * `{ unavailable: true }` when the model cannot be reached. Signed-in only, rate limited and budgeted.
  */
 
@@ -9,6 +9,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { HUD_AI_LIMITS } from '@/lib/tf2-hud/ai-core';
+import { AI_CONTEXT_LIMIT } from '@/lib/tf2-hud/ai-context';
 import { proposeHudChanges, selectHudFiles } from '@/lib/tf2-hud/ai.server';
 
 const message = z.string().trim().min(1).max(HUD_AI_LIMITS.message);
@@ -33,6 +34,8 @@ const schema = z.discriminatedUnion('stage', [
     stage: z.literal('edit'),
     message,
     history,
+    /** What the player has selected, from the editor. Sent to the model as data. */
+    context: z.string().max(AI_CONTEXT_LIMIT).optional(),
     files: z
       .array(
         z.object({
@@ -67,6 +70,7 @@ export const Route = createFileRoute('/api/tf2-hud/ai')({
           message: body.message,
           files: body.files,
           history: body.history,
+          context: body.context,
         });
         return Response.json(
           r.ok

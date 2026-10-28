@@ -45,6 +45,20 @@ lib/tf2-hud/
 - **3D** — model panels show the loadout builder's own 3D player and items, and the backpack page shows a full page of items (see _3D and items_ below). Where WebGL, the synced models or the catalog are missing, panels are labelled boxes as before.
 - **Alpha:** a panel's own `alpha` (and an animation's) fades it and everything inside it, as in the game.
 
+## Colours from the preview
+
+Select a panel and its colours appear beside it as chips (`ColorChips.tsx`): click one to change it in place. If the colour is tied to a scheme colour (`TanDark`), the popover lists what you can change: **this element only** (choosing a number detaches it from the name) or **each colour in its name chain, everywhere** (`TanDark`, then `Tan`), with a count of what else on the page and in the scheme uses it. `lib/tf2-hud/color-vars.ts` works that out (and `wouldCycle` refuses a colour that would end up pointing at itself); edits to a scheme colour or a `BaseSettings` name go through `scheme/edit.ts`. Where a panel edit lands (a block, a panel override, the file, the `_minmode` copy) is decided once in `lib/tf2-hud/panel-edit.ts`, shared by the inspector and the chips.
+
+## AI help
+
+The assistant (top bar, or any ✦ button) never writes files. It proposes key-level changes against the files it was shown, the editor dry-runs them with its own lossless edits and shows each key's before and after, and applying is one undo step. What was added:
+
+- **It knows what you are looking at.** The ✦ button in the inspector header, the colour popover, a problem in the Problems tab and the Scheme tab's "Describe a look" box each open it with a context (`lib/tf2-hud/ai-context.ts`: the panel's name, control, key path, layout, text, font, colours with the scheme names they go through, and its block). The context also names the files the answer needs, so the "which files?" model call is skipped. It is built from your own project, capped, stripped of control characters, and sent as data (`SELECTED:` in the prompt, wrapped like the player's own words), never as instructions. A chip above the message box shows it and removes it.
+- **Palettes:** describe a look ("dark teal with amber") and the assistant changes several scheme colours together, keeping shared colours aliased and text readable; you see every swatch before applying.
+- **Questions:** "what does this do?" is answered in the summary with no changes.
+- **Fix problems:** the ✦ on a problem asks for a fix to that file.
+- Server: the `edit` stage of `POST /api/tf2-hud/ai` accepts `context`; prompt `tf2-hud-edit` is at version 2.
+
 ## Blocks
 
 A **block** is a named group of panels that share a look, so "all the charge bars" is edited once instead of one `.res` entry at a time. Blocks never replace the files: a block writes ordinary keys into its members, and the export is a normal HUD.

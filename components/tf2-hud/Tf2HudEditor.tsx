@@ -121,6 +121,11 @@ export default function Tf2HudEditor({ draft, hud, fork }: Props) {
   const [saveOpen, setSaveOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  // Buttons elsewhere (a panel, a problem, the scheme) ask the assistant through the store.
+  const assistantNonce = useEditor((s) => s.assistantRequest?.nonce);
+  useEffect(() => {
+    if (assistantNonce) setAssistantOpen(true);
+  }, [assistantNonce]);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const { save: cloudSave, canQuickSave } = useCloudSave();
   const [confirmImport, setConfirmImport] = useState<File | null>(null);

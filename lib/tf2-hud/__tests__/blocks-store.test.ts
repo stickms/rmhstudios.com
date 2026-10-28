@@ -40,3 +40,17 @@ describe('applyBatch', () => {
     expect(useEditor.getState().readText('resource/ui/a.res')).toBe('"A" {}');
   });
 });
+
+describe('assistant requests', () => {
+  it('numbers each request so asking the same thing twice still opens it, and clears when taken', () => {
+    const s = useEditor.getState();
+    s.clearAssistantRequest();
+    s.askAssistant({ prompt: 'a' });
+    const first = useEditor.getState().assistantRequest!;
+    expect(first).toMatchObject({ prompt: 'a', nonce: expect.any(Number) });
+    s.askAssistant({ prompt: 'a' });
+    expect(useEditor.getState().assistantRequest!.nonce).toBe(first.nonce + 1);
+    s.clearAssistantRequest();
+    expect(useEditor.getState().assistantRequest).toBeNull();
+  });
+});

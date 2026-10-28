@@ -6,10 +6,11 @@
  */
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { panelContext } from '@/lib/tf2-hud/ai-context';
 import {
   colorSlots,
   colorUsage,
@@ -18,7 +19,7 @@ import {
   type ChainHop,
   type ColorSlot,
 } from '@/lib/tf2-hud/color-vars';
-import { propsOf } from '@/lib/tf2-hud/kv/props';
+import { propsOf, type Props } from '@/lib/tf2-hud/kv/props';
 import { kvAt } from '@/lib/tf2-hud/kv/query';
 import { writePanelProp } from '@/lib/tf2-hud/panel-edit';
 import { kindOf, parseCached } from '@/lib/tf2-hud/scene/build';
@@ -59,11 +60,13 @@ function useKeyLabel() {
 
 function ColorTargetPopover({
   node,
+  props,
   slot,
   anchor,
   onClose,
 }: {
   node: PanelNode;
+  props: Props;
   slot: ColorSlot;
   anchor: HTMLElement | null;
   onClose: () => void;
@@ -72,6 +75,7 @@ function ColorTargetPopover({
   const { scheme, page } = useSceneContext();
   const readText = useEditor((s) => s.readText);
   const writeText = useEditor((s) => s.writeText);
+  const askAssistant = useEditor((s) => s.askAssistant);
   const label = useKeyLabel();
   /** `null` = this element; otherwise the scheme colour being edited. */
   const [target, setTarget] = useState<ChainHop | null>(null);
@@ -190,6 +194,25 @@ function ColorTargetPopover({
           }
         }}
       />
+      <button
+        type="button"
+        className="mt-3 flex w-full items-center gap-1.5 rounded-(--app-radius-sm) px-1.5 py-1 text-xs text-(--app-accent-text) hover:bg-(--app-surface-hover)"
+        onClick={() => {
+          askAssistant({
+            context: panelContext({ panel: node, props, scheme }),
+            prompt: t('color-ai-prompt', {
+              defaultValue:
+                'Suggest a better colour for the {{what}} of this panel, one that stays readable.',
+              what: label(slot.key).toLowerCase(),
+            }),
+            autoSend: true,
+          });
+          onClose();
+        }}
+      >
+        <Sparkles className="size-3.5" aria-hidden />
+        {t('color-ai', { defaultValue: 'Suggest a colour with the assistant' })}
+      </button>
     </Popover>
   );
 }
@@ -290,6 +313,7 @@ export default function ColorChips({
       {active && anchor ? (
         <ColorTargetPopover
           node={node}
+          props={props}
           slot={active}
           anchor={anchor}
           onClose={() => setOpen(null)}
